@@ -27,6 +27,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.asynchttpclient.util.HttpConstants.Methods.PUT;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -63,9 +64,9 @@ public class WsCallerTest {
         }
 
         @Test(expected = IllegalStateException.class)
-        public void test_code_is_lower_than_0(){
+        public void test_response_code_is_lower_than_0(){
             WsCaller wsCaller = new WsCaller(asyncHttpClient);
-            wsCaller.setAcknowledgement("fsqdfsdf","sdfsfdsf",null,null,null,null,Lists.newArrayList(),null,-1,"", Stopwatch.createUnstarted(), OffsetDateTime.now(ZoneId.of(WsCaller.UTC_ZONE_ID)), new AtomicInteger(2));
+            wsCaller.setAcknowledgement("fsqdfsdf","sdfsfdsf","http://stuff.com/sfsfds",Lists.newArrayList(),PUT,"fake body",Lists.newArrayList(),"fake response body",-1,"", Stopwatch.createUnstarted(), OffsetDateTime.now(ZoneId.of(WsCaller.UTC_ZONE_ID)), new AtomicInteger(2));
         }
 
 

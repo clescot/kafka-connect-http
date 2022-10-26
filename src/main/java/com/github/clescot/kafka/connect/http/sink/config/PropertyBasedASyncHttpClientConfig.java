@@ -178,6 +178,11 @@ public class PropertyBasedASyncHttpClientConfig implements AsyncHttpClientConfig
     }
 
     @Override
+    public int expiredCookieEvictionDelay() {
+        return 0;
+    }
+
+    @Override
     public int getMaxRequestRetry() {
         return getInt(ASYNC_CLIENT_CONFIG_ROOT + MAX_REQUEST_RETRY_CONFIG,defaultMaxRequestRetry());
     }
@@ -353,6 +358,16 @@ public class PropertyBasedASyncHttpClientConfig implements AsyncHttpClientConfig
     }
 
     @Override
+    public long getHashedWheelTimerTickDuration() {
+        return 0;
+    }
+
+    @Override
+    public int getHashedWheelTimerSize() {
+        return 0;
+    }
+
+    @Override
     public KeepAliveStrategy getKeepAliveStrategy() {
         return keepAliveStrategy;
     }
@@ -380,6 +395,11 @@ public class PropertyBasedASyncHttpClientConfig implements AsyncHttpClientConfig
     @Override
     public boolean isSoReuseAddress() {
         return getBoolean(ASYNC_CLIENT_CONFIG_ROOT + SO_REUSE_ADDRESS_CONFIG,defaultSoReuseAddress());
+    }
+
+    @Override
+    public boolean isSoKeepAlive() {
+        return false;
     }
 
     @Override
