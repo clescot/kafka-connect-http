@@ -72,13 +72,11 @@ public class WsSinkTask extends SinkTask {
     }
 
     /**
-     * configuration du du limiteur de débit :
-     * org.asynchttpclient.throttle.http.max.connections pour le nombre maximum de connexions simultanées
-     * org.asynchttpclient.throttle.http.rate.limit.per.second pour le nombre d'appels par seconde
-     * org.asynchttpclient.throttle.http.max.wait.ms pour le temps d'attente maximum pour une nouvelle connexion quand le quota d'appel est atteint.
-     * configuration de asynchttpclient :
-     * commence par 'org.asynchttpclient.'
-     *
+     * rate limiter configuration :
+     * org.asynchttpclient.throttle.http.max.connections simultaneous max connections
+     * org.asynchttpclient.throttle.http.rate.limit.per.second max calls per second
+     * org.asynchttpclient.throttle.http.max.wait.ms max wait time when call quota is reached.
+     * asynchttpclient configuration is starting by : 'org.asynchttpclient.'
      *
      * @param taskConfig
      */
