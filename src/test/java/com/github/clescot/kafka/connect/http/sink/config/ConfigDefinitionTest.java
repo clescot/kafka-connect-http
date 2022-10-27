@@ -34,7 +34,7 @@ public class ConfigDefinitionTest {
             assert(ConfigDefinition.config().configKeys()).containsKey("connect.sink.ack.schema");
             assert(ConfigDefinition.config().configKeys()).containsKey("connect.sink.producer.id");
 
-            assertThat(ConfigDefinition.config().configKeys().values().size()).isEqualTo(5);
+            assertThat(ConfigDefinition.config().configKeys().values().size()).isEqualTo(6);
 
             assertThat(ConfigDefinition.config().configKeys().get("connect.sink.target.bootstrap.server").name).isEqualTo("connect.sink.target.bootstrap.server");
             assertThat(ConfigDefinition.config().configKeys().get("connect.sink.producer.id").name).isEqualTo("connect.sink.producer.id");
