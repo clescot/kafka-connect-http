@@ -81,8 +81,8 @@ public class AckSender {
         Preconditions.checkNotNull(ack.getCorrelationId(),"acknowledgement 'correlationId' is null");
         value.put("correlationId", ack.getCorrelationId());
 
-        Preconditions.checkNotNull(ack.getWsId(),"acknowledgement 'wsId' is null");
-        value.put("wsId", ack.getWsId());
+        Preconditions.checkNotNull(ack.getRequestId(),"acknowledgement 'requestId' is null");
+        value.put("requestId", ack.getRequestId());
 
         Preconditions.checkState(ack.getStatusCode()!=null && ack.getStatusCode()>0,"acknowledgement 'statusCode' is null");
         value.put("statusCode", ack.getStatusCode());
