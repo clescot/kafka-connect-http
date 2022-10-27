@@ -21,4 +21,10 @@ public class ConfigConstants {
     public static final String ACK_SCHEMA = "connect.sink.ack.schema";
     public static final String ACK_SCHEMA_DOC = "Schema used to send acknowledgment";
 
+    public static final String VALUE_CONVERTER = "value.converter";
+
+    public static final String VALUE_CONVERTER_DOC = "converter used to convert between kafka connect internal format and byte[]. default is org.apache.kafka.connect.storage.StringConverter. it must implements org.apache.kafka.connect.storage.Converter interface";
+
+
+
 }
