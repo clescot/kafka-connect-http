@@ -61,6 +61,11 @@
             <artifactId>connect-json</artifactId>
             <version>${kafka.version}</version>
         </dependency>
+        <dependency>
+            <groupId>io.confluent</groupId>
+            <artifactId>kafka-connect-json-schema-converter</artifactId>
+            <version>${confluent.platform.version}</version>
+        </dependency>
 
 
         <dependency>
