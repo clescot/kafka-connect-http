@@ -27,10 +27,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.lang.reflect.InvocationTargetException;
-import java.util.Collection;
-import java.util.Map;
-import java.util.Properties;
-import java.util.concurrent.TransferQueue;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.ASYNC_CLIENT_CONFIG_ROOT;
@@ -38,20 +35,21 @@ import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.ASYNC_CLI
 
 public class WsSinkTask extends SinkTask {
     public static final String ASYN_HTTP_CONFIG_PREFIX = ASYNC_CLIENT_CONFIG_ROOT;
-    public static final String HTTP_MAX_CONNECTIONS = ASYN_HTTP_CONFIG_PREFIX+"http.max.connections";
-    public static final String HTTP_RATE_LIMIT_PER_SECOND = ASYN_HTTP_CONFIG_PREFIX+"http.rate.limit.per.second";
-    public static final String HTTP_MAX_WAIT_MS = ASYN_HTTP_CONFIG_PREFIX+"http.max.wait.ms";
-    public static final String KEEP_ALIVE_STRATEGY_CLASS = ASYN_HTTP_CONFIG_PREFIX+"keep.alive.class";
-    public static final String RESPONSE_BODY_PART_FACTORY = ASYN_HTTP_CONFIG_PREFIX+"response.body.part.factory";
-    private static final String CONNECTION_SEMAPHORE_FACTORY = ASYN_HTTP_CONFIG_PREFIX + "connection.semaphore.factory";;
+    public static final String HTTP_MAX_CONNECTIONS = ASYN_HTTP_CONFIG_PREFIX + "http.max.connections";
+    public static final String HTTP_RATE_LIMIT_PER_SECOND = ASYN_HTTP_CONFIG_PREFIX + "http.rate.limit.per.second";
+    public static final String HTTP_MAX_WAIT_MS = ASYN_HTTP_CONFIG_PREFIX + "http.max.wait.ms";
+    public static final String KEEP_ALIVE_STRATEGY_CLASS = ASYN_HTTP_CONFIG_PREFIX + "keep.alive.class";
+    public static final String RESPONSE_BODY_PART_FACTORY = ASYN_HTTP_CONFIG_PREFIX + "response.body.part.factory";
+    private static final String CONNECTION_SEMAPHORE_FACTORY = ASYN_HTTP_CONFIG_PREFIX + "connection.semaphore.factory";
+    ;
     private static final String EVENT_LOOP_GROUP = ASYN_HTTP_CONFIG_PREFIX + "event.loop.group";
     private static final String COOKIE_STORE = ASYN_HTTP_CONFIG_PREFIX + "cookie.store";
     private static final String NETTY_TIMER = ASYN_HTTP_CONFIG_PREFIX + "netty.timer";
-    private static final String BYTE_BUFFER_ALLOCATOR =ASYN_HTTP_CONFIG_PREFIX + "byte.buffer.allocator";
+    private static final String BYTE_BUFFER_ALLOCATOR = ASYN_HTTP_CONFIG_PREFIX + "byte.buffer.allocator";
     private WsCaller wsCaller;
     private static AsyncHttpClient asyncHttpClient;
     private final static Logger LOGGER = LoggerFactory.getLogger(WsSinkTask.class);
-    private static TransferQueue<Acknowledgement> queue;
+    private static Queue<Acknowledgement> queue;
 
 
     @Override
@@ -95,7 +93,8 @@ public class WsSinkTask extends SinkTask {
             try {
                 //we instantiate the default constructor, public or not
                 keepAliveStrategy = (KeepAliveStrategy) Class.forName(defaultKeepAliveStrategyClassName).getDeclaredConstructor().newInstance();
-            } catch (ClassNotFoundException | IllegalAccessException | InstantiationException | InvocationTargetException | NoSuchMethodException e) {
+            } catch (ClassNotFoundException | IllegalAccessException | InstantiationException |
+                     InvocationTargetException | NoSuchMethodException e) {
                 LOGGER.error(e.getMessage());
                 LOGGER.error("we rollback to the default keep alive strategy");
                 keepAliveStrategy = new DefaultKeepAliveStrategy();
@@ -110,7 +109,8 @@ public class WsSinkTask extends SinkTask {
             String connectionSemaphoreFactoryClassName = config.getOrDefault(CONNECTION_SEMAPHORE_FACTORY, "org.asynchttpclient.netty.channel.DefaultConnectionSemaphoreFactory");
             try {
                 propertyBasedASyncHttpClientConfig.setConnectionSemaphoreFactory((ConnectionSemaphoreFactory) Class.forName(connectionSemaphoreFactoryClassName).getDeclaredConstructor().newInstance());
-            } catch (InstantiationException | IllegalAccessException | InvocationTargetException | NoSuchMethodException | ClassNotFoundException e) {
+            } catch (InstantiationException | IllegalAccessException | InvocationTargetException |
+                     NoSuchMethodException | ClassNotFoundException e) {
                 LOGGER.error(e.getMessage());
                 propertyBasedASyncHttpClientConfig.setConnectionSemaphoreFactory(new DefaultConnectionSemaphoreFactory());
                 LOGGER.error("we rollback to the default connection semaphore factory");
@@ -120,7 +120,8 @@ public class WsSinkTask extends SinkTask {
             String cookieStoreClassName = config.getOrDefault(COOKIE_STORE, "org.asynchttpclient.cookie.ThreadSafeCookieStore");
             try {
                 propertyBasedASyncHttpClientConfig.setCookieStore((CookieStore) Class.forName(cookieStoreClassName).getDeclaredConstructor().newInstance());
-            } catch (InstantiationException | IllegalAccessException | InvocationTargetException | NoSuchMethodException | ClassNotFoundException e) {
+            } catch (InstantiationException | IllegalAccessException | InvocationTargetException |
+                     NoSuchMethodException | ClassNotFoundException e) {
                 LOGGER.error(e.getMessage());
                 propertyBasedASyncHttpClientConfig.setCookieStore(new ThreadSafeCookieStore());
                 LOGGER.error("we rollback to the default cookie store");
@@ -130,7 +131,8 @@ public class WsSinkTask extends SinkTask {
             String nettyTimerClassName = config.getOrDefault(NETTY_TIMER, "io.netty.util.HashedWheelTimer");
             try {
                 propertyBasedASyncHttpClientConfig.setNettyTimer((Timer) Class.forName(nettyTimerClassName).getDeclaredConstructor().newInstance());
-            } catch (InstantiationException | IllegalAccessException | InvocationTargetException | NoSuchMethodException | ClassNotFoundException e) {
+            } catch (InstantiationException | IllegalAccessException | InvocationTargetException |
+                     NoSuchMethodException | ClassNotFoundException e) {
                 LOGGER.error(e.getMessage());
                 propertyBasedASyncHttpClientConfig.setNettyTimer(new HashedWheelTimer());
                 LOGGER.error("we rollback to the default netty timer");
@@ -140,7 +142,8 @@ public class WsSinkTask extends SinkTask {
             String byteBufferAllocatorClassName = config.getOrDefault(BYTE_BUFFER_ALLOCATOR, "io.netty.buffer.PooledByteBufAllocator");
             try {
                 propertyBasedASyncHttpClientConfig.setByteBufAllocator((ByteBufAllocator) Class.forName(byteBufferAllocatorClassName).getDeclaredConstructor().newInstance());
-            } catch (InstantiationException | IllegalAccessException | InvocationTargetException | NoSuchMethodException | ClassNotFoundException e) {
+            } catch (InstantiationException | IllegalAccessException | InvocationTargetException |
+                     NoSuchMethodException | ClassNotFoundException e) {
                 LOGGER.error(e.getMessage());
                 propertyBasedASyncHttpClientConfig.setByteBufAllocator(new PooledByteBufAllocator());
                 LOGGER.error("we rollback to the default byte buffer allocator");
@@ -152,28 +155,13 @@ public class WsSinkTask extends SinkTask {
     }
 
 
-
     @Override
     public void put(Collection<SinkRecord> records) {
         Preconditions.checkNotNull(records, "records collection to be processed is null");
         Preconditions.checkNotNull(wsCaller, "wsCaller is null. 'start' method must be called once before put");
-
-        records.stream()
-                .map(wsCaller::call)
-                .forEach(WsSinkTask::send);
+        records.stream().map(wsCaller::call).forEach(ack -> queue.offer(ack));
     }
 
-
-    private static void send(Acknowledgement acknowledgement){
-        try {
-            if(!queue.hasWaitingConsumer()){
-                throw new RuntimeException("there are no waiting consumers for the queue");
-            }
-            queue.transfer(acknowledgement);
-        } catch (InterruptedException e) {
-            throw new RuntimeException(e);
-        }
-    }
 
     @Override
     public void stop() {

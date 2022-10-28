@@ -14,7 +14,7 @@ import org.apache.kafka.connect.source.SourceTask;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.TransferQueue;
+import java.util.Queue;
 
 public class WsSourceTask extends SourceTask {
 
@@ -31,7 +31,7 @@ public class WsSourceTask extends SourceTask {
     public static final String STATUS_MESSAGE = "statusMessage";
     public static final String RESPONSE_HEADERS = "responseHeaders";
     public static final String RESPONSE_BODY = "responseBody";
-    private static TransferQueue<Acknowledgement> queue;
+    private static Queue<Acknowledgement> queue;
     private AckConfig ackConfig;
 
     @Override
@@ -48,13 +48,16 @@ public class WsSourceTask extends SourceTask {
 
     @Override
     public List<SourceRecord> poll() throws InterruptedException {
-        Acknowledgement acknowledgement = queue.take();
-        SourceRecord sourceRecord = transformAcknowledgment(acknowledgement);
-        return Lists.newArrayList(sourceRecord);
+        List<SourceRecord> records = Lists.newArrayList();
+        while (queue.peek() != null) {
+            records.add(toSourceRecord(queue.poll()));
+        }
+
+        return records;
     }
 
 
-    private SourceRecord transformAcknowledgment(Acknowledgement acknowledgement){
+    private SourceRecord toSourceRecord(Acknowledgement acknowledgement){
         Map<String, ?> sourcePartition = Maps.newHashMap();
         Map<String, ?> sourceOffset= Maps.newHashMap();
         Struct struct = new Struct(getSchema());
