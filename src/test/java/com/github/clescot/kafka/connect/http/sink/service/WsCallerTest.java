@@ -1,7 +1,6 @@
 package com.github.clescot.kafka.connect.http.sink.service;
 
 
-import com.github.clescot.kafka.connect.http.sink.utils.HeaderImpl;
 import com.github.clescot.kafka.connect.http.source.Acknowledgement;
 import com.google.common.base.Stopwatch;
 import com.google.common.collect.Lists;
@@ -196,21 +195,5 @@ public class WsCallerTest {
         }
 
     }
-    public static class Test_extractWsProperties{
-        @Test
-        public void test_nominal_case(){
-            AsyncHttpClient asyncHttpClient = mock(AsyncHttpClient.class);
-            HashMap<String, String> vars = Maps.newHashMap();
-            WsCaller wsCaller = new WsCaller(asyncHttpClient);
-            Headers headers = new ConnectHeaders();
-            Header header1 = new HeaderImpl("ws-http-test",null,"value");
-            headers.add(header1);
-            Header header2 = new HeaderImpl("http-test",null,"value");
-            headers.add(header2);
-            Header header3 = new HeaderImpl("ws-test",null,"value");
-            headers.add(header3);
-            Map<String, String> extractedProperties = wsCaller.extractWsProperties(headers);
-            assertThat(extractedProperties).containsOnlyKeys("http-test","test");
-        }
-    }
+
 }
