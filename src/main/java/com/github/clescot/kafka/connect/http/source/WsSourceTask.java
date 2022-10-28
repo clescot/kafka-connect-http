@@ -1,9 +1,7 @@
-package com.github.clescot.kafka.connect.http.sink;
+package com.github.clescot.kafka.connect.http.source;
 
 import com.github.clescot.kafka.connect.http.QueueFactory;
 import com.github.clescot.kafka.connect.http.sink.utils.VersionUtil;
-import com.github.clescot.kafka.connect.http.source.AckConfig;
-import com.github.clescot.kafka.connect.http.source.Acknowledgement;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
