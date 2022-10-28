@@ -1,6 +1,7 @@
 package com.github.clescot.kafka.connect.http.sink.model;
 
 
+import com.github.clescot.kafka.connect.http.source.Acknowledgement;
 import com.google.common.collect.Lists;
 import org.junit.Test;
 import org.junit.experimental.runners.Enclosed;

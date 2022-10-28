@@ -1,28 +1,18 @@
 package com.github.clescot.kafka.connect.http.sink;
 
-import com.github.clescot.kafka.connect.http.sink.config.AckConfig;
+import com.github.clescot.kafka.connect.http.QueueFactory;
 import com.github.clescot.kafka.connect.http.sink.config.PropertyBasedASyncHttpClientConfig;
-import com.github.clescot.kafka.connect.http.sink.service.AckSender;
-import com.github.clescot.kafka.connect.http.sink.service.KafkaFailSafeProducer;
 import com.github.clescot.kafka.connect.http.sink.service.WsCaller;
 import com.github.clescot.kafka.connect.http.sink.utils.VersionUtil;
+import com.github.clescot.kafka.connect.http.source.Acknowledgement;
 import com.google.common.base.Preconditions;
-import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
-import io.confluent.connect.avro.AvroConverter;
-import io.confluent.kafka.serializers.KafkaAvroDeserializerConfig;
-import io.confluent.kafka.serializers.KafkaAvroSerializerConfig;
 import io.netty.buffer.ByteBufAllocator;
 import io.netty.buffer.PooledByteBufAllocator;
 import io.netty.util.HashedWheelTimer;
 import io.netty.util.Timer;
-import org.apache.kafka.clients.producer.KafkaProducer;
-import org.apache.kafka.clients.producer.ProducerConfig;
-import org.apache.kafka.common.serialization.ByteArraySerializer;
-import org.apache.kafka.common.serialization.StringSerializer;
 import org.apache.kafka.connect.sink.SinkRecord;
 import org.apache.kafka.connect.sink.SinkTask;
-import org.apache.kafka.connect.storage.Converter;
 import org.asynchttpclient.AsyncHttpClient;
 import org.asynchttpclient.AsyncHttpClientConfig;
 import org.asynchttpclient.Dsl;
@@ -40,7 +30,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.util.Collection;
 import java.util.Map;
 import java.util.Properties;
-import java.util.StringJoiner;
+import java.util.concurrent.TransferQueue;
 import java.util.stream.Collectors;
 
 import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.ASYNC_CLIENT_CONFIG_ROOT;
@@ -58,12 +48,10 @@ public class WsSinkTask extends SinkTask {
     private static final String COOKIE_STORE = ASYN_HTTP_CONFIG_PREFIX + "cookie.store";
     private static final String NETTY_TIMER = ASYN_HTTP_CONFIG_PREFIX + "netty.timer";
     private static final String BYTE_BUFFER_ALLOCATOR =ASYN_HTTP_CONFIG_PREFIX + "byte.buffer.allocator";
-    public static final String ACK_RETRIES = "ack.retries";
-    public static final String DEFAULT_RETRIES = "2";
-    private AckSender ackSender;
     private WsCaller wsCaller;
     private static AsyncHttpClient asyncHttpClient;
     private final static Logger LOGGER = LoggerFactory.getLogger(WsSinkTask.class);
+    private static TransferQueue<Acknowledgement> queue;
 
 
     @Override
@@ -83,25 +71,8 @@ public class WsSinkTask extends SinkTask {
     @Override
     public void start(Map<String, String> taskConfig) {
         Preconditions.checkNotNull(taskConfig, "taskConfig cannot be null");
-        AckConfig config = new AckConfig(taskConfig);
-        Properties props = new Properties();
-        props.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, config.getTargetBootstrapServer());
-        props.put(ProducerConfig.CLIENT_ID_CONFIG, config.getProducerClientId());
-        props.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class.getName());
-        props.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, ByteArraySerializer.class.getName());
-        props.put(KafkaAvroSerializerConfig.SCHEMA_REGISTRY_URL_CONFIG, config.getTargetSchemaRegistry());
-
-        StringJoiner joiner = new StringJoiner("\n\t");
-        props.forEach((k, v) -> joiner.add(String.format("%s = %s", k, v)));
-        LOGGER.info("kafka producer configuration : \n\t" + joiner.toString());
-        Converter keyAvroConverter = new AvroConverter();
-        keyAvroConverter.configure(ImmutableMap.of(KafkaAvroDeserializerConfig.SCHEMA_REGISTRY_URL_CONFIG, config.getTargetSchemaRegistry()), true);
-        Converter valueAvroConverter = new AvroConverter();
-        valueAvroConverter.configure(ImmutableMap.of(KafkaAvroDeserializerConfig.SCHEMA_REGISTRY_URL_CONFIG, config.getTargetSchemaRegistry()), false);
-        KafkaFailSafeProducer kafkaProducer = new KafkaFailSafeProducer(()-> new KafkaProducer(props),Integer.parseInt(taskConfig.getOrDefault(ACK_RETRIES, DEFAULT_RETRIES)));
-        this.ackSender = AckSender.getInstance(config, kafkaProducer, valueAvroConverter);
-
         this.wsCaller = new WsCaller(getAsyncHttpClient(taskConfig));
+        this.queue = QueueFactory.getQueue();
     }
 
 
@@ -180,6 +151,8 @@ public class WsSinkTask extends SinkTask {
         return asyncHttpClient;
     }
 
+
+
     @Override
     public void put(Collection<SinkRecord> records) {
         Preconditions.checkNotNull(records, "records collection to be processed is null");
@@ -187,9 +160,20 @@ public class WsSinkTask extends SinkTask {
 
         records.stream()
                 .map(wsCaller::call)
-                .forEach(ackSender::send);
+                .forEach(WsSinkTask::send);
     }
 
+
+    private static void send(Acknowledgement acknowledgement){
+        try {
+            if(!queue.hasWaitingConsumer()){
+                throw new RuntimeException("there are no waiting consumers for the queue");
+            }
+            queue.transfer(acknowledgement);
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
+    }
 
     @Override
     public void stop() {
@@ -198,10 +182,6 @@ public class WsSinkTask extends SinkTask {
 
     public WsCaller getWsCaller() {
         return wsCaller;
-    }
-
-    public AckSender getAckSender() {
-        return ackSender;
     }
 
 

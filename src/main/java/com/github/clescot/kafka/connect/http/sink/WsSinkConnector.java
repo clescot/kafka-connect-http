@@ -1,7 +1,6 @@
 package com.github.clescot.kafka.connect.http.sink;
 
 import com.github.clescot.kafka.connect.http.sink.config.ConfigDefinition;
-import com.github.clescot.kafka.connect.http.sink.service.AckSender;
 import com.github.clescot.kafka.connect.http.sink.utils.VersionUtil;
 import com.google.common.base.Preconditions;
 import org.apache.kafka.common.config.ConfigDef;
@@ -39,10 +38,6 @@ public class WsSinkConnector extends SinkConnector {
 
     @Override
     public void stop() {
-        AckSender currentInstance = AckSender.getCurrentInstance();
-        if(currentInstance != null) {
-            currentInstance.close();
-        }
     }
 
     @Override
