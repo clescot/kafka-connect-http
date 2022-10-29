@@ -16,4 +16,5 @@
     </root>
 
     <logger name="com.github.clescot" level="DEBUG"/>
+    <logger name="org.testcontainers" level="INFO"/>
 </configuration>
