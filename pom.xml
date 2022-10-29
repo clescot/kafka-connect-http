@@ -172,7 +172,7 @@
                 <artifactId>maven-shade-plugin</artifactId>
                 <version>3.4.0</version>
                 <configuration>
-                    <!-- put your configurations here -->
+                    <outputFile>${project.build.directory}/http-connector/kafka-connect-http-sink.jar</outputFile>
                 </configuration>
                 <executions>
                     <execution>
