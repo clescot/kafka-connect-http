@@ -85,8 +85,8 @@ public class WsCaller {
     public static final String WS_RETRY_MAX_DELAY_IN_MS = "retry-max-delay-in-ms";
     public static final String WS_RETRY_DELAY_FACTOR = "retry-delay-factor";
     public static final String WS_RETRY_JITTER = "retry-jitter";
-    private Map<String,Pattern> httpSuccessCodesPatterns = Maps.newHashMap();
-    private WsCallerAsyncCompletionHandler asyncCompletionHandler = new WsCallerAsyncCompletionHandler();
+    private final Map<String,Pattern> httpSuccessCodesPatterns = Maps.newHashMap();
+    private final WsCallerAsyncCompletionHandler asyncCompletionHandler = new WsCallerAsyncCompletionHandler();
 
     public WsCaller(AsyncHttpClient asyncHttpClient) {
         this.asyncHttpClient = asyncHttpClient;
@@ -97,11 +97,11 @@ public class WsCaller {
      * HTTP calls. they are all starting with 'ws-'.
      * including
      * 1- parameters for retry policy, like :
-     * retry count, delai between calls.
-     * 2- the correlation id permetting to track together multiple calls
+     * retry count, delay between calls.
+     * 2- the correlation id permit to track together multiple calls
      * 3- proxy parameters
-     * 4- authentification parameters
-     * 5- parameters related to the http, like url, HTTP method,http headers (starting by 'ws-headers-',
+     * 4- authentication parameters
+     * 5- parameters related to the http, like url, HTTP method,http headers (starting by 'ws-headers-'),
      * establishing connection timeout.
      * body's http request(encoded in avro or not), is the value of the kafka message.
      * 6- parameters related to the http response, like response read timeout,success regex of the response,
@@ -117,7 +117,7 @@ public class WsCaller {
         //properties which was 'ws-key' in headerKafka and are now 'key' : 'ws-' prefix is removed
         Map<String, String> wsProperties= extractWsProperties(headerKafka);
 
-        //we generate a X-Correlation-ID header if not present
+        //we generate an X-Correlation-ID header if not present
         String correlationId = Optional.ofNullable(wsProperties.get(HEADER_X_CORRELATION_ID)).orElse(UUID.randomUUID().toString());
         wsProperties.put(HEADER_X_CORRELATION_ID,correlationId);
 
@@ -170,11 +170,11 @@ public class WsCaller {
         return acknowledgement;
     }
 
-    protected Map<String, String> extractWsProperties(Headers headerKafka) {
+    protected Map<String, String> extractWsProperties(Headers headersKafka) {
         Map<String, String> map = Maps.newHashMap();
-        for (Header headerkafka : headerKafka) {
-            if(headerkafka.key().startsWith(WS_PREFIX)) {
-                map.put(headerkafka.key().substring(WS_PREFIX.length()), headerkafka.value().toString());
+        for (Header headerKafka : headersKafka) {
+            if(headerKafka.key().startsWith(WS_PREFIX)) {
+                map.put(headerKafka.key().substring(WS_PREFIX.length()), headerKafka.value().toString());
             }
         }
         return map;
@@ -252,7 +252,7 @@ public class WsCaller {
         Matcher matcher = pattern.matcher("" + responseStatusCode);
         /*
         *  WS Server status code returned
-        *  3 cases can arises:
+        *  3 cases can arise:
         *  * a success occurs : the status code returned from the ws server is matching the regexp => no retries
         *  * a functional error occurs: the status code returned from the ws server is not matching the regexp, but is lower than 500 => no retries
         *  * a technical error occurs from the WS server : the status code returned from the ws server does not match the regexp AND is equals or higher than 500 : retries are done
@@ -311,8 +311,7 @@ public class WsCaller {
             readTimeoutInMillis = Integer.parseInt(wsProperties.get(WS_READ_TIMEOUT_IN_MS));
             requestBuilder.setReadTimeout(readTimeoutInMillis);
         }
-        Request request = requestBuilder.build();
-        return request;
+        return requestBuilder.build();
     }
 
     private void defineProxyServer(RequestBuilder requestBuilder, Map<String, String> proxyHeaders) {
@@ -326,8 +325,8 @@ public class WsCaller {
 
             String securedPortAsString = proxyHeaders.get(WS_PROXY_SECURED_PORT);
             if (securedPortAsString != null) {
-                int securedproxyPort = Integer.parseInt(securedPortAsString);
-                proxyBuilder.setSecuredPort(securedproxyPort);
+                int securedProxyPort = Integer.parseInt(securedPortAsString);
+                proxyBuilder.setSecuredPort(securedProxyPort);
             }
 
             String nonProxyHosts = proxyHeaders.get(WS_PROXY_NON_PROXY_HOSTS);
@@ -355,7 +354,7 @@ public class WsCaller {
 
             realmBuilder.setLoginContextName(realmHeaders.get(WS_REALM_LOGIN_CONTEXT_NAME));
 
-            String authSchemeAsString = Optional.ofNullable(realmHeaders.get(WS_REALM_AUTH_SCHEME)).orElse(null);
+            String authSchemeAsString = realmHeaders.get(WS_REALM_AUTH_SCHEME);
             Realm.AuthScheme authScheme =authSchemeAsString!=null?Realm.AuthScheme.valueOf(authSchemeAsString):null;
 
             realmBuilder.setScheme(authScheme);
@@ -437,7 +436,7 @@ public class WsCaller {
                 .build();
     }
 
-    public void setAsyncHttpClient(AsyncHttpClient asyncHttpClient) {
+    protected void setAsyncHttpClient(AsyncHttpClient asyncHttpClient) {
         this.asyncHttpClient = asyncHttpClient;
     }
 }
