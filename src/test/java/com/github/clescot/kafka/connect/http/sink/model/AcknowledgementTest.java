@@ -11,6 +11,7 @@ import org.junit.runner.RunWith;
 import java.time.OffsetDateTime;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import static com.github.clescot.kafka.connect.http.sink.service.WsCaller.SUCCESS;
 import static org.assertj.core.api.AssertionsForInterfaceTypes.assertThat;
 
 
@@ -20,34 +21,38 @@ public class AcknowledgementTest {
 
         @Test
         public void test_nominal_case() {
-            Acknowledgement acknowledgement = new Acknowledgement( "dfsdfsd",
-"sd897osdmsdg",
- 200,
-"toto",
- Maps.newHashMap(),
-"nfgnlksdfnlnskdfnlsf",
-"http://toto:8081",
-Maps.newHashMap(),
-"PUT",
-"",
- 100,
- OffsetDateTime.now(),
- new AtomicInteger(2));
-            Acknowledgement acknowledgement1 = new Acknowledgement( "dfsdfsd",
-"sd897osdmsdg",
- 200,
-"toto",
-Maps.newHashMap(),
-"nfgnlksdfnlnskdfnlsf",
-"http://toto:8081",
-Maps.newHashMap(),
-"PUT",
-"",
- 100,
-OffsetDateTime.now(),
- new AtomicInteger(2));
+            Acknowledgement acknowledgement = new Acknowledgement(
+                    "dfsdfsd",
+                    "sd897osdmsdg",
+                    200,
+                    "toto",
+                    Maps.newHashMap(),
+                    "nfgnlksdfnlnskdfnlsf",
+                    "http://toto:8081",
+                    Maps.newHashMap(),
+                    "PUT",
+                    "",
+                    100,
+                    OffsetDateTime.now(),
+                    new AtomicInteger(2),
+                    SUCCESS);
+            Acknowledgement acknowledgement1 = new Acknowledgement("dfsdfsd",
+                    "sd897osdmsdg",
+                    200,
+                    "toto",
+                    Maps.newHashMap(),
+                    "nfgnlksdfnlnskdfnlsf",
+                    "http://toto:8081",
+                    Maps.newHashMap(),
+                    "PUT",
+                    "",
+                    100,
+                    OffsetDateTime.now(),
+                    new AtomicInteger(2),
+                    SUCCESS);
             acknowledgement1.equals(acknowledgement);
         }
+
         @Test
         public void test_nominal_case_detail() {
             Acknowledgement acknowledgement = new Acknowledgement(
@@ -63,7 +68,8 @@ OffsetDateTime.now(),
                     "",
                     100,
                     OffsetDateTime.now(),
-                    new AtomicInteger(2)
+                    new AtomicInteger(2),
+                    SUCCESS
             );
             assertThat(acknowledgement.getResponseBody()).isEqualTo("nfgnlksdfnlnskdfnlsf");
             assertThat(acknowledgement.getCorrelationId()).isEqualTo("sdfsfsdf5555");
