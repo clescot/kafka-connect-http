@@ -2,7 +2,6 @@ package com.github.clescot.kafka.connect.http.source;
 
 import com.github.clescot.kafka.connect.http.sink.config.ConfigConstants;
 import com.github.clescot.kafka.connect.http.sink.config.ConfigDefinition;
-import com.google.common.base.Preconditions;
 import org.apache.kafka.common.config.AbstractConfig;
 
 import java.util.Map;
@@ -16,7 +15,7 @@ public class AckConfig extends AbstractConfig {
 
     public AckConfig(Map<?, ?> originals) {
         super(ConfigDefinition.config(), originals);
-        this.ackTopic = Optional.ofNullable(getString(ConfigConstants.ACK_TOPIC)).orElseThrow(()-> new IllegalArgumentException(ConfigConstants.ACK_TOPIC+ CANNOT_BE_FOUND_IN_MAP_CONFIGURATION));
+        this.ackTopic = Optional.ofNullable(getString(ConfigConstants.SUCCESS_TOPIC)).orElseThrow(()-> new IllegalArgumentException(ConfigConstants.SUCCESS_TOPIC + CANNOT_BE_FOUND_IN_MAP_CONFIGURATION));
     }
 
 
