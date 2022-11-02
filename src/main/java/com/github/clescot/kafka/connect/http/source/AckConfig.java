@@ -10,20 +10,24 @@ import java.util.Optional;
 public class AckConfig extends AbstractConfig {
 
     public static final String CANNOT_BE_FOUND_IN_MAP_CONFIGURATION = " cannot be found in map configuration";
-    private final String ackTopic;
+    private final String successTopic;
+    private final String errorsTopic;
 
 
     public AckConfig(Map<?, ?> originals) {
         super(ConfigDefinition.config(), originals);
-        this.ackTopic = Optional.ofNullable(getString(ConfigConstants.SUCCESS_TOPIC)).orElseThrow(()-> new IllegalArgumentException(ConfigConstants.SUCCESS_TOPIC + CANNOT_BE_FOUND_IN_MAP_CONFIGURATION));
+        this.successTopic = Optional.ofNullable(getString(ConfigConstants.SUCCESS_TOPIC)).orElseThrow(()-> new IllegalArgumentException(ConfigConstants.SUCCESS_TOPIC + CANNOT_BE_FOUND_IN_MAP_CONFIGURATION));
+        this.errorsTopic = Optional.ofNullable(getString(ConfigConstants.ERRORS_TOPIC)).orElseThrow(()-> new IllegalArgumentException(ConfigConstants.ERRORS_TOPIC + CANNOT_BE_FOUND_IN_MAP_CONFIGURATION));
     }
 
 
 
 
-    public String getAckTopic() {
-        return ackTopic;
+    public String getSuccessTopic() {
+        return successTopic;
     }
 
-
+    public String getErrorsTopic() {
+        return errorsTopic;
+    }
 }

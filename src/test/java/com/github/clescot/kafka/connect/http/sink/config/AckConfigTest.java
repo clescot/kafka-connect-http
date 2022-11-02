@@ -24,19 +24,8 @@ public class AckConfigTest {
     @Test
     public void test_nominal_case(){
         HashMap<Object, Object> config = Maps.newHashMap();
-        config.put(ConfigConstants.TARGET_BOOTSTRAP_SERVER,"fake.bootstrap.servers.com:9092");
-        config.put(ConfigConstants.TARGET_SCHEMA_REGISTRY,"fake.schema.registry:8081");
-        config.put(ConfigConstants.SUCCESS_TOPIC,"fake.ack.topic");
-        config.put(ConfigConstants.ACK_SCHEMA,"{\n" +
-                "    \"namespace\": \"com.fake.namespace\",\n" +
-                "    \"name\": \"Test\",\n" +
-                "    \"doc\": \"test doc\",\n" +
-                "    \"type\": \"record\",\n" +
-                "    \"fields\": [\n" +
-                "        {\"name\": \"name\", \"type\": \"string\"},\n" +
-                "        {\"name\": \"id\", \"type\": \"int\"}\n" +
-                "    ]\n" +
-                "}");
+        config.put(ConfigConstants.SUCCESS_TOPIC,"success.topic");
+        config.put(ConfigConstants.ERRORS_TOPIC,"errors.topic");
         new AckConfig(config);
     }
 
