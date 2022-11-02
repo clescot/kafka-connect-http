@@ -34,8 +34,11 @@ public class QueueProducer implements Runnable {
     }
 
     private static Acknowledgement getAcknowledgement() {
-        List<Map.Entry<String,String>> requestheaders = Lists.newArrayList();
-        List<Map.Entry<String,String>> responseHeaders = Lists.newArrayList();
+        Map<String,String> requestheaders = Maps.newHashMap();
+        requestheaders.put("X-Request-ID","sdqd-qsdqd-446564");
+        requestheaders.put("X-Correlation-ID","222-qsdqd-446564");
+        requestheaders.put("Content-Type","application/json");
+        Map<String,String> responseHeaders = Maps.newHashMap();
         return Acknowledgement.AcknowledgementBuilder.anAcknowledgement()
                 //tracing headers
                 .withRequestId(UUID.randomUUID().toString())

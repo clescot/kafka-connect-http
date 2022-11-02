@@ -98,13 +98,13 @@ public class WsSourceTask extends SourceTask {
                 .field(REQUEST_URI, Schema.STRING_SCHEMA)
                 .field(METHOD, Schema.STRING_SCHEMA)
                 .field(REQUEST_HEADERS,
-                        SchemaBuilder.array(Schema.STRING_SCHEMA))
+                        SchemaBuilder.map(Schema.STRING_SCHEMA,Schema.STRING_SCHEMA).build())
                 .field(REQUEST_BODY, Schema.STRING_SCHEMA)
                 // response fields
                 .field(STATUS_CODE, Schema.INT32_SCHEMA)
                 .field(STATUS_MESSAGE, Schema.STRING_SCHEMA)
                 .field(RESPONSE_HEADERS,
-                        SchemaBuilder.array(Schema.STRING_SCHEMA))
+                        SchemaBuilder.map(Schema.STRING_SCHEMA,Schema.STRING_SCHEMA).build())
                 .field(RESPONSE_BODY, Schema.STRING_SCHEMA)
                 .schema();
 
