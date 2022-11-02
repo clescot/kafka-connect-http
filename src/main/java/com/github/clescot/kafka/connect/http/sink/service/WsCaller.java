@@ -111,7 +111,8 @@ public class WsCaller {
      */
     public Acknowledgement call(SinkRecord sinkRecord) {
 
-        Struct value = (Struct) sinkRecord.value();
+        String body
+                = sinkRecord.value().toString();
         Headers headerKafka = sinkRecord.headers();
 
         //properties which was 'ws-key' in headerKafka and are now 'key' : 'ws-' prefix is removed
@@ -148,7 +149,7 @@ public class WsCaller {
         try {
             acknowledgement = Failsafe.with(List.of(retryPolicy))
                     .get(() -> {
-                String body = (String) value.get(BODY);
+
                 attempts.addAndGet(1);
                 return callOnceWs(requestId,wsProperties, body,attempts);
             });
