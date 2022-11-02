@@ -7,7 +7,10 @@ import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.List;
 import java.util.Map;
+
+import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 
 class WsSourceConnectorTest {
 
@@ -36,4 +39,33 @@ class WsSourceConnectorTest {
     public void test_start_null_settings_map(){
         Assertions.assertThrows(NullPointerException.class, () -> wsSourceConnector.start(null));
     }
+
+    @Test
+    public void test_task_configs_zero_task(){
+        Map<String,String> settings = Maps.newHashMap();
+        settings.put("ack.topic","foo");
+        wsSourceConnector.start(settings);
+        List<Map<String, String>> maps = wsSourceConnector.taskConfigs(0);
+        assertThat(maps).asList().isEmpty();
+    }
+
+    @Test
+    public void test_task_configs_1_task(){
+        Map<String,String> settings = Maps.newHashMap();
+        settings.put("ack.topic","foo");
+        wsSourceConnector.start(settings);
+        List<Map<String, String>> maps = wsSourceConnector.taskConfigs(1);
+        assertThat(maps).asList().hasSize(1);
+
+    }
+      @Test
+    public void test_task_configs_10_tasks(){
+        Map<String,String> settings = Maps.newHashMap();
+        settings.put("ack.topic","foo");
+        wsSourceConnector.start(settings);
+          List<Map<String, String>> maps = wsSourceConnector.taskConfigs(10);
+          assertThat(maps).asList().hasSize(10);
+      }
+
+
 }
