@@ -60,6 +60,7 @@ class WsSourceTaskTest {
         ExecutorService exService = Executors.newFixedThreadPool(3);
         int numberOfMessagesToProduce = 50;
         QueueProducer queueProducer = new QueueProducer(QueueFactory.getQueue(), numberOfMessagesToProduce);
+        queueProducer.run();
         exService.submit(queueProducer).get();
         for (int i = 0; i < numberOfMessagesToProduce; i++) {
             List<SourceRecord> sourceRecords = wsSourceTask.poll();
