@@ -27,7 +27,6 @@ public class AckConfigTest {
         HashMap<Object, Object> config = Maps.newHashMap();
         config.put(ConfigConstants.TARGET_BOOTSTRAP_SERVER,"fake.bootstrap.servers.com:9092");
         config.put(ConfigConstants.TARGET_SCHEMA_REGISTRY,"fake.schema.registry:8081");
-        config.put(ConfigConstants.PRODUCER_CLIENT_ID,"fake.client.id");
         config.put(ConfigConstants.ACK_TOPIC,"fake.ack.topic");
         config.put(ConfigConstants.ACK_SCHEMA,"{\n" +
                 "    \"namespace\": \"com.fake.namespace\",\n" +
@@ -50,7 +49,6 @@ public class AckConfigTest {
         HashMap<Object, Object> config = Maps.newHashMap();
         config.put(ConfigConstants.TARGET_BOOTSTRAP_SERVER,"fake.bootstrap.servers.com:9092");
         config.put(ConfigConstants.TARGET_SCHEMA_REGISTRY,"fake.schema.registry:8081");
-        config.put(ConfigConstants.PRODUCER_CLIENT_ID,"fake.client.id");
         config.put(ConfigConstants.ACK_SCHEMA,"{\n" +
                 "    \"namespace\": \"com.fake.namespace\",\n" +
                 "    \"name\": \"Test\",\n" +
