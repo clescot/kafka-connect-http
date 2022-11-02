@@ -25,8 +25,7 @@ import java.util.Map;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static com.github.clescot.kafka.connect.http.sink.service.WsCaller.HEADER_X_CORRELATION_ID;
-import static com.github.clescot.kafka.connect.http.sink.service.WsCaller.HEADER_X_REQUEST_ID;
+import static com.github.clescot.kafka.connect.http.sink.service.WsCaller.*;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.asynchttpclient.util.HttpConstants.Methods.PUT;
 import static org.mockito.ArgumentMatchers.any;
@@ -60,7 +59,7 @@ public class WsCallerTest {
                     Stopwatch.createUnstarted(),
                     OffsetDateTime.now(ZoneId.of(WsCaller.UTC_ZONE_ID)),
                     new AtomicInteger(2),
-                    true
+                    SUCCESS
             );
         }
 
@@ -80,7 +79,7 @@ public class WsCallerTest {
                     Stopwatch.createUnstarted(),
                     OffsetDateTime.now(ZoneId.of(WsCaller.UTC_ZONE_ID)),
                     new AtomicInteger(2),
-                    true
+                    SUCCESS
             );
         }
 
@@ -102,7 +101,7 @@ public class WsCallerTest {
                     Stopwatch.createUnstarted(),
                     OffsetDateTime.now(ZoneId.of(WsCaller.UTC_ZONE_ID)),
                     new AtomicInteger(2),
-                    true);
+                    SUCCESS);
         }
 
         @Test(expected = IllegalStateException.class)
@@ -121,7 +120,7 @@ public class WsCallerTest {
                     Stopwatch.createUnstarted(),
                     OffsetDateTime.now(ZoneId.of(WsCaller.UTC_ZONE_ID)),
                     new AtomicInteger(2),
-                    true);
+                    SUCCESS);
         }
 
 
@@ -143,7 +142,7 @@ public class WsCallerTest {
                     Stopwatch.createUnstarted(),
                     OffsetDateTime.now(ZoneId.of(WsCaller.UTC_ZONE_ID)),
                     new AtomicInteger(2),
-                    true);
+                    SUCCESS);
         }
     }
 
