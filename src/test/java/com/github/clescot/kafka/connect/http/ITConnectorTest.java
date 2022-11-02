@@ -60,7 +60,7 @@ public class ITConnectorTest {
     @Container
     public static KafkaContainer kafkaContainer = new KafkaContainer(DockerImageName.parse("confluentinc/cp-kafka:" + CONFLUENT_VERSION))
             .withNetwork(network)
-//            .withLogConsumer(new Slf4jLogConsumer(LOGGER))
+            .withLogConsumer(new Slf4jLogConsumer(LOGGER))
             ;
     @Container
     private static final SchemaRegistryContainer schemaRegistryContainer = new SchemaRegistryContainer()
@@ -136,7 +136,7 @@ public class ITConnectorTest {
                 .with("ack.topic", "http-responses")
                 .with("key.converter", "org.apache.kafka.connect.storage.StringConverter")
                 .with("value.converter", "io.confluent.connect.json.JsonSchemaConverter")
-                .with("value.converter.schema.registry.url","http://"+schemaRegistryContainer.getHost()+schemaRegistryContainer.getMappedPort(8081));
+                .with("value.converter.schema.registry.url","http://"+schemaRegistryContainer.getNetworkAliases().get(0)+":8081");
 
         connectContainer.registerConnector("http-sink-connector", sinkConnectorConfiguration);
         connectContainer.ensureConnectorTaskState("http-sink-connector", 0, Connector.State.RUNNING);
@@ -159,7 +159,7 @@ public class ITConnectorTest {
         ProducerRecord<String, String> record = new ProducerRecord<>("http-requests", null, System.currentTimeMillis(), null, "value", headers);
         producer.send(record);
         producer.flush();
-        await().atMost(Duration.ofSeconds(1000)).until(() -> Boolean.TRUE.equals(Boolean.FALSE));
+//        await().atMost(Duration.ofSeconds(1000)).until(() -> Boolean.TRUE.equals(Boolean.FALSE));
     }
 
 
