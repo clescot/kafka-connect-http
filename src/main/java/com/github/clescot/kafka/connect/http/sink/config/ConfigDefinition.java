@@ -14,5 +14,6 @@ public class ConfigDefinition {
                 .define(ConfigConstants.SUCCESS_TOPIC, ConfigDef.Type.STRING, null, ConfigDef.Importance.HIGH, ConfigConstants.SUCCESS_TOPIC_DOC)
                 .define(ConfigConstants.ERRORS_TOPIC, ConfigDef.Type.STRING, null, ConfigDef.Importance.HIGH, ConfigConstants.ERRORS_TOPIC_DOC)
                 ;
+        //TODO add static headers to add on every request
     }
 }
