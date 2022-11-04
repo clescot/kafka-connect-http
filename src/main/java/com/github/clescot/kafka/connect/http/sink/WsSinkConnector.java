@@ -30,6 +30,7 @@ public class WsSinkConnector extends SinkConnector {
     @Override
     public List<Map<String, String>> taskConfigs(int taskCount) {
         List<Map<String, String>> configs = new ArrayList<>(taskCount);
+        Preconditions.checkNotNull(settings,"settings need to be initialized. call start() method before taskConfigs");
         for (int i = 0; i < taskCount; i++) {
             configs.add(this.settings);
         }
