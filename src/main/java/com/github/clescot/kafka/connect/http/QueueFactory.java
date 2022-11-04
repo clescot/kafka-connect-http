@@ -13,7 +13,6 @@ public class QueueFactory {
     public static final String DEFAULT_QUEUE_NAME = "default";
     private static Logger LOGGER = LoggerFactory.getLogger(QueueFactory.class);
     private static Map<String,Queue<Acknowledgement>> queueMap = Maps.newHashMap();
-    //TODO ad a map of queue
     public static synchronized Queue<Acknowledgement> getQueue(String queueName){
         if(queueMap.get(queueName) == null){
             LOGGER.debug("creating the '{}' queue",queueName);
