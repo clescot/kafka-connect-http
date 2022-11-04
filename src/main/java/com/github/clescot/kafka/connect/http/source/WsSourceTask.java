@@ -21,6 +21,7 @@ import java.util.Queue;
 
 import static com.github.clescot.kafka.connect.http.QueueFactory.DEFAULT_QUEUE_NAME;
 import static com.github.clescot.kafka.connect.http.QueueFactory.queueMapIsEmpty;
+import static com.github.clescot.kafka.connect.http.sink.config.ConfigConstants.QUEUE_NAME;
 
 public class WsSourceTask extends SourceTask {
 
@@ -37,7 +38,7 @@ public class WsSourceTask extends SourceTask {
     public static final String STATUS_MESSAGE = "statusMessage";
     public static final String RESPONSE_HEADERS = "responseHeaders";
     public static final String RESPONSE_BODY = "responseBody";
-    public static final String QUEUE_NAME = "queue.name";
+
     private static Queue<Acknowledgement> queue;
     private AckConfig ackConfig;
     private final static Logger LOGGER = LoggerFactory.getLogger(WsSourceTask.class);

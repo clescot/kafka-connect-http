@@ -11,6 +11,7 @@ public class ConfigConstants {
     public static final String ERRORS_TOPIC = "errors.topic";
     public static final String ERRORS_TOPIC_DOC = "Topic to receive errors from http request/responses";
 
+    public static final String QUEUE_NAME = "queue.name";
 
 
 }
