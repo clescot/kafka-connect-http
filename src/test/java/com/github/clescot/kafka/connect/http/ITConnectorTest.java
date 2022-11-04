@@ -31,6 +31,10 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.rnorth.ducttape.unreliables.Unreliables;
+import org.skyscreamer.jsonassert.Customization;
+import org.skyscreamer.jsonassert.JSONAssert;
+import org.skyscreamer.jsonassert.JSONCompareMode;
+import org.skyscreamer.jsonassert.comparator.CustomComparator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.testcontainers.containers.KafkaContainer;
@@ -53,7 +57,6 @@ import java.util.stream.Stream;
 import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
 import static com.github.tomakehurst.wiremock.client.WireMock.get;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.awaitility.Awaitility.await;
 
 @Testcontainers
 @WireMockTest
@@ -117,13 +120,19 @@ public class ITConnectorTest {
     @BeforeAll
     public static void startContainers() throws IOException {
         hostName = InetAddress.getLocalHost().getHostName();
+
+        //init wiremock
         WireMock.configureFor(hostName, CUSTOM_AVAILABLE_PORT);
         wireMockServer.start();
         org.testcontainers.Testcontainers.exposeHostPorts(wireMockServer.port());
+
+        //start containers
         Startables.deepStart(Stream.of(kafkaContainer, schemaRegistryContainer, connectContainer)).join();
         internalSchemaRegistryUrl = "http://" + schemaRegistryContainer.getNetworkAliases().get(0) + ":8081";
         externalSchemaRegistryUrl = "http://" + schemaRegistryContainer.getHost() + ":"+schemaRegistryContainer.getMappedPort(8081);
+
         //register connectors
+        //sink connector
         ConnectorConfiguration sinkConnectorConfiguration = ConnectorConfiguration.create()
                 .with("connector.class", "com.github.clescot.kafka.connect.http.sink.WsSinkConnector")
                 .with("tasks.max", "2")
@@ -131,7 +140,10 @@ public class ITConnectorTest {
                 .with("key.converter", "org.apache.kafka.connect.storage.StringConverter")
                 .with("value.converter", "org.apache.kafka.connect.storage.StringConverter");
 
+        connectContainer.registerConnector("http-sink-connector", sinkConnectorConfiguration);
+        connectContainer.ensureConnectorTaskState("http-sink-connector", 0, Connector.State.RUNNING);
 
+        //source connector
         ConnectorConfiguration sourceConnectorConfiguration = ConnectorConfiguration.create()
                 .with("connector.class", "com.github.clescot.kafka.connect.http.source.WsSourceConnector")
                 .with("tasks.max", "2")
@@ -141,8 +153,6 @@ public class ITConnectorTest {
                 .with("value.converter", "io.confluent.connect.json.JsonSchemaConverter")
                 .with("value.converter.schema.registry.url", internalSchemaRegistryUrl);
 
-        connectContainer.registerConnector("http-sink-connector", sinkConnectorConfiguration);
-        connectContainer.ensureConnectorTaskState("http-sink-connector", 0, Connector.State.RUNNING);
         connectContainer.registerConnector("http-source-connector", sourceConnectorConfiguration);
         connectContainer.ensureConnectorTaskState("http-source-connector", 0, Connector.State.RUNNING);
 
@@ -165,7 +175,7 @@ public class ITConnectorTest {
 
     @Test
     public void nominalCase(WireMockRuntimeInfo wmRuntimeInfo) {
-        //define the http Mock Server
+        //define the http Mock Server interaction
         WireMock wireMock = wmRuntimeInfo.getWireMock();
         wireMock
                 .register(get("/ping")
@@ -176,6 +186,7 @@ public class ITConnectorTest {
                         .withStatusMessage("OK")
                         )
                 );
+
         //forge messages which will command http requests
         KafkaProducer<String, String> producer = getProducer(kafkaContainer);
         Collection<Header> headers = Lists.newArrayList();
@@ -195,8 +206,42 @@ public class ITConnectorTest {
         assertThat(consumerRecords).hasSize(1);
         ConsumerRecord<String, ? extends Object> consumerRecord = consumerRecords.get(0);
         assertThat(consumerRecord.key()).isNull();
-        assertThat(consumerRecord.value().toString()).isEqualTo("");
-        assertThat(consumerRecord.headers().toArray()).hasSize(1);
+        String jsonAsString = consumerRecord.value().toString();
+        String expectedJSON = "" +
+                "{\n" +
+                "  \"durationInMillis\": 442,\n" +
+                "  \"moment\": \"2022-11-03T18:45:01.144249Z\",\n" +
+                "  \"attempts\": 1,\n" +
+                "  \"correlationId\": \"9b62eda5-7fae-42ce-b9eb-b95ef515f647\",\n" +
+                "  \"requestId\": \"e6de70d1-f222-46e8-b755-754880687822\",\n" +
+                "  \"requestUri\": \"http://192.168.1.4:36279/ping\",\n" +
+                "  \"method\": \"GET\",\n" +
+                "  \"requestHeaders\": {\n" +
+                "    \"X-Request-ID\": \"e6de70d1-f222-46e8-b755-754880687822\",\n" +
+                "    \"X-Correlation-ID\": \"9b62eda5-7fae-42ce-b9eb-b95ef515f647\"\n" +
+                "  },\n" +
+                "  \"statusCode\": 200,\n" +
+                "  \"statusMessage\": \"OK\",\n" +
+                "  \"responseHeaders\": {\n" +
+                "    \"Transfer-Encoding\": \"chunked\",\n" +
+                "    \"Matched-Stub-Id\": \"8b759c66-af77-4e33-8a4d-055ed4d91907\",\n" +
+                "    \"Vary\": \"Accept-Encoding, User-Agent\",\n" +
+                "    \"Content-Type\": \"application/json\"\n" +
+                "  },\n" +
+                "  \"responseBody\": \"{\\\"result\\\":\\\"pong\\\"}\"\n" +
+                "}";
+        JSONAssert.assertEquals(expectedJSON, jsonAsString,
+                new CustomComparator(JSONCompareMode.LENIENT,
+                        new Customization("moment", (o1, o2) -> true),
+                        new Customization("correlationId", (o1, o2) -> true),
+                        new Customization("durationInMillis", (o1, o2) -> true),
+                        new Customization("requestHeaders.X-Correlation-ID", (o1, o2) -> true),
+                        new Customization("requestHeaders.X-Request-ID", (o1, o2) -> true),
+                        new Customization("requestId", (o1, o2) -> true),
+                        new Customization("requestUri", (o1, o2) -> true),
+                        new Customization("responseHeaders.Matched-Stub-Id", (o1, o2) -> true)
+                ));
+        assertThat(consumerRecord.headers().toArray()).isEmpty();
 //        await().atMost(Duration.ofSeconds(1000)).until(() -> Boolean.TRUE.equals(Boolean.FALSE));
     }
 
