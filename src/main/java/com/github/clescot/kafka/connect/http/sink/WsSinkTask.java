@@ -12,6 +12,7 @@ import io.netty.buffer.ByteBufAllocator;
 import io.netty.buffer.PooledByteBufAllocator;
 import io.netty.util.HashedWheelTimer;
 import io.netty.util.Timer;
+import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.sink.SinkRecord;
 import org.apache.kafka.connect.sink.SinkTask;
 import org.asynchttpclient.AsyncHttpClient;
@@ -53,7 +54,7 @@ public class WsSinkTask extends SinkTask {
     public static final String EMPTY_STRING="";
     private WsCaller wsCaller;
     private final static Logger LOGGER = LoggerFactory.getLogger(WsSinkTask.class);
-    private static Queue<Acknowledgement> queue;
+    private Queue<Acknowledgement> queue;
 
     private static AsyncHttpClient asyncHttpClient;
     private Map<String,String> staticRequestHeaders = Maps.newHashMap();
@@ -175,9 +176,15 @@ public class WsSinkTask extends SinkTask {
         Preconditions.checkNotNull(records, "records collection to be processed is null");
         Preconditions.checkNotNull(wsCaller, "wsCaller is null. 'start' method must be called once before put");
         records.stream()
+                .map(this::addStaticHeaders)
                 .map(wsCaller::call)
                 .peek(ack->LOGGER.debug("get ack :{}",ack))
                 .forEach(ack -> queue.offer(ack));
+    }
+
+    private SinkRecord addStaticHeaders(SinkRecord sinkRecord) {
+        this.staticRequestHeaders.forEach((key,value)->sinkRecord.headers().add(key,value, Schema.STRING_SCHEMA));
+        return sinkRecord;
     }
 
 
