@@ -2,7 +2,6 @@ package com.github.clescot.kafka.connect.http.sink.model;
 
 
 import com.github.clescot.kafka.connect.http.source.Acknowledgement;
-import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import org.junit.Test;
 import org.junit.experimental.runners.Enclosed;
@@ -11,7 +10,7 @@ import org.junit.runner.RunWith;
 import java.time.OffsetDateTime;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static com.github.clescot.kafka.connect.http.sink.service.WsCaller.SUCCESS;
+import static com.github.clescot.kafka.connect.http.sink.client.WsCaller.SUCCESS;
 import static org.assertj.core.api.AssertionsForInterfaceTypes.assertThat;
 
 
