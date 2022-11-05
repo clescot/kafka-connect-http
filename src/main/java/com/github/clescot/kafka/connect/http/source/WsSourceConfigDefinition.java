@@ -3,10 +3,10 @@ package com.github.clescot.kafka.connect.http.source;
 import com.github.clescot.kafka.connect.http.sink.ConfigConstants;
 import org.apache.kafka.common.config.ConfigDef;
 
-public class SourceConfigDefinition {
+public class WsSourceConfigDefinition {
 
 
-    private SourceConfigDefinition() {
+    private WsSourceConfigDefinition() {
         //Class with only static methods
     }
 

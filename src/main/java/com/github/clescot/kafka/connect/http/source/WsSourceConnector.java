@@ -39,7 +39,7 @@ public class WsSourceConnector extends SourceConnector {
 
     @Override
     public ConfigDef config() {
-        return SourceConfigDefinition.config();
+        return WsSourceConfigDefinition.config();
     }
 
     @Override

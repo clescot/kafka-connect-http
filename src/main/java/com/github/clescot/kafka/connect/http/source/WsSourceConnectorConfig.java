@@ -22,7 +22,7 @@ public class WsSourceConnectorConfig extends AbstractConfig {
 
 
     public WsSourceConnectorConfig(Map<?, ?> originals) {
-        this(SourceConfigDefinition.config(), originals);
+        this(WsSourceConfigDefinition.config(), originals);
     }
 
     public WsSourceConnectorConfig(ConfigDef configDef,Map<?, ?> originals){
