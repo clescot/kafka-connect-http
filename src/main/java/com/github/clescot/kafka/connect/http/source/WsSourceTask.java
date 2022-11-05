@@ -16,12 +16,7 @@ import org.slf4j.LoggerFactory;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Queue;
-
-import static com.github.clescot.kafka.connect.http.QueueFactory.DEFAULT_QUEUE_NAME;
-import static com.github.clescot.kafka.connect.http.QueueFactory.queueMapIsEmpty;
-import static com.github.clescot.kafka.connect.http.sink.config.ConfigConstants.QUEUE_NAME;
 
 public class WsSourceTask extends SourceTask {
 
@@ -40,7 +35,7 @@ public class WsSourceTask extends SourceTask {
     public static final String RESPONSE_BODY = "responseBody";
 
     private static Queue<Acknowledgement> queue;
-    private SourceConfig ackConfig;
+    private WsSourceConnectorConfig sourceConfig;
     private final static Logger LOGGER = LoggerFactory.getLogger(WsSourceTask.class);
     @Override
     public String version() {
@@ -50,12 +45,8 @@ public class WsSourceTask extends SourceTask {
     @Override
     public void start(Map<String, String> taskConfig) {
         Preconditions.checkNotNull(taskConfig, "taskConfig cannot be null");
-        String queueName = Optional.ofNullable(taskConfig.get(QUEUE_NAME)).orElse(DEFAULT_QUEUE_NAME);
-        if(queueMapIsEmpty()){
-            LOGGER.warn("no pre-existing queue exists. this WsSourceConnector has created a '{}' one. It needs to consume a queue filled with a SinkConnector. Ignore this message if a SinkConnector will be created after this one.",queueName);
-        }
-        queue = QueueFactory.getQueue(queueName);
-        this.ackConfig = new SourceConfig(taskConfig);
+        this.sourceConfig = new WsSourceConnectorConfig(taskConfig);
+        queue = QueueFactory.getQueue(sourceConfig.getQueueName());
     }
 
     @Override
@@ -94,7 +85,7 @@ public class WsSourceTask extends SourceTask {
         return new SourceRecord(
                 sourcePartition,
                 sourceOffset,
-                acknowledgement.isSuccess()?ackConfig.getSuccessTopic():ackConfig.getErrorsTopic(),
+                acknowledgement.isSuccess()? sourceConfig.getSuccessTopic(): sourceConfig.getErrorsTopic(),
                 struct.schema(),
                 struct
         );
