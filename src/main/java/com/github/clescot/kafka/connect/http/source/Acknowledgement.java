@@ -8,7 +8,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class Acknowledgement {
 
 
-    private Map<String,String> requestHeaders;
+    private final Map<String,String> requestHeaders;
     private final String method;
     private final String requestBody;
     private final Map<String,String> responseHeaders;

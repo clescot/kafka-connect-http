@@ -8,7 +8,9 @@ import org.apache.kafka.common.config.ConfigDef;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.*;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 
 import static com.github.clescot.kafka.connect.http.QueueFactory.DEFAULT_QUEUE_NAME;
 import static com.github.clescot.kafka.connect.http.QueueFactory.queueMapIsEmpty;
@@ -16,9 +18,9 @@ import static com.github.clescot.kafka.connect.http.sink.ConfigConstants.*;
 
 public class WsSinkConnectorConfig extends AbstractConfig {
     private static final Logger LOGGER = LoggerFactory.getLogger(WsSinkConnectorConfig.class);
-    private String queueName;
-    private boolean publishToInMemoryQueue;
-    private Map<String,String> staticRequestHeaders = Maps.newHashMap();
+    private final String queueName;
+    private final boolean publishToInMemoryQueue;
+    private final Map<String,String> staticRequestHeaders = Maps.newHashMap();
 
     public WsSinkConnectorConfig(Map<?, ?> originals) {
         this(WsSinkConfigDefinition.config(), originals);

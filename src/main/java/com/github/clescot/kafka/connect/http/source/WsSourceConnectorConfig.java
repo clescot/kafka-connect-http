@@ -16,9 +16,9 @@ import static com.github.clescot.kafka.connect.http.sink.ConfigConstants.QUEUE_N
 public class WsSourceConnectorConfig extends AbstractConfig {
     private static final Logger LOGGER = LoggerFactory.getLogger(WsSourceConnectorConfig.class);
     public static final String CANNOT_BE_FOUND_IN_MAP_CONFIGURATION = " cannot be found in map configuration";
-    private String successTopic;
-    private String errorsTopic;
-    private String queueName;
+    private final String successTopic;
+    private final String errorsTopic;
+    private final String queueName;
 
 
     public WsSourceConnectorConfig(Map<?, ?> originals) {
