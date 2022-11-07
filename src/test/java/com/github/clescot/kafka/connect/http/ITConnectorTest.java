@@ -255,8 +255,7 @@ public class ITConnectorTest {
     }
 
     private String getIP() {
-        try {
-            final DatagramSocket datagramSocket = new DatagramSocket();
+        try(DatagramSocket datagramSocket = new DatagramSocket()) {
             datagramSocket.connect(InetAddress.getByName("8.8.8.8"), 12345);
             return datagramSocket.getLocalAddress().getHostAddress();
         } catch (IOException e) {
