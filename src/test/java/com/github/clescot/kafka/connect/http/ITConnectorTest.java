@@ -130,13 +130,13 @@ public class ITConnectorTest {
                 .with("topics", "http-requests")
                 .with("key.converter", "org.apache.kafka.connect.storage.StringConverter")
                 .with("value.converter", "org.apache.kafka.connect.storage.StringConverter");
-//                .with("value.converter.schema.registry.url","http://"+schemaRegistryContainer.getHost()+schemaRegistryContainer.getMappedPort(8081));
         ConnectorConfiguration sourceConnectorConfiguration = ConnectorConfiguration.create()
                 .with("connector.class", "com.github.clescot.kafka.connect.http.source.WsSourceConnector")
                 .with("tasks.max", "2")
-                .with("topics", "http-responses")
+                .with("ack.topic", "http-responses")
                 .with("key.converter", "org.apache.kafka.connect.storage.StringConverter")
-                .with("value.converter", "org.apache.kafka.connect.storage.StringConverter");
+                .with("value.converter", "io.confluent.connect.json.JsonSchemaConverter")
+                .with("value.converter.schema.registry.url","http://"+schemaRegistryContainer.getHost()+schemaRegistryContainer.getMappedPort(8081));
 
         connectContainer.registerConnector("http-sink-connector", sinkConnectorConfiguration);
         connectContainer.ensureConnectorTaskState("http-sink-connector", 0, Connector.State.RUNNING);
