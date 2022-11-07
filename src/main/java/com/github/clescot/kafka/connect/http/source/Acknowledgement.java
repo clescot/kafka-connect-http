@@ -2,7 +2,6 @@ package com.github.clescot.kafka.connect.http.source;
 
 import java.time.OffsetDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -22,7 +21,7 @@ public class Acknowledgement {
     private AtomicInteger attempts;
     private final String requestUri;
     private final String requestId;
-
+    private boolean success;
 
     public Acknowledgement(
             String correlationId,
@@ -37,7 +36,8 @@ public class Acknowledgement {
             String requestBody,
             long durationInMillis,
             OffsetDateTime moment,
-            AtomicInteger attempts) {
+            AtomicInteger attempts,
+            boolean success) {
         this.correlationId = correlationId;
         this.requestId = requestId;
         this.statusCode = statusCode;
@@ -51,6 +51,7 @@ public class Acknowledgement {
         this.durationInMillis = durationInMillis;
         this.moment = moment;
         this.attempts = attempts;
+        this.success = success;
     }
 
     public String getCorrelationId() {
@@ -105,6 +106,10 @@ public class Acknowledgement {
         return durationInMillis;
     }
 
+    public boolean isSuccess() {
+        return success;
+    }
+
     @Override
     public String toString() {
         return "Acknowledgement{" +
@@ -120,6 +125,7 @@ public class Acknowledgement {
                 ", requestId='" + requestId + '\'' +
                 ", durationInMillis='" + durationInMillis + '\'' +
                 ", moment='" + moment.format(DateTimeFormatter.ISO_INSTANT) + '\'' +
+                ", success='" + success + '\'' +
                 ", attempts='" + attempts + '\'' +
                 '}';
     }
@@ -138,6 +144,8 @@ public class Acknowledgement {
         private long durationInMillis;
         private OffsetDateTime moment;
         private AtomicInteger attempts;
+
+        private boolean success;
 
         private AcknowledgementBuilder() {
         }
@@ -178,6 +186,11 @@ public class Acknowledgement {
             return this;
         }
 
+        public AcknowledgementBuilder withSuccess(boolean success) {
+            this.success = success;
+            return this;
+        }
+
         public Acknowledgement build() {
             return new Acknowledgement(
                     correlationId,
@@ -192,7 +205,8 @@ public class Acknowledgement {
                     requestBody,
                     durationInMillis,
                     moment,
-                    attempts
+                    attempts,
+                    success
             );
         }
 
