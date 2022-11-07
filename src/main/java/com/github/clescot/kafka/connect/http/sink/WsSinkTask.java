@@ -205,4 +205,8 @@ public class WsSinkTask extends SinkTask {
         //we return a copy
         return Maps.newHashMap(staticRequestHeaders);
     }
+
+    protected void setQueue(Queue<Acknowledgement> queue) {
+        this.queue = queue;
+    }
 }
