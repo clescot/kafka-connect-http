@@ -1,11 +1,11 @@
 package com.github.clescot.kafka.connect.http.sink.service;
 
 
-import com.github.clescot.kafka.connect.http.sink.model.Acknowledgement;
+import com.github.clescot.kafka.connect.http.sink.utils.HeaderImpl;
+import com.github.clescot.kafka.connect.http.source.Acknowledgement;
 import com.google.common.base.Stopwatch;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
-import com.github.clescot.kafka.connect.http.sink.utils.HeaderImpl;
 import org.apache.kafka.connect.header.ConnectHeaders;
 import org.apache.kafka.connect.header.Header;
 import org.apache.kafka.connect.header.Headers;
@@ -43,7 +43,6 @@ public class WsCallerTest {
         @Before
         public void setUp(){
             asyncHttpClient = mock(AsyncHttpClient.class);
-            AckSender.clearCurrentInstance();
         }
 
         @Test(expected = NullPointerException.class)
