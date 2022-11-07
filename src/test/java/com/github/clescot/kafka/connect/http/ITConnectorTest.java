@@ -54,6 +54,7 @@ import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Stream;
 
+import static com.github.clescot.kafka.connect.http.sink.ConfigConstants.PUBLISH_TO_IN_MEMORY_QUEUE;
 import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
 import static com.github.tomakehurst.wiremock.client.WireMock.get;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -138,7 +139,9 @@ public class ITConnectorTest {
                 .with("tasks.max", "2")
                 .with("topics", HTTP_REQUESTS)
                 .with("key.converter", "org.apache.kafka.connect.storage.StringConverter")
-                .with("value.converter", "org.apache.kafka.connect.storage.StringConverter");
+                .with("value.converter", "org.apache.kafka.connect.storage.StringConverter")
+                .with(PUBLISH_TO_IN_MEMORY_QUEUE, "true")
+                ;
 
         connectContainer.registerConnector("http-sink-connector", sinkConnectorConfiguration);
         connectContainer.ensureConnectorTaskState("http-sink-connector", 0, Connector.State.RUNNING);
