@@ -2,11 +2,11 @@ package com.github.clescot.kafka.connect.http;
 
 import com.github.clescot.kafka.connect.http.source.Acknowledgement;
 import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
 
 import java.time.OffsetDateTime;
 import java.time.ZoneId;
-import java.util.Queue;
-import java.util.UUID;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.github.clescot.kafka.connect.http.sink.service.WsCaller.UTC_ZONE_ID;
@@ -34,17 +34,19 @@ public class QueueProducer implements Runnable {
     }
 
     private static Acknowledgement getAcknowledgement() {
+        List<Map.Entry<String,String>> requestheaders = Lists.newArrayList();
+        List<Map.Entry<String,String>> responseHeaders = Lists.newArrayList();
         return Acknowledgement.AcknowledgementBuilder.anAcknowledgement()
                 //tracing headers
                 .withRequestId(UUID.randomUUID().toString())
                 .withCorrelationId("my-correlation-id")
                 //request
                 .withRequestUri("http://fakeUri.com")
-                .withRequestHeaders(Lists.newArrayList())
+                .withRequestHeaders(requestheaders)
                 .withMethod("GET")
                 .withRequestBody("requestBody")
                 //response
-                .withResponseHeaders(Lists.newArrayList())
+                .withResponseHeaders(responseHeaders)
                 .withResponseBody("body")
                 .withStatusCode(200)
                 .withStatusMessage("OK")
