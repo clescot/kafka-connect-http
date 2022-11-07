@@ -16,6 +16,7 @@ import org.mockito.ArgumentCaptor;
 
 import java.time.OffsetDateTime;
 import java.time.ZoneId;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -71,7 +72,8 @@ class WsSinkTaskTest {
         settings.put("param2","value2");
         wsSinkTask.start(settings);
         WsCaller wsCaller = mock(WsCaller.class);
-        when(wsCaller.call(any(SinkRecord.class))).thenReturn(getDummyAcknowledgment());
+        Acknowledgement dummyAcknowledgment = getDummyAcknowledgment();
+        when(wsCaller.call(any(SinkRecord.class))).thenReturn(dummyAcknowledgment);
         wsSinkTask.setWsCaller(wsCaller);
         List<SinkRecord> records = Lists.newArrayList();
         List<Header> headers = Lists.newArrayList();
@@ -80,21 +82,26 @@ class WsSinkTaskTest {
         wsSinkTask.put(records);
         ArgumentCaptor<SinkRecord> captor = ArgumentCaptor.forClass(SinkRecord.class);
         verify(wsCaller,times(1)).call(captor.capture());
-        SinkRecord enhancedRecord = captor.getValue();
-        assertThat(enhancedRecord.headers()).anyMatch(header -> "param1".equals(header.key())&& "value1".equals(header.value()));
-        assertThat(enhancedRecord.headers()).anyMatch(header -> "param2".equals(header.key())&& "value2".equals(header.value()));
+        SinkRecord enhancedRecordBeforeHttpCall = captor.getValue();
+        assertThat(enhancedRecordBeforeHttpCall.headers().size()==sinkRecord.headers().size()+wsSinkTask.getStaticRequestHeaders().size());
+        assertThat(enhancedRecordBeforeHttpCall.headers()).anyMatch(header -> "param1".equals(header.key())&& "value1".equals(header.value()));
+        assertThat(enhancedRecordBeforeHttpCall.headers()).anyMatch(header -> "param2".equals(header.key())&& "value2".equals(header.value()));
     }
 
     private Acknowledgement getDummyAcknowledgment() {
+        HashMap<String, String> requestHeaders = Maps.newHashMap();
+        requestHeaders.put("X-dummy","blabla");
+        HashMap<String, String> responseHeaders = Maps.newHashMap();
+        responseHeaders.put("Content-Type","application/json");
         return new Acknowledgement(
                 "fsdfsf--sdfsdfsdf",
                 "fsdfsdf5565",
                 200,
                 "OK",
-                Maps.newHashMap(),
+                responseHeaders,
                 "",
                 "http://www.dummy.com",
-                Maps.newHashMap(),
+                requestHeaders,
                 "GET",
                 "",
                 100L,
