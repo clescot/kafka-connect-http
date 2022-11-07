@@ -52,7 +52,7 @@ public class WsSourceTask extends SourceTask {
         Preconditions.checkNotNull(taskConfig, "taskConfig cannot be null");
         String queueName = Optional.ofNullable(taskConfig.get(QUEUE_NAME)).orElse(DEFAULT_QUEUE_NAME);
         if(queueMapIsEmpty()){
-            LOGGER.warn("no pre-existing queue exists. this WsSourceConnector has created one. It needs to consume a queue filled with a SinkConnector. Ignore this message if a SinkConnector will be created after this one.");
+            LOGGER.warn("no pre-existing queue exists. this WsSourceConnector has created a '{}' one. It needs to consume a queue filled with a SinkConnector. Ignore this message if a SinkConnector will be created after this one.",queueName);
         }
         queue = QueueFactory.getQueue(queueName);
         this.ackConfig = new AckConfig(taskConfig);
