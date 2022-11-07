@@ -47,6 +47,7 @@ public class WsSourceTask extends SourceTask {
         Preconditions.checkNotNull(taskConfig, "taskConfig cannot be null");
         this.sourceConfig = new WsSourceConnectorConfig(taskConfig);
         queue = QueueFactory.getQueue(sourceConfig.getQueueName());
+        QueueFactory.registerConsumerForQueue(sourceConfig.getQueueName());
     }
 
     @Override
