@@ -1,7 +1,7 @@
 package com.github.clescot.kafka.connect.http.sink;
 
 import com.github.clescot.kafka.connect.http.QueueFactory;
-import com.github.clescot.kafka.connect.http.sink.client.WsCaller;
+import com.github.clescot.kafka.connect.http.sink.client.HttpClient;
 import com.github.clescot.kafka.connect.http.source.Acknowledgement;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
@@ -80,17 +80,17 @@ class WsSinkTaskTest {
         settings.put("param1","value1");
         settings.put("param2","value2");
         wsSinkTask.start(settings);
-        WsCaller wsCaller = mock(WsCaller.class);
+        HttpClient httpClient = mock(HttpClient.class);
         Acknowledgement dummyAcknowledgment = getDummyAcknowledgment();
-        when(wsCaller.call(any(SinkRecord.class))).thenReturn(dummyAcknowledgment);
-        wsSinkTask.setWsCaller(wsCaller);
+        when(httpClient.call(any(SinkRecord.class))).thenReturn(dummyAcknowledgment);
+        wsSinkTask.setHttpClient(httpClient);
         List<SinkRecord> records = Lists.newArrayList();
         List<Header> headers = Lists.newArrayList();
         SinkRecord sinkRecord = new SinkRecord("myTopic",0, Schema.STRING_SCHEMA,"key",Schema.STRING_SCHEMA,"myValue",-1,System.currentTimeMillis(), TimestampType.CREATE_TIME,headers);
         records.add(sinkRecord);
         wsSinkTask.put(records);
         ArgumentCaptor<SinkRecord> captor = ArgumentCaptor.forClass(SinkRecord.class);
-        verify(wsCaller,times(1)).call(captor.capture());
+        verify(httpClient,times(1)).call(captor.capture());
         SinkRecord enhancedRecordBeforeHttpCall = captor.getValue();
         assertThat(enhancedRecordBeforeHttpCall.headers().size()==sinkRecord.headers().size()+wsSinkTask.getStaticRequestHeaders().size());
         assertThat(enhancedRecordBeforeHttpCall.headers()).anyMatch(header -> "param1".equals(header.key())&& "value1".equals(header.value()));
@@ -104,11 +104,11 @@ class WsSinkTaskTest {
         Map<String,String> settings = Maps.newHashMap();
         wsSinkTask.start(settings);
 
-        //mock wsCaller
-        WsCaller wsCaller = mock(WsCaller.class);
+        //mock httpClient
+        HttpClient httpClient = mock(HttpClient.class);
         Acknowledgement dummyAcknowledgment = getDummyAcknowledgment();
-        when(wsCaller.call(any(SinkRecord.class))).thenReturn(dummyAcknowledgment);
-        wsSinkTask.setWsCaller(wsCaller);
+        when(httpClient.call(any(SinkRecord.class))).thenReturn(dummyAcknowledgment);
+        wsSinkTask.setHttpClient(httpClient);
 
         //mock queue
         Queue<Acknowledgement> dummyQueue = mock(Queue.class);
@@ -127,7 +127,7 @@ class WsSinkTaskTest {
 
         //no additional headers added
         ArgumentCaptor<SinkRecord> captor = ArgumentCaptor.forClass(SinkRecord.class);
-        verify(wsCaller,times(1)).call(captor.capture());
+        verify(httpClient,times(1)).call(captor.capture());
         SinkRecord enhancedRecordBeforeHttpCall = captor.getValue();
         assertThat(enhancedRecordBeforeHttpCall.headers().size()==sinkRecord.headers().size());
 
@@ -143,11 +143,11 @@ class WsSinkTaskTest {
         settings.put(PUBLISH_TO_IN_MEMORY_QUEUE,"true");
         wsSinkTask.start(settings);
 
-        //mock wsCaller
-        WsCaller wsCaller = mock(WsCaller.class);
+        //mock httpClient
+        HttpClient httpClient = mock(HttpClient.class);
         Acknowledgement dummyAcknowledgment = getDummyAcknowledgment();
-        when(wsCaller.call(any(SinkRecord.class))).thenReturn(dummyAcknowledgment);
-        wsSinkTask.setWsCaller(wsCaller);
+        when(httpClient.call(any(SinkRecord.class))).thenReturn(dummyAcknowledgment);
+        wsSinkTask.setHttpClient(httpClient);
 
         //mock queue
         Queue<Acknowledgement> dummyQueue = mock(Queue.class);
@@ -175,10 +175,10 @@ class WsSinkTaskTest {
         Map<String,String> settings = Maps.newHashMap();
         settings.put(PUBLISH_TO_IN_MEMORY_QUEUE,"false");
         wsSinkTask.start(settings);
-        WsCaller wsCaller = mock(WsCaller.class);
+        HttpClient httpClient = mock(HttpClient.class);
         Acknowledgement dummyAcknowledgment = getDummyAcknowledgment();
-        when(wsCaller.call(any(SinkRecord.class))).thenReturn(dummyAcknowledgment);
-        wsSinkTask.setWsCaller(wsCaller);
+        when(httpClient.call(any(SinkRecord.class))).thenReturn(dummyAcknowledgment);
+        wsSinkTask.setHttpClient(httpClient);
         Queue<Acknowledgement> queue = mock(Queue.class);
         wsSinkTask.setQueue(queue);
         List<SinkRecord> records = Lists.newArrayList();
@@ -186,7 +186,7 @@ class WsSinkTaskTest {
         SinkRecord sinkRecord = new SinkRecord("myTopic",0, Schema.STRING_SCHEMA,"key",Schema.STRING_SCHEMA,"myValue",-1,System.currentTimeMillis(), TimestampType.CREATE_TIME,headers);
         records.add(sinkRecord);
         wsSinkTask.put(records);
-        verify(wsCaller,times(1)).call(any(SinkRecord.class));
+        verify(httpClient,times(1)).call(any(SinkRecord.class));
         verify(queue,never()).offer(any(Acknowledgement.class));
     }
 
@@ -199,10 +199,10 @@ class WsSinkTaskTest {
         settings.put(PUBLISH_TO_IN_MEMORY_QUEUE,"true");
         QueueFactory.registerConsumerForQueue(QueueFactory.DEFAULT_QUEUE_NAME);
         wsSinkTask.start(settings);
-        WsCaller wsCaller = mock(WsCaller.class);
+        HttpClient httpClient = mock(HttpClient.class);
         Acknowledgement dummyAcknowledgment = getDummyAcknowledgment();
-        when(wsCaller.call(any(SinkRecord.class))).thenReturn(dummyAcknowledgment);
-        wsSinkTask.setWsCaller(wsCaller);
+        when(httpClient.call(any(SinkRecord.class))).thenReturn(dummyAcknowledgment);
+        wsSinkTask.setHttpClient(httpClient);
         Queue<Acknowledgement> queue = mock(Queue.class);
         wsSinkTask.setQueue(queue);
         List<SinkRecord> records = Lists.newArrayList();
@@ -213,7 +213,7 @@ class WsSinkTaskTest {
         wsSinkTask.put(records);
 
         //then
-        verify(wsCaller,times(1)).call(any(SinkRecord.class));
+        verify(httpClient,times(1)).call(any(SinkRecord.class));
         verify(queue,times(1)).offer(any(Acknowledgement.class));
     }
 

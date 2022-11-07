@@ -20,7 +20,7 @@ import java.util.HashMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static com.github.clescot.kafka.connect.http.sink.client.WsCaller.*;
+import static com.github.clescot.kafka.connect.http.sink.client.HttpClient.*;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.asynchttpclient.util.HttpConstants.Methods.PUT;
 import static org.mockito.ArgumentMatchers.any;
@@ -28,7 +28,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 @RunWith(Enclosed.class)
-public class WsCallerTest {
+public class HttpClientTest {
 
     public static class Test_setAcknowledgement {
         private AsyncHttpClient asyncHttpClient;
@@ -40,8 +40,8 @@ public class WsCallerTest {
 
         @Test(expected = NullPointerException.class)
         public void test_all_null() {
-            WsCaller wsCaller = new WsCaller(asyncHttpClient);
-            wsCaller.setAcknowledgement(null,
+            HttpClient httpClient = new HttpClient(asyncHttpClient);
+            httpClient.setAcknowledgement(null,
                     null,
                     null,
                     Maps.newHashMap(),
@@ -52,7 +52,7 @@ public class WsCallerTest {
                     -1,
                     null,
                     Stopwatch.createUnstarted(),
-                    OffsetDateTime.now(ZoneId.of(WsCaller.UTC_ZONE_ID)),
+                    OffsetDateTime.now(ZoneId.of(HttpClient.UTC_ZONE_ID)),
                     new AtomicInteger(2),
                     SUCCESS
             );
@@ -60,8 +60,8 @@ public class WsCallerTest {
 
         @Test(expected = NullPointerException.class)
         public void test_content_is_null() {
-            WsCaller wsCaller = new WsCaller(asyncHttpClient);
-            wsCaller.setAcknowledgement(null,
+            HttpClient httpClient = new HttpClient(asyncHttpClient);
+            httpClient.setAcknowledgement(null,
                     null,
                     null,
                     Maps.newHashMap(),
@@ -72,7 +72,7 @@ public class WsCallerTest {
                     200,
                     null,
                     Stopwatch.createUnstarted(),
-                    OffsetDateTime.now(ZoneId.of(WsCaller.UTC_ZONE_ID)),
+                    OffsetDateTime.now(ZoneId.of(HttpClient.UTC_ZONE_ID)),
                     new AtomicInteger(2),
                     SUCCESS
             );
@@ -82,8 +82,8 @@ public class WsCallerTest {
         public void test_message_is_null() {
             HashMap<String,
                     String> vars = Maps.newHashMap();
-            WsCaller wsCaller = new WsCaller(asyncHttpClient);
-            wsCaller.setAcknowledgement("fsqdfsdf",
+            HttpClient httpClient = new HttpClient(asyncHttpClient);
+            httpClient.setAcknowledgement("fsqdfsdf",
                     null,
                     null,
                     null,
@@ -94,15 +94,15 @@ public class WsCallerTest {
                     200,
                     "",
                     Stopwatch.createUnstarted(),
-                    OffsetDateTime.now(ZoneId.of(WsCaller.UTC_ZONE_ID)),
+                    OffsetDateTime.now(ZoneId.of(HttpClient.UTC_ZONE_ID)),
                     new AtomicInteger(2),
                     SUCCESS);
         }
 
         @Test(expected = IllegalStateException.class)
         public void test_response_code_is_lower_than_0() {
-            WsCaller wsCaller = new WsCaller(asyncHttpClient);
-            wsCaller.setAcknowledgement("fsqdfsdf",
+            HttpClient httpClient = new HttpClient(asyncHttpClient);
+            httpClient.setAcknowledgement("fsqdfsdf",
                     "sdfsfdsf",
                     "http://stuff.com/sfsfds",
                     Maps.newHashMap(),
@@ -113,7 +113,7 @@ public class WsCallerTest {
                     -1,
                     "",
                     Stopwatch.createUnstarted(),
-                    OffsetDateTime.now(ZoneId.of(WsCaller.UTC_ZONE_ID)),
+                    OffsetDateTime.now(ZoneId.of(HttpClient.UTC_ZONE_ID)),
                     new AtomicInteger(2),
                     SUCCESS);
         }
@@ -123,8 +123,8 @@ public class WsCallerTest {
         public void test_nominal_case() {
             HashMap<String,
                     String> vars = Maps.newHashMap();
-            WsCaller wsCaller = new WsCaller(asyncHttpClient);
-            wsCaller.setAcknowledgement("fsqdfsdf",
+            HttpClient httpClient = new HttpClient(asyncHttpClient);
+            httpClient.setAcknowledgement("fsqdfsdf",
                     "requestId",
                     "requestUri",
                     Maps.newHashMap(),
@@ -135,7 +135,7 @@ public class WsCallerTest {
                     200,
                     "" +"",
                     Stopwatch.createUnstarted(),
-                    OffsetDateTime.now(ZoneId.of(WsCaller.UTC_ZONE_ID)),
+                    OffsetDateTime.now(ZoneId.of(HttpClient.UTC_ZONE_ID)),
                     new AtomicInteger(2),
                     SUCCESS);
         }
@@ -161,14 +161,14 @@ public class WsCallerTest {
             when(listenerObject.get()).thenReturn(response);
             when(asyncHttpClient.executeRequest(any(Request.class))).thenReturn(listener);
             when(asyncHttpClient.executeRequest(any(Request.class), any())).thenReturn(listenerObject);
-            WsCaller wsCaller = new WsCaller(asyncHttpClient);
+            HttpClient httpClient = new HttpClient(asyncHttpClient);
             HashMap<String, String> wsProperties = Maps.newHashMap();
             wsProperties.put("url", "http://localhost:8089");
             wsProperties.put("method", "PUT");
             wsProperties.put("correlation-id", "sgsmr,sdfgsjjmsldf");
             wsProperties.put(HEADER_X_CORRELATION_ID, "sdfd-7899-8921");
             wsProperties.put(HEADER_X_REQUEST_ID, "sdfd-dfdf-8921");
-            Acknowledgement acknowledgement = wsCaller.callOnceWs("requestId", wsProperties, "body", new AtomicInteger(2));
+            Acknowledgement acknowledgement = httpClient.callOnceWs("requestId", wsProperties, "body", new AtomicInteger(2));
             assertThat(acknowledgement).isNotNull();
         }
 
@@ -189,7 +189,7 @@ public class WsCallerTest {
             when(asyncHttpClient.executeRequest(any(Request.class))).thenReturn(listener);
             when(asyncHttpClient.executeRequest(any(Request.class), any())).thenReturn(listenerObject);
             HashMap<String, String> vars = Maps.newHashMap();
-            WsCaller wsCaller = new WsCaller(asyncHttpClient);
+            HttpClient httpClient = new HttpClient(asyncHttpClient);
             HashMap<String, String> wsProperties = Maps.newHashMap();
             wsProperties.put("url", "http://localhost:8089");
             wsProperties.put("method", "PUT");
@@ -197,7 +197,7 @@ public class WsCallerTest {
             wsProperties.put("success-code", "^\\d+$");
             wsProperties.put(HEADER_X_CORRELATION_ID, "sdfd-7899-8921");
             wsProperties.put(HEADER_X_REQUEST_ID, "sdfd-dfdf-8921");
-            Acknowledgement acknowledgement = wsCaller.callOnceWs("requestId", wsProperties, "body", new AtomicInteger(2));
+            Acknowledgement acknowledgement = httpClient.callOnceWs("requestId", wsProperties, "body", new AtomicInteger(2));
             assertThat(acknowledgement).isNotNull();
         }
 
@@ -216,7 +216,7 @@ public class WsCallerTest {
             when(asyncHttpClient.executeRequest(any(Request.class))).thenReturn(listener);
             when(asyncHttpClient.executeRequest(any(Request.class), any())).thenReturn(listenerObject);
             HashMap<String, String> vars = Maps.newHashMap();
-            WsCaller wsCaller = new WsCaller(asyncHttpClient);
+            HttpClient httpClient = new HttpClient(asyncHttpClient);
             HashMap<String, String> wsProperties = Maps.newHashMap();
             wsProperties.put("url", "http://localhost:8089");
             wsProperties.put("method", "PUT");
@@ -224,7 +224,7 @@ public class WsCallerTest {
             wsProperties.put("success-code", "^[1-4][0-9][0-9]$");
             wsProperties.put(HEADER_X_CORRELATION_ID, "sdfd-7899-8921");
             wsProperties.put(HEADER_X_REQUEST_ID, "sdfd-dfdf-8921");
-            Acknowledgement acknowledgement = wsCaller.callOnceWs("requestId", wsProperties, "body", new AtomicInteger(2));
+            Acknowledgement acknowledgement = httpClient.callOnceWs("requestId", wsProperties, "body", new AtomicInteger(2));
             assertThat(acknowledgement).isNotNull();
         }
 
@@ -246,7 +246,7 @@ public class WsCallerTest {
             when(asyncHttpClient.executeRequest(any(Request.class))).thenReturn(listener);
             when(asyncHttpClient.executeRequest(any(Request.class), any())).thenReturn(listenerObject);
             HashMap<String, String> vars = Maps.newHashMap();
-            WsCaller wsCaller = new WsCaller(asyncHttpClient);
+            HttpClient httpClient = new HttpClient(asyncHttpClient);
             HashMap<String, String> wsProperties = Maps.newHashMap();
             wsProperties.put("url", "http://localhost:8089");
             wsProperties.put("method", "PUT");
@@ -254,7 +254,7 @@ public class WsCallerTest {
             wsProperties.put("success-code", "^[1-4][0-9][0-9]$");
             wsProperties.put(HEADER_X_CORRELATION_ID, "sdfd-7899-8921");
             wsProperties.put(HEADER_X_REQUEST_ID, "sdfd-dfdf-8921");
-            Acknowledgement acknowledgement = wsCaller.callOnceWs("requestId", wsProperties, "body", new AtomicInteger(2));
+            Acknowledgement acknowledgement = httpClient.callOnceWs("requestId", wsProperties, "body", new AtomicInteger(2));
             assertThat(acknowledgement).isNotNull();
         }
 
