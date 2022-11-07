@@ -29,10 +29,14 @@ public class AckConfig extends AbstractConfig {
         this.producerClientId = Optional.ofNullable(getString(ConfigConstants.PRODUCER_CLIENT_ID)).orElseThrow(()-> new IllegalArgumentException(ConfigConstants.PRODUCER_CLIENT_ID+ CANNOT_BE_FOUND_IN_MAP_CONFIGURATION));
         this.ackTopic = Optional.ofNullable(getString(ConfigConstants.ACK_TOPIC)).orElseThrow(()-> new IllegalArgumentException(ConfigConstants.ACK_TOPIC+ CANNOT_BE_FOUND_IN_MAP_CONFIGURATION));
 
+        this.ackSchema = getSchemaFromAvroConfig();
+    }
+
+    private Schema getSchemaFromAvroConfig() {
         AvroData avroData = new AvroData(new AvroDataConfig(ImmutableMap.of(KafkaAvroDeserializerConfig.SCHEMA_REGISTRY_URL_CONFIG, targetSchemaRegistry)));
         String ackSchemaParam = Optional.ofNullable(getString(ConfigConstants.ACK_SCHEMA)).orElseThrow(()-> new IllegalArgumentException(ConfigConstants.ACK_SCHEMA+ CANNOT_BE_FOUND_IN_MAP_CONFIGURATION));
         org.apache.avro.Schema avroSchema = new org.apache.avro.Schema.Parser().parse(ackSchemaParam);
-        this.ackSchema = avroData.toConnectSchema(avroSchema);
+         return avroData.toConnectSchema(avroSchema);
     }
 
     public String getTargetBootstrapServer() {
