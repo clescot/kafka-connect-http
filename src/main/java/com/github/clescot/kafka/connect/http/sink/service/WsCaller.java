@@ -93,20 +93,18 @@ public class WsCaller {
     }
 
     /**
-     * Les paramètres présents dans les headers kafka permettent de piloter
-     * la mécanique d'appels de web service. Ils commencent tous par 'ws-'.
-     * Cela comprend
-     * 1- les paramètres de pilotage de la politique de réessais, comme :
-     * le nombre de reessais, le délai entre les tentatives.
-     * 2- L'identifiant unique généré (correlation id), permettant de faire un suivi des multiples appels
-     * qu'engendre un évenement métier.
-     * 3- les paramètres proxy
-     * 4- les paramètres d'authentification
-     * 5- les paramètres propres à l'appel http, que sont l'url, la méthode HTTP, les headers http de l'appel (commencant par 'ws-headers-',
-     * le timeout d'établisssement de la connexion
-     *
-     * Le corps de la requête http (encodé en avro ou non), est la valeur du message Kafka.
-     * 6- les paramètres propres à la réponse, tel le timeout de lecture de la réponse, la regex de succès de la réponse,
+     * parameters which are in kafka headers permit to pilot
+     * HTTP calls. they are all starting with 'ws-'.
+     * including
+     * 1- parameters for retry policy, like :
+     * retry count, delai between calls.
+     * 2- the correlation id permetting to track together multiple calls
+     * 3- proxy parameters
+     * 4- authentification parameters
+     * 5- parameters related to the http, like url, HTTP method,http headers (starting by 'ws-headers-',
+     * establishing connection timeout.
+     * body's http request(encoded in avro or not), is the value of the kafka message.
+     * 6- parameters related to the http response, like response read timeout,success regex of the response,
      *
      * @param sinkRecord
      * @return
