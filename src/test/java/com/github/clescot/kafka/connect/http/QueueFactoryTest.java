@@ -1,13 +1,13 @@
 package com.github.clescot.kafka.connect.http;
 
 import com.github.clescot.kafka.connect.http.source.Acknowledgement;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 import java.util.Queue;
 
 import static com.github.clescot.kafka.connect.http.QueueFactory.DEFAULT_QUEUE_NAME;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.*;
 
 class QueueFactoryTest {
 
@@ -34,6 +34,28 @@ class QueueFactoryTest {
         assertThat(queue5 != queue4);
         assertThat(queue5 != queue);
     }
+
+
+    @Test
+    public void test_registerConsumerForQueue(){
+        QueueFactory.registerConsumerForQueue("test");
+        assertThat(QueueFactory.hasAConsumer("test")).isTrue();
+    }
+
+    @Test
+    public void test_registerConsumerForQueue_with_null_value(){
+        Assertions.assertThrows(NullPointerException.class,()->
+                QueueFactory.registerConsumerForQueue(null)
+                );
+    }
+
+    @Test
+    public void test_registerConsumerForQueue_with_an_empty_value(){
+        Assertions.assertThrows(IllegalArgumentException.class,()->
+                QueueFactory.registerConsumerForQueue("")
+                );
+    }
+
 
 
 }
