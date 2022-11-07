@@ -17,8 +17,8 @@ public class ConfigConstants {
     public static final String QUEUE_NAME = "queue.name";
     public static final String QUEUE_NAME_DOC = "queue name in the in memory map.";
 
-    public static final String STATIC_REQUEST_HEADERS = "static.request.headers";
-    public static final String STATIC_REQUEST_HEADERS_DOC = "list of static parameters names which will be added to all http requests. these parameter names need to be added with their values as parameters in complement of this list";
+    public static final String STATIC_REQUEST_HEADER_NAMES = "static.request.header.names";
+    public static final String STATIC_REQUEST_HEADER_NAMES_DOC = "list of static parameters names which will be added to all http requests. these parameter names need to be added with their values as parameters in complement of this list";
 
 
 }
