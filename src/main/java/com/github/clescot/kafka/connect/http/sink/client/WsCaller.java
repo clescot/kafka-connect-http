@@ -34,7 +34,6 @@ import java.util.stream.Collectors;
 public class WsCaller {
 
     private final static Logger LOGGER = LoggerFactory.getLogger(WsCaller.class);
-    public static final String BODY = "body";
     public static final int SERVER_ERROR_STATUS_CODE = 500;
     public static final String HEADER_PREFIX = "header-";
     public static final String PROXY_PREFIX = "proxy-";
