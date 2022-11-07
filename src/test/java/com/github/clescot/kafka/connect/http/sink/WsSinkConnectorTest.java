@@ -33,19 +33,8 @@ public class WsSinkConnectorTest {
         public void test_with_nominal_case(){
             WsSinkConnector wsSinkConnector = new WsSinkConnector();
             Map<String, String> settings = Maps.newHashMap();
-            settings.put(TARGET_BOOTSTRAP_SERVER,"localhost:9092");
-            settings.put(TARGET_SCHEMA_REGISTRY,"localhost:8081");
             settings.put(SUCCESS_TOPIC,"fake.ack.topic");
-            settings.put(ACK_SCHEMA,"{\n" +
-                    "    \"namespace\": \"com.fake.namespace\",\n" +
-                    "    \"name\": \"Test\",\n" +
-                    "    \"doc\": \"test doc\",\n" +
-                    "    \"type\": \"record\",\n" +
-                    "    \"fields\": [\n" +
-                    "        {\"name\": \"name\", \"type\": \"string\"},\n" +
-                    "        {\"name\": \"id\", \"type\": \"int\"}\n" +
-                    "    ]\n" +
-                    "}");
+
             wsSinkConnector.start(settings);
         }
 
@@ -65,20 +54,7 @@ public class WsSinkConnectorTest {
         public void test_nominal_case(){
             WsSinkConnector wsSinkConnector = new WsSinkConnector();
             Map<String, String> settings = Maps.newHashMap();
-            settings.put(TARGET_BOOTSTRAP_SERVER,"localhost:9092");
-            settings.put(TARGET_SCHEMA_REGISTRY,"localhost:8081");
             settings.put(SUCCESS_TOPIC,"fake.ack.topic");
-            settings.put(ACK_SCHEMA,"{\n" +
-                    "    \"namespace\": \"com.fake.namespace\",\n" +
-                    "    \"name\": \"Test\",\n" +
-                    "    \"doc\": \"test doc\",\n" +
-                    "    \"type\": \"record\",\n" +
-                    "    \"fields\": [\n" +
-                    "        {\"name\": \"name\", \"type\": \"string\"},\n" +
-                    "        {\"name\": \"id\", \"type\": \"int\"}\n" +
-                    "    ]\n" +
-                    "}");
-            wsSinkConnector.start(settings);
             List<Map<String, String>> maps = wsSinkConnector.taskConfigs(1);
             assertThat(maps.size()).isEqualTo(1);
             assertThat(maps.get(0)).isEqualTo(settings);
@@ -88,19 +64,7 @@ public class WsSinkConnectorTest {
         public void test_2_tasks(){
             WsSinkConnector wsSinkConnector = new WsSinkConnector();
             Map<String, String> settings = Maps.newHashMap();
-            settings.put(TARGET_BOOTSTRAP_SERVER,"localhost:9092");
-            settings.put(TARGET_SCHEMA_REGISTRY,"localhost:8081");
             settings.put(SUCCESS_TOPIC,"fake.ack.topic");
-            settings.put(ACK_SCHEMA,"{\n" +
-                    "    \"namespace\": \"com.fake.namespace\",\n" +
-                    "    \"name\": \"Test\",\n" +
-                    "    \"doc\": \"test doc\",\n" +
-                    "    \"type\": \"record\",\n" +
-                    "    \"fields\": [\n" +
-                    "        {\"name\": \"name\", \"type\": \"string\"},\n" +
-                    "        {\"name\": \"id\", \"type\": \"int\"}\n" +
-                    "    ]\n" +
-                    "}");
             wsSinkConnector.start(settings);
             List<Map<String, String>> maps = wsSinkConnector.taskConfigs(2);
             assertThat(maps.size()).isEqualTo(2);
@@ -115,19 +79,7 @@ public class WsSinkConnectorTest {
         public void test_nominal_case_without_ack_sender_already_initialized(){
             WsSinkConnector wsSinkConnector = new WsSinkConnector();
             Map<String, String> settings = Maps.newHashMap();
-            settings.put(TARGET_BOOTSTRAP_SERVER,"localhost:9092");
-            settings.put(TARGET_SCHEMA_REGISTRY,"localhost:8081");
             settings.put(SUCCESS_TOPIC,"fake.ack.topic");
-            settings.put(ACK_SCHEMA,"{\n" +
-                    "    \"namespace\": \"com.fake.namespace\",\n" +
-                    "    \"name\": \"Test\",\n" +
-                    "    \"doc\": \"test doc\",\n" +
-                    "    \"type\": \"record\",\n" +
-                    "    \"fields\": [\n" +
-                    "        {\"name\": \"name\", \"type\": \"string\"},\n" +
-                    "        {\"name\": \"id\", \"type\": \"int\"}\n" +
-                    "    ]\n" +
-                    "}");
             wsSinkConnector.start(settings);
             wsSinkConnector.stop();
         }
