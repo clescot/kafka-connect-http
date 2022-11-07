@@ -1,4 +1,4 @@
-package com.github.clescot.kafka.connect.http.sink.model;
+package com.github.clescot.kafka.connect.http.source;
 
 import java.time.OffsetDateTime;
 import java.time.format.DateTimeFormatter;

@@ -1,6 +1,6 @@
 package com.github.clescot.kafka.connect.http.sink.service;
 
-import com.github.clescot.kafka.connect.http.sink.model.Acknowledgement;
+import com.github.clescot.kafka.connect.http.source.Acknowledgement;
 import com.google.common.base.Preconditions;
 import com.google.common.base.Stopwatch;
 import com.google.common.collect.Lists;
