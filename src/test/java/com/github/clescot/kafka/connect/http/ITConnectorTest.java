@@ -61,6 +61,7 @@ public class ITConnectorTest {
     public static final String CONFLUENT_VERSION = "7.2.2";
     public static final int CUSTOM_AVAILABLE_PORT = 0;
     public static final int CACHE_CAPACITY = 100;
+    public static final String HTTP_REQUESTS = "http-requests";
     private static Network network = Network.newNetwork();
     @Container
     public static KafkaContainer kafkaContainer = new KafkaContainer(DockerImageName.parse("confluentinc/cp-kafka:" + CONFLUENT_VERSION))
@@ -123,7 +124,7 @@ public class ITConnectorTest {
         ConnectorConfiguration sinkConnectorConfiguration = ConnectorConfiguration.create()
                 .with("connector.class", "com.github.clescot.kafka.connect.http.sink.WsSinkConnector")
                 .with("tasks.max", "2")
-                .with("topics", "http-requests")
+                .with("topics", HTTP_REQUESTS)
                 .with("key.converter", "org.apache.kafka.connect.storage.StringConverter")
                 .with("value.converter", "org.apache.kafka.connect.storage.StringConverter");
 
@@ -179,14 +180,14 @@ public class ITConnectorTest {
         LOGGER.info("url:{}", url);
         headers.add(new RecordHeader("ws-url", url.getBytes(StandardCharsets.UTF_8)));
         headers.add(new RecordHeader("ws-method", "GET".getBytes(StandardCharsets.UTF_8)));
-        ProducerRecord<String, String> record = new ProducerRecord<>("http-requests", null, System.currentTimeMillis(), null, "value", headers);
+        ProducerRecord<String, String> record = new ProducerRecord<>(HTTP_REQUESTS, null, System.currentTimeMillis(), null, "value", headers);
         producer.send(record);
         producer.flush();
 
         //verify http responses
         KafkaConsumer<String, String> consumer = getConsumer(kafkaContainer,externalSchemaRegistryUrl);
 
-        consumer.subscribe(Lists.newArrayList(successTopic));
+        consumer.subscribe(Lists.newArrayList(successTopic,errorsTopic));
         List<ConsumerRecord<String, String>> consumerRecords = drain(consumer, 1);
         assertThat(consumerRecords).hasSize(1);
         ConsumerRecord<String, String> consumerRecord = consumerRecords.get(0);
