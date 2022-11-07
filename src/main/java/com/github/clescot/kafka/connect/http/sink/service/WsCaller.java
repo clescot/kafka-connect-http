@@ -30,6 +30,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 public class WsCaller {
 
@@ -63,7 +64,6 @@ public class WsCaller {
     private static final String WS_REALM_AUTH_SCHEME = "auth-scheme";
     public static final String HTTP_PROXY_TYPE = "HTTP";
     public static final String UTF_8 = "UTF-8";
-    public static final String UNKNOWN_WS_ID = "UNKNOWN_WS_ID";
     private static final String UNKNOWN_URI = "UNKNOWN_URI";
     private static final String UNKNOWN_METHOD = "UNKNOWN_METHOD";
     public static final String UTC_ZONE_ID = "UTC";
@@ -159,10 +159,10 @@ public class WsCaller {
                     correlationId,
                     requestId,
                     Optional.ofNullable(wsProperties.get(WS_URL)).orElse(UNKNOWN_URI),
-                    Lists.newArrayList(),
+                    Maps.newHashMap(),
                     Optional.ofNullable(wsProperties.get(WS_METHOD)).orElse(UNKNOWN_METHOD),
                     BLANK_REQUEST_CONTENT,
-                    Lists.newArrayList(),
+                    Maps.newHashMap(),
                     BLANK_RESPONSE_CONTENT,
                     SERVER_ERROR_STATUS_CODE,
                     String.valueOf(e.getMessage()),
@@ -212,16 +212,17 @@ public class WsCaller {
 
         int responseStatusCode = handleRetriesBasedOnStatusCode(wsProperties, response);
         correlationId = wsProperties.get(HEADER_X_CORRELATION_ID);
-        List<Map.Entry<String, String>> requestEntries = request.getHeaders()!=null?request.getHeaders().entries():Lists.newArrayList();
+        Map<String, String> requestHeaders = request.getHeaders().entries().stream().collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
         List<Map.Entry<String, String>> responseEntries = response.getHeaders()!=null?response.getHeaders().entries():Lists.newArrayList();
+        Map<String, String> responseHeaders = response.getHeaders().entries().stream().collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
         return setAcknowledgement(
                 correlationId,
                 requestId,
                 request.getUri().toString(),
-                requestEntries!=null?requestEntries:Lists.newArrayList(),
+                requestHeaders!=null?requestHeaders:Maps.newHashMap(),
                 request.getMethod(),
                 request.getStringData(),
-                responseEntries!=null?responseEntries:Lists.newArrayList(),
+                responseHeaders!=null?responseHeaders:Maps.newHashMap(),
                 response.getResponseBody(),
                 responseStatusCode,
                 response.getStatusText(),
@@ -394,10 +395,10 @@ public class WsCaller {
     protected Acknowledgement setAcknowledgement(String correlationId,
                                                  String requestId,
                                                  String requestUri,
-                                                 List<Map.Entry<String, String>> requestHeaders,
+                                                 Map<String,String> requestHeaders,
                                                  String method,
                                                  String requestBody,
-                                                 List<Map.Entry<String, String>> responseHeaders,
+                                                 Map<String,String> responseHeaders,
                                                  String responseBody,
                                                  int responseStatusCode,
                                                  String responseStatusMessage,

@@ -9,10 +9,10 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class Acknowledgement {
 
 
-    private List<Map.Entry<String,String>> requestHeaders;
+    private Map<String,String> requestHeaders;
     private final String method;
     private final String requestBody;
-    private List<Map.Entry<String,String>> responseHeaders;
+    private Map<String,String> responseHeaders;
     private String correlationId;
     private Integer statusCode;
     private String statusMessage;
@@ -29,10 +29,10 @@ public class Acknowledgement {
             String requestId,
             Integer statusCode,
             String statusMessage,
-            List<Map.Entry<String,String>> responseHeaders,
+            Map<String,String> responseHeaders,
             String responseBody,
             String requestUri,
-            List<Map.Entry<String,String>> requestHeaders,
+            Map<String,String> requestHeaders,
             String method,
             String requestBody,
             long durationInMillis,
@@ -57,7 +57,7 @@ public class Acknowledgement {
         return correlationId;
     }
 
-    public List<Map.Entry<String,String>> getRequestHeaders() {
+    public Map<String,String> getRequestHeaders() {
         return requestHeaders;
     }
 
@@ -69,7 +69,7 @@ public class Acknowledgement {
         return requestBody;
     }
 
-    public List<Map.Entry<String,String>> getResponseHeaders() {
+    public Map<String,String> getResponseHeaders() {
         return responseHeaders;
     }
 
@@ -129,9 +129,9 @@ public class Acknowledgement {
         private String requestId;
         private String requestUri;
         private String requestMethod;
-        private List<Map.Entry<String,String>> requestHeaders;
+        private Map<String,String> requestHeaders;
         private String requestBody;
-        private List<Map.Entry<String,String>> responseHeaders;
+        private Map<String,String> responseHeaders;
         private String responseBody;
         private Integer statusCode;
         private String statusMessage;
@@ -206,12 +206,12 @@ public class Acknowledgement {
             return this;
         }
 
-        public AcknowledgementBuilder withRequestHeaders(List<Map.Entry<String,String>> headers) {
+        public AcknowledgementBuilder withRequestHeaders(Map<String,String> headers) {
             this.requestHeaders = headers;
             return this;
         }
 
-        public AcknowledgementBuilder withResponseHeaders(List<Map.Entry<String,String>> headers) {
+        public AcknowledgementBuilder withResponseHeaders(Map<String,String> headers) {
             this.responseHeaders = headers;
             return this;
         }
