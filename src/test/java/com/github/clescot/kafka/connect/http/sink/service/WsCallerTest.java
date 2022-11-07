@@ -59,7 +59,8 @@ public class WsCallerTest {
                     null,
                     Stopwatch.createUnstarted(),
                     OffsetDateTime.now(ZoneId.of(WsCaller.UTC_ZONE_ID)),
-                    new AtomicInteger(2)
+                    new AtomicInteger(2),
+                    true
             );
         }
 
@@ -78,7 +79,9 @@ public class WsCallerTest {
                     null,
                     Stopwatch.createUnstarted(),
                     OffsetDateTime.now(ZoneId.of(WsCaller.UTC_ZONE_ID)),
-                    new AtomicInteger(2));
+                    new AtomicInteger(2),
+                    true
+            );
         }
 
         @Test(expected = NullPointerException.class)
@@ -98,7 +101,8 @@ public class WsCallerTest {
                     "",
                     Stopwatch.createUnstarted(),
                     OffsetDateTime.now(ZoneId.of(WsCaller.UTC_ZONE_ID)),
-                    new AtomicInteger(2));
+                    new AtomicInteger(2),
+                    true);
         }
 
         @Test(expected = IllegalStateException.class)
@@ -116,7 +120,8 @@ public class WsCallerTest {
                     "",
                     Stopwatch.createUnstarted(),
                     OffsetDateTime.now(ZoneId.of(WsCaller.UTC_ZONE_ID)),
-                    new AtomicInteger(2));
+                    new AtomicInteger(2),
+                    true);
         }
 
 
@@ -137,7 +142,8 @@ public class WsCallerTest {
                     "" +"",
                     Stopwatch.createUnstarted(),
                     OffsetDateTime.now(ZoneId.of(WsCaller.UTC_ZONE_ID)),
-                    new AtomicInteger(2));
+                    new AtomicInteger(2),
+                    true);
         }
     }
 

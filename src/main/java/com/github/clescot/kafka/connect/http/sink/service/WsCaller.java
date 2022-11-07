@@ -7,7 +7,6 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import dev.failsafe.Failsafe;
 import dev.failsafe.RetryPolicy;
-import org.apache.kafka.connect.data.Struct;
 import org.apache.kafka.connect.header.Header;
 import org.apache.kafka.connect.header.Headers;
 import org.apache.kafka.connect.sink.SinkRecord;
@@ -67,6 +66,8 @@ public class WsCaller {
     private static final String UNKNOWN_URI = "UNKNOWN_URI";
     private static final String UNKNOWN_METHOD = "UNKNOWN_METHOD";
     public static final String UTC_ZONE_ID = "UTC";
+    public static final boolean FAILURE = false;
+    public static final boolean SUCCESS = true;
 
 
     private AsyncHttpClient asyncHttpClient;
@@ -164,7 +165,9 @@ public class WsCaller {
                     BLANK_RESPONSE_CONTENT,
                     SERVER_ERROR_STATUS_CODE,
                     String.valueOf(e.getMessage()),
-                    Stopwatch.createUnstarted(), OffsetDateTime.now(ZoneId.of(UTC_ZONE_ID)), attempts);
+                    Stopwatch.createUnstarted(), OffsetDateTime.now(ZoneId.of(UTC_ZONE_ID)),
+                    attempts,
+                    FAILURE);
         }
         return acknowledgement;
     }
@@ -204,12 +207,19 @@ public class WsCaller {
 
     }
 
-    private Acknowledgement getAcknowledgement(String requestId, Map<String, String> wsProperties, Request request, Response response, Stopwatch stopwatch, OffsetDateTime now, AtomicInteger attempts) {
+    private Acknowledgement getAcknowledgement(String requestId,
+                                               Map<String,
+                                               String> wsProperties,
+                                               Request request,
+                                               Response response,
+                                               Stopwatch stopwatch,
+                                               OffsetDateTime now,
+                                               AtomicInteger attempts) {
         Preconditions.checkNotNull(request,"request cannot  be null");
         Preconditions.checkNotNull(response,"response cannot  be null");
         String correlationId;
 
-        int responseStatusCode = handleRetriesBasedOnStatusCode(wsProperties, response);
+        int responseStatusCode = getSuccessfulStatusCodeOrThrowRetryException(wsProperties, response);
         correlationId = wsProperties.get(HEADER_X_CORRELATION_ID);
         List<Map.Entry<String, String>> requestEntries = request.getHeaders()!=null?request.getHeaders().entries():Lists.newArrayList();
         Map<String, String> requestHeaders = requestEntries.stream().collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
@@ -228,11 +238,12 @@ public class WsCaller {
                 response.getStatusText(),
                 stopwatch,
                 now,
-                attempts
+                attempts,
+                SUCCESS
         );
     }
 
-    private int handleRetriesBasedOnStatusCode(Map<String, String> wsProperties, Response response) {
+    private int getSuccessfulStatusCodeOrThrowRetryException(Map<String, String> wsProperties, Response response) {
         int responseStatusCode = response.getStatusCode();
         //by default, we don't resend any http call with a response between 100 and 499
         // 1xx is for protocol information (100 continue for example),
@@ -402,7 +413,8 @@ public class WsCaller {
                                                  String responseStatusMessage,
                                                  Stopwatch stopwatch,
                                                  OffsetDateTime now,
-                                                 AtomicInteger attempts) {
+                                                 AtomicInteger attempts,
+                                                 boolean success) {
         Preconditions.checkNotNull(correlationId,"'correlationId' is null");
         Preconditions.checkNotNull(requestId,"'requestId' is null");
         Preconditions.checkNotNull(requestUri,"'requestUri' is null");
@@ -433,6 +445,7 @@ public class WsCaller {
                 //at which moment occurs the beginning of the http call
                 .at(now)
                 .withAttempts(attempts)
+                .withSuccess(success)
                 .build();
     }
 
