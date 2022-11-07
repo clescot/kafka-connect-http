@@ -111,8 +111,7 @@ public class WsCaller {
      */
     public Acknowledgement call(SinkRecord sinkRecord) {
 
-        String body
-                = sinkRecord.value().toString();
+        String body = sinkRecord.value().toString();
         Headers headerKafka = sinkRecord.headers();
 
         //properties which was 'ws-key' in headerKafka and are now 'key' : 'ws-' prefix is removed
@@ -149,7 +148,6 @@ public class WsCaller {
         try {
             acknowledgement = Failsafe.with(List.of(retryPolicy))
                     .get(() -> {
-
                 attempts.addAndGet(1);
                 return callOnceWs(requestId,wsProperties, body,attempts);
             });
@@ -189,6 +187,7 @@ public class WsCaller {
         try {
             OffsetDateTime now = OffsetDateTime.now(ZoneId.of(UTC_ZONE_ID));
             ListenableFuture<Response> responseListenableFuture = asyncHttpClient.executeRequest(request, asyncCompletionHandler);
+            //we cannot use the asynchronous nature of the response yet
             Response response = responseListenableFuture.get();
             stopwatch.stop();
             LOGGER.info("duration: {}",stopwatch);
@@ -261,7 +260,7 @@ public class WsCaller {
         *  * a technical error occurs from the WS server : the status code returned from the ws server does not match the regexp AND is equals or higher than 500 : retries are done
         */
         if(!matcher.matches()&&responseStatusCode>=500){
-            throw new RestClientException("response status code:"+responseStatusCode+" does not match regex "+ pattern.pattern());
+            throw new RestClientException("response status code:"+responseStatusCode+" does not match status code success regex "+ pattern.pattern());
         }
         return responseStatusCode;
     }
@@ -321,8 +320,6 @@ public class WsCaller {
         //proxy stuff
         String proxyHost = proxyHeaders.get(WS_PROXY_HOST);
         if(proxyHost!=null) {
-
-
             int proxyPort = Integer.parseInt(proxyHeaders.get(WS_PROXY_PORT));
             ProxyServer.Builder proxyBuilder = new ProxyServer.Builder(proxyHost, proxyPort);
 
