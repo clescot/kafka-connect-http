@@ -1,6 +1,6 @@
 package com.github.clescot.kafka.connect.http.sink;
 
-import com.github.clescot.kafka.connect.http.source.SourceConfigDefinition;
+import com.github.clescot.kafka.connect.http.source.WsSourceConnectorConfig;
 import com.google.common.base.Preconditions;
 import org.apache.kafka.common.config.ConfigDef;
 import org.apache.kafka.connect.connector.Task;
@@ -13,12 +13,12 @@ import java.util.Map;
 
 public class WsSinkConnector extends SinkConnector {
 
-    private Map<String, String> settings;
+    private WsSinkConnectorConfig wsSinkConnectorConfig;
 
     @Override
     public void start(Map<String, String> settings) {
         Preconditions.checkNotNull(settings);
-        this.settings = settings;
+        this.wsSinkConnectorConfig = new WsSinkConnectorConfig(config(),settings);
     }
 
     @Override
@@ -29,9 +29,8 @@ public class WsSinkConnector extends SinkConnector {
     @Override
     public List<Map<String, String>> taskConfigs(int taskCount) {
         List<Map<String, String>> configs = new ArrayList<>(taskCount);
-        Preconditions.checkNotNull(settings,"settings need to be initialized. call start() method before taskConfigs");
         for (int i = 0; i < taskCount; i++) {
-            configs.add(this.settings);
+            configs.add(this.wsSinkConnectorConfig.originalsStrings());
         }
         return configs;
     }
@@ -42,7 +41,7 @@ public class WsSinkConnector extends SinkConnector {
 
     @Override
     public ConfigDef config() {
-        return SourceConfigDefinition.config();
+        return SinkConfigDefinition.config();
     }
 
     @Override
