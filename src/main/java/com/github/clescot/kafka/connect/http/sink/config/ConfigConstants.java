@@ -12,19 +12,11 @@ public class ConfigConstants {
     public static final String TARGET_SCHEMA_REGISTRY = "connect.sink.target.schema.registry";
     public static final String TARGET_SCHEMA_REGISTRY_DOC = "Schema registry used for target kafka";
 
-    public static final String PRODUCER_CLIENT_ID= "connect.sink.producer.id";
-    public static final String PRODUCER_CLIENT_ID_DOC = "producer client id";
-
-    public static final String ACK_TOPIC = "connect.sink.ack.topic";
+    public static final String ACK_TOPIC = "ack.topic";
     public static final String ACK_TOPIC_DOC = "Topic to receive acknowledgment";
 
-    public static final String ACK_SCHEMA = "connect.sink.ack.schema";
+    public static final String ACK_SCHEMA = "ack.schema";
     public static final String ACK_SCHEMA_DOC = "Schema used to send acknowledgment";
-
-    public static final String VALUE_CONVERTER = "value.converter";
-
-    public static final String VALUE_CONVERTER_DOC = "converter used to convert between kafka connect internal format and byte[]. default is org.apache.kafka.connect.storage.StringConverter. it must implements org.apache.kafka.connect.storage.Converter interface";
-
 
 
 }

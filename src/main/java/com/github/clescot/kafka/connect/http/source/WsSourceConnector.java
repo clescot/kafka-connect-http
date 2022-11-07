@@ -18,8 +18,9 @@ public class WsSourceConnector extends SourceConnector {
 
     @Override
     public void start(Map<String, String> props) {
-        Preconditions.checkNotNull(settings);
-        this.settings = settings;
+        Preconditions.checkNotNull(props,"WsSourceConnector requires an 'ack.topic' setting");
+        Preconditions.checkArgument(!props.isEmpty(),"WsSourceConnector requires an 'ack.topic' setting");
+        this.settings = props;
     }
 
     @Override
