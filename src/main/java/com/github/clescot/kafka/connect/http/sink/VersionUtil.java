@@ -1,4 +1,4 @@
-package com.github.clescot.kafka.connect.http.sink.utils;
+package com.github.clescot.kafka.connect.http.sink;
 
 import com.google.common.base.Strings;
 

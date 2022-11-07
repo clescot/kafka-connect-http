@@ -1,4 +1,4 @@
-package com.github.clescot.kafka.connect.http.sink.config;
+package com.github.clescot.kafka.connect.http.sink.client;
 
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;

@@ -1,4 +1,4 @@
-package com.github.clescot.kafka.connect.http.sink.service;
+package com.github.clescot.kafka.connect.http.sink.client;
 
 /**
  * exception for handling retry policy, when a WS Server error occurs.
