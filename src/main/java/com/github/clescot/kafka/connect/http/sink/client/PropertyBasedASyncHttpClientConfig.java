@@ -33,7 +33,7 @@ import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.*;
 
 public class PropertyBasedASyncHttpClientConfig implements AsyncHttpClientConfig {
 
-    private Properties properties;
+    private final Properties properties;
     private final ConcurrentHashMap<String, String> propsCache = new ConcurrentHashMap<>();
     private ThreadFactory threadFactory;
     private ProxyServerSelector ProxyServerSelector;

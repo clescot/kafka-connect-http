@@ -28,7 +28,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.lang.reflect.InvocationTargetException;
-import java.util.*;
+import java.util.Collection;
+import java.util.Map;
+import java.util.Properties;
+import java.util.Queue;
 import java.util.stream.Collectors;
 
 import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.ASYNC_CLIENT_CONFIG_ROOT;
@@ -42,12 +45,9 @@ public class WsSinkTask extends SinkTask {
     public static final String KEEP_ALIVE_STRATEGY_CLASS = ASYN_HTTP_CONFIG_PREFIX + "keep.alive.class";
     public static final String RESPONSE_BODY_PART_FACTORY = ASYN_HTTP_CONFIG_PREFIX + "response.body.part.factory";
     private static final String CONNECTION_SEMAPHORE_FACTORY = ASYN_HTTP_CONFIG_PREFIX + "connection.semaphore.factory";
-    ;
-    private static final String EVENT_LOOP_GROUP = ASYN_HTTP_CONFIG_PREFIX + "event.loop.group";
     private static final String COOKIE_STORE = ASYN_HTTP_CONFIG_PREFIX + "cookie.store";
     private static final String NETTY_TIMER = ASYN_HTTP_CONFIG_PREFIX + "netty.timer";
     private static final String BYTE_BUFFER_ALLOCATOR = ASYN_HTTP_CONFIG_PREFIX + "byte.buffer.allocator";
-    public static final String EMPTY_STRING="";
     private WsCaller wsCaller;
     private final static Logger LOGGER = LoggerFactory.getLogger(WsSinkTask.class);
     private Queue<Acknowledgement> queue;
@@ -194,9 +194,6 @@ public class WsSinkTask extends SinkTask {
         //Producer are stopped in connector stop
     }
 
-    public WsCaller getWsCaller() {
-        return wsCaller;
-    }
     //for testing purpose
     protected void setWsCaller(WsCaller wsCaller){
         this.wsCaller = wsCaller;

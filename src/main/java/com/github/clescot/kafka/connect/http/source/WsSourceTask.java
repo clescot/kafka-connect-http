@@ -77,6 +77,7 @@ public class WsSourceTask extends SourceTask {
         struct.put(REQUEST_URI,acknowledgement.getRequestUri());
         struct.put(METHOD,acknowledgement.getMethod());
         struct.put(REQUEST_HEADERS,acknowledgement.getRequestHeaders());
+        struct.put(REQUEST_BODY,acknowledgement.getRequestBody());
         // response fields
         struct.put(STATUS_CODE,acknowledgement.getStatusCode());
         struct.put(STATUS_MESSAGE,acknowledgement.getStatusMessage());
