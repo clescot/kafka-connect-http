@@ -104,7 +104,7 @@ public class WsCaller {
      * 5- les paramètres propres à l'appel http, que sont l'url, la méthode HTTP, les headers http de l'appel (commencant par 'ws-headers-',
      * le timeout d'établisssement de la connexion
      *
-     * Le corps de la requête http (encodé en avro), est la valeur du message Kafka.
+     * Le corps de la requête http (encodé en avro ou non), est la valeur du message Kafka.
      * 6- les paramètres propres à la réponse, tel le timeout de lecture de la réponse, la regex de succès de la réponse,
      *
      * @param sinkRecord
