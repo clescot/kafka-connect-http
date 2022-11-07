@@ -12,9 +12,11 @@ import org.slf4j.LoggerFactory;
 import org.testcontainers.containers.KafkaContainer;
 import org.testcontainers.containers.Network;
 import org.testcontainers.containers.output.Slf4jLogConsumer;
+import org.testcontainers.containers.wait.strategy.Wait;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.lifecycle.Startables;
+import org.testcontainers.shaded.org.awaitility.Awaitility;
 import org.testcontainers.utility.DockerImageName;
 
 import java.io.*;
@@ -35,30 +37,58 @@ public class ITConnectorTest {
     private static Network network = Network.newNetwork();
     @Container
     public static KafkaContainer kafkaContainer = new KafkaContainer(DockerImageName.parse("confluentinc/cp-kafka:"+CONFLUENT_VERSION))
-            .withNetwork(network);
+            .withNetwork(network)
+//            .withLogConsumer(new Slf4jLogConsumer(LOGGER))
+            ;
     private static final SchemaRegistryContainer schemaRegistryContainer = new SchemaRegistryContainer()
             .withNetwork(network)
             .withKafka(kafkaContainer)
-            .withLogConsumer(new Slf4jLogConsumer(LOGGER))
+//            .withLogConsumer(new Slf4jLogConsumer(LOGGER))
             .dependsOn(kafkaContainer)
             .withStartupTimeout(Duration.ofSeconds(90));
 
-    public static DebeziumContainer connectContainer =new DebeziumContainer("debezium/connect:2.1")
-                    .withFileSystemBind("target/http-connector/kafka-connect-http-sink.jar", "/kafka/connect/http-connector/kafka-connect-http-sink.jar")
+    public static DebeziumContainer connectContainer =new DebeziumContainer("confluentinc/cp-kafka-connect:7.2.2")
+                    .withFileSystemBind("target/http-connector", "/usr/local/share/kafka/plugins")
+                    .withLogConsumer(new Slf4jLogConsumer(LOGGER))
                     .withNetwork(network)
-                    .withKafka(kafkaContainer)
-                    .dependsOn(kafkaContainer,schemaRegistryContainer);
+//                    .withKafka(kafkaContainer)
+                    .withEnv("CONNECT_BOOTSTRAP_SERVERS",kafkaContainer.getNetworkAliases().get(0) + ":9092")
+                    .withEnv("CONNECT_GROUP_ID","test")
+                    .withEnv("CONNECT_CONFIG_STORAGE_TOPIC","test_config")
+                    .withEnv("CONNECT_CONFIG_STORAGE_REPLICATION_FACTOR","1")
+                    .withEnv("CONNECT_OFFSET_STORAGE_TOPIC","test_offset")
+                    .withEnv("CONNECT_OFFSET_STORAGE_REPLICATION_FACTOR","1")
+                    .withEnv("CONNECT_STATUS_STORAGE_TOPIC","test_status")
+                    .withEnv("CONNECT_STATUS_STORAGE_REPLICATION_FACTOR","1")
+                    .withEnv("CONNECT_KEY_CONVERTER","org.apache.kafka.connect.storage.StringConverter")
+                    .withEnv("CONNECT_VALUE_CONVERTER","org.apache.kafka.connect.storage.StringConverter")
+                    .withEnv("CONNECT_REST_ADVERTISED_HOST_NAME","pop-os.localdomain")
+                    .withEnv("CONNECT_LOG4J_ROOT_LOGLEVEL","INFO")
+                    .withEnv("CONNECT_LOG4J_LOGGERS","" +
+                            "org.apache.kafka.connect=ERROR," +
+                            "org.apache.kafka.connect.runtime.distributed=ERROR," +
+                            "org.apache.kafka.connect.runtime.isolation=DEBUG," +
+                            "org.apache.kafka.clients=ERROR")
+                    .withEnv("CONNECT_PLUGIN_PATH","/usr/share/java/,/usr/share/confluent-hub-components/,/usr/local/share/kafka/plugins")
+//                    .withEnv("CONNECT_LOG4J_ROOT_LOGLEVEL","INFO")
+//                    .withEnv("CONNECT_LOG4J_LOGGERS","org.apache.kafka.connect=DEBUG")
+//                    .withEnv("GROUP_ID", "1")
+//                    .withEnv("CONFIG_STORAGE_TOPIC", "debezium_connect_config")
+//                    .withEnv("OFFSET_STORAGE_TOPIC", "debezium_connect_offsets")
+//                    .withEnv("STATUS_STORAGE_TOPIC", "debezium_connect_status")
+//                    .withEnv("CONNECT_KEY_CONVERTER_SCHEMAS_ENABLE", "false")
+//                    .withEnv("CONNECT_VALUE_CONVERTER_SCHEMAS_ENABLE", "false")
+                    .withExposedPorts(8083)
+                    .dependsOn(kafkaContainer,schemaRegistryContainer)
+                    .waitingFor(Wait.forHttp("/connector-plugins/"));
 
 
     @BeforeAll
     public static void startContainers() throws IOException {
 //        createConnectorJar("target/kafka-connect-http-sink-for-it.jar");
         Startables.deepStart(Stream.of(
-                        kafkaContainer,schemaRegistryContainer, connectContainer))
+                        kafkaContainer,schemaRegistryContainer,connectContainer))
                 .join();
-        kafkaContainer.followOutput(logConsumer);
-        schemaRegistryContainer.followOutput(logConsumer);
-        connectContainer.followOutput(logConsumer);
     }
 
     @Test
@@ -66,9 +96,9 @@ public class ITConnectorTest {
         ConnectorConfiguration connector = ConnectorConfiguration.create()
                 .with("connector.class", "com.github.clescot.kafka.connect.http.sink.WsSinkConnector")
                 .with("tasks.max", "2")
+                .with("topics", "test,toto")
                 .with("key.converter", "org.apache.kafka.connect.storage.StringConverter")
                 .with("value.converter", "org.apache.kafka.connect.storage.StringConverter");
-
 
         connectContainer.registerConnector("http-connector", connector);
         connectContainer.ensureConnectorTaskState("http-connector", 0, Connector.State.RUNNING);
