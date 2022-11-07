@@ -3,6 +3,9 @@ package com.github.clescot.kafka.connect.http.sink.service;
 import com.github.clescot.kafka.connect.http.sink.config.AckConfig;
 import com.github.clescot.kafka.connect.http.sink.model.Acknowledgement;
 import com.google.common.base.Preconditions;
+import io.confluent.connect.json.JsonSchemaConverter;
+import io.confluent.kafka.schemaregistry.client.CachedSchemaRegistryClient;
+import io.confluent.kafka.schemaregistry.client.SchemaRegistryClient;
 import org.apache.commons.compress.utils.Lists;
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.ProducerRecord;
@@ -62,17 +65,17 @@ public class AckSender {
         Preconditions.checkNotNull(ack,"ack must not be null");
         byte[] bytesValue = convertValue(ack);
         ProducerRecord<String, byte[]> producerRecord = new ProducerRecord<>(this.ackTopic, ack.getCorrelationId(), bytesValue);
-        RecordMetadata send;
+        RecordMetadata recordMetadata;
         try {
-            send = this.producer.send(producerRecord).get();
+            recordMetadata = this.producer.send(producerRecord).get();
         } catch (InterruptedException | ExecutionException e) {
             throw new RuntimeException(e);
         }
         LOGGER.info("Successful message sending to topic : {} -> acknownledgment : {}, ", this.ackTopic,ack.toString());
-        return send;
+        return recordMetadata;
     }
 
-    protected byte[] convertValue(Acknowledgement ack) {
+    protected Struct buildStruct(Acknowledgement ack) {
         Preconditions.checkNotNull(ack,"acknowledgement is null");
         Struct value = new Struct(this.ackSchema);
 
@@ -124,7 +127,12 @@ public class AckSender {
         Preconditions.checkNotNull(ack.getAttempts(),"acknowledgement 'attempts' is null");
         value.put("attempts", ack.getAttempts().intValue());
         value.validate();
-        return this.valueConverter.fromConnectData(this.ackTopic, this.ackSchema, value);
+        return value;
+    }
+
+    protected byte[] convertValue(Acknowledgement acknowledgement){
+        Struct struct = buildStruct(acknowledgement);
+        return this.valueConverter.fromConnectData(this.ackTopic, this.ackSchema, struct);
     }
 
     public void close() {
