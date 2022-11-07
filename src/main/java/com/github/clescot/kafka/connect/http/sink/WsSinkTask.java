@@ -54,6 +54,7 @@ public class WsSinkTask extends SinkTask {
     private WsCaller wsCaller;
     private final static Logger LOGGER = LoggerFactory.getLogger(WsSinkTask.class);
     private Queue<Acknowledgement> queue;
+    private String queueName;
 
     private static AsyncHttpClient asyncHttpClient;
     private Map<String,String> staticRequestHeaders;
@@ -78,7 +79,7 @@ public class WsSinkTask extends SinkTask {
         Preconditions.checkNotNull(settings, "settings cannot be null");
         this.wsSinkConnectorConfig = new WsSinkConnectorConfig(WsSinkConfigDefinition.config(),settings);
         this.wsCaller = new WsCaller(getAsyncHttpClient(wsSinkConnectorConfig.originalsStrings()));
-        String queueName = wsSinkConnectorConfig.getQueueName();
+        this.queueName = wsSinkConnectorConfig.getQueueName();
         this.queue = QueueFactory.getQueue(queueName);
         this.staticRequestHeaders = wsSinkConnectorConfig.getStaticRequestHeaders();
 
@@ -170,6 +171,7 @@ public class WsSinkTask extends SinkTask {
     public void put(Collection<SinkRecord> records) {
         Preconditions.checkNotNull(records, "records collection to be processed is null");
         Preconditions.checkNotNull(wsCaller, "wsCaller is null. 'start' method must be called once before put");
+        Preconditions.checkArgument(QueueFactory.hasAConsumer(queueName),queueName+" has'nt got any consumer, i.e no Source Connector has been configured to consume records published in this in memory queue. we stop the Sink Connector to prevent any OutofMemoryError.");
         records.stream()
                 .map(this::addStaticHeaders)
                 .map(wsCaller::call)
