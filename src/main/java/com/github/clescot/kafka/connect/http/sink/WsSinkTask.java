@@ -99,7 +99,7 @@ public class WsSinkTask extends SinkTask {
         Converter valueAvroConverter = new AvroConverter();
         valueAvroConverter.configure(ImmutableMap.of(KafkaAvroDeserializerConfig.SCHEMA_REGISTRY_URL_CONFIG, config.getTargetSchemaRegistry()), false);
         KafkaFailSafeProducer kafkaProducer = new KafkaFailSafeProducer(()-> new KafkaProducer(props),Integer.parseInt(taskConfig.getOrDefault(ACK_RETRIES, DEFAULT_RETRIES)));
-        this.ackSender = AckSender.getInstance(config, kafkaProducer, keyAvroConverter, valueAvroConverter);
+        this.ackSender = AckSender.getInstance(config, kafkaProducer, valueAvroConverter);
 
         this.wsCaller = new WsCaller(getAsyncHttpClient(taskConfig));
     }

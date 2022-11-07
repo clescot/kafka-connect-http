@@ -168,7 +168,7 @@ public class WsSinkConnectorTest {
             keyAvroConverter.configure(ImmutableMap.of(KafkaAvroDeserializerConfig.SCHEMA_REGISTRY_URL_CONFIG, "http://localhost:8081"), true);
             AvroConverter valueAvroConverter = new AvroConverter();
             valueAvroConverter.configure(ImmutableMap.of(KafkaAvroDeserializerConfig.SCHEMA_REGISTRY_URL_CONFIG, "http://localhost:8081"), false);
-            AckSender.getInstance(new AckConfig(settings),producer,keyAvroConverter,valueAvroConverter);
+            AckSender.getInstance(new AckConfig(settings),producer,valueAvroConverter);
             AckSender currentInstance = AckSender.getCurrentInstance();
             assertThat(currentInstance).isNotNull();
             wsSinkConnector.stop();

@@ -24,9 +24,9 @@ public class AckSender {
     public static final String HTTP_HEADER_KEY_VALUE_SEPARATOR = ":";
     private static AckSender instance;
     private final static Logger LOGGER = LoggerFactory.getLogger(AckSender.class);
-    public static synchronized AckSender getInstance(AckConfig config, KafkaFailSafeProducer<String, byte[]> producer, Converter keyConverter, Converter valueConverter) {
+    public static synchronized AckSender getInstance(AckConfig config, KafkaFailSafeProducer<String, byte[]> producer,  Converter valueConverter) {
         if (instance == null) {
-            instance = new AckSender(config, producer, keyConverter,valueConverter);
+            instance = new AckSender(config, producer, valueConverter);
         }
         return instance;
     }
@@ -45,15 +45,13 @@ public class AckSender {
 
     private KafkaFailSafeProducer<String, byte[]> producer;
     private Converter valueConverter;
-    private Converter keyConverter;
     private String ackTopic;
     private Schema ackSchema;
 
 
-    private AckSender(AckConfig config, KafkaFailSafeProducer<String, byte[]> producer, Converter keyConverter, Converter valueConverter) {
+    private AckSender(AckConfig config, KafkaFailSafeProducer<String, byte[]> producer,  Converter valueConverter) {
 
         this.producer = producer;
-        this.keyConverter = keyConverter;
         this.valueConverter = valueConverter;
         LOGGER.info("multiplicator kafka producer is created");
         this.ackTopic = config.getAckTopic();
@@ -137,10 +135,6 @@ public class AckSender {
 
     public void setValueConverter(Converter valueConverter) {
         this.valueConverter = valueConverter;
-    }
-
-    public void setKeyConverter(Converter keyConverter) {
-        this.keyConverter = keyConverter;
     }
 
     //for mock
