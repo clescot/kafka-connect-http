@@ -1,13 +1,9 @@
-package com.github.clescot.kafka.connect.http.sink.service;
+package com.github.clescot.kafka.connect.http.sink.client;
 
 
 import com.github.clescot.kafka.connect.http.source.Acknowledgement;
 import com.google.common.base.Stopwatch;
-import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
-import org.apache.kafka.connect.header.ConnectHeaders;
-import org.apache.kafka.connect.header.Header;
-import org.apache.kafka.connect.header.Headers;
 import org.asynchttpclient.AsyncHttpClient;
 import org.asynchttpclient.ListenableFuture;
 import org.asynchttpclient.Request;
@@ -21,11 +17,10 @@ import org.junit.runner.RunWith;
 import java.time.OffsetDateTime;
 import java.time.ZoneId;
 import java.util.HashMap;
-import java.util.Map;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static com.github.clescot.kafka.connect.http.sink.service.WsCaller.*;
+import static com.github.clescot.kafka.connect.http.sink.client.WsCaller.*;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.asynchttpclient.util.HttpConstants.Methods.PUT;
 import static org.mockito.ArgumentMatchers.any;

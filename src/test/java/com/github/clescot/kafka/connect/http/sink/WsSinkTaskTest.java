@@ -1,6 +1,6 @@
 package com.github.clescot.kafka.connect.http.sink;
 
-import com.github.clescot.kafka.connect.http.sink.service.WsCaller;
+import com.github.clescot.kafka.connect.http.sink.client.WsCaller;
 import com.github.clescot.kafka.connect.http.source.Acknowledgement;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;

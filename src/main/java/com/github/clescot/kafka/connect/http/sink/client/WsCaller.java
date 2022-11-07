@@ -1,4 +1,4 @@
-package com.github.clescot.kafka.connect.http.sink.service;
+package com.github.clescot.kafka.connect.http.sink.client;
 
 import com.github.clescot.kafka.connect.http.source.Acknowledgement;
 import com.google.common.base.Preconditions;
