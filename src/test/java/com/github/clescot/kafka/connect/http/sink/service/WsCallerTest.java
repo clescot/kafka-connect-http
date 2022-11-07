@@ -46,13 +46,11 @@ public class WsCallerTest {
 
         @Test(expected = NullPointerException.class)
         public void test_all_null(){
-            HashMap<String, String> vars = Maps.newHashMap();
             WsCaller wsCaller = new WsCaller( asyncHttpClient);
             wsCaller.setAcknowledgement(null,null,null,Lists.newArrayList(),null,null,Lists.newArrayList(),null,-1,null, Stopwatch.createUnstarted(), OffsetDateTime.now(ZoneId.of(WsCaller.UTC_ZONE_ID)), new AtomicInteger(2));
         }
         @Test(expected = NullPointerException.class)
         public void test_content_is_null(){
-            HashMap<String, String> vars = Maps.newHashMap();
             WsCaller wsCaller = new WsCaller(asyncHttpClient);
             wsCaller.setAcknowledgement(null,null,null,Lists.newArrayList(),null,null,Lists.newArrayList(),null,200,null, Stopwatch.createUnstarted(), OffsetDateTime.now(ZoneId.of(WsCaller.UTC_ZONE_ID)), new AtomicInteger(2));
         }
@@ -99,7 +97,6 @@ public class WsCallerTest {
             when(listenerObject.get()).thenReturn(response);
             when(asyncHttpClient.executeRequest(any(Request.class))).thenReturn(listener);
             when(asyncHttpClient.executeRequest(any(Request.class),any())).thenReturn(listenerObject);
-            HashMap<String, String> vars = Maps.newHashMap();
             WsCaller wsCaller = new WsCaller( asyncHttpClient);
             HashMap<String, String> wsProperties = Maps.newHashMap();
             wsProperties.put("url","http://localhost:8089");

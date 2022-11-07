@@ -1,9 +1,8 @@
 package com.github.clescot.kafka.connect.http.sink.service;
 
-import com.github.clescot.kafka.connect.http.sink.model.Acknowledgement;
 import com.github.clescot.kafka.connect.http.sink.config.AckConfig;
+import com.github.clescot.kafka.connect.http.sink.model.Acknowledgement;
 import com.google.common.base.Preconditions;
-import io.confluent.connect.avro.AvroConverter;
 import org.apache.commons.compress.utils.Lists;
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.ProducerRecord;
@@ -25,9 +24,9 @@ public class AckSender {
     public static final String HTTP_HEADER_KEY_VALUE_SEPARATOR = ":";
     private static AckSender instance;
     private final static Logger LOGGER = LoggerFactory.getLogger(AckSender.class);
-    public static synchronized AckSender getInstance(AckConfig config, KafkaFailSafeProducer<String, byte[]> producer, AvroConverter keyAvroConverter, AvroConverter valueAvroConverter) {
+    public static synchronized AckSender getInstance(AckConfig config, KafkaFailSafeProducer<String, byte[]> producer, Converter keyConverter, Converter valueConverter) {
         if (instance == null) {
-            instance = new AckSender(config, producer, keyAvroConverter,valueAvroConverter);
+            instance = new AckSender(config, producer, keyConverter,valueConverter);
         }
         return instance;
     }
@@ -136,11 +135,11 @@ public class AckSender {
         producer.close();
     }
 
-    public void setValueConverter(AvroConverter valueConverter) {
+    public void setValueConverter(Converter valueConverter) {
         this.valueConverter = valueConverter;
     }
 
-    public void setKeyConverter(AvroConverter keyConverter) {
+    public void setKeyConverter(Converter keyConverter) {
         this.keyConverter = keyConverter;
     }
 
