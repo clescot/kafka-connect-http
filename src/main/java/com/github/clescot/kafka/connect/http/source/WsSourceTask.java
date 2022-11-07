@@ -1,6 +1,7 @@
 package com.github.clescot.kafka.connect.http.source;
 
 import com.github.clescot.kafka.connect.http.QueueFactory;
+import com.github.clescot.kafka.connect.http.sink.WsSinkTask;
 import com.github.clescot.kafka.connect.http.sink.utils.VersionUtil;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
@@ -10,6 +11,8 @@ import org.apache.kafka.connect.data.SchemaBuilder;
 import org.apache.kafka.connect.data.Struct;
 import org.apache.kafka.connect.source.SourceRecord;
 import org.apache.kafka.connect.source.SourceTask;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.time.format.DateTimeFormatter;
 import java.util.List;
@@ -33,7 +36,7 @@ public class WsSourceTask extends SourceTask {
     public static final String RESPONSE_BODY = "responseBody";
     private static Queue<Acknowledgement> queue;
     private AckConfig ackConfig;
-
+    private final static Logger LOGGER = LoggerFactory.getLogger(WsSourceTask.class);
     @Override
     public String version() {
         return VersionUtil.version(this.getClass());
@@ -47,10 +50,12 @@ public class WsSourceTask extends SourceTask {
     }
 
     @Override
-    public List<SourceRecord> poll() throws InterruptedException {
+    public List<SourceRecord> poll() {
         List<SourceRecord> records = Lists.newArrayList();
         while (queue.peek() != null) {
-            records.add(toSourceRecord(queue.poll()));
+            SourceRecord sourceRecord = toSourceRecord(queue.poll());
+            LOGGER.debug("send ack with source record :{}",sourceRecord);
+            records.add(sourceRecord);
         }
 
         return records;

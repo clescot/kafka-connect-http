@@ -159,7 +159,10 @@ public class WsSinkTask extends SinkTask {
     public void put(Collection<SinkRecord> records) {
         Preconditions.checkNotNull(records, "records collection to be processed is null");
         Preconditions.checkNotNull(wsCaller, "wsCaller is null. 'start' method must be called once before put");
-        records.stream().map(wsCaller::call).forEach(ack -> queue.offer(ack));
+        records.stream()
+                .map(wsCaller::call)
+                .peek(ack->LOGGER.debug("get ack :{}",ack))
+                .forEach(ack -> queue.offer(ack));
     }
 
 
