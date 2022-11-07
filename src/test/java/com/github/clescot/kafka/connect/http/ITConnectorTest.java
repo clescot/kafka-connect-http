@@ -6,8 +6,11 @@ import com.github.tomakehurst.wiremock.junit5.WireMockRuntimeInfo;
 import com.github.tomakehurst.wiremock.junit5.WireMockTest;
 import com.google.common.base.Joiner;
 import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
+import io.confluent.kafka.schemaregistry.avro.AvroSchemaProvider;
 import io.confluent.kafka.schemaregistry.client.CachedSchemaRegistryClient;
 import io.confluent.kafka.schemaregistry.client.SchemaRegistryClient;
+import io.confluent.kafka.schemaregistry.json.JsonSchemaProvider;
 import io.confluent.kafka.serializers.json.KafkaJsonSchemaDeserializer;
 import io.debezium.testing.testcontainers.Connector;
 import io.debezium.testing.testcontainers.ConnectorConfiguration;
@@ -185,14 +188,14 @@ public class ITConnectorTest {
         producer.flush();
 
         //verify http responses
-        KafkaConsumer<String, String> consumer = getConsumer(kafkaContainer,externalSchemaRegistryUrl);
+        KafkaConsumer<String,? extends Object> consumer = getConsumer(kafkaContainer,externalSchemaRegistryUrl);
 
         consumer.subscribe(Lists.newArrayList(successTopic,errorsTopic));
-        List<ConsumerRecord<String, String>> consumerRecords = drain(consumer, 1);
+        List<ConsumerRecord<String, ? extends Object>> consumerRecords = drain(consumer, 1);
         assertThat(consumerRecords).hasSize(1);
-        ConsumerRecord<String, String> consumerRecord = consumerRecords.get(0);
+        ConsumerRecord<String, ? extends Object> consumerRecord = consumerRecords.get(0);
         assertThat(consumerRecord.key()).isNull();
-        assertThat(consumerRecord.value()).isEqualTo("");
+        assertThat(consumerRecord.value().toString()).isEqualTo("");
         assertThat(consumerRecord.headers().toArray()).hasSize(1);
 //        await().atMost(Duration.ofSeconds(1000)).until(() -> Boolean.TRUE.equals(Boolean.FALSE));
     }
@@ -210,11 +213,11 @@ public class ITConnectorTest {
                 new StringSerializer());
     }
 
-    private KafkaConsumer<String, String> getConsumer(
+    private KafkaConsumer<String, ? extends Object> getConsumer(
             KafkaContainer kafkaContainer,
             String schemaRegistryUrl) {
 
-        SchemaRegistryClient schemaRegistryClient = new CachedSchemaRegistryClient(schemaRegistryUrl, CACHE_CAPACITY);
+        SchemaRegistryClient schemaRegistryClient = new CachedSchemaRegistryClient(schemaRegistryUrl, CACHE_CAPACITY,Lists.newArrayList(new JsonSchemaProvider(),new AvroSchemaProvider()), Maps.newHashMap());
         Deserializer<String> jsonSchemaDeserializer = new KafkaJsonSchemaDeserializer<>(schemaRegistryClient);
 
 
@@ -230,11 +233,11 @@ public class ITConnectorTest {
                 jsonSchemaDeserializer);
     }
 
-    private List<ConsumerRecord<String, String>> drain(
-            KafkaConsumer<String, String> consumer,
+    private List<ConsumerRecord<String, ? extends Object>> drain(
+            KafkaConsumer<String, ? extends Object> consumer,
             int expectedRecordCount) {
 
-        List<ConsumerRecord<String, String>> allRecords = new ArrayList<>();
+        List<ConsumerRecord<String, ? extends Object>> allRecords = new ArrayList<>();
 
         Unreliables.retryUntilTrue(10, TimeUnit.SECONDS, () -> {
             consumer.poll(Duration.ofMillis(50))
