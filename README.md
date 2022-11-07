@@ -82,12 +82,14 @@ every Kafka Connect Sink Connector need to define these required parameters :
 - *topics* (or *topics.regex*): `http-requests` for example
 
 #### optional Kafka Connect parameters
+
 - *tasks.max*  (default to `1`)
 - *key.converter*
 - *value.converter*
 - ....
 
 #### optional HTTP Sink connector parameters
+
 - *publish.to.in.memory.queue* : `false` by default. When set to `true`, publish HTTP interactions (request and responses)
  are published into the in memory queue. 
 - *queue.name* : if not set, `default` queue name is used, if the `publish.to.in.memory.queue` is set to `true`. 
@@ -107,4 +109,9 @@ via the `publish.to.in.memory.queue` set to `true`.
 
 #### required HTTP Source connector parameters
 
+- *success.topic* : Topic to receive successful http request/responses, for example, http-success
+- *errors.topic* : Topic to receive errors from http request/responses, for example, http-errors
 
+#### optional HTTP Source connector parameters
+
+- *queue.name* : if not set, listen on the 'default' queue.
