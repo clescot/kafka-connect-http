@@ -2,6 +2,7 @@ package com.github.clescot.kafka.connect.http.sink.config;
 
 import com.github.clescot.kafka.connect.http.source.AckConfig;
 import com.google.common.collect.Maps;
+import org.apache.kafka.common.config.ConfigException;
 import org.junit.Test;
 
 import java.util.HashMap;
