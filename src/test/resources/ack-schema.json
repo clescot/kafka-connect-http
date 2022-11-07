@@ -7,7 +7,7 @@
       "type": "string"
     },
     {
-      "name": "wsId",
+      "name": "requestId",
       "type": "string"
     },
     {

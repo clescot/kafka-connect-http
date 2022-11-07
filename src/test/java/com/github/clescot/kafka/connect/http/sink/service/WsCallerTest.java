@@ -26,6 +26,8 @@ import java.util.Map;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import static com.github.clescot.kafka.connect.http.sink.service.WsCaller.HEADER_X_CORRELATION_ID;
+import static com.github.clescot.kafka.connect.http.sink.service.WsCaller.HEADER_X_REQUEST_ID;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.asynchttpclient.util.HttpConstants.Methods.PUT;
 import static org.mockito.ArgumentMatchers.any;
@@ -72,7 +74,7 @@ public class WsCallerTest {
         public void test_nominal_case(){
             HashMap<String, String> vars = Maps.newHashMap();
             WsCaller wsCaller = new WsCaller( asyncHttpClient);
-            wsCaller.setAcknowledgement("fsqdfsdf","wsId","requestUri",Lists.newArrayList(),"PUT","",Lists.newArrayList(),"",200,"", Stopwatch.createUnstarted(), OffsetDateTime.now(ZoneId.of(WsCaller.UTC_ZONE_ID)), new AtomicInteger(2));
+            wsCaller.setAcknowledgement("fsqdfsdf","requestId","requestUri",Lists.newArrayList(),"PUT","",Lists.newArrayList(),"",200,"", Stopwatch.createUnstarted(), OffsetDateTime.now(ZoneId.of(WsCaller.UTC_ZONE_ID)), new AtomicInteger(2));
         }
     }
 
@@ -102,7 +104,9 @@ public class WsCallerTest {
             wsProperties.put("url","http://localhost:8089");
             wsProperties.put("method","PUT");
             wsProperties.put("correlation-id","sgsmr,sdfgsjjmsldf");
-            Acknowledgement acknowledgement = wsCaller.callOnceWs("wsId", wsProperties,"body", new AtomicInteger(2));
+            wsProperties.put(HEADER_X_CORRELATION_ID,"sdfd-7899-8921");
+            wsProperties.put(HEADER_X_REQUEST_ID,"sdfd-dfdf-8921");
+            Acknowledgement acknowledgement = wsCaller.callOnceWs("requestId", wsProperties,"body", new AtomicInteger(2));
             assertThat(acknowledgement).isNotNull();
         }
 
@@ -129,7 +133,9 @@ public class WsCallerTest {
             wsProperties.put("method","PUT");
             wsProperties.put("correlation-id","sgsmr,sdfgsjjmsldf");
             wsProperties.put("success-code","^\\d+$");
-            Acknowledgement acknowledgement = wsCaller.callOnceWs("wsId", wsProperties,"body", new AtomicInteger(2));
+            wsProperties.put(HEADER_X_CORRELATION_ID,"sdfd-7899-8921");
+            wsProperties.put(HEADER_X_REQUEST_ID,"sdfd-dfdf-8921");
+            Acknowledgement acknowledgement = wsCaller.callOnceWs("requestId", wsProperties,"body", new AtomicInteger(2));
             assertThat(acknowledgement).isNotNull();
         }
 
@@ -154,7 +160,9 @@ public class WsCallerTest {
             wsProperties.put("method","PUT");
             wsProperties.put("correlation-id","sgsmr,sdfgsjjmsldf");
             wsProperties.put("success-code","^[1-4][0-9][0-9]$");
-            Acknowledgement acknowledgement = wsCaller.callOnceWs("wsId", wsProperties,"body", new AtomicInteger(2));
+            wsProperties.put(HEADER_X_CORRELATION_ID,"sdfd-7899-8921");
+            wsProperties.put(HEADER_X_REQUEST_ID,"sdfd-dfdf-8921");
+            Acknowledgement acknowledgement = wsCaller.callOnceWs("requestId", wsProperties,"body", new AtomicInteger(2));
             assertThat(acknowledgement).isNotNull();
         }
 
@@ -182,7 +190,9 @@ public class WsCallerTest {
             wsProperties.put("method","PUT");
             wsProperties.put("correlation-id","sgsmr,sdfgsjjmsldf");
             wsProperties.put("success-code","^[1-4][0-9][0-9]$");
-            Acknowledgement acknowledgement = wsCaller.callOnceWs("wsId", wsProperties,"body", new AtomicInteger(2));
+            wsProperties.put(HEADER_X_CORRELATION_ID,"sdfd-7899-8921");
+            wsProperties.put(HEADER_X_REQUEST_ID,"sdfd-dfdf-8921");
+            Acknowledgement acknowledgement = wsCaller.callOnceWs("requestId", wsProperties,"body", new AtomicInteger(2));
             assertThat(acknowledgement).isNotNull();
         }
 

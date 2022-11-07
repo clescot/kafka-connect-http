@@ -24,6 +24,7 @@ import java.time.ZoneId;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.UUID;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -76,9 +77,9 @@ public class WsCaller {
     public static final String WS_READ_TIMEOUT_IN_MS = "read-timeout-in-ms";
     private static final String WS_REALM_PASS = "password";
     public static final String WS_METHOD = "method";
-    public static final String WS_CORRELATION_ID = "correlation-id";
+    public static final String HEADER_X_CORRELATION_ID = "header-X-Correlation-ID";
     public static final String WS_URL = "url";
-    public static final String WS_ID = "ws-ws-id";
+    public static final String HEADER_X_REQUEST_ID = "header-X-Request-ID";
     public static final String WS_RETRIES = "retries";
     public static final String WS_RETRY_DELAY_IN_MS = "retry-delay-in-ms";
     public static final String WS_RETRY_MAX_DELAY_IN_MS = "retry-max-delay-in-ms";
@@ -117,7 +118,14 @@ public class WsCaller {
 
         //properties which was 'ws-key' in headerKafka and are now 'key' : 'ws-' prefix is removed
         Map<String, String> wsProperties= extractWsProperties(headerKafka);
-        String wsId = Optional.ofNullable(wsProperties.get(WS_ID)).orElse(UNKNOWN_WS_ID);
+
+        //we generate a X-Correlation-ID header if not present
+        String correlationId = Optional.ofNullable(wsProperties.get(HEADER_X_CORRELATION_ID)).orElse(UUID.randomUUID().toString());
+        wsProperties.put(HEADER_X_CORRELATION_ID,correlationId);
+
+        //we generate a X-Request-ID header if not present
+        String requestId = Optional.ofNullable(wsProperties.get(HEADER_X_REQUEST_ID)).orElse(UUID.randomUUID().toString());
+        wsProperties.put(HEADER_X_REQUEST_ID,requestId);
 
         //define RetryPolicy
         int retries = Integer.parseInt(Optional.ofNullable(wsProperties.get(WS_RETRIES)).orElse("3"));
@@ -137,7 +145,6 @@ public class WsCaller {
             .build();
 
         Acknowledgement acknowledgement;
-        String correlationId = wsProperties.get(WS_CORRELATION_ID);
         Preconditions.checkNotNull(correlationId,"'correlationId' is required but null");
         AtomicInteger attempts = new AtomicInteger();
         try {
@@ -145,13 +152,13 @@ public class WsCaller {
                     .get(() -> {
                 String body = (String) value.get(BODY);
                 attempts.addAndGet(1);
-                return callOnceWs(wsId,wsProperties, body,attempts);
+                return callOnceWs(requestId,wsProperties, body,attempts);
             });
         } catch (RestClientException e) {
             LOGGER.error("Failed to call web service after {} retries with error {} ", retries, e.getMessage());
             return setAcknowledgement(
                     correlationId,
-                    wsId,
+                    requestId,
                     Optional.ofNullable(wsProperties.get(WS_URL)).orElse(UNKNOWN_URI),
                     Lists.newArrayList(),
                     Optional.ofNullable(wsProperties.get(WS_METHOD)).orElse(UNKNOWN_METHOD),
@@ -175,7 +182,7 @@ public class WsCaller {
         return map;
     }
 
-    protected Acknowledgement callOnceWs(String wsId, Map<String, String> wsProperties, String body, AtomicInteger attempts) throws RestClientException {
+    protected Acknowledgement callOnceWs(String requestId, Map<String, String> wsProperties, String body, AtomicInteger attempts) throws RestClientException {
         Request request = buildRequest(wsProperties, body);
         LOGGER.info("request: {}",request.toString());
         LOGGER.info("body: {}", request.getStringData()!=null?request.getStringData():"");
@@ -187,7 +194,7 @@ public class WsCaller {
             stopwatch.stop();
             LOGGER.info("duration: {}",stopwatch);
             LOGGER.info("response  : {}",response.toString());
-            return getAcknowledgement(wsId,wsProperties,request, response,stopwatch, now,attempts);
+            return getAcknowledgement(requestId,wsProperties,request, response,stopwatch, now,attempts);
         } catch (RestClientException | InterruptedException | ExecutionException e) {
             LOGGER.error("Failed to call web service {} ", e.getMessage());
             throw new RestClientException(e.getMessage());
@@ -199,18 +206,18 @@ public class WsCaller {
 
     }
 
-    private Acknowledgement getAcknowledgement(String wsId, Map<String, String> wsProperties, Request request, Response response, Stopwatch stopwatch, OffsetDateTime now, AtomicInteger attempts) {
+    private Acknowledgement getAcknowledgement(String requestId, Map<String, String> wsProperties, Request request, Response response, Stopwatch stopwatch, OffsetDateTime now, AtomicInteger attempts) {
         Preconditions.checkNotNull(request,"request cannot  be null");
         Preconditions.checkNotNull(response,"response cannot  be null");
         String correlationId;
 
         int responseStatusCode = handleRetriesBasedOnStatusCode(wsProperties, response);
-        correlationId = wsProperties.get(WS_CORRELATION_ID);
+        correlationId = wsProperties.get(HEADER_X_CORRELATION_ID);
         List<Map.Entry<String, String>> requestEntries = request.getHeaders()!=null?request.getHeaders().entries():Lists.newArrayList();
         List<Map.Entry<String, String>> responseEntries = response.getHeaders()!=null?response.getHeaders().entries():Lists.newArrayList();
         return setAcknowledgement(
                 correlationId,
-                wsId,
+                requestId,
                 request.getUri().toString(),
                 requestEntries!=null?requestEntries:Lists.newArrayList(),
                 request.getMethod(),
@@ -266,8 +273,8 @@ public class WsCaller {
         String method = wsProperties.get(WS_METHOD);
         Preconditions.checkNotNull(method,"'method' is required but null");
 
-        String correlationId = wsProperties.get(WS_CORRELATION_ID);
-        Preconditions.checkNotNull(correlationId,"'correlation-id' is required but null");
+        String correlationId = wsProperties.get(HEADER_X_CORRELATION_ID);
+        Preconditions.checkNotNull(correlationId,HEADER_X_CORRELATION_ID+" is required but null");
 
 
         //extract http headers
@@ -387,7 +394,7 @@ public class WsCaller {
 
 
     protected Acknowledgement setAcknowledgement(String correlationId,
-                                                 String wsId,
+                                                 String requestId,
                                                  String requestUri,
                                                  List<Map.Entry<String, String>> requestHeaders,
                                                  String method,
@@ -400,7 +407,7 @@ public class WsCaller {
                                                  OffsetDateTime now,
                                                  AtomicInteger attempts) {
         Preconditions.checkNotNull(correlationId,"'correlationId' is null");
-        Preconditions.checkNotNull(wsId,"'wsId' is null");
+        Preconditions.checkNotNull(requestId,"'requestId' is null");
         Preconditions.checkNotNull(requestUri,"'requestUri' is null");
         Preconditions.checkNotNull(requestHeaders,"'requestHeaders' is null");
         Preconditions.checkNotNull(method,"'method' is null");
@@ -410,8 +417,8 @@ public class WsCaller {
         Preconditions.checkState(responseStatusCode>0,"code is lower than 1");
         Preconditions.checkNotNull(responseStatusMessage,"responseStatusMessage is null");
         return Acknowledgement.AcknowledgementBuilder.anAcknowledgement()
-                //functional metadata
-                .withWsId(wsId)
+                //tracing headers
+                .withRequestId(requestId)
                 .withCorrelationId(correlationId)
                 //request
                 .withRequestUri(requestUri)
