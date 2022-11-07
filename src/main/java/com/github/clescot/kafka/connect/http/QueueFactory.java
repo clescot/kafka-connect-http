@@ -2,15 +2,15 @@ package com.github.clescot.kafka.connect.http;
 
 import com.github.clescot.kafka.connect.http.source.Acknowledgement;
 
-import java.util.concurrent.LinkedTransferQueue;
-import java.util.concurrent.TransferQueue;
+import java.util.Queue;
+import java.util.concurrent.ConcurrentLinkedQueue;
 
 public class QueueFactory {
-    private static TransferQueue<Acknowledgement> queue;
+    private static Queue<Acknowledgement> queue;
 
-    public static synchronized TransferQueue<Acknowledgement> getQueue(){
+    public static synchronized Queue<Acknowledgement> getQueue(){
         if(queue == null){
-            queue = new LinkedTransferQueue<>();
+            queue = new ConcurrentLinkedQueue<>();
         }
         return queue;
     }
