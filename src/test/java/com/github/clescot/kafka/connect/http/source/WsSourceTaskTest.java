@@ -10,6 +10,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.util.Map;
+import java.util.Queue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TransferQueue;
@@ -49,7 +50,7 @@ class WsSourceTaskTest {
     @Test
     void poll() throws InterruptedException {
         wsSourceTask.start(getNominalConfig());
-        TransferQueue<Acknowledgement> queue = QueueFactory.getQueue();
+        Queue<Acknowledgement> queue = QueueFactory.getQueue();
         ExecutorService exService = Executors.newFixedThreadPool(3);
         int numberOfMessagesToProduce = 50;
         QueueProducer queueProducer = new QueueProducer(QueueFactory.getQueue(), numberOfMessagesToProduce);

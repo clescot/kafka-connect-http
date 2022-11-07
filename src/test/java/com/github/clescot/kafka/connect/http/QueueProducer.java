@@ -3,18 +3,16 @@ package com.github.clescot.kafka.connect.http;
 import com.github.clescot.kafka.connect.http.source.Acknowledgement;
 import com.google.common.collect.Lists;
 
-import java.time.Duration;
 import java.time.OffsetDateTime;
 import java.time.ZoneId;
+import java.util.Queue;
 import java.util.UUID;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TransferQueue;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.github.clescot.kafka.connect.http.sink.service.WsCaller.UTC_ZONE_ID;
 
 public class QueueProducer implements Runnable {
-    private TransferQueue<Acknowledgement> transferQueue;
+    private Queue<Acknowledgement> transferQueue;
 
 
     private Integer numberOfMessagesToProduce;
@@ -22,7 +20,7 @@ public class QueueProducer implements Runnable {
     public AtomicInteger numberOfProducedMessages = new AtomicInteger();
 
 
-    public QueueProducer(TransferQueue<Acknowledgement> transferQueue,int numberOfMessagesToProduce) {
+    public QueueProducer(Queue<Acknowledgement> transferQueue, int numberOfMessagesToProduce) {
         this.transferQueue = transferQueue;
         this.numberOfMessagesToProduce = numberOfMessagesToProduce;
     }
@@ -30,12 +28,8 @@ public class QueueProducer implements Runnable {
     @Override
     public void run() {
         for (int i = 0; i < numberOfMessagesToProduce; i++) {
-            try {
-                transferQueue.transfer(getAcknowledgement());
-                numberOfProducedMessages.incrementAndGet();
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
+            transferQueue.offer(getAcknowledgement());
+            numberOfProducedMessages.incrementAndGet();
         }
     }
 
