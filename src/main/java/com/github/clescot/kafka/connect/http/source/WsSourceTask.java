@@ -16,7 +16,11 @@ import org.slf4j.LoggerFactory;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Queue;
+
+import static com.github.clescot.kafka.connect.http.QueueFactory.DEFAULT_QUEUE_NAME;
+import static com.github.clescot.kafka.connect.http.QueueFactory.queueMapIsEmpty;
 
 public class WsSourceTask extends SourceTask {
 
@@ -33,6 +37,7 @@ public class WsSourceTask extends SourceTask {
     public static final String STATUS_MESSAGE = "statusMessage";
     public static final String RESPONSE_HEADERS = "responseHeaders";
     public static final String RESPONSE_BODY = "responseBody";
+    public static final String QUEUE_NAME = "queue.name";
     private static Queue<Acknowledgement> queue;
     private AckConfig ackConfig;
     private final static Logger LOGGER = LoggerFactory.getLogger(WsSourceTask.class);
@@ -44,7 +49,11 @@ public class WsSourceTask extends SourceTask {
     @Override
     public void start(Map<String, String> taskConfig) {
         Preconditions.checkNotNull(taskConfig, "taskConfig cannot be null");
-        queue = QueueFactory.getQueue();
+        String queueName = Optional.ofNullable(taskConfig.get(QUEUE_NAME)).orElse(DEFAULT_QUEUE_NAME);
+        if(queueMapIsEmpty()){
+            LOGGER.warn("no pre-existing queue exists. this WsSourceConnector has created one. It needs to consume a queue filled with a SinkConnector. Ignore this message if a SinkConnector will be created after this one.");
+        }
+        queue = QueueFactory.getQueue(queueName);
         this.ackConfig = new AckConfig(taskConfig);
     }
 

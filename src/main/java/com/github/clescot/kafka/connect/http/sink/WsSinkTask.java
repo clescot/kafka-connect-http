@@ -30,6 +30,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.util.*;
 import java.util.stream.Collectors;
 
+import static com.github.clescot.kafka.connect.http.QueueFactory.DEFAULT_QUEUE_NAME;
 import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.ASYNC_CLIENT_CONFIG_ROOT;
 
 
@@ -40,6 +41,7 @@ public class WsSinkTask extends SinkTask {
     public static final String HTTP_MAX_WAIT_MS = ASYN_HTTP_CONFIG_PREFIX + "http.max.wait.ms";
     public static final String KEEP_ALIVE_STRATEGY_CLASS = ASYN_HTTP_CONFIG_PREFIX + "keep.alive.class";
     public static final String RESPONSE_BODY_PART_FACTORY = ASYN_HTTP_CONFIG_PREFIX + "response.body.part.factory";
+    public static final String QUEUE_NAME = "queue.name";
     private static final String CONNECTION_SEMAPHORE_FACTORY = ASYN_HTTP_CONFIG_PREFIX + "connection.semaphore.factory";
     ;
     private static final String EVENT_LOOP_GROUP = ASYN_HTTP_CONFIG_PREFIX + "event.loop.group";
@@ -70,7 +72,8 @@ public class WsSinkTask extends SinkTask {
     public void start(Map<String, String> taskConfig) {
         Preconditions.checkNotNull(taskConfig, "taskConfig cannot be null");
         this.wsCaller = new WsCaller(getAsyncHttpClient(taskConfig));
-        this.queue = QueueFactory.getQueue();
+        String queueName = Optional.ofNullable(taskConfig.get(QUEUE_NAME)).orElse(DEFAULT_QUEUE_NAME);
+        this.queue = QueueFactory.getQueue(queueName);
     }
 
 
