@@ -5,8 +5,8 @@ import com.google.common.base.Preconditions;
 import com.google.common.base.Stopwatch;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
-import net.jodah.failsafe.Failsafe;
-import net.jodah.failsafe.RetryPolicy;
+import dev.failsafe.Failsafe;
+import dev.failsafe.RetryPolicy;
 import org.apache.kafka.connect.data.Struct;
 import org.apache.kafka.connect.header.Header;
 import org.apache.kafka.connect.header.Headers;
@@ -18,6 +18,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.nio.charset.Charset;
+import java.time.Duration;
 import java.time.OffsetDateTime;
 import java.time.ZoneId;
 import java.util.List;
@@ -124,22 +125,23 @@ public class WsCaller {
         long retryMaxDelayInMs = Long.parseLong(Optional.ofNullable(wsProperties.get(WS_RETRY_MAX_DELAY_IN_MS)).orElse("300000"));
         double retryDelayFactor = Double.parseDouble(Optional.ofNullable(wsProperties.get(WS_RETRY_DELAY_FACTOR)).orElse("2"));
         long retryJitterInMs = Long.parseLong(Optional.ofNullable(wsProperties.get(WS_RETRY_JITTER)).orElse("100"));
-        RetryPolicy retryPolicy = new RetryPolicy()
-                //we retry only if the error comes from the WS server (server-side technical error)
-                .retryOn(RestClientException.class)
-                .withBackoff(retryDelayInMs,retryMaxDelayInMs,TimeUnit.MILLISECONDS,retryDelayFactor)
-                .withJitter(retryJitterInMs,TimeUnit.MILLISECONDS)
-                .withMaxRetries(retries);
+        RetryPolicy<Acknowledgement> retryPolicy = RetryPolicy.<Acknowledgement>builder()
+            //we retry only if the error comes from the WS server (server-side technical error)
+            .handle(RestClientException.class)
+            .withBackoff(Duration.ofMillis(retryDelayInMs),Duration.ofMillis(retryMaxDelayInMs),retryDelayFactor)
+            .withJitter(Duration.ofMillis(retryJitterInMs))
+            .withMaxRetries(retries)
+            .onRetry(listener -> LOGGER.warn("Retry ws call result:{}, failure:{}",listener.getLastResult(),listener.getLastException()))
+            .onFailure(listener -> LOGGER.warn("ws call failed ! result:{},exception:{}",listener.getResult(),listener.getException()))
+            .onAbort(listener -> LOGGER.warn("ws call aborted ! result:{},exception:{}",listener.getResult(),listener.getException()))
+            .build();
 
         Acknowledgement acknowledgement;
         String correlationId = wsProperties.get(WS_CORRELATION_ID);
         Preconditions.checkNotNull(correlationId,"'correlationId' is required but null");
         AtomicInteger attempts = new AtomicInteger();
         try {
-            acknowledgement = Failsafe.with(retryPolicy)
-                    .onRetry((result, failure, context) -> LOGGER.warn("Retry ws call result:{}, failure:{}, context{}",result,failure, context))
-                    .onFailure((object,throwable,executionContext) -> LOGGER.warn("ws call failed ! object:{},throwable:{},context:{}",object,throwable,executionContext))
-                    .onAbort((object,throwable,executionContext) -> LOGGER.warn("ws call aborted ! object:{},throwable:{},context:{}",object,throwable,executionContext))
+            acknowledgement = Failsafe.with(List.of(retryPolicy))
                     .get(() -> {
                 String body = (String) value.get(BODY);
                 attempts.addAndGet(1);
