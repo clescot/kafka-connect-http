@@ -10,7 +10,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 public class AckConfigTest {
 
-    public static final String DEFAULT_SINK_PRODUCER_ID = "sinkProducer";
+    public static final String DEFAULT_SINK_PRODUCER_ID = "httpSinkProducer";
 
     @Test(expected = NullPointerException.class)
     public void test_null_map(){
