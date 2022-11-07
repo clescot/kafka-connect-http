@@ -7,6 +7,7 @@ import com.github.clescot.kafka.connect.http.sink.utils.VersionUtil;
 import com.github.clescot.kafka.connect.http.source.Acknowledgement;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
 import io.netty.buffer.ByteBufAllocator;
 import io.netty.buffer.PooledByteBufAllocator;
 import io.netty.util.HashedWheelTimer;
@@ -32,6 +33,7 @@ import java.util.stream.Collectors;
 
 import static com.github.clescot.kafka.connect.http.QueueFactory.DEFAULT_QUEUE_NAME;
 import static com.github.clescot.kafka.connect.http.sink.config.ConfigConstants.QUEUE_NAME;
+import static com.github.clescot.kafka.connect.http.sink.config.ConfigConstants.STATIC_REQUEST_HEADER_NAMES;
 import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.ASYNC_CLIENT_CONFIG_ROOT;
 
 
@@ -48,11 +50,13 @@ public class WsSinkTask extends SinkTask {
     private static final String COOKIE_STORE = ASYN_HTTP_CONFIG_PREFIX + "cookie.store";
     private static final String NETTY_TIMER = ASYN_HTTP_CONFIG_PREFIX + "netty.timer";
     private static final String BYTE_BUFFER_ALLOCATOR = ASYN_HTTP_CONFIG_PREFIX + "byte.buffer.allocator";
+    public static final String EMPTY_STRING="";
     private WsCaller wsCaller;
-    private static AsyncHttpClient asyncHttpClient;
     private final static Logger LOGGER = LoggerFactory.getLogger(WsSinkTask.class);
     private static Queue<Acknowledgement> queue;
 
+    private static AsyncHttpClient asyncHttpClient;
+    private Map<String,String> staticRequestHeaders = Maps.newHashMap();
 
     @Override
     public String version() {
@@ -72,8 +76,17 @@ public class WsSinkTask extends SinkTask {
     public void start(Map<String, String> taskConfig) {
         Preconditions.checkNotNull(taskConfig, "taskConfig cannot be null");
         this.wsCaller = new WsCaller(getAsyncHttpClient(taskConfig));
+
         String queueName = Optional.ofNullable(taskConfig.get(QUEUE_NAME)).orElse(DEFAULT_QUEUE_NAME);
         this.queue = QueueFactory.getQueue(queueName);
+        String staticRequestHeaderNames = Optional.ofNullable(taskConfig.get(STATIC_REQUEST_HEADER_NAMES)).orElse(EMPTY_STRING);
+        List<String> additionalHeaderNamesList = Arrays.asList(staticRequestHeaderNames.split(","));
+        for(String headerName:additionalHeaderNamesList){
+            String value = taskConfig.get(headerName);
+            Preconditions.checkNotNull(value,headerName+" is not configured as a parameter.");
+            Preconditions.checkArgument(!value.isEmpty(),headerName+" has got an empty value");
+            staticRequestHeaders.put(headerName, value);
+        }
     }
 
 
