@@ -27,25 +27,8 @@ public class ConfigDefinitionTest {
         public void test_nominal_case() {
 
             assert(ConfigDefinition.config().groups()).isEmpty();
-
-            assert(ConfigDefinition.config().configKeys()).containsKey("connect.sink.target.bootstrap.server");
-            assert(ConfigDefinition.config().configKeys()).containsKey("connect.sink.target.schema.registry");
             assert(ConfigDefinition.config().configKeys()).containsKey("connect.sink.ack.topic");
-            assert(ConfigDefinition.config().configKeys()).containsKey("connect.sink.ack.schema");
-            assert(ConfigDefinition.config().configKeys()).containsKey("connect.sink.producer.id");
-
-            assertThat(ConfigDefinition.config().configKeys().values().size()).isEqualTo(6);
-
-            assertThat(ConfigDefinition.config().configKeys().get("connect.sink.target.bootstrap.server").name).isEqualTo("connect.sink.target.bootstrap.server");
-            assertThat(ConfigDefinition.config().configKeys().get("connect.sink.producer.id").name).isEqualTo("connect.sink.producer.id");
-            assertThat(ConfigDefinition.config().configKeys().get("connect.sink.target.schema.registry").name).isEqualTo("connect.sink.target.schema.registry");
-            assertThat(ConfigDefinition.config().configKeys().get("connect.sink.ack.schema").name).isEqualTo("connect.sink.ack.schema");
             assertThat(ConfigDefinition.config().configKeys().get("connect.sink.ack.topic").name).isEqualTo("connect.sink.ack.topic");
-
-            assertThat(ConfigDefinition.config().configKeys().get("connect.sink.target.bootstrap.server").documentation).isEqualTo("kafka target bootStrap server");
-            assertThat(ConfigDefinition.config().configKeys().get("connect.sink.producer.id").documentation).isEqualTo("producer client id");
-            assertThat(ConfigDefinition.config().configKeys().get("connect.sink.target.schema.registry").documentation).isEqualTo("Schema registry used for target kafka");
-            assertThat(ConfigDefinition.config().configKeys().get("connect.sink.ack.schema").documentation).isEqualTo("Schema used to send acknowledgment");
             assertThat(ConfigDefinition.config().configKeys().get("connect.sink.ack.topic").documentation).isEqualTo("Topic to receive acknowledgment");
 
         }
