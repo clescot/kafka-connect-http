@@ -7,7 +7,7 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 
 public class QueueFactory {
     private static Queue<Acknowledgement> queue;
-
+    //TODO ad a map of queue
     public static synchronized Queue<Acknowledgement> getQueue(){
         if(queue == null){
             queue = new ConcurrentLinkedQueue<>();
