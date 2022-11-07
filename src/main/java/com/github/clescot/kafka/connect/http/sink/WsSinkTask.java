@@ -79,12 +79,11 @@ public class WsSinkTask extends SinkTask {
 
         String queueName = Optional.ofNullable(taskConfig.get(QUEUE_NAME)).orElse(DEFAULT_QUEUE_NAME);
         this.queue = QueueFactory.getQueue(queueName);
-        String staticRequestHeaderNames = Optional.ofNullable(taskConfig.get(STATIC_REQUEST_HEADER_NAMES)).orElse(EMPTY_STRING);
-        List<String> additionalHeaderNamesList = Arrays.asList(staticRequestHeaderNames.split(","));
+        Optional<String> staticRequestHeaderNames = Optional.ofNullable(taskConfig.get(STATIC_REQUEST_HEADER_NAMES));
+        List<String> additionalHeaderNamesList = staticRequestHeaderNames.isEmpty()?Lists.newArrayList():Arrays.asList(staticRequestHeaderNames.get().split(","));
         for(String headerName:additionalHeaderNamesList){
             String value = taskConfig.get(headerName);
-            Preconditions.checkNotNull(value,headerName+" is not configured as a parameter.");
-            Preconditions.checkArgument(!value.isEmpty(),headerName+" has got an empty value");
+            Preconditions.checkNotNull(value,"'"+headerName+"' is not configured as a parameter.");
             staticRequestHeaders.put(headerName, value);
         }
     }
@@ -191,5 +190,7 @@ public class WsSinkTask extends SinkTask {
         return wsCaller;
     }
 
-
+    protected void setWsCaller(WsCaller wsCaller){
+        this.wsCaller = wsCaller;
+    }
 }
