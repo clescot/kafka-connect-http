@@ -56,7 +56,8 @@ public class WsSinkTask extends SinkTask {
     private Queue<Acknowledgement> queue;
 
     private static AsyncHttpClient asyncHttpClient;
-    private Map<String,String> staticRequestHeaders = Maps.newHashMap();
+    private Map<String,String> staticRequestHeaders;
+    private WsSinkConnectorConfig wsSinkConnectorConfig;
 
     @Override
     public String version() {
@@ -70,22 +71,17 @@ public class WsSinkTask extends SinkTask {
      * org.asynchttpclient.throttle.http.max.wait.ms max wait time when call quota is reached.
      * asynchttpclient configuration is starting by : 'org.asynchttpclient.'
      *
-     * @param taskConfig
+     * @param settings
      */
     @Override
-    public void start(Map<String, String> taskConfig) {
-        Preconditions.checkNotNull(taskConfig, "taskConfig cannot be null");
-        this.wsCaller = new WsCaller(getAsyncHttpClient(taskConfig));
-
-        String queueName = Optional.ofNullable(taskConfig.get(QUEUE_NAME)).orElse(DEFAULT_QUEUE_NAME);
+    public void start(Map<String, String> settings) {
+        Preconditions.checkNotNull(settings, "settings cannot be null");
+        this.wsSinkConnectorConfig = new WsSinkConnectorConfig(WsSinkConfigDefinition.config(),settings);
+        this.wsCaller = new WsCaller(getAsyncHttpClient(wsSinkConnectorConfig.originalsStrings()));
+        String queueName = wsSinkConnectorConfig.getQueueName();
         this.queue = QueueFactory.getQueue(queueName);
-        Optional<String> staticRequestHeaderNames = Optional.ofNullable(taskConfig.get(STATIC_REQUEST_HEADER_NAMES));
-        List<String> additionalHeaderNamesList = staticRequestHeaderNames.isEmpty()?Lists.newArrayList():Arrays.asList(staticRequestHeaderNames.get().split(","));
-        for(String headerName:additionalHeaderNamesList){
-            String value = taskConfig.get(headerName);
-            Preconditions.checkNotNull(value,"'"+headerName+"' is not configured as a parameter.");
-            staticRequestHeaders.put(headerName, value);
-        }
+        this.staticRequestHeaders = wsSinkConnectorConfig.getStaticRequestHeaders();
+
     }
 
 
@@ -93,7 +89,7 @@ public class WsSinkTask extends SinkTask {
         if (asyncHttpClient == null) {
             Map<String, String> asyncConfig = config.entrySet().stream().filter(entry -> entry.getKey().startsWith(ASYN_HTTP_CONFIG_PREFIX)).collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
             Properties asyncHttpProperties = new Properties();
-            asyncConfig.forEach(asyncHttpProperties::put);
+            asyncHttpProperties.putAll(asyncConfig);
             PropertyBasedASyncHttpClientConfig propertyBasedASyncHttpClientConfig = new PropertyBasedASyncHttpClientConfig(asyncHttpProperties);
             //define throttling
             int maxConnections = Integer.parseInt(config.getOrDefault(HTTP_MAX_CONNECTIONS, "3"));
@@ -178,7 +174,12 @@ public class WsSinkTask extends SinkTask {
                 .map(this::addStaticHeaders)
                 .map(wsCaller::call)
                 .peek(ack->LOGGER.debug("get ack :{}",ack))
-                .forEach(ack -> queue.offer(ack));
+                .forEach(ack -> {
+                    if(!wsSinkConnectorConfig.isIgnoreHttpResponses()) {
+                        queue.offer(ack);
+                    }
+                }
+                );
     }
 
     private SinkRecord addStaticHeaders(SinkRecord sinkRecord) {

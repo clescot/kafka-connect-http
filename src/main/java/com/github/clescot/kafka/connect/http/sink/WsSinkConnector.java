@@ -40,7 +40,7 @@ public class WsSinkConnector extends SinkConnector {
 
     @Override
     public ConfigDef config() {
-        return SinkConfigDefinition.config();
+        return WsSinkConfigDefinition.config();
     }
 
     @Override
