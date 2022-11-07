@@ -18,8 +18,6 @@ public class ConfigConstantsTest {
             assertThat(ConfigConstants.TARGET_BOOTSTRAP_SERVER_DOC).isEqualTo("kafka target bootStrap server");
             assertThat(ConfigConstants.TARGET_SCHEMA_REGISTRY).isEqualTo("connect.sink.target.schema.registry");
             assertThat(ConfigConstants.TARGET_SCHEMA_REGISTRY_DOC).isEqualTo("Schema registry used for target kafka");
-            assertThat(ConfigConstants.PRODUCER_CLIENT_ID).isEqualTo("connect.sink.producer.id");
-            assertThat(ConfigConstants.PRODUCER_CLIENT_ID_DOC).isEqualTo("producer client id");
             assertThat(ConfigConstants.ACK_TOPIC).isEqualTo("connect.sink.ack.topic");
             assertThat(ConfigConstants.ACK_TOPIC_DOC).isEqualTo("Topic to receive acknowledgment");
             assertThat(ConfigConstants.ACK_SCHEMA).isEqualTo("connect.sink.ack.schema");

@@ -16,7 +16,6 @@ public class AckConfig extends AbstractConfig {
 
     public AckConfig(Map<?, ?> originals) {
         super(ConfigDefinition.config(), originals);
-        Preconditions.checkNotNull(originals,"map configuration for AckConfig cannot be null");
         this.ackTopic = Optional.ofNullable(getString(ConfigConstants.ACK_TOPIC)).orElseThrow(()-> new IllegalArgumentException(ConfigConstants.ACK_TOPIC+ CANNOT_BE_FOUND_IN_MAP_CONFIGURATION));
     }
 

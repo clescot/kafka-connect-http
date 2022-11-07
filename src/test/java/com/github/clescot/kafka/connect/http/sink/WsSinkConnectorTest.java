@@ -1,11 +1,6 @@
 package com.github.clescot.kafka.connect.http.sink;
 
-import com.github.clescot.kafka.connect.http.sink.service.KafkaFailSafeProducer;
-import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Maps;
-import com.github.clescot.kafka.connect.http.source.AckConfig;
-import io.confluent.connect.avro.AvroConverter;
-import io.confluent.kafka.serializers.KafkaAvroDeserializerConfig;
 import org.apache.kafka.connect.connector.Task;
 import org.junit.Test;
 import org.junit.experimental.runners.Enclosed;
@@ -16,7 +11,6 @@ import java.util.Map;
 
 import static com.github.clescot.kafka.connect.http.sink.config.ConfigConstants.*;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Mockito.mock;
 
 @RunWith(Enclosed.class)
 public class WsSinkConnectorTest {
@@ -41,7 +35,6 @@ public class WsSinkConnectorTest {
             Map<String, String> settings = Maps.newHashMap();
             settings.put(TARGET_BOOTSTRAP_SERVER,"localhost:9092");
             settings.put(TARGET_SCHEMA_REGISTRY,"localhost:8081");
-            settings.put(PRODUCER_CLIENT_ID,"fake.client.id");
             settings.put(ACK_TOPIC,"fake.ack.topic");
             settings.put(ACK_SCHEMA,"{\n" +
                     "    \"namespace\": \"com.fake.namespace\",\n" +
@@ -74,7 +67,6 @@ public class WsSinkConnectorTest {
             Map<String, String> settings = Maps.newHashMap();
             settings.put(TARGET_BOOTSTRAP_SERVER,"localhost:9092");
             settings.put(TARGET_SCHEMA_REGISTRY,"localhost:8081");
-            settings.put(PRODUCER_CLIENT_ID,"fake.client.id");
             settings.put(ACK_TOPIC,"fake.ack.topic");
             settings.put(ACK_SCHEMA,"{\n" +
                     "    \"namespace\": \"com.fake.namespace\",\n" +
@@ -98,7 +90,6 @@ public class WsSinkConnectorTest {
             Map<String, String> settings = Maps.newHashMap();
             settings.put(TARGET_BOOTSTRAP_SERVER,"localhost:9092");
             settings.put(TARGET_SCHEMA_REGISTRY,"localhost:8081");
-            settings.put(PRODUCER_CLIENT_ID,"fake.client.id");
             settings.put(ACK_TOPIC,"fake.ack.topic");
             settings.put(ACK_SCHEMA,"{\n" +
                     "    \"namespace\": \"com.fake.namespace\",\n" +
@@ -126,7 +117,6 @@ public class WsSinkConnectorTest {
             Map<String, String> settings = Maps.newHashMap();
             settings.put(TARGET_BOOTSTRAP_SERVER,"localhost:9092");
             settings.put(TARGET_SCHEMA_REGISTRY,"localhost:8081");
-            settings.put(PRODUCER_CLIENT_ID,"fake.client.id");
             settings.put(ACK_TOPIC,"fake.ack.topic");
             settings.put(ACK_SCHEMA,"{\n" +
                     "    \"namespace\": \"com.fake.namespace\",\n" +

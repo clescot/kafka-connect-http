@@ -5,7 +5,6 @@ import org.apache.kafka.connect.storage.StringConverter;
 
 public class ConfigDefinition {
 
-    public static final String DEFAULT_PRODUCER_CLIENT_ID = "httpSinkProducer";
 
     private ConfigDefinition() {
         //Class with only static methods

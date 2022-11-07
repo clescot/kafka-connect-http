@@ -55,6 +55,7 @@ public class ITConnectorTest {
     private final static Logger LOGGER = LoggerFactory.getLogger(ITConnectorTest.class);
     private final static Slf4jLogConsumer logConsumer = new Slf4jLogConsumer(LOGGER).withSeparateOutputStreams();
     public static final String CONFLUENT_VERSION = "7.2.2";
+    public static final int CUSTOM_AVAILABLE_PORT = 0;
     private static Network network = Network.newNetwork();
     @Container
     public static KafkaContainer kafkaContainer = new KafkaContainer(DockerImageName.parse("confluentinc/cp-kafka:" + CONFLUENT_VERSION))
@@ -104,7 +105,7 @@ public class ITConnectorTest {
     @BeforeAll
     public static void startContainers() throws IOException {
         hostName = InetAddress.getLocalHost().getHostName();
-        WireMock.configureFor(hostName, 0);
+        WireMock.configureFor(hostName, CUSTOM_AVAILABLE_PORT);
         wireMockServer.start();
         org.testcontainers.Testcontainers.exposeHostPorts(wireMockServer.port());
         Startables.deepStart(Stream.of(kafkaContainer, schemaRegistryContainer, connectContainer)).join();
@@ -139,8 +140,8 @@ public class ITConnectorTest {
 
         connectContainer.registerConnector("http-sink-connector", sinkConnectorConfiguration);
         connectContainer.ensureConnectorTaskState("http-sink-connector", 0, Connector.State.RUNNING);
-//        connectContainer.registerConnector("http-source-connector", sourceConnectorConfiguration);
-//        connectContainer.ensureConnectorTaskState("http-source-connector", 0, Connector.State.RUNNING);
+        connectContainer.registerConnector("http-source-connector", sourceConnectorConfiguration);
+        connectContainer.ensureConnectorTaskState("http-source-connector", 0, Connector.State.RUNNING);
 
         List<String> registeredConnectors = connectContainer.getRegisteredConnectors();
 
