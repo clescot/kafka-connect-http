@@ -31,9 +31,9 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
-public class WsCaller {
+public class HttpClient {
 
-    private final static Logger LOGGER = LoggerFactory.getLogger(WsCaller.class);
+    private final static Logger LOGGER = LoggerFactory.getLogger(HttpClient.class);
     public static final int SERVER_ERROR_STATUS_CODE = 500;
     public static final String HEADER_PREFIX = "header-";
     public static final String PROXY_PREFIX = "proxy-";
@@ -86,9 +86,9 @@ public class WsCaller {
     public static final String WS_RETRY_DELAY_FACTOR = "retry-delay-factor";
     public static final String WS_RETRY_JITTER = "retry-jitter";
     private final Map<String,Pattern> httpSuccessCodesPatterns = Maps.newHashMap();
-    private final WsCallerAsyncCompletionHandler asyncCompletionHandler = new WsCallerAsyncCompletionHandler();
+    private final HttpClientAsyncCompletionHandler asyncCompletionHandler = new HttpClientAsyncCompletionHandler();
 
-    public WsCaller(AsyncHttpClient asyncHttpClient) {
+    public HttpClient(AsyncHttpClient asyncHttpClient) {
         this.asyncHttpClient = asyncHttpClient;
     }
 

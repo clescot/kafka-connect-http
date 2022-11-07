@@ -9,7 +9,7 @@ import java.time.ZoneId;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static com.github.clescot.kafka.connect.http.sink.client.WsCaller.*;
+import static com.github.clescot.kafka.connect.http.sink.client.HttpClient.*;
 
 public class QueueProducer implements Runnable {
     private Queue<Acknowledgement> transferQueue;
