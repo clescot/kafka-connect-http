@@ -40,7 +40,7 @@ public class WsSourceTask extends SourceTask {
     public static final String RESPONSE_BODY = "responseBody";
 
     private static Queue<Acknowledgement> queue;
-    private AckConfig ackConfig;
+    private SourceConfig ackConfig;
     private final static Logger LOGGER = LoggerFactory.getLogger(WsSourceTask.class);
     @Override
     public String version() {
@@ -55,7 +55,7 @@ public class WsSourceTask extends SourceTask {
             LOGGER.warn("no pre-existing queue exists. this WsSourceConnector has created a '{}' one. It needs to consume a queue filled with a SinkConnector. Ignore this message if a SinkConnector will be created after this one.",queueName);
         }
         queue = QueueFactory.getQueue(queueName);
-        this.ackConfig = new AckConfig(taskConfig);
+        this.ackConfig = new SourceConfig(taskConfig);
     }
 
     @Override
