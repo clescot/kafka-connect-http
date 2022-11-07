@@ -11,6 +11,7 @@ import org.apache.kafka.connect.data.Struct;
 import org.apache.kafka.connect.source.SourceRecord;
 import org.apache.kafka.connect.source.SourceTask;
 
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TransferQueue;
@@ -41,7 +42,7 @@ public class WsSourceTask extends SourceTask {
     @Override
     public void start(Map<String, String> taskConfig) {
         Preconditions.checkNotNull(taskConfig, "taskConfig cannot be null");
-        this.queue = QueueFactory.getQueue();
+        queue = QueueFactory.getQueue();
         this.ackConfig = new AckConfig(taskConfig);
     }
 
@@ -57,33 +58,47 @@ public class WsSourceTask extends SourceTask {
         Map<String, ?> sourcePartition = Maps.newHashMap();
         Map<String, ?> sourceOffset= Maps.newHashMap();
         Struct struct = new Struct(getSchema());
+        //ack fields
+        struct.put(DURATION_IN_MILLIS,acknowledgement.getDurationInMillis());
+        struct.put(MOMENT,acknowledgement.getMoment().format(DateTimeFormatter.ISO_ZONED_DATE_TIME));
+        struct.put(ATTEMPTS,acknowledgement.getAttempts().intValue());
+        //request fields
+        struct.put(CORRELATION_ID,acknowledgement.getCorrelationId());
+        struct.put(REQUEST_ID,acknowledgement.getRequestId());
+        struct.put(REQUEST_URI,acknowledgement.getRequestUri());
+        struct.put(METHOD,acknowledgement.getMethod());
+        struct.put(REQUEST_HEADERS,acknowledgement.getRequestHeaders());
+        // response fields
+        struct.put(STATUS_CODE,acknowledgement.getStatusCode());
+        struct.put(STATUS_MESSAGE,acknowledgement.getStatusMessage());
+        struct.put(RESPONSE_HEADERS,acknowledgement.getResponseHeaders());
+        struct.put(RESPONSE_BODY,acknowledgement.getResponseBody());
 
-        SourceRecord sourceRecord = new SourceRecord(sourcePartition,sourceOffset,ackConfig.getAckTopic(),struct.schema(),struct);
-        return sourceRecord;
+        return new SourceRecord(sourcePartition,sourceOffset,ackConfig.getAckTopic(),struct.schema(),struct);
     }
 
     private Schema getSchema() {
         return SchemaBuilder
                 .struct()
                 //ack fields
-                .field(DURATION_IN_MILLIS,Schema.INT64_SCHEMA)
-                .field(MOMENT,Schema.STRING_SCHEMA)
-                .field(ATTEMPTS,Schema.INT32_SCHEMA)
+                .field(DURATION_IN_MILLIS, Schema.INT64_SCHEMA)
+                .field(MOMENT, Schema.STRING_SCHEMA)
+                .field(ATTEMPTS, Schema.INT32_SCHEMA)
                 //request fields
-                .field(CORRELATION_ID,Schema.STRING_SCHEMA)
-                .field(REQUEST_ID,Schema.STRING_SCHEMA)
-                .field(REQUEST_URI,Schema.STRING_SCHEMA)
-                .field(METHOD,Schema.STRING_SCHEMA)
+                .field(CORRELATION_ID, Schema.STRING_SCHEMA)
+                .field(REQUEST_ID, Schema.STRING_SCHEMA)
+                .field(REQUEST_URI, Schema.STRING_SCHEMA)
+                .field(METHOD, Schema.STRING_SCHEMA)
                 .field(REQUEST_HEADERS,
-                        SchemaBuilder.map(Schema.STRING_SCHEMA,Schema.STRING_SCHEMA))
-                .field(REQUEST_BODY,Schema.STRING_SCHEMA)
+                        SchemaBuilder.array(Schema.STRING_SCHEMA))
+                .field(REQUEST_BODY, Schema.STRING_SCHEMA)
                 // response fields
-                .field(STATUS_CODE,Schema.INT16_SCHEMA)
-                .field(STATUS_MESSAGE,Schema.STRING_SCHEMA)
+                .field(STATUS_CODE, Schema.INT32_SCHEMA)
+                .field(STATUS_MESSAGE, Schema.STRING_SCHEMA)
                 .field(RESPONSE_HEADERS,
-                    SchemaBuilder.map(Schema.STRING_SCHEMA,Schema.STRING_SCHEMA))
-                .field(RESPONSE_BODY,Schema.STRING_SCHEMA)
-                .valueSchema();
+                        SchemaBuilder.array(Schema.STRING_SCHEMA))
+                .field(RESPONSE_BODY, Schema.STRING_SCHEMA)
+                .schema();
 
     }
 

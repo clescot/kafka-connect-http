@@ -1,6 +1,7 @@
 package com.github.clescot.kafka.connect.http.source;
 
 import com.github.clescot.kafka.connect.http.QueueFactory;
+import com.github.clescot.kafka.connect.http.QueueProducer;
 import com.github.clescot.kafka.connect.http.sink.config.ConfigConstants;
 import com.google.common.collect.Maps;
 import org.jetbrains.annotations.NotNull;
@@ -50,8 +51,13 @@ class WsSourceTaskTest {
         wsSourceTask.start(getNominalConfig());
         TransferQueue<Acknowledgement> queue = QueueFactory.getQueue();
         ExecutorService exService = Executors.newFixedThreadPool(3);
+        int numberOfMessagesToProduce = 50;
+        QueueProducer queueProducer = new QueueProducer(QueueFactory.getQueue(), numberOfMessagesToProduce);
+        exService.submit(queueProducer);
+        for (int i = 0; i < numberOfMessagesToProduce; i++) {
+            wsSourceTask.poll();
+        }
 
-        wsSourceTask.poll();
 
     }
 }
