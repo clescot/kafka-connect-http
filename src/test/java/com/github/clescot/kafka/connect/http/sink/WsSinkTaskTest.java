@@ -20,7 +20,7 @@ import java.util.Map;
 import java.util.Queue;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static com.github.clescot.kafka.connect.http.sink.ConfigConstants.IGNORE_HTTP_RESPONSES;
+import static com.github.clescot.kafka.connect.http.sink.ConfigConstants.PUBLISH_TO_IN_MEMORY_QUEUE;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.*;
 
@@ -131,7 +131,7 @@ class WsSinkTaskTest {
     public void test_put_with_ignore_http_responses(){
         WsSinkTask wsSinkTask = new WsSinkTask();
         Map<String,String> settings = Maps.newHashMap();
-        settings.put(IGNORE_HTTP_RESPONSES,"true");
+        settings.put(PUBLISH_TO_IN_MEMORY_QUEUE,"true");
         wsSinkTask.start(settings);
         WsCaller wsCaller = mock(WsCaller.class);
         Acknowledgement dummyAcknowledgment = getDummyAcknowledgment();
@@ -152,7 +152,7 @@ class WsSinkTaskTest {
     public void test_put_with_ignore_http_responses_set_to_false(){
         WsSinkTask wsSinkTask = new WsSinkTask();
         Map<String,String> settings = Maps.newHashMap();
-        settings.put(IGNORE_HTTP_RESPONSES,"false");
+        settings.put(PUBLISH_TO_IN_MEMORY_QUEUE,"false");
         wsSinkTask.start(settings);
         WsCaller wsCaller = mock(WsCaller.class);
         Acknowledgement dummyAcknowledgment = getDummyAcknowledgment();

@@ -30,7 +30,7 @@ public class WsSinkConnectorConfig extends AbstractConfig {
         if(queueMapIsEmpty()){
             LOGGER.warn("no pre-existing queue exists. this WsSourceConnector has created a '{}' one. It needs to consume a queue filled with a SinkConnector. Ignore this message if a SinkConnector will be created after this one.",queueName);
         }
-        this.ignoreHttpResponses = Optional.ofNullable(getBoolean(IGNORE_HTTP_RESPONSES)).orElse(true);
+        this.ignoreHttpResponses = Optional.ofNullable(getBoolean(PUBLISH_TO_IN_MEMORY_QUEUE)).orElse(true);
 
         Optional<List<String>> staticRequestHeaderNames = Optional.ofNullable(getList(STATIC_REQUEST_HEADER_NAMES));
         List<String> additionalHeaderNamesList =staticRequestHeaderNames.orElse(Lists.newArrayList());
