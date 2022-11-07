@@ -57,5 +57,17 @@ class QueueFactoryTest {
     }
 
 
+    @Test
+    public void test_clear_registrations(){
+        //given
+        String queueName = "test";
+        QueueFactory.registerConsumerForQueue(queueName);
+        assertThat(QueueFactory.hasAConsumer(queueName)).isTrue();
+
+        //when
+        QueueFactory.clearRegistrations();
+        assertThat(QueueFactory.hasAConsumer(queueName)).isFalse();
+    }
+
 
 }

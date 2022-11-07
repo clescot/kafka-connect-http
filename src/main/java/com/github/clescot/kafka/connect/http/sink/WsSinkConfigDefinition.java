@@ -15,7 +15,7 @@ public class WsSinkConfigDefinition {
         return new ConfigDef()
                 .define(ConfigConstants.QUEUE_NAME, ConfigDef.Type.STRING, null,ConfigDef.Importance.MEDIUM, ConfigConstants.QUEUE_NAME_DOC)
                 .define(ConfigConstants.STATIC_REQUEST_HEADER_NAMES, ConfigDef.Type.LIST,  Collections.emptyList(), ConfigDef.Importance.MEDIUM, ConfigConstants.STATIC_REQUEST_HEADER_NAMES_DOC)
-                .define(ConfigConstants.PUBLISH_TO_IN_MEMORY_QUEUE, ConfigDef.Type.BOOLEAN, true, ConfigDef.Importance.MEDIUM, ConfigConstants.PUBLISH_TO_IN_MEMORY_QUEUE_DOC)
+                .define(ConfigConstants.PUBLISH_TO_IN_MEMORY_QUEUE, ConfigDef.Type.BOOLEAN, false, ConfigDef.Importance.MEDIUM, ConfigConstants.PUBLISH_TO_IN_MEMORY_QUEUE_DOC)
                 ;
     }
 }
