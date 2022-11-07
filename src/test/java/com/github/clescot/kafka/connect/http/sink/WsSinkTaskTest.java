@@ -90,22 +90,40 @@ class WsSinkTaskTest {
 
     @Test
     public void test_put_nominal_case(){
+        //given
         WsSinkTask wsSinkTask = new WsSinkTask();
         Map<String,String> settings = Maps.newHashMap();
         wsSinkTask.start(settings);
+
+        //mock wsCaller
         WsCaller wsCaller = mock(WsCaller.class);
         Acknowledgement dummyAcknowledgment = getDummyAcknowledgment();
         when(wsCaller.call(any(SinkRecord.class))).thenReturn(dummyAcknowledgment);
         wsSinkTask.setWsCaller(wsCaller);
+
+        //mock queue
+        Queue<Acknowledgement> dummyQueue = mock(Queue.class);
+        wsSinkTask.setQueue(dummyQueue);
+
+        //init sinkRecord
         List<SinkRecord> records = Lists.newArrayList();
         List<Header> headers = Lists.newArrayList();
         SinkRecord sinkRecord = new SinkRecord("myTopic",0, Schema.STRING_SCHEMA,"key",Schema.STRING_SCHEMA,"myValue",-1,System.currentTimeMillis(), TimestampType.CREATE_TIME,headers);
         records.add(sinkRecord);
+
+        //when
         wsSinkTask.put(records);
+
+        //then
+
+        //no additional headers added
         ArgumentCaptor<SinkRecord> captor = ArgumentCaptor.forClass(SinkRecord.class);
         verify(wsCaller,times(1)).call(captor.capture());
         SinkRecord enhancedRecordBeforeHttpCall = captor.getValue();
         assertThat(enhancedRecordBeforeHttpCall.headers().size()==sinkRecord.headers().size());
+
+        //no records are published into the in memory queue by default
+        verify(dummyQueue,never()).offer(any(Acknowledgement.class));
     }
 
 
@@ -128,6 +146,27 @@ class WsSinkTaskTest {
         wsSinkTask.put(records);
         verify(wsCaller,times(1)).call(any(SinkRecord.class));
         verify(queue,never()).offer(any(Acknowledgement.class));
+    }
+
+    @Test
+    public void test_put_with_ignore_http_responses_set_to_false(){
+        WsSinkTask wsSinkTask = new WsSinkTask();
+        Map<String,String> settings = Maps.newHashMap();
+        settings.put(IGNORE_HTTP_RESPONSES,"false");
+        wsSinkTask.start(settings);
+        WsCaller wsCaller = mock(WsCaller.class);
+        Acknowledgement dummyAcknowledgment = getDummyAcknowledgment();
+        when(wsCaller.call(any(SinkRecord.class))).thenReturn(dummyAcknowledgment);
+        wsSinkTask.setWsCaller(wsCaller);
+        Queue<Acknowledgement> queue = mock(Queue.class);
+        wsSinkTask.setQueue(queue);
+        List<SinkRecord> records = Lists.newArrayList();
+        List<Header> headers = Lists.newArrayList();
+        SinkRecord sinkRecord = new SinkRecord("myTopic",0, Schema.STRING_SCHEMA,"key",Schema.STRING_SCHEMA,"myValue",-1,System.currentTimeMillis(), TimestampType.CREATE_TIME,headers);
+        records.add(sinkRecord);
+        wsSinkTask.put(records);
+        verify(wsCaller,times(1)).call(any(SinkRecord.class));
+        verify(queue,times(1)).offer(any(Acknowledgement.class));
     }
 
 
