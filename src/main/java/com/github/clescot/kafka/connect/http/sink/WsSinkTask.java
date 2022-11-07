@@ -31,9 +31,6 @@ import java.lang.reflect.InvocationTargetException;
 import java.util.*;
 import java.util.stream.Collectors;
 
-import static com.github.clescot.kafka.connect.http.QueueFactory.DEFAULT_QUEUE_NAME;
-import static com.github.clescot.kafka.connect.http.sink.ConfigConstants.QUEUE_NAME;
-import static com.github.clescot.kafka.connect.http.sink.ConfigConstants.STATIC_REQUEST_HEADER_NAMES;
 import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.ASYNC_CLIENT_CONFIG_ROOT;
 
 
@@ -171,13 +168,15 @@ public class WsSinkTask extends SinkTask {
     public void put(Collection<SinkRecord> records) {
         Preconditions.checkNotNull(records, "records collection to be processed is null");
         Preconditions.checkNotNull(wsCaller, "wsCaller is null. 'start' method must be called once before put");
-        Preconditions.checkArgument(QueueFactory.hasAConsumer(queueName),queueName+" has'nt got any consumer, i.e no Source Connector has been configured to consume records published in this in memory queue. we stop the Sink Connector to prevent any OutofMemoryError.");
+        if(wsSinkConnectorConfig.isPublishToInMemoryQueue()) {
+            Preconditions.checkArgument(QueueFactory.hasAConsumer(queueName), "'" + queueName + "' queue hasn't got any consumer, i.e no Source Connector has been configured to consume records published in this in memory queue. we stop the Sink Connector to prevent any OutofMemoryError.");
+        }
         records.stream()
                 .map(this::addStaticHeaders)
                 .map(wsCaller::call)
                 .peek(ack->LOGGER.debug("get ack :{}",ack))
                 .forEach(ack -> {
-                    if(!wsSinkConnectorConfig.isIgnoreHttpResponses()) {
+                    if(wsSinkConnectorConfig.isPublishToInMemoryQueue()) {
                         queue.offer(ack);
                     }
                 }

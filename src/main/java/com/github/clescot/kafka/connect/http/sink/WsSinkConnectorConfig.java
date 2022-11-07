@@ -17,7 +17,7 @@ import static com.github.clescot.kafka.connect.http.sink.ConfigConstants.*;
 public class WsSinkConnectorConfig extends AbstractConfig {
     private static final Logger LOGGER = LoggerFactory.getLogger(WsSinkConnectorConfig.class);
     private String queueName;
-    private boolean ignoreHttpResponses;
+    private boolean publishToInMemoryQueue;
     private Map<String,String> staticRequestHeaders = Maps.newHashMap();
 
     public WsSinkConnectorConfig(Map<?, ?> originals) {
@@ -30,7 +30,7 @@ public class WsSinkConnectorConfig extends AbstractConfig {
         if(queueMapIsEmpty()){
             LOGGER.warn("no pre-existing queue exists. this WsSourceConnector has created a '{}' one. It needs to consume a queue filled with a SinkConnector. Ignore this message if a SinkConnector will be created after this one.",queueName);
         }
-        this.ignoreHttpResponses = Optional.ofNullable(getBoolean(PUBLISH_TO_IN_MEMORY_QUEUE)).orElse(true);
+        this.publishToInMemoryQueue = Optional.ofNullable(getBoolean(PUBLISH_TO_IN_MEMORY_QUEUE)).orElse(false);
 
         Optional<List<String>> staticRequestHeaderNames = Optional.ofNullable(getList(STATIC_REQUEST_HEADER_NAMES));
         List<String> additionalHeaderNamesList =staticRequestHeaderNames.orElse(Lists.newArrayList());
@@ -45,8 +45,8 @@ public class WsSinkConnectorConfig extends AbstractConfig {
         return queueName;
     }
 
-    public boolean isIgnoreHttpResponses() {
-        return ignoreHttpResponses;
+    public boolean isPublishToInMemoryQueue() {
+        return publishToInMemoryQueue;
     }
 
     public Map<String, String> getStaticRequestHeaders() {

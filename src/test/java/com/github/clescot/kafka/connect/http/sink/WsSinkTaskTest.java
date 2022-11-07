@@ -1,5 +1,6 @@
 package com.github.clescot.kafka.connect.http.sink;
 
+import com.github.clescot.kafka.connect.http.QueueFactory;
 import com.github.clescot.kafka.connect.http.sink.client.WsCaller;
 import com.github.clescot.kafka.connect.http.source.Acknowledgement;
 import com.google.common.collect.Lists;
@@ -9,6 +10,7 @@ import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.header.Header;
 import org.apache.kafka.connect.sink.SinkRecord;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 
@@ -25,6 +27,13 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.*;
 
 class WsSinkTaskTest {
+
+
+
+    @BeforeEach
+    public void setUp(){
+        QueueFactory.clearRegistrations();
+    }
 
     @Test
     public void test_start_with_queue_name(){
@@ -126,12 +135,45 @@ class WsSinkTaskTest {
         verify(dummyQueue,never()).offer(any(Acknowledgement.class));
     }
 
-
     @Test
-    public void test_put_with_ignore_http_responses(){
+    public void test_put_with_publish_to_in_memory_queue_without_consumer(){
+        //given
         WsSinkTask wsSinkTask = new WsSinkTask();
         Map<String,String> settings = Maps.newHashMap();
         settings.put(PUBLISH_TO_IN_MEMORY_QUEUE,"true");
+        wsSinkTask.start(settings);
+
+        //mock wsCaller
+        WsCaller wsCaller = mock(WsCaller.class);
+        Acknowledgement dummyAcknowledgment = getDummyAcknowledgment();
+        when(wsCaller.call(any(SinkRecord.class))).thenReturn(dummyAcknowledgment);
+        wsSinkTask.setWsCaller(wsCaller);
+
+        //mock queue
+        Queue<Acknowledgement> dummyQueue = mock(Queue.class);
+        wsSinkTask.setQueue(dummyQueue);
+
+        //init sinkRecord
+        List<SinkRecord> records = Lists.newArrayList();
+        List<Header> headers = Lists.newArrayList();
+        SinkRecord sinkRecord = new SinkRecord("myTopic",0, Schema.STRING_SCHEMA,"key",Schema.STRING_SCHEMA,"myValue",-1,System.currentTimeMillis(), TimestampType.CREATE_TIME,headers);
+        records.add(sinkRecord);
+
+        //when
+        //then
+        Assertions.assertThrows(IllegalArgumentException.class,
+                ()->wsSinkTask.put(records));
+
+    }
+
+
+
+
+    @Test
+    public void test_put_with_publish_in_memory_set_to_false(){
+        WsSinkTask wsSinkTask = new WsSinkTask();
+        Map<String,String> settings = Maps.newHashMap();
+        settings.put(PUBLISH_TO_IN_MEMORY_QUEUE,"false");
         wsSinkTask.start(settings);
         WsCaller wsCaller = mock(WsCaller.class);
         Acknowledgement dummyAcknowledgment = getDummyAcknowledgment();
@@ -149,10 +191,13 @@ class WsSinkTaskTest {
     }
 
     @Test
-    public void test_put_with_ignore_http_responses_set_to_false(){
+    public void test_put_with_publish_to_in_memory_queue_set_to_true_with_a_consumer(){
+
+        //given
         WsSinkTask wsSinkTask = new WsSinkTask();
         Map<String,String> settings = Maps.newHashMap();
-        settings.put(PUBLISH_TO_IN_MEMORY_QUEUE,"false");
+        settings.put(PUBLISH_TO_IN_MEMORY_QUEUE,"true");
+        QueueFactory.registerConsumerForQueue(QueueFactory.DEFAULT_QUEUE_NAME);
         wsSinkTask.start(settings);
         WsCaller wsCaller = mock(WsCaller.class);
         Acknowledgement dummyAcknowledgment = getDummyAcknowledgment();
@@ -164,7 +209,10 @@ class WsSinkTaskTest {
         List<Header> headers = Lists.newArrayList();
         SinkRecord sinkRecord = new SinkRecord("myTopic",0, Schema.STRING_SCHEMA,"key",Schema.STRING_SCHEMA,"myValue",-1,System.currentTimeMillis(), TimestampType.CREATE_TIME,headers);
         records.add(sinkRecord);
+        //when
         wsSinkTask.put(records);
+
+        //then
         verify(wsCaller,times(1)).call(any(SinkRecord.class));
         verify(queue,times(1)).offer(any(Acknowledgement.class));
     }

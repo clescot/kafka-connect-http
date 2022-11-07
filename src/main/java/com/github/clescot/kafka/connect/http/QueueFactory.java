@@ -41,4 +41,8 @@ public class QueueFactory {
         Boolean queueHasAConsumer = consumers.get(queueName);
         return queueHasAConsumer != null && queueHasAConsumer;
     }
+
+    public static void clearRegistrations() {
+        consumers.clear();
+    }
 }
