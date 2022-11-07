@@ -196,8 +196,13 @@ public class WsSinkTask extends SinkTask {
     public WsCaller getWsCaller() {
         return wsCaller;
     }
-
+    //for testing purpose
     protected void setWsCaller(WsCaller wsCaller){
         this.wsCaller = wsCaller;
+    }
+    //for testing purpose
+    protected Map<String,String> getStaticRequestHeaders(){
+        //we return a copy
+        return Maps.newHashMap(staticRequestHeaders);
     }
 }
