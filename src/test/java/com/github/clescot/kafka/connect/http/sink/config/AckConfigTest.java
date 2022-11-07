@@ -1,8 +1,7 @@
 package com.github.clescot.kafka.connect.http.sink.config;
 
-import com.github.clescot.kafka.connect.http.source.AckConfig;
+import com.github.clescot.kafka.connect.http.source.SourceConfig;
 import com.google.common.collect.Maps;
-import org.apache.kafka.common.config.ConfigException;
 import org.junit.Test;
 
 import java.util.HashMap;
@@ -16,11 +15,11 @@ public class AckConfigTest {
 
     @Test(expected = NullPointerException.class)
     public void test_null_map(){
-        new AckConfig(null);
+        new SourceConfig(null);
     }
     @Test(expected = IllegalArgumentException.class)
     public void test_empty_map(){
-        new AckConfig(Maps.newHashMap());
+        new SourceConfig(Maps.newHashMap());
     }
 
     @Test
@@ -28,7 +27,7 @@ public class AckConfigTest {
         HashMap<Object, Object> config = Maps.newHashMap();
         config.put(ConfigConstants.SUCCESS_TOPIC,"success.topic");
         config.put(ConfigConstants.ERRORS_TOPIC,"errors.topic");
-        new AckConfig(config);
+        new SourceConfig(config);
     }
 
 
@@ -37,7 +36,7 @@ public class AckConfigTest {
     @Test(expected = IllegalArgumentException.class)
     public void test_missing_ack_topic(){
         HashMap<Object, Object> config = Maps.newHashMap();
-        new AckConfig(config);
+        new SourceConfig(config);
     }
 
 
