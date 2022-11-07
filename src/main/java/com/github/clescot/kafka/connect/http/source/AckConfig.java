@@ -3,12 +3,7 @@ package com.github.clescot.kafka.connect.http.source;
 import com.github.clescot.kafka.connect.http.sink.config.ConfigConstants;
 import com.github.clescot.kafka.connect.http.sink.config.ConfigDefinition;
 import com.google.common.base.Preconditions;
-import com.google.common.collect.ImmutableMap;
-import io.confluent.connect.avro.AvroData;
-import io.confluent.connect.avro.AvroDataConfig;
-import io.confluent.kafka.serializers.KafkaAvroDeserializerConfig;
 import org.apache.kafka.common.config.AbstractConfig;
-import org.apache.kafka.connect.data.Schema;
 
 import java.util.Map;
 import java.util.Optional;
