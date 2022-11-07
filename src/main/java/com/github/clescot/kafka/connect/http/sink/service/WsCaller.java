@@ -192,7 +192,7 @@ public class WsCaller {
             Response response = responseListenableFuture.get();
             stopwatch.stop();
             LOGGER.info("duration: {}",stopwatch);
-            LOGGER.info("response  : {}",response.toString());
+            LOGGER.info("response: {}",response.toString());
             return getAcknowledgement(requestId,wsProperties,request, response,stopwatch, now,attempts);
         } catch (RestClientException | InterruptedException | ExecutionException e) {
             LOGGER.error("Failed to call web service {} ", e.getMessage());
