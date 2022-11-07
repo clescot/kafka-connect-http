@@ -5,9 +5,9 @@ import org.asynchttpclient.HttpResponseStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class WsCallerAsyncCompletionHandler extends AsyncCompletionHandlerBase {
+public class HttpClientAsyncCompletionHandler extends AsyncCompletionHandlerBase {
 
-    private final static Logger LOGGER = LoggerFactory.getLogger(WsCallerAsyncCompletionHandler.class);
+    private final static Logger LOGGER = LoggerFactory.getLogger(HttpClientAsyncCompletionHandler.class);
 
 
 

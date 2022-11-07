@@ -2,7 +2,7 @@ package com.github.clescot.kafka.connect.http.sink;
 
 import com.github.clescot.kafka.connect.http.QueueFactory;
 import com.github.clescot.kafka.connect.http.sink.client.PropertyBasedASyncHttpClientConfig;
-import com.github.clescot.kafka.connect.http.sink.client.WsCaller;
+import com.github.clescot.kafka.connect.http.sink.client.HttpClient;
 import com.github.clescot.kafka.connect.http.source.Acknowledgement;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
@@ -48,7 +48,7 @@ public class WsSinkTask extends SinkTask {
     private static final String COOKIE_STORE = ASYN_HTTP_CONFIG_PREFIX + "cookie.store";
     private static final String NETTY_TIMER = ASYN_HTTP_CONFIG_PREFIX + "netty.timer";
     private static final String BYTE_BUFFER_ALLOCATOR = ASYN_HTTP_CONFIG_PREFIX + "byte.buffer.allocator";
-    private WsCaller wsCaller;
+    private HttpClient httpClient;
     private final static Logger LOGGER = LoggerFactory.getLogger(WsSinkTask.class);
     private Queue<Acknowledgement> queue;
     private String queueName;
@@ -75,7 +75,7 @@ public class WsSinkTask extends SinkTask {
     public void start(Map<String, String> settings) {
         Preconditions.checkNotNull(settings, "settings cannot be null");
         this.wsSinkConnectorConfig = new WsSinkConnectorConfig(WsSinkConfigDefinition.config(),settings);
-        this.wsCaller = new WsCaller(getAsyncHttpClient(wsSinkConnectorConfig.originalsStrings()));
+        this.httpClient = new HttpClient(getAsyncHttpClient(wsSinkConnectorConfig.originalsStrings()));
         this.queueName = wsSinkConnectorConfig.getQueueName();
         this.queue = QueueFactory.getQueue(queueName);
         this.staticRequestHeaders = wsSinkConnectorConfig.getStaticRequestHeaders();
@@ -167,13 +167,13 @@ public class WsSinkTask extends SinkTask {
     @Override
     public void put(Collection<SinkRecord> records) {
         Preconditions.checkNotNull(records, "records collection to be processed is null");
-        Preconditions.checkNotNull(wsCaller, "wsCaller is null. 'start' method must be called once before put");
+        Preconditions.checkNotNull(httpClient, "httpClient is null. 'start' method must be called once before put");
         if(wsSinkConnectorConfig.isPublishToInMemoryQueue()) {
             Preconditions.checkArgument(QueueFactory.hasAConsumer(queueName), "'" + queueName + "' queue hasn't got any consumer, i.e no Source Connector has been configured to consume records published in this in memory queue. we stop the Sink Connector to prevent any OutofMemoryError.");
         }
         records.stream()
                 .map(this::addStaticHeaders)
-                .map(wsCaller::call)
+                .map(httpClient::call)
                 .peek(ack->LOGGER.debug("get ack :{}",ack))
                 .forEach(ack -> {
                     if(wsSinkConnectorConfig.isPublishToInMemoryQueue()) {
@@ -195,8 +195,8 @@ public class WsSinkTask extends SinkTask {
     }
 
     //for testing purpose
-    protected void setWsCaller(WsCaller wsCaller){
-        this.wsCaller = wsCaller;
+    protected void setHttpClient(HttpClient httpClient){
+        this.httpClient = httpClient;
     }
     //for testing purpose
     protected Map<String,String> getStaticRequestHeaders(){
