@@ -11,17 +11,17 @@ public class Acknowledgement {
     private Map<String,String> requestHeaders;
     private final String method;
     private final String requestBody;
-    private Map<String,String> responseHeaders;
-    private String correlationId;
-    private Integer statusCode;
-    private String statusMessage;
-    private String responseBody;
-    private long durationInMillis;
-    private OffsetDateTime moment;
-    private AtomicInteger attempts;
+    private final Map<String,String> responseHeaders;
+    private final String correlationId;
+    private final Integer statusCode;
+    private final String statusMessage;
+    private final String responseBody;
+    private final long durationInMillis;
+    private final OffsetDateTime moment;
+    private final AtomicInteger attempts;
     private final String requestUri;
     private final String requestId;
-    private boolean success;
+    private final boolean success;
 
     public Acknowledgement(
             String correlationId,
