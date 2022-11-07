@@ -35,7 +35,7 @@ public class WsSinkConnectorTest {
             Map<String, String> settings = Maps.newHashMap();
             settings.put(TARGET_BOOTSTRAP_SERVER,"localhost:9092");
             settings.put(TARGET_SCHEMA_REGISTRY,"localhost:8081");
-            settings.put(ACK_TOPIC,"fake.ack.topic");
+            settings.put(SUCCESS_TOPIC,"fake.ack.topic");
             settings.put(ACK_SCHEMA,"{\n" +
                     "    \"namespace\": \"com.fake.namespace\",\n" +
                     "    \"name\": \"Test\",\n" +
@@ -67,7 +67,7 @@ public class WsSinkConnectorTest {
             Map<String, String> settings = Maps.newHashMap();
             settings.put(TARGET_BOOTSTRAP_SERVER,"localhost:9092");
             settings.put(TARGET_SCHEMA_REGISTRY,"localhost:8081");
-            settings.put(ACK_TOPIC,"fake.ack.topic");
+            settings.put(SUCCESS_TOPIC,"fake.ack.topic");
             settings.put(ACK_SCHEMA,"{\n" +
                     "    \"namespace\": \"com.fake.namespace\",\n" +
                     "    \"name\": \"Test\",\n" +
@@ -90,7 +90,7 @@ public class WsSinkConnectorTest {
             Map<String, String> settings = Maps.newHashMap();
             settings.put(TARGET_BOOTSTRAP_SERVER,"localhost:9092");
             settings.put(TARGET_SCHEMA_REGISTRY,"localhost:8081");
-            settings.put(ACK_TOPIC,"fake.ack.topic");
+            settings.put(SUCCESS_TOPIC,"fake.ack.topic");
             settings.put(ACK_SCHEMA,"{\n" +
                     "    \"namespace\": \"com.fake.namespace\",\n" +
                     "    \"name\": \"Test\",\n" +
@@ -117,7 +117,7 @@ public class WsSinkConnectorTest {
             Map<String, String> settings = Maps.newHashMap();
             settings.put(TARGET_BOOTSTRAP_SERVER,"localhost:9092");
             settings.put(TARGET_SCHEMA_REGISTRY,"localhost:8081");
-            settings.put(ACK_TOPIC,"fake.ack.topic");
+            settings.put(SUCCESS_TOPIC,"fake.ack.topic");
             settings.put(ACK_SCHEMA,"{\n" +
                     "    \"namespace\": \"com.fake.namespace\",\n" +
                     "    \"name\": \"Test\",\n" +

@@ -6,6 +6,9 @@ import com.github.tomakehurst.wiremock.junit5.WireMockRuntimeInfo;
 import com.github.tomakehurst.wiremock.junit5.WireMockTest;
 import com.google.common.base.Joiner;
 import com.google.common.collect.Lists;
+import io.confluent.kafka.schemaregistry.client.CachedSchemaRegistryClient;
+import io.confluent.kafka.schemaregistry.client.SchemaRegistryClient;
+import io.confluent.kafka.serializers.json.KafkaJsonSchemaDeserializer;
 import io.debezium.testing.testcontainers.Connector;
 import io.debezium.testing.testcontainers.ConnectorConfiguration;
 import io.debezium.testing.testcontainers.DebeziumContainer;
@@ -17,6 +20,7 @@ import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.common.header.Header;
 import org.apache.kafka.common.header.internals.RecordHeader;
+import org.apache.kafka.common.serialization.Deserializer;
 import org.apache.kafka.common.serialization.StringDeserializer;
 import org.apache.kafka.common.serialization.StringSerializer;
 import org.junit.jupiter.api.AfterAll;
@@ -41,11 +45,11 @@ import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
 import static com.github.tomakehurst.wiremock.client.WireMock.get;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
 
 @Testcontainers
@@ -56,6 +60,7 @@ public class ITConnectorTest {
     private final static Slf4jLogConsumer logConsumer = new Slf4jLogConsumer(LOGGER).withSeparateOutputStreams();
     public static final String CONFLUENT_VERSION = "7.2.2";
     public static final int CUSTOM_AVAILABLE_PORT = 0;
+    public static final int CACHE_CAPACITY = 100;
     private static Network network = Network.newNetwork();
     @Container
     public static KafkaContainer kafkaContainer = new KafkaContainer(DockerImageName.parse("confluentinc/cp-kafka:" + CONFLUENT_VERSION))
@@ -100,7 +105,10 @@ public class ITConnectorTest {
 
     private static WireMockServer wireMockServer = new WireMockServer();
     private static String hostName;
-
+    private static String internalSchemaRegistryUrl;
+    private static String externalSchemaRegistryUrl;
+    private static final String successTopic = "http-success";
+    private static final String errorsTopic = "http-errors";
 
     @BeforeAll
     public static void startContainers() throws IOException {
@@ -109,6 +117,35 @@ public class ITConnectorTest {
         wireMockServer.start();
         org.testcontainers.Testcontainers.exposeHostPorts(wireMockServer.port());
         Startables.deepStart(Stream.of(kafkaContainer, schemaRegistryContainer, connectContainer)).join();
+        internalSchemaRegistryUrl = "http://" + schemaRegistryContainer.getNetworkAliases().get(0) + ":8081";
+        externalSchemaRegistryUrl = "http://" + schemaRegistryContainer.getHost() + ":"+schemaRegistryContainer.getMappedPort(8081);
+        //register connectors
+        ConnectorConfiguration sinkConnectorConfiguration = ConnectorConfiguration.create()
+                .with("connector.class", "com.github.clescot.kafka.connect.http.sink.WsSinkConnector")
+                .with("tasks.max", "2")
+                .with("topics", "http-requests")
+                .with("key.converter", "org.apache.kafka.connect.storage.StringConverter")
+                .with("value.converter", "org.apache.kafka.connect.storage.StringConverter");
+
+
+        ConnectorConfiguration sourceConnectorConfiguration = ConnectorConfiguration.create()
+                .with("connector.class", "com.github.clescot.kafka.connect.http.source.WsSourceConnector")
+                .with("tasks.max", "2")
+                .with("success.topic", successTopic)
+                .with("errors.topic", errorsTopic)
+                .with("key.converter", "org.apache.kafka.connect.storage.StringConverter")
+                .with("value.converter", "io.confluent.connect.json.JsonSchemaConverter")
+                .with("value.converter.schema.registry.url", internalSchemaRegistryUrl);
+
+        connectContainer.registerConnector("http-sink-connector", sinkConnectorConfiguration);
+        connectContainer.ensureConnectorTaskState("http-sink-connector", 0, Connector.State.RUNNING);
+        connectContainer.registerConnector("http-source-connector", sourceConnectorConfiguration);
+        connectContainer.ensureConnectorTaskState("http-source-connector", 0, Connector.State.RUNNING);
+
+        List<String> registeredConnectors = connectContainer.getRegisteredConnectors();
+
+        String joinedRegisteredConnectors = Joiner.on(",").join(registeredConnectors);
+        LOGGER.info("registered connectors :{}", joinedRegisteredConnectors);
     }
 
 
@@ -124,32 +161,18 @@ public class ITConnectorTest {
 
     @Test
     public void nominalCase(WireMockRuntimeInfo wmRuntimeInfo) {
-        ConnectorConfiguration sinkConnectorConfiguration = ConnectorConfiguration.create()
-                .with("connector.class", "com.github.clescot.kafka.connect.http.sink.WsSinkConnector")
-                .with("tasks.max", "2")
-                .with("topics", "http-requests")
-                .with("key.converter", "org.apache.kafka.connect.storage.StringConverter")
-                .with("value.converter", "org.apache.kafka.connect.storage.StringConverter");
-        ConnectorConfiguration sourceConnectorConfiguration = ConnectorConfiguration.create()
-                .with("connector.class", "com.github.clescot.kafka.connect.http.source.WsSourceConnector")
-                .with("tasks.max", "2")
-                .with("ack.topic", "http-responses")
-                .with("key.converter", "org.apache.kafka.connect.storage.StringConverter")
-                .with("value.converter", "io.confluent.connect.json.JsonSchemaConverter")
-                .with("value.converter.schema.registry.url","http://"+schemaRegistryContainer.getNetworkAliases().get(0)+":8081");
-
-        connectContainer.registerConnector("http-sink-connector", sinkConnectorConfiguration);
-        connectContainer.ensureConnectorTaskState("http-sink-connector", 0, Connector.State.RUNNING);
-        connectContainer.registerConnector("http-source-connector", sourceConnectorConfiguration);
-        connectContainer.ensureConnectorTaskState("http-source-connector", 0, Connector.State.RUNNING);
-
-        List<String> registeredConnectors = connectContainer.getRegisteredConnectors();
-
-        String joinedRegisteredConnectors = Joiner.on(",").join(registeredConnectors);
-        LOGGER.info("registered connectors :{}", joinedRegisteredConnectors);
-        String httpBaseUrl = wmRuntimeInfo.getHttpBaseUrl();
+        //define the http Mock Server
         WireMock wireMock = wmRuntimeInfo.getWireMock();
-        wireMock.register(get("/ping").willReturn(aResponse().withBody("pong").withStatus(200).withStatusMessage("OK")));
+        wireMock
+                .register(get("/ping")
+                        .willReturn(aResponse()
+                        .withHeader("Content-Type","application/json")
+                        .withBody("{\"result\":\"pong\"}")
+                        .withStatus(200)
+                        .withStatusMessage("OK")
+                        )
+                );
+        //forge messages which will command http requests
         KafkaProducer<String, String> producer = getProducer(kafkaContainer);
         Collection<Header> headers = Lists.newArrayList();
         String url = "http://" + getIP() + ":" + wmRuntimeInfo.getHttpPort() + "/ping";
@@ -159,6 +182,17 @@ public class ITConnectorTest {
         ProducerRecord<String, String> record = new ProducerRecord<>("http-requests", null, System.currentTimeMillis(), null, "value", headers);
         producer.send(record);
         producer.flush();
+
+        //verify http responses
+        KafkaConsumer<String, String> consumer = getConsumer(kafkaContainer,externalSchemaRegistryUrl);
+
+        consumer.subscribe(Lists.newArrayList(successTopic));
+        List<ConsumerRecord<String, String>> consumerRecords = drain(consumer, 1);
+        assertThat(consumerRecords).hasSize(1);
+        ConsumerRecord<String, String> consumerRecord = consumerRecords.get(0);
+        assertThat(consumerRecord.key()).isNull();
+        assertThat(consumerRecord.value()).isEqualTo("");
+        assertThat(consumerRecord.headers().toArray()).hasSize(1);
 //        await().atMost(Duration.ofSeconds(1000)).until(() -> Boolean.TRUE.equals(Boolean.FALSE));
     }
 
@@ -176,7 +210,12 @@ public class ITConnectorTest {
     }
 
     private KafkaConsumer<String, String> getConsumer(
-            KafkaContainer kafkaContainer) {
+            KafkaContainer kafkaContainer,
+            String schemaRegistryUrl) {
+
+        SchemaRegistryClient schemaRegistryClient = new CachedSchemaRegistryClient(schemaRegistryUrl, CACHE_CAPACITY);
+        Deserializer<String> jsonSchemaDeserializer = new KafkaJsonSchemaDeserializer<>(schemaRegistryClient);
+
 
         return new KafkaConsumer<>(
                 Map.of(
@@ -187,7 +226,7 @@ public class ITConnectorTest {
                         ConsumerConfig.AUTO_OFFSET_RESET_CONFIG,
                         "earliest"),
                 new StringDeserializer(),
-                new StringDeserializer());
+                jsonSchemaDeserializer);
     }
 
     private List<ConsumerRecord<String, String>> drain(
