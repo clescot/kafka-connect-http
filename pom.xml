@@ -1,20 +1,22 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
-
-
     <name>KAFKA CONNECT :: HTTP :: SINK</name>
     <groupId>com.github.clescot</groupId>
     <artifactId>kafka-connect-http-sink</artifactId>
     <version>1.0-SNAPSHOT</version>
     <packaging>jar</packaging>
     <properties>
+        <async.http.client.version>2.12.3</async.http.client.version>
         <kafka.version>3.3.1</kafka.version>
-        <confluent.platform.version>7.2.1</confluent.platform.version>
+        <confluent.platform.version>7.2.2</confluent.platform.version>
         <guava.version>31.1-jre</guava.version>
-        <junit.version>5.8.1</junit.version>
+        <junit.version>5.9.1</junit.version>
         <maven.compiler.source>17</maven.compiler.source>
         <maven.compiler.target>17</maven.compiler.target>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
+        <testcontainers.version>1.17.5</testcontainers.version>
     </properties>
 
     <dependencies>
@@ -27,12 +29,12 @@
         <dependency>
             <groupId>org.asynchttpclient</groupId>
             <artifactId>async-http-client</artifactId>
-            <version>2.10.4</version>
+            <version>${async.http.client.version}</version>
         </dependency>
         <dependency>
             <groupId>org.asynchttpclient</groupId>
             <artifactId>async-http-client-extras-guava</artifactId>
-            <version>2.10.4</version>
+            <version>${async.http.client.version}</version>
         </dependency>
 
 
@@ -64,7 +66,7 @@
         <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
-            <version>4.12</version>
+            <version>4.13.2</version>
             <scope>test</scope>
         </dependency>
 
@@ -72,39 +74,32 @@
         <dependency>
             <groupId>org.assertj</groupId>
             <artifactId>assertj-core</artifactId>
-            <!-- use 2.6.0 for Java 7 projects -->
-            <version>3.6.2</version>
+            <version>3.23.1</version>
             <scope>test</scope>
         </dependency>
 
 
         <dependency>
-            <groupId>net.jodah</groupId>
+            <groupId>dev.failsafe</groupId>
             <artifactId>failsafe</artifactId>
-            <version>1.1.0</version>
+            <version>3.3.0</version>
         </dependency>
         <dependency>
             <groupId>org.mockito</groupId>
             <artifactId>mockito-core</artifactId>
-            <version>3.0.0</version>
+            <version>4.8.1</version>
             <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.testcontainers</groupId>
             <artifactId>testcontainers</artifactId>
-            <version>1.12.3</version>
+            <version>${testcontainers.version}</version>
             <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.testcontainers</groupId>
             <artifactId>kafka</artifactId>
-            <version>1.12.3</version>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.testcontainers</groupId>
-            <artifactId>mssqlserver</artifactId>
-            <version>1.12.3</version>
+            <version>${testcontainers.version}</version>
             <scope>test</scope>
         </dependency>
         <dependency>
@@ -112,6 +107,12 @@
             <artifactId>testcontainers-kafka</artifactId>
             <version>1.2.4</version>
             <scope>test</scope>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.projectlombok</groupId>
+                    <artifactId>lombok</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
             <groupId>org.junit.jupiter</groupId>
@@ -134,7 +135,9 @@
                 </configuration>
             </plugin>
             <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-assembly-plugin</artifactId>
+                <version>3.4.2</version>
                 <executions>
                     <execution>
                         <phase>package</phase>
