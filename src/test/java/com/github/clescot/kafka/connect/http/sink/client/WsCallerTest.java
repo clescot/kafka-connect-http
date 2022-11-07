@@ -202,7 +202,7 @@ public class WsCallerTest {
         }
 
 
-        @Test(expected = RestClientException.class)
+        @Test(expected = HttpException.class)
         public void test_failure_server_side() throws ExecutionException, InterruptedException {
             AsyncHttpClient asyncHttpClient = mock(AsyncHttpClient.class);
             ListenableFuture<Response> listener = mock(ListenableFuture.class);
