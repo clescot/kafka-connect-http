@@ -1,0 +1,62 @@
+{
+  "type": "record",
+  "name": "wsAck",
+  "fields": [
+    {
+      "name": "correlationId",
+      "type": "string"
+    },
+    {
+      "name": "wsId",
+      "type": "string"
+    },
+    {
+      "name": "statusCode",
+      "type": "int"
+    },
+    {
+      "name": "statusMessage",
+      "type": "string"
+    },
+    {"name": "responseHeaders",
+      "type": {
+        "type":"array",
+        "items": "string"
+      }
+    },
+    {
+      "name": "responseBody",
+      "type": "string"
+    },
+    {
+      "name": "method",
+      "type": "string"
+    },
+    {
+      "name": "requestUri",
+      "type": "string"
+    },
+    {"name": "requestHeaders",
+      "type": {
+        "type":"array",
+        "items": "string"
+      }
+    },
+    {
+      "name": "requestBody",
+      "type": "string"
+    },
+    {
+      "name": "durationInMillis",
+      "type": "long"
+    },
+    {
+      "name": "moment",
+      "type": "string"
+    },
+    {
+      "name": "attempts",
+      "type": "int"
+    }
+  ]
+}
