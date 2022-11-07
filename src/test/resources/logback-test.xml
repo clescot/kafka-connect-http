@@ -8,5 +8,5 @@
     <root level="INFO">
         <appender-ref ref="STDOUT" />
     </root>
-    <logger name="com.github.clescot.kafka.connect.http.source" level="DEBUG" />
+    <logger name="com.github.clescot.kafka.connect.http" level="DEBUG" />
 </configuration>
