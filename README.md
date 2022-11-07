@@ -66,10 +66,13 @@ HTTP query and HTTP responses.
 ### Does the unbounded in memory queue implies an *OutOfMemoryError* risk ?
 
 As both ends of the in memory queue, implies a Kafka communication, the *OutOfMemory* risk seems mitigated by the same source of problem on both sides (kafka communication problem).
+We also check that all queues registered has got their consumer (Source Connector instance).
+Note that a queue has got only one consumer, opposite to the Topic concept, which support multiple consumers. The only one queue consumer, is the configured Source Connector.
+
 
 ## configuration
 
-### Sink Connector
+### HTTP Sink Connector
 
 #### required parameters
 
@@ -96,3 +99,12 @@ every Kafka Connect Sink Connector need to define these required parameters :
  `,` character. The connector will try to get the value to add to request by querying the config with the header name as parameter name.
  For example, if set `static.request.header.names: param_name1,param_name2`, the connector will lookup the param_name1 
   and param_name2 parameters to get values to add. 
+
+### HTTP Source Connector
+
+The HTTP Source connector is only useful if you have configured the publishment of HTTP interactions into the queue, 
+via the `publish.to.in.memory.queue` set to `true`.
+
+#### required HTTP Source connector parameters
+
+
