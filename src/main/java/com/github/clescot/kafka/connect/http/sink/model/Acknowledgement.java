@@ -21,12 +21,12 @@ public class Acknowledgement {
     private OffsetDateTime moment;
     private AtomicInteger attempts;
     private final String requestUri;
-    private final String wsId;
+    private final String requestId;
 
 
     public Acknowledgement(
             String correlationId,
-            String wsId,
+            String requestId,
             Integer statusCode,
             String statusMessage,
             List<Map.Entry<String, String>> responseHeaders,
@@ -39,7 +39,7 @@ public class Acknowledgement {
             OffsetDateTime moment,
             AtomicInteger attempts) {
         this.correlationId = correlationId;
-        this.wsId = wsId;
+        this.requestId = requestId;
         this.statusCode = statusCode;
         this.statusMessage = statusMessage;
         this.requestUri = requestUri;
@@ -97,8 +97,8 @@ public class Acknowledgement {
         return requestUri;
     }
 
-    public String getWsId() {
-        return wsId;
+    public String getRequestId() {
+        return requestId;
     }
 
     public long getDurationInMillis() {
@@ -117,7 +117,7 @@ public class Acknowledgement {
                 ", statusMessage='" + statusMessage + '\'' +
                 ", responseBody='" + responseBody + '\'' +
                 ", requestUri='" + requestUri + '\'' +
-                ", wsId='" + wsId + '\'' +
+                ", requestId='" + requestId + '\'' +
                 ", durationInMillis='" + durationInMillis + '\'' +
                 ", moment='" + moment.format(DateTimeFormatter.ISO_INSTANT) + '\'' +
                 ", attempts='" + attempts + '\'' +
@@ -126,7 +126,7 @@ public class Acknowledgement {
 
     public static final class AcknowledgementBuilder {
         private String correlationId;
-        private String wsId;
+        private String requestId;
         private String requestUri;
         private String requestMethod;
         private List<Map.Entry<String, String>> requestHeaders;
@@ -152,8 +152,8 @@ public class Acknowledgement {
             return this;
         }
 
-        public AcknowledgementBuilder withWsId(String wsId) {
-            this.wsId = wsId;
+        public AcknowledgementBuilder withRequestId(String requestId) {
+            this.requestId = requestId;
             return this;
         }
 
@@ -181,7 +181,7 @@ public class Acknowledgement {
         public Acknowledgement build() {
             return new Acknowledgement(
                     correlationId,
-                    wsId,
+                    requestId,
                     statusCode,
                     statusMessage,
                     responseHeaders,

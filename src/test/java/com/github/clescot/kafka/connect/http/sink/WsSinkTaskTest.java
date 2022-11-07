@@ -65,7 +65,7 @@ public class WsSinkTaskTest {
             "      \"type\": \"string\"\n" +
             "    },\n" +
             "    {\n" +
-            "      \"name\": \"wsId\",\n" +
+            "      \"name\": \"requestId\",\n" +
             "      \"type\": \"string\"\n" +
             "    },\n" +
             "    {\n" +
@@ -333,7 +333,7 @@ public class WsSinkTaskTest {
             headers.add(url);
             Header method = new HeaderImpl("ws-method",Schema.STRING_SCHEMA,"PUT");
             headers.add(method);
-            Header correlationId = new HeaderImpl("ws-"+WS_CORRELATION_ID,Schema.STRING_SCHEMA,"qsdfsdfsdf654d5zgt5T");
+            Header correlationId = new HeaderImpl("ws-"+ HEADER_X_CORRELATION_ID,Schema.STRING_SCHEMA,"qsdfsdfsdf654d5zgt5T");
             headers.add(correlationId);
             Header retries = new HeaderImpl("ws-"+WS_RETRIES,Schema.STRING_SCHEMA,"2");
             headers.add(retries);
@@ -439,7 +439,7 @@ public class WsSinkTaskTest {
             headers.add(url);
             Header method = new HeaderImpl("ws-method",Schema.STRING_SCHEMA,"PUT");
             headers.add(method);
-            Header correlationId = new HeaderImpl("ws-"+WS_CORRELATION_ID,Schema.STRING_SCHEMA,"qsdfsdfsdf654d5zgt5T");
+            Header correlationId = new HeaderImpl("ws-"+ HEADER_X_CORRELATION_ID,Schema.STRING_SCHEMA,"qsdfsdfsdf654d5zgt5T");
             headers.add(correlationId);
             Header retries = new HeaderImpl("ws-"+WS_RETRIES,Schema.STRING_SCHEMA,"2");
             headers.add(retries);
@@ -517,7 +517,7 @@ public class WsSinkTaskTest {
             headers.add(url);
             Header method = new HeaderImpl("ws-method",Schema.STRING_SCHEMA,"PUT");
             headers.add(method);
-            Header correlationId = new HeaderImpl("ws-"+WS_CORRELATION_ID,Schema.STRING_SCHEMA,"qsdfsdfsdf654d5zgt5T");
+            Header correlationId = new HeaderImpl("ws-"+ HEADER_X_CORRELATION_ID,Schema.STRING_SCHEMA,"qsdfsdfsdf654d5zgt5T");
             headers.add(correlationId);
             Header retries = new HeaderImpl("ws-"+WS_RETRIES,Schema.STRING_SCHEMA,"2");
             headers.add(retries);
