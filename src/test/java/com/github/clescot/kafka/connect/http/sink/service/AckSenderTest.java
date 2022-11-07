@@ -73,7 +73,7 @@ public class AckSenderTest {
 
             AvroConverter valueAvroConverter = mock(AvroConverter.class);
             when(valueAvroConverter.fromConnectData(anyString(), any(Schema.class), any())).thenReturn(FAKE_RESPONSE.getBytes());
-            AckSender ackSender = AckSender.getInstance(ackConfig, producer, keyAvroConverter, valueAvroConverter);
+            AckSender ackSender = AckSender.getInstance(ackConfig, producer, valueAvroConverter);
 
             Acknowledgement acknowledgement = new Acknowledgement("", "sd897osdmsdg", 200, "toto", Lists.newArrayList(), "nfgnlksdfnlnskdfnlsf","http://toto:8081",Lists.newArrayList(),"PUT","", 100L, OffsetDateTime.now(), new AtomicInteger(2));
             //when
@@ -103,7 +103,7 @@ public class AckSenderTest {
             KafkaFailSafeProducer<String, byte[]> producer = new KafkaFailSafeProducer(()->new KafkaProducer(props),2);
             AvroConverter keyAvroConverter = getAvroConverter(true);
             AvroConverter valueAvroConverter = getAvroConverter(false);
-            AckSender ackSender = AckSender.getInstance(ackConfig, producer, keyAvroConverter, valueAvroConverter);
+            AckSender ackSender = AckSender.getInstance(ackConfig, producer, valueAvroConverter);
             ackSender.convertValue(null);
         }
 
@@ -128,7 +128,7 @@ public class AckSenderTest {
             KafkaFailSafeProducer<String, byte[]> producer = new KafkaFailSafeProducer(()->new KafkaProducer(props),2);
             AvroConverter keyAvroConverter = getAvroConverter(true);
             AvroConverter valueAvroConverter = getAvroConverter(false);
-            AckSender ackSender = AckSender.getInstance(ackConfig, producer, keyAvroConverter, valueAvroConverter);
+            AckSender ackSender = AckSender.getInstance(ackConfig, producer, valueAvroConverter);
             Acknowledgement acknowledgement = new Acknowledgement(null,null, 200, "toto",Lists.newArrayList(), "nfgnlksdfnlnskdfnlsf","http://toto:8081",Lists.newArrayList(),"POST","",  100L, OffsetDateTime.now(), new AtomicInteger(2));
             ackSender.convertValue(acknowledgement);
         }
@@ -154,7 +154,7 @@ public class AckSenderTest {
             KafkaFailSafeProducer<String, byte[]> producer = new KafkaFailSafeProducer(()->new KafkaProducer(props),2);
             AvroConverter keyAvroConverter = getAvroConverter(true);
             AvroConverter valueAvroConverter = getAvroConverter(false);
-            AckSender ackSender = AckSender.getInstance(ackConfig, producer, keyAvroConverter, valueAvroConverter);
+            AckSender ackSender = AckSender.getInstance(ackConfig, producer, valueAvroConverter);
             Acknowledgement acknowledgement = new Acknowledgement("sdfsfd", "sd897osdmsdg", -1, "toto",Lists.newArrayList(), "nfgnlksdfnlnskdfnlsf","http://toto:8081",Lists.newArrayList(),"PUT","",  100L, OffsetDateTime.now(), new AtomicInteger(2));
             ackSender.convertValue(acknowledgement);
         }
@@ -180,7 +180,7 @@ public class AckSenderTest {
             KafkaFailSafeProducer<String, byte[]> producer = new KafkaFailSafeProducer(()->new KafkaProducer(props),2);
             AvroConverter keyAvroConverter = getAvroConverter(true);
             AvroConverter valueAvroConverter = getAvroConverter(false);
-            AckSender ackSender = AckSender.getInstance(ackConfig, producer, keyAvroConverter, valueAvroConverter);
+            AckSender ackSender = AckSender.getInstance(ackConfig, producer, valueAvroConverter);
             Acknowledgement acknowledgement = new Acknowledgement( "sdqfsdfsdf","sd897osdmsdg", 200, "toto",Lists.newArrayList(), null,"http://toto:8081",Lists.newArrayList(),"PUT","",  100L, OffsetDateTime.now(), new AtomicInteger(2));
             ackSender.convertValue(acknowledgement);
         }
@@ -208,7 +208,7 @@ public class AckSenderTest {
             KafkaFailSafeProducer<String, byte[]> producer = new KafkaFailSafeProducer(()->new KafkaProducer(props),2);
             AvroConverter keyAvroConverter = getAvroConverter(true);
             AvroConverter valueAvroConverter = getAvroConverter(false);
-            AckSender ackSender = AckSender.getInstance(ackConfig, producer, keyAvroConverter, valueAvroConverter);
+            AckSender ackSender = AckSender.getInstance(ackConfig, producer, valueAvroConverter);
             Acknowledgement acknowledgement = new Acknowledgement("sfsfddf","sd897osdmsdg", 200, null,Lists.newArrayList(), "nfgnlksdfnlnskdfnlsf","http://toto:8081",Lists.newArrayList(),"POST","",  100L, OffsetDateTime.now(), new AtomicInteger(2));
             ackSender.convertValue(acknowledgement);
         }
@@ -232,10 +232,8 @@ public class AckSenderTest {
             KafkaFailSafeProducer<String, byte[]> producer = mock(KafkaFailSafeProducer.class);
             RecordMetadata recordMetadata = new RecordMetadata(null, 1, 1, 1, Long.valueOf(1), 1, 1);
             when(producer.send(any(ProducerRecord.class))).thenReturn(CompletableFuture.supplyAsync(() -> recordMetadata));
-            AvroConverter keyAvroConverter = mock(AvroConverter.class);
-            when(keyAvroConverter.fromConnectData(anyString(), any(Schema.class), any())).thenReturn("test".getBytes());
             AvroConverter valueAvroConverter = mock(AvroConverter.class);
-            AckSender ackSender = AckSender.getInstance(ackConfig, producer, keyAvroConverter, valueAvroConverter);
+            AckSender ackSender = AckSender.getInstance(ackConfig, producer, valueAvroConverter);
             ArrayList<Map.Entry<String, String>> responseHeaders = Lists.newArrayList();
             responseHeaders.add(new AbstractMap.SimpleEntry<>("content-type","application/json"));
             responseHeaders.add(new AbstractMap.SimpleEntry<>("toto","titi"));
@@ -273,7 +271,7 @@ public class AckSenderTest {
             AvroConverter keyAvroConverter = getAvroConverter(true);
             AvroConverter valueAvroConverter = getAvroConverter(false);
             KafkaFailSafeProducer<String, byte[]> producer = mock(KafkaFailSafeProducer.class);
-            AckSender ackSender = AckSender.getInstance(ackConfig, producer, keyAvroConverter, valueAvroConverter);
+            AckSender ackSender = AckSender.getInstance(ackConfig, producer,  valueAvroConverter);
             ackSender.close();
         }
     }
