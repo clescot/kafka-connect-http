@@ -1,25 +1,26 @@
-package com.github.clescot.kafka.connect.http.sink.config;
+package com.github.clescot.kafka.connect.http.source;
 
-import com.github.clescot.kafka.connect.http.source.SourceConfig;
+import com.github.clescot.kafka.connect.http.sink.ConfigConstants;
+import com.github.clescot.kafka.connect.http.source.WsSourceConnectorConfig;
 import com.google.common.collect.Maps;
+import org.apache.kafka.common.config.ConfigException;
 import org.junit.Test;
 
 import java.util.HashMap;
 
-import static org.assertj.core.api.Assertions.assertThat;
 
 
-public class AckConfigTest {
+public class WsSourceConnectorConfigTest {
 
 
 
     @Test(expected = NullPointerException.class)
     public void test_null_map(){
-        new SourceConfig(null);
+        new WsSourceConnectorConfig(null);
     }
-    @Test(expected = IllegalArgumentException.class)
+    @Test(expected = ConfigException.class)
     public void test_empty_map(){
-        new SourceConfig(Maps.newHashMap());
+        new WsSourceConnectorConfig(Maps.newHashMap());
     }
 
     @Test
@@ -27,16 +28,16 @@ public class AckConfigTest {
         HashMap<Object, Object> config = Maps.newHashMap();
         config.put(ConfigConstants.SUCCESS_TOPIC,"success.topic");
         config.put(ConfigConstants.ERRORS_TOPIC,"errors.topic");
-        new SourceConfig(config);
+        new WsSourceConnectorConfig(config);
     }
 
 
 
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test(expected = ConfigException.class)
     public void test_missing_ack_topic(){
         HashMap<Object, Object> config = Maps.newHashMap();
-        new SourceConfig(config);
+        new WsSourceConnectorConfig(config);
     }
 
 

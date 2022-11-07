@@ -10,7 +10,6 @@ import org.junit.runner.RunWith;
 import java.util.List;
 import java.util.Map;
 
-import static com.github.clescot.kafka.connect.http.sink.config.ConfigConstants.*;
 import static org.assertj.core.api.Assertions.assertThat;
 
 @RunWith(Enclosed.class)

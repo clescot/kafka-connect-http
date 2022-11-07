@@ -1,6 +1,5 @@
 package com.github.clescot.kafka.connect.http.sink;
 
-import com.github.clescot.kafka.connect.http.sink.config.ConfigConstants;
 import com.github.clescot.kafka.connect.http.sink.service.WsCaller;
 import com.github.clescot.kafka.connect.http.source.Acknowledgement;
 import com.google.common.collect.Lists;
@@ -8,7 +7,6 @@ import com.google.common.collect.Maps;
 import org.apache.kafka.common.record.TimestampType;
 import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.header.Header;
-import org.apache.kafka.connect.header.Headers;
 import org.apache.kafka.connect.sink.SinkRecord;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;

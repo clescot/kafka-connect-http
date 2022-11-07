@@ -33,8 +33,8 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 import static com.github.clescot.kafka.connect.http.QueueFactory.DEFAULT_QUEUE_NAME;
-import static com.github.clescot.kafka.connect.http.sink.config.ConfigConstants.QUEUE_NAME;
-import static com.github.clescot.kafka.connect.http.sink.config.ConfigConstants.STATIC_REQUEST_HEADER_NAMES;
+import static com.github.clescot.kafka.connect.http.sink.ConfigConstants.QUEUE_NAME;
+import static com.github.clescot.kafka.connect.http.sink.ConfigConstants.STATIC_REQUEST_HEADER_NAMES;
 import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.ASYNC_CLIENT_CONFIG_ROOT;
 
 

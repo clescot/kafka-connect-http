@@ -1,6 +1,7 @@
 package com.github.clescot.kafka.connect.http.source;
 
 import com.google.common.collect.Maps;
+import org.apache.kafka.common.config.ConfigException;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -11,7 +12,7 @@ import java.util.List;
 import java.util.Map;
 
 import static com.github.clescot.kafka.connect.http.QueueFactory.DEFAULT_QUEUE_NAME;
-import static com.github.clescot.kafka.connect.http.sink.config.ConfigConstants.*;
+import static com.github.clescot.kafka.connect.http.sink.ConfigConstants.*;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 
 class WsSourceConnectorTest {
@@ -34,7 +35,7 @@ class WsSourceConnectorTest {
 
     @Test
     public void test_start_missing_success_topic(){
-        Assertions.assertThrows(IllegalArgumentException.class, () ->  {
+        Assertions.assertThrows(ConfigException.class, () ->  {
                 Map < String, String > settings = Maps.newHashMap();
                 settings.put(ERRORS_TOPIC, "foo");
                 wsSourceConnector.start(settings);
@@ -43,7 +44,7 @@ class WsSourceConnectorTest {
 
     @Test
     public void test_start_missing_errors_topic(){
-        Assertions.assertThrows(IllegalArgumentException.class, () ->  {
+        Assertions.assertThrows(ConfigException.class, () ->  {
                 Map < String, String > settings = Maps.newHashMap();
                 settings.put(SUCCESS_TOPIC, "foo");
                 wsSourceConnector.start(settings);
@@ -73,7 +74,7 @@ class WsSourceConnectorTest {
     @Test
     public void test_start_empty_settings_map(){
         Map<String,String> settings = Maps.newHashMap();
-        Assertions.assertThrows(IllegalArgumentException.class, () -> wsSourceConnector.start(settings));
+        Assertions.assertThrows(ConfigException.class, () -> wsSourceConnector.start(settings));
     }
 
     @Test
