@@ -11,7 +11,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 public class AckConfigTest {
 
-    public static final String DEFAULT_SINK_PRODUCER_ID = "httpSinkProducer";
 
     @Test(expected = NullPointerException.class)
     public void test_null_map(){
@@ -27,7 +26,7 @@ public class AckConfigTest {
         HashMap<Object, Object> config = Maps.newHashMap();
         config.put(ConfigConstants.TARGET_BOOTSTRAP_SERVER,"fake.bootstrap.servers.com:9092");
         config.put(ConfigConstants.TARGET_SCHEMA_REGISTRY,"fake.schema.registry:8081");
-        config.put(ConfigConstants.ACK_TOPIC,"fake.ack.topic");
+        config.put(ConfigConstants.SUCCESS_TOPIC,"fake.ack.topic");
         config.put(ConfigConstants.ACK_SCHEMA,"{\n" +
                 "    \"namespace\": \"com.fake.namespace\",\n" +
                 "    \"name\": \"Test\",\n" +

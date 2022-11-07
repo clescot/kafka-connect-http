@@ -2,7 +2,6 @@ package com.github.clescot.kafka.connect.http.source;
 
 import com.github.clescot.kafka.connect.http.QueueFactory;
 import com.github.clescot.kafka.connect.http.QueueProducer;
-import com.github.clescot.kafka.connect.http.sink.WsSinkTask;
 import com.github.clescot.kafka.connect.http.sink.config.ConfigConstants;
 import com.google.common.collect.Maps;
 import org.apache.kafka.connect.source.SourceRecord;
@@ -49,7 +48,7 @@ class WsSourceTaskTest {
     @NotNull
     private static Map<String, String> getNominalConfig() {
         Map<String, String> config =  Maps.newHashMap();
-        config.put(ConfigConstants.ACK_TOPIC,"ack-topic");
+        config.put(ConfigConstants.SUCCESS_TOPIC,"ack-topic");
         return config;
     }
 

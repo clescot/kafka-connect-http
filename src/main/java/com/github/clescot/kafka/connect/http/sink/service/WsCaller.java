@@ -212,9 +212,10 @@ public class WsCaller {
 
         int responseStatusCode = handleRetriesBasedOnStatusCode(wsProperties, response);
         correlationId = wsProperties.get(HEADER_X_CORRELATION_ID);
-        Map<String, String> requestHeaders = request.getHeaders().entries().stream().collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+        List<Map.Entry<String, String>> requestEntries = request.getHeaders()!=null?request.getHeaders().entries():Lists.newArrayList();
+        Map<String, String> requestHeaders = requestEntries.stream().collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
         List<Map.Entry<String, String>> responseEntries = response.getHeaders()!=null?response.getHeaders().entries():Lists.newArrayList();
-        Map<String, String> responseHeaders = response.getHeaders().entries().stream().collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+        Map<String, String> responseHeaders = responseEntries.stream().collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
         return setAcknowledgement(
                 correlationId,
                 requestId,

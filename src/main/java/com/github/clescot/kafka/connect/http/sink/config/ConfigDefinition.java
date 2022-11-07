@@ -1,7 +1,6 @@
 package com.github.clescot.kafka.connect.http.sink.config;
 
 import org.apache.kafka.common.config.ConfigDef;
-import org.apache.kafka.connect.storage.StringConverter;
 
 public class ConfigDefinition {
 
@@ -12,6 +11,8 @@ public class ConfigDefinition {
 
     public static ConfigDef config() {
         return new ConfigDef()
-                .define(ConfigConstants.ACK_TOPIC, ConfigDef.Type.STRING, null, ConfigDef.Importance.HIGH, ConfigConstants.ACK_TOPIC_DOC);
+                .define(ConfigConstants.SUCCESS_TOPIC, ConfigDef.Type.STRING, null, ConfigDef.Importance.HIGH, ConfigConstants.SUCCESS_TOPIC_DOC)
+                .define(ConfigConstants.ERRORS_TOPIC, ConfigDef.Type.STRING, null, ConfigDef.Importance.HIGH, ConfigConstants.ERRORS_TOPIC_DOC)
+                ;
     }
 }
