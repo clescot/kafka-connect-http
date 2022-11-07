@@ -48,7 +48,8 @@ class WsSourceTaskTest {
     @NotNull
     private static Map<String, String> getNominalConfig() {
         Map<String, String> config =  Maps.newHashMap();
-        config.put(ConfigConstants.SUCCESS_TOPIC,"ack-topic");
+        config.put(ConfigConstants.SUCCESS_TOPIC,"http-success");
+        config.put(ConfigConstants.ERRORS_TOPIC,"http-errors");
         return config;
     }
 

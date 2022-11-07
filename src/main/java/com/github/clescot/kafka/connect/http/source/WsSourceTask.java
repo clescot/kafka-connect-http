@@ -1,7 +1,6 @@
 package com.github.clescot.kafka.connect.http.source;
 
 import com.github.clescot.kafka.connect.http.QueueFactory;
-import com.github.clescot.kafka.connect.http.sink.WsSinkTask;
 import com.github.clescot.kafka.connect.http.sink.utils.VersionUtil;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
@@ -82,7 +81,7 @@ public class WsSourceTask extends SourceTask {
         struct.put(RESPONSE_HEADERS,acknowledgement.getResponseHeaders());
         struct.put(RESPONSE_BODY,acknowledgement.getResponseBody());
 
-        return new SourceRecord(sourcePartition,sourceOffset,ackConfig.getAckTopic(),struct.schema(),struct);
+        return new SourceRecord(sourcePartition,sourceOffset,ackConfig.getSuccessTopic(),struct.schema(),struct);
     }
 
     private Schema getSchema() {
