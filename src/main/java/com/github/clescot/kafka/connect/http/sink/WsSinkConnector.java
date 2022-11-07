@@ -1,6 +1,6 @@
 package com.github.clescot.kafka.connect.http.sink;
 
-import com.github.clescot.kafka.connect.http.sink.config.ConfigDefinition;
+import com.github.clescot.kafka.connect.http.source.SourceConfigDefinition;
 import com.github.clescot.kafka.connect.http.sink.utils.VersionUtil;
 import com.google.common.base.Preconditions;
 import org.apache.kafka.common.config.ConfigDef;
@@ -43,7 +43,7 @@ public class WsSinkConnector extends SinkConnector {
 
     @Override
     public ConfigDef config() {
-        return ConfigDefinition.config();
+        return SourceConfigDefinition.config();
     }
 
     @Override

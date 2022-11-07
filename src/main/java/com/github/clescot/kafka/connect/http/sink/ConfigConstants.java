@@ -1,4 +1,4 @@
-package com.github.clescot.kafka.connect.http.sink.config;
+package com.github.clescot.kafka.connect.http.sink;
 
 public class ConfigConstants {
 

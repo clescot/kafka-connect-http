@@ -2,8 +2,9 @@ package com.github.clescot.kafka.connect.http.source;
 
 import com.github.clescot.kafka.connect.http.QueueFactory;
 import com.github.clescot.kafka.connect.http.QueueProducer;
-import com.github.clescot.kafka.connect.http.sink.config.ConfigConstants;
+import com.github.clescot.kafka.connect.http.sink.ConfigConstants;
 import com.google.common.collect.Maps;
+import org.apache.kafka.common.config.ConfigException;
 import org.apache.kafka.connect.source.SourceRecord;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.AfterEach;
@@ -45,7 +46,7 @@ class WsSourceTaskTest {
 
     @Test
     void test_start_with_empty_settings() {
-        Assertions.assertThrows(IllegalArgumentException.class, () -> wsSourceTask.start(Maps.newHashMap()));
+        Assertions.assertThrows(ConfigException.class, () -> wsSourceTask.start(Maps.newHashMap()));
     }
 
     @Test
