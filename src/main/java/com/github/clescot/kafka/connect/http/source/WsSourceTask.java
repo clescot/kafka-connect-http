@@ -81,7 +81,13 @@ public class WsSourceTask extends SourceTask {
         struct.put(RESPONSE_HEADERS,acknowledgement.getResponseHeaders());
         struct.put(RESPONSE_BODY,acknowledgement.getResponseBody());
 
-        return new SourceRecord(sourcePartition,sourceOffset,ackConfig.getSuccessTopic(),struct.schema(),struct);
+        return new SourceRecord(
+                sourcePartition,
+                sourceOffset,
+                acknowledgement.isSuccess()?ackConfig.getSuccessTopic():ackConfig.getErrorsTopic(),
+                struct.schema(),
+                struct
+        );
     }
 
     private Schema getSchema() {
