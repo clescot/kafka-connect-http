@@ -34,8 +34,6 @@ public class WsSinkConnectorTest {
         public void test_with_nominal_case(){
             WsSinkConnector wsSinkConnector = new WsSinkConnector();
             Map<String, String> settings = Maps.newHashMap();
-            settings.put(SUCCESS_TOPIC,"fake.ack.topic");
-
             wsSinkConnector.start(settings);
         }
 
@@ -55,8 +53,6 @@ public class WsSinkConnectorTest {
         public void test_nominal_case(){
             WsSinkConnector wsSinkConnector = new WsSinkConnector();
             Map<String, String> settings = Maps.newHashMap();
-            settings.put(SUCCESS_TOPIC,"fake.success.topic");
-            settings.put(ERRORS_TOPIC,"fake.errors.topic");
             wsSinkConnector.start(settings);
             List<Map<String, String>> maps = wsSinkConnector.taskConfigs(1);
             assertThat(maps.size()).isEqualTo(1);
@@ -79,7 +75,6 @@ public class WsSinkConnectorTest {
         public void test_2_tasks(){
             WsSinkConnector wsSinkConnector = new WsSinkConnector();
             Map<String, String> settings = Maps.newHashMap();
-            settings.put(SUCCESS_TOPIC,"fake.ack.topic");
             wsSinkConnector.start(settings);
             List<Map<String, String>> maps = wsSinkConnector.taskConfigs(2);
             assertThat(maps.size()).isEqualTo(2);
@@ -94,7 +89,6 @@ public class WsSinkConnectorTest {
         public void test_nominal_case_without_ack_sender_already_initialized(){
             WsSinkConnector wsSinkConnector = new WsSinkConnector();
             Map<String, String> settings = Maps.newHashMap();
-            settings.put(SUCCESS_TOPIC,"fake.ack.topic");
             wsSinkConnector.start(settings);
             wsSinkConnector.stop();
         }
