@@ -5,24 +5,24 @@ package com.github.clescot.kafka.connect.http.sink.client;
  * i.e, retry occured only when a technical error is thrown.
  * A functional error, like a weird parameter will not be retried.
  */
-public class RestClientException extends RuntimeException {
+public class HttpException extends RuntimeException {
 
-    public RestClientException() {
+    public HttpException() {
     }
 
-    public RestClientException(String message) {
+    public HttpException(String message) {
         super(message);
     }
 
-    public RestClientException(String message, Throwable cause) {
+    public HttpException(String message, Throwable cause) {
         super(message, cause);
     }
 
-    public RestClientException(Throwable cause) {
+    public HttpException(Throwable cause) {
         super(cause);
     }
 
-    public RestClientException(String message, Throwable cause, boolean enableSuppression, boolean writableStackTrace) {
+    public HttpException(String message, Throwable cause, boolean enableSuppression, boolean writableStackTrace) {
         super(message, cause, enableSuppression, writableStackTrace);
     }
 }

@@ -133,7 +133,7 @@ public class WsCaller {
         long retryJitterInMs = Long.parseLong(Optional.ofNullable(wsProperties.get(WS_RETRY_JITTER)).orElse("100"));
         RetryPolicy<Acknowledgement> retryPolicy = RetryPolicy.<Acknowledgement>builder()
             //we retry only if the error comes from the WS server (server-side technical error)
-            .handle(RestClientException.class)
+            .handle(HttpException.class)
             .withBackoff(Duration.ofMillis(retryDelayInMs),Duration.ofMillis(retryMaxDelayInMs),retryDelayFactor)
             .withJitter(Duration.ofMillis(retryJitterInMs))
             .withMaxRetries(retries)
@@ -151,7 +151,7 @@ public class WsCaller {
                 attempts.addAndGet(1);
                 return callOnceWs(requestId,wsProperties, body,attempts);
             });
-        } catch (RestClientException e) {
+        } catch (HttpException e) {
             LOGGER.error("Failed to call web service after {} retries with error {} ", retries, e.getMessage());
             return setAcknowledgement(
                     correlationId,
@@ -181,7 +181,7 @@ public class WsCaller {
         return map;
     }
 
-    protected Acknowledgement callOnceWs(String requestId, Map<String, String> wsProperties, String body, AtomicInteger attempts) throws RestClientException {
+    protected Acknowledgement callOnceWs(String requestId, Map<String, String> wsProperties, String body, AtomicInteger attempts) throws HttpException {
         Request request = buildRequest(wsProperties, body);
         LOGGER.info("request: {}",request.toString());
         LOGGER.info("body: {}", request.getStringData()!=null?request.getStringData():"");
@@ -195,9 +195,9 @@ public class WsCaller {
             LOGGER.info("duration: {}",stopwatch);
             LOGGER.info("response: {}",response.toString());
             return getAcknowledgement(requestId,wsProperties,request, response,stopwatch, now,attempts);
-        } catch (RestClientException | InterruptedException | ExecutionException e) {
+        } catch (HttpException | InterruptedException | ExecutionException e) {
             LOGGER.error("Failed to call web service {} ", e.getMessage());
-            throw new RestClientException(e.getMessage());
+            throw new HttpException(e.getMessage());
         }finally {
             if(stopwatch.isRunning()){
                 stopwatch.stop();
@@ -270,7 +270,7 @@ public class WsCaller {
         *  * a technical error occurs from the WS server : the status code returned from the ws server does not match the regexp AND is equals or higher than 500 : retries are done
         */
         if(!matcher.matches()&&responseStatusCode>=500){
-            throw new RestClientException("response status code:"+responseStatusCode+" does not match status code success regex "+ pattern.pattern());
+            throw new HttpException("response status code:"+responseStatusCode+" does not match status code success regex "+ pattern.pattern());
         }
         return responseStatusCode;
     }
