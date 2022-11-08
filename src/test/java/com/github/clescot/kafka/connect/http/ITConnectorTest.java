@@ -25,6 +25,7 @@ import org.apache.kafka.common.header.internals.RecordHeader;
 import org.apache.kafka.common.serialization.Deserializer;
 import org.apache.kafka.common.serialization.StringDeserializer;
 import org.apache.kafka.common.serialization.StringSerializer;
+import org.json.JSONException;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
@@ -65,7 +66,7 @@ public class ITConnectorTest {
 
     private final static Logger LOGGER = LoggerFactory.getLogger(ITConnectorTest.class);
     private final static Slf4jLogConsumer logConsumer = new Slf4jLogConsumer(LOGGER).withSeparateOutputStreams();
-    public static final String CONFLUENT_VERSION = "7.2.2";
+    public static final String CONFLUENT_VERSION = "7.3.0";
     public static final int CUSTOM_AVAILABLE_PORT = 0;
     public static final int CACHE_CAPACITY = 100;
     public static final String HTTP_REQUESTS = "http-requests";
@@ -83,7 +84,7 @@ public class ITConnectorTest {
             .dependsOn(kafkaContainer)
             .withStartupTimeout(Duration.ofSeconds(90));
     @Container
-    public static DebeziumContainer connectContainer = new DebeziumContainer("confluentinc/cp-kafka-connect:7.2.2")
+    public static DebeziumContainer connectContainer = new DebeziumContainer("confluentinc/cp-kafka-connect:"+CONFLUENT_VERSION)
             .withFileSystemBind("target/http-connector", "/usr/local/share/kafka/plugins")
             .withLogConsumer(new Slf4jLogConsumer(LOGGER))
             .withNetwork(network)
@@ -177,7 +178,7 @@ public class ITConnectorTest {
     }
 
     @Test
-    public void nominalCase(WireMockRuntimeInfo wmRuntimeInfo) {
+    public void nominalCase(WireMockRuntimeInfo wmRuntimeInfo) throws JSONException {
         //define the http Mock Server interaction
         WireMock wireMock = wmRuntimeInfo.getWireMock();
         wireMock
