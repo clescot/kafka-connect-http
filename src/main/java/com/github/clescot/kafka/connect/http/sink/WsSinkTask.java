@@ -12,6 +12,7 @@ import io.netty.buffer.PooledByteBufAllocator;
 import io.netty.util.HashedWheelTimer;
 import io.netty.util.Timer;
 import org.apache.kafka.connect.data.Schema;
+import org.apache.kafka.connect.sink.ErrantRecordReporter;
 import org.apache.kafka.connect.sink.SinkRecord;
 import org.apache.kafka.connect.sink.SinkTask;
 import org.asynchttpclient.AsyncHttpClient;
@@ -56,6 +57,7 @@ public class WsSinkTask extends SinkTask {
     private static AsyncHttpClient asyncHttpClient;
     private Map<String,String> staticRequestHeaders;
     private WsSinkConnectorConfig wsSinkConnectorConfig;
+    private ErrantRecordReporter errantRecordReporter;
 
     @Override
     public String version() {
@@ -74,6 +76,13 @@ public class WsSinkTask extends SinkTask {
     @Override
     public void start(Map<String, String> settings) {
         Preconditions.checkNotNull(settings, "settings cannot be null");
+        try {
+            errantRecordReporter = context.errantRecordReporter();
+        } catch (NoSuchMethodError | NoClassDefFoundError e) {
+            LOGGER.warn("errantRecordReporter has been added to Kafka Connect since 2.6.0 release. you shoudl upgrade the Kafka Connect Runtime shortly.");
+            errantRecordReporter = null;
+        }
+
         this.wsSinkConnectorConfig = new WsSinkConnectorConfig(WsSinkConfigDefinition.config(),settings);
         this.httpClient = new HttpClient(getAsyncHttpClient(wsSinkConnectorConfig.originalsStrings()));
         this.queueName = wsSinkConnectorConfig.getQueueName();
