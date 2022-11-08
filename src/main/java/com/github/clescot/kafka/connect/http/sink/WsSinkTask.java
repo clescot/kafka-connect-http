@@ -3,7 +3,7 @@ package com.github.clescot.kafka.connect.http.sink;
 import com.github.clescot.kafka.connect.http.QueueFactory;
 import com.github.clescot.kafka.connect.http.sink.client.HttpClient;
 import com.github.clescot.kafka.connect.http.sink.client.PropertyBasedASyncHttpClientConfig;
-import com.github.clescot.kafka.connect.http.source.Acknowledgement;
+import com.github.clescot.kafka.connect.http.source.HttpExchange;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
@@ -50,7 +50,7 @@ public class WsSinkTask extends SinkTask {
     private static final String BYTE_BUFFER_ALLOCATOR = ASYN_HTTP_CONFIG_PREFIX + "byte.buffer.allocator";
     private HttpClient httpClient;
     private final static Logger LOGGER = LoggerFactory.getLogger(WsSinkTask.class);
-    private Queue<Acknowledgement> queue;
+    private Queue<HttpExchange> queue;
     private String queueName;
 
     private static AsyncHttpClient asyncHttpClient;
@@ -208,7 +208,7 @@ public class WsSinkTask extends SinkTask {
         return Maps.newHashMap(staticRequestHeaders);
     }
 
-    protected void setQueue(Queue<Acknowledgement> queue) {
+    protected void setQueue(Queue<HttpExchange> queue) {
         this.queue = queue;
     }
 }

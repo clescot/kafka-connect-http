@@ -1,6 +1,6 @@
 package com.github.clescot.kafka.connect.http;
 
-import com.github.clescot.kafka.connect.http.source.Acknowledgement;
+import com.github.clescot.kafka.connect.http.source.HttpExchange;
 import com.google.common.collect.Maps;
 import org.jetbrains.annotations.NotNull;
 
@@ -12,7 +12,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import static com.github.clescot.kafka.connect.http.sink.client.HttpClient.*;
 
 public class QueueProducer implements Runnable {
-    private Queue<Acknowledgement> transferQueue;
+    private Queue<HttpExchange> transferQueue;
 
 
     private long numberOfSuccessfulMessages;
@@ -21,7 +21,7 @@ public class QueueProducer implements Runnable {
     public AtomicInteger numberOfProducedMessages = new AtomicInteger();
 
 
-    public QueueProducer(Queue<Acknowledgement> transferQueue, long numberOfSuccessfulMessages, long numberOfErrorMessages) {
+    public QueueProducer(Queue<HttpExchange> transferQueue, long numberOfSuccessfulMessages, long numberOfErrorMessages) {
         this.transferQueue = transferQueue;
         this.numberOfSuccessfulMessages = numberOfSuccessfulMessages;
         this.numberOfErrorMessages = numberOfErrorMessages;
@@ -30,28 +30,28 @@ public class QueueProducer implements Runnable {
     @Override
     public void run() {
         for (int i = 0; i < numberOfSuccessfulMessages; i++) {
-            transferQueue.offer(getAcknowledgement(SUCCESS));
+            transferQueue.offer(getHttpExchange(SUCCESS));
             numberOfProducedMessages.incrementAndGet();
         }
         for (int i = 0; i < numberOfErrorMessages; i++) {
-            transferQueue.offer(getAcknowledgement(FAILURE));
+            transferQueue.offer(getHttpExchange(FAILURE));
             numberOfProducedMessages.incrementAndGet();
         }
     }
 
-    private static Acknowledgement getAcknowledgement(boolean success) {
+    private static HttpExchange getHttpExchange(boolean success) {
         Map<String,String> requestheaders = Maps.newHashMap();
         requestheaders.put("X-Request-ID","sdqd-qsdqd-446564");
         requestheaders.put("X-Correlation-ID","222-qsdqd-446564");
         requestheaders.put("Content-Type","application/json");
-        return success?getSuccessfulAcknowledgement(requestheaders):getErrorAcknowledgement(requestheaders);
+        return success? getSuccessfulHttpExchange(requestheaders): getErrorHttpExchange(requestheaders);
     }
 
     @NotNull
-    private static Acknowledgement getSuccessfulAcknowledgement(Map<String, String> requestheaders) {
+    private static HttpExchange getSuccessfulHttpExchange(Map<String, String> requestheaders) {
         Map<String,String> responseHeaders = Maps.newHashMap();
         responseHeaders.put("Content-Type","application/json");
-        return Acknowledgement.AcknowledgementBuilder.anAcknowledgement()
+        return HttpExchange.Builder.anHttpExchange()
                 //tracing headers
                 .withRequestId(UUID.randomUUID().toString())
                 .withCorrelationId("my-correlation-id")
@@ -76,10 +76,10 @@ public class QueueProducer implements Runnable {
     }
 
     @NotNull
-    private static Acknowledgement getErrorAcknowledgement(Map<String, String> requestheaders) {
+    private static HttpExchange getErrorHttpExchange(Map<String, String> requestheaders) {
         Map<String,String> responseHeaders = Maps.newHashMap();
         responseHeaders.put("Content-Type","application/json");
-        return Acknowledgement.AcknowledgementBuilder.anAcknowledgement()
+        return HttpExchange.Builder.anHttpExchange()
                 //tracing headers
                 .withRequestId(UUID.randomUUID().toString())
                 .withCorrelationId("another-correlation-id")

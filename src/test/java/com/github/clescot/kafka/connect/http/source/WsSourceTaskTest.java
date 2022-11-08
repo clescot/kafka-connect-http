@@ -2,7 +2,6 @@ package com.github.clescot.kafka.connect.http.source;
 
 import com.github.clescot.kafka.connect.http.QueueFactory;
 import com.github.clescot.kafka.connect.http.QueueProducer;
-import com.github.clescot.kafka.connect.http.ConfigConstants;
 import com.google.common.collect.Maps;
 import org.apache.kafka.common.config.ConfigException;
 import org.apache.kafka.connect.source.SourceRecord;
@@ -35,7 +34,7 @@ class WsSourceTaskTest {
     }
     @AfterEach
     public void tearsDown() {
-        Queue<Acknowledgement> queue = QueueFactory.getQueue();
+        Queue<HttpExchange> queue = QueueFactory.getQueue();
         queue.clear();
     }
 
@@ -68,7 +67,7 @@ class WsSourceTaskTest {
     @Test
     void poll() throws ExecutionException, InterruptedException {
         wsSourceTask.start(getNominalConfig());
-        Queue<Acknowledgement> queue = QueueFactory.getQueue();
+        Queue<HttpExchange> queue = QueueFactory.getQueue();
         ExecutorService exService = Executors.newFixedThreadPool(3);
         long expectedNumberOfSuccessfulMessages = 50L;
         long expectedNumberOfFailureMessages = 30L;

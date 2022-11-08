@@ -5,7 +5,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
-public class Acknowledgement {
+public class HttpExchange {
 
 
     private final Map<String,String> requestHeaders;
@@ -23,7 +23,7 @@ public class Acknowledgement {
     private final String requestId;
     private final boolean success;
 
-    public Acknowledgement(
+    public HttpExchange(
             String correlationId,
             String requestId,
             Integer statusCode,
@@ -112,7 +112,7 @@ public class Acknowledgement {
 
     @Override
     public String toString() {
-        return "Acknowledgement{" +
+        return "HttpExchange{" +
                 "requestHeaders=" + requestHeaders +
                 ", method='" + method + '\'' +
                 ", requestBody='" + requestBody + '\'' +
@@ -130,7 +130,7 @@ public class Acknowledgement {
                 '}';
     }
 
-    public static final class AcknowledgementBuilder {
+    public static final class Builder {
         private String correlationId;
         private String requestId;
         private String requestUri;
@@ -147,52 +147,52 @@ public class Acknowledgement {
 
         private boolean success;
 
-        private AcknowledgementBuilder() {
+        private Builder() {
         }
 
-        public static AcknowledgementBuilder anAcknowledgement() {
-            return new AcknowledgementBuilder();
+        public static Builder anHttpExchange() {
+            return new Builder();
         }
 
 
-        public AcknowledgementBuilder withRequestUri(String requestUri) {
+        public Builder withRequestUri(String requestUri) {
             this.requestUri = requestUri;
             return this;
         }
 
-        public AcknowledgementBuilder withRequestId(String requestId) {
+        public Builder withRequestId(String requestId) {
             this.requestId = requestId;
             return this;
         }
 
 
-        public AcknowledgementBuilder withCorrelationId(String correlationId) {
+        public Builder withCorrelationId(String correlationId) {
             this.correlationId = correlationId;
             return this;
         }
 
-        public AcknowledgementBuilder withStatusCode(Integer statusCode) {
+        public Builder withStatusCode(Integer statusCode) {
             this.statusCode = statusCode;
             return this;
         }
 
-        public AcknowledgementBuilder withStatusMessage(String statusMessage) {
+        public Builder withStatusMessage(String statusMessage) {
             this.statusMessage = statusMessage;
             return this;
         }
 
-        public AcknowledgementBuilder withResponseBody(String content) {
+        public Builder withResponseBody(String content) {
             this.responseBody = content;
             return this;
         }
 
-        public AcknowledgementBuilder withSuccess(boolean success) {
+        public Builder withSuccess(boolean success) {
             this.success = success;
             return this;
         }
 
-        public Acknowledgement build() {
-            return new Acknowledgement(
+        public HttpExchange build() {
+            return new HttpExchange(
                     correlationId,
                     requestId,
                     statusCode,
@@ -210,37 +210,37 @@ public class Acknowledgement {
             );
         }
 
-        public AcknowledgementBuilder withRequestBody(String requestBody) {
+        public Builder withRequestBody(String requestBody) {
             this.requestBody = requestBody;
             return this;
         }
 
-        public AcknowledgementBuilder withMethod(String method) {
+        public Builder withMethod(String method) {
             this.requestMethod = method;
             return this;
         }
 
-        public AcknowledgementBuilder withRequestHeaders(Map<String,String> headers) {
+        public Builder withRequestHeaders(Map<String,String> headers) {
             this.requestHeaders = headers;
             return this;
         }
 
-        public AcknowledgementBuilder withResponseHeaders(Map<String,String> headers) {
+        public Builder withResponseHeaders(Map<String,String> headers) {
             this.responseHeaders = headers;
             return this;
         }
 
-        public AcknowledgementBuilder withDuration(long durationInMillis) {
+        public Builder withDuration(long durationInMillis) {
             this.durationInMillis = durationInMillis;
             return this;
         }
 
-        public AcknowledgementBuilder at(OffsetDateTime moment) {
+        public Builder at(OffsetDateTime moment) {
             this.moment = moment;
             return this;
         }
 
-        public AcknowledgementBuilder withAttempts(AtomicInteger attempts) {
+        public Builder withAttempts(AtomicInteger attempts) {
             this.attempts = attempts;
             return this;
         }

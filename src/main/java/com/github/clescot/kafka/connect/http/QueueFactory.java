@@ -1,6 +1,6 @@
 package com.github.clescot.kafka.connect.http;
 
-import com.github.clescot.kafka.connect.http.source.Acknowledgement;
+import com.github.clescot.kafka.connect.http.source.HttpExchange;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Maps;
 import org.slf4j.Logger;
@@ -13,17 +13,17 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 public class QueueFactory {
     public static final String DEFAULT_QUEUE_NAME = "default";
     private static final Logger LOGGER = LoggerFactory.getLogger(QueueFactory.class);
-    private static final Map<String,Queue<Acknowledgement>> queueMap = Maps.newHashMap();
+    private static final Map<String,Queue<HttpExchange>> queueMap = Maps.newHashMap();
 
     private static final Map<String,Boolean> consumers = Maps.newHashMap();
-    public static synchronized Queue<Acknowledgement> getQueue(String queueName){
+    public static synchronized Queue<HttpExchange> getQueue(String queueName){
         if(queueMap.get(queueName) == null){
             LOGGER.debug("creating the '{}' queue",queueName);
             queueMap.put(queueName, new ConcurrentLinkedQueue<>());
         }
         return queueMap.get(queueName);
     }
-    public static synchronized Queue<Acknowledgement> getQueue(){
+    public static synchronized Queue<HttpExchange> getQueue(){
         return getQueue(DEFAULT_QUEUE_NAME);
     }
 

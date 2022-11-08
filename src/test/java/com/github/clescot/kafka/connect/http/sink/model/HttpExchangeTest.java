@@ -1,7 +1,7 @@
 package com.github.clescot.kafka.connect.http.sink.model;
 
 
-import com.github.clescot.kafka.connect.http.source.Acknowledgement;
+import com.github.clescot.kafka.connect.http.source.HttpExchange;
 import com.google.common.collect.Maps;
 import org.junit.Test;
 import org.junit.experimental.runners.Enclosed;
@@ -15,12 +15,12 @@ import static org.assertj.core.api.AssertionsForInterfaceTypes.assertThat;
 
 
 @RunWith(Enclosed.class)
-public class AcknowledgementTest {
-    public static class TestAcknowledgement {
+public class HttpExchangeTest {
+    public static class TestHttpExchange {
 
         @Test
         public void test_nominal_case() {
-            Acknowledgement acknowledgement = new Acknowledgement(
+            HttpExchange httpExchange = new HttpExchange(
                     "dfsdfsd",
                     "sd897osdmsdg",
                     200,
@@ -35,7 +35,7 @@ public class AcknowledgementTest {
                     OffsetDateTime.now(),
                     new AtomicInteger(2),
                     SUCCESS);
-            Acknowledgement acknowledgement1 = new Acknowledgement("dfsdfsd",
+            HttpExchange httpExchange1 = new HttpExchange("dfsdfsd",
                     "sd897osdmsdg",
                     200,
                     "toto",
@@ -49,12 +49,12 @@ public class AcknowledgementTest {
                     OffsetDateTime.now(),
                     new AtomicInteger(2),
                     SUCCESS);
-            acknowledgement1.equals(acknowledgement);
+            httpExchange1.equals(httpExchange);
         }
 
         @Test
         public void test_nominal_case_detail() {
-            Acknowledgement acknowledgement = new Acknowledgement(
+            HttpExchange httpExchange = new HttpExchange(
                     "sdfsfsdf5555",
                     "sd897osdmsdg",
                     200,
@@ -70,9 +70,9 @@ public class AcknowledgementTest {
                     new AtomicInteger(2),
                     SUCCESS
             );
-            assertThat(acknowledgement.getResponseBody()).isEqualTo("nfgnlksdfnlnskdfnlsf");
-            assertThat(acknowledgement.getCorrelationId()).isEqualTo("sdfsfsdf5555");
-            assertThat(acknowledgement.getStatusCode()).isEqualTo(200);
+            assertThat(httpExchange.getResponseBody()).isEqualTo("nfgnlksdfnlnskdfnlsf");
+            assertThat(httpExchange.getCorrelationId()).isEqualTo("sdfsfsdf5555");
+            assertThat(httpExchange.getStatusCode()).isEqualTo(200);
         }
     }
 }

@@ -1,13 +1,12 @@
 package com.github.clescot.kafka.connect.http.sink.client;
 
-import com.github.clescot.kafka.connect.http.source.Acknowledgement;
+import com.github.clescot.kafka.connect.http.source.HttpExchange;
 import com.google.common.base.Preconditions;
 import com.google.common.base.Stopwatch;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import dev.failsafe.Failsafe;
 import dev.failsafe.RetryPolicy;
-import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.data.Struct;
 import org.apache.kafka.connect.header.Header;
 import org.apache.kafka.connect.header.Headers;
@@ -111,7 +110,7 @@ public class HttpClient {
      * @param sinkRecord
      * @return
      */
-    public Acknowledgement call(SinkRecord sinkRecord) {
+    public HttpExchange call(SinkRecord sinkRecord) {
 
         String body = sinkRecord.value().toString();
         Headers headerKafka = sinkRecord.headers();
@@ -133,7 +132,7 @@ public class HttpClient {
         long retryMaxDelayInMs = Long.parseLong(Optional.ofNullable(wsProperties.get(WS_RETRY_MAX_DELAY_IN_MS)).orElse("300000"));
         double retryDelayFactor = Double.parseDouble(Optional.ofNullable(wsProperties.get(WS_RETRY_DELAY_FACTOR)).orElse("2"));
         long retryJitterInMs = Long.parseLong(Optional.ofNullable(wsProperties.get(WS_RETRY_JITTER)).orElse("100"));
-        RetryPolicy<Acknowledgement> retryPolicy = RetryPolicy.<Acknowledgement>builder()
+        RetryPolicy<HttpExchange> retryPolicy = RetryPolicy.<HttpExchange>builder()
             //we retry only if the error comes from the WS server (server-side technical error)
             .handle(HttpException.class)
             .withBackoff(Duration.ofMillis(retryDelayInMs),Duration.ofMillis(retryMaxDelayInMs),retryDelayFactor)
@@ -144,18 +143,18 @@ public class HttpClient {
             .onAbort(listener -> LOGGER.warn("ws call aborted ! result:{},exception:{}",listener.getResult(),listener.getException()))
             .build();
 
-        Acknowledgement acknowledgement;
+        HttpExchange httpExchange;
         Preconditions.checkNotNull(correlationId,"'correlationId' is required but null");
         AtomicInteger attempts = new AtomicInteger();
         try {
-            acknowledgement = Failsafe.with(List.of(retryPolicy))
+            httpExchange = Failsafe.with(List.of(retryPolicy))
                     .get(() -> {
                 attempts.addAndGet(1);
                 return callOnceWs(requestId,wsProperties, body,attempts);
             });
         } catch (HttpException e) {
             LOGGER.error("Failed to call web service after {} retries with error {} ", retries, e.getMessage());
-            return setAcknowledgement(
+            return buildHttpExchange(
                     correlationId,
                     requestId,
                     Optional.ofNullable(wsProperties.get(WS_URL)).orElse(UNKNOWN_URI),
@@ -170,7 +169,7 @@ public class HttpClient {
                     attempts,
                     FAILURE);
         }
-        return acknowledgement;
+        return httpExchange;
     }
 
     protected Map<String, String> extractWsProperties(Headers headersKafka) {
@@ -183,7 +182,7 @@ public class HttpClient {
         return map;
     }
 
-    protected Acknowledgement callOnceWs(String requestId, Map<String, String> wsProperties, String body, AtomicInteger attempts) throws HttpException {
+    protected HttpExchange callOnceWs(String requestId, Map<String, String> wsProperties, String body, AtomicInteger attempts) throws HttpException {
         Request request = buildRequest(wsProperties, body);
         LOGGER.info("request: {}",request.toString());
         LOGGER.info("body: {}", request.getStringData()!=null?request.getStringData():"");
@@ -196,7 +195,7 @@ public class HttpClient {
             stopwatch.stop();
             LOGGER.info("duration: {}",stopwatch);
             LOGGER.info("response: {}",response.toString());
-            return getAcknowledgement(requestId,wsProperties,request, response,stopwatch, now,attempts);
+            return getHttpExchange(requestId,wsProperties,request, response,stopwatch, now,attempts);
         } catch (HttpException | InterruptedException | ExecutionException e) {
             LOGGER.error("Failed to call web service {} ", e.getMessage());
             throw new HttpException(e.getMessage());
@@ -208,14 +207,14 @@ public class HttpClient {
 
     }
 
-    private Acknowledgement getAcknowledgement(String requestId,
-                                               Map<String,
+    private HttpExchange getHttpExchange(String requestId,
+                                         Map<String,
                                                String> wsProperties,
-                                               Request request,
-                                               Response response,
-                                               Stopwatch stopwatch,
-                                               OffsetDateTime now,
-                                               AtomicInteger attempts) {
+                                         Request request,
+                                         Response response,
+                                         Stopwatch stopwatch,
+                                         OffsetDateTime now,
+                                         AtomicInteger attempts) {
         Preconditions.checkNotNull(request,"request cannot  be null");
         Preconditions.checkNotNull(response,"response cannot  be null");
         String correlationId;
@@ -226,7 +225,7 @@ public class HttpClient {
         Map<String, String> requestHeaders = requestEntries.stream().collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
         List<Map.Entry<String, String>> responseEntries = response.getHeaders()!=null?response.getHeaders().entries():Lists.newArrayList();
         Map<String, String> responseHeaders = responseEntries.stream().collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
-        return setAcknowledgement(
+        return buildHttpExchange(
                 correlationId,
                 requestId,
                 request.getUri().toString(),
@@ -412,20 +411,20 @@ public class HttpClient {
     }
 
 
-    protected Acknowledgement setAcknowledgement(String correlationId,
-                                                 String requestId,
-                                                 String requestUri,
-                                                 Map<String,String> requestHeaders,
-                                                 String method,
-                                                 String requestBody,
-                                                 Map<String,String> responseHeaders,
-                                                 String responseBody,
-                                                 int responseStatusCode,
-                                                 String responseStatusMessage,
-                                                 Stopwatch stopwatch,
-                                                 OffsetDateTime now,
-                                                 AtomicInteger attempts,
-                                                 boolean success) {
+    protected HttpExchange buildHttpExchange(String correlationId,
+                                             String requestId,
+                                             String requestUri,
+                                             Map<String,String> requestHeaders,
+                                             String method,
+                                             String requestBody,
+                                             Map<String,String> responseHeaders,
+                                             String responseBody,
+                                             int responseStatusCode,
+                                             String responseStatusMessage,
+                                             Stopwatch stopwatch,
+                                             OffsetDateTime now,
+                                             AtomicInteger attempts,
+                                             boolean success) {
         Preconditions.checkNotNull(correlationId,"'correlationId' is null");
         Preconditions.checkNotNull(requestId,"'requestId' is null");
         Preconditions.checkNotNull(requestUri,"'requestUri' is null");
@@ -436,7 +435,7 @@ public class HttpClient {
         Preconditions.checkNotNull(responseBody,"'responseBody' is null");
         Preconditions.checkState(responseStatusCode>0,"code is lower than 1");
         Preconditions.checkNotNull(responseStatusMessage,"responseStatusMessage is null");
-        return Acknowledgement.AcknowledgementBuilder.anAcknowledgement()
+        return HttpExchange.Builder.anHttpExchange()
                 //tracing headers
                 .withRequestId(requestId)
                 .withCorrelationId(correlationId)

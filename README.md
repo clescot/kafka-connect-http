@@ -1,6 +1,6 @@
 # Kafka Connect HTTP Sink project
 
-## project intention
+## 1. project intention
 
 ### What is the goal of this project?
 
@@ -75,11 +75,30 @@ As both ends of the in memory queue, implies a Kafka communication, the *OutOfMe
 We also check that all queues registered has got their consumer (Source Connector instance).
 Note that a queue has got only one consumer, opposite to the Topic concept, which support multiple consumers. The only one queue consumer, is the configured Source Connector.
 
-### Architecture
+# 2. Architecture
 
 ![Architecture](architecture.png)
 
-## configuration
+This big picture permits to highlight (with numbers in the picture) some key points in the architecture, which will be explained with details
+after the section dedicated to put in place the HTTP Sink and Source connectors:
+
+1. format of the incoming Kafka message (HTTP intention)
+2. The HTTP Sink connector listen to these topics (can be a list of topics, or a regex)
+3. The HTTP Sink connector transform the incoming message into an HTTP call and get the answer from the HTTP server
+  Behaviour of the HTTP client shipped with the HTTP Sink Connector can be tuned, including the retry policy. 
+4. Optionally (`publish.to.in.memory.queue` set to `true` in the HTTP Sink Connector configuration), the HTTP exchange 
+   is published into a `default` in memory queue (or a defined queue with the `queue.name` parameter in the HTTP Sink  
+   Connector configuration). A check is done to prevent publishment to a 'in memory' queue without consumer(Source Connector),  
+   i.e preventing an OutofMemory Error. The HTTP Sink Connector will fail at the first message consumption in this situation.   
+5. If configured in the Sink Configuration, an HTTP Source Connector is needed to consume the published 
+   HTTP exchange(with all the details of the interaction).
+6. According to the HTTP Exchange details, 
+
+# 3. HTTP Connectors configuration
+
+Here are the configuration to setup an HTTP Sink connector, and optionally an HTTP Source Connector, into a Kafka Connect
+ cluster. Note that the jar file owning these connector classes, 
+[need to be installed with the Kafka connect runtime](https://docs.confluent.io/kafka-connectors/self-managed/install.html#install-connector-manually). 
 
 ### HTTP Sink Connector
 
@@ -165,3 +184,4 @@ You can create or update this connector instance with this command :
 ```bash
 curl -X PUT -H "Content-Type: application/json" --data @source.json http://my-kafka-connect-cluster:8083/connectors/my-http-source-connector/config
 ```
+
