@@ -37,6 +37,9 @@ public class WsSourceTask extends SourceTask {
     private static Queue<Acknowledgement> queue;
     private WsSourceConnectorConfig sourceConfig;
     private final static Logger LOGGER = LoggerFactory.getLogger(WsSourceTask.class);
+
+    private final static Schema ackSchema =getSchema();
+
     @Override
     public String version() {
         return VersionUtil.version(this.getClass());
@@ -66,7 +69,7 @@ public class WsSourceTask extends SourceTask {
     private SourceRecord toSourceRecord(Acknowledgement acknowledgement){
         Map<String, ?> sourcePartition = Maps.newHashMap();
         Map<String, ?> sourceOffset= Maps.newHashMap();
-        Struct struct = new Struct(getSchema());
+        Struct struct = new Struct(ackSchema);
         //ack fields
         struct.put(DURATION_IN_MILLIS,acknowledgement.getDurationInMillis());
         struct.put(MOMENT,acknowledgement.getMoment().format(DateTimeFormatter.ISO_ZONED_DATE_TIME));
@@ -93,9 +96,10 @@ public class WsSourceTask extends SourceTask {
         );
     }
 
-    private Schema getSchema() {
+    private static Schema getSchema() {
         return SchemaBuilder
                 .struct()
+                .name(Acknowledgement.class.getName())
                 //ack fields
                 .field(DURATION_IN_MILLIS, Schema.INT64_SCHEMA)
                 .field(MOMENT, Schema.STRING_SCHEMA)
