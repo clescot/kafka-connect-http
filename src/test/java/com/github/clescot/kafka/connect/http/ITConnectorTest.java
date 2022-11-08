@@ -117,7 +117,7 @@ public class ITConnectorTest {
     private static String internalSchemaRegistryUrl;
     private static String externalSchemaRegistryUrl;
     private static final String successTopic = "http-success";
-    private static final String errorsTopic = "http-errors";
+    private static final String errorTopic = "http-error";
 
     @BeforeAll
     public static void startContainers() throws IOException {
@@ -152,7 +152,7 @@ public class ITConnectorTest {
                 .with("connector.class", "com.github.clescot.kafka.connect.http.source.WsSourceConnector")
                 .with("tasks.max", "2")
                 .with("success.topic", successTopic)
-                .with("error.topic", errorsTopic)
+                .with("error.topic", errorTopic)
                 .with("key.converter", "org.apache.kafka.connect.storage.StringConverter")
                 .with("value.converter", "io.confluent.connect.json.JsonSchemaConverter")
                 .with("value.converter.schema.registry.url", internalSchemaRegistryUrl);
@@ -205,7 +205,7 @@ public class ITConnectorTest {
         //verify http responses
         KafkaConsumer<String,? extends Object> consumer = getConsumer(kafkaContainer,externalSchemaRegistryUrl);
 
-        consumer.subscribe(Lists.newArrayList(successTopic,errorsTopic));
+        consumer.subscribe(Lists.newArrayList(successTopic, errorTopic));
         List<ConsumerRecord<String, ? extends Object>> consumerRecords = drain(consumer, 1);
         assertThat(consumerRecords).hasSize(1);
         ConsumerRecord<String, ? extends Object> consumerRecord = consumerRecords.get(0);

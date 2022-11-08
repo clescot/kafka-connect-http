@@ -61,7 +61,7 @@ class WsSourceTaskTest {
     private static Map<String, String> getNominalConfig() {
         Map<String, String> config = Maps.newHashMap();
         config.put(SUCCESS_TOPIC, "http-success");
-        config.put(ERROR_TOPIC, "http-errors");
+        config.put(ERROR_TOPIC, "http-error");
         return config;
     }
 
