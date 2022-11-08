@@ -1,8 +1,8 @@
 package com.github.clescot.kafka.connect.http.sink;
 
 import com.github.clescot.kafka.connect.http.QueueFactory;
-import com.github.clescot.kafka.connect.http.sink.client.PropertyBasedASyncHttpClientConfig;
 import com.github.clescot.kafka.connect.http.sink.client.HttpClient;
+import com.github.clescot.kafka.connect.http.sink.client.PropertyBasedASyncHttpClientConfig;
 import com.github.clescot.kafka.connect.http.source.Acknowledgement;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;

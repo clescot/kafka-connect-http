@@ -2,7 +2,7 @@ package com.github.clescot.kafka.connect.http.source;
 
 import com.github.clescot.kafka.connect.http.QueueFactory;
 import com.github.clescot.kafka.connect.http.QueueProducer;
-import com.github.clescot.kafka.connect.http.sink.ConfigConstants;
+import com.github.clescot.kafka.connect.http.ConfigConstants;
 import com.google.common.collect.Maps;
 import org.apache.kafka.common.config.ConfigException;
 import org.apache.kafka.connect.source.SourceRecord;
@@ -21,6 +21,8 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
+import static com.github.clescot.kafka.connect.http.source.WsSourceConfigDefinition.ERROR_TOPIC;
+import static com.github.clescot.kafka.connect.http.source.WsSourceConfigDefinition.SUCCESS_TOPIC;
 import static org.assertj.core.api.Assertions.assertThat;
 
 class WsSourceTaskTest {
@@ -58,8 +60,8 @@ class WsSourceTaskTest {
     @NotNull
     private static Map<String, String> getNominalConfig() {
         Map<String, String> config = Maps.newHashMap();
-        config.put(ConfigConstants.SUCCESS_TOPIC, "http-success");
-        config.put(ConfigConstants.ERROR_TOPIC, "http-errors");
+        config.put(SUCCESS_TOPIC, "http-success");
+        config.put(ERROR_TOPIC, "http-errors");
         return config;
     }
 
@@ -74,9 +76,9 @@ class WsSourceTaskTest {
         exService.submit(queueProducer).get();
 
         List<SourceRecord> sourceRecords = wsSourceTask.poll();
-        long successfulMessagesCount = sourceRecords.stream().filter(sourceRecord -> sourceRecord.topic().equals(getNominalConfig().get(ConfigConstants.SUCCESS_TOPIC))).count();
+        long successfulMessagesCount = sourceRecords.stream().filter(sourceRecord -> sourceRecord.topic().equals(getNominalConfig().get(SUCCESS_TOPIC))).count();
         assertThat(successfulMessagesCount).isEqualTo(expectedNumberOfSuccessfulMessages);
-        long errorMessagesCount = sourceRecords.stream().filter(sourceRecord -> sourceRecord.topic().equals(getNominalConfig().get(ConfigConstants.ERROR_TOPIC))).count();
+        long errorMessagesCount = sourceRecords.stream().filter(sourceRecord -> sourceRecord.topic().equals(getNominalConfig().get(ERROR_TOPIC))).count();
         assertThat(errorMessagesCount).isEqualTo(expectedNumberOfFailureMessages);
         //we have consumed all messages
         assertThat(queue).isEmpty();

@@ -1,5 +1,6 @@
 package com.github.clescot.kafka.connect.http.sink;
 
+import com.github.clescot.kafka.connect.http.ConfigConstants;
 import com.github.clescot.kafka.connect.http.QueueFactory;
 import com.github.clescot.kafka.connect.http.sink.client.HttpClient;
 import com.github.clescot.kafka.connect.http.source.Acknowledgement;
@@ -22,7 +23,8 @@ import java.util.Map;
 import java.util.Queue;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static com.github.clescot.kafka.connect.http.sink.ConfigConstants.PUBLISH_TO_IN_MEMORY_QUEUE;
+import static com.github.clescot.kafka.connect.http.sink.WsSinkConfigDefinition.PUBLISH_TO_IN_MEMORY_QUEUE;
+import static com.github.clescot.kafka.connect.http.sink.WsSinkConfigDefinition.STATIC_REQUEST_HEADER_NAMES;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.*;
 
@@ -47,7 +49,7 @@ class WsSinkTaskTest {
     public void test_start_with_static_request_headers(){
         WsSinkTask wsSinkTask = new WsSinkTask();
         Map<String,String> settings = Maps.newHashMap();
-        settings.put(ConfigConstants.STATIC_REQUEST_HEADER_NAMES,"param1,param2");
+        settings.put(STATIC_REQUEST_HEADER_NAMES,"param1,param2");
         settings.put("param1","value1");
         settings.put("param2","value2");
         wsSinkTask.start(settings);
@@ -58,7 +60,7 @@ class WsSinkTaskTest {
         Assertions.assertThrows(NullPointerException.class,()->{
             WsSinkTask wsSinkTask = new WsSinkTask();
             Map<String,String> settings = Maps.newHashMap();
-            settings.put(ConfigConstants.STATIC_REQUEST_HEADER_NAMES,"param1,param2");
+            settings.put(STATIC_REQUEST_HEADER_NAMES,"param1,param2");
             wsSinkTask.start(settings);
         });
 
@@ -76,7 +78,7 @@ class WsSinkTaskTest {
     public void test_put_add_static_headers(){
         WsSinkTask wsSinkTask = new WsSinkTask();
         Map<String,String> settings = Maps.newHashMap();
-        settings.put(ConfigConstants.STATIC_REQUEST_HEADER_NAMES,"param1,param2");
+        settings.put(STATIC_REQUEST_HEADER_NAMES,"param1,param2");
         settings.put("param1","value1");
         settings.put("param2","value2");
         wsSinkTask.start(settings);

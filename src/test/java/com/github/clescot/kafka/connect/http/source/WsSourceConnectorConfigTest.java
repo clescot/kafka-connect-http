@@ -1,12 +1,14 @@
 package com.github.clescot.kafka.connect.http.source;
 
-import com.github.clescot.kafka.connect.http.sink.ConfigConstants;
+import com.github.clescot.kafka.connect.http.ConfigConstants;
 import com.google.common.collect.Maps;
 import org.apache.kafka.common.config.ConfigException;
 import org.junit.Test;
 
 import java.util.HashMap;
 
+import static com.github.clescot.kafka.connect.http.source.WsSourceConfigDefinition.ERROR_TOPIC;
+import static com.github.clescot.kafka.connect.http.source.WsSourceConfigDefinition.SUCCESS_TOPIC;
 
 
 public class WsSourceConnectorConfigTest {
@@ -25,8 +27,8 @@ public class WsSourceConnectorConfigTest {
     @Test
     public void test_nominal_case(){
         HashMap<Object, Object> config = Maps.newHashMap();
-        config.put(ConfigConstants.SUCCESS_TOPIC,"success.topic");
-        config.put(ConfigConstants.ERROR_TOPIC,"error.topic");
+        config.put(SUCCESS_TOPIC,"success.topic");
+        config.put(ERROR_TOPIC,"error.topic");
         new WsSourceConnectorConfig(config);
     }
 
