@@ -9,7 +9,10 @@ import com.google.common.collect.Maps;
 import org.apache.kafka.common.record.TimestampType;
 import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.header.Header;
+import org.apache.kafka.connect.sink.ErrantRecordReporter;
 import org.apache.kafka.connect.sink.SinkRecord;
+import org.apache.kafka.connect.sink.SinkTaskContext;
+import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -39,7 +42,7 @@ class WsSinkTaskTest {
 
     @Test
     public void test_start_with_queue_name(){
-        WsSinkTask wsSinkTask = new WsSinkTask();
+        WsSinkTask wsSinkTask = getWsSinkTask();
         Map<String,String> settings = Maps.newHashMap();
         settings.put(ConfigConstants.QUEUE_NAME,"dummyQueueName");
         wsSinkTask.start(settings);
@@ -47,7 +50,7 @@ class WsSinkTaskTest {
 
     @Test
     public void test_start_with_static_request_headers(){
-        WsSinkTask wsSinkTask = new WsSinkTask();
+        WsSinkTask wsSinkTask = getWsSinkTask();
         Map<String,String> settings = Maps.newHashMap();
         settings.put(STATIC_REQUEST_HEADER_NAMES,"param1,param2");
         settings.put("param1","value1");
@@ -69,14 +72,14 @@ class WsSinkTaskTest {
 
     @Test
     public void test_start_no_settings(){
-        WsSinkTask wsSinkTask = new WsSinkTask();
+        WsSinkTask wsSinkTask = getWsSinkTask();
         wsSinkTask.start(Maps.newHashMap());
     }
 
 
     @Test
     public void test_put_add_static_headers(){
-        WsSinkTask wsSinkTask = new WsSinkTask();
+        WsSinkTask wsSinkTask = getWsSinkTask();
         Map<String,String> settings = Maps.newHashMap();
         settings.put(STATIC_REQUEST_HEADER_NAMES,"param1,param2");
         settings.put("param1","value1");
@@ -102,7 +105,7 @@ class WsSinkTaskTest {
     @Test
     public void test_put_nominal_case(){
         //given
-        WsSinkTask wsSinkTask = new WsSinkTask();
+        WsSinkTask wsSinkTask = getWsSinkTask();
         Map<String,String> settings = Maps.newHashMap();
         wsSinkTask.start(settings);
 
@@ -140,7 +143,7 @@ class WsSinkTaskTest {
     @Test
     public void test_put_with_publish_to_in_memory_queue_without_consumer(){
         //given
-        WsSinkTask wsSinkTask = new WsSinkTask();
+        WsSinkTask wsSinkTask = getWsSinkTask();
         Map<String,String> settings = Maps.newHashMap();
         settings.put(PUBLISH_TO_IN_MEMORY_QUEUE,"true");
         wsSinkTask.start(settings);
@@ -168,12 +171,20 @@ class WsSinkTaskTest {
 
     }
 
-
+    @NotNull
+    private static WsSinkTask getWsSinkTask() {
+        WsSinkTask wsSinkTask = new WsSinkTask();
+        ErrantRecordReporter errantRecordReporter = mock(ErrantRecordReporter.class);
+        SinkTaskContext sinkTaskContext = mock(SinkTaskContext.class);
+        when(sinkTaskContext.errantRecordReporter()).thenReturn(errantRecordReporter);
+        wsSinkTask.initialize(sinkTaskContext);
+        return wsSinkTask;
+    }
 
 
     @Test
     public void test_put_with_publish_in_memory_set_to_false(){
-        WsSinkTask wsSinkTask = new WsSinkTask();
+        WsSinkTask wsSinkTask = getWsSinkTask();
         Map<String,String> settings = Maps.newHashMap();
         settings.put(PUBLISH_TO_IN_MEMORY_QUEUE,"false");
         wsSinkTask.start(settings);
@@ -196,7 +207,7 @@ class WsSinkTaskTest {
     public void test_put_with_publish_to_in_memory_queue_set_to_true_with_a_consumer(){
 
         //given
-        WsSinkTask wsSinkTask = new WsSinkTask();
+        WsSinkTask wsSinkTask = getWsSinkTask();
         Map<String,String> settings = Maps.newHashMap();
         settings.put(PUBLISH_TO_IN_MEMORY_QUEUE,"true");
         QueueFactory.registerConsumerForQueue(QueueFactory.DEFAULT_QUEUE_NAME);
