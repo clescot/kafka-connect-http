@@ -68,6 +68,8 @@ public class WsSourceTask extends SourceTask {
 
 
     private SourceRecord toSourceRecord(Acknowledgement acknowledgement){
+        //sourcePartition and sourceOffset are useful to track data consumption from source
+        //but it is useless in the in memory queue context
         Map<String, ?> sourcePartition = Maps.newHashMap();
         Map<String, ?> sourceOffset= Maps.newHashMap();
         Struct struct = new Struct(ackSchema);
