@@ -69,6 +69,9 @@ As both ends of the in memory queue, implies a Kafka communication, the *OutOfMe
 We also check that all queues registered has got their consumer (Source Connector instance).
 Note that a queue has got only one consumer, opposite to the Topic concept, which support multiple consumers. The only one queue consumer, is the configured Source Connector.
 
+### Architecture
+
+![Architecture](architecture.png)]
 
 ## configuration
 
