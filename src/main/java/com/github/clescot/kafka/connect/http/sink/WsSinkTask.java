@@ -166,7 +166,11 @@ public class WsSinkTask extends SinkTask {
 
     @Override
     public void put(Collection<SinkRecord> records) {
+
         Preconditions.checkNotNull(records, "records collection to be processed is null");
+        if(records.isEmpty()){
+            return;
+        }
         Preconditions.checkNotNull(httpClient, "httpClient is null. 'start' method must be called once before put");
         if(wsSinkConnectorConfig.isPublishToInMemoryQueue()) {
             Preconditions.checkArgument(QueueFactory.hasAConsumer(queueName), "'" + queueName + "' queue hasn't got any consumer, i.e no Source Connector has been configured to consume records published in this in memory queue. we stop the Sink Connector to prevent any OutofMemoryError.");
