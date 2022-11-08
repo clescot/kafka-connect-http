@@ -33,6 +33,7 @@ public class WsSourceTask extends SourceTask {
     public static final String STATUS_MESSAGE = "statusMessage";
     public static final String RESPONSE_HEADERS = "responseHeaders";
     public static final String RESPONSE_BODY = "responseBody";
+    public static final int ACK_SCHEMA_VERSION = 1;
 
     private static Queue<Acknowledgement> queue;
     private WsSourceConnectorConfig sourceConfig;
@@ -100,6 +101,7 @@ public class WsSourceTask extends SourceTask {
         return SchemaBuilder
                 .struct()
                 .name(Acknowledgement.class.getName())
+                .version(ACK_SCHEMA_VERSION)
                 //ack fields
                 .field(DURATION_IN_MILLIS, Schema.INT64_SCHEMA)
                 .field(MOMENT, Schema.STRING_SCHEMA)
