@@ -7,6 +7,8 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import dev.failsafe.Failsafe;
 import dev.failsafe.RetryPolicy;
+import org.apache.kafka.connect.data.Schema;
+import org.apache.kafka.connect.data.Struct;
 import org.apache.kafka.connect.header.Header;
 import org.apache.kafka.connect.header.Headers;
 import org.apache.kafka.connect.sink.SinkRecord;
@@ -273,6 +275,16 @@ public class HttpClient {
             throw new HttpException("response status code:"+responseStatusCode+" does not match status code success regex "+ pattern.pattern());
         }
         return responseStatusCode;
+    }
+
+    private Request buildRequest(SinkRecord sinkRecord){
+        if(sinkRecord.valueSchema()!=null) {
+            Struct struct = (Struct) sinkRecord.value();
+            struct.validate();
+        }
+
+
+        return null;
     }
 
     private Request buildRequest(Map<String, String> wsProperties, String body) {

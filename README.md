@@ -125,10 +125,10 @@ every Kafka Connect Sink Connector need to define these required parameters :
 }
 ```
 
-You can configure this connector with this command :
+You can create or update this connector instance with this command :
 
 ```bash
-curl -X POST -H "Content-Type: application/json" --data @sink.json http://my-kafka-connect-cluster:8083/connectors
+curl -X PUT -H "Content-Type: application/json" --data @sink.json http://my-kafka-connect-cluster:8083/connectors/my-http-sink-connector/config
 ```
 ### HTTP Source Connector
 
@@ -160,8 +160,8 @@ via the `publish.to.in.memory.queue` set to `true`.
 }
 ```
 
-You can configure this connector with this command : 
+You can create or update this connector instance with this command :
 
 ```bash
-curl -X POST -H "Content-Type: application/json" --data @source.json http://my-kafka-connect-cluster:8083/connectors
+curl -X PUT -H "Content-Type: application/json" --data @source.json http://my-kafka-connect-cluster:8083/connectors/my-http-source-connector/config
 ```
