@@ -26,7 +26,7 @@ public class WsSourceConnectorConfigTest {
     public void test_nominal_case(){
         HashMap<Object, Object> config = Maps.newHashMap();
         config.put(ConfigConstants.SUCCESS_TOPIC,"success.topic");
-        config.put(ConfigConstants.ERROR_TOPIC,"errors.topic");
+        config.put(ConfigConstants.ERROR_TOPIC,"error.topic");
         new WsSourceConnectorConfig(config);
     }
 

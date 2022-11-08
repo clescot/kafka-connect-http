@@ -151,7 +151,7 @@ public class ITConnectorTest {
                 .with("connector.class", "com.github.clescot.kafka.connect.http.source.WsSourceConnector")
                 .with("tasks.max", "2")
                 .with("success.topic", successTopic)
-                .with("errors.topic", errorsTopic)
+                .with("error.topic", errorsTopic)
                 .with("key.converter", "org.apache.kafka.connect.storage.StringConverter")
                 .with("value.converter", "io.confluent.connect.json.JsonSchemaConverter")
                 .with("value.converter.schema.registry.url", internalSchemaRegistryUrl);

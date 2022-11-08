@@ -137,6 +137,6 @@ via the `publish.to.in.memory.queue` set to `true`.
 "connector.class":"com.github.clescot.kafka.connect.http.source.WsSourceConnector",
 "tasks.max": "1",
 "success.topic": "http-success",
-"erros.topic": "http-error",
+"error.topic": "http-error",
 }
 }
