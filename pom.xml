@@ -276,8 +276,13 @@
             <id>confluent</id>
             <url>https://packages.confluent.io/maven/</url>
         </repository>
-
-
     </repositories>
+    <distributionManagement>
+        <repository>
+            <id>github</id>
+            <name>GitHub OWNER Apache Maven Packages</name>
+            <url>https://maven.pkg.github.com/clescot/kafka-connect-http-sink</url>
+        </repository>
+    </distributionManagement>
 
 </project>
