@@ -28,7 +28,7 @@ public class WsSourceConnectorConfig extends AbstractConfig {
     public WsSourceConnectorConfig(ConfigDef configDef,Map<?, ?> originals){
         super(configDef,originals);
         this.successTopic = Optional.ofNullable(getString(ConfigConstants.SUCCESS_TOPIC)).orElseThrow(()-> new IllegalArgumentException(ConfigConstants.SUCCESS_TOPIC + CANNOT_BE_FOUND_IN_MAP_CONFIGURATION));
-        this.errorsTopic = Optional.ofNullable(getString(ConfigConstants.ERRORS_TOPIC)).orElseThrow(()-> new IllegalArgumentException(ConfigConstants.ERRORS_TOPIC + CANNOT_BE_FOUND_IN_MAP_CONFIGURATION));
+        this.errorsTopic = Optional.ofNullable(getString(ConfigConstants.ERROR_TOPIC)).orElseThrow(()-> new IllegalArgumentException(ConfigConstants.ERROR_TOPIC + CANNOT_BE_FOUND_IN_MAP_CONFIGURATION));
         this.queueName = Optional.ofNullable(getString(QUEUE_NAME)).orElse(DEFAULT_QUEUE_NAME);
         if(queueMapIsEmpty()){
             LOGGER.warn("no pre-existing queue exists. this WsSourceConnector has created a '{}' one. It needs to consume a queue filled with a SinkConnector. Ignore this message if a SinkConnector will be created after this one.",queueName);

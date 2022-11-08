@@ -59,7 +59,7 @@ class WsSourceTaskTest {
     private static Map<String, String> getNominalConfig() {
         Map<String, String> config = Maps.newHashMap();
         config.put(ConfigConstants.SUCCESS_TOPIC, "http-success");
-        config.put(ConfigConstants.ERRORS_TOPIC, "http-errors");
+        config.put(ConfigConstants.ERROR_TOPIC, "http-errors");
         return config;
     }
 
@@ -76,7 +76,7 @@ class WsSourceTaskTest {
         List<SourceRecord> sourceRecords = wsSourceTask.poll();
         long successfulMessagesCount = sourceRecords.stream().filter(sourceRecord -> sourceRecord.topic().equals(getNominalConfig().get(ConfigConstants.SUCCESS_TOPIC))).count();
         assertThat(successfulMessagesCount).isEqualTo(expectedNumberOfSuccessfulMessages);
-        long errorMessagesCount = sourceRecords.stream().filter(sourceRecord -> sourceRecord.topic().equals(getNominalConfig().get(ConfigConstants.ERRORS_TOPIC))).count();
+        long errorMessagesCount = sourceRecords.stream().filter(sourceRecord -> sourceRecord.topic().equals(getNominalConfig().get(ConfigConstants.ERROR_TOPIC))).count();
         assertThat(errorMessagesCount).isEqualTo(expectedNumberOfFailureMessages);
         //we have consumed all messages
         assertThat(queue).isEmpty();

@@ -1,7 +1,6 @@
 package com.github.clescot.kafka.connect.http.source;
 
 import com.github.clescot.kafka.connect.http.sink.ConfigConstants;
-import com.github.clescot.kafka.connect.http.source.WsSourceConnectorConfig;
 import com.google.common.collect.Maps;
 import org.apache.kafka.common.config.ConfigException;
 import org.junit.Test;
@@ -27,7 +26,7 @@ public class WsSourceConnectorConfigTest {
     public void test_nominal_case(){
         HashMap<Object, Object> config = Maps.newHashMap();
         config.put(ConfigConstants.SUCCESS_TOPIC,"success.topic");
-        config.put(ConfigConstants.ERRORS_TOPIC,"errors.topic");
+        config.put(ConfigConstants.ERROR_TOPIC,"errors.topic");
         new WsSourceConnectorConfig(config);
     }
 

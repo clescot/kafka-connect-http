@@ -25,7 +25,8 @@ But they have got some restrictions :
 
 Kafka connect permits to copy data from/to a Kafka Cluster easily, but not to interact (request/response) with an external ressource.
 
-Kafka Connect divide tasks between Sink and Source connectors :
+Kafka Connect divide tasks between Sink and
+Source connectors :
 
 - **Sink** connectors get data from Kafka and output to an external data target
 - **Source** Connectors get data from an external data source and output it to Kafka 
@@ -34,21 +35,26 @@ The main advantage of this separation is to ease data interactions.
 
 The main problem with HTTP interactions, is its request/response nature.
 
-#### How does it not work ?
+#### How does it NOT work ?
 
 - *the One connector strategy*
 
     If you define only one connector, you can read a kafka message (with the reusable high level Kafka connect configuration), and query an HTTP server. If you want to store HTTP responses, 
-    you need to define a low level kafka client which will translate HTTP responses as kafka messages : you duplicate the Kafka configuration.
+    you need to define a low level kafka client which will translate HTTP responses as kafka messages : you duplicate the Kafka configuration, with some low level and high level configurations mixed.
+    Your configuration can became complex...
+    This strategy can work if you don't bother with HTTP responses (but who don't ?), and don't configure a low level kafka client.
+
 - *Multiple connectors to solve the problem ?*
     
-    Sink and Source connectors share interactions with the Kafka Cluster. You can easily define a *Source* Connector 
+    Sink and Source connectors share interactions with the Kafka Cluster. You can easily, out of the box, define a *Source* Connector 
   which will listen to an external Datasource, and store data into Kafka. You can also define a *Sink* Connector which 
   will listen to Kafka, and output data to a target. But  it reverses HTTP interactions ; we don't receive HTTP reponses 
-  before querying an HTTP server : this is not a solution to our problem.
+  before querying an HTTP server ; we cannot declare a *Source* Connector, which will chain through Kafka with a *Sink* Connector : 
+- this is not a solution to our problem.
 
 ### How does it work? How do we solve the problem ?
     
+    We need to revert the multiple connectors proposal in the previous section, with a shared channel different from Kafka
 - a **Sink** Connector to query HTTP servers
 
     We define a Sink Connector to read from kafka, and query HTTP servers according to the Kafka message. This is the most easy part.
@@ -71,7 +77,7 @@ Note that a queue has got only one consumer, opposite to the Topic concept, whic
 
 ### Architecture
 
-![Architecture](architecture.png)]
+![Architecture](architecture.png)
 
 ## configuration
 
@@ -105,6 +111,8 @@ every Kafka Connect Sink Connector need to define these required parameters :
  For example, if set `static.request.header.names: param_name1,param_name2`, the connector will lookup the param_name1 
   and param_name2 parameters to get values to add. 
 
+#### Configuration example
+
 ### HTTP Source Connector
 
 The HTTP Source connector is only useful if you have configured the publishment of HTTP interactions into the queue, 
@@ -113,8 +121,22 @@ via the `publish.to.in.memory.queue` set to `true`.
 #### required HTTP Source connector parameters
 
 - *success.topic* : Topic to receive successful http request/responses, for example, http-success
-- *errors.topic* : Topic to receive errors from http request/responses, for example, http-errors
+- *error.topic* : Topic to receive errors from http request/responses, for example, http-error
 
 #### optional HTTP Source connector parameters
 
 - *queue.name* : if not set, listen on the 'default' queue.
+
+#### Configuration example
+
+
+
+{
+"name": "my-http-source-connector",
+"config": {
+"connector.class":"com.github.clescot.kafka.connect.http.source.WsSourceConnector",
+"tasks.max": "1",
+"success.topic": "http-success",
+"erros.topic": "http-error",
+}
+}

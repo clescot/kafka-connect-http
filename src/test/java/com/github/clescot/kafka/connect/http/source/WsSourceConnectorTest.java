@@ -29,7 +29,7 @@ class WsSourceConnectorTest {
     public void test_start_nominal_case(){
         Map<String,String> settings = Maps.newHashMap();
         settings.put(SUCCESS_TOPIC,"foo");
-        settings.put(ERRORS_TOPIC,"foo");
+        settings.put(ERROR_TOPIC,"foo");
         wsSourceConnector.start(settings);
     }
 
@@ -37,7 +37,7 @@ class WsSourceConnectorTest {
     public void test_start_missing_success_topic(){
         Assertions.assertThrows(ConfigException.class, () ->  {
                 Map < String, String > settings = Maps.newHashMap();
-                settings.put(ERRORS_TOPIC, "foo");
+                settings.put(ERROR_TOPIC, "foo");
                 wsSourceConnector.start(settings);
         });
     }
@@ -55,7 +55,7 @@ class WsSourceConnectorTest {
     public void test_start_with_queue_name(){
             Map < String, String > settings = Maps.newHashMap();
             settings.put(SUCCESS_TOPIC, "foo1");
-            settings.put(ERRORS_TOPIC, "foo2");
+            settings.put(ERROR_TOPIC, "foo2");
             settings.put(QUEUE_NAME, "myQueue");
             wsSourceConnector.start(settings);
     }
@@ -64,7 +64,7 @@ class WsSourceConnectorTest {
     public void test_start_with_default_queue_name(){
         Map < String, String > settings = Maps.newHashMap();
         settings.put(SUCCESS_TOPIC, "foo1");
-        settings.put(ERRORS_TOPIC, "foo2");
+        settings.put(ERROR_TOPIC, "foo2");
         settings.put(QUEUE_NAME, DEFAULT_QUEUE_NAME);
         wsSourceConnector.start(settings);
     }
@@ -86,7 +86,7 @@ class WsSourceConnectorTest {
     public void test_task_configs_zero_task(){
         Map<String,String> settings = Maps.newHashMap();
         settings.put(SUCCESS_TOPIC,"foo");
-        settings.put(ERRORS_TOPIC,"foo");
+        settings.put(ERROR_TOPIC,"foo");
         wsSourceConnector.start(settings);
         List<Map<String, String>> maps = wsSourceConnector.taskConfigs(0);
         assertThat(maps).asList().isEmpty();
@@ -96,7 +96,7 @@ class WsSourceConnectorTest {
     public void test_task_configs_1_task(){
         Map<String,String> settings = Maps.newHashMap();
         settings.put(SUCCESS_TOPIC,"foo");
-        settings.put(ERRORS_TOPIC,"foo");
+        settings.put(ERROR_TOPIC,"foo");
         wsSourceConnector.start(settings);
         List<Map<String, String>> maps = wsSourceConnector.taskConfigs(1);
         assertThat(maps).asList().hasSize(1);
@@ -106,7 +106,7 @@ class WsSourceConnectorTest {
     public void test_task_configs_10_tasks(){
         Map<String,String> settings = Maps.newHashMap();
           settings.put(SUCCESS_TOPIC,"foo");
-          settings.put(ERRORS_TOPIC,"foo");
+          settings.put(ERROR_TOPIC,"foo");
         wsSourceConnector.start(settings);
           List<Map<String, String>> maps = wsSourceConnector.taskConfigs(10);
           assertThat(maps).asList().hasSize(10);

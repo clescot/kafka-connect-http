@@ -20,8 +20,8 @@ public class ConfigConstants {
     //source parameters
     public static final String SUCCESS_TOPIC = "success.topic";
     public static final String SUCCESS_TOPIC_DOC = "Topic to receive successful http request/responses";
-    public static final String ERRORS_TOPIC = "errors.topic";
-    public static final String ERRORS_TOPIC_DOC = "Topic to receive errors from http request/responses";
+    public static final String ERROR_TOPIC = "error.topic";
+    public static final String ERROR_TOPIC_DOC = "Topic to receive errors from http request/responses";
 
 
 }
