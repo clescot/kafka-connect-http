@@ -33,3 +33,9 @@ jobs:
           -DrepositoryId=github
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: delete old pre-release-archives
+        uses: actions/delete-package-versions@v3
+        with:
+          package-name: 'test-package'
+          min-versions-to-keep: 10
+          delete-only-pre-release-versions: "true"
