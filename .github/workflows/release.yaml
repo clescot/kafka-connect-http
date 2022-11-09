@@ -18,3 +18,9 @@ jobs:
         run: mvn --batch-mode deploy
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Upload ZIP archive
+        uses: actions/upload-artifact@v3
+        with:
+          sourcePath: target/components/packages/*.zip
+          githubToken: ${{ secrets.GITHUB_TOKEN }}
+          artifactName: kafka-connect-http-sink
