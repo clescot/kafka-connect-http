@@ -31,3 +31,5 @@ jobs:
           -Dversion=${{ env.MAVEN_PROJECT_VERSION }} \
           -Dpackaging=zip \
           -DrepositoryId=github
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
