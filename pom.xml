@@ -17,7 +17,7 @@
     <properties>
         <async.http.client.version>2.12.3</async.http.client.version>
         <kafka.version>3.3.1</kafka.version>
-        <confluent.platform.version>7.2.2</confluent.platform.version>
+        <confluent.platform.version>7.3.0</confluent.platform.version>
         <guava.version>31.1-jre</guava.version>
         <junit.version>5.9.1</junit.version>
         <maven.compiler.source>11</maven.compiler.source>
@@ -56,42 +56,6 @@
             <version>1.4.4</version>
         </dependency>
 
-
-        <dependency>
-            <groupId>io.confluent</groupId>
-            <artifactId>kafka-connect-avro-converter</artifactId>
-            <version>${confluent.platform.version}</version>
-            <scope>compile</scope>
-            <exclusions>
-                <exclusion>
-                    <groupId>log4j</groupId>
-                    <artifactId>log4j</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>org.slf4j</groupId>
-                    <artifactId>slf4j-log4j12</artifactId>
-                </exclusion>
-            </exclusions>
-        </dependency>
-
-        <dependency>
-            <groupId>org.apache.kafka</groupId>
-            <artifactId>connect-json</artifactId>
-            <version>${kafka.version}</version>
-            <scope>provided</scope>
-        </dependency>
-        <dependency>
-            <groupId>io.confluent</groupId>
-            <artifactId>kafka-json-schema-provider</artifactId>
-            <version>${confluent.platform.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>io.confluent</groupId>
-            <artifactId>kafka-connect-json-schema-converter</artifactId>
-            <version>${confluent.platform.version}</version>
-        </dependency>
-
-
         <dependency>
             <groupId>com.google.guava</groupId>
             <artifactId>guava</artifactId>
@@ -111,8 +75,6 @@
             <version>3.23.1</version>
             <scope>test</scope>
         </dependency>
-
-
         <dependency>
             <groupId>org.mockito</groupId>
             <artifactId>mockito-core</artifactId>
@@ -132,18 +94,6 @@
             <scope>test</scope>
         </dependency>
         <dependency>
-            <groupId>com.github.ydespreaux.testcontainers</groupId>
-            <artifactId>testcontainers-kafka</artifactId>
-            <version>1.2.4</version>
-            <scope>test</scope>
-            <exclusions>
-                <exclusion>
-                    <groupId>org.projectlombok</groupId>
-                    <artifactId>lombok</artifactId>
-                </exclusion>
-            </exclusions>
-        </dependency>
-        <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter</artifactId>
             <version>${junit.version}</version>
@@ -153,6 +103,30 @@
             <groupId>org.testcontainers</groupId>
             <artifactId>junit-jupiter</artifactId>
             <version>${testcontainers.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.github.tomakehurst</groupId>
+            <artifactId>wiremock-jre8</artifactId>
+            <version>2.34.0</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.skyscreamer</groupId>
+            <artifactId>jsonassert</artifactId>
+            <version>1.5.1</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.confluent</groupId>
+            <artifactId>kafka-connect-json-schema-converter</artifactId>
+            <version>${confluent.platform.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.confluent</groupId>
+            <artifactId>kafka-json-schema-provider</artifactId>
+            <version>${confluent.platform.version}</version>
             <scope>test</scope>
         </dependency>
         <dependency>
@@ -167,22 +141,19 @@
                 </exclusion>
             </exclusions>
         </dependency>
-        <dependency>
-            <groupId>com.github.tomakehurst</groupId>
-            <artifactId>wiremock-jre8</artifactId>
-            <version>2.34.0</version>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.skyscreamer</groupId>
-            <artifactId>jsonassert</artifactId>
-            <version>1.5.1</version>
-        </dependency>
-
     </dependencies>
 
     <build>
         <finalName>${project.artifactId}</finalName>
+        <pluginManagement>
+            <plugins>
+                <plugin>
+                    <groupId>io.confluent</groupId>
+                    <artifactId>kafka-connect-maven-plugin</artifactId>
+                    <version>0.12.0</version>
+                </plugin>
+            </plugins>
+        </pluginManagement>
         <plugins>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
@@ -192,6 +163,11 @@
                     <source>${maven.compiler.source}</source>
                     <target>${maven.compiler.target}</target>
                 </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-deploy-plugin</artifactId>
+                <version>3.0.0</version>
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
@@ -258,6 +234,39 @@
                         <include>**/IT*.java</include>
                     </includes>
                 </configuration>
+            </plugin>
+            <plugin>
+                <groupId>io.confluent</groupId>
+                <artifactId>kafka-connect-maven-plugin</artifactId>
+                <version>0.12.0</version>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>kafka-connect</goal>
+                        </goals>
+                        <configuration>
+                            <title>Kafka Connect HTTP Sink and Source</title>
+                            <documentationUrl>https://github.com/clescot/kafka-connect-http-sink#readme</documentationUrl>
+                            <description>The Http Sink connector permits from Kafka to interact with HTTP servers, and optionally the Source Connector permits to store in Kafka HTTP interactions details.</description>
+                            <logo>logos/shell.png</logo>
+                            <supportProviderName>Charles Lescot</supportProviderName>
+                            <supportSummary>Support is provided as best effort only. Please register any issues in the github project.</supportSummary>
+                            <supportUrl>https://github.com/clescot/kafka-connect-http-sink/issues</supportUrl>
+                            <sourceUrl>https://github.com/clescot/kafka-connect-http-sink</sourceUrl>
+                            <ownerUsername>clescot</ownerUsername>
+                            <ownerType>user</ownerType>
+                            <ownerName>Charles Lescot</ownerName>
+                            <ownerUrl>https://github.com/clescot</ownerUrl>
+                            <componentTypes>
+                                <componentType>sink</componentType>
+                                <componentType>source</componentType>
+                            </componentTypes>
+                            <tags>
+                                <tag>http</tag>
+                            </tags>
+                        </configuration>
+                    </execution>
+                </executions>
             </plugin>
         </plugins>
     </build>

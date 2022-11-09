@@ -1,7 +1,7 @@
 package com.github.clescot.kafka.connect.http.sink.client;
 
 
-import com.github.clescot.kafka.connect.http.source.Acknowledgement;
+import com.github.clescot.kafka.connect.http.source.HttpExchange;
 import com.google.common.base.Stopwatch;
 import com.google.common.collect.Maps;
 import org.asynchttpclient.AsyncHttpClient;
@@ -30,7 +30,7 @@ import static org.mockito.Mockito.when;
 @RunWith(Enclosed.class)
 public class HttpClientTest {
 
-    public static class Test_setAcknowledgement {
+    public static class Test_setHttpExchange {
         private AsyncHttpClient asyncHttpClient;
 
         @Before
@@ -41,7 +41,7 @@ public class HttpClientTest {
         @Test(expected = NullPointerException.class)
         public void test_all_null() {
             HttpClient httpClient = new HttpClient(asyncHttpClient);
-            httpClient.setAcknowledgement(null,
+            httpClient.buildHttpExchange(null,
                     null,
                     null,
                     Maps.newHashMap(),
@@ -61,7 +61,7 @@ public class HttpClientTest {
         @Test(expected = NullPointerException.class)
         public void test_content_is_null() {
             HttpClient httpClient = new HttpClient(asyncHttpClient);
-            httpClient.setAcknowledgement(null,
+            httpClient.buildHttpExchange(null,
                     null,
                     null,
                     Maps.newHashMap(),
@@ -83,7 +83,7 @@ public class HttpClientTest {
             HashMap<String,
                     String> vars = Maps.newHashMap();
             HttpClient httpClient = new HttpClient(asyncHttpClient);
-            httpClient.setAcknowledgement("fsqdfsdf",
+            httpClient.buildHttpExchange("fsqdfsdf",
                     null,
                     null,
                     null,
@@ -102,7 +102,7 @@ public class HttpClientTest {
         @Test(expected = IllegalStateException.class)
         public void test_response_code_is_lower_than_0() {
             HttpClient httpClient = new HttpClient(asyncHttpClient);
-            httpClient.setAcknowledgement("fsqdfsdf",
+            httpClient.buildHttpExchange("fsqdfsdf",
                     "sdfsfdsf",
                     "http://stuff.com/sfsfds",
                     Maps.newHashMap(),
@@ -124,7 +124,7 @@ public class HttpClientTest {
             HashMap<String,
                     String> vars = Maps.newHashMap();
             HttpClient httpClient = new HttpClient(asyncHttpClient);
-            httpClient.setAcknowledgement("fsqdfsdf",
+            httpClient.buildHttpExchange("fsqdfsdf",
                     "requestId",
                     "requestUri",
                     Maps.newHashMap(),
@@ -168,8 +168,8 @@ public class HttpClientTest {
             wsProperties.put("correlation-id", "sgsmr,sdfgsjjmsldf");
             wsProperties.put(HEADER_X_CORRELATION_ID, "sdfd-7899-8921");
             wsProperties.put(HEADER_X_REQUEST_ID, "sdfd-dfdf-8921");
-            Acknowledgement acknowledgement = httpClient.callOnceWs("requestId", wsProperties, "body", new AtomicInteger(2));
-            assertThat(acknowledgement).isNotNull();
+            HttpExchange httpExchange = httpClient.callOnceWs("requestId", wsProperties, "body", new AtomicInteger(2));
+            assertThat(httpExchange).isNotNull();
         }
 
         @Test
@@ -197,8 +197,8 @@ public class HttpClientTest {
             wsProperties.put("success-code", "^\\d+$");
             wsProperties.put(HEADER_X_CORRELATION_ID, "sdfd-7899-8921");
             wsProperties.put(HEADER_X_REQUEST_ID, "sdfd-dfdf-8921");
-            Acknowledgement acknowledgement = httpClient.callOnceWs("requestId", wsProperties, "body", new AtomicInteger(2));
-            assertThat(acknowledgement).isNotNull();
+            HttpExchange httpExchange = httpClient.callOnceWs("requestId", wsProperties, "body", new AtomicInteger(2));
+            assertThat(httpExchange).isNotNull();
         }
 
 
@@ -224,8 +224,8 @@ public class HttpClientTest {
             wsProperties.put("success-code", "^[1-4][0-9][0-9]$");
             wsProperties.put(HEADER_X_CORRELATION_ID, "sdfd-7899-8921");
             wsProperties.put(HEADER_X_REQUEST_ID, "sdfd-dfdf-8921");
-            Acknowledgement acknowledgement = httpClient.callOnceWs("requestId", wsProperties, "body", new AtomicInteger(2));
-            assertThat(acknowledgement).isNotNull();
+            HttpExchange httpExchange = httpClient.callOnceWs("requestId", wsProperties, "body", new AtomicInteger(2));
+            assertThat(httpExchange).isNotNull();
         }
 
         @Test
@@ -254,8 +254,8 @@ public class HttpClientTest {
             wsProperties.put("success-code", "^[1-4][0-9][0-9]$");
             wsProperties.put(HEADER_X_CORRELATION_ID, "sdfd-7899-8921");
             wsProperties.put(HEADER_X_REQUEST_ID, "sdfd-dfdf-8921");
-            Acknowledgement acknowledgement = httpClient.callOnceWs("requestId", wsProperties, "body", new AtomicInteger(2));
-            assertThat(acknowledgement).isNotNull();
+            HttpExchange httpExchange = httpClient.callOnceWs("requestId", wsProperties, "body", new AtomicInteger(2));
+            assertThat(httpExchange).isNotNull();
         }
 
     }

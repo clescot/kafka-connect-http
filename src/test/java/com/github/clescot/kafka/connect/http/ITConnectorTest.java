@@ -15,7 +15,6 @@ import io.confluent.kafka.serializers.json.KafkaJsonSchemaDeserializer;
 import io.debezium.testing.testcontainers.Connector;
 import io.debezium.testing.testcontainers.ConnectorConfiguration;
 import io.debezium.testing.testcontainers.DebeziumContainer;
-import io.debezium.testing.testcontainers.SchemaRegistryContainer;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
@@ -26,6 +25,7 @@ import org.apache.kafka.common.header.internals.RecordHeader;
 import org.apache.kafka.common.serialization.Deserializer;
 import org.apache.kafka.common.serialization.StringDeserializer;
 import org.apache.kafka.common.serialization.StringSerializer;
+import org.json.JSONException;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
@@ -47,14 +47,15 @@ import org.testcontainers.lifecycle.Startables;
 import org.testcontainers.utility.DockerImageName;
 
 import java.io.IOException;
-import java.net.*;
+import java.net.DatagramSocket;
+import java.net.InetAddress;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Stream;
 
-import static com.github.clescot.kafka.connect.http.sink.ConfigConstants.PUBLISH_TO_IN_MEMORY_QUEUE;
+import static com.github.clescot.kafka.connect.http.sink.WsSinkConfigDefinition.PUBLISH_TO_IN_MEMORY_QUEUE;
 import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
 import static com.github.tomakehurst.wiremock.client.WireMock.get;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -65,7 +66,7 @@ public class ITConnectorTest {
 
     private final static Logger LOGGER = LoggerFactory.getLogger(ITConnectorTest.class);
     private final static Slf4jLogConsumer logConsumer = new Slf4jLogConsumer(LOGGER).withSeparateOutputStreams();
-    public static final String CONFLUENT_VERSION = "7.2.2";
+    public static final String CONFLUENT_VERSION = "7.3.0";
     public static final int CUSTOM_AVAILABLE_PORT = 0;
     public static final int CACHE_CAPACITY = 100;
     public static final String HTTP_REQUESTS = "http-requests";
@@ -83,7 +84,7 @@ public class ITConnectorTest {
             .dependsOn(kafkaContainer)
             .withStartupTimeout(Duration.ofSeconds(90));
     @Container
-    public static DebeziumContainer connectContainer = new DebeziumContainer("confluentinc/cp-kafka-connect:7.2.2")
+    public static DebeziumContainer connectContainer = new DebeziumContainer("confluentinc/cp-kafka-connect:"+CONFLUENT_VERSION)
             .withFileSystemBind("target/http-connector", "/usr/local/share/kafka/plugins")
             .withLogConsumer(new Slf4jLogConsumer(LOGGER))
             .withNetwork(network)
@@ -116,7 +117,7 @@ public class ITConnectorTest {
     private static String internalSchemaRegistryUrl;
     private static String externalSchemaRegistryUrl;
     private static final String successTopic = "http-success";
-    private static final String errorsTopic = "http-errors";
+    private static final String errorTopic = "http-error";
 
     @BeforeAll
     public static void startContainers() throws IOException {
@@ -151,7 +152,7 @@ public class ITConnectorTest {
                 .with("connector.class", "com.github.clescot.kafka.connect.http.source.WsSourceConnector")
                 .with("tasks.max", "2")
                 .with("success.topic", successTopic)
-                .with("errors.topic", errorsTopic)
+                .with("error.topic", errorTopic)
                 .with("key.converter", "org.apache.kafka.connect.storage.StringConverter")
                 .with("value.converter", "io.confluent.connect.json.JsonSchemaConverter")
                 .with("value.converter.schema.registry.url", internalSchemaRegistryUrl);
@@ -177,7 +178,7 @@ public class ITConnectorTest {
     }
 
     @Test
-    public void nominalCase(WireMockRuntimeInfo wmRuntimeInfo) {
+    public void nominalCase(WireMockRuntimeInfo wmRuntimeInfo) throws JSONException {
         //define the http Mock Server interaction
         WireMock wireMock = wmRuntimeInfo.getWireMock();
         wireMock
@@ -204,7 +205,7 @@ public class ITConnectorTest {
         //verify http responses
         KafkaConsumer<String,? extends Object> consumer = getConsumer(kafkaContainer,externalSchemaRegistryUrl);
 
-        consumer.subscribe(Lists.newArrayList(successTopic,errorsTopic));
+        consumer.subscribe(Lists.newArrayList(successTopic, errorTopic));
         List<ConsumerRecord<String, ? extends Object>> consumerRecords = drain(consumer, 1);
         assertThat(consumerRecords).hasSize(1);
         ConsumerRecord<String, ? extends Object> consumerRecord = consumerRecords.get(0);

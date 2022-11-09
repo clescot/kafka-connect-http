@@ -1,9 +1,9 @@
 package com.github.clescot.kafka.connect.http.sink;
 
 import com.github.clescot.kafka.connect.http.QueueFactory;
-import com.github.clescot.kafka.connect.http.sink.client.PropertyBasedASyncHttpClientConfig;
 import com.github.clescot.kafka.connect.http.sink.client.HttpClient;
-import com.github.clescot.kafka.connect.http.source.Acknowledgement;
+import com.github.clescot.kafka.connect.http.sink.client.PropertyBasedASyncHttpClientConfig;
+import com.github.clescot.kafka.connect.http.source.HttpExchange;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
@@ -12,6 +12,7 @@ import io.netty.buffer.PooledByteBufAllocator;
 import io.netty.util.HashedWheelTimer;
 import io.netty.util.Timer;
 import org.apache.kafka.connect.data.Schema;
+import org.apache.kafka.connect.sink.ErrantRecordReporter;
 import org.apache.kafka.connect.sink.SinkRecord;
 import org.apache.kafka.connect.sink.SinkTask;
 import org.asynchttpclient.AsyncHttpClient;
@@ -50,12 +51,13 @@ public class WsSinkTask extends SinkTask {
     private static final String BYTE_BUFFER_ALLOCATOR = ASYN_HTTP_CONFIG_PREFIX + "byte.buffer.allocator";
     private HttpClient httpClient;
     private final static Logger LOGGER = LoggerFactory.getLogger(WsSinkTask.class);
-    private Queue<Acknowledgement> queue;
+    private Queue<HttpExchange> queue;
     private String queueName;
 
     private static AsyncHttpClient asyncHttpClient;
     private Map<String,String> staticRequestHeaders;
     private WsSinkConnectorConfig wsSinkConnectorConfig;
+    private ErrantRecordReporter errantRecordReporter;
 
     @Override
     public String version() {
@@ -74,6 +76,13 @@ public class WsSinkTask extends SinkTask {
     @Override
     public void start(Map<String, String> settings) {
         Preconditions.checkNotNull(settings, "settings cannot be null");
+        try {
+            errantRecordReporter = context.errantRecordReporter();
+        } catch (NoSuchMethodError | NoClassDefFoundError e) {
+            LOGGER.warn("errantRecordReporter has been added to Kafka Connect since 2.6.0 release. you shoudl upgrade the Kafka Connect Runtime shortly.");
+            errantRecordReporter = null;
+        }
+
         this.wsSinkConnectorConfig = new WsSinkConnectorConfig(WsSinkConfigDefinition.config(),settings);
         this.httpClient = new HttpClient(getAsyncHttpClient(wsSinkConnectorConfig.originalsStrings()));
         this.queueName = wsSinkConnectorConfig.getQueueName();
@@ -166,7 +175,11 @@ public class WsSinkTask extends SinkTask {
 
     @Override
     public void put(Collection<SinkRecord> records) {
+
         Preconditions.checkNotNull(records, "records collection to be processed is null");
+        if(records.isEmpty()){
+            return;
+        }
         Preconditions.checkNotNull(httpClient, "httpClient is null. 'start' method must be called once before put");
         if(wsSinkConnectorConfig.isPublishToInMemoryQueue()) {
             Preconditions.checkArgument(QueueFactory.hasAConsumer(queueName), "'" + queueName + "' queue hasn't got any consumer, i.e no Source Connector has been configured to consume records published in this in memory queue. we stop the Sink Connector to prevent any OutofMemoryError.");
@@ -204,7 +217,7 @@ public class WsSinkTask extends SinkTask {
         return Maps.newHashMap(staticRequestHeaders);
     }
 
-    protected void setQueue(Queue<Acknowledgement> queue) {
+    protected void setQueue(Queue<HttpExchange> queue) {
         this.queue = queue;
     }
 }

@@ -1,6 +1,5 @@
 package com.github.clescot.kafka.connect.http.source;
 
-import com.github.clescot.kafka.connect.http.sink.ConfigConstants;
 import org.apache.kafka.common.config.AbstractConfig;
 import org.apache.kafka.common.config.ConfigDef;
 import org.slf4j.Logger;
@@ -9,9 +8,11 @@ import org.slf4j.LoggerFactory;
 import java.util.Map;
 import java.util.Optional;
 
+import static com.github.clescot.kafka.connect.http.ConfigConstants.QUEUE_NAME;
 import static com.github.clescot.kafka.connect.http.QueueFactory.DEFAULT_QUEUE_NAME;
 import static com.github.clescot.kafka.connect.http.QueueFactory.queueMapIsEmpty;
-import static com.github.clescot.kafka.connect.http.sink.ConfigConstants.QUEUE_NAME;
+import static com.github.clescot.kafka.connect.http.source.WsSourceConfigDefinition.ERROR_TOPIC;
+import static com.github.clescot.kafka.connect.http.source.WsSourceConfigDefinition.SUCCESS_TOPIC;
 
 public class WsSourceConnectorConfig extends AbstractConfig {
     private static final Logger LOGGER = LoggerFactory.getLogger(WsSourceConnectorConfig.class);
@@ -27,8 +28,8 @@ public class WsSourceConnectorConfig extends AbstractConfig {
 
     public WsSourceConnectorConfig(ConfigDef configDef,Map<?, ?> originals){
         super(configDef,originals);
-        this.successTopic = Optional.ofNullable(getString(ConfigConstants.SUCCESS_TOPIC)).orElseThrow(()-> new IllegalArgumentException(ConfigConstants.SUCCESS_TOPIC + CANNOT_BE_FOUND_IN_MAP_CONFIGURATION));
-        this.errorsTopic = Optional.ofNullable(getString(ConfigConstants.ERRORS_TOPIC)).orElseThrow(()-> new IllegalArgumentException(ConfigConstants.ERRORS_TOPIC + CANNOT_BE_FOUND_IN_MAP_CONFIGURATION));
+        this.successTopic = Optional.ofNullable(getString(SUCCESS_TOPIC)).orElseThrow(()-> new IllegalArgumentException(SUCCESS_TOPIC + CANNOT_BE_FOUND_IN_MAP_CONFIGURATION));
+        this.errorsTopic = Optional.ofNullable(getString(ERROR_TOPIC)).orElseThrow(()-> new IllegalArgumentException(ERROR_TOPIC + CANNOT_BE_FOUND_IN_MAP_CONFIGURATION));
         this.queueName = Optional.ofNullable(getString(QUEUE_NAME)).orElse(DEFAULT_QUEUE_NAME);
         if(queueMapIsEmpty()){
             LOGGER.warn("no pre-existing queue exists. this WsSourceConnector has created a '{}' one. It needs to consume a queue filled with a SinkConnector. Ignore this message if a SinkConnector will be created after this one.",queueName);

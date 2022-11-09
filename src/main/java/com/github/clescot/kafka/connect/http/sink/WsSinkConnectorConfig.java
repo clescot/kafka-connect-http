@@ -12,9 +12,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
+import static com.github.clescot.kafka.connect.http.ConfigConstants.QUEUE_NAME;
 import static com.github.clescot.kafka.connect.http.QueueFactory.DEFAULT_QUEUE_NAME;
 import static com.github.clescot.kafka.connect.http.QueueFactory.queueMapIsEmpty;
-import static com.github.clescot.kafka.connect.http.sink.ConfigConstants.*;
+import static com.github.clescot.kafka.connect.http.sink.WsSinkConfigDefinition.PUBLISH_TO_IN_MEMORY_QUEUE;
+import static com.github.clescot.kafka.connect.http.sink.WsSinkConfigDefinition.STATIC_REQUEST_HEADER_NAMES;
 
 public class WsSinkConnectorConfig extends AbstractConfig {
     private static final Logger LOGGER = LoggerFactory.getLogger(WsSinkConnectorConfig.class);

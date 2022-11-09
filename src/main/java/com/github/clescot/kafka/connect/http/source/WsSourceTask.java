@@ -33,10 +33,14 @@ public class WsSourceTask extends SourceTask {
     public static final String STATUS_MESSAGE = "statusMessage";
     public static final String RESPONSE_HEADERS = "responseHeaders";
     public static final String RESPONSE_BODY = "responseBody";
+    public static final int ACK_SCHEMA_VERSION = 1;
 
-    private static Queue<Acknowledgement> queue;
+    private static Queue<HttpExchange> queue;
     private WsSourceConnectorConfig sourceConfig;
     private final static Logger LOGGER = LoggerFactory.getLogger(WsSourceTask.class);
+
+    private final static Schema ackSchema =getSchema();
+
     @Override
     public String version() {
         return VersionUtil.version(this.getClass());
@@ -63,39 +67,43 @@ public class WsSourceTask extends SourceTask {
     }
 
 
-    private SourceRecord toSourceRecord(Acknowledgement acknowledgement){
+    private SourceRecord toSourceRecord(HttpExchange httpExchange){
+        //sourcePartition and sourceOffset are useful to track data consumption from source
+        //but it is useless in the in memory queue context
         Map<String, ?> sourcePartition = Maps.newHashMap();
         Map<String, ?> sourceOffset= Maps.newHashMap();
-        Struct struct = new Struct(getSchema());
+        Struct struct = new Struct(ackSchema);
         //ack fields
-        struct.put(DURATION_IN_MILLIS,acknowledgement.getDurationInMillis());
-        struct.put(MOMENT,acknowledgement.getMoment().format(DateTimeFormatter.ISO_ZONED_DATE_TIME));
-        struct.put(ATTEMPTS,acknowledgement.getAttempts().intValue());
+        struct.put(DURATION_IN_MILLIS,httpExchange.getDurationInMillis());
+        struct.put(MOMENT,httpExchange.getMoment().format(DateTimeFormatter.ISO_ZONED_DATE_TIME));
+        struct.put(ATTEMPTS,httpExchange.getAttempts().intValue());
         //request fields
-        struct.put(CORRELATION_ID,acknowledgement.getCorrelationId());
-        struct.put(REQUEST_ID,acknowledgement.getRequestId());
-        struct.put(REQUEST_URI,acknowledgement.getRequestUri());
-        struct.put(METHOD,acknowledgement.getMethod());
-        struct.put(REQUEST_HEADERS,acknowledgement.getRequestHeaders());
-        struct.put(REQUEST_BODY,acknowledgement.getRequestBody());
+        struct.put(CORRELATION_ID,httpExchange.getCorrelationId());
+        struct.put(REQUEST_ID,httpExchange.getRequestId());
+        struct.put(REQUEST_URI,httpExchange.getRequestUri());
+        struct.put(METHOD,httpExchange.getMethod());
+        struct.put(REQUEST_HEADERS,httpExchange.getRequestHeaders());
+        struct.put(REQUEST_BODY,httpExchange.getRequestBody());
         // response fields
-        struct.put(STATUS_CODE,acknowledgement.getStatusCode());
-        struct.put(STATUS_MESSAGE,acknowledgement.getStatusMessage());
-        struct.put(RESPONSE_HEADERS,acknowledgement.getResponseHeaders());
-        struct.put(RESPONSE_BODY,acknowledgement.getResponseBody());
+        struct.put(STATUS_CODE,httpExchange.getStatusCode());
+        struct.put(STATUS_MESSAGE,httpExchange.getStatusMessage());
+        struct.put(RESPONSE_HEADERS,httpExchange.getResponseHeaders());
+        struct.put(RESPONSE_BODY,httpExchange.getResponseBody());
 
         return new SourceRecord(
                 sourcePartition,
                 sourceOffset,
-                acknowledgement.isSuccess()? sourceConfig.getSuccessTopic(): sourceConfig.getErrorsTopic(),
+                httpExchange.isSuccess()? sourceConfig.getSuccessTopic(): sourceConfig.getErrorsTopic(),
                 struct.schema(),
                 struct
         );
     }
 
-    private Schema getSchema() {
+    private static Schema getSchema() {
         return SchemaBuilder
                 .struct()
+                .name(HttpExchange.class.getName())
+                .version(ACK_SCHEMA_VERSION)
                 //ack fields
                 .field(DURATION_IN_MILLIS, Schema.INT64_SCHEMA)
                 .field(MOMENT, Schema.STRING_SCHEMA)

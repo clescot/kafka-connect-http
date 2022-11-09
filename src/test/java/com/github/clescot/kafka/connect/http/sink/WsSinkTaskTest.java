@@ -1,14 +1,18 @@
 package com.github.clescot.kafka.connect.http.sink;
 
+import com.github.clescot.kafka.connect.http.ConfigConstants;
 import com.github.clescot.kafka.connect.http.QueueFactory;
 import com.github.clescot.kafka.connect.http.sink.client.HttpClient;
-import com.github.clescot.kafka.connect.http.source.Acknowledgement;
+import com.github.clescot.kafka.connect.http.source.HttpExchange;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import org.apache.kafka.common.record.TimestampType;
 import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.header.Header;
+import org.apache.kafka.connect.sink.ErrantRecordReporter;
 import org.apache.kafka.connect.sink.SinkRecord;
+import org.apache.kafka.connect.sink.SinkTaskContext;
+import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -22,7 +26,8 @@ import java.util.Map;
 import java.util.Queue;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static com.github.clescot.kafka.connect.http.sink.ConfigConstants.PUBLISH_TO_IN_MEMORY_QUEUE;
+import static com.github.clescot.kafka.connect.http.sink.WsSinkConfigDefinition.PUBLISH_TO_IN_MEMORY_QUEUE;
+import static com.github.clescot.kafka.connect.http.sink.WsSinkConfigDefinition.STATIC_REQUEST_HEADER_NAMES;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.*;
 
@@ -37,7 +42,7 @@ class WsSinkTaskTest {
 
     @Test
     public void test_start_with_queue_name(){
-        WsSinkTask wsSinkTask = new WsSinkTask();
+        WsSinkTask wsSinkTask = getWsSinkTask();
         Map<String,String> settings = Maps.newHashMap();
         settings.put(ConfigConstants.QUEUE_NAME,"dummyQueueName");
         wsSinkTask.start(settings);
@@ -45,9 +50,9 @@ class WsSinkTaskTest {
 
     @Test
     public void test_start_with_static_request_headers(){
-        WsSinkTask wsSinkTask = new WsSinkTask();
+        WsSinkTask wsSinkTask = getWsSinkTask();
         Map<String,String> settings = Maps.newHashMap();
-        settings.put(ConfigConstants.STATIC_REQUEST_HEADER_NAMES,"param1,param2");
+        settings.put(STATIC_REQUEST_HEADER_NAMES,"param1,param2");
         settings.put("param1","value1");
         settings.put("param2","value2");
         wsSinkTask.start(settings);
@@ -58,7 +63,7 @@ class WsSinkTaskTest {
         Assertions.assertThrows(NullPointerException.class,()->{
             WsSinkTask wsSinkTask = new WsSinkTask();
             Map<String,String> settings = Maps.newHashMap();
-            settings.put(ConfigConstants.STATIC_REQUEST_HEADER_NAMES,"param1,param2");
+            settings.put(STATIC_REQUEST_HEADER_NAMES,"param1,param2");
             wsSinkTask.start(settings);
         });
 
@@ -67,22 +72,22 @@ class WsSinkTaskTest {
 
     @Test
     public void test_start_no_settings(){
-        WsSinkTask wsSinkTask = new WsSinkTask();
+        WsSinkTask wsSinkTask = getWsSinkTask();
         wsSinkTask.start(Maps.newHashMap());
     }
 
 
     @Test
     public void test_put_add_static_headers(){
-        WsSinkTask wsSinkTask = new WsSinkTask();
+        WsSinkTask wsSinkTask = getWsSinkTask();
         Map<String,String> settings = Maps.newHashMap();
-        settings.put(ConfigConstants.STATIC_REQUEST_HEADER_NAMES,"param1,param2");
+        settings.put(STATIC_REQUEST_HEADER_NAMES,"param1,param2");
         settings.put("param1","value1");
         settings.put("param2","value2");
         wsSinkTask.start(settings);
         HttpClient httpClient = mock(HttpClient.class);
-        Acknowledgement dummyAcknowledgment = getDummyAcknowledgment();
-        when(httpClient.call(any(SinkRecord.class))).thenReturn(dummyAcknowledgment);
+        HttpExchange dummyHttpExchange = getDummyHttpExchange();
+        when(httpClient.call(any(SinkRecord.class))).thenReturn(dummyHttpExchange);
         wsSinkTask.setHttpClient(httpClient);
         List<SinkRecord> records = Lists.newArrayList();
         List<Header> headers = Lists.newArrayList();
@@ -100,18 +105,18 @@ class WsSinkTaskTest {
     @Test
     public void test_put_nominal_case(){
         //given
-        WsSinkTask wsSinkTask = new WsSinkTask();
+        WsSinkTask wsSinkTask = getWsSinkTask();
         Map<String,String> settings = Maps.newHashMap();
         wsSinkTask.start(settings);
 
         //mock httpClient
         HttpClient httpClient = mock(HttpClient.class);
-        Acknowledgement dummyAcknowledgment = getDummyAcknowledgment();
-        when(httpClient.call(any(SinkRecord.class))).thenReturn(dummyAcknowledgment);
+        HttpExchange dummyHttpExchange = getDummyHttpExchange();
+        when(httpClient.call(any(SinkRecord.class))).thenReturn(dummyHttpExchange);
         wsSinkTask.setHttpClient(httpClient);
 
         //mock queue
-        Queue<Acknowledgement> dummyQueue = mock(Queue.class);
+        Queue<HttpExchange> dummyQueue = mock(Queue.class);
         wsSinkTask.setQueue(dummyQueue);
 
         //init sinkRecord
@@ -132,25 +137,25 @@ class WsSinkTaskTest {
         assertThat(enhancedRecordBeforeHttpCall.headers().size()==sinkRecord.headers().size());
 
         //no records are published into the in memory queue by default
-        verify(dummyQueue,never()).offer(any(Acknowledgement.class));
+        verify(dummyQueue,never()).offer(any(HttpExchange.class));
     }
 
     @Test
     public void test_put_with_publish_to_in_memory_queue_without_consumer(){
         //given
-        WsSinkTask wsSinkTask = new WsSinkTask();
+        WsSinkTask wsSinkTask = getWsSinkTask();
         Map<String,String> settings = Maps.newHashMap();
         settings.put(PUBLISH_TO_IN_MEMORY_QUEUE,"true");
         wsSinkTask.start(settings);
 
         //mock httpClient
         HttpClient httpClient = mock(HttpClient.class);
-        Acknowledgement dummyAcknowledgment = getDummyAcknowledgment();
-        when(httpClient.call(any(SinkRecord.class))).thenReturn(dummyAcknowledgment);
+        HttpExchange dummyHttpExchange = getDummyHttpExchange();
+        when(httpClient.call(any(SinkRecord.class))).thenReturn(dummyHttpExchange);
         wsSinkTask.setHttpClient(httpClient);
 
         //mock queue
-        Queue<Acknowledgement> dummyQueue = mock(Queue.class);
+        Queue<HttpExchange> dummyQueue = mock(Queue.class);
         wsSinkTask.setQueue(dummyQueue);
 
         //init sinkRecord
@@ -166,20 +171,28 @@ class WsSinkTaskTest {
 
     }
 
-
+    @NotNull
+    private static WsSinkTask getWsSinkTask() {
+        WsSinkTask wsSinkTask = new WsSinkTask();
+        ErrantRecordReporter errantRecordReporter = mock(ErrantRecordReporter.class);
+        SinkTaskContext sinkTaskContext = mock(SinkTaskContext.class);
+        when(sinkTaskContext.errantRecordReporter()).thenReturn(errantRecordReporter);
+        wsSinkTask.initialize(sinkTaskContext);
+        return wsSinkTask;
+    }
 
 
     @Test
     public void test_put_with_publish_in_memory_set_to_false(){
-        WsSinkTask wsSinkTask = new WsSinkTask();
+        WsSinkTask wsSinkTask = getWsSinkTask();
         Map<String,String> settings = Maps.newHashMap();
         settings.put(PUBLISH_TO_IN_MEMORY_QUEUE,"false");
         wsSinkTask.start(settings);
         HttpClient httpClient = mock(HttpClient.class);
-        Acknowledgement dummyAcknowledgment = getDummyAcknowledgment();
-        when(httpClient.call(any(SinkRecord.class))).thenReturn(dummyAcknowledgment);
+        HttpExchange dummyHttpExchange = getDummyHttpExchange();
+        when(httpClient.call(any(SinkRecord.class))).thenReturn(dummyHttpExchange);
         wsSinkTask.setHttpClient(httpClient);
-        Queue<Acknowledgement> queue = mock(Queue.class);
+        Queue<HttpExchange> queue = mock(Queue.class);
         wsSinkTask.setQueue(queue);
         List<SinkRecord> records = Lists.newArrayList();
         List<Header> headers = Lists.newArrayList();
@@ -187,23 +200,23 @@ class WsSinkTaskTest {
         records.add(sinkRecord);
         wsSinkTask.put(records);
         verify(httpClient,times(1)).call(any(SinkRecord.class));
-        verify(queue,never()).offer(any(Acknowledgement.class));
+        verify(queue,never()).offer(any(HttpExchange.class));
     }
 
     @Test
     public void test_put_with_publish_to_in_memory_queue_set_to_true_with_a_consumer(){
 
         //given
-        WsSinkTask wsSinkTask = new WsSinkTask();
+        WsSinkTask wsSinkTask = getWsSinkTask();
         Map<String,String> settings = Maps.newHashMap();
         settings.put(PUBLISH_TO_IN_MEMORY_QUEUE,"true");
         QueueFactory.registerConsumerForQueue(QueueFactory.DEFAULT_QUEUE_NAME);
         wsSinkTask.start(settings);
         HttpClient httpClient = mock(HttpClient.class);
-        Acknowledgement dummyAcknowledgment = getDummyAcknowledgment();
-        when(httpClient.call(any(SinkRecord.class))).thenReturn(dummyAcknowledgment);
+        HttpExchange dummyHttpExchange = getDummyHttpExchange();
+        when(httpClient.call(any(SinkRecord.class))).thenReturn(dummyHttpExchange);
         wsSinkTask.setHttpClient(httpClient);
-        Queue<Acknowledgement> queue = mock(Queue.class);
+        Queue<HttpExchange> queue = mock(Queue.class);
         wsSinkTask.setQueue(queue);
         List<SinkRecord> records = Lists.newArrayList();
         List<Header> headers = Lists.newArrayList();
@@ -214,16 +227,16 @@ class WsSinkTaskTest {
 
         //then
         verify(httpClient,times(1)).call(any(SinkRecord.class));
-        verify(queue,times(1)).offer(any(Acknowledgement.class));
+        verify(queue,times(1)).offer(any(HttpExchange.class));
     }
 
 
-    private Acknowledgement getDummyAcknowledgment() {
+    private HttpExchange getDummyHttpExchange() {
         HashMap<String, String> requestHeaders = Maps.newHashMap();
         requestHeaders.put("X-dummy","blabla");
         HashMap<String, String> responseHeaders = Maps.newHashMap();
         responseHeaders.put("Content-Type","application/json");
-        return new Acknowledgement(
+        return new HttpExchange(
                 "fsdfsf--sdfsdfsdf",
                 "fsdfsdf5565",
                 200,
