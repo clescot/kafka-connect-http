@@ -5,6 +5,7 @@ import com.github.clescot.kafka.connect.http.HttpRequest;
 import java.time.OffsetDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class HttpExchange {
@@ -173,5 +174,18 @@ public class HttpExchange {
             this.attempts = attempts;
             return this;
         }
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        HttpExchange that = (HttpExchange) o;
+        return success == that.success && Objects.equals(responseHeaders, that.responseHeaders) && statusCode.equals(that.statusCode) && statusMessage.equals(that.statusMessage) && Objects.equals(responseBody, that.responseBody) && httpRequest.equals(that.httpRequest);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(responseHeaders, statusCode, statusMessage, responseBody, success, httpRequest);
     }
 }
