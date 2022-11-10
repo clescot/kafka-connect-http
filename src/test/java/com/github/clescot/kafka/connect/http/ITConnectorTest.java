@@ -213,7 +213,7 @@ public class ITConnectorTest {
         LOGGER.info("url:{}", url);
         HashMap<String, List<String>> headers = Maps.newHashMap();
         headers.put("header-X-Correlation-ID",Lists.newArrayList("e6de70d1-f222-46e8-b755-754880687822"));
-        headers.put("X-Request-ID",Lists.newArrayList("e6de70d1-f222-46e8-b755-754880687822"));
+        headers.put("X-Request-ID",Lists.newArrayList("e6de70d1-f222-46e8-b755-11111"));
         HttpRequest httpRequest = new HttpRequest(
                 url,
                 headers,
@@ -255,7 +255,7 @@ public class ITConnectorTest {
                 "        \"e6de70d1-f222-46e8-b755-754880687822\"\n" +
                 "      ],\n" +
                 "      \"X-Request-ID\": [\n" +
-                "        \"e6de70d1-f222-46e8-b755-754880687822\"\n" +
+                "        \"e6de70d1-f222-46e8-b755-11111\"\n" +
                 "      ]\n" +
                 "    },\n" +
                 "    \"url\": \""+baseUrl+"/ping\",\n" +
@@ -278,7 +278,6 @@ public class ITConnectorTest {
                         new Customization("requestHeaders.X-Correlation-ID", (o1, o2) -> true),
                         new Customization("requestHeaders.X-Request-ID", (o1, o2) -> true),
                         new Customization("requestId", (o1, o2) -> true),
-                        new Customization("requestUri", (o1, o2) -> true),
                         new Customization("responseHeaders.Matched-Stub-Id", (o1, o2) -> true)
                 ));
         assertThat(consumerRecord.headers().toArray()).isEmpty();
