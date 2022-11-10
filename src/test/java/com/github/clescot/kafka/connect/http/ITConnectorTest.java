@@ -300,12 +300,6 @@ public class ITConnectorTest {
     }
 
 
-    public static void main(String[] args) throws IOException {
-        ITConnectorTest itConnectorTest = new ITConnectorTest();
-        String ip = itConnectorTest.getIP();
-        System.out.println("ip:" + ip);
-    }
-
     private String getIP() {
         try(DatagramSocket datagramSocket = new DatagramSocket()) {
             datagramSocket.connect(InetAddress.getByName("8.8.8.8"), 12345);
