@@ -111,28 +111,38 @@ public class HttpClientTest {
 
         @Test
         public void test_nominal_case() throws ExecutionException, InterruptedException {
+
+            //given
             AsyncHttpClient asyncHttpClient = mock(AsyncHttpClient.class);
             ListenableFuture<Response> listener = mock(ListenableFuture.class);
             ListenableFuture<Object> listenerObject = mock(ListenableFuture.class);
             Response response = mock(Response.class);
-            Uri uri = new Uri("http", null, "fakeHost", 8080, "/toto", "param1=3", "#4");
-            when(response.getUri()).thenReturn(uri);
 
             when(response.getResponseBody()).thenReturn("body");
-            when(response.getStatusCode()).thenReturn(200);
-            when(response.getStatusText()).thenReturn("OK");
+            int statusCode = 200;
+            when(response.getStatusCode()).thenReturn(statusCode);
+            String statusMessage = "OK";
+            when(response.getStatusText()).thenReturn(statusMessage);
 
             when(listener.get()).thenReturn(response);
             when(listenerObject.get()).thenReturn(response);
             when(asyncHttpClient.executeRequest(any(Request.class))).thenReturn(listener);
             when(asyncHttpClient.executeRequest(any(Request.class), any())).thenReturn(listenerObject);
             HttpClient httpClient = new HttpClient(asyncHttpClient);
+
+            //when
             HttpExchange httpExchange = httpClient.callOnceWs(getDummyHttpRequest(), new AtomicInteger(2));
+
+            //then
             assertThat(httpExchange).isNotNull();
+            assertThat(httpExchange.getHttpRequest().getUrl()).isEqualTo("http://localhost:8089");
+            assertThat(httpExchange.getStatusCode()).isEqualTo(statusCode);
+            assertThat(httpExchange.getStatusMessage()).isEqualTo(statusMessage);
         }
 
         @Test
         public void test_any_positive_int_success_code_lower_than_500() throws ExecutionException, InterruptedException {
+            //given
             AsyncHttpClient asyncHttpClient = mock(AsyncHttpClient.class);
             ListenableFuture<Response> listener = mock(ListenableFuture.class);
             ListenableFuture<Object> listenerObject = mock(ListenableFuture.class);
@@ -149,13 +159,16 @@ public class HttpClientTest {
             when(asyncHttpClient.executeRequest(any(Request.class), any())).thenReturn(listenerObject);
             HashMap<String, String> vars = Maps.newHashMap();
             HttpClient httpClient = new HttpClient(asyncHttpClient);
+            //when
             HttpExchange httpExchange = httpClient.callOnceWs(getDummyHttpRequest(), new AtomicInteger(2));
+            //then
             assertThat(httpExchange).isNotNull();
         }
 
 
         @Test(expected = HttpException.class)
         public void test_failure_server_side() throws ExecutionException, InterruptedException {
+            //given
             AsyncHttpClient asyncHttpClient = mock(AsyncHttpClient.class);
             ListenableFuture<Response> listener = mock(ListenableFuture.class);
             ListenableFuture<Object> listenerObject = mock(ListenableFuture.class);
@@ -169,12 +182,15 @@ public class HttpClientTest {
             when(asyncHttpClient.executeRequest(any(Request.class), any())).thenReturn(listenerObject);
             HashMap<String, String> vars = Maps.newHashMap();
             HttpClient httpClient = new HttpClient(asyncHttpClient);
+            //when
             HttpExchange httpExchange = httpClient.callOnceWs(getDummyHttpRequest(), new AtomicInteger(2));
+            //then
             assertThat(httpExchange).isNotNull();
         }
 
         @Test
         public void test_failure_client_side() throws ExecutionException, InterruptedException {
+            //given
             AsyncHttpClient asyncHttpClient = mock(AsyncHttpClient.class);
             ListenableFuture<Response> listener = mock(ListenableFuture.class);
             ListenableFuture<Object> listenerObject = mock(ListenableFuture.class);
@@ -192,7 +208,9 @@ public class HttpClientTest {
             when(asyncHttpClient.executeRequest(any(Request.class), any())).thenReturn(listenerObject);
             HashMap<String, String> vars = Maps.newHashMap();
             HttpClient httpClient = new HttpClient(asyncHttpClient);
+            //when
             HttpExchange httpExchange = httpClient.callOnceWs(getDummyHttpRequest(), new AtomicInteger(2));
+            //then
             assertThat(httpExchange).isNotNull();
         }
 
