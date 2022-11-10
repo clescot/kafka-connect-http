@@ -1,8 +1,10 @@
 package com.github.clescot.kafka.connect.http.sink.client;
 
 
+import com.github.clescot.kafka.connect.http.HttpRequest;
 import com.github.clescot.kafka.connect.http.source.HttpExchange;
 import com.google.common.base.Stopwatch;
+import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import org.asynchttpclient.AsyncHttpClient;
 import org.asynchttpclient.ListenableFuture;
@@ -17,6 +19,7 @@ import org.junit.runner.RunWith;
 import java.time.OffsetDateTime;
 import java.time.ZoneId;
 import java.util.HashMap;
+import java.util.List;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -44,12 +47,7 @@ public class HttpClientTest {
             httpClient.buildHttpExchange(null,
                     null,
                     null,
-                    Maps.newHashMap(),
-                    null,
-                    null,
-                    Maps.newHashMap(),
-                    null,
-                    -1,
+                    200,
                     null,
                     Stopwatch.createUnstarted(),
                     OffsetDateTime.now(ZoneId.of(HttpClient.UTC_ZONE_ID)),
@@ -61,16 +59,11 @@ public class HttpClientTest {
         @Test(expected = NullPointerException.class)
         public void test_content_is_null() {
             HttpClient httpClient = new HttpClient(asyncHttpClient);
-            httpClient.buildHttpExchange(null,
-                    null,
-                    null,
-                    Maps.newHashMap(),
-                    null,
-                    null,
-                    Maps.newHashMap(),
-                    null,
-                    200,
-                    null,
+            httpClient.buildHttpExchange(getDummyHttpRequest(),
+                    Maps.<String,String>newHashMap(),
+                    "",
+                    -45,
+                    "" +"",
                     Stopwatch.createUnstarted(),
                     OffsetDateTime.now(ZoneId.of(HttpClient.UTC_ZONE_ID)),
                     new AtomicInteger(2),
@@ -83,16 +76,11 @@ public class HttpClientTest {
             HashMap<String,
                     String> vars = Maps.newHashMap();
             HttpClient httpClient = new HttpClient(asyncHttpClient);
-            httpClient.buildHttpExchange("fsqdfsdf",
-                    null,
-                    null,
-                    null,
-                    null,
-                    null,
+            httpClient.buildHttpExchange(null,
                     Maps.newHashMap(),
-                    null,
-                    200,
                     "",
+                    -45,
+                    "" +"",
                     Stopwatch.createUnstarted(),
                     OffsetDateTime.now(ZoneId.of(HttpClient.UTC_ZONE_ID)),
                     new AtomicInteger(2),
@@ -102,16 +90,11 @@ public class HttpClientTest {
         @Test(expected = IllegalStateException.class)
         public void test_response_code_is_lower_than_0() {
             HttpClient httpClient = new HttpClient(asyncHttpClient);
-            httpClient.buildHttpExchange("fsqdfsdf",
-                    "sdfsfdsf",
-                    "http://stuff.com/sfsfds",
-                    Maps.newHashMap(),
-                    PUT,
-                    "fake body",
-                    Maps.newHashMap(),
-                    "fake response body",
-                    -1,
+            httpClient.buildHttpExchange(getDummyHttpRequest(),
+                    Maps.<String,String>newHashMap(),
                     "",
+                    -45,
+                    "" +"",
                     Stopwatch.createUnstarted(),
                     OffsetDateTime.now(ZoneId.of(HttpClient.UTC_ZONE_ID)),
                     new AtomicInteger(2),
@@ -124,12 +107,7 @@ public class HttpClientTest {
             HashMap<String,
                     String> vars = Maps.newHashMap();
             HttpClient httpClient = new HttpClient(asyncHttpClient);
-            httpClient.buildHttpExchange("fsqdfsdf",
-                    "requestId",
-                    "requestUri",
-                    Maps.newHashMap(),
-                    "PUT",
-                    "",
+            httpClient.buildHttpExchange(getDummyHttpRequest(),
                     Maps.newHashMap(),
                     "",
                     200,
@@ -162,13 +140,7 @@ public class HttpClientTest {
             when(asyncHttpClient.executeRequest(any(Request.class))).thenReturn(listener);
             when(asyncHttpClient.executeRequest(any(Request.class), any())).thenReturn(listenerObject);
             HttpClient httpClient = new HttpClient(asyncHttpClient);
-            HashMap<String, String> wsProperties = Maps.newHashMap();
-            wsProperties.put("url", "http://localhost:8089");
-            wsProperties.put("method", "PUT");
-            wsProperties.put("correlation-id", "sgsmr,sdfgsjjmsldf");
-            wsProperties.put(HEADER_X_CORRELATION_ID, "sdfd-7899-8921");
-            wsProperties.put(HEADER_X_REQUEST_ID, "sdfd-dfdf-8921");
-            HttpExchange httpExchange = httpClient.callOnceWs("requestId", wsProperties, "body", new AtomicInteger(2));
+            HttpExchange httpExchange = httpClient.callOnceWs(getDummyHttpRequest(), new AtomicInteger(2));
             assertThat(httpExchange).isNotNull();
         }
 
@@ -190,14 +162,7 @@ public class HttpClientTest {
             when(asyncHttpClient.executeRequest(any(Request.class), any())).thenReturn(listenerObject);
             HashMap<String, String> vars = Maps.newHashMap();
             HttpClient httpClient = new HttpClient(asyncHttpClient);
-            HashMap<String, String> wsProperties = Maps.newHashMap();
-            wsProperties.put("url", "http://localhost:8089");
-            wsProperties.put("method", "PUT");
-            wsProperties.put("correlation-id", "sgsmr,sdfgsjjmsldf");
-            wsProperties.put("success-code", "^\\d+$");
-            wsProperties.put(HEADER_X_CORRELATION_ID, "sdfd-7899-8921");
-            wsProperties.put(HEADER_X_REQUEST_ID, "sdfd-dfdf-8921");
-            HttpExchange httpExchange = httpClient.callOnceWs("requestId", wsProperties, "body", new AtomicInteger(2));
+            HttpExchange httpExchange = httpClient.callOnceWs(getDummyHttpRequest(), new AtomicInteger(2));
             assertThat(httpExchange).isNotNull();
         }
 
@@ -217,14 +182,7 @@ public class HttpClientTest {
             when(asyncHttpClient.executeRequest(any(Request.class), any())).thenReturn(listenerObject);
             HashMap<String, String> vars = Maps.newHashMap();
             HttpClient httpClient = new HttpClient(asyncHttpClient);
-            HashMap<String, String> wsProperties = Maps.newHashMap();
-            wsProperties.put("url", "http://localhost:8089");
-            wsProperties.put("method", "PUT");
-            wsProperties.put("correlation-id", "sgsmr,sdfgsjjmsldf");
-            wsProperties.put("success-code", "^[1-4][0-9][0-9]$");
-            wsProperties.put(HEADER_X_CORRELATION_ID, "sdfd-7899-8921");
-            wsProperties.put(HEADER_X_REQUEST_ID, "sdfd-dfdf-8921");
-            HttpExchange httpExchange = httpClient.callOnceWs("requestId", wsProperties, "body", new AtomicInteger(2));
+            HttpExchange httpExchange = httpClient.callOnceWs(getDummyHttpRequest(), new AtomicInteger(2));
             assertThat(httpExchange).isNotNull();
         }
 
@@ -247,17 +205,33 @@ public class HttpClientTest {
             when(asyncHttpClient.executeRequest(any(Request.class), any())).thenReturn(listenerObject);
             HashMap<String, String> vars = Maps.newHashMap();
             HttpClient httpClient = new HttpClient(asyncHttpClient);
-            HashMap<String, String> wsProperties = Maps.newHashMap();
-            wsProperties.put("url", "http://localhost:8089");
-            wsProperties.put("method", "PUT");
-            wsProperties.put("correlation-id", "sgsmr,sdfgsjjmsldf");
-            wsProperties.put("success-code", "^[1-4][0-9][0-9]$");
-            wsProperties.put(HEADER_X_CORRELATION_ID, "sdfd-7899-8921");
-            wsProperties.put(HEADER_X_REQUEST_ID, "sdfd-dfdf-8921");
-            HttpExchange httpExchange = httpClient.callOnceWs("requestId", wsProperties, "body", new AtomicInteger(2));
+            HttpExchange httpExchange = httpClient.callOnceWs(getDummyHttpRequest(), new AtomicInteger(2));
             assertThat(httpExchange).isNotNull();
         }
 
+
+
+
+    }
+
+
+    private static HttpRequest getDummyHttpRequest(){
+        HashMap<String, List<String>> headers = Maps.newHashMap();
+        headers.put("Content-Type", Lists.newArrayList("application/json"));
+        HttpRequest httpRequest = new HttpRequest(
+                "http://localhost:8089",
+                headers,
+                "GET",
+                "{\"param\":\"name\"}",
+                null,
+                null);
+        httpRequest.setRetries(10);
+        httpRequest.setRetryDelayInMs(2500L);
+        httpRequest.setRetryMaxDelayInMs(7000L);
+        httpRequest.setRetryDelayFactor(2);
+        httpRequest.setCorrelationId("45-66-33");
+        httpRequest.setRequestId("77-3333-11");
+        return httpRequest;
     }
 
 }

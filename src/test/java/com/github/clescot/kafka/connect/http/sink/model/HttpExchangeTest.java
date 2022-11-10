@@ -1,11 +1,10 @@
 package com.github.clescot.kafka.connect.http.sink.model;
 
 
+import com.github.clescot.kafka.connect.http.HttpRequest;
 import com.github.clescot.kafka.connect.http.source.HttpExchange;
 import com.google.common.collect.Maps;
-import org.junit.Test;
-import org.junit.experimental.runners.Enclosed;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.Test;
 
 import java.time.OffsetDateTime;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -14,37 +13,30 @@ import static com.github.clescot.kafka.connect.http.sink.client.HttpClient.SUCCE
 import static org.assertj.core.api.AssertionsForInterfaceTypes.assertThat;
 
 
-@RunWith(Enclosed.class)
 public class HttpExchangeTest {
-    public static class TestHttpExchange {
 
+        private HttpRequest getDummyHttpRequest(){
+            return new HttpRequest(
+                    "http://www.toto.com",Maps.newHashMap(),"GET","stuff",null,null);
+        }
         @Test
         public void test_nominal_case() {
             HttpExchange httpExchange = new HttpExchange(
-                    "dfsdfsd",
-                    "sd897osdmsdg",
+                    getDummyHttpRequest(),
                     200,
-                    "toto",
+                    "OK",
                     Maps.newHashMap(),
                     "nfgnlksdfnlnskdfnlsf",
-                    "http://toto:8081",
-                    Maps.newHashMap(),
-                    "PUT",
-                    "",
                     100,
                     OffsetDateTime.now(),
                     new AtomicInteger(2),
                     SUCCESS);
-            HttpExchange httpExchange1 = new HttpExchange("dfsdfsd",
-                    "sd897osdmsdg",
+            HttpExchange httpExchange1 = new HttpExchange(
+                    getDummyHttpRequest(),
                     200,
-                    "toto",
+                    "OK",
                     Maps.newHashMap(),
                     "nfgnlksdfnlnskdfnlsf",
-                    "http://toto:8081",
-                    Maps.newHashMap(),
-                    "PUT",
-                    "",
                     100,
                     OffsetDateTime.now(),
                     new AtomicInteger(2),
@@ -55,25 +47,18 @@ public class HttpExchangeTest {
         @Test
         public void test_nominal_case_detail() {
             HttpExchange httpExchange = new HttpExchange(
-                    "sdfsfsdf5555",
-                    "sd897osdmsdg",
-                    200,
-                    "toto",
+                    getDummyHttpRequest(),
+                    404,
+                    "Not Found",
                     Maps.newHashMap(),
                     "nfgnlksdfnlnskdfnlsf",
-                    "http://toto:8081",
-                    Maps.newHashMap(),
-                    "PUT",
-                    "",
-                    100,
+                    745L,
                     OffsetDateTime.now(),
                     new AtomicInteger(2),
                     SUCCESS
             );
             assertThat(httpExchange.getResponseBody()).isEqualTo("nfgnlksdfnlnskdfnlsf");
-            assertThat(httpExchange.getCorrelationId()).isEqualTo("sdfsfsdf5555");
             assertThat(httpExchange.getStatusCode()).isEqualTo(200);
         }
-    }
 }
 

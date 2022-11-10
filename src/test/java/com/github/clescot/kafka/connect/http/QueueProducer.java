@@ -1,19 +1,21 @@
 package com.github.clescot.kafka.connect.http;
 
 import com.github.clescot.kafka.connect.http.source.HttpExchange;
+import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import org.jetbrains.annotations.NotNull;
 
 import java.time.OffsetDateTime;
 import java.time.ZoneId;
-import java.util.*;
+import java.util.List;
+import java.util.Map;
+import java.util.Queue;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.github.clescot.kafka.connect.http.sink.client.HttpClient.*;
 
 public class QueueProducer implements Runnable {
     private Queue<HttpExchange> transferQueue;
-
 
     private long numberOfSuccessfulMessages;
     private long numberOfErrorMessages;
@@ -40,26 +42,22 @@ public class QueueProducer implements Runnable {
     }
 
     private static HttpExchange getHttpExchange(boolean success) {
-        Map<String,String> requestheaders = Maps.newHashMap();
-        requestheaders.put("X-Request-ID","sdqd-qsdqd-446564");
-        requestheaders.put("X-Correlation-ID","222-qsdqd-446564");
-        requestheaders.put("Content-Type","application/json");
-        return success? getSuccessfulHttpExchange(requestheaders): getErrorHttpExchange(requestheaders);
+        Map<String, List<String>> requestheaders = Maps.newHashMap();
+        requestheaders.put("X-Request-ID", Lists.newArrayList("sdqd-qsdqd-446564"));
+        requestheaders.put("X-Correlation-ID",Lists.newArrayList("222-qsdqd-446564"));
+        requestheaders.put("Content-Type",Lists.newArrayList("application/json"));
+        HttpRequest httpRequest = new HttpRequest("http://www.toto.com",requestheaders,"POST","fummy body",null,null);
+        return success? getSuccessfulHttpExchange(httpRequest): getErrorHttpExchange(httpRequest);
     }
 
     @NotNull
-    private static HttpExchange getSuccessfulHttpExchange(Map<String, String> requestheaders) {
+    private static HttpExchange getSuccessfulHttpExchange(HttpRequest httpRequest) {
         Map<String,String> responseHeaders = Maps.newHashMap();
         responseHeaders.put("Content-Type","application/json");
         return HttpExchange.Builder.anHttpExchange()
                 //tracing headers
-                .withRequestId(UUID.randomUUID().toString())
-                .withCorrelationId("my-correlation-id")
                 //request
-                .withRequestUri("http://fakeUri.com")
-                .withRequestHeaders(requestheaders)
-                .withMethod("GET")
-                .withRequestBody("requestBody")
+                .withHttpRequest(httpRequest)
                 //response
                 .withResponseHeaders(responseHeaders)
                 .withResponseBody("body")
@@ -76,18 +74,12 @@ public class QueueProducer implements Runnable {
     }
 
     @NotNull
-    private static HttpExchange getErrorHttpExchange(Map<String, String> requestheaders) {
+    private static HttpExchange getErrorHttpExchange(HttpRequest httpRequest) {
         Map<String,String> responseHeaders = Maps.newHashMap();
         responseHeaders.put("Content-Type","application/json");
         return HttpExchange.Builder.anHttpExchange()
                 //tracing headers
-                .withRequestId(UUID.randomUUID().toString())
-                .withCorrelationId("another-correlation-id")
-                //request
-                .withRequestUri("http://fakeUri.com")
-                .withRequestHeaders(requestheaders)
-                .withMethod("GET")
-                .withRequestBody("requestBody")
+                .withHttpRequest(httpRequest)
                 //response
                 .withResponseHeaders(responseHeaders)
                 .withResponseBody("Internal server error ... please retry later")
