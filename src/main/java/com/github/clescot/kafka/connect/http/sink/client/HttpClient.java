@@ -108,58 +108,59 @@ public class HttpClient {
      * @return
      */
     public HttpExchange call(HttpRequest httpRequest) {
+        HttpExchange httpExchange = null;
 
-        String body = httpRequest.getBodyAsString();
+        if(httpRequest!=null) {
+
+            //properties which was 'ws-key' in headerKafka and are now 'key' : 'ws-' prefix is removed
+            Map<String, List<String>> wsProperties = extractWsProperties(httpRequest.getHeaders());
+
+            //we generate an X-Correlation-ID header if not present
+            String correlationId = Optional.ofNullable(httpRequest.getCorrelationId()).orElse(UUID.randomUUID().toString());
+            wsProperties.put(HEADER_X_CORRELATION_ID, Lists.newArrayList(correlationId));
+
+            //we generate a X-Request-ID header if not present
+            String requestId = Optional.ofNullable(httpRequest.getRequestId()).orElse(UUID.randomUUID().toString());
+            wsProperties.put(HEADER_X_REQUEST_ID, Lists.newArrayList(requestId));
+
+            //define RetryPolicy
+            int retries = Optional.ofNullable(httpRequest.getRetries()).orElse(3);
+            long retryDelayInMs = Optional.ofNullable(httpRequest.getRetryDelayInMs()).orElse(500L);
+            long retryMaxDelayInMs = Optional.ofNullable(httpRequest.getRetryMaxDelayInMs()).orElse(300000L);
+            double retryDelayFactor = Optional.ofNullable(httpRequest.getRetryDelayFactor()).orElse(2d);
+            long retryJitterInMs = Optional.ofNullable(httpRequest.getRetryJitter()).orElse(100L);
+            RetryPolicy<HttpExchange> retryPolicy = RetryPolicy.<HttpExchange>builder()
+                    //we retry only if the error comes from the WS server (server-side technical error)
+                    .handle(HttpException.class)
+                    .withBackoff(Duration.ofMillis(retryDelayInMs), Duration.ofMillis(retryMaxDelayInMs), retryDelayFactor)
+                    .withJitter(Duration.ofMillis(retryJitterInMs))
+                    .withMaxRetries(retries)
+                    .onRetry(listener -> LOGGER.warn("Retry ws call result:{}, failure:{}", listener.getLastResult(), listener.getLastException()))
+                    .onFailure(listener -> LOGGER.warn("ws call failed ! result:{},exception:{}", listener.getResult(), listener.getException()))
+                    .onAbort(listener -> LOGGER.warn("ws call aborted ! result:{},exception:{}", listener.getResult(), listener.getException()))
+                    .build();
 
 
-        //properties which was 'ws-key' in headerKafka and are now 'key' : 'ws-' prefix is removed
-        Map<String, List<String>> wsProperties= extractWsProperties(httpRequest.getHeaders());
-
-        //we generate an X-Correlation-ID header if not present
-        String correlationId = Optional.ofNullable(httpRequest.getCorrelationId()).orElse(UUID.randomUUID().toString());
-        wsProperties.put(HEADER_X_CORRELATION_ID,Lists.newArrayList(correlationId));
-
-        //we generate a X-Request-ID header if not present
-        String requestId = Optional.ofNullable(httpRequest.getRequestId()).orElse(UUID.randomUUID().toString());
-        wsProperties.put(HEADER_X_REQUEST_ID,Lists.newArrayList(requestId));
-
-        //define RetryPolicy
-        int retries = Optional.ofNullable(httpRequest.getRetries()).orElse(3);
-        long retryDelayInMs = Optional.ofNullable(httpRequest.getRetryDelayInMs()).orElse(500L);
-        long retryMaxDelayInMs = Optional.ofNullable(httpRequest.getRetryMaxDelayInMs()).orElse(300000L);
-        double retryDelayFactor = Optional.ofNullable(httpRequest.getRetryDelayFactor()).orElse(2d);
-        long retryJitterInMs = Optional.ofNullable(httpRequest.getRetryJitter()).orElse(100L);
-        RetryPolicy<HttpExchange> retryPolicy = RetryPolicy.<HttpExchange>builder()
-            //we retry only if the error comes from the WS server (server-side technical error)
-            .handle(HttpException.class)
-            .withBackoff(Duration.ofMillis(retryDelayInMs),Duration.ofMillis(retryMaxDelayInMs),retryDelayFactor)
-            .withJitter(Duration.ofMillis(retryJitterInMs))
-            .withMaxRetries(retries)
-            .onRetry(listener -> LOGGER.warn("Retry ws call result:{}, failure:{}",listener.getLastResult(),listener.getLastException()))
-            .onFailure(listener -> LOGGER.warn("ws call failed ! result:{},exception:{}",listener.getResult(),listener.getException()))
-            .onAbort(listener -> LOGGER.warn("ws call aborted ! result:{},exception:{}",listener.getResult(),listener.getException()))
-            .build();
-
-        HttpExchange httpExchange;
-        Preconditions.checkNotNull(correlationId,"'correlationId' is required but null");
-        AtomicInteger attempts = new AtomicInteger();
-        try {
-            httpExchange = Failsafe.with(List.of(retryPolicy))
-                    .get(() -> {
-                attempts.addAndGet(1);
-                return callOnceWs(httpRequest,attempts);
-            });
-        } catch (HttpException e) {
-            LOGGER.error("Failed to call web service after {} retries with error {} ", retries, e.getMessage());
-            return buildHttpExchange(
-                    httpRequest,
-                    Maps.newHashMap(),
-                    BLANK_RESPONSE_CONTENT,
-                    SERVER_ERROR_STATUS_CODE,
-                    String.valueOf(e.getMessage()),
-                    Stopwatch.createUnstarted(), OffsetDateTime.now(ZoneId.of(UTC_ZONE_ID)),
-                    attempts,
-                    FAILURE);
+            Preconditions.checkNotNull(correlationId, "'correlationId' is required but null");
+            AtomicInteger attempts = new AtomicInteger();
+            try {
+                httpExchange = Failsafe.with(List.of(retryPolicy))
+                        .get(() -> {
+                            attempts.addAndGet(1);
+                            return callOnceWs(httpRequest, attempts);
+                        });
+            } catch (HttpException e) {
+                LOGGER.error("Failed to call web service after {} retries with error {} ", retries, e.getMessage());
+                return buildHttpExchange(
+                        httpRequest,
+                        Maps.newHashMap(),
+                        BLANK_RESPONSE_CONTENT,
+                        SERVER_ERROR_STATUS_CODE,
+                        String.valueOf(e.getMessage()),
+                        Stopwatch.createUnstarted(), OffsetDateTime.now(ZoneId.of(UTC_ZONE_ID)),
+                        attempts,
+                        FAILURE);
+            }
         }
         return httpExchange;
     }
@@ -207,7 +208,6 @@ public class HttpClient {
                                          AtomicInteger attempts) {
         Preconditions.checkNotNull(request,"request cannot  be null");
         Preconditions.checkNotNull(response,"response cannot  be null");
-        String correlationId;
 
         Map<String, List<String>> headers = httpRequest.getHeaders();
         int responseStatusCode = getSuccessfulStatusCodeOrThrowRetryException(headers, response);

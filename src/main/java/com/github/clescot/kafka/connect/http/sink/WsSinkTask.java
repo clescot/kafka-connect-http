@@ -197,7 +197,7 @@ public class WsSinkTask extends SinkTask {
                 .map(httpClient::call)
                 .peek(httpExchange->LOGGER.debug("HTTP exchange :{}",httpExchange))
                 .forEach(httpExchange -> {
-                    if(wsSinkConnectorConfig.isPublishToInMemoryQueue()) {
+                    if(wsSinkConnectorConfig.isPublishToInMemoryQueue() && httpExchange!=null) {
                         queue.offer(httpExchange);
                     }
                 }
