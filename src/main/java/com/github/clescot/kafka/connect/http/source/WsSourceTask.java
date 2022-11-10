@@ -74,7 +74,7 @@ public class WsSourceTask extends SourceTask {
         struct.put(MOMENT,httpExchange.getMoment().format(DateTimeFormatter.ISO_ZONED_DATE_TIME));
         struct.put(ATTEMPTS,httpExchange.getAttempts().intValue());
         //request fields
-        struct.put(REQUEST,httpExchange.getHttpRequest());
+        struct.put(REQUEST,httpExchange.getHttpRequest().toStruct());
         // response fields
         struct.put(STATUS_CODE,httpExchange.getStatusCode());
         struct.put(STATUS_MESSAGE,httpExchange.getStatusMessage());

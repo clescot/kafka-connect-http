@@ -246,7 +246,7 @@ class WsSinkTaskTest {
         objectMapper.registerModule(new JavaTimeModule());
         String httpExchangeAsString = objectMapper.writeValueAsString(dummyHttpExchange);
         String expectedJSON = "" +
-                "  {\n" +
+                " {\n" +
                 "  \"responseHeaders\": {\n" +
                 "    \"Content-Type\": \"application/json\"\n" +
                 "  },\n" +
@@ -272,8 +272,8 @@ class WsSinkTaskTest {
                 "    },\n" +
                 "    \"method\": \"GET\",\n" +
                 "    \"bodyAsString\": \"stuff\",\n" +
-                "    \"bodyAsByteArray\": null,\n" +
-                "    \"bodyAsMultipart\": null,\n" +
+                "    \"bodyAsByteArray\": \"\",\n" +
+                "    \"bodyAsMultipart\": [],\n" +
                 "    \"bodyType\": \"STRING\"\n" +
                 "  }\n" +
                 "}";

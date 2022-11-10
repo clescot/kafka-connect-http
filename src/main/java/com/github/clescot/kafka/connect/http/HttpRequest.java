@@ -1,5 +1,6 @@
 package com.github.clescot.kafka.connect.http;
 
+import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.data.SchemaBuilder;
@@ -25,9 +26,10 @@ public class HttpRequest {
     public static final String HEADERS = "headers";
 
     //only one 'body' field must be set
-    public static final String STRING_BODY = "stringBody";
-    public static final String BYTE_ARRAY_BODY = "byteArrayBody";
-    public static final String MULTIPART_BODY = "multipartBody";
+    public static final String BODY_TYPE = "bodyType";
+    public static final String BODY_AS_STRING = "bodyAsString";
+    public static final String BODY_AS_BYTE_ARRAY = "bodyAsByteArray";
+    public static final String BODY_AS_MULTIPART = "bodyAsMultipart";
     public static final int VERSION = 1;
 
     //metadata
@@ -49,8 +51,8 @@ public class HttpRequest {
     private Map<String, List<String>> headers = Maps.newHashMap();
     private String method;
     private String bodyAsString;
-    private byte[] bodyAsByteArray;
-    private List<byte[]> bodyAsMultipart;
+    private byte[] bodyAsByteArray=new byte[0];
+    private List<byte[]> bodyAsMultipart= Lists.newArrayList();
     private BodyType bodyType;
 
 
@@ -64,18 +66,19 @@ public class HttpRequest {
             //connection (override the default one set in the Sink Connector)
             .field(TIMEOUT_IN_MS, Schema.OPTIONAL_INT64_SCHEMA)
             //retry policy (override the default one set in the Sink Connector)
-            .field(RETRIES, Schema.OPTIONAL_INT16_SCHEMA)
+            .field(RETRIES, Schema.OPTIONAL_INT32_SCHEMA)
             .field(RETRY_DELAY_IN_MS, Schema.OPTIONAL_INT64_SCHEMA)
             .field(RETRY_MAX_DELAY_IN_MS, Schema.OPTIONAL_INT64_SCHEMA)
             .field(RETRY_DELAY_FACTOR, Schema.OPTIONAL_FLOAT64_SCHEMA)
             .field(RETRY_JITTER, Schema.OPTIONAL_INT64_SCHEMA)
             //request
-            .field(HEADERS, SchemaBuilder.map(Schema.STRING_SCHEMA, Schema.STRING_SCHEMA).build())
+            .field(HEADERS, SchemaBuilder.map(Schema.STRING_SCHEMA, SchemaBuilder.array(Schema.STRING_SCHEMA)).build())
             .field(URL, Schema.STRING_SCHEMA)
             .field(METHOD, Schema.STRING_SCHEMA)
-            .field(STRING_BODY, Schema.OPTIONAL_STRING_SCHEMA)
-            .field(BYTE_ARRAY_BODY, Schema.OPTIONAL_BYTES_SCHEMA)
-            .field(MULTIPART_BODY, SchemaBuilder.array(Schema.OPTIONAL_BYTES_SCHEMA));
+            .field(BODY_TYPE,Schema.STRING_SCHEMA)
+            .field(BODY_AS_STRING, Schema.OPTIONAL_STRING_SCHEMA)
+            .field(BODY_AS_BYTE_ARRAY, Schema.OPTIONAL_BYTES_SCHEMA)
+            .field(BODY_AS_MULTIPART, SchemaBuilder.array(Schema.OPTIONAL_BYTES_SCHEMA));
 
     public HttpRequest(String url,
                        Map<String, List<String>> headers,
@@ -87,8 +90,8 @@ public class HttpRequest {
         this.headers = Optional.ofNullable(headers).orElse(Maps.newHashMap());
         this.method = method;
         this.bodyAsString = bodyAsString;
-        this.bodyAsByteArray = bodyAsByteArray;
-        this.bodyAsMultipart = bodyAsMultipart;
+        this.bodyAsByteArray = bodyAsByteArray!=null?bodyAsByteArray:this.bodyAsByteArray;
+        this.bodyAsMultipart = bodyAsMultipart!=null?bodyAsMultipart:this.bodyAsMultipart;
         if(bodyAsString!=null&&bodyAsByteArray==null&&bodyAsMultipart==null){
             this.bodyType=BodyType.STRING;
         }else if(bodyAsString==null&&bodyAsByteArray!=null&&bodyAsMultipart==null){
@@ -235,10 +238,31 @@ public class HttpRequest {
                 ", url='" + url + '\'' +
                 ", headers=" + headers +
                 ", method='" + method + '\'' +
+                ", bodyType='" + bodyType.name() + '\'' +
                 ", stringBody='" + bodyAsString + '\'' +
                 ", byteArrayBody=" + Arrays.toString(bodyAsByteArray) +
                 ", multipartBody=" + bodyAsMultipart +
                 '}';
+    }
+
+    public Struct toStruct(){
+        Struct struct = new Struct(SCHEMA);
+        struct.put(REQUEST_ID,requestId);
+        struct.put(CORRELATION_ID,correlationId);
+        struct.put(TIMEOUT_IN_MS,timeoutInMs);
+        struct.put(RETRIES,retries);
+        struct.put(RETRY_DELAY_IN_MS,retryDelayInMs);
+        struct.put(RETRY_MAX_DELAY_IN_MS,retryMaxDelayInMs);
+        struct.put(RETRY_DELAY_FACTOR,retryDelayFactor);
+        struct.put(RETRY_JITTER,retryJitter);
+        struct.put(URL,url);
+        struct.put(HEADERS,headers);
+        struct.put(METHOD,method);
+        struct.put(BODY_TYPE,bodyType.name());
+        struct.put(BODY_AS_STRING,bodyAsString);
+        struct.put(BODY_AS_BYTE_ARRAY,bodyAsByteArray);
+        struct.put(BODY_AS_MULTIPART,bodyAsMultipart);
+        return struct;
     }
 
     public static final class Builder {
@@ -263,9 +287,9 @@ public class HttpRequest {
             String url = struct.getString(URL);
             Map<String, List<String>> headers = struct.getMap(HEADERS);
             String method = struct.getString(METHOD);
-            String stringBody = struct.getString(STRING_BODY);
-            byte[] byteArrayBody = struct.getBytes(BYTE_ARRAY_BODY);
-            List<byte[]> multipartBody = struct.getArray(BYTE_ARRAY_BODY);
+            String stringBody = struct.getString(BODY_AS_STRING);
+            byte[] byteArrayBody = struct.getBytes(BODY_AS_BYTE_ARRAY);
+            List<byte[]> multipartBody = struct.getArray(BODY_AS_BYTE_ARRAY);
 
             HttpRequest httpRequest = new HttpRequest(
                     url,
