@@ -116,19 +116,19 @@ public class HttpClient {
         Map<String, List<String>> wsProperties= extractWsProperties(httpRequest.getHeaders());
 
         //we generate an X-Correlation-ID header if not present
-        String correlationId = Optional.ofNullable(wsProperties.get(HEADER_X_CORRELATION_ID).get(0)).orElse(UUID.randomUUID().toString());
+        String correlationId = Optional.ofNullable(httpRequest.getCorrelationId()).orElse(UUID.randomUUID().toString());
         wsProperties.put(HEADER_X_CORRELATION_ID,Lists.newArrayList(correlationId));
 
         //we generate a X-Request-ID header if not present
-        String requestId = Optional.ofNullable(wsProperties.get(HEADER_X_REQUEST_ID).get(0)).orElse(UUID.randomUUID().toString());
+        String requestId = Optional.ofNullable(httpRequest.getRequestId()).orElse(UUID.randomUUID().toString());
         wsProperties.put(HEADER_X_REQUEST_ID,Lists.newArrayList(requestId));
 
         //define RetryPolicy
-        int retries = Integer.parseInt(Optional.ofNullable(wsProperties.get(WS_RETRIES).get(0)).orElse("3"));
-        long retryDelayInMs = Long.parseLong(Optional.ofNullable(wsProperties.get(WS_RETRY_DELAY_IN_MS).get(0)).orElse("500"));
-        long retryMaxDelayInMs = Long.parseLong(Optional.ofNullable(wsProperties.get(WS_RETRY_MAX_DELAY_IN_MS).get(0)).orElse("300000"));
-        double retryDelayFactor = Double.parseDouble(Optional.ofNullable(wsProperties.get(WS_RETRY_DELAY_FACTOR).get(0)).orElse("2"));
-        long retryJitterInMs = Long.parseLong(Optional.ofNullable(wsProperties.get(WS_RETRY_JITTER).get(0)).orElse("100"));
+        int retries = Optional.ofNullable(httpRequest.getRetries()).orElse(3);
+        long retryDelayInMs = Optional.ofNullable(httpRequest.getRetryDelayInMs()).orElse(500L);
+        long retryMaxDelayInMs = Optional.ofNullable(httpRequest.getRetryMaxDelayInMs()).orElse(300000L);
+        double retryDelayFactor = Optional.ofNullable(httpRequest.getRetryDelayFactor()).orElse(2d);
+        long retryJitterInMs = Optional.ofNullable(httpRequest.getRetryJitter()).orElse(100L);
         RetryPolicy<HttpExchange> retryPolicy = RetryPolicy.<HttpExchange>builder()
             //we retry only if the error comes from the WS server (server-side technical error)
             .handle(HttpException.class)

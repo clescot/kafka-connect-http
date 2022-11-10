@@ -38,7 +38,7 @@ public class HttpRequest {
     private long timeoutInMs;
 
     //retry policy
-    private long retries;
+    private int retries;
     private long retryDelayInMs;
     private long retryMaxDelayInMs;
     private double retryDelayFactor;
@@ -64,7 +64,7 @@ public class HttpRequest {
             //connection (override the default one set in the Sink Connector)
             .field(TIMEOUT_IN_MS, Schema.OPTIONAL_INT64_SCHEMA)
             //retry policy (override the default one set in the Sink Connector)
-            .field(RETRIES, Schema.OPTIONAL_INT32_SCHEMA)
+            .field(RETRIES, Schema.OPTIONAL_INT16_SCHEMA)
             .field(RETRY_DELAY_IN_MS, Schema.OPTIONAL_INT64_SCHEMA)
             .field(RETRY_MAX_DELAY_IN_MS, Schema.OPTIONAL_INT64_SCHEMA)
             .field(RETRY_DELAY_FACTOR, Schema.OPTIONAL_FLOAT64_SCHEMA)
@@ -125,11 +125,11 @@ public class HttpRequest {
         this.timeoutInMs = timeoutInMs;
     }
 
-    public long getRetries() {
+    public int getRetries() {
         return retries;
     }
 
-    public void setRetries(long retries) {
+    public void setRetries(int retries) {
         this.retries = retries;
     }
 
@@ -271,7 +271,7 @@ public class HttpRequest {
             long timeoutInMs = struct.getInt64(TIMEOUT_IN_MS);
 
             //retry policy
-            long retries = struct.getInt64(RETRIES);
+            int retries = struct.getInt32(RETRIES);
             long retryDelayInMs = struct.getInt64(RETRY_DELAY_IN_MS);
             long retryMaxDelayInMs = struct.getInt64(RETRY_MAX_DELAY_IN_MS);
             double retryDelayFactor = struct.getFloat64(RETRY_DELAY_FACTOR);
