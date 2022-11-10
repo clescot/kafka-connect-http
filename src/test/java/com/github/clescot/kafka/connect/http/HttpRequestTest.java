@@ -39,8 +39,8 @@ class HttpRequestTest {
                 "  \"headers\": {},\n" +
                 "  \"method\": \"GET\",\n" +
                 "  \"bodyAsString\": \"stuff\",\n" +
-                "  \"bodyAsByteArray\": null,\n" +
-                "  \"bodyAsMultipart\": null,\n" +
+                "  \"bodyAsByteArray\": \"\",\n" +
+                "  \"bodyAsMultipart\": [],\n" +
                 "  \"bodyType\": \"STRING\"\n" +
                 "}";
 
