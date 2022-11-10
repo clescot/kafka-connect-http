@@ -270,7 +270,7 @@ public class HttpClient {
         Preconditions.checkNotNull(method,"'method' is required but null");
 
         String correlationId = httpRequest.getCorrelationId();
-        Preconditions.checkNotNull(correlationId,HEADER_X_CORRELATION_ID+" is required but null");
+        Preconditions.checkNotNull(correlationId,"correlationId is required but null");
 
 
         //extract http headers
