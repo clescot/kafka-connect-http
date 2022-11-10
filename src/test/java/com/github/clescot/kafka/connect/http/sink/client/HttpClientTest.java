@@ -219,7 +219,7 @@ public class HttpClientTest {
         httpRequest.setRetries(10);
         httpRequest.setRetryDelayInMs(2500L);
         httpRequest.setRetryMaxDelayInMs(7000L);
-        httpRequest.setRetryDelayFactor(2);
+        httpRequest.setRetryDelayFactor(2d);
         httpRequest.setCorrelationId("45-66-33");
         httpRequest.setRequestId("77-3333-11");
         return httpRequest;

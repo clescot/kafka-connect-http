@@ -1,5 +1,8 @@
 package com.github.clescot.kafka.connect.http;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.github.tomakehurst.wiremock.WireMockServer;
 import com.github.tomakehurst.wiremock.client.WireMock;
 import com.github.tomakehurst.wiremock.junit5.WireMockRuntimeInfo;
@@ -69,8 +72,11 @@ public class ITConnectorTest {
     public static final String CONFLUENT_VERSION = "7.3.0";
     public static final int CUSTOM_AVAILABLE_PORT = 0;
     public static final int CACHE_CAPACITY = 100;
-    public static final String HTTP_REQUESTS = "http-requests";
+    public static final String HTTP_REQUESTS_AS_STRING = "http-requests-string";
+    public static final String HTTP_REQUESTS_AS_STRUCT_WITH_REGISTRY = "http-requests-struct-with-registry";
+    public static final String HTTP_REQUESTS_AS_STRUCT_WITHOUT_REGISTRY = "http-requests-struct-without-registry";
     private static Network network = Network.newNetwork();
+    private static final ObjectMapper MAPPER = new ObjectMapper().registerModule(new JavaTimeModule());
     @Container
     public static KafkaContainer kafkaContainer = new KafkaContainer(DockerImageName.parse("confluentinc/cp-kafka:" + CONFLUENT_VERSION))
             .withNetwork(network)
@@ -132,21 +138,27 @@ public class ITConnectorTest {
         Startables.deepStart(Stream.of(kafkaContainer, schemaRegistryContainer, connectContainer)).join();
         internalSchemaRegistryUrl = "http://" + schemaRegistryContainer.getNetworkAliases().get(0) + ":8081";
         externalSchemaRegistryUrl = "http://" + schemaRegistryContainer.getHost() + ":"+schemaRegistryContainer.getMappedPort(8081);
+    }
 
-        //register connectors
-        //sink connector
-        ConnectorConfiguration sinkConnectorConfiguration = ConnectorConfiguration.create()
+    private static void configureSinkConnector(String connectorName, boolean publishToInMemoryQueue, String incomingTopic, String valueConverterClassName,Map.Entry<String,String>... additionalSettings) {
+        ConnectorConfiguration sinkConnectorMessagesAsStringConfiguration = ConnectorConfiguration.create()
                 .with("connector.class", "com.github.clescot.kafka.connect.http.sink.WsSinkConnector")
                 .with("tasks.max", "2")
-                .with("topics", HTTP_REQUESTS)
+                .with("topics", incomingTopic)
                 .with("key.converter", "org.apache.kafka.connect.storage.StringConverter")
-                .with("value.converter", "org.apache.kafka.connect.storage.StringConverter")
-                .with(PUBLISH_TO_IN_MEMORY_QUEUE, "true")
+                .with("value.converter", valueConverterClassName)
+                .with(PUBLISH_TO_IN_MEMORY_QUEUE, Boolean.valueOf(publishToInMemoryQueue).toString())
                 ;
+        if(additionalSettings!=null && additionalSettings.length>0) {
+            for (Map.Entry<String, String> additionalSetting : additionalSettings) {
+                sinkConnectorMessagesAsStringConfiguration = sinkConnectorMessagesAsStringConfiguration.with(additionalSetting.getKey(), additionalSetting.getValue());
+            }
+        }
+        connectContainer.registerConnector(connectorName, sinkConnectorMessagesAsStringConfiguration);
+        connectContainer.ensureConnectorTaskState(connectorName, 0, Connector.State.RUNNING);
+    }
 
-        connectContainer.registerConnector("http-sink-connector", sinkConnectorConfiguration);
-        connectContainer.ensureConnectorTaskState("http-sink-connector", 0, Connector.State.RUNNING);
-
+    private static void configureSourceConnector(String connectorName) {
         //source connector
         ConnectorConfiguration sourceConnectorConfiguration = ConnectorConfiguration.create()
                 .with("connector.class", "com.github.clescot.kafka.connect.http.source.WsSourceConnector")
@@ -157,13 +169,8 @@ public class ITConnectorTest {
                 .with("value.converter", "io.confluent.connect.json.JsonSchemaConverter")
                 .with("value.converter.schema.registry.url", internalSchemaRegistryUrl);
 
-        connectContainer.registerConnector("http-source-connector", sourceConnectorConfiguration);
-        connectContainer.ensureConnectorTaskState("http-source-connector", 0, Connector.State.RUNNING);
-
-        List<String> registeredConnectors = connectContainer.getRegisteredConnectors();
-
-        String joinedRegisteredConnectors = Joiner.on(",").join(registeredConnectors);
-        LOGGER.info("registered connectors :{}", joinedRegisteredConnectors);
+        connectContainer.registerConnector(connectorName, sourceConnectorConfiguration);
+        connectContainer.ensureConnectorTaskState(connectorName, 0, Connector.State.RUNNING);
     }
 
 
@@ -178,7 +185,14 @@ public class ITConnectorTest {
     }
 
     @Test
-    public void nominalCase(WireMockRuntimeInfo wmRuntimeInfo) throws JSONException {
+    public void sink_and_source_with_input_as_string(WireMockRuntimeInfo wmRuntimeInfo) throws JSONException, JsonProcessingException {
+        //register connectors
+        configureSinkConnector("http-sink-connector-message-as-string",true, HTTP_REQUESTS_AS_STRING, "org.apache.kafka.connect.storage.StringConverter");
+        configureSourceConnector("http-source-connector");
+        List<String> registeredConnectors = connectContainer.getRegisteredConnectors();
+        String joinedRegisteredConnectors = Joiner.on(",").join(registeredConnectors);
+        LOGGER.info("registered connectors :{}", joinedRegisteredConnectors);
+
         //define the http Mock Server interaction
         WireMock wireMock = wmRuntimeInfo.getWireMock();
         wireMock
@@ -192,13 +206,25 @@ public class ITConnectorTest {
                 );
 
         //forge messages which will command http requests
-        KafkaProducer<String, String> producer = getProducer(kafkaContainer);
-        Collection<Header> headers = Lists.newArrayList();
-        String url = "http://" + getIP() + ":" + wmRuntimeInfo.getHttpPort() + "/ping";
+        KafkaProducer<String, String> producer = getStringProducer(kafkaContainer);
+
+        String baseUrl = "http://" + getIP() + ":" + wmRuntimeInfo.getHttpPort();
+        String url = baseUrl + "/ping";
         LOGGER.info("url:{}", url);
-        headers.add(new RecordHeader("ws-url", url.getBytes(StandardCharsets.UTF_8)));
-        headers.add(new RecordHeader("ws-method", "GET".getBytes(StandardCharsets.UTF_8)));
-        ProducerRecord<String, String> record = new ProducerRecord<>(HTTP_REQUESTS, null, System.currentTimeMillis(), null, "value", headers);
+        HashMap<String, List<String>> headers = Maps.newHashMap();
+        headers.put("header-X-Correlation-ID",Lists.newArrayList("e6de70d1-f222-46e8-b755-754880687822"));
+        headers.put("X-Request-ID",Lists.newArrayList("e6de70d1-f222-46e8-b755-754880687822"));
+        HttpRequest httpRequest = new HttpRequest(
+                url,
+                headers,
+                "GET",
+                "stuff",
+                null,
+                null
+                );
+        Collection<Header> kafkaHeaders = Lists.newArrayList();
+        String httpRequestAsJSON = MAPPER.writeValueAsString(httpRequest);
+        ProducerRecord<String, String> record = new ProducerRecord<>(HTTP_REQUESTS_AS_STRING, null, System.currentTimeMillis(), null, httpRequestAsJSON, kafkaHeaders);
         producer.send(record);
         producer.flush();
 
@@ -211,28 +237,38 @@ public class ITConnectorTest {
         ConsumerRecord<String, ? extends Object> consumerRecord = consumerRecords.get(0);
         assertThat(consumerRecord.key()).isNull();
         String jsonAsString = consumerRecord.value().toString();
-        String expectedJSON = "" +
-                "{\n" +
-                "  \"durationInMillis\": 442,\n" +
-                "  \"moment\": \"2022-11-03T18:45:01.144249Z\",\n" +
+        String expectedJSON = "{\n" +
+                "  \"durationInMillis\": 0,\n" +
+                "  \"moment\": \"2022-11-10T17:19:42.740852Z\",\n" +
                 "  \"attempts\": 1,\n" +
-                "  \"correlationId\": \"9b62eda5-7fae-42ce-b9eb-b95ef515f647\",\n" +
-                "  \"requestId\": \"e6de70d1-f222-46e8-b755-754880687822\",\n" +
-                "  \"requestUri\": \"http://192.168.1.4:36279/ping\",\n" +
-                "  \"method\": \"GET\",\n" +
-                "  \"requestHeaders\": {\n" +
-                "    \"X-Request-ID\": \"e6de70d1-f222-46e8-b755-754880687822\",\n" +
-                "    \"X-Correlation-ID\": \"9b62eda5-7fae-42ce-b9eb-b95ef515f647\"\n" +
+                "  \"request\": {\n" +
+                "    \"requestId\": null,\n" +
+                "    \"correlationId\": null,\n" +
+                "    \"timeoutInMs\": 0,\n" +
+                "    \"retries\": 0,\n" +
+                "    \"retryDelayInMs\": null,\n" +
+                "    \"retryMaxDelayInMs\": null,\n" +
+                "    \"retryDelayFactor\": null,\n" +
+                "    \"retryJitter\": null,\n" +
+                "    \"headers\": {\n" +
+                "      \"header-X-Correlation-ID\": [\n" +
+                "        \"e6de70d1-f222-46e8-b755-754880687822\"\n" +
+                "      ],\n" +
+                "      \"X-Request-ID\": [\n" +
+                "        \"e6de70d1-f222-46e8-b755-754880687822\"\n" +
+                "      ]\n" +
+                "    },\n" +
+                "    \"url\": \""+baseUrl+"/ping\",\n" +
+                "    \"method\": \"GET\",\n" +
+                "    \"bodyType\": \"STRING\",\n" +
+                "    \"bodyAsString\": \"stuff\",\n" +
+                "    \"bodyAsByteArray\": \"\",\n" +
+                "    \"bodyAsMultipart\": []\n" +
                 "  },\n" +
-                "  \"statusCode\": 200,\n" +
-                "  \"statusMessage\": \"OK\",\n" +
-                "  \"responseHeaders\": {\n" +
-                "    \"Transfer-Encoding\": \"chunked\",\n" +
-                "    \"Matched-Stub-Id\": \"8b759c66-af77-4e33-8a4d-055ed4d91907\",\n" +
-                "    \"Vary\": \"Accept-Encoding, User-Agent\",\n" +
-                "    \"Content-Type\": \"application/json\"\n" +
-                "  },\n" +
-                "  \"responseBody\": \"{\\\"result\\\":\\\"pong\\\"}\"\n" +
+                "  \"statusCode\": 500,\n" +
+                "  \"statusMessage\": \"header-X-Correlation-ID is required but null\",\n" +
+                "  \"responseHeaders\": {},\n" +
+                "  \"responseBody\": \"\"\n" +
                 "}";
         JSONAssert.assertEquals(expectedJSON, jsonAsString,
                 new CustomComparator(JSONCompareMode.LENIENT,
@@ -250,7 +286,7 @@ public class ITConnectorTest {
     }
 
 
-    private KafkaProducer<String, String> getProducer(
+    private KafkaProducer<String, String> getStringProducer(
             KafkaContainer kafkaContainer) {
 
         return new KafkaProducer<>(

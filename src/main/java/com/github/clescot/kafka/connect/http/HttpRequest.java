@@ -37,14 +37,14 @@ public class HttpRequest {
     private String correlationId;
 
     //connection
-    private long timeoutInMs;
+    private Long timeoutInMs;
 
     //retry policy
-    private int retries;
-    private long retryDelayInMs;
-    private long retryMaxDelayInMs;
-    private double retryDelayFactor;
-    private long retryJitter;
+    private Integer retries;
+    private Long retryDelayInMs;
+    private Long retryMaxDelayInMs;
+    private Double retryDelayFactor;
+    private Long retryJitter;
 
     //request
     private String url;
@@ -131,7 +131,7 @@ public class HttpRequest {
         this.correlationId = correlationId;
     }
 
-    public long getTimeoutInMs() {
+    public Long getTimeoutInMs() {
         return timeoutInMs;
     }
 
@@ -139,7 +139,7 @@ public class HttpRequest {
         this.timeoutInMs = timeoutInMs;
     }
 
-    public int getRetries() {
+    public Integer getRetries() {
         return retries;
     }
 
@@ -147,35 +147,35 @@ public class HttpRequest {
         this.retries = retries;
     }
 
-    public long getRetryDelayInMs() {
+    public Long getRetryDelayInMs() {
         return retryDelayInMs;
     }
 
-    public void setRetryDelayInMs(long retryDelayInMs) {
+    public void setRetryDelayInMs(Long retryDelayInMs) {
         this.retryDelayInMs = retryDelayInMs;
     }
 
-    public long getRetryMaxDelayInMs() {
+    public Long getRetryMaxDelayInMs() {
         return retryMaxDelayInMs;
     }
 
-    public void setRetryMaxDelayInMs(long retryMaxDelayInMs) {
+    public void setRetryMaxDelayInMs(Long retryMaxDelayInMs) {
         this.retryMaxDelayInMs = retryMaxDelayInMs;
     }
 
-    public double getRetryDelayFactor() {
+    public Double getRetryDelayFactor() {
         return retryDelayFactor;
     }
 
-    public void setRetryDelayFactor(double retryDelayFactor) {
+    public void setRetryDelayFactor(Double retryDelayFactor) {
         this.retryDelayFactor = retryDelayFactor;
     }
 
-    public long getRetryJitter() {
+    public Long getRetryJitter() {
         return retryJitter;
     }
 
-    public void setRetryJitter(long retryJitter) {
+    public void setRetryJitter(Long retryJitter) {
         this.retryJitter = retryJitter;
     }
 
@@ -264,6 +264,7 @@ public class HttpRequest {
         struct.put(BODY_AS_MULTIPART,bodyAsMultipart);
         return struct;
     }
+
 
     public static final class Builder {
 

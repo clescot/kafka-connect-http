@@ -29,12 +29,12 @@ class HttpRequestTest {
         String expectedHttpRequest = "{\n" +
                 "  \"requestId\": null,\n" +
                 "  \"correlationId\": null,\n" +
-                "  \"timeoutInMs\": 0,\n" +
-                "  \"retries\": 0,\n" +
-                "  \"retryDelayInMs\": 0,\n" +
-                "  \"retryMaxDelayInMs\": 0,\n" +
-                "  \"retryDelayFactor\": 0.0,\n" +
-                "  \"retryJitter\": 0,\n" +
+                "  \"timeoutInMs\": null,\n" +
+                "  \"retries\": null,\n" +
+                "  \"retryDelayInMs\": null,\n" +
+                "  \"retryMaxDelayInMs\": null,\n" +
+                "  \"retryDelayFactor\": null,\n" +
+                "  \"retryJitter\": null,\n" +
                 "  \"url\": \"http://www.stuff.com\",\n" +
                 "  \"headers\": {},\n" +
                 "  \"method\": \"GET\",\n" +

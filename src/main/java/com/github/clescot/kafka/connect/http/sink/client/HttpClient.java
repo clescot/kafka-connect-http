@@ -149,14 +149,14 @@ public class HttpClient {
                             attempts.addAndGet(1);
                             return callOnceWs(httpRequest, attempts);
                         });
-            } catch (HttpException e) {
-                LOGGER.error("Failed to call web service after {} retries with error {} ", retries, e.getMessage());
+            } catch (Throwable throwable) {
+                LOGGER.error("Failed to call web service after {} retries with error {} ", retries, throwable.getMessage());
                 return buildHttpExchange(
                         httpRequest,
                         Maps.newHashMap(),
                         BLANK_RESPONSE_CONTENT,
                         SERVER_ERROR_STATUS_CODE,
-                        String.valueOf(e.getMessage()),
+                        String.valueOf(throwable.getMessage()),
                         Stopwatch.createUnstarted(), OffsetDateTime.now(ZoneId.of(UTC_ZONE_ID)),
                         attempts,
                         FAILURE);
