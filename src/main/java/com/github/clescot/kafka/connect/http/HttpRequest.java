@@ -45,12 +45,12 @@ public class HttpRequest {
     private long retryJitter;
 
     //request
-    private final String url;
-    private final Map<String, List<String>> headers;
-    private final String method;
-    private final String bodyAsString;
-    private final byte[] bodyAsByteArray;
-    private final List<byte[]> bodyAsMultipart;
+    private String url;
+    private Map<String, List<String>> headers = Maps.newHashMap();
+    private String method;
+    private String bodyAsString;
+    private byte[] bodyAsByteArray;
+    private List<byte[]> bodyAsMultipart;
     private BodyType bodyType;
 
 
@@ -99,6 +99,17 @@ public class HttpRequest {
 
 
 
+    }
+
+
+    /**
+     * only for json deserialization
+     */
+    protected HttpRequest(){
+    }
+
+    public void setBodyType(BodyType bodyType) {
+        this.bodyType = bodyType;
     }
 
     public String getRequestId() {
@@ -192,6 +203,8 @@ public class HttpRequest {
     public BodyType getBodyType() {
         return bodyType;
     }
+
+
 
     @Override
     public boolean equals(Object o) {

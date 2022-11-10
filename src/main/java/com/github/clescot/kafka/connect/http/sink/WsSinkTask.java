@@ -227,17 +227,20 @@ public class WsSinkTask extends SinkTask {
                         .withStruct(valueAsStruct)
                         .build();
 
-            } else if (!String.class.isAssignableFrom(valueClass)) {
+            } else if ("[B".equals(valueClass.getName())) {
                 //we assume the value is a byte array
                 stringValue = new String((byte[]) value, Charsets.UTF_8);
-            } else {
+            } else if(String.class.isAssignableFrom(valueClass)){
                 stringValue = (String) value;
+            }else{
+                throw new ConnectException("value is an instance of the class "+valueClass.getName()+" not handled by the WsSinkTask");
             }
             if (httpRequest == null) {
                 httpRequest = parseHttpRequestAsJsonString(stringValue);
             }
         }catch (ConnectException connectException){
             errantRecordReporter.report(sinkRecord,connectException);
+            LOGGER.warn("error in sinkRecord's structure : "+sinkRecord,connectException);
             return null;
         }
         return httpRequest;
@@ -248,13 +251,16 @@ public class WsSinkTask extends SinkTask {
         try {
             httpRequest = OBJECT_MAPPER.readValue(value, HttpRequest.class);
         } catch (JsonProcessingException e) {
+            LOGGER.error(e.getMessage(),e);
             throw new ConnectException(e);
         }
         return httpRequest;
     }
 
     private HttpRequest addStaticHeaders(HttpRequest httpRequest) {
-        this.staticRequestHeaders.forEach((key,value)->httpRequest.getHeaders().put(key,value));
+        if(httpRequest!=null) {
+            this.staticRequestHeaders.forEach((key, value) -> httpRequest.getHeaders().put(key, value));
+        }
         return httpRequest;
     }
 

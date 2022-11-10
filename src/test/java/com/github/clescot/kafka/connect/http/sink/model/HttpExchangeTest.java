@@ -46,19 +46,21 @@ public class HttpExchangeTest {
 
         @Test
         public void test_nominal_case_detail() {
+            int statusCode = 404;
+            String responseBody = "nfgnlksdfnlnskdfnlsf";
             HttpExchange httpExchange = new HttpExchange(
                     getDummyHttpRequest(),
-                    404,
+                    statusCode,
                     "Not Found",
                     Maps.newHashMap(),
-                    "nfgnlksdfnlnskdfnlsf",
+                    responseBody,
                     745L,
                     OffsetDateTime.now(),
                     new AtomicInteger(2),
                     SUCCESS
             );
-            assertThat(httpExchange.getResponseBody()).isEqualTo("nfgnlksdfnlnskdfnlsf");
-            assertThat(httpExchange.getStatusCode()).isEqualTo(200);
+            assertThat(httpExchange.getResponseBody()).isEqualTo(responseBody);
+            assertThat(httpExchange.getStatusCode()).isEqualTo(statusCode);
         }
 }
 

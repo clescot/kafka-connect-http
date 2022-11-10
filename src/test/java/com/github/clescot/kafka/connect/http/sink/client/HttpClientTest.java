@@ -56,20 +56,7 @@ public class HttpClientTest {
             );
         }
 
-        @Test(expected = NullPointerException.class)
-        public void test_content_is_null() {
-            HttpClient httpClient = new HttpClient(asyncHttpClient);
-            httpClient.buildHttpExchange(getDummyHttpRequest(),
-                    Maps.<String,String>newHashMap(),
-                    "",
-                    -45,
-                    "" +"",
-                    Stopwatch.createUnstarted(),
-                    OffsetDateTime.now(ZoneId.of(HttpClient.UTC_ZONE_ID)),
-                    new AtomicInteger(2),
-                    SUCCESS
-            );
-        }
+
 
         @Test(expected = NullPointerException.class)
         public void test_message_is_null() {
@@ -79,7 +66,7 @@ public class HttpClientTest {
             httpClient.buildHttpExchange(null,
                     Maps.newHashMap(),
                     "",
-                    -45,
+                    200,
                     "" +"",
                     Stopwatch.createUnstarted(),
                     OffsetDateTime.now(ZoneId.of(HttpClient.UTC_ZONE_ID)),
@@ -91,7 +78,7 @@ public class HttpClientTest {
         public void test_response_code_is_lower_than_0() {
             HttpClient httpClient = new HttpClient(asyncHttpClient);
             httpClient.buildHttpExchange(getDummyHttpRequest(),
-                    Maps.<String,String>newHashMap(),
+                    Maps.newHashMap(),
                     "",
                     -45,
                     "" +"",
@@ -216,13 +203,17 @@ public class HttpClientTest {
 
 
     private static HttpRequest getDummyHttpRequest(){
+        return getDummyHttpRequest("{\"param\":\"name\"}");
+    }
+
+    private static HttpRequest getDummyHttpRequest(String body){
         HashMap<String, List<String>> headers = Maps.newHashMap();
         headers.put("Content-Type", Lists.newArrayList("application/json"));
         HttpRequest httpRequest = new HttpRequest(
                 "http://localhost:8089",
                 headers,
                 "GET",
-                "{\"param\":\"name\"}",
+                body,
                 null,
                 null);
         httpRequest.setRetries(10);

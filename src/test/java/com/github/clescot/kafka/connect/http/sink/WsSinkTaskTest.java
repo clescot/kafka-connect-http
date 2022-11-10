@@ -99,7 +99,7 @@ class WsSinkTaskTest {
         wsSinkTask.setHttpClient(httpClient);
         List<SinkRecord> records = Lists.newArrayList();
         List<Header> headers = Lists.newArrayList();
-        SinkRecord sinkRecord = new SinkRecord("myTopic",0, Schema.STRING_SCHEMA,"key",Schema.STRING_SCHEMA,"myValue",-1,System.currentTimeMillis(), TimestampType.CREATE_TIME,headers);
+        SinkRecord sinkRecord = new SinkRecord("myTopic",0, Schema.STRING_SCHEMA,"key",Schema.STRING_SCHEMA,getDummyHttpRequestAsString(),-1,System.currentTimeMillis(), TimestampType.CREATE_TIME,headers);
         records.add(sinkRecord);
         wsSinkTask.put(records);
         ArgumentCaptor<HttpRequest> captor = ArgumentCaptor.forClass(HttpRequest.class);
@@ -130,7 +130,7 @@ class WsSinkTaskTest {
         //init sinkRecord
         List<SinkRecord> records = Lists.newArrayList();
         List<Header> headers = Lists.newArrayList();
-        SinkRecord sinkRecord = new SinkRecord("myTopic",0, Schema.STRING_SCHEMA,"key",Schema.STRING_SCHEMA,"myValue",-1,System.currentTimeMillis(), TimestampType.CREATE_TIME,headers);
+        SinkRecord sinkRecord = new SinkRecord("myTopic",0, Schema.STRING_SCHEMA,"key",Schema.STRING_SCHEMA,getDummyHttpRequestAsString(),-1,System.currentTimeMillis(), TimestampType.CREATE_TIME,headers);
         records.add(sinkRecord);
 
         //when
@@ -204,7 +204,7 @@ class WsSinkTaskTest {
         wsSinkTask.setQueue(queue);
         List<SinkRecord> records = Lists.newArrayList();
         List<Header> headers = Lists.newArrayList();
-        SinkRecord sinkRecord = new SinkRecord("myTopic",0, Schema.STRING_SCHEMA,"key",Schema.STRING_SCHEMA,"myValue",-1,System.currentTimeMillis(), TimestampType.CREATE_TIME,headers);
+        SinkRecord sinkRecord = new SinkRecord("myTopic",0, Schema.STRING_SCHEMA,"key",Schema.STRING_SCHEMA,getDummyHttpRequestAsString(),-1,System.currentTimeMillis(), TimestampType.CREATE_TIME,headers);
         records.add(sinkRecord);
         wsSinkTask.put(records);
         verify(httpClient,times(1)).call(any(HttpRequest.class));
@@ -228,7 +228,7 @@ class WsSinkTaskTest {
         wsSinkTask.setQueue(queue);
         List<SinkRecord> records = Lists.newArrayList();
         List<Header> headers = Lists.newArrayList();
-        SinkRecord sinkRecord = new SinkRecord("myTopic",0, Schema.STRING_SCHEMA,"key",Schema.STRING_SCHEMA,"myValue",-1,System.currentTimeMillis(), TimestampType.CREATE_TIME,headers);
+        SinkRecord sinkRecord = new SinkRecord("myTopic",0, Schema.STRING_SCHEMA,"key",Schema.STRING_SCHEMA,getDummyHttpRequestAsString(),-1,System.currentTimeMillis(), TimestampType.CREATE_TIME,headers);
         records.add(sinkRecord);
         //when
         wsSinkTask.put(records);
@@ -247,28 +247,41 @@ class WsSinkTaskTest {
         String httpExchangeAsString = objectMapper.writeValueAsString(dummyHttpExchange);
         String expectedJSON = "" +
                 "  {\n" +
-                "    \"requestHeaders\": {\n" +
-                "      \"X-dummy\": \"blabla\"\n" +
+                "  \"responseHeaders\": {\n" +
+                "    \"Content-Type\": \"application/json\"\n" +
+                "  },\n" +
+                "  \"statusCode\": 200,\n" +
+                "  \"statusMessage\": \"OK\",\n" +
+                "  \"responseBody\": \"\",\n" +
+                "  \"attempts\": 1,\n" +
+                "  \"success\": true,\n" +
+                "  \"httpRequest\": {\n" +
+                "    \"requestId\": null,\n" +
+                "    \"correlationId\": null,\n" +
+                "    \"timeoutInMs\": 0,\n" +
+                "    \"retries\": 0,\n" +
+                "    \"retryDelayInMs\": 0,\n" +
+                "    \"retryMaxDelayInMs\": 0,\n" +
+                "    \"retryDelayFactor\": 0.0,\n" +
+                "    \"retryJitter\": 0,\n" +
+                "    \"url\": \"http://www.titi.com\",\n" +
+                "    \"headers\": {\n" +
+                "      \"X-dummy\": [\n" +
+                "        \"blabla\"\n" +
+                "      ]\n" +
                 "    },\n" +
                 "    \"method\": \"GET\",\n" +
-                "    \"requestBody\": \"\",\n" +
-                "    \"responseHeaders\": {\n" +
-                "      \"Content-Type\": \"application/json\"\n" +
-                "    },\n" +
-                "    \"correlationId\": \"fsdfsf--sdfsdfsdf\",\n" +
-                "    \"statusCode\": 200,\n" +
-                "    \"statusMessage\": \"OK\",\n" +
-                "    \"responseBody\": \"\",\n" +
-                "    \"durationInMillis\": 100,\n" +
-                "    \"moment\": 1668003522.147107051,\n" +
-                "    \"attempts\": 1,\n" +
-                "    \"requestUri\": \"http://www.dummy.com\",\n" +
-                "    \"requestId\": \"fsdfsdf5565\",\n" +
-                "    \"success\": true\n" +
-                "  }";
+                "    \"bodyAsString\": \"stuff\",\n" +
+                "    \"bodyAsByteArray\": null,\n" +
+                "    \"bodyAsMultipart\": null,\n" +
+                "    \"bodyType\": \"STRING\"\n" +
+                "  }\n" +
+                "}";
+
         JSONAssert.assertEquals(expectedJSON, httpExchangeAsString,
                 new CustomComparator(JSONCompareMode.LENIENT,
-                        new Customization("moment", (o1, o2) -> true)
+                        new Customization("moment", (o1, o2) -> true),
+                        new Customization("durationInMillis", (o1, o2) -> true)
                 ));
 
 
@@ -292,6 +305,27 @@ class WsSinkTaskTest {
                 new AtomicInteger(1),
                 true
         );
+    }
+
+
+    private String getDummyHttpRequestAsString(){
+        return "{\n" +
+        "  \"requestId\": null,\n" +
+                "  \"correlationId\": null,\n" +
+                "  \"timeoutInMs\": 0,\n" +
+                "  \"retries\": 0,\n" +
+                "  \"retryDelayInMs\": 0,\n" +
+                "  \"retryMaxDelayInMs\": 0,\n" +
+                "  \"retryDelayFactor\": 0.0,\n" +
+                "  \"retryJitter\": 0,\n" +
+                "  \"url\": \"http://www.stuff.com\",\n" +
+                "  \"headers\": {},\n" +
+                "  \"method\": \"GET\",\n" +
+                "  \"bodyAsString\": \"stuff\",\n" +
+                "  \"bodyAsByteArray\": null,\n" +
+                "  \"bodyAsMultipart\": null,\n" +
+                "  \"bodyType\": \"STRING\"\n" +
+                "}";
     }
 
 }
