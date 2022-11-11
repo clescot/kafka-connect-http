@@ -16,7 +16,6 @@ import io.netty.buffer.ByteBufAllocator;
 import io.netty.buffer.PooledByteBufAllocator;
 import io.netty.util.HashedWheelTimer;
 import io.netty.util.Timer;
-import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.data.Struct;
 import org.apache.kafka.connect.errors.ConnectException;
 import org.apache.kafka.connect.sink.ErrantRecordReporter;
@@ -198,7 +197,10 @@ public class WsSinkTask extends SinkTask {
                 .peek(httpExchange->LOGGER.debug("HTTP exchange :{}",httpExchange))
                 .forEach(httpExchange -> {
                     if(wsSinkConnectorConfig.isPublishToInMemoryQueue() && httpExchange!=null) {
+                        LOGGER.debug("http exchange published to queue :{}",httpExchange);
                         queue.offer(httpExchange);
+                    }else{
+                        LOGGER.debug("http exchange NOT published to queue :{}",httpExchange);
                     }
                 }
                 );
@@ -218,7 +220,7 @@ public class WsSinkTask extends SinkTask {
             if (Struct.class.isAssignableFrom(valueClass)) {
                 Struct valueAsStruct = (Struct) value;
                 if (sinkRecord.valueSchema() != null) {
-                    LOGGER.error("####################### valueSchema is {}"+sinkRecord.valueSchema());
+                    LOGGER.debug("valueSchema is {}"+sinkRecord.valueSchema());
                     if (!HttpRequest.SCHEMA.equals(sinkRecord.valueSchema())) {
                         LOGGER.warn("sinkRecord has got a value Schema different from the HttpRequest Schema");
                     }
@@ -241,7 +243,7 @@ public class WsSinkTask extends SinkTask {
             }
             if (httpRequest == null) {
                 httpRequest = parseHttpRequestAsJsonString(stringValue);
-                LOGGER.error("successful httpREquest parsing :{}",httpRequest);
+                LOGGER.debug("successful httpRequest parsing :{}",httpRequest);
             }
         }catch (ConnectException connectException){
             LOGGER.warn("error in sinkRecord's structure : "+sinkRecord,connectException);

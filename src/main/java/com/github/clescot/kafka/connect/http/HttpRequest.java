@@ -7,7 +7,10 @@ import org.apache.kafka.connect.data.SchemaBuilder;
 import org.apache.kafka.connect.data.Struct;
 
 import javax.annotation.Nullable;
-import java.util.*;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 
 public class HttpRequest {
 
@@ -81,13 +84,11 @@ public class HttpRequest {
             .field(BODY_AS_MULTIPART, SchemaBuilder.array(Schema.OPTIONAL_BYTES_SCHEMA));
 
     public HttpRequest(String url,
-                       Map<String, List<String>> headers,
                        String method,
                        @Nullable String bodyAsString,
                        @Nullable byte[] bodyAsByteArray,
                        @Nullable List<byte[]> bodyAsMultipart) {
         this.url = url;
-        this.headers = Optional.ofNullable(headers).orElse(Maps.newHashMap());
         this.method = method;
         this.bodyAsString = bodyAsString;
         this.bodyAsByteArray = bodyAsByteArray != null ? bodyAsByteArray : this.bodyAsByteArray;
@@ -99,8 +100,6 @@ public class HttpRequest {
         } else if (bodyAsString == null && bodyAsByteArray == null && bodyAsMultipart != null) {
             this.bodyType = BodyType.MULTIPART;
         }
-
-
     }
 
 
@@ -206,6 +205,9 @@ public class HttpRequest {
         return bodyType;
     }
 
+    public void setHeaders(Map<String, List<String>> headers) {
+        this.headers = headers;
+    }
 
     @Override
     public boolean equals(Object o) {
@@ -293,7 +295,6 @@ public class HttpRequest {
 
             HttpRequest httpRequest = new HttpRequest(
                     url,
-                    headers,
                     method,
                     stringBody,
                     byteArrayBody,
@@ -302,29 +303,33 @@ public class HttpRequest {
 
             //metadata
             String requestId = struct.getString(REQUEST_ID);
+            httpRequest.setRequestId(requestId);
+
             String correlationId = struct.getString(CORRELATION_ID);
+            httpRequest.setCorrelationId(correlationId);
 
             //connection
             long timeoutInMs = struct.getInt64(TIMEOUT_IN_MS);
+            httpRequest.setTimeoutInMs(timeoutInMs);
 
             //retry policy
             int retries = struct.getInt32(RETRIES);
-            long retryDelayInMs = struct.getInt64(RETRY_DELAY_IN_MS);
-            long retryMaxDelayInMs = struct.getInt64(RETRY_MAX_DELAY_IN_MS);
-            double retryDelayFactor = struct.getFloat64(RETRY_DELAY_FACTOR);
-            long retryJitter = struct.getInt64(RETRY_JITTER);
             if (retries >= 0) {
                 httpRequest.setRetries(retries);
             }
+            long retryDelayInMs = struct.getInt64(RETRY_DELAY_IN_MS);
             if (retryDelayInMs >= 0) {
                 httpRequest.setRetryDelayInMs(retryDelayInMs);
             }
+            long retryMaxDelayInMs = struct.getInt64(RETRY_MAX_DELAY_IN_MS);
             if (retryMaxDelayInMs >= 0) {
                 httpRequest.setRetryMaxDelayInMs(retryMaxDelayInMs);
             }
+            double retryDelayFactor = struct.getFloat64(RETRY_DELAY_FACTOR);
             if (retryDelayFactor >= 0) {
                 httpRequest.setRetryDelayFactor(retryDelayFactor);
             }
+            long retryJitter = struct.getInt64(RETRY_JITTER);
             if (retryJitter >= 0) {
                 httpRequest.setRetryJitter(retryJitter);
             }

@@ -23,9 +23,8 @@ import java.util.List;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static com.github.clescot.kafka.connect.http.sink.client.HttpClient.*;
+import static com.github.clescot.kafka.connect.http.sink.client.HttpClient.SUCCESS;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.asynchttpclient.util.HttpConstants.Methods.PUT;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -229,11 +228,11 @@ public class HttpClientTest {
         headers.put("Content-Type", Lists.newArrayList("application/json"));
         HttpRequest httpRequest = new HttpRequest(
                 "http://localhost:8089",
-                headers,
                 "GET",
                 body,
                 null,
                 null);
+        httpRequest.setHeaders(headers);
         httpRequest.setRetries(10);
         httpRequest.setRetryDelayInMs(2500L);
         httpRequest.setRetryMaxDelayInMs(7000L);

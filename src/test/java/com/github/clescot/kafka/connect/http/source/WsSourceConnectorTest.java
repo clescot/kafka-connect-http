@@ -11,8 +11,8 @@ import org.slf4j.LoggerFactory;
 import java.util.List;
 import java.util.Map;
 
+import static com.github.clescot.kafka.connect.http.ConfigConstants.QUEUE_NAME;
 import static com.github.clescot.kafka.connect.http.QueueFactory.DEFAULT_QUEUE_NAME;
-import static com.github.clescot.kafka.connect.http.ConfigConstants.*;
 import static com.github.clescot.kafka.connect.http.source.WsSourceConfigDefinition.ERROR_TOPIC;
 import static com.github.clescot.kafka.connect.http.source.WsSourceConfigDefinition.SUCCESS_TOPIC;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;

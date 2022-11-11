@@ -3,12 +3,9 @@ package com.github.clescot.kafka.connect.http;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
-import com.google.common.collect.Maps;
 import org.json.JSONException;
 import org.junit.jupiter.api.Test;
 import org.skyscreamer.jsonassert.JSONAssert;
-
-import java.util.List;
 
 class HttpRequestTest {
 
@@ -19,7 +16,6 @@ class HttpRequestTest {
         objectMapper.registerModule(new JavaTimeModule());
         HttpRequest httpRequest = new HttpRequest(
                 "http://www.stuff.com",
-                Maps.<String, List<String>>newHashMap(),
                 "GET",
                 "stuff",
                 null,

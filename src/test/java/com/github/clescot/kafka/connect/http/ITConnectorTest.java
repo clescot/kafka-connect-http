@@ -222,12 +222,12 @@ public class ITConnectorTest {
         headers.put("X-Request-ID",Lists.newArrayList("e6de70d1-f222-46e8-b755-11111"));
         HttpRequest httpRequest = new HttpRequest(
                 url,
-                headers,
                 "GET",
                 "stuff",
                 null,
                 null
                 );
+        httpRequest.setHeaders(headers);
         Collection<Header> kafkaHeaders = Lists.newArrayList();
         String httpRequestAsJSON = MAPPER.writeValueAsString(httpRequest);
         ProducerRecord<String, String> record = new ProducerRecord<>(HTTP_REQUESTS_AS_STRING, null, System.currentTimeMillis(), null, httpRequestAsJSON, kafkaHeaders);
@@ -327,12 +327,12 @@ public class ITConnectorTest {
         headers.put("X-Request-ID",Lists.newArrayList("e6de70d1-f222-46e8-b755-11111"));
         HttpRequest httpRequest = new HttpRequest(
                 url,
-                headers,
                 "GET",
                 "stuff",
                 null,
                 null
         );
+        httpRequest.setHeaders(headers);
         Collection<Header> kafkaHeaders = Lists.newArrayList();
         ProducerRecord<String, HttpRequest> record = new ProducerRecord<>(HTTP_REQUESTS_AS_STRUCT_WITH_REGISTRY, null, System.currentTimeMillis(), null, httpRequest, kafkaHeaders);
         producer.send(record);
