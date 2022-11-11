@@ -86,7 +86,7 @@ public class WsSinkTask extends SinkTask {
             //TODO handle DLQ with errantRecordReporter
             errantRecordReporter = context.errantRecordReporter();
         } catch (NoSuchMethodError | NoClassDefFoundError e) {
-            LOGGER.warn("errantRecordReporter has been added to Kafka Connect since 2.6.0 release. you shoudl upgrade the Kafka Connect Runtime shortly.");
+            LOGGER.warn("errantRecordReporter has been added to Kafka Connect since 2.6.0 release. you should upgrade the Kafka Connect Runtime shortly.");
             errantRecordReporter = null;
         }
 
@@ -210,7 +210,8 @@ public class WsSinkTask extends SinkTask {
         String stringValue = null;
         try {
             if (value == null) {
-                throw new ConnectException("sinkRecord has got a null value");
+                LOGGER.warn("sinkRecord has got a 'null' value");
+                throw new ConnectException("sinkRecord has got a 'null' value");
             }
             Class<?> valueClass = value.getClass();
             if (Struct.class.isAssignableFrom(valueClass)) {
@@ -233,14 +234,19 @@ public class WsSinkTask extends SinkTask {
             } else if(String.class.isAssignableFrom(valueClass)){
                 stringValue = (String) value;
             }else{
+                LOGGER.warn("value is an instance of the class "+valueClass.getName()+" not handled by the WsSinkTask");
                 throw new ConnectException("value is an instance of the class "+valueClass.getName()+" not handled by the WsSinkTask");
             }
             if (httpRequest == null) {
                 httpRequest = parseHttpRequestAsJsonString(stringValue);
             }
         }catch (ConnectException connectException){
-            errantRecordReporter.report(sinkRecord,connectException);
             LOGGER.warn("error in sinkRecord's structure : "+sinkRecord,connectException);
+            if(errantRecordReporter!=null) {
+                errantRecordReporter.report(sinkRecord, connectException);
+            }else{
+                LOGGER.warn("errantRecordReporter has been added to Kafka Connect since 2.6.0 release. you should upgrade the Kafka Connect Runtime shortly.");
+            }
             return null;
         }
         return httpRequest;
