@@ -51,8 +51,8 @@ public class HttpRequest {
     private Map<String, List<String>> headers = Maps.newHashMap();
     private String method;
     private String bodyAsString;
-    private byte[] bodyAsByteArray=new byte[0];
-    private List<byte[]> bodyAsMultipart= Lists.newArrayList();
+    private byte[] bodyAsByteArray = new byte[0];
+    private List<byte[]> bodyAsMultipart = Lists.newArrayList();
     private BodyType bodyType;
 
 
@@ -75,7 +75,7 @@ public class HttpRequest {
             .field(HEADERS, SchemaBuilder.map(Schema.STRING_SCHEMA, SchemaBuilder.array(Schema.STRING_SCHEMA)).build())
             .field(URL, Schema.STRING_SCHEMA)
             .field(METHOD, Schema.STRING_SCHEMA)
-            .field(BODY_TYPE,Schema.STRING_SCHEMA)
+            .field(BODY_TYPE, Schema.STRING_SCHEMA)
             .field(BODY_AS_STRING, Schema.OPTIONAL_STRING_SCHEMA)
             .field(BODY_AS_BYTE_ARRAY, Schema.OPTIONAL_BYTES_SCHEMA)
             .field(BODY_AS_MULTIPART, SchemaBuilder.array(Schema.OPTIONAL_BYTES_SCHEMA));
@@ -90,16 +90,15 @@ public class HttpRequest {
         this.headers = Optional.ofNullable(headers).orElse(Maps.newHashMap());
         this.method = method;
         this.bodyAsString = bodyAsString;
-        this.bodyAsByteArray = bodyAsByteArray!=null?bodyAsByteArray:this.bodyAsByteArray;
-        this.bodyAsMultipart = bodyAsMultipart!=null?bodyAsMultipart:this.bodyAsMultipart;
-        if(bodyAsString!=null&&bodyAsByteArray==null&&bodyAsMultipart==null){
-            this.bodyType=BodyType.STRING;
-        }else if(bodyAsString==null&&bodyAsByteArray!=null&&bodyAsMultipart==null){
-            this.bodyType=BodyType.BYTE_ARRAY;
-        }else if(bodyAsString==null&&bodyAsByteArray==null&&bodyAsMultipart!=null){
-            this.bodyType=BodyType.MULTIPART;
+        this.bodyAsByteArray = bodyAsByteArray != null ? bodyAsByteArray : this.bodyAsByteArray;
+        this.bodyAsMultipart = bodyAsMultipart != null ? bodyAsMultipart : this.bodyAsMultipart;
+        if (bodyAsString != null && bodyAsByteArray == null && bodyAsMultipart == null) {
+            this.bodyType = BodyType.STRING;
+        } else if (bodyAsString == null && bodyAsByteArray != null && bodyAsMultipart == null) {
+            this.bodyType = BodyType.BYTE_ARRAY;
+        } else if (bodyAsString == null && bodyAsByteArray == null && bodyAsMultipart != null) {
+            this.bodyType = BodyType.MULTIPART;
         }
-
 
 
     }
@@ -108,7 +107,7 @@ public class HttpRequest {
     /**
      * only for json deserialization
      */
-    protected HttpRequest(){
+    protected HttpRequest() {
     }
 
     public void setBodyType(BodyType bodyType) {
@@ -208,7 +207,6 @@ public class HttpRequest {
     }
 
 
-
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
@@ -245,23 +243,24 @@ public class HttpRequest {
                 '}';
     }
 
-    public Struct toStruct(){
-        Struct struct = new Struct(SCHEMA);
-        struct.put(REQUEST_ID,requestId);
-        struct.put(CORRELATION_ID,correlationId);
-        struct.put(TIMEOUT_IN_MS,timeoutInMs);
-        struct.put(RETRIES,retries);
-        struct.put(RETRY_DELAY_IN_MS,retryDelayInMs);
-        struct.put(RETRY_MAX_DELAY_IN_MS,retryMaxDelayInMs);
-        struct.put(RETRY_DELAY_FACTOR,retryDelayFactor);
-        struct.put(RETRY_JITTER,retryJitter);
-        struct.put(URL,url);
-        struct.put(HEADERS,headers);
-        struct.put(METHOD,method);
-        struct.put(BODY_TYPE,bodyType.name());
-        struct.put(BODY_AS_STRING,bodyAsString);
-        struct.put(BODY_AS_BYTE_ARRAY,bodyAsByteArray);
-        struct.put(BODY_AS_MULTIPART,bodyAsMultipart);
+    public Struct toStruct() {
+        Struct struct =
+                new Struct(SCHEMA)
+                        .put(REQUEST_ID, requestId)
+                        .put(CORRELATION_ID, correlationId)
+                        .put(TIMEOUT_IN_MS, timeoutInMs)
+                        .put(RETRIES, retries)
+                        .put(RETRY_DELAY_IN_MS, retryDelayInMs)
+                        .put(RETRY_MAX_DELAY_IN_MS, retryMaxDelayInMs)
+                        .put(RETRY_DELAY_FACTOR, retryDelayFactor)
+                        .put(RETRY_JITTER, retryJitter)
+                        .put(URL, url)
+                        .put(HEADERS, headers)
+                        .put(METHOD, method)
+                        .put(BODY_TYPE, bodyType.name())
+                        .put(BODY_AS_STRING, bodyAsString)
+                        .put(BODY_AS_BYTE_ARRAY, bodyAsByteArray)
+                        .put(BODY_AS_MULTIPART, bodyAsMultipart);
         return struct;
     }
 
