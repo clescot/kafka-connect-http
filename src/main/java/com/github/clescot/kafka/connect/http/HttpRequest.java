@@ -1,6 +1,6 @@
 package com.github.clescot.kafka.connect.http;
 
-import com.github.clescot.kafka.connect.http.sink.WsSinkTask;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import org.apache.kafka.connect.data.Schema;
@@ -10,11 +10,181 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nullable;
-import java.util.Arrays;
+import java.util.Base64;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
+@io.confluent.kafka.schemaregistry.annotations.Schema(value = "{\n" +
+        "  \"$schema\": \"http://json-schema.org/draft/2019-09/schema#\",\n" +
+        "  \"title\": \"Http Request\",\n" +
+        "  \"type\": \"object\",\n" +
+        "  \"additionalProperties\": false,\n" +
+        "  \"required\": [\"url\",\"method\"],\n" +
+        "  \"properties\": {\n" +
+        "    \"requestId\": {\n" +
+        "      \"oneOf\": [\n" +
+        "        {\n" +
+        "          \"type\": \"null\",\n" +
+        "          \"title\": \"Not included\"\n" +
+        "        },\n" +
+        "        {\n" +
+        "          \"type\": \"string\"\n" +
+        "        }\n" +
+        "      ]\n" +
+        "    },\n" +
+        "    \"correlationId\": {\n" +
+        "      \"oneOf\": [\n" +
+        "        {\n" +
+        "          \"type\": \"null\",\n" +
+        "          \"title\": \"Not included\"\n" +
+        "        },\n" +
+        "        {\n" +
+        "          \"type\": \"string\"\n" +
+        "        }\n" +
+        "      ]\n" +
+        "    },\n" +
+        "    \"timeoutInMs\": {\n" +
+        "      \"oneOf\": [\n" +
+        "        {\n" +
+        "          \"type\": \"null\",\n" +
+        "          \"title\": \"Not included\"\n" +
+        "        },\n" +
+        "        {\n" +
+        "          \"type\": \"integer\"\n" +
+        "        }\n" +
+        "      ]\n" +
+        "    },\n" +
+        "    \"retries\": {\n" +
+        "      \"oneOf\": [\n" +
+        "        {\n" +
+        "          \"type\": \"null\",\n" +
+        "          \"title\": \"Not included\"\n" +
+        "        },\n" +
+        "        {\n" +
+        "          \"type\": \"integer\"\n" +
+        "        }\n" +
+        "      ]\n" +
+        "    },\n" +
+        "    \"retryDelayInMs\": {\n" +
+        "      \"oneOf\": [\n" +
+        "        {\n" +
+        "          \"type\": \"null\",\n" +
+        "          \"title\": \"Not included\"\n" +
+        "        },\n" +
+        "        {\n" +
+        "          \"type\": \"integer\"\n" +
+        "        }\n" +
+        "      ]\n" +
+        "    },\n" +
+        "    \"retryMaxDelayInMs\": {\n" +
+        "      \"oneOf\": [\n" +
+        "        {\n" +
+        "          \"type\": \"null\",\n" +
+        "          \"title\": \"Not included\"\n" +
+        "        },\n" +
+        "        {\n" +
+        "          \"type\": \"integer\"\n" +
+        "        }\n" +
+        "      ]\n" +
+        "    },\n" +
+        "    \"retryDelayFactor\": {\n" +
+        "      \"oneOf\": [\n" +
+        "        {\n" +
+        "          \"type\": \"null\",\n" +
+        "          \"title\": \"Not included\"\n" +
+        "        },\n" +
+        "        {\n" +
+        "          \"type\": \"number\"\n" +
+        "        }\n" +
+        "      ]\n" +
+        "    },\n" +
+        "    \"retryJitter\": {\n" +
+        "      \"oneOf\": [\n" +
+        "        {\n" +
+        "          \"type\": \"null\",\n" +
+        "          \"title\": \"Not included\"\n" +
+        "        },\n" +
+        "        {\n" +
+        "          \"type\": \"integer\"\n" +
+        "        }\n" +
+        "      ]\n" +
+        "    },\n" +
+        "    \"url\": {\n" +
+        "      \"type\": \"string\"\n" +
+        "    },\n" +
+        "    \"headers\": {\n" +
+        "      \"type\": \"object\",\n" +
+        "      \"connect.type\": \"map\",\n" +
+        "      \"additionalProperties\": {\n" +
+        "        \"type\": \"array\",\n" +
+        "        \"items\": {\n" +
+        "          \"type\": \"string\"\n" +
+        "        }\n" +
+        "      }\n" +
+        "    },\n" +
+        "    \"method\": {\n" +
+        "      \"type\": \"string\"\n" +
+        "    },\n" +
+        "    \"bodyAsString\": {\n" +
+        "      \"oneOf\": [\n" +
+        "        {\n" +
+        "          \"type\": \"null\",\n" +
+        "          \"title\": \"Not included\"\n" +
+        "        },\n" +
+        "        {\n" +
+        "          \"type\": \"string\"\n" +
+        "        }\n" +
+        "      ]\n" +
+        "    },\n" +
+        "    \"bodyAsByteArray\": {\n" +
+        "      \"oneOf\": [\n" +
+        "        {\n" +
+        "          \"type\": \"null\",\n" +
+        "          \"title\": \"Not included\"\n" +
+        "        },\n" +
+        "        {\n" +
+        "          \"type\": \"string\"\n" +
+        "        }\n" +
+        "      ]\n" +
+        "    },\n" +
+        "    \"bodyAsMultipart\": {\n" +
+        "      \"oneOf\": [\n" +
+        "        {\n" +
+        "          \"type\": \"null\",\n" +
+        "          \"title\": \"Not included\"\n" +
+        "        },\n" +
+        "        {\n" +
+        "          \"type\": \"array\",\n" +
+        "          \"items\": {\n" +
+        "            \"type\": \"string\"\n" +
+        "          }\n" +
+        "        }\n" +
+        "      ]\n" +
+        "    },\n" +
+        "    \"bodyType\": {\n" +
+        "      \"oneOf\": [\n" +
+        "        {\n" +
+        "          \"type\": \"null\",\n" +
+        "          \"title\": \"Not included\"\n" +
+        "        },\n" +
+        "        {\n" +
+        "          \"type\": \"string\",\n" +
+        "          \"enum\": [\n" +
+        "            \"STRING\",\n" +
+        "            \"BYTE_ARRAY\",\n" +
+        "            \"MULTIPART\"\n" +
+        "          ]\n" +
+        "        }\n" +
+        "      ]\n" +
+        "    }\n" +
+        "  },\n" +
+        "  \"required\": [\n" +
+        "    \"url\",\n" +
+        "    \"method\"\n" +
+        "  ]\n" +
+        "}",
+        refs = {})
 public class HttpRequest {
 
 
@@ -41,26 +211,41 @@ public class HttpRequest {
     private final static Logger LOGGER = LoggerFactory.getLogger(HttpRequest.class);
 
     //metadata
+    @JsonProperty
     private String requestId;
+    @JsonProperty
     private String correlationId;
 
     //connection
+    @JsonProperty
     private Long timeoutInMs;
 
     //retry policy
-    private Integer retries;
+    @JsonProperty
+    private Long retries;
+    @JsonProperty
     private Long retryDelayInMs;
+    @JsonProperty
     private Long retryMaxDelayInMs;
+    @JsonProperty
     private Double retryDelayFactor;
+    @JsonProperty
     private Long retryJitter;
 
     //request
+    @JsonProperty(required = true)
     private String url;
+    @JsonProperty
     private Map<String, List<String>> headers = Maps.newHashMap();
+    @JsonProperty(required = true)
     private String method;
+    @JsonProperty
     private String bodyAsString;
-    private byte[] bodyAsByteArray = new byte[0];
-    private List<byte[]> bodyAsMultipart = Lists.newArrayList();
+    @JsonProperty
+    private String bodyAsByteArray;
+    @JsonProperty
+    private List<String> bodyAsMultipart = Lists.newArrayList();
+    @JsonProperty
     private BodyType bodyType;
 
 
@@ -85,8 +270,8 @@ public class HttpRequest {
             .field(METHOD, Schema.STRING_SCHEMA)
             .field(BODY_TYPE, Schema.STRING_SCHEMA)
             .field(BODY_AS_STRING, Schema.OPTIONAL_STRING_SCHEMA)
-            .field(BODY_AS_BYTE_ARRAY, Schema.OPTIONAL_BYTES_SCHEMA)
-            .field(BODY_AS_MULTIPART, SchemaBuilder.array(Schema.OPTIONAL_BYTES_SCHEMA));
+            .field(BODY_AS_BYTE_ARRAY, Schema.OPTIONAL_STRING_SCHEMA)
+            .field(BODY_AS_MULTIPART, SchemaBuilder.array(Schema.OPTIONAL_STRING_SCHEMA));
 
     public HttpRequest(String url,
                        String method,
@@ -96,8 +281,8 @@ public class HttpRequest {
         this.url = url;
         this.method = method;
         this.bodyAsString = bodyAsString;
-        this.bodyAsByteArray = bodyAsByteArray != null ? bodyAsByteArray : this.bodyAsByteArray;
-        this.bodyAsMultipart = bodyAsMultipart != null ? bodyAsMultipart : this.bodyAsMultipart;
+        this.bodyAsByteArray = bodyAsByteArray != null ?  Base64.getEncoder().encodeToString(bodyAsByteArray) : this.bodyAsByteArray;
+        this.bodyAsMultipart = bodyAsMultipart != null ? convertMultipart(bodyAsMultipart) : this.bodyAsMultipart;
         if (bodyAsString != null && bodyAsByteArray == null && bodyAsMultipart == null) {
             this.bodyType = BodyType.STRING;
         } else if (bodyAsString == null && bodyAsByteArray != null && bodyAsMultipart == null) {
@@ -105,6 +290,14 @@ public class HttpRequest {
         } else if (bodyAsString == null && bodyAsByteArray == null && bodyAsMultipart != null) {
             this.bodyType = BodyType.MULTIPART;
         }
+    }
+
+    private List<String> convertMultipart(List<byte[]> bodyAsMultipart) {
+        List<String> results = Lists.newArrayList();
+        for (byte[] bytes : bodyAsMultipart) {
+            results.add(Base64.getEncoder().encodeToString(bytes));
+        }
+        return results;
     }
 
 
@@ -138,15 +331,15 @@ public class HttpRequest {
         return timeoutInMs;
     }
 
-    public void setTimeoutInMs(long timeoutInMs) {
+    public void setTimeoutInMs(Long timeoutInMs) {
         this.timeoutInMs = timeoutInMs;
     }
 
-    public Integer getRetries() {
+    public Long getRetries() {
         return retries;
     }
 
-    public void setRetries(int retries) {
+    public void setRetries(Long retries) {
         this.retries = retries;
     }
 
@@ -199,11 +392,15 @@ public class HttpRequest {
     }
 
     public byte[] getBodyAsByteArray() {
-        return bodyAsByteArray;
+        return this.bodyAsByteArray!=null?Base64.getDecoder().decode(bodyAsByteArray):new byte[0];
     }
 
     public List<byte[]> getBodyAsMultipart() {
-        return bodyAsMultipart;
+        List<byte[]> multipart = Lists.newArrayList();
+        for (String encodedPart : this.bodyAsMultipart) {
+            multipart.add(Base64.getDecoder().decode(encodedPart));
+        }
+        return multipart;
     }
 
     public BodyType getBodyType() {
@@ -219,14 +416,12 @@ public class HttpRequest {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         HttpRequest that = (HttpRequest) o;
-        return timeoutInMs == that.timeoutInMs && retries == that.retries && retryDelayInMs == that.retryDelayInMs && retryMaxDelayInMs == that.retryMaxDelayInMs && retryDelayFactor == that.retryDelayFactor && retryJitter == that.retryJitter && Objects.equals(requestId, that.requestId) && Objects.equals(correlationId, that.correlationId) && url.equals(that.url) && Objects.equals(headers, that.headers) && method.equals(that.method) && Objects.equals(bodyAsString, that.bodyAsString) && Arrays.equals(bodyAsByteArray, that.bodyAsByteArray) && Objects.equals(bodyAsMultipart, that.bodyAsMultipart);
+        return Objects.equals(requestId, that.requestId) && Objects.equals(correlationId, that.correlationId) && Objects.equals(timeoutInMs, that.timeoutInMs) && Objects.equals(retries, that.retries) && Objects.equals(retryDelayInMs, that.retryDelayInMs) && Objects.equals(retryMaxDelayInMs, that.retryMaxDelayInMs) && Objects.equals(retryDelayFactor, that.retryDelayFactor) && Objects.equals(retryJitter, that.retryJitter) && url.equals(that.url) && Objects.equals(headers, that.headers) && method.equals(that.method) && Objects.equals(bodyAsString, that.bodyAsString) && Objects.equals(bodyAsByteArray, that.bodyAsByteArray) && Objects.equals(bodyAsMultipart, that.bodyAsMultipart) && bodyType == that.bodyType;
     }
 
     @Override
     public int hashCode() {
-        int result = Objects.hash(requestId, correlationId, timeoutInMs, retries, retryDelayInMs, retryMaxDelayInMs, retryDelayFactor, retryJitter, url, headers, method, bodyAsString, bodyAsMultipart);
-        result = 31 * result + Arrays.hashCode(bodyAsByteArray);
-        return result;
+        return Objects.hash(requestId, correlationId, timeoutInMs, retries, retryDelayInMs, retryMaxDelayInMs, retryDelayFactor, retryJitter, url, headers, method, bodyAsString, bodyAsByteArray, bodyAsMultipart, bodyType);
     }
 
     @Override
@@ -243,10 +438,10 @@ public class HttpRequest {
                 ", url='" + url + '\'' +
                 ", headers=" + headers +
                 ", method='" + method + '\'' +
-                ", bodyType='" + bodyType.name() + '\'' +
-                ", stringBody='" + bodyAsString + '\'' +
-                ", byteArrayBody=" + Arrays.toString(bodyAsByteArray) +
-                ", multipartBody=" + bodyAsMultipart +
+                ", bodyAsString='" + bodyAsString + '\'' +
+                ", bodyAsByteArray='" + bodyAsByteArray + '\'' +
+                ", bodyAsMultipart=" + bodyAsMultipart +
+                ", bodyType=" + bodyType +
                 '}';
     }
 
@@ -293,10 +488,12 @@ public class HttpRequest {
             //request
             String url = struct.getString(URL);
             Map<String, List<String>> headers = struct.getMap(HEADERS);
+
+            //Map<String, List<String>>
             String method = struct.getString(METHOD);
             String stringBody = struct.getString(BODY_AS_STRING);
-            byte[] byteArrayBody = struct.getBytes(BODY_AS_BYTE_ARRAY);
-            List<byte[]> multipartBody = struct.getArray(BODY_AS_BYTE_ARRAY);
+            byte[] byteArrayBody = Base64.getDecoder().decode(struct.getString(BODY_AS_BYTE_ARRAY));
+            List<byte[]> multipartBody = struct.getArray(BODY_AS_MULTIPART);
 
             HttpRequest httpRequest = new HttpRequest(
                     url,
@@ -316,28 +513,28 @@ public class HttpRequest {
             httpRequest.setCorrelationId(correlationId);
 
             //connection
-            long timeoutInMs = struct.getInt64(TIMEOUT_IN_MS);
+            Long timeoutInMs = struct.getInt64(TIMEOUT_IN_MS);
             httpRequest.setTimeoutInMs(timeoutInMs);
 
             //retry policy
-            int retries = struct.getInt32(RETRIES);
-            if (retries >= 0) {
+            Long retries = struct.getInt64(RETRIES);
+            if (retries!=null && retries.longValue() >= 0) {
                 httpRequest.setRetries(retries);
             }
-            long retryDelayInMs = struct.getInt64(RETRY_DELAY_IN_MS);
-            if (retryDelayInMs >= 0) {
+            Long retryDelayInMs = struct.getInt64(RETRY_DELAY_IN_MS);
+            if (retryDelayInMs!=null && retryDelayInMs >= 0) {
                 httpRequest.setRetryDelayInMs(retryDelayInMs);
             }
-            long retryMaxDelayInMs = struct.getInt64(RETRY_MAX_DELAY_IN_MS);
-            if (retryMaxDelayInMs >= 0) {
+            Long retryMaxDelayInMs = struct.getInt64(RETRY_MAX_DELAY_IN_MS);
+            if (retryMaxDelayInMs!=null && retryMaxDelayInMs >= 0) {
                 httpRequest.setRetryMaxDelayInMs(retryMaxDelayInMs);
             }
-            double retryDelayFactor = struct.getFloat64(RETRY_DELAY_FACTOR);
-            if (retryDelayFactor >= 0) {
+            Double retryDelayFactor = struct.getFloat64(RETRY_DELAY_FACTOR);
+            if (retryDelayFactor!=null && retryDelayFactor >= 0) {
                 httpRequest.setRetryDelayFactor(retryDelayFactor);
             }
-            long retryJitter = struct.getInt64(RETRY_JITTER);
-            if (retryJitter >= 0) {
+            Long retryJitter = struct.getInt64(RETRY_JITTER);
+            if (retryJitter!=null && retryJitter >= 0) {
                 httpRequest.setRetryJitter(retryJitter);
             }
             return httpRequest;

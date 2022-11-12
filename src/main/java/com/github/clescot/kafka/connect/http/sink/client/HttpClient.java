@@ -124,17 +124,17 @@ public class HttpClient {
             wsProperties.put(HEADER_X_REQUEST_ID, Lists.newArrayList(requestId));
 
             //define RetryPolicy
-            int retries = Optional.ofNullable(httpRequest.getRetries()).orElse(3);
-            long retryDelayInMs = Optional.ofNullable(httpRequest.getRetryDelayInMs()).orElse(500L);
-            long retryMaxDelayInMs = Optional.ofNullable(httpRequest.getRetryMaxDelayInMs()).orElse(300000L);
-            double retryDelayFactor = Optional.ofNullable(httpRequest.getRetryDelayFactor()).orElse(2d);
-            long retryJitterInMs = Optional.ofNullable(httpRequest.getRetryJitter()).orElse(100L);
+            Long retries = Optional.ofNullable(httpRequest.getRetries()).orElse(3L);
+            Long retryDelayInMs = Optional.ofNullable(httpRequest.getRetryDelayInMs()).orElse(500L);
+            Long retryMaxDelayInMs = Optional.ofNullable(httpRequest.getRetryMaxDelayInMs()).orElse(300000L);
+            Double retryDelayFactor = Optional.ofNullable(httpRequest.getRetryDelayFactor()).orElse(2d);
+            Long retryJitterInMs = Optional.ofNullable(httpRequest.getRetryJitter()).orElse(100L);
             RetryPolicy<HttpExchange> retryPolicy = RetryPolicy.<HttpExchange>builder()
                     //we retry only if the error comes from the WS server (server-side technical error)
                     .handle(HttpException.class)
                     .withBackoff(Duration.ofMillis(retryDelayInMs), Duration.ofMillis(retryMaxDelayInMs), retryDelayFactor)
                     .withJitter(Duration.ofMillis(retryJitterInMs))
-                    .withMaxRetries(retries)
+                    .withMaxRetries(retries.intValue())
                     .onRetry(listener -> LOGGER.warn("Retry ws call result:{}, failure:{}", listener.getLastResult(), listener.getLastException()))
                     .onFailure(listener -> LOGGER.warn("ws call failed ! result:{},exception:{}", listener.getResult(), listener.getException()))
                     .onAbort(listener -> LOGGER.warn("ws call aborted ! result:{},exception:{}", listener.getResult(), listener.getException()))

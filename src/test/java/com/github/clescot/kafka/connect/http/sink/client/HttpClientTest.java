@@ -233,7 +233,7 @@ public class HttpClientTest {
                 null,
                 null);
         httpRequest.setHeaders(headers);
-        httpRequest.setRetries(10);
+        httpRequest.setRetries(10L);
         httpRequest.setRetryDelayInMs(2500L);
         httpRequest.setRetryMaxDelayInMs(7000L);
         httpRequest.setRetryDelayFactor(2d);
