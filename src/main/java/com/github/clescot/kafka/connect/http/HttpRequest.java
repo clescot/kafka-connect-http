@@ -1,10 +1,13 @@
 package com.github.clescot.kafka.connect.http;
 
+import com.github.clescot.kafka.connect.http.sink.WsSinkTask;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.data.SchemaBuilder;
 import org.apache.kafka.connect.data.Struct;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nullable;
 import java.util.Arrays;
@@ -34,6 +37,8 @@ public class HttpRequest {
     public static final String BODY_AS_BYTE_ARRAY = "bodyAsByteArray";
     public static final String BODY_AS_MULTIPART = "bodyAsMultipart";
     public static final int VERSION = 1;
+
+    private final static Logger LOGGER = LoggerFactory.getLogger(HttpRequest.class);
 
     //metadata
     private String requestId;
@@ -300,6 +305,8 @@ public class HttpRequest {
                     byteArrayBody,
                     multipartBody
             );
+
+            httpRequest.setHeaders(headers);
 
             //metadata
             String requestId = struct.getString(REQUEST_ID);
