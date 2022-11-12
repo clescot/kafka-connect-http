@@ -293,7 +293,7 @@ class WsSinkTaskTest {
         requestHeaders.put("X-dummy",Lists.newArrayList("blabla"));
         Map<String, String> responseHeaders = Maps.newHashMap();
         responseHeaders.put("Content-Type","application/json");
-        HttpRequest httpRequest = new HttpRequest("http://www.titi.com","GET","stuff",null,null);
+        HttpRequest httpRequest = new HttpRequest("http://www.titi.com","GET","STRING","stuff",null,null);
         httpRequest.setHeaders(requestHeaders);
         return new HttpExchange(
                 httpRequest,

@@ -229,6 +229,7 @@ public class HttpClientTest {
         HttpRequest httpRequest = new HttpRequest(
                 "http://localhost:8089",
                 "GET",
+                "STRING",
                 body,
                 null,
                 null);

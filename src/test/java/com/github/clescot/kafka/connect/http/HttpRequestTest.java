@@ -37,6 +37,7 @@ class HttpRequestTest {
         HttpRequest httpRequest = new HttpRequest(
                 "http://www.stuff.com",
                 "GET",
+                "STRING",
                 "stuff",
                 null,
                 null
@@ -77,6 +78,7 @@ class HttpRequestTest {
         HttpRequest httpRequest = new HttpRequest(
                 "http://www.stuff.com",
                 "GET",
+                "STRING",
                 "stuff",
                 null,
                 null

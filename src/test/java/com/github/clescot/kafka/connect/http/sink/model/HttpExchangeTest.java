@@ -17,7 +17,7 @@ public class HttpExchangeTest {
 
         private HttpRequest getDummyHttpRequest(){
             return new HttpRequest(
-                    "http://www.toto.com","GET","stuff",null,null);
+                    "http://www.toto.com","GET","STRING","stuff",null,null);
         }
         @Test
         public void test_nominal_case() {

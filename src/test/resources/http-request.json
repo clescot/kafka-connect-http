@@ -3,7 +3,7 @@
   "title": "Http Request",
   "type": "object",
   "additionalProperties": false,
-  "required": ["url","method"],
+  "required": ["url","method","bodyType"],
   "properties": {
     "requestId": {
       "oneOf": [
@@ -146,19 +146,11 @@
       ]
     },
     "bodyType": {
-      "oneOf": [
-        {
-          "type": "null",
-          "title": "Not included"
-        },
-        {
-          "type": "string",
-          "enum": [
-            "STRING",
-            "BYTE_ARRAY",
-            "MULTIPART"
-          ]
-        }
+      "type": "string",
+      "enum": [
+        "STRING",
+        "BYTE_ARRAY",
+        "MULTIPART"
       ]
     }
   },

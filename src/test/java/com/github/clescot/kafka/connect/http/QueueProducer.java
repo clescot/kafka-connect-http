@@ -46,7 +46,7 @@ public class QueueProducer implements Runnable {
         requestheaders.put("X-Request-ID", Lists.newArrayList("sdqd-qsdqd-446564"));
         requestheaders.put("X-Correlation-ID",Lists.newArrayList("222-qsdqd-446564"));
         requestheaders.put("Content-Type",Lists.newArrayList("application/json"));
-        HttpRequest httpRequest = new HttpRequest("http://www.toto.com","POST","fummy body",null,null);
+        HttpRequest httpRequest = new HttpRequest("http://www.toto.com","POST","STRING","fummy body",null,null);
         httpRequest.setHeaders(requestheaders);
         return success? getSuccessfulHttpExchange(httpRequest): getErrorHttpExchange(httpRequest);
     }

@@ -14,7 +14,9 @@ import io.confluent.kafka.schemaregistry.avro.AvroSchemaProvider;
 import io.confluent.kafka.schemaregistry.client.CachedSchemaRegistryClient;
 import io.confluent.kafka.schemaregistry.client.SchemaRegistryClient;
 import io.confluent.kafka.schemaregistry.client.rest.exceptions.RestClientException;
+import io.confluent.kafka.schemaregistry.json.JsonSchema;
 import io.confluent.kafka.schemaregistry.json.JsonSchemaProvider;
+import io.confluent.kafka.schemaregistry.json.JsonSchemaUtils;
 import io.confluent.kafka.serializers.json.KafkaJsonSchemaDeserializer;
 import io.confluent.kafka.serializers.json.KafkaJsonSchemaSerializer;
 import io.debezium.testing.testcontainers.Connector;
@@ -223,6 +225,7 @@ public class ITConnectorTest {
         HttpRequest httpRequest = new HttpRequest(
                 url,
                 "GET",
+                "STRING",
                 "stuff",
                 null,
                 null
@@ -328,6 +331,7 @@ public class ITConnectorTest {
         HttpRequest httpRequest = new HttpRequest(
                 url,
                 "GET",
+                "STRING",
                 "stuff",
                 null,
                 null
@@ -391,6 +395,7 @@ public class ITConnectorTest {
                         new Customization("responseHeaders.Matched-Stub-Id", (o1, o2) -> true)
                 ));
         assertThat(consumerRecord.headers().toArray()).isEmpty();
+
 //        await().atMost(Duration.ofSeconds(1000)).until(() -> Boolean.TRUE.equals(Boolean.FALSE));
     }
 

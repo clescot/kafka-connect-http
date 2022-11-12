@@ -240,9 +240,9 @@ public class HttpRequest {
     @JsonProperty(required = true)
     private String method;
     @JsonProperty
-    private String bodyAsString;
+    private String bodyAsString="";
     @JsonProperty
-    private String bodyAsByteArray;
+    private String bodyAsByteArray="";
     @JsonProperty
     private List<String> bodyAsMultipart = Lists.newArrayList();
     @JsonProperty
@@ -275,20 +275,41 @@ public class HttpRequest {
 
     public HttpRequest(String url,
                        String method,
+                       String bodyType,
                        @Nullable String bodyAsString,
                        @Nullable byte[] bodyAsByteArray,
                        @Nullable List<byte[]> bodyAsMultipart) {
         this.url = url;
         this.method = method;
+        this.bodyType = BodyType.valueOf(bodyType);
         this.bodyAsString = bodyAsString;
         this.bodyAsByteArray = bodyAsByteArray != null ?  Base64.getEncoder().encodeToString(bodyAsByteArray) : this.bodyAsByteArray;
         this.bodyAsMultipart = bodyAsMultipart != null ? convertMultipart(bodyAsMultipart) : this.bodyAsMultipart;
-        if (bodyAsString != null && bodyAsByteArray == null && bodyAsMultipart == null) {
-            this.bodyType = BodyType.STRING;
-        } else if (bodyAsString == null && bodyAsByteArray != null && bodyAsMultipart == null) {
-            this.bodyType = BodyType.BYTE_ARRAY;
-        } else if (bodyAsString == null && bodyAsByteArray == null && bodyAsMultipart != null) {
-            this.bodyType = BodyType.MULTIPART;
+
+        if (BodyType.STRING==this.bodyType){
+               if(!bodyAsString.isEmpty() &&this.bodyAsByteArray.isEmpty()&& this.bodyAsMultipart.isEmpty()){
+                   LOGGER.debug("bodyType 'STRING' is accurate against bodyAsString,bodyAsByteArray and bodyAsMultipart fields");
+               }else{
+                   LOGGER.error("bodyType is set to {}. bodyAsString:{},bodyAsByteArray:{},bodyAsMultipart:{}",bodyType,bodyAsString,bodyAsByteArray,bodyAsMultipart);
+                   throw new IllegalArgumentException("when bodyType is set to 'STRING', the 'bodyAsString' field must be non null ; 'bodyAsByteArray' and 'bodyAsMultipart' fields must be null ");
+               }
+        } else if(BodyType.BYTE_ARRAY.equals(this.bodyType)){
+            if(bodyAsString.isEmpty() && !this.bodyAsByteArray.isEmpty() && this.bodyAsMultipart.isEmpty()){
+                LOGGER.debug("bodyType 'BYTE_ARRAY' is accurate against bodyAsString,bodyAsByteArray and bodyAsMultipart fields");
+            }else{
+                LOGGER.error("bodyType is set to {}. bodyAsString:{},bodyAsByteArray:{},bodyAsMultipart:{}",bodyType,bodyAsString,bodyAsByteArray,bodyAsMultipart);
+                throw new IllegalArgumentException("when bodyType is set to 'BYTE_ARRAY', the 'bodyAsString' and 'bodyAsMultipart' fields must be null ; 'bodyAsByteArray'  must be non-null");
+            }
+        }else if(BodyType.MULTIPART.equals(this.bodyType)){
+            if(bodyAsString.isEmpty() && this.bodyAsByteArray.isEmpty() && this.bodyAsMultipart.size()>0){
+                LOGGER.debug("bodyType 'MULTIPART' is accurate against bodyAsString,bodyAsByteArray and bodyAsMultipart fields");
+            }else{
+                LOGGER.error("bodyType is set to {}. bodyAsString:{},bodyAsByteArray:{},bodyAsMultipart:{}",bodyType,bodyAsString,bodyAsByteArray,bodyAsMultipart);
+                throw new IllegalArgumentException("when 'bodyType' is set to 'MULTIPART', the 'bodyAsString' and 'bodyAsByteArray' fields must be null ; 'bodyAsMultipart' must be non-null");
+            }
+        }else{
+            LOGGER.error("bodyType is set to {}. bodyAsString:{},bodyAsByteArray:{},bodyAsMultipart:{}",bodyType,bodyAsString,bodyAsByteArray,bodyAsMultipart);
+            throw new IllegalArgumentException("'bodyType' is not set to either 'STRING','BYTE_ARRAY', or 'MULTIPART'");
         }
     }
 
@@ -489,8 +510,8 @@ public class HttpRequest {
             String url = struct.getString(URL);
             Map<String, List<String>> headers = struct.getMap(HEADERS);
 
-            //Map<String, List<String>>
             String method = struct.getString(METHOD);
+            String bodyType = struct.getString(BODY_TYPE);
             String stringBody = struct.getString(BODY_AS_STRING);
             byte[] byteArrayBody = Base64.getDecoder().decode(struct.getString(BODY_AS_BYTE_ARRAY));
             List<byte[]> multipartBody = struct.getArray(BODY_AS_MULTIPART);
@@ -498,6 +519,7 @@ public class HttpRequest {
             HttpRequest httpRequest = new HttpRequest(
                     url,
                     method,
+                    bodyType,
                     stringBody,
                     byteArrayBody,
                     multipartBody
