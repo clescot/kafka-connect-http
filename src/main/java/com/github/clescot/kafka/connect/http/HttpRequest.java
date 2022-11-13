@@ -491,6 +491,21 @@ public class HttpRequest {
     public static final class Builder {
 
         private Struct struct;
+        private String url;
+        private String method;
+        private String bodyType;
+        private String stringBody;
+        private byte[] byteArrayBody;
+        private List<byte[]> multipartBody;
+        private Map<String, List<String>> headers;
+        private String requestId;
+        private String correlationId;
+        private Long timeoutInMs;
+        private Long retries;
+        private Long retryDelayInMs;
+        private Long retryMaxDelayInMs;
+        private Double retryDelayFactor;
+        private Long retryJitter;
 
         private Builder() {
         }
@@ -501,20 +516,33 @@ public class HttpRequest {
 
         public Builder withStruct(Struct struct) {
             this.struct = struct;
+            //request
+            this.url = struct.getString(URL);
+            this.headers = struct.getMap(HEADERS);
+
+            this.method = struct.getString(METHOD);
+            this.bodyType = struct.getString(BODY_TYPE);
+            this.stringBody = struct.getString(BODY_AS_STRING);
+            this.byteArrayBody = Base64.getDecoder().decode(struct.getString(BODY_AS_BYTE_ARRAY));
+            this.multipartBody = struct.getArray(BODY_AS_MULTIPART);
+
+            //metadata
+            this.requestId = struct.getString(REQUEST_ID);
+            this.correlationId = struct.getString(CORRELATION_ID);
+            //connection
+            this.timeoutInMs = struct.getInt64(TIMEOUT_IN_MS);
+            //retry policy
+            this.retries = struct.getInt64(RETRIES);
+            this.retryDelayInMs = struct.getInt64(RETRY_DELAY_IN_MS);
+            this.retryMaxDelayInMs = struct.getInt64(RETRY_MAX_DELAY_IN_MS);
+            this.retryDelayFactor = struct.getFloat64(RETRY_DELAY_FACTOR);
+            this.retryJitter = struct.getInt64(RETRY_JITTER);
             return this;
         }
 
 
         public HttpRequest build() {
-            //request
-            String url = struct.getString(URL);
-            Map<String, List<String>> headers = struct.getMap(HEADERS);
 
-            String method = struct.getString(METHOD);
-            String bodyType = struct.getString(BODY_TYPE);
-            String stringBody = struct.getString(BODY_AS_STRING);
-            byte[] byteArrayBody = Base64.getDecoder().decode(struct.getString(BODY_AS_BYTE_ARRAY));
-            List<byte[]> multipartBody = struct.getArray(BODY_AS_MULTIPART);
 
             HttpRequest httpRequest = new HttpRequest(
                     url,
@@ -526,36 +554,30 @@ public class HttpRequest {
             );
 
             httpRequest.setHeaders(headers);
-
-            //metadata
-            String requestId = struct.getString(REQUEST_ID);
             httpRequest.setRequestId(requestId);
-
-            String correlationId = struct.getString(CORRELATION_ID);
             httpRequest.setCorrelationId(correlationId);
 
-            //connection
-            Long timeoutInMs = struct.getInt64(TIMEOUT_IN_MS);
+
             httpRequest.setTimeoutInMs(timeoutInMs);
 
             //retry policy
-            Long retries = struct.getInt64(RETRIES);
+
             if (retries!=null && retries.longValue() >= 0) {
                 httpRequest.setRetries(retries);
             }
-            Long retryDelayInMs = struct.getInt64(RETRY_DELAY_IN_MS);
+
             if (retryDelayInMs!=null && retryDelayInMs >= 0) {
                 httpRequest.setRetryDelayInMs(retryDelayInMs);
             }
-            Long retryMaxDelayInMs = struct.getInt64(RETRY_MAX_DELAY_IN_MS);
+
             if (retryMaxDelayInMs!=null && retryMaxDelayInMs >= 0) {
                 httpRequest.setRetryMaxDelayInMs(retryMaxDelayInMs);
             }
-            Double retryDelayFactor = struct.getFloat64(RETRY_DELAY_FACTOR);
+
             if (retryDelayFactor!=null && retryDelayFactor >= 0) {
                 httpRequest.setRetryDelayFactor(retryDelayFactor);
             }
-            Long retryJitter = struct.getInt64(RETRY_JITTER);
+
             if (retryJitter!=null && retryJitter >= 0) {
                 httpRequest.setRetryJitter(retryJitter);
             }
