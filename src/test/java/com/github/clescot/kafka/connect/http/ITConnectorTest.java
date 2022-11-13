@@ -204,11 +204,13 @@ public class ITConnectorTest {
 
         //define the http Mock Server interaction
         WireMock wireMock = wmRuntimeInfo.getWireMock();
+        String bodyResponse = "{\"result\":\"pong\"}";
+        String escapedJsonResponse = StringEscapeUtils.escapeJson(bodyResponse);
         wireMock
                 .register(get("/ping")
                         .willReturn(aResponse()
                         .withHeader("Content-Type","application/json")
-                        .withBody("{\"result\":\"pong\"}")
+                        .withBody(bodyResponse)
                         .withStatus(200)
                         .withStatusMessage("OK")
                         )
@@ -254,8 +256,8 @@ public class ITConnectorTest {
                 "  \"request\": {\n" +
                 "    \"requestId\": null,\n" +
                 "    \"correlationId\": null,\n" +
-                "    \"timeoutInMs\": 0,\n" +
-                "    \"retries\": 0,\n" +
+                "    \"timeoutInMs\": null,\n" +
+                "    \"retries\": null,\n" +
                 "    \"retryDelayInMs\": null,\n" +
                 "    \"retryMaxDelayInMs\": null,\n" +
                 "    \"retryDelayFactor\": null,\n" +
@@ -275,10 +277,10 @@ public class ITConnectorTest {
                 "    \"bodyAsByteArray\": \"\",\n" +
                 "    \"bodyAsMultipart\": []\n" +
                 "  },\n" +
-                "  \"statusCode\": 500,\n" +
-                "  \"statusMessage\": \"header-X-Correlation-ID is required but null\",\n" +
+                "  \"statusCode\": 200,\n" +
+                "  \"statusMessage\": \"OK\",\n" +
                 "  \"responseHeaders\": {},\n" +
-                "  \"responseBody\": \"\"\n" +
+                "  \"responseBody\": \""+escapedJsonResponse+"\"\n" +
                 "}";
         JSONAssert.assertEquals(expectedJSON, jsonAsString,
                 new CustomComparator(JSONCompareMode.LENIENT,
@@ -407,7 +409,6 @@ public class ITConnectorTest {
                 ));
         assertThat(consumerRecord.headers().toArray()).isEmpty();
 
-//        await().atMost(Duration.ofSeconds(1000)).until(() -> Boolean.TRUE.equals(Boolean.FALSE));
     }
 
     //struct with schema registry
