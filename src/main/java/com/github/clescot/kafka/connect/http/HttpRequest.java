@@ -288,21 +288,21 @@ public class HttpRequest {
 
         if (BodyType.STRING==this.bodyType){
                if(!bodyAsString.isEmpty() &&this.bodyAsByteArray.isEmpty()&& this.bodyAsMultipart.isEmpty()){
-                   LOGGER.debug("bodyType 'STRING' is accurate against bodyAsString,bodyAsByteArray and bodyAsMultipart fields");
+                   LOGGER.trace("bodyType 'STRING' is accurate against bodyAsString,bodyAsByteArray and bodyAsMultipart fields");
                }else{
                    LOGGER.error("bodyType is set to {}. bodyAsString:{},bodyAsByteArray:{},bodyAsMultipart:{}",bodyType,bodyAsString,bodyAsByteArray,bodyAsMultipart);
                    throw new IllegalArgumentException("when bodyType is set to 'STRING', the 'bodyAsString' field must be non null ; 'bodyAsByteArray' and 'bodyAsMultipart' fields must be null ");
                }
         } else if(BodyType.BYTE_ARRAY.equals(this.bodyType)){
             if(bodyAsString.isEmpty() && !this.bodyAsByteArray.isEmpty() && this.bodyAsMultipart.isEmpty()){
-                LOGGER.debug("bodyType 'BYTE_ARRAY' is accurate against bodyAsString,bodyAsByteArray and bodyAsMultipart fields");
+                LOGGER.trace("bodyType 'BYTE_ARRAY' is accurate against bodyAsString,bodyAsByteArray and bodyAsMultipart fields");
             }else{
                 LOGGER.error("bodyType is set to {}. bodyAsString:{},bodyAsByteArray:{},bodyAsMultipart:{}",bodyType,bodyAsString,bodyAsByteArray,bodyAsMultipart);
                 throw new IllegalArgumentException("when bodyType is set to 'BYTE_ARRAY', the 'bodyAsString' and 'bodyAsMultipart' fields must be null ; 'bodyAsByteArray'  must be non-null");
             }
         }else if(BodyType.MULTIPART.equals(this.bodyType)){
             if(bodyAsString.isEmpty() && this.bodyAsByteArray.isEmpty() && this.bodyAsMultipart.size()>0){
-                LOGGER.debug("bodyType 'MULTIPART' is accurate against bodyAsString,bodyAsByteArray and bodyAsMultipart fields");
+                LOGGER.trace("bodyType 'MULTIPART' is accurate against bodyAsString,bodyAsByteArray and bodyAsMultipart fields");
             }else{
                 LOGGER.error("bodyType is set to {}. bodyAsString:{},bodyAsByteArray:{},bodyAsMultipart:{}",bodyType,bodyAsString,bodyAsByteArray,bodyAsMultipart);
                 throw new IllegalArgumentException("when 'bodyType' is set to 'MULTIPART', the 'bodyAsString' and 'bodyAsByteArray' fields must be null ; 'bodyAsMultipart' must be non-null");

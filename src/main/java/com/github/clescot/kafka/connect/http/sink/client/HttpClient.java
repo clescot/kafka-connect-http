@@ -260,7 +260,7 @@ public class HttpClient {
     }
 
 
-    private Request buildRequest(HttpRequest httpRequest) {
+    protected Request buildRequest(HttpRequest httpRequest) {
         Preconditions.checkNotNull(httpRequest,"'httpRequest' is required but null");
         Preconditions.checkNotNull(httpRequest.getHeaders(),"'headers' are required but null");
         Preconditions.checkNotNull(httpRequest.getBodyAsString(),"'body' is required but null");
@@ -268,10 +268,6 @@ public class HttpClient {
         Preconditions.checkNotNull(url,"'url' is required but null");
         String method = httpRequest.getMethod();
         Preconditions.checkNotNull(method,"'method' is required but null");
-
-        String correlationId = httpRequest.getCorrelationId();
-        Preconditions.checkNotNull(correlationId,"correlationId is required but null");
-
 
         //extract http headers
         Map<String, List<String>> httpHeaders =httpRequest.getHeaders();

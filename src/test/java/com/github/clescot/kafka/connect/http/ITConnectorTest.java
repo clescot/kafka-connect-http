@@ -349,6 +349,7 @@ public class ITConnectorTest {
         List<ConsumerRecord<String, ? extends Object>> consumerRecords = drain(consumer, 1);
         assertThat(consumerRecords).hasSize(1);
         ConsumerRecord<String, ? extends Object> consumerRecord = consumerRecords.get(0);
+        assertThat(consumerRecord.topic()).isEqualTo(successTopic);
         assertThat(consumerRecord.key()).isNull();
         String jsonAsString = consumerRecord.value().toString();
         String expectedJSON = "{\n" +

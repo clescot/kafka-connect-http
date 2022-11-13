@@ -216,13 +216,13 @@ public class WsSinkTask extends SinkTask {
                 throw new ConnectException("sinkRecord has got a 'null' value");
             }
             Class<?> valueClass = value.getClass();
-            LOGGER.debug("valueClass is {}"+valueClass.getName());
+            LOGGER.debug("valueClass is {}",valueClass.getName());
             if (Struct.class.isAssignableFrom(valueClass)) {
                 Struct valueAsStruct = (Struct) value;
                 if (sinkRecord.valueSchema() != null) {
-                    LOGGER.debug("valueSchema is {}"+sinkRecord.valueSchema());
+                    LOGGER.debug("valueSchema is {}",sinkRecord.valueSchema());
                     if (!HttpRequest.SCHEMA.equals(sinkRecord.valueSchema())) {
-                        LOGGER.warn("sinkRecord has got a value Schema different from the HttpRequest Schema");
+                        LOGGER.warn("sinkRecord has got a value Schema different from the HttpRequest Schema:{}",sinkRecord.valueSchema().name());
                     }
                 }
                 valueAsStruct.validate();

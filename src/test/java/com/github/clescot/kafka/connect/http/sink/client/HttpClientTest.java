@@ -213,6 +213,21 @@ public class HttpClientTest {
             assertThat(httpExchange).isNotNull();
         }
 
+        @Test
+        public void test_build_http_request_nominal_case(){
+            //given
+            AsyncHttpClient asyncHttpClient = mock(AsyncHttpClient.class);
+            HttpClient httpClient = new HttpClient(asyncHttpClient);
+
+            //when
+            HttpRequest httpRequest = getDummyHttpRequest();
+            Request request = httpClient.buildRequest(httpRequest);
+
+            //then
+            assertThat(request.getUrl()).isEqualTo(httpRequest.getUrl());
+            assertThat(request.getMethod()).isEqualTo(httpRequest.getMethod());
+        }
+
 
 
 
@@ -226,6 +241,7 @@ public class HttpClientTest {
     private static HttpRequest getDummyHttpRequest(String body){
         HashMap<String, List<String>> headers = Maps.newHashMap();
         headers.put("Content-Type", Lists.newArrayList("application/json"));
+        headers.put("X-Stuff", Lists.newArrayList("dummy stuff"));
         HttpRequest httpRequest = new HttpRequest(
                 "http://localhost:8089",
                 "GET",
@@ -242,5 +258,7 @@ public class HttpClientTest {
         httpRequest.setRequestId("77-3333-11");
         return httpRequest;
     }
+
+
 
 }
