@@ -149,13 +149,4 @@ class WsSourceTaskTest {
         assertThat(queue).isEmpty();
     }
 
-    @Test
-    public void test(){
-        String bodyResponse = "{\"result\":\"pong\"}";
-        System.out.println(bodyResponse);
-        String escapedJsonResponse = StringEscapeUtils.escapeJson(bodyResponse);
-        System.out.println(escapedJsonResponse);
-        String escapedResponseBody = StringEscapeUtils.escapeJava(escapedJsonResponse);
-        System.out.println(escapedResponseBody);
-    }
 }
