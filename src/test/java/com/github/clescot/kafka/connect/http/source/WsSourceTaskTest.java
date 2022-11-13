@@ -1,5 +1,6 @@
 package com.github.clescot.kafka.connect.http.source;
 
+import com.github.clescot.kafka.connect.http.HttpRequest;
 import com.github.clescot.kafka.connect.http.QueueFactory;
 import com.github.clescot.kafka.connect.http.QueueProducer;
 import com.google.common.collect.Maps;
@@ -13,12 +14,15 @@ import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.time.OffsetDateTime;
+import java.time.ZoneId;
 import java.util.List;
 import java.util.Map;
 import java.util.Queue;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.github.clescot.kafka.connect.http.source.WsSourceConfigDefinition.ERROR_TOPIC;
 import static com.github.clescot.kafka.connect.http.source.WsSourceConfigDefinition.SUCCESS_TOPIC;
@@ -81,7 +85,66 @@ class WsSourceTaskTest {
         assertThat(errorMessagesCount).isEqualTo(expectedNumberOfFailureMessages);
         //we have consumed all messages
         assertThat(queue).isEmpty();
-
-
+    }
+    @Test
+    void test_success()  {
+        wsSourceTask.start(getNominalConfig());
+        Queue<HttpExchange> queue = QueueFactory.getQueue();
+        HttpRequest httpRequest = new HttpRequest(
+                "http://www.dummy.com",
+                "GET",
+                "STRING",
+                "stuff",
+                null,
+                null
+                );
+        HttpExchange httpExchange = new HttpExchange(
+                httpRequest,
+                200,
+                "OK",
+                Maps.newHashMap(),
+                "dummy response",
+                210,
+                OffsetDateTime.now(ZoneId.of("UTC")),
+                new AtomicInteger(1),
+                true);
+        queue.offer(httpExchange);
+        List<SourceRecord> sourceRecords = wsSourceTask.poll();
+        long successfulMessagesCount = sourceRecords.stream().filter(sourceRecord -> sourceRecord.topic().equals(getNominalConfig().get(SUCCESS_TOPIC))).count();
+        assertThat(successfulMessagesCount).isEqualTo(1);
+        long errorMessagesCount = sourceRecords.stream().filter(sourceRecord -> sourceRecord.topic().equals(getNominalConfig().get(ERROR_TOPIC))).count();
+        assertThat(errorMessagesCount).isEqualTo(0);
+        //we have consumed all messages
+        assertThat(queue).isEmpty();
+    }    @Test
+    void test_error()  {
+        wsSourceTask.start(getNominalConfig());
+        Queue<HttpExchange> queue = QueueFactory.getQueue();
+        HttpRequest httpRequest = new HttpRequest(
+                "http://www.dummy.com",
+                "GET",
+                "STRING",
+                "stuff",
+                null,
+                null
+                );
+        HttpExchange httpExchange = new HttpExchange(
+                httpRequest,
+                500,
+                "OK",
+                Maps.newHashMap(),
+                "dummy response",
+                210,
+                OffsetDateTime.now(ZoneId.of("UTC")),
+                new AtomicInteger(1),
+                false);
+        queue.offer(httpExchange);
+        List<SourceRecord> sourceRecords = wsSourceTask.poll();
+        long successfulMessagesCount = sourceRecords.stream().filter(sourceRecord -> sourceRecord.topic().equals(getNominalConfig().get(SUCCESS_TOPIC))).count();
+        assertThat(successfulMessagesCount).isEqualTo(0);
+        long errorMessagesCount = sourceRecords.stream().filter(sourceRecord -> sourceRecord.topic().equals(getNominalConfig().get(ERROR_TOPIC))).count();
+        assertThat(errorMessagesCount).isEqualTo(1);
+        //we have consumed all messages
+        assertThat(queue).isEmpty();
     }
 }

@@ -15,7 +15,7 @@ public class HttpExchange {
     private final Integer statusCode;
     private final String statusMessage;
     private final String responseBody;
-    private final long durationInMillis;
+    private final Long durationInMillis;
     private final OffsetDateTime moment;
     private final AtomicInteger attempts;
     private final boolean success;
@@ -68,7 +68,7 @@ public class HttpExchange {
     }
 
 
-    public long getDurationInMillis() {
+    public Long getDurationInMillis() {
         return durationInMillis;
     }
 
@@ -100,7 +100,7 @@ public class HttpExchange {
         private String responseBody;
         private Integer statusCode;
         private String statusMessage;
-        private long durationInMillis;
+        private Long durationInMillis;
         private OffsetDateTime moment;
         private AtomicInteger attempts;
 
@@ -160,7 +160,7 @@ public class HttpExchange {
             return this;
         }
 
-        public Builder withDuration(long durationInMillis) {
+        public Builder withDuration(Long durationInMillis) {
             this.durationInMillis = durationInMillis;
             return this;
         }
