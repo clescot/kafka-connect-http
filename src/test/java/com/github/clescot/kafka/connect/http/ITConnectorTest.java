@@ -191,6 +191,7 @@ public class ITConnectorTest {
     @AfterEach
     public void afterEach() {
         wireMockServer.resetAll();
+        connectContainer.deleteAllConnectors();
     }
 
     @Test
