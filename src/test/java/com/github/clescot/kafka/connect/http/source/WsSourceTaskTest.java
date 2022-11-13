@@ -43,19 +43,19 @@ class WsSourceTaskTest {
     }
 
     @Test
-    void test_start_with_null_settings() {
+    public void test_start_with_null_settings() {
         WsSourceTask wsSourceTask = new WsSourceTask();
 
         Assertions.assertThrows(NullPointerException.class, () -> wsSourceTask.start(null));
     }
 
     @Test
-    void test_start_with_empty_settings() {
+    public void test_start_with_empty_settings() {
         Assertions.assertThrows(ConfigException.class, () -> wsSourceTask.start(Maps.newHashMap()));
     }
 
     @Test
-    void test_start_nominal_case() {
+    public void test_start_nominal_case() {
         Map<String, String> config = getNominalConfig();
         wsSourceTask.start(config);
     }
@@ -69,7 +69,7 @@ class WsSourceTaskTest {
     }
 
     @Test
-    void poll() throws ExecutionException, InterruptedException {
+    public void poll() throws ExecutionException, InterruptedException {
         wsSourceTask.start(getNominalConfig());
         Queue<HttpExchange> queue = QueueFactory.getQueue();
         ExecutorService exService = Executors.newFixedThreadPool(3);
@@ -87,7 +87,7 @@ class WsSourceTaskTest {
         assertThat(queue).isEmpty();
     }
     @Test
-    void test_success()  {
+    public void test_success()  {
         wsSourceTask.start(getNominalConfig());
         Queue<HttpExchange> queue = QueueFactory.getQueue();
         HttpRequest httpRequest = new HttpRequest(
@@ -117,7 +117,7 @@ class WsSourceTaskTest {
         //we have consumed all messages
         assertThat(queue).isEmpty();
     }    @Test
-    void test_error()  {
+    public void test_error()  {
         wsSourceTask.start(getNominalConfig());
         Queue<HttpExchange> queue = QueueFactory.getQueue();
         HttpRequest httpRequest = new HttpRequest(
