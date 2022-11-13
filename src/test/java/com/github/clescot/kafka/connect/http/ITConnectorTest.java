@@ -359,8 +359,8 @@ public class ITConnectorTest {
                 "  \"request\": {\n" +
                 "    \"requestId\": null,\n" +
                 "    \"correlationId\": null,\n" +
-                "    \"timeoutInMs\": 0,\n" +
-                "    \"retries\": 0,\n" +
+                "    \"timeoutInMs\": null,\n" +
+                "    \"retries\": null,\n" +
                 "    \"retryDelayInMs\": null,\n" +
                 "    \"retryMaxDelayInMs\": null,\n" +
                 "    \"retryDelayFactor\": null,\n" +
@@ -380,10 +380,10 @@ public class ITConnectorTest {
                 "    \"bodyAsByteArray\": \"\",\n" +
                 "    \"bodyAsMultipart\": []\n" +
                 "  },\n" +
-                "  \"statusCode\": 500,\n" +
-                "  \"statusMessage\": \"header-X-Correlation-ID is required but null\",\n" +
+                "  \"statusCode\": 200,\n" +
+                "  \"statusMessage\": \"OK\",\n" +
                 "  \"responseHeaders\": {},\n" +
-                "  \"responseBody\": \"\"\n" +
+                "  \"responseBody\": {\"result\":\"pong\"}\n" +
                 "}";
         JSONAssert.assertEquals(expectedJSON, jsonAsString,
                 new CustomComparator(JSONCompareMode.LENIENT,
