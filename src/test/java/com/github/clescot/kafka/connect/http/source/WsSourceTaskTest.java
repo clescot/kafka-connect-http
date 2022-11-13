@@ -4,6 +4,7 @@ import com.github.clescot.kafka.connect.http.HttpRequest;
 import com.github.clescot.kafka.connect.http.QueueFactory;
 import com.github.clescot.kafka.connect.http.QueueProducer;
 import com.google.common.collect.Maps;
+import org.apache.commons.text.StringEscapeUtils;
 import org.apache.kafka.common.config.ConfigException;
 import org.apache.kafka.connect.source.SourceRecord;
 import org.jetbrains.annotations.NotNull;
@@ -146,5 +147,15 @@ class WsSourceTaskTest {
         assertThat(errorMessagesCount).isEqualTo(1);
         //we have consumed all messages
         assertThat(queue).isEmpty();
+    }
+
+    @Test
+    public void test(){
+        String bodyResponse = "{\"result\":\"pong\"}";
+        System.out.println(bodyResponse);
+        String escapedJsonResponse = StringEscapeUtils.escapeJson(bodyResponse);
+        System.out.println(escapedJsonResponse);
+        String escapedResponseBody = StringEscapeUtils.escapeJava(escapedJsonResponse);
+        System.out.println(escapedResponseBody);
     }
 }

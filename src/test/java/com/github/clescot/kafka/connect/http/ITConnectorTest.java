@@ -22,6 +22,7 @@ import io.confluent.kafka.serializers.json.KafkaJsonSchemaSerializer;
 import io.debezium.testing.testcontainers.Connector;
 import io.debezium.testing.testcontainers.ConnectorConfiguration;
 import io.debezium.testing.testcontainers.DebeziumContainer;
+import org.apache.commons.text.StringEscapeUtils;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
@@ -309,13 +310,19 @@ public class ITConnectorTest {
 
         //define the http Mock Server interaction
         WireMock wireMock = wmRuntimeInfo.getWireMock();
+        String bodyResponse = "{\"result\":\"pong\"}";
+        System.out.println(bodyResponse);
+        String escapedJsonResponse = StringEscapeUtils.escapeJson(bodyResponse);
+        System.out.println(escapedJsonResponse);
+        int statusCode = 200;
+        String statusMessage = "OK";
         wireMock
                 .register(get("/ping")
                         .willReturn(aResponse()
                                 .withHeader("Content-Type","application/json")
-                                .withBody("{\"result\":\"pong\"}")
-                                .withStatus(200)
-                                .withStatusMessage("OK")
+                                .withBody(bodyResponse)
+                                .withStatus(statusCode)
+                                .withStatusMessage(statusMessage)
                         )
                 );
 
@@ -352,6 +359,7 @@ public class ITConnectorTest {
         assertThat(consumerRecord.topic()).isEqualTo(successTopic);
         assertThat(consumerRecord.key()).isNull();
         String jsonAsString = consumerRecord.value().toString();
+        LOGGER.info("json response  :{}",jsonAsString);
         String expectedJSON = "{\n" +
                 "  \"durationInMillis\": 0,\n" +
                 "  \"moment\": \"2022-11-10T17:19:42.740852Z\",\n" +
@@ -380,10 +388,12 @@ public class ITConnectorTest {
                 "    \"bodyAsByteArray\": \"\",\n" +
                 "    \"bodyAsMultipart\": []\n" +
                 "  },\n" +
-                "  \"statusCode\": 200,\n" +
-                "  \"statusMessage\": \"OK\",\n" +
-                "  \"responseHeaders\": {},\n" +
-                "  \"responseBody\": {\"result\":\"pong\"}\n" +
+                "  \"statusCode\": "+statusCode+",\n" +
+                "  \"statusMessage\": \""+statusMessage+"\",\n" +
+                "  \"responseHeaders\": {" +
+                "\"Content-Type\":\"application/json\"" +
+                "},\n" +
+                "  \"responseBody\": \""+escapedJsonResponse+"\"\n" +
                 "}";
         JSONAssert.assertEquals(expectedJSON, jsonAsString,
                 new CustomComparator(JSONCompareMode.LENIENT,
