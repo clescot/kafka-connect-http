@@ -54,9 +54,13 @@ public class WsSourceTask extends SourceTask {
     public List<SourceRecord> poll() {
         List<SourceRecord> records = Lists.newArrayList();
         while (queue.peek() != null) {
-            SourceRecord sourceRecord = toSourceRecord(queue.poll());
-            LOGGER.debug("send ack with source record :{}",sourceRecord);
-            records.add(sourceRecord);
+            HttpExchange httpExchange = queue.poll();
+            LOGGER.debug("received httpExchange from queue:{}",httpExchange);
+            if(httpExchange!=null){
+                SourceRecord sourceRecord = toSourceRecord(httpExchange);
+                LOGGER.debug("send ack with source record :{}",sourceRecord);
+                records.add(sourceRecord);
+            }
         }
 
         return records;
