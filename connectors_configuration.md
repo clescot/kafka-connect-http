@@ -47,7 +47,7 @@ every Kafka Connect Sink Connector need to define these required parameters :
     }
 }
 ```
-`sink.json` example with publishment in the in memory queue, for the Source Connector:
+`sink.json` example _with publishment in the in memory queue_, for the Source Connector:
 ```json 
 {
     "name": "my-http-sink-connector",
