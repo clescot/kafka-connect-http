@@ -278,10 +278,12 @@ public class ITConnectorTest {
                 "    \"bodyAsByteArray\": \"\",\n" +
                 "    \"bodyAsMultipart\": []\n" +
                 "  },\n" +
-                "  \"statusCode\": 200,\n" +
+                "  \"response\": {" +
+                "   \"statusCode\":200,\n" +
                 "  \"statusMessage\": \"OK\",\n" +
-                "  \"responseHeaders\": {},\n" +
-                "  \"responseBody\": \""+escapedJsonResponse+"\"\n" +
+                "  \"headers\": {},\n" +
+                "  \"body\": \""+escapedJsonResponse+"\"\n" +
+                "}"+
                 "}";
         JSONAssert.assertEquals(expectedJSON, jsonAsString,
                 new CustomComparator(JSONCompareMode.LENIENT,
@@ -391,12 +393,14 @@ public class ITConnectorTest {
                 "    \"bodyAsByteArray\": \"\",\n" +
                 "    \"bodyAsMultipart\": []\n" +
                 "  },\n" +
-                "  \"statusCode\": "+statusCode+",\n" +
+                "  \"response\": {\n" +
+                "   \"statusCode\":200,\n" +
                 "  \"statusMessage\": \""+statusMessage+"\",\n" +
-                "  \"responseHeaders\": {" +
+                "  \"headers\": {" +
                 "\"Content-Type\":\"application/json\"" +
                 "},\n" +
-                "  \"responseBody\": \""+escapedJsonResponse+"\"\n" +
+                "  \"body\": \""+escapedJsonResponse+"\"\n" +
+                "}"+
                 "}";
         JSONAssert.assertEquals(expectedJSON, jsonAsString,
                 new CustomComparator(JSONCompareMode.LENIENT,
