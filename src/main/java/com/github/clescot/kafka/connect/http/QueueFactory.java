@@ -1,6 +1,5 @@
 package com.github.clescot.kafka.connect.http;
 
-import com.github.clescot.kafka.connect.http.source.HttpExchange;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Maps;
 import org.slf4j.Logger;

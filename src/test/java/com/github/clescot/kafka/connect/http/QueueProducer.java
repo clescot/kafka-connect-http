@@ -1,6 +1,5 @@
 package com.github.clescot.kafka.connect.http;
 
-import com.github.clescot.kafka.connect.http.source.HttpExchange;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import org.jetbrains.annotations.NotNull;
@@ -55,15 +54,14 @@ public class QueueProducer implements Runnable {
     private static HttpExchange getSuccessfulHttpExchange(HttpRequest httpRequest) {
         Map<String,String> responseHeaders = Maps.newHashMap();
         responseHeaders.put("Content-Type","application/json");
+        HttpResponse httpResponse = new HttpResponse(200,"OK","body");
+        httpResponse.setResponseHeaders(responseHeaders);
         return HttpExchange.Builder.anHttpExchange()
                 //tracing headers
                 //request
                 .withHttpRequest(httpRequest)
                 //response
-                .withResponseHeaders(responseHeaders)
-                .withResponseBody("body")
-                .withStatusCode(200)
-                .withStatusMessage("OK")
+                .withHttpResponse(httpResponse)
                 //technical metadata
                 //time elapsed during http call
                 .withDuration(469878798L)
@@ -78,14 +76,13 @@ public class QueueProducer implements Runnable {
     private static HttpExchange getErrorHttpExchange(HttpRequest httpRequest) {
         Map<String,String> responseHeaders = Maps.newHashMap();
         responseHeaders.put("Content-Type","application/json");
+        HttpResponse httpResponse = new HttpResponse(500,"Internal Server Error","Houston, we've got a problem....");
+        httpResponse.setResponseHeaders(responseHeaders);
         return HttpExchange.Builder.anHttpExchange()
                 //tracing headers
                 .withHttpRequest(httpRequest)
                 //response
-                .withResponseHeaders(responseHeaders)
-                .withResponseBody("Internal server error ... please retry later")
-                .withStatusCode(500)
-                .withStatusMessage("Internal Server Error")
+                .withHttpResponse(httpResponse)
                 //technical metadata
                 //time elapsed during http call
                 .withDuration(465558798L)

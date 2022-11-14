@@ -2,8 +2,8 @@ package com.github.clescot.kafka.connect.http.sink.model;
 
 
 import com.github.clescot.kafka.connect.http.HttpRequest;
-import com.github.clescot.kafka.connect.http.source.HttpExchange;
-import com.google.common.collect.Maps;
+import com.github.clescot.kafka.connect.http.HttpExchange;
+import com.github.clescot.kafka.connect.http.HttpResponse;
 import org.junit.jupiter.api.Test;
 
 import java.time.OffsetDateTime;
@@ -19,24 +19,22 @@ public class HttpExchangeTest {
             return new HttpRequest(
                     "http://www.toto.com","GET","STRING","stuff",null,null);
         }
+        private HttpResponse getDummyHttpResponse(int statusCode){
+            return new HttpResponse(
+                    statusCode,"OK","nfgnlksdfnlnskdfnlsf");
+        }
         @Test
         public void test_nominal_case() {
             HttpExchange httpExchange = new HttpExchange(
                     getDummyHttpRequest(),
-                    200,
-                    "OK",
-                    Maps.newHashMap(),
-                    "nfgnlksdfnlnskdfnlsf",
+                    getDummyHttpResponse(200),
                     100,
                     OffsetDateTime.now(),
                     new AtomicInteger(2),
                     SUCCESS);
             HttpExchange httpExchange1 = new HttpExchange(
                     getDummyHttpRequest(),
-                    200,
-                    "OK",
-                    Maps.newHashMap(),
-                    "nfgnlksdfnlnskdfnlsf",
+                  getDummyHttpResponse(200),
                     100,
                     OffsetDateTime.now(),
                     new AtomicInteger(2),
@@ -50,17 +48,14 @@ public class HttpExchangeTest {
             String responseBody = "nfgnlksdfnlnskdfnlsf";
             HttpExchange httpExchange = new HttpExchange(
                     getDummyHttpRequest(),
-                    statusCode,
-                    "Not Found",
-                    Maps.newHashMap(),
-                    responseBody,
+                   getDummyHttpResponse(statusCode),
                     745L,
                     OffsetDateTime.now(),
                     new AtomicInteger(2),
                     SUCCESS
             );
-            assertThat(httpExchange.getResponseBody()).isEqualTo(responseBody);
-            assertThat(httpExchange.getStatusCode()).isEqualTo(statusCode);
+            assertThat(httpExchange.getHttpResponse().getResponseBody()).isEqualTo(responseBody);
+            assertThat(httpExchange.getHttpResponse().getStatusCode()).isEqualTo(statusCode);
         }
 }
 

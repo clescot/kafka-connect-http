@@ -7,7 +7,7 @@ import com.github.clescot.kafka.connect.http.HttpRequest;
 import com.github.clescot.kafka.connect.http.QueueFactory;
 import com.github.clescot.kafka.connect.http.sink.client.HttpClient;
 import com.github.clescot.kafka.connect.http.sink.client.PropertyBasedASyncHttpClientConfig;
-import com.github.clescot.kafka.connect.http.source.HttpExchange;
+import com.github.clescot.kafka.connect.http.HttpExchange;
 import com.google.common.base.Charsets;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;

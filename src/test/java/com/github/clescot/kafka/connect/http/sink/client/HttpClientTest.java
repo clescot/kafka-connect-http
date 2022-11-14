@@ -2,7 +2,8 @@ package com.github.clescot.kafka.connect.http.sink.client;
 
 
 import com.github.clescot.kafka.connect.http.HttpRequest;
-import com.github.clescot.kafka.connect.http.source.HttpExchange;
+import com.github.clescot.kafka.connect.http.HttpExchange;
+import com.github.clescot.kafka.connect.http.HttpResponse;
 import com.google.common.base.Stopwatch;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
@@ -20,6 +21,7 @@ import java.time.OffsetDateTime;
 import java.time.ZoneId;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -45,9 +47,6 @@ public class HttpClientTest {
             HttpClient httpClient = new HttpClient(asyncHttpClient);
             httpClient.buildHttpExchange(null,
                     null,
-                    null,
-                    200,
-                    null,
                     Stopwatch.createUnstarted(),
                     OffsetDateTime.now(ZoneId.of(HttpClient.UTC_ZONE_ID)),
                     new AtomicInteger(2),
@@ -63,24 +62,18 @@ public class HttpClientTest {
                     String> vars = Maps.newHashMap();
             HttpClient httpClient = new HttpClient(asyncHttpClient);
             httpClient.buildHttpExchange(null,
-                    Maps.newHashMap(),
-                    "",
-                    200,
-                    "" +"",
+                    getDummyHttpResponse(200),
                     Stopwatch.createUnstarted(),
                     OffsetDateTime.now(ZoneId.of(HttpClient.UTC_ZONE_ID)),
                     new AtomicInteger(2),
                     SUCCESS);
         }
 
-        @Test(expected = IllegalStateException.class)
+        @Test(expected = IllegalArgumentException.class)
         public void test_response_code_is_lower_than_0() {
             HttpClient httpClient = new HttpClient(asyncHttpClient);
             httpClient.buildHttpExchange(getDummyHttpRequest(),
-                    Maps.newHashMap(),
-                    "",
-                    -45,
-                    "" +"",
+                   getDummyHttpResponse(-12),
                     Stopwatch.createUnstarted(),
                     OffsetDateTime.now(ZoneId.of(HttpClient.UTC_ZONE_ID)),
                     new AtomicInteger(2),
@@ -94,14 +87,20 @@ public class HttpClientTest {
                     String> vars = Maps.newHashMap();
             HttpClient httpClient = new HttpClient(asyncHttpClient);
             httpClient.buildHttpExchange(getDummyHttpRequest(),
-                    Maps.newHashMap(),
-                    "",
-                    200,
-                    "" +"",
+                   getDummyHttpResponse(200),
                     Stopwatch.createUnstarted(),
                     OffsetDateTime.now(ZoneId.of(HttpClient.UTC_ZONE_ID)),
                     new AtomicInteger(2),
                     SUCCESS);
+        }
+
+        private HttpResponse getDummyHttpResponse(int statusCode) {
+            HttpResponse httpResponse = new HttpResponse(statusCode,"OK","my response");
+            Map<String,String> headers = Maps.newHashMap();
+            headers.put("Content-Type","application/json");
+            headers.put("X-stuff","foo");
+            httpResponse.setResponseHeaders(headers);
+            return httpResponse;
         }
     }
 
@@ -135,8 +134,8 @@ public class HttpClientTest {
             //then
             assertThat(httpExchange).isNotNull();
             assertThat(httpExchange.getHttpRequest().getUrl()).isEqualTo("http://localhost:8089");
-            assertThat(httpExchange.getStatusCode()).isEqualTo(statusCode);
-            assertThat(httpExchange.getStatusMessage()).isEqualTo(statusMessage);
+            assertThat(httpExchange.getHttpResponse().getStatusCode()).isEqualTo(statusCode);
+            assertThat(httpExchange.getHttpResponse().getStatusMessage()).isEqualTo(statusMessage);
         }
 
         @Test

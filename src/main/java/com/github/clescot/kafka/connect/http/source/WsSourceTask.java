@@ -1,13 +1,11 @@
 package com.github.clescot.kafka.connect.http.source;
 
-import com.github.clescot.kafka.connect.http.HttpRequest;
+import com.github.clescot.kafka.connect.http.HttpExchange;
 import com.github.clescot.kafka.connect.http.QueueFactory;
 import com.github.clescot.kafka.connect.http.sink.VersionUtil;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
-import org.apache.kafka.connect.data.Schema;
-import org.apache.kafka.connect.data.SchemaBuilder;
 import org.apache.kafka.connect.data.Struct;
 import org.apache.kafka.connect.source.SourceRecord;
 import org.apache.kafka.connect.source.SourceTask;
@@ -19,23 +17,15 @@ import java.util.List;
 import java.util.Map;
 import java.util.Queue;
 
-public class WsSourceTask extends SourceTask {
+import static com.github.clescot.kafka.connect.http.HttpExchange.*;
 
-    public static final String DURATION_IN_MILLIS = "durationInMillis";
-    public static final String MOMENT = "moment";
-    public static final String ATTEMPTS = "attempts";
-    public static final String REQUEST = "request";
-    public static final String STATUS_CODE = "statusCode";
-    public static final String STATUS_MESSAGE = "statusMessage";
-    public static final String RESPONSE_HEADERS = "responseHeaders";
-    public static final String RESPONSE_BODY = "responseBody";
-    public static final int ACK_SCHEMA_VERSION = 1;
+public class WsSourceTask extends SourceTask {
 
     private static Queue<HttpExchange> queue;
     private WsSourceConnectorConfig sourceConfig;
     private final static Logger LOGGER = LoggerFactory.getLogger(WsSourceTask.class);
 
-    private final static Schema ackSchema = getHttpExchangeSchema();
+
 
     @Override
     public String version() {
@@ -72,18 +62,14 @@ public class WsSourceTask extends SourceTask {
         //but it is useless in the in memory queue context
         Map<String, ?> sourcePartition = Maps.newHashMap();
         Map<String, ?> sourceOffset= Maps.newHashMap();
-        Struct struct = new Struct(ackSchema);
-        //ack fields
+        Struct struct = new Struct(HttpExchange.SCHEMA);
         struct.put(DURATION_IN_MILLIS,httpExchange.getDurationInMillis());
         struct.put(MOMENT,httpExchange.getMoment().format(DateTimeFormatter.ISO_ZONED_DATE_TIME));
         struct.put(ATTEMPTS,httpExchange.getAttempts().intValue());
         //request fields
         struct.put(REQUEST,httpExchange.getHttpRequest().toStruct());
         // response fields
-        struct.put(STATUS_CODE,httpExchange.getStatusCode());
-        struct.put(STATUS_MESSAGE,httpExchange.getStatusMessage());
-        struct.put(RESPONSE_HEADERS,httpExchange.getResponseHeaders());
-        struct.put(RESPONSE_BODY,httpExchange.getResponseBody());
+        struct.put(RESPONSE,httpExchange.getHttpResponse().toStruct());
 
         return new SourceRecord(
                 sourcePartition,
@@ -94,26 +80,7 @@ public class WsSourceTask extends SourceTask {
         );
     }
 
-    private static Schema getHttpExchangeSchema() {
-        return SchemaBuilder
-                .struct()
-                .name(HttpExchange.class.getName())
-                .version(ACK_SCHEMA_VERSION)
-                //metadata fields
-                .field(DURATION_IN_MILLIS, Schema.INT64_SCHEMA)
-                .field(MOMENT, Schema.STRING_SCHEMA)
-                .field(ATTEMPTS, Schema.INT32_SCHEMA)
-                //request fields
-                .field(REQUEST, HttpRequest.SCHEMA)
-                // response fields
-                .field(STATUS_CODE, Schema.INT32_SCHEMA)
-                .field(STATUS_MESSAGE, Schema.STRING_SCHEMA)
-                .field(RESPONSE_HEADERS,
-                        SchemaBuilder.map(Schema.STRING_SCHEMA,Schema.STRING_SCHEMA).build())
-                .field(RESPONSE_BODY, Schema.STRING_SCHEMA)
-                .schema();
 
-    }
 
 
     @Override

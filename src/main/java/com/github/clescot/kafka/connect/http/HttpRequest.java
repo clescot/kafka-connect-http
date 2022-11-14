@@ -467,8 +467,7 @@ public class HttpRequest {
     }
 
     public Struct toStruct() {
-        Struct struct =
-                new Struct(SCHEMA)
+        return  new Struct(SCHEMA)
                         .put(REQUEST_ID, requestId)
                         .put(CORRELATION_ID, correlationId)
                         .put(TIMEOUT_IN_MS, timeoutInMs)
@@ -484,7 +483,6 @@ public class HttpRequest {
                         .put(BODY_AS_STRING, bodyAsString)
                         .put(BODY_AS_BYTE_ARRAY, bodyAsByteArray)
                         .put(BODY_AS_MULTIPART, bodyAsMultipart);
-        return struct;
     }
 
 

@@ -1,7 +1,8 @@
 package com.github.clescot.kafka.connect.http.sink.client;
 
 import com.github.clescot.kafka.connect.http.HttpRequest;
-import com.github.clescot.kafka.connect.http.source.HttpExchange;
+import com.github.clescot.kafka.connect.http.HttpExchange;
+import com.github.clescot.kafka.connect.http.HttpResponse;
 import com.google.common.base.Preconditions;
 import com.google.common.base.Stopwatch;
 import com.google.common.collect.Lists;
@@ -153,10 +154,7 @@ public class HttpClient {
                 LOGGER.error("Failed to call web service after {} retries with error {} ", retries, throwable.getMessage());
                 return buildHttpExchange(
                         httpRequest,
-                        Maps.newHashMap(),
-                        BLANK_RESPONSE_CONTENT,
-                        SERVER_ERROR_STATUS_CODE,
-                        String.valueOf(throwable.getMessage()),
+                        new HttpResponse(SERVER_ERROR_STATUS_CODE,String.valueOf(throwable.getMessage()),BLANK_RESPONSE_CONTENT),
                         Stopwatch.createUnstarted(), OffsetDateTime.now(ZoneId.of(UTC_ZONE_ID)),
                         attempts,
                         FAILURE);
@@ -185,10 +183,11 @@ public class HttpClient {
             ListenableFuture<Response> responseListenableFuture = asyncHttpClient.executeRequest(request, asyncCompletionHandler);
             //we cannot use the asynchronous nature of the response yet
             Response response = responseListenableFuture.get();
+            LOGGER.info("response: {}", response);
             stopwatch.stop();
+            HttpResponse httpResponse = buildResponse(httpRequest,response);
             LOGGER.info("duration: {}",stopwatch);
-            LOGGER.info("response: {}",response.toString());
-            return getHttpExchange(httpRequest,request, response,stopwatch, now,attempts);
+            return getHttpExchange(httpRequest,httpResponse,stopwatch, now,attempts);
         } catch (HttpException | InterruptedException | ExecutionException e) {
             LOGGER.error("Failed to call web service {} ", e.getMessage());
             throw new HttpException(e.getMessage());
@@ -200,25 +199,23 @@ public class HttpClient {
 
     }
 
+    private HttpResponse buildResponse(HttpRequest httpRequest,Response response) {
+        int responseStatusCode = getSuccessfulStatusCodeOrThrowRetryException(httpRequest.getHeaders(), response.getStatusCode());
+        List<Map.Entry<String, String>> responseEntries = response.getHeaders()!=null?response.getHeaders().entries():Lists.newArrayList();
+        HttpResponse httpResponse = new HttpResponse(responseStatusCode,response.getStatusText(),response.getResponseBody());
+        Map<String, String> responseHeaders = responseEntries.stream().collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+        httpResponse.setResponseHeaders(responseHeaders);
+        return httpResponse;
+    }
+
     private HttpExchange getHttpExchange(HttpRequest httpRequest,
-                                         Request request,
-                                         Response response,
+                                         HttpResponse httpResponse,
                                          Stopwatch stopwatch,
                                          OffsetDateTime now,
                                          AtomicInteger attempts) {
-        Preconditions.checkNotNull(request,"request cannot  be null");
-        Preconditions.checkNotNull(response,"response cannot  be null");
-
-        Map<String, List<String>> headers = httpRequest.getHeaders();
-        int responseStatusCode = getSuccessfulStatusCodeOrThrowRetryException(headers, response);
-        List<Map.Entry<String, String>> responseEntries = response.getHeaders()!=null?response.getHeaders().entries():Lists.newArrayList();
-        Map<String, String> responseHeaders = responseEntries.stream().collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
         return buildHttpExchange(
                 httpRequest,
-                responseHeaders,
-                response.getResponseBody(),
-                responseStatusCode,
-                response.getStatusText(),
+                httpResponse,
                 stopwatch,
                 now,
                 attempts,
@@ -226,8 +223,7 @@ public class HttpClient {
         );
     }
 
-    private int getSuccessfulStatusCodeOrThrowRetryException(Map<String,  List<String>> wsProperties, Response response) {
-        int responseStatusCode = response.getStatusCode();
+    private int getSuccessfulStatusCodeOrThrowRetryException(Map<String,  List<String>> wsProperties, int responseStatusCode) {
         //by default, we don't resend any http call with a response between 100 and 499
         // 1xx is for protocol information (100 continue for example),
         // 2xx is for success,
@@ -253,8 +249,8 @@ public class HttpClient {
         *  * a functional error occurs: the status code returned from the ws server is not matching the regexp, but is lower than 500 => no retries
         *  * a technical error occurs from the WS server : the status code returned from the ws server does not match the regexp AND is equals or higher than 500 : retries are done
         */
-        if(!matcher.matches()&&responseStatusCode>=500){
-            throw new HttpException("response status code:"+responseStatusCode+" does not match status code success regex "+ pattern.pattern());
+        if(!matcher.matches()&& responseStatusCode >=500){
+            throw new HttpException("response status code:"+ responseStatusCode +" does not match status code success regex "+ pattern.pattern());
         }
         return responseStatusCode;
     }
@@ -381,27 +377,17 @@ public class HttpClient {
 
 
     protected HttpExchange buildHttpExchange(HttpRequest httpRequest,
-                                             Map<String,String> responseHeaders,
-                                             String responseBody,
-                                             int responseStatusCode,
-                                             String responseStatusMessage,
+                                             HttpResponse httpResponse,
                                              Stopwatch stopwatch,
                                              OffsetDateTime now,
                                              AtomicInteger attempts,
                                              boolean success) {
         Preconditions.checkNotNull(httpRequest,"'httpRequest' is null");
-        Preconditions.checkNotNull(responseHeaders,"'responseHeaders' is null");
-        Preconditions.checkNotNull(responseBody,"'responseBody' is null");
-        Preconditions.checkState(responseStatusCode>0,"code is lower than 1");
-        Preconditions.checkNotNull(responseStatusMessage,"responseStatusMessage is null");
         return HttpExchange.Builder.anHttpExchange()
                 //request
                 .withHttpRequest(httpRequest)
                 //response
-                .withResponseHeaders(responseHeaders)
-                .withResponseBody(responseBody)
-                .withStatusCode(responseStatusCode)
-                .withStatusMessage(responseStatusMessage)
+                .withHttpResponse(httpResponse)
                 //technical metadata
                 //time elapsed during http call
                 .withDuration(stopwatch.elapsed(TimeUnit.MILLISECONDS))

@@ -1,10 +1,7 @@
 package com.github.clescot.kafka.connect.http.source;
 
-import com.github.clescot.kafka.connect.http.HttpRequest;
-import com.github.clescot.kafka.connect.http.QueueFactory;
-import com.github.clescot.kafka.connect.http.QueueProducer;
+import com.github.clescot.kafka.connect.http.*;
 import com.google.common.collect.Maps;
-import org.apache.commons.text.StringEscapeUtils;
 import org.apache.kafka.common.config.ConfigException;
 import org.apache.kafka.connect.source.SourceRecord;
 import org.jetbrains.annotations.NotNull;
@@ -37,6 +34,7 @@ class WsSourceTaskTest {
     public void setup() {
         wsSourceTask = new WsSourceTask();
     }
+
     @AfterEach
     public void tearsDown() {
         Queue<HttpExchange> queue = QueueFactory.getQueue();
@@ -87,8 +85,9 @@ class WsSourceTaskTest {
         //we have consumed all messages
         assertThat(queue).isEmpty();
     }
+
     @Test
-    public void test_success()  {
+    public void test_success() {
         wsSourceTask.start(getNominalConfig());
         Queue<HttpExchange> queue = QueueFactory.getQueue();
         HttpRequest httpRequest = new HttpRequest(
@@ -98,13 +97,11 @@ class WsSourceTaskTest {
                 "stuff",
                 null,
                 null
-                );
+        );
+        HttpResponse httpResponse = new HttpResponse(200, "OK", "dummy response");
         HttpExchange httpExchange = new HttpExchange(
                 httpRequest,
-                200,
-                "OK",
-                Maps.newHashMap(),
-                "dummy response",
+                httpResponse,
                 210,
                 OffsetDateTime.now(ZoneId.of("UTC")),
                 new AtomicInteger(1),
@@ -117,8 +114,10 @@ class WsSourceTaskTest {
         assertThat(errorMessagesCount).isEqualTo(0);
         //we have consumed all messages
         assertThat(queue).isEmpty();
-    }    @Test
-    public void test_error()  {
+    }
+
+    @Test
+    public void test_error() {
         wsSourceTask.start(getNominalConfig());
         Queue<HttpExchange> queue = QueueFactory.getQueue();
         HttpRequest httpRequest = new HttpRequest(
@@ -128,13 +127,11 @@ class WsSourceTaskTest {
                 "stuff",
                 null,
                 null
-                );
+        );
+        HttpResponse httpResponse = new HttpResponse(500, "Internal Server Error", "dummy response");
         HttpExchange httpExchange = new HttpExchange(
                 httpRequest,
-                500,
-                "OK",
-                Maps.newHashMap(),
-                "dummy response",
+                httpResponse,
                 210,
                 OffsetDateTime.now(ZoneId.of("UTC")),
                 new AtomicInteger(1),

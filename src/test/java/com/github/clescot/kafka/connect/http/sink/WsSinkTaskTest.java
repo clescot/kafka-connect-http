@@ -3,11 +3,8 @@ package com.github.clescot.kafka.connect.http.sink;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
-import com.github.clescot.kafka.connect.http.ConfigConstants;
-import com.github.clescot.kafka.connect.http.HttpRequest;
-import com.github.clescot.kafka.connect.http.QueueFactory;
+import com.github.clescot.kafka.connect.http.*;
 import com.github.clescot.kafka.connect.http.sink.client.HttpClient;
-import com.github.clescot.kafka.connect.http.source.HttpExchange;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import org.apache.kafka.common.record.TimestampType;
@@ -246,15 +243,19 @@ class WsSinkTaskTest {
         objectMapper.registerModule(new JavaTimeModule());
         String httpExchangeAsString = objectMapper.writeValueAsString(dummyHttpExchange);
         String expectedJSON = "" +
-                " {\n" +
-                "  \"responseHeaders\": {\n" +
-                "    \"Content-Type\": \"application/json\"\n" +
-                "  },\n" +
-                "  \"statusCode\": 200,\n" +
-                "  \"statusMessage\": \"OK\",\n" +
-                "  \"responseBody\": \"\",\n" +
+                "{\n" +
+                "  \"durationInMillis\": 245,\n" +
+                "  \"moment\": 1668388166.569457181,\n" +
                 "  \"attempts\": 1,\n" +
                 "  \"success\": true,\n" +
+                "  \"httpResponse\": {\n" +
+                "    \"statusCode\": 200,\n" +
+                "    \"statusMessage\": \"OK\",\n" +
+                "    \"responseBody\": \"my response\",\n" +
+                "    \"responseHeaders\": {\n" +
+                "      \"Content-Type\": \"application/json\"\n" +
+                "    }\n" +
+                "  },\n" +
                 "  \"httpRequest\": {\n" +
                 "    \"requestId\": null,\n" +
                 "    \"correlationId\": null,\n" +
@@ -291,16 +292,15 @@ class WsSinkTaskTest {
     private HttpExchange getDummyHttpExchange() {
         Map<String, List<String>> requestHeaders = Maps.newHashMap();
         requestHeaders.put("X-dummy",Lists.newArrayList("blabla"));
-        Map<String, String> responseHeaders = Maps.newHashMap();
-        responseHeaders.put("Content-Type","application/json");
         HttpRequest httpRequest = new HttpRequest("http://www.titi.com","GET","STRING","stuff",null,null);
         httpRequest.setHeaders(requestHeaders);
+        HttpResponse httpResponse = new HttpResponse(200,"OK","my response");
+        Map<String, String> responseHeaders = Maps.newHashMap();
+        responseHeaders.put("Content-Type","application/json");
+        httpResponse.setResponseHeaders(responseHeaders);
         return new HttpExchange(
                 httpRequest,
-                200,
-                "OK",
-                responseHeaders,
-                "",
+              httpResponse,
                 245L,
                 OffsetDateTime.now(ZoneId.of("UTC")),
                 new AtomicInteger(1),
