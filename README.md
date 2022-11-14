@@ -100,4 +100,5 @@ after the section dedicated to put in place the HTTP Sink and Source connectors:
    It also can be serialized as a String. 
 
 # 3. [HTTP Connectors configuration](connectors_configuration.md)
+# 4. [incoming message format](incoming_message_format.md)
 
