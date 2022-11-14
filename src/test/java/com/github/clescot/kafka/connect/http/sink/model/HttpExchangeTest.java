@@ -4,8 +4,12 @@ package com.github.clescot.kafka.connect.http.sink.model;
 import com.github.clescot.kafka.connect.http.HttpRequest;
 import com.github.clescot.kafka.connect.http.HttpExchange;
 import com.github.clescot.kafka.connect.http.HttpResponse;
+import io.confluent.kafka.schemaregistry.json.JsonSchema;
+import io.confluent.kafka.schemaregistry.json.JsonSchemaUtils;
+import io.confluent.kafka.schemaregistry.json.SpecificationVersion;
 import org.junit.jupiter.api.Test;
 
+import java.io.IOException;
 import java.time.OffsetDateTime;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -56,6 +60,31 @@ public class HttpExchangeTest {
             );
             assertThat(httpExchange.getHttpResponse().getResponseBody()).isEqualTo(responseBody);
             assertThat(httpExchange.getHttpResponse().getStatusCode()).isEqualTo(statusCode);
+        }
+        @Test
+        public void generate_json_schema() throws IOException {
+            int statusCode = 200;
+            HttpExchange httpExchange = new HttpExchange(
+                    getDummyHttpRequest(),
+                    getDummyHttpResponse(statusCode),
+                    745L,
+                    OffsetDateTime.now(),
+                    new AtomicInteger(2),
+                    SUCCESS
+            );
+
+            //get JSON schema
+            SpecificationVersion jsonSchemaSpecification = SpecificationVersion.DRAFT_2019_09;
+            boolean useOneOfForNullables = true;
+            boolean failUnknownProperties = true;
+            JsonSchema expectedJsonSchema = JsonSchemaUtils.getSchema(
+                    httpExchange,
+                    jsonSchemaSpecification,
+                    useOneOfForNullables,
+                    failUnknownProperties,
+                    null
+            );
+            System.out.println(expectedJsonSchema);
         }
 }
 

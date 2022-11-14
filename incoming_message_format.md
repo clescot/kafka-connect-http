@@ -27,6 +27,7 @@ Avro and Protobuf should work as incoming format, but without guarantee.
 
 The HTTP Sink Connector, support also String messages, but not as the main use case.
 
+## HTTP Request incoming Format
 
 ### Struct format
 
@@ -62,4 +63,5 @@ Here is the source code which define the Struct format, base source for JSON Sch
 
 ### JSON Schema format
 
-[JSON Schema Format](src/test/resources/http-request.json)
+[HTTP Request JSON Schema Format](src/test/resources/http-request.json)
+
