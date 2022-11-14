@@ -21,4 +21,4 @@ These messages (`HTTPExchange`), are `Struct` messages.
 
 ### JSON Schema format
 
-[JSON Schema Format](src/test/resources/http-request.json)
+[JSON Schema Format](src/test/resources/http-exchange.json)
