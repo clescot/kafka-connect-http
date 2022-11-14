@@ -32,7 +32,7 @@ public class WsSinkConfigDefinition {
                 .define(ConfigConstants.QUEUE_NAME, ConfigDef.Type.STRING, null,ConfigDef.Importance.MEDIUM, ConfigConstants.QUEUE_NAME_DOC)
                 .define(STATIC_REQUEST_HEADER_NAMES, ConfigDef.Type.LIST,  Collections.emptyList(), ConfigDef.Importance.MEDIUM, STATIC_REQUEST_HEADER_NAMES_DOC)
                 .define(PUBLISH_TO_IN_MEMORY_QUEUE, ConfigDef.Type.BOOLEAN, false, ConfigDef.Importance.MEDIUM, PUBLISH_TO_IN_MEMORY_QUEUE_DOC)
-                .define(DEFAULT_RETRIES, ConfigDef.Type.LONG, null, ConfigDef.Importance.MEDIUM, DEFAULT_RETRIES_DOC)
+                .define(DEFAULT_RETRIES, ConfigDef.Type.INT, null, ConfigDef.Importance.MEDIUM, DEFAULT_RETRIES_DOC)
                 .define(DEFAULT_RETRY_DELAY_IN_MS, ConfigDef.Type.LONG, null, ConfigDef.Importance.MEDIUM, DEFAULT_RETRY_DELAY_IN_MS_DOC)
                 .define(DEFAULT_RETRY_MAX_DELAY_IN_MS, ConfigDef.Type.LONG, null, ConfigDef.Importance.MEDIUM, DEFAULT_RETRY_MAX_DELAY_IN_MS_DOC)
                 .define(DEFAULT_RETRY_DELAY_FACTOR, ConfigDef.Type.DOUBLE, null, ConfigDef.Importance.MEDIUM, DEFAULT_RETRY_DELAY_FACTOR_DOC)

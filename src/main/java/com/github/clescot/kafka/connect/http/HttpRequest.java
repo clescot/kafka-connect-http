@@ -222,6 +222,7 @@ public class HttpRequest {
 
     //retry policy
     @JsonProperty
+    //we should define an Integer, but the JSON Schema cannot choose between short, integer, or long....
     private Long retries;
     @JsonProperty
     private Long retryDelayInMs;

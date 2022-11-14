@@ -21,7 +21,7 @@ public class WsSinkConnectorConfig extends AbstractConfig {
     private static final Logger LOGGER = LoggerFactory.getLogger(WsSinkConnectorConfig.class);
     private final String queueName;
     private final boolean publishToInMemoryQueue;
-    private final Long defaultRetries;
+    private final Integer defaultRetries;
     private final Long defaultRetryDelayInMs;
     private final Long defaultRetryMaxDelayInMs;
     private final Double defaultRetryDelayFactor;
@@ -40,7 +40,7 @@ public class WsSinkConnectorConfig extends AbstractConfig {
         }
         this.publishToInMemoryQueue = Optional.ofNullable(getBoolean(PUBLISH_TO_IN_MEMORY_QUEUE)).orElse(false);
 
-        this.defaultRetries = Optional.ofNullable(getLong(DEFAULT_RETRIES)).orElse(null);
+        this.defaultRetries = Optional.ofNullable(getInt(DEFAULT_RETRIES)).orElse(null);
         this.defaultRetryDelayInMs = Optional.ofNullable(getLong(DEFAULT_RETRY_DELAY_IN_MS)).orElse(null);
         this.defaultRetryMaxDelayInMs = Optional.ofNullable(getLong(DEFAULT_RETRY_MAX_DELAY_IN_MS)).orElse(null);
         this.defaultRetryDelayFactor = Optional.ofNullable(getDouble(DEFAULT_RETRY_DELAY_FACTOR)).orElse(null);
@@ -67,7 +67,7 @@ public class WsSinkConnectorConfig extends AbstractConfig {
         return Maps.newHashMap(staticRequestHeaders);
     }
 
-    public Long getDefaultRetries() {
+    public Integer getDefaultRetries() {
         return defaultRetries;
     }
 

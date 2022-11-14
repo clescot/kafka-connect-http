@@ -8,6 +8,7 @@ import org.apache.kafka.connect.data.Struct;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 public class HttpResponse {
 
@@ -71,5 +72,28 @@ public class HttpResponse {
                 .put(BODY,responseBody);
 
 
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        HttpResponse that = (HttpResponse) o;
+        return statusCode.equals(that.statusCode) && statusMessage.equals(that.statusMessage) && responseBody.equals(that.responseBody) && Objects.equals(responseHeaders, that.responseHeaders);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(statusCode, statusMessage, responseBody, responseHeaders);
+    }
+
+    @Override
+    public String toString() {
+        return "HttpResponse{" +
+                "statusCode=" + statusCode +
+                ", statusMessage='" + statusMessage + '\'' +
+                ", responseBody='" + responseBody + '\'' +
+                ", responseHeaders=" + responseHeaders +
+                '}';
     }
 }

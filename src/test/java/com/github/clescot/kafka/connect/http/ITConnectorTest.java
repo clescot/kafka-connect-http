@@ -223,7 +223,7 @@ public class ITConnectorTest {
         String url = baseUrl + "/ping";
         LOGGER.info("url:{}", url);
         HashMap<String, List<String>> headers = Maps.newHashMap();
-        headers.put("header-X-Correlation-ID",Lists.newArrayList("e6de70d1-f222-46e8-b755-754880687822"));
+        headers.put("X-Correlation-ID",Lists.newArrayList("e6de70d1-f222-46e8-b755-754880687822"));
         headers.put("X-Request-ID",Lists.newArrayList("e6de70d1-f222-46e8-b755-11111"));
         HttpRequest httpRequest = new HttpRequest(
                 url,
@@ -263,7 +263,7 @@ public class ITConnectorTest {
                 "    \"retryDelayFactor\": null,\n" +
                 "    \"retryJitter\": null,\n" +
                 "    \"headers\": {\n" +
-                "      \"header-X-Correlation-ID\": [\n" +
+                "      \"X-Correlation-ID\": [\n" +
                 "        \"e6de70d1-f222-46e8-b755-754880687822\"\n" +
                 "      ],\n" +
                 "      \"X-Request-ID\": [\n" +
@@ -337,7 +337,7 @@ public class ITConnectorTest {
         String url = baseUrl + "/ping";
         LOGGER.info("url:{}", url);
         HashMap<String, List<String>> headers = Maps.newHashMap();
-        headers.put("header-X-Correlation-ID",Lists.newArrayList("e6de70d1-f222-46e8-b755-754880687822"));
+        headers.put("X-Correlation-ID",Lists.newArrayList("e6de70d1-f222-46e8-b755-754880687822"));
         headers.put("X-Request-ID",Lists.newArrayList("e6de70d1-f222-46e8-b755-11111"));
         HttpRequest httpRequest = new HttpRequest(
                 url,
@@ -378,7 +378,7 @@ public class ITConnectorTest {
                 "    \"retryDelayFactor\": null,\n" +
                 "    \"retryJitter\": null,\n" +
                 "    \"headers\": {\n" +
-                "      \"header-X-Correlation-ID\": [\n" +
+                "      \"X-Correlation-ID\": [\n" +
                 "        \"e6de70d1-f222-46e8-b755-754880687822\"\n" +
                 "      ],\n" +
                 "      \"X-Request-ID\": [\n" +

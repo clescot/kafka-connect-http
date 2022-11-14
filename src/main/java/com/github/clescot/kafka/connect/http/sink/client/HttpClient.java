@@ -66,22 +66,21 @@ public class HttpClient {
 
 
     private AsyncHttpClient asyncHttpClient;
-    private Optional<RetryPolicy<HttpExchange>> defaultRetryPolicy;
+    private Optional<RetryPolicy<HttpExchange>> defaultRetryPolicy=Optional.empty();
     public static final String BLANK_RESPONSE_CONTENT = "";
     public static final String WS_SUCCESS_CODE = "success-code";
     public static final String WS_REQUEST_TIMEOUT_IN_MS = "request-timeout-in-ms";
     public static final String WS_READ_TIMEOUT_IN_MS = "read-timeout-in-ms";
     private static final String WS_REALM_PASS = "password";
     public static final String WS_METHOD = "method";
-    public static final String HEADER_X_CORRELATION_ID = "header-X-Correlation-ID";
+    public static final String HEADER_X_CORRELATION_ID = "X-Correlation-ID";
     public static final String WS_URL = "url";
-    public static final String HEADER_X_REQUEST_ID = "header-X-Request-ID";
+    public static final String HEADER_X_REQUEST_ID = "X-Request-ID";
     private final Map<String, Pattern> httpSuccessCodesPatterns = Maps.newHashMap();
     private final HttpClientAsyncCompletionHandler asyncCompletionHandler = new HttpClientAsyncCompletionHandler();
 
-    public HttpClient(AsyncHttpClient asyncHttpClient, Optional<RetryPolicy<HttpExchange>> defaultRetryPolicy) {
+    public HttpClient(AsyncHttpClient asyncHttpClient) {
         this.asyncHttpClient = asyncHttpClient;
-        this.defaultRetryPolicy = defaultRetryPolicy;
     }
 
     /**
@@ -128,7 +127,7 @@ public class HttpClient {
                     && retryMaxDelayInMs.isPresent()
                     && retryDelayFactor.isPresent()
                     && retryJitterInMs.isPresent()) {
-                retryPolicyForCall = Optional.of(buildRetryPolicy(retries.get(), retryDelayInMs.get(), retryMaxDelayInMs.get(), retryDelayFactor.get(), retryJitterInMs.get()));
+                retryPolicyForCall = Optional.of(buildRetryPolicy(retries.get().intValue(), retryDelayInMs.get(), retryMaxDelayInMs.get(), retryDelayFactor.get(), retryJitterInMs.get()));
             }
 
             Preconditions.checkNotNull(correlationId, "'correlationId' is required but null");
@@ -142,7 +141,7 @@ public class HttpClient {
                     return callOnceWs(httpRequest, attempts);
                 }
             } catch (Throwable throwable) {
-                LOGGER.error("Failed to call web service after {} retries with error {} ", retries, throwable.getMessage());
+                LOGGER.error("Failed to call web service after {} retries with error {} ", attempts, throwable.getMessage());
                 return buildHttpExchange(
                         httpRequest,
                         new HttpResponse(SERVER_ERROR_STATUS_CODE, String.valueOf(throwable.getMessage()), BLANK_RESPONSE_CONTENT),
@@ -154,13 +153,13 @@ public class HttpClient {
         return httpExchange;
     }
 
-    private RetryPolicy<HttpExchange> buildRetryPolicy(Long retries, Long retryDelayInMs, Long retryMaxDelayInMs, Double retryDelayFactor, Long retryJitterInMs) {
+    private RetryPolicy<HttpExchange> buildRetryPolicy(Integer retries, Long retryDelayInMs, Long retryMaxDelayInMs, Double retryDelayFactor, Long retryJitterInMs) {
         RetryPolicy<HttpExchange> retryPolicy = RetryPolicy.<HttpExchange>builder()
                 //we retry only if the error comes from the WS server (server-side technical error)
                 .handle(HttpException.class)
                 .withBackoff(Duration.ofMillis(retryDelayInMs), Duration.ofMillis(retryMaxDelayInMs), retryDelayFactor)
                 .withJitter(Duration.ofMillis(retryJitterInMs))
-                .withMaxRetries(retries.intValue())
+                .withMaxRetries(retries)
                 .onRetry(listener -> LOGGER.warn("Retry ws call result:{}, failure:{}", listener.getLastResult(), listener.getLastException()))
                 .onFailure(listener -> LOGGER.warn("ws call failed ! result:{},exception:{}", listener.getResult(), listener.getException()))
                 .onAbort(listener -> LOGGER.warn("ws call aborted ! result:{},exception:{}", listener.getResult(), listener.getException()))
@@ -407,5 +406,9 @@ public class HttpClient {
 
     protected void setAsyncHttpClient(AsyncHttpClient asyncHttpClient) {
         this.asyncHttpClient = asyncHttpClient;
+    }
+
+    public void setDefaultRetryPolicy(Integer retries,Long retryDelayInMs,Long retryMaxDelayInMs,Double retryDelayFactor,Long retryJitterInMs) {
+        this.defaultRetryPolicy = Optional.of(buildRetryPolicy(retries,retryDelayInMs,retryMaxDelayInMs,retryDelayFactor,retryJitterInMs));
     }
 }

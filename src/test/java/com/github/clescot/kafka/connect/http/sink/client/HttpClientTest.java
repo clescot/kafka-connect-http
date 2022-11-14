@@ -45,7 +45,7 @@ public class HttpClientTest {
 
         @Test(expected = NullPointerException.class)
         public void test_all_null() {
-            HttpClient httpClient = new HttpClient(asyncHttpClient, Optional.empty());
+            HttpClient httpClient = new HttpClient(asyncHttpClient);
             httpClient.buildHttpExchange(null,
                     null,
                     Stopwatch.createUnstarted(),
@@ -61,7 +61,7 @@ public class HttpClientTest {
         public void test_message_is_null() {
             HashMap<String,
                     String> vars = Maps.newHashMap();
-            HttpClient httpClient = new HttpClient(asyncHttpClient,Optional.empty());
+            HttpClient httpClient = new HttpClient(asyncHttpClient);
             httpClient.buildHttpExchange(null,
                     getDummyHttpResponse(200),
                     Stopwatch.createUnstarted(),
@@ -72,7 +72,7 @@ public class HttpClientTest {
 
         @Test(expected = IllegalArgumentException.class)
         public void test_response_code_is_lower_than_0() {
-            HttpClient httpClient = new HttpClient(asyncHttpClient,Optional.empty());
+            HttpClient httpClient = new HttpClient(asyncHttpClient);
             httpClient.buildHttpExchange(getDummyHttpRequest(),
                    getDummyHttpResponse(-12),
                     Stopwatch.createUnstarted(),
@@ -86,7 +86,7 @@ public class HttpClientTest {
         public void test_nominal_case() {
             HashMap<String,
                     String> vars = Maps.newHashMap();
-            HttpClient httpClient = new HttpClient(asyncHttpClient,Optional.empty());
+            HttpClient httpClient = new HttpClient(asyncHttpClient);
             httpClient.buildHttpExchange(getDummyHttpRequest(),
                    getDummyHttpResponse(200),
                     Stopwatch.createUnstarted(),
@@ -127,7 +127,7 @@ public class HttpClientTest {
             when(listenerObject.get()).thenReturn(response);
             when(asyncHttpClient.executeRequest(any(Request.class))).thenReturn(listener);
             when(asyncHttpClient.executeRequest(any(Request.class), any())).thenReturn(listenerObject);
-            HttpClient httpClient = new HttpClient(asyncHttpClient,Optional.empty());
+            HttpClient httpClient = new HttpClient(asyncHttpClient);
 
             //when
             HttpExchange httpExchange = httpClient.callOnceWs(getDummyHttpRequest(), new AtomicInteger(2));
@@ -157,7 +157,7 @@ public class HttpClientTest {
             when(asyncHttpClient.executeRequest(any(Request.class))).thenReturn(listener);
             when(asyncHttpClient.executeRequest(any(Request.class), any())).thenReturn(listenerObject);
             HashMap<String, String> vars = Maps.newHashMap();
-            HttpClient httpClient = new HttpClient(asyncHttpClient,Optional.empty());
+            HttpClient httpClient = new HttpClient(asyncHttpClient);
             //when
             HttpExchange httpExchange = httpClient.callOnceWs(getDummyHttpRequest(), new AtomicInteger(2));
             //then
@@ -180,7 +180,7 @@ public class HttpClientTest {
             when(asyncHttpClient.executeRequest(any(Request.class))).thenReturn(listener);
             when(asyncHttpClient.executeRequest(any(Request.class), any())).thenReturn(listenerObject);
             HashMap<String, String> vars = Maps.newHashMap();
-            HttpClient httpClient = new HttpClient(asyncHttpClient,Optional.empty());
+            HttpClient httpClient = new HttpClient(asyncHttpClient);
             //when
             HttpExchange httpExchange = httpClient.callOnceWs(getDummyHttpRequest(), new AtomicInteger(2));
             //then
@@ -206,7 +206,7 @@ public class HttpClientTest {
             when(asyncHttpClient.executeRequest(any(Request.class))).thenReturn(listener);
             when(asyncHttpClient.executeRequest(any(Request.class), any())).thenReturn(listenerObject);
             HashMap<String, String> vars = Maps.newHashMap();
-            HttpClient httpClient = new HttpClient(asyncHttpClient,Optional.empty());
+            HttpClient httpClient = new HttpClient(asyncHttpClient);
             //when
             HttpExchange httpExchange = httpClient.callOnceWs(getDummyHttpRequest(), new AtomicInteger(2));
             //then
@@ -217,7 +217,7 @@ public class HttpClientTest {
         public void test_build_http_request_nominal_case(){
             //given
             AsyncHttpClient asyncHttpClient = mock(AsyncHttpClient.class);
-            HttpClient httpClient = new HttpClient(asyncHttpClient,Optional.empty());
+            HttpClient httpClient = new HttpClient(asyncHttpClient);
 
             //when
             HttpRequest httpRequest = getDummyHttpRequest();

@@ -98,29 +98,20 @@ public class WsSinkTask extends SinkTask {
         this.queueName = wsSinkConnectorConfig.getQueueName();
         this.queue = QueueFactory.getQueue(queueName);
         this.staticRequestHeaders = wsSinkConnectorConfig.getStaticRequestHeaders();
-        Optional<Long> defaultRetries = Optional.ofNullable(wsSinkConnectorConfig.getDefaultRetries());
+        this.httpClient = new HttpClient(getAsyncHttpClient(wsSinkConnectorConfig.originalsStrings()));
+        Optional<Integer> defaultRetries = Optional.ofNullable(wsSinkConnectorConfig.getDefaultRetries());
         Optional<Long> defaultRetryDelayInMs = Optional.ofNullable(wsSinkConnectorConfig.getDefaultRetryDelayInMs());
         Optional<Long> defaultRetryMaxDelayInMs = Optional.ofNullable(wsSinkConnectorConfig.getDefaultRetryMaxDelayInMs());
         Optional<Double> defaultRetryDelayFactor = Optional.ofNullable(wsSinkConnectorConfig.getDefaultRetryDelayFactor());
         Optional<Long> defaultRetryJitterInMs = Optional.ofNullable(wsSinkConnectorConfig.getDefaultRetryJitterInMs());
-        Optional<RetryPolicy<HttpExchange>> retryPolicy = Optional.empty();
         if (defaultRetries.isPresent()
                 && defaultRetryDelayInMs.isPresent()
                 && defaultRetryMaxDelayInMs.isPresent()
                 && defaultRetryDelayFactor.isPresent()
                 && defaultRetryJitterInMs.isPresent()) {
-            retryPolicy = Optional.of(RetryPolicy.<HttpExchange>builder()
-                    //we retry only if the error comes from the WS server (server-side technical error)
-                    .handle(HttpException.class)
-                    .withBackoff(Duration.ofMillis(defaultRetryDelayInMs.get()), Duration.ofMillis(defaultRetryMaxDelayInMs.get()), defaultRetryDelayFactor.get())
-                    .withJitter(Duration.ofMillis(defaultRetryJitterInMs.get()))
-                    .withMaxRetries(defaultRetries.get().intValue())
-                    .onRetry(listener -> LOGGER.warn("Retry ws call result:{}, failure:{}", listener.getLastResult(), listener.getLastException()))
-                    .onFailure(listener -> LOGGER.warn("ws call failed ! result:{},exception:{}", listener.getResult(), listener.getException()))
-                    .onAbort(listener -> LOGGER.warn("ws call aborted ! result:{},exception:{}", listener.getResult(), listener.getException()))
-                    .build());
+           httpClient.setDefaultRetryPolicy(defaultRetries.get(),defaultRetryDelayInMs.get(),defaultRetryMaxDelayInMs.get(),defaultRetryDelayFactor.get(),defaultRetryJitterInMs.get());
         }
-        this.httpClient = new HttpClient(getAsyncHttpClient(wsSinkConnectorConfig.originalsStrings()), retryPolicy);
+
 
     }
 
