@@ -1,0 +1,162 @@
+{
+  "$schema": "http://json-schema.org/draft/2019-09/schema#",
+  "title": "Http Request schema to drive HTTP Sink Connector",
+  "description": "Http Request schema to drive HTTP Sink Connector. It supports 3 modes : classical body as string (bodyPart set to 'STRING'), a byte Array mode to transmit binary data((bodyPart set to 'BYTE_ARRAY'), and a multipart mode ((bodyPart set to 'MULTIPART')",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["url","method","bodyType"],
+  "properties": {
+    "requestId": {
+      "oneOf": [
+        {
+          "type": "null",
+          "title": "Not included"
+        },
+        {
+          "type": "string"
+        }
+      ]
+    },
+    "correlationId": {
+      "oneOf": [
+        {
+          "type": "null",
+          "title": "Not included"
+        },
+        {
+          "type": "string"
+        }
+      ]
+    },
+    "timeoutInMs": {
+      "oneOf": [
+        {
+          "type": "null",
+          "title": "Not included"
+        },
+        {
+          "type": "integer"
+        }
+      ]
+    },
+    "retries": {
+      "oneOf": [
+        {
+          "type": "null",
+          "title": "Not included"
+        },
+        {
+          "type": "integer"
+        }
+      ]
+    },
+    "retryDelayInMs": {
+      "oneOf": [
+        {
+          "type": "null",
+          "title": "Not included"
+        },
+        {
+          "type": "integer"
+        }
+      ]
+    },
+    "retryMaxDelayInMs": {
+      "oneOf": [
+        {
+          "type": "null",
+          "title": "Not included"
+        },
+        {
+          "type": "integer"
+        }
+      ]
+    },
+    "retryDelayFactor": {
+      "oneOf": [
+        {
+          "type": "null",
+          "title": "Not included"
+        },
+        {
+          "type": "number"
+        }
+      ]
+    },
+    "retryJitter": {
+      "oneOf": [
+        {
+          "type": "null",
+          "title": "Not included"
+        },
+        {
+          "type": "integer"
+        }
+      ]
+    },
+    "url": {
+      "type": "string"
+    },
+    "headers": {
+      "type": "object",
+      "connect.type": "map",
+      "additionalProperties": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        }
+      }
+    },
+    "method": {
+      "type": "string"
+    },
+    "bodyAsString": {
+      "oneOf": [
+        {
+          "type": "null",
+          "title": "Not included"
+        },
+        {
+          "type": "string"
+        }
+      ]
+    },
+    "bodyAsByteArray": {
+      "oneOf": [
+        {
+          "type": "null",
+          "title": "Not included"
+        },
+        {
+          "type": "string"
+        }
+      ]
+    },
+    "bodyAsMultipart": {
+      "oneOf": [
+        {
+          "type": "null",
+          "title": "Not included"
+        },
+        {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      ]
+    },
+    "bodyType": {
+      "type": "string",
+      "enum": [
+        "STRING",
+        "BYTE_ARRAY",
+        "MULTIPART"
+      ]
+    }
+  },
+  "required": [
+    "url",
+    "method"
+  ]
+}

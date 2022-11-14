@@ -22,7 +22,7 @@ public class WsSinkConnectorConfig extends AbstractConfig {
     private static final Logger LOGGER = LoggerFactory.getLogger(WsSinkConnectorConfig.class);
     private final String queueName;
     private final boolean publishToInMemoryQueue;
-    private final Map<String,String> staticRequestHeaders = Maps.newHashMap();
+    private final Map<String,List<String>> staticRequestHeaders = Maps.newHashMap();
 
     public WsSinkConnectorConfig(Map<?, ?> originals) {
         this(WsSinkConfigDefinition.config(), originals);
@@ -41,7 +41,7 @@ public class WsSinkConnectorConfig extends AbstractConfig {
         for(String headerName:additionalHeaderNamesList){
             String value = (String) originals().get(headerName);
             Preconditions.checkNotNull(value,"'"+headerName+"' is not configured as a parameter.");
-            staticRequestHeaders.put(headerName, value);
+            staticRequestHeaders.put(headerName, Lists.newArrayList(value));
         }
     }
 
@@ -53,7 +53,7 @@ public class WsSinkConnectorConfig extends AbstractConfig {
         return publishToInMemoryQueue;
     }
 
-    public Map<String, String> getStaticRequestHeaders() {
+    public Map<String, List<String>> getStaticRequestHeaders() {
         return Maps.newHashMap(staticRequestHeaders);
     }
 }

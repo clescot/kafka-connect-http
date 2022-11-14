@@ -1,9 +1,14 @@
 package com.github.clescot.kafka.connect.http.sink;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import com.github.clescot.kafka.connect.http.HttpRequest;
 import com.github.clescot.kafka.connect.http.QueueFactory;
 import com.github.clescot.kafka.connect.http.sink.client.HttpClient;
 import com.github.clescot.kafka.connect.http.sink.client.PropertyBasedASyncHttpClientConfig;
-import com.github.clescot.kafka.connect.http.source.HttpExchange;
+import com.github.clescot.kafka.connect.http.HttpExchange;
+import com.google.common.base.Charsets;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
@@ -11,7 +16,8 @@ import io.netty.buffer.ByteBufAllocator;
 import io.netty.buffer.PooledByteBufAllocator;
 import io.netty.util.HashedWheelTimer;
 import io.netty.util.Timer;
-import org.apache.kafka.connect.data.Schema;
+import org.apache.kafka.connect.data.Struct;
+import org.apache.kafka.connect.errors.ConnectException;
 import org.apache.kafka.connect.sink.ErrantRecordReporter;
 import org.apache.kafka.connect.sink.SinkRecord;
 import org.apache.kafka.connect.sink.SinkTask;
@@ -29,10 +35,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.lang.reflect.InvocationTargetException;
-import java.util.Collection;
-import java.util.Map;
-import java.util.Properties;
-import java.util.Queue;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.ASYNC_CLIENT_CONFIG_ROOT;
@@ -49,15 +52,17 @@ public class WsSinkTask extends SinkTask {
     private static final String COOKIE_STORE = ASYN_HTTP_CONFIG_PREFIX + "cookie.store";
     private static final String NETTY_TIMER = ASYN_HTTP_CONFIG_PREFIX + "netty.timer";
     private static final String BYTE_BUFFER_ALLOCATOR = ASYN_HTTP_CONFIG_PREFIX + "byte.buffer.allocator";
-    private HttpClient httpClient;
     private final static Logger LOGGER = LoggerFactory.getLogger(WsSinkTask.class);
+    private final static ObjectMapper OBJECT_MAPPER = new ObjectMapper().registerModule(new JavaTimeModule());
+    private HttpClient httpClient;
     private Queue<HttpExchange> queue;
     private String queueName;
 
     private static AsyncHttpClient asyncHttpClient;
-    private Map<String,String> staticRequestHeaders;
+    private Map<String,List<String>> staticRequestHeaders;
     private WsSinkConnectorConfig wsSinkConnectorConfig;
     private ErrantRecordReporter errantRecordReporter;
+
 
     @Override
     public String version() {
@@ -77,9 +82,10 @@ public class WsSinkTask extends SinkTask {
     public void start(Map<String, String> settings) {
         Preconditions.checkNotNull(settings, "settings cannot be null");
         try {
+            //TODO handle DLQ with errantRecordReporter
             errantRecordReporter = context.errantRecordReporter();
         } catch (NoSuchMethodError | NoClassDefFoundError e) {
-            LOGGER.warn("errantRecordReporter has been added to Kafka Connect since 2.6.0 release. you shoudl upgrade the Kafka Connect Runtime shortly.");
+            LOGGER.warn("errantRecordReporter has been added to Kafka Connect since 2.6.0 release. you should upgrade the Kafka Connect Runtime shortly.");
             errantRecordReporter = null;
         }
 
@@ -185,20 +191,88 @@ public class WsSinkTask extends SinkTask {
             Preconditions.checkArgument(QueueFactory.hasAConsumer(queueName), "'" + queueName + "' queue hasn't got any consumer, i.e no Source Connector has been configured to consume records published in this in memory queue. we stop the Sink Connector to prevent any OutofMemoryError.");
         }
         records.stream()
+                .map(this::buildHttpRequest)
                 .map(this::addStaticHeaders)
                 .map(httpClient::call)
-                .peek(ack->LOGGER.debug("get ack :{}",ack))
-                .forEach(ack -> {
-                    if(wsSinkConnectorConfig.isPublishToInMemoryQueue()) {
-                        queue.offer(ack);
+                .peek(httpExchange->LOGGER.debug("HTTP exchange :{}",httpExchange))
+                .forEach(httpExchange -> {
+                    if(wsSinkConnectorConfig.isPublishToInMemoryQueue() && httpExchange!=null) {
+                        LOGGER.debug("http exchange published to queue :{}",httpExchange);
+                        queue.offer(httpExchange);
+                    }else{
+                        LOGGER.debug("http exchange NOT published to queue :{}",httpExchange);
                     }
                 }
                 );
     }
 
-    private SinkRecord addStaticHeaders(SinkRecord sinkRecord) {
-        this.staticRequestHeaders.forEach((key,value)->sinkRecord.headers().add(key,value, Schema.STRING_SCHEMA));
-        return sinkRecord;
+    private HttpRequest buildHttpRequest(SinkRecord sinkRecord){
+        HttpRequest httpRequest = null;
+        Object value = sinkRecord.value();
+        String stringValue = null;
+        try {
+            if (value == null) {
+                LOGGER.warn("sinkRecord has got a 'null' value");
+                throw new ConnectException("sinkRecord has got a 'null' value");
+            }
+            Class<?> valueClass = value.getClass();
+            LOGGER.debug("valueClass is {}",valueClass.getName());
+            if (Struct.class.isAssignableFrom(valueClass)) {
+                Struct valueAsStruct = (Struct) value;
+                if (sinkRecord.valueSchema() != null) {
+                    LOGGER.debug("valueSchema is {}",sinkRecord.valueSchema());
+                    if (!HttpRequest.SCHEMA.equals(sinkRecord.valueSchema())) {
+                        LOGGER.warn("sinkRecord has got a value Schema different from the HttpRequest Schema:{}",sinkRecord.valueSchema().name());
+                    }
+                }
+                valueAsStruct.validate();
+                httpRequest = HttpRequest
+                        .Builder
+                        .anHttpRequest()
+                        .withStruct(valueAsStruct)
+                        .build();
+
+            } else if ("[B".equals(valueClass.getName())) {
+                //we assume the value is a byte array
+                stringValue = new String((byte[]) value, Charsets.UTF_8);
+            } else if(String.class.isAssignableFrom(valueClass)){
+                stringValue = (String) value;
+            }else{
+                LOGGER.warn("value is an instance of the class "+valueClass.getName()+" not handled by the WsSinkTask");
+                throw new ConnectException("value is an instance of the class "+valueClass.getName()+" not handled by the WsSinkTask");
+            }
+            if (httpRequest == null) {
+                httpRequest = parseHttpRequestAsJsonString(stringValue);
+                LOGGER.debug("successful httpRequest parsing :{}",httpRequest);
+            }
+        }catch (ConnectException connectException){
+            LOGGER.warn("error in sinkRecord's structure : "+sinkRecord,connectException);
+            if(errantRecordReporter!=null) {
+                errantRecordReporter.report(sinkRecord, connectException);
+            }else{
+                LOGGER.warn("errantRecordReporter has been added to Kafka Connect since 2.6.0 release. you should upgrade the Kafka Connect Runtime shortly.");
+            }
+            return null;
+        }
+        return httpRequest;
+    }
+
+    private HttpRequest parseHttpRequestAsJsonString(String value) throws ConnectException{
+        HttpRequest httpRequest;
+        try {
+            httpRequest = OBJECT_MAPPER.readValue(value, HttpRequest.class);
+        } catch (JsonProcessingException e) {
+            LOGGER.error(e.getMessage(),e);
+            throw new ConnectException(e);
+        }
+        return httpRequest;
+    }
+
+    private HttpRequest addStaticHeaders(HttpRequest httpRequest) {
+        if(httpRequest!=null) {
+            this.staticRequestHeaders.forEach((key, value) -> httpRequest.getHeaders().put(key, value));
+        }
+        return httpRequest;
     }
 
 
@@ -212,7 +286,7 @@ public class WsSinkTask extends SinkTask {
         this.httpClient = httpClient;
     }
     //for testing purpose
-    protected Map<String,String> getStaticRequestHeaders(){
+    protected Map<String,List<String>> getStaticRequestHeaders(){
         //we return a copy
         return Maps.newHashMap(staticRequestHeaders);
     }

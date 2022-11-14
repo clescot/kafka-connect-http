@@ -1,6 +1,5 @@
 package com.github.clescot.kafka.connect.http;
 
-import com.github.clescot.kafka.connect.http.source.HttpExchange;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 

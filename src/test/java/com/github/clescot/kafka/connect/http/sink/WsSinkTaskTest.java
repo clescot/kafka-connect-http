@@ -1,9 +1,10 @@
 package com.github.clescot.kafka.connect.http.sink;
 
-import com.github.clescot.kafka.connect.http.ConfigConstants;
-import com.github.clescot.kafka.connect.http.QueueFactory;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import com.github.clescot.kafka.connect.http.*;
 import com.github.clescot.kafka.connect.http.sink.client.HttpClient;
-import com.github.clescot.kafka.connect.http.source.HttpExchange;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import org.apache.kafka.common.record.TimestampType;
@@ -13,14 +14,18 @@ import org.apache.kafka.connect.sink.ErrantRecordReporter;
 import org.apache.kafka.connect.sink.SinkRecord;
 import org.apache.kafka.connect.sink.SinkTaskContext;
 import org.jetbrains.annotations.NotNull;
+import org.json.JSONException;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
+import org.skyscreamer.jsonassert.Customization;
+import org.skyscreamer.jsonassert.JSONAssert;
+import org.skyscreamer.jsonassert.JSONCompareMode;
+import org.skyscreamer.jsonassert.comparator.CustomComparator;
 
 import java.time.OffsetDateTime;
 import java.time.ZoneId;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Queue;
@@ -87,19 +92,19 @@ class WsSinkTaskTest {
         wsSinkTask.start(settings);
         HttpClient httpClient = mock(HttpClient.class);
         HttpExchange dummyHttpExchange = getDummyHttpExchange();
-        when(httpClient.call(any(SinkRecord.class))).thenReturn(dummyHttpExchange);
+        when(httpClient.call(any(HttpRequest.class))).thenReturn(dummyHttpExchange);
         wsSinkTask.setHttpClient(httpClient);
         List<SinkRecord> records = Lists.newArrayList();
         List<Header> headers = Lists.newArrayList();
-        SinkRecord sinkRecord = new SinkRecord("myTopic",0, Schema.STRING_SCHEMA,"key",Schema.STRING_SCHEMA,"myValue",-1,System.currentTimeMillis(), TimestampType.CREATE_TIME,headers);
+        SinkRecord sinkRecord = new SinkRecord("myTopic",0, Schema.STRING_SCHEMA,"key",Schema.STRING_SCHEMA,getDummyHttpRequestAsString(),-1,System.currentTimeMillis(), TimestampType.CREATE_TIME,headers);
         records.add(sinkRecord);
         wsSinkTask.put(records);
-        ArgumentCaptor<SinkRecord> captor = ArgumentCaptor.forClass(SinkRecord.class);
+        ArgumentCaptor<HttpRequest> captor = ArgumentCaptor.forClass(HttpRequest.class);
         verify(httpClient,times(1)).call(captor.capture());
-        SinkRecord enhancedRecordBeforeHttpCall = captor.getValue();
-        assertThat(enhancedRecordBeforeHttpCall.headers().size()==sinkRecord.headers().size()+wsSinkTask.getStaticRequestHeaders().size());
-        assertThat(enhancedRecordBeforeHttpCall.headers()).anyMatch(header -> "param1".equals(header.key())&& "value1".equals(header.value()));
-        assertThat(enhancedRecordBeforeHttpCall.headers()).anyMatch(header -> "param2".equals(header.key())&& "value2".equals(header.value()));
+        HttpRequest enhancedRecordBeforeHttpCall = captor.getValue();
+        assertThat(enhancedRecordBeforeHttpCall.getHeaders().size()==sinkRecord.headers().size()+wsSinkTask.getStaticRequestHeaders().size());
+        assertThat(enhancedRecordBeforeHttpCall.getHeaders()).contains(Map.entry("param1",Lists.newArrayList("value1")));
+        assertThat(enhancedRecordBeforeHttpCall.getHeaders()).contains(Map.entry("param2",Lists.newArrayList("value2")));
     }
 
     @Test
@@ -112,7 +117,7 @@ class WsSinkTaskTest {
         //mock httpClient
         HttpClient httpClient = mock(HttpClient.class);
         HttpExchange dummyHttpExchange = getDummyHttpExchange();
-        when(httpClient.call(any(SinkRecord.class))).thenReturn(dummyHttpExchange);
+        when(httpClient.call(any(HttpRequest.class))).thenReturn(dummyHttpExchange);
         wsSinkTask.setHttpClient(httpClient);
 
         //mock queue
@@ -122,7 +127,7 @@ class WsSinkTaskTest {
         //init sinkRecord
         List<SinkRecord> records = Lists.newArrayList();
         List<Header> headers = Lists.newArrayList();
-        SinkRecord sinkRecord = new SinkRecord("myTopic",0, Schema.STRING_SCHEMA,"key",Schema.STRING_SCHEMA,"myValue",-1,System.currentTimeMillis(), TimestampType.CREATE_TIME,headers);
+        SinkRecord sinkRecord = new SinkRecord("myTopic",0, Schema.STRING_SCHEMA,"key",Schema.STRING_SCHEMA,getDummyHttpRequestAsString(),-1,System.currentTimeMillis(), TimestampType.CREATE_TIME,headers);
         records.add(sinkRecord);
 
         //when
@@ -131,10 +136,10 @@ class WsSinkTaskTest {
         //then
 
         //no additional headers added
-        ArgumentCaptor<SinkRecord> captor = ArgumentCaptor.forClass(SinkRecord.class);
+        ArgumentCaptor<HttpRequest> captor = ArgumentCaptor.forClass(HttpRequest.class);
         verify(httpClient,times(1)).call(captor.capture());
-        SinkRecord enhancedRecordBeforeHttpCall = captor.getValue();
-        assertThat(enhancedRecordBeforeHttpCall.headers().size()==sinkRecord.headers().size());
+        HttpRequest enhancedRecordBeforeHttpCall = captor.getValue();
+        assertThat(enhancedRecordBeforeHttpCall.getHeaders().size()==sinkRecord.headers().size());
 
         //no records are published into the in memory queue by default
         verify(dummyQueue,never()).offer(any(HttpExchange.class));
@@ -151,7 +156,7 @@ class WsSinkTaskTest {
         //mock httpClient
         HttpClient httpClient = mock(HttpClient.class);
         HttpExchange dummyHttpExchange = getDummyHttpExchange();
-        when(httpClient.call(any(SinkRecord.class))).thenReturn(dummyHttpExchange);
+        when(httpClient.call(any(HttpRequest.class))).thenReturn(dummyHttpExchange);
         wsSinkTask.setHttpClient(httpClient);
 
         //mock queue
@@ -190,16 +195,16 @@ class WsSinkTaskTest {
         wsSinkTask.start(settings);
         HttpClient httpClient = mock(HttpClient.class);
         HttpExchange dummyHttpExchange = getDummyHttpExchange();
-        when(httpClient.call(any(SinkRecord.class))).thenReturn(dummyHttpExchange);
+        when(httpClient.call(any(HttpRequest.class))).thenReturn(dummyHttpExchange);
         wsSinkTask.setHttpClient(httpClient);
         Queue<HttpExchange> queue = mock(Queue.class);
         wsSinkTask.setQueue(queue);
         List<SinkRecord> records = Lists.newArrayList();
         List<Header> headers = Lists.newArrayList();
-        SinkRecord sinkRecord = new SinkRecord("myTopic",0, Schema.STRING_SCHEMA,"key",Schema.STRING_SCHEMA,"myValue",-1,System.currentTimeMillis(), TimestampType.CREATE_TIME,headers);
+        SinkRecord sinkRecord = new SinkRecord("myTopic",0, Schema.STRING_SCHEMA,"key",Schema.STRING_SCHEMA,getDummyHttpRequestAsString(),-1,System.currentTimeMillis(), TimestampType.CREATE_TIME,headers);
         records.add(sinkRecord);
         wsSinkTask.put(records);
-        verify(httpClient,times(1)).call(any(SinkRecord.class));
+        verify(httpClient,times(1)).call(any(HttpRequest.class));
         verify(queue,never()).offer(any(HttpExchange.class));
     }
 
@@ -214,44 +219,114 @@ class WsSinkTaskTest {
         wsSinkTask.start(settings);
         HttpClient httpClient = mock(HttpClient.class);
         HttpExchange dummyHttpExchange = getDummyHttpExchange();
-        when(httpClient.call(any(SinkRecord.class))).thenReturn(dummyHttpExchange);
+        when(httpClient.call(any(HttpRequest.class))).thenReturn(dummyHttpExchange);
         wsSinkTask.setHttpClient(httpClient);
         Queue<HttpExchange> queue = mock(Queue.class);
         wsSinkTask.setQueue(queue);
         List<SinkRecord> records = Lists.newArrayList();
         List<Header> headers = Lists.newArrayList();
-        SinkRecord sinkRecord = new SinkRecord("myTopic",0, Schema.STRING_SCHEMA,"key",Schema.STRING_SCHEMA,"myValue",-1,System.currentTimeMillis(), TimestampType.CREATE_TIME,headers);
+        SinkRecord sinkRecord = new SinkRecord("myTopic",0, Schema.STRING_SCHEMA,"key",Schema.STRING_SCHEMA,getDummyHttpRequestAsString(),-1,System.currentTimeMillis(), TimestampType.CREATE_TIME,headers);
         records.add(sinkRecord);
         //when
         wsSinkTask.put(records);
 
         //then
-        verify(httpClient,times(1)).call(any(SinkRecord.class));
+        verify(httpClient,times(1)).call(any(HttpRequest.class));
         verify(queue,times(1)).offer(any(HttpExchange.class));
     }
 
 
+    @Test
+    public void test_http_exchange_json_serialization() throws JsonProcessingException, JSONException {
+        HttpExchange dummyHttpExchange = getDummyHttpExchange();
+        ObjectMapper objectMapper = new ObjectMapper();
+        objectMapper.registerModule(new JavaTimeModule());
+        String httpExchangeAsString = objectMapper.writeValueAsString(dummyHttpExchange);
+        String expectedJSON = "" +
+                "{\n" +
+                "  \"durationInMillis\": 245,\n" +
+                "  \"moment\": 1668388166.569457181,\n" +
+                "  \"attempts\": 1,\n" +
+                "  \"success\": true,\n" +
+                "  \"httpResponse\": {\n" +
+                "    \"statusCode\": 200,\n" +
+                "    \"statusMessage\": \"OK\",\n" +
+                "    \"responseBody\": \"my response\",\n" +
+                "    \"responseHeaders\": {\n" +
+                "      \"Content-Type\": \"application/json\"\n" +
+                "    }\n" +
+                "  },\n" +
+                "  \"httpRequest\": {\n" +
+                "    \"requestId\": null,\n" +
+                "    \"correlationId\": null,\n" +
+                "    \"timeoutInMs\": null,\n" +
+                "    \"retries\": null,\n" +
+                "    \"retryDelayInMs\": null,\n" +
+                "    \"retryMaxDelayInMs\": null,\n" +
+                "    \"retryDelayFactor\": null,\n" +
+                "    \"retryJitter\": null,\n" +
+                "    \"url\": \"http://www.titi.com\",\n" +
+                "    \"headers\": {\n" +
+                "      \"X-dummy\": [\n" +
+                "        \"blabla\"\n" +
+                "      ]\n" +
+                "    },\n" +
+                "    \"method\": \"GET\",\n" +
+                "    \"bodyAsString\": \"stuff\",\n" +
+                "    \"bodyAsByteArray\": \"\",\n" +
+                "    \"bodyAsMultipart\": [],\n" +
+                "    \"bodyType\": \"STRING\"\n" +
+                "  }\n" +
+                "}";
+
+        JSONAssert.assertEquals(expectedJSON, httpExchangeAsString,
+                new CustomComparator(JSONCompareMode.LENIENT,
+                        new Customization("moment", (o1, o2) -> true),
+                        new Customization("durationInMillis", (o1, o2) -> true)
+                ));
+
+
+    }
+
+
     private HttpExchange getDummyHttpExchange() {
-        HashMap<String, String> requestHeaders = Maps.newHashMap();
-        requestHeaders.put("X-dummy","blabla");
-        HashMap<String, String> responseHeaders = Maps.newHashMap();
+        Map<String, List<String>> requestHeaders = Maps.newHashMap();
+        requestHeaders.put("X-dummy",Lists.newArrayList("blabla"));
+        HttpRequest httpRequest = new HttpRequest("http://www.titi.com","GET","STRING","stuff",null,null);
+        httpRequest.setHeaders(requestHeaders);
+        HttpResponse httpResponse = new HttpResponse(200,"OK","my response");
+        Map<String, String> responseHeaders = Maps.newHashMap();
         responseHeaders.put("Content-Type","application/json");
+        httpResponse.setResponseHeaders(responseHeaders);
         return new HttpExchange(
-                "fsdfsf--sdfsdfsdf",
-                "fsdfsdf5565",
-                200,
-                "OK",
-                responseHeaders,
-                "",
-                "http://www.dummy.com",
-                requestHeaders,
-                "GET",
-                "",
-                100L,
+                httpRequest,
+              httpResponse,
+                245L,
                 OffsetDateTime.now(ZoneId.of("UTC")),
                 new AtomicInteger(1),
                 true
         );
+    }
+
+
+    private String getDummyHttpRequestAsString(){
+        return "{\n" +
+        "  \"requestId\": null,\n" +
+                "  \"correlationId\": null,\n" +
+                "  \"timeoutInMs\": 0,\n" +
+                "  \"retries\": 0,\n" +
+                "  \"retryDelayInMs\": 0,\n" +
+                "  \"retryMaxDelayInMs\": 0,\n" +
+                "  \"retryDelayFactor\": 0.0,\n" +
+                "  \"retryJitter\": 0,\n" +
+                "  \"url\": \"http://www.stuff.com\",\n" +
+                "  \"headers\": {},\n" +
+                "  \"method\": \"GET\",\n" +
+                "  \"bodyAsString\": \"stuff\",\n" +
+                "  \"bodyAsByteArray\": null,\n" +
+                "  \"bodyAsMultipart\": null,\n" +
+                "  \"bodyType\": \"STRING\"\n" +
+                "}";
     }
 
 }
