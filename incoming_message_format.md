@@ -29,6 +29,34 @@ The HTTP Sink Connector, support also String messages, but not as the main use c
 
 ## HTTP Request incoming Format
 
+### fields
+
+#### metadata fields
+- requestId
+- correlationId
+
+#### connection fields
+- timeoutInMs
+
+##### retry policy fields
+
+
+- retries
+- retryDelayInMs
+- retryMaxDelayInMs
+- retryDelayFactor
+- retryJitter
+
+#### Request Fields
+
+- url
+- method
+- headers
+- bodyType
+- bodyAsString
+- bodyAsByteArray
+- bodyAsMultipart
+
 ### Struct format
 
 The `HttpRequest` class represents the incoming message.

@@ -15,13 +15,17 @@ import java.util.Optional;
 import static com.github.clescot.kafka.connect.http.ConfigConstants.QUEUE_NAME;
 import static com.github.clescot.kafka.connect.http.QueueFactory.DEFAULT_QUEUE_NAME;
 import static com.github.clescot.kafka.connect.http.QueueFactory.queueMapIsEmpty;
-import static com.github.clescot.kafka.connect.http.sink.WsSinkConfigDefinition.PUBLISH_TO_IN_MEMORY_QUEUE;
-import static com.github.clescot.kafka.connect.http.sink.WsSinkConfigDefinition.STATIC_REQUEST_HEADER_NAMES;
+import static com.github.clescot.kafka.connect.http.sink.WsSinkConfigDefinition.*;
 
 public class WsSinkConnectorConfig extends AbstractConfig {
     private static final Logger LOGGER = LoggerFactory.getLogger(WsSinkConnectorConfig.class);
     private final String queueName;
     private final boolean publishToInMemoryQueue;
+    private final Long defaultRetries;
+    private final Long defaultRetryDelayInMs;
+    private final Long defaultRetryMaxDelayInMs;
+    private final Double defaultRetryDelayFactor;
+    private final Long defaultRetryJitterInMs;
     private final Map<String,List<String>> staticRequestHeaders = Maps.newHashMap();
 
     public WsSinkConnectorConfig(Map<?, ?> originals) {
@@ -35,6 +39,12 @@ public class WsSinkConnectorConfig extends AbstractConfig {
             LOGGER.warn("no pre-existing queue exists. this WsSourceConnector has created a '{}' one. It needs to consume a queue filled with a SinkConnector. Ignore this message if a SinkConnector will be created after this one.",queueName);
         }
         this.publishToInMemoryQueue = Optional.ofNullable(getBoolean(PUBLISH_TO_IN_MEMORY_QUEUE)).orElse(false);
+
+        this.defaultRetries = Optional.ofNullable(getLong(DEFAULT_RETRIES)).orElse(null);
+        this.defaultRetryDelayInMs = Optional.ofNullable(getLong(DEFAULT_RETRY_DELAY_IN_MS)).orElse(null);
+        this.defaultRetryMaxDelayInMs = Optional.ofNullable(getLong(DEFAULT_RETRY_MAX_DELAY_IN_MS)).orElse(null);
+        this.defaultRetryDelayFactor = Optional.ofNullable(getDouble(DEFAULT_RETRY_DELAY_FACTOR)).orElse(null);
+        this.defaultRetryJitterInMs = Optional.ofNullable(getLong(DEFAULT_RETRY_JITTER_IN_MS)).orElse(null);
 
         Optional<List<String>> staticRequestHeaderNames = Optional.ofNullable(getList(STATIC_REQUEST_HEADER_NAMES));
         List<String> additionalHeaderNamesList =staticRequestHeaderNames.orElse(Lists.newArrayList());
@@ -55,5 +65,25 @@ public class WsSinkConnectorConfig extends AbstractConfig {
 
     public Map<String, List<String>> getStaticRequestHeaders() {
         return Maps.newHashMap(staticRequestHeaders);
+    }
+
+    public Long getDefaultRetries() {
+        return defaultRetries;
+    }
+
+    public Long getDefaultRetryDelayInMs() {
+        return defaultRetryDelayInMs;
+    }
+
+    public Long getDefaultRetryMaxDelayInMs() {
+        return defaultRetryMaxDelayInMs;
+    }
+
+    public Double getDefaultRetryDelayFactor() {
+        return defaultRetryDelayFactor;
+    }
+
+    public Long getDefaultRetryJitterInMs() {
+        return defaultRetryJitterInMs;
     }
 }
