@@ -33,6 +33,13 @@ every Kafka Connect Sink Connector need to define these required parameters :
   `,` character. The connector will try to get the value to add to request by querying the config with the header name as parameter name.
   For example, if set `static.request.header.names: param_name1,param_name2`, the connector will lookup the param_name1
   and param_name2 parameters to get values to add.
+- default retry policy parameters : these parameters (**set them all or no one**), permit to define a default retry policy, which can be overriden by parameters set at the request level.
+  - *default.retries* : how many retries
+  - *default.retry.delay.in.ms* : initial delay between retries
+  - *default.retry.max.delay.in.ms* :max delay between retries
+  - *default.retry.delay.factor* : by which number multiply the previous delay to calculate the current one
+  - *default.retry.jitter.in.ms* : add a random factor to avoid multiple retry policies firing at the same time.
+
 
 #### Configuration example
 

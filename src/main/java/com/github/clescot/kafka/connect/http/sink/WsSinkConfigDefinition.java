@@ -19,7 +19,7 @@ public class WsSinkConfigDefinition {
     public static final String DEFAULT_RETRY_MAX_DELAY_IN_MS_DOC = "if set with other default retry parameters, permit to define a default retry policy, which can be overriden in the httpRequest object. Define how long max wait before retry";
     public static final String DEFAULT_RETRY_DELAY_FACTOR = "default.retry.delay.factor";
     public static final String DEFAULT_RETRY_DELAY_FACTOR_DOC = "if set with other default retry parameters, permit to define a default retry policy, which can be overriden in the httpRequest object. Define the factor to multiply the previous delay to define the current retry delay";
-    public static final String DEFAULT_RETRY_JITTER_IN_MS = "default.retry.jitter";
+    public static final String DEFAULT_RETRY_JITTER_IN_MS = "default.retry.jitter.in.ms";
     public static final String DEFAULT_RETRY_JITTER_IN_MS_DOC = "if set with other default retry parameters, permit to define a default retry policy, which can be overriden in the httpRequest object. Define max entropy to add, to prevent many retry policies instances with the same parameters, to flood servers at the same time";
 
 
