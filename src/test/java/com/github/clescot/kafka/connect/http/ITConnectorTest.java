@@ -397,7 +397,7 @@ public class ITConnectorTest {
                 "   \"statusCode\":200,\n" +
                 "  \"statusMessage\": \""+statusMessage+"\",\n" +
                 "  \"headers\": {" +
-                "\"Content-Type\":\"application/json\"" +
+                "\"Content-Type\":[\"application/json\"]" +
                 "},\n" +
                 "  \"body\": \""+escapedJsonResponse+"\"\n" +
                 "}"+
@@ -415,20 +415,6 @@ public class ITConnectorTest {
         assertThat(consumerRecord.headers().toArray()).isEmpty();
 
     }
-
-    //struct with schema registry
-    //value.converter=io.confluent.connect.json.JsonSchemaConverter
-    //value.converter.schema.registry.url=http://localhost:8081
-
-    //plain string
-
-    //for JSON with embedded schema
-    //value.converter=org.apache.kafka.connect.json.JsonConverter
-    //value.converter.schemas.enable=true
-
-    //JSON as string without schema
-    //value.converter=org.apache.kafka.connect.json.JsonConverter
-    //value.converter.schemas.enable=false
 
 
     private KafkaProducer<String, String> getStringProducer(

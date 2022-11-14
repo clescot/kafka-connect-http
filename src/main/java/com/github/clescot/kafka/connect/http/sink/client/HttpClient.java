@@ -19,10 +19,7 @@ import java.nio.charset.Charset;
 import java.time.Duration;
 import java.time.OffsetDateTime;
 import java.time.ZoneId;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.UUID;
+import java.util.*;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -203,7 +200,9 @@ public class HttpClient {
         int responseStatusCode = getSuccessfulStatusCodeOrThrowRetryException(httpRequest.getHeaders(), response.getStatusCode());
         List<Map.Entry<String, String>> responseEntries = response.getHeaders()!=null?response.getHeaders().entries():Lists.newArrayList();
         HttpResponse httpResponse = new HttpResponse(responseStatusCode,response.getStatusText(),response.getResponseBody());
-        Map<String, String> responseHeaders = responseEntries.stream().collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+        Map<String, List<String>> responseHeaders = responseEntries.stream()
+                .map(entry->new AbstractMap.SimpleImmutableEntry<String,List<String>>(entry.getKey(),Lists.newArrayList(entry.getValue())))
+                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
         httpResponse.setResponseHeaders(responseHeaders);
         return httpResponse;
     }
