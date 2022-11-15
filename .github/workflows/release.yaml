@@ -13,7 +13,12 @@ jobs:
       packages: write
     steps:
       - uses: actions/checkout@v3
+      - name: Set up JDK 11
+        uses: actions/setup-java@v3
         with:
+          java-version: '11'
+          distribution: 'adopt'
+          cache: maven
           token: ${{ secrets.GITHUB_TOKEN }}
       - name: Cache local Maven repository
         uses: actions/cache@v3
@@ -22,10 +27,6 @@ jobs:
           key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
           restore-keys: |
             ${{ runner.os }}-maven-
-      - uses: actions/setup-java@v3
-        with:
-          java-version: '11'
-          distribution: 'adopt'
       - name: Set MAVEN_PROJECT_VERSION as env
         run: echo "MAVEN_PROJECT_VERSION=$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout)" >> $GITHUB_ENV
       - name: Configure Git user
@@ -62,4 +63,4 @@ jobs:
           gpg-enabled: "false"
           maven-args: "-DskipIT"
         env:
-          JAVA_HOME: /usr/lib/jvm/java-17-openjdk/
+          JAVA_HOME: /usr/lib/jvm/java-11-openjdk/
