@@ -138,6 +138,17 @@
             }
           ]
         },
+        "successPattern": {
+          "oneOf": [
+            {
+              "type": "null",
+              "title": "Not included"
+            },
+            {
+              "type": "string"
+            }
+          ]
+        },
         "retries": {
           "oneOf": [
             {
