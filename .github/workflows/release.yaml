@@ -17,6 +17,10 @@ jobs:
           distribution: 'adopt'
       - name: Set MAVEN_PROJECT_VERSION as env
         run: echo "MAVEN_PROJECT_VERSION=$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout)" >> $GITHUB_ENV
+      - name: Configure Git user
+        run: |
+          git config user.email "actions@github.com"
+          git config user.name "GitHub Actions"
       - name: Publish package
         run: mvn --batch-mode deploy
         env:
@@ -39,3 +43,7 @@ jobs:
           package-name: 'test-package'
           min-versions-to-keep: 10
           delete-only-pre-release-versions: "true"
+      - name: Publish JAR
+        run: ./mvnw -B release:prepare release:perform
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
