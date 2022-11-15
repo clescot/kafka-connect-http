@@ -1,41 +1,46 @@
 name: Publish package to GitHub Packages
 on:
-  pull_request:
+  push:
+    branches:
+      - master
   release:
     types: [created]
 jobs:
   publish:
     runs-on: ubuntu-latest
     permissions:
-      contents: read
+      contents: write
       packages: write
     steps:
       - uses: actions/checkout@v3
-      - uses: actions/setup-java@v3
+      - name: Set up JDK 11
+        uses: actions/setup-java@v3
         with:
           java-version: '11'
           distribution: 'adopt'
-      - name: Set MAVEN_PROJECT_VERSION as env
-        run: echo "MAVEN_PROJECT_VERSION=$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout)" >> $GITHUB_ENV
-      - name: Publish package
-        run: mvn --batch-mode deploy
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      - name: Upload ZIP archive
-        run: |
-          mvn deploy:deploy-file \
-          -Dfile=target/components/packages/clescot-kafka-connect-http-sink-${{ env.MAVEN_PROJECT_VERSION }}.zip \
-          -Durl=https://maven.pkg.github.com/clescot/kafka-connect-http-sink \
-          -DgroupId=com.github.clescot \
-          -DartifactId=kafka-connect-http-sink \
-          -Dversion=${{ env.MAVEN_PROJECT_VERSION }} \
-          -Dpackaging=zip \
-          -DrepositoryId=github
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      - name: delete old pre-release-archives
-        uses: actions/delete-package-versions@v3
+          cache: maven
+          token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Cache local Maven repository
+        uses: actions/cache@v3
         with:
-          package-name: 'test-package'
-          min-versions-to-keep: 10
-          delete-only-pre-release-versions: "true"
+          path: ~/.m2/repository
+          key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
+          restore-keys: |
+            ${{ runner.os }}-maven-
+
+      - name: Configure Git user
+        run: |
+          git config user.email "actions@github.com"
+          git config user.name "clescot"
+      - name: Release
+        uses: qcastel/github-actions-maven-release@v1.12.37
+        with:
+          access-token: ${{ secrets.GITHUB_TOKEN }}
+          version-patch: true
+          gpg-enabled: "false"
+          maven-args: " -DskipIT "
+          maven-servers: '[{"id": "github", "username": "$GITHUB_ACTOR", "password": "${{ secrets.GITHUB_TOKEN }}"}]'
+        env:
+          JAVA_HOME: /usr/lib/jvm/java-11-openjdk/
+
+
