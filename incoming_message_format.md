@@ -81,6 +81,7 @@ Here is the source code which define the Struct format, base source for JSON Sch
         //meta-data outside of the request
         //connection (override the default one set in the Sink Connector)
         .field(TIMEOUT_IN_MS, Schema.OPTIONAL_INT64_SCHEMA)
+        .field(SUCCESS_PATTERN, Schema.OPTIONAL_STRING_SCHEMA)
         //retry policy (override the default one set in the Sink Connector)
         .field(RETRIES, Schema.OPTIONAL_INT32_SCHEMA)
         .field(RETRY_DELAY_IN_MS, Schema.OPTIONAL_INT64_SCHEMA)
