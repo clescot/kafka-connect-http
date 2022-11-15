@@ -4,6 +4,8 @@
     <name>KAFKA CONNECT :: HTTP :: SINK</name>
     <groupId>com.github.clescot</groupId>
     <artifactId>kafka-connect-http-sink</artifactId>
+    <version>0.1.0-SNAPSHOT</version>
+    <url>https://github.com/clescot/kafka-connect-http-sink</url>
     <licenses>
         <license>
             <name>Apache License, Version 2.0</name>
@@ -11,9 +13,10 @@
             <distribution>repo</distribution>
         </license>
     </licenses>
-    <url>https://github.com/clescot/kafka-connect-http-sink</url>
-    <version>0.1.0-SNAPSHOT</version>
     <packaging>jar</packaging>
+    <scm>
+        <developerConnection>scm:git:https://github.com/clescot/kafka-connect-http-sink.git</developerConnection>
+    </scm>
     <properties>
         <async.http.client.version>2.12.3</async.http.client.version>
         <kafka.version>3.3.1</kafka.version>
@@ -25,6 +28,7 @@
         <maven.compiler.target>11</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
+        <project.scm.id>github</project.scm.id>
         <testcontainers.version>1.17.5</testcontainers.version>
     </properties>
 
@@ -262,6 +266,14 @@
                     <includes>
                         <include>**/IT*.java</include>
                     </includes>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-release-plugin</artifactId>
+                <version>3.0.0-M7</version>
+                <configuration>
+                    <scmCommentPrefix>[ci skip]</scmCommentPrefix>
                 </configuration>
             </plugin>
             <plugin>
