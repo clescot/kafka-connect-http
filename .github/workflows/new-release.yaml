@@ -1,0 +1,40 @@
+name: release version
+
+on:
+  push:
+    branches:
+      - master
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    if: "!contains(github.event.head_commit.message, '[ci skip]')"
+    steps:
+      - uses: actions/checkout@v3
+      - name: Release
+        uses: mg-smartrent/github-actions-maven-release@v2.6
+        with:
+          release-branch-name: "master"
+          git-release-bot-name: "ReleaseBot"
+          git-release-bot-email: "actions@github.com"
+          access-token: ${{ secrets.GITHUB_TOKEN }}
+
+          # Release
+          maven-repo-server-id: ${MAVEN_SERVER_ID}
+          maven-repo-server-username: ${GITHUB_USERNAME}
+          maven-repo-server-password: ${{ secrets.GITHUB_TOKEN }}
+          maven-release-args: "-Dskip.unit.tests=true -DskipIT=true"
+
+          # Publish artifacts to GitHub Packages
+          maven-publish-args: "-Dskip.unit.tests=true -DskipIT=true"
+          maven-release-publish: "true"
+          maven-snapshot-publish: "true"
+
+#          #Build and push Docker Image to docker registry
+#          maven-release-push-docker: "true"
+#          maven-snapshot-push-docker: "true"
+#          maven-docker-args: ""
+#          maven-docker-user: ${DOCKER_USERNAME}
+#          maven-docker-password: ${DOCKER_PASSWORD}
+#          maven-docker-file-repository: ${DOCKER_FILE_REPOSITORY}
+
