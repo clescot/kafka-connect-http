@@ -48,8 +48,6 @@ class HttpRequestTest {
         httpRequest.setHeaders(headers);
 
         String expectedHttpRequest = "{\n" +
-                "  \"requestId\": null,\n" +
-                "  \"correlationId\": null,\n" +
                 "  \"timeoutInMs\": null,\n" +
                 "  \"retries\": null,\n" +
                 "  \"retryDelayInMs\": null,\n" +

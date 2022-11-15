@@ -257,8 +257,6 @@ class WsSinkTaskTest {
                 "    }\n" +
                 "  },\n" +
                 "  \"httpRequest\": {\n" +
-                "    \"requestId\": null,\n" +
-                "    \"correlationId\": null,\n" +
                 "    \"timeoutInMs\": null,\n" +
                 "    \"retries\": null,\n" +
                 "    \"retryDelayInMs\": null,\n" +
@@ -311,8 +309,6 @@ class WsSinkTaskTest {
 
     private String getDummyHttpRequestAsString(){
         return "{\n" +
-        "  \"requestId\": null,\n" +
-                "  \"correlationId\": null,\n" +
                 "  \"timeoutInMs\": 0,\n" +
                 "  \"retries\": 0,\n" +
                 "  \"retryDelayInMs\": 0,\n" +

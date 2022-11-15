@@ -9,7 +9,6 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import dev.failsafe.Failsafe;
 import dev.failsafe.RetryPolicy;
-import dev.failsafe.RetryPolicyBuilder;
 import org.asynchttpclient.*;
 import org.asynchttpclient.proxy.ProxyServer;
 import org.asynchttpclient.proxy.ProxyType;
@@ -20,7 +19,10 @@ import java.nio.charset.Charset;
 import java.time.Duration;
 import java.time.OffsetDateTime;
 import java.time.ZoneId;
-import java.util.*;
+import java.util.AbstractMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -34,7 +36,6 @@ public class HttpClient {
     public static final int SERVER_ERROR_STATUS_CODE = 500;
     public static final String PROXY_PREFIX = "proxy-";
     public static final String REALM_PREFIX = "realm-";
-    public static final String WS_PREFIX = "ws-";
     private static final String WS_PROXY_HOST = "host";
     private static final String WS_PROXY_PORT = "port";
     private static final String WS_PROXY_SECURED_PORT = "secured-port";
@@ -58,8 +59,6 @@ public class HttpClient {
     private static final String WS_REALM_AUTH_SCHEME = "auth-scheme";
     public static final String HTTP_PROXY_TYPE = "HTTP";
     public static final String UTF_8 = "UTF-8";
-    private static final String UNKNOWN_URI = "UNKNOWN_URI";
-    private static final String UNKNOWN_METHOD = "UNKNOWN_METHOD";
     public static final String UTC_ZONE_ID = "UTC";
     public static final boolean FAILURE = false;
     public static final boolean SUCCESS = true;
@@ -72,10 +71,7 @@ public class HttpClient {
     public static final String WS_REQUEST_TIMEOUT_IN_MS = "request-timeout-in-ms";
     public static final String WS_READ_TIMEOUT_IN_MS = "read-timeout-in-ms";
     private static final String WS_REALM_PASS = "password";
-    public static final String WS_METHOD = "method";
-    public static final String HEADER_X_CORRELATION_ID = "X-Correlation-ID";
-    public static final String WS_URL = "url";
-    public static final String HEADER_X_REQUEST_ID = "X-Request-ID";
+
     private final Map<String, Pattern> httpSuccessCodesPatterns = Maps.newHashMap();
     private final HttpClientAsyncCompletionHandler asyncCompletionHandler = new HttpClientAsyncCompletionHandler();
 
@@ -105,16 +101,8 @@ public class HttpClient {
 
         if (httpRequest != null) {
 
-            //properties which was 'ws-key' in headerKafka and are now 'key' : 'ws-' prefix is removed
-            Map<String, List<String>> wsProperties = extractWsProperties(httpRequest.getHeaders());
 
-            //we generate an X-Correlation-ID header if not present
-            String correlationId = Optional.ofNullable(httpRequest.getCorrelationId()).orElse(UUID.randomUUID().toString());
-            wsProperties.put(HEADER_X_CORRELATION_ID, Lists.newArrayList(correlationId));
 
-            //we generate a X-Request-ID header if not present
-            String requestId = Optional.ofNullable(httpRequest.getRequestId()).orElse(UUID.randomUUID().toString());
-            wsProperties.put(HEADER_X_REQUEST_ID, Lists.newArrayList(requestId));
             Optional<RetryPolicy<HttpExchange>> retryPolicyForCall = defaultRetryPolicy;
             //define RetryPolicy in the request
             Optional<Long> retries = Optional.ofNullable(httpRequest.getRetries());
@@ -130,7 +118,6 @@ public class HttpClient {
                 retryPolicyForCall = Optional.of(buildRetryPolicy(retries.get().intValue(), retryDelayInMs.get(), retryMaxDelayInMs.get(), retryDelayFactor.get(), retryJitterInMs.get()));
             }
 
-            Preconditions.checkNotNull(correlationId, "'correlationId' is required but null");
             AtomicInteger attempts = new AtomicInteger();
             try {
                 attempts.addAndGet(1);
@@ -167,15 +154,6 @@ public class HttpClient {
         return retryPolicy;
     }
 
-    protected Map<String, List<String>> extractWsProperties(Map<String, List<String>> headersKafka) {
-        Map<String, List<String>> wsProperties = Maps.newHashMap();
-        for (Map.Entry<String, List<String>> headerKafka : headersKafka.entrySet()) {
-            if (headerKafka.getKey().startsWith(WS_PREFIX)) {
-                wsProperties.put(headerKafka.getKey().substring(WS_PREFIX.length()), headerKafka.getValue());
-            }
-        }
-        return wsProperties;
-    }
 
     protected HttpExchange callOnceWs(HttpRequest httpRequest, AtomicInteger attempts) throws HttpException {
         Request request = buildRequest(httpRequest);

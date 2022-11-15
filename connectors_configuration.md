@@ -39,7 +39,8 @@ every Kafka Connect Sink Connector need to define these required parameters :
   - *default.retry.max.delay.in.ms* :max delay between retries
   - *default.retry.delay.factor* : by which number multiply the previous delay to calculate the current one
   - *default.retry.jitter.in.ms* : add a random factor to avoid multiple retry policies firing at the same time.
-
+- *generate.missing.request.id* : `false` by default. when set to `true`, generate an uuid bound to the 'X-Request-ID' header.
+- *generate.missing.correlation.id* : `false` by default. when set to `true`, generate an uuid bound to the 'X-Correlation-ID' header.
 
 #### Configuration example
 

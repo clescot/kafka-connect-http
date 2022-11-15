@@ -64,29 +64,27 @@ The `HttpRequest` class represents the incoming message.
 Here is the source code which define the Struct format, base source for JSON Schema/Avro/Protobuf solutions : 
 
 ```java
-  public static final Schema SCHEMA = SchemaBuilder
-            .struct()
-            .name(HttpRequest.class.getName())
-            .version(VERSION)
-            //meta-data outside of the request
-            .field(REQUEST_ID, Schema.OPTIONAL_STRING_SCHEMA)
-            .field(CORRELATION_ID, Schema.OPTIONAL_STRING_SCHEMA)
-            //connection (override the default one set in the Sink Connector)
-            .field(TIMEOUT_IN_MS, Schema.OPTIONAL_INT64_SCHEMA)
-            //retry policy (override the default one set in the Sink Connector)
-            .field(RETRIES, Schema.OPTIONAL_INT32_SCHEMA)
-            .field(RETRY_DELAY_IN_MS, Schema.OPTIONAL_INT64_SCHEMA)
-            .field(RETRY_MAX_DELAY_IN_MS, Schema.OPTIONAL_INT64_SCHEMA)
-            .field(RETRY_DELAY_FACTOR, Schema.OPTIONAL_FLOAT64_SCHEMA)
-            .field(RETRY_JITTER, Schema.OPTIONAL_INT64_SCHEMA)
-            //request
-            .field(HEADERS, SchemaBuilder.map(Schema.STRING_SCHEMA, SchemaBuilder.array(Schema.STRING_SCHEMA)).build())
-            .field(URL, Schema.STRING_SCHEMA)
-            .field(METHOD, Schema.STRING_SCHEMA)
-            .field(BODY_TYPE, Schema.STRING_SCHEMA)
-            .field(BODY_AS_STRING, Schema.OPTIONAL_STRING_SCHEMA)
-            .field(BODY_AS_BYTE_ARRAY, Schema.OPTIONAL_STRING_SCHEMA)
-            .field(BODY_AS_MULTIPART, SchemaBuilder.array(Schema.OPTIONAL_STRING_SCHEMA));
+    public static final Schema SCHEMA = SchemaBuilder
+        .struct()
+        .name(HttpRequest.class.getName())
+        .version(VERSION)
+        //meta-data outside of the request
+        //connection (override the default one set in the Sink Connector)
+        .field(TIMEOUT_IN_MS, Schema.OPTIONAL_INT64_SCHEMA)
+        //retry policy (override the default one set in the Sink Connector)
+        .field(RETRIES, Schema.OPTIONAL_INT32_SCHEMA)
+        .field(RETRY_DELAY_IN_MS, Schema.OPTIONAL_INT64_SCHEMA)
+        .field(RETRY_MAX_DELAY_IN_MS, Schema.OPTIONAL_INT64_SCHEMA)
+        .field(RETRY_DELAY_FACTOR, Schema.OPTIONAL_FLOAT64_SCHEMA)
+        .field(RETRY_JITTER, Schema.OPTIONAL_INT64_SCHEMA)
+        //request
+        .field(HEADERS, SchemaBuilder.map(Schema.STRING_SCHEMA, SchemaBuilder.array(Schema.STRING_SCHEMA)).build())
+        .field(URL, Schema.STRING_SCHEMA)
+        .field(METHOD, Schema.STRING_SCHEMA)
+        .field(BODY_TYPE, Schema.STRING_SCHEMA)
+        .field(BODY_AS_STRING, Schema.OPTIONAL_STRING_SCHEMA)
+        .field(BODY_AS_BYTE_ARRAY, Schema.OPTIONAL_STRING_SCHEMA)
+        .field(BODY_AS_MULTIPART, SchemaBuilder.array(Schema.OPTIONAL_STRING_SCHEMA));
 ```
 
 ### JSON Schema format

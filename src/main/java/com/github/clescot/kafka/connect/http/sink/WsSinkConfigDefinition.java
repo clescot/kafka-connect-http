@@ -21,7 +21,10 @@ public class WsSinkConfigDefinition {
     public static final String DEFAULT_RETRY_DELAY_FACTOR_DOC = "if set with other default retry parameters, permit to define a default retry policy, which can be overriden in the httpRequest object. Define the factor to multiply the previous delay to define the current retry delay";
     public static final String DEFAULT_RETRY_JITTER_IN_MS = "default.retry.jitter.in.ms";
     public static final String DEFAULT_RETRY_JITTER_IN_MS_DOC = "if set with other default retry parameters, permit to define a default retry policy, which can be overriden in the httpRequest object. Define max entropy to add, to prevent many retry policies instances with the same parameters, to flood servers at the same time";
-
+    public static final String GENERATE_MISSING_CORRELATION_ID = "generate.missing.correlation.id";
+    public static final String GENERATE_MISSING_CORRELATION_ID_DOC = "if not present in the HttpRequest headers, generate an UUID bound to the 'X-Correlation-ID' name";
+    public static final String GENERATE_MISSING_REQUEST_ID = "generate.missing.request.id";
+    public static final String GENERATE_MISSING_REQUEST_ID_DOC = "if not present in the HttpRequest headers, generate an UUID bound to the 'X-Request-ID' name";
 
     private WsSinkConfigDefinition() {
         //Class with only static methods
@@ -37,6 +40,8 @@ public class WsSinkConfigDefinition {
                 .define(DEFAULT_RETRY_MAX_DELAY_IN_MS, ConfigDef.Type.LONG, null, ConfigDef.Importance.MEDIUM, DEFAULT_RETRY_MAX_DELAY_IN_MS_DOC)
                 .define(DEFAULT_RETRY_DELAY_FACTOR, ConfigDef.Type.DOUBLE, null, ConfigDef.Importance.MEDIUM, DEFAULT_RETRY_DELAY_FACTOR_DOC)
                 .define(DEFAULT_RETRY_JITTER_IN_MS, ConfigDef.Type.LONG, null, ConfigDef.Importance.MEDIUM, DEFAULT_RETRY_JITTER_IN_MS_DOC)
+                .define(GENERATE_MISSING_CORRELATION_ID, ConfigDef.Type.BOOLEAN, false, ConfigDef.Importance.MEDIUM, GENERATE_MISSING_CORRELATION_ID_DOC)
+                .define(GENERATE_MISSING_REQUEST_ID, ConfigDef.Type.BOOLEAN, false, ConfigDef.Importance.MEDIUM, GENERATE_MISSING_REQUEST_ID_DOC)
                 ;
     }
 }

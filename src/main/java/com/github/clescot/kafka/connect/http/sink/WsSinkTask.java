@@ -3,18 +3,15 @@ package com.github.clescot.kafka.connect.http.sink;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import com.github.clescot.kafka.connect.http.HttpExchange;
 import com.github.clescot.kafka.connect.http.HttpRequest;
 import com.github.clescot.kafka.connect.http.QueueFactory;
 import com.github.clescot.kafka.connect.http.sink.client.HttpClient;
-import com.github.clescot.kafka.connect.http.sink.client.HttpException;
 import com.github.clescot.kafka.connect.http.sink.client.PropertyBasedASyncHttpClientConfig;
-import com.github.clescot.kafka.connect.http.HttpExchange;
 import com.google.common.base.Charsets;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
-import dev.failsafe.Policy;
-import dev.failsafe.RetryPolicy;
 import io.netty.buffer.ByteBufAllocator;
 import io.netty.buffer.PooledByteBufAllocator;
 import io.netty.util.HashedWheelTimer;
@@ -38,7 +35,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.lang.reflect.InvocationTargetException;
-import java.time.Duration;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -58,6 +54,9 @@ public class WsSinkTask extends SinkTask {
     private static final String BYTE_BUFFER_ALLOCATOR = ASYN_HTTP_CONFIG_PREFIX + "byte.buffer.allocator";
     private final static Logger LOGGER = LoggerFactory.getLogger(WsSinkTask.class);
     private final static ObjectMapper OBJECT_MAPPER = new ObjectMapper().registerModule(new JavaTimeModule());
+
+    public static final String HEADER_X_CORRELATION_ID = "X-Correlation-ID";
+    public static final String HEADER_X_REQUEST_ID = "X-Request-ID";
     private HttpClient httpClient;
     private Queue<HttpExchange> queue;
     private String queueName;
@@ -66,7 +65,8 @@ public class WsSinkTask extends SinkTask {
     private Map<String, List<String>> staticRequestHeaders;
     private WsSinkConnectorConfig wsSinkConnectorConfig;
     private ErrantRecordReporter errantRecordReporter;
-    private Policy defaultRetryPolicy;
+    private boolean generateMissingCorrelationId;
+    private boolean generateMissingRequestId;
 
     @Override
     public String version() {
@@ -98,6 +98,9 @@ public class WsSinkTask extends SinkTask {
         this.queueName = wsSinkConnectorConfig.getQueueName();
         this.queue = QueueFactory.getQueue(queueName);
         this.staticRequestHeaders = wsSinkConnectorConfig.getStaticRequestHeaders();
+        this.generateMissingRequestId = wsSinkConnectorConfig.isGenerateMissingRequestId();
+        this.generateMissingCorrelationId = wsSinkConnectorConfig.isGenerateMissingCorrelationId();
+
         this.httpClient = new HttpClient(getAsyncHttpClient(wsSinkConnectorConfig.originalsStrings()));
         Optional<Integer> defaultRetries = Optional.ofNullable(wsSinkConnectorConfig.getDefaultRetries());
         Optional<Long> defaultRetryDelayInMs = Optional.ofNullable(wsSinkConnectorConfig.getDefaultRetryDelayInMs());
@@ -211,6 +214,7 @@ public class WsSinkTask extends SinkTask {
         records.stream()
                 .map(this::buildHttpRequest)
                 .map(this::addStaticHeaders)
+                .map(this::addTrackingHeaders)
                 .map(httpClient::call)
                 .peek(httpExchange -> LOGGER.debug("HTTP exchange :{}", httpExchange))
                 .forEach(httpExchange -> {
@@ -222,6 +226,26 @@ public class WsSinkTask extends SinkTask {
                             }
                         }
                 );
+    }
+
+    private  HttpRequest addTrackingHeaders(HttpRequest httpRequest) {
+        Map<String, List<String>> headers = httpRequest.getHeaders();
+
+        //we generate an 'X-Request-ID' header if not present
+        Optional<List<String>> requestId = Optional.ofNullable(httpRequest.getHeaders().get(HEADER_X_REQUEST_ID));
+        if(requestId.isEmpty()&&this.generateMissingRequestId){
+            requestId = Optional.of(Lists.newArrayList(UUID.randomUUID().toString()));
+        }
+        requestId.ifPresent(reqId -> headers.put(HEADER_X_REQUEST_ID, Lists.newArrayList(reqId)));
+
+        //we generate an 'X-Correlation-ID' header if not present
+        Optional<List<String>> correlationId = Optional.ofNullable(httpRequest.getHeaders().get(HEADER_X_CORRELATION_ID));
+        if(correlationId.isEmpty()&&this.generateMissingCorrelationId){
+            correlationId = Optional.of(Lists.newArrayList(UUID.randomUUID().toString()));
+        }
+        correlationId.ifPresent(corrId -> headers.put(HEADER_X_CORRELATION_ID, Lists.newArrayList(corrId)));
+
+        return httpRequest;
     }
 
     private HttpRequest buildHttpRequest(SinkRecord sinkRecord) {

@@ -196,7 +196,13 @@ public class ITConnectorTest {
     @Test
     public void sink_and_source_with_input_as_string(WireMockRuntimeInfo wmRuntimeInfo) throws JSONException, JsonProcessingException {
         //register connectors
-        configureSinkConnector("http-sink-connector-message-as-string",PUBLISH_TO_IN_MEMORY_QUEUE_OK, HTTP_REQUESTS_AS_STRING, "org.apache.kafka.connect.storage.StringConverter");
+        configureSinkConnector("http-sink-connector-message-as-string",
+                PUBLISH_TO_IN_MEMORY_QUEUE_OK,
+                HTTP_REQUESTS_AS_STRING,
+                "org.apache.kafka.connect.storage.StringConverter",
+                new AbstractMap.SimpleImmutableEntry<>("generate.missing.request.id","true"),
+                new AbstractMap.SimpleImmutableEntry<>("generate.missing.correlation.id","true")
+        );
         configureSourceConnector("http-source-connector");
         List<String> registeredConnectors = connectContainer.getRegisteredConnectors();
         String joinedRegisteredConnectors = Joiner.on(",").join(registeredConnectors);
@@ -254,8 +260,6 @@ public class ITConnectorTest {
                 "  \"moment\": \"2022-11-10T17:19:42.740852Z\",\n" +
                 "  \"attempts\": 1,\n" +
                 "  \"request\": {\n" +
-                "    \"requestId\": null,\n" +
-                "    \"correlationId\": null,\n" +
                 "    \"timeoutInMs\": null,\n" +
                 "    \"retries\": null,\n" +
                 "    \"retryDelayInMs\": null,\n" +
@@ -305,7 +309,9 @@ public class ITConnectorTest {
                 PUBLISH_TO_IN_MEMORY_QUEUE_OK,
                 HTTP_REQUESTS_AS_STRUCT_WITH_REGISTRY,
                 "io.confluent.connect.json.JsonSchemaConverter",
-                new AbstractMap.SimpleImmutableEntry("value.converter.schema.registry.url",internalSchemaRegistryUrl)
+                new AbstractMap.SimpleImmutableEntry<>("value.converter.schema.registry.url",internalSchemaRegistryUrl),
+                new AbstractMap.SimpleImmutableEntry<>("generate.missing.request.id","true"),
+                new AbstractMap.SimpleImmutableEntry<>("generate.missing.correlation.id","true")
         );
         configureSourceConnector("http-source-connector");
         List<String> registeredConnectors = connectContainer.getRegisteredConnectors();
@@ -369,8 +375,6 @@ public class ITConnectorTest {
                 "  \"moment\": \"2022-11-10T17:19:42.740852Z\",\n" +
                 "  \"attempts\": 1,\n" +
                 "  \"request\": {\n" +
-                "    \"requestId\": null,\n" +
-                "    \"correlationId\": null,\n" +
                 "    \"timeoutInMs\": null,\n" +
                 "    \"retries\": null,\n" +
                 "    \"retryDelayInMs\": null,\n" +

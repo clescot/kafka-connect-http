@@ -22,28 +22,6 @@ import java.util.Objects;
         "  \"additionalProperties\": false,\n" +
         "  \"required\": [\"url\",\"method\"],\n" +
         "  \"properties\": {\n" +
-        "    \"requestId\": {\n" +
-        "      \"oneOf\": [\n" +
-        "        {\n" +
-        "          \"type\": \"null\",\n" +
-        "          \"title\": \"Not included\"\n" +
-        "        },\n" +
-        "        {\n" +
-        "          \"type\": \"string\"\n" +
-        "        }\n" +
-        "      ]\n" +
-        "    },\n" +
-        "    \"correlationId\": {\n" +
-        "      \"oneOf\": [\n" +
-        "        {\n" +
-        "          \"type\": \"null\",\n" +
-        "          \"title\": \"Not included\"\n" +
-        "        },\n" +
-        "        {\n" +
-        "          \"type\": \"string\"\n" +
-        "        }\n" +
-        "      ]\n" +
-        "    },\n" +
         "    \"timeoutInMs\": {\n" +
         "      \"oneOf\": [\n" +
         "        {\n" +
@@ -188,8 +166,6 @@ import java.util.Objects;
 public class HttpRequest {
 
 
-    public static final String REQUEST_ID = "requestId";
-    public static final String CORRELATION_ID = "correlationId";
     public static final String TIMEOUT_IN_MS = "timeoutInMs";
 
     public static final String RETRIES = "retries";
@@ -210,13 +186,6 @@ public class HttpRequest {
 
     private final static Logger LOGGER = LoggerFactory.getLogger(HttpRequest.class);
 
-    //metadata
-    @JsonProperty
-    private String requestId;
-    @JsonProperty
-    private String correlationId;
-
-    //connection
     @JsonProperty
     private Long timeoutInMs;
 
@@ -255,8 +224,6 @@ public class HttpRequest {
             .name(HttpRequest.class.getName())
             .version(VERSION)
             //meta-data outside of the request
-            .field(REQUEST_ID, Schema.OPTIONAL_STRING_SCHEMA)
-            .field(CORRELATION_ID, Schema.OPTIONAL_STRING_SCHEMA)
             //connection (override the default one set in the Sink Connector)
             .field(TIMEOUT_IN_MS, Schema.OPTIONAL_INT64_SCHEMA)
             //retry policy (override the default one set in the Sink Connector)
@@ -331,22 +298,6 @@ public class HttpRequest {
 
     public void setBodyType(BodyType bodyType) {
         this.bodyType = bodyType;
-    }
-
-    public String getRequestId() {
-        return requestId;
-    }
-
-    public void setRequestId(String requestId) {
-        this.requestId = requestId;
-    }
-
-    public String getCorrelationId() {
-        return correlationId;
-    }
-
-    public void setCorrelationId(String correlationId) {
-        this.correlationId = correlationId;
     }
 
     public Long getTimeoutInMs() {
@@ -438,19 +389,17 @@ public class HttpRequest {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         HttpRequest that = (HttpRequest) o;
-        return Objects.equals(requestId, that.requestId) && Objects.equals(correlationId, that.correlationId) && Objects.equals(timeoutInMs, that.timeoutInMs) && Objects.equals(retries, that.retries) && Objects.equals(retryDelayInMs, that.retryDelayInMs) && Objects.equals(retryMaxDelayInMs, that.retryMaxDelayInMs) && Objects.equals(retryDelayFactor, that.retryDelayFactor) && Objects.equals(retryJitter, that.retryJitter) && url.equals(that.url) && Objects.equals(headers, that.headers) && method.equals(that.method) && Objects.equals(bodyAsString, that.bodyAsString) && Objects.equals(bodyAsByteArray, that.bodyAsByteArray) && Objects.equals(bodyAsMultipart, that.bodyAsMultipart) && bodyType == that.bodyType;
+        return Objects.equals(timeoutInMs, that.timeoutInMs) && Objects.equals(retries, that.retries) && Objects.equals(retryDelayInMs, that.retryDelayInMs) && Objects.equals(retryMaxDelayInMs, that.retryMaxDelayInMs) && Objects.equals(retryDelayFactor, that.retryDelayFactor) && Objects.equals(retryJitter, that.retryJitter) && url.equals(that.url) && Objects.equals(headers, that.headers) && method.equals(that.method) && Objects.equals(bodyAsString, that.bodyAsString) && Objects.equals(bodyAsByteArray, that.bodyAsByteArray) && Objects.equals(bodyAsMultipart, that.bodyAsMultipart) && bodyType == that.bodyType;
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(requestId, correlationId, timeoutInMs, retries, retryDelayInMs, retryMaxDelayInMs, retryDelayFactor, retryJitter, url, headers, method, bodyAsString, bodyAsByteArray, bodyAsMultipart, bodyType);
+        return Objects.hash(timeoutInMs, retries, retryDelayInMs, retryMaxDelayInMs, retryDelayFactor, retryJitter, url, headers, method, bodyAsString, bodyAsByteArray, bodyAsMultipart, bodyType);
     }
 
     @Override
     public String toString() {
         return "HttpRequest{" +
-                "requestId='" + requestId + '\'' +
-                ", correlationId='" + correlationId + '\'' +
                 ", timeoutInMs=" + timeoutInMs +
                 ", retries=" + retries +
                 ", retryDelayInMs=" + retryDelayInMs +
@@ -469,8 +418,6 @@ public class HttpRequest {
 
     public Struct toStruct() {
         return  new Struct(SCHEMA)
-                        .put(REQUEST_ID, requestId)
-                        .put(CORRELATION_ID, correlationId)
                         .put(TIMEOUT_IN_MS, timeoutInMs)
                         .put(RETRIES, retries)
                         .put(RETRY_DELAY_IN_MS, retryDelayInMs)
@@ -525,9 +472,6 @@ public class HttpRequest {
             this.byteArrayBody = Base64.getDecoder().decode(struct.getString(BODY_AS_BYTE_ARRAY));
             this.multipartBody = struct.getArray(BODY_AS_MULTIPART);
 
-            //metadata
-            this.requestId = struct.getString(REQUEST_ID);
-            this.correlationId = struct.getString(CORRELATION_ID);
             //connection
             this.timeoutInMs = struct.getInt64(TIMEOUT_IN_MS);
             //retry policy
@@ -553,9 +497,6 @@ public class HttpRequest {
             );
 
             httpRequest.setHeaders(headers);
-            httpRequest.setRequestId(requestId);
-            httpRequest.setCorrelationId(correlationId);
-
 
             httpRequest.setTimeoutInMs(timeoutInMs);
 
