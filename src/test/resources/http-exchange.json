@@ -127,28 +127,6 @@
       "type": "object",
       "additionalProperties": false,
       "properties": {
-        "requestId": {
-          "oneOf": [
-            {
-              "type": "null",
-              "title": "Not included"
-            },
-            {
-              "type": "string"
-            }
-          ]
-        },
-        "correlationId": {
-          "oneOf": [
-            {
-              "type": "null",
-              "title": "Not included"
-            },
-            {
-              "type": "string"
-            }
-          ]
-        },
         "timeoutInMs": {
           "oneOf": [
             {
