@@ -13,6 +13,13 @@ jobs:
       packages: write
     steps:
       - uses: actions/checkout@v3
+      - name: Cache local Maven repository
+        uses: actions/cache@v3
+        with:
+          path: ~/.m2/repository
+          key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
+          restore-keys: |
+            ${{ runner.os }}-maven-
       - uses: actions/setup-java@v3
         with:
           java-version: '11'
@@ -46,6 +53,6 @@ jobs:
           min-versions-to-keep: 10
           delete-only-pre-release-versions: "true"
       - name: Publish JAR
-        run: ./mvnw -B release:prepare release:perform
+        run: ./mvn -B release:prepare release:perform
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
