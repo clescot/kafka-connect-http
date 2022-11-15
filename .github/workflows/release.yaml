@@ -53,6 +53,6 @@ jobs:
           min-versions-to-keep: 10
           delete-only-pre-release-versions: "true"
       - name: Publish JAR
-        run: ./mvn -B release:prepare release:perform
+        run: mvn -B release:prepare release:perform
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
