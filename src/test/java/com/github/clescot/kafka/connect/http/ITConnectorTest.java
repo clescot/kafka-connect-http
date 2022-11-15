@@ -14,9 +14,7 @@ import io.confluent.kafka.schemaregistry.avro.AvroSchemaProvider;
 import io.confluent.kafka.schemaregistry.client.CachedSchemaRegistryClient;
 import io.confluent.kafka.schemaregistry.client.SchemaRegistryClient;
 import io.confluent.kafka.schemaregistry.client.rest.exceptions.RestClientException;
-import io.confluent.kafka.schemaregistry.json.JsonSchema;
 import io.confluent.kafka.schemaregistry.json.JsonSchemaProvider;
-import io.confluent.kafka.schemaregistry.json.JsonSchemaUtils;
 import io.confluent.kafka.serializers.json.KafkaJsonSchemaDeserializer;
 import io.confluent.kafka.serializers.json.KafkaJsonSchemaSerializer;
 import io.debezium.testing.testcontainers.Connector;
@@ -83,6 +81,7 @@ public class ITConnectorTest {
     public static final String HTTP_REQUESTS_AS_STRING = "http-requests-string";
     public static final String HTTP_REQUESTS_AS_STRUCT_WITH_REGISTRY = "http-requests-struct-with-registry";
     public static final String HTTP_REQUESTS_AS_STRUCT_WITHOUT_REGISTRY = "http-requests-struct-without-registry";
+    public static final boolean PUBLISH_TO_IN_MEMORY_QUEUE_OK = true;
     private static Network network = Network.newNetwork();
     private static final ObjectMapper MAPPER = new ObjectMapper().registerModule(new JavaTimeModule());
     @Container
@@ -197,7 +196,13 @@ public class ITConnectorTest {
     @Test
     public void sink_and_source_with_input_as_string(WireMockRuntimeInfo wmRuntimeInfo) throws JSONException, JsonProcessingException {
         //register connectors
-        configureSinkConnector("http-sink-connector-message-as-string",true, HTTP_REQUESTS_AS_STRING, "org.apache.kafka.connect.storage.StringConverter");
+        configureSinkConnector("http-sink-connector-message-as-string",
+                PUBLISH_TO_IN_MEMORY_QUEUE_OK,
+                HTTP_REQUESTS_AS_STRING,
+                "org.apache.kafka.connect.storage.StringConverter",
+                new AbstractMap.SimpleImmutableEntry<>("generate.missing.request.id","true"),
+                new AbstractMap.SimpleImmutableEntry<>("generate.missing.correlation.id","true")
+        );
         configureSourceConnector("http-source-connector");
         List<String> registeredConnectors = connectContainer.getRegisteredConnectors();
         String joinedRegisteredConnectors = Joiner.on(",").join(registeredConnectors);
@@ -224,7 +229,7 @@ public class ITConnectorTest {
         String url = baseUrl + "/ping";
         LOGGER.info("url:{}", url);
         HashMap<String, List<String>> headers = Maps.newHashMap();
-        headers.put("header-X-Correlation-ID",Lists.newArrayList("e6de70d1-f222-46e8-b755-754880687822"));
+        headers.put("X-Correlation-ID",Lists.newArrayList("e6de70d1-f222-46e8-b755-754880687822"));
         headers.put("X-Request-ID",Lists.newArrayList("e6de70d1-f222-46e8-b755-11111"));
         HttpRequest httpRequest = new HttpRequest(
                 url,
@@ -255,8 +260,6 @@ public class ITConnectorTest {
                 "  \"moment\": \"2022-11-10T17:19:42.740852Z\",\n" +
                 "  \"attempts\": 1,\n" +
                 "  \"request\": {\n" +
-                "    \"requestId\": null,\n" +
-                "    \"correlationId\": null,\n" +
                 "    \"timeoutInMs\": null,\n" +
                 "    \"retries\": null,\n" +
                 "    \"retryDelayInMs\": null,\n" +
@@ -264,7 +267,7 @@ public class ITConnectorTest {
                 "    \"retryDelayFactor\": null,\n" +
                 "    \"retryJitter\": null,\n" +
                 "    \"headers\": {\n" +
-                "      \"header-X-Correlation-ID\": [\n" +
+                "      \"X-Correlation-ID\": [\n" +
                 "        \"e6de70d1-f222-46e8-b755-754880687822\"\n" +
                 "      ],\n" +
                 "      \"X-Request-ID\": [\n" +
@@ -303,10 +306,12 @@ public class ITConnectorTest {
     public void sink_and_source_with_input_as_struct_and_schema_registry(WireMockRuntimeInfo wmRuntimeInfo) throws JSONException, IOException, RestClientException {
         //register connectors
         configureSinkConnector("http-sink-connector-message-as-struct-and-registry",
-                true,
+                PUBLISH_TO_IN_MEMORY_QUEUE_OK,
                 HTTP_REQUESTS_AS_STRUCT_WITH_REGISTRY,
                 "io.confluent.connect.json.JsonSchemaConverter",
-                new AbstractMap.SimpleImmutableEntry("value.converter.schema.registry.url",internalSchemaRegistryUrl)
+                new AbstractMap.SimpleImmutableEntry<>("value.converter.schema.registry.url",internalSchemaRegistryUrl),
+                new AbstractMap.SimpleImmutableEntry<>("generate.missing.request.id","true"),
+                new AbstractMap.SimpleImmutableEntry<>("generate.missing.correlation.id","true")
         );
         configureSourceConnector("http-source-connector");
         List<String> registeredConnectors = connectContainer.getRegisteredConnectors();
@@ -338,7 +343,7 @@ public class ITConnectorTest {
         String url = baseUrl + "/ping";
         LOGGER.info("url:{}", url);
         HashMap<String, List<String>> headers = Maps.newHashMap();
-        headers.put("header-X-Correlation-ID",Lists.newArrayList("e6de70d1-f222-46e8-b755-754880687822"));
+        headers.put("X-Correlation-ID",Lists.newArrayList("e6de70d1-f222-46e8-b755-754880687822"));
         headers.put("X-Request-ID",Lists.newArrayList("e6de70d1-f222-46e8-b755-11111"));
         HttpRequest httpRequest = new HttpRequest(
                 url,
@@ -370,8 +375,6 @@ public class ITConnectorTest {
                 "  \"moment\": \"2022-11-10T17:19:42.740852Z\",\n" +
                 "  \"attempts\": 1,\n" +
                 "  \"request\": {\n" +
-                "    \"requestId\": null,\n" +
-                "    \"correlationId\": null,\n" +
                 "    \"timeoutInMs\": null,\n" +
                 "    \"retries\": null,\n" +
                 "    \"retryDelayInMs\": null,\n" +
@@ -379,7 +382,7 @@ public class ITConnectorTest {
                 "    \"retryDelayFactor\": null,\n" +
                 "    \"retryJitter\": null,\n" +
                 "    \"headers\": {\n" +
-                "      \"header-X-Correlation-ID\": [\n" +
+                "      \"X-Correlation-ID\": [\n" +
                 "        \"e6de70d1-f222-46e8-b755-754880687822\"\n" +
                 "      ],\n" +
                 "      \"X-Request-ID\": [\n" +
@@ -397,7 +400,7 @@ public class ITConnectorTest {
                 "   \"statusCode\":200,\n" +
                 "  \"statusMessage\": \""+statusMessage+"\",\n" +
                 "  \"headers\": {" +
-                "\"Content-Type\":\"application/json\"" +
+                "\"Content-Type\":[\"application/json\"]" +
                 "},\n" +
                 "  \"body\": \""+escapedJsonResponse+"\"\n" +
                 "}"+
@@ -415,20 +418,6 @@ public class ITConnectorTest {
         assertThat(consumerRecord.headers().toArray()).isEmpty();
 
     }
-
-    //struct with schema registry
-    //value.converter=io.confluent.connect.json.JsonSchemaConverter
-    //value.converter.schema.registry.url=http://localhost:8081
-
-    //plain string
-
-    //for JSON with embedded schema
-    //value.converter=org.apache.kafka.connect.json.JsonConverter
-    //value.converter.schemas.enable=true
-
-    //JSON as string without schema
-    //value.converter=org.apache.kafka.connect.json.JsonConverter
-    //value.converter.schemas.enable=false
 
 
     private KafkaProducer<String, String> getStringProducer(

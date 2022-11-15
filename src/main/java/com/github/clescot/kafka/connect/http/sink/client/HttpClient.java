@@ -1,7 +1,7 @@
 package com.github.clescot.kafka.connect.http.sink.client;
 
-import com.github.clescot.kafka.connect.http.HttpRequest;
 import com.github.clescot.kafka.connect.http.HttpExchange;
+import com.github.clescot.kafka.connect.http.HttpRequest;
 import com.github.clescot.kafka.connect.http.HttpResponse;
 import com.google.common.base.Preconditions;
 import com.google.common.base.Stopwatch;
@@ -19,10 +19,10 @@ import java.nio.charset.Charset;
 import java.time.Duration;
 import java.time.OffsetDateTime;
 import java.time.ZoneId;
+import java.util.AbstractMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.UUID;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -34,10 +34,8 @@ public class HttpClient {
 
     private final static Logger LOGGER = LoggerFactory.getLogger(HttpClient.class);
     public static final int SERVER_ERROR_STATUS_CODE = 500;
-    public static final String HEADER_PREFIX = "header-";
     public static final String PROXY_PREFIX = "proxy-";
     public static final String REALM_PREFIX = "realm-";
-    public static final String WS_PREFIX = "ws-";
     private static final String WS_PROXY_HOST = "host";
     private static final String WS_PROXY_PORT = "port";
     private static final String WS_PROXY_SECURED_PORT = "secured-port";
@@ -61,30 +59,20 @@ public class HttpClient {
     private static final String WS_REALM_AUTH_SCHEME = "auth-scheme";
     public static final String HTTP_PROXY_TYPE = "HTTP";
     public static final String UTF_8 = "UTF-8";
-    private static final String UNKNOWN_URI = "UNKNOWN_URI";
-    private static final String UNKNOWN_METHOD = "UNKNOWN_METHOD";
     public static final String UTC_ZONE_ID = "UTC";
     public static final boolean FAILURE = false;
     public static final boolean SUCCESS = true;
 
 
     private AsyncHttpClient asyncHttpClient;
-    public static final String BLANK_REQUEST_CONTENT = "";
+    private Optional<RetryPolicy<HttpExchange>> defaultRetryPolicy=Optional.empty();
     public static final String BLANK_RESPONSE_CONTENT = "";
-    public static final String WS_SUCCESS_CODE = "success-code";
+    public static final String X_SUCCESS_PATTERN = "X-Success-Pattern";
     public static final String WS_REQUEST_TIMEOUT_IN_MS = "request-timeout-in-ms";
     public static final String WS_READ_TIMEOUT_IN_MS = "read-timeout-in-ms";
     private static final String WS_REALM_PASS = "password";
-    public static final String WS_METHOD = "method";
-    public static final String HEADER_X_CORRELATION_ID = "header-X-Correlation-ID";
-    public static final String WS_URL = "url";
-    public static final String HEADER_X_REQUEST_ID = "header-X-Request-ID";
-    public static final String WS_RETRIES = "retries";
-    public static final String WS_RETRY_DELAY_IN_MS = "retry-delay-in-ms";
-    public static final String WS_RETRY_MAX_DELAY_IN_MS = "retry-max-delay-in-ms";
-    public static final String WS_RETRY_DELAY_FACTOR = "retry-delay-factor";
-    public static final String WS_RETRY_JITTER = "retry-jitter";
-    private final Map<String,Pattern> httpSuccessCodesPatterns = Maps.newHashMap();
+
+    private final Map<String, Pattern> httpSuccessCodesPatterns = Maps.newHashMap();
     private final HttpClientAsyncCompletionHandler asyncCompletionHandler = new HttpClientAsyncCompletionHandler();
 
     public HttpClient(AsyncHttpClient asyncHttpClient) {
@@ -111,50 +99,39 @@ public class HttpClient {
     public HttpExchange call(HttpRequest httpRequest) {
         HttpExchange httpExchange = null;
 
-        if(httpRequest!=null) {
-
-            //properties which was 'ws-key' in headerKafka and are now 'key' : 'ws-' prefix is removed
-            Map<String, List<String>> wsProperties = extractWsProperties(httpRequest.getHeaders());
-
-            //we generate an X-Correlation-ID header if not present
-            String correlationId = Optional.ofNullable(httpRequest.getCorrelationId()).orElse(UUID.randomUUID().toString());
-            wsProperties.put(HEADER_X_CORRELATION_ID, Lists.newArrayList(correlationId));
-
-            //we generate a X-Request-ID header if not present
-            String requestId = Optional.ofNullable(httpRequest.getRequestId()).orElse(UUID.randomUUID().toString());
-            wsProperties.put(HEADER_X_REQUEST_ID, Lists.newArrayList(requestId));
-
-            //define RetryPolicy
-            Long retries = Optional.ofNullable(httpRequest.getRetries()).orElse(3L);
-            Long retryDelayInMs = Optional.ofNullable(httpRequest.getRetryDelayInMs()).orElse(500L);
-            Long retryMaxDelayInMs = Optional.ofNullable(httpRequest.getRetryMaxDelayInMs()).orElse(300000L);
-            Double retryDelayFactor = Optional.ofNullable(httpRequest.getRetryDelayFactor()).orElse(2d);
-            Long retryJitterInMs = Optional.ofNullable(httpRequest.getRetryJitter()).orElse(100L);
-            RetryPolicy<HttpExchange> retryPolicy = RetryPolicy.<HttpExchange>builder()
-                    //we retry only if the error comes from the WS server (server-side technical error)
-                    .handle(HttpException.class)
-                    .withBackoff(Duration.ofMillis(retryDelayInMs), Duration.ofMillis(retryMaxDelayInMs), retryDelayFactor)
-                    .withJitter(Duration.ofMillis(retryJitterInMs))
-                    .withMaxRetries(retries.intValue())
-                    .onRetry(listener -> LOGGER.warn("Retry ws call result:{}, failure:{}", listener.getLastResult(), listener.getLastException()))
-                    .onFailure(listener -> LOGGER.warn("ws call failed ! result:{},exception:{}", listener.getResult(), listener.getException()))
-                    .onAbort(listener -> LOGGER.warn("ws call aborted ! result:{},exception:{}", listener.getResult(), listener.getException()))
-                    .build();
+        if (httpRequest != null) {
 
 
-            Preconditions.checkNotNull(correlationId, "'correlationId' is required but null");
+
+            Optional<RetryPolicy<HttpExchange>> retryPolicyForCall = defaultRetryPolicy;
+            //define RetryPolicy in the request
+            Optional<Long> retries = Optional.ofNullable(httpRequest.getRetries());
+            Optional<Long> retryDelayInMs = Optional.ofNullable(httpRequest.getRetryDelayInMs());
+            Optional<Long> retryMaxDelayInMs = Optional.ofNullable(httpRequest.getRetryMaxDelayInMs());
+            Optional<Double> retryDelayFactor = Optional.ofNullable(httpRequest.getRetryDelayFactor());
+            Optional<Long> retryJitterInMs = Optional.ofNullable(httpRequest.getRetryJitter());
+            if (retries.isPresent()
+                    && retryDelayInMs.isPresent()
+                    && retryMaxDelayInMs.isPresent()
+                    && retryDelayFactor.isPresent()
+                    && retryJitterInMs.isPresent()) {
+                retryPolicyForCall = Optional.of(buildRetryPolicy(retries.get().intValue(), retryDelayInMs.get(), retryMaxDelayInMs.get(), retryDelayFactor.get(), retryJitterInMs.get()));
+            }
+
             AtomicInteger attempts = new AtomicInteger();
             try {
-                httpExchange = Failsafe.with(List.of(retryPolicy))
-                        .get(() -> {
-                            attempts.addAndGet(1);
-                            return callOnceWs(httpRequest, attempts);
-                        });
+                attempts.addAndGet(1);
+                if (retryPolicyForCall.isPresent()) {
+                    httpExchange = Failsafe.with(List.of(retryPolicyForCall.get()))
+                            .get(() -> callOnceWs(httpRequest, attempts));
+                } else {
+                    return callOnceWs(httpRequest, attempts);
+                }
             } catch (Throwable throwable) {
-                LOGGER.error("Failed to call web service after {} retries with error {} ", retries, throwable.getMessage());
+                LOGGER.error("Failed to call web service after {} retries with error {} ", attempts, throwable.getMessage());
                 return buildHttpExchange(
                         httpRequest,
-                        new HttpResponse(SERVER_ERROR_STATUS_CODE,String.valueOf(throwable.getMessage()),BLANK_RESPONSE_CONTENT),
+                        new HttpResponse(SERVER_ERROR_STATUS_CODE, String.valueOf(throwable.getMessage()), BLANK_RESPONSE_CONTENT),
                         Stopwatch.createUnstarted(), OffsetDateTime.now(ZoneId.of(UTC_ZONE_ID)),
                         attempts,
                         FAILURE);
@@ -163,20 +140,26 @@ public class HttpClient {
         return httpExchange;
     }
 
-    protected Map<String,  List<String>> extractWsProperties(Map<String,List<String>> headersKafka) {
-        Map<String, List<String>> wsProperties = Maps.newHashMap();
-        for (Map.Entry<String,List<String>> headerKafka : headersKafka.entrySet()) {
-            if(headerKafka.getKey().startsWith(WS_PREFIX)) {
-                wsProperties.put(headerKafka.getKey().substring(WS_PREFIX.length()), headerKafka.getValue());
-            }
-        }
-        return wsProperties;
+    private RetryPolicy<HttpExchange> buildRetryPolicy(Integer retries, Long retryDelayInMs, Long retryMaxDelayInMs, Double retryDelayFactor, Long retryJitterInMs) {
+        RetryPolicy<HttpExchange> retryPolicy = RetryPolicy.<HttpExchange>builder()
+                //we retry only if the error comes from the WS server (server-side technical error)
+                .handle(HttpException.class)
+                .withBackoff(Duration.ofMillis(retryDelayInMs), Duration.ofMillis(retryMaxDelayInMs), retryDelayFactor)
+                .withJitter(Duration.ofMillis(retryJitterInMs))
+                .withMaxRetries(retries)
+                .onRetry(listener -> LOGGER.warn("Retry ws call result:{}, failure:{}", listener.getLastResult(), listener.getLastException()))
+                .onFailure(listener -> LOGGER.warn("ws call failed ! result:{},exception:{}", listener.getResult(), listener.getException()))
+                .onAbort(listener -> LOGGER.warn("ws call aborted ! result:{},exception:{}", listener.getResult(), listener.getException()))
+                .build();
+        return retryPolicy;
     }
 
-    protected HttpExchange callOnceWs(HttpRequest httpRequest,AtomicInteger attempts) throws HttpException {
+
+    protected HttpExchange callOnceWs(HttpRequest httpRequest, AtomicInteger attempts) throws HttpException {
+        Pattern successPattern = getSuccessPattern(httpRequest);
         Request request = buildRequest(httpRequest);
-        LOGGER.info("request: {}",request.toString());
-        LOGGER.info("body: {}", request.getStringData()!=null?request.getStringData():"");
+        LOGGER.info("request: {}", request.toString());
+        LOGGER.info("body: {}", request.getStringData() != null ? request.getStringData() : "");
         Stopwatch stopwatch = Stopwatch.createStarted();
         try {
             OffsetDateTime now = OffsetDateTime.now(ZoneId.of(UTC_ZONE_ID));
@@ -185,25 +168,28 @@ public class HttpClient {
             Response response = responseListenableFuture.get();
             LOGGER.info("response: {}", response);
             stopwatch.stop();
-            HttpResponse httpResponse = buildResponse(httpRequest,response);
-            LOGGER.info("duration: {}",stopwatch);
-            return getHttpExchange(httpRequest,httpResponse,stopwatch, now,attempts);
+
+            HttpResponse httpResponse = buildResponse(response, successPattern);
+            LOGGER.info("duration: {}", stopwatch);
+            return getHttpExchange(httpRequest, httpResponse, stopwatch, now, attempts);
         } catch (HttpException | InterruptedException | ExecutionException e) {
             LOGGER.error("Failed to call web service {} ", e.getMessage());
             throw new HttpException(e.getMessage());
-        }finally {
-            if(stopwatch.isRunning()){
+        } finally {
+            if (stopwatch.isRunning()) {
                 stopwatch.stop();
             }
         }
 
     }
 
-    private HttpResponse buildResponse(HttpRequest httpRequest,Response response) {
-        int responseStatusCode = getSuccessfulStatusCodeOrThrowRetryException(httpRequest.getHeaders(), response.getStatusCode());
-        List<Map.Entry<String, String>> responseEntries = response.getHeaders()!=null?response.getHeaders().entries():Lists.newArrayList();
-        HttpResponse httpResponse = new HttpResponse(responseStatusCode,response.getStatusText(),response.getResponseBody());
-        Map<String, String> responseHeaders = responseEntries.stream().collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+    private HttpResponse buildResponse(Response response, Pattern successPattern) {
+        int responseStatusCode = getSuccessfulStatusCodeOrThrowRetryException(response.getStatusCode(), successPattern);
+        List<Map.Entry<String, String>> responseEntries = response.getHeaders() != null ? response.getHeaders().entries() : Lists.newArrayList();
+        HttpResponse httpResponse = new HttpResponse(responseStatusCode, response.getStatusText(), response.getResponseBody());
+        Map<String, List<String>> responseHeaders = responseEntries.stream()
+                .map(entry -> new AbstractMap.SimpleImmutableEntry<String, List<String>>(entry.getKey(), Lists.newArrayList(entry.getValue())))
+                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
         httpResponse.setResponseHeaders(responseHeaders);
         return httpResponse;
     }
@@ -223,7 +209,16 @@ public class HttpClient {
         );
     }
 
-    private int getSuccessfulStatusCodeOrThrowRetryException(Map<String,  List<String>> wsProperties, int responseStatusCode) {
+    private int getSuccessfulStatusCodeOrThrowRetryException(int responseStatusCode, Pattern pattern) {
+        Matcher matcher = pattern.matcher("" + responseStatusCode);
+
+        if (!matcher.matches() && responseStatusCode >= 500) {
+            throw new HttpException("response status code:" + responseStatusCode + " does not match status code success regex " + pattern.pattern());
+        }
+        return responseStatusCode;
+    }
+
+    private Pattern getSuccessPattern(HttpRequest httpRequest) {
         //by default, we don't resend any http call with a response between 100 and 499
         // 1xx is for protocol information (100 continue for example),
         // 2xx is for success,
@@ -231,42 +226,39 @@ public class HttpClient {
         //4xx is for a client error
         //5xx is for a server error
         //only 5xx by default, trigger a resend
+
+        /*
+         *  HTTP Server status code returned
+         *  3 cases can arise:
+         *  * a success occurs : the status code returned from the ws server is matching the regexp => no retries
+         *  * a functional error occurs: the status code returned from the ws server is not matching the regexp, but is lower than 500 => no retries
+         *  * a technical error occurs from the WS server : the status code returned from the ws server does not match the regexp AND is equals or higher than 500 : retries are done
+         */
         String wsSuccessCode = "^[1-4][0-9][0-9]$";
-        if (wsProperties.get(WS_SUCCESS_CODE) != null) {
-            wsSuccessCode = wsProperties.get(WS_SUCCESS_CODE).get(0);
+        if (httpRequest.getSuccessPattern() != null) {
+            wsSuccessCode = httpRequest.getSuccessPattern();
         }
-        if(this.httpSuccessCodesPatterns.get(wsSuccessCode)==null){
+        if (this.httpSuccessCodesPatterns.get(wsSuccessCode) == null) {
             //Pattern.compile should be reused for performance, but wsSuccessCode can change....
             Pattern httpSuccessPattern = Pattern.compile(wsSuccessCode);
-            httpSuccessCodesPatterns.put(wsSuccessCode,httpSuccessPattern);
+            httpSuccessCodesPatterns.put(wsSuccessCode, httpSuccessPattern);
         }
         Pattern pattern = httpSuccessCodesPatterns.get(wsSuccessCode);
-        Matcher matcher = pattern.matcher("" + responseStatusCode);
-        /*
-        *  WS Server status code returned
-        *  3 cases can arise:
-        *  * a success occurs : the status code returned from the ws server is matching the regexp => no retries
-        *  * a functional error occurs: the status code returned from the ws server is not matching the regexp, but is lower than 500 => no retries
-        *  * a technical error occurs from the WS server : the status code returned from the ws server does not match the regexp AND is equals or higher than 500 : retries are done
-        */
-        if(!matcher.matches()&& responseStatusCode >=500){
-            throw new HttpException("response status code:"+ responseStatusCode +" does not match status code success regex "+ pattern.pattern());
-        }
-        return responseStatusCode;
+        return pattern;
     }
 
 
     protected Request buildRequest(HttpRequest httpRequest) {
-        Preconditions.checkNotNull(httpRequest,"'httpRequest' is required but null");
-        Preconditions.checkNotNull(httpRequest.getHeaders(),"'headers' are required but null");
-        Preconditions.checkNotNull(httpRequest.getBodyAsString(),"'body' is required but null");
+        Preconditions.checkNotNull(httpRequest, "'httpRequest' is required but null");
+        Preconditions.checkNotNull(httpRequest.getHeaders(), "'headers' are required but null");
+        Preconditions.checkNotNull(httpRequest.getBodyAsString(), "'body' is required but null");
         String url = httpRequest.getUrl();
-        Preconditions.checkNotNull(url,"'url' is required but null");
+        Preconditions.checkNotNull(url, "'url' is required but null");
         String method = httpRequest.getMethod();
-        Preconditions.checkNotNull(method,"'method' is required but null");
+        Preconditions.checkNotNull(method, "'method' is required but null");
 
         //extract http headers
-        Map<String, List<String>> httpHeaders =httpRequest.getHeaders();
+        Map<String, List<String>> httpHeaders = httpRequest.getHeaders();
 
         RequestBuilder requestBuilder = new RequestBuilder()
                 .setUrl(url)
@@ -277,14 +269,14 @@ public class HttpClient {
         //extract proxy headers
         Map<String, String> proxyHeaders = Maps.newHashMap();
         httpHeaders.entrySet().stream().filter(entry -> entry.getKey().startsWith(PROXY_PREFIX))
-                .forEach(entry-> proxyHeaders.put(entry.getKey().substring(PROXY_PREFIX.length()), entry.getValue().get(0)));
+                .forEach(entry -> proxyHeaders.put(entry.getKey().substring(PROXY_PREFIX.length()), entry.getValue().get(0)));
 
         defineProxyServer(requestBuilder, proxyHeaders);
 
         //extract proxy headers
         Map<String, String> realmHeaders = Maps.newHashMap();
         httpHeaders.entrySet().stream().filter(entry -> entry.getKey().startsWith(PROXY_PREFIX))
-                .forEach(entry-> realmHeaders.put(entry.getKey().substring(REALM_PREFIX.length()), entry.getValue().get(0)));
+                .forEach(entry -> realmHeaders.put(entry.getKey().substring(REALM_PREFIX.length()), entry.getValue().get(0)));
 
         defineRealm(requestBuilder, proxyHeaders);
         //retry stuff
@@ -305,7 +297,7 @@ public class HttpClient {
     private void defineProxyServer(RequestBuilder requestBuilder, Map<String, String> proxyHeaders) {
         //proxy stuff
         String proxyHost = proxyHeaders.get(WS_PROXY_HOST);
-        if(proxyHost!=null) {
+        if (proxyHost != null) {
             int proxyPort = Integer.parseInt(proxyHeaders.get(WS_PROXY_PORT));
             ProxyServer.Builder proxyBuilder = new ProxyServer.Builder(proxyHost, proxyPort);
 
@@ -330,9 +322,9 @@ public class HttpClient {
     private void defineRealm(RequestBuilder requestBuilder, Map<String, String> realmHeaders) {
         String principals = realmHeaders.get(WS_REALM_PRINCIPAL_NAME);
         String passwords = realmHeaders.get(WS_REALM_PASS);
-        if(isNotNullOrEmpty(principals)
-        && isNotNullOrEmpty(passwords)){
-            Realm.Builder realmBuilder = new Realm.Builder(principals,passwords);
+        if (isNotNullOrEmpty(principals)
+                && isNotNullOrEmpty(passwords)) {
+            Realm.Builder realmBuilder = new Realm.Builder(principals, passwords);
 
             realmBuilder.setAlgorithm(realmHeaders.get(WS_REALM_ALGORITHM));
 
@@ -341,7 +333,7 @@ public class HttpClient {
             realmBuilder.setLoginContextName(realmHeaders.get(WS_REALM_LOGIN_CONTEXT_NAME));
 
             String authSchemeAsString = realmHeaders.get(WS_REALM_AUTH_SCHEME);
-            Realm.AuthScheme authScheme =authSchemeAsString!=null?Realm.AuthScheme.valueOf(authSchemeAsString):null;
+            Realm.AuthScheme authScheme = authSchemeAsString != null ? Realm.AuthScheme.valueOf(authSchemeAsString) : null;
 
             realmBuilder.setScheme(authScheme);
 
@@ -371,8 +363,8 @@ public class HttpClient {
         }
     }
 
-    private boolean isNotNullOrEmpty(String field){
-        return field!=null && !field.isEmpty();
+    private boolean isNotNullOrEmpty(String field) {
+        return field != null && !field.isEmpty();
     }
 
 
@@ -382,7 +374,7 @@ public class HttpClient {
                                              OffsetDateTime now,
                                              AtomicInteger attempts,
                                              boolean success) {
-        Preconditions.checkNotNull(httpRequest,"'httpRequest' is null");
+        Preconditions.checkNotNull(httpRequest, "'httpRequest' is null");
         return HttpExchange.Builder.anHttpExchange()
                 //request
                 .withHttpRequest(httpRequest)
@@ -400,5 +392,9 @@ public class HttpClient {
 
     protected void setAsyncHttpClient(AsyncHttpClient asyncHttpClient) {
         this.asyncHttpClient = asyncHttpClient;
+    }
+
+    public void setDefaultRetryPolicy(Integer retries,Long retryDelayInMs,Long retryMaxDelayInMs,Double retryDelayFactor,Long retryJitterInMs) {
+        this.defaultRetryPolicy = Optional.of(buildRetryPolicy(retries,retryDelayInMs,retryMaxDelayInMs,retryDelayFactor,retryJitterInMs));
     }
 }

@@ -3,11 +3,11 @@ package com.github.clescot.kafka.connect.http.sink;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import com.github.clescot.kafka.connect.http.HttpExchange;
 import com.github.clescot.kafka.connect.http.HttpRequest;
 import com.github.clescot.kafka.connect.http.QueueFactory;
 import com.github.clescot.kafka.connect.http.sink.client.HttpClient;
 import com.github.clescot.kafka.connect.http.sink.client.PropertyBasedASyncHttpClientConfig;
-import com.github.clescot.kafka.connect.http.HttpExchange;
 import com.google.common.base.Charsets;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
@@ -54,15 +54,19 @@ public class WsSinkTask extends SinkTask {
     private static final String BYTE_BUFFER_ALLOCATOR = ASYN_HTTP_CONFIG_PREFIX + "byte.buffer.allocator";
     private final static Logger LOGGER = LoggerFactory.getLogger(WsSinkTask.class);
     private final static ObjectMapper OBJECT_MAPPER = new ObjectMapper().registerModule(new JavaTimeModule());
+
+    public static final String HEADER_X_CORRELATION_ID = "X-Correlation-ID";
+    public static final String HEADER_X_REQUEST_ID = "X-Request-ID";
     private HttpClient httpClient;
     private Queue<HttpExchange> queue;
     private String queueName;
 
     private static AsyncHttpClient asyncHttpClient;
-    private Map<String,List<String>> staticRequestHeaders;
+    private Map<String, List<String>> staticRequestHeaders;
     private WsSinkConnectorConfig wsSinkConnectorConfig;
     private ErrantRecordReporter errantRecordReporter;
-
+    private boolean generateMissingCorrelationId;
+    private boolean generateMissingRequestId;
 
     @Override
     public String version() {
@@ -89,11 +93,28 @@ public class WsSinkTask extends SinkTask {
             errantRecordReporter = null;
         }
 
-        this.wsSinkConnectorConfig = new WsSinkConnectorConfig(WsSinkConfigDefinition.config(),settings);
-        this.httpClient = new HttpClient(getAsyncHttpClient(wsSinkConnectorConfig.originalsStrings()));
+        this.wsSinkConnectorConfig = new WsSinkConnectorConfig(WsSinkConfigDefinition.config(), settings);
+
         this.queueName = wsSinkConnectorConfig.getQueueName();
         this.queue = QueueFactory.getQueue(queueName);
         this.staticRequestHeaders = wsSinkConnectorConfig.getStaticRequestHeaders();
+        this.generateMissingRequestId = wsSinkConnectorConfig.isGenerateMissingRequestId();
+        this.generateMissingCorrelationId = wsSinkConnectorConfig.isGenerateMissingCorrelationId();
+
+        this.httpClient = new HttpClient(getAsyncHttpClient(wsSinkConnectorConfig.originalsStrings()));
+        Optional<Integer> defaultRetries = Optional.ofNullable(wsSinkConnectorConfig.getDefaultRetries());
+        Optional<Long> defaultRetryDelayInMs = Optional.ofNullable(wsSinkConnectorConfig.getDefaultRetryDelayInMs());
+        Optional<Long> defaultRetryMaxDelayInMs = Optional.ofNullable(wsSinkConnectorConfig.getDefaultRetryMaxDelayInMs());
+        Optional<Double> defaultRetryDelayFactor = Optional.ofNullable(wsSinkConnectorConfig.getDefaultRetryDelayFactor());
+        Optional<Long> defaultRetryJitterInMs = Optional.ofNullable(wsSinkConnectorConfig.getDefaultRetryJitterInMs());
+        if (defaultRetries.isPresent()
+                && defaultRetryDelayInMs.isPresent()
+                && defaultRetryMaxDelayInMs.isPresent()
+                && defaultRetryDelayFactor.isPresent()
+                && defaultRetryJitterInMs.isPresent()) {
+           httpClient.setDefaultRetryPolicy(defaultRetries.get(),defaultRetryDelayInMs.get(),defaultRetryMaxDelayInMs.get(),defaultRetryDelayFactor.get(),defaultRetryJitterInMs.get());
+        }
+
 
     }
 
@@ -183,30 +204,51 @@ public class WsSinkTask extends SinkTask {
     public void put(Collection<SinkRecord> records) {
 
         Preconditions.checkNotNull(records, "records collection to be processed is null");
-        if(records.isEmpty()){
+        if (records.isEmpty()) {
             return;
         }
         Preconditions.checkNotNull(httpClient, "httpClient is null. 'start' method must be called once before put");
-        if(wsSinkConnectorConfig.isPublishToInMemoryQueue()) {
+        if (wsSinkConnectorConfig.isPublishToInMemoryQueue()) {
             Preconditions.checkArgument(QueueFactory.hasAConsumer(queueName), "'" + queueName + "' queue hasn't got any consumer, i.e no Source Connector has been configured to consume records published in this in memory queue. we stop the Sink Connector to prevent any OutofMemoryError.");
         }
         records.stream()
                 .map(this::buildHttpRequest)
                 .map(this::addStaticHeaders)
+                .map(this::addTrackingHeaders)
                 .map(httpClient::call)
-                .peek(httpExchange->LOGGER.debug("HTTP exchange :{}",httpExchange))
+                .peek(httpExchange -> LOGGER.debug("HTTP exchange :{}", httpExchange))
                 .forEach(httpExchange -> {
-                    if(wsSinkConnectorConfig.isPublishToInMemoryQueue() && httpExchange!=null) {
-                        LOGGER.debug("http exchange published to queue :{}",httpExchange);
-                        queue.offer(httpExchange);
-                    }else{
-                        LOGGER.debug("http exchange NOT published to queue :{}",httpExchange);
-                    }
-                }
+                            if (wsSinkConnectorConfig.isPublishToInMemoryQueue() && httpExchange != null) {
+                                LOGGER.debug("http exchange published to queue :{}", httpExchange);
+                                queue.offer(httpExchange);
+                            } else {
+                                LOGGER.debug("http exchange NOT published to queue :{}", httpExchange);
+                            }
+                        }
                 );
     }
 
-    private HttpRequest buildHttpRequest(SinkRecord sinkRecord){
+    private  HttpRequest addTrackingHeaders(HttpRequest httpRequest) {
+        Map<String, List<String>> headers = httpRequest.getHeaders();
+
+        //we generate an 'X-Request-ID' header if not present
+        Optional<List<String>> requestId = Optional.ofNullable(httpRequest.getHeaders().get(HEADER_X_REQUEST_ID));
+        if(requestId.isEmpty()&&this.generateMissingRequestId){
+            requestId = Optional.of(Lists.newArrayList(UUID.randomUUID().toString()));
+        }
+        requestId.ifPresent(reqId -> headers.put(HEADER_X_REQUEST_ID, Lists.newArrayList(reqId)));
+
+        //we generate an 'X-Correlation-ID' header if not present
+        Optional<List<String>> correlationId = Optional.ofNullable(httpRequest.getHeaders().get(HEADER_X_CORRELATION_ID));
+        if(correlationId.isEmpty()&&this.generateMissingCorrelationId){
+            correlationId = Optional.of(Lists.newArrayList(UUID.randomUUID().toString()));
+        }
+        correlationId.ifPresent(corrId -> headers.put(HEADER_X_CORRELATION_ID, Lists.newArrayList(corrId)));
+
+        return httpRequest;
+    }
+
+    private HttpRequest buildHttpRequest(SinkRecord sinkRecord) {
         HttpRequest httpRequest = null;
         Object value = sinkRecord.value();
         String stringValue = null;
@@ -216,13 +258,13 @@ public class WsSinkTask extends SinkTask {
                 throw new ConnectException("sinkRecord has got a 'null' value");
             }
             Class<?> valueClass = value.getClass();
-            LOGGER.debug("valueClass is {}",valueClass.getName());
+            LOGGER.debug("valueClass is {}", valueClass.getName());
             if (Struct.class.isAssignableFrom(valueClass)) {
                 Struct valueAsStruct = (Struct) value;
                 if (sinkRecord.valueSchema() != null) {
-                    LOGGER.debug("valueSchema is {}",sinkRecord.valueSchema());
+                    LOGGER.debug("valueSchema is {}", sinkRecord.valueSchema());
                     if (!HttpRequest.SCHEMA.equals(sinkRecord.valueSchema())) {
-                        LOGGER.warn("sinkRecord has got a value Schema different from the HttpRequest Schema:{}",sinkRecord.valueSchema().name());
+                        LOGGER.warn("sinkRecord has got a value Schema different from the HttpRequest Schema:{}", sinkRecord.valueSchema().name());
                     }
                 }
                 valueAsStruct.validate();
@@ -235,21 +277,21 @@ public class WsSinkTask extends SinkTask {
             } else if ("[B".equals(valueClass.getName())) {
                 //we assume the value is a byte array
                 stringValue = new String((byte[]) value, Charsets.UTF_8);
-            } else if(String.class.isAssignableFrom(valueClass)){
+            } else if (String.class.isAssignableFrom(valueClass)) {
                 stringValue = (String) value;
-            }else{
-                LOGGER.warn("value is an instance of the class "+valueClass.getName()+" not handled by the WsSinkTask");
-                throw new ConnectException("value is an instance of the class "+valueClass.getName()+" not handled by the WsSinkTask");
+            } else {
+                LOGGER.warn("value is an instance of the class " + valueClass.getName() + " not handled by the WsSinkTask");
+                throw new ConnectException("value is an instance of the class " + valueClass.getName() + " not handled by the WsSinkTask");
             }
             if (httpRequest == null) {
                 httpRequest = parseHttpRequestAsJsonString(stringValue);
-                LOGGER.debug("successful httpRequest parsing :{}",httpRequest);
+                LOGGER.debug("successful httpRequest parsing :{}", httpRequest);
             }
-        }catch (ConnectException connectException){
-            LOGGER.warn("error in sinkRecord's structure : "+sinkRecord,connectException);
-            if(errantRecordReporter!=null) {
+        } catch (ConnectException connectException) {
+            LOGGER.warn("error in sinkRecord's structure : " + sinkRecord, connectException);
+            if (errantRecordReporter != null) {
                 errantRecordReporter.report(sinkRecord, connectException);
-            }else{
+            } else {
                 LOGGER.warn("errantRecordReporter has been added to Kafka Connect since 2.6.0 release. you should upgrade the Kafka Connect Runtime shortly.");
             }
             return null;
@@ -257,19 +299,19 @@ public class WsSinkTask extends SinkTask {
         return httpRequest;
     }
 
-    private HttpRequest parseHttpRequestAsJsonString(String value) throws ConnectException{
+    private HttpRequest parseHttpRequestAsJsonString(String value) throws ConnectException {
         HttpRequest httpRequest;
         try {
             httpRequest = OBJECT_MAPPER.readValue(value, HttpRequest.class);
         } catch (JsonProcessingException e) {
-            LOGGER.error(e.getMessage(),e);
+            LOGGER.error(e.getMessage(), e);
             throw new ConnectException(e);
         }
         return httpRequest;
     }
 
     private HttpRequest addStaticHeaders(HttpRequest httpRequest) {
-        if(httpRequest!=null) {
+        if (httpRequest != null) {
             this.staticRequestHeaders.forEach((key, value) -> httpRequest.getHeaders().put(key, value));
         }
         return httpRequest;
@@ -282,11 +324,12 @@ public class WsSinkTask extends SinkTask {
     }
 
     //for testing purpose
-    protected void setHttpClient(HttpClient httpClient){
+    protected void setHttpClient(HttpClient httpClient) {
         this.httpClient = httpClient;
     }
+
     //for testing purpose
-    protected Map<String,List<String>> getStaticRequestHeaders(){
+    protected Map<String, List<String>> getStaticRequestHeaders() {
         //we return a copy
         return Maps.newHashMap(staticRequestHeaders);
     }

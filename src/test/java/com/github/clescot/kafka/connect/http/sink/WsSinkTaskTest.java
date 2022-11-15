@@ -253,12 +253,10 @@ class WsSinkTaskTest {
                 "    \"statusMessage\": \"OK\",\n" +
                 "    \"responseBody\": \"my response\",\n" +
                 "    \"responseHeaders\": {\n" +
-                "      \"Content-Type\": \"application/json\"\n" +
+                "      \"Content-Type\": [\"application/json\"]\n" +
                 "    }\n" +
                 "  },\n" +
                 "  \"httpRequest\": {\n" +
-                "    \"requestId\": null,\n" +
-                "    \"correlationId\": null,\n" +
                 "    \"timeoutInMs\": null,\n" +
                 "    \"retries\": null,\n" +
                 "    \"retryDelayInMs\": null,\n" +
@@ -295,8 +293,8 @@ class WsSinkTaskTest {
         HttpRequest httpRequest = new HttpRequest("http://www.titi.com","GET","STRING","stuff",null,null);
         httpRequest.setHeaders(requestHeaders);
         HttpResponse httpResponse = new HttpResponse(200,"OK","my response");
-        Map<String, String> responseHeaders = Maps.newHashMap();
-        responseHeaders.put("Content-Type","application/json");
+        Map<String,List<String>> responseHeaders = Maps.newHashMap();
+        responseHeaders.put("Content-Type",Lists.newArrayList("application/json"));
         httpResponse.setResponseHeaders(responseHeaders);
         return new HttpExchange(
                 httpRequest,
@@ -311,8 +309,6 @@ class WsSinkTaskTest {
 
     private String getDummyHttpRequestAsString(){
         return "{\n" +
-        "  \"requestId\": null,\n" +
-                "  \"correlationId\": null,\n" +
                 "  \"timeoutInMs\": 0,\n" +
                 "  \"retries\": 0,\n" +
                 "  \"retryDelayInMs\": 0,\n" +

@@ -48,9 +48,8 @@ class HttpRequestTest {
         httpRequest.setHeaders(headers);
 
         String expectedHttpRequest = "{\n" +
-                "  \"requestId\": null,\n" +
-                "  \"correlationId\": null,\n" +
                 "  \"timeoutInMs\": null,\n" +
+                "  \"successPattern\": null,\n" +
                 "  \"retries\": null,\n" +
                 "  \"retryDelayInMs\": null,\n" +
                 "  \"retryMaxDelayInMs\": null,\n" +
@@ -88,7 +87,7 @@ class HttpRequestTest {
         headers.put("X-correlation-id", Lists.newArrayList("44-999-33-dd"));
         headers.put("X-request-id", Lists.newArrayList("11-999-ff-777"));
         httpRequest.setHeaders(headers);
-        SpecificationVersion jsonSchemaSpecification = SpecificationVersion.DRAFT_7;
+        SpecificationVersion jsonSchemaSpecification = SpecificationVersion.DRAFT_2019_09;
         boolean useOneOfForNullables=true;
         boolean failUnknownProperties=true;
         //get JSON schema

@@ -12,7 +12,7 @@
         </license>
     </licenses>
     <url>https://github.com/clescot/kafka-connect-http-sink</url>
-    <version>1.0-SNAPSHOT</version>
+    <version>0.1.0-SNAPSHOT</version>
     <packaging>jar</packaging>
     <properties>
         <async.http.client.version>2.12.3</async.http.client.version>
@@ -277,7 +277,6 @@
                             <title>Kafka Connect HTTP Sink and Source</title>
                             <documentationUrl>https://github.com/clescot/kafka-connect-http-sink#readme</documentationUrl>
                             <description>The Http Sink connector permits from Kafka to interact with HTTP servers, and optionally the Source Connector permits to store in Kafka HTTP interactions details.</description>
-                            <logo>logos/shell.png</logo>
                             <supportProviderName>Charles Lescot</supportProviderName>
                             <supportSummary>Support is provided as best effort only. Please register any issues in the github project.</supportSummary>
                             <supportUrl>https://github.com/clescot/kafka-connect-http-sink/issues</supportUrl>

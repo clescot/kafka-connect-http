@@ -1,0 +1,295 @@
+{
+  "$schema": "http://json-schema.org/draft/2019-09/schema#",
+  "title": "Http Exchange",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "durationInMillis": {
+      "oneOf": [
+        {
+          "type": "null",
+          "title": "Not included"
+        },
+        {
+          "type": "integer"
+        }
+      ]
+    },
+    "moment": {
+      "oneOf": [
+        {
+          "type": "null",
+          "title": "Not included"
+        },
+        {
+          "type": "number"
+        }
+      ]
+    },
+    "attempts": {
+      "oneOf": [
+        {
+          "type": "null",
+          "title": "Not included"
+        },
+        {
+          "type": "integer"
+        }
+      ]
+    },
+    "success": {
+      "type": "boolean"
+    },
+    "httpResponse": {
+      "oneOf": [
+        {
+          "type": "null",
+          "title": "Not included"
+        },
+        {
+          "$ref": "#/definitions/HttpResponse"
+        }
+      ]
+    },
+    "httpRequest": {
+      "oneOf": [
+        {
+          "type": "null",
+          "title": "Not included"
+        },
+        {
+          "$ref": "#/definitions/HttpRequest"
+        }
+      ]
+    }
+  },
+  "required": [
+    "success"
+  ],
+  "definitions": {
+    "HttpResponse": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "statusCode": {
+          "oneOf": [
+            {
+              "type": "null",
+              "title": "Not included"
+            },
+            {
+              "type": "integer"
+            }
+          ]
+        },
+        "statusMessage": {
+          "oneOf": [
+            {
+              "type": "null",
+              "title": "Not included"
+            },
+            {
+              "type": "string"
+            }
+          ]
+        },
+        "responseBody": {
+          "oneOf": [
+            {
+              "type": "null",
+              "title": "Not included"
+            },
+            {
+              "type": "string"
+            }
+          ]
+        },
+        "responseHeaders": {
+          "oneOf": [
+            {
+              "type": "null",
+              "title": "Not included"
+            },
+            {
+              "type": "object",
+              "additionalProperties": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              }
+            }
+          ]
+        }
+      }
+    },
+    "HttpRequest": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "timeoutInMs": {
+          "oneOf": [
+            {
+              "type": "null",
+              "title": "Not included"
+            },
+            {
+              "type": "integer"
+            }
+          ]
+        },
+        "successPattern": {
+          "oneOf": [
+            {
+              "type": "null",
+              "title": "Not included"
+            },
+            {
+              "type": "string"
+            }
+          ]
+        },
+        "retries": {
+          "oneOf": [
+            {
+              "type": "null",
+              "title": "Not included"
+            },
+            {
+              "type": "integer"
+            }
+          ]
+        },
+        "retryDelayInMs": {
+          "oneOf": [
+            {
+              "type": "null",
+              "title": "Not included"
+            },
+            {
+              "type": "integer"
+            }
+          ]
+        },
+        "retryMaxDelayInMs": {
+          "oneOf": [
+            {
+              "type": "null",
+              "title": "Not included"
+            },
+            {
+              "type": "integer"
+            }
+          ]
+        },
+        "retryDelayFactor": {
+          "oneOf": [
+            {
+              "type": "null",
+              "title": "Not included"
+            },
+            {
+              "type": "number"
+            }
+          ]
+        },
+        "retryJitter": {
+          "oneOf": [
+            {
+              "type": "null",
+              "title": "Not included"
+            },
+            {
+              "type": "integer"
+            }
+          ]
+        },
+        "url": {
+          "type": "string"
+        },
+        "headers": {
+          "oneOf": [
+            {
+              "type": "null",
+              "title": "Not included"
+            },
+            {
+              "type": "object",
+              "additionalProperties": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              }
+            }
+          ]
+        },
+        "method": {
+          "type": "string"
+        },
+        "bodyAsString": {
+          "oneOf": [
+            {
+              "type": "null",
+              "title": "Not included"
+            },
+            {
+              "type": "string"
+            }
+          ]
+        },
+        "bodyAsByteArray": {
+          "oneOf": [
+            {
+              "type": "null",
+              "title": "Not included"
+            },
+            {
+              "type": "array",
+              "items": {
+                "type": "integer"
+              }
+            }
+          ]
+        },
+        "bodyAsMultipart": {
+          "oneOf": [
+            {
+              "type": "null",
+              "title": "Not included"
+            },
+            {
+              "type": "array",
+              "items": {
+                "type": "array",
+                "items": {
+                  "type": "integer"
+                }
+              }
+            }
+          ]
+        },
+        "bodyType": {
+          "oneOf": [
+            {
+              "type": "null",
+              "title": "Not included"
+            },
+            {
+              "type": "string",
+              "enum": [
+                "STRING",
+                "BYTE_ARRAY",
+                "MULTIPART"
+              ]
+            }
+          ]
+        }
+      },
+      "required": [
+        "url",
+        "method"
+      ]
+    }
+  }
+}

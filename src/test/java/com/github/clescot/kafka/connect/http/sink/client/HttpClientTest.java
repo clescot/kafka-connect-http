@@ -22,9 +22,12 @@ import java.time.ZoneId;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import static com.github.clescot.kafka.connect.http.sink.WsSinkTask.HEADER_X_CORRELATION_ID;
+import static com.github.clescot.kafka.connect.http.sink.WsSinkTask.HEADER_X_REQUEST_ID;
 import static com.github.clescot.kafka.connect.http.sink.client.HttpClient.SUCCESS;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
@@ -96,9 +99,9 @@ public class HttpClientTest {
 
         private HttpResponse getDummyHttpResponse(int statusCode) {
             HttpResponse httpResponse = new HttpResponse(statusCode,"OK","my response");
-            Map<String,String> headers = Maps.newHashMap();
-            headers.put("Content-Type","application/json");
-            headers.put("X-stuff","foo");
+            Map<String,List<String>> headers = Maps.newHashMap();
+            headers.put("Content-Type",Lists.newArrayList("application/json"));
+            headers.put("X-stuff",Lists.newArrayList("foo"));
             httpResponse.setResponseHeaders(headers);
             return httpResponse;
         }
@@ -253,8 +256,8 @@ public class HttpClientTest {
         httpRequest.setRetryDelayInMs(2500L);
         httpRequest.setRetryMaxDelayInMs(7000L);
         httpRequest.setRetryDelayFactor(2d);
-        httpRequest.setCorrelationId("45-66-33");
-        httpRequest.setRequestId("77-3333-11");
+        httpRequest.getHeaders().put(HEADER_X_CORRELATION_ID,Lists.newArrayList("45-66-33"));
+        httpRequest.getHeaders().put(HEADER_X_REQUEST_ID,Lists.newArrayList("77-3333-11"));
         return httpRequest;
     }
 

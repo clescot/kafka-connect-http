@@ -6,7 +6,9 @@ import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.data.SchemaBuilder;
 import org.apache.kafka.connect.data.Struct;
 
+import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 public class HttpResponse {
 
@@ -23,7 +25,7 @@ public class HttpResponse {
             .version(VERSION)
             .field(STATUS_CODE,Schema.INT64_SCHEMA)
             .field(STATUS_MESSAGE,Schema.STRING_SCHEMA)
-            .field(HEADERS, SchemaBuilder.map(Schema.STRING_SCHEMA, Schema.STRING_SCHEMA).build())
+            .field(HEADERS, SchemaBuilder.map(Schema.STRING_SCHEMA, SchemaBuilder.array(Schema.STRING_SCHEMA)).build())
             .field(BODY,Schema.STRING_SCHEMA);
 
 
@@ -31,7 +33,7 @@ public class HttpResponse {
     private final String statusMessage;
     private final String responseBody;
 
-    private Map<String,String> responseHeaders = Maps.newHashMap();
+    private Map<String, List<String>> responseHeaders = Maps.newHashMap();
 
     public HttpResponse(Integer statusCode, String statusMessage, String responseBody) {
         Preconditions.checkArgument(statusCode>0,"status code must be a positive integer");
@@ -40,7 +42,7 @@ public class HttpResponse {
         this.responseBody = responseBody;
     }
 
-    public Map<String, String> getResponseHeaders() {
+    public Map<String, List<String>> getResponseHeaders() {
         return responseHeaders;
     }
 
@@ -56,7 +58,7 @@ public class HttpResponse {
         return responseBody;
     }
 
-    public void setResponseHeaders(Map<String, String> responseHeaders) {
+    public void setResponseHeaders(Map<String, List<String>> responseHeaders) {
         this.responseHeaders = responseHeaders;
     }
 
@@ -70,5 +72,28 @@ public class HttpResponse {
                 .put(BODY,responseBody);
 
 
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        HttpResponse that = (HttpResponse) o;
+        return statusCode.equals(that.statusCode) && statusMessage.equals(that.statusMessage) && responseBody.equals(that.responseBody) && Objects.equals(responseHeaders, that.responseHeaders);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(statusCode, statusMessage, responseBody, responseHeaders);
+    }
+
+    @Override
+    public String toString() {
+        return "HttpResponse{" +
+                "statusCode=" + statusCode +
+                ", statusMessage='" + statusMessage + '\'' +
+                ", responseBody='" + responseBody + '\'' +
+                ", responseHeaders=" + responseHeaders +
+                '}';
     }
 }

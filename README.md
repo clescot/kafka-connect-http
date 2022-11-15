@@ -82,9 +82,9 @@ Note that a queue has got only one consumer, opposite to the Topic concept, whic
 This big picture permits to highlight (with numbers in the picture) some key points in the architecture, which will be explained with details
 after the section dedicated to put in place the HTTP Sink and Source connectors:
 
-1. format of the incoming Kafka message (HTTP intention)
-2. The HTTP Sink connector listen to these topics (can be a list of topics, or a regex)
-3. The HTTP Sink connector transform the incoming message into an HTTP call and get the answer from the HTTP server
+1. format of the [incoming kafka message](incoming_message_format.md) (HTTP intention)
+2. The HTTP Sink connector listen to these topics (can be a list of topics, or a regex, via *topics* or *topics.regex* settings)
+3. The HTTP Sink connector transform the incoming message into an HTTP call and get the answer from the HTTP server.
   Behaviour of the HTTP client shipped with the HTTP Sink Connector can be tuned, including the retry policy. At this stage,
   the HTTP Sink connector, according to the HTTP exchange details, decides if the HTTP exchange is a success or a failure.
   Incoming message can be a JSON serialized as a String, or a structured message linked with a schma stored in a schema registry. 
@@ -93,100 +93,14 @@ after the section dedicated to put in place the HTTP Sink and Source connectors:
    Connector configuration). A check is done to prevent publishment to a 'in memory' queue without consumer(Source Connector),  
    i.e preventing an OutofMemory Error. The HTTP Sink Connector will fail at the first message consumption in this situation.   
 5. If configured in the Sink Configuration, an HTTP Source Connector is needed to consume the published 
-   HTTP exchange(with all the details of the interaction).
+   HTTP exchange (with all the details of the interaction).
 6. According to the HTTP Exchange status (success or failure), the HTTP Source connector serialize the exchange as a kafka message and save
-   it in the http.success topic, or the http.error topic
-7. the HTTP exchange is saved as a struct, and can be serialized as a JSON Schema or another format via converters, and the help of a Schema registry.
+   it in the `http.success` topic, or the `http.error` topic.
+7. the HTTP exchange is saved as a `Struct`, and can be serialized as a JSON Schema or another format via converters, and the help of a Schema registry.
    It also can be serialized as a String. 
 
-# 3. HTTP Connectors configuration
-
-Here are the configuration to setup an HTTP Sink connector, and optionally an HTTP Source Connector, into a Kafka Connect
- cluster. Note that the jar file owning these connector classes, 
-[need to be installed with the Kafka connect runtime](https://docs.confluent.io/kafka-connectors/self-managed/install.html#install-connector-manually). 
-
-### HTTP Sink Connector
-
-#### required parameters
-
-every Kafka Connect Sink Connector need to define these required parameters :
-
-- *connector.class* : `com.github.clescot.kafka.connect.http.sink.WsSinkConnector`
-- *topics* (or *topics.regex*): `http-requests` for example
-
-#### optional Kafka Connect parameters
-
-- *tasks.max*  (default to `1`)
-- *key.converter*
-- *value.converter*
-- ....
-
-#### optional HTTP Sink connector parameters
-
-- *publish.to.in.memory.queue* : `false` by default. When set to `true`, publish HTTP interactions (request and responses)
- are published into the in memory queue. 
-- *queue.name* : if not set, `default` queue name is used, if the `publish.to.in.memory.queue` is set to `true`. 
-  You can define multiple in memory queues, to permit to publish to different topics, different HTTP interactions. If
- you set this parameter to a value different than `default`, you need to configure an HTTP source Connector listening 
- on the same queue name to avoid some OutOfMemoryErrors.
-- *static.request.header.names* : list of headers names to attach to all requests. *Static* term, means that these headers 
- are not managed by initial kafka message, but are defined at the connector level and added globally. this list is divided by 
- `,` character. The connector will try to get the value to add to request by querying the config with the header name as parameter name.
- For example, if set `static.request.header.names: param_name1,param_name2`, the connector will lookup the param_name1 
-  and param_name2 parameters to get values to add. 
-
-#### Configuration example
-
-`sink.json` example :
-```json 
-{
-    "name": "my-http-sink-connector",
-    "config": {
-    "connector.class":"com.github.clescot.kafka.connect.http.sink.WsSinkConnector",
-    "tasks.max": "1",
-    "topics":"http-request",
-    }
-}
-```
-
-You can create or update this connector instance with this command :
-
-```bash
-curl -X PUT -H "Content-Type: application/json" --data @sink.json http://my-kafka-connect-cluster:8083/connectors/my-http-sink-connector/config
-```
-### HTTP Source Connector
-
-The HTTP Source connector is only useful if you have configured the publishment of HTTP interactions into the queue, 
-via the `publish.to.in.memory.queue` set to `true`.
-
-#### required HTTP Source connector parameters
-
-- *success.topic* : Topic to receive successful http request/responses, for example, http-success
-- *error.topic* : Topic to receive errors from http request/responses, for example, http-error
-
-#### optional HTTP Source connector parameters
-
-- *queue.name* : if not set, listen on the 'default' queue.
-
-#### Configuration example
-
-
-`source.json` example :
-```json 
-{
-    "name": "my-http-source-connector",
-    "config": {
-    "connector.class":"com.github.clescot.kafka.connect.http.source.WsSourceConnector",
-    "tasks.max": "1",
-    "success.topic": "http-success",
-    "error.topic": "http-error",
-    }
-}
-```
-
-You can create or update this connector instance with this command :
-
-```bash
-curl -X PUT -H "Content-Type: application/json" --data @source.json http://my-kafka-connect-cluster:8083/connectors/my-http-source-connector/config
-```
+# 3. [HTTP Connectors configuration](connectors_configuration.md)
+# 4. [incoming message format](incoming_message_format.md)
+# 5. [outcoming message format](outcoming_message_format.md)
+# 6. [missing features](missing_features.md)
 

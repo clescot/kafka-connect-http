@@ -52,8 +52,8 @@ public class QueueProducer implements Runnable {
 
     @NotNull
     private static HttpExchange getSuccessfulHttpExchange(HttpRequest httpRequest) {
-        Map<String,String> responseHeaders = Maps.newHashMap();
-        responseHeaders.put("Content-Type","application/json");
+        Map<String,List<String>> responseHeaders = Maps.newHashMap();
+        responseHeaders.put("Content-Type",Lists.newArrayList("application/json"));
         HttpResponse httpResponse = new HttpResponse(200,"OK","body");
         httpResponse.setResponseHeaders(responseHeaders);
         return HttpExchange.Builder.anHttpExchange()
@@ -74,8 +74,8 @@ public class QueueProducer implements Runnable {
 
     @NotNull
     private static HttpExchange getErrorHttpExchange(HttpRequest httpRequest) {
-        Map<String,String> responseHeaders = Maps.newHashMap();
-        responseHeaders.put("Content-Type","application/json");
+        Map<String,List<String>> responseHeaders = Maps.newHashMap();
+        responseHeaders.put("Content-Type",Lists.newArrayList("application/json"));
         HttpResponse httpResponse = new HttpResponse(500,"Internal Server Error","Houston, we've got a problem....");
         httpResponse.setResponseHeaders(responseHeaders);
         return HttpExchange.Builder.anHttpExchange()

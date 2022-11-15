@@ -6,28 +6,6 @@
   "additionalProperties": false,
   "required": ["url","method","bodyType"],
   "properties": {
-    "requestId": {
-      "oneOf": [
-        {
-          "type": "null",
-          "title": "Not included"
-        },
-        {
-          "type": "string"
-        }
-      ]
-    },
-    "correlationId": {
-      "oneOf": [
-        {
-          "type": "null",
-          "title": "Not included"
-        },
-        {
-          "type": "string"
-        }
-      ]
-    },
     "timeoutInMs": {
       "oneOf": [
         {
@@ -36,6 +14,17 @@
         },
         {
           "type": "integer"
+        }
+      ]
+    },
+       "successPattern": {
+      "oneOf": [
+        {
+          "type": "null",
+          "title": "Not included"
+        },
+        {
+          "type": "string"
         }
       ]
     },

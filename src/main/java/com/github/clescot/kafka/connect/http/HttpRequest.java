@@ -22,28 +22,6 @@ import java.util.Objects;
         "  \"additionalProperties\": false,\n" +
         "  \"required\": [\"url\",\"method\"],\n" +
         "  \"properties\": {\n" +
-        "    \"requestId\": {\n" +
-        "      \"oneOf\": [\n" +
-        "        {\n" +
-        "          \"type\": \"null\",\n" +
-        "          \"title\": \"Not included\"\n" +
-        "        },\n" +
-        "        {\n" +
-        "          \"type\": \"string\"\n" +
-        "        }\n" +
-        "      ]\n" +
-        "    },\n" +
-        "    \"correlationId\": {\n" +
-        "      \"oneOf\": [\n" +
-        "        {\n" +
-        "          \"type\": \"null\",\n" +
-        "          \"title\": \"Not included\"\n" +
-        "        },\n" +
-        "        {\n" +
-        "          \"type\": \"string\"\n" +
-        "        }\n" +
-        "      ]\n" +
-        "    },\n" +
         "    \"timeoutInMs\": {\n" +
         "      \"oneOf\": [\n" +
         "        {\n" +
@@ -52,6 +30,17 @@ import java.util.Objects;
         "        },\n" +
         "        {\n" +
         "          \"type\": \"integer\"\n" +
+        "        }\n" +
+        "      ]\n" +
+        "    },\n" +
+           "    \"successPattern\": {\n" +
+        "      \"oneOf\": [\n" +
+        "        {\n" +
+        "          \"type\": \"null\",\n" +
+        "          \"title\": \"Not included\"\n" +
+        "        },\n" +
+        "        {\n" +
+        "          \"type\": \"string\"\n" +
         "        }\n" +
         "      ]\n" +
         "    },\n" +
@@ -188,8 +177,6 @@ import java.util.Objects;
 public class HttpRequest {
 
 
-    public static final String REQUEST_ID = "requestId";
-    public static final String CORRELATION_ID = "correlationId";
     public static final String TIMEOUT_IN_MS = "timeoutInMs";
 
     public static final String RETRIES = "retries";
@@ -197,6 +184,7 @@ public class HttpRequest {
     public static final String RETRY_MAX_DELAY_IN_MS = "retryMaxDelayInMs";
     public static final String RETRY_DELAY_FACTOR = "retryDelayFactor";
     public static final String RETRY_JITTER = "retryJitter";
+    public static final String SUCCESS_PATTERN = "successPattern";
     public static final String URL = "url";
     public static final String METHOD = "method";
     public static final String HEADERS = "headers";
@@ -210,18 +198,12 @@ public class HttpRequest {
 
     private final static Logger LOGGER = LoggerFactory.getLogger(HttpRequest.class);
 
-    //metadata
-    @JsonProperty
-    private String requestId;
-    @JsonProperty
-    private String correlationId;
-
-    //connection
     @JsonProperty
     private Long timeoutInMs;
 
     //retry policy
     @JsonProperty
+    //we should define an Integer, but the JSON Schema cannot choose between short, integer, or long....
     private Long retries;
     @JsonProperty
     private Long retryDelayInMs;
@@ -231,6 +213,10 @@ public class HttpRequest {
     private Double retryDelayFactor;
     @JsonProperty
     private Long retryJitter;
+
+    @JsonProperty
+    private String successPattern;
+
 
     //request
     @JsonProperty(required = true)
@@ -254,10 +240,9 @@ public class HttpRequest {
             .name(HttpRequest.class.getName())
             .version(VERSION)
             //meta-data outside of the request
-            .field(REQUEST_ID, Schema.OPTIONAL_STRING_SCHEMA)
-            .field(CORRELATION_ID, Schema.OPTIONAL_STRING_SCHEMA)
             //connection (override the default one set in the Sink Connector)
             .field(TIMEOUT_IN_MS, Schema.OPTIONAL_INT64_SCHEMA)
+            .field(SUCCESS_PATTERN, Schema.OPTIONAL_STRING_SCHEMA)
             //retry policy (override the default one set in the Sink Connector)
             .field(RETRIES, Schema.OPTIONAL_INT32_SCHEMA)
             .field(RETRY_DELAY_IN_MS, Schema.OPTIONAL_INT64_SCHEMA)
@@ -330,22 +315,6 @@ public class HttpRequest {
 
     public void setBodyType(BodyType bodyType) {
         this.bodyType = bodyType;
-    }
-
-    public String getRequestId() {
-        return requestId;
-    }
-
-    public void setRequestId(String requestId) {
-        this.requestId = requestId;
-    }
-
-    public String getCorrelationId() {
-        return correlationId;
-    }
-
-    public void setCorrelationId(String correlationId) {
-        this.correlationId = correlationId;
     }
 
     public Long getTimeoutInMs() {
@@ -432,25 +401,28 @@ public class HttpRequest {
         this.headers = headers;
     }
 
+    public String getSuccessPattern() {
+        return successPattern;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         HttpRequest that = (HttpRequest) o;
-        return Objects.equals(requestId, that.requestId) && Objects.equals(correlationId, that.correlationId) && Objects.equals(timeoutInMs, that.timeoutInMs) && Objects.equals(retries, that.retries) && Objects.equals(retryDelayInMs, that.retryDelayInMs) && Objects.equals(retryMaxDelayInMs, that.retryMaxDelayInMs) && Objects.equals(retryDelayFactor, that.retryDelayFactor) && Objects.equals(retryJitter, that.retryJitter) && url.equals(that.url) && Objects.equals(headers, that.headers) && method.equals(that.method) && Objects.equals(bodyAsString, that.bodyAsString) && Objects.equals(bodyAsByteArray, that.bodyAsByteArray) && Objects.equals(bodyAsMultipart, that.bodyAsMultipart) && bodyType == that.bodyType;
+        return Objects.equals(timeoutInMs, that.timeoutInMs) && Objects.equals(retries, that.retries) && Objects.equals(retryDelayInMs, that.retryDelayInMs) && Objects.equals(retryMaxDelayInMs, that.retryMaxDelayInMs) && Objects.equals(retryDelayFactor, that.retryDelayFactor) && Objects.equals(retryJitter, that.retryJitter) && Objects.equals(successPattern, that.successPattern) && url.equals(that.url) && Objects.equals(headers, that.headers) && method.equals(that.method) && Objects.equals(bodyAsString, that.bodyAsString) && Objects.equals(bodyAsByteArray, that.bodyAsByteArray) && Objects.equals(bodyAsMultipart, that.bodyAsMultipart) && bodyType == that.bodyType;
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(requestId, correlationId, timeoutInMs, retries, retryDelayInMs, retryMaxDelayInMs, retryDelayFactor, retryJitter, url, headers, method, bodyAsString, bodyAsByteArray, bodyAsMultipart, bodyType);
+        return Objects.hash(timeoutInMs, retries, retryDelayInMs, retryMaxDelayInMs, retryDelayFactor, retryJitter, successPattern, url, headers, method, bodyAsString, bodyAsByteArray, bodyAsMultipart, bodyType);
     }
 
     @Override
     public String toString() {
         return "HttpRequest{" +
-                "requestId='" + requestId + '\'' +
-                ", correlationId='" + correlationId + '\'' +
                 ", timeoutInMs=" + timeoutInMs +
+                ", successPattern=" + successPattern +
                 ", retries=" + retries +
                 ", retryDelayInMs=" + retryDelayInMs +
                 ", retryMaxDelayInMs=" + retryMaxDelayInMs +
@@ -468,9 +440,8 @@ public class HttpRequest {
 
     public Struct toStruct() {
         return  new Struct(SCHEMA)
-                        .put(REQUEST_ID, requestId)
-                        .put(CORRELATION_ID, correlationId)
                         .put(TIMEOUT_IN_MS, timeoutInMs)
+                        .put(SUCCESS_PATTERN, successPattern)
                         .put(RETRIES, retries)
                         .put(RETRY_DELAY_IN_MS, retryDelayInMs)
                         .put(RETRY_MAX_DELAY_IN_MS, retryMaxDelayInMs)
@@ -496,14 +467,13 @@ public class HttpRequest {
         private byte[] byteArrayBody;
         private List<byte[]> multipartBody;
         private Map<String, List<String>> headers;
-        private String requestId;
-        private String correlationId;
         private Long timeoutInMs;
         private Long retries;
         private Long retryDelayInMs;
         private Long retryMaxDelayInMs;
         private Double retryDelayFactor;
         private Long retryJitter;
+        private String successPattern;
 
         private Builder() {
         }
@@ -524,9 +494,6 @@ public class HttpRequest {
             this.byteArrayBody = Base64.getDecoder().decode(struct.getString(BODY_AS_BYTE_ARRAY));
             this.multipartBody = struct.getArray(BODY_AS_MULTIPART);
 
-            //metadata
-            this.requestId = struct.getString(REQUEST_ID);
-            this.correlationId = struct.getString(CORRELATION_ID);
             //connection
             this.timeoutInMs = struct.getInt64(TIMEOUT_IN_MS);
             //retry policy
@@ -535,6 +502,7 @@ public class HttpRequest {
             this.retryMaxDelayInMs = struct.getInt64(RETRY_MAX_DELAY_IN_MS);
             this.retryDelayFactor = struct.getFloat64(RETRY_DELAY_FACTOR);
             this.retryJitter = struct.getInt64(RETRY_JITTER);
+            this.successPattern = struct.getString(SUCCESS_PATTERN);
             return this;
         }
 
@@ -552,9 +520,6 @@ public class HttpRequest {
             );
 
             httpRequest.setHeaders(headers);
-            httpRequest.setRequestId(requestId);
-            httpRequest.setCorrelationId(correlationId);
-
 
             httpRequest.setTimeoutInMs(timeoutInMs);
 
@@ -579,8 +544,15 @@ public class HttpRequest {
             if (retryJitter!=null && retryJitter >= 0) {
                 httpRequest.setRetryJitter(retryJitter);
             }
+            if (successPattern !=null) {
+                httpRequest.setSuccessPattern(successPattern);
+            }
             return httpRequest;
         }
+    }
+
+    private void setSuccessPattern(String successPattern) {
+        this.successPattern = successPattern;
     }
 
     private enum BodyType {
