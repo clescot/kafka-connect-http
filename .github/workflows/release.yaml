@@ -27,8 +27,7 @@ jobs:
           key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
           restore-keys: |
             ${{ runner.os }}-maven-
-      - name: Set MAVEN_PROJECT_VERSION as env
-        run: echo "MAVEN_PROJECT_VERSION=$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout)" >> $GITHUB_ENV
+
       - name: Configure Git user
         run: |
           git config user.email "actions@github.com"
@@ -37,6 +36,19 @@ jobs:
         run: mvn --batch-mode deploy
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Release
+        uses: qcastel/github-actions-maven-release@v1.12.37
+        with:
+          access-token: ${{ secrets.GITHUB_TOKEN }}
+          version-patch: true
+#          version-minor: true
+          gpg-enabled: "false"
+          maven-args: "-DskipIT"
+        env:
+          JAVA_HOME: /usr/lib/jvm/java-11-openjdk/
+
+      - name: Set MAVEN_PROJECT_VERSION as env
+        run: echo "MAVEN_PROJECT_VERSION=$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout)" >> $GITHUB_ENV
       - name: Upload ZIP archive
         run: |
           mvn deploy:deploy-file \
@@ -55,12 +67,4 @@ jobs:
           package-name: 'test-package'
           min-versions-to-keep: 10
           delete-only-pre-release-versions: "true"
-      - name: Release
-        uses: qcastel/github-actions-maven-release@v1.12.37
-        with:
-          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
-          version-minor: true
-          gpg-enabled: "false"
-          maven-args: "-DskipIT"
-        env:
-          JAVA_HOME: /usr/lib/jvm/java-11-openjdk/
+
