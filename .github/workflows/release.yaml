@@ -60,5 +60,5 @@ jobs:
           ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
           version-minor: true
           gpg-enabled: "false"
-          env:
-            JAVA_HOME: /usr/lib/jvm/java-11-openjdk/
+        env:
+          JAVA_HOME: /usr/lib/jvm/java-11-openjdk/
