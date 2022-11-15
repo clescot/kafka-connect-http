@@ -49,6 +49,7 @@ class HttpRequestTest {
 
         String expectedHttpRequest = "{\n" +
                 "  \"timeoutInMs\": null,\n" +
+                "  \"successPattern\": null,\n" +
                 "  \"retries\": null,\n" +
                 "  \"retryDelayInMs\": null,\n" +
                 "  \"retryMaxDelayInMs\": null,\n" +

@@ -33,6 +33,17 @@ import java.util.Objects;
         "        }\n" +
         "      ]\n" +
         "    },\n" +
+           "    \"successPattern\": {\n" +
+        "      \"oneOf\": [\n" +
+        "        {\n" +
+        "          \"type\": \"null\",\n" +
+        "          \"title\": \"Not included\"\n" +
+        "        },\n" +
+        "        {\n" +
+        "          \"type\": \"string\"\n" +
+        "        }\n" +
+        "      ]\n" +
+        "    },\n" +
         "    \"retries\": {\n" +
         "      \"oneOf\": [\n" +
         "        {\n" +
@@ -173,6 +184,7 @@ public class HttpRequest {
     public static final String RETRY_MAX_DELAY_IN_MS = "retryMaxDelayInMs";
     public static final String RETRY_DELAY_FACTOR = "retryDelayFactor";
     public static final String RETRY_JITTER = "retryJitter";
+    public static final String SUCCESS_PATTERN = "successPattern";
     public static final String URL = "url";
     public static final String METHOD = "method";
     public static final String HEADERS = "headers";
@@ -202,6 +214,10 @@ public class HttpRequest {
     @JsonProperty
     private Long retryJitter;
 
+    @JsonProperty
+    private String successPattern;
+
+
     //request
     @JsonProperty(required = true)
     private String url;
@@ -226,6 +242,7 @@ public class HttpRequest {
             //meta-data outside of the request
             //connection (override the default one set in the Sink Connector)
             .field(TIMEOUT_IN_MS, Schema.OPTIONAL_INT64_SCHEMA)
+            .field(SUCCESS_PATTERN, Schema.OPTIONAL_STRING_SCHEMA)
             //retry policy (override the default one set in the Sink Connector)
             .field(RETRIES, Schema.OPTIONAL_INT32_SCHEMA)
             .field(RETRY_DELAY_IN_MS, Schema.OPTIONAL_INT64_SCHEMA)
@@ -384,23 +401,28 @@ public class HttpRequest {
         this.headers = headers;
     }
 
+    public String getSuccessPattern() {
+        return successPattern;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         HttpRequest that = (HttpRequest) o;
-        return Objects.equals(timeoutInMs, that.timeoutInMs) && Objects.equals(retries, that.retries) && Objects.equals(retryDelayInMs, that.retryDelayInMs) && Objects.equals(retryMaxDelayInMs, that.retryMaxDelayInMs) && Objects.equals(retryDelayFactor, that.retryDelayFactor) && Objects.equals(retryJitter, that.retryJitter) && url.equals(that.url) && Objects.equals(headers, that.headers) && method.equals(that.method) && Objects.equals(bodyAsString, that.bodyAsString) && Objects.equals(bodyAsByteArray, that.bodyAsByteArray) && Objects.equals(bodyAsMultipart, that.bodyAsMultipart) && bodyType == that.bodyType;
+        return Objects.equals(timeoutInMs, that.timeoutInMs) && Objects.equals(retries, that.retries) && Objects.equals(retryDelayInMs, that.retryDelayInMs) && Objects.equals(retryMaxDelayInMs, that.retryMaxDelayInMs) && Objects.equals(retryDelayFactor, that.retryDelayFactor) && Objects.equals(retryJitter, that.retryJitter) && Objects.equals(successPattern, that.successPattern) && url.equals(that.url) && Objects.equals(headers, that.headers) && method.equals(that.method) && Objects.equals(bodyAsString, that.bodyAsString) && Objects.equals(bodyAsByteArray, that.bodyAsByteArray) && Objects.equals(bodyAsMultipart, that.bodyAsMultipart) && bodyType == that.bodyType;
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(timeoutInMs, retries, retryDelayInMs, retryMaxDelayInMs, retryDelayFactor, retryJitter, url, headers, method, bodyAsString, bodyAsByteArray, bodyAsMultipart, bodyType);
+        return Objects.hash(timeoutInMs, retries, retryDelayInMs, retryMaxDelayInMs, retryDelayFactor, retryJitter, successPattern, url, headers, method, bodyAsString, bodyAsByteArray, bodyAsMultipart, bodyType);
     }
 
     @Override
     public String toString() {
         return "HttpRequest{" +
                 ", timeoutInMs=" + timeoutInMs +
+                ", successPattern=" + successPattern +
                 ", retries=" + retries +
                 ", retryDelayInMs=" + retryDelayInMs +
                 ", retryMaxDelayInMs=" + retryMaxDelayInMs +
@@ -419,6 +441,7 @@ public class HttpRequest {
     public Struct toStruct() {
         return  new Struct(SCHEMA)
                         .put(TIMEOUT_IN_MS, timeoutInMs)
+                        .put(SUCCESS_PATTERN, successPattern)
                         .put(RETRIES, retries)
                         .put(RETRY_DELAY_IN_MS, retryDelayInMs)
                         .put(RETRY_MAX_DELAY_IN_MS, retryMaxDelayInMs)
@@ -444,14 +467,13 @@ public class HttpRequest {
         private byte[] byteArrayBody;
         private List<byte[]> multipartBody;
         private Map<String, List<String>> headers;
-        private String requestId;
-        private String correlationId;
         private Long timeoutInMs;
         private Long retries;
         private Long retryDelayInMs;
         private Long retryMaxDelayInMs;
         private Double retryDelayFactor;
         private Long retryJitter;
+        private String successPattern;
 
         private Builder() {
         }
@@ -480,6 +502,7 @@ public class HttpRequest {
             this.retryMaxDelayInMs = struct.getInt64(RETRY_MAX_DELAY_IN_MS);
             this.retryDelayFactor = struct.getFloat64(RETRY_DELAY_FACTOR);
             this.retryJitter = struct.getInt64(RETRY_JITTER);
+            this.successPattern = struct.getString(SUCCESS_PATTERN);
             return this;
         }
 
@@ -521,8 +544,15 @@ public class HttpRequest {
             if (retryJitter!=null && retryJitter >= 0) {
                 httpRequest.setRetryJitter(retryJitter);
             }
+            if (successPattern !=null) {
+                httpRequest.setSuccessPattern(successPattern);
+            }
             return httpRequest;
         }
+    }
+
+    private void setSuccessPattern(String successPattern) {
+        this.successPattern = successPattern;
     }
 
     private enum BodyType {

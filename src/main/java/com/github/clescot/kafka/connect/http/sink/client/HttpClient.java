@@ -156,7 +156,7 @@ public class HttpClient {
 
 
     protected HttpExchange callOnceWs(HttpRequest httpRequest, AtomicInteger attempts) throws HttpException {
-        Pattern successPattern = getSuccessPattern(httpRequest.getHeaders());
+        Pattern successPattern = getSuccessPattern(httpRequest);
         Request request = buildRequest(httpRequest);
         LOGGER.info("request: {}", request.toString());
         LOGGER.info("body: {}", request.getStringData() != null ? request.getStringData() : "");
@@ -218,7 +218,7 @@ public class HttpClient {
         return responseStatusCode;
     }
 
-    private Pattern getSuccessPattern(Map<String, List<String>> headers) {
+    private Pattern getSuccessPattern(HttpRequest httpRequest) {
         //by default, we don't resend any http call with a response between 100 and 499
         // 1xx is for protocol information (100 continue for example),
         // 2xx is for success,
@@ -235,10 +235,8 @@ public class HttpClient {
          *  * a technical error occurs from the WS server : the status code returned from the ws server does not match the regexp AND is equals or higher than 500 : retries are done
          */
         String wsSuccessCode = "^[1-4][0-9][0-9]$";
-        if (headers.get(X_SUCCESS_PATTERN) != null) {
-            wsSuccessCode = headers.get(X_SUCCESS_PATTERN).get(0);
-            //we remove hte HEADER to avoid any character collision from the regex
-            headers.remove(X_SUCCESS_PATTERN);
+        if (httpRequest.getSuccessPattern() != null) {
+            wsSuccessCode = httpRequest.getSuccessPattern();
         }
         if (this.httpSuccessCodesPatterns.get(wsSuccessCode) == null) {
             //Pattern.compile should be reused for performance, but wsSuccessCode can change....
