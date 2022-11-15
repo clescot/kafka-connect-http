@@ -67,7 +67,7 @@ public class HttpClient {
     private AsyncHttpClient asyncHttpClient;
     private Optional<RetryPolicy<HttpExchange>> defaultRetryPolicy=Optional.empty();
     public static final String BLANK_RESPONSE_CONTENT = "";
-    public static final String WS_SUCCESS_CODE = "success-code";
+    public static final String X_SUCCESS_PATTERN = "X-Success-Pattern";
     public static final String WS_REQUEST_TIMEOUT_IN_MS = "request-timeout-in-ms";
     public static final String WS_READ_TIMEOUT_IN_MS = "read-timeout-in-ms";
     private static final String WS_REALM_PASS = "password";
@@ -156,6 +156,7 @@ public class HttpClient {
 
 
     protected HttpExchange callOnceWs(HttpRequest httpRequest, AtomicInteger attempts) throws HttpException {
+        Pattern successPattern = getSuccessPattern(httpRequest.getHeaders());
         Request request = buildRequest(httpRequest);
         LOGGER.info("request: {}", request.toString());
         LOGGER.info("body: {}", request.getStringData() != null ? request.getStringData() : "");
@@ -167,7 +168,8 @@ public class HttpClient {
             Response response = responseListenableFuture.get();
             LOGGER.info("response: {}", response);
             stopwatch.stop();
-            HttpResponse httpResponse = buildResponse(httpRequest, response);
+
+            HttpResponse httpResponse = buildResponse(response, successPattern);
             LOGGER.info("duration: {}", stopwatch);
             return getHttpExchange(httpRequest, httpResponse, stopwatch, now, attempts);
         } catch (HttpException | InterruptedException | ExecutionException e) {
@@ -181,8 +183,8 @@ public class HttpClient {
 
     }
 
-    private HttpResponse buildResponse(HttpRequest httpRequest, Response response) {
-        int responseStatusCode = getSuccessfulStatusCodeOrThrowRetryException(httpRequest.getHeaders(), response.getStatusCode());
+    private HttpResponse buildResponse(Response response, Pattern successPattern) {
+        int responseStatusCode = getSuccessfulStatusCodeOrThrowRetryException(response.getStatusCode(), successPattern);
         List<Map.Entry<String, String>> responseEntries = response.getHeaders() != null ? response.getHeaders().entries() : Lists.newArrayList();
         HttpResponse httpResponse = new HttpResponse(responseStatusCode, response.getStatusText(), response.getResponseBody());
         Map<String, List<String>> responseHeaders = responseEntries.stream()
@@ -207,7 +209,16 @@ public class HttpClient {
         );
     }
 
-    private int getSuccessfulStatusCodeOrThrowRetryException(Map<String, List<String>> wsProperties, int responseStatusCode) {
+    private int getSuccessfulStatusCodeOrThrowRetryException(int responseStatusCode, Pattern pattern) {
+        Matcher matcher = pattern.matcher("" + responseStatusCode);
+
+        if (!matcher.matches() && responseStatusCode >= 500) {
+            throw new HttpException("response status code:" + responseStatusCode + " does not match status code success regex " + pattern.pattern());
+        }
+        return responseStatusCode;
+    }
+
+    private Pattern getSuccessPattern(Map<String, List<String>> headers) {
         //by default, we don't resend any http call with a response between 100 and 499
         // 1xx is for protocol information (100 continue for example),
         // 2xx is for success,
@@ -215,9 +226,19 @@ public class HttpClient {
         //4xx is for a client error
         //5xx is for a server error
         //only 5xx by default, trigger a resend
+
+        /*
+         *  HTTP Server status code returned
+         *  3 cases can arise:
+         *  * a success occurs : the status code returned from the ws server is matching the regexp => no retries
+         *  * a functional error occurs: the status code returned from the ws server is not matching the regexp, but is lower than 500 => no retries
+         *  * a technical error occurs from the WS server : the status code returned from the ws server does not match the regexp AND is equals or higher than 500 : retries are done
+         */
         String wsSuccessCode = "^[1-4][0-9][0-9]$";
-        if (wsProperties.get(WS_SUCCESS_CODE) != null) {
-            wsSuccessCode = wsProperties.get(WS_SUCCESS_CODE).get(0);
+        if (headers.get(X_SUCCESS_PATTERN) != null) {
+            wsSuccessCode = headers.get(X_SUCCESS_PATTERN).get(0);
+            //we remove hte HEADER to avoid any character collision from the regex
+            headers.remove(X_SUCCESS_PATTERN);
         }
         if (this.httpSuccessCodesPatterns.get(wsSuccessCode) == null) {
             //Pattern.compile should be reused for performance, but wsSuccessCode can change....
@@ -225,18 +246,7 @@ public class HttpClient {
             httpSuccessCodesPatterns.put(wsSuccessCode, httpSuccessPattern);
         }
         Pattern pattern = httpSuccessCodesPatterns.get(wsSuccessCode);
-        Matcher matcher = pattern.matcher("" + responseStatusCode);
-        /*
-         *  WS Server status code returned
-         *  3 cases can arise:
-         *  * a success occurs : the status code returned from the ws server is matching the regexp => no retries
-         *  * a functional error occurs: the status code returned from the ws server is not matching the regexp, but is lower than 500 => no retries
-         *  * a technical error occurs from the WS server : the status code returned from the ws server does not match the regexp AND is equals or higher than 500 : retries are done
-         */
-        if (!matcher.matches() && responseStatusCode >= 500) {
-            throw new HttpException("response status code:" + responseStatusCode + " does not match status code success regex " + pattern.pattern());
-        }
-        return responseStatusCode;
+        return pattern;
     }
 
 
