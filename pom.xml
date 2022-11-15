@@ -15,7 +15,7 @@
     </licenses>
     <packaging>jar</packaging>
     <scm>
-        <developerConnection>scm:git:https://github.com/clescot/kafka-connect-http-sink.git</developerConnection>
+        <developerConnection>git@github.com:clescot/kafka-connect-http-sink.git</developerConnection>
     </scm>
     <properties>
         <async.http.client.version>2.12.3</async.http.client.version>
