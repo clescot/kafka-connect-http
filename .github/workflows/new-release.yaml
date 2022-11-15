@@ -12,7 +12,7 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - name: Release
-        uses: mg-smartrent/github-actions-maven-release@v2.6
+        uses: mg-smartrent/github-actions-maven-release@v1.5
         with:
           release-branch-name: "master"
           git-release-bot-name: "ReleaseBot"
