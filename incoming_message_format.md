@@ -31,10 +31,6 @@ The HTTP Sink Connector, support also String messages, but not as the main use c
 
 ### fields
 
-#### metadata fields
-- requestId
-- correlationId
-
 #### connection fields
 - timeoutInMs
 
