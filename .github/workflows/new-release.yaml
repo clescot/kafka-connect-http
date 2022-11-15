@@ -19,6 +19,8 @@ jobs:
           cache: maven
       - name: Release
         uses: mg-smartrent/github-actions-maven-release@v1.5
+        env:
+          JAVA_HOME: /usr/lib/jvm/java-11-openjdk/
         with:
           release-branch-name: "master"
           git-release-bot-name: "ReleaseBot"
