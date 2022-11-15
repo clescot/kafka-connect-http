@@ -54,7 +54,11 @@ jobs:
           package-name: 'test-package'
           min-versions-to-keep: 10
           delete-only-pre-release-versions: "true"
-      - name: Publish JAR
-        run: mvn -B release:prepare release:perform
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Release
+        uses: qcastel/github-actions-maven-release@v1.12.37
+        with:
+          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+          version-minor: true
+          gpg-enabled: "false"
+          env:
+            JAVA_HOME: /usr/lib/jvm/java-11-openjdk/
