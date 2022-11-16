@@ -39,7 +39,7 @@ jobs:
           version-patch: true
           gpg-enabled: "false"
           maven-args: "-DskipIT "
-          maven-servers: '[{"id": "github", "username": "${{GITHUB_ACTOR}}", "password": "${{ secrets.GITHUB_TOKEN }}"]'
+          maven-servers: '[{"id": "github", "username": "$GITHUB_ACTOR", "password": "${{ secrets.GITHUB_TOKEN }}"]'
         env:
           JAVA_HOME: /usr/lib/jvm/java-11-openjdk/
 
