@@ -28,10 +28,10 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-maven-
 
-      - name: Configure Git user
-        run: |
-          git config user.email "actions@github.com"
-          git config user.name "GitHub Actions"
+#      - name: Configure Git user
+#        run: |
+#          git config user.email "actions@github.com"
+#          git config user.name "GitHub Actions"
       - name: Release
         uses: qcastel/github-actions-maven-release@v1.12.37
         with:
