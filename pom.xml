@@ -331,7 +331,7 @@
                         <configuration>
                             <artifacts>
                                 <artifact>
-                                    <file>components/packages/clescot-${project.name}-${project.version}.zip</file>
+                                    <file>components/packages/clescot-${project.build.finalName}-${project.version}.zip</file>
                                     <type>zip</type>
                                     <classifier>kafka-connect</classifier>
                                 </artifact>
