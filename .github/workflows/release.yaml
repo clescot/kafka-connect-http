@@ -37,11 +37,9 @@ jobs:
         with:
           access-token: ${{ secrets.GITHUB_TOKEN }}
           version-patch: true
-#          version-minor: true
           gpg-enabled: "false"
           maven-args: "-DskipIT "
-#          maven-args: "-DskipIT -Dmaven.deploy.skip=true"
-          maven-servers: [{"id": "github", "username": "${{GITHUB_ACTOR}}", "password": "${{ secrets.GITHUB_TOKEN }}"]
+          maven-servers: '[{"id": "github", "username": "${{GITHUB_ACTOR}}", "password": "${{ secrets.GITHUB_TOKEN }}"]'
         env:
           JAVA_HOME: /usr/lib/jvm/java-11-openjdk/
 
