@@ -49,6 +49,7 @@ public class WsSinkConnectorConfig extends AbstractConfig {
         this.defaultRetryJitterInMs = Optional.ofNullable(getLong(DEFAULT_RETRY_JITTER_IN_MS)).orElse(null);
         this.generateMissingRequestId = getBoolean(GENERATE_MISSING_REQUEST_ID);
         this.generateMissingCorrelationId = getBoolean(GENERATE_MISSING_CORRELATION_ID);
+        //TODO add Throttling parameters
         Optional<List<String>> staticRequestHeaderNames = Optional.ofNullable(getList(STATIC_REQUEST_HEADER_NAMES));
         List<String> additionalHeaderNamesList =staticRequestHeaderNames.orElse(Lists.newArrayList());
         for(String headerName:additionalHeaderNamesList){
