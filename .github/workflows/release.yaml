@@ -5,6 +5,7 @@ on:
       - master
   release:
     types: [created]
+permissions: write-all
 jobs:
   publish:
     runs-on: ubuntu-latest
