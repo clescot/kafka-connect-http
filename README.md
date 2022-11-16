@@ -54,7 +54,8 @@ The main problem with HTTP interactions, is its request/response nature.
 
 ### How does it work? How do we solve the problem ?
     
-    We need to revert the multiple connectors proposal in the previous section, with a shared channel different from Kafka
+We need to revert the multiple connectors proposal in the previous section, with a shared channel different from Kafka. We provide :
+
 - a **Sink** Connector to query HTTP servers
 
     We define a Sink Connector to read from kafka, and query HTTP servers according to the Kafka message. This is the most easy part.
