@@ -29,14 +29,14 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-maven-
 
-#      - name: Configure Git user
-#        run: |
-#          git config user.email "actions@github.com"
-#          git config user.name "GitHub Actions"
+      - name: Configure Git user
+        run: |
+          git config user.email "actions@github.com"
+          git config user.name "clescot"
       - name: Release
         uses: qcastel/github-actions-maven-release@v1.12.37
         with:
-          access-token: ${{ secrets.GITHUB_TOKEN }}
+          access-token: ${{ secrets.ACCESS_TOKEN }}
           version-patch: true
 #          version-minor: true
           gpg-enabled: "false"
