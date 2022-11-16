@@ -32,10 +32,6 @@ jobs:
         run: |
           git config user.email "actions@github.com"
           git config user.name "clescot"
-      - name: fix settings.xml for release
-        uses: s4u/maven-settings-action@v2.8.0
-        with:
-          servers: '[{"id": "github", "username": "${GITHUB_ACTOR}", "password": "${{ secrets.GITHUB_TOKEN }}"}]'
       - name: Release
         uses: qcastel/github-actions-maven-release@v1.12.37
         with:
@@ -45,31 +41,8 @@ jobs:
           gpg-enabled: "false"
           maven-args: "-DskipIT "
 #          maven-args: "-DskipIT -Dmaven.deploy.skip=true"
+          maven-servers: [{"id": "github", "username": "${{GITHUB_ACTOR}}", "password": "${{ secrets.GITHUB_TOKEN }}"]
         env:
           JAVA_HOME: /usr/lib/jvm/java-11-openjdk/
 
-#      - name: Set MAVEN_PROJECT_VERSION as env
-#        run: echo "MAVEN_PROJECT_VERSION=$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout)" >> $GITHUB_ENV
-#      - name: Upload ZIP archive
-#        run: |
-#          mvn deploy:deploy-file \
-#          -Dfile=target/components/packages/clescot-kafka-connect-http-sink-${{ env.MAVEN_PROJECT_VERSION }}.zip \
-#          -Durl=https://maven.pkg.github.com/clescot/kafka-connect-http-sink \
-#          -DgroupId=com.github.clescot \
-#          -DartifactId=kafka-connect-http-sink \
-#          -Dversion=${{ env.MAVEN_PROJECT_VERSION }} \
-#          -Dpackaging=zip \
-#          -DrepositoryId=github
-#        env:
-#          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-#      - name: Publish package
-#        run: mvn --batch-mode deploy
-#        env:
-#          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-#      - name: delete old pre-release-archives
-#        uses: actions/delete-package-versions@v3
-#        with:
-#          package-name: 'test-package'
-#          min-versions-to-keep: 10
-#          delete-only-pre-release-versions: "true"
 
