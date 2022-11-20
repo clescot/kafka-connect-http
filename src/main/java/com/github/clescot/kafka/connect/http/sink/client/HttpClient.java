@@ -80,18 +80,6 @@ public class HttpClient {
     }
 
     /**
-     * parameters which are in kafka headers permit to pilot
-     * HTTP calls. they are all starting with 'ws-'.
-     * including
-     * 1- parameters for retry policy, like :
-     * retry count, delay between calls.
-     * 2- the correlation id permit to track together multiple calls
-     * 3- proxy parameters
-     * 4- authentication parameters
-     * 5- parameters related to the http, like url, HTTP method,http headers (starting by 'ws-headers-'),
-     * establishing connection timeout.
-     * body's http request(encoded in avro or not), is the value of the kafka message.
-     * 6- parameters related to the http response, like response read timeout,success regex of the response,
      *
      * @param httpRequest
      * @return
