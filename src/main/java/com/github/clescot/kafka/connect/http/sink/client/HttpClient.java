@@ -72,7 +72,6 @@ public class HttpClient {
     private Optional<RetryPolicy<HttpExchange>> defaultRetryPolicy = Optional.empty();
     private RateLimiter<HttpExchange> defaultRateLimiter = RateLimiter.<HttpExchange>smoothBuilder(WsSinkConfigDefinition.DEFAULT_RATE_LIMITER_MAX_EXECUTIONS_VALUE, Duration.of(WsSinkConfigDefinition.DEFAULT_RATE_LIMITER_PERIOD_IN_MS_VALUE, ChronoUnit.MILLIS)).build();;
     public static final String BLANK_RESPONSE_CONTENT = "";
-    public static final String X_SUCCESS_PATTERN = "X-Success-Pattern";
     public static final String WS_REQUEST_TIMEOUT_IN_MS = "request-timeout-in-ms";
     public static final String WS_READ_TIMEOUT_IN_MS = "read-timeout-in-ms";
     private static final String WS_REALM_PASS = "password";
