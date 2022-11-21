@@ -257,12 +257,6 @@ class WsSinkTaskTest {
                 "    }\n" +
                 "  },\n" +
                 "  \"httpRequest\": {\n" +
-                "    \"timeoutInMs\": null,\n" +
-                "    \"retries\": null,\n" +
-                "    \"retryDelayInMs\": null,\n" +
-                "    \"retryMaxDelayInMs\": null,\n" +
-                "    \"retryDelayFactor\": null,\n" +
-                "    \"retryJitter\": null,\n" +
                 "    \"url\": \"http://www.titi.com\",\n" +
                 "    \"headers\": {\n" +
                 "      \"X-dummy\": [\n" +
@@ -309,12 +303,6 @@ class WsSinkTaskTest {
 
     private String getDummyHttpRequestAsString(){
         return "{\n" +
-                "  \"timeoutInMs\": 0,\n" +
-                "  \"retries\": 0,\n" +
-                "  \"retryDelayInMs\": 0,\n" +
-                "  \"retryMaxDelayInMs\": 0,\n" +
-                "  \"retryDelayFactor\": 0.0,\n" +
-                "  \"retryJitter\": 0,\n" +
                 "  \"url\": \"http://www.stuff.com\",\n" +
                 "  \"headers\": {},\n" +
                 "  \"method\": \"GET\",\n" +

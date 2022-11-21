@@ -35,6 +35,11 @@ public class WsSinkConfigDefinition {
     public static final String GENERATE_MISSING_REQUEST_ID_DOC = "if not present in the HttpRequest headers, generate an UUID bound to the 'X-Request-ID' name";
     public static final long DEFAULT_RATE_LIMITER_PERIOD_IN_MS_VALUE = 1000L;
     public static final long DEFAULT_RATE_LIMITER_MAX_EXECUTIONS_VALUE = 1L;
+    private static final int DEFAULT_RETRIES_VALUE = 1;
+    private static final long DEFAULT_RETRY_DELAY_IN_MS_VALUE = 2000L;
+    private static final long DEFAULT_RETRY_MAX_DELAY_IN_MS_VALUE = 20000L;
+    private static final double DEFAULT_RETRY_DELAY_FACTOR_VALUE = 1.5d;
+    private static final long DEFAULT_RETRY_JITTER_IN_MS_VALUE = 500;
 
     private WsSinkConfigDefinition() {
         //Class with only static methods
@@ -45,11 +50,11 @@ public class WsSinkConfigDefinition {
                 .define(ConfigConstants.QUEUE_NAME, ConfigDef.Type.STRING, null,ConfigDef.Importance.MEDIUM, ConfigConstants.QUEUE_NAME_DOC)
                 .define(STATIC_REQUEST_HEADER_NAMES, ConfigDef.Type.LIST,  Collections.emptyList(), ConfigDef.Importance.MEDIUM, STATIC_REQUEST_HEADER_NAMES_DOC)
                 .define(PUBLISH_TO_IN_MEMORY_QUEUE, ConfigDef.Type.BOOLEAN, false, ConfigDef.Importance.MEDIUM, PUBLISH_TO_IN_MEMORY_QUEUE_DOC)
-                .define(DEFAULT_RETRIES, ConfigDef.Type.INT, null, ConfigDef.Importance.MEDIUM, DEFAULT_RETRIES_DOC)
-                .define(DEFAULT_RETRY_DELAY_IN_MS, ConfigDef.Type.LONG, null, ConfigDef.Importance.MEDIUM, DEFAULT_RETRY_DELAY_IN_MS_DOC)
-                .define(DEFAULT_RETRY_MAX_DELAY_IN_MS, ConfigDef.Type.LONG, null, ConfigDef.Importance.MEDIUM, DEFAULT_RETRY_MAX_DELAY_IN_MS_DOC)
-                .define(DEFAULT_RETRY_DELAY_FACTOR, ConfigDef.Type.DOUBLE, null, ConfigDef.Importance.MEDIUM, DEFAULT_RETRY_DELAY_FACTOR_DOC)
-                .define(DEFAULT_RETRY_JITTER_IN_MS, ConfigDef.Type.LONG, null, ConfigDef.Importance.MEDIUM, DEFAULT_RETRY_JITTER_IN_MS_DOC)
+                .define(DEFAULT_RETRIES, ConfigDef.Type.INT, DEFAULT_RETRIES_VALUE, ConfigDef.Importance.MEDIUM, DEFAULT_RETRIES_DOC)
+                .define(DEFAULT_RETRY_DELAY_IN_MS, ConfigDef.Type.LONG, DEFAULT_RETRY_DELAY_IN_MS_VALUE, ConfigDef.Importance.MEDIUM, DEFAULT_RETRY_DELAY_IN_MS_DOC)
+                .define(DEFAULT_RETRY_MAX_DELAY_IN_MS, ConfigDef.Type.LONG, DEFAULT_RETRY_MAX_DELAY_IN_MS_VALUE, ConfigDef.Importance.MEDIUM, DEFAULT_RETRY_MAX_DELAY_IN_MS_DOC)
+                .define(DEFAULT_RETRY_DELAY_FACTOR, ConfigDef.Type.DOUBLE, DEFAULT_RETRY_DELAY_FACTOR_VALUE, ConfigDef.Importance.MEDIUM, DEFAULT_RETRY_DELAY_FACTOR_DOC)
+                .define(DEFAULT_RETRY_JITTER_IN_MS, ConfigDef.Type.LONG, DEFAULT_RETRY_JITTER_IN_MS_VALUE, ConfigDef.Importance.MEDIUM, DEFAULT_RETRY_JITTER_IN_MS_DOC)
                 .define(DEFAULT_RATE_LIMITER_PERIOD_IN_MS, ConfigDef.Type.LONG, WsSinkConfigDefinition.DEFAULT_RATE_LIMITER_PERIOD_IN_MS_VALUE, ConfigDef.Importance.MEDIUM, DEFAULT_RATE_LIMITER_PERIOD_IN_MS_DOC)
                 .define(DEFAULT_RATE_LIMITER_MAX_EXECUTIONS, ConfigDef.Type.LONG, WsSinkConfigDefinition.DEFAULT_RATE_LIMITER_MAX_EXECUTIONS_VALUE, ConfigDef.Importance.MEDIUM, DEFAULT_RATE_LIMITER_MAX_EXECUTIONS_DOC)
                 .define(GENERATE_MISSING_CORRELATION_ID, ConfigDef.Type.BOOLEAN, false, ConfigDef.Importance.MEDIUM, GENERATE_MISSING_CORRELATION_ID_DOC)

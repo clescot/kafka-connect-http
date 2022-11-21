@@ -252,10 +252,6 @@ public class HttpClientTest {
                 null,
                 null);
         httpRequest.setHeaders(headers);
-        httpRequest.setRetries(10L);
-        httpRequest.setRetryDelayInMs(2500L);
-        httpRequest.setRetryMaxDelayInMs(7000L);
-        httpRequest.setRetryDelayFactor(2d);
         httpRequest.getHeaders().put(HEADER_X_CORRELATION_ID,Lists.newArrayList("45-66-33"));
         httpRequest.getHeaders().put(HEADER_X_REQUEST_ID,Lists.newArrayList("77-3333-11"));
         return httpRequest;

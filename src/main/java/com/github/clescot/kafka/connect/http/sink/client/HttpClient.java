@@ -94,19 +94,7 @@ public class HttpClient {
 
 
             Optional<RetryPolicy<HttpExchange>> retryPolicyForCall = defaultRetryPolicy;
-            //define RetryPolicy in the request
-            Optional<Long> retries = Optional.ofNullable(httpRequest.getRetries());
-            Optional<Long> retryDelayInMs = Optional.ofNullable(httpRequest.getRetryDelayInMs());
-            Optional<Long> retryMaxDelayInMs = Optional.ofNullable(httpRequest.getRetryMaxDelayInMs());
-            Optional<Double> retryDelayFactor = Optional.ofNullable(httpRequest.getRetryDelayFactor());
-            Optional<Long> retryJitterInMs = Optional.ofNullable(httpRequest.getRetryJitter());
-            if (retries.isPresent()
-                    && retryDelayInMs.isPresent()
-                    && retryMaxDelayInMs.isPresent()
-                    && retryDelayFactor.isPresent()
-                    && retryJitterInMs.isPresent()) {
-                retryPolicyForCall = Optional.of(buildRetryPolicy(retries.get().intValue(), retryDelayInMs.get(), retryMaxDelayInMs.get(), retryDelayFactor.get(), retryJitterInMs.get()));
-            }
+
 
             AtomicInteger attempts = new AtomicInteger();
             try {
@@ -237,9 +225,7 @@ public class HttpClient {
          *  * a technical error occurs from the WS server : the status code returned from the ws server does not match the regexp AND is equals or higher than 500 : retries are done
          */
         String wsSuccessCode = "^[1-4][0-9][0-9]$";
-        if (httpRequest.getSuccessPattern() != null) {
-            wsSuccessCode = httpRequest.getSuccessPattern();
-        }
+
         if (this.httpSuccessCodesPatterns.get(wsSuccessCode) == null) {
             //Pattern.compile should be reused for performance, but wsSuccessCode can change....
             Pattern httpSuccessPattern = Pattern.compile(wsSuccessCode);

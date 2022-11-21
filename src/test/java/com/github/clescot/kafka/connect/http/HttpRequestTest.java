@@ -48,13 +48,6 @@ class HttpRequestTest {
         httpRequest.setHeaders(headers);
 
         String expectedHttpRequest = "{\n" +
-                "  \"timeoutInMs\": null,\n" +
-                "  \"successPattern\": null,\n" +
-                "  \"retries\": null,\n" +
-                "  \"retryDelayInMs\": null,\n" +
-                "  \"retryMaxDelayInMs\": null,\n" +
-                "  \"retryDelayFactor\": null,\n" +
-                "  \"retryJitter\": null,\n" +
                 "  \"url\": \"http://www.stuff.com\",\n" +
                 "  \"headers\":{\"X-request-id\":[\"aaaa-4466666-111\"],\"X-correlation-id\":[\"sfds-55-77\"]},\n" +
                 "  \"method\": \"GET\",\n" +

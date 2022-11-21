@@ -102,28 +102,20 @@ public class WsSinkTask extends SinkTask {
         this.generateMissingCorrelationId = wsSinkConnectorConfig.isGenerateMissingCorrelationId();
 
         this.httpClient = new HttpClient(getAsyncHttpClient(wsSinkConnectorConfig.originalsStrings()));
-        Optional<Integer> defaultRetries = Optional.ofNullable(wsSinkConnectorConfig.getDefaultRetries());
-        Optional<Long> defaultRetryDelayInMs = Optional.ofNullable(wsSinkConnectorConfig.getDefaultRetryDelayInMs());
-        Optional<Long> defaultRetryMaxDelayInMs = Optional.ofNullable(wsSinkConnectorConfig.getDefaultRetryMaxDelayInMs());
-        Optional<Double> defaultRetryDelayFactor = Optional.ofNullable(wsSinkConnectorConfig.getDefaultRetryDelayFactor());
-        Optional<Long> defaultRetryJitterInMs = Optional.ofNullable(wsSinkConnectorConfig.getDefaultRetryJitterInMs());
-        if (defaultRetries.isPresent()
-                && defaultRetryDelayInMs.isPresent()
-                && defaultRetryMaxDelayInMs.isPresent()
-                && defaultRetryDelayFactor.isPresent()
-                && defaultRetryJitterInMs.isPresent()) {
+        Integer defaultRetries = wsSinkConnectorConfig.getDefaultRetries();
+        Long defaultRetryDelayInMs = wsSinkConnectorConfig.getDefaultRetryDelayInMs();
+        Long defaultRetryMaxDelayInMs = wsSinkConnectorConfig.getDefaultRetryMaxDelayInMs();
+        Double defaultRetryDelayFactor = wsSinkConnectorConfig.getDefaultRetryDelayFactor();
+        Long defaultRetryJitterInMs = wsSinkConnectorConfig.getDefaultRetryJitterInMs();
+
            httpClient.setDefaultRetryPolicy(
-                   defaultRetries.get(),
-                   defaultRetryDelayInMs.get(),
-                   defaultRetryMaxDelayInMs.get(),
-                   defaultRetryDelayFactor.get(),
-                   defaultRetryJitterInMs.get()
+                   defaultRetries,
+                   defaultRetryDelayInMs,
+                   defaultRetryMaxDelayInMs,
+                   defaultRetryDelayFactor,
+                   defaultRetryJitterInMs
            );
         }
-
-
-
-    }
 
 
     private static synchronized AsyncHttpClient getAsyncHttpClient(Map<String, String> config) {
