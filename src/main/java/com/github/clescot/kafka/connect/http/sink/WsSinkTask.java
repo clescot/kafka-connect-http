@@ -112,8 +112,15 @@ public class WsSinkTask extends SinkTask {
                 && defaultRetryMaxDelayInMs.isPresent()
                 && defaultRetryDelayFactor.isPresent()
                 && defaultRetryJitterInMs.isPresent()) {
-           httpClient.setDefaultRetryPolicy(defaultRetries.get(),defaultRetryDelayInMs.get(),defaultRetryMaxDelayInMs.get(),defaultRetryDelayFactor.get(),defaultRetryJitterInMs.get());
+           httpClient.setDefaultRetryPolicy(
+                   defaultRetries.get(),
+                   defaultRetryDelayInMs.get(),
+                   defaultRetryMaxDelayInMs.get(),
+                   defaultRetryDelayFactor.get(),
+                   defaultRetryJitterInMs.get()
+           );
         }
+
 
 
     }

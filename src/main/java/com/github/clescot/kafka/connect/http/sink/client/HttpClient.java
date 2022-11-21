@@ -3,11 +3,13 @@ package com.github.clescot.kafka.connect.http.sink.client;
 import com.github.clescot.kafka.connect.http.HttpExchange;
 import com.github.clescot.kafka.connect.http.HttpRequest;
 import com.github.clescot.kafka.connect.http.HttpResponse;
+import com.github.clescot.kafka.connect.http.sink.WsSinkConfigDefinition;
 import com.google.common.base.Preconditions;
 import com.google.common.base.Stopwatch;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import dev.failsafe.Failsafe;
+import dev.failsafe.RateLimiter;
 import dev.failsafe.RetryPolicy;
 import org.asynchttpclient.*;
 import org.asynchttpclient.proxy.ProxyServer;
@@ -19,6 +21,7 @@ import java.nio.charset.Charset;
 import java.time.Duration;
 import java.time.OffsetDateTime;
 import java.time.ZoneId;
+import java.time.temporal.ChronoUnit;
 import java.util.AbstractMap;
 import java.util.List;
 import java.util.Map;
@@ -62,10 +65,12 @@ public class HttpClient {
     public static final String UTC_ZONE_ID = "UTC";
     public static final boolean FAILURE = false;
     public static final boolean SUCCESS = true;
+    public static final int ONE_HTTP_REQUEST = 1;
 
 
     private AsyncHttpClient asyncHttpClient;
-    private Optional<RetryPolicy<HttpExchange>> defaultRetryPolicy=Optional.empty();
+    private Optional<RetryPolicy<HttpExchange>> defaultRetryPolicy = Optional.empty();
+    private RateLimiter<HttpExchange> defaultRateLimiter = RateLimiter.<HttpExchange>smoothBuilder(WsSinkConfigDefinition.DEFAULT_RATE_LIMITER_MAX_EXECUTIONS_VALUE, Duration.of(WsSinkConfigDefinition.DEFAULT_RATE_LIMITER_PERIOD_IN_MS_VALUE, ChronoUnit.MILLIS)).build();;
     public static final String BLANK_RESPONSE_CONTENT = "";
     public static final String X_SUCCESS_PATTERN = "X-Success-Pattern";
     public static final String WS_REQUEST_TIMEOUT_IN_MS = "request-timeout-in-ms";
@@ -80,7 +85,6 @@ public class HttpClient {
     }
 
     /**
-     *
      * @param httpRequest
      * @return
      */
@@ -88,7 +92,6 @@ public class HttpClient {
         HttpExchange httpExchange = null;
 
         if (httpRequest != null) {
-
 
 
             Optional<RetryPolicy<HttpExchange>> retryPolicyForCall = defaultRetryPolicy;
@@ -128,7 +131,11 @@ public class HttpClient {
         return httpExchange;
     }
 
-    private RetryPolicy<HttpExchange> buildRetryPolicy(Integer retries, Long retryDelayInMs, Long retryMaxDelayInMs, Double retryDelayFactor, Long retryJitterInMs) {
+    private RetryPolicy<HttpExchange> buildRetryPolicy(Integer retries,
+                                                       Long retryDelayInMs,
+                                                       Long retryMaxDelayInMs,
+                                                       Double retryDelayFactor,
+                                                       Long retryJitterInMs) {
         RetryPolicy<HttpExchange> retryPolicy = RetryPolicy.<HttpExchange>builder()
                 //we retry only if the error comes from the WS server (server-side technical error)
                 .handle(HttpException.class)
@@ -148,8 +155,15 @@ public class HttpClient {
         Request request = buildRequest(httpRequest);
         LOGGER.info("request: {}", request.toString());
         LOGGER.info("body: {}", request.getStringData() != null ? request.getStringData() : "");
+        try {
+            this.defaultRateLimiter.acquirePermits(ONE_HTTP_REQUEST);
+        } catch (InterruptedException e) {
+            LOGGER.error("Failed to acquire execution permit from the rate limiter {} ", e.getMessage());
+            throw new HttpException(e.getMessage());
+        }
         Stopwatch stopwatch = Stopwatch.createStarted();
         try {
+
             OffsetDateTime now = OffsetDateTime.now(ZoneId.of(UTC_ZONE_ID));
             ListenableFuture<Response> responseListenableFuture = asyncHttpClient.executeRequest(request, asyncCompletionHandler);
             //we cannot use the asynchronous nature of the response yet
@@ -168,6 +182,7 @@ public class HttpClient {
                 stopwatch.stop();
             }
         }
+
 
     }
 
@@ -382,7 +397,11 @@ public class HttpClient {
         this.asyncHttpClient = asyncHttpClient;
     }
 
-    public void setDefaultRetryPolicy(Integer retries,Long retryDelayInMs,Long retryMaxDelayInMs,Double retryDelayFactor,Long retryJitterInMs) {
-        this.defaultRetryPolicy = Optional.of(buildRetryPolicy(retries,retryDelayInMs,retryMaxDelayInMs,retryDelayFactor,retryJitterInMs));
+    public void setDefaultRetryPolicy(Integer retries, Long retryDelayInMs, Long retryMaxDelayInMs, Double retryDelayFactor, Long retryJitterInMs) {
+        this.defaultRetryPolicy = Optional.of(buildRetryPolicy(retries, retryDelayInMs, retryMaxDelayInMs, retryDelayFactor, retryJitterInMs));
+    }
+
+    public void setDefaultRateLimiter(long periodInMs, long maxExecutions) {
+        this.defaultRateLimiter = RateLimiter.<HttpExchange>smoothBuilder(maxExecutions, Duration.of(periodInMs, ChronoUnit.MILLIS)).build();
     }
 }

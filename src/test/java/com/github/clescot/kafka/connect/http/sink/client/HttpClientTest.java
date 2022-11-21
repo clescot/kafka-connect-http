@@ -181,8 +181,8 @@ public class HttpClientTest {
             when(listenerObject.get()).thenReturn(response);
             when(asyncHttpClient.executeRequest(any(Request.class))).thenReturn(listener);
             when(asyncHttpClient.executeRequest(any(Request.class), any())).thenReturn(listenerObject);
-            HashMap<String, String> vars = Maps.newHashMap();
             HttpClient httpClient = new HttpClient(asyncHttpClient);
+
             //when
             HttpExchange httpExchange = httpClient.callOnceWs(getDummyHttpRequest(), new AtomicInteger(2));
             //then

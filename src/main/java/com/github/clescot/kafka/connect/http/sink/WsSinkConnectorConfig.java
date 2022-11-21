@@ -26,6 +26,8 @@ public class WsSinkConnectorConfig extends AbstractConfig {
     private final Long defaultRetryMaxDelayInMs;
     private final Double defaultRetryDelayFactor;
     private final Long defaultRetryJitterInMs;
+    private final Long defaultRateLimiterMaxExecutions;
+    private final Long defaultRateLimiterPeriodInMs;
     private final Map<String,List<String>> staticRequestHeaders = Maps.newHashMap();
     private final boolean generateMissingRequestId;
     private final boolean generateMissingCorrelationId;
@@ -49,7 +51,8 @@ public class WsSinkConnectorConfig extends AbstractConfig {
         this.defaultRetryJitterInMs = Optional.ofNullable(getLong(DEFAULT_RETRY_JITTER_IN_MS)).orElse(null);
         this.generateMissingRequestId = getBoolean(GENERATE_MISSING_REQUEST_ID);
         this.generateMissingCorrelationId = getBoolean(GENERATE_MISSING_CORRELATION_ID);
-        //TODO add Throttling parameters
+        this.defaultRateLimiterPeriodInMs = getLong(DEFAULT_RATE_LIMITER_PERIOD_IN_MS);
+        this.defaultRateLimiterMaxExecutions = getLong(DEFAULT_RATE_LIMITER_MAX_EXECUTIONS);
         Optional<List<String>> staticRequestHeaderNames = Optional.ofNullable(getList(STATIC_REQUEST_HEADER_NAMES));
         List<String> additionalHeaderNamesList =staticRequestHeaderNames.orElse(Lists.newArrayList());
         for(String headerName:additionalHeaderNamesList){
