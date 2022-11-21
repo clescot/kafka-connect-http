@@ -260,12 +260,6 @@ public class ITConnectorTest {
                 "  \"moment\": \"2022-11-10T17:19:42.740852Z\",\n" +
                 "  \"attempts\": 1,\n" +
                 "  \"request\": {\n" +
-                "    \"timeoutInMs\": null,\n" +
-                "    \"retries\": null,\n" +
-                "    \"retryDelayInMs\": null,\n" +
-                "    \"retryMaxDelayInMs\": null,\n" +
-                "    \"retryDelayFactor\": null,\n" +
-                "    \"retryJitter\": null,\n" +
                 "    \"headers\": {\n" +
                 "      \"X-Correlation-ID\": [\n" +
                 "        \"e6de70d1-f222-46e8-b755-754880687822\"\n" +
@@ -375,12 +369,6 @@ public class ITConnectorTest {
                 "  \"moment\": \"2022-11-10T17:19:42.740852Z\",\n" +
                 "  \"attempts\": 1,\n" +
                 "  \"request\": {\n" +
-                "    \"timeoutInMs\": null,\n" +
-                "    \"retries\": null,\n" +
-                "    \"retryDelayInMs\": null,\n" +
-                "    \"retryMaxDelayInMs\": null,\n" +
-                "    \"retryDelayFactor\": null,\n" +
-                "    \"retryJitter\": null,\n" +
                 "    \"headers\": {\n" +
                 "      \"X-Correlation-ID\": [\n" +
                 "        \"e6de70d1-f222-46e8-b755-754880687822\"\n" +
