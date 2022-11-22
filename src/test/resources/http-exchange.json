@@ -193,20 +193,12 @@
           ]
         },
         "bodyType": {
-          "oneOf": [
-            {
-              "type": "null",
-              "title": "Not included"
-            },
-            {
               "type": "string",
               "enum": [
                 "STRING",
                 "BYTE_ARRAY",
                 "MULTIPART"
               ]
-            }
-          ]
         }
       },
       "required": [

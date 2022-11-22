@@ -69,6 +69,7 @@
   },
   "required": [
     "url",
-    "method"
+    "method",
+    "bodyType"
   ]
 }
