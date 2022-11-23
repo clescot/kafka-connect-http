@@ -5,62 +5,22 @@
   "additionalProperties": false,
   "properties": {
     "durationInMillis": {
-      "oneOf": [
-        {
-          "type": "null",
-          "title": "Not included"
-        },
-        {
-          "type": "integer"
-        }
-      ]
+      "type": "integer"
     },
     "moment": {
-      "oneOf": [
-        {
-          "type": "null",
-          "title": "Not included"
-        },
-        {
-          "type": "number"
-        }
-      ]
+      "type": "number"
     },
     "attempts": {
-      "oneOf": [
-        {
-          "type": "null",
-          "title": "Not included"
-        },
-        {
-          "type": "integer"
-        }
-      ]
+      "type": "integer"
     },
     "success": {
       "type": "boolean"
     },
     "httpResponse": {
-      "oneOf": [
-        {
-          "type": "null",
-          "title": "Not included"
-        },
-        {
-          "$ref": "#/definitions/HttpResponse"
-        }
-      ]
+      "$ref": "#/definitions/HttpResponse"
     },
     "httpRequest": {
-      "oneOf": [
-        {
-          "type": "null",
-          "title": "Not included"
-        },
-        {
-          "$ref": "#/definitions/HttpRequest"
-        }
-      ]
+      "$ref": "#/definitions/HttpRequest"
     }
   },
   "required": [
@@ -71,55 +31,23 @@
       "type": "object",
       "additionalProperties": false,
       "properties": {
-        "statusCode": {
-          "oneOf": [
-            {
-              "type": "null",
-              "title": "Not included"
-            },
-            {
-              "type": "integer"
-            }
-          ]
+        "statusCode":{
+          "type": "integer"
         },
-        "statusMessage": {
-          "oneOf": [
-            {
-              "type": "null",
-              "title": "Not included"
-            },
-            {
+        "statusMessage":  {
+          "type": "string"
+        },
+        "responseBody":  {
+          "type": "string"
+        },
+        "responseHeaders":  {
+          "type": "object",
+          "additionalProperties": {
+            "type": "array",
+            "items": {
               "type": "string"
             }
-          ]
-        },
-        "responseBody": {
-          "oneOf": [
-            {
-              "type": "null",
-              "title": "Not included"
-            },
-            {
-              "type": "string"
-            }
-          ]
-        },
-        "responseHeaders": {
-          "oneOf": [
-            {
-              "type": "null",
-              "title": "Not included"
-            },
-            {
-              "type": "object",
-              "additionalProperties": {
-                "type": "array",
-                "items": {
-                  "type": "string"
-                }
-              }
-            }
-          ]
+          }
         }
       }
     },
@@ -131,79 +59,46 @@
           "type": "string"
         },
         "headers": {
-          "oneOf": [
-            {
-              "type": "null",
-              "title": "Not included"
-            },
-            {
-              "type": "object",
-              "additionalProperties": {
-                "type": "array",
-                "items": {
-                  "type": "string"
-                }
-              }
+          "type": "object",
+          "additionalProperties": {
+            "type": "array",
+            "items": {
+              "type": "string"
             }
-          ]
+          }
         },
         "method": {
           "type": "string"
         },
         "bodyAsString": {
-          "oneOf": [
-            {
-              "type": "null",
-              "title": "Not included"
-            },
-            {
-              "type": "string"
-            }
-          ]
+          "type": "string"
         },
         "bodyAsByteArray": {
-          "oneOf": [
-            {
-              "type": "null",
-              "title": "Not included"
-            },
-            {
-              "type": "array",
-              "items": {
-                "type": "integer"
-              }
-            }
-          ]
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
         },
-        "bodyAsMultipart": {
-          "oneOf": [
-            {
-              "type": "null",
-              "title": "Not included"
-            },
-            {
-              "type": "array",
-              "items": {
-                "type": "array",
-                "items": {
-                  "type": "integer"
-                }
-              }
-            }
-          ]
+        "bodyAsMultipart":{
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
         },
-        "bodyType": {
-              "type": "string",
-              "enum": [
-                "STRING",
-                "BYTE_ARRAY",
-                "MULTIPART"
-              ]
+        "bodyType":
+        {
+          "type": "string",
+          "enum": [
+            "STRING",
+            "BYTE_ARRAY",
+            "MULTIPART"
+          ]
         }
       },
       "required": [
         "url",
-        "method"
+        "method",
+        "bodyType"
       ]
     }
   }

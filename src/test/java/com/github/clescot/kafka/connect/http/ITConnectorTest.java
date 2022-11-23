@@ -15,6 +15,7 @@ import io.confluent.kafka.schemaregistry.client.CachedSchemaRegistryClient;
 import io.confluent.kafka.schemaregistry.client.SchemaRegistryClient;
 import io.confluent.kafka.schemaregistry.client.rest.exceptions.RestClientException;
 import io.confluent.kafka.schemaregistry.json.JsonSchemaProvider;
+import io.confluent.kafka.schemaregistry.json.SpecificationVersion;
 import io.confluent.kafka.serializers.json.KafkaJsonSchemaDeserializer;
 import io.confluent.kafka.serializers.json.KafkaJsonSchemaSerializer;
 import io.debezium.testing.testcontainers.Connector;
@@ -427,7 +428,7 @@ public class ITConnectorTest {
         props.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG,StringSerializer.class.getName());
         props.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG,KafkaJsonSchemaSerializer.class.getName());
         props.put(AUTO_REGISTER_SCHEMAS,"true");
-        props.put(SCHEMA_SPEC_VERSION,"draft_7");
+        props.put(SCHEMA_SPEC_VERSION, SpecificationVersion.DRAFT_2019_09);
         props.put(ONEOF_FOR_NULLABLES,"true");
         props.put(FAIL_UNKNOWN_PROPERTIES,"true");
         props.put(WRITE_DATES_AS_ISO8601,"true");
