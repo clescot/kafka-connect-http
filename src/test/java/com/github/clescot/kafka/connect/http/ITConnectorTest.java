@@ -428,7 +428,7 @@ public class ITConnectorTest {
         props.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG,StringSerializer.class.getName());
         props.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG,KafkaJsonSchemaSerializer.class.getName());
         props.put(AUTO_REGISTER_SCHEMAS,"true");
-        props.put(SCHEMA_SPEC_VERSION, SpecificationVersion.DRAFT_2019_09);
+        props.put(SCHEMA_SPEC_VERSION, SpecificationVersion.DRAFT_2019_09.toString());
         props.put(ONEOF_FOR_NULLABLES,"true");
         props.put(FAIL_UNKNOWN_PROPERTIES,"true");
         props.put(WRITE_DATES_AS_ISO8601,"true");
