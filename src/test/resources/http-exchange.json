@@ -74,10 +74,7 @@
           "type": "string"
         },
         "bodyAsByteArray": {
-          "type": "array",
-          "items": {
-            "type": "string"
-          }
+          "type": "string"
         },
         "bodyAsMultipart":{
           "type": "array",
