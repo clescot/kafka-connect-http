@@ -39,56 +39,24 @@ import java.util.Objects;
         "      \"type\": \"string\"\n" +
         "    },\n" +
         "    \"bodyAsString\": {\n" +
-        "      \"oneOf\": [\n" +
-        "        {\n" +
-        "          \"type\": \"null\",\n" +
-        "          \"title\": \"Not included\"\n" +
-        "        },\n" +
-        "        {\n" +
         "          \"type\": \"string\"\n" +
-        "        }\n" +
-        "      ]\n" +
         "    },\n" +
-        "    \"bodyAsByteArray\": {\n" +
-        "      \"oneOf\": [\n" +
-        "        {\n" +
-        "          \"type\": \"null\",\n" +
-        "          \"title\": \"Not included\"\n" +
-        "        },\n" +
-        "        {\n" +
+        "    \"bodyAsByteArray\":       {\n" +
         "          \"type\": \"string\"\n" +
-        "        }\n" +
-        "      ]\n" +
         "    },\n" +
-        "    \"bodyAsMultipart\": {\n" +
-        "      \"oneOf\": [\n" +
-        "        {\n" +
-        "          \"type\": \"null\",\n" +
-        "          \"title\": \"Not included\"\n" +
-        "        },\n" +
-        "        {\n" +
+        "    \"bodyAsMultipart\":    {\n" +
         "          \"type\": \"array\",\n" +
         "          \"items\": {\n" +
         "            \"type\": \"string\"\n" +
         "          }\n" +
-        "        }\n" +
-        "      ]\n" +
         "    },\n" +
-        "    \"bodyType\": {\n" +
-        "      \"oneOf\": [\n" +
-        "        {\n" +
-        "          \"type\": \"null\",\n" +
-        "          \"title\": \"Not included\"\n" +
-        "        },\n" +
-        "        {\n" +
+        "    \"bodyType\":   {\n" +
         "          \"type\": \"string\",\n" +
         "          \"enum\": [\n" +
         "            \"STRING\",\n" +
         "            \"BYTE_ARRAY\",\n" +
         "            \"MULTIPART\"\n" +
         "          ]\n" +
-        "        }\n" +
-        "      ]\n" +
         "    }\n" +
         "  },\n" +
         "  \"required\": [\n" +
