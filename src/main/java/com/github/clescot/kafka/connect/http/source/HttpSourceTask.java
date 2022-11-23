@@ -19,11 +19,11 @@ import java.util.Queue;
 
 import static com.github.clescot.kafka.connect.http.HttpExchange.*;
 
-public class WsSourceTask extends SourceTask {
+public class HttpSourceTask extends SourceTask {
 
     private static Queue<HttpExchange> queue;
-    private WsSourceConnectorConfig sourceConfig;
-    private final static Logger LOGGER = LoggerFactory.getLogger(WsSourceTask.class);
+    private HttpSourceConnectorConfig sourceConfig;
+    private final static Logger LOGGER = LoggerFactory.getLogger(HttpSourceTask.class);
 
 
 
@@ -35,7 +35,7 @@ public class WsSourceTask extends SourceTask {
     @Override
     public void start(Map<String, String> taskConfig) {
         Preconditions.checkNotNull(taskConfig, "taskConfig cannot be null");
-        this.sourceConfig = new WsSourceConnectorConfig(taskConfig);
+        this.sourceConfig = new HttpSourceConnectorConfig(taskConfig);
         queue = QueueFactory.getQueue(sourceConfig.getQueueName());
         QueueFactory.registerConsumerForQueue(sourceConfig.getQueueName());
     }

@@ -5,13 +5,13 @@ import org.apache.kafka.common.config.ConfigDef;
 
 import static com.github.clescot.kafka.connect.http.ConfigConstants.QUEUE_NAME;
 
-public class WsSourceConfigDefinition {
+public class HttpSourceConfigDefinition {
 
     public static final String SUCCESS_TOPIC = "success.topic";
     public static final String SUCCESS_TOPIC_DOC = "Topic to receive successful http request/responses";
     public static final String ERROR_TOPIC = "error.topic";
     public static final String ERROR_TOPIC_DOC = "Topic to receive errors from http request/responses";
-    private WsSourceConfigDefinition() {
+    private HttpSourceConfigDefinition() {
         //Class with only static methods
     }
 

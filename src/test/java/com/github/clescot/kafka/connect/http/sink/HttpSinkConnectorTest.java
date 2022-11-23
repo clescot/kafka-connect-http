@@ -13,25 +13,25 @@ import java.util.Map;
 import static org.assertj.core.api.Assertions.assertThat;
 
 @RunWith(Enclosed.class)
-public class WsSinkConnectorTest {
+public class HttpSinkConnectorTest {
 
 
     public static class Test_start{
 
         @Test
         public void test_with_empty_map(){
-            WsSinkConnector wsSinkConnector = new WsSinkConnector();
+            HttpSinkConnector wsSinkConnector = new HttpSinkConnector();
             wsSinkConnector.start(Maps.newHashMap());
         }
         @Test(expected = NullPointerException.class)
         public void test_with_null_map(){
-            WsSinkConnector wsSinkConnector = new WsSinkConnector();
+            HttpSinkConnector wsSinkConnector = new HttpSinkConnector();
             wsSinkConnector.start(null);
         }
 
         @Test
         public void test_with_nominal_case(){
-            WsSinkConnector wsSinkConnector = new WsSinkConnector();
+            HttpSinkConnector wsSinkConnector = new HttpSinkConnector();
             Map<String, String> settings = Maps.newHashMap();
             wsSinkConnector.start(settings);
         }
@@ -41,16 +41,16 @@ public class WsSinkConnectorTest {
     public static class Test_task_class{
         @Test
         public void test_nominal_case(){
-            WsSinkConnector wsSinkConnector = new WsSinkConnector();
+            HttpSinkConnector wsSinkConnector = new HttpSinkConnector();
             Class<? extends Task> aClass = wsSinkConnector.taskClass();
-            assertThat(aClass).isEqualTo(WsSinkTask.class);
+            assertThat(aClass).isEqualTo(HttpSinkTask.class);
         }
     }
 
     public static class Test_taskConfigs{
         @Test
         public void test_nominal_case(){
-            WsSinkConnector wsSinkConnector = new WsSinkConnector();
+            HttpSinkConnector wsSinkConnector = new HttpSinkConnector();
             Map<String, String> settings = Maps.newHashMap();
             wsSinkConnector.start(settings);
             List<Map<String, String>> maps = wsSinkConnector.taskConfigs(1);
@@ -62,7 +62,7 @@ public class WsSinkConnectorTest {
         @Test
         public void test_calling_task_configs_but_not_start(){
             Assertions.assertThrows(NullPointerException.class,()->{
-                    WsSinkConnector wsSinkConnector = new WsSinkConnector();
+                    HttpSinkConnector wsSinkConnector = new HttpSinkConnector();
                     wsSinkConnector.taskConfigs(1);
                 }
             );
@@ -72,7 +72,7 @@ public class WsSinkConnectorTest {
 
         @Test
         public void test_2_tasks(){
-            WsSinkConnector wsSinkConnector = new WsSinkConnector();
+            HttpSinkConnector wsSinkConnector = new HttpSinkConnector();
             Map<String, String> settings = Maps.newHashMap();
             wsSinkConnector.start(settings);
             List<Map<String, String>> maps = wsSinkConnector.taskConfigs(2);
@@ -86,7 +86,7 @@ public class WsSinkConnectorTest {
 
         @Test
         public void test_nominal_case_without_ack_sender_already_initialized(){
-            WsSinkConnector wsSinkConnector = new WsSinkConnector();
+            HttpSinkConnector wsSinkConnector = new HttpSinkConnector();
             Map<String, String> settings = Maps.newHashMap();
             wsSinkConnector.start(settings);
             wsSinkConnector.stop();

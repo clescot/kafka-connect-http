@@ -13,18 +13,18 @@ import java.util.Map;
 
 import static com.github.clescot.kafka.connect.http.ConfigConstants.QUEUE_NAME;
 import static com.github.clescot.kafka.connect.http.QueueFactory.DEFAULT_QUEUE_NAME;
-import static com.github.clescot.kafka.connect.http.source.WsSourceConfigDefinition.ERROR_TOPIC;
-import static com.github.clescot.kafka.connect.http.source.WsSourceConfigDefinition.SUCCESS_TOPIC;
+import static com.github.clescot.kafka.connect.http.source.HttpSourceConfigDefinition.ERROR_TOPIC;
+import static com.github.clescot.kafka.connect.http.source.HttpSourceConfigDefinition.SUCCESS_TOPIC;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 
-class WsSourceConnectorTest {
+class HttpSourceConnectorTest {
 
-    private final static Logger LOGGER = LoggerFactory.getLogger(WsSourceConnectorTest.class);
-    private WsSourceConnector wsSourceConnector;
+    private final static Logger LOGGER = LoggerFactory.getLogger(HttpSourceConnectorTest.class);
+    private HttpSourceConnector wsSourceConnector;
 
     @BeforeEach
     public void setup(){
-        wsSourceConnector = new WsSourceConnector();
+        wsSourceConnector = new HttpSourceConnector();
     }
 
     @Test

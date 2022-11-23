@@ -22,17 +22,17 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static com.github.clescot.kafka.connect.http.source.WsSourceConfigDefinition.ERROR_TOPIC;
-import static com.github.clescot.kafka.connect.http.source.WsSourceConfigDefinition.SUCCESS_TOPIC;
+import static com.github.clescot.kafka.connect.http.source.HttpSourceConfigDefinition.ERROR_TOPIC;
+import static com.github.clescot.kafka.connect.http.source.HttpSourceConfigDefinition.SUCCESS_TOPIC;
 import static org.assertj.core.api.Assertions.assertThat;
 
-class WsSourceTaskTest {
-    private WsSourceTask wsSourceTask;
-    private final static Logger LOGGER = LoggerFactory.getLogger(WsSourceTaskTest.class);
+class HttpSourceTaskTest {
+    private HttpSourceTask wsSourceTask;
+    private final static Logger LOGGER = LoggerFactory.getLogger(HttpSourceTaskTest.class);
 
     @BeforeEach
     public void setup() {
-        wsSourceTask = new WsSourceTask();
+        wsSourceTask = new HttpSourceTask();
     }
 
     @AfterEach
@@ -43,7 +43,7 @@ class WsSourceTaskTest {
 
     @Test
     public void test_start_with_null_settings() {
-        WsSourceTask wsSourceTask = new WsSourceTask();
+        HttpSourceTask wsSourceTask = new HttpSourceTask();
 
         Assertions.assertThrows(NullPointerException.class, () -> wsSourceTask.start(null));
     }

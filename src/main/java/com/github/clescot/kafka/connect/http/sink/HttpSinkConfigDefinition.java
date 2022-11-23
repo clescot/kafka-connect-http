@@ -5,7 +5,7 @@ import org.apache.kafka.common.config.ConfigDef;
 
 import java.util.Collections;
 
-public class WsSinkConfigDefinition {
+public class HttpSinkConfigDefinition {
 
     public static final String STATIC_REQUEST_HEADER_NAMES = "static.request.header.names";
     public static final String STATIC_REQUEST_HEADER_NAMES_DOC = "list of static parameters names which will be added to all http requests. these parameter names need to be added with their values as parameters in complement of this list";
@@ -41,7 +41,7 @@ public class WsSinkConfigDefinition {
     private static final double DEFAULT_RETRY_DELAY_FACTOR_VALUE = 1.5d;
     private static final long DEFAULT_RETRY_JITTER_IN_MS_VALUE = 500;
 
-    private WsSinkConfigDefinition() {
+    private HttpSinkConfigDefinition() {
         //Class with only static methods
     }
 
@@ -55,8 +55,8 @@ public class WsSinkConfigDefinition {
                 .define(DEFAULT_RETRY_MAX_DELAY_IN_MS, ConfigDef.Type.LONG, DEFAULT_RETRY_MAX_DELAY_IN_MS_VALUE, ConfigDef.Importance.MEDIUM, DEFAULT_RETRY_MAX_DELAY_IN_MS_DOC)
                 .define(DEFAULT_RETRY_DELAY_FACTOR, ConfigDef.Type.DOUBLE, DEFAULT_RETRY_DELAY_FACTOR_VALUE, ConfigDef.Importance.MEDIUM, DEFAULT_RETRY_DELAY_FACTOR_DOC)
                 .define(DEFAULT_RETRY_JITTER_IN_MS, ConfigDef.Type.LONG, DEFAULT_RETRY_JITTER_IN_MS_VALUE, ConfigDef.Importance.MEDIUM, DEFAULT_RETRY_JITTER_IN_MS_DOC)
-                .define(DEFAULT_RATE_LIMITER_PERIOD_IN_MS, ConfigDef.Type.LONG, WsSinkConfigDefinition.DEFAULT_RATE_LIMITER_PERIOD_IN_MS_VALUE, ConfigDef.Importance.MEDIUM, DEFAULT_RATE_LIMITER_PERIOD_IN_MS_DOC)
-                .define(DEFAULT_RATE_LIMITER_MAX_EXECUTIONS, ConfigDef.Type.LONG, WsSinkConfigDefinition.DEFAULT_RATE_LIMITER_MAX_EXECUTIONS_VALUE, ConfigDef.Importance.MEDIUM, DEFAULT_RATE_LIMITER_MAX_EXECUTIONS_DOC)
+                .define(DEFAULT_RATE_LIMITER_PERIOD_IN_MS, ConfigDef.Type.LONG, HttpSinkConfigDefinition.DEFAULT_RATE_LIMITER_PERIOD_IN_MS_VALUE, ConfigDef.Importance.MEDIUM, DEFAULT_RATE_LIMITER_PERIOD_IN_MS_DOC)
+                .define(DEFAULT_RATE_LIMITER_MAX_EXECUTIONS, ConfigDef.Type.LONG, HttpSinkConfigDefinition.DEFAULT_RATE_LIMITER_MAX_EXECUTIONS_VALUE, ConfigDef.Importance.MEDIUM, DEFAULT_RATE_LIMITER_MAX_EXECUTIONS_DOC)
                 .define(GENERATE_MISSING_CORRELATION_ID, ConfigDef.Type.BOOLEAN, false, ConfigDef.Importance.MEDIUM, GENERATE_MISSING_CORRELATION_ID_DOC)
                 .define(GENERATE_MISSING_REQUEST_ID, ConfigDef.Type.BOOLEAN, false, ConfigDef.Importance.MEDIUM, GENERATE_MISSING_REQUEST_ID_DOC)
                 ;
