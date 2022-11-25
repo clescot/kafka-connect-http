@@ -15,26 +15,28 @@ import java.util.Optional;
 import static com.github.clescot.kafka.connect.http.ConfigConstants.QUEUE_NAME;
 import static com.github.clescot.kafka.connect.http.QueueFactory.DEFAULT_QUEUE_NAME;
 import static com.github.clescot.kafka.connect.http.QueueFactory.queueMapIsEmpty;
-import static com.github.clescot.kafka.connect.http.sink.WsSinkConfigDefinition.*;
+import static com.github.clescot.kafka.connect.http.sink.HttpSinkConfigDefinition.*;
 
-public class WsSinkConnectorConfig extends AbstractConfig {
-    private static final Logger LOGGER = LoggerFactory.getLogger(WsSinkConnectorConfig.class);
-    private final String queueName;
-    private final boolean publishToInMemoryQueue;
-    private final Integer defaultRetries;
-    private final Long defaultRetryDelayInMs;
-    private final Long defaultRetryMaxDelayInMs;
-    private final Double defaultRetryDelayFactor;
-    private final Long defaultRetryJitterInMs;
-    private final Map<String,List<String>> staticRequestHeaders = Maps.newHashMap();
-    private final boolean generateMissingRequestId;
-    private final boolean generateMissingCorrelationId;
+public class HttpSinkConnectorConfig extends AbstractConfig {
+    private static final Logger LOGGER = LoggerFactory.getLogger(HttpSinkConnectorConfig.class);
+    private String queueName;
+    private boolean publishToInMemoryQueue;
+    private Integer defaultRetries;
+    private Long defaultRetryDelayInMs;
+    private Long defaultRetryMaxDelayInMs;
+    private Double defaultRetryDelayFactor;
+    private Long defaultRetryJitterInMs;
+    private Long defaultRateLimiterMaxExecutions;
+    private Long defaultRateLimiterPeriodInMs;
+    private Map<String,List<String>> staticRequestHeaders = Maps.newHashMap();
+    private boolean generateMissingRequestId;
+    private boolean generateMissingCorrelationId;
 
-    public WsSinkConnectorConfig(Map<?, ?> originals) {
-        this(WsSinkConfigDefinition.config(), originals);
+    public HttpSinkConnectorConfig(Map<?, ?> originals) {
+        this(HttpSinkConfigDefinition.config(), originals);
     }
 
-    public WsSinkConnectorConfig(ConfigDef configDef, Map<?, ?> originals){
+    public HttpSinkConnectorConfig(ConfigDef configDef, Map<?, ?> originals){
         super(configDef,originals);
         this.queueName = Optional.ofNullable(getString(QUEUE_NAME)).orElse(DEFAULT_QUEUE_NAME);
         if(queueMapIsEmpty()){
@@ -42,13 +44,15 @@ public class WsSinkConnectorConfig extends AbstractConfig {
         }
         this.publishToInMemoryQueue = Optional.ofNullable(getBoolean(PUBLISH_TO_IN_MEMORY_QUEUE)).orElse(false);
 
-        this.defaultRetries = Optional.ofNullable(getInt(DEFAULT_RETRIES)).orElse(null);
-        this.defaultRetryDelayInMs = Optional.ofNullable(getLong(DEFAULT_RETRY_DELAY_IN_MS)).orElse(null);
-        this.defaultRetryMaxDelayInMs = Optional.ofNullable(getLong(DEFAULT_RETRY_MAX_DELAY_IN_MS)).orElse(null);
-        this.defaultRetryDelayFactor = Optional.ofNullable(getDouble(DEFAULT_RETRY_DELAY_FACTOR)).orElse(null);
-        this.defaultRetryJitterInMs = Optional.ofNullable(getLong(DEFAULT_RETRY_JITTER_IN_MS)).orElse(null);
+        this.defaultRetries = getInt(DEFAULT_RETRIES);
+        this.defaultRetryDelayInMs = getLong(DEFAULT_RETRY_DELAY_IN_MS);
+        this.defaultRetryMaxDelayInMs = getLong(DEFAULT_RETRY_MAX_DELAY_IN_MS);
+        this.defaultRetryDelayFactor = getDouble(DEFAULT_RETRY_DELAY_FACTOR);
+        this.defaultRetryJitterInMs = getLong(DEFAULT_RETRY_JITTER_IN_MS);
         this.generateMissingRequestId = getBoolean(GENERATE_MISSING_REQUEST_ID);
         this.generateMissingCorrelationId = getBoolean(GENERATE_MISSING_CORRELATION_ID);
+        this.defaultRateLimiterPeriodInMs = getLong(DEFAULT_RATE_LIMITER_PERIOD_IN_MS);
+        this.defaultRateLimiterMaxExecutions = getLong(DEFAULT_RATE_LIMITER_MAX_EXECUTIONS);
         Optional<List<String>> staticRequestHeaderNames = Optional.ofNullable(getList(STATIC_REQUEST_HEADER_NAMES));
         List<String> additionalHeaderNamesList =staticRequestHeaderNames.orElse(Lists.newArrayList());
         for(String headerName:additionalHeaderNamesList){

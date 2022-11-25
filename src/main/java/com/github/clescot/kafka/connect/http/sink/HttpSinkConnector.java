@@ -10,19 +10,19 @@ import java.util.List;
 import java.util.Map;
 
 
-public class WsSinkConnector extends SinkConnector {
+public class HttpSinkConnector extends SinkConnector {
 
-    private WsSinkConnectorConfig wsSinkConnectorConfig;
+    private HttpSinkConnectorConfig wsSinkConnectorConfig;
 
     @Override
     public void start(Map<String, String> settings) {
         Preconditions.checkNotNull(settings);
-        this.wsSinkConnectorConfig = new WsSinkConnectorConfig(config(),settings);
+        this.wsSinkConnectorConfig = new HttpSinkConnectorConfig(config(),settings);
     }
 
     @Override
     public Class<? extends Task> taskClass() {
-        return WsSinkTask.class;
+        return HttpSinkTask.class;
     }
 
     @Override
@@ -40,7 +40,7 @@ public class WsSinkConnector extends SinkConnector {
 
     @Override
     public ConfigDef config() {
-        return WsSinkConfigDefinition.config();
+        return HttpSinkConfigDefinition.config();
     }
 
     @Override

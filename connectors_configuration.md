@@ -109,3 +109,6 @@ You can create or update this connector instance with this command :
 curl -X PUT -H "Content-Type: application/json" --data @source.json http://my-kafka-connect-cluster:8083/connectors/my-http-source-connector/config
 ```
 
+### Input and output Topics partitionning
+
+# TODO 

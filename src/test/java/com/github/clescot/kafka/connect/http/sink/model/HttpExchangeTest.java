@@ -75,7 +75,7 @@ public class HttpExchangeTest {
 
             //get JSON schema
             SpecificationVersion jsonSchemaSpecification = SpecificationVersion.DRAFT_2019_09;
-            boolean useOneOfForNullables = true;
+            boolean useOneOfForNullables = false;
             boolean failUnknownProperties = true;
             JsonSchema expectedJsonSchema = JsonSchemaUtils.getSchema(
                     httpExchange,

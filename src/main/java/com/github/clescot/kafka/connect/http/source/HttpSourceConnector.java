@@ -9,17 +9,17 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-public class WsSourceConnector extends SourceConnector {
+public class HttpSourceConnector extends SourceConnector {
 
-    private WsSourceConnectorConfig wsSourceConnectorConfig;
+    private HttpSourceConnectorConfig wsSourceConnectorConfig;
     @Override
     public void start(Map<String, String> props) {
-        this.wsSourceConnectorConfig = new WsSourceConnectorConfig(config(),props);
+        this.wsSourceConnectorConfig = new HttpSourceConnectorConfig(config(),props);
     }
 
     @Override
     public Class<? extends Task> taskClass() {
-        return WsSourceTask.class;
+        return HttpSourceTask.class;
     }
 
     @Override
@@ -39,7 +39,7 @@ public class WsSourceConnector extends SourceConnector {
 
     @Override
     public ConfigDef config() {
-        return WsSourceConfigDefinition.config();
+        return HttpSourceConfigDefinition.config();
     }
 
     @Override

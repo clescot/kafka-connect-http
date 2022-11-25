@@ -22,12 +22,11 @@ import java.time.ZoneId;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static com.github.clescot.kafka.connect.http.sink.WsSinkTask.HEADER_X_CORRELATION_ID;
-import static com.github.clescot.kafka.connect.http.sink.WsSinkTask.HEADER_X_REQUEST_ID;
+import static com.github.clescot.kafka.connect.http.sink.HttpSinkTask.HEADER_X_CORRELATION_ID;
+import static com.github.clescot.kafka.connect.http.sink.HttpSinkTask.HEADER_X_REQUEST_ID;
 import static com.github.clescot.kafka.connect.http.sink.client.HttpClient.SUCCESS;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
@@ -181,8 +180,8 @@ public class HttpClientTest {
             when(listenerObject.get()).thenReturn(response);
             when(asyncHttpClient.executeRequest(any(Request.class))).thenReturn(listener);
             when(asyncHttpClient.executeRequest(any(Request.class), any())).thenReturn(listenerObject);
-            HashMap<String, String> vars = Maps.newHashMap();
             HttpClient httpClient = new HttpClient(asyncHttpClient);
+
             //when
             HttpExchange httpExchange = httpClient.callOnceWs(getDummyHttpRequest(), new AtomicInteger(2));
             //then
@@ -252,10 +251,6 @@ public class HttpClientTest {
                 null,
                 null);
         httpRequest.setHeaders(headers);
-        httpRequest.setRetries(10L);
-        httpRequest.setRetryDelayInMs(2500L);
-        httpRequest.setRetryMaxDelayInMs(7000L);
-        httpRequest.setRetryDelayFactor(2d);
         httpRequest.getHeaders().put(HEADER_X_CORRELATION_ID,Lists.newArrayList("45-66-33"));
         httpRequest.getHeaders().put(HEADER_X_REQUEST_ID,Lists.newArrayList("77-3333-11"));
         return httpRequest;

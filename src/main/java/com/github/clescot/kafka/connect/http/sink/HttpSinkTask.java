@@ -41,7 +41,7 @@ import java.util.stream.Collectors;
 import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.ASYNC_CLIENT_CONFIG_ROOT;
 
 
-public class WsSinkTask extends SinkTask {
+public class HttpSinkTask extends SinkTask {
     public static final String ASYN_HTTP_CONFIG_PREFIX = ASYNC_CLIENT_CONFIG_ROOT;
     public static final String HTTP_MAX_CONNECTIONS = ASYN_HTTP_CONFIG_PREFIX + "http.max.connections";
     public static final String HTTP_RATE_LIMIT_PER_SECOND = ASYN_HTTP_CONFIG_PREFIX + "http.rate.limit.per.second";
@@ -52,7 +52,7 @@ public class WsSinkTask extends SinkTask {
     private static final String COOKIE_STORE = ASYN_HTTP_CONFIG_PREFIX + "cookie.store";
     private static final String NETTY_TIMER = ASYN_HTTP_CONFIG_PREFIX + "netty.timer";
     private static final String BYTE_BUFFER_ALLOCATOR = ASYN_HTTP_CONFIG_PREFIX + "byte.buffer.allocator";
-    private final static Logger LOGGER = LoggerFactory.getLogger(WsSinkTask.class);
+    private final static Logger LOGGER = LoggerFactory.getLogger(HttpSinkTask.class);
     private final static ObjectMapper OBJECT_MAPPER = new ObjectMapper().registerModule(new JavaTimeModule());
 
     public static final String HEADER_X_CORRELATION_ID = "X-Correlation-ID";
@@ -63,7 +63,7 @@ public class WsSinkTask extends SinkTask {
 
     private static AsyncHttpClient asyncHttpClient;
     private Map<String, List<String>> staticRequestHeaders;
-    private WsSinkConnectorConfig wsSinkConnectorConfig;
+    private HttpSinkConnectorConfig wsSinkConnectorConfig;
     private ErrantRecordReporter errantRecordReporter;
     private boolean generateMissingCorrelationId;
     private boolean generateMissingRequestId;
@@ -93,7 +93,7 @@ public class WsSinkTask extends SinkTask {
             errantRecordReporter = null;
         }
 
-        this.wsSinkConnectorConfig = new WsSinkConnectorConfig(WsSinkConfigDefinition.config(), settings);
+        this.wsSinkConnectorConfig = new HttpSinkConnectorConfig(HttpSinkConfigDefinition.config(), settings);
 
         this.queueName = wsSinkConnectorConfig.getQueueName();
         this.queue = QueueFactory.getQueue(queueName);
@@ -102,21 +102,20 @@ public class WsSinkTask extends SinkTask {
         this.generateMissingCorrelationId = wsSinkConnectorConfig.isGenerateMissingCorrelationId();
 
         this.httpClient = new HttpClient(getAsyncHttpClient(wsSinkConnectorConfig.originalsStrings()));
-        Optional<Integer> defaultRetries = Optional.ofNullable(wsSinkConnectorConfig.getDefaultRetries());
-        Optional<Long> defaultRetryDelayInMs = Optional.ofNullable(wsSinkConnectorConfig.getDefaultRetryDelayInMs());
-        Optional<Long> defaultRetryMaxDelayInMs = Optional.ofNullable(wsSinkConnectorConfig.getDefaultRetryMaxDelayInMs());
-        Optional<Double> defaultRetryDelayFactor = Optional.ofNullable(wsSinkConnectorConfig.getDefaultRetryDelayFactor());
-        Optional<Long> defaultRetryJitterInMs = Optional.ofNullable(wsSinkConnectorConfig.getDefaultRetryJitterInMs());
-        if (defaultRetries.isPresent()
-                && defaultRetryDelayInMs.isPresent()
-                && defaultRetryMaxDelayInMs.isPresent()
-                && defaultRetryDelayFactor.isPresent()
-                && defaultRetryJitterInMs.isPresent()) {
-           httpClient.setDefaultRetryPolicy(defaultRetries.get(),defaultRetryDelayInMs.get(),defaultRetryMaxDelayInMs.get(),defaultRetryDelayFactor.get(),defaultRetryJitterInMs.get());
+        Integer defaultRetries = wsSinkConnectorConfig.getDefaultRetries();
+        Long defaultRetryDelayInMs = wsSinkConnectorConfig.getDefaultRetryDelayInMs();
+        Long defaultRetryMaxDelayInMs = wsSinkConnectorConfig.getDefaultRetryMaxDelayInMs();
+        Double defaultRetryDelayFactor = wsSinkConnectorConfig.getDefaultRetryDelayFactor();
+        Long defaultRetryJitterInMs = wsSinkConnectorConfig.getDefaultRetryJitterInMs();
+
+           httpClient.setDefaultRetryPolicy(
+                   defaultRetries,
+                   defaultRetryDelayInMs,
+                   defaultRetryMaxDelayInMs,
+                   defaultRetryDelayFactor,
+                   defaultRetryJitterInMs
+           );
         }
-
-
-    }
 
 
     private static synchronized AsyncHttpClient getAsyncHttpClient(Map<String, String> config) {

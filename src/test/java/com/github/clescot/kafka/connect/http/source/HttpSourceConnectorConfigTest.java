@@ -6,21 +6,21 @@ import org.junit.Test;
 
 import java.util.HashMap;
 
-import static com.github.clescot.kafka.connect.http.source.WsSourceConfigDefinition.ERROR_TOPIC;
-import static com.github.clescot.kafka.connect.http.source.WsSourceConfigDefinition.SUCCESS_TOPIC;
+import static com.github.clescot.kafka.connect.http.source.HttpSourceConfigDefinition.ERROR_TOPIC;
+import static com.github.clescot.kafka.connect.http.source.HttpSourceConfigDefinition.SUCCESS_TOPIC;
 
 
-public class WsSourceConnectorConfigTest {
+public class HttpSourceConnectorConfigTest {
 
 
 
     @Test(expected = NullPointerException.class)
     public void test_null_map(){
-        new WsSourceConnectorConfig(null);
+        new HttpSourceConnectorConfig(null);
     }
     @Test(expected = ConfigException.class)
     public void test_empty_map(){
-        new WsSourceConnectorConfig(Maps.newHashMap());
+        new HttpSourceConnectorConfig(Maps.newHashMap());
     }
 
     @Test
@@ -28,7 +28,7 @@ public class WsSourceConnectorConfigTest {
         HashMap<Object, Object> config = Maps.newHashMap();
         config.put(SUCCESS_TOPIC,"success.topic");
         config.put(ERROR_TOPIC,"error.topic");
-        new WsSourceConnectorConfig(config);
+        new HttpSourceConnectorConfig(config);
     }
 
 
@@ -37,7 +37,7 @@ public class WsSourceConnectorConfigTest {
     @Test(expected = ConfigException.class)
     public void test_missing_ack_topic(){
         HashMap<Object, Object> config = Maps.newHashMap();
-        new WsSourceConnectorConfig(config);
+        new HttpSourceConnectorConfig(config);
     }
 
 

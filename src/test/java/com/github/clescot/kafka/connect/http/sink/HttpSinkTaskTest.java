@@ -31,12 +31,12 @@ import java.util.Map;
 import java.util.Queue;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static com.github.clescot.kafka.connect.http.sink.WsSinkConfigDefinition.PUBLISH_TO_IN_MEMORY_QUEUE;
-import static com.github.clescot.kafka.connect.http.sink.WsSinkConfigDefinition.STATIC_REQUEST_HEADER_NAMES;
+import static com.github.clescot.kafka.connect.http.sink.HttpSinkConfigDefinition.PUBLISH_TO_IN_MEMORY_QUEUE;
+import static com.github.clescot.kafka.connect.http.sink.HttpSinkConfigDefinition.STATIC_REQUEST_HEADER_NAMES;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.*;
 
-class WsSinkTaskTest {
+class HttpSinkTaskTest {
 
 
 
@@ -47,7 +47,7 @@ class WsSinkTaskTest {
 
     @Test
     public void test_start_with_queue_name(){
-        WsSinkTask wsSinkTask = getWsSinkTask();
+        HttpSinkTask wsSinkTask = getWsSinkTask();
         Map<String,String> settings = Maps.newHashMap();
         settings.put(ConfigConstants.QUEUE_NAME,"dummyQueueName");
         wsSinkTask.start(settings);
@@ -55,7 +55,7 @@ class WsSinkTaskTest {
 
     @Test
     public void test_start_with_static_request_headers(){
-        WsSinkTask wsSinkTask = getWsSinkTask();
+        HttpSinkTask wsSinkTask = getWsSinkTask();
         Map<String,String> settings = Maps.newHashMap();
         settings.put(STATIC_REQUEST_HEADER_NAMES,"param1,param2");
         settings.put("param1","value1");
@@ -66,7 +66,7 @@ class WsSinkTaskTest {
     @Test
     public void test_start_with_static_request_headers_without_required_parameters(){
         Assertions.assertThrows(NullPointerException.class,()->{
-            WsSinkTask wsSinkTask = new WsSinkTask();
+            HttpSinkTask wsSinkTask = new HttpSinkTask();
             Map<String,String> settings = Maps.newHashMap();
             settings.put(STATIC_REQUEST_HEADER_NAMES,"param1,param2");
             wsSinkTask.start(settings);
@@ -77,14 +77,14 @@ class WsSinkTaskTest {
 
     @Test
     public void test_start_no_settings(){
-        WsSinkTask wsSinkTask = getWsSinkTask();
+        HttpSinkTask wsSinkTask = getWsSinkTask();
         wsSinkTask.start(Maps.newHashMap());
     }
 
 
     @Test
     public void test_put_add_static_headers(){
-        WsSinkTask wsSinkTask = getWsSinkTask();
+        HttpSinkTask wsSinkTask = getWsSinkTask();
         Map<String,String> settings = Maps.newHashMap();
         settings.put(STATIC_REQUEST_HEADER_NAMES,"param1,param2");
         settings.put("param1","value1");
@@ -110,7 +110,7 @@ class WsSinkTaskTest {
     @Test
     public void test_put_nominal_case(){
         //given
-        WsSinkTask wsSinkTask = getWsSinkTask();
+        HttpSinkTask wsSinkTask = getWsSinkTask();
         Map<String,String> settings = Maps.newHashMap();
         wsSinkTask.start(settings);
 
@@ -148,7 +148,7 @@ class WsSinkTaskTest {
     @Test
     public void test_put_with_publish_to_in_memory_queue_without_consumer(){
         //given
-        WsSinkTask wsSinkTask = getWsSinkTask();
+        HttpSinkTask wsSinkTask = getWsSinkTask();
         Map<String,String> settings = Maps.newHashMap();
         settings.put(PUBLISH_TO_IN_MEMORY_QUEUE,"true");
         wsSinkTask.start(settings);
@@ -177,8 +177,8 @@ class WsSinkTaskTest {
     }
 
     @NotNull
-    private static WsSinkTask getWsSinkTask() {
-        WsSinkTask wsSinkTask = new WsSinkTask();
+    private static HttpSinkTask getWsSinkTask() {
+        HttpSinkTask wsSinkTask = new HttpSinkTask();
         ErrantRecordReporter errantRecordReporter = mock(ErrantRecordReporter.class);
         SinkTaskContext sinkTaskContext = mock(SinkTaskContext.class);
         when(sinkTaskContext.errantRecordReporter()).thenReturn(errantRecordReporter);
@@ -189,7 +189,7 @@ class WsSinkTaskTest {
 
     @Test
     public void test_put_with_publish_in_memory_set_to_false(){
-        WsSinkTask wsSinkTask = getWsSinkTask();
+        HttpSinkTask wsSinkTask = getWsSinkTask();
         Map<String,String> settings = Maps.newHashMap();
         settings.put(PUBLISH_TO_IN_MEMORY_QUEUE,"false");
         wsSinkTask.start(settings);
@@ -212,7 +212,7 @@ class WsSinkTaskTest {
     public void test_put_with_publish_to_in_memory_queue_set_to_true_with_a_consumer(){
 
         //given
-        WsSinkTask wsSinkTask = getWsSinkTask();
+        HttpSinkTask wsSinkTask = getWsSinkTask();
         Map<String,String> settings = Maps.newHashMap();
         settings.put(PUBLISH_TO_IN_MEMORY_QUEUE,"true");
         QueueFactory.registerConsumerForQueue(QueueFactory.DEFAULT_QUEUE_NAME);
@@ -257,12 +257,6 @@ class WsSinkTaskTest {
                 "    }\n" +
                 "  },\n" +
                 "  \"httpRequest\": {\n" +
-                "    \"timeoutInMs\": null,\n" +
-                "    \"retries\": null,\n" +
-                "    \"retryDelayInMs\": null,\n" +
-                "    \"retryMaxDelayInMs\": null,\n" +
-                "    \"retryDelayFactor\": null,\n" +
-                "    \"retryJitter\": null,\n" +
                 "    \"url\": \"http://www.titi.com\",\n" +
                 "    \"headers\": {\n" +
                 "      \"X-dummy\": [\n" +
@@ -309,12 +303,6 @@ class WsSinkTaskTest {
 
     private String getDummyHttpRequestAsString(){
         return "{\n" +
-                "  \"timeoutInMs\": 0,\n" +
-                "  \"retries\": 0,\n" +
-                "  \"retryDelayInMs\": 0,\n" +
-                "  \"retryMaxDelayInMs\": 0,\n" +
-                "  \"retryDelayFactor\": 0.0,\n" +
-                "  \"retryJitter\": 0,\n" +
                 "  \"url\": \"http://www.stuff.com\",\n" +
                 "  \"headers\": {},\n" +
                 "  \"method\": \"GET\",\n" +

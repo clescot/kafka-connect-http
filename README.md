@@ -4,7 +4,7 @@
 
 ### What is the goal of this project?
 
-The main goal of this project is to allow to interact with HTTP servers, with a [Kafka Connect](https://docs.confluent.io/platform/current/connect/index.html)
+The main goal of this project is to allow to interact with HTTP servers, via a [Kafka Connect](https://docs.confluent.io/platform/current/connect/index.html)
 cluster.
 It permits to define HTTP requests, and store optionnally HTTP responses as Kafka messages, with Kafka connect connectors.
 
@@ -54,7 +54,8 @@ The main problem with HTTP interactions, is its request/response nature.
 
 ### How does it work? How do we solve the problem ?
     
-    We need to revert the multiple connectors proposal in the previous section, with a shared channel different from Kafka
+We need to revert the multiple connectors proposal in the previous section, with a shared channel different from Kafka. We provide :
+
 - a **Sink** Connector to query HTTP servers
 
     We define a Sink Connector to read from kafka, and query HTTP servers according to the Kafka message. This is the most easy part.

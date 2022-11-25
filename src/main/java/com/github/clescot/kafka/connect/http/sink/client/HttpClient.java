@@ -3,11 +3,13 @@ package com.github.clescot.kafka.connect.http.sink.client;
 import com.github.clescot.kafka.connect.http.HttpExchange;
 import com.github.clescot.kafka.connect.http.HttpRequest;
 import com.github.clescot.kafka.connect.http.HttpResponse;
+import com.github.clescot.kafka.connect.http.sink.HttpSinkConfigDefinition;
 import com.google.common.base.Preconditions;
 import com.google.common.base.Stopwatch;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import dev.failsafe.Failsafe;
+import dev.failsafe.RateLimiter;
 import dev.failsafe.RetryPolicy;
 import org.asynchttpclient.*;
 import org.asynchttpclient.proxy.ProxyServer;
@@ -19,6 +21,7 @@ import java.nio.charset.Charset;
 import java.time.Duration;
 import java.time.OffsetDateTime;
 import java.time.ZoneId;
+import java.time.temporal.ChronoUnit;
 import java.util.AbstractMap;
 import java.util.List;
 import java.util.Map;
@@ -62,12 +65,13 @@ public class HttpClient {
     public static final String UTC_ZONE_ID = "UTC";
     public static final boolean FAILURE = false;
     public static final boolean SUCCESS = true;
+    public static final int ONE_HTTP_REQUEST = 1;
 
 
     private AsyncHttpClient asyncHttpClient;
-    private Optional<RetryPolicy<HttpExchange>> defaultRetryPolicy=Optional.empty();
+    private Optional<RetryPolicy<HttpExchange>> defaultRetryPolicy = Optional.empty();
+    private RateLimiter<HttpExchange> defaultRateLimiter = RateLimiter.<HttpExchange>smoothBuilder(HttpSinkConfigDefinition.DEFAULT_RATE_LIMITER_MAX_EXECUTIONS_VALUE, Duration.of(HttpSinkConfigDefinition.DEFAULT_RATE_LIMITER_PERIOD_IN_MS_VALUE, ChronoUnit.MILLIS)).build();;
     public static final String BLANK_RESPONSE_CONTENT = "";
-    public static final String X_SUCCESS_PATTERN = "X-Success-Pattern";
     public static final String WS_REQUEST_TIMEOUT_IN_MS = "request-timeout-in-ms";
     public static final String WS_READ_TIMEOUT_IN_MS = "read-timeout-in-ms";
     private static final String WS_REALM_PASS = "password";
@@ -80,19 +84,6 @@ public class HttpClient {
     }
 
     /**
-     * parameters which are in kafka headers permit to pilot
-     * HTTP calls. they are all starting with 'ws-'.
-     * including
-     * 1- parameters for retry policy, like :
-     * retry count, delay between calls.
-     * 2- the correlation id permit to track together multiple calls
-     * 3- proxy parameters
-     * 4- authentication parameters
-     * 5- parameters related to the http, like url, HTTP method,http headers (starting by 'ws-headers-'),
-     * establishing connection timeout.
-     * body's http request(encoded in avro or not), is the value of the kafka message.
-     * 6- parameters related to the http response, like response read timeout,success regex of the response,
-     *
      * @param httpRequest
      * @return
      */
@@ -102,21 +93,8 @@ public class HttpClient {
         if (httpRequest != null) {
 
 
-
             Optional<RetryPolicy<HttpExchange>> retryPolicyForCall = defaultRetryPolicy;
-            //define RetryPolicy in the request
-            Optional<Long> retries = Optional.ofNullable(httpRequest.getRetries());
-            Optional<Long> retryDelayInMs = Optional.ofNullable(httpRequest.getRetryDelayInMs());
-            Optional<Long> retryMaxDelayInMs = Optional.ofNullable(httpRequest.getRetryMaxDelayInMs());
-            Optional<Double> retryDelayFactor = Optional.ofNullable(httpRequest.getRetryDelayFactor());
-            Optional<Long> retryJitterInMs = Optional.ofNullable(httpRequest.getRetryJitter());
-            if (retries.isPresent()
-                    && retryDelayInMs.isPresent()
-                    && retryMaxDelayInMs.isPresent()
-                    && retryDelayFactor.isPresent()
-                    && retryJitterInMs.isPresent()) {
-                retryPolicyForCall = Optional.of(buildRetryPolicy(retries.get().intValue(), retryDelayInMs.get(), retryMaxDelayInMs.get(), retryDelayFactor.get(), retryJitterInMs.get()));
-            }
+
 
             AtomicInteger attempts = new AtomicInteger();
             try {
@@ -140,7 +118,11 @@ public class HttpClient {
         return httpExchange;
     }
 
-    private RetryPolicy<HttpExchange> buildRetryPolicy(Integer retries, Long retryDelayInMs, Long retryMaxDelayInMs, Double retryDelayFactor, Long retryJitterInMs) {
+    private RetryPolicy<HttpExchange> buildRetryPolicy(Integer retries,
+                                                       Long retryDelayInMs,
+                                                       Long retryMaxDelayInMs,
+                                                       Double retryDelayFactor,
+                                                       Long retryJitterInMs) {
         RetryPolicy<HttpExchange> retryPolicy = RetryPolicy.<HttpExchange>builder()
                 //we retry only if the error comes from the WS server (server-side technical error)
                 .handle(HttpException.class)
@@ -160,8 +142,15 @@ public class HttpClient {
         Request request = buildRequest(httpRequest);
         LOGGER.info("request: {}", request.toString());
         LOGGER.info("body: {}", request.getStringData() != null ? request.getStringData() : "");
+        try {
+            this.defaultRateLimiter.acquirePermits(ONE_HTTP_REQUEST);
+        } catch (InterruptedException e) {
+            LOGGER.error("Failed to acquire execution permit from the rate limiter {} ", e.getMessage());
+            throw new HttpException(e.getMessage());
+        }
         Stopwatch stopwatch = Stopwatch.createStarted();
         try {
+
             OffsetDateTime now = OffsetDateTime.now(ZoneId.of(UTC_ZONE_ID));
             ListenableFuture<Response> responseListenableFuture = asyncHttpClient.executeRequest(request, asyncCompletionHandler);
             //we cannot use the asynchronous nature of the response yet
@@ -180,6 +169,7 @@ public class HttpClient {
                 stopwatch.stop();
             }
         }
+
 
     }
 
@@ -235,9 +225,7 @@ public class HttpClient {
          *  * a technical error occurs from the WS server : the status code returned from the ws server does not match the regexp AND is equals or higher than 500 : retries are done
          */
         String wsSuccessCode = "^[1-4][0-9][0-9]$";
-        if (httpRequest.getSuccessPattern() != null) {
-            wsSuccessCode = httpRequest.getSuccessPattern();
-        }
+
         if (this.httpSuccessCodesPatterns.get(wsSuccessCode) == null) {
             //Pattern.compile should be reused for performance, but wsSuccessCode can change....
             Pattern httpSuccessPattern = Pattern.compile(wsSuccessCode);
@@ -394,7 +382,11 @@ public class HttpClient {
         this.asyncHttpClient = asyncHttpClient;
     }
 
-    public void setDefaultRetryPolicy(Integer retries,Long retryDelayInMs,Long retryMaxDelayInMs,Double retryDelayFactor,Long retryJitterInMs) {
-        this.defaultRetryPolicy = Optional.of(buildRetryPolicy(retries,retryDelayInMs,retryMaxDelayInMs,retryDelayFactor,retryJitterInMs));
+    public void setDefaultRetryPolicy(Integer retries, Long retryDelayInMs, Long retryMaxDelayInMs, Double retryDelayFactor, Long retryJitterInMs) {
+        this.defaultRetryPolicy = Optional.of(buildRetryPolicy(retries, retryDelayInMs, retryMaxDelayInMs, retryDelayFactor, retryJitterInMs));
+    }
+
+    public void setDefaultRateLimiter(long periodInMs, long maxExecutions) {
+        this.defaultRateLimiter = RateLimiter.<HttpExchange>smoothBuilder(maxExecutions, Duration.of(periodInMs, ChronoUnit.MILLIS)).build();
     }
 }
