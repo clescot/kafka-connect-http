@@ -151,7 +151,7 @@ public class ITConnectorTest {
 
     private static void configureSinkConnector(String connectorName, boolean publishToInMemoryQueue, String incomingTopic, String valueConverterClassName,Map.Entry<String,String>... additionalSettings) {
         ConnectorConfiguration sinkConnectorMessagesAsStringConfiguration = ConnectorConfiguration.create()
-                .with("connector.class", "com.github.clescot.kafka.connect.http.sink.WsSinkConnector")
+                .with("connector.class", "com.github.clescot.kafka.connect.http.sink.HttpSinkConnector")
                 .with("tasks.max", "2")
                 .with("topics", incomingTopic)
                 .with("key.converter", "org.apache.kafka.connect.storage.StringConverter")
@@ -170,7 +170,7 @@ public class ITConnectorTest {
     private static void configureSourceConnector(String connectorName) {
         //source connector
         ConnectorConfiguration sourceConnectorConfiguration = ConnectorConfiguration.create()
-                .with("connector.class", "com.github.clescot.kafka.connect.http.source.WsSourceConnector")
+                .with("connector.class", "com.github.clescot.kafka.connect.http.source.HttpSourceConnector")
                 .with("tasks.max", "2")
                 .with("success.topic", successTopic)
                 .with("error.topic", errorTopic)

@@ -63,7 +63,7 @@ public class HttpSinkTask extends SinkTask {
 
     private static AsyncHttpClient asyncHttpClient;
     private Map<String, List<String>> staticRequestHeaders;
-    private HttpSinkConnectorConfig wsSinkConnectorConfig;
+    private HttpSinkConnectorConfig httpSinkConnectorConfig;
     private ErrantRecordReporter errantRecordReporter;
     private boolean generateMissingCorrelationId;
     private boolean generateMissingRequestId;
@@ -93,20 +93,20 @@ public class HttpSinkTask extends SinkTask {
             errantRecordReporter = null;
         }
 
-        this.wsSinkConnectorConfig = new HttpSinkConnectorConfig(HttpSinkConfigDefinition.config(), settings);
+        this.httpSinkConnectorConfig = new HttpSinkConnectorConfig(HttpSinkConfigDefinition.config(), settings);
 
-        this.queueName = wsSinkConnectorConfig.getQueueName();
+        this.queueName = httpSinkConnectorConfig.getQueueName();
         this.queue = QueueFactory.getQueue(queueName);
-        this.staticRequestHeaders = wsSinkConnectorConfig.getStaticRequestHeaders();
-        this.generateMissingRequestId = wsSinkConnectorConfig.isGenerateMissingRequestId();
-        this.generateMissingCorrelationId = wsSinkConnectorConfig.isGenerateMissingCorrelationId();
+        this.staticRequestHeaders = httpSinkConnectorConfig.getStaticRequestHeaders();
+        this.generateMissingRequestId = httpSinkConnectorConfig.isGenerateMissingRequestId();
+        this.generateMissingCorrelationId = httpSinkConnectorConfig.isGenerateMissingCorrelationId();
 
-        this.httpClient = new HttpClient(getAsyncHttpClient(wsSinkConnectorConfig.originalsStrings()));
-        Integer defaultRetries = wsSinkConnectorConfig.getDefaultRetries();
-        Long defaultRetryDelayInMs = wsSinkConnectorConfig.getDefaultRetryDelayInMs();
-        Long defaultRetryMaxDelayInMs = wsSinkConnectorConfig.getDefaultRetryMaxDelayInMs();
-        Double defaultRetryDelayFactor = wsSinkConnectorConfig.getDefaultRetryDelayFactor();
-        Long defaultRetryJitterInMs = wsSinkConnectorConfig.getDefaultRetryJitterInMs();
+        this.httpClient = new HttpClient(getAsyncHttpClient(httpSinkConnectorConfig.originalsStrings()));
+        Integer defaultRetries = httpSinkConnectorConfig.getDefaultRetries();
+        Long defaultRetryDelayInMs = httpSinkConnectorConfig.getDefaultRetryDelayInMs();
+        Long defaultRetryMaxDelayInMs = httpSinkConnectorConfig.getDefaultRetryMaxDelayInMs();
+        Double defaultRetryDelayFactor = httpSinkConnectorConfig.getDefaultRetryDelayFactor();
+        Long defaultRetryJitterInMs = httpSinkConnectorConfig.getDefaultRetryJitterInMs();
 
            httpClient.setDefaultRetryPolicy(
                    defaultRetries,
@@ -207,7 +207,7 @@ public class HttpSinkTask extends SinkTask {
             return;
         }
         Preconditions.checkNotNull(httpClient, "httpClient is null. 'start' method must be called once before put");
-        if (wsSinkConnectorConfig.isPublishToInMemoryQueue()) {
+        if (httpSinkConnectorConfig.isPublishToInMemoryQueue()) {
             Preconditions.checkArgument(QueueFactory.hasAConsumer(queueName), "'" + queueName + "' queue hasn't got any consumer, i.e no Source Connector has been configured to consume records published in this in memory queue. we stop the Sink Connector to prevent any OutofMemoryError.");
         }
         records.stream()
@@ -217,7 +217,7 @@ public class HttpSinkTask extends SinkTask {
                 .map(httpClient::call)
                 .peek(httpExchange -> LOGGER.debug("HTTP exchange :{}", httpExchange))
                 .forEach(httpExchange -> {
-                            if (wsSinkConnectorConfig.isPublishToInMemoryQueue() && httpExchange != null) {
+                            if (httpSinkConnectorConfig.isPublishToInMemoryQueue() && httpExchange != null) {
                                 LOGGER.debug("http exchange published to queue :{}", httpExchange);
                                 queue.offer(httpExchange);
                             } else {

@@ -20,11 +20,11 @@ import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 class HttpSourceConnectorTest {
 
     private final static Logger LOGGER = LoggerFactory.getLogger(HttpSourceConnectorTest.class);
-    private HttpSourceConnector wsSourceConnector;
+    private HttpSourceConnector httpSourceConnector;
 
     @BeforeEach
     public void setup(){
-        wsSourceConnector = new HttpSourceConnector();
+        httpSourceConnector = new HttpSourceConnector();
     }
 
     @Test
@@ -32,7 +32,7 @@ class HttpSourceConnectorTest {
         Map<String,String> settings = Maps.newHashMap();
         settings.put(SUCCESS_TOPIC,"foo");
         settings.put(ERROR_TOPIC,"foo");
-        wsSourceConnector.start(settings);
+        httpSourceConnector.start(settings);
     }
 
     @Test
@@ -40,7 +40,7 @@ class HttpSourceConnectorTest {
         Assertions.assertThrows(ConfigException.class, () ->  {
                 Map < String, String > settings = Maps.newHashMap();
                 settings.put(ERROR_TOPIC, "foo");
-                wsSourceConnector.start(settings);
+                httpSourceConnector.start(settings);
         });
     }
 
@@ -49,7 +49,7 @@ class HttpSourceConnectorTest {
         Assertions.assertThrows(ConfigException.class, () ->  {
                 Map < String, String > settings = Maps.newHashMap();
                 settings.put(SUCCESS_TOPIC, "foo");
-                wsSourceConnector.start(settings);
+                httpSourceConnector.start(settings);
         });
     }
 
@@ -59,7 +59,7 @@ class HttpSourceConnectorTest {
             settings.put(SUCCESS_TOPIC, "foo1");
             settings.put(ERROR_TOPIC, "foo2");
             settings.put(QUEUE_NAME, "myQueue");
-            wsSourceConnector.start(settings);
+            httpSourceConnector.start(settings);
     }
 
     @Test
@@ -68,7 +68,7 @@ class HttpSourceConnectorTest {
         settings.put(SUCCESS_TOPIC, "foo1");
         settings.put(ERROR_TOPIC, "foo2");
         settings.put(QUEUE_NAME, DEFAULT_QUEUE_NAME);
-        wsSourceConnector.start(settings);
+        httpSourceConnector.start(settings);
     }
 
 
@@ -76,12 +76,12 @@ class HttpSourceConnectorTest {
     @Test
     public void test_start_empty_settings_map(){
         Map<String,String> settings = Maps.newHashMap();
-        Assertions.assertThrows(ConfigException.class, () -> wsSourceConnector.start(settings));
+        Assertions.assertThrows(ConfigException.class, () -> httpSourceConnector.start(settings));
     }
 
     @Test
     public void test_start_null_settings_map(){
-        Assertions.assertThrows(NullPointerException.class, () -> wsSourceConnector.start(null));
+        Assertions.assertThrows(NullPointerException.class, () -> httpSourceConnector.start(null));
     }
 
     @Test
@@ -89,8 +89,8 @@ class HttpSourceConnectorTest {
         Map<String,String> settings = Maps.newHashMap();
         settings.put(SUCCESS_TOPIC,"foo");
         settings.put(ERROR_TOPIC,"foo");
-        wsSourceConnector.start(settings);
-        List<Map<String, String>> maps = wsSourceConnector.taskConfigs(0);
+        httpSourceConnector.start(settings);
+        List<Map<String, String>> maps = httpSourceConnector.taskConfigs(0);
         assertThat(maps).asList().isEmpty();
     }
 
@@ -99,8 +99,8 @@ class HttpSourceConnectorTest {
         Map<String,String> settings = Maps.newHashMap();
         settings.put(SUCCESS_TOPIC,"foo");
         settings.put(ERROR_TOPIC,"foo");
-        wsSourceConnector.start(settings);
-        List<Map<String, String>> maps = wsSourceConnector.taskConfigs(1);
+        httpSourceConnector.start(settings);
+        List<Map<String, String>> maps = httpSourceConnector.taskConfigs(1);
         assertThat(maps).asList().hasSize(1);
 
     }
@@ -109,8 +109,8 @@ class HttpSourceConnectorTest {
         Map<String,String> settings = Maps.newHashMap();
           settings.put(SUCCESS_TOPIC,"foo");
           settings.put(ERROR_TOPIC,"foo");
-        wsSourceConnector.start(settings);
-          List<Map<String, String>> maps = wsSourceConnector.taskConfigs(10);
+        httpSourceConnector.start(settings);
+          List<Map<String, String>> maps = httpSourceConnector.taskConfigs(10);
           assertThat(maps).asList().hasSize(10);
       }
 
