@@ -298,10 +298,16 @@ public class HttpRequest {
     }
 
 
-    private enum BodyType {
+    public enum BodyType {
         STRING,
         BYTE_ARRAY,
-        MULTIPART
+        MULTIPART;
 
+        @Override
+        public String toString() {
+            return name();
+        }
     }
+
+
 }

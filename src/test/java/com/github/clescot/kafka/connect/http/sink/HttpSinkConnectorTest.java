@@ -20,20 +20,20 @@ public class HttpSinkConnectorTest {
 
         @Test
         public void test_with_empty_map(){
-            HttpSinkConnector wsSinkConnector = new HttpSinkConnector();
-            wsSinkConnector.start(Maps.newHashMap());
+            HttpSinkConnector httpSinkConnector = new HttpSinkConnector();
+            httpSinkConnector.start(Maps.newHashMap());
         }
         @Test(expected = NullPointerException.class)
         public void test_with_null_map(){
-            HttpSinkConnector wsSinkConnector = new HttpSinkConnector();
-            wsSinkConnector.start(null);
+            HttpSinkConnector httpSinkConnector = new HttpSinkConnector();
+            httpSinkConnector.start(null);
         }
 
         @Test
         public void test_with_nominal_case(){
-            HttpSinkConnector wsSinkConnector = new HttpSinkConnector();
+            HttpSinkConnector httpSinkConnector = new HttpSinkConnector();
             Map<String, String> settings = Maps.newHashMap();
-            wsSinkConnector.start(settings);
+            httpSinkConnector.start(settings);
         }
 
     }
@@ -41,8 +41,8 @@ public class HttpSinkConnectorTest {
     public static class Test_task_class{
         @Test
         public void test_nominal_case(){
-            HttpSinkConnector wsSinkConnector = new HttpSinkConnector();
-            Class<? extends Task> aClass = wsSinkConnector.taskClass();
+            HttpSinkConnector httpSinkConnector = new HttpSinkConnector();
+            Class<? extends Task> aClass = httpSinkConnector.taskClass();
             assertThat(aClass).isEqualTo(HttpSinkTask.class);
         }
     }
@@ -50,10 +50,10 @@ public class HttpSinkConnectorTest {
     public static class Test_taskConfigs{
         @Test
         public void test_nominal_case(){
-            HttpSinkConnector wsSinkConnector = new HttpSinkConnector();
+            HttpSinkConnector httpSinkConnector = new HttpSinkConnector();
             Map<String, String> settings = Maps.newHashMap();
-            wsSinkConnector.start(settings);
-            List<Map<String, String>> maps = wsSinkConnector.taskConfigs(1);
+            httpSinkConnector.start(settings);
+            List<Map<String, String>> maps = httpSinkConnector.taskConfigs(1);
             assertThat(maps.size()).isEqualTo(1);
             assertThat(maps.get(0)).isEqualTo(settings);
         }
@@ -62,8 +62,8 @@ public class HttpSinkConnectorTest {
         @Test
         public void test_calling_task_configs_but_not_start(){
             Assertions.assertThrows(NullPointerException.class,()->{
-                    HttpSinkConnector wsSinkConnector = new HttpSinkConnector();
-                    wsSinkConnector.taskConfigs(1);
+                    HttpSinkConnector httpSinkConnector = new HttpSinkConnector();
+                    httpSinkConnector.taskConfigs(1);
                 }
             );
 
@@ -72,10 +72,10 @@ public class HttpSinkConnectorTest {
 
         @Test
         public void test_2_tasks(){
-            HttpSinkConnector wsSinkConnector = new HttpSinkConnector();
+            HttpSinkConnector httpSinkConnector = new HttpSinkConnector();
             Map<String, String> settings = Maps.newHashMap();
-            wsSinkConnector.start(settings);
-            List<Map<String, String>> maps = wsSinkConnector.taskConfigs(2);
+            httpSinkConnector.start(settings);
+            List<Map<String, String>> maps = httpSinkConnector.taskConfigs(2);
             assertThat(maps.size()).isEqualTo(2);
             assertThat(maps.get(0)).isEqualTo(settings);
             assertThat(maps.get(1)).isEqualTo(settings);
@@ -86,10 +86,10 @@ public class HttpSinkConnectorTest {
 
         @Test
         public void test_nominal_case_without_ack_sender_already_initialized(){
-            HttpSinkConnector wsSinkConnector = new HttpSinkConnector();
+            HttpSinkConnector httpSinkConnector = new HttpSinkConnector();
             Map<String, String> settings = Maps.newHashMap();
-            wsSinkConnector.start(settings);
-            wsSinkConnector.stop();
+            httpSinkConnector.start(settings);
+            httpSinkConnector.stop();
         }
 
     }

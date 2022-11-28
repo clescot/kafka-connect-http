@@ -12,12 +12,12 @@ import java.util.Map;
 
 public class HttpSinkConnector extends SinkConnector {
 
-    private HttpSinkConnectorConfig wsSinkConnectorConfig;
+    private HttpSinkConnectorConfig httpSinkConnectorConfig;
 
     @Override
     public void start(Map<String, String> settings) {
         Preconditions.checkNotNull(settings);
-        this.wsSinkConnectorConfig = new HttpSinkConnectorConfig(config(),settings);
+        this.httpSinkConnectorConfig = new HttpSinkConnectorConfig(config(),settings);
     }
 
     @Override
@@ -29,7 +29,7 @@ public class HttpSinkConnector extends SinkConnector {
     public List<Map<String, String>> taskConfigs(int taskCount) {
         List<Map<String, String>> configs = new ArrayList<>(taskCount);
         for (int i = 0; i < taskCount; i++) {
-            configs.add(this.wsSinkConnectorConfig.originalsStrings());
+            configs.add(this.httpSinkConnectorConfig.originalsStrings());
         }
         return configs;
     }

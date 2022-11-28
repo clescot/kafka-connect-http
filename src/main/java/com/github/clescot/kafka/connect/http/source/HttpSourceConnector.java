@@ -11,10 +11,10 @@ import java.util.Map;
 
 public class HttpSourceConnector extends SourceConnector {
 
-    private HttpSourceConnectorConfig wsSourceConnectorConfig;
+    private HttpSourceConnectorConfig httpSourceConnectorConfig;
     @Override
     public void start(Map<String, String> props) {
-        this.wsSourceConnectorConfig = new HttpSourceConnectorConfig(config(),props);
+        this.httpSourceConnectorConfig = new HttpSourceConnectorConfig(config(),props);
     }
 
     @Override
@@ -26,7 +26,7 @@ public class HttpSourceConnector extends SourceConnector {
     public List<Map<String, String>> taskConfigs(int maxTasks) {
         List<Map<String, String>> configs = new ArrayList<>(maxTasks);
         for (int i = 0; i < maxTasks; i++) {
-            configs.add(this.wsSourceConnectorConfig.originalsStrings());
+            configs.add(this.httpSourceConnectorConfig.originalsStrings());
         }
 
         return configs;
