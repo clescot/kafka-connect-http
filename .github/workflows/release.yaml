@@ -44,8 +44,10 @@ jobs:
           JAVA_HOME: /usr/lib/jvm/java-11-openjdk/
       - name: explore content
         run: |
+          pwd
           ls -al .
-          ls -al ${{ github.workspace }}/         
+          ls -al ./target/components/packages/
+          ls -al ./target/components/http-connector/
           ls -al ${{ github.workspace }}/target         
           ls -al ${{ github.workspace }}/target/http-connector
       - name: Get tag name
@@ -56,6 +58,6 @@ jobs:
       - uses: ncipollo/release-action@v1
         with:
           tag: ${{ steps.tag-name.outputs.TAG }}
-          artifacts: " ${{ github.workspace }}/target/components/packages/kafka-connect-http-sink-*.zip,${{ github.workspace }}/target/http-connector/kafka-connect-http-sink-*.jar"
+          artifacts: "./target/components/packages/kafka-connect-http-sink-*.zip,./target/http-connector/kafka-connect-http-sink-*.jar"
           generateReleaseNotes: true
 
