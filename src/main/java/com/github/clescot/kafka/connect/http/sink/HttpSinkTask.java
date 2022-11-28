@@ -252,15 +252,15 @@ public class HttpSinkTask extends SinkTask {
         return httpRequest;
     }
 
-    private HttpRequest buildHttpRequest(SinkRecord sinkRecord) {
+    protected HttpRequest buildHttpRequest(SinkRecord sinkRecord) {
+        if(sinkRecord==null||sinkRecord.value()==null){
+            LOGGER.warn("sinkRecord has got a 'null' value");
+            throw new ConnectException("sinkRecord has got a 'null' value");
+        }
         HttpRequest httpRequest = null;
         Object value = sinkRecord.value();
         String stringValue = null;
         try {
-            if (value == null) {
-                LOGGER.warn("sinkRecord has got a 'null' value");
-                throw new ConnectException("sinkRecord has got a 'null' value");
-            }
             Class<?> valueClass = value.getClass();
             LOGGER.debug("valueClass is {}", valueClass.getName());
             if (Struct.class.isAssignableFrom(valueClass)) {

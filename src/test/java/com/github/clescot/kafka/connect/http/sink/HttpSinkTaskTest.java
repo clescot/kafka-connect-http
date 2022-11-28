@@ -9,6 +9,7 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import org.apache.kafka.common.record.TimestampType;
 import org.apache.kafka.connect.data.Schema;
+import org.apache.kafka.connect.errors.ConnectException;
 import org.apache.kafka.connect.header.Header;
 import org.apache.kafka.connect.sink.ErrantRecordReporter;
 import org.apache.kafka.connect.sink.SinkRecord;
@@ -49,20 +50,20 @@ class HttpSinkTaskTest {
     Queue<HttpExchange> dummyQueue;
 
     @InjectMocks
-    HttpSinkTask wsSinkTask;
+    HttpSinkTask httpSinkTask;
 
     @BeforeEach
     public void setUp(){
         QueueFactory.clearRegistrations();
         MockitoAnnotations.openMocks(this);
-        wsSinkTask.initialize(sinkTaskContext);
+        httpSinkTask.initialize(sinkTaskContext);
     }
 
     @Test
     public void test_start_with_queue_name(){
         Map<String,String> settings = Maps.newHashMap();
         settings.put(ConfigConstants.QUEUE_NAME,"dummyQueueName");
-        wsSinkTask.start(settings);
+        httpSinkTask.start(settings);
     }
 
     @Test
@@ -71,7 +72,7 @@ class HttpSinkTaskTest {
         settings.put(STATIC_REQUEST_HEADER_NAMES,"param1,param2");
         settings.put("param1","value1");
         settings.put("param2","value2");
-        wsSinkTask.start(settings);
+        httpSinkTask.start(settings);
     }
 
     @Test
@@ -88,7 +89,7 @@ class HttpSinkTaskTest {
 
     @Test
     public void test_start_no_settings(){
-        wsSinkTask.start(Maps.newHashMap());
+        httpSinkTask.start(Maps.newHashMap());
     }
 
 
@@ -98,20 +99,20 @@ class HttpSinkTaskTest {
         settings.put(STATIC_REQUEST_HEADER_NAMES,"param1,param2");
         settings.put("param1","value1");
         settings.put("param2","value2");
-        wsSinkTask.start(settings);
+        httpSinkTask.start(settings);
         HttpClient httpClient = mock(HttpClient.class);
         HttpExchange dummyHttpExchange = getDummyHttpExchange();
         when(httpClient.call(any(HttpRequest.class))).thenReturn(dummyHttpExchange);
-        wsSinkTask.setHttpClient(httpClient);
+        httpSinkTask.setHttpClient(httpClient);
         List<SinkRecord> records = Lists.newArrayList();
         List<Header> headers = Lists.newArrayList();
         SinkRecord sinkRecord = new SinkRecord("myTopic",0, Schema.STRING_SCHEMA,"key",Schema.STRING_SCHEMA,getDummyHttpRequestAsString(),-1,System.currentTimeMillis(), TimestampType.CREATE_TIME,headers);
         records.add(sinkRecord);
-        wsSinkTask.put(records);
+        httpSinkTask.put(records);
         ArgumentCaptor<HttpRequest> captor = ArgumentCaptor.forClass(HttpRequest.class);
         verify(httpClient,times(1)).call(captor.capture());
         HttpRequest enhancedRecordBeforeHttpCall = captor.getValue();
-        assertThat(enhancedRecordBeforeHttpCall.getHeaders().size()==sinkRecord.headers().size()+wsSinkTask.getStaticRequestHeaders().size());
+        assertThat(enhancedRecordBeforeHttpCall.getHeaders().size()==sinkRecord.headers().size()+ httpSinkTask.getStaticRequestHeaders().size());
         assertThat(enhancedRecordBeforeHttpCall.getHeaders()).contains(Map.entry("param1",Lists.newArrayList("value1")));
         assertThat(enhancedRecordBeforeHttpCall.getHeaders()).contains(Map.entry("param2",Lists.newArrayList("value2")));
     }
@@ -120,13 +121,13 @@ class HttpSinkTaskTest {
     public void test_put_nominal_case(){
         //given
         Map<String,String> settings = Maps.newHashMap();
-        wsSinkTask.start(settings);
+        httpSinkTask.start(settings);
 
         //mock httpClient
         HttpClient httpClient = mock(HttpClient.class);
         HttpExchange dummyHttpExchange = getDummyHttpExchange();
         when(httpClient.call(any(HttpRequest.class))).thenReturn(dummyHttpExchange);
-        wsSinkTask.setHttpClient(httpClient);
+        httpSinkTask.setHttpClient(httpClient);
 
         //init sinkRecord
         List<SinkRecord> records = Lists.newArrayList();
@@ -135,7 +136,7 @@ class HttpSinkTaskTest {
         records.add(sinkRecord);
 
         //when
-        wsSinkTask.put(records);
+        httpSinkTask.put(records);
 
         //then
 
@@ -153,13 +154,13 @@ class HttpSinkTaskTest {
     public void test_put_sink_record_with_null_value(){
         //given
         Map<String,String> settings = Maps.newHashMap();
-        wsSinkTask.start(settings);
+        httpSinkTask.start(settings);
 
         //mock httpClient
         HttpClient httpClient = mock(HttpClient.class);
         HttpExchange dummyHttpExchange = getDummyHttpExchange();
         when(httpClient.call(any(HttpRequest.class))).thenReturn(dummyHttpExchange);
-        wsSinkTask.setHttpClient(httpClient);
+        httpSinkTask.setHttpClient(httpClient);
 
         //init sinkRecord
         List<SinkRecord> records = Lists.newArrayList();
@@ -168,7 +169,7 @@ class HttpSinkTaskTest {
         records.add(sinkRecord);
 
         //when
-        wsSinkTask.put(records);
+        httpSinkTask.put(records);
         //then
         verify(dummyQueue,never()).offer(any(HttpExchange.class));
     }
@@ -178,13 +179,13 @@ class HttpSinkTaskTest {
         //given
         Map<String,String> settings = Maps.newHashMap();
         settings.put(PUBLISH_TO_IN_MEMORY_QUEUE,"true");
-        wsSinkTask.start(settings);
+        httpSinkTask.start(settings);
 
         //mock httpClient
         HttpClient httpClient = mock(HttpClient.class);
         HttpExchange dummyHttpExchange = getDummyHttpExchange();
         when(httpClient.call(any(HttpRequest.class))).thenReturn(dummyHttpExchange);
-        wsSinkTask.setHttpClient(httpClient);
+        httpSinkTask.setHttpClient(httpClient);
 
         //init sinkRecord
         List<SinkRecord> records = Lists.newArrayList();
@@ -195,7 +196,7 @@ class HttpSinkTaskTest {
         //when
         //then
         Assertions.assertThrows(IllegalArgumentException.class,
-                ()->wsSinkTask.put(records));
+                ()-> httpSinkTask.put(records));
 
     }
 
@@ -205,18 +206,18 @@ class HttpSinkTaskTest {
     public void test_put_with_publish_in_memory_set_to_false(){
         Map<String,String> settings = Maps.newHashMap();
         settings.put(PUBLISH_TO_IN_MEMORY_QUEUE,"false");
-        wsSinkTask.start(settings);
+        httpSinkTask.start(settings);
         HttpClient httpClient = mock(HttpClient.class);
         HttpExchange dummyHttpExchange = getDummyHttpExchange();
         when(httpClient.call(any(HttpRequest.class))).thenReturn(dummyHttpExchange);
-        wsSinkTask.setHttpClient(httpClient);
+        httpSinkTask.setHttpClient(httpClient);
         Queue<HttpExchange> queue = mock(Queue.class);
-        wsSinkTask.setQueue(queue);
+        httpSinkTask.setQueue(queue);
         List<SinkRecord> records = Lists.newArrayList();
         List<Header> headers = Lists.newArrayList();
         SinkRecord sinkRecord = new SinkRecord("myTopic",0, Schema.STRING_SCHEMA,"key",Schema.STRING_SCHEMA,getDummyHttpRequestAsString(),-1,System.currentTimeMillis(), TimestampType.CREATE_TIME,headers);
         records.add(sinkRecord);
-        wsSinkTask.put(records);
+        httpSinkTask.put(records);
         verify(httpClient,times(1)).call(any(HttpRequest.class));
         verify(queue,never()).offer(any(HttpExchange.class));
     }
@@ -228,19 +229,19 @@ class HttpSinkTaskTest {
         Map<String,String> settings = Maps.newHashMap();
         settings.put(PUBLISH_TO_IN_MEMORY_QUEUE,"true");
         QueueFactory.registerConsumerForQueue(QueueFactory.DEFAULT_QUEUE_NAME);
-        wsSinkTask.start(settings);
+        httpSinkTask.start(settings);
         HttpClient httpClient = mock(HttpClient.class);
         HttpExchange dummyHttpExchange = getDummyHttpExchange();
         when(httpClient.call(any(HttpRequest.class))).thenReturn(dummyHttpExchange);
-        wsSinkTask.setHttpClient(httpClient);
+        httpSinkTask.setHttpClient(httpClient);
         Queue<HttpExchange> queue = mock(Queue.class);
-        wsSinkTask.setQueue(queue);
+        httpSinkTask.setQueue(queue);
         List<SinkRecord> records = Lists.newArrayList();
         List<Header> headers = Lists.newArrayList();
         SinkRecord sinkRecord = new SinkRecord("myTopic",0, Schema.STRING_SCHEMA,"key",Schema.STRING_SCHEMA,getDummyHttpRequestAsString(),-1,System.currentTimeMillis(), TimestampType.CREATE_TIME,headers);
         records.add(sinkRecord);
         //when
-        wsSinkTask.put(records);
+        httpSinkTask.put(records);
 
         //then
         verify(httpClient,times(1)).call(any(HttpRequest.class));
@@ -290,6 +291,22 @@ class HttpSinkTaskTest {
                 ));
 
 
+    }
+
+
+    @Test
+    public void test_buildHttpRequest_null_sink_record(){
+        //when
+        //then
+        Assertions.assertThrows(ConnectException.class,()->httpSinkTask.buildHttpRequest(null));
+    }
+    @Test
+    public void test_buildHttpRequest_null_value_sink_record(){
+        //when
+        List<Header> headers = Lists.newArrayList();
+        SinkRecord sinkRecord = new SinkRecord("myTopic",0, Schema.STRING_SCHEMA,"key",Schema.STRING_SCHEMA,null,-1,System.currentTimeMillis(), TimestampType.CREATE_TIME,headers);
+        //then
+        Assertions.assertThrows(ConnectException.class,()->httpSinkTask.buildHttpRequest(sinkRecord));
     }
 
 
