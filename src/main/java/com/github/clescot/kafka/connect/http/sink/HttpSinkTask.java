@@ -31,11 +31,14 @@ import org.asynchttpclient.cookie.ThreadSafeCookieStore;
 import org.asynchttpclient.extras.guava.RateLimitedThrottleRequestFilter;
 import org.asynchttpclient.netty.channel.ConnectionSemaphoreFactory;
 import org.asynchttpclient.netty.channel.DefaultConnectionSemaphoreFactory;
+import org.slf4j.ILoggerFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.lang.reflect.InvocationTargetException;
 import java.util.*;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
 import java.util.stream.Collectors;
 
 import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.ASYNC_CLIENT_CONFIG_ROOT;
@@ -88,6 +91,9 @@ public class HttpSinkTask extends SinkTask {
         try {
             //TODO handle DLQ with errantRecordReporter
             errantRecordReporter = context.errantRecordReporter();
+            if(errantRecordReporter==null){
+                LOGGER.warn("Dead Letter Queue (DLQ) is not enabled. it is recommended to configure a Dead Letter Queue for a better error handling.");
+            }
         } catch (NoSuchMethodError | NoClassDefFoundError e) {
             LOGGER.warn("errantRecordReporter has been added to Kafka Connect since 2.6.0 release. you should upgrade the Kafka Connect Runtime shortly.");
             errantRecordReporter = null;
@@ -210,22 +216,44 @@ public class HttpSinkTask extends SinkTask {
         if (httpSinkConnectorConfig.isPublishToInMemoryQueue()) {
             Preconditions.checkArgument(QueueFactory.hasAConsumer(queueName), "'" + queueName + "' queue hasn't got any consumer, i.e no Source Connector has been configured to consume records published in this in memory queue. we stop the Sink Connector to prevent any OutofMemoryError.");
         }
-        records.stream()
-                .filter(sinkRecord -> sinkRecord.value()!=null)
-                .map(this::buildHttpRequest)
-                .map(this::addStaticHeaders)
-                .map(this::addTrackingHeaders)
-                .map(httpClient::call)
-                .peek(httpExchange -> LOGGER.debug("HTTP exchange :{}", httpExchange))
-                .forEach(httpExchange -> {
-                            if (httpSinkConnectorConfig.isPublishToInMemoryQueue() && httpExchange != null) {
-                                LOGGER.debug("http exchange published to queue :{}", httpExchange);
-                                queue.offer(httpExchange);
-                            } else {
-                                LOGGER.debug("http exchange NOT published to queue :{}", httpExchange);
-                            }
-                        }
-                );
+        for (SinkRecord sinkRecord:records) {
+             try {
+                 // attempt to send record to data sink
+                 process(sinkRecord);
+             } catch (Exception e) {
+                 if (errantRecordReporter != null) {
+                     // Send errant record to error reporter
+                     Future<Void> future = errantRecordReporter.report(sinkRecord, e);
+                     // Optionally wait till the failure's been recorded in Kafka
+                     try {
+                         future.get();
+                     } catch (InterruptedException |ExecutionException ex) {
+                         throw new RuntimeException(ex);
+                     }
+                 } else {
+                     // There's no error reporter, so fail
+                     throw new ConnectException("Failed on record", e);
+                 }
+             }
+        }
+
+    }
+
+    private void process(SinkRecord sinkRecord) {
+        if(sinkRecord.value()==null){
+            throw new ConnectException("sinkRecord Value is null :"+ sinkRecord);
+        }
+        HttpRequest httpRequest = buildHttpRequest(sinkRecord);
+        HttpRequest httpRequestWithStaticHeaders = addStaticHeaders(httpRequest);
+        HttpRequest httpRequestWithTrackingHeaders = addTrackingHeaders(httpRequestWithStaticHeaders);
+        HttpExchange httpExchange = httpClient.call(httpRequestWithTrackingHeaders);
+        LOGGER.debug("HTTP exchange :{}", httpExchange);
+        if (httpSinkConnectorConfig.isPublishToInMemoryQueue() && httpExchange != null) {
+            LOGGER.debug("http exchange published to queue :{}", httpExchange);
+            queue.offer(httpExchange);
+        } else {
+            LOGGER.debug("http exchange NOT published to queue :{}", httpExchange);
+        }
     }
 
     private  HttpRequest addTrackingHeaders(HttpRequest httpRequest) {
@@ -297,8 +325,9 @@ public class HttpSinkTask extends SinkTask {
                 errantRecordReporter.report(sinkRecord, connectException);
             } else {
                 LOGGER.warn("errantRecordReporter has been added to Kafka Connect since 2.6.0 release. you should upgrade the Kafka Connect Runtime shortly.");
+                throw connectException;
             }
-            return null;
+
         }
         return httpRequest;
     }
@@ -317,6 +346,8 @@ public class HttpSinkTask extends SinkTask {
     private HttpRequest addStaticHeaders(HttpRequest httpRequest) {
         if (httpRequest != null) {
             this.staticRequestHeaders.forEach((key, value) -> httpRequest.getHeaders().put(key, value));
+        }else{
+
         }
         return httpRequest;
     }

@@ -174,9 +174,8 @@ class HttpSinkTaskTest {
         records.add(sinkRecord);
 
         //when
-        httpSinkTask.put(records);
-        //then
-        verify(dummyQueue, never()).offer(any(HttpExchange.class));
+        Assertions.assertThrows(ConnectException.class,()->httpSinkTask.put(records));
+
     }
 
     @Test
