@@ -50,6 +50,6 @@ jobs:
       - uses: ncipollo/release-action@v1
         with:
           tag: ${{ steps.tag-name.outputs.TAG }}
-          artifacts: "/home/runner/work/kafka-connect-http-sink/kafka-connect-http-sink/target/components/packages/kafka-connect-http-sink-*.zip,/home/runner/work/kafka-connect-http-sink/kafka-connect-http-sink/target/http-connector/kafka-connect-http-sink-*.jar"
+          artifacts: "**/kafka-connect-http-sink-${{ steps.tag-name.outputs.TAG }}.zip,**/http-connector/kafka-connect-http-sink-${{ steps.tag-name.outputs.TAG }}.jar"
           generateReleaseNotes: true
 
