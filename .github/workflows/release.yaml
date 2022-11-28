@@ -42,5 +42,8 @@ jobs:
           maven-servers: '[{"id": "github", "username": "$GITHUB_ACTOR", "password": "${{ secrets.GITHUB_TOKEN }}"}]'
         env:
           JAVA_HOME: /usr/lib/jvm/java-11-openjdk/
-# TODO create automatically a github release
+      - uses: ncipollo/release-action@v1
+        with:
+          artifacts: "kafka-connect-http-sink-*.zip,kafka-connect-http-sink-*.jar"
+          generateReleaseNotes: true
 
