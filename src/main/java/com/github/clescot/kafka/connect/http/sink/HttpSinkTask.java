@@ -211,6 +211,7 @@ public class HttpSinkTask extends SinkTask {
             Preconditions.checkArgument(QueueFactory.hasAConsumer(queueName), "'" + queueName + "' queue hasn't got any consumer, i.e no Source Connector has been configured to consume records published in this in memory queue. we stop the Sink Connector to prevent any OutofMemoryError.");
         }
         records.stream()
+                .filter(sinkRecord -> sinkRecord.value()!=null)
                 .map(this::buildHttpRequest)
                 .map(this::addStaticHeaders)
                 .map(this::addTrackingHeaders)
@@ -228,7 +229,11 @@ public class HttpSinkTask extends SinkTask {
     }
 
     private  HttpRequest addTrackingHeaders(HttpRequest httpRequest) {
-        Map<String, List<String>> headers = httpRequest.getHeaders();
+        if(httpRequest==null){
+            LOGGER.warn("sinkRecord has got a 'null' value");
+            throw new ConnectException("sinkRecord has got a 'null' value");
+        }
+        Map<String, List<String>> headers = Optional.ofNullable(httpRequest.getHeaders()).orElse(Maps.newHashMap());
 
         //we generate an 'X-Request-ID' header if not present
         Optional<List<String>> requestId = Optional.ofNullable(httpRequest.getHeaders().get(HEADER_X_REQUEST_ID));

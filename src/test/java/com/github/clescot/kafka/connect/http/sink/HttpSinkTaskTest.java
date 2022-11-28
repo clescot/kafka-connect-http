@@ -13,12 +13,14 @@ import org.apache.kafka.connect.header.Header;
 import org.apache.kafka.connect.sink.ErrantRecordReporter;
 import org.apache.kafka.connect.sink.SinkRecord;
 import org.apache.kafka.connect.sink.SinkTaskContext;
-import org.jetbrains.annotations.NotNull;
 import org.json.JSONException;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.MockitoAnnotations;
 import org.skyscreamer.jsonassert.Customization;
 import org.skyscreamer.jsonassert.JSONAssert;
 import org.skyscreamer.jsonassert.JSONCompareMode;
@@ -38,16 +40,26 @@ import static org.mockito.Mockito.*;
 
 class HttpSinkTaskTest {
 
+    @Mock
+    ErrantRecordReporter errantRecordReporter;
+    @Mock
+    SinkTaskContext sinkTaskContext;
 
+    @Mock
+    Queue<HttpExchange> dummyQueue;
+
+    @InjectMocks
+    HttpSinkTask wsSinkTask;
 
     @BeforeEach
     public void setUp(){
         QueueFactory.clearRegistrations();
+        MockitoAnnotations.openMocks(this);
+        wsSinkTask.initialize(sinkTaskContext);
     }
 
     @Test
     public void test_start_with_queue_name(){
-        HttpSinkTask wsSinkTask = getWsSinkTask();
         Map<String,String> settings = Maps.newHashMap();
         settings.put(ConfigConstants.QUEUE_NAME,"dummyQueueName");
         wsSinkTask.start(settings);
@@ -55,7 +67,6 @@ class HttpSinkTaskTest {
 
     @Test
     public void test_start_with_static_request_headers(){
-        HttpSinkTask wsSinkTask = getWsSinkTask();
         Map<String,String> settings = Maps.newHashMap();
         settings.put(STATIC_REQUEST_HEADER_NAMES,"param1,param2");
         settings.put("param1","value1");
@@ -77,14 +88,12 @@ class HttpSinkTaskTest {
 
     @Test
     public void test_start_no_settings(){
-        HttpSinkTask wsSinkTask = getWsSinkTask();
         wsSinkTask.start(Maps.newHashMap());
     }
 
 
     @Test
     public void test_put_add_static_headers(){
-        HttpSinkTask wsSinkTask = getWsSinkTask();
         Map<String,String> settings = Maps.newHashMap();
         settings.put(STATIC_REQUEST_HEADER_NAMES,"param1,param2");
         settings.put("param1","value1");
@@ -110,7 +119,6 @@ class HttpSinkTaskTest {
     @Test
     public void test_put_nominal_case(){
         //given
-        HttpSinkTask wsSinkTask = getWsSinkTask();
         Map<String,String> settings = Maps.newHashMap();
         wsSinkTask.start(settings);
 
@@ -119,10 +127,6 @@ class HttpSinkTaskTest {
         HttpExchange dummyHttpExchange = getDummyHttpExchange();
         when(httpClient.call(any(HttpRequest.class))).thenReturn(dummyHttpExchange);
         wsSinkTask.setHttpClient(httpClient);
-
-        //mock queue
-        Queue<HttpExchange> dummyQueue = mock(Queue.class);
-        wsSinkTask.setQueue(dummyQueue);
 
         //init sinkRecord
         List<SinkRecord> records = Lists.newArrayList();
@@ -146,9 +150,32 @@ class HttpSinkTaskTest {
     }
 
     @Test
+    public void test_put_sink_record_with_null_value(){
+        //given
+        Map<String,String> settings = Maps.newHashMap();
+        wsSinkTask.start(settings);
+
+        //mock httpClient
+        HttpClient httpClient = mock(HttpClient.class);
+        HttpExchange dummyHttpExchange = getDummyHttpExchange();
+        when(httpClient.call(any(HttpRequest.class))).thenReturn(dummyHttpExchange);
+        wsSinkTask.setHttpClient(httpClient);
+
+        //init sinkRecord
+        List<SinkRecord> records = Lists.newArrayList();
+        List<Header> headers = Lists.newArrayList();
+        SinkRecord sinkRecord = new SinkRecord("myTopic",0, Schema.STRING_SCHEMA,"key",Schema.STRING_SCHEMA,null,-1,System.currentTimeMillis(), TimestampType.CREATE_TIME,headers);
+        records.add(sinkRecord);
+
+        //when
+        wsSinkTask.put(records);
+        //then
+        verify(dummyQueue,never()).offer(any(HttpExchange.class));
+    }
+
+    @Test
     public void test_put_with_publish_to_in_memory_queue_without_consumer(){
         //given
-        HttpSinkTask wsSinkTask = getWsSinkTask();
         Map<String,String> settings = Maps.newHashMap();
         settings.put(PUBLISH_TO_IN_MEMORY_QUEUE,"true");
         wsSinkTask.start(settings);
@@ -158,10 +185,6 @@ class HttpSinkTaskTest {
         HttpExchange dummyHttpExchange = getDummyHttpExchange();
         when(httpClient.call(any(HttpRequest.class))).thenReturn(dummyHttpExchange);
         wsSinkTask.setHttpClient(httpClient);
-
-        //mock queue
-        Queue<HttpExchange> dummyQueue = mock(Queue.class);
-        wsSinkTask.setQueue(dummyQueue);
 
         //init sinkRecord
         List<SinkRecord> records = Lists.newArrayList();
@@ -176,20 +199,10 @@ class HttpSinkTaskTest {
 
     }
 
-    @NotNull
-    private static HttpSinkTask getWsSinkTask() {
-        HttpSinkTask wsSinkTask = new HttpSinkTask();
-        ErrantRecordReporter errantRecordReporter = mock(ErrantRecordReporter.class);
-        SinkTaskContext sinkTaskContext = mock(SinkTaskContext.class);
-        when(sinkTaskContext.errantRecordReporter()).thenReturn(errantRecordReporter);
-        wsSinkTask.initialize(sinkTaskContext);
-        return wsSinkTask;
-    }
 
 
     @Test
     public void test_put_with_publish_in_memory_set_to_false(){
-        HttpSinkTask wsSinkTask = getWsSinkTask();
         Map<String,String> settings = Maps.newHashMap();
         settings.put(PUBLISH_TO_IN_MEMORY_QUEUE,"false");
         wsSinkTask.start(settings);
@@ -212,7 +225,6 @@ class HttpSinkTaskTest {
     public void test_put_with_publish_to_in_memory_queue_set_to_true_with_a_consumer(){
 
         //given
-        HttpSinkTask wsSinkTask = getWsSinkTask();
         Map<String,String> settings = Maps.newHashMap();
         settings.put(PUBLISH_TO_IN_MEMORY_QUEUE,"true");
         QueueFactory.registerConsumerForQueue(QueueFactory.DEFAULT_QUEUE_NAME);
