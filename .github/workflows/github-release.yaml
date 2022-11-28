@@ -1,0 +1,21 @@
+name: create a github release on tag pushed on the master branch
+on:
+  push:
+    tags:
+      - master
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v3
+      - name: Configure Git user
+        run: |
+          git config user.email "actions@github.com"
+          git config user.name "clescot"
+      - uses: ncipollo/release-action@v1
+        with:
+          artifacts: "kafka-connect-http-sink-*.zip,kafka-connect-http-sink-*.jar"
+          generateReleaseNotes: true
+
