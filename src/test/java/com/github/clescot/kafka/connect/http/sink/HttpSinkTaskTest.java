@@ -28,7 +28,6 @@ import org.skyscreamer.jsonassert.JSONAssert;
 import org.skyscreamer.jsonassert.JSONCompareMode;
 import org.skyscreamer.jsonassert.comparator.CustomComparator;
 
-import javax.net.ssl.TrustManager;
 import javax.net.ssl.TrustManagerFactory;
 import java.time.OffsetDateTime;
 import java.time.ZoneId;
@@ -48,6 +47,9 @@ class HttpSinkTaskTest {
     private static final String DUMMY_URL = "http://www." + DUMMY_BODY + ".com";
     private static final String DUMMY_METHOD = "GET";
     private static final String DUMMY_BODY_TYPE = "STRING";
+    private static final String PKIX_TRUST_MANAGER_FACTORY_ALGORITHM = "PKIX";
+    private static final String PKCS_12_KEYSTORE_FORMAT = "pkcs12";
+    private static final String JKS_KEYSTORE_FORMAT = "jks";
     @Mock
     ErrantRecordReporter errantRecordReporter;
     @Mock
@@ -351,7 +353,7 @@ class HttpSinkTaskTest {
         String truststorePath = Thread.currentThread().getContextClassLoader().getResource("client_truststore.jks").getPath().toString();
         String password = "Secret123!";
         //when
-        TrustManagerFactory trustManagerFactory = httpSinkTask.getTrustManagerFactory(truststorePath, password.toCharArray(), "jks","PKIX");
+        TrustManagerFactory trustManagerFactory = httpSinkTask.getTrustManagerFactory(truststorePath, password.toCharArray(), JKS_KEYSTORE_FORMAT, PKIX_TRUST_MANAGER_FACTORY_ALGORITHM);
         //then
         assertThat(trustManagerFactory).isNotNull();
         assertThat(trustManagerFactory.getTrustManagers()).hasSize(1);
@@ -362,10 +364,10 @@ class HttpSinkTaskTest {
     public void test_getTrustManagerFactory_pkcs12_nominal_case(){
 
         //given
-        String truststorePath = Thread.currentThread().getContextClassLoader().getResource("client_truststore.p12").getPath().toString();
+        String truststorePath = Thread.currentThread().getContextClassLoader().getResource("client_truststore.p12").getPath();
         String password = "Secret123!";
         //when
-        TrustManagerFactory trustManagerFactory = httpSinkTask.getTrustManagerFactory(truststorePath, password.toCharArray(), "pkcs12","PKIX");
+        TrustManagerFactory trustManagerFactory = httpSinkTask.getTrustManagerFactory(truststorePath, password.toCharArray(), PKCS_12_KEYSTORE_FORMAT, PKIX_TRUST_MANAGER_FACTORY_ALGORITHM);
         //then
         assertThat(trustManagerFactory).isNotNull();
         assertThat(trustManagerFactory.getTrustManagers()).hasSize(1);
