@@ -38,6 +38,7 @@ public class QueueFactory {
     public static void registerConsumerForQueue(String queueName){
         Preconditions.checkNotNull(queueName,"we cannot register a consumer for a null queueName");
         Preconditions.checkArgument(!queueName.isEmpty(),"we cannot register a consumer for an empty queueName");
+        LOGGER.info("registration of a consumer for the queue '{}'",queueName);
         consumers.put(queueName,true);
     }
 
