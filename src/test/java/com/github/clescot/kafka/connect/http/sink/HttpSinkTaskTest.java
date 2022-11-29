@@ -28,6 +28,8 @@ import org.skyscreamer.jsonassert.JSONAssert;
 import org.skyscreamer.jsonassert.JSONCompareMode;
 import org.skyscreamer.jsonassert.comparator.CustomComparator;
 
+import javax.net.ssl.TrustManager;
+import javax.net.ssl.TrustManagerFactory;
 import java.time.OffsetDateTime;
 import java.time.ZoneId;
 import java.util.List;
@@ -339,6 +341,35 @@ class HttpSinkTaskTest {
         assertThat(httpRequest.getUrl()).isEqualTo(DUMMY_URL);
         assertThat(httpRequest.getMethod()).isEqualTo(DUMMY_METHOD);
         assertThat(httpRequest.getBodyType().toString()).isEqualTo(DUMMY_BODY_TYPE);
+    }
+
+
+    @Test
+    public void test_getTrustManagerFactory_jks_nominal_case(){
+
+        //given
+        String truststorePath = Thread.currentThread().getContextClassLoader().getResource("client_truststore.jks").getPath().toString();
+        String password = "Secret123!";
+        //when
+        TrustManagerFactory trustManagerFactory = httpSinkTask.getTrustManagerFactory(truststorePath, password.toCharArray(), "jks","PKIX");
+        //then
+        assertThat(trustManagerFactory).isNotNull();
+        assertThat(trustManagerFactory.getTrustManagers()).hasSize(1);
+
+    }
+
+    @Test
+    public void test_getTrustManagerFactory_pkcs12_nominal_case(){
+
+        //given
+        String truststorePath = Thread.currentThread().getContextClassLoader().getResource("client_truststore.p12").getPath().toString();
+        String password = "Secret123!";
+        //when
+        TrustManagerFactory trustManagerFactory = httpSinkTask.getTrustManagerFactory(truststorePath, password.toCharArray(), "pkcs12","PKIX");
+        //then
+        assertThat(trustManagerFactory).isNotNull();
+        assertThat(trustManagerFactory.getTrustManagers()).hasSize(1);
+
     }
 
 

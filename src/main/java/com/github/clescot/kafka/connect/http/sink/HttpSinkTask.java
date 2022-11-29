@@ -14,6 +14,8 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import io.netty.buffer.ByteBufAllocator;
 import io.netty.buffer.PooledByteBufAllocator;
+import io.netty.handler.ssl.SslContext;
+import io.netty.handler.ssl.SslContextBuilder;
 import io.netty.util.HashedWheelTimer;
 import io.netty.util.Timer;
 import org.apache.kafka.connect.data.Struct;
@@ -31,11 +33,15 @@ import org.asynchttpclient.cookie.ThreadSafeCookieStore;
 import org.asynchttpclient.extras.guava.RateLimitedThrottleRequestFilter;
 import org.asynchttpclient.netty.channel.ConnectionSemaphoreFactory;
 import org.asynchttpclient.netty.channel.DefaultConnectionSemaphoreFactory;
-import org.slf4j.ILoggerFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.net.ssl.*;
+import java.io.*;
 import java.lang.reflect.InvocationTargetException;
+import java.nio.file.Path;
+import java.security.*;
+import java.security.cert.CertificateException;
 import java.util.*;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
@@ -60,6 +66,10 @@ public class HttpSinkTask extends SinkTask {
 
     public static final String HEADER_X_CORRELATION_ID = "X-Correlation-ID";
     public static final String HEADER_X_REQUEST_ID = "X-Request-ID";
+    private static final String HTTPCLIENT_SSL_TRUSTSTORE_PATH = "httpclient.ssl.truststore.path";
+    private static final String HTTPCLIENT_SSL_TRUSTSTORE_PASSWORD = "httpclient.ssl.truststore.password";
+    private static final String HTTPCLIENT_SSL_TRUSTSTORE_TYPE = "httpclient.ssl.truststore.type";
+    private static final String HTTPCLIENT_SSL_TRUSTSTORE_ALGORITHM = "httpclient.ssl.truststore.algorithm";
     private HttpClient httpClient;
     private Queue<HttpExchange> queue;
     private String queueName;
@@ -89,9 +99,8 @@ public class HttpSinkTask extends SinkTask {
     public void start(Map<String, String> settings) {
         Preconditions.checkNotNull(settings, "settings cannot be null");
         try {
-            //TODO handle DLQ with errantRecordReporter
             errantRecordReporter = context.errantRecordReporter();
-            if(errantRecordReporter==null){
+            if (errantRecordReporter == null) {
                 LOGGER.warn("Dead Letter Queue (DLQ) is not enabled. it is recommended to configure a Dead Letter Queue for a better error handling.");
             }
         } catch (NoSuchMethodError | NoClassDefFoundError e) {
@@ -114,17 +123,17 @@ public class HttpSinkTask extends SinkTask {
         Double defaultRetryDelayFactor = httpSinkConnectorConfig.getDefaultRetryDelayFactor();
         Long defaultRetryJitterInMs = httpSinkConnectorConfig.getDefaultRetryJitterInMs();
 
-           httpClient.setDefaultRetryPolicy(
-                   defaultRetries,
-                   defaultRetryDelayInMs,
-                   defaultRetryMaxDelayInMs,
-                   defaultRetryDelayFactor,
-                   defaultRetryJitterInMs
-           );
-        }
+        httpClient.setDefaultRetryPolicy(
+                defaultRetries,
+                defaultRetryDelayInMs,
+                defaultRetryMaxDelayInMs,
+                defaultRetryDelayFactor,
+                defaultRetryJitterInMs
+        );
+    }
 
 
-    private static synchronized AsyncHttpClient getAsyncHttpClient(Map<String, String> config) {
+    private synchronized AsyncHttpClient getAsyncHttpClient(Map<String, String> config) {
         if (asyncHttpClient == null) {
             Map<String, String> asyncConfig = config.entrySet().stream().filter(entry -> entry.getKey().startsWith(ASYN_HTTP_CONFIG_PREFIX)).collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
             Properties asyncHttpProperties = new Properties();
@@ -198,12 +207,51 @@ public class HttpSinkTask extends SinkTask {
                 propertyBasedASyncHttpClientConfig.setByteBufAllocator(new PooledByteBufAllocator());
                 LOGGER.error("we rollback to the default byte buffer allocator");
             }
+            if (config.containsKey(HTTPCLIENT_SSL_TRUSTSTORE_PATH)&&config.containsKey(HTTPCLIENT_SSL_TRUSTSTORE_PASSWORD)) {
+                Optional<TrustManagerFactory> trustManagerFactory = Optional.ofNullable(
+                        getTrustManagerFactory(
+                                config.get(HTTPCLIENT_SSL_TRUSTSTORE_PATH),
+                                config.get(HTTPCLIENT_SSL_TRUSTSTORE_PASSWORD).toCharArray(),
+                                config.get(HTTPCLIENT_SSL_TRUSTSTORE_TYPE),
+                                config.get(HTTPCLIENT_SSL_TRUSTSTORE_ALGORITHM)));
+                if (trustManagerFactory.isPresent()) {
+                    SslContext nettySSLContext;
+                    try {
+                        nettySSLContext = SslContextBuilder.forClient().trustManager(trustManagerFactory.get()).build();
+                    } catch (SSLException e) {
+                        throw new RuntimeException(e);
+                    }
+                    propertyBasedASyncHttpClientConfig.setSslContext(nettySSLContext);
+                }
+                asyncHttpClient = Dsl.asyncHttpClient(propertyBasedASyncHttpClientConfig);
 
-            asyncHttpClient = Dsl.asyncHttpClient(propertyBasedASyncHttpClientConfig);
+            }
         }
         return asyncHttpClient;
     }
 
+    protected TrustManagerFactory getTrustManagerFactory(String trustStorePath, char[] password, String keystoreType,String algorithm) {
+        TrustManagerFactory trustManagerFactory;
+        KeyStore trustStore;
+        try {
+            String finalAlgorithm = Optional.ofNullable(algorithm).orElse(TrustManagerFactory.getDefaultAlgorithm());
+            trustManagerFactory = TrustManagerFactory.getInstance(finalAlgorithm);
+            String finalKeystoreType = Optional.ofNullable(keystoreType).orElse(KeyStore.getDefaultType());
+            trustStore = KeyStore.getInstance(finalKeystoreType);
+        } catch (NoSuchAlgorithmException | KeyStoreException e) {
+            throw new RuntimeException(e);
+        }
+
+        Path path = Path.of(trustStorePath);
+        File file = path.toFile();
+        try (InputStream inputStream = new FileInputStream(file)) {
+            trustStore.load(inputStream, password);
+            trustManagerFactory.init(trustStore);
+        } catch (IOException | NoSuchAlgorithmException | CertificateException | KeyStoreException e) {
+            throw new RuntimeException(e);
+        }
+        return trustManagerFactory;
+    }
 
     @Override
     public void put(Collection<SinkRecord> records) {
@@ -216,32 +264,32 @@ public class HttpSinkTask extends SinkTask {
         if (httpSinkConnectorConfig.isPublishToInMemoryQueue()) {
             Preconditions.checkArgument(QueueFactory.hasAConsumer(queueName), "'" + queueName + "' queue hasn't got any consumer, i.e no Source Connector has been configured to consume records published in this in memory queue. we stop the Sink Connector to prevent any OutofMemoryError.");
         }
-        for (SinkRecord sinkRecord:records) {
-             try {
-                 // attempt to send record to data sink
-                 process(sinkRecord);
-             } catch (Exception e) {
-                 if (errantRecordReporter != null) {
-                     // Send errant record to error reporter
-                     Future<Void> future = errantRecordReporter.report(sinkRecord, e);
-                     // Optionally wait till the failure's been recorded in Kafka
-                     try {
-                         future.get();
-                     } catch (InterruptedException |ExecutionException ex) {
-                         throw new RuntimeException(ex);
-                     }
-                 } else {
-                     // There's no error reporter, so fail
-                     throw new ConnectException("Failed on record", e);
-                 }
-             }
+        for (SinkRecord sinkRecord : records) {
+            try {
+                // attempt to send record to data sink
+                process(sinkRecord);
+            } catch (Exception e) {
+                if (errantRecordReporter != null) {
+                    // Send errant record to error reporter
+                    Future<Void> future = errantRecordReporter.report(sinkRecord, e);
+                    // Optionally wait till the failure's been recorded in Kafka
+                    try {
+                        future.get();
+                    } catch (InterruptedException | ExecutionException ex) {
+                        throw new RuntimeException(ex);
+                    }
+                } else {
+                    // There's no error reporter, so fail
+                    throw new ConnectException("Failed on record", e);
+                }
+            }
         }
 
     }
 
     private void process(SinkRecord sinkRecord) {
-        if(sinkRecord.value()==null){
-            throw new ConnectException("sinkRecord Value is null :"+ sinkRecord);
+        if (sinkRecord.value() == null) {
+            throw new ConnectException("sinkRecord Value is null :" + sinkRecord);
         }
         HttpRequest httpRequest = buildHttpRequest(sinkRecord);
         HttpRequest httpRequestWithStaticHeaders = addStaticHeaders(httpRequest);
@@ -256,8 +304,8 @@ public class HttpSinkTask extends SinkTask {
         }
     }
 
-    private  HttpRequest addTrackingHeaders(HttpRequest httpRequest) {
-        if(httpRequest==null){
+    private HttpRequest addTrackingHeaders(HttpRequest httpRequest) {
+        if (httpRequest == null) {
             LOGGER.warn("sinkRecord has got a 'null' value");
             throw new ConnectException("sinkRecord has got a 'null' value");
         }
@@ -265,14 +313,14 @@ public class HttpSinkTask extends SinkTask {
 
         //we generate an 'X-Request-ID' header if not present
         Optional<List<String>> requestId = Optional.ofNullable(httpRequest.getHeaders().get(HEADER_X_REQUEST_ID));
-        if(requestId.isEmpty()&&this.generateMissingRequestId){
+        if (requestId.isEmpty() && this.generateMissingRequestId) {
             requestId = Optional.of(Lists.newArrayList(UUID.randomUUID().toString()));
         }
         requestId.ifPresent(reqId -> headers.put(HEADER_X_REQUEST_ID, Lists.newArrayList(reqId)));
 
         //we generate an 'X-Correlation-ID' header if not present
         Optional<List<String>> correlationId = Optional.ofNullable(httpRequest.getHeaders().get(HEADER_X_CORRELATION_ID));
-        if(correlationId.isEmpty()&&this.generateMissingCorrelationId){
+        if (correlationId.isEmpty() && this.generateMissingCorrelationId) {
             correlationId = Optional.of(Lists.newArrayList(UUID.randomUUID().toString()));
         }
         correlationId.ifPresent(corrId -> headers.put(HEADER_X_CORRELATION_ID, Lists.newArrayList(corrId)));
@@ -281,7 +329,7 @@ public class HttpSinkTask extends SinkTask {
     }
 
     protected HttpRequest buildHttpRequest(SinkRecord sinkRecord) {
-        if(sinkRecord==null||sinkRecord.value()==null){
+        if (sinkRecord == null || sinkRecord.value() == null) {
             LOGGER.warn("sinkRecord has got a 'null' value");
             throw new ConnectException("sinkRecord has got a 'null' value");
         }
@@ -341,7 +389,7 @@ public class HttpSinkTask extends SinkTask {
     private HttpRequest addStaticHeaders(HttpRequest httpRequest) {
         if (httpRequest != null) {
             this.staticRequestHeaders.forEach((key, value) -> httpRequest.getHeaders().put(key, value));
-        }else{
+        } else {
 
         }
         return httpRequest;
