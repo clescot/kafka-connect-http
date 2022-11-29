@@ -6,7 +6,7 @@ import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.github.clescot.kafka.connect.http.HttpExchange;
 import com.github.clescot.kafka.connect.http.HttpRequest;
 import com.github.clescot.kafka.connect.http.QueueFactory;
-import com.github.clescot.kafka.connect.http.sink.client.HttpClient;
+import com.github.clescot.kafka.connect.http.sink.client.AHCHttpClient;
 import com.github.clescot.kafka.connect.http.sink.client.PropertyBasedASyncHttpClientConfig;
 import com.google.common.base.Charsets;
 import com.google.common.base.Preconditions;
@@ -70,7 +70,7 @@ public class HttpSinkTask extends SinkTask {
     private static final String HTTPCLIENT_SSL_TRUSTSTORE_PASSWORD = "httpclient.ssl.truststore.password";
     private static final String HTTPCLIENT_SSL_TRUSTSTORE_TYPE = "httpclient.ssl.truststore.type";
     private static final String HTTPCLIENT_SSL_TRUSTSTORE_ALGORITHM = "httpclient.ssl.truststore.algorithm";
-    private HttpClient httpClient;
+    private AHCHttpClient httpClient;
     private Queue<HttpExchange> queue;
     private String queueName;
 
@@ -116,7 +116,7 @@ public class HttpSinkTask extends SinkTask {
         this.generateMissingRequestId = httpSinkConnectorConfig.isGenerateMissingRequestId();
         this.generateMissingCorrelationId = httpSinkConnectorConfig.isGenerateMissingCorrelationId();
 
-        this.httpClient = new HttpClient(getAsyncHttpClient(httpSinkConnectorConfig.originalsStrings()));
+        this.httpClient = new AHCHttpClient(getAsyncHttpClient(httpSinkConnectorConfig.originalsStrings()));
         Integer defaultRetries = httpSinkConnectorConfig.getDefaultRetries();
         Long defaultRetryDelayInMs = httpSinkConnectorConfig.getDefaultRetryDelayInMs();
         Long defaultRetryMaxDelayInMs = httpSinkConnectorConfig.getDefaultRetryMaxDelayInMs();
@@ -402,7 +402,7 @@ public class HttpSinkTask extends SinkTask {
     }
 
     //for testing purpose
-    protected void setHttpClient(HttpClient httpClient) {
+    protected void setHttpClient(AHCHttpClient httpClient) {
         this.httpClient = httpClient;
     }
 

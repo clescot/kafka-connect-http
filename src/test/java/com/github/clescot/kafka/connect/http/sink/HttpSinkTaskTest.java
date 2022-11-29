@@ -4,7 +4,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.github.clescot.kafka.connect.http.*;
-import com.github.clescot.kafka.connect.http.sink.client.HttpClient;
+import com.github.clescot.kafka.connect.http.sink.client.AHCHttpClient;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import org.apache.kafka.common.record.TimestampType;
@@ -109,7 +109,7 @@ class HttpSinkTaskTest {
         settings.put("param1", "value1");
         settings.put("param2", "value2");
         httpSinkTask.start(settings);
-        HttpClient httpClient = mock(HttpClient.class);
+        AHCHttpClient httpClient = mock(AHCHttpClient.class);
         HttpExchange dummyHttpExchange = getDummyHttpExchange();
         when(httpClient.call(any(HttpRequest.class))).thenReturn(dummyHttpExchange);
         httpSinkTask.setHttpClient(httpClient);
@@ -133,7 +133,7 @@ class HttpSinkTaskTest {
         httpSinkTask.start(settings);
 
         //mock httpClient
-        HttpClient httpClient = mock(HttpClient.class);
+        AHCHttpClient httpClient = mock(AHCHttpClient.class);
         HttpExchange dummyHttpExchange = getDummyHttpExchange();
         when(httpClient.call(any(HttpRequest.class))).thenReturn(dummyHttpExchange);
         httpSinkTask.setHttpClient(httpClient);
@@ -166,7 +166,7 @@ class HttpSinkTaskTest {
         httpSinkTask.start(settings);
 
         //mock httpClient
-        HttpClient httpClient = mock(HttpClient.class);
+        AHCHttpClient httpClient = mock(AHCHttpClient.class);
         HttpExchange dummyHttpExchange = getDummyHttpExchange();
         when(httpClient.call(any(HttpRequest.class))).thenReturn(dummyHttpExchange);
         httpSinkTask.setHttpClient(httpClient);
@@ -190,7 +190,7 @@ class HttpSinkTaskTest {
         httpSinkTask.start(settings);
 
         //mock httpClient
-        HttpClient httpClient = mock(HttpClient.class);
+        AHCHttpClient httpClient = mock(AHCHttpClient.class);
         HttpExchange dummyHttpExchange = getDummyHttpExchange();
         when(httpClient.call(any(HttpRequest.class))).thenReturn(dummyHttpExchange);
         httpSinkTask.setHttpClient(httpClient);
@@ -214,7 +214,7 @@ class HttpSinkTaskTest {
         Map<String, String> settings = Maps.newHashMap();
         settings.put(PUBLISH_TO_IN_MEMORY_QUEUE, "false");
         httpSinkTask.start(settings);
-        HttpClient httpClient = mock(HttpClient.class);
+        AHCHttpClient httpClient = mock(AHCHttpClient.class);
         HttpExchange dummyHttpExchange = getDummyHttpExchange();
         when(httpClient.call(any(HttpRequest.class))).thenReturn(dummyHttpExchange);
         httpSinkTask.setHttpClient(httpClient);
@@ -237,7 +237,7 @@ class HttpSinkTaskTest {
         settings.put(PUBLISH_TO_IN_MEMORY_QUEUE, "true");
         QueueFactory.registerConsumerForQueue(QueueFactory.DEFAULT_QUEUE_NAME);
         httpSinkTask.start(settings);
-        HttpClient httpClient = mock(HttpClient.class);
+        AHCHttpClient httpClient = mock(AHCHttpClient.class);
         HttpExchange dummyHttpExchange = getDummyHttpExchange();
         when(httpClient.call(any(HttpRequest.class))).thenReturn(dummyHttpExchange);
         httpSinkTask.setHttpClient(httpClient);

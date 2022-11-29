@@ -11,7 +11,7 @@ import java.util.Map;
 import java.util.Queue;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static com.github.clescot.kafka.connect.http.sink.client.HttpClient.*;
+import static com.github.clescot.kafka.connect.http.sink.client.AHCHttpClient.*;
 
 public class QueueProducer implements Runnable {
     private Queue<HttpExchange> transferQueue;
