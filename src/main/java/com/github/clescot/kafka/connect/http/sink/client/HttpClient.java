@@ -11,7 +11,6 @@ import dev.failsafe.RetryPolicy;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.net.ssl.SSLContext;
 import java.time.Duration;
 import java.time.OffsetDateTime;
 import java.time.ZoneId;
@@ -53,7 +52,8 @@ public interface HttpClient<Req, Res> {
                     return call(httpRequest, attempts);
                 }
             } catch (Throwable throwable) {
-                LOGGER.error("Failed to call web service after {} retries with error {} ", attempts, throwable.getMessage());
+                LOGGER.error("Failed to call web service after {} retries with error({}). message:{} ", attempts, throwable,
+                        throwable.getMessage());
                 return buildHttpExchange(
                         httpRequest,
                         new HttpResponse(SERVER_ERROR_STATUS_CODE, String.valueOf(throwable.getMessage()), BLANK_RESPONSE_CONTENT),
@@ -107,7 +107,6 @@ public interface HttpClient<Req, Res> {
                 SUCCESS
         );
     }
-
 
 
     default HttpExchange buildHttpExchange(HttpRequest httpRequest,

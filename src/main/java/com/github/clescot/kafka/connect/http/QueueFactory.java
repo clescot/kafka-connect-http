@@ -50,7 +50,7 @@ public class QueueFactory {
     public static boolean hasAConsumer(String queueName,long maxWaitTimeInMilliSeconds){
         Duration duration = Duration.ofMillis(maxWaitTimeInMilliSeconds);
         try {
-            Awaitility.await().atMost(duration).conditionEvaluationListener(new ConditionEvaluationLogger(string -> LOGGER.info("awaiting a registered consumer (Source Connector) listening on the queue : '{}'", queueName), TimeUnit.SECONDS)).until(() -> hasAConsumer(queueName));
+            Awaitility.await().atMost(duration).pollDelay(maxWaitTimeInMilliSeconds>5000?5000:maxWaitTimeInMilliSeconds-1,TimeUnit.MILLISECONDS).conditionEvaluationListener(new ConditionEvaluationLogger(string -> LOGGER.info("awaiting a registered consumer (Source Connector) listening on the queue : '{}'", queueName), TimeUnit.SECONDS)).until(() -> hasAConsumer(queueName));
         }catch(ConditionTimeoutException e){
             return false;
         }

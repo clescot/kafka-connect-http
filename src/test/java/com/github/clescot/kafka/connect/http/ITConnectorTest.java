@@ -179,7 +179,9 @@ public class ITConnectorTest {
                 .with("error.topic", errorTopic)
                 .with("key.converter", "org.apache.kafka.connect.storage.StringConverter")
                 .with("value.converter", "io.confluent.connect.json.JsonSchemaConverter")
-                .with("value.converter.schema.registry.url", internalSchemaRegistryUrl);
+                .with("value.converter.schema.registry.url", internalSchemaRegistryUrl)
+                .with("queue.name", "stuff")
+                ;
 
         connectContainer.registerConnector(connectorName, sourceConnectorConfiguration);
         connectContainer.ensureConnectorTaskState(connectorName, 0, Connector.State.RUNNING);
@@ -195,11 +197,13 @@ public class ITConnectorTest {
     public void afterEach() {
         wireMockServer.resetAll();
         connectContainer.deleteAllConnectors();
+        QueueFactory.clearRegistrations();
     }
 
     @Test
     public void sink_and_source_with_input_as_string(WireMockRuntimeInfo wmRuntimeInfo) throws JSONException, JsonProcessingException {
         //register connectors
+        configureSourceConnector("http-source-connector");
         configureSinkConnector("http-sink-connector-message-as-string",
                 PUBLISH_TO_IN_MEMORY_QUEUE_OK,
                 HTTP_REQUESTS_AS_STRING,
@@ -207,7 +211,6 @@ public class ITConnectorTest {
                 new AbstractMap.SimpleImmutableEntry<>("generate.missing.request.id","true"),
                 new AbstractMap.SimpleImmutableEntry<>("generate.missing.correlation.id","true")
         );
-        configureSourceConnector("http-source-connector");
         List<String> registeredConnectors = connectContainer.getRegisteredConnectors();
         String joinedRegisteredConnectors = Joiner.on(",").join(registeredConnectors);
         LOGGER.info("registered connectors :{}", joinedRegisteredConnectors);
@@ -303,6 +306,7 @@ public class ITConnectorTest {
     @Test
     public void sink_and_source_with_input_as_struct_and_schema_registry(WireMockRuntimeInfo wmRuntimeInfo) throws JSONException, IOException, RestClientException {
         //register connectors
+        configureSourceConnector("http-source-connector");
         configureSinkConnector("http-sink-connector-message-as-struct-and-registry",
                 PUBLISH_TO_IN_MEMORY_QUEUE_OK,
                 HTTP_REQUESTS_AS_STRUCT_WITH_REGISTRY,
@@ -311,7 +315,6 @@ public class ITConnectorTest {
                 new AbstractMap.SimpleImmutableEntry<>("generate.missing.request.id","true"),
                 new AbstractMap.SimpleImmutableEntry<>("generate.missing.correlation.id","true")
         );
-        configureSourceConnector("http-source-connector");
         List<String> registeredConnectors = connectContainer.getRegisteredConnectors();
         String joinedRegisteredConnectors = Joiner.on(",").join(registeredConnectors);
         LOGGER.info("registered connectors :{}", joinedRegisteredConnectors);
