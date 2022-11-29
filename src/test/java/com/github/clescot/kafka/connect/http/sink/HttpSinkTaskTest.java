@@ -73,6 +73,36 @@ class HttpSinkTaskTest {
         settings.put(ConfigConstants.QUEUE_NAME, "dummyQueueName");
         httpSinkTask.start(settings);
     }
+ @Test
+    public void test_start_with_custom_trust_store_path_and_password() {
+        Map<String, String> settings = Maps.newHashMap();
+        String truststorePath = Thread.currentThread().getContextClassLoader().getResource("client_truststore.jks").getPath();
+        String password = "Secret123!";
+        settings.put(HTTPCLIENT_SSL_TRUSTSTORE_PATH, truststorePath);
+        settings.put(HTTPCLIENT_SSL_TRUSTSTORE_PASSWORD, password);
+        httpSinkTask.start(settings);
+    }
+    @Test
+    public void test_start_with_custom_trust_store_path_password_and_type() {
+        Map<String, String> settings = Maps.newHashMap();
+        String truststorePath = Thread.currentThread().getContextClassLoader().getResource("client_truststore.jks").getPath();
+        String password = "Secret123!";
+        settings.put(HTTPCLIENT_SSL_TRUSTSTORE_PATH, truststorePath);
+        settings.put(HTTPCLIENT_SSL_TRUSTSTORE_PASSWORD, password);
+        settings.put(HTTPCLIENT_SSL_TRUSTSTORE_TYPE, "jks");
+        httpSinkTask.start(settings);
+    }
+    @Test
+    public void test_start_with_custom_trust_store_path_password_type_and_algorithm() {
+        Map<String, String> settings = Maps.newHashMap();
+        String truststorePath = Thread.currentThread().getContextClassLoader().getResource("client_truststore.jks").getPath();
+        String password = "Secret123!";
+        settings.put(HTTPCLIENT_SSL_TRUSTSTORE_PATH, truststorePath);
+        settings.put(HTTPCLIENT_SSL_TRUSTSTORE_PASSWORD, password);
+        settings.put(HTTPCLIENT_SSL_TRUSTSTORE_TYPE, "jks");
+        settings.put(HTTPCLIENT_SSL_TRUSTSTORE_ALGORITHM, "PKIX");
+        httpSinkTask.start(settings);
+    }
 
     @Test
     public void test_start_with_static_request_headers() {
@@ -337,7 +367,7 @@ class HttpSinkTaskTest {
     public void test_getTrustManagerFactory_jks_nominal_case(){
 
         //given
-        String truststorePath = Thread.currentThread().getContextClassLoader().getResource("client_truststore.jks").getPath().toString();
+        String truststorePath = Thread.currentThread().getContextClassLoader().getResource("client_truststore.jks").getPath();
         String password = "Secret123!";
         //when
         TrustManagerFactory trustManagerFactory = HttpClientFactory.getTrustManagerFactory(truststorePath, password.toCharArray(), JKS_KEYSTORE_FORMAT, PKIX_TRUST_MANAGER_FACTORY_ALGORITHM);

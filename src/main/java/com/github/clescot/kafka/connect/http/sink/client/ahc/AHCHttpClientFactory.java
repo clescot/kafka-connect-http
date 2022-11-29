@@ -1,5 +1,6 @@
 package com.github.clescot.kafka.connect.http.sink.client.ahc;
 
+import com.github.clescot.kafka.connect.http.sink.HttpSinkConfigDefinition;
 import com.github.clescot.kafka.connect.http.sink.client.HttpClient;
 import com.github.clescot.kafka.connect.http.sink.client.HttpClientFactory;
 import com.google.common.collect.Lists;
@@ -30,6 +31,7 @@ import java.util.Optional;
 import java.util.Properties;
 import java.util.stream.Collectors;
 
+import static com.github.clescot.kafka.connect.http.sink.HttpSinkConfigDefinition.*;
 import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.ASYNC_CLIENT_CONFIG_ROOT;
 
 public class AHCHttpClientFactory implements HttpClientFactory {

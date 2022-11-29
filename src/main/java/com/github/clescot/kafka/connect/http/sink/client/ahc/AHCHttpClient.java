@@ -52,17 +52,12 @@ public class AHCHttpClient extends AbstractHttpClient<Request, Response> {
 
     public static final boolean FAILURE = false;
 
-
-
-
-    private AsyncHttpClient asyncHttpClient;
-
-
-
     public static final String WS_REQUEST_TIMEOUT_IN_MS = "request-timeout-in-ms";
     public static final String WS_READ_TIMEOUT_IN_MS = "read-timeout-in-ms";
     private static final String WS_REALM_PASS = "password";
 
+
+    private AsyncHttpClient asyncHttpClient;
 
     private final HttpClientAsyncCompletionHandler asyncCompletionHandler = new HttpClientAsyncCompletionHandler();
 
