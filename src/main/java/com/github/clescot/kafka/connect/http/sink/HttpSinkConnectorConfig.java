@@ -116,4 +116,23 @@ public class HttpSinkConnectorConfig extends AbstractConfig {
     public long getMaxWaitTimeRegistrationOfQueueConsumerInMs() {
         return maxWaitTimeRegistrationOfQueueConsumerInMs;
     }
+
+    @Override
+    public String toString() {
+        return "HttpSinkConnectorConfig{" +
+                "queueName='" + queueName + '\'' +
+                ", publishToInMemoryQueue=" + publishToInMemoryQueue +
+                ", defaultRetries=" + defaultRetries +
+                ", defaultRetryDelayInMs=" + defaultRetryDelayInMs +
+                ", defaultRetryMaxDelayInMs=" + defaultRetryMaxDelayInMs +
+                ", defaultRetryDelayFactor=" + defaultRetryDelayFactor +
+                ", defaultRetryJitterInMs=" + defaultRetryJitterInMs +
+                ", defaultRateLimiterMaxExecutions=" + defaultRateLimiterMaxExecutions +
+                ", defaultRateLimiterPeriodInMs=" + defaultRateLimiterPeriodInMs +
+                ", staticRequestHeaders=" + staticRequestHeaders +
+                ", generateMissingRequestId=" + generateMissingRequestId +
+                ", generateMissingCorrelationId=" + generateMissingCorrelationId +
+                ", maxWaitTimeRegistrationOfQueueConsumerInMs=" + maxWaitTimeRegistrationOfQueueConsumerInMs +
+                '}';
+    }
 }

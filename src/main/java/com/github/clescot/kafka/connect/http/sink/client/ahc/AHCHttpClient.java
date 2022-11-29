@@ -67,6 +67,7 @@ public class AHCHttpClient extends AbstractHttpClient<Request, Response> {
 
     @Override
     public org.asynchttpclient.Response nativeCall(org.asynchttpclient.Request request) {
+        LOGGER.debug("native call  {}",request);
         ListenableFuture<Response> responseListenableFuture = asyncHttpClient.executeRequest(request, asyncCompletionHandler);
         //we cannot use the asynchronous nature of the response yet
         try {
@@ -199,13 +200,6 @@ public class AHCHttpClient extends AbstractHttpClient<Request, Response> {
     private boolean isNotNullOrEmpty(String field) {
         return field != null && !field.isEmpty();
     }
-
-
-
-    protected void setAsyncHttpClient(AsyncHttpClient asyncHttpClient) {
-        this.asyncHttpClient = asyncHttpClient;
-    }
-
 
     public HttpResponse buildResponse(Response response, Pattern successPattern) {
         int responseStatusCode = getSuccessfulStatusCodeOrThrowRetryException(response.getStatusCode(), successPattern);

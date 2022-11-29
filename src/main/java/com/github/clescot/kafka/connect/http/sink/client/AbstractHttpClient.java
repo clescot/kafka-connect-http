@@ -23,6 +23,7 @@ public abstract class  AbstractHttpClient<Req,Res> implements HttpClient<Req,Res
 
     @Override
     public void setDefaultRateLimiter(long periodInMs, long maxExecutions) {
+        LOGGER.info("default rate limiter set with  {} executions every {} ms",maxExecutions,periodInMs);
         this.defaultRateLimiter = RateLimiter.<HttpExchange>smoothBuilder(maxExecutions, Duration.of(periodInMs, ChronoUnit.MILLIS)).build();
     }
 
@@ -33,6 +34,7 @@ public abstract class  AbstractHttpClient<Req,Res> implements HttpClient<Req,Res
         LOGGER.info("request: {}", request.toString());
         try {
             this.defaultRateLimiter.acquirePermits(ONE_HTTP_REQUEST);
+            LOGGER.debug("permits acquired");
         } catch (InterruptedException e) {
             LOGGER.error("Failed to acquire execution permit from the rate limiter {} ", e.getMessage());
             throw new HttpException(e.getMessage());

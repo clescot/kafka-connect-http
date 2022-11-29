@@ -48,118 +48,112 @@ public class AHCHttpClientFactory implements HttpClientFactory {
     private static final String BYTE_BUFFER_ALLOCATOR = ASYN_HTTP_CONFIG_PREFIX + "byte.buffer.allocator";
 
 
-
     private static AHCHttpClient httpClient;
 
     private final static Logger LOGGER = LoggerFactory.getLogger(AHCHttpClientFactory.class);
 
 
+    private static synchronized AsyncHttpClient getAsyncHttpClient(Map<String, String> config) {
+        AsyncHttpClient asyncHttpClient = null;
+        Map<String, String> asyncConfig = config.entrySet().stream().filter(entry -> entry.getKey().startsWith(ASYN_HTTP_CONFIG_PREFIX)).collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+        Properties asyncHttpProperties = new Properties();
+        asyncHttpProperties.putAll(asyncConfig);
+        PropertyBasedASyncHttpClientConfig propertyBasedASyncHttpClientConfig = new PropertyBasedASyncHttpClientConfig(asyncHttpProperties);
+        //define throttling
+        int maxConnections = Integer.parseInt(config.getOrDefault(HTTP_MAX_CONNECTIONS, "3"));
+        double rateLimitPerSecond = Double.parseDouble(config.getOrDefault(HTTP_RATE_LIMIT_PER_SECOND, "3"));
+        int maxWaitMs = Integer.parseInt(config.getOrDefault(HTTP_MAX_WAIT_MS, "500"));
+        propertyBasedASyncHttpClientConfig.setRequestFilters(Lists.newArrayList(new RateLimitedThrottleRequestFilter(maxConnections, rateLimitPerSecond, maxWaitMs)));
 
+        String defaultKeepAliveStrategyClassName = config.getOrDefault(KEEP_ALIVE_STRATEGY_CLASS, "org.asynchttpclient.channel.DefaultKeepAliveStrategy");
 
+        //define keep alive strategy
+        KeepAliveStrategy keepAliveStrategy;
+        try {
+            //we instantiate the default constructor, public or not
+            keepAliveStrategy = (KeepAliveStrategy) Class.forName(defaultKeepAliveStrategyClassName).getDeclaredConstructor().newInstance();
+        } catch (ClassNotFoundException | IllegalAccessException | InstantiationException |
+                 InvocationTargetException | NoSuchMethodException e) {
+            LOGGER.error(e.getMessage());
+            LOGGER.error("we rollback to the default keep alive strategy");
+            keepAliveStrategy = new DefaultKeepAliveStrategy();
+        }
+        propertyBasedASyncHttpClientConfig.setKeepAliveStrategy(keepAliveStrategy);
 
-    private static synchronized AsyncHttpClient getAsyncHttpClient(Map<String,String>config){
-                AsyncHttpClient asyncHttpClient = null;
-                Map<String, String> asyncConfig = config.entrySet().stream().filter(entry -> entry.getKey().startsWith(ASYN_HTTP_CONFIG_PREFIX)).collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
-                Properties asyncHttpProperties = new Properties();
-                asyncHttpProperties.putAll(asyncConfig);
-                PropertyBasedASyncHttpClientConfig propertyBasedASyncHttpClientConfig = new PropertyBasedASyncHttpClientConfig(asyncHttpProperties);
-                //define throttling
-                int maxConnections = Integer.parseInt(config.getOrDefault(HTTP_MAX_CONNECTIONS, "3"));
-                double rateLimitPerSecond = Double.parseDouble(config.getOrDefault(HTTP_RATE_LIMIT_PER_SECOND, "3"));
-                int maxWaitMs = Integer.parseInt(config.getOrDefault(HTTP_MAX_WAIT_MS, "500"));
-                propertyBasedASyncHttpClientConfig.setRequestFilters(Lists.newArrayList(new RateLimitedThrottleRequestFilter(maxConnections, rateLimitPerSecond, maxWaitMs)));
+        //set response body part factory mode
+        String responseBodyPartFactoryMode = config.getOrDefault(RESPONSE_BODY_PART_FACTORY, "EAGER");
+        propertyBasedASyncHttpClientConfig.setResponseBodyPartFactory(AsyncHttpClientConfig.ResponseBodyPartFactory.valueOf(responseBodyPartFactoryMode));
 
-                String defaultKeepAliveStrategyClassName = config.getOrDefault(KEEP_ALIVE_STRATEGY_CLASS, "org.asynchttpclient.channel.DefaultKeepAliveStrategy");
-
-                //define keep alive strategy
-                KeepAliveStrategy keepAliveStrategy;
-                try {
-                    //we instantiate the default constructor, public or not
-                    keepAliveStrategy = (KeepAliveStrategy) Class.forName(defaultKeepAliveStrategyClassName).getDeclaredConstructor().newInstance();
-                } catch (ClassNotFoundException | IllegalAccessException | InstantiationException |
-                         InvocationTargetException | NoSuchMethodException e) {
-                    LOGGER.error(e.getMessage());
-                    LOGGER.error("we rollback to the default keep alive strategy");
-                    keepAliveStrategy = new DefaultKeepAliveStrategy();
-                }
-                propertyBasedASyncHttpClientConfig.setKeepAliveStrategy(keepAliveStrategy);
-
-                //set response body part factory mode
-                String responseBodyPartFactoryMode = config.getOrDefault(RESPONSE_BODY_PART_FACTORY, "EAGER");
-                propertyBasedASyncHttpClientConfig.setResponseBodyPartFactory(AsyncHttpClientConfig.ResponseBodyPartFactory.valueOf(responseBodyPartFactoryMode));
-
-                //define connection semaphore factory
-                String connectionSemaphoreFactoryClassName = config.getOrDefault(CONNECTION_SEMAPHORE_FACTORY, "org.asynchttpclient.netty.channel.DefaultConnectionSemaphoreFactory");
-                try {
-                    propertyBasedASyncHttpClientConfig.setConnectionSemaphoreFactory((ConnectionSemaphoreFactory) Class.forName(connectionSemaphoreFactoryClassName).getDeclaredConstructor().newInstance());
-                } catch (InstantiationException | IllegalAccessException | InvocationTargetException |
-                         NoSuchMethodException | ClassNotFoundException e) {
-                    LOGGER.error(e.getMessage());
-                    propertyBasedASyncHttpClientConfig.setConnectionSemaphoreFactory(new DefaultConnectionSemaphoreFactory());
-                    LOGGER.error("we rollback to the default connection semaphore factory");
-                }
-
-                //cookie store
-                String cookieStoreClassName = config.getOrDefault(COOKIE_STORE, "org.asynchttpclient.cookie.ThreadSafeCookieStore");
-                try {
-                    propertyBasedASyncHttpClientConfig.setCookieStore((CookieStore) Class.forName(cookieStoreClassName).getDeclaredConstructor().newInstance());
-                } catch (InstantiationException | IllegalAccessException | InvocationTargetException |
-                         NoSuchMethodException | ClassNotFoundException e) {
-                    LOGGER.error(e.getMessage());
-                    propertyBasedASyncHttpClientConfig.setCookieStore(new ThreadSafeCookieStore());
-                    LOGGER.error("we rollback to the default cookie store");
-                }
-
-                //netty timer
-                String nettyTimerClassName = config.getOrDefault(NETTY_TIMER, "io.netty.util.HashedWheelTimer");
-                try {
-                    propertyBasedASyncHttpClientConfig.setNettyTimer((Timer) Class.forName(nettyTimerClassName).getDeclaredConstructor().newInstance());
-                } catch (InstantiationException | IllegalAccessException | InvocationTargetException |
-                         NoSuchMethodException | ClassNotFoundException e) {
-                    LOGGER.error(e.getMessage());
-                    propertyBasedASyncHttpClientConfig.setNettyTimer(new HashedWheelTimer());
-                    LOGGER.error("we rollback to the default netty timer");
-                }
-
-                //byte buffer allocator
-                String byteBufferAllocatorClassName = config.getOrDefault(BYTE_BUFFER_ALLOCATOR, "io.netty.buffer.PooledByteBufAllocator");
-                try {
-                    propertyBasedASyncHttpClientConfig.setByteBufAllocator((ByteBufAllocator) Class.forName(byteBufferAllocatorClassName).getDeclaredConstructor().newInstance());
-                } catch (InstantiationException | IllegalAccessException | InvocationTargetException |
-                         NoSuchMethodException | ClassNotFoundException e) {
-                    LOGGER.error(e.getMessage());
-                    propertyBasedASyncHttpClientConfig.setByteBufAllocator(new PooledByteBufAllocator());
-                    LOGGER.error("we rollback to the default byte buffer allocator");
-                }
-                if (config.containsKey(HTTPCLIENT_SSL_TRUSTSTORE_PATH)&&config.containsKey(HTTPCLIENT_SSL_TRUSTSTORE_PASSWORD)) {
-
-                    Optional<TrustManagerFactory> trustManagerFactory = Optional.ofNullable(
-                            HttpClientFactory.getTrustManagerFactory(
-                                    config.get(HTTPCLIENT_SSL_TRUSTSTORE_PATH),
-                                    config.get(HTTPCLIENT_SSL_TRUSTSTORE_PASSWORD).toCharArray(),
-                                    config.get(HTTPCLIENT_SSL_TRUSTSTORE_TYPE),
-                                    config.get(HTTPCLIENT_SSL_TRUSTSTORE_ALGORITHM)));
-                    if (trustManagerFactory.isPresent()) {
-                        SslContext nettySSLContext;
-                        try {
-                            nettySSLContext = SslContextBuilder.forClient().trustManager(trustManagerFactory.get()).build();
-                        } catch (SSLException e) {
-                            throw new RuntimeException(e);
-                        }
-                        propertyBasedASyncHttpClientConfig.setSslContext(nettySSLContext);
-                    }
-                    asyncHttpClient = Dsl.asyncHttpClient(propertyBasedASyncHttpClientConfig);
-
-                }
-            return asyncHttpClient;
+        //define connection semaphore factory
+        String connectionSemaphoreFactoryClassName = config.getOrDefault(CONNECTION_SEMAPHORE_FACTORY, "org.asynchttpclient.netty.channel.DefaultConnectionSemaphoreFactory");
+        try {
+            propertyBasedASyncHttpClientConfig.setConnectionSemaphoreFactory((ConnectionSemaphoreFactory) Class.forName(connectionSemaphoreFactoryClassName).getDeclaredConstructor().newInstance());
+        } catch (InstantiationException | IllegalAccessException | InvocationTargetException |
+                 NoSuchMethodException | ClassNotFoundException e) {
+            LOGGER.error(e.getMessage());
+            propertyBasedASyncHttpClientConfig.setConnectionSemaphoreFactory(new DefaultConnectionSemaphoreFactory());
+            LOGGER.error("we rollback to the default connection semaphore factory");
         }
 
+        //cookie store
+        String cookieStoreClassName = config.getOrDefault(COOKIE_STORE, "org.asynchttpclient.cookie.ThreadSafeCookieStore");
+        try {
+            propertyBasedASyncHttpClientConfig.setCookieStore((CookieStore) Class.forName(cookieStoreClassName).getDeclaredConstructor().newInstance());
+        } catch (InstantiationException | IllegalAccessException | InvocationTargetException |
+                 NoSuchMethodException | ClassNotFoundException e) {
+            LOGGER.error(e.getMessage());
+            propertyBasedASyncHttpClientConfig.setCookieStore(new ThreadSafeCookieStore());
+            LOGGER.error("we rollback to the default cookie store");
+        }
+
+        //netty timer
+        String nettyTimerClassName = config.getOrDefault(NETTY_TIMER, "io.netty.util.HashedWheelTimer");
+        try {
+            propertyBasedASyncHttpClientConfig.setNettyTimer((Timer) Class.forName(nettyTimerClassName).getDeclaredConstructor().newInstance());
+        } catch (InstantiationException | IllegalAccessException | InvocationTargetException |
+                 NoSuchMethodException | ClassNotFoundException e) {
+            LOGGER.error(e.getMessage());
+            propertyBasedASyncHttpClientConfig.setNettyTimer(new HashedWheelTimer());
+            LOGGER.error("we rollback to the default netty timer");
+        }
+
+        //byte buffer allocator
+        String byteBufferAllocatorClassName = config.getOrDefault(BYTE_BUFFER_ALLOCATOR, "io.netty.buffer.PooledByteBufAllocator");
+        try {
+            propertyBasedASyncHttpClientConfig.setByteBufAllocator((ByteBufAllocator) Class.forName(byteBufferAllocatorClassName).getDeclaredConstructor().newInstance());
+        } catch (InstantiationException | IllegalAccessException | InvocationTargetException |
+                 NoSuchMethodException | ClassNotFoundException e) {
+            LOGGER.error(e.getMessage());
+            propertyBasedASyncHttpClientConfig.setByteBufAllocator(new PooledByteBufAllocator());
+            LOGGER.error("we rollback to the default byte buffer allocator");
+        }
+        if (config.containsKey(HTTPCLIENT_SSL_TRUSTSTORE_PATH) && config.containsKey(HTTPCLIENT_SSL_TRUSTSTORE_PASSWORD)) {
+
+            Optional<TrustManagerFactory> trustManagerFactory = Optional.ofNullable(
+                    HttpClientFactory.getTrustManagerFactory(
+                            config.get(HTTPCLIENT_SSL_TRUSTSTORE_PATH),
+                            config.get(HTTPCLIENT_SSL_TRUSTSTORE_PASSWORD).toCharArray(),
+                            config.get(HTTPCLIENT_SSL_TRUSTSTORE_TYPE),
+                            config.get(HTTPCLIENT_SSL_TRUSTSTORE_ALGORITHM)));
+            if (trustManagerFactory.isPresent()) {
+                SslContext nettySSLContext;
+                try {
+                    nettySSLContext = SslContextBuilder.forClient().trustManager(trustManagerFactory.get()).build();
+                } catch (SSLException e) {
+                    throw new RuntimeException(e);
+                }
+                propertyBasedASyncHttpClientConfig.setSslContext(nettySSLContext);
+            }
+        }
+        asyncHttpClient = Dsl.asyncHttpClient(propertyBasedASyncHttpClientConfig);
+        return asyncHttpClient;
+    }
 
 
     @Override
     public HttpClient build(Map<String, String> config) {
-        if(httpClient==null) {
-            httpClient= new AHCHttpClient(getAsyncHttpClient(config));
+        if (httpClient == null) {
+            httpClient = new AHCHttpClient(getAsyncHttpClient(config));
         }
         return httpClient;
     }
