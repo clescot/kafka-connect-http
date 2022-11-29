@@ -14,9 +14,12 @@ import io.confluent.kafka.schemaregistry.json.JsonSchemaUtils;
 import io.confluent.kafka.schemaregistry.json.SpecificationVersion;
 import io.confluent.kafka.serializers.json.KafkaJsonSchemaSerializer;
 import io.confluent.kafka.serializers.json.KafkaJsonSchemaSerializerConfig;
+import org.apache.kafka.connect.data.Field;
+import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.data.SchemaAndValue;
 import org.apache.kafka.connect.data.Struct;
 import org.json.JSONException;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.skyscreamer.jsonassert.JSONAssert;
 
@@ -117,5 +120,46 @@ class HttpRequestTest {
 
         System.out.println(parsedHttpRequest);
     }
-
+    @Test
+    public void test_with_empty_struct(){
+        //given
+        Struct struct = new Struct(HttpRequest.SCHEMA);
+        //when
+        Assertions.assertThrows(NullPointerException.class,()->HttpRequest.Builder.anHttpRequest().withStruct(struct).build());
+    }
+    @Test
+    public void test_with_struct_only_url(){
+        //given
+        Struct struct = new Struct(HttpRequest.SCHEMA);
+        struct.put("url","http://stuff.com");
+        //when
+        Assertions.assertThrows(NullPointerException.class,()->HttpRequest.Builder.anHttpRequest().withStruct(struct).build());
+    }
+    @Test
+    public void test_with_struct_only_url_and_method(){
+        //given
+        Struct struct = new Struct(HttpRequest.SCHEMA);
+        struct.put("url","http://stuff.com");
+        struct.put("method","GET");
+        //when
+        Assertions.assertThrows(NullPointerException.class,()->HttpRequest.Builder.anHttpRequest().withStruct(struct).build());
+    }
+    @Test
+    public void test_with_struct_nominal_case(){
+        //given
+        Struct struct = new Struct(HttpRequest.SCHEMA);
+        String dummyUrl = "http://stuff.com";
+        struct.put("url", dummyUrl);
+        String dummyMethod = "GET";
+        struct.put("method", dummyMethod);
+        String dummyBodyType = "STRING";
+        struct.put("bodyType", dummyBodyType);
+        //when
+        HttpRequest httpRequest = HttpRequest.Builder.anHttpRequest().withStruct(struct).build();
+        //then
+        assertThat(httpRequest).isNotNull();
+        assertThat(httpRequest.getUrl()).isEqualTo(dummyUrl);
+        assertThat(httpRequest.getMethod()).isEqualTo(dummyMethod);
+        assertThat(httpRequest.getBodyType().toString()).isEqualTo(dummyBodyType);
+    }
 }
