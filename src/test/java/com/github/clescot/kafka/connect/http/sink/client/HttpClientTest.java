@@ -4,6 +4,7 @@ package com.github.clescot.kafka.connect.http.sink.client;
 import com.github.clescot.kafka.connect.http.HttpRequest;
 import com.github.clescot.kafka.connect.http.HttpExchange;
 import com.github.clescot.kafka.connect.http.HttpResponse;
+import com.github.clescot.kafka.connect.http.sink.client.ahc.AHCHttpClient;
 import com.google.common.base.Stopwatch;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
@@ -27,7 +28,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.github.clescot.kafka.connect.http.sink.HttpSinkTask.HEADER_X_CORRELATION_ID;
 import static com.github.clescot.kafka.connect.http.sink.HttpSinkTask.HEADER_X_REQUEST_ID;
-import static com.github.clescot.kafka.connect.http.sink.client.AHCHttpClient.SUCCESS;
+import static com.github.clescot.kafka.connect.http.sink.client.ahc.AHCHttpClient.SUCCESS;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;

@@ -1,7 +1,8 @@
-package com.github.clescot.kafka.connect.http.sink.client;
+package com.github.clescot.kafka.connect.http.sink.client.ahc;
 
 import com.github.clescot.kafka.connect.http.HttpRequest;
 import com.github.clescot.kafka.connect.http.HttpResponse;
+import com.github.clescot.kafka.connect.http.sink.client.AbstractHttpClient;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;

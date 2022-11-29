@@ -21,6 +21,7 @@ public abstract class  AbstractHttpClient<Req,Res> implements HttpClient<Req,Res
     private Optional<RetryPolicy<HttpExchange>> defaultRetryPolicy = Optional.empty();
     RateLimiter<HttpExchange> defaultRateLimiter = RateLimiter.<HttpExchange>smoothBuilder(HttpSinkConfigDefinition.DEFAULT_RATE_LIMITER_MAX_EXECUTIONS_VALUE, Duration.of(HttpSinkConfigDefinition.DEFAULT_RATE_LIMITER_PERIOD_IN_MS_VALUE, ChronoUnit.MILLIS)).build();
 
+    @Override
     public void setDefaultRateLimiter(long periodInMs, long maxExecutions) {
         this.defaultRateLimiter = RateLimiter.<HttpExchange>smoothBuilder(maxExecutions, Duration.of(periodInMs, ChronoUnit.MILLIS)).build();
     }
@@ -58,9 +59,7 @@ public abstract class  AbstractHttpClient<Req,Res> implements HttpClient<Req,Res
 
 
     }
-
-    protected abstract HttpResponse buildResponse(Res response, Pattern successPattern);
-
+    @Override
     public void setDefaultRetryPolicy(Integer retries, Long retryDelayInMs, Long retryMaxDelayInMs, Double retryDelayFactor, Long retryJitterInMs) {
         this.defaultRetryPolicy = Optional.of(buildRetryPolicy(retries, retryDelayInMs, retryMaxDelayInMs, retryDelayFactor, retryJitterInMs));
     }
@@ -74,6 +73,6 @@ public abstract class  AbstractHttpClient<Req,Res> implements HttpClient<Req,Res
         return responseStatusCode;
     }
 
-
+    protected abstract HttpResponse buildResponse(Res response, Pattern successPattern);
 
 }

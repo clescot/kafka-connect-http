@@ -152,7 +152,11 @@ public interface HttpClient<Req, Res> {
     <Res> Res buildRequest(HttpRequest httpRequest);
 
 
-     HttpExchange call(HttpRequest httpRequest, AtomicInteger attempts) throws HttpException;
+    void setDefaultRateLimiter(long periodInMs, long maxExecutions);
+
+    HttpExchange call(HttpRequest httpRequest, AtomicInteger attempts) throws HttpException;
 
     Res nativeCall(Req request);
+
+    void setDefaultRetryPolicy(Integer retries, Long retryDelayInMs, Long retryMaxDelayInMs, Double retryDelayFactor, Long retryJitterInMs);
 }
