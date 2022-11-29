@@ -11,6 +11,7 @@ import dev.failsafe.RetryPolicy;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.net.ssl.SSLContext;
 import java.time.Duration;
 import java.time.OffsetDateTime;
 import java.time.ZoneId;
@@ -136,7 +137,7 @@ public interface HttpClient<Req, Res> {
                                                        Long retryMaxDelayInMs,
                                                        Double retryDelayFactor,
                                                        Long retryJitterInMs) {
-        RetryPolicy<HttpExchange> retryPolicy = RetryPolicy.<HttpExchange>builder()
+        return RetryPolicy.<HttpExchange>builder()
                 //we retry only if the error comes from the WS server (server-side technical error)
                 .handle(HttpException.class)
                 .withBackoff(Duration.ofMillis(retryDelayInMs), Duration.ofMillis(retryMaxDelayInMs), retryDelayFactor)
@@ -146,7 +147,6 @@ public interface HttpClient<Req, Res> {
                 .onFailure(listener -> LOGGER.warn("ws call failed ! result:{},exception:{}", listener.getResult(), listener.getException()))
                 .onAbort(listener -> LOGGER.warn("ws call aborted ! result:{},exception:{}", listener.getResult(), listener.getException()))
                 .build();
-        return retryPolicy;
     }
 
     <Res> Res buildRequest(HttpRequest httpRequest);
@@ -159,4 +159,5 @@ public interface HttpClient<Req, Res> {
     Res nativeCall(Req request);
 
     void setDefaultRetryPolicy(Integer retries, Long retryDelayInMs, Long retryMaxDelayInMs, Double retryDelayFactor, Long retryJitterInMs);
+
 }

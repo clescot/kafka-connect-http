@@ -83,7 +83,6 @@ public class AHCHttpClient extends AbstractHttpClient<Request, Response> {
     }
 
 
-
     @Override
     public org.asynchttpclient.Request buildRequest(HttpRequest httpRequest) {
         Preconditions.checkNotNull(httpRequest, "'httpRequest' is required but null");
