@@ -93,6 +93,9 @@ public class HttpSinkTask extends SinkTask {
                 defaultRetryDelayFactor,
                 defaultRetryJitterInMs
         );
+        if (httpSinkConnectorConfig.isPublishToInMemoryQueue()) {
+            Preconditions.checkArgument(QueueFactory.hasAConsumer(queueName, httpSinkConnectorConfig.getMaxWaitTimeRegistrationOfQueueConsumerInMs()), "'" + queueName + "' queue hasn't got any consumer, i.e no Source Connector has been configured to consume records published in this in memory queue. we stop the Sink Connector to prevent any OutofMemoryError.");
+        }
     }
 
 
@@ -105,9 +108,7 @@ public class HttpSinkTask extends SinkTask {
             return;
         }
         Preconditions.checkNotNull(httpClient, "httpClient is null. 'start' method must be called once before put");
-        if (httpSinkConnectorConfig.isPublishToInMemoryQueue()) {
-            Preconditions.checkArgument(QueueFactory.hasAConsumer(queueName), "'" + queueName + "' queue hasn't got any consumer, i.e no Source Connector has been configured to consume records published in this in memory queue. we stop the Sink Connector to prevent any OutofMemoryError.");
-        }
+
         for (SinkRecord sinkRecord : records) {
             try {
                 // attempt to send record to data sink

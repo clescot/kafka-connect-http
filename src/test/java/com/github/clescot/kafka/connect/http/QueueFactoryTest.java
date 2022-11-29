@@ -1,5 +1,6 @@
 package com.github.clescot.kafka.connect.http;
 
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
@@ -38,7 +39,7 @@ class QueueFactoryTest {
     @Test
     public void test_registerConsumerForQueue(){
         QueueFactory.registerConsumerForQueue("test");
-        assertThat(QueueFactory.hasAConsumer("test")).isTrue();
+        assertThat(QueueFactory.hasAConsumer("test",200)).isTrue();
     }
 
     @Test
@@ -61,12 +62,39 @@ class QueueFactoryTest {
         //given
         String queueName = "test";
         QueueFactory.registerConsumerForQueue(queueName);
-        assertThat(QueueFactory.hasAConsumer(queueName)).isTrue();
+        assertThat(QueueFactory.hasAConsumer(queueName,500)).isTrue();
 
         //when
         QueueFactory.clearRegistrations();
-        assertThat(QueueFactory.hasAConsumer(queueName)).isFalse();
+        assertThat(QueueFactory.hasAConsumer(queueName,500)).isFalse();
     }
 
 
+    @Test
+    public void test_has_not_a_queue_name_with_timeout(){
+        String queueName = "test";
+        //given
+        QueueFactory.getQueue(queueName);
+        //when
+        boolean hasAConsumer = QueueFactory.hasAConsumer(queueName, 500);
+        //then
+        assertThat(hasAConsumer).isFalse();
+    }
+
+    @Test
+    public void test_has_a_queue_name_with_timeout(){
+        String queueName = "test";
+        //given
+        QueueFactory.getQueue(queueName);
+        QueueFactory.registerConsumerForQueue(queueName);
+        //when
+        boolean hasAConsumer = QueueFactory.hasAConsumer(queueName, 500);
+        //then
+        assertThat(hasAConsumer).isTrue();
+    }
+
+    @AfterEach
+    public void tearsDown(){
+        QueueFactory.clearRegistrations();
+    }
 }

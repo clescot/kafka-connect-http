@@ -2,12 +2,17 @@ package com.github.clescot.kafka.connect.http;
 
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Maps;
+import org.awaitility.Awaitility;
+import org.awaitility.core.ConditionEvaluationLogger;
+import org.awaitility.core.ConditionTimeoutException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.time.Duration;
 import java.util.Map;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.TimeUnit;
 
 public class QueueFactory {
     public static final String DEFAULT_QUEUE_NAME = "default";
@@ -36,9 +41,19 @@ public class QueueFactory {
         consumers.put(queueName,true);
     }
 
-    public static boolean hasAConsumer(String queueName){
+    private static boolean hasAConsumer(String queueName){
         Boolean queueHasAConsumer = consumers.get(queueName);
         return queueHasAConsumer != null && queueHasAConsumer;
+    }
+
+    public static boolean hasAConsumer(String queueName,long maxWaitTimeInMilliSeconds){
+        Duration duration = Duration.ofMillis(maxWaitTimeInMilliSeconds);
+        try {
+            Awaitility.await().atMost(duration).conditionEvaluationListener(new ConditionEvaluationLogger(string -> LOGGER.info("awaiting a registered consumer (Source Connector) listening on the queue : '{}'", queueName), TimeUnit.SECONDS)).until(() -> hasAConsumer(queueName));
+        }catch(ConditionTimeoutException e){
+            return false;
+        }
+        return true;
     }
 
     public static void clearRegistrations() {

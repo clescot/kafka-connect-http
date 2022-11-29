@@ -156,8 +156,11 @@ public class ITConnectorTest {
                 .with("topics", incomingTopic)
                 .with("key.converter", "org.apache.kafka.connect.storage.StringConverter")
                 .with("value.converter", valueConverterClassName)
-                .with(PUBLISH_TO_IN_MEMORY_QUEUE, Boolean.valueOf(publishToInMemoryQueue).toString())
-                ;
+                .with("value.converter.use.optional.for.nonrequired", true)
+                .with(PUBLISH_TO_IN_MEMORY_QUEUE, Boolean.valueOf(publishToInMemoryQueue).toString());
+        if(publishToInMemoryQueue){
+            sinkConnectorMessagesAsStringConfiguration =sinkConnectorMessagesAsStringConfiguration.with("queue.name", "stuff");
+        }
         if(additionalSettings!=null && additionalSettings.length>0) {
             for (Map.Entry<String, String> additionalSetting : additionalSettings) {
                 sinkConnectorMessagesAsStringConfiguration = sinkConnectorMessagesAsStringConfiguration.with(additionalSetting.getKey(), additionalSetting.getValue());

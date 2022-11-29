@@ -28,6 +28,9 @@ public class HttpSinkConfigDefinition {
     public static final String DEFAULT_RATE_LIMITER_MAX_EXECUTIONS = "default.rate.limiter.max.executions";
     public static final String DEFAULT_RATE_LIMITER_MAX_EXECUTIONS_DOC = "max execution in the period defined with the '"+DEFAULT_RATE_LIMITER_PERIOD_IN_MS+"' parameter";
 
+    public static final String WAIT_TIME_REGISTRATION_QUEUE_CONSUMER_IN_MS = "wait.time.registration.queue.consumer.in.ms";
+    public static final String WAIT_TIME_REGISTRATION_QUEUE_CONSUMER_IN_MS_DOC = "wait time defined with the '"+DEFAULT_RATE_LIMITER_PERIOD_IN_MS+"' parameter, for a queue consumer (Source Connector) registration. We wait if the "+PUBLISH_TO_IN_MEMORY_QUEUE+" parameter is set to 'true', to avoid to publish to the queue without any consumer (OutOfMemoryError possible)";
+
 
     public static final String GENERATE_MISSING_CORRELATION_ID = "generate.missing.correlation.id";
     public static final String GENERATE_MISSING_CORRELATION_ID_DOC = "if not present in the HttpRequest headers, generate an UUID bound to the 'X-Correlation-ID' name";
@@ -59,6 +62,7 @@ public class HttpSinkConfigDefinition {
                 .define(DEFAULT_RATE_LIMITER_MAX_EXECUTIONS, ConfigDef.Type.LONG, HttpSinkConfigDefinition.DEFAULT_RATE_LIMITER_MAX_EXECUTIONS_VALUE, ConfigDef.Importance.MEDIUM, DEFAULT_RATE_LIMITER_MAX_EXECUTIONS_DOC)
                 .define(GENERATE_MISSING_CORRELATION_ID, ConfigDef.Type.BOOLEAN, false, ConfigDef.Importance.MEDIUM, GENERATE_MISSING_CORRELATION_ID_DOC)
                 .define(GENERATE_MISSING_REQUEST_ID, ConfigDef.Type.BOOLEAN, false, ConfigDef.Importance.MEDIUM, GENERATE_MISSING_REQUEST_ID_DOC)
+                .define(WAIT_TIME_REGISTRATION_QUEUE_CONSUMER_IN_MS, ConfigDef.Type.LONG, 60000L, ConfigDef.Importance.LOW, WAIT_TIME_REGISTRATION_QUEUE_CONSUMER_IN_MS_DOC)
                 ;
     }
 }

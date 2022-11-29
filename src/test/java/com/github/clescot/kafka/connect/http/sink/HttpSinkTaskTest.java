@@ -37,8 +37,7 @@ import java.util.Map;
 import java.util.Queue;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static com.github.clescot.kafka.connect.http.sink.HttpSinkConfigDefinition.PUBLISH_TO_IN_MEMORY_QUEUE;
-import static com.github.clescot.kafka.connect.http.sink.HttpSinkConfigDefinition.STATIC_REQUEST_HEADER_NAMES;
+import static com.github.clescot.kafka.connect.http.sink.HttpSinkConfigDefinition.*;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.*;
 
@@ -187,24 +186,12 @@ class HttpSinkTaskTest {
         //given
         Map<String, String> settings = Maps.newHashMap();
         settings.put(PUBLISH_TO_IN_MEMORY_QUEUE, "true");
-        httpSinkTask.start(settings);
-
-        //mock httpClient
-        AHCHttpClient httpClient = mock(AHCHttpClient.class);
-        HttpExchange dummyHttpExchange = getDummyHttpExchange();
-        when(httpClient.call(any(HttpRequest.class))).thenReturn(dummyHttpExchange);
-        httpSinkTask.setHttpClient(httpClient);
-
-        //init sinkRecord
-        List<SinkRecord> records = Lists.newArrayList();
-        List<Header> headers = Lists.newArrayList();
-        SinkRecord sinkRecord = new SinkRecord("myTopic", 0, Schema.STRING_SCHEMA, "key", Schema.STRING_SCHEMA, "myValue", -1, System.currentTimeMillis(), TimestampType.CREATE_TIME, headers);
-        records.add(sinkRecord);
-
+        settings.put(ConfigConstants.QUEUE_NAME, "test");
+        settings.put(WAIT_TIME_REGISTRATION_QUEUE_CONSUMER_IN_MS, "200");
         //when
         //then
         Assertions.assertThrows(IllegalArgumentException.class,
-                () -> httpSinkTask.put(records));
+                () ->  httpSinkTask.start(settings));
 
     }
 

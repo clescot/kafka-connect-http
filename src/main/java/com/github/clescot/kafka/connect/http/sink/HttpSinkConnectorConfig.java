@@ -32,6 +32,8 @@ public class HttpSinkConnectorConfig extends AbstractConfig {
     private boolean generateMissingRequestId;
     private boolean generateMissingCorrelationId;
 
+    private long maxWaitTimeRegistrationOfQueueConsumerInMs;
+
     public HttpSinkConnectorConfig(Map<?, ?> originals) {
         this(HttpSinkConfigDefinition.config(), originals);
     }
@@ -53,6 +55,7 @@ public class HttpSinkConnectorConfig extends AbstractConfig {
         this.generateMissingCorrelationId = getBoolean(GENERATE_MISSING_CORRELATION_ID);
         this.defaultRateLimiterPeriodInMs = getLong(DEFAULT_RATE_LIMITER_PERIOD_IN_MS);
         this.defaultRateLimiterMaxExecutions = getLong(DEFAULT_RATE_LIMITER_MAX_EXECUTIONS);
+        this.maxWaitTimeRegistrationOfQueueConsumerInMs = getLong(WAIT_TIME_REGISTRATION_QUEUE_CONSUMER_IN_MS);
         Optional<List<String>> staticRequestHeaderNames = Optional.ofNullable(getList(STATIC_REQUEST_HEADER_NAMES));
         List<String> additionalHeaderNamesList =staticRequestHeaderNames.orElse(Lists.newArrayList());
         for(String headerName:additionalHeaderNamesList){
@@ -100,5 +103,17 @@ public class HttpSinkConnectorConfig extends AbstractConfig {
 
     public boolean isGenerateMissingCorrelationId() {
         return generateMissingCorrelationId;
+    }
+
+    public Long getDefaultRateLimiterMaxExecutions() {
+        return defaultRateLimiterMaxExecutions;
+    }
+
+    public Long getDefaultRateLimiterPeriodInMs() {
+        return defaultRateLimiterPeriodInMs;
+    }
+
+    public long getMaxWaitTimeRegistrationOfQueueConsumerInMs() {
+        return maxWaitTimeRegistrationOfQueueConsumerInMs;
     }
 }
