@@ -47,8 +47,10 @@ class HttpSinkTaskTest {
     private static final String DUMMY_URL = "http://www." + DUMMY_BODY + ".com";
     private static final String DUMMY_METHOD = "GET";
     private static final String DUMMY_BODY_TYPE = "STRING";
-    private static final String PKIX_TRUST_MANAGER_FACTORY_ALGORITHM = "PKIX";
-    private static final String JKS_KEYSTORE_FORMAT = "jks";
+    private static final String CLIENT_TRUSTSTORE_JKS_FILENAME = "client_truststore.jks";
+    private static final String CLIENT_TRUSTSTORE_JKS_PASSWORD = "Secret123!";
+    private static final String JKS_STORE_TYPE = "jks";
+    private static final String TRUSTSTORE_PKIX_ALGORITHM = "PKIX";
     @Mock
     ErrantRecordReporter errantRecordReporter;
     @Mock
@@ -76,8 +78,8 @@ class HttpSinkTaskTest {
  @Test
     public void test_start_with_custom_trust_store_path_and_password() {
         Map<String, String> settings = Maps.newHashMap();
-        String truststorePath = Thread.currentThread().getContextClassLoader().getResource("client_truststore.jks").getPath();
-        String password = "Secret123!";
+        String truststorePath = Thread.currentThread().getContextClassLoader().getResource(CLIENT_TRUSTSTORE_JKS_FILENAME).getPath();
+        String password = CLIENT_TRUSTSTORE_JKS_PASSWORD;
         settings.put(HTTPCLIENT_SSL_TRUSTSTORE_PATH, truststorePath);
         settings.put(HTTPCLIENT_SSL_TRUSTSTORE_PASSWORD, password);
         httpSinkTask.start(settings);
@@ -85,22 +87,22 @@ class HttpSinkTaskTest {
     @Test
     public void test_start_with_custom_trust_store_path_password_and_type() {
         Map<String, String> settings = Maps.newHashMap();
-        String truststorePath = Thread.currentThread().getContextClassLoader().getResource("client_truststore.jks").getPath();
-        String password = "Secret123!";
+        String truststorePath = Thread.currentThread().getContextClassLoader().getResource(CLIENT_TRUSTSTORE_JKS_FILENAME).getPath();
+        String password = CLIENT_TRUSTSTORE_JKS_PASSWORD;
         settings.put(HTTPCLIENT_SSL_TRUSTSTORE_PATH, truststorePath);
         settings.put(HTTPCLIENT_SSL_TRUSTSTORE_PASSWORD, password);
-        settings.put(HTTPCLIENT_SSL_TRUSTSTORE_TYPE, "jks");
+        settings.put(HTTPCLIENT_SSL_TRUSTSTORE_TYPE, JKS_STORE_TYPE);
         httpSinkTask.start(settings);
     }
     @Test
     public void test_start_with_custom_trust_store_path_password_type_and_algorithm() {
         Map<String, String> settings = Maps.newHashMap();
-        String truststorePath = Thread.currentThread().getContextClassLoader().getResource("client_truststore.jks").getPath();
-        String password = "Secret123!";
+        String truststorePath = Thread.currentThread().getContextClassLoader().getResource(CLIENT_TRUSTSTORE_JKS_FILENAME).getPath();
+        String password = CLIENT_TRUSTSTORE_JKS_PASSWORD;
         settings.put(HTTPCLIENT_SSL_TRUSTSTORE_PATH, truststorePath);
         settings.put(HTTPCLIENT_SSL_TRUSTSTORE_PASSWORD, password);
-        settings.put(HTTPCLIENT_SSL_TRUSTSTORE_TYPE, "jks");
-        settings.put(HTTPCLIENT_SSL_TRUSTSTORE_ALGORITHM, "PKIX");
+        settings.put(HTTPCLIENT_SSL_TRUSTSTORE_TYPE, JKS_STORE_TYPE);
+        settings.put(HTTPCLIENT_SSL_TRUSTSTORE_ALGORITHM, TRUSTSTORE_PKIX_ALGORITHM);
         httpSinkTask.start(settings);
     }
 
@@ -367,10 +369,10 @@ class HttpSinkTaskTest {
     public void test_getTrustManagerFactory_jks_nominal_case(){
 
         //given
-        String truststorePath = Thread.currentThread().getContextClassLoader().getResource("client_truststore.jks").getPath();
-        String password = "Secret123!";
+        String truststorePath = Thread.currentThread().getContextClassLoader().getResource(CLIENT_TRUSTSTORE_JKS_FILENAME).getPath();
+        String password = CLIENT_TRUSTSTORE_JKS_PASSWORD;
         //when
-        TrustManagerFactory trustManagerFactory = HttpClientFactory.getTrustManagerFactory(truststorePath, password.toCharArray(), JKS_KEYSTORE_FORMAT, PKIX_TRUST_MANAGER_FACTORY_ALGORITHM);
+        TrustManagerFactory trustManagerFactory = HttpClientFactory.getTrustManagerFactory(truststorePath, password.toCharArray(), JKS_STORE_TYPE, TRUSTSTORE_PKIX_ALGORITHM);
         //then
         assertThat(trustManagerFactory).isNotNull();
         assertThat(trustManagerFactory.getTrustManagers()).hasSize(1);
