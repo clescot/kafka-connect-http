@@ -41,16 +41,16 @@ import static com.github.clescot.kafka.connect.http.sink.HttpSinkConfigDefinitio
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.*;
 
-class HttpSinkTaskTest {
+public class HttpSinkTaskTest {
 
     private static final String DUMMY_BODY = "stuff";
     private static final String DUMMY_URL = "http://www." + DUMMY_BODY + ".com";
     private static final String DUMMY_METHOD = "GET";
     private static final String DUMMY_BODY_TYPE = "STRING";
-    private static final String CLIENT_TRUSTSTORE_JKS_FILENAME = "client_truststore.jks";
-    private static final String CLIENT_TRUSTSTORE_JKS_PASSWORD = "Secret123!";
-    private static final String JKS_STORE_TYPE = "jks";
-    private static final String TRUSTSTORE_PKIX_ALGORITHM = "PKIX";
+    public static final String CLIENT_TRUSTSTORE_JKS_FILENAME = "client_truststore.jks";
+    public static final String CLIENT_TRUSTSTORE_JKS_PASSWORD = "Secret123!";
+    public static final String JKS_STORE_TYPE = "jks";
+    public static final String TRUSTSTORE_PKIX_ALGORITHM = "PKIX";
     @Mock
     ErrantRecordReporter errantRecordReporter;
     @Mock

@@ -1,6 +1,5 @@
 package com.github.clescot.kafka.connect.http.sink.client.ahc;
 
-import com.github.clescot.kafka.connect.http.sink.HttpSinkConfigDefinition;
 import com.github.clescot.kafka.connect.http.sink.client.HttpClient;
 import com.github.clescot.kafka.connect.http.sink.client.HttpClientFactory;
 import com.google.common.collect.Lists;

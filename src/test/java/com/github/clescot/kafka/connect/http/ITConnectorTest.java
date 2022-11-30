@@ -1,13 +1,11 @@
 package com.github.clescot.kafka.connect.http;
 
-import static org.hamcrest.Matchers.equalTo;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
-import com.github.tomakehurst.wiremock.WireMockServer;
 import com.github.tomakehurst.wiremock.client.WireMock;
+import com.github.tomakehurst.wiremock.junit5.WireMockExtension;
 import com.github.tomakehurst.wiremock.junit5.WireMockRuntimeInfo;
-import com.github.tomakehurst.wiremock.junit5.WireMockTest;
 import com.google.common.base.Joiner;
 import com.google.common.base.Stopwatch;
 import com.google.common.collect.Lists;
@@ -34,12 +32,13 @@ import org.apache.kafka.common.header.Header;
 import org.apache.kafka.common.serialization.Deserializer;
 import org.apache.kafka.common.serialization.StringDeserializer;
 import org.apache.kafka.common.serialization.StringSerializer;
-import org.awaitility.core.ConditionEvaluationLogger;
 import org.json.JSONException;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.RegisterExtension;
+import org.opentest4j.AssertionFailedError;
 import org.rnorth.ducttape.unreliables.Unreliables;
 import org.skyscreamer.jsonassert.Customization;
 import org.skyscreamer.jsonassert.JSONAssert;
@@ -61,22 +60,21 @@ import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.time.Duration;
 import java.util.*;
-import java.util.concurrent.TimeUnit;
 import java.util.stream.Stream;
 
-import static com.github.clescot.kafka.connect.http.sink.HttpSinkConfigDefinition.PUBLISH_TO_IN_MEMORY_QUEUE;
+import static com.github.clescot.kafka.connect.http.sink.HttpSinkConfigDefinition.*;
+import static com.github.clescot.kafka.connect.http.sink.HttpSinkTaskTest.*;
 import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
 import static com.github.tomakehurst.wiremock.client.WireMock.get;
+import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.wireMockConfig;
 import static io.confluent.kafka.serializers.AbstractKafkaSchemaSerDeConfig.AUTO_REGISTER_SCHEMAS;
 import static io.confluent.kafka.serializers.AbstractKafkaSchemaSerDeConfig.SCHEMA_REGISTRY_URL_CONFIG;
 import static io.confluent.kafka.serializers.json.KafkaJsonSchemaSerializerConfig.*;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.apache.kafka.clients.producer.ProducerConfig.BOOTSTRAP_SERVERS_CONFIG;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.awaitility.Awaitility.await;
 
 @Testcontainers
-@WireMockTest
 public class ITConnectorTest {
 
     private final static Logger LOGGER = LoggerFactory.getLogger(ITConnectorTest.class);
@@ -132,21 +130,35 @@ public class ITConnectorTest {
             .dependsOn(kafkaContainer, schemaRegistryContainer)
             .waitingFor(Wait.forHttp("/connector-plugins/"));
 
-    private static WireMockServer wireMockServer = new WireMockServer();
     private static String hostName;
     private static String internalSchemaRegistryUrl;
     private static String externalSchemaRegistryUrl;
-    private static final String successTopic = "http-success";
-    private static final String errorTopic = "http-error";
+
+
+    @RegisterExtension
+    static WireMockExtension wmHttp = WireMockExtension.newInstance()
+            .options(
+                    wireMockConfig()
+                    .dynamicPort()
+            )
+            .build();
+
+    @RegisterExtension
+    static WireMockExtension wmHttps = WireMockExtension.newInstance()
+            .options(
+                    wireMockConfig()
+//                    .keystorePath(Thread.currentThread().getContextClassLoader().getResource(CLIENT_TRUSTSTORE_JKS_FILENAME).getPath())
+//                    .keystorePassword(CLIENT_TRUSTSTORE_JKS_PASSWORD)
+//                    .keystoreType("JKS")
+                    .dynamicPort()
+                    .dynamicHttpsPort()
+            )
+            .build();
 
     @BeforeAll
     public static void startContainers() throws IOException {
         hostName = InetAddress.getLocalHost().getHostName();
 
-        //init wiremock
-        WireMock.configureFor(hostName, CUSTOM_AVAILABLE_PORT);
-        wireMockServer.start();
-        org.testcontainers.Testcontainers.exposeHostPorts(wireMockServer.port());
 
         //start containers
         Startables.deepStart(Stream.of(kafkaContainer, schemaRegistryContainer, connectContainer)).join();
@@ -154,7 +166,7 @@ public class ITConnectorTest {
         externalSchemaRegistryUrl = "http://" + schemaRegistryContainer.getHost() + ":"+schemaRegistryContainer.getMappedPort(8081);
     }
 
-    private static void configureSinkConnector(String connectorName, boolean publishToInMemoryQueue, String incomingTopic, String valueConverterClassName,Map.Entry<String,String>... additionalSettings) {
+    private static void configureSinkConnector(String connectorName, boolean publishToInMemoryQueue, String incomingTopic, String valueConverterClassName, String queueName, Map.Entry<String,String>... additionalSettings) {
         ConnectorConfiguration sinkConnectorMessagesAsStringConfiguration = ConnectorConfiguration.create()
                 .with("connector.class", "com.github.clescot.kafka.connect.http.sink.HttpSinkConnector")
                 .with("tasks.max", "2")
@@ -164,7 +176,7 @@ public class ITConnectorTest {
                 .with("value.converter.use.optional.for.nonrequired", true)
                 .with(PUBLISH_TO_IN_MEMORY_QUEUE, Boolean.valueOf(publishToInMemoryQueue).toString());
         if(publishToInMemoryQueue){
-            sinkConnectorMessagesAsStringConfiguration =sinkConnectorMessagesAsStringConfiguration.with("queue.name", "stuff");
+            sinkConnectorMessagesAsStringConfiguration =sinkConnectorMessagesAsStringConfiguration.with("queue.name", queueName);
         }
         if(additionalSettings!=null && additionalSettings.length>0) {
             for (Map.Entry<String, String> additionalSetting : additionalSettings) {
@@ -175,7 +187,7 @@ public class ITConnectorTest {
         connectContainer.ensureConnectorTaskState(connectorName, 0, Connector.State.RUNNING);
     }
 
-    private static void configureSourceConnector(String connectorName) {
+    private static void configureSourceConnector(String connectorName, String queueName, String successTopic, String errorTopic) {
         //source connector
         ConnectorConfiguration sourceConnectorConfiguration = ConnectorConfiguration.create()
                 .with("connector.class", "com.github.clescot.kafka.connect.http.source.HttpSourceConnector")
@@ -185,7 +197,7 @@ public class ITConnectorTest {
                 .with("key.converter", "org.apache.kafka.connect.storage.StringConverter")
                 .with("value.converter", "io.confluent.connect.json.JsonSchemaConverter")
                 .with("value.converter.schema.registry.url", internalSchemaRegistryUrl)
-                .with("queue.name", "stuff")
+                .with("queue.name", queueName)
                 ;
 
         connectContainer.registerConnector(connectorName, sourceConnectorConfiguration);
@@ -193,26 +205,26 @@ public class ITConnectorTest {
     }
 
 
-    @AfterAll
-    public static void afterAll() {
-        wireMockServer.stop();
-    }
-
     @AfterEach
     public void afterEach() {
-        wireMockServer.resetAll();
+        wmHttp.resetAll();
+        wmHttps.resetAll();
         connectContainer.deleteAllConnectors();
         QueueFactory.clearRegistrations();
     }
 
     @Test
-    public void sink_and_source_with_input_as_string(WireMockRuntimeInfo wmRuntimeInfo) throws JSONException, JsonProcessingException {
+    public void test_sink_and_source_with_input_as_string() throws JSONException, JsonProcessingException {
+        WireMockRuntimeInfo wmRuntimeInfo = wmHttp.getRuntimeInfo();
         //register connectors
-        configureSourceConnector("http-source-connector");
-        configureSinkConnector("http-sink-connector-message-as-string",
+        String queueName = "test_sink_and_source_with_input_as_string";
+        String successTopic = "success-test_sink_and_source_with_input_as_string";
+        String errorTopic = "error-test_sink_and_source_with_input_as_string";
+        configureSourceConnector("http-source-connector-test_sink_and_source_with_input_as_string", queueName, successTopic, errorTopic);
+        configureSinkConnector("http-sink-connector-test_sink_and_source_with_input_as_string",
                 PUBLISH_TO_IN_MEMORY_QUEUE_OK,
                 HTTP_REQUESTS_AS_STRING,
-                "org.apache.kafka.connect.storage.StringConverter",
+                "org.apache.kafka.connect.storage.StringConverter", "test_sink_and_source_with_input_as_string",
                 new AbstractMap.SimpleImmutableEntry<>("generate.missing.request.id","true"),
                 new AbstractMap.SimpleImmutableEntry<>("generate.missing.correlation.id","true")
         );
@@ -305,17 +317,19 @@ public class ITConnectorTest {
                         new Customization("responseHeaders.Matched-Stub-Id", (o1, o2) -> true)
                 ));
         assertThat(consumerRecord.headers().toArray()).isEmpty();
-//        await().atMost(Duration.ofSeconds(1000)).until(() -> Boolean.TRUE.equals(Boolean.FALSE));
     }
 
     @Test
-    public void sink_and_source_with_input_as_struct_and_schema_registry(WireMockRuntimeInfo wmRuntimeInfo) throws JSONException, IOException, RestClientException {
+    public void test_sink_and_source_with_input_as_struct_and_schema_registry() throws JSONException, IOException, RestClientException {
+        WireMockRuntimeInfo wmRuntimeInfo = wmHttp.getRuntimeInfo();
         //register connectors
-        configureSourceConnector("http-source-connector");
-        configureSinkConnector("http-sink-connector-message-as-struct-and-registry",
+        String successTopic = "success-sink_and_source_with_input_as_struct_and_schema_registry";
+        String errorTopic = "error-sink_and_source_with_input_as_struct_and_schema_registry";
+        configureSourceConnector("http-source-connector-test_sink_and_source_with_input_as_struct_and_schema_registry", "test_sink_and_source_with_input_as_struct_and_schema_registry", successTopic, errorTopic);
+        configureSinkConnector("http-sink-connector-test_sink_and_source_with_input_as_struct_and_schema_registry",
                 PUBLISH_TO_IN_MEMORY_QUEUE_OK,
                 HTTP_REQUESTS_AS_STRUCT_WITH_REGISTRY,
-                "io.confluent.connect.json.JsonSchemaConverter",
+                "io.confluent.connect.json.JsonSchemaConverter", "test_sink_and_source_with_input_as_struct_and_schema_registry",
                 new AbstractMap.SimpleImmutableEntry<>("value.converter.schema.registry.url",internalSchemaRegistryUrl),
                 new AbstractMap.SimpleImmutableEntry<>("generate.missing.request.id","true"),
                 new AbstractMap.SimpleImmutableEntry<>("generate.missing.correlation.id","true")
@@ -420,14 +434,19 @@ public class ITConnectorTest {
     }
 
     @Test
-    public void sink_and_source_with_input_as_struct_and_schema_registry_test_rate_limiting(WireMockRuntimeInfo wmRuntimeInfo) throws JSONException, IOException, RestClientException {
+    public void test_sink_and_source_with_input_as_struct_and_schema_registry_test_rate_limiting() throws JSONException, IOException, RestClientException {
+        WireMockRuntimeInfo wmRuntimeInfo = wmHttp.getRuntimeInfo();
         //register connectors
-        configureSourceConnector("http-source-connector");
+        String successTopic = "success-sink_and_source_with_input_as_struct_and_schema_registry_test_rate_limiting";
+        String errorTopic = "error-sink_and_source_with_input_as_struct_and_schema_registry_test_rate_limiting";
+        String queueName = "test_sink_and_source_with_input_as_struct_and_schema_registry_test_rate_limiting";
+        String connectorName = "http-source-connector-test_sink_and_source_with_input_as_struct_and_schema_registry_test_rate_limiting";
+        configureSourceConnector(connectorName, queueName, successTopic, errorTopic);
         int maxExecutionsPerSecond = 3;
-        configureSinkConnector("http-sink-connector-message-as-struct-and-registry",
+        configureSinkConnector("http-sink-connector-test_sink_and_source_with_input_as_struct_and_schema_registry_test_rate_limiting",
                 PUBLISH_TO_IN_MEMORY_QUEUE_OK,
                 HTTP_REQUESTS_AS_STRUCT_WITH_REGISTRY,
-                "io.confluent.connect.json.JsonSchemaConverter",
+                "io.confluent.connect.json.JsonSchemaConverter", "test_sink_and_source_with_input_as_struct_and_schema_registry_test_rate_limiting",
                 new AbstractMap.SimpleImmutableEntry<>("value.converter.schema.registry.url",internalSchemaRegistryUrl),
                 new AbstractMap.SimpleImmutableEntry<>("generate.missing.request.id","true"),
                 new AbstractMap.SimpleImmutableEntry<>("generate.missing.correlation.id","true"),
@@ -493,7 +512,7 @@ public class ITConnectorTest {
         int checkedMessages=0;
         for (int i = 0; i < messageCount; i++) {
             ConsumerRecord<String, ? extends Object> consumerRecord = consumerRecords.get(i);
-            checkMessage(escapedJsonResponse, statusMessage, baseUrl, consumerRecord);
+            checkMessage(successTopic,escapedJsonResponse, 200, statusMessage, baseUrl, consumerRecord);
             checkedMessages++;
         }
         stopwatch.stop();
@@ -502,11 +521,82 @@ public class ITConnectorTest {
         LOGGER.info("min execution time  '{}' seconds",minExecutionTimeInSeconds);
         long elapsedTimeInSeconds = stopwatch.elapsed(SECONDS);
         LOGGER.info("elapsed time '{}' seconds",elapsedTimeInSeconds);
-        assertThat(elapsedTimeInSeconds > minExecutionTimeInSeconds);
+        //we add one to avoid rounding issues
+        assertThat(elapsedTimeInSeconds+1).isGreaterThan(minExecutionTimeInSeconds);
 
     }
+    //@Test
+    public void test_custom_truststore() throws JSONException {
+        WireMockRuntimeInfo wm1RuntimeInfo = wmHttps.getRuntimeInfo();
+        //register connectors
+        String successTopic = "success-custom_truststore";
+        String errorTopic = "error-custom_truststore";
+        String queueName = "test_custom_truststore";
+        configureSourceConnector("http-source-connector-test_custom_truststore", queueName, successTopic, errorTopic);
+        configureSinkConnector("http-sink-connector-test_custom_truststore",
+                PUBLISH_TO_IN_MEMORY_QUEUE_OK,
+                HTTP_REQUESTS_AS_STRUCT_WITH_REGISTRY,
+                "io.confluent.connect.json.JsonSchemaConverter", "test_custom_truststore",
+                new AbstractMap.SimpleImmutableEntry<>("value.converter.schema.registry.url",internalSchemaRegistryUrl),
+                new AbstractMap.SimpleImmutableEntry<>("generate.missing.request.id","true"),
+                new AbstractMap.SimpleImmutableEntry<>("generate.missing.correlation.id","true"),
+                new AbstractMap.SimpleImmutableEntry<>(HTTPCLIENT_SSL_TRUSTSTORE_PATH,Thread.currentThread().getContextClassLoader().getResource(CLIENT_TRUSTSTORE_JKS_FILENAME).getPath()),
+                new AbstractMap.SimpleImmutableEntry<>(HTTPCLIENT_SSL_TRUSTSTORE_PASSWORD,CLIENT_TRUSTSTORE_JKS_PASSWORD),
+                new AbstractMap.SimpleImmutableEntry<>(HTTPCLIENT_SSL_TRUSTSTORE_TYPE,JKS_STORE_TYPE),
+                new AbstractMap.SimpleImmutableEntry<>(HTTPCLIENT_SSL_TRUSTSTORE_ALGORITHM,TRUSTSTORE_PKIX_ALGORITHM)
+        );
+        List<String> registeredConnectors = connectContainer.getRegisteredConnectors();
+        String joinedRegisteredConnectors = Joiner.on(",").join(registeredConnectors);
+        LOGGER.info("registered connectors :{}", joinedRegisteredConnectors);
 
-    private static void checkMessage(String escapedJsonResponse, String statusMessage, String baseUrl, ConsumerRecord<String, ?> consumerRecord) throws JSONException {
+        //define the http Mock Server interaction
+        WireMock wireMock = wm1RuntimeInfo.getWireMock();
+        String bodyResponse = "{\"result\":\"pong\"}";
+        System.out.println(bodyResponse);
+        String escapedJsonResponse = StringEscapeUtils.escapeJson(bodyResponse);
+        System.out.println(escapedJsonResponse);
+        int statusCode = 200;
+        String statusMessage = "OK";
+        wireMock
+                .register(get("/ping")
+                        .willReturn(aResponse()
+                                .withHeader("Content-Type","application/json")
+                                .withBody(bodyResponse)
+                                .withStatus(statusCode)
+                                .withStatusMessage(statusMessage)
+                        )
+                );
+
+        //forge messages which will command http requests
+        KafkaProducer<String, HttpRequest> producer = getStructAsJSONProducer();
+
+        String baseUrl = "https://" + getIP() + ":" + wm1RuntimeInfo.getHttpsPort();
+        String url = baseUrl + "/ping";
+        LOGGER.info("url:{}", url);
+        HashMap<String, List<String>> headers = Maps.newHashMap();
+        headers.put("X-Correlation-ID",Lists.newArrayList("e6de70d1-f222-46e8-b755-754880687822"));
+        headers.put("X-Request-ID",Lists.newArrayList("e6de70d1-f222-46e8-b755-11111"));
+        HttpRequest httpRequest = new HttpRequest(
+                url,
+                "GET",
+                "STRING",
+                "stuff",
+                null,
+                null
+        );
+        httpRequest.setHeaders(headers);
+        Collection<Header> kafkaHeaders = Lists.newArrayList();
+        ProducerRecord<String, HttpRequest> record = new ProducerRecord<>(HTTP_REQUESTS_AS_STRUCT_WITH_REGISTRY, null, System.currentTimeMillis(), null, httpRequest, kafkaHeaders);
+        producer.send(record);
+        producer.flush();
+
+        //verify http responses
+        KafkaConsumer<String,? extends Object> consumer = getConsumer(kafkaContainer,externalSchemaRegistryUrl);
+
+        consumer.subscribe(Lists.newArrayList(successTopic, errorTopic));
+        List<ConsumerRecord<String, ? extends Object>> consumerRecords = drain(consumer, 1, 120);
+        assertThat(consumerRecords).hasSize(1);
+        ConsumerRecord<String, ? extends Object> consumerRecord = consumerRecords.get(0);
         assertThat(consumerRecord.topic()).isEqualTo(successTopic);
         assertThat(consumerRecord.key()).isNull();
         String jsonAsString = consumerRecord.value().toString();
@@ -524,7 +614,7 @@ public class ITConnectorTest {
                 "        \"e6de70d1-f222-46e8-b755-11111\"\n" +
                 "      ]\n" +
                 "    },\n" +
-                "    \"url\": \""+ baseUrl +"/ping\",\n" +
+                "    \"url\": \""+baseUrl+"/ping\",\n" +
                 "    \"method\": \"GET\",\n" +
                 "    \"bodyType\": \"STRING\",\n" +
                 "    \"bodyAsString\": \"stuff\",\n" +
@@ -533,11 +623,11 @@ public class ITConnectorTest {
                 "  },\n" +
                 "  \"response\": {\n" +
                 "   \"statusCode\":200,\n" +
-                "  \"statusMessage\": \""+ statusMessage +"\",\n" +
+                "  \"statusMessage\": \""+statusMessage+"\",\n" +
                 "  \"headers\": {" +
                 "\"Content-Type\":[\"application/json\"]" +
                 "},\n" +
-                "  \"body\": \""+ escapedJsonResponse +"\"\n" +
+                "  \"body\": \""+escapedJsonResponse+"\"\n" +
                 "}"+
                 "}";
         JSONAssert.assertEquals(expectedJSON, jsonAsString,
@@ -551,6 +641,53 @@ public class ITConnectorTest {
                         new Customization("responseHeaders.Matched-Stub-Id", (o1, o2) -> true)
                 ));
         assertThat(consumerRecord.headers().toArray()).isEmpty();
+    }
+
+    private static void checkMessage(String topicName,String escapedJsonResponse, int statusCode, String statusMessage, String baseUrl, ConsumerRecord<String, ?> consumerRecord) throws JSONException {
+            assertThat(consumerRecord.topic()).isEqualTo(topicName);
+            assertThat(consumerRecord.key()).isNull();
+            String jsonAsString = consumerRecord.value().toString();
+            LOGGER.info("json response  :{}", jsonAsString);
+            String expectedJSON = "{\n" +
+                    "  \"durationInMillis\": 0,\n" +
+                    "  \"moment\": \"2022-11-10T17:19:42.740852Z\",\n" +
+                    "  \"attempts\": 1,\n" +
+                    "  \"request\": {\n" +
+                    "    \"headers\": {\n" +
+                    "      \"X-Correlation-ID\": [\n" +
+                    "        \"e6de70d1-f222-46e8-b755-754880687822\"\n" +
+                    "      ],\n" +
+                    "      \"X-Request-ID\": [\n" +
+                    "        \"e6de70d1-f222-46e8-b755-11111\"\n" +
+                    "      ]\n" +
+                    "    },\n" +
+                    "    \"url\": \"" + baseUrl + "/ping\",\n" +
+                    "    \"method\": \"GET\",\n" +
+                    "    \"bodyType\": \"STRING\",\n" +
+                    "    \"bodyAsString\": \"stuff\",\n" +
+                    "    \"bodyAsByteArray\": \"\",\n" +
+                    "    \"bodyAsMultipart\": []\n" +
+                    "  },\n" +
+                    "  \"response\": {\n" +
+                    "   \"statusCode\":" + statusCode + ",\n" +
+                    "  \"statusMessage\": \"" + statusMessage + "\",\n" +
+                    "  \"headers\": {" +
+                    "\"Content-Type\":[\"application/json\"]" +
+                    "},\n" +
+                    "  \"body\": \"" + escapedJsonResponse + "\"\n" +
+                    "}" +
+                    "}";
+            JSONAssert.assertEquals(expectedJSON, jsonAsString,
+                    new CustomComparator(JSONCompareMode.LENIENT,
+                            new Customization("moment", (o1, o2) -> true),
+                            new Customization("correlationId", (o1, o2) -> true),
+                            new Customization("durationInMillis", (o1, o2) -> true),
+                            new Customization("requestHeaders.X-Correlation-ID", (o1, o2) -> true),
+                            new Customization("requestHeaders.X-Request-ID", (o1, o2) -> true),
+                            new Customization("requestId", (o1, o2) -> true),
+                            new Customization("responseHeaders.Matched-Stub-Id", (o1, o2) -> true)
+                    ));
+            assertThat(consumerRecord.headers().toArray()).isEmpty();
     }
 
 
@@ -584,7 +721,13 @@ public class ITConnectorTest {
             KafkaContainer kafkaContainer,
             String schemaRegistryUrl) {
 
-        SchemaRegistryClient schemaRegistryClient = new CachedSchemaRegistryClient(schemaRegistryUrl, CACHE_CAPACITY,Lists.newArrayList(new JsonSchemaProvider(),new AvroSchemaProvider()), Maps.newHashMap());
+        SchemaRegistryClient schemaRegistryClient = new CachedSchemaRegistryClient(
+                                                        schemaRegistryUrl,
+                                                        CACHE_CAPACITY,
+                                                        Lists.newArrayList(
+                                                                new JsonSchemaProvider(),
+                                                                new AvroSchemaProvider()),
+                                                        Maps.newHashMap());
         Deserializer<String> jsonSchemaDeserializer = new KafkaJsonSchemaDeserializer<>(schemaRegistryClient);
 
 
@@ -600,17 +743,13 @@ public class ITConnectorTest {
                 jsonSchemaDeserializer);
     }
 
-    private List<ConsumerRecord<String, ? extends Object>> drain(
-            KafkaConsumer<String, ? extends Object> consumer,
-            int expectedRecordCount, int timeoutInSeconds) {
-
+    private List<ConsumerRecord<String, ? extends Object>> drain(KafkaConsumer<String, ? extends Object> consumer,
+                                                                    int expectedRecordCount, int timeoutInSeconds) {
         List<ConsumerRecord<String, ? extends Object>> allRecords = new ArrayList<>();
-
         Unreliables.retryUntilTrue(timeoutInSeconds, SECONDS, () -> {
             consumer.poll(Duration.ofMillis(50))
                     .iterator()
                     .forEachRemaining(allRecords::add);
-
             return allRecords.size() == expectedRecordCount;
         });
 
