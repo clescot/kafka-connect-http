@@ -1,5 +1,6 @@
 package com.github.clescot.kafka.connect.http;
 
+import static org.hamcrest.Matchers.equalTo;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
@@ -8,6 +9,7 @@ import com.github.tomakehurst.wiremock.client.WireMock;
 import com.github.tomakehurst.wiremock.junit5.WireMockRuntimeInfo;
 import com.github.tomakehurst.wiremock.junit5.WireMockTest;
 import com.google.common.base.Joiner;
+import com.google.common.base.Stopwatch;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import io.confluent.kafka.schemaregistry.avro.AvroSchemaProvider;
@@ -32,6 +34,7 @@ import org.apache.kafka.common.header.Header;
 import org.apache.kafka.common.serialization.Deserializer;
 import org.apache.kafka.common.serialization.StringDeserializer;
 import org.apache.kafka.common.serialization.StringSerializer;
+import org.awaitility.core.ConditionEvaluationLogger;
 import org.json.JSONException;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
@@ -67,8 +70,10 @@ import static com.github.tomakehurst.wiremock.client.WireMock.get;
 import static io.confluent.kafka.serializers.AbstractKafkaSchemaSerDeConfig.AUTO_REGISTER_SCHEMAS;
 import static io.confluent.kafka.serializers.AbstractKafkaSchemaSerDeConfig.SCHEMA_REGISTRY_URL_CONFIG;
 import static io.confluent.kafka.serializers.json.KafkaJsonSchemaSerializerConfig.*;
+import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.apache.kafka.clients.producer.ProducerConfig.BOOTSTRAP_SERVERS_CONFIG;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.awaitility.Awaitility.await;
 
 @Testcontainers
 @WireMockTest
@@ -257,7 +262,7 @@ public class ITConnectorTest {
         KafkaConsumer<String,? extends Object> consumer = getConsumer(kafkaContainer,externalSchemaRegistryUrl);
 
         consumer.subscribe(Lists.newArrayList(successTopic, errorTopic));
-        List<ConsumerRecord<String, ? extends Object>> consumerRecords = drain(consumer, 1);
+        List<ConsumerRecord<String, ? extends Object>> consumerRecords = drain(consumer, 1, 30);
         assertThat(consumerRecords).hasSize(1);
         ConsumerRecord<String, ? extends Object> consumerRecord = consumerRecords.get(0);
         assertThat(consumerRecord.key()).isNull();
@@ -364,7 +369,7 @@ public class ITConnectorTest {
         KafkaConsumer<String,? extends Object> consumer = getConsumer(kafkaContainer,externalSchemaRegistryUrl);
 
         consumer.subscribe(Lists.newArrayList(successTopic, errorTopic));
-        List<ConsumerRecord<String, ? extends Object>> consumerRecords = drain(consumer, 1);
+        List<ConsumerRecord<String, ? extends Object>> consumerRecords = drain(consumer, 1, 120);
         assertThat(consumerRecords).hasSize(1);
         ConsumerRecord<String, ? extends Object> consumerRecord = consumerRecords.get(0);
         assertThat(consumerRecord.topic()).isEqualTo(successTopic);
@@ -412,6 +417,140 @@ public class ITConnectorTest {
                 ));
         assertThat(consumerRecord.headers().toArray()).isEmpty();
 
+    }
+
+    @Test
+    public void sink_and_source_with_input_as_struct_and_schema_registry_test_rate_limiting(WireMockRuntimeInfo wmRuntimeInfo) throws JSONException, IOException, RestClientException {
+        //register connectors
+        configureSourceConnector("http-source-connector");
+        int maxExecutionsPerSecond = 3;
+        configureSinkConnector("http-sink-connector-message-as-struct-and-registry",
+                PUBLISH_TO_IN_MEMORY_QUEUE_OK,
+                HTTP_REQUESTS_AS_STRUCT_WITH_REGISTRY,
+                "io.confluent.connect.json.JsonSchemaConverter",
+                new AbstractMap.SimpleImmutableEntry<>("value.converter.schema.registry.url",internalSchemaRegistryUrl),
+                new AbstractMap.SimpleImmutableEntry<>("generate.missing.request.id","true"),
+                new AbstractMap.SimpleImmutableEntry<>("generate.missing.correlation.id","true"),
+                new AbstractMap.SimpleImmutableEntry<>("default.rate.limiter.period.in.ms","1000"),
+                new AbstractMap.SimpleImmutableEntry<>("default.rate.limiter.max.executions", maxExecutionsPerSecond+"")
+        );
+        List<String> registeredConnectors = connectContainer.getRegisteredConnectors();
+        String joinedRegisteredConnectors = Joiner.on(",").join(registeredConnectors);
+        LOGGER.info("registered connectors :{}", joinedRegisteredConnectors);
+
+        //define the http Mock Server interaction
+        WireMock wireMock = wmRuntimeInfo.getWireMock();
+        String bodyResponse = "{\"result\":\"pong\"}";
+        System.out.println(bodyResponse);
+        String escapedJsonResponse = StringEscapeUtils.escapeJson(bodyResponse);
+        System.out.println(escapedJsonResponse);
+        int statusCode = 200;
+        String statusMessage = "OK";
+        wireMock
+                .register(get("/ping")
+                        .willReturn(aResponse()
+                                .withHeader("Content-Type","application/json")
+                                .withBody(bodyResponse)
+                                .withStatus(statusCode)
+                                .withStatusMessage(statusMessage)
+                        )
+                );
+
+        //forge messages which will command http requests
+        KafkaProducer<String, HttpRequest> producer = getStructAsJSONProducer();
+
+        String baseUrl = "http://" + getIP() + ":" + wmRuntimeInfo.getHttpPort();
+        String url = baseUrl + "/ping";
+        LOGGER.info("url:{}", url);
+        HashMap<String, List<String>> headers = Maps.newHashMap();
+        headers.put("X-Correlation-ID",Lists.newArrayList("e6de70d1-f222-46e8-b755-754880687822"));
+        headers.put("X-Request-ID",Lists.newArrayList("e6de70d1-f222-46e8-b755-11111"));
+        HttpRequest httpRequest = new HttpRequest(
+                url,
+                "GET",
+                "STRING",
+                "stuff",
+                null,
+                null
+        );
+        httpRequest.setHeaders(headers);
+        Collection<Header> kafkaHeaders = Lists.newArrayList();
+        ProducerRecord<String, HttpRequest> record = new ProducerRecord<>(HTTP_REQUESTS_AS_STRUCT_WITH_REGISTRY, null, System.currentTimeMillis(), null, httpRequest, kafkaHeaders);
+        int messageCount = 50;
+        Stopwatch stopwatch = Stopwatch.createStarted();
+        for (int i = 0; i < messageCount; i++) {
+            producer.send(record);
+        }
+        producer.flush();
+
+        //verify http responses
+        KafkaConsumer<String,? extends Object> consumer = getConsumer(kafkaContainer,externalSchemaRegistryUrl);
+
+        consumer.subscribe(Lists.newArrayList(successTopic, errorTopic));
+        List<ConsumerRecord<String, ? extends Object>> consumerRecords = drain(consumer, messageCount, 40);
+        assertThat(consumerRecords).hasSize(messageCount);
+
+        int checkedMessages=0;
+        for (int i = 0; i < messageCount; i++) {
+            ConsumerRecord<String, ? extends Object> consumerRecord = consumerRecords.get(i);
+            checkMessage(escapedJsonResponse, statusMessage, baseUrl, consumerRecord);
+            checkedMessages++;
+        }
+        stopwatch.stop();
+
+        int minExecutionTimeInSeconds = messageCount / maxExecutionsPerSecond;
+        LOGGER.info("min execution time  '{}' seconds",minExecutionTimeInSeconds);
+        long elapsedTimeInSeconds = stopwatch.elapsed(SECONDS);
+        LOGGER.info("elapsed time '{}' seconds",elapsedTimeInSeconds);
+        assertThat(elapsedTimeInSeconds > minExecutionTimeInSeconds);
+
+    }
+
+    private static void checkMessage(String escapedJsonResponse, String statusMessage, String baseUrl, ConsumerRecord<String, ?> consumerRecord) throws JSONException {
+        assertThat(consumerRecord.topic()).isEqualTo(successTopic);
+        assertThat(consumerRecord.key()).isNull();
+        String jsonAsString = consumerRecord.value().toString();
+        LOGGER.info("json response  :{}",jsonAsString);
+        String expectedJSON = "{\n" +
+                "  \"durationInMillis\": 0,\n" +
+                "  \"moment\": \"2022-11-10T17:19:42.740852Z\",\n" +
+                "  \"attempts\": 1,\n" +
+                "  \"request\": {\n" +
+                "    \"headers\": {\n" +
+                "      \"X-Correlation-ID\": [\n" +
+                "        \"e6de70d1-f222-46e8-b755-754880687822\"\n" +
+                "      ],\n" +
+                "      \"X-Request-ID\": [\n" +
+                "        \"e6de70d1-f222-46e8-b755-11111\"\n" +
+                "      ]\n" +
+                "    },\n" +
+                "    \"url\": \""+ baseUrl +"/ping\",\n" +
+                "    \"method\": \"GET\",\n" +
+                "    \"bodyType\": \"STRING\",\n" +
+                "    \"bodyAsString\": \"stuff\",\n" +
+                "    \"bodyAsByteArray\": \"\",\n" +
+                "    \"bodyAsMultipart\": []\n" +
+                "  },\n" +
+                "  \"response\": {\n" +
+                "   \"statusCode\":200,\n" +
+                "  \"statusMessage\": \""+ statusMessage +"\",\n" +
+                "  \"headers\": {" +
+                "\"Content-Type\":[\"application/json\"]" +
+                "},\n" +
+                "  \"body\": \""+ escapedJsonResponse +"\"\n" +
+                "}"+
+                "}";
+        JSONAssert.assertEquals(expectedJSON, jsonAsString,
+                new CustomComparator(JSONCompareMode.LENIENT,
+                        new Customization("moment", (o1, o2) -> true),
+                        new Customization("correlationId", (o1, o2) -> true),
+                        new Customization("durationInMillis", (o1, o2) -> true),
+                        new Customization("requestHeaders.X-Correlation-ID", (o1, o2) -> true),
+                        new Customization("requestHeaders.X-Request-ID", (o1, o2) -> true),
+                        new Customization("requestId", (o1, o2) -> true),
+                        new Customization("responseHeaders.Matched-Stub-Id", (o1, o2) -> true)
+                ));
+        assertThat(consumerRecord.headers().toArray()).isEmpty();
     }
 
 
@@ -463,11 +602,11 @@ public class ITConnectorTest {
 
     private List<ConsumerRecord<String, ? extends Object>> drain(
             KafkaConsumer<String, ? extends Object> consumer,
-            int expectedRecordCount) {
+            int expectedRecordCount, int timeoutInSeconds) {
 
         List<ConsumerRecord<String, ? extends Object>> allRecords = new ArrayList<>();
 
-        Unreliables.retryUntilTrue(30, TimeUnit.SECONDS, () -> {
+        Unreliables.retryUntilTrue(timeoutInSeconds, SECONDS, () -> {
             consumer.poll(Duration.ofMillis(50))
                     .iterator()
                     .forEachRemaining(allRecords::add);

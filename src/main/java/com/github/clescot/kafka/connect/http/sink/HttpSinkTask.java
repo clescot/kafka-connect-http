@@ -144,10 +144,10 @@ public class HttpSinkTask extends SinkTask {
         HttpExchange httpExchange = httpClient.call(httpRequestWithTrackingHeaders);
         LOGGER.debug("HTTP exchange :{}", httpExchange);
         if (httpSinkConnectorConfig.isPublishToInMemoryQueue() && httpExchange != null) {
-            LOGGER.debug("http exchange published to queue :{}", httpExchange);
+            LOGGER.debug("http exchange published to queue '{}':{}",queueName, httpExchange);
             queue.offer(httpExchange);
         } else {
-            LOGGER.debug("http exchange NOT published to queue :{}", httpExchange);
+            LOGGER.debug("http exchange NOT published to queue '{}':{}",queueName, httpExchange);
         }
     }
 

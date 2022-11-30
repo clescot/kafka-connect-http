@@ -21,7 +21,8 @@ import static com.github.clescot.kafka.connect.http.HttpExchange.*;
 
 public class HttpSourceTask extends SourceTask {
 
-    private static Queue<HttpExchange> queue;
+    private Queue<HttpExchange> queue;
+    private String queueName;
     private HttpSourceConnectorConfig sourceConfig;
     private final static Logger LOGGER = LoggerFactory.getLogger(HttpSourceTask.class);
 
@@ -36,8 +37,9 @@ public class HttpSourceTask extends SourceTask {
     public void start(Map<String, String> taskConfig) {
         Preconditions.checkNotNull(taskConfig, "taskConfig cannot be null");
         this.sourceConfig = new HttpSourceConnectorConfig(taskConfig);
-        queue = QueueFactory.getQueue(sourceConfig.getQueueName());
-        QueueFactory.registerConsumerForQueue(sourceConfig.getQueueName());
+        this.queueName = sourceConfig.getQueueName();
+        queue = QueueFactory.getQueue(queueName);
+        QueueFactory.registerConsumerForQueue(queueName);
     }
 
     @Override
@@ -45,10 +47,10 @@ public class HttpSourceTask extends SourceTask {
         List<SourceRecord> records = Lists.newArrayList();
         while (queue.peek() != null) {
             HttpExchange httpExchange = queue.poll();
-            LOGGER.debug("received httpExchange from queue:{}",httpExchange);
+            LOGGER.debug("received httpExchange from queue '{}':{}",queueName,httpExchange);
             if(httpExchange!=null){
                 SourceRecord sourceRecord = toSourceRecord(httpExchange);
-                LOGGER.debug("send ack with source record :{}",sourceRecord);
+                LOGGER.debug("send ack to queue '{}' with source record :{}",queueName,sourceRecord);
                 records.add(sourceRecord);
             }
         }
