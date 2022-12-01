@@ -11,3 +11,10 @@ keytool -noprompt -keystore client_truststore.jks -storetype jks  -genkey -alias
 ```bash
 keytool -noprompt -keystore client_truststore.p12 -storetype pkcs12  -genkey -alias client -keypass Secret123! -storepass Secret123! -keyalg RSA -keysize 2048 -validity 100000 -dname "CN=it.mycorp.com, OU=IT, O=myCorp, L=HappyTown,  C=FI"
 ```
+
+
+## display truststore content
+
+```bash
+keytool -keystore client_truststore.jks -storepass Secret123! -alias client -v -keypass Secret123! -list
+```

@@ -33,12 +33,10 @@ import org.apache.kafka.common.serialization.Deserializer;
 import org.apache.kafka.common.serialization.StringDeserializer;
 import org.apache.kafka.common.serialization.StringSerializer;
 import org.json.JSONException;
-import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
-import org.opentest4j.AssertionFailedError;
 import org.rnorth.ducttape.unreliables.Unreliables;
 import org.skyscreamer.jsonassert.Customization;
 import org.skyscreamer.jsonassert.JSONAssert;
@@ -54,6 +52,7 @@ import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.lifecycle.Startables;
 import org.testcontainers.utility.DockerImageName;
+import org.testcontainers.utility.MountableFile;
 
 import java.io.IOException;
 import java.net.DatagramSocket;
@@ -83,8 +82,6 @@ public class ITConnectorTest {
     public static final int CUSTOM_AVAILABLE_PORT = 0;
     public static final int CACHE_CAPACITY = 100;
     public static final String HTTP_REQUESTS_AS_STRING = "http-requests-string";
-    public static final String HTTP_REQUESTS_AS_STRUCT_WITH_REGISTRY = "http-requests-struct-with-registry";
-    public static final String HTTP_REQUESTS_AS_STRUCT_WITHOUT_REGISTRY = "http-requests-struct-without-registry";
     public static final boolean PUBLISH_TO_IN_MEMORY_QUEUE_OK = true;
     private static Network network = Network.newNetwork();
     private static final ObjectMapper MAPPER = new ObjectMapper().registerModule(new JavaTimeModule());
@@ -100,12 +97,14 @@ public class ITConnectorTest {
             .withLogConsumer(new Slf4jLogConsumer(LOGGER))
             .dependsOn(kafkaContainer)
             .withStartupTimeout(Duration.ofSeconds(90));
+    private static final String FAKE_SSL_DOMAIN_NAME = "it.mycorp.com";
     @Container
     public static DebeziumContainer connectContainer = new DebeziumContainer("confluentinc/cp-kafka-connect:"+CONFLUENT_VERSION)
             .withFileSystemBind("target/http-connector", "/usr/local/share/kafka/plugins")
             .withLogConsumer(new Slf4jLogConsumer(LOGGER))
             .withNetwork(network)
             .withKafka(kafkaContainer)
+            .withExtraHost(FAKE_SSL_DOMAIN_NAME,getIP())
             .withEnv("CONNECT_BOOTSTRAP_SERVERS", kafkaContainer.getNetworkAliases().get(0) + ":9092")
             .withEnv("CONNECT_GROUP_ID", "test")
             .withEnv("CONNECT_CONFIG_STORAGE_TOPIC", "test_config")
@@ -126,6 +125,7 @@ public class ITConnectorTest {
                     "org.reflections=ERROR," +
                     "org.apache.kafka.clients=ERROR")
             .withEnv("CONNECT_PLUGIN_PATH", "/usr/share/java/,/usr/share/confluent-hub-components/,/usr/local/share/kafka/plugins")
+            .withCopyFileToContainer(MountableFile.forClasspathResource(CLIENT_TRUSTSTORE_JKS_FILENAME),"/opt/"+CLIENT_TRUSTSTORE_JKS_FILENAME)
             .withExposedPorts(8083)
             .dependsOn(kafkaContainer, schemaRegistryContainer)
             .waitingFor(Wait.forHttp("/connector-plugins/"));
@@ -147,10 +147,10 @@ public class ITConnectorTest {
     static WireMockExtension wmHttps = WireMockExtension.newInstance()
             .options(
                     wireMockConfig()
-//                    .keystorePath(Thread.currentThread().getContextClassLoader().getResource(CLIENT_TRUSTSTORE_JKS_FILENAME).getPath())
-//                    .keystorePassword(CLIENT_TRUSTSTORE_JKS_PASSWORD)
-//                    .keystoreType("JKS")
-                    .dynamicPort()
+                    .keystorePath("src/test/resources/"+CLIENT_TRUSTSTORE_JKS_FILENAME)
+                    .keystorePassword(CLIENT_TRUSTSTORE_JKS_PASSWORD)
+                    .keystoreType("JKS")
+                    .keyManagerPassword(CLIENT_TRUSTSTORE_JKS_PASSWORD)
                     .dynamicHttpsPort()
             )
             .build();
@@ -169,7 +169,7 @@ public class ITConnectorTest {
     private static void configureSinkConnector(String connectorName, boolean publishToInMemoryQueue, String incomingTopic, String valueConverterClassName, String queueName, Map.Entry<String,String>... additionalSettings) {
         ConnectorConfiguration sinkConnectorMessagesAsStringConfiguration = ConnectorConfiguration.create()
                 .with("connector.class", "com.github.clescot.kafka.connect.http.sink.HttpSinkConnector")
-                .with("tasks.max", "2")
+                .with("tasks.max", "1")
                 .with("topics", incomingTopic)
                 .with("key.converter", "org.apache.kafka.connect.storage.StringConverter")
                 .with("value.converter", valueConverterClassName)
@@ -191,7 +191,7 @@ public class ITConnectorTest {
         //source connector
         ConnectorConfiguration sourceConnectorConfiguration = ConnectorConfiguration.create()
                 .with("connector.class", "com.github.clescot.kafka.connect.http.source.HttpSourceConnector")
-                .with("tasks.max", "2")
+                .with("tasks.max", "1")
                 .with("success.topic", successTopic)
                 .with("error.topic", errorTopic)
                 .with("key.converter", "org.apache.kafka.connect.storage.StringConverter")
@@ -321,15 +321,17 @@ public class ITConnectorTest {
 
     @Test
     public void test_sink_and_source_with_input_as_struct_and_schema_registry() throws JSONException, IOException, RestClientException {
-        WireMockRuntimeInfo wmRuntimeInfo = wmHttp.getRuntimeInfo();
+        WireMockRuntimeInfo httpRuntimeInfo = wmHttp.getRuntimeInfo();
         //register connectors
-        String successTopic = "success-sink_and_source_with_input_as_struct_and_schema_registry";
-        String errorTopic = "error-sink_and_source_with_input_as_struct_and_schema_registry";
-        configureSourceConnector("http-source-connector-test_sink_and_source_with_input_as_struct_and_schema_registry", "test_sink_and_source_with_input_as_struct_and_schema_registry", successTopic, errorTopic);
-        configureSinkConnector("http-sink-connector-test_sink_and_source_with_input_as_struct_and_schema_registry",
+        String suffix = "sink_and_source_with_input_as_struct_and_schema_registry";
+        String incomingTopic="incoming-"+suffix;
+        String successTopic = "success-" + suffix;
+        String errorTopic = "error-" + suffix;
+        configureSourceConnector("http-source-connector-test_" + suffix, "test_" + suffix, successTopic, errorTopic);
+        configureSinkConnector("http-sink-connector-test_" + suffix,
                 PUBLISH_TO_IN_MEMORY_QUEUE_OK,
-                HTTP_REQUESTS_AS_STRUCT_WITH_REGISTRY,
-                "io.confluent.connect.json.JsonSchemaConverter", "test_sink_and_source_with_input_as_struct_and_schema_registry",
+                incomingTopic,
+                "io.confluent.connect.json.JsonSchemaConverter", "test_" + suffix,
                 new AbstractMap.SimpleImmutableEntry<>("value.converter.schema.registry.url",internalSchemaRegistryUrl),
                 new AbstractMap.SimpleImmutableEntry<>("generate.missing.request.id","true"),
                 new AbstractMap.SimpleImmutableEntry<>("generate.missing.correlation.id","true")
@@ -339,7 +341,7 @@ public class ITConnectorTest {
         LOGGER.info("registered connectors :{}", joinedRegisteredConnectors);
 
         //define the http Mock Server interaction
-        WireMock wireMock = wmRuntimeInfo.getWireMock();
+        WireMock wireMock = httpRuntimeInfo.getWireMock();
         String bodyResponse = "{\"result\":\"pong\"}";
         System.out.println(bodyResponse);
         String escapedJsonResponse = StringEscapeUtils.escapeJson(bodyResponse);
@@ -359,7 +361,7 @@ public class ITConnectorTest {
         //forge messages which will command http requests
         KafkaProducer<String, HttpRequest> producer = getStructAsJSONProducer();
 
-        String baseUrl = "http://" + getIP() + ":" + wmRuntimeInfo.getHttpPort();
+        String baseUrl = "http://" + getIP() + ":" + httpRuntimeInfo.getHttpPort();
         String url = baseUrl + "/ping";
         LOGGER.info("url:{}", url);
         HashMap<String, List<String>> headers = Maps.newHashMap();
@@ -375,7 +377,7 @@ public class ITConnectorTest {
         );
         httpRequest.setHeaders(headers);
         Collection<Header> kafkaHeaders = Lists.newArrayList();
-        ProducerRecord<String, HttpRequest> record = new ProducerRecord<>(HTTP_REQUESTS_AS_STRUCT_WITH_REGISTRY, null, System.currentTimeMillis(), null, httpRequest, kafkaHeaders);
+        ProducerRecord<String, HttpRequest> record = new ProducerRecord<>(incomingTopic, null, System.currentTimeMillis(), null, httpRequest, kafkaHeaders);
         producer.send(record);
         producer.flush();
 
@@ -435,18 +437,20 @@ public class ITConnectorTest {
 
     @Test
     public void test_sink_and_source_with_input_as_struct_and_schema_registry_test_rate_limiting() throws JSONException, IOException, RestClientException {
-        WireMockRuntimeInfo wmRuntimeInfo = wmHttp.getRuntimeInfo();
+        WireMockRuntimeInfo httpRuntimeInfo = wmHttp.getRuntimeInfo();
         //register connectors
-        String successTopic = "success-sink_and_source_with_input_as_struct_and_schema_registry_test_rate_limiting";
-        String errorTopic = "error-sink_and_source_with_input_as_struct_and_schema_registry_test_rate_limiting";
-        String queueName = "test_sink_and_source_with_input_as_struct_and_schema_registry_test_rate_limiting";
-        String connectorName = "http-source-connector-test_sink_and_source_with_input_as_struct_and_schema_registry_test_rate_limiting";
+        String suffix = "sink_and_source_with_input_as_struct_and_schema_registry_test_rate_limiting";
+        String incomingTopic= "incoming-" + suffix;
+        String successTopic = "success-" + suffix;
+        String errorTopic = "error-" + suffix;
+        String queueName = "test_" + suffix;
+        String connectorName = "http-source-connector-test_" + suffix;
         configureSourceConnector(connectorName, queueName, successTopic, errorTopic);
         int maxExecutionsPerSecond = 3;
-        configureSinkConnector("http-sink-connector-test_sink_and_source_with_input_as_struct_and_schema_registry_test_rate_limiting",
+        configureSinkConnector("http-sink-connector-test_" + suffix,
                 PUBLISH_TO_IN_MEMORY_QUEUE_OK,
-                HTTP_REQUESTS_AS_STRUCT_WITH_REGISTRY,
-                "io.confluent.connect.json.JsonSchemaConverter", "test_sink_and_source_with_input_as_struct_and_schema_registry_test_rate_limiting",
+                incomingTopic,
+                "io.confluent.connect.json.JsonSchemaConverter", "test_" + suffix,
                 new AbstractMap.SimpleImmutableEntry<>("value.converter.schema.registry.url",internalSchemaRegistryUrl),
                 new AbstractMap.SimpleImmutableEntry<>("generate.missing.request.id","true"),
                 new AbstractMap.SimpleImmutableEntry<>("generate.missing.correlation.id","true"),
@@ -458,7 +462,7 @@ public class ITConnectorTest {
         LOGGER.info("registered connectors :{}", joinedRegisteredConnectors);
 
         //define the http Mock Server interaction
-        WireMock wireMock = wmRuntimeInfo.getWireMock();
+        WireMock wireMock = httpRuntimeInfo.getWireMock();
         String bodyResponse = "{\"result\":\"pong\"}";
         System.out.println(bodyResponse);
         String escapedJsonResponse = StringEscapeUtils.escapeJson(bodyResponse);
@@ -478,7 +482,7 @@ public class ITConnectorTest {
         //forge messages which will command http requests
         KafkaProducer<String, HttpRequest> producer = getStructAsJSONProducer();
 
-        String baseUrl = "http://" + getIP() + ":" + wmRuntimeInfo.getHttpPort();
+        String baseUrl = "http://" + getIP() + ":" + httpRuntimeInfo.getHttpPort();
         String url = baseUrl + "/ping";
         LOGGER.info("url:{}", url);
         HashMap<String, List<String>> headers = Maps.newHashMap();
@@ -494,7 +498,7 @@ public class ITConnectorTest {
         );
         httpRequest.setHeaders(headers);
         Collection<Header> kafkaHeaders = Lists.newArrayList();
-        ProducerRecord<String, HttpRequest> record = new ProducerRecord<>(HTTP_REQUESTS_AS_STRUCT_WITH_REGISTRY, null, System.currentTimeMillis(), null, httpRequest, kafkaHeaders);
+        ProducerRecord<String, HttpRequest> record = new ProducerRecord<>(incomingTopic, null, System.currentTimeMillis(), null, httpRequest, kafkaHeaders);
         int messageCount = 50;
         Stopwatch stopwatch = Stopwatch.createStarted();
         for (int i = 0; i < messageCount; i++) {
@@ -517,7 +521,7 @@ public class ITConnectorTest {
         }
         stopwatch.stop();
 
-        int minExecutionTimeInSeconds = messageCount / maxExecutionsPerSecond;
+        int minExecutionTimeInSeconds = messageCount / (maxExecutionsPerSecond);
         LOGGER.info("min execution time  '{}' seconds",minExecutionTimeInSeconds);
         long elapsedTimeInSeconds = stopwatch.elapsed(SECONDS);
         LOGGER.info("elapsed time '{}' seconds",elapsedTimeInSeconds);
@@ -525,22 +529,26 @@ public class ITConnectorTest {
         assertThat(elapsedTimeInSeconds+1).isGreaterThan(minExecutionTimeInSeconds);
 
     }
-    //@Test
+    @Test
     public void test_custom_truststore() throws JSONException {
-        WireMockRuntimeInfo wm1RuntimeInfo = wmHttps.getRuntimeInfo();
+
+
+        WireMockRuntimeInfo httpsRuntimeInfo = wmHttps.getRuntimeInfo();
         //register connectors
-        String successTopic = "success-custom_truststore";
-        String errorTopic = "error-custom_truststore";
-        String queueName = "test_custom_truststore";
-        configureSourceConnector("http-source-connector-test_custom_truststore", queueName, successTopic, errorTopic);
-        configureSinkConnector("http-sink-connector-test_custom_truststore",
+        String suffix = "custom_truststore";
+        String incomingTopic = "incoming-"+suffix;
+        String successTopic = "success-" + suffix;
+        String errorTopic = "error-" + suffix;
+        String queueName = "test_" + suffix;
+        configureSourceConnector("http-source-connector-test_" + suffix, queueName, successTopic, errorTopic);
+        configureSinkConnector("http-sink-connector-test_" + suffix,
                 PUBLISH_TO_IN_MEMORY_QUEUE_OK,
-                HTTP_REQUESTS_AS_STRUCT_WITH_REGISTRY,
-                "io.confluent.connect.json.JsonSchemaConverter", "test_custom_truststore",
+                incomingTopic,
+                "io.confluent.connect.json.JsonSchemaConverter", "test_" + suffix,
                 new AbstractMap.SimpleImmutableEntry<>("value.converter.schema.registry.url",internalSchemaRegistryUrl),
                 new AbstractMap.SimpleImmutableEntry<>("generate.missing.request.id","true"),
                 new AbstractMap.SimpleImmutableEntry<>("generate.missing.correlation.id","true"),
-                new AbstractMap.SimpleImmutableEntry<>(HTTPCLIENT_SSL_TRUSTSTORE_PATH,Thread.currentThread().getContextClassLoader().getResource(CLIENT_TRUSTSTORE_JKS_FILENAME).getPath()),
+                new AbstractMap.SimpleImmutableEntry<>(HTTPCLIENT_SSL_TRUSTSTORE_PATH,"/opt/"+CLIENT_TRUSTSTORE_JKS_FILENAME),
                 new AbstractMap.SimpleImmutableEntry<>(HTTPCLIENT_SSL_TRUSTSTORE_PASSWORD,CLIENT_TRUSTSTORE_JKS_PASSWORD),
                 new AbstractMap.SimpleImmutableEntry<>(HTTPCLIENT_SSL_TRUSTSTORE_TYPE,JKS_STORE_TYPE),
                 new AbstractMap.SimpleImmutableEntry<>(HTTPCLIENT_SSL_TRUSTSTORE_ALGORITHM,TRUSTSTORE_PKIX_ALGORITHM)
@@ -550,7 +558,7 @@ public class ITConnectorTest {
         LOGGER.info("registered connectors :{}", joinedRegisteredConnectors);
 
         //define the http Mock Server interaction
-        WireMock wireMock = wm1RuntimeInfo.getWireMock();
+        WireMock wireMock = httpsRuntimeInfo.getWireMock();
         String bodyResponse = "{\"result\":\"pong\"}";
         System.out.println(bodyResponse);
         String escapedJsonResponse = StringEscapeUtils.escapeJson(bodyResponse);
@@ -570,7 +578,7 @@ public class ITConnectorTest {
         //forge messages which will command http requests
         KafkaProducer<String, HttpRequest> producer = getStructAsJSONProducer();
 
-        String baseUrl = "https://" + getIP() + ":" + wm1RuntimeInfo.getHttpsPort();
+        String baseUrl = "https://" + FAKE_SSL_DOMAIN_NAME + ":" + httpsRuntimeInfo.getHttpsPort();
         String url = baseUrl + "/ping";
         LOGGER.info("url:{}", url);
         HashMap<String, List<String>> headers = Maps.newHashMap();
@@ -586,7 +594,7 @@ public class ITConnectorTest {
         );
         httpRequest.setHeaders(headers);
         Collection<Header> kafkaHeaders = Lists.newArrayList();
-        ProducerRecord<String, HttpRequest> record = new ProducerRecord<>(HTTP_REQUESTS_AS_STRUCT_WITH_REGISTRY, null, System.currentTimeMillis(), null, httpRequest, kafkaHeaders);
+        ProducerRecord<String, HttpRequest> record = new ProducerRecord<>(incomingTopic, null, System.currentTimeMillis(), null, httpRequest, kafkaHeaders);
         producer.send(record);
         producer.flush();
 
@@ -757,7 +765,7 @@ public class ITConnectorTest {
     }
 
 
-    private String getIP() {
+    private static String getIP() {
         try(DatagramSocket datagramSocket = new DatagramSocket()) {
             datagramSocket.connect(InetAddress.getByName("8.8.8.8"), 12345);
             return datagramSocket.getLocalAddress().getHostAddress();
