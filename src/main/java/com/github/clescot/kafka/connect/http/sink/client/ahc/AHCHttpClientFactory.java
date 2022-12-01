@@ -151,10 +151,7 @@ public class AHCHttpClientFactory implements HttpClientFactory {
 
     @Override
     public HttpClient build(Map<String, String> config) {
-        if (httpClient == null) {
-            httpClient = new AHCHttpClient(getAsyncHttpClient(config));
-        }
-        return httpClient;
+            return new AHCHttpClient(getAsyncHttpClient(config));
     }
 }
 
