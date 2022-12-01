@@ -3,6 +3,7 @@ package com.github.clescot.kafka.connect.http.sink.client.ahc;
 import com.github.clescot.kafka.connect.http.HttpRequest;
 import com.github.clescot.kafka.connect.http.HttpResponse;
 import com.github.clescot.kafka.connect.http.sink.client.AbstractHttpClient;
+import com.github.clescot.kafka.connect.http.sink.client.HttpException;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
@@ -201,7 +202,7 @@ public class AHCHttpClient extends AbstractHttpClient<Request, Response> {
         return field != null && !field.isEmpty();
     }
 
-    public HttpResponse buildResponse(Response response, Pattern successPattern) {
+    public HttpResponse buildResponse(Response response, Pattern successPattern) throws HttpException {
         int responseStatusCode = getSuccessfulStatusCodeOrThrowRetryException(response.getStatusCode(), successPattern);
         List<Map.Entry<String, String>> responseEntries = response.getHeaders() != null ? response.getHeaders().entries() : Lists.newArrayList();
         HttpResponse httpResponse = new HttpResponse(responseStatusCode, response.getStatusText(), response.getResponseBody());

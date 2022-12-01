@@ -150,9 +150,6 @@ public interface HttpClient<Req, Res> {
 
     <Res> Res buildRequest(HttpRequest httpRequest);
 
-
-    void setDefaultRateLimiter(long periodInMs, long maxExecutions);
-
     HttpExchange call(HttpRequest httpRequest, AtomicInteger attempts) throws HttpException;
 
     Res nativeCall(Req request);

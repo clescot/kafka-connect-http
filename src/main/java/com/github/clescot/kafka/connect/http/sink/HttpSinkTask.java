@@ -7,11 +7,13 @@ import com.github.clescot.kafka.connect.http.HttpExchange;
 import com.github.clescot.kafka.connect.http.HttpRequest;
 import com.github.clescot.kafka.connect.http.QueueFactory;
 import com.github.clescot.kafka.connect.http.sink.client.HttpClient;
+import com.github.clescot.kafka.connect.http.sink.client.HttpException;
 import com.github.clescot.kafka.connect.http.sink.client.ahc.AHCHttpClientFactory;
 import com.google.common.base.Charsets;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
+import dev.failsafe.RateLimiter;
 import org.apache.kafka.connect.data.Struct;
 import org.apache.kafka.connect.errors.ConnectException;
 import org.apache.kafka.connect.sink.ErrantRecordReporter;
@@ -21,9 +23,13 @@ import org.asynchttpclient.AsyncHttpClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.time.Duration;
+import java.time.temporal.ChronoUnit;
 import java.util.*;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
+
+import static com.github.clescot.kafka.connect.http.sink.client.HttpClient.ONE_HTTP_REQUEST;
 
 
 public class HttpSinkTask extends SinkTask {
@@ -43,7 +49,7 @@ public class HttpSinkTask extends SinkTask {
     private ErrantRecordReporter errantRecordReporter;
     private boolean generateMissingCorrelationId;
     private boolean generateMissingRequestId;
-
+    private RateLimiter<HttpExchange> defaultRateLimiter = RateLimiter.<HttpExchange>smoothBuilder(HttpSinkConfigDefinition.DEFAULT_RATE_LIMITER_MAX_EXECUTIONS_VALUE, Duration.of(HttpSinkConfigDefinition.DEFAULT_RATE_LIMITER_PERIOD_IN_MS_VALUE, ChronoUnit.MILLIS)).build();
     @Override
     public String version() {
         return VersionUtil.version(this.getClass());
@@ -93,7 +99,7 @@ public class HttpSinkTask extends SinkTask {
                 defaultRetryDelayFactor,
                 defaultRetryJitterInMs
         );
-        httpClient.setDefaultRateLimiter(httpSinkConnectorConfig.getDefaultRateLimiterPeriodInMs(),httpSinkConnectorConfig.getDefaultRateLimiterMaxExecutions());
+        setDefaultRateLimiter(httpSinkConnectorConfig.getDefaultRateLimiterPeriodInMs(),httpSinkConnectorConfig.getDefaultRateLimiterMaxExecutions());
 
         if (httpSinkConnectorConfig.isPublishToInMemoryQueue()) {
             Preconditions.checkArgument(QueueFactory.hasAConsumer(queueName, httpSinkConnectorConfig.getMaxWaitTimeRegistrationOfQueueConsumerInMs()), "'" + queueName + "' queue hasn't got any consumer, i.e no Source Connector has been configured to consume records published in this in memory queue. we stop the Sink Connector to prevent any OutofMemoryError.");
@@ -141,13 +147,24 @@ public class HttpSinkTask extends SinkTask {
         HttpRequest httpRequest = buildHttpRequest(sinkRecord);
         HttpRequest httpRequestWithStaticHeaders = addStaticHeaders(httpRequest);
         HttpRequest httpRequestWithTrackingHeaders = addTrackingHeaders(httpRequestWithStaticHeaders);
-        HttpExchange httpExchange = httpClient.call(httpRequestWithTrackingHeaders);
+        HttpExchange httpExchange = throttle(httpRequestWithTrackingHeaders);
         LOGGER.debug("HTTP exchange :{}", httpExchange);
         if (httpSinkConnectorConfig.isPublishToInMemoryQueue() && httpExchange != null) {
             LOGGER.debug("http exchange published to queue '{}':{}",queueName, httpExchange);
             queue.offer(httpExchange);
         } else {
             LOGGER.debug("http exchange NOT published to queue '{}':{}",queueName, httpExchange);
+        }
+    }
+
+    private HttpExchange throttle(HttpRequest httpRequest){
+        try {
+            this.defaultRateLimiter.acquirePermits(ONE_HTTP_REQUEST);
+            LOGGER.debug("permits acquired");
+            return httpClient.call(httpRequest);
+        } catch (InterruptedException e) {
+            LOGGER.error("Failed to acquire execution permit from the rate limiter {} ", e.getMessage());
+            throw new HttpException(e.getMessage());
         }
     }
 
@@ -261,5 +278,11 @@ public class HttpSinkTask extends SinkTask {
 
     protected void setQueue(Queue<HttpExchange> queue) {
         this.queue = queue;
+    }
+
+
+    public void setDefaultRateLimiter(long periodInMs, long maxExecutions) {
+        LOGGER.info("default rate limiter set with  {} executions every {} ms",maxExecutions,periodInMs);
+        this.defaultRateLimiter = RateLimiter.<HttpExchange>smoothBuilder(maxExecutions, Duration.of(periodInMs, ChronoUnit.MILLIS)).build();
     }
 }
