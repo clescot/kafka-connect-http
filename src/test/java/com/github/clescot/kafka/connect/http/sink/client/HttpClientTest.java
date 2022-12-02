@@ -167,7 +167,7 @@ public class HttpClientTest {
         }
 
 
-        @Test(expected = HttpException.class)
+        @Test
         public void test_failure_server_side() throws ExecutionException, InterruptedException {
             //given
             AsyncHttpClient asyncHttpClient = mock(AsyncHttpClient.class);

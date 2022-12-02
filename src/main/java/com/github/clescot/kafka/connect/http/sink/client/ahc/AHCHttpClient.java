@@ -58,7 +58,7 @@ public class AHCHttpClient extends AbstractHttpClient<Request, Response> {
     private static final String WS_REALM_PASS = "password";
 
 
-    private AsyncHttpClient asyncHttpClient;
+    private final AsyncHttpClient asyncHttpClient;
 
     private final HttpClientAsyncCompletionHandler asyncCompletionHandler = new HttpClientAsyncCompletionHandler();
 
@@ -201,11 +201,10 @@ public class AHCHttpClient extends AbstractHttpClient<Request, Response> {
     private boolean isNotNullOrEmpty(String field) {
         return field != null && !field.isEmpty();
     }
-
-    public HttpResponse buildResponse(Response response, Pattern successPattern) throws HttpException {
-        int responseStatusCode = getSuccessfulStatusCodeOrThrowRetryException(response.getStatusCode(), successPattern);
+    @Override
+    public HttpResponse buildResponse(Response response) throws HttpException {
         List<Map.Entry<String, String>> responseEntries = response.getHeaders() != null ? response.getHeaders().entries() : Lists.newArrayList();
-        HttpResponse httpResponse = new HttpResponse(responseStatusCode, response.getStatusText(), response.getResponseBody());
+        HttpResponse httpResponse = new HttpResponse(response.getStatusCode(), response.getStatusText(), response.getResponseBody());
         Map<String, List<String>> responseHeaders = responseEntries.stream()
                 .map(entry -> new AbstractMap.SimpleImmutableEntry<String, List<String>>(entry.getKey(), Lists.newArrayList(entry.getValue())))
                 .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));

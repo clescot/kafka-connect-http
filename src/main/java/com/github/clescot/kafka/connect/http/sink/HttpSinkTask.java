@@ -34,6 +34,8 @@ import java.util.*;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import static com.github.clescot.kafka.connect.http.sink.client.HttpClient.*;
 
@@ -57,6 +59,8 @@ public class HttpSinkTask extends SinkTask {
     private RateLimiter<HttpExchange> defaultRateLimiter = RateLimiter.<HttpExchange>smoothBuilder(HttpSinkConfigDefinition.DEFAULT_RATE_LIMITER_MAX_EXECUTIONS_VALUE, Duration.of(HttpSinkConfigDefinition.DEFAULT_RATE_LIMITER_PERIOD_IN_MS_VALUE, ChronoUnit.MILLIS)).build();
 
     private Optional<RetryPolicy<HttpExchange>> defaultRetryPolicy = Optional.empty();
+
+    private Map<String, Pattern> httpSuccessCodesPatterns = Maps.newHashMap();
     @Override
     public String version() {
         return VersionUtil.version(this.getClass());
@@ -177,7 +181,10 @@ public class HttpSinkTask extends SinkTask {
                 attempts.addAndGet(ONE_HTTP_REQUEST);
                 if (retryPolicyForCall.isPresent()) {
                     httpExchange = Failsafe.with(List.of(retryPolicyForCall.get()))
-                            .get(() -> callWithThrottling(httpRequest, attempts));
+                            .get(() -> {
+                                HttpExchange httpExchange1 = callWithThrottling(httpRequest, attempts);
+                                return handleRetry(httpExchange1);
+                            });
                 } else {
                     return callWithThrottling(httpRequest, attempts);
                 }
@@ -195,6 +202,43 @@ public class HttpSinkTask extends SinkTask {
         return httpExchange;
     }
 
+    private HttpExchange handleRetry(HttpExchange httpExchange){
+        boolean retry = retryNeeded(httpExchange.getHttpResponse());
+        if(retry){
+            throw new HttpException(httpExchange,"retry needed");
+        }
+        return httpExchange;
+    }
+    private Pattern getSuccessPattern(String customSuccessCodePattern) {
+        //by default, we don't resend any http call with a response between 100 and 499
+        // 1xx is for protocol information (100 continue for example),
+        // 2xx is for success,
+        // 3xx is for redirection
+        //4xx is for a client error
+        //5xx is for a server error
+        //only 5xx by default, trigger a resend
+
+        /*
+         *  HTTP Server status code returned
+         *  3 cases can arise:
+         *  * a success occurs : the status code returned from the ws server is matching the regexp => no retries
+         *  * a functional error occurs: the status code returned from the ws server is not matching the regexp, but is lower than 500 => no retries
+         *  * a technical error occurs from the WS server : the status code returned from the ws server does not match the regexp AND is equals or higher than 500 : retries are done
+         */
+        String currentSuccessCodePattern = Optional.ofNullable(customSuccessCodePattern).orElse("^[1-4][0-9][0-9]$");
+
+        if (this.httpSuccessCodesPatterns.get(currentSuccessCodePattern) == null) {
+            //Pattern.compile should be reused for performance, but wsSuccessCode can change....
+            Pattern httpSuccessPattern = Pattern.compile(currentSuccessCodePattern);
+            httpSuccessCodesPatterns.put(currentSuccessCodePattern, httpSuccessPattern);
+        }
+        return httpSuccessCodesPatterns.get(currentSuccessCodePattern);
+    }
+    private boolean retryNeeded(HttpResponse httpResponse){
+        Pattern successPattern = getSuccessPattern(null);
+        return retryNeeded(httpResponse.getStatusCode(), successPattern);
+    }
+
     private HttpExchange callWithThrottling(HttpRequest httpRequest, AtomicInteger attempts){
         try {
             this.defaultRateLimiter.acquirePermits(ONE_HTTP_REQUEST);
@@ -205,6 +249,12 @@ public class HttpSinkTask extends SinkTask {
             throw new HttpException(e.getMessage());
         }
     }
+
+    private boolean retryNeeded(int responseStatusCode, Pattern pattern) throws HttpException{
+        Matcher matcher = pattern.matcher("" + responseStatusCode);
+        return !matcher.matches() && responseStatusCode >= 500;
+    }
+
 
     private HttpRequest addTrackingHeaders(HttpRequest httpRequest) {
         if (httpRequest == null) {
