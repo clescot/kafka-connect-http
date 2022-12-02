@@ -5,72 +5,62 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.github.clescot.kafka.connect.http.HttpExchange;
 import com.github.clescot.kafka.connect.http.HttpRequest;
+import com.github.clescot.kafka.connect.http.HttpResponse;
 import com.github.clescot.kafka.connect.http.QueueFactory;
 import com.github.clescot.kafka.connect.http.sink.client.HttpClient;
-import com.github.clescot.kafka.connect.http.sink.client.PropertyBasedASyncHttpClientConfig;
+import com.github.clescot.kafka.connect.http.sink.client.HttpException;
+import com.github.clescot.kafka.connect.http.sink.client.ahc.AHCHttpClientFactory;
 import com.google.common.base.Charsets;
 import com.google.common.base.Preconditions;
+import com.google.common.base.Stopwatch;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
-import io.netty.buffer.ByteBufAllocator;
-import io.netty.buffer.PooledByteBufAllocator;
-import io.netty.util.HashedWheelTimer;
-import io.netty.util.Timer;
+import dev.failsafe.Failsafe;
+import dev.failsafe.RateLimiter;
+import dev.failsafe.RetryPolicy;
 import org.apache.kafka.connect.data.Struct;
 import org.apache.kafka.connect.errors.ConnectException;
 import org.apache.kafka.connect.sink.ErrantRecordReporter;
 import org.apache.kafka.connect.sink.SinkRecord;
 import org.apache.kafka.connect.sink.SinkTask;
-import org.asynchttpclient.AsyncHttpClient;
-import org.asynchttpclient.AsyncHttpClientConfig;
-import org.asynchttpclient.Dsl;
-import org.asynchttpclient.channel.DefaultKeepAliveStrategy;
-import org.asynchttpclient.channel.KeepAliveStrategy;
-import org.asynchttpclient.cookie.CookieStore;
-import org.asynchttpclient.cookie.ThreadSafeCookieStore;
-import org.asynchttpclient.extras.guava.RateLimitedThrottleRequestFilter;
-import org.asynchttpclient.netty.channel.ConnectionSemaphoreFactory;
-import org.asynchttpclient.netty.channel.DefaultConnectionSemaphoreFactory;
-import org.slf4j.ILoggerFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.lang.reflect.InvocationTargetException;
+import java.time.Duration;
+import java.time.OffsetDateTime;
+import java.time.ZoneId;
+import java.time.temporal.ChronoUnit;
 import java.util.*;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
-import java.util.stream.Collectors;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
-import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.ASYNC_CLIENT_CONFIG_ROOT;
+import static com.github.clescot.kafka.connect.http.sink.client.HttpClient.*;
 
 
 public class HttpSinkTask extends SinkTask {
-    public static final String ASYN_HTTP_CONFIG_PREFIX = ASYNC_CLIENT_CONFIG_ROOT;
-    public static final String HTTP_MAX_CONNECTIONS = ASYN_HTTP_CONFIG_PREFIX + "http.max.connections";
-    public static final String HTTP_RATE_LIMIT_PER_SECOND = ASYN_HTTP_CONFIG_PREFIX + "http.rate.limit.per.second";
-    public static final String HTTP_MAX_WAIT_MS = ASYN_HTTP_CONFIG_PREFIX + "http.max.wait.ms";
-    public static final String KEEP_ALIVE_STRATEGY_CLASS = ASYN_HTTP_CONFIG_PREFIX + "keep.alive.class";
-    public static final String RESPONSE_BODY_PART_FACTORY = ASYN_HTTP_CONFIG_PREFIX + "response.body.part.factory";
-    private static final String CONNECTION_SEMAPHORE_FACTORY = ASYN_HTTP_CONFIG_PREFIX + "connection.semaphore.factory";
-    private static final String COOKIE_STORE = ASYN_HTTP_CONFIG_PREFIX + "cookie.store";
-    private static final String NETTY_TIMER = ASYN_HTTP_CONFIG_PREFIX + "netty.timer";
-    private static final String BYTE_BUFFER_ALLOCATOR = ASYN_HTTP_CONFIG_PREFIX + "byte.buffer.allocator";
     private final static Logger LOGGER = LoggerFactory.getLogger(HttpSinkTask.class);
     private final static ObjectMapper OBJECT_MAPPER = new ObjectMapper().registerModule(new JavaTimeModule());
 
     public static final String HEADER_X_CORRELATION_ID = "X-Correlation-ID";
     public static final String HEADER_X_REQUEST_ID = "X-Request-ID";
+
     private HttpClient httpClient;
     private Queue<HttpExchange> queue;
     private String queueName;
 
-    private static AsyncHttpClient asyncHttpClient;
     private Map<String, List<String>> staticRequestHeaders;
     private HttpSinkConnectorConfig httpSinkConnectorConfig;
     private ErrantRecordReporter errantRecordReporter;
     private boolean generateMissingCorrelationId;
     private boolean generateMissingRequestId;
+    private RateLimiter<HttpExchange> defaultRateLimiter = RateLimiter.<HttpExchange>smoothBuilder(HttpSinkConfigDefinition.DEFAULT_RATE_LIMITER_MAX_EXECUTIONS_VALUE, Duration.of(HttpSinkConfigDefinition.DEFAULT_RATE_LIMITER_PERIOD_IN_MS_VALUE, ChronoUnit.MILLIS)).build();
 
+    private Optional<RetryPolicy<HttpExchange>> defaultRetryPolicy = Optional.empty();
+
+    private Map<String, Pattern> httpSuccessCodesPatterns = Maps.newHashMap();
     @Override
     public String version() {
         return VersionUtil.version(this.getClass());
@@ -89,9 +79,8 @@ public class HttpSinkTask extends SinkTask {
     public void start(Map<String, String> settings) {
         Preconditions.checkNotNull(settings, "settings cannot be null");
         try {
-            //TODO handle DLQ with errantRecordReporter
             errantRecordReporter = context.errantRecordReporter();
-            if(errantRecordReporter==null){
+            if (errantRecordReporter == null) {
                 LOGGER.warn("Dead Letter Queue (DLQ) is not enabled. it is recommended to configure a Dead Letter Queue for a better error handling.");
             }
         } catch (NoSuchMethodError | NoClassDefFoundError e) {
@@ -107,102 +96,27 @@ public class HttpSinkTask extends SinkTask {
         this.generateMissingRequestId = httpSinkConnectorConfig.isGenerateMissingRequestId();
         this.generateMissingCorrelationId = httpSinkConnectorConfig.isGenerateMissingCorrelationId();
 
-        this.httpClient = new HttpClient(getAsyncHttpClient(httpSinkConnectorConfig.originalsStrings()));
+        this.httpClient = new AHCHttpClientFactory().build(httpSinkConnectorConfig.originalsStrings());
         Integer defaultRetries = httpSinkConnectorConfig.getDefaultRetries();
         Long defaultRetryDelayInMs = httpSinkConnectorConfig.getDefaultRetryDelayInMs();
         Long defaultRetryMaxDelayInMs = httpSinkConnectorConfig.getDefaultRetryMaxDelayInMs();
         Double defaultRetryDelayFactor = httpSinkConnectorConfig.getDefaultRetryDelayFactor();
         Long defaultRetryJitterInMs = httpSinkConnectorConfig.getDefaultRetryJitterInMs();
 
-           httpClient.setDefaultRetryPolicy(
-                   defaultRetries,
-                   defaultRetryDelayInMs,
-                   defaultRetryMaxDelayInMs,
-                   defaultRetryDelayFactor,
-                   defaultRetryJitterInMs
-           );
+        setDefaultRetryPolicy(
+                defaultRetries,
+                defaultRetryDelayInMs,
+                defaultRetryMaxDelayInMs,
+                defaultRetryDelayFactor,
+                defaultRetryJitterInMs
+        );
+        setDefaultRateLimiter(httpSinkConnectorConfig.getDefaultRateLimiterPeriodInMs(),httpSinkConnectorConfig.getDefaultRateLimiterMaxExecutions());
+
+        if (httpSinkConnectorConfig.isPublishToInMemoryQueue()) {
+            Preconditions.checkArgument(QueueFactory.hasAConsumer(queueName, httpSinkConnectorConfig.getMaxWaitTimeRegistrationOfQueueConsumerInMs()), "'" + queueName + "' queue hasn't got any consumer, i.e no Source Connector has been configured to consume records published in this in memory queue. we stop the Sink Connector to prevent any OutofMemoryError.");
         }
-
-
-    private static synchronized AsyncHttpClient getAsyncHttpClient(Map<String, String> config) {
-        if (asyncHttpClient == null) {
-            Map<String, String> asyncConfig = config.entrySet().stream().filter(entry -> entry.getKey().startsWith(ASYN_HTTP_CONFIG_PREFIX)).collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
-            Properties asyncHttpProperties = new Properties();
-            asyncHttpProperties.putAll(asyncConfig);
-            PropertyBasedASyncHttpClientConfig propertyBasedASyncHttpClientConfig = new PropertyBasedASyncHttpClientConfig(asyncHttpProperties);
-            //define throttling
-            int maxConnections = Integer.parseInt(config.getOrDefault(HTTP_MAX_CONNECTIONS, "3"));
-            double rateLimitPerSecond = Double.parseDouble(config.getOrDefault(HTTP_RATE_LIMIT_PER_SECOND, "3"));
-            int maxWaitMs = Integer.parseInt(config.getOrDefault(HTTP_MAX_WAIT_MS, "500"));
-            propertyBasedASyncHttpClientConfig.setRequestFilters(Lists.newArrayList(new RateLimitedThrottleRequestFilter(maxConnections, rateLimitPerSecond, maxWaitMs)));
-
-            String defaultKeepAliveStrategyClassName = config.getOrDefault(KEEP_ALIVE_STRATEGY_CLASS, "org.asynchttpclient.channel.DefaultKeepAliveStrategy");
-
-            //define keep alive strategy
-            KeepAliveStrategy keepAliveStrategy;
-            try {
-                //we instantiate the default constructor, public or not
-                keepAliveStrategy = (KeepAliveStrategy) Class.forName(defaultKeepAliveStrategyClassName).getDeclaredConstructor().newInstance();
-            } catch (ClassNotFoundException | IllegalAccessException | InstantiationException |
-                     InvocationTargetException | NoSuchMethodException e) {
-                LOGGER.error(e.getMessage());
-                LOGGER.error("we rollback to the default keep alive strategy");
-                keepAliveStrategy = new DefaultKeepAliveStrategy();
-            }
-            propertyBasedASyncHttpClientConfig.setKeepAliveStrategy(keepAliveStrategy);
-
-            //set response body part factory mode
-            String responseBodyPartFactoryMode = config.getOrDefault(RESPONSE_BODY_PART_FACTORY, "EAGER");
-            propertyBasedASyncHttpClientConfig.setResponseBodyPartFactory(AsyncHttpClientConfig.ResponseBodyPartFactory.valueOf(responseBodyPartFactoryMode));
-
-            //define connection semaphore factory
-            String connectionSemaphoreFactoryClassName = config.getOrDefault(CONNECTION_SEMAPHORE_FACTORY, "org.asynchttpclient.netty.channel.DefaultConnectionSemaphoreFactory");
-            try {
-                propertyBasedASyncHttpClientConfig.setConnectionSemaphoreFactory((ConnectionSemaphoreFactory) Class.forName(connectionSemaphoreFactoryClassName).getDeclaredConstructor().newInstance());
-            } catch (InstantiationException | IllegalAccessException | InvocationTargetException |
-                     NoSuchMethodException | ClassNotFoundException e) {
-                LOGGER.error(e.getMessage());
-                propertyBasedASyncHttpClientConfig.setConnectionSemaphoreFactory(new DefaultConnectionSemaphoreFactory());
-                LOGGER.error("we rollback to the default connection semaphore factory");
-            }
-
-            //cookie store
-            String cookieStoreClassName = config.getOrDefault(COOKIE_STORE, "org.asynchttpclient.cookie.ThreadSafeCookieStore");
-            try {
-                propertyBasedASyncHttpClientConfig.setCookieStore((CookieStore) Class.forName(cookieStoreClassName).getDeclaredConstructor().newInstance());
-            } catch (InstantiationException | IllegalAccessException | InvocationTargetException |
-                     NoSuchMethodException | ClassNotFoundException e) {
-                LOGGER.error(e.getMessage());
-                propertyBasedASyncHttpClientConfig.setCookieStore(new ThreadSafeCookieStore());
-                LOGGER.error("we rollback to the default cookie store");
-            }
-
-            //netty timer
-            String nettyTimerClassName = config.getOrDefault(NETTY_TIMER, "io.netty.util.HashedWheelTimer");
-            try {
-                propertyBasedASyncHttpClientConfig.setNettyTimer((Timer) Class.forName(nettyTimerClassName).getDeclaredConstructor().newInstance());
-            } catch (InstantiationException | IllegalAccessException | InvocationTargetException |
-                     NoSuchMethodException | ClassNotFoundException e) {
-                LOGGER.error(e.getMessage());
-                propertyBasedASyncHttpClientConfig.setNettyTimer(new HashedWheelTimer());
-                LOGGER.error("we rollback to the default netty timer");
-            }
-
-            //byte buffer allocator
-            String byteBufferAllocatorClassName = config.getOrDefault(BYTE_BUFFER_ALLOCATOR, "io.netty.buffer.PooledByteBufAllocator");
-            try {
-                propertyBasedASyncHttpClientConfig.setByteBufAllocator((ByteBufAllocator) Class.forName(byteBufferAllocatorClassName).getDeclaredConstructor().newInstance());
-            } catch (InstantiationException | IllegalAccessException | InvocationTargetException |
-                     NoSuchMethodException | ClassNotFoundException e) {
-                LOGGER.error(e.getMessage());
-                propertyBasedASyncHttpClientConfig.setByteBufAllocator(new PooledByteBufAllocator());
-                LOGGER.error("we rollback to the default byte buffer allocator");
-            }
-
-            asyncHttpClient = Dsl.asyncHttpClient(propertyBasedASyncHttpClientConfig);
-        }
-        return asyncHttpClient;
     }
+
 
 
     @Override
@@ -213,51 +127,145 @@ public class HttpSinkTask extends SinkTask {
             return;
         }
         Preconditions.checkNotNull(httpClient, "httpClient is null. 'start' method must be called once before put");
-        if (httpSinkConnectorConfig.isPublishToInMemoryQueue()) {
-            Preconditions.checkArgument(QueueFactory.hasAConsumer(queueName), "'" + queueName + "' queue hasn't got any consumer, i.e no Source Connector has been configured to consume records published in this in memory queue. we stop the Sink Connector to prevent any OutofMemoryError.");
-        }
-        for (SinkRecord sinkRecord:records) {
-             try {
-                 // attempt to send record to data sink
-                 process(sinkRecord);
-             } catch (Exception e) {
-                 if (errantRecordReporter != null) {
-                     // Send errant record to error reporter
-                     Future<Void> future = errantRecordReporter.report(sinkRecord, e);
-                     // Optionally wait till the failure's been recorded in Kafka
-                     try {
-                         future.get();
-                     } catch (InterruptedException |ExecutionException ex) {
-                         throw new RuntimeException(ex);
-                     }
-                 } else {
-                     // There's no error reporter, so fail
-                     throw new ConnectException("Failed on record", e);
-                 }
-             }
+
+        for (SinkRecord sinkRecord : records) {
+            try {
+                // attempt to send record to data sink
+                process(sinkRecord);
+            } catch (Exception e) {
+                if (errantRecordReporter != null) {
+                    // Send errant record to error reporter
+                    Future<Void> future = errantRecordReporter.report(sinkRecord, e);
+                    // Optionally wait till the failure's been recorded in Kafka
+                    try {
+                        future.get();
+                    } catch (InterruptedException | ExecutionException ex) {
+                        throw new RuntimeException(ex);
+                    }
+                } else {
+                    // There's no error reporter, so fail
+                    throw new ConnectException("Failed on record", e);
+                }
+            }
         }
 
     }
 
     private void process(SinkRecord sinkRecord) {
-        if(sinkRecord.value()==null){
-            throw new ConnectException("sinkRecord Value is null :"+ sinkRecord);
+        if (sinkRecord.value() == null) {
+            throw new ConnectException("sinkRecord Value is null :" + sinkRecord);
         }
+        //build HttpRequest
         HttpRequest httpRequest = buildHttpRequest(sinkRecord);
         HttpRequest httpRequestWithStaticHeaders = addStaticHeaders(httpRequest);
         HttpRequest httpRequestWithTrackingHeaders = addTrackingHeaders(httpRequestWithStaticHeaders);
-        HttpExchange httpExchange = httpClient.call(httpRequestWithTrackingHeaders);
+        //handle Request and Response
+        HttpExchange httpExchange = callWithRetryPolicy(httpRequestWithTrackingHeaders, defaultRetryPolicy);
         LOGGER.debug("HTTP exchange :{}", httpExchange);
-        if (httpSinkConnectorConfig.isPublishToInMemoryQueue() && httpExchange != null) {
-            LOGGER.debug("http exchange published to queue :{}", httpExchange);
-            queue.offer(httpExchange);
-        } else {
-            LOGGER.debug("http exchange NOT published to queue :{}", httpExchange);
+    }
+
+    private HttpExchange callWithRetryPolicy(HttpRequest httpRequest, Optional<RetryPolicy<HttpExchange>> retryPolicyForCall) {
+        HttpExchange httpExchange = null;
+
+        if (httpRequest != null) {
+            AtomicInteger attempts = new AtomicInteger();
+            try {
+                attempts.addAndGet(ONE_HTTP_REQUEST);
+                if (retryPolicyForCall.isPresent()) {
+                    httpExchange = Failsafe.with(List.of(retryPolicyForCall.get()))
+                            .get(() -> {
+                                HttpExchange httpExchange1 = callAndPublish(httpRequest, attempts);
+                                return handleRetry(httpExchange1);
+                            });
+                } else {
+                    return callAndPublish(httpRequest, attempts);
+                }
+            } catch (Throwable throwable) {
+                LOGGER.error("Failed to call web service after {} retries with error({}). message:{} ", attempts, throwable,
+                        throwable.getMessage());
+                return httpClient.buildHttpExchange(
+                        httpRequest,
+                        new HttpResponse(SERVER_ERROR_STATUS_CODE, String.valueOf(throwable.getMessage()), BLANK_RESPONSE_CONTENT),
+                        Stopwatch.createUnstarted(), OffsetDateTime.now(ZoneId.of(UTC_ZONE_ID)),
+                        attempts,
+                        FAILURE);
+            }
+        }
+        return httpExchange;
+    }
+
+    private HttpExchange handleRetry(HttpExchange httpExchange){
+        boolean retry = retryNeeded(httpExchange.getHttpResponse());
+        if(retry){
+            throw new HttpException(httpExchange,"retry needed");
+        }
+        return httpExchange;
+    }
+    private Pattern getSuccessPattern(Optional<String> customSuccessCodePattern) {
+        //by default, we don't resend any http call with a response between 100 and 499
+        // 1xx is for protocol information (100 continue for example),
+        // 2xx is for success,
+        // 3xx is for redirection
+        //4xx is for a client error
+        //5xx is for a server error
+        //only 5xx by default, trigger a resend
+
+        /*
+         *  HTTP Server status code returned
+         *  3 cases can arise:
+         *  * a success occurs : the status code returned from the ws server is matching the regexp => no retries
+         *  * a functional error occurs: the status code returned from the ws server is not matching the regexp, but is lower than 500 => no retries
+         *  * a technical error occurs from the WS server : the status code returned from the ws server does not match the regexp AND is equals or higher than 500 : retries are done
+         */
+        String currentSuccessCodePattern = customSuccessCodePattern.orElse("^[1-4][0-9][0-9]$");
+
+        if (this.httpSuccessCodesPatterns.get(currentSuccessCodePattern) == null) {
+            //Pattern.compile should be reused for performance, but wsSuccessCode can change....
+            Pattern httpSuccessPattern = Pattern.compile(currentSuccessCodePattern);
+            httpSuccessCodesPatterns.put(currentSuccessCodePattern, httpSuccessPattern);
+        }
+        return httpSuccessCodesPatterns.get(currentSuccessCodePattern);
+    }
+    private boolean retryNeeded(HttpResponse httpResponse){
+        Pattern successPattern = getSuccessPattern(Optional.empty());
+        return retryNeeded(httpResponse.getStatusCode(), successPattern);
+    }
+
+    private HttpExchange callWithThrottling(HttpRequest httpRequest, AtomicInteger attempts){
+        try {
+            this.defaultRateLimiter.acquirePermits(ONE_HTTP_REQUEST);
+            LOGGER.debug("permits acquired");
+            return httpClient.call(httpRequest,attempts);
+        } catch (InterruptedException e) {
+            LOGGER.error("Failed to acquire execution permit from the rate limiter {} ", e.getMessage());
+            throw new HttpException(e.getMessage());
         }
     }
 
-    private  HttpRequest addTrackingHeaders(HttpRequest httpRequest) {
-        if(httpRequest==null){
+
+    private HttpExchange callAndPublish(HttpRequest httpRequest,AtomicInteger attempts){
+        HttpExchange httpExchange = callWithThrottling(httpRequest, attempts);
+        httpExchange.setSuccess(getSuccessPattern(Optional.empty()).matcher(httpExchange.getHttpResponse().getStatusCode()+"").matches());
+        //publish eventually to 'in memory' queue
+        if (httpSinkConnectorConfig.isPublishToInMemoryQueue()) {
+            LOGGER.debug("http exchange published to queue '{}':{}",queueName, httpExchange);
+            queue.offer(httpExchange);
+        } else {
+            LOGGER.debug("http exchange NOT published to queue '{}':{}",queueName, httpExchange);
+        }
+        return httpExchange;
+    }
+
+    private boolean retryNeeded(int responseStatusCode, Pattern pattern) throws HttpException{
+        Matcher matcher = pattern.matcher("" + responseStatusCode);
+        return !matcher.matches() && responseStatusCode >= 500;
+    }
+
+
+
+
+    private HttpRequest addTrackingHeaders(HttpRequest httpRequest) {
+        if (httpRequest == null) {
             LOGGER.warn("sinkRecord has got a 'null' value");
             throw new ConnectException("sinkRecord has got a 'null' value");
         }
@@ -265,14 +273,14 @@ public class HttpSinkTask extends SinkTask {
 
         //we generate an 'X-Request-ID' header if not present
         Optional<List<String>> requestId = Optional.ofNullable(httpRequest.getHeaders().get(HEADER_X_REQUEST_ID));
-        if(requestId.isEmpty()&&this.generateMissingRequestId){
+        if (requestId.isEmpty() && this.generateMissingRequestId) {
             requestId = Optional.of(Lists.newArrayList(UUID.randomUUID().toString()));
         }
         requestId.ifPresent(reqId -> headers.put(HEADER_X_REQUEST_ID, Lists.newArrayList(reqId)));
 
         //we generate an 'X-Correlation-ID' header if not present
         Optional<List<String>> correlationId = Optional.ofNullable(httpRequest.getHeaders().get(HEADER_X_CORRELATION_ID));
-        if(correlationId.isEmpty()&&this.generateMissingCorrelationId){
+        if (correlationId.isEmpty() && this.generateMissingCorrelationId) {
             correlationId = Optional.of(Lists.newArrayList(UUID.randomUUID().toString()));
         }
         correlationId.ifPresent(corrId -> headers.put(HEADER_X_CORRELATION_ID, Lists.newArrayList(corrId)));
@@ -281,7 +289,7 @@ public class HttpSinkTask extends SinkTask {
     }
 
     protected HttpRequest buildHttpRequest(SinkRecord sinkRecord) {
-        if(sinkRecord==null||sinkRecord.value()==null){
+        if (sinkRecord == null || sinkRecord.value() == null) {
             LOGGER.warn("sinkRecord has got a 'null' value");
             throw new ConnectException("sinkRecord has got a 'null' value");
         }
@@ -341,7 +349,7 @@ public class HttpSinkTask extends SinkTask {
     private HttpRequest addStaticHeaders(HttpRequest httpRequest) {
         if (httpRequest != null) {
             this.staticRequestHeaders.forEach((key, value) -> httpRequest.getHeaders().put(key, value));
-        }else{
+        } else {
 
         }
         return httpRequest;
@@ -367,4 +375,32 @@ public class HttpSinkTask extends SinkTask {
     protected void setQueue(Queue<HttpExchange> queue) {
         this.queue = queue;
     }
+
+
+    public void setDefaultRateLimiter(long periodInMs, long maxExecutions) {
+        LOGGER.info("default rate limiter set with  {} executions every {} ms",maxExecutions,periodInMs);
+        this.defaultRateLimiter = RateLimiter.<HttpExchange>smoothBuilder(maxExecutions, Duration.of(periodInMs, ChronoUnit.MILLIS)).build();
+    }
+
+    private void setDefaultRetryPolicy(Integer retries, Long retryDelayInMs, Long retryMaxDelayInMs, Double retryDelayFactor, Long retryJitterInMs) {
+        this.defaultRetryPolicy = Optional.of(buildRetryPolicy(retries, retryDelayInMs, retryMaxDelayInMs, retryDelayFactor, retryJitterInMs));
+    }
+
+    private RetryPolicy<HttpExchange> buildRetryPolicy(Integer retries,
+                                                       Long retryDelayInMs,
+                                                       Long retryMaxDelayInMs,
+                                                       Double retryDelayFactor,
+                                                       Long retryJitterInMs) {
+        return RetryPolicy.<HttpExchange>builder()
+                //we retry only if the error comes from the WS server (server-side technical error)
+                .handle(HttpException.class)
+                .withBackoff(Duration.ofMillis(retryDelayInMs), Duration.ofMillis(retryMaxDelayInMs), retryDelayFactor)
+                .withJitter(Duration.ofMillis(retryJitterInMs))
+                .withMaxRetries(retries)
+                .onRetry(listener -> LOGGER.warn("Retry ws call result:{}, failure:{}", listener.getLastResult(), listener.getLastException()))
+                .onFailure(listener -> LOGGER.warn("ws call failed ! result:{},exception:{}", listener.getResult(), listener.getException()))
+                .onAbort(listener -> LOGGER.warn("ws call aborted ! result:{},exception:{}", listener.getResult(), listener.getException()))
+                .build();
+    }
+
 }

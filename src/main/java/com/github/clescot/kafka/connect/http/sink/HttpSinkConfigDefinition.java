@@ -28,6 +28,9 @@ public class HttpSinkConfigDefinition {
     public static final String DEFAULT_RATE_LIMITER_MAX_EXECUTIONS = "default.rate.limiter.max.executions";
     public static final String DEFAULT_RATE_LIMITER_MAX_EXECUTIONS_DOC = "max execution in the period defined with the '"+DEFAULT_RATE_LIMITER_PERIOD_IN_MS+"' parameter";
 
+    public static final String WAIT_TIME_REGISTRATION_QUEUE_CONSUMER_IN_MS = "wait.time.registration.queue.consumer.in.ms";
+    public static final String WAIT_TIME_REGISTRATION_QUEUE_CONSUMER_IN_MS_DOC = "wait time defined with the '"+DEFAULT_RATE_LIMITER_PERIOD_IN_MS+"' parameter, for a queue consumer (Source Connector) registration. We wait if the "+PUBLISH_TO_IN_MEMORY_QUEUE+" parameter is set to 'true', to avoid to publish to the queue without any consumer (OutOfMemoryError possible)";
+
 
     public static final String GENERATE_MISSING_CORRELATION_ID = "generate.missing.correlation.id";
     public static final String GENERATE_MISSING_CORRELATION_ID_DOC = "if not present in the HttpRequest headers, generate an UUID bound to the 'X-Correlation-ID' name";
@@ -40,6 +43,16 @@ public class HttpSinkConfigDefinition {
     private static final long DEFAULT_RETRY_MAX_DELAY_IN_MS_VALUE = 20000L;
     private static final double DEFAULT_RETRY_DELAY_FACTOR_VALUE = 1.5d;
     private static final long DEFAULT_RETRY_JITTER_IN_MS_VALUE = 500;
+
+
+    public static final String HTTPCLIENT_SSL_TRUSTSTORE_PATH = "httpclient.ssl.truststore.path";
+    public static final String HTTPCLIENT_SSL_TRUSTSTORE_PATH_DOC = "file path of the custom trusted store";
+    public static final String HTTPCLIENT_SSL_TRUSTSTORE_PASSWORD = "httpclient.ssl.truststore.password";
+    public static final String HTTPCLIENT_SSL_TRUSTSTORE_PASSWORD_DOC = "password of the custom trusted store";
+    public static final String HTTPCLIENT_SSL_TRUSTSTORE_TYPE = "httpclient.ssl.truststore.type";
+    public static final String HTTPCLIENT_SSL_TRUSTSTORE_TYPE_DOC = "truststore type. can be 'jks' or 'pkcs12'";
+    public static final String HTTPCLIENT_SSL_TRUSTSTORE_ALGORITHM = "httpclient.ssl.truststore.algorithm";
+    public static final String HTTPCLIENT_SSL_TRUSTSTORE_ALGORITHM_DOC = "httpclient.ssl.truststore.algorithm";
 
     private HttpSinkConfigDefinition() {
         //Class with only static methods
@@ -59,6 +72,11 @@ public class HttpSinkConfigDefinition {
                 .define(DEFAULT_RATE_LIMITER_MAX_EXECUTIONS, ConfigDef.Type.LONG, HttpSinkConfigDefinition.DEFAULT_RATE_LIMITER_MAX_EXECUTIONS_VALUE, ConfigDef.Importance.MEDIUM, DEFAULT_RATE_LIMITER_MAX_EXECUTIONS_DOC)
                 .define(GENERATE_MISSING_CORRELATION_ID, ConfigDef.Type.BOOLEAN, false, ConfigDef.Importance.MEDIUM, GENERATE_MISSING_CORRELATION_ID_DOC)
                 .define(GENERATE_MISSING_REQUEST_ID, ConfigDef.Type.BOOLEAN, false, ConfigDef.Importance.MEDIUM, GENERATE_MISSING_REQUEST_ID_DOC)
+                .define(WAIT_TIME_REGISTRATION_QUEUE_CONSUMER_IN_MS, ConfigDef.Type.LONG, 60000L, ConfigDef.Importance.LOW, WAIT_TIME_REGISTRATION_QUEUE_CONSUMER_IN_MS_DOC)
+                .define(HTTPCLIENT_SSL_TRUSTSTORE_PATH, ConfigDef.Type.STRING, null, ConfigDef.Importance.LOW, WAIT_TIME_REGISTRATION_QUEUE_CONSUMER_IN_MS_DOC)
+                .define(HTTPCLIENT_SSL_TRUSTSTORE_PASSWORD, ConfigDef.Type.STRING, null, ConfigDef.Importance.LOW, HTTPCLIENT_SSL_TRUSTSTORE_PASSWORD_DOC)
+                .define(HTTPCLIENT_SSL_TRUSTSTORE_TYPE, ConfigDef.Type.STRING, null, ConfigDef.Importance.LOW, HTTPCLIENT_SSL_TRUSTSTORE_TYPE_DOC)
+                .define(HTTPCLIENT_SSL_TRUSTSTORE_ALGORITHM, ConfigDef.Type.STRING, null, ConfigDef.Importance.LOW, HTTPCLIENT_SSL_TRUSTSTORE_ALGORITHM_DOC)
                 ;
     }
 }

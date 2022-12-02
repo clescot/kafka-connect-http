@@ -1,4 +1,4 @@
-package com.github.clescot.kafka.connect.http.sink.client;
+package com.github.clescot.kafka.connect.http.sink.client.ahc;
 
 import org.asynchttpclient.AsyncCompletionHandlerBase;
 import org.asynchttpclient.HttpResponseStatus;

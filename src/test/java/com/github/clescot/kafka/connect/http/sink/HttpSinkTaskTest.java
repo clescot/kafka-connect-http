@@ -4,7 +4,8 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.github.clescot.kafka.connect.http.*;
-import com.github.clescot.kafka.connect.http.sink.client.HttpClient;
+import com.github.clescot.kafka.connect.http.sink.client.HttpClientFactory;
+import com.github.clescot.kafka.connect.http.sink.client.ahc.AHCHttpClient;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import org.apache.kafka.common.record.TimestampType;
@@ -28,6 +29,7 @@ import org.skyscreamer.jsonassert.JSONAssert;
 import org.skyscreamer.jsonassert.JSONCompareMode;
 import org.skyscreamer.jsonassert.comparator.CustomComparator;
 
+import javax.net.ssl.TrustManagerFactory;
 import java.time.OffsetDateTime;
 import java.time.ZoneId;
 import java.util.List;
@@ -35,17 +37,20 @@ import java.util.Map;
 import java.util.Queue;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static com.github.clescot.kafka.connect.http.sink.HttpSinkConfigDefinition.PUBLISH_TO_IN_MEMORY_QUEUE;
-import static com.github.clescot.kafka.connect.http.sink.HttpSinkConfigDefinition.STATIC_REQUEST_HEADER_NAMES;
+import static com.github.clescot.kafka.connect.http.sink.HttpSinkConfigDefinition.*;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.*;
 
-class HttpSinkTaskTest {
+public class HttpSinkTaskTest {
 
     private static final String DUMMY_BODY = "stuff";
     private static final String DUMMY_URL = "http://www." + DUMMY_BODY + ".com";
     private static final String DUMMY_METHOD = "GET";
     private static final String DUMMY_BODY_TYPE = "STRING";
+    public static final String CLIENT_TRUSTSTORE_JKS_FILENAME = "client_truststore.jks";
+    public static final String CLIENT_TRUSTSTORE_JKS_PASSWORD = "Secret123!";
+    public static final String JKS_STORE_TYPE = "jks";
+    public static final String TRUSTSTORE_PKIX_ALGORITHM = "PKIX";
     @Mock
     ErrantRecordReporter errantRecordReporter;
     @Mock
@@ -68,6 +73,36 @@ class HttpSinkTaskTest {
     public void test_start_with_queue_name() {
         Map<String, String> settings = Maps.newHashMap();
         settings.put(ConfigConstants.QUEUE_NAME, "dummyQueueName");
+        httpSinkTask.start(settings);
+    }
+ @Test
+    public void test_start_with_custom_trust_store_path_and_password() {
+        Map<String, String> settings = Maps.newHashMap();
+        String truststorePath = Thread.currentThread().getContextClassLoader().getResource(CLIENT_TRUSTSTORE_JKS_FILENAME).getPath();
+        String password = CLIENT_TRUSTSTORE_JKS_PASSWORD;
+        settings.put(HTTPCLIENT_SSL_TRUSTSTORE_PATH, truststorePath);
+        settings.put(HTTPCLIENT_SSL_TRUSTSTORE_PASSWORD, password);
+        httpSinkTask.start(settings);
+    }
+    @Test
+    public void test_start_with_custom_trust_store_path_password_and_type() {
+        Map<String, String> settings = Maps.newHashMap();
+        String truststorePath = Thread.currentThread().getContextClassLoader().getResource(CLIENT_TRUSTSTORE_JKS_FILENAME).getPath();
+        String password = CLIENT_TRUSTSTORE_JKS_PASSWORD;
+        settings.put(HTTPCLIENT_SSL_TRUSTSTORE_PATH, truststorePath);
+        settings.put(HTTPCLIENT_SSL_TRUSTSTORE_PASSWORD, password);
+        settings.put(HTTPCLIENT_SSL_TRUSTSTORE_TYPE, JKS_STORE_TYPE);
+        httpSinkTask.start(settings);
+    }
+    @Test
+    public void test_start_with_custom_trust_store_path_password_type_and_algorithm() {
+        Map<String, String> settings = Maps.newHashMap();
+        String truststorePath = Thread.currentThread().getContextClassLoader().getResource(CLIENT_TRUSTSTORE_JKS_FILENAME).getPath();
+        String password = CLIENT_TRUSTSTORE_JKS_PASSWORD;
+        settings.put(HTTPCLIENT_SSL_TRUSTSTORE_PATH, truststorePath);
+        settings.put(HTTPCLIENT_SSL_TRUSTSTORE_PASSWORD, password);
+        settings.put(HTTPCLIENT_SSL_TRUSTSTORE_TYPE, JKS_STORE_TYPE);
+        settings.put(HTTPCLIENT_SSL_TRUSTSTORE_ALGORITHM, TRUSTSTORE_PKIX_ALGORITHM);
         httpSinkTask.start(settings);
     }
 
@@ -105,9 +140,9 @@ class HttpSinkTaskTest {
         settings.put("param1", "value1");
         settings.put("param2", "value2");
         httpSinkTask.start(settings);
-        HttpClient httpClient = mock(HttpClient.class);
+        AHCHttpClient httpClient = mock(AHCHttpClient.class);
         HttpExchange dummyHttpExchange = getDummyHttpExchange();
-        when(httpClient.call(any(HttpRequest.class))).thenReturn(dummyHttpExchange);
+        when(httpClient.call(any(HttpRequest.class),any(AtomicInteger.class))).thenReturn(dummyHttpExchange);
         httpSinkTask.setHttpClient(httpClient);
         List<SinkRecord> records = Lists.newArrayList();
         List<Header> headers = Lists.newArrayList();
@@ -115,7 +150,7 @@ class HttpSinkTaskTest {
         records.add(sinkRecord);
         httpSinkTask.put(records);
         ArgumentCaptor<HttpRequest> captor = ArgumentCaptor.forClass(HttpRequest.class);
-        verify(httpClient, times(1)).call(captor.capture());
+        verify(httpClient, times(1)).call(captor.capture(),any(AtomicInteger.class));
         HttpRequest enhancedRecordBeforeHttpCall = captor.getValue();
         assertThat(enhancedRecordBeforeHttpCall.getHeaders().size() == sinkRecord.headers().size() + httpSinkTask.getStaticRequestHeaders().size());
         assertThat(enhancedRecordBeforeHttpCall.getHeaders()).contains(Map.entry("param1", Lists.newArrayList("value1")));
@@ -129,9 +164,9 @@ class HttpSinkTaskTest {
         httpSinkTask.start(settings);
 
         //mock httpClient
-        HttpClient httpClient = mock(HttpClient.class);
+        AHCHttpClient httpClient = mock(AHCHttpClient.class);
         HttpExchange dummyHttpExchange = getDummyHttpExchange();
-        when(httpClient.call(any(HttpRequest.class))).thenReturn(dummyHttpExchange);
+        when(httpClient.call(any(HttpRequest.class),any(AtomicInteger.class))).thenReturn(dummyHttpExchange);
         httpSinkTask.setHttpClient(httpClient);
 
         //init sinkRecord
@@ -147,7 +182,7 @@ class HttpSinkTaskTest {
 
         //no additional headers added
         ArgumentCaptor<HttpRequest> captor = ArgumentCaptor.forClass(HttpRequest.class);
-        verify(httpClient, times(1)).call(captor.capture());
+        verify(httpClient, times(1)).call(captor.capture(),any(AtomicInteger.class));
         HttpRequest enhancedRecordBeforeHttpCall = captor.getValue();
         assertThat(enhancedRecordBeforeHttpCall.getHeaders().size() == sinkRecord.headers().size());
 
@@ -162,9 +197,9 @@ class HttpSinkTaskTest {
         httpSinkTask.start(settings);
 
         //mock httpClient
-        HttpClient httpClient = mock(HttpClient.class);
+        AHCHttpClient httpClient = mock(AHCHttpClient.class);
         HttpExchange dummyHttpExchange = getDummyHttpExchange();
-        when(httpClient.call(any(HttpRequest.class))).thenReturn(dummyHttpExchange);
+        when(httpClient.call(any(HttpRequest.class),any(AtomicInteger.class))).thenReturn(dummyHttpExchange);
         httpSinkTask.setHttpClient(httpClient);
 
         //init sinkRecord
@@ -183,24 +218,12 @@ class HttpSinkTaskTest {
         //given
         Map<String, String> settings = Maps.newHashMap();
         settings.put(PUBLISH_TO_IN_MEMORY_QUEUE, "true");
-        httpSinkTask.start(settings);
-
-        //mock httpClient
-        HttpClient httpClient = mock(HttpClient.class);
-        HttpExchange dummyHttpExchange = getDummyHttpExchange();
-        when(httpClient.call(any(HttpRequest.class))).thenReturn(dummyHttpExchange);
-        httpSinkTask.setHttpClient(httpClient);
-
-        //init sinkRecord
-        List<SinkRecord> records = Lists.newArrayList();
-        List<Header> headers = Lists.newArrayList();
-        SinkRecord sinkRecord = new SinkRecord("myTopic", 0, Schema.STRING_SCHEMA, "key", Schema.STRING_SCHEMA, "myValue", -1, System.currentTimeMillis(), TimestampType.CREATE_TIME, headers);
-        records.add(sinkRecord);
-
+        settings.put(ConfigConstants.QUEUE_NAME, "test");
+        settings.put(WAIT_TIME_REGISTRATION_QUEUE_CONSUMER_IN_MS, "200");
         //when
         //then
         Assertions.assertThrows(IllegalArgumentException.class,
-                () -> httpSinkTask.put(records));
+                () ->  httpSinkTask.start(settings));
 
     }
 
@@ -210,9 +233,9 @@ class HttpSinkTaskTest {
         Map<String, String> settings = Maps.newHashMap();
         settings.put(PUBLISH_TO_IN_MEMORY_QUEUE, "false");
         httpSinkTask.start(settings);
-        HttpClient httpClient = mock(HttpClient.class);
+        AHCHttpClient httpClient = mock(AHCHttpClient.class);
         HttpExchange dummyHttpExchange = getDummyHttpExchange();
-        when(httpClient.call(any(HttpRequest.class))).thenReturn(dummyHttpExchange);
+        when(httpClient.call(any(HttpRequest.class),any(AtomicInteger.class))).thenReturn(dummyHttpExchange);
         httpSinkTask.setHttpClient(httpClient);
         Queue<HttpExchange> queue = mock(Queue.class);
         httpSinkTask.setQueue(queue);
@@ -221,7 +244,7 @@ class HttpSinkTaskTest {
         SinkRecord sinkRecord = new SinkRecord("myTopic", 0, Schema.STRING_SCHEMA, "key", Schema.STRING_SCHEMA, getDummyHttpRequestAsString(), -1, System.currentTimeMillis(), TimestampType.CREATE_TIME, headers);
         records.add(sinkRecord);
         httpSinkTask.put(records);
-        verify(httpClient, times(1)).call(any(HttpRequest.class));
+        verify(httpClient, times(1)).call(any(HttpRequest.class),any(AtomicInteger.class));
         verify(queue, never()).offer(any(HttpExchange.class));
     }
 
@@ -233,9 +256,9 @@ class HttpSinkTaskTest {
         settings.put(PUBLISH_TO_IN_MEMORY_QUEUE, "true");
         QueueFactory.registerConsumerForQueue(QueueFactory.DEFAULT_QUEUE_NAME);
         httpSinkTask.start(settings);
-        HttpClient httpClient = mock(HttpClient.class);
+        AHCHttpClient httpClient = mock(AHCHttpClient.class);
         HttpExchange dummyHttpExchange = getDummyHttpExchange();
-        when(httpClient.call(any(HttpRequest.class))).thenReturn(dummyHttpExchange);
+        when(httpClient.call(any(HttpRequest.class),any(AtomicInteger.class))).thenReturn(dummyHttpExchange);
         httpSinkTask.setHttpClient(httpClient);
         Queue<HttpExchange> queue = mock(Queue.class);
         httpSinkTask.setQueue(queue);
@@ -247,7 +270,7 @@ class HttpSinkTaskTest {
         httpSinkTask.put(records);
 
         //then
-        verify(httpClient, times(1)).call(any(HttpRequest.class));
+        verify(httpClient, times(1)).call(any(HttpRequest.class),any(AtomicInteger.class));
         verify(queue, times(1)).offer(any(HttpExchange.class));
     }
 
@@ -340,6 +363,22 @@ class HttpSinkTaskTest {
         assertThat(httpRequest.getMethod()).isEqualTo(DUMMY_METHOD);
         assertThat(httpRequest.getBodyType().toString()).isEqualTo(DUMMY_BODY_TYPE);
     }
+
+
+    @Test
+    public void test_getTrustManagerFactory_jks_nominal_case(){
+
+        //given
+        String truststorePath = Thread.currentThread().getContextClassLoader().getResource(CLIENT_TRUSTSTORE_JKS_FILENAME).getPath();
+        String password = CLIENT_TRUSTSTORE_JKS_PASSWORD;
+        //when
+        TrustManagerFactory trustManagerFactory = HttpClientFactory.getTrustManagerFactory(truststorePath, password.toCharArray(), JKS_STORE_TYPE, TRUSTSTORE_PKIX_ALGORITHM);
+        //then
+        assertThat(trustManagerFactory).isNotNull();
+        assertThat(trustManagerFactory.getTrustManagers()).hasSize(1);
+
+    }
+
 
 
     private HttpExchange getDummyHttpExchange() {

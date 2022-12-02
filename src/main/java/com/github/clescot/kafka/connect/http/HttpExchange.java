@@ -4,9 +4,6 @@ import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.data.SchemaBuilder;
 
 import java.time.OffsetDateTime;
-import java.time.format.DateTimeFormatter;
-import java.util.Map;
-import java.util.Objects;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class HttpExchange {
@@ -32,7 +29,7 @@ public class HttpExchange {
     private final Long durationInMillis;
     private final OffsetDateTime moment;
     private final AtomicInteger attempts;
-    private final boolean success;
+    private boolean success;
     private final HttpResponse httpResponse;
     private HttpRequest httpRequest;
 
@@ -68,6 +65,10 @@ public class HttpExchange {
         return success;
     }
 
+    public void setSuccess(boolean success) {
+        this.success = success;
+    }
+
     public HttpRequest getHttpRequest() {
         return httpRequest;
     }
@@ -75,6 +76,7 @@ public class HttpExchange {
     public HttpResponse getHttpResponse() {
         return httpResponse;
     }
+
 
     @Override
     public String toString() {

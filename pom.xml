@@ -92,6 +92,12 @@
             <artifactId>kafka-schema-registry-client</artifactId>
             <version>7.3.0</version>
         </dependency>
+        <dependency>
+            <groupId>org.awaitility</groupId>
+            <artifactId>awaitility</artifactId>
+            <version>4.2.0</version>
+        </dependency>
+
 
         <!--   test dependencies -->
         <dependency>

@@ -4,6 +4,7 @@ package com.github.clescot.kafka.connect.http.sink.client;
 import com.github.clescot.kafka.connect.http.HttpRequest;
 import com.github.clescot.kafka.connect.http.HttpExchange;
 import com.github.clescot.kafka.connect.http.HttpResponse;
+import com.github.clescot.kafka.connect.http.sink.client.ahc.AHCHttpClient;
 import com.google.common.base.Stopwatch;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
@@ -27,7 +28,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.github.clescot.kafka.connect.http.sink.HttpSinkTask.HEADER_X_CORRELATION_ID;
 import static com.github.clescot.kafka.connect.http.sink.HttpSinkTask.HEADER_X_REQUEST_ID;
-import static com.github.clescot.kafka.connect.http.sink.client.HttpClient.SUCCESS;
+import static com.github.clescot.kafka.connect.http.sink.client.ahc.AHCHttpClient.SUCCESS;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
@@ -46,11 +47,11 @@ public class HttpClientTest {
 
         @Test(expected = NullPointerException.class)
         public void test_all_null() {
-            HttpClient httpClient = new HttpClient(asyncHttpClient);
+            AHCHttpClient httpClient = new AHCHttpClient(asyncHttpClient);
             httpClient.buildHttpExchange(null,
                     null,
                     Stopwatch.createUnstarted(),
-                    OffsetDateTime.now(ZoneId.of(HttpClient.UTC_ZONE_ID)),
+                    OffsetDateTime.now(ZoneId.of(AHCHttpClient.UTC_ZONE_ID)),
                     new AtomicInteger(2),
                     SUCCESS
             );
@@ -62,22 +63,22 @@ public class HttpClientTest {
         public void test_message_is_null() {
             HashMap<String,
                     String> vars = Maps.newHashMap();
-            HttpClient httpClient = new HttpClient(asyncHttpClient);
+            AHCHttpClient httpClient = new AHCHttpClient(asyncHttpClient);
             httpClient.buildHttpExchange(null,
                     getDummyHttpResponse(200),
                     Stopwatch.createUnstarted(),
-                    OffsetDateTime.now(ZoneId.of(HttpClient.UTC_ZONE_ID)),
+                    OffsetDateTime.now(ZoneId.of(AHCHttpClient.UTC_ZONE_ID)),
                     new AtomicInteger(2),
                     SUCCESS);
         }
 
         @Test(expected = IllegalArgumentException.class)
         public void test_response_code_is_lower_than_0() {
-            HttpClient httpClient = new HttpClient(asyncHttpClient);
+            AHCHttpClient httpClient = new AHCHttpClient(asyncHttpClient);
             httpClient.buildHttpExchange(getDummyHttpRequest(),
                    getDummyHttpResponse(-12),
                     Stopwatch.createUnstarted(),
-                    OffsetDateTime.now(ZoneId.of(HttpClient.UTC_ZONE_ID)),
+                    OffsetDateTime.now(ZoneId.of(AHCHttpClient.UTC_ZONE_ID)),
                     new AtomicInteger(2),
                     SUCCESS);
         }
@@ -87,11 +88,11 @@ public class HttpClientTest {
         public void test_nominal_case() {
             HashMap<String,
                     String> vars = Maps.newHashMap();
-            HttpClient httpClient = new HttpClient(asyncHttpClient);
+            AHCHttpClient httpClient = new AHCHttpClient(asyncHttpClient);
             httpClient.buildHttpExchange(getDummyHttpRequest(),
                    getDummyHttpResponse(200),
                     Stopwatch.createUnstarted(),
-                    OffsetDateTime.now(ZoneId.of(HttpClient.UTC_ZONE_ID)),
+                    OffsetDateTime.now(ZoneId.of(AHCHttpClient.UTC_ZONE_ID)),
                     new AtomicInteger(2),
                     SUCCESS);
         }
@@ -128,10 +129,10 @@ public class HttpClientTest {
             when(listenerObject.get()).thenReturn(response);
             when(asyncHttpClient.executeRequest(any(Request.class))).thenReturn(listener);
             when(asyncHttpClient.executeRequest(any(Request.class), any())).thenReturn(listenerObject);
-            HttpClient httpClient = new HttpClient(asyncHttpClient);
+            AHCHttpClient httpClient = new AHCHttpClient(asyncHttpClient);
 
             //when
-            HttpExchange httpExchange = httpClient.callOnceWs(getDummyHttpRequest(), new AtomicInteger(2));
+            HttpExchange httpExchange = httpClient.call(getDummyHttpRequest(), new AtomicInteger(2));
 
             //then
             assertThat(httpExchange).isNotNull();
@@ -158,15 +159,15 @@ public class HttpClientTest {
             when(asyncHttpClient.executeRequest(any(Request.class))).thenReturn(listener);
             when(asyncHttpClient.executeRequest(any(Request.class), any())).thenReturn(listenerObject);
             HashMap<String, String> vars = Maps.newHashMap();
-            HttpClient httpClient = new HttpClient(asyncHttpClient);
+            AHCHttpClient httpClient = new AHCHttpClient(asyncHttpClient);
             //when
-            HttpExchange httpExchange = httpClient.callOnceWs(getDummyHttpRequest(), new AtomicInteger(2));
+            HttpExchange httpExchange = httpClient.call(getDummyHttpRequest(), new AtomicInteger(2));
             //then
             assertThat(httpExchange).isNotNull();
         }
 
 
-        @Test(expected = HttpException.class)
+        @Test
         public void test_failure_server_side() throws ExecutionException, InterruptedException {
             //given
             AsyncHttpClient asyncHttpClient = mock(AsyncHttpClient.class);
@@ -180,10 +181,10 @@ public class HttpClientTest {
             when(listenerObject.get()).thenReturn(response);
             when(asyncHttpClient.executeRequest(any(Request.class))).thenReturn(listener);
             when(asyncHttpClient.executeRequest(any(Request.class), any())).thenReturn(listenerObject);
-            HttpClient httpClient = new HttpClient(asyncHttpClient);
+            AHCHttpClient httpClient = new AHCHttpClient(asyncHttpClient);
 
             //when
-            HttpExchange httpExchange = httpClient.callOnceWs(getDummyHttpRequest(), new AtomicInteger(2));
+            HttpExchange httpExchange = httpClient.call(getDummyHttpRequest(), new AtomicInteger(2));
             //then
             assertThat(httpExchange).isNotNull();
         }
@@ -207,9 +208,9 @@ public class HttpClientTest {
             when(asyncHttpClient.executeRequest(any(Request.class))).thenReturn(listener);
             when(asyncHttpClient.executeRequest(any(Request.class), any())).thenReturn(listenerObject);
             HashMap<String, String> vars = Maps.newHashMap();
-            HttpClient httpClient = new HttpClient(asyncHttpClient);
+            AHCHttpClient httpClient = new AHCHttpClient(asyncHttpClient);
             //when
-            HttpExchange httpExchange = httpClient.callOnceWs(getDummyHttpRequest(), new AtomicInteger(2));
+            HttpExchange httpExchange = httpClient.call(getDummyHttpRequest(), new AtomicInteger(2));
             //then
             assertThat(httpExchange).isNotNull();
         }
@@ -218,7 +219,7 @@ public class HttpClientTest {
         public void test_build_http_request_nominal_case(){
             //given
             AsyncHttpClient asyncHttpClient = mock(AsyncHttpClient.class);
-            HttpClient httpClient = new HttpClient(asyncHttpClient);
+            AHCHttpClient httpClient = new AHCHttpClient(asyncHttpClient);
 
             //when
             HttpRequest httpRequest = getDummyHttpRequest();

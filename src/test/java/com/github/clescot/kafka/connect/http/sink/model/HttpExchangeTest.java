@@ -13,7 +13,7 @@ import java.io.IOException;
 import java.time.OffsetDateTime;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static com.github.clescot.kafka.connect.http.sink.client.HttpClient.SUCCESS;
+import static com.github.clescot.kafka.connect.http.sink.client.ahc.AHCHttpClient.SUCCESS;
 import static org.assertj.core.api.AssertionsForInterfaceTypes.assertThat;
 
 
