@@ -142,7 +142,7 @@ public class HttpSinkTaskTest {
         httpSinkTask.start(settings);
         AHCHttpClient httpClient = mock(AHCHttpClient.class);
         HttpExchange dummyHttpExchange = getDummyHttpExchange();
-        when(httpClient.call(any(HttpRequest.class))).thenReturn(dummyHttpExchange);
+        when(httpClient.call(any(HttpRequest.class),any(AtomicInteger.class))).thenReturn(dummyHttpExchange);
         httpSinkTask.setHttpClient(httpClient);
         List<SinkRecord> records = Lists.newArrayList();
         List<Header> headers = Lists.newArrayList();
@@ -150,7 +150,7 @@ public class HttpSinkTaskTest {
         records.add(sinkRecord);
         httpSinkTask.put(records);
         ArgumentCaptor<HttpRequest> captor = ArgumentCaptor.forClass(HttpRequest.class);
-        verify(httpClient, times(1)).call(captor.capture());
+        verify(httpClient, times(1)).call(captor.capture(),any(AtomicInteger.class));
         HttpRequest enhancedRecordBeforeHttpCall = captor.getValue();
         assertThat(enhancedRecordBeforeHttpCall.getHeaders().size() == sinkRecord.headers().size() + httpSinkTask.getStaticRequestHeaders().size());
         assertThat(enhancedRecordBeforeHttpCall.getHeaders()).contains(Map.entry("param1", Lists.newArrayList("value1")));
@@ -166,7 +166,7 @@ public class HttpSinkTaskTest {
         //mock httpClient
         AHCHttpClient httpClient = mock(AHCHttpClient.class);
         HttpExchange dummyHttpExchange = getDummyHttpExchange();
-        when(httpClient.call(any(HttpRequest.class))).thenReturn(dummyHttpExchange);
+        when(httpClient.call(any(HttpRequest.class),any(AtomicInteger.class))).thenReturn(dummyHttpExchange);
         httpSinkTask.setHttpClient(httpClient);
 
         //init sinkRecord
@@ -182,7 +182,7 @@ public class HttpSinkTaskTest {
 
         //no additional headers added
         ArgumentCaptor<HttpRequest> captor = ArgumentCaptor.forClass(HttpRequest.class);
-        verify(httpClient, times(1)).call(captor.capture());
+        verify(httpClient, times(1)).call(captor.capture(),any(AtomicInteger.class));
         HttpRequest enhancedRecordBeforeHttpCall = captor.getValue();
         assertThat(enhancedRecordBeforeHttpCall.getHeaders().size() == sinkRecord.headers().size());
 
@@ -199,7 +199,7 @@ public class HttpSinkTaskTest {
         //mock httpClient
         AHCHttpClient httpClient = mock(AHCHttpClient.class);
         HttpExchange dummyHttpExchange = getDummyHttpExchange();
-        when(httpClient.call(any(HttpRequest.class))).thenReturn(dummyHttpExchange);
+        when(httpClient.call(any(HttpRequest.class),any(AtomicInteger.class))).thenReturn(dummyHttpExchange);
         httpSinkTask.setHttpClient(httpClient);
 
         //init sinkRecord
@@ -235,7 +235,7 @@ public class HttpSinkTaskTest {
         httpSinkTask.start(settings);
         AHCHttpClient httpClient = mock(AHCHttpClient.class);
         HttpExchange dummyHttpExchange = getDummyHttpExchange();
-        when(httpClient.call(any(HttpRequest.class))).thenReturn(dummyHttpExchange);
+        when(httpClient.call(any(HttpRequest.class),any(AtomicInteger.class))).thenReturn(dummyHttpExchange);
         httpSinkTask.setHttpClient(httpClient);
         Queue<HttpExchange> queue = mock(Queue.class);
         httpSinkTask.setQueue(queue);
@@ -244,7 +244,7 @@ public class HttpSinkTaskTest {
         SinkRecord sinkRecord = new SinkRecord("myTopic", 0, Schema.STRING_SCHEMA, "key", Schema.STRING_SCHEMA, getDummyHttpRequestAsString(), -1, System.currentTimeMillis(), TimestampType.CREATE_TIME, headers);
         records.add(sinkRecord);
         httpSinkTask.put(records);
-        verify(httpClient, times(1)).call(any(HttpRequest.class));
+        verify(httpClient, times(1)).call(any(HttpRequest.class),any(AtomicInteger.class));
         verify(queue, never()).offer(any(HttpExchange.class));
     }
 
@@ -258,7 +258,7 @@ public class HttpSinkTaskTest {
         httpSinkTask.start(settings);
         AHCHttpClient httpClient = mock(AHCHttpClient.class);
         HttpExchange dummyHttpExchange = getDummyHttpExchange();
-        when(httpClient.call(any(HttpRequest.class))).thenReturn(dummyHttpExchange);
+        when(httpClient.call(any(HttpRequest.class),any(AtomicInteger.class))).thenReturn(dummyHttpExchange);
         httpSinkTask.setHttpClient(httpClient);
         Queue<HttpExchange> queue = mock(Queue.class);
         httpSinkTask.setQueue(queue);
@@ -270,7 +270,7 @@ public class HttpSinkTaskTest {
         httpSinkTask.put(records);
 
         //then
-        verify(httpClient, times(1)).call(any(HttpRequest.class));
+        verify(httpClient, times(1)).call(any(HttpRequest.class),any(AtomicInteger.class));
         verify(queue, times(1)).offer(any(HttpExchange.class));
     }
 

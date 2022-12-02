@@ -6,17 +6,11 @@ import com.github.clescot.kafka.connect.http.HttpResponse;
 import com.google.common.base.Preconditions;
 import com.google.common.base.Stopwatch;
 import com.google.common.collect.Maps;
-import dev.failsafe.Failsafe;
-import dev.failsafe.RetryPolicy;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.time.Duration;
 import java.time.OffsetDateTime;
-import java.time.ZoneId;
-import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Pattern;
@@ -24,7 +18,6 @@ import java.util.regex.Pattern;
 public interface HttpClient<Req, Res> {
     boolean FAILURE = false;
     int SERVER_ERROR_STATUS_CODE = 500;
-    Optional<RetryPolicy<HttpExchange>> defaultRetryPolicy = Optional.empty();
     String BLANK_RESPONSE_CONTENT = "";
     String UTC_ZONE_ID = "UTC";
     boolean SUCCESS = true;
@@ -37,33 +30,6 @@ public interface HttpClient<Req, Res> {
      * @param httpRequest
      * @return
      */
-    default HttpExchange call(HttpRequest httpRequest) {
-        HttpExchange httpExchange = null;
-
-        if (httpRequest != null) {
-            Optional<RetryPolicy<HttpExchange>> retryPolicyForCall = defaultRetryPolicy;
-            AtomicInteger attempts = new AtomicInteger();
-            try {
-                attempts.addAndGet(1);
-                if (retryPolicyForCall.isPresent()) {
-                    httpExchange = Failsafe.with(List.of(retryPolicyForCall.get()))
-                            .get(() -> call(httpRequest, attempts));
-                } else {
-                    return call(httpRequest, attempts);
-                }
-            } catch (Throwable throwable) {
-                LOGGER.error("Failed to call web service after {} retries with error({}). message:{} ", attempts, throwable,
-                        throwable.getMessage());
-                return buildHttpExchange(
-                        httpRequest,
-                        new HttpResponse(SERVER_ERROR_STATUS_CODE, String.valueOf(throwable.getMessage()), BLANK_RESPONSE_CONTENT),
-                        Stopwatch.createUnstarted(), OffsetDateTime.now(ZoneId.of(UTC_ZONE_ID)),
-                        attempts,
-                        FAILURE);
-            }
-        }
-        return httpExchange;
-    }
 
     default Pattern getSuccessPattern(HttpRequest httpRequest) {
         //by default, we don't resend any http call with a response between 100 and 499
@@ -88,8 +54,7 @@ public interface HttpClient<Req, Res> {
             Pattern httpSuccessPattern = Pattern.compile(wsSuccessCode);
             httpSuccessCodesPatterns.put(wsSuccessCode, httpSuccessPattern);
         }
-        Pattern pattern = httpSuccessCodesPatterns.get(wsSuccessCode);
-        return pattern;
+        return httpSuccessCodesPatterns.get(wsSuccessCode);
     }
 
 
@@ -131,29 +96,9 @@ public interface HttpClient<Req, Res> {
                 .build();
     }
 
-    default RetryPolicy<HttpExchange> buildRetryPolicy(Integer retries,
-                                                       Long retryDelayInMs,
-                                                       Long retryMaxDelayInMs,
-                                                       Double retryDelayFactor,
-                                                       Long retryJitterInMs) {
-        return RetryPolicy.<HttpExchange>builder()
-                //we retry only if the error comes from the WS server (server-side technical error)
-                .handle(HttpException.class)
-                .withBackoff(Duration.ofMillis(retryDelayInMs), Duration.ofMillis(retryMaxDelayInMs), retryDelayFactor)
-                .withJitter(Duration.ofMillis(retryJitterInMs))
-                .withMaxRetries(retries)
-                .onRetry(listener -> LOGGER.warn("Retry ws call result:{}, failure:{}", listener.getLastResult(), listener.getLastException()))
-                .onFailure(listener -> LOGGER.warn("ws call failed ! result:{},exception:{}", listener.getResult(), listener.getException()))
-                .onAbort(listener -> LOGGER.warn("ws call aborted ! result:{},exception:{}", listener.getResult(), listener.getException()))
-                .build();
-    }
+
 
     <Res> Res buildRequest(HttpRequest httpRequest);
 
     HttpExchange call(HttpRequest httpRequest, AtomicInteger attempts) throws HttpException;
-
-    Res nativeCall(Req request);
-
-    void setDefaultRetryPolicy(Integer retries, Long retryDelayInMs, Long retryMaxDelayInMs, Double retryDelayFactor, Long retryJitterInMs);
-
 }

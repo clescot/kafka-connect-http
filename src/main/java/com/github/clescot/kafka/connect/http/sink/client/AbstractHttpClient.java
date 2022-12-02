@@ -44,10 +44,6 @@ public abstract class  AbstractHttpClient<Req,Res> implements HttpClient<Req,Res
 
 
     }
-    @Override
-    public void setDefaultRetryPolicy(Integer retries, Long retryDelayInMs, Long retryMaxDelayInMs, Double retryDelayFactor, Long retryJitterInMs) {
-        this.defaultRetryPolicy = Optional.of(buildRetryPolicy(retries, retryDelayInMs, retryMaxDelayInMs, retryDelayFactor, retryJitterInMs));
-    }
 
     protected int getSuccessfulStatusCodeOrThrowRetryException(int responseStatusCode, Pattern pattern) throws HttpException{
         Matcher matcher = pattern.matcher("" + responseStatusCode);
@@ -59,5 +55,5 @@ public abstract class  AbstractHttpClient<Req,Res> implements HttpClient<Req,Res
     }
 
     protected abstract HttpResponse buildResponse(Res response, Pattern successPattern);
-
+    protected abstract Res nativeCall(Req request);
 }
