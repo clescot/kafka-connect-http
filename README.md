@@ -1,4 +1,4 @@
-# Kafka Connect HTTP Sink project
+# Kafka Connect HTTP Sink and (optionally) Source connectors project
 
 ## 1. project intention
 
@@ -6,7 +6,7 @@
 
 The main goal of this project is to allow to interact with HTTP servers, via a [Kafka Connect](https://docs.confluent.io/platform/current/connect/index.html)
 cluster.
-It permits to define HTTP requests, and store optionnally HTTP responses as Kafka messages, with Kafka connect connectors.
+It permits to define HTTP requests, and store optionally HTTP responses as Kafka messages, with Kafka connect connectors.
 
 ### Advantages of this project
 
