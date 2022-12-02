@@ -162,14 +162,6 @@ public class HttpSinkTask extends SinkTask {
         //handle Request and Response
         HttpExchange httpExchange = callWithRetryPolicy(httpRequestWithTrackingHeaders, defaultRetryPolicy);
         LOGGER.debug("HTTP exchange :{}", httpExchange);
-
-        //publish eventually to 'in memory' queue
-        if (httpSinkConnectorConfig.isPublishToInMemoryQueue() && httpExchange != null) {
-            LOGGER.debug("http exchange published to queue '{}':{}",queueName, httpExchange);
-            queue.offer(httpExchange);
-        } else {
-            LOGGER.debug("http exchange NOT published to queue '{}':{}",queueName, httpExchange);
-        }
     }
 
     private HttpExchange callWithRetryPolicy(HttpRequest httpRequest, Optional<RetryPolicy<HttpExchange>> retryPolicyForCall) {
@@ -182,11 +174,11 @@ public class HttpSinkTask extends SinkTask {
                 if (retryPolicyForCall.isPresent()) {
                     httpExchange = Failsafe.with(List.of(retryPolicyForCall.get()))
                             .get(() -> {
-                                HttpExchange httpExchange1 = callWithThrottling(httpRequest, attempts);
+                                HttpExchange httpExchange1 = callAndPublish(httpRequest, attempts);
                                 return handleRetry(httpExchange1);
                             });
                 } else {
-                    return callWithThrottling(httpRequest, attempts);
+                    return callAndPublish(httpRequest, attempts);
                 }
             } catch (Throwable throwable) {
                 LOGGER.error("Failed to call web service after {} retries with error({}). message:{} ", attempts, throwable,
@@ -209,7 +201,7 @@ public class HttpSinkTask extends SinkTask {
         }
         return httpExchange;
     }
-    private Pattern getSuccessPattern(String customSuccessCodePattern) {
+    private Pattern getSuccessPattern(Optional<String> customSuccessCodePattern) {
         //by default, we don't resend any http call with a response between 100 and 499
         // 1xx is for protocol information (100 continue for example),
         // 2xx is for success,
@@ -225,7 +217,7 @@ public class HttpSinkTask extends SinkTask {
          *  * a functional error occurs: the status code returned from the ws server is not matching the regexp, but is lower than 500 => no retries
          *  * a technical error occurs from the WS server : the status code returned from the ws server does not match the regexp AND is equals or higher than 500 : retries are done
          */
-        String currentSuccessCodePattern = Optional.ofNullable(customSuccessCodePattern).orElse("^[1-4][0-9][0-9]$");
+        String currentSuccessCodePattern = customSuccessCodePattern.orElse("^[1-4][0-9][0-9]$");
 
         if (this.httpSuccessCodesPatterns.get(currentSuccessCodePattern) == null) {
             //Pattern.compile should be reused for performance, but wsSuccessCode can change....
@@ -235,7 +227,7 @@ public class HttpSinkTask extends SinkTask {
         return httpSuccessCodesPatterns.get(currentSuccessCodePattern);
     }
     private boolean retryNeeded(HttpResponse httpResponse){
-        Pattern successPattern = getSuccessPattern(null);
+        Pattern successPattern = getSuccessPattern(Optional.empty());
         return retryNeeded(httpResponse.getStatusCode(), successPattern);
     }
 
@@ -250,10 +242,26 @@ public class HttpSinkTask extends SinkTask {
         }
     }
 
+
+    private HttpExchange callAndPublish(HttpRequest httpRequest,AtomicInteger attempts){
+        HttpExchange httpExchange = callWithThrottling(httpRequest, attempts);
+        httpExchange.setSuccess(getSuccessPattern(Optional.empty()).matcher(httpExchange.getHttpResponse().getStatusCode()+"").matches());
+        //publish eventually to 'in memory' queue
+        if (httpSinkConnectorConfig.isPublishToInMemoryQueue()) {
+            LOGGER.debug("http exchange published to queue '{}':{}",queueName, httpExchange);
+            queue.offer(httpExchange);
+        } else {
+            LOGGER.debug("http exchange NOT published to queue '{}':{}",queueName, httpExchange);
+        }
+        return httpExchange;
+    }
+
     private boolean retryNeeded(int responseStatusCode, Pattern pattern) throws HttpException{
         Matcher matcher = pattern.matcher("" + responseStatusCode);
         return !matcher.matches() && responseStatusCode >= 500;
     }
+
+
 
 
     private HttpRequest addTrackingHeaders(HttpRequest httpRequest) {

@@ -2,7 +2,7 @@ package com.github.clescot.kafka.connect.http.sink.client.ahc;
 
 import com.github.clescot.kafka.connect.http.HttpRequest;
 import com.github.clescot.kafka.connect.http.HttpResponse;
-import com.github.clescot.kafka.connect.http.sink.client.AbstractHttpClient;
+import com.github.clescot.kafka.connect.http.sink.client.HttpClient;
 import com.github.clescot.kafka.connect.http.sink.client.HttpException;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
@@ -19,10 +19,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ExecutionException;
-import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
-public class AHCHttpClient extends AbstractHttpClient<Request, Response> {
+public class AHCHttpClient implements HttpClient<Request, Response> {
 
     private final static Logger LOGGER = LoggerFactory.getLogger(AHCHttpClient.class);
     public static final String PROXY_PREFIX = "proxy-";
@@ -201,7 +200,6 @@ public class AHCHttpClient extends AbstractHttpClient<Request, Response> {
     private boolean isNotNullOrEmpty(String field) {
         return field != null && !field.isEmpty();
     }
-    @Override
     public HttpResponse buildResponse(Response response) throws HttpException {
         List<Map.Entry<String, String>> responseEntries = response.getHeaders() != null ? response.getHeaders().entries() : Lists.newArrayList();
         HttpResponse httpResponse = new HttpResponse(response.getStatusCode(), response.getStatusText(), response.getResponseBody());

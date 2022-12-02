@@ -13,7 +13,6 @@ import com.google.common.collect.Maps;
 import io.confluent.kafka.schemaregistry.avro.AvroSchemaProvider;
 import io.confluent.kafka.schemaregistry.client.CachedSchemaRegistryClient;
 import io.confluent.kafka.schemaregistry.client.SchemaRegistryClient;
-import io.confluent.kafka.schemaregistry.client.rest.exceptions.RestClientException;
 import io.confluent.kafka.schemaregistry.json.JsonSchemaProvider;
 import io.confluent.kafka.schemaregistry.json.SpecificationVersion;
 import io.confluent.kafka.serializers.json.KafkaJsonSchemaDeserializer;
@@ -536,54 +535,23 @@ public class ITConnectorTest {
         KafkaConsumer<String,? extends Object> consumer = getConsumer(kafkaContainer,externalSchemaRegistryUrl);
 
         consumer.subscribe(Lists.newArrayList(successTopic, errorTopic));
-        List<ConsumerRecord<String, ? extends Object>> consumerRecords = drain(consumer, 1, 120);
+        int messageCount = 3;
+        List<ConsumerRecord<String, ? extends Object>> consumerRecords = drain(consumer, messageCount, 120);
         assertThat(consumerRecords).hasSize(3);
-        ConsumerRecord<String, ? extends Object> consumerRecord = consumerRecords.get(0);
-        assertThat(consumerRecord.topic()).isEqualTo(successTopic);
-        assertThat(consumerRecord.key()).isNull();
-        String jsonAsString = consumerRecord.value().toString();
-        LOGGER.info("json response  :{}",jsonAsString);
-        String expectedJSON = "{\n" +
-                "  \"durationInMillis\": 0,\n" +
-                "  \"moment\": \"2022-11-10T17:19:42.740852Z\",\n" +
-                "  \"attempts\": 1,\n" +
-                "  \"request\": {\n" +
-                "    \"headers\": {\n" +
-                "      \"X-Correlation-ID\": [\n" +
-                "        \"e6de70d1-f222-46e8-b755-754880687822\"\n" +
-                "      ],\n" +
-                "      \"X-Request-ID\": [\n" +
-                "        \"e6de70d1-f222-46e8-b755-11111\"\n" +
-                "      ]\n" +
-                "    },\n" +
-                "    \"url\": \""+baseUrl+"/ping\",\n" +
-                "    \"method\": \"GET\",\n" +
-                "    \"bodyType\": \"STRING\",\n" +
-                "    \"bodyAsString\": \"stuff\",\n" +
-                "    \"bodyAsByteArray\": \"\",\n" +
-                "    \"bodyAsMultipart\": []\n" +
-                "  },\n" +
-                "  \"response\": {\n" +
-                "   \"statusCode\":200,\n" +
-                "  \"statusMessage\": \""+successStatusMessage+"\",\n" +
-                "  \"headers\": {" +
-                "\"Content-Type\":[\"application/json\"]" +
-                "},\n" +
-                "  \"body\": \""+escapedJsonResponse+"\"\n" +
-                "}"+
-                "}";
-        JSONAssert.assertEquals(expectedJSON, jsonAsString,
-                new CustomComparator(JSONCompareMode.LENIENT,
-                        new Customization("moment", (o1, o2) -> true),
-                        new Customization("correlationId", (o1, o2) -> true),
-                        new Customization("durationInMillis", (o1, o2) -> true),
-                        new Customization("requestHeaders.X-Correlation-ID", (o1, o2) -> true),
-                        new Customization("requestHeaders.X-Request-ID", (o1, o2) -> true),
-                        new Customization("requestId", (o1, o2) -> true),
-                        new Customization("responseHeaders.Matched-Stub-Id", (o1, o2) -> true)
-                ));
-        assertThat(consumerRecord.headers().toArray()).isEmpty();
-
+        int messageInErrorTopic=0;
+        int messageInSuccessTopic=0;
+        for (int i = 0; i < messageCount; i++) {
+            ConsumerRecord<String, ? extends Object> consumerRecord = consumerRecords.get(i);
+            if(errorTopic.equals(consumerRecord.topic())) {
+                messageInErrorTopic++;
+                checkMessage(errorTopic, escapedJsonResponse, serverErrorStatusCode, errorStatusMessage, baseUrl, consumerRecord);
+            }else{
+                messageInSuccessTopic++;
+                checkMessage(successTopic, escapedJsonResponse, successStatusCode, successStatusMessage, baseUrl, consumerRecord);
+            }
+        }
+        assertThat(messageInErrorTopic).isEqualTo(2);
+        assertThat(messageInSuccessTopic).isEqualTo(1);
     }
 
     @Test
@@ -843,6 +811,7 @@ public class ITConnectorTest {
                             new Customization("durationInMillis", (o1, o2) -> true),
                             new Customization("requestHeaders.X-Correlation-ID", (o1, o2) -> true),
                             new Customization("requestHeaders.X-Request-ID", (o1, o2) -> true),
+                            new Customization("requestHeaders.X-Try", (o1, o2) -> true),
                             new Customization("requestId", (o1, o2) -> true),
                             new Customization("responseHeaders.Matched-Stub-Id", (o1, o2) -> true)
                     ));

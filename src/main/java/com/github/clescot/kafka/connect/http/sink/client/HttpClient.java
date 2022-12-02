@@ -9,6 +9,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.time.OffsetDateTime;
+import java.time.ZoneId;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -19,32 +20,8 @@ public interface HttpClient<Req, Res> {
     String UTC_ZONE_ID = "UTC";
     boolean SUCCESS = true;
     int ONE_HTTP_REQUEST = 1;
-    final static Logger LOGGER = LoggerFactory.getLogger(HttpClient.class);
+    Logger LOGGER = LoggerFactory.getLogger(HttpClient.class);
 
-
-
-    /**
-     * @param httpRequest
-     * @return
-     */
-
-
-
-
-    default HttpExchange getHttpExchange(HttpRequest httpRequest,
-                                         HttpResponse httpResponse,
-                                         Stopwatch stopwatch,
-                                         OffsetDateTime now,
-                                         AtomicInteger attempts) {
-        return buildHttpExchange(
-                httpRequest,
-                httpResponse,
-                stopwatch,
-                now,
-                attempts,
-                SUCCESS
-        );
-    }
 
 
     default HttpExchange buildHttpExchange(HttpRequest httpRequest,
@@ -71,7 +48,33 @@ public interface HttpClient<Req, Res> {
 
 
 
-    <Res> Res buildRequest(HttpRequest httpRequest);
+    <Response> Response buildRequest(HttpRequest httpRequest);
 
-    HttpExchange call(HttpRequest httpRequest, AtomicInteger attempts) throws HttpException;
+    default   HttpExchange call(HttpRequest httpRequest, AtomicInteger attempts) throws HttpException {
+
+
+        Stopwatch stopwatch = Stopwatch.createStarted();
+        try {
+            Req request = buildRequest(httpRequest);
+            LOGGER.info("request: {}", request.toString());
+            OffsetDateTime now = OffsetDateTime.now(ZoneId.of(UTC_ZONE_ID));
+            Res response = nativeCall(request);
+            LOGGER.info("response: {}", response);
+            stopwatch.stop();
+            HttpResponse httpResponse = buildResponse(response);
+            LOGGER.info("duration: {}", stopwatch);
+            return buildHttpExchange(httpRequest, httpResponse, stopwatch, now, attempts,httpResponse.getStatusCode()<400?SUCCESS:FAILURE);
+        } catch (HttpException e) {
+            LOGGER.error("Failed to call web service {} ", e.getMessage());
+            throw new HttpException(e.getMessage());
+        } finally {
+            if (stopwatch.isRunning()) {
+                stopwatch.stop();
+            }
+        }
+    }
+
+
+    HttpResponse buildResponse(Res response);
+    Res nativeCall(Req request);
 }
