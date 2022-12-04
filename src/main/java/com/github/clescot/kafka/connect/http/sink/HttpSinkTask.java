@@ -46,6 +46,8 @@ public class HttpSinkTask extends SinkTask {
 
     public static final String HEADER_X_CORRELATION_ID = "X-Correlation-ID";
     public static final String HEADER_X_REQUEST_ID = "X-Request-ID";
+    private static final String DEFAULT_NO_RETRY_RESPONSE_CODE_REGEX = "^[1-4][0-9][0-9]$";
+    private static final String DEFAULT_SUCCESS_RESPONSE_CODE_REGEX = "^[1-2][0-9][0-9]$";
 
     private HttpClient httpClient;
     private Queue<HttpExchange> queue;
@@ -60,7 +62,7 @@ public class HttpSinkTask extends SinkTask {
 
     private Optional<RetryPolicy<HttpExchange>> defaultRetryPolicy = Optional.empty();
 
-    private Map<String, Pattern> httpSuccessCodesPatterns = Maps.newHashMap();
+    private Map<String, Pattern> patternMap = Maps.newHashMap();
     @Override
     public String version() {
         return VersionUtil.version(this.getClass());
@@ -201,7 +203,7 @@ public class HttpSinkTask extends SinkTask {
         }
         return httpExchange;
     }
-    private Pattern getSuccessPattern(Optional<String> customSuccessCodePattern) {
+    private Pattern getPattern(String pattern) {
         //by default, we don't resend any http call with a response between 100 and 499
         // 1xx is for protocol information (100 continue for example),
         // 2xx is for success,
@@ -217,18 +219,17 @@ public class HttpSinkTask extends SinkTask {
          *  * a functional error occurs: the status code returned from the ws server is not matching the regexp, but is lower than 500 => no retries
          *  * a technical error occurs from the WS server : the status code returned from the ws server does not match the regexp AND is equals or higher than 500 : retries are done
          */
-        String currentSuccessCodePattern = customSuccessCodePattern.orElse("^[1-4][0-9][0-9]$");
 
-        if (this.httpSuccessCodesPatterns.get(currentSuccessCodePattern) == null) {
+        if (this.patternMap.get(pattern) == null) {
             //Pattern.compile should be reused for performance, but wsSuccessCode can change....
-            Pattern httpSuccessPattern = Pattern.compile(currentSuccessCodePattern);
-            httpSuccessCodesPatterns.put(currentSuccessCodePattern, httpSuccessPattern);
+            Pattern httpSuccessPattern = Pattern.compile(pattern);
+            patternMap.put(pattern, httpSuccessPattern);
         }
-        return httpSuccessCodesPatterns.get(currentSuccessCodePattern);
+        return patternMap.get(pattern);
     }
     private boolean retryNeeded(HttpResponse httpResponse){
-        Pattern successPattern = getSuccessPattern(Optional.empty());
-        return retryNeeded(httpResponse.getStatusCode(), successPattern);
+        Pattern retryPattern = getPattern(Optional.<String>empty().orElse(DEFAULT_NO_RETRY_RESPONSE_CODE_REGEX));
+        return retryNeeded(httpResponse.getStatusCode(), retryPattern);
     }
 
     private HttpExchange callWithThrottling(HttpRequest httpRequest, AtomicInteger attempts){
@@ -245,7 +246,7 @@ public class HttpSinkTask extends SinkTask {
 
     private HttpExchange callAndPublish(HttpRequest httpRequest,AtomicInteger attempts){
         HttpExchange httpExchange = callWithThrottling(httpRequest, attempts);
-        httpExchange.setSuccess(getSuccessPattern(Optional.empty()).matcher(httpExchange.getHttpResponse().getStatusCode()+"").matches());
+        httpExchange.setSuccess(getPattern(Optional.<String>empty().orElse(DEFAULT_SUCCESS_RESPONSE_CODE_REGEX)).matcher(httpExchange.getHttpResponse().getStatusCode()+"").matches());
         //publish eventually to 'in memory' queue
         if (httpSinkConnectorConfig.isPublishToInMemoryQueue()) {
             LOGGER.debug("http exchange published to queue '{}':{}",queueName, httpExchange);
