@@ -4,7 +4,6 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.github.clescot.kafka.connect.http.*;
-import com.github.clescot.kafka.connect.http.sink.client.HttpClientFactory;
 import com.github.clescot.kafka.connect.http.sink.client.ahc.AHCHttpClient;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
@@ -29,7 +28,6 @@ import org.skyscreamer.jsonassert.JSONAssert;
 import org.skyscreamer.jsonassert.JSONCompareMode;
 import org.skyscreamer.jsonassert.comparator.CustomComparator;
 
-import javax.net.ssl.TrustManagerFactory;
 import java.time.OffsetDateTime;
 import java.time.ZoneId;
 import java.util.List;
@@ -365,20 +363,32 @@ public class HttpSinkTaskTest {
     }
 
 
+
+
     @Test
-    public void test_getTrustManagerFactory_jks_nominal_case(){
-
-        //given
-        String truststorePath = Thread.currentThread().getContextClassLoader().getResource(CLIENT_TRUSTSTORE_JKS_FILENAME).getPath();
-        String password = CLIENT_TRUSTSTORE_JKS_PASSWORD;
-        //when
-        TrustManagerFactory trustManagerFactory = HttpClientFactory.getTrustManagerFactory(truststorePath, password.toCharArray(), JKS_STORE_TYPE, TRUSTSTORE_PKIX_ALGORITHM);
-        //then
-        assertThat(trustManagerFactory).isNotNull();
-        assertThat(trustManagerFactory.getTrustManagers()).hasSize(1);
-
+    public void test_retry_needed(){
+        HttpResponse httpResponse = new HttpResponse(500,"Internal Server Error","");
+        Map<String, String> settings = Maps.newHashMap();
+        httpSinkTask.start(settings);
+        boolean retryNeeded = httpSinkTask.retryNeeded(httpResponse);
+        assertThat(retryNeeded).isTrue();
     }
-
+    @Test
+    public void test_retry_not_needed_with_400_status_code(){
+        HttpResponse httpResponse = new HttpResponse(400,"Internal Server Error","");
+        Map<String, String> settings = Maps.newHashMap();
+        httpSinkTask.start(settings);
+        boolean retryNeeded = httpSinkTask.retryNeeded(httpResponse);
+        assertThat(retryNeeded).isFalse();
+    }
+    @Test
+    public void test_retry_not_needed_with_200_status_code(){
+        HttpResponse httpResponse = new HttpResponse(200,"Internal Server Error","");
+        Map<String, String> settings = Maps.newHashMap();
+        httpSinkTask.start(settings);
+        boolean retryNeeded = httpSinkTask.retryNeeded(httpResponse);
+        assertThat(retryNeeded).isFalse();
+    }
 
 
     private HttpExchange getDummyHttpExchange() {

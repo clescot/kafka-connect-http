@@ -53,6 +53,30 @@ public class HttpSinkConfigDefinition {
     public static final String HTTPCLIENT_SSL_TRUSTSTORE_TYPE_DOC = "truststore type. can be 'jks' or 'pkcs12'";
     public static final String HTTPCLIENT_SSL_TRUSTSTORE_ALGORITHM = "httpclient.ssl.truststore.algorithm";
     public static final String HTTPCLIENT_SSL_TRUSTSTORE_ALGORITHM_DOC = "httpclient.ssl.truststore.algorithm";
+    public static final String DEFAULT_SUCCESS_RESPONSE_CODE_REGEX = "default.success.response.code.regex";
+    public static final String DEFAULT_SUCCESS_RESPONSE_CODE_REGEX_DOC = "default regex which decide if the request is a success or not, based on the response status code";
+    private static final String DEFAULT_DEFAULT_SUCCESS_RESPONSE_CODE_REGEX = "^[1-2][0-9][0-9]$";
+    public static final String DEFAULT_RETRY_RESPONSE_CODE_REGEX = "default.retry.response.code.regex";
+    public static final String DEFAULT_RETRY_RESPONSE_CODE_REGEX_DOC = "regex which define if a retry need to be triggered, based on the response status code";
+    //by default, we don't resend any http call with a response between 100 and 499
+    // 1xx is for protocol information (100 continue for example),
+    // 2xx is for success,
+    // 3xx is for redirection
+    //4xx is for a client error
+    //5xx is for a server error
+    //only 5xx by default, trigger a resend
+
+    /*
+     *  HTTP Server status code returned
+     *  3 cases can arise:
+     *  * a success occurs : the status code returned from the ws server is matching the regexp => no retries
+     *  * a functional error occurs: the status code returned from the ws server is not matching the regexp, but is lower than 500 => no retries
+     *  * a technical error occurs from the WS server : the status code returned from the ws server does not match the regexp AND is equals or higher than 500 : retries are done
+     */
+
+    private static final String DEFAULT_DEFAULT_RETRY_RESPONSE_CODE_REGEX = "^5[0-9][0-9]$";
+
+
 
     private HttpSinkConfigDefinition() {
         //Class with only static methods
@@ -63,6 +87,8 @@ public class HttpSinkConfigDefinition {
                 .define(ConfigConstants.QUEUE_NAME, ConfigDef.Type.STRING, null,ConfigDef.Importance.MEDIUM, ConfigConstants.QUEUE_NAME_DOC)
                 .define(STATIC_REQUEST_HEADER_NAMES, ConfigDef.Type.LIST,  Collections.emptyList(), ConfigDef.Importance.MEDIUM, STATIC_REQUEST_HEADER_NAMES_DOC)
                 .define(PUBLISH_TO_IN_MEMORY_QUEUE, ConfigDef.Type.BOOLEAN, false, ConfigDef.Importance.MEDIUM, PUBLISH_TO_IN_MEMORY_QUEUE_DOC)
+                .define(DEFAULT_SUCCESS_RESPONSE_CODE_REGEX, ConfigDef.Type.STRING, DEFAULT_DEFAULT_SUCCESS_RESPONSE_CODE_REGEX, ConfigDef.Importance.LOW, DEFAULT_SUCCESS_RESPONSE_CODE_REGEX_DOC)
+                .define(DEFAULT_RETRY_RESPONSE_CODE_REGEX, ConfigDef.Type.STRING, DEFAULT_DEFAULT_RETRY_RESPONSE_CODE_REGEX, ConfigDef.Importance.LOW, DEFAULT_RETRY_RESPONSE_CODE_REGEX_DOC)
                 .define(DEFAULT_RETRIES, ConfigDef.Type.INT, DEFAULT_RETRIES_VALUE, ConfigDef.Importance.MEDIUM, DEFAULT_RETRIES_DOC)
                 .define(DEFAULT_RETRY_DELAY_IN_MS, ConfigDef.Type.LONG, DEFAULT_RETRY_DELAY_IN_MS_VALUE, ConfigDef.Importance.MEDIUM, DEFAULT_RETRY_DELAY_IN_MS_DOC)
                 .define(DEFAULT_RETRY_MAX_DELAY_IN_MS, ConfigDef.Type.LONG, DEFAULT_RETRY_MAX_DELAY_IN_MS_VALUE, ConfigDef.Importance.MEDIUM, DEFAULT_RETRY_MAX_DELAY_IN_MS_DOC)
