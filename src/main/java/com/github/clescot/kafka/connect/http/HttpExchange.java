@@ -2,8 +2,10 @@ package com.github.clescot.kafka.connect.http;
 
 import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.data.SchemaBuilder;
+import org.apache.kafka.connect.data.Struct;
 
 import java.time.OffsetDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class HttpExchange {
@@ -88,6 +90,18 @@ public class HttpExchange {
                 ", httpRequest=" + httpRequest +
                 ", httpResponse=" + httpResponse +
                 '}';
+    }
+
+    public Struct toStruct(){
+        Struct struct = new Struct(HttpExchange.SCHEMA);
+        struct.put(DURATION_IN_MILLIS,getDurationInMillis());
+        struct.put(MOMENT,getMoment().format(DateTimeFormatter.ISO_ZONED_DATE_TIME));
+        struct.put(ATTEMPTS,getAttempts().intValue());
+        //request fields
+        struct.put(REQUEST,getHttpRequest().toStruct());
+        // response fields
+        struct.put(RESPONSE,getHttpResponse().toStruct());
+        return struct;
     }
 
     public static final class Builder {

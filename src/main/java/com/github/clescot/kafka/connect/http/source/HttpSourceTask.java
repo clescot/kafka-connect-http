@@ -64,14 +64,7 @@ public class HttpSourceTask extends SourceTask {
         //but it is useless in the in memory queue context
         Map<String, ?> sourcePartition = Maps.newHashMap();
         Map<String, ?> sourceOffset= Maps.newHashMap();
-        Struct struct = new Struct(HttpExchange.SCHEMA);
-        struct.put(DURATION_IN_MILLIS,httpExchange.getDurationInMillis());
-        struct.put(MOMENT,httpExchange.getMoment().format(DateTimeFormatter.ISO_ZONED_DATE_TIME));
-        struct.put(ATTEMPTS,httpExchange.getAttempts().intValue());
-        //request fields
-        struct.put(REQUEST,httpExchange.getHttpRequest().toStruct());
-        // response fields
-        struct.put(RESPONSE,httpExchange.getHttpResponse().toStruct());
+        Struct struct = httpExchange.toStruct();
 
         return new SourceRecord(
                 sourcePartition,
