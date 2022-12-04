@@ -391,6 +391,35 @@ public class HttpSinkTaskTest {
     }
 
 
+    @Test
+    public void test_retry_needed_by_configuration_with_200_status_code(){
+        HttpResponse httpResponse = new HttpResponse(200,"Internal Server Error","");
+        Map<String, String> settings = Maps.newHashMap();
+        settings.put(DEFAULT_RETRY_RESPONSE_CODE_REGEX,"^[1-5][0-9][0-9]$");
+        httpSinkTask.start(settings);
+        boolean retryNeeded = httpSinkTask.retryNeeded(httpResponse);
+        assertThat(retryNeeded).isTrue();
+    }
+  @Test
+    public void test_is_success_with_200(){
+        HttpExchange httpExchange = getDummyHttpExchange();
+        Map<String, String> settings = Maps.newHashMap();
+        httpSinkTask.start(settings);
+        boolean success = httpSinkTask.isSuccess(httpExchange);
+        assertThat(success).isTrue();
+    }
+
+    @Test
+    public void test_is_not_success_with_200_by_configuration(){
+        HttpExchange httpExchange = getDummyHttpExchange();
+        Map<String, String> settings = Maps.newHashMap();
+        settings.put(DEFAULT_SUCCESS_RESPONSE_CODE_REGEX,"^20[1-5]$");
+        httpSinkTask.start(settings);
+        boolean success = httpSinkTask.isSuccess(httpExchange);
+        assertThat(success).isFalse();
+    }
+
+
     private HttpExchange getDummyHttpExchange() {
         Map<String, List<String>> requestHeaders = Maps.newHashMap();
         requestHeaders.put("X-dummy", Lists.newArrayList("blabla"));

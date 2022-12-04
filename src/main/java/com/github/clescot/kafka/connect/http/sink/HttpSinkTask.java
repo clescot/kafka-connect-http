@@ -241,8 +241,7 @@ public class HttpSinkTask extends SinkTask {
     private HttpExchange callAndPublish(HttpRequest httpRequest,AtomicInteger attempts){
         HttpExchange httpExchange = callWithThrottling(httpRequest, attempts);
         //TODO add specific pattern per site
-        Pattern pattern = getPattern(this.defaultSuccessResponseCodeRegex);
-        boolean success = pattern.matcher(httpExchange.getHttpResponse().getStatusCode() + "").matches();
+        boolean success = isSuccess(httpExchange);
         httpExchange.setSuccess(success);
         //publish eventually to 'in memory' queue
         if (httpSinkConnectorConfig.isPublishToInMemoryQueue()) {
@@ -254,9 +253,11 @@ public class HttpSinkTask extends SinkTask {
         return httpExchange;
     }
 
-
-
-
+    protected boolean isSuccess(HttpExchange httpExchange) {
+        Pattern pattern = getPattern(this.defaultSuccessResponseCodeRegex);
+        boolean success = pattern.matcher(httpExchange.getHttpResponse().getStatusCode() + "").matches();
+        return success;
+    }
 
 
     private HttpRequest addTrackingHeaders(HttpRequest httpRequest) {
