@@ -3,10 +3,7 @@ package com.github.clescot.kafka.connect.http.sink;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
-import com.github.clescot.kafka.connect.http.HttpExchange;
-import com.github.clescot.kafka.connect.http.HttpRequest;
-import com.github.clescot.kafka.connect.http.HttpResponse;
-import com.github.clescot.kafka.connect.http.QueueFactory;
+import com.github.clescot.kafka.connect.http.*;
 import com.github.clescot.kafka.connect.http.sink.client.HttpClient;
 import com.github.clescot.kafka.connect.http.sink.client.HttpException;
 import com.github.clescot.kafka.connect.http.sink.client.ahc.AHCHttpClientFactory;
@@ -49,7 +46,7 @@ public class HttpSinkTask extends SinkTask {
     public static final String HEADER_X_REQUEST_ID = "X-Request-ID";
 
     private HttpClient httpClient;
-    private Queue<HttpExchange> queue;
+    private Queue<KafkaRecord> queue;
     private String queueName;
 
     private Map<String, List<String>> staticRequestHeaders;
@@ -165,11 +162,11 @@ public class HttpSinkTask extends SinkTask {
         HttpRequest httpRequestWithStaticHeaders = addStaticHeaders(httpRequest);
         HttpRequest httpRequestWithTrackingHeaders = addTrackingHeaders(httpRequestWithStaticHeaders);
         //handle Request and Response
-        HttpExchange httpExchange = callWithRetryPolicy(httpRequestWithTrackingHeaders, defaultRetryPolicy);
+        HttpExchange httpExchange = callWithRetryPolicy(sinkRecord,httpRequestWithTrackingHeaders, defaultRetryPolicy);
         LOGGER.debug("HTTP exchange :{}", httpExchange);
     }
 
-    private HttpExchange callWithRetryPolicy(HttpRequest httpRequest, Optional<RetryPolicy<HttpExchange>> retryPolicyForCall) {
+    private HttpExchange callWithRetryPolicy(SinkRecord sinkRecord,HttpRequest httpRequest, Optional<RetryPolicy<HttpExchange>> retryPolicyForCall) {
         HttpExchange httpExchange = null;
 
         if (httpRequest != null) {
@@ -179,11 +176,11 @@ public class HttpSinkTask extends SinkTask {
                 if (retryPolicyForCall.isPresent()) {
                     httpExchange = Failsafe.with(List.of(retryPolicyForCall.get()))
                             .get(() -> {
-                                HttpExchange httpExchange1 = callAndPublish(httpRequest, attempts);
+                                HttpExchange httpExchange1 = callAndPublish(sinkRecord,httpRequest, attempts);
                                 return handleRetry(httpExchange1);
                             });
                 } else {
-                    return callAndPublish(httpRequest, attempts);
+                    return callAndPublish(sinkRecord,httpRequest, attempts);
                 }
             } catch (Throwable throwable) {
                 LOGGER.error("Failed to call web service after {} retries with error({}). message:{} ", attempts, throwable,
@@ -238,7 +235,7 @@ public class HttpSinkTask extends SinkTask {
     }
 
 
-    private HttpExchange callAndPublish(HttpRequest httpRequest,AtomicInteger attempts){
+    private HttpExchange callAndPublish(SinkRecord sinkRecord,HttpRequest httpRequest,AtomicInteger attempts){
         HttpExchange httpExchange = callWithThrottling(httpRequest, attempts);
         //TODO add specific pattern per site
         boolean success = isSuccess(httpExchange);
@@ -246,7 +243,7 @@ public class HttpSinkTask extends SinkTask {
         //publish eventually to 'in memory' queue
         if (httpSinkConnectorConfig.isPublishToInMemoryQueue()) {
             LOGGER.debug("http exchange published to queue '{}':{}",queueName, httpExchange);
-            queue.offer(httpExchange);
+            queue.offer(new KafkaRecord(sinkRecord.headers(),sinkRecord.keySchema(),sinkRecord.key(),httpExchange));
         } else {
             LOGGER.debug("http exchange NOT published to queue '{}':{}",queueName, httpExchange);
         }
@@ -368,7 +365,7 @@ public class HttpSinkTask extends SinkTask {
         return Maps.newHashMap(staticRequestHeaders);
     }
 
-    protected void setQueue(Queue<HttpExchange> queue) {
+    protected void setQueue(Queue<KafkaRecord> queue) {
         this.queue = queue;
     }
 

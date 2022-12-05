@@ -235,7 +235,7 @@ public class HttpSinkTaskTest {
         HttpExchange dummyHttpExchange = getDummyHttpExchange();
         when(httpClient.call(any(HttpRequest.class),any(AtomicInteger.class))).thenReturn(dummyHttpExchange);
         httpSinkTask.setHttpClient(httpClient);
-        Queue<HttpExchange> queue = mock(Queue.class);
+        Queue<KafkaRecord> queue = mock(Queue.class);
         httpSinkTask.setQueue(queue);
         List<SinkRecord> records = Lists.newArrayList();
         List<Header> headers = Lists.newArrayList();
@@ -243,7 +243,7 @@ public class HttpSinkTaskTest {
         records.add(sinkRecord);
         httpSinkTask.put(records);
         verify(httpClient, times(1)).call(any(HttpRequest.class),any(AtomicInteger.class));
-        verify(queue, never()).offer(any(HttpExchange.class));
+        verify(queue, never()).offer(any(KafkaRecord.class));
     }
 
     @Test
@@ -258,7 +258,7 @@ public class HttpSinkTaskTest {
         HttpExchange dummyHttpExchange = getDummyHttpExchange();
         when(httpClient.call(any(HttpRequest.class),any(AtomicInteger.class))).thenReturn(dummyHttpExchange);
         httpSinkTask.setHttpClient(httpClient);
-        Queue<HttpExchange> queue = mock(Queue.class);
+        Queue<KafkaRecord> queue = mock(Queue.class);
         httpSinkTask.setQueue(queue);
         List<SinkRecord> records = Lists.newArrayList();
         List<Header> headers = Lists.newArrayList();
@@ -269,7 +269,7 @@ public class HttpSinkTaskTest {
 
         //then
         verify(httpClient, times(1)).call(any(HttpRequest.class),any(AtomicInteger.class));
-        verify(queue, times(1)).offer(any(HttpExchange.class));
+        verify(queue, times(1)).offer(any(KafkaRecord.class));
     }
 
 

@@ -14,23 +14,23 @@ class QueueFactoryTest {
 
     @Test
     public void test_get_queue_without_queue_name(){
-        Queue<HttpExchange> queue = QueueFactory.getQueue();
+        Queue<KafkaRecord> queue = QueueFactory.getQueue();
         assertThat(queue).isNotNull();
-        Queue<HttpExchange> queue2 = QueueFactory.getQueue();
+        Queue<KafkaRecord> queue2 = QueueFactory.getQueue();
         assertThat(queue2 == queue);
     }
 
     @Test
     public void test_get_queue_with_queue_name(){
-        Queue<HttpExchange> queue = QueueFactory.getQueue(DEFAULT_QUEUE_NAME);
+        Queue<KafkaRecord> queue = QueueFactory.getQueue(DEFAULT_QUEUE_NAME);
         assertThat(queue).isNotNull();
-        Queue<HttpExchange> queue2 = QueueFactory.getQueue();
+        Queue<KafkaRecord> queue2 = QueueFactory.getQueue();
         assertThat(queue2 == queue);
-        Queue<HttpExchange> queue3 = QueueFactory.getQueue("dummy");
+        Queue<KafkaRecord> queue3 = QueueFactory.getQueue("dummy");
         assertThat(queue3 != queue);
-        Queue<HttpExchange> queue4 = QueueFactory.getQueue("dummy");
+        Queue<KafkaRecord> queue4 = QueueFactory.getQueue("dummy");
         assertThat(queue3 == queue4);
-        Queue<HttpExchange> queue5 = QueueFactory.getQueue("dummy2");
+        Queue<KafkaRecord> queue5 = QueueFactory.getQueue("dummy2");
         assertThat(queue5 != queue4);
         assertThat(queue5 != queue);
     }

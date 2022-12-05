@@ -17,17 +17,17 @@ import java.util.concurrent.TimeUnit;
 public class QueueFactory {
     public static final String DEFAULT_QUEUE_NAME = "default";
     private static final Logger LOGGER = LoggerFactory.getLogger(QueueFactory.class);
-    private static final Map<String,Queue<HttpExchange>> queueMap = Maps.newHashMap();
+    private static final Map<String,Queue<KafkaRecord>> queueMap = Maps.newHashMap();
 
     private static final Map<String,Boolean> consumers = Maps.newHashMap();
-    public static synchronized Queue<HttpExchange> getQueue(String queueName){
+    public static synchronized Queue<KafkaRecord> getQueue(String queueName){
         if(queueMap.get(queueName) == null){
             LOGGER.debug("creating the '{}' queue",queueName);
             queueMap.put(queueName, new ConcurrentLinkedQueue<>());
         }
         return queueMap.get(queueName);
     }
-    public static synchronized Queue<HttpExchange> getQueue(){
+    public static synchronized Queue<KafkaRecord> getQueue(){
         return getQueue(DEFAULT_QUEUE_NAME);
     }
 

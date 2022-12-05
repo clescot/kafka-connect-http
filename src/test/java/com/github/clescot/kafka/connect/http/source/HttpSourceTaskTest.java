@@ -37,7 +37,7 @@ class HttpSourceTaskTest {
 
     @AfterEach
     public void tearsDown() {
-        Queue<HttpExchange> queue = QueueFactory.getQueue();
+        Queue<KafkaRecord> queue = QueueFactory.getQueue();
         queue.clear();
     }
 
@@ -70,7 +70,7 @@ class HttpSourceTaskTest {
     @Test
     public void poll() throws ExecutionException, InterruptedException {
         wsSourceTask.start(getNominalConfig());
-        Queue<HttpExchange> queue = QueueFactory.getQueue();
+        Queue<KafkaRecord> queue = QueueFactory.getQueue();
         ExecutorService exService = Executors.newFixedThreadPool(3);
         long expectedNumberOfSuccessfulMessages = 50L;
         long expectedNumberOfFailureMessages = 30L;
@@ -89,7 +89,7 @@ class HttpSourceTaskTest {
     @Test
     public void test_success() {
         wsSourceTask.start(getNominalConfig());
-        Queue<HttpExchange> queue = QueueFactory.getQueue();
+        Queue<KafkaRecord> queue = QueueFactory.getQueue();
         HttpRequest httpRequest = new HttpRequest(
                 "http://www.dummy.com",
                 "GET",
@@ -106,7 +106,7 @@ class HttpSourceTaskTest {
                 OffsetDateTime.now(ZoneId.of("UTC")),
                 new AtomicInteger(1),
                 true);
-        queue.offer(httpExchange);
+        queue.offer(QueueProducer.toKafkaRecord(httpExchange));
         List<SourceRecord> sourceRecords = wsSourceTask.poll();
         long successfulMessagesCount = sourceRecords.stream().filter(sourceRecord -> sourceRecord.topic().equals(getNominalConfig().get(SUCCESS_TOPIC))).count();
         assertThat(successfulMessagesCount).isEqualTo(1);
@@ -119,7 +119,7 @@ class HttpSourceTaskTest {
     @Test
     public void test_error() {
         wsSourceTask.start(getNominalConfig());
-        Queue<HttpExchange> queue = QueueFactory.getQueue();
+        Queue<KafkaRecord> queue = QueueFactory.getQueue();
         HttpRequest httpRequest = new HttpRequest(
                 "http://www.dummy.com",
                 "GET",
@@ -136,7 +136,7 @@ class HttpSourceTaskTest {
                 OffsetDateTime.now(ZoneId.of("UTC")),
                 new AtomicInteger(1),
                 false);
-        queue.offer(httpExchange);
+        queue.offer(QueueProducer.toKafkaRecord(httpExchange));
         List<SourceRecord> sourceRecords = wsSourceTask.poll();
         long successfulMessagesCount = sourceRecords.stream().filter(sourceRecord -> sourceRecord.topic().equals(getNominalConfig().get(SUCCESS_TOPIC))).count();
         assertThat(successfulMessagesCount).isEqualTo(0);
