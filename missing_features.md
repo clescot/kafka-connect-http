@@ -9,7 +9,3 @@ Only the bodyType set to 'STRING' (most usual http requests), is supported.
 
 we use actually the Async HTTP Client library, which has got great performances, but seems dormant.
 We plan to switch to the okhttp library from square, and rely on it to add some authentication features (oauth2).
-
-## kafka key from incoming message is not yet transmitted to the output topic
-
-we plan to transmit across the in memory queue, the key bound to the incoming kafka message. 
