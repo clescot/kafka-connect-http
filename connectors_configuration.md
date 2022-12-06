@@ -91,6 +91,8 @@ every Kafka Connect Sink Connector need to define these required parameters :
     "default.retry.jitter.in.ms":"500",
     "default.rate.limiter.period.in.ms":"1000",
     "default.rate.limiter.max.executions":"5",
+    "default.retry.response.code.regex":"^5[0-9][0-9]$",
+    "default.success.response.code.regex":"^[1-2][0-9][0-9]$",
     "httpclient.ssl.truststore.path": "/path/to/my.truststore.jks",
     "httpclient.ssl.truststore.password": "mySecret_Pass",
     "httpclient.ssl.truststore.type": "jks"
