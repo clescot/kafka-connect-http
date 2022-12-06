@@ -5,7 +5,8 @@
 According to this request Handling schema, here are the steps involved in request handling : 
 
 1. we read the incoming message, and convert it to an HttpRequest Object.
-2. we pass this _HttpRequest_ object to the HTTP client implementation, which execute the query
+2. we pass this _HttpRequest_ object to the HTTP client implementation, which execute the query. A rate limit is set 
+according to the `default.rate.limiter.period.in.ms` and `default.rate.limiter.max.executions` during this period.
 3. we create an HttpResponse object, representing the answer of the website. We wrap the request, response, and some metadata
 (time elapsed...) as an _HttpExchange_ object. We use the _HttpResponse_ status code as an input of the 
 `default.success.response.code.regex` settings. If it matches, we set the success boolean field from HttpExchange,
