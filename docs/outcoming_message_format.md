@@ -8,6 +8,7 @@ These messages (`HTTPExchange`), are `Struct` messages.
 ### Struct format
 
 ```java
+public class HTTPExchange {
     public final static Schema SCHEMA = SchemaBuilder
         .struct()
         .name(HttpExchange.class.getName())
@@ -21,9 +22,9 @@ These messages (`HTTPExchange`), are `Struct` messages.
         // response
         .field(RESPONSE, HttpResponse.SCHEMA)
         .schema();
-
+}
 ```
 
 ### JSON Schema format
 
-[JSON Schema Format](src/test/resources/http-exchange.json)
+[JSON Schema Format](../src/test/resources/http-exchange.json)

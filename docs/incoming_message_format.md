@@ -50,6 +50,7 @@ The `HttpRequest` class represents the incoming message.
 Here is the source code which define the Struct format, base source for JSON Schema/Avro/Protobuf solutions : 
 
 ```java
+public class HttpRequest {
     public Struct toStruct() {
         return new Struct(SCHEMA)
         .put(URL, url)
@@ -59,9 +60,11 @@ Here is the source code which define the Struct format, base source for JSON Sch
         .put(BODY_AS_STRING, bodyAsString)
         .put(BODY_AS_BYTE_ARRAY, bodyAsByteArray)
         .put(BODY_AS_MULTIPART, bodyAsMultipart);
+    } 
+}       
 ```
 
 ### JSON Schema format
 
-[HTTP Request JSON Schema Format](src/test/resources/http-request.json)
+[HTTP Request JSON Schema Format](../src/test/resources/http-request.json)
 
