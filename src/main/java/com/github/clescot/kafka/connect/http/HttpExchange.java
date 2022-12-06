@@ -27,7 +27,7 @@ public class HttpExchange {
             .field(REQUEST, HttpRequest.SCHEMA)
             // response
             .field(RESPONSE, HttpResponse.SCHEMA)
-            .schema();;
+            .schema();
     private final Long durationInMillis;
     private final OffsetDateTime moment;
     private final AtomicInteger attempts;

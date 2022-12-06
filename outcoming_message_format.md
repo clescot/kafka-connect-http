@@ -8,14 +8,19 @@ These messages (`HTTPExchange`), are `Struct` messages.
 ### Struct format
 
 ```java
-    public static final Schema SCHEMA = SchemaBuilder
-            .struct()
-            .name(HttpResponse.class.getName())
-            .version(VERSION)
-            .field(STATUS_CODE,Schema.INT64_SCHEMA)
-            .field(STATUS_MESSAGE,Schema.STRING_SCHEMA)
-            .field(HEADERS, SchemaBuilder.map(Schema.STRING_SCHEMA, SchemaBuilder.array(Schema.STRING_SCHEMA)).build())
-            .field(BODY,Schema.STRING_SCHEMA);
+    public final static Schema SCHEMA = SchemaBuilder
+        .struct()
+        .name(HttpExchange.class.getName())
+        .version(HTTP_EXCHANGE_VERSION)
+        //metadata fields
+        .field(DURATION_IN_MILLIS, Schema.INT64_SCHEMA)
+        .field(MOMENT, Schema.STRING_SCHEMA)
+        .field(ATTEMPTS, Schema.INT32_SCHEMA)
+        //request
+        .field(REQUEST, HttpRequest.SCHEMA)
+        // response
+        .field(RESPONSE, HttpResponse.SCHEMA)
+        .schema();
 
 ```
 

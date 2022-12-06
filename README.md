@@ -102,8 +102,9 @@ after the section dedicated to put in place the HTTP Sink and Source connectors:
 
 # 3. [HTTP Connectors configuration](connectors_configuration.md)
 # 4. [incoming message format](incoming_message_format.md)
-# 5. [outcoming message format](outcoming_message_format.md)
-# 6. [missing features](missing_features.md)
+# 5. [request handling](request_handling.md)
+# 6. [outcoming message format](outcoming_message_format.md)
+# 7. [missing features](missing_features.md)
 
 
 
