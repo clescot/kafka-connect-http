@@ -63,7 +63,8 @@ We need to revert the multiple connectors proposal in the previous section, with
  
   If we need to store HTTP responses, the **Sink** Connector need to publish to the **Source** Connector the responses. 
   We use **an internal unbounded in memory Thread-safe Queue** for this purpose. Global HTTP interactions are (request,responses,
-  and metadatas) published in the in memory queue.
+  and metadatas) published in the in memory queue. Note that the Source connector is optional (you don have to configure an in memory queue in this case), 
+  and if you configure multiple connectors pairs (Sink and Source), you can define a unique in memory queue (with the `queue.name` parameter) for each pair.
 
 ### Does it cancel the distributed nature of Kafka Connect ?
 
