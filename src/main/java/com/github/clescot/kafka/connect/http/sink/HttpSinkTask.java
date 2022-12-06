@@ -3,10 +3,7 @@ package com.github.clescot.kafka.connect.http.sink;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
-import com.github.clescot.kafka.connect.http.HttpExchange;
-import com.github.clescot.kafka.connect.http.HttpRequest;
-import com.github.clescot.kafka.connect.http.HttpResponse;
-import com.github.clescot.kafka.connect.http.QueueFactory;
+import com.github.clescot.kafka.connect.http.*;
 import com.github.clescot.kafka.connect.http.sink.client.HttpClient;
 import com.github.clescot.kafka.connect.http.sink.client.HttpException;
 import com.github.clescot.kafka.connect.http.sink.client.ahc.AHCHttpClientFactory;
@@ -37,6 +34,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import static com.github.clescot.kafka.connect.http.sink.HttpSinkConfigDefinition.DEFAULT_SUCCESS_RESPONSE_CODE_REGEX;
 import static com.github.clescot.kafka.connect.http.sink.client.HttpClient.*;
 
 
@@ -48,7 +46,7 @@ public class HttpSinkTask extends SinkTask {
     public static final String HEADER_X_REQUEST_ID = "X-Request-ID";
 
     private HttpClient httpClient;
-    private Queue<HttpExchange> queue;
+    private Queue<KafkaRecord> queue;
     private String queueName;
 
     private Map<String, List<String>> staticRequestHeaders;
@@ -60,7 +58,10 @@ public class HttpSinkTask extends SinkTask {
 
     private Optional<RetryPolicy<HttpExchange>> defaultRetryPolicy = Optional.empty();
 
-    private Map<String, Pattern> httpSuccessCodesPatterns = Maps.newHashMap();
+    private Map<String, Pattern> patternMap = Maps.newHashMap();
+    private String defaultSuccessResponseCodeRegex;
+    private String defaultRetryResponseCodeRegex;
+
     @Override
     public String version() {
         return VersionUtil.version(this.getClass());
@@ -95,7 +96,8 @@ public class HttpSinkTask extends SinkTask {
         this.staticRequestHeaders = httpSinkConnectorConfig.getStaticRequestHeaders();
         this.generateMissingRequestId = httpSinkConnectorConfig.isGenerateMissingRequestId();
         this.generateMissingCorrelationId = httpSinkConnectorConfig.isGenerateMissingCorrelationId();
-
+        this.defaultSuccessResponseCodeRegex = httpSinkConnectorConfig.getDefaultSuccessResponseCodeRegex();
+        this.defaultRetryResponseCodeRegex = httpSinkConnectorConfig.getDefaultRetryResponseCodeRegex();
         this.httpClient = new AHCHttpClientFactory().build(httpSinkConnectorConfig.originalsStrings());
         Integer defaultRetries = httpSinkConnectorConfig.getDefaultRetries();
         Long defaultRetryDelayInMs = httpSinkConnectorConfig.getDefaultRetryDelayInMs();
@@ -160,11 +162,11 @@ public class HttpSinkTask extends SinkTask {
         HttpRequest httpRequestWithStaticHeaders = addStaticHeaders(httpRequest);
         HttpRequest httpRequestWithTrackingHeaders = addTrackingHeaders(httpRequestWithStaticHeaders);
         //handle Request and Response
-        HttpExchange httpExchange = callWithRetryPolicy(httpRequestWithTrackingHeaders, defaultRetryPolicy);
+        HttpExchange httpExchange = callWithRetryPolicy(sinkRecord,httpRequestWithTrackingHeaders, defaultRetryPolicy);
         LOGGER.debug("HTTP exchange :{}", httpExchange);
     }
 
-    private HttpExchange callWithRetryPolicy(HttpRequest httpRequest, Optional<RetryPolicy<HttpExchange>> retryPolicyForCall) {
+    private HttpExchange callWithRetryPolicy(SinkRecord sinkRecord,HttpRequest httpRequest, Optional<RetryPolicy<HttpExchange>> retryPolicyForCall) {
         HttpExchange httpExchange = null;
 
         if (httpRequest != null) {
@@ -174,11 +176,11 @@ public class HttpSinkTask extends SinkTask {
                 if (retryPolicyForCall.isPresent()) {
                     httpExchange = Failsafe.with(List.of(retryPolicyForCall.get()))
                             .get(() -> {
-                                HttpExchange httpExchange1 = callAndPublish(httpRequest, attempts);
+                                HttpExchange httpExchange1 = callAndPublish(sinkRecord,httpRequest, attempts);
                                 return handleRetry(httpExchange1);
                             });
                 } else {
-                    return callAndPublish(httpRequest, attempts);
+                    return callAndPublish(sinkRecord,httpRequest, attempts);
                 }
             } catch (Throwable throwable) {
                 LOGGER.error("Failed to call web service after {} retries with error({}). message:{} ", attempts, throwable,
@@ -195,40 +197,30 @@ public class HttpSinkTask extends SinkTask {
     }
 
     private HttpExchange handleRetry(HttpExchange httpExchange){
-        boolean retry = retryNeeded(httpExchange.getHttpResponse());
-        if(retry){
+        //we don't retry success HTTP Exchange
+        boolean responseCodeImpliesRetry = retryNeeded(httpExchange.getHttpResponse());
+        LOGGER.debug("httpExchange success :'{}'",httpExchange.isSuccess());
+        LOGGER.debug("response code('{}') implies retry:'{}'",httpExchange.getHttpResponse().getStatusCode(),""+responseCodeImpliesRetry);
+        if(!httpExchange.isSuccess()
+           && responseCodeImpliesRetry){
             throw new HttpException(httpExchange,"retry needed");
         }
         return httpExchange;
     }
-    private Pattern getSuccessPattern(Optional<String> customSuccessCodePattern) {
-        //by default, we don't resend any http call with a response between 100 and 499
-        // 1xx is for protocol information (100 continue for example),
-        // 2xx is for success,
-        // 3xx is for redirection
-        //4xx is for a client error
-        //5xx is for a server error
-        //only 5xx by default, trigger a resend
+    private Pattern getPattern(String pattern) {
 
-        /*
-         *  HTTP Server status code returned
-         *  3 cases can arise:
-         *  * a success occurs : the status code returned from the ws server is matching the regexp => no retries
-         *  * a functional error occurs: the status code returned from the ws server is not matching the regexp, but is lower than 500 => no retries
-         *  * a technical error occurs from the WS server : the status code returned from the ws server does not match the regexp AND is equals or higher than 500 : retries are done
-         */
-        String currentSuccessCodePattern = customSuccessCodePattern.orElse("^[1-4][0-9][0-9]$");
-
-        if (this.httpSuccessCodesPatterns.get(currentSuccessCodePattern) == null) {
+        if (this.patternMap.get(pattern) == null) {
             //Pattern.compile should be reused for performance, but wsSuccessCode can change....
-            Pattern httpSuccessPattern = Pattern.compile(currentSuccessCodePattern);
-            httpSuccessCodesPatterns.put(currentSuccessCodePattern, httpSuccessPattern);
+            Pattern httpSuccessPattern = Pattern.compile(pattern);
+            patternMap.put(pattern, httpSuccessPattern);
         }
-        return httpSuccessCodesPatterns.get(currentSuccessCodePattern);
+        return patternMap.get(pattern);
     }
-    private boolean retryNeeded(HttpResponse httpResponse){
-        Pattern successPattern = getSuccessPattern(Optional.empty());
-        return retryNeeded(httpResponse.getStatusCode(), successPattern);
+    protected boolean retryNeeded(HttpResponse httpResponse){
+        //TODO add specific pattern per site
+        Pattern retryPattern = getPattern(this.defaultRetryResponseCodeRegex);
+        Matcher matcher = retryPattern.matcher("" + httpResponse.getStatusCode());
+        return matcher.matches();
     }
 
     private HttpExchange callWithThrottling(HttpRequest httpRequest, AtomicInteger attempts){
@@ -243,25 +235,26 @@ public class HttpSinkTask extends SinkTask {
     }
 
 
-    private HttpExchange callAndPublish(HttpRequest httpRequest,AtomicInteger attempts){
+    private HttpExchange callAndPublish(SinkRecord sinkRecord,HttpRequest httpRequest,AtomicInteger attempts){
         HttpExchange httpExchange = callWithThrottling(httpRequest, attempts);
-        httpExchange.setSuccess(getSuccessPattern(Optional.empty()).matcher(httpExchange.getHttpResponse().getStatusCode()+"").matches());
+        //TODO add specific pattern per site
+        boolean success = isSuccess(httpExchange);
+        httpExchange.setSuccess(success);
         //publish eventually to 'in memory' queue
         if (httpSinkConnectorConfig.isPublishToInMemoryQueue()) {
             LOGGER.debug("http exchange published to queue '{}':{}",queueName, httpExchange);
-            queue.offer(httpExchange);
+            queue.offer(new KafkaRecord(sinkRecord.headers(),sinkRecord.keySchema(),sinkRecord.key(),httpExchange));
         } else {
             LOGGER.debug("http exchange NOT published to queue '{}':{}",queueName, httpExchange);
         }
         return httpExchange;
     }
 
-    private boolean retryNeeded(int responseStatusCode, Pattern pattern) throws HttpException{
-        Matcher matcher = pattern.matcher("" + responseStatusCode);
-        return !matcher.matches() && responseStatusCode >= 500;
+    protected boolean isSuccess(HttpExchange httpExchange) {
+        Pattern pattern = getPattern(this.defaultSuccessResponseCodeRegex);
+        boolean success = pattern.matcher(httpExchange.getHttpResponse().getStatusCode() + "").matches();
+        return success;
     }
-
-
 
 
     private HttpRequest addTrackingHeaders(HttpRequest httpRequest) {
@@ -372,7 +365,7 @@ public class HttpSinkTask extends SinkTask {
         return Maps.newHashMap(staticRequestHeaders);
     }
 
-    protected void setQueue(Queue<HttpExchange> queue) {
+    protected void setQueue(Queue<KafkaRecord> queue) {
         this.queue = queue;
     }
 

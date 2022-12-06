@@ -19,6 +19,8 @@ import static com.github.clescot.kafka.connect.http.sink.HttpSinkConfigDefinitio
 
 public class HttpSinkConnectorConfig extends AbstractConfig {
     private static final Logger LOGGER = LoggerFactory.getLogger(HttpSinkConnectorConfig.class);
+    private final String defaultSuccessResponseCodeRegex;
+    private final String defaultRetryResponseCodeRegex;
     private String queueName;
     private boolean publishToInMemoryQueue;
     private Integer defaultRetries;
@@ -63,6 +65,8 @@ public class HttpSinkConnectorConfig extends AbstractConfig {
             Preconditions.checkNotNull(value,"'"+headerName+"' is not configured as a parameter.");
             staticRequestHeaders.put(headerName, Lists.newArrayList(value));
         }
+        this.defaultSuccessResponseCodeRegex=getString(DEFAULT_SUCCESS_RESPONSE_CODE_REGEX);
+        this.defaultRetryResponseCodeRegex=getString(DEFAULT_RETRY_RESPONSE_CODE_REGEX);
     }
 
     public String getQueueName() {
@@ -117,10 +121,20 @@ public class HttpSinkConnectorConfig extends AbstractConfig {
         return maxWaitTimeRegistrationOfQueueConsumerInMs;
     }
 
+    public String getDefaultSuccessResponseCodeRegex() {
+        return defaultSuccessResponseCodeRegex;
+    }
+
+    public String getDefaultRetryResponseCodeRegex() {
+        return defaultRetryResponseCodeRegex;
+    }
+
     @Override
     public String toString() {
         return "HttpSinkConnectorConfig{" +
-                "queueName='" + queueName + '\'' +
+                "defaultSuccessResponseCodeRegex='" + defaultSuccessResponseCodeRegex + '\'' +
+                ", defaultRetryResponseCodeRegex='" + defaultRetryResponseCodeRegex + '\'' +
+                ", queueName='" + queueName + '\'' +
                 ", publishToInMemoryQueue=" + publishToInMemoryQueue +
                 ", defaultRetries=" + defaultRetries +
                 ", defaultRetryDelayInMs=" + defaultRetryDelayInMs +

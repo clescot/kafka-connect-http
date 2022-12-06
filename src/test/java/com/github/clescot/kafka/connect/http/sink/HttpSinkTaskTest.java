@@ -4,7 +4,6 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.github.clescot.kafka.connect.http.*;
-import com.github.clescot.kafka.connect.http.sink.client.HttpClientFactory;
 import com.github.clescot.kafka.connect.http.sink.client.ahc.AHCHttpClient;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
@@ -29,7 +28,6 @@ import org.skyscreamer.jsonassert.JSONAssert;
 import org.skyscreamer.jsonassert.JSONCompareMode;
 import org.skyscreamer.jsonassert.comparator.CustomComparator;
 
-import javax.net.ssl.TrustManagerFactory;
 import java.time.OffsetDateTime;
 import java.time.ZoneId;
 import java.util.List;
@@ -237,7 +235,7 @@ public class HttpSinkTaskTest {
         HttpExchange dummyHttpExchange = getDummyHttpExchange();
         when(httpClient.call(any(HttpRequest.class),any(AtomicInteger.class))).thenReturn(dummyHttpExchange);
         httpSinkTask.setHttpClient(httpClient);
-        Queue<HttpExchange> queue = mock(Queue.class);
+        Queue<KafkaRecord> queue = mock(Queue.class);
         httpSinkTask.setQueue(queue);
         List<SinkRecord> records = Lists.newArrayList();
         List<Header> headers = Lists.newArrayList();
@@ -245,7 +243,7 @@ public class HttpSinkTaskTest {
         records.add(sinkRecord);
         httpSinkTask.put(records);
         verify(httpClient, times(1)).call(any(HttpRequest.class),any(AtomicInteger.class));
-        verify(queue, never()).offer(any(HttpExchange.class));
+        verify(queue, never()).offer(any(KafkaRecord.class));
     }
 
     @Test
@@ -260,7 +258,7 @@ public class HttpSinkTaskTest {
         HttpExchange dummyHttpExchange = getDummyHttpExchange();
         when(httpClient.call(any(HttpRequest.class),any(AtomicInteger.class))).thenReturn(dummyHttpExchange);
         httpSinkTask.setHttpClient(httpClient);
-        Queue<HttpExchange> queue = mock(Queue.class);
+        Queue<KafkaRecord> queue = mock(Queue.class);
         httpSinkTask.setQueue(queue);
         List<SinkRecord> records = Lists.newArrayList();
         List<Header> headers = Lists.newArrayList();
@@ -271,7 +269,7 @@ public class HttpSinkTaskTest {
 
         //then
         verify(httpClient, times(1)).call(any(HttpRequest.class),any(AtomicInteger.class));
-        verify(queue, times(1)).offer(any(HttpExchange.class));
+        verify(queue, times(1)).offer(any(KafkaRecord.class));
     }
 
 
@@ -365,20 +363,61 @@ public class HttpSinkTaskTest {
     }
 
 
+
+
     @Test
-    public void test_getTrustManagerFactory_jks_nominal_case(){
-
-        //given
-        String truststorePath = Thread.currentThread().getContextClassLoader().getResource(CLIENT_TRUSTSTORE_JKS_FILENAME).getPath();
-        String password = CLIENT_TRUSTSTORE_JKS_PASSWORD;
-        //when
-        TrustManagerFactory trustManagerFactory = HttpClientFactory.getTrustManagerFactory(truststorePath, password.toCharArray(), JKS_STORE_TYPE, TRUSTSTORE_PKIX_ALGORITHM);
-        //then
-        assertThat(trustManagerFactory).isNotNull();
-        assertThat(trustManagerFactory.getTrustManagers()).hasSize(1);
-
+    public void test_retry_needed(){
+        HttpResponse httpResponse = new HttpResponse(500,"Internal Server Error","");
+        Map<String, String> settings = Maps.newHashMap();
+        httpSinkTask.start(settings);
+        boolean retryNeeded = httpSinkTask.retryNeeded(httpResponse);
+        assertThat(retryNeeded).isTrue();
+    }
+    @Test
+    public void test_retry_not_needed_with_400_status_code(){
+        HttpResponse httpResponse = new HttpResponse(400,"Internal Server Error","");
+        Map<String, String> settings = Maps.newHashMap();
+        httpSinkTask.start(settings);
+        boolean retryNeeded = httpSinkTask.retryNeeded(httpResponse);
+        assertThat(retryNeeded).isFalse();
+    }
+    @Test
+    public void test_retry_not_needed_with_200_status_code(){
+        HttpResponse httpResponse = new HttpResponse(200,"Internal Server Error","");
+        Map<String, String> settings = Maps.newHashMap();
+        httpSinkTask.start(settings);
+        boolean retryNeeded = httpSinkTask.retryNeeded(httpResponse);
+        assertThat(retryNeeded).isFalse();
     }
 
+
+    @Test
+    public void test_retry_needed_by_configuration_with_200_status_code(){
+        HttpResponse httpResponse = new HttpResponse(200,"Internal Server Error","");
+        Map<String, String> settings = Maps.newHashMap();
+        settings.put(DEFAULT_RETRY_RESPONSE_CODE_REGEX,"^[1-5][0-9][0-9]$");
+        httpSinkTask.start(settings);
+        boolean retryNeeded = httpSinkTask.retryNeeded(httpResponse);
+        assertThat(retryNeeded).isTrue();
+    }
+  @Test
+    public void test_is_success_with_200(){
+        HttpExchange httpExchange = getDummyHttpExchange();
+        Map<String, String> settings = Maps.newHashMap();
+        httpSinkTask.start(settings);
+        boolean success = httpSinkTask.isSuccess(httpExchange);
+        assertThat(success).isTrue();
+    }
+
+    @Test
+    public void test_is_not_success_with_200_by_configuration(){
+        HttpExchange httpExchange = getDummyHttpExchange();
+        Map<String, String> settings = Maps.newHashMap();
+        settings.put(DEFAULT_SUCCESS_RESPONSE_CODE_REGEX,"^20[1-5]$");
+        httpSinkTask.start(settings);
+        boolean success = httpSinkTask.isSuccess(httpExchange);
+        assertThat(success).isFalse();
+    }
 
 
     private HttpExchange getDummyHttpExchange() {

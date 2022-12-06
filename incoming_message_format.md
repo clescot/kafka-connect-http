@@ -31,30 +31,6 @@ The HTTP Sink Connector, support also String messages, but not as the main use c
 
 ### fields
 
-#### connection fields
-- timeoutInMs
-
-##### retry policy fields
-
-
-- retries
-- retryDelayInMs
-- retryMaxDelayInMs
-- retryDelayFactor
-- retryJitter
-#### success fields
-
-- `successPattern` : by default, we don't resend any http call with a response code between 100 and 499 (regex is :`^[1-4][0-9][0-9]$`)
-  - 1xx is for protocol information (100 continue for example)
-  - 2xx is for success
-  - 3xx is for redirection
-  - 4xx is for a client error
-  - 5xx is for a server error : only 5xx by default, **trigger a resend**
-  - if the `successPattern` field is set, its value (a regex) will be used to match the success status (error will trigger a resend).
-    
-
-
-
 #### Request Fields
 
 - `url`
@@ -74,28 +50,15 @@ The `HttpRequest` class represents the incoming message.
 Here is the source code which define the Struct format, base source for JSON Schema/Avro/Protobuf solutions : 
 
 ```java
-    public static final Schema SCHEMA = SchemaBuilder
-        .struct()
-        .name(HttpRequest.class.getName())
-        .version(VERSION)
-        //meta-data outside of the request
-        //connection (override the default one set in the Sink Connector)
-        .field(TIMEOUT_IN_MS, Schema.OPTIONAL_INT64_SCHEMA)
-        .field(SUCCESS_PATTERN, Schema.OPTIONAL_STRING_SCHEMA)
-        //retry policy (override the default one set in the Sink Connector)
-        .field(RETRIES, Schema.OPTIONAL_INT32_SCHEMA)
-        .field(RETRY_DELAY_IN_MS, Schema.OPTIONAL_INT64_SCHEMA)
-        .field(RETRY_MAX_DELAY_IN_MS, Schema.OPTIONAL_INT64_SCHEMA)
-        .field(RETRY_DELAY_FACTOR, Schema.OPTIONAL_FLOAT64_SCHEMA)
-        .field(RETRY_JITTER, Schema.OPTIONAL_INT64_SCHEMA)
-        //request
-        .field(HEADERS, SchemaBuilder.map(Schema.STRING_SCHEMA, SchemaBuilder.array(Schema.STRING_SCHEMA)).build())
-        .field(URL, Schema.STRING_SCHEMA)
-        .field(METHOD, Schema.STRING_SCHEMA)
-        .field(BODY_TYPE, Schema.STRING_SCHEMA)
-        .field(BODY_AS_STRING, Schema.OPTIONAL_STRING_SCHEMA)
-        .field(BODY_AS_BYTE_ARRAY, Schema.OPTIONAL_STRING_SCHEMA)
-        .field(BODY_AS_MULTIPART, SchemaBuilder.array(Schema.OPTIONAL_STRING_SCHEMA));
+    public Struct toStruct() {
+        return new Struct(SCHEMA)
+        .put(URL, url)
+        .put(HEADERS, headers)
+        .put(METHOD, method)
+        .put(BODY_TYPE, bodyType.name())
+        .put(BODY_AS_STRING, bodyAsString)
+        .put(BODY_AS_BYTE_ARRAY, bodyAsByteArray)
+        .put(BODY_AS_MULTIPART, bodyAsMultipart);
 ```
 
 ### JSON Schema format

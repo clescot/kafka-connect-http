@@ -14,7 +14,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import static com.github.clescot.kafka.connect.http.sink.client.ahc.AHCHttpClient.*;
 
 public class QueueProducer implements Runnable {
-    private Queue<HttpExchange> transferQueue;
+    private Queue<KafkaRecord> transferQueue;
 
     private long numberOfSuccessfulMessages;
     private long numberOfErrorMessages;
@@ -22,7 +22,7 @@ public class QueueProducer implements Runnable {
     public AtomicInteger numberOfProducedMessages = new AtomicInteger();
 
 
-    public QueueProducer(Queue<HttpExchange> transferQueue, long numberOfSuccessfulMessages, long numberOfErrorMessages) {
+    public QueueProducer(Queue<KafkaRecord> transferQueue, long numberOfSuccessfulMessages, long numberOfErrorMessages) {
         this.transferQueue = transferQueue;
         this.numberOfSuccessfulMessages = numberOfSuccessfulMessages;
         this.numberOfErrorMessages = numberOfErrorMessages;
@@ -31,13 +31,17 @@ public class QueueProducer implements Runnable {
     @Override
     public void run() {
         for (int i = 0; i < numberOfSuccessfulMessages; i++) {
-            transferQueue.offer(getHttpExchange(SUCCESS));
+            transferQueue.offer(toKafkaRecord(getHttpExchange(SUCCESS)));
             numberOfProducedMessages.incrementAndGet();
         }
         for (int i = 0; i < numberOfErrorMessages; i++) {
-            transferQueue.offer(getHttpExchange(FAILURE));
+            transferQueue.offer(toKafkaRecord(getHttpExchange(FAILURE)));
             numberOfProducedMessages.incrementAndGet();
         }
+    }
+
+    public static  KafkaRecord toKafkaRecord(HttpExchange httpExchange){
+        return new KafkaRecord(Lists.newArrayList(),null,null,httpExchange);
     }
 
     private static HttpExchange getHttpExchange(boolean success) {

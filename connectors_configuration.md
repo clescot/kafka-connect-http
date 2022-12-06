@@ -44,7 +44,7 @@ every Kafka Connect Sink Connector need to define these required parameters :
 
 #### Configuration example
 
-`sink.json` example :
+- `sink.json` example :
 ```json 
 {
     "name": "my-http-sink-connector",
@@ -55,7 +55,7 @@ every Kafka Connect Sink Connector need to define these required parameters :
     }
 }
 ```
-`sink.json` example _with publishment in the in memory queue_, for the Source Connector:
+- `sink.json` example _with publishment in the in memory queue_, for the Source Connector:
 ```json 
 {
     "name": "my-http-sink-connector",
@@ -65,6 +65,38 @@ every Kafka Connect Sink Connector need to define these required parameters :
     "topics":"http-request",
     "publish.to.in.memory.queue":"true"
     }
+}
+```
+
+- a more advanced example :
+
+```json 
+{
+  "name": "my-http-sink-connector",
+  "config": {
+    "connector.class":"com.github.clescot.kafka.connect.http.sink.HttpSinkConnector",
+    "tasks.max": "1",
+    "topics":"http-request",
+    "key.converter": "org.apache.kafka.connect.storage.StringConverter",
+    "value.converter": "io.confluent.connect.json.JsonSchemaConverter",
+    "value.converter.use.optional.for.nonrequired": "true",
+    "value.converter.schema.registry.url": "https://my-schema-registry-url:8081",
+    "generate.missing.request.id": "true",
+    "generate.missing.correlation.id": "true",
+    "publish.to.in.memory.queue":"true",
+    "default.retries":"3",
+    "default.retry.delay.in.ms":"2000",
+    "default.retry.max.delay.in.ms":"600000",
+    "default.retry.delay.factor":"1.5",
+    "default.retry.jitter.in.ms":"500",
+    "default.rate.limiter.period.in.ms":"1000",
+    "default.rate.limiter.max.executions":"5",
+    "default.retry.response.code.regex":"^5[0-9][0-9]$",
+    "default.success.response.code.regex":"^[1-2][0-9][0-9]$",
+    "httpclient.ssl.truststore.path": "/path/to/my.truststore.jks",
+    "httpclient.ssl.truststore.password": "mySecret_Pass",
+    "httpclient.ssl.truststore.type": "jks"
+  }
 }
 ```
 
