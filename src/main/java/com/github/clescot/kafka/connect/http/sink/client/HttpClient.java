@@ -48,7 +48,7 @@ public interface HttpClient<Req, Res> {
 
 
 
-    <Response> Response buildRequest(HttpRequest httpRequest);
+    Req buildRequest(HttpRequest httpRequest);
 
     default   HttpExchange call(HttpRequest httpRequest, AtomicInteger attempts) throws HttpException {
 
