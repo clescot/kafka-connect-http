@@ -53,7 +53,7 @@ public class AHCHttpClientFactory implements HttpClientFactory {
 
 
     private static synchronized AsyncHttpClient getAsyncHttpClient(Map<String, String> config) {
-        AsyncHttpClient asyncHttpClient = null;
+        AsyncHttpClient asyncHttpClient;
         Map<String, String> asyncConfig = config.entrySet().stream().filter(entry -> entry.getKey().startsWith(ASYN_HTTP_CONFIG_PREFIX)).collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
         Properties asyncHttpProperties = new Properties();
         asyncHttpProperties.putAll(asyncConfig);
