@@ -61,7 +61,36 @@ class HttpRequestTest {
         String serializedHttpRequest = objectMapper.writeValueAsString(httpRequest);
         JSONAssert.assertEquals(expectedHttpRequest, serializedHttpRequest,true);
     }
+    @Test
+    public void test_deserialization() throws JsonProcessingException, JSONException {
+        ObjectMapper objectMapper = new ObjectMapper();
+        objectMapper.registerModule(new JavaTimeModule());
+        HttpRequest expectedHttpRequest = new HttpRequest(
+                "http://www.stuff.com",
+                "GET",
+                "STRING",
+                "stuff",
+                null,
+                null
+        );
+        Map<String,List<String>> headers = Maps.newHashMap();
+        headers.put("X-correlation-id",Lists.newArrayList("sfds-55-77"));
+        headers.put("X-request-id",Lists.newArrayList("aaaa-4466666-111"));
+        expectedHttpRequest.setHeaders(headers);
 
+        String httpRequestAsString = "{\n" +
+                "  \"url\": \"http://www.stuff.com\",\n" +
+                "  \"headers\":{\"X-request-id\":[\"aaaa-4466666-111\"],\"X-correlation-id\":[\"sfds-55-77\"]},\n" +
+                "  \"method\": \"GET\",\n" +
+                "  \"bodyAsString\": \"stuff\",\n" +
+                "  \"bodyAsByteArray\": \"\",\n" +
+                "  \"bodyAsMultipart\": [],\n" +
+                "  \"bodyType\": \"STRING\"\n" +
+                "}";
+
+        HttpRequest parsedHttpRequest = objectMapper.readValue(httpRequestAsString, HttpRequest.class);
+        assertThat(parsedHttpRequest).isEqualTo(expectedHttpRequest);
+    }
 
     @Test
     public void test_build_http_request_from_struct() throws IOException {
