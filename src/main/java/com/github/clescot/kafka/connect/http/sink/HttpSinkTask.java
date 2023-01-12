@@ -100,6 +100,7 @@ public class HttpSinkTask extends SinkTask {
         try {
             httpClientFactoryClass = (Class<HttpClientFactory>) Class.forName(httpSinkConnectorConfig.getHttpClientFactoryClass());
             httpClientFactory = httpClientFactoryClass.getDeclaredConstructor().newInstance();
+            LOGGER.debug("using HttpClientFactory implementation: {}",httpClientFactory.getClass().getName());
         } catch (ClassNotFoundException | NoSuchMethodException | InstantiationException | IllegalAccessException |
                  InvocationTargetException e) {
             throw new RuntimeException(e);
