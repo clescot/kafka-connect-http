@@ -64,7 +64,7 @@ public class HttpSourceTask extends SourceTask {
         Map<String, ?> sourceOffset= Maps.newHashMap();
         HttpExchange httpExchange = kafkaRecord.getHttpExchange();
         Struct struct = httpExchange.toStruct();
-
+        LOGGER.debug("HttpSourcetask Struct received :{}",struct);
         return new SourceRecord(
                 sourcePartition,
                 sourceOffset,

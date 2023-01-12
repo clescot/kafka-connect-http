@@ -8,8 +8,10 @@ import com.google.common.collect.Maps;
 import okhttp3.*;
 
 import java.io.IOException;
+import java.util.Base64;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 public class OkHttpClient implements HttpClient<Request, Response> {
     private Map<String, String> config;
@@ -25,7 +27,7 @@ public class OkHttpClient implements HttpClient<Request, Response> {
         //url
         String url = httpRequest.getUrl();
         HttpUrl okHttpUrl = HttpUrl.parse(url);
-
+        assert okHttpUrl != null;
         //headers
         Headers.Builder okHeadersBuilder = new Headers.Builder();
         Map<String, List<String>> headers = httpRequest.getHeaders();
@@ -33,29 +35,49 @@ public class OkHttpClient implements HttpClient<Request, Response> {
             String key = entry.getKey();
             List<String> values = entry.getValue();
             for (String value : values) {
-                okHeadersBuilder.add(key,value);
+                okHeadersBuilder.add(key, value);
             }
         });
-
+        List<String> contentType = headers.get("Content-Type");
+        String firstContentType = null;
+        if (contentType != null && !contentType.isEmpty()) {
+            firstContentType = contentType.get(0);
+        }
         //
 //        byte[] bodyAsByteArray = httpRequest.getBodyAsByteArray();
         RequestBody requestBody = null;
-//        if(HttpRequest.BodyType.STRING.equals(httpRequest.getBodyType())){
-//            String bodyAsString = httpRequest.getBodyAsString();
-//            List<String> encodedNames = Lists.newArrayList();
-//            List<String> encodedValues = Lists.newArrayList();
-//            FormBody.Builder builder = new FormBody.Builder();
-//            builder.add("string","value");
-//            builder.addEncoded("string","value");
-//            Request.Builder requestBuilder = new Request.Builder();
-//            MediaType.get()
-//            RequestBody body =RequestBody.create(json, JSON);
-//            MediaType
+        if (HttpRequest.BodyType.STRING.equals(httpRequest.getBodyType())) {
+            //use the contentType set in HttpRequest. if not set, use application/json
+            requestBody = RequestBody.create(httpRequest.getBodyAsString(), MediaType.parse(Optional.ofNullable(firstContentType).orElse("application/json")));
 //            requestBody = new FormBody(encodedNames,encodedValues);
-//        }
+        } else if (HttpRequest.BodyType.BYTE_ARRAY.equals(httpRequest.getBodyType())) {
+            String encoded = Base64.getEncoder().encodeToString(httpRequest.getBodyAsByteArray());
+            requestBody = RequestBody.create(encoded, MediaType.parse(Optional.ofNullable(firstContentType).orElse("application/octet-stream")));
+        }if(HttpRequest.BodyType.FORM.equals(httpRequest.getBodyType())){
+            FormBody.Builder builder = new FormBody.Builder();
+            //TODO
+            Map<String,String> multiparts = null;
+            for (Map.Entry<String, String> entry : multiparts.entrySet()) {
+                builder.add(entry.getKey(),entry.getValue());
+            }
+            requestBody = builder.build();
+
+    }else{
+            //HttpRequest.BodyType = MULTIPART
+            if(firstContentType.startsWith("multipart/form-data")){
+                List<byte[]> bodyAsMultipart = httpRequest.getBodyAsMultipart();
+
+                //TODO handle multipart
+                //List<String> encodedNames = Lists.newArrayList();
+                //List<String> encodedValues = Lists.newArrayList();
+
+                //builder.add("string","value");
+                //builder.addEncoded("string","value");
+            }
+        }
         //TODO set requestBody from HttpRequest
-        Request request = new Request(okHttpUrl,httpRequest.getMethod(),okHeadersBuilder.build(),requestBody, Maps.newHashMap());
-        return request;
+
+        return new Request(okHttpUrl,httpRequest.getMethod(),okHeadersBuilder.build(),requestBody, Maps.newHashMap());
     }
 
     @Override

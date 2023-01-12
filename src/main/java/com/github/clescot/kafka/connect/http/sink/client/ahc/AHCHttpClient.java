@@ -68,6 +68,11 @@ public class AHCHttpClient implements HttpClient<Request, Response> {
     @Override
     public org.asynchttpclient.Response nativeCall(org.asynchttpclient.Request request) {
         LOGGER.debug("native call  {}",request);
+        if(request.getStringData()!=null) {
+            LOGGER.debug("body stringData: '{}'", new String(request.getStringData()));
+        }else{
+            LOGGER.debug("body stringData: null", new String(request.getStringData()));
+        }
         ListenableFuture<Response> responseListenableFuture = asyncHttpClient.executeRequest(request, asyncCompletionHandler);
         //we cannot use the asynchronous nature of the response yet
         try {

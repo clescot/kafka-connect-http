@@ -31,6 +31,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 class HttpRequestTest {
 
 
+    private static final String DUMMY_BODY_AS_STRING = "stuff";
+
     @Test
     public void test_serialization() throws JsonProcessingException, JSONException {
         ObjectMapper objectMapper = new ObjectMapper();
@@ -38,11 +40,9 @@ class HttpRequestTest {
         HttpRequest httpRequest = new HttpRequest(
                 "http://www.stuff.com",
                 "GET",
-                "STRING",
-                "stuff",
-                null,
-                null
+                "STRING"
         );
+        httpRequest.setBodyAsString(DUMMY_BODY_AS_STRING);
         Map<String,List<String>> headers = Maps.newHashMap();
         headers.put("X-correlation-id",Lists.newArrayList("sfds-55-77"));
         headers.put("X-request-id",Lists.newArrayList("aaaa-4466666-111"));
@@ -53,6 +53,7 @@ class HttpRequestTest {
                 "  \"headers\":{\"X-request-id\":[\"aaaa-4466666-111\"],\"X-correlation-id\":[\"sfds-55-77\"]},\n" +
                 "  \"method\": \"GET\",\n" +
                 "  \"bodyAsString\": \"stuff\",\n" +
+                "  \"bodyAsForm\": {},\n" +
                 "  \"bodyAsByteArray\": \"\",\n" +
                 "  \"bodyAsMultipart\": [],\n" +
                 "  \"bodyType\": \"STRING\"\n" +
@@ -68,11 +69,9 @@ class HttpRequestTest {
         HttpRequest expectedHttpRequest = new HttpRequest(
                 "http://www.stuff.com",
                 "GET",
-                "STRING",
-                "stuff",
-                null,
-                null
+                "STRING"
         );
+        expectedHttpRequest.setBodyAsString(DUMMY_BODY_AS_STRING);
         Map<String,List<String>> headers = Maps.newHashMap();
         headers.put("X-correlation-id",Lists.newArrayList("sfds-55-77"));
         headers.put("X-request-id",Lists.newArrayList("aaaa-4466666-111"));
@@ -100,11 +99,9 @@ class HttpRequestTest {
         HttpRequest httpRequest = new HttpRequest(
                 "http://www.stuff.com",
                 "GET",
-                "STRING",
-                "stuff",
-                null,
-                null
+                "STRING"
         );
+        httpRequest.setBodyAsString(DUMMY_BODY_AS_STRING);
         Map<String, List<String>> headers = Maps.newHashMap();
         headers.put("X-stuff", Lists.newArrayList("m-y-value"));
         headers.put("X-correlation-id", Lists.newArrayList("44-999-33-dd"));
@@ -131,7 +128,7 @@ class HttpRequestTest {
         jsonSchemaSerializerConfig.put(KafkaJsonSchemaSerializerConfig.FAIL_UNKNOWN_PROPERTIES,""+failUnknownProperties);
         MockSchemaRegistryClient schemaRegistryClient = new MockSchemaRegistryClient(Lists.newArrayList(new JsonSchemaProvider()));
         KafkaJsonSchemaSerializer<HttpRequest> serializer = new KafkaJsonSchemaSerializer<>(schemaRegistryClient,jsonSchemaSerializerConfig);
-        byte[] bytes = serializer.serialize("stuff", httpRequest);
+        byte[] bytes = serializer.serialize(DUMMY_BODY_AS_STRING, httpRequest);
 
         System.out.println("bytesAsString:"+new String(bytes, StandardCharsets.UTF_8));
         //like in kafka connect Sink connector, convert byte[] to struct
@@ -139,7 +136,7 @@ class HttpRequestTest {
         Map<String,String> converterConfig= Maps.newHashMap();
         converterConfig.put(JsonSchemaConverterConfig.SCHEMA_REGISTRY_URL_CONFIG,"mock://stuff.com");
         jsonSchemaConverter.configure(converterConfig,false);
-        SchemaAndValue schemaAndValue = jsonSchemaConverter.toConnectData("stuff", bytes);
+        SchemaAndValue schemaAndValue = jsonSchemaConverter.toConnectData(DUMMY_BODY_AS_STRING, bytes);
         Struct value = (Struct) schemaAndValue.value();
         assertThat(expectedJsonSchema.equals(value.schema()));
         //when
@@ -181,6 +178,7 @@ class HttpRequestTest {
         struct.put("method", dummyMethod);
         String dummyBodyType = "STRING";
         struct.put("bodyType", dummyBodyType);
+        struct.put("bodyAsString", DUMMY_BODY_AS_STRING);
         //when
         HttpRequest httpRequest = HttpRequest.Builder.anHttpRequest().withStruct(struct).build();
         //then
@@ -188,5 +186,6 @@ class HttpRequestTest {
         assertThat(httpRequest.getUrl()).isEqualTo(dummyUrl);
         assertThat(httpRequest.getMethod()).isEqualTo(dummyMethod);
         assertThat(httpRequest.getBodyType().toString()).isEqualTo(dummyBodyType);
+        assertThat(httpRequest.getBodyAsString().toString()).isEqualTo(DUMMY_BODY_AS_STRING);
     }
 }

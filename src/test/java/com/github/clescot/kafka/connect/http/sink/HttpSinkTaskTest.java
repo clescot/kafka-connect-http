@@ -302,6 +302,7 @@ public class HttpSinkTaskTest {
                 "    },\n" +
                 "    \"method\": \"" + DUMMY_METHOD + "\",\n" +
                 "    \"bodyAsString\": \"" + DUMMY_BODY + "\",\n" +
+                "    \"bodyAsForm\": {},\n" +
                 "    \"bodyAsByteArray\": \"\",\n" +
                 "    \"bodyAsMultipart\": [],\n" +
                 "    \"bodyType\": \"" + DUMMY_BODY_TYPE + "\"\n" +
@@ -423,8 +424,9 @@ public class HttpSinkTaskTest {
     private HttpExchange getDummyHttpExchange() {
         Map<String, List<String>> requestHeaders = Maps.newHashMap();
         requestHeaders.put("X-dummy", Lists.newArrayList("blabla"));
-        HttpRequest httpRequest = new HttpRequest("http://www.titi.com", DUMMY_METHOD, DUMMY_BODY_TYPE, DUMMY_BODY, null, null);
+        HttpRequest httpRequest = new HttpRequest("http://www.titi.com", DUMMY_METHOD, DUMMY_BODY_TYPE);
         httpRequest.setHeaders(requestHeaders);
+        httpRequest.setBodyAsString("stuff");
         HttpResponse httpResponse = new HttpResponse(200, "OK", "my response");
         Map<String, List<String>> responseHeaders = Maps.newHashMap();
         responseHeaders.put("Content-Type", Lists.newArrayList("application/json"));
@@ -446,14 +448,16 @@ public class HttpSinkTaskTest {
                 "  \"headers\": {},\n" +
                 "  \"method\": \"" + DUMMY_METHOD + "\",\n" +
                 "  \"bodyAsString\": \"" + DUMMY_BODY + "\",\n" +
-                "  \"bodyAsByteArray\": null,\n" +
-                "  \"bodyAsMultipart\": null,\n" +
+                "  \"bodyAsByteArray\": [],\n" +
+                "  \"bodyAsForm\": {},\n" +
+                "  \"bodyAsMultipart\": [],\n" +
                 "  \"bodyType\": \"" + DUMMY_BODY_TYPE + "\"\n" +
                 "}";
     }
 
     private Struct getDummyHttpRequestAsStruct() {
-        HttpRequest httpRequest = new HttpRequest(DUMMY_URL,DUMMY_METHOD,DUMMY_BODY_TYPE,DUMMY_BODY,null,null);
+        HttpRequest httpRequest = new HttpRequest(DUMMY_URL,DUMMY_METHOD,DUMMY_BODY_TYPE);
+        httpRequest.setBodyAsString("stuff");
         return httpRequest.toStruct();
     }
 

@@ -247,11 +247,9 @@ public class HttpClientTest {
         HttpRequest httpRequest = new HttpRequest(
                 "http://localhost:8089",
                 "GET",
-                "STRING",
-                body,
-                null,
-                null);
+                "STRING");
         httpRequest.setHeaders(headers);
+        httpRequest.setBodyAsString(body);
         httpRequest.getHeaders().put(HEADER_X_CORRELATION_ID,Lists.newArrayList("45-66-33"));
         httpRequest.getHeaders().put(HEADER_X_REQUEST_ID,Lists.newArrayList("77-3333-11"));
         return httpRequest;
