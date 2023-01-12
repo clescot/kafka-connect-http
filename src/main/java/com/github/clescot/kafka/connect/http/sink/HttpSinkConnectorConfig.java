@@ -70,7 +70,7 @@ public class HttpSinkConnectorConfig extends AbstractConfig {
         }
         this.defaultSuccessResponseCodeRegex=getString(DEFAULT_SUCCESS_RESPONSE_CODE_REGEX);
         this.defaultRetryResponseCodeRegex=getString(DEFAULT_RETRY_RESPONSE_CODE_REGEX);
-        String httpClientImplementation = Optional.ofNullable(getString(HTTPCLIENT_IMPLEMENTATION)).orElse("ahc");
+        String httpClientImplementation = Optional.ofNullable(getString(HTTPCLIENT_IMPLEMENTATION)).orElse("okhttp");
         if("ahc".equalsIgnoreCase(httpClientImplementation)){
             this.httpClientFactoryClass = AHCHttpClientFactory.class.getName();
         }else if("okhttp".equalsIgnoreCase(httpClientImplementation)){

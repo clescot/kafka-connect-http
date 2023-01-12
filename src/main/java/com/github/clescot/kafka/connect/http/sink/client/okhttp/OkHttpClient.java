@@ -43,25 +43,20 @@ public class OkHttpClient implements HttpClient<Request, Response> {
         if (contentType != null && !contentType.isEmpty()) {
             firstContentType = contentType.get(0);
         }
-        //
-//        byte[] bodyAsByteArray = httpRequest.getBodyAsByteArray();
         RequestBody requestBody = null;
         if (HttpRequest.BodyType.STRING.equals(httpRequest.getBodyType())) {
             //use the contentType set in HttpRequest. if not set, use application/json
             requestBody = RequestBody.create(httpRequest.getBodyAsString(), MediaType.parse(Optional.ofNullable(firstContentType).orElse("application/json")));
-//            requestBody = new FormBody(encodedNames,encodedValues);
         } else if (HttpRequest.BodyType.BYTE_ARRAY.equals(httpRequest.getBodyType())) {
             String encoded = Base64.getEncoder().encodeToString(httpRequest.getBodyAsByteArray());
             requestBody = RequestBody.create(encoded, MediaType.parse(Optional.ofNullable(firstContentType).orElse("application/octet-stream")));
         }if(HttpRequest.BodyType.FORM.equals(httpRequest.getBodyType())){
             FormBody.Builder builder = new FormBody.Builder();
-            //TODO
             Map<String,String> multiparts = null;
             for (Map.Entry<String, String> entry : multiparts.entrySet()) {
                 builder.add(entry.getKey(),entry.getValue());
             }
             requestBody = builder.build();
-
     }else{
             //HttpRequest.BodyType = MULTIPART
             if(firstContentType.startsWith("multipart/form-data")){
@@ -75,7 +70,6 @@ public class OkHttpClient implements HttpClient<Request, Response> {
                 //builder.addEncoded("string","value");
             }
         }
-        //TODO set requestBody from HttpRequest
 
         return new Request(okHttpUrl,httpRequest.getMethod(),okHeadersBuilder.build(),requestBody, Maps.newHashMap());
     }
