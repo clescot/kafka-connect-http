@@ -1,5 +1,7 @@
 package com.github.clescot.kafka.connect.http.sink;
 
+import com.github.clescot.kafka.connect.http.sink.client.ahc.AHCHttpClientFactory;
+import com.github.clescot.kafka.connect.http.sink.client.okhttp.OkHttpClientFactory;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
@@ -35,6 +37,7 @@ public class HttpSinkConnectorConfig extends AbstractConfig {
     private boolean generateMissingCorrelationId;
 
     private long maxWaitTimeRegistrationOfQueueConsumerInMs;
+    private String httpClientFactoryClass;
 
     public HttpSinkConnectorConfig(Map<?, ?> originals) {
         this(HttpSinkConfigDefinition.config(), originals);
@@ -67,6 +70,15 @@ public class HttpSinkConnectorConfig extends AbstractConfig {
         }
         this.defaultSuccessResponseCodeRegex=getString(DEFAULT_SUCCESS_RESPONSE_CODE_REGEX);
         this.defaultRetryResponseCodeRegex=getString(DEFAULT_RETRY_RESPONSE_CODE_REGEX);
+        String httpClientImplementation = Optional.ofNullable(getString(HTTPCLIENT_IMPLEMENTATION)).orElse("ahc");
+        if("ahc".equalsIgnoreCase(httpClientImplementation)){
+            this.httpClientFactoryClass = AHCHttpClientFactory.class.getName();
+        }else if("okhttp".equalsIgnoreCase(httpClientImplementation)){
+            this.httpClientFactoryClass = OkHttpClientFactory.class.getName();
+        }else{
+            LOGGER.error("unknown HttpClient implementation : must be either 'ahc' or 'okhttp', but is '{}'",httpClientImplementation);
+            throw new IllegalArgumentException("unknown HttpClient implementation : must be either 'ahc' or 'okhttp', but is '"+httpClientImplementation+"'");
+        }
     }
 
     public String getQueueName() {
@@ -129,6 +141,10 @@ public class HttpSinkConnectorConfig extends AbstractConfig {
         return defaultRetryResponseCodeRegex;
     }
 
+    public String getHttpClientFactoryClass() {
+        return httpClientFactoryClass;
+    }
+
     @Override
     public String toString() {
         return "HttpSinkConnectorConfig{" +
@@ -149,4 +165,6 @@ public class HttpSinkConnectorConfig extends AbstractConfig {
                 ", maxWaitTimeRegistrationOfQueueConsumerInMs=" + maxWaitTimeRegistrationOfQueueConsumerInMs +
                 '}';
     }
+
+
 }

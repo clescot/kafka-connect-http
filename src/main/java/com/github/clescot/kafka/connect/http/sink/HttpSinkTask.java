@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.github.clescot.kafka.connect.http.*;
 import com.github.clescot.kafka.connect.http.sink.client.HttpClient;
+import com.github.clescot.kafka.connect.http.sink.client.HttpClientFactory;
 import com.github.clescot.kafka.connect.http.sink.client.HttpException;
 import com.github.clescot.kafka.connect.http.sink.client.ahc.AHCHttpClientFactory;
 import com.google.common.base.Charsets;
@@ -23,6 +24,7 @@ import org.apache.kafka.connect.sink.SinkTask;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.lang.reflect.InvocationTargetException;
 import java.time.Duration;
 import java.time.OffsetDateTime;
 import java.time.ZoneId;
@@ -68,11 +70,6 @@ public class HttpSinkTask extends SinkTask {
     }
 
     /**
-     * rate limiter configuration :
-     * org.asynchttpclient.throttle.http.max.connections simultaneous max connections
-     * org.asynchttpclient.throttle.http.rate.limit.per.second max calls per second
-     * org.asynchttpclient.throttle.http.max.wait.ms max wait time when call quota is reached.
-     * asynchttpclient configuration is starting by : 'org.asynchttpclient.'
      *
      * @param settings
      */
@@ -98,7 +95,17 @@ public class HttpSinkTask extends SinkTask {
         this.generateMissingCorrelationId = httpSinkConnectorConfig.isGenerateMissingCorrelationId();
         this.defaultSuccessResponseCodeRegex = httpSinkConnectorConfig.getDefaultSuccessResponseCodeRegex();
         this.defaultRetryResponseCodeRegex = httpSinkConnectorConfig.getDefaultRetryResponseCodeRegex();
-        this.httpClient = new AHCHttpClientFactory().build(httpSinkConnectorConfig.originalsStrings());
+        Class<HttpClientFactory> httpClientFactoryClass;
+        HttpClientFactory httpClientFactory;
+        try {
+            httpClientFactoryClass = (Class<HttpClientFactory>) Class.forName(httpSinkConnectorConfig.getHttpClientFactoryClass());
+            httpClientFactory = httpClientFactoryClass.getDeclaredConstructor().newInstance();
+        } catch (ClassNotFoundException | NoSuchMethodException | InstantiationException | IllegalAccessException |
+                 InvocationTargetException e) {
+            throw new RuntimeException(e);
+        }
+
+        this.httpClient = httpClientFactory.build(httpSinkConnectorConfig.originalsStrings());
         Integer defaultRetries = httpSinkConnectorConfig.getDefaultRetries();
         Long defaultRetryDelayInMs = httpSinkConnectorConfig.getDefaultRetryDelayInMs();
         Long defaultRetryMaxDelayInMs = httpSinkConnectorConfig.getDefaultRetryMaxDelayInMs();

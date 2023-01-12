@@ -45,6 +45,8 @@ public class HttpSinkConfigDefinition {
     private static final long DEFAULT_RETRY_JITTER_IN_MS_VALUE = 500;
 
 
+    public static final String HTTPCLIENT_IMPLEMENTATION = "httpclient.implementation";
+    public static final String HTTPCLIENT_IMPLEMENTATION_DOC = "define which intalled library to use : either 'ahc', a.k.a async http client, or 'okhttp' ";
     public static final String HTTPCLIENT_SSL_TRUSTSTORE_PATH = "httpclient.ssl.truststore.path";
     public static final String HTTPCLIENT_SSL_TRUSTSTORE_PATH_DOC = "file path of the custom trusted store";
     public static final String HTTPCLIENT_SSL_TRUSTSTORE_PASSWORD = "httpclient.ssl.truststore.password";
@@ -99,6 +101,7 @@ public class HttpSinkConfigDefinition {
                 .define(GENERATE_MISSING_CORRELATION_ID, ConfigDef.Type.BOOLEAN, false, ConfigDef.Importance.MEDIUM, GENERATE_MISSING_CORRELATION_ID_DOC)
                 .define(GENERATE_MISSING_REQUEST_ID, ConfigDef.Type.BOOLEAN, false, ConfigDef.Importance.MEDIUM, GENERATE_MISSING_REQUEST_ID_DOC)
                 .define(WAIT_TIME_REGISTRATION_QUEUE_CONSUMER_IN_MS, ConfigDef.Type.LONG, 60000L, ConfigDef.Importance.LOW, WAIT_TIME_REGISTRATION_QUEUE_CONSUMER_IN_MS_DOC)
+                .define(HTTPCLIENT_IMPLEMENTATION, ConfigDef.Type.STRING, null, ConfigDef.Importance.LOW, HTTPCLIENT_IMPLEMENTATION_DOC)
                 .define(HTTPCLIENT_SSL_TRUSTSTORE_PATH, ConfigDef.Type.STRING, null, ConfigDef.Importance.LOW, HTTPCLIENT_SSL_TRUSTSTORE_PATH_DOC)
                 .define(HTTPCLIENT_SSL_TRUSTSTORE_PASSWORD, ConfigDef.Type.STRING, null, ConfigDef.Importance.LOW, HTTPCLIENT_SSL_TRUSTSTORE_PASSWORD_DOC)
                 .define(HTTPCLIENT_SSL_TRUSTSTORE_TYPE, ConfigDef.Type.STRING, null, ConfigDef.Importance.LOW, HTTPCLIENT_SSL_TRUSTSTORE_TYPE_DOC)
