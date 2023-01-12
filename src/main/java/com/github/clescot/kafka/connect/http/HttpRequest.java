@@ -254,10 +254,10 @@ public class HttpRequest {
         private String method;
         private String bodyType;
         private String stringBody;
-        private Map<String,String> formBody;
+        private Map<String,String> formBody = Maps.newHashMap();
         private byte[] byteArrayBody;
         private List<byte[]> multipartBody = Lists.newArrayList();
-        private Map<String, List<String>> headers;
+        private Map<String, List<String>> headers = Maps.newHashMap();
 
         private Builder() {
         }
@@ -273,7 +273,10 @@ public class HttpRequest {
             this.url = struct.getString(URL);
             Preconditions.checkNotNull(url, "'url' is required");
 
-            this.headers = struct.getMap(HEADERS);
+            Map<String, List<String>> headers = struct.getMap(HEADERS);
+            if(headers!=null&&!headers.isEmpty()) {
+                this.headers = headers;
+            }
 
             this.method = struct.getString(METHOD);
             Preconditions.checkNotNull(method, "'method' is required");

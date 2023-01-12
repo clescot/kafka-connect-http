@@ -52,7 +52,6 @@ public interface HttpClient<Req, Res> {
 
     default   HttpExchange call(HttpRequest httpRequest, AtomicInteger attempts) throws HttpException {
 
-
         Stopwatch stopwatch = Stopwatch.createStarted();
         try {
             LOGGER.info("request: {}", httpRequest.toString());

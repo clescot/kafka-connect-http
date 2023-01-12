@@ -73,7 +73,6 @@ import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.apache.kafka.clients.producer.ProducerConfig.BOOTSTRAP_SERVERS_CONFIG;
 import static org.assertj.core.api.Assertions.assertThat;
 
-@Disabled
 @Testcontainers
 public class ITConnectorTest {
 
