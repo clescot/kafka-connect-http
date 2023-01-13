@@ -19,6 +19,7 @@ import static com.github.clescot.kafka.connect.http.sink.HttpSinkConfigDefinitio
 
 public abstract class AbstractHttpClient<Req, Res> implements HttpClient<Req, Res> {
 
+    private static final String DEFAULT_SSL_PROTOCOL = "SSL";
     protected Map<String, String> config;
 
     public AbstractHttpClient(Map<String, String> config) {
@@ -90,7 +91,7 @@ public abstract class AbstractHttpClient<Req, Res> implements HttpClient<Req, Re
                                                           @Nullable TrustManagerFactory trustManagerFactory,
                                                 @Nullable String protocol){
         try {
-            SSLContext sslContext = SSLContext.getInstance(Optional.ofNullable(protocol).orElse("SSL"));
+            SSLContext sslContext = SSLContext.getInstance(Optional.ofNullable(protocol).orElse(DEFAULT_SSL_PROTOCOL));
             SecureRandom random = new SecureRandom();
             sslContext.init(keyManagerFactory!=null?keyManagerFactory.getKeyManagers():null,trustManagerFactory!=null?trustManagerFactory.getTrustManagers():null, random);
             return sslContext.getSocketFactory();

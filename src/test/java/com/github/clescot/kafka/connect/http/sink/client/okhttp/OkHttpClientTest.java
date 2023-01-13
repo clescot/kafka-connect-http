@@ -21,7 +21,7 @@ class OkHttpClientTest {
     @Test
     public void test_build_request() throws IOException {
         OkHttpClient client = new OkHttpClient(Maps.newHashMap());
-        HttpRequest httpRequest = new HttpRequest("http://dummy.com/","GET",HttpRequest.BodyType.STRING.name());
+        HttpRequest httpRequest = new HttpRequest("http://dummy.com/","POST",HttpRequest.BodyType.STRING.name());
         httpRequest.setBodyAsString("stuff");
         Request request = client.buildRequest(httpRequest);
         LOGGER.debug("request:{}",request);
@@ -38,7 +38,7 @@ class OkHttpClientTest {
         OkHttpClient client = new OkHttpClient(Maps.newHashMap());
 
 
-        HttpRequest httpRequest = new HttpRequest("http://dummy.com/","GET",HttpRequest.BodyType.STRING.name());
+        HttpRequest httpRequest = new HttpRequest("http://dummy.com/","POST",HttpRequest.BodyType.STRING.name());
         httpRequest.setBodyAsString("stuff");
         Request request = client.buildRequest(httpRequest);
 

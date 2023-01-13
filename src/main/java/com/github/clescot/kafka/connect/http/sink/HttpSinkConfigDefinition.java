@@ -47,6 +47,8 @@ public class HttpSinkConfigDefinition {
 
     public static final String HTTPCLIENT_IMPLEMENTATION = "httpclient.implementation";
     public static final String HTTPCLIENT_IMPLEMENTATION_DOC = "define which intalled library to use : either 'ahc', a.k.a async http client, or 'okhttp' ";
+    public static final String HTTPCLIENT_PROTOCOLS = "httpclient.protocols";
+    public static final String HTTPCLIENT_PROTOCOLS_DOC = "protocols to use, in order of preference,divided by a comma.supported protocols in okhttp: HTTP_1_1,HTTP_2,H2_PRIOR_KNOWLEDGE,QUIC";
 
     public static final String HTTPCLIENT_SSL_SKIP_HOSTNAME_VERIFICATION = "httpclient.ssl.skip.hostname.verification";
     public static final String HTTPCLIENT_SSL_SKIP_HOSTNAME_VERIFICATION_DOC = "skip hostname verification";
@@ -117,6 +119,7 @@ public class HttpSinkConfigDefinition {
                 .define(GENERATE_MISSING_REQUEST_ID, ConfigDef.Type.BOOLEAN, false, ConfigDef.Importance.MEDIUM, GENERATE_MISSING_REQUEST_ID_DOC)
                 .define(WAIT_TIME_REGISTRATION_QUEUE_CONSUMER_IN_MS, ConfigDef.Type.LONG, 60000L, ConfigDef.Importance.LOW, WAIT_TIME_REGISTRATION_QUEUE_CONSUMER_IN_MS_DOC)
                 .define(HTTPCLIENT_IMPLEMENTATION, ConfigDef.Type.STRING, null, ConfigDef.Importance.LOW, HTTPCLIENT_IMPLEMENTATION_DOC)
+                .define(HTTPCLIENT_PROTOCOLS, ConfigDef.Type.STRING, null, ConfigDef.Importance.LOW, HTTPCLIENT_PROTOCOLS_DOC)
                 .define(HTTPCLIENT_SSL_SKIP_HOSTNAME_VERIFICATION, ConfigDef.Type.STRING, null, ConfigDef.Importance.LOW, HTTPCLIENT_SSL_SKIP_HOSTNAME_VERIFICATION_DOC)
                 .define(HTTPCLIENT_SSL_KEYSTORE_PATH, ConfigDef.Type.STRING, null, ConfigDef.Importance.LOW, HTTPCLIENT_SSL_KEYSTORE_PATH_DOC)
                 .define(HTTPCLIENT_SSL_KEYSTORE_PASSWORD, ConfigDef.Type.STRING, null, ConfigDef.Importance.LOW, HTTPCLIENT_SSL_KEYSTORE_PASSWORD_DOC)
