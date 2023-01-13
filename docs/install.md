@@ -12,7 +12,7 @@ There are two ways to install the connectors :
 
    - copy from the github website, from the home page, in the package section, the zip file from the latest release 
    (we've not yet published on the confluent hub website our connector, nor on the maven central repository).
-   For example, `kafka-connect-http-sink-0.2.32.zip`.
+   For example, `kafka-connect-http-sink-0.2.33.zip`.
    - include it in your Kafka connect docker image, via this command in your `Dockerfile` : 
    
         `COPY connectors/kafka-connect-http-sink-*.zip /tmp/kafka-connect-http-sink.zip`
