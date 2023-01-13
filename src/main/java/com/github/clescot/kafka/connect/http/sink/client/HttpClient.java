@@ -54,14 +54,15 @@ public interface HttpClient<Req, Res> {
 
         Stopwatch stopwatch = Stopwatch.createStarted();
         try {
-            LOGGER.info("request: {}", httpRequest.toString());
+            LOGGER.info("httpRequest: {}", httpRequest.toString());
             Req request = buildRequest(httpRequest);
-            LOGGER.info("request: {}", request.toString());
+            LOGGER.info("native request: {}", request.toString());
             OffsetDateTime now = OffsetDateTime.now(ZoneId.of(UTC_ZONE_ID));
             Res response = nativeCall(request);
-            LOGGER.info("response: {}", response);
+            LOGGER.info("native response: {}", response);
             stopwatch.stop();
             HttpResponse httpResponse = buildResponse(response);
+            LOGGER.info("httpResponse: {}", response);
             LOGGER.info("duration: {}", stopwatch);
             return buildHttpExchange(httpRequest, httpResponse, stopwatch, now, attempts,httpResponse.getStatusCode()<400?SUCCESS:FAILURE);
         } catch (HttpException e) {
