@@ -21,6 +21,8 @@ import static com.github.clescot.kafka.connect.http.sink.HttpSinkConfigDefinitio
 
 public class HttpSinkConnectorConfig extends AbstractConfig {
     private static final Logger LOGGER = LoggerFactory.getLogger(HttpSinkConnectorConfig.class);
+    private static final String OKHTTP_IMPLEMENTATION = "okhttp";
+    private static final String AHC_IMPLEMENTATION = "ahc";
     private final String defaultSuccessResponseCodeRegex;
     private final String defaultRetryResponseCodeRegex;
     private String queueName;
@@ -68,12 +70,12 @@ public class HttpSinkConnectorConfig extends AbstractConfig {
             Preconditions.checkNotNull(value,"'"+headerName+"' is not configured as a parameter.");
             staticRequestHeaders.put(headerName, Lists.newArrayList(value));
         }
-        this.defaultSuccessResponseCodeRegex=getString(HTTP_CLIENT_DEFAULT_SUCCESS_RESPONSE_CODE_REGEX);
-        this.defaultRetryResponseCodeRegex=getString(HTTP_CLIENT_DEFAULT_RETRY_RESPONSE_CODE_REGEX);
-        String httpClientImplementation = Optional.ofNullable(getString(HTTPCLIENT_IMPLEMENTATION)).orElse("okhttp");
-        if("ahc".equalsIgnoreCase(httpClientImplementation)){
+        this.defaultSuccessResponseCodeRegex = getString(HTTP_CLIENT_DEFAULT_SUCCESS_RESPONSE_CODE_REGEX);
+        this.defaultRetryResponseCodeRegex = getString(HTTP_CLIENT_DEFAULT_RETRY_RESPONSE_CODE_REGEX);
+        String httpClientImplementation = Optional.ofNullable(getString(HTTPCLIENT_IMPLEMENTATION)).orElse(OKHTTP_IMPLEMENTATION);
+        if(AHC_IMPLEMENTATION.equalsIgnoreCase(httpClientImplementation)){
             this.httpClientFactoryClass = AHCHttpClientFactory.class.getName();
-        }else if("okhttp".equalsIgnoreCase(httpClientImplementation)){
+        }else if(OKHTTP_IMPLEMENTATION.equalsIgnoreCase(httpClientImplementation)){
             this.httpClientFactoryClass = OkHttpClientFactory.class.getName();
         }else{
             LOGGER.error("unknown HttpClient implementation : must be either 'ahc' or 'okhttp', but is '{}'",httpClientImplementation);
