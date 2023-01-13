@@ -3,7 +3,10 @@
 Kafka Connect cluster is usually deployed as a Docker Container, in Kubernetes.
 Note that the jar file owning these connector classes,
 [need to be installed with the Kafka connect runtime](https://docs.confluent.io/kafka-connectors/self-managed/install.html#install-connector-manually).
-We publish on each release, an archive file (zip) for use on Confluent Hub. It is not yet published on the Confluent Hub, but can be installed manually into your
+
+We publish on each release, a Confluent Hub archive file (zip), useful with the confluent-hub CLI. It is not yet published on the Confluent Hub, but can be installed manually into your Docker image.
+
+We also publish an uber `jar` putting all dependencies and project classes into one jar.
 
 There are two ways to install the connectors :  
  - the `confluentHub archive` way
@@ -24,7 +27,11 @@ There are two ways to install the connectors :
    - you're done ! 
 
 - the `uberjar` way
-  - copy the `uberjar` published in the `/usr/local/share/kafka/plugins` directory, in your Dockerfile, from the [confluentinc/cp-kafka-connect Docker image](https://hub.docker.com/r/confluentinc/cp-kafka-connect).
+  - copy the `uberjar` into one of directories referenced in the `plugin.path` in your Dockerfile (we suggest to use the [confluentinc/cp-kafka-connect Docker image](https://hub.docker.com/r/confluentinc/cp-kafka-connect).
+
+      `plugin.path` is the comma-separated list of paths to directories that contain Kafka Connect plugins).
+
+       By default,  `plugin.path` is set to `/usr/local/share/kafka/plugins`
   - the main difficulty is to find the right place to put the jar, depending on your kafka-connect image. the `confluentHub archive` way permits to avoid this issue
 
 # check the connector installation
