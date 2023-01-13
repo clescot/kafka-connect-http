@@ -45,6 +45,17 @@ public class HttpSinkConfigDefinition {
     private static final long DEFAULT_RETRY_JITTER_IN_MS_VALUE = 500;
 
 
+    public static final String HTTPCLIENT_CALL_TIMEOUT = "httpclient.call.timeout";
+    public static final String HTTPCLIENT_CALL_TIMEOUT_DOC = "default timeout in milliseconds for complete call . A value of 0 means no timeout, otherwise values must be between 1 and Integer.MAX_VALUE.";
+
+    public static final String HTTPCLIENT_CONNECT_TIMEOUT = "httpclient.connect.timeout";
+    public static final String HTTPCLIENT_CONNECT_TIMEOUT_DOC = "Sets the default connect timeout in milliseconds for new connections. A value of 0 means no timeout, otherwise values must be between 1 and Integer.MAX_VALUE.";
+    public static final String HTTPCLIENT_READ_TIMEOUT = "httpclient.read.timeout";
+    public static final String HTTPCLIENT_READ_TIMEOUT_DOC = "Sets the default read timeout in milliseconds for new connections. A value of 0 means no timeout, otherwise values must be between 1 and Integer.MAX_VALUE.";
+
+    public static final String HTTPCLIENT_WRITE_TIMEOUT = "httpclient.write.timeout";
+    public static final String HTTPCLIENT_WRITE_TIMEOUT_DOC = "Sets the default write timeout in milliseconds for new connections. A value of 0 means no timeout, otherwise values must be between 1 and Integer.MAX_VALUE.";
+
     public static final String HTTPCLIENT_IMPLEMENTATION = "httpclient.implementation";
     public static final String HTTPCLIENT_IMPLEMENTATION_DOC = "define which intalled library to use : either 'ahc', a.k.a async http client, or 'okhttp' ";
     public static final String HTTPCLIENT_PROTOCOLS = "httpclient.protocols";
@@ -129,6 +140,10 @@ public class HttpSinkConfigDefinition {
                 .define(HTTPCLIENT_SSL_TRUSTSTORE_PASSWORD, ConfigDef.Type.STRING, null, ConfigDef.Importance.LOW, HTTPCLIENT_SSL_TRUSTSTORE_PASSWORD_DOC)
                 .define(HTTPCLIENT_SSL_TRUSTSTORE_TYPE, ConfigDef.Type.STRING, null, ConfigDef.Importance.LOW, HTTPCLIENT_SSL_TRUSTSTORE_TYPE_DOC)
                 .define(HTTPCLIENT_SSL_TRUSTSTORE_ALGORITHM, ConfigDef.Type.STRING, null, ConfigDef.Importance.LOW, HTTPCLIENT_SSL_TRUSTSTORE_ALGORITHM_DOC)
+                .define(HTTPCLIENT_CALL_TIMEOUT, ConfigDef.Type.STRING, null, ConfigDef.Importance.MEDIUM, HTTPCLIENT_CALL_TIMEOUT_DOC)
+                .define(HTTPCLIENT_CONNECT_TIMEOUT, ConfigDef.Type.STRING, null, ConfigDef.Importance.MEDIUM, HTTPCLIENT_CONNECT_TIMEOUT_DOC)
+                .define(HTTPCLIENT_READ_TIMEOUT, ConfigDef.Type.STRING, null, ConfigDef.Importance.MEDIUM, HTTPCLIENT_READ_TIMEOUT_DOC)
+                .define(HTTPCLIENT_WRITE_TIMEOUT, ConfigDef.Type.STRING, null, ConfigDef.Importance.MEDIUM, HTTPCLIENT_WRITE_TIMEOUT_DOC)
                 ;
     }
 }

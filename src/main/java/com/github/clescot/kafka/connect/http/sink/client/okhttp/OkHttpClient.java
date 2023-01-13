@@ -13,9 +13,9 @@ import org.slf4j.LoggerFactory;
 import javax.net.ssl.*;
 import java.io.IOException;
 import java.util.*;
+import java.util.concurrent.TimeUnit;
 
-import static com.github.clescot.kafka.connect.http.sink.HttpSinkConfigDefinition.HTTPCLIENT_PROTOCOLS;
-import static com.github.clescot.kafka.connect.http.sink.HttpSinkConfigDefinition.HTTPCLIENT_SSL_SKIP_HOSTNAME_VERIFICATION;
+import static com.github.clescot.kafka.connect.http.sink.HttpSinkConfigDefinition.*;
 
 public class OkHttpClient extends AbstractHttpClient<Request, Response> {
     private static final String PROTOCOL_SEPARATOR = ",";
@@ -25,6 +25,7 @@ public class OkHttpClient extends AbstractHttpClient<Request, Response> {
     public OkHttpClient(Map<String, String> config) {
         super(config);
         okhttp3.OkHttpClient.Builder httpClientBuilder = new okhttp3.OkHttpClient.Builder();
+        //protocols
         if(config.containsKey(HTTPCLIENT_PROTOCOLS)) {
             String protocolNames = config.get(HTTPCLIENT_PROTOCOLS);
             List<Protocol> protocols = Lists.newArrayList();
@@ -35,6 +36,7 @@ public class OkHttpClient extends AbstractHttpClient<Request, Response> {
             }
             httpClientBuilder.protocols(protocols);
         }
+        //KeyManager/trustManager/SSLSocketFactory
         Optional<KeyManagerFactory> keyManagerFactoryOption = getKeyManagerFactory();
         Optional<TrustManagerFactory> trustManagerFactoryOption = getTrustManagerFactory();
         if(keyManagerFactoryOption.isPresent()||trustManagerFactoryOption.isPresent()) {
@@ -49,6 +51,31 @@ public class OkHttpClient extends AbstractHttpClient<Request, Response> {
                 httpClientBuilder.hostnameVerifier((hostname, session) -> true);
             }
         }
+
+        //call timeout
+        if(config.containsKey(HTTPCLIENT_CALL_TIMEOUT)) {
+            int callTimeout = Integer.parseInt(config.get(HTTPCLIENT_CALL_TIMEOUT));
+            httpClientBuilder.callTimeout(callTimeout, TimeUnit.MILLISECONDS);
+        }
+
+        //connect timeout
+        if(config.containsKey(HTTPCLIENT_CONNECT_TIMEOUT)) {
+            int connectTimeout = Integer.parseInt(config.get(HTTPCLIENT_CONNECT_TIMEOUT_DOC));
+            httpClientBuilder.connectTimeout(connectTimeout, TimeUnit.MILLISECONDS);
+        }
+
+        //read timeout
+        if(config.containsKey(HTTPCLIENT_READ_TIMEOUT)) {
+            int readTimeout = Integer.parseInt(config.get(HTTPCLIENT_READ_TIMEOUT_DOC));
+            httpClientBuilder.readTimeout(readTimeout, TimeUnit.MILLISECONDS);
+        }
+
+        //write timeout
+        if(config.containsKey(HTTPCLIENT_WRITE_TIMEOUT)) {
+            int writeTimeout = Integer.parseInt(config.get(HTTPCLIENT_WRITE_TIMEOUT_DOC));
+            httpClientBuilder.writeTimeout(writeTimeout, TimeUnit.MILLISECONDS);
+        }
+
         client = httpClientBuilder.build();
 
 
