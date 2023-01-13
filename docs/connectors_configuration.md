@@ -1,8 +1,7 @@
 # HTTP Connectors configuration
 
 Here are the configuration to setup an HTTP Sink connector, and optionally an HTTP Source Connector, into a Kafka Connect
-cluster. Note that the jar file owning these connector classes,
-[need to be installed with the Kafka connect runtime](https://docs.confluent.io/kafka-connectors/self-managed/install.html#install-connector-manually).
+cluster. 
 
 ### HTTP Sink Connector
 
@@ -176,4 +175,16 @@ curl -X PUT -H "Content-Type: application/json" --data @source.json http://my-ka
 
 ### Input and output Topics partitionning
 
-# TODO 
+TODO 
+
+### per site parameters
+
+TODO 
+
+### site authentication methods
+
+TODO 
+
+### monitoring
+
+TODO
