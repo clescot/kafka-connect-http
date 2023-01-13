@@ -8,8 +8,20 @@ import com.google.common.base.Stopwatch;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.annotation.Nullable;
+import javax.net.ssl.TrustManagerFactory;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.nio.file.Path;
+import java.security.KeyStore;
+import java.security.KeyStoreException;
+import java.security.NoSuchAlgorithmException;
+import java.security.cert.CertificateException;
 import java.time.OffsetDateTime;
 import java.time.ZoneId;
+import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -48,20 +60,21 @@ public interface HttpClient<Req, Res> {
 
 
 
-    <Response> Response buildRequest(HttpRequest httpRequest);
+    Req buildRequest(HttpRequest httpRequest);
 
-    default   HttpExchange call(HttpRequest httpRequest, AtomicInteger attempts) throws HttpException {
-
+    default HttpExchange call(HttpRequest httpRequest, AtomicInteger attempts) throws HttpException {
 
         Stopwatch stopwatch = Stopwatch.createStarted();
         try {
+            LOGGER.info("httpRequest: {}", httpRequest.toString());
             Req request = buildRequest(httpRequest);
-            LOGGER.info("request: {}", request.toString());
+            LOGGER.info("native request: {}", request.toString());
             OffsetDateTime now = OffsetDateTime.now(ZoneId.of(UTC_ZONE_ID));
             Res response = nativeCall(request);
-            LOGGER.info("response: {}", response);
+            LOGGER.info("native response: {}", response);
             stopwatch.stop();
             HttpResponse httpResponse = buildResponse(response);
+            LOGGER.info("httpResponse: {}", response);
             LOGGER.info("duration: {}", stopwatch);
             return buildHttpExchange(httpRequest, httpResponse, stopwatch, now, attempts,httpResponse.getStatusCode()<400?SUCCESS:FAILURE);
         } catch (HttpException e) {
@@ -77,4 +90,32 @@ public interface HttpClient<Req, Res> {
 
     HttpResponse buildResponse(Res response);
     Res nativeCall(Req request);
+
+
+
+    static TrustManagerFactory getTrustManagerFactory(String trustStorePath,
+                                                      char[] password,
+                                                      @Nullable String keystoreType,
+                                                      @Nullable String algorithm) {
+        TrustManagerFactory trustManagerFactory;
+        KeyStore trustStore;
+        try {
+            String finalAlgorithm = Optional.ofNullable(algorithm).orElse(TrustManagerFactory.getDefaultAlgorithm());
+            trustManagerFactory = TrustManagerFactory.getInstance(finalAlgorithm);
+            String finalKeystoreType = Optional.ofNullable(keystoreType).orElse(KeyStore.getDefaultType());
+            trustStore = KeyStore.getInstance(finalKeystoreType);
+        } catch (NoSuchAlgorithmException | KeyStoreException e) {
+            throw new RuntimeException(e);
+        }
+
+        Path path = Path.of(trustStorePath);
+        File file = path.toFile();
+        try (InputStream inputStream = new FileInputStream(file)) {
+            trustStore.load(inputStream, password);
+            trustManagerFactory.init(trustStore);
+        } catch (IOException | NoSuchAlgorithmException | CertificateException | KeyStoreException e) {
+            throw new RuntimeException(e);
+        }
+        return trustManagerFactory;
+    }
 }

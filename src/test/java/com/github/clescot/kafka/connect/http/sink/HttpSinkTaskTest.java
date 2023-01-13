@@ -107,7 +107,7 @@ public class HttpSinkTaskTest {
     @Test
     public void test_start_with_static_request_headers() {
         Map<String, String> settings = Maps.newHashMap();
-        settings.put(STATIC_REQUEST_HEADER_NAMES, "param1,param2");
+        settings.put(HTTP_CLIENT_STATIC_REQUEST_HEADER_NAMES, "param1,param2");
         settings.put("param1", "value1");
         settings.put("param2", "value2");
         httpSinkTask.start(settings);
@@ -118,7 +118,7 @@ public class HttpSinkTaskTest {
         Assertions.assertThrows(NullPointerException.class, () -> {
             HttpSinkTask wsSinkTask = new HttpSinkTask();
             Map<String, String> settings = Maps.newHashMap();
-            settings.put(STATIC_REQUEST_HEADER_NAMES, "param1,param2");
+            settings.put(HTTP_CLIENT_STATIC_REQUEST_HEADER_NAMES, "param1,param2");
             wsSinkTask.start(settings);
         });
 
@@ -134,7 +134,7 @@ public class HttpSinkTaskTest {
     @Test
     public void test_put_add_static_headers() {
         Map<String, String> settings = Maps.newHashMap();
-        settings.put(STATIC_REQUEST_HEADER_NAMES, "param1,param2");
+        settings.put(HTTP_CLIENT_STATIC_REQUEST_HEADER_NAMES, "param1,param2");
         settings.put("param1", "value1");
         settings.put("param2", "value2");
         httpSinkTask.start(settings);
@@ -302,6 +302,7 @@ public class HttpSinkTaskTest {
                 "    },\n" +
                 "    \"method\": \"" + DUMMY_METHOD + "\",\n" +
                 "    \"bodyAsString\": \"" + DUMMY_BODY + "\",\n" +
+                "    \"bodyAsForm\": {},\n" +
                 "    \"bodyAsByteArray\": \"\",\n" +
                 "    \"bodyAsMultipart\": [],\n" +
                 "    \"bodyType\": \"" + DUMMY_BODY_TYPE + "\"\n" +
@@ -395,7 +396,7 @@ public class HttpSinkTaskTest {
     public void test_retry_needed_by_configuration_with_200_status_code(){
         HttpResponse httpResponse = new HttpResponse(200,"Internal Server Error","");
         Map<String, String> settings = Maps.newHashMap();
-        settings.put(DEFAULT_RETRY_RESPONSE_CODE_REGEX,"^[1-5][0-9][0-9]$");
+        settings.put(HTTP_CLIENT_DEFAULT_RETRY_RESPONSE_CODE_REGEX,"^[1-5][0-9][0-9]$");
         httpSinkTask.start(settings);
         boolean retryNeeded = httpSinkTask.retryNeeded(httpResponse);
         assertThat(retryNeeded).isTrue();
@@ -413,7 +414,7 @@ public class HttpSinkTaskTest {
     public void test_is_not_success_with_200_by_configuration(){
         HttpExchange httpExchange = getDummyHttpExchange();
         Map<String, String> settings = Maps.newHashMap();
-        settings.put(DEFAULT_SUCCESS_RESPONSE_CODE_REGEX,"^20[1-5]$");
+        settings.put(HTTP_CLIENT_DEFAULT_SUCCESS_RESPONSE_CODE_REGEX,"^20[1-5]$");
         httpSinkTask.start(settings);
         boolean success = httpSinkTask.isSuccess(httpExchange);
         assertThat(success).isFalse();
@@ -423,8 +424,9 @@ public class HttpSinkTaskTest {
     private HttpExchange getDummyHttpExchange() {
         Map<String, List<String>> requestHeaders = Maps.newHashMap();
         requestHeaders.put("X-dummy", Lists.newArrayList("blabla"));
-        HttpRequest httpRequest = new HttpRequest("http://www.titi.com", DUMMY_METHOD, DUMMY_BODY_TYPE, DUMMY_BODY, null, null);
+        HttpRequest httpRequest = new HttpRequest("http://www.titi.com", DUMMY_METHOD, DUMMY_BODY_TYPE);
         httpRequest.setHeaders(requestHeaders);
+        httpRequest.setBodyAsString("stuff");
         HttpResponse httpResponse = new HttpResponse(200, "OK", "my response");
         Map<String, List<String>> responseHeaders = Maps.newHashMap();
         responseHeaders.put("Content-Type", Lists.newArrayList("application/json"));
@@ -446,14 +448,16 @@ public class HttpSinkTaskTest {
                 "  \"headers\": {},\n" +
                 "  \"method\": \"" + DUMMY_METHOD + "\",\n" +
                 "  \"bodyAsString\": \"" + DUMMY_BODY + "\",\n" +
-                "  \"bodyAsByteArray\": null,\n" +
-                "  \"bodyAsMultipart\": null,\n" +
+                "  \"bodyAsByteArray\": [],\n" +
+                "  \"bodyAsForm\": {},\n" +
+                "  \"bodyAsMultipart\": [],\n" +
                 "  \"bodyType\": \"" + DUMMY_BODY_TYPE + "\"\n" +
                 "}";
     }
 
     private Struct getDummyHttpRequestAsStruct() {
-        HttpRequest httpRequest = new HttpRequest(DUMMY_URL,DUMMY_METHOD,DUMMY_BODY_TYPE,DUMMY_BODY,null,null);
+        HttpRequest httpRequest = new HttpRequest(DUMMY_URL,DUMMY_METHOD,DUMMY_BODY_TYPE);
+        httpRequest.setBodyAsString("stuff");
         return httpRequest.toStruct();
     }
 

@@ -63,7 +63,8 @@ We need to revert the multiple connectors proposal in the previous section, with
  
   If we need to store HTTP responses, the **Sink** Connector need to publish to the **Source** Connector the responses. 
   We use **an internal unbounded in memory Thread-safe Queue** for this purpose. Global HTTP interactions are (request,responses,
-  and metadatas) published in the in memory queue.
+  and metadatas) published in the in memory queue. Note that the Source connector is optional (you don have to configure an in memory queue in this case), 
+  and if you configure multiple connectors pairs (Sink and Source), you can define a unique in memory queue (with the `queue.name` parameter) for each pair.
 
 ### Does it cancel the distributed nature of Kafka Connect ?
 
@@ -78,12 +79,12 @@ Note that a queue has got only one consumer, opposite to the Topic concept, whic
 
 # 2. Architecture
 
-![Architecture](architecture.png)
+![Architecture](docs/architecture.png)
 
 This big picture permits to highlight (with numbers in the picture) some key points in the architecture, which will be explained with details
 after the section dedicated to put in place the HTTP Sink and Source connectors:
 
-1. format of the [incoming kafka message](incoming_message_format.md) (HTTP intention)
+1. format of the [incoming kafka message](docs/incoming_message_format.md) (HTTP intention)
 2. The HTTP Sink connector listen to these topics (can be a list of topics, or a regex, via *topics* or *topics.regex* settings)
 3. The HTTP Sink connector transform the incoming message into an HTTP call and get the answer from the HTTP server.
   Behaviour of the HTTP client shipped with the HTTP Sink Connector can be tuned, including the retry policy. At this stage,
@@ -100,11 +101,12 @@ after the section dedicated to put in place the HTTP Sink and Source connectors:
 7. the HTTP exchange is saved as a `Struct`, and can be serialized as a JSON Schema or another format via converters, and the help of a Schema registry.
    It also can be serialized as a String. 
 
-# 3. [HTTP Connectors configuration](connectors_configuration.md)
-# 4. [incoming message format](incoming_message_format.md)
-# 5. [request handling](request_handling.md)
-# 6. [outcoming message format](outcoming_message_format.md)
-# 7. [missing features](missing_features.md)
+# 2. [how to install](docs/install.md)
+# 3. [HTTP Connectors configuration](docs/connectors_configuration.md)
+# 4. [incoming message format](docs/incoming_message_format.md)
+# 5. [request handling](docs/request_handling.md)
+# 6. [outcoming message format](docs/outcoming_message_format.md)
+# 7. [missing features](docs/missing_features.md)
 
 
 

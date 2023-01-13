@@ -5,8 +5,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.github.clescot.kafka.connect.http.*;
 import com.github.clescot.kafka.connect.http.sink.client.HttpClient;
+import com.github.clescot.kafka.connect.http.sink.client.HttpClientFactory;
 import com.github.clescot.kafka.connect.http.sink.client.HttpException;
-import com.github.clescot.kafka.connect.http.sink.client.ahc.AHCHttpClientFactory;
 import com.google.common.base.Charsets;
 import com.google.common.base.Preconditions;
 import com.google.common.base.Stopwatch;
@@ -23,6 +23,7 @@ import org.apache.kafka.connect.sink.SinkTask;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.lang.reflect.InvocationTargetException;
 import java.time.Duration;
 import java.time.OffsetDateTime;
 import java.time.ZoneId;
@@ -34,7 +35,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import static com.github.clescot.kafka.connect.http.sink.HttpSinkConfigDefinition.DEFAULT_SUCCESS_RESPONSE_CODE_REGEX;
 import static com.github.clescot.kafka.connect.http.sink.client.HttpClient.*;
 
 
@@ -68,11 +68,6 @@ public class HttpSinkTask extends SinkTask {
     }
 
     /**
-     * rate limiter configuration :
-     * org.asynchttpclient.throttle.http.max.connections simultaneous max connections
-     * org.asynchttpclient.throttle.http.rate.limit.per.second max calls per second
-     * org.asynchttpclient.throttle.http.max.wait.ms max wait time when call quota is reached.
-     * asynchttpclient configuration is starting by : 'org.asynchttpclient.'
      *
      * @param settings
      */
@@ -98,7 +93,18 @@ public class HttpSinkTask extends SinkTask {
         this.generateMissingCorrelationId = httpSinkConnectorConfig.isGenerateMissingCorrelationId();
         this.defaultSuccessResponseCodeRegex = httpSinkConnectorConfig.getDefaultSuccessResponseCodeRegex();
         this.defaultRetryResponseCodeRegex = httpSinkConnectorConfig.getDefaultRetryResponseCodeRegex();
-        this.httpClient = new AHCHttpClientFactory().build(httpSinkConnectorConfig.originalsStrings());
+        Class<HttpClientFactory> httpClientFactoryClass;
+        HttpClientFactory httpClientFactory;
+        try {
+            httpClientFactoryClass = (Class<HttpClientFactory>) Class.forName(httpSinkConnectorConfig.getHttpClientFactoryClass());
+            httpClientFactory = httpClientFactoryClass.getDeclaredConstructor().newInstance();
+            LOGGER.debug("using HttpClientFactory implementation: {}",httpClientFactory.getClass().getName());
+        } catch (ClassNotFoundException | NoSuchMethodException | InstantiationException | IllegalAccessException |
+                 InvocationTargetException e) {
+            throw new RuntimeException(e);
+        }
+
+        this.httpClient = httpClientFactory.build(httpSinkConnectorConfig.originalsStrings());
         Integer defaultRetries = httpSinkConnectorConfig.getDefaultRetries();
         Long defaultRetryDelayInMs = httpSinkConnectorConfig.getDefaultRetryDelayInMs();
         Long defaultRetryMaxDelayInMs = httpSinkConnectorConfig.getDefaultRetryMaxDelayInMs();
@@ -112,13 +118,12 @@ public class HttpSinkTask extends SinkTask {
                 defaultRetryDelayFactor,
                 defaultRetryJitterInMs
         );
-        setDefaultRateLimiter(httpSinkConnectorConfig.getDefaultRateLimiterPeriodInMs(),httpSinkConnectorConfig.getDefaultRateLimiterMaxExecutions());
+        setDefaultRateLimiter(httpSinkConnectorConfig.getDefaultRateLimiterPeriodInMs(), httpSinkConnectorConfig.getDefaultRateLimiterMaxExecutions());
 
         if (httpSinkConnectorConfig.isPublishToInMemoryQueue()) {
             Preconditions.checkArgument(QueueFactory.hasAConsumer(queueName, httpSinkConnectorConfig.getMaxWaitTimeRegistrationOfQueueConsumerInMs()), "'" + queueName + "' queue hasn't got any consumer, i.e no Source Connector has been configured to consume records published in this in memory queue. we stop the Sink Connector to prevent any OutofMemoryError.");
         }
     }
-
 
 
     @Override
@@ -162,11 +167,11 @@ public class HttpSinkTask extends SinkTask {
         HttpRequest httpRequestWithStaticHeaders = addStaticHeaders(httpRequest);
         HttpRequest httpRequestWithTrackingHeaders = addTrackingHeaders(httpRequestWithStaticHeaders);
         //handle Request and Response
-        HttpExchange httpExchange = callWithRetryPolicy(sinkRecord,httpRequestWithTrackingHeaders, defaultRetryPolicy);
+        HttpExchange httpExchange = callWithRetryPolicy(sinkRecord, httpRequestWithTrackingHeaders, defaultRetryPolicy);
         LOGGER.debug("HTTP exchange :{}", httpExchange);
     }
 
-    private HttpExchange callWithRetryPolicy(SinkRecord sinkRecord,HttpRequest httpRequest, Optional<RetryPolicy<HttpExchange>> retryPolicyForCall) {
+    private HttpExchange callWithRetryPolicy(SinkRecord sinkRecord, HttpRequest httpRequest, Optional<RetryPolicy<HttpExchange>> retryPolicyForCall) {
         HttpExchange httpExchange = null;
 
         if (httpRequest != null) {
@@ -176,11 +181,11 @@ public class HttpSinkTask extends SinkTask {
                 if (retryPolicyForCall.isPresent()) {
                     httpExchange = Failsafe.with(List.of(retryPolicyForCall.get()))
                             .get(() -> {
-                                HttpExchange httpExchange1 = callAndPublish(sinkRecord,httpRequest, attempts);
+                                HttpExchange httpExchange1 = callAndPublish(sinkRecord, httpRequest, attempts);
                                 return handleRetry(httpExchange1);
                             });
                 } else {
-                    return callAndPublish(sinkRecord,httpRequest, attempts);
+                    return callAndPublish(sinkRecord, httpRequest, attempts);
                 }
             } catch (Throwable throwable) {
                 LOGGER.error("Failed to call web service after {} retries with error({}). message:{} ", attempts, throwable,
@@ -196,17 +201,18 @@ public class HttpSinkTask extends SinkTask {
         return httpExchange;
     }
 
-    private HttpExchange handleRetry(HttpExchange httpExchange){
+    private HttpExchange handleRetry(HttpExchange httpExchange) {
         //we don't retry success HTTP Exchange
         boolean responseCodeImpliesRetry = retryNeeded(httpExchange.getHttpResponse());
-        LOGGER.debug("httpExchange success :'{}'",httpExchange.isSuccess());
-        LOGGER.debug("response code('{}') implies retry:'{}'",httpExchange.getHttpResponse().getStatusCode(),""+responseCodeImpliesRetry);
-        if(!httpExchange.isSuccess()
-           && responseCodeImpliesRetry){
-            throw new HttpException(httpExchange,"retry needed");
+        LOGGER.debug("httpExchange success :'{}'", httpExchange.isSuccess());
+        LOGGER.debug("response code('{}') implies retry:'{}'", httpExchange.getHttpResponse().getStatusCode(), "" + responseCodeImpliesRetry);
+        if (!httpExchange.isSuccess()
+                && responseCodeImpliesRetry) {
+            throw new HttpException(httpExchange, "retry needed");
         }
         return httpExchange;
     }
+
     private Pattern getPattern(String pattern) {
 
         if (this.patternMap.get(pattern) == null) {
@@ -216,18 +222,19 @@ public class HttpSinkTask extends SinkTask {
         }
         return patternMap.get(pattern);
     }
-    protected boolean retryNeeded(HttpResponse httpResponse){
+
+    protected boolean retryNeeded(HttpResponse httpResponse) {
         //TODO add specific pattern per site
         Pattern retryPattern = getPattern(this.defaultRetryResponseCodeRegex);
         Matcher matcher = retryPattern.matcher("" + httpResponse.getStatusCode());
         return matcher.matches();
     }
 
-    private HttpExchange callWithThrottling(HttpRequest httpRequest, AtomicInteger attempts){
+    private HttpExchange callWithThrottling(HttpRequest httpRequest, AtomicInteger attempts) {
         try {
             this.defaultRateLimiter.acquirePermits(ONE_HTTP_REQUEST);
-            LOGGER.debug("permits acquired");
-            return httpClient.call(httpRequest,attempts);
+            LOGGER.debug("permits acquired request:'{}'",httpRequest);
+            return httpClient.call(httpRequest, attempts);
         } catch (InterruptedException e) {
             LOGGER.error("Failed to acquire execution permit from the rate limiter {} ", e.getMessage());
             throw new HttpException(e.getMessage());
@@ -235,17 +242,17 @@ public class HttpSinkTask extends SinkTask {
     }
 
 
-    private HttpExchange callAndPublish(SinkRecord sinkRecord,HttpRequest httpRequest,AtomicInteger attempts){
+    private HttpExchange callAndPublish(SinkRecord sinkRecord, HttpRequest httpRequest, AtomicInteger attempts) {
         HttpExchange httpExchange = callWithThrottling(httpRequest, attempts);
         //TODO add specific pattern per site
         boolean success = isSuccess(httpExchange);
         httpExchange.setSuccess(success);
         //publish eventually to 'in memory' queue
         if (httpSinkConnectorConfig.isPublishToInMemoryQueue()) {
-            LOGGER.debug("http exchange published to queue '{}':{}",queueName, httpExchange);
-            queue.offer(new KafkaRecord(sinkRecord.headers(),sinkRecord.keySchema(),sinkRecord.key(),httpExchange));
+            LOGGER.debug("http exchange published to queue '{}':{}", queueName, httpExchange);
+            queue.offer(new KafkaRecord(sinkRecord.headers(), sinkRecord.keySchema(), sinkRecord.key(), httpExchange));
         } else {
-            LOGGER.debug("http exchange NOT published to queue '{}':{}",queueName, httpExchange);
+            LOGGER.debug("http exchange NOT published to queue '{}':{}", queueName, httpExchange);
         }
         return httpExchange;
     }
@@ -294,24 +301,27 @@ public class HttpSinkTask extends SinkTask {
             LOGGER.debug("valueClass is {}", valueClass.getName());
             if (Struct.class.isAssignableFrom(valueClass)) {
                 Struct valueAsStruct = (Struct) value;
-
+                LOGGER.debug("Struct is {}", valueAsStruct);
                 valueAsStruct.validate();
                 httpRequest = HttpRequest
                         .Builder
                         .anHttpRequest()
                         .withStruct(valueAsStruct)
                         .build();
-
+                LOGGER.debug("httpRequest : {}", httpRequest);
             } else if ("[B".equals(valueClass.getName())) {
                 //we assume the value is a byte array
                 stringValue = new String((byte[]) value, Charsets.UTF_8);
+                LOGGER.debug("byte[] is {}", stringValue);
             } else if (String.class.isAssignableFrom(valueClass)) {
                 stringValue = (String) value;
+                LOGGER.debug("String is {}", stringValue);
             } else {
                 LOGGER.warn("value is an instance of the class " + valueClass.getName() + " not handled by the WsSinkTask");
                 throw new ConnectException("value is an instance of the class " + valueClass.getName() + " not handled by the WsSinkTask");
             }
             if (httpRequest == null) {
+                LOGGER.debug("stringValue :{}", stringValue);
                 httpRequest = parseHttpRequestAsJsonString(stringValue);
                 LOGGER.debug("successful httpRequest parsing :{}", httpRequest);
             }
@@ -340,11 +350,8 @@ public class HttpSinkTask extends SinkTask {
     }
 
     private HttpRequest addStaticHeaders(HttpRequest httpRequest) {
-        if (httpRequest != null) {
-            this.staticRequestHeaders.forEach((key, value) -> httpRequest.getHeaders().put(key, value));
-        } else {
-
-        }
+        Preconditions.checkNotNull(httpRequest,"httpRequest is null");
+        this.staticRequestHeaders.forEach((key, value) -> httpRequest.getHeaders().put(key, value));
         return httpRequest;
     }
 
@@ -371,7 +378,7 @@ public class HttpSinkTask extends SinkTask {
 
 
     public void setDefaultRateLimiter(long periodInMs, long maxExecutions) {
-        LOGGER.info("default rate limiter set with  {} executions every {} ms",maxExecutions,periodInMs);
+        LOGGER.info("default rate limiter set with  {} executions every {} ms", maxExecutions, periodInMs);
         this.defaultRateLimiter = RateLimiter.<HttpExchange>smoothBuilder(maxExecutions, Duration.of(periodInMs, ChronoUnit.MILLIS)).build();
     }
 

@@ -20,8 +20,10 @@ import static org.assertj.core.api.AssertionsForInterfaceTypes.assertThat;
 public class HttpExchangeTest {
 
         private HttpRequest getDummyHttpRequest(){
-            return new HttpRequest(
-                    "http://www.toto.com","GET","STRING","stuff",null,null);
+            HttpRequest httpRequest = new HttpRequest(
+                    "http://www.toto.com", "GET", "STRING");
+            httpRequest.setBodyAsString("stuff");
+            return httpRequest;
         }
         private HttpResponse getDummyHttpResponse(int statusCode){
             return new HttpResponse(
