@@ -51,25 +51,25 @@ public class HttpSinkConnectorConfig extends AbstractConfig {
         }
         this.publishToInMemoryQueue = Optional.ofNullable(getBoolean(PUBLISH_TO_IN_MEMORY_QUEUE)).orElse(false);
 
-        this.defaultRetries = getInt(DEFAULT_RETRIES);
-        this.defaultRetryDelayInMs = getLong(DEFAULT_RETRY_DELAY_IN_MS);
-        this.defaultRetryMaxDelayInMs = getLong(DEFAULT_RETRY_MAX_DELAY_IN_MS);
-        this.defaultRetryDelayFactor = getDouble(DEFAULT_RETRY_DELAY_FACTOR);
-        this.defaultRetryJitterInMs = getLong(DEFAULT_RETRY_JITTER_IN_MS);
-        this.generateMissingRequestId = getBoolean(GENERATE_MISSING_REQUEST_ID);
-        this.generateMissingCorrelationId = getBoolean(GENERATE_MISSING_CORRELATION_ID);
-        this.defaultRateLimiterPeriodInMs = getLong(DEFAULT_RATE_LIMITER_PERIOD_IN_MS);
-        this.defaultRateLimiterMaxExecutions = getLong(DEFAULT_RATE_LIMITER_MAX_EXECUTIONS);
+        this.defaultRetries = getInt(HTTP_CLIENT_DEFAULT_RETRIES);
+        this.defaultRetryDelayInMs = getLong(HTTP_CLIENT_DEFAULT_RETRY_DELAY_IN_MS);
+        this.defaultRetryMaxDelayInMs = getLong(HTTP_CLIENT_DEFAULT_RETRY_MAX_DELAY_IN_MS);
+        this.defaultRetryDelayFactor = getDouble(HTTP_CLIENT_DEFAULT_RETRY_DELAY_FACTOR);
+        this.defaultRetryJitterInMs = getLong(HTTP_CLIENT_DEFAULT_RETRY_JITTER_IN_MS);
+        this.generateMissingRequestId = getBoolean(HTTP_CLIENT_GENERATE_MISSING_REQUEST_ID);
+        this.generateMissingCorrelationId = getBoolean(HTTP_CLIENT_GENERATE_MISSING_CORRELATION_ID);
+        this.defaultRateLimiterPeriodInMs = getLong(HTTP_CLIENT_DEFAULT_RATE_LIMITER_PERIOD_IN_MS);
+        this.defaultRateLimiterMaxExecutions = getLong(HTTP_CLIENT_DEFAULT_RATE_LIMITER_MAX_EXECUTIONS);
         this.maxWaitTimeRegistrationOfQueueConsumerInMs = getLong(WAIT_TIME_REGISTRATION_QUEUE_CONSUMER_IN_MS);
-        Optional<List<String>> staticRequestHeaderNames = Optional.ofNullable(getList(STATIC_REQUEST_HEADER_NAMES));
+        Optional<List<String>> staticRequestHeaderNames = Optional.ofNullable(getList(HTTP_CLIENT_STATIC_REQUEST_HEADER_NAMES));
         List<String> additionalHeaderNamesList =staticRequestHeaderNames.orElse(Lists.newArrayList());
         for(String headerName:additionalHeaderNamesList){
             String value = (String) originals().get(headerName);
             Preconditions.checkNotNull(value,"'"+headerName+"' is not configured as a parameter.");
             staticRequestHeaders.put(headerName, Lists.newArrayList(value));
         }
-        this.defaultSuccessResponseCodeRegex=getString(DEFAULT_SUCCESS_RESPONSE_CODE_REGEX);
-        this.defaultRetryResponseCodeRegex=getString(DEFAULT_RETRY_RESPONSE_CODE_REGEX);
+        this.defaultSuccessResponseCodeRegex=getString(HTTP_CLIENT_DEFAULT_SUCCESS_RESPONSE_CODE_REGEX);
+        this.defaultRetryResponseCodeRegex=getString(HTTP_CLIENT_DEFAULT_RETRY_RESPONSE_CODE_REGEX);
         String httpClientImplementation = Optional.ofNullable(getString(HTTPCLIENT_IMPLEMENTATION)).orElse("okhttp");
         if("ahc".equalsIgnoreCase(httpClientImplementation)){
             this.httpClientFactoryClass = AHCHttpClientFactory.class.getName();

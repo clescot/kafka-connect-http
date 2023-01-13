@@ -7,7 +7,6 @@ import com.github.clescot.kafka.connect.http.*;
 import com.github.clescot.kafka.connect.http.sink.client.HttpClient;
 import com.github.clescot.kafka.connect.http.sink.client.HttpClientFactory;
 import com.github.clescot.kafka.connect.http.sink.client.HttpException;
-import com.github.clescot.kafka.connect.http.sink.client.ahc.AHCHttpClientFactory;
 import com.google.common.base.Charsets;
 import com.google.common.base.Preconditions;
 import com.google.common.base.Stopwatch;
@@ -36,7 +35,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import static com.github.clescot.kafka.connect.http.sink.HttpSinkConfigDefinition.DEFAULT_SUCCESS_RESPONSE_CODE_REGEX;
 import static com.github.clescot.kafka.connect.http.sink.client.HttpClient.*;
 
 

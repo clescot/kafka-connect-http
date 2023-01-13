@@ -20,7 +20,6 @@ import io.confluent.kafka.serializers.json.KafkaJsonSchemaSerializer;
 import io.debezium.testing.testcontainers.Connector;
 import io.debezium.testing.testcontainers.ConnectorConfiguration;
 import io.debezium.testing.testcontainers.DebeziumContainer;
-import okhttp3.Protocol;
 import org.apache.commons.text.StringEscapeUtils;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
@@ -35,7 +34,6 @@ import org.apache.kafka.common.serialization.StringSerializer;
 import org.json.JSONException;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 import org.rnorth.ducttape.unreliables.Unreliables;
@@ -226,8 +224,8 @@ public class ITConnectorTest {
                 PUBLISH_TO_IN_MEMORY_QUEUE_OK,
                 HTTP_REQUESTS_AS_STRING,
                 "org.apache.kafka.connect.storage.StringConverter", "test_sink_and_source_with_input_as_string",
-                new AbstractMap.SimpleImmutableEntry<>(GENERATE_MISSING_REQUEST_ID,"true"),
-                new AbstractMap.SimpleImmutableEntry<>(GENERATE_MISSING_CORRELATION_ID,"true")
+                new AbstractMap.SimpleImmutableEntry<>(HTTP_CLIENT_GENERATE_MISSING_REQUEST_ID,"true"),
+                new AbstractMap.SimpleImmutableEntry<>(HTTP_CLIENT_GENERATE_MISSING_CORRELATION_ID,"true")
         );
         List<String> registeredConnectors = connectContainer.getRegisteredConnectors();
         String joinedRegisteredConnectors = Joiner.on(",").join(registeredConnectors);
@@ -333,8 +331,8 @@ public class ITConnectorTest {
                 incomingTopic,
                 "io.confluent.connect.json.JsonSchemaConverter", "test_" + suffix,
                 new AbstractMap.SimpleImmutableEntry<>("value.converter.schema.registry.url",internalSchemaRegistryUrl),
-                new AbstractMap.SimpleImmutableEntry<>(GENERATE_MISSING_REQUEST_ID,"true"),
-                new AbstractMap.SimpleImmutableEntry<>(GENERATE_MISSING_CORRELATION_ID,"true")
+                new AbstractMap.SimpleImmutableEntry<>(HTTP_CLIENT_GENERATE_MISSING_REQUEST_ID,"true"),
+                new AbstractMap.SimpleImmutableEntry<>(HTTP_CLIENT_GENERATE_MISSING_CORRELATION_ID,"true")
         );
         List<String> registeredConnectors = connectContainer.getRegisteredConnectors();
         String joinedRegisteredConnectors = Joiner.on(",").join(registeredConnectors);
@@ -448,13 +446,13 @@ public class ITConnectorTest {
                 incomingTopic,
                 "io.confluent.connect.json.JsonSchemaConverter", "test_" + suffix,
                 new AbstractMap.SimpleImmutableEntry<>("value.converter.schema.registry.url",internalSchemaRegistryUrl),
-                new AbstractMap.SimpleImmutableEntry<>(GENERATE_MISSING_REQUEST_ID,"true"),
-                new AbstractMap.SimpleImmutableEntry<>(GENERATE_MISSING_CORRELATION_ID,"true"),
-                new AbstractMap.SimpleImmutableEntry<>(DEFAULT_RETRIES,"3"),
-                new AbstractMap.SimpleImmutableEntry<>(DEFAULT_RETRY_DELAY_IN_MS,"1000"),
-                new AbstractMap.SimpleImmutableEntry<>(DEFAULT_RETRY_MAX_DELAY_IN_MS,"100000"),
-                new AbstractMap.SimpleImmutableEntry<>(DEFAULT_RETRY_DELAY_FACTOR,"1.5"),
-                new AbstractMap.SimpleImmutableEntry<>(DEFAULT_RETRY_JITTER_IN_MS,"500")
+                new AbstractMap.SimpleImmutableEntry<>(HTTP_CLIENT_GENERATE_MISSING_REQUEST_ID,"true"),
+                new AbstractMap.SimpleImmutableEntry<>(HTTP_CLIENT_GENERATE_MISSING_CORRELATION_ID,"true"),
+                new AbstractMap.SimpleImmutableEntry<>(HTTP_CLIENT_DEFAULT_RETRIES,"3"),
+                new AbstractMap.SimpleImmutableEntry<>(HTTP_CLIENT_DEFAULT_RETRY_DELAY_IN_MS,"1000"),
+                new AbstractMap.SimpleImmutableEntry<>(HTTP_CLIENT_DEFAULT_RETRY_MAX_DELAY_IN_MS,"100000"),
+                new AbstractMap.SimpleImmutableEntry<>(HTTP_CLIENT_DEFAULT_RETRY_DELAY_FACTOR,"1.5"),
+                new AbstractMap.SimpleImmutableEntry<>(HTTP_CLIENT_DEFAULT_RETRY_JITTER_IN_MS,"500")
         );
         List<String> registeredConnectors = connectContainer.getRegisteredConnectors();
         String joinedRegisteredConnectors = Joiner.on(",").join(registeredConnectors);
@@ -569,10 +567,10 @@ public class ITConnectorTest {
                 incomingTopic,
                 "io.confluent.connect.json.JsonSchemaConverter", "test_" + suffix,
                 new AbstractMap.SimpleImmutableEntry<>("value.converter.schema.registry.url",internalSchemaRegistryUrl),
-                new AbstractMap.SimpleImmutableEntry<>(GENERATE_MISSING_REQUEST_ID,"true"),
-                new AbstractMap.SimpleImmutableEntry<>(GENERATE_MISSING_CORRELATION_ID,"true"),
-                new AbstractMap.SimpleImmutableEntry<>(DEFAULT_RATE_LIMITER_PERIOD_IN_MS,"1000"),
-                new AbstractMap.SimpleImmutableEntry<>(DEFAULT_RATE_LIMITER_MAX_EXECUTIONS, maxExecutionsPerSecond+"")
+                new AbstractMap.SimpleImmutableEntry<>(HTTP_CLIENT_GENERATE_MISSING_REQUEST_ID,"true"),
+                new AbstractMap.SimpleImmutableEntry<>(HTTP_CLIENT_GENERATE_MISSING_CORRELATION_ID,"true"),
+                new AbstractMap.SimpleImmutableEntry<>(HTTP_CLIENT_DEFAULT_RATE_LIMITER_PERIOD_IN_MS,"1000"),
+                new AbstractMap.SimpleImmutableEntry<>(HTTP_CLIENT_DEFAULT_RATE_LIMITER_MAX_EXECUTIONS, maxExecutionsPerSecond+"")
         );
         List<String> registeredConnectors = connectContainer.getRegisteredConnectors();
         String joinedRegisteredConnectors = Joiner.on(",").join(registeredConnectors);
@@ -661,10 +659,10 @@ public class ITConnectorTest {
                 incomingTopic,
                 "io.confluent.connect.json.JsonSchemaConverter", "test_" + suffix,
                 new AbstractMap.SimpleImmutableEntry<>("value.converter.schema.registry.url",internalSchemaRegistryUrl),
-                new AbstractMap.SimpleImmutableEntry<>(GENERATE_MISSING_REQUEST_ID,"true"),
-                new AbstractMap.SimpleImmutableEntry<>(GENERATE_MISSING_CORRELATION_ID,"true"),
+                new AbstractMap.SimpleImmutableEntry<>(HTTP_CLIENT_GENERATE_MISSING_REQUEST_ID,"true"),
+                new AbstractMap.SimpleImmutableEntry<>(HTTP_CLIENT_GENERATE_MISSING_CORRELATION_ID,"true"),
                 new AbstractMap.SimpleImmutableEntry<>(HTTPCLIENT_SSL_SKIP_HOSTNAME_VERIFICATION,"true"),
-                new AbstractMap.SimpleImmutableEntry<>(HTTPCLIENT_PROTOCOLS, "HTTP_1_1"),
+                new AbstractMap.SimpleImmutableEntry<>(HTTPCLIENT_DEFAULT_PROTOCOLS, "HTTP_1_1"),
                 new AbstractMap.SimpleImmutableEntry<>(HTTPCLIENT_SSL_TRUSTSTORE_PATH,"/opt/"+CLIENT_TRUSTSTORE_JKS_FILENAME),
                 new AbstractMap.SimpleImmutableEntry<>(HTTPCLIENT_SSL_TRUSTSTORE_PASSWORD,CLIENT_TRUSTSTORE_JKS_PASSWORD),
                 new AbstractMap.SimpleImmutableEntry<>(HTTPCLIENT_SSL_TRUSTSTORE_TYPE,JKS_STORE_TYPE),

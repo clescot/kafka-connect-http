@@ -26,8 +26,8 @@ public class OkHttpClient extends AbstractHttpClient<Request, Response> {
         super(config);
         okhttp3.OkHttpClient.Builder httpClientBuilder = new okhttp3.OkHttpClient.Builder();
         //protocols
-        if(config.containsKey(HTTPCLIENT_PROTOCOLS)) {
-            String protocolNames = config.get(HTTPCLIENT_PROTOCOLS);
+        if(config.containsKey(HTTPCLIENT_DEFAULT_PROTOCOLS)) {
+            String protocolNames = config.get(HTTPCLIENT_DEFAULT_PROTOCOLS);
             List<Protocol> protocols = Lists.newArrayList();
             List<String> strings = Lists.newArrayList(protocolNames.split(PROTOCOL_SEPARATOR));
             for (String protocolName : strings) {
@@ -53,26 +53,26 @@ public class OkHttpClient extends AbstractHttpClient<Request, Response> {
         }
 
         //call timeout
-        if(config.containsKey(HTTPCLIENT_CALL_TIMEOUT)) {
-            int callTimeout = Integer.parseInt(config.get(HTTPCLIENT_CALL_TIMEOUT));
+        if(config.containsKey(HTTPCLIENT_DEFAULT_CALL_TIMEOUT)) {
+            int callTimeout = Integer.parseInt(config.get(HTTPCLIENT_DEFAULT_CALL_TIMEOUT));
             httpClientBuilder.callTimeout(callTimeout, TimeUnit.MILLISECONDS);
         }
 
         //connect timeout
-        if(config.containsKey(HTTPCLIENT_CONNECT_TIMEOUT)) {
-            int connectTimeout = Integer.parseInt(config.get(HTTPCLIENT_CONNECT_TIMEOUT_DOC));
+        if(config.containsKey(HTTPCLIENT_DEFAULT_CONNECT_TIMEOUT)) {
+            int connectTimeout = Integer.parseInt(config.get(HTTPCLIENT_DEFAULT_CONNECT_TIMEOUT_DOC));
             httpClientBuilder.connectTimeout(connectTimeout, TimeUnit.MILLISECONDS);
         }
 
         //read timeout
-        if(config.containsKey(HTTPCLIENT_READ_TIMEOUT)) {
-            int readTimeout = Integer.parseInt(config.get(HTTPCLIENT_READ_TIMEOUT_DOC));
+        if(config.containsKey(HTTPCLIENT_DEFAULT_READ_TIMEOUT)) {
+            int readTimeout = Integer.parseInt(config.get(HTTPCLIENT_DEFAULT_READ_TIMEOUT_DOC));
             httpClientBuilder.readTimeout(readTimeout, TimeUnit.MILLISECONDS);
         }
 
         //write timeout
-        if(config.containsKey(HTTPCLIENT_WRITE_TIMEOUT)) {
-            int writeTimeout = Integer.parseInt(config.get(HTTPCLIENT_WRITE_TIMEOUT_DOC));
+        if(config.containsKey(HTTPCLIENT_DEFAULT_WRITE_TIMEOUT)) {
+            int writeTimeout = Integer.parseInt(config.get(HTTPCLIENT_DEFAULT_WRITE_TIMEOUT_DOC));
             httpClientBuilder.writeTimeout(writeTimeout, TimeUnit.MILLISECONDS);
         }
 
