@@ -14,9 +14,12 @@ There are two ways to install the connectors :
    (we've not yet published on the confluent hub website our connector, nor on the maven central repository).
    For example, `kafka-connect-http-sink-0.2.32.zip`.
    - include it in your Kafka connect docker image, via this command in your `Dockerfile` : 
-   `COPY connectors/kafka-connect-http-sink-*.zip /tmp/kafka-connect-http-sink.zip`
+   
+        `COPY connectors/kafka-connect-http-sink-*.zip /tmp/kafka-connect-http-sink.zip`
+
    - install the connector via the confluent-hub command line (we assume that your image is inherited from the confluent/kafka-connect image,
      which ships this useful tool), in the offline way : 
+   
      `RUN confluent-hub install /tmp/kafka-connect-http-sink.zip --no-prompt`
    - you're done ! 
 
