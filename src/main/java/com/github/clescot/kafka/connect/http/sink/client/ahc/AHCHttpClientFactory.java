@@ -129,7 +129,7 @@ public class AHCHttpClientFactory implements HttpClientFactory {
         if (config.containsKey(HTTPCLIENT_SSL_TRUSTSTORE_PATH) && config.containsKey(HTTPCLIENT_SSL_TRUSTSTORE_PASSWORD)) {
 
             Optional<TrustManagerFactory> trustManagerFactory = Optional.ofNullable(
-                    HttpClientFactory.getTrustManagerFactory(
+                    HttpClient.getTrustManagerFactory(
                             config.get(HTTPCLIENT_SSL_TRUSTSTORE_PATH),
                             config.get(HTTPCLIENT_SSL_TRUSTSTORE_PASSWORD).toCharArray(),
                             config.get(HTTPCLIENT_SSL_TRUSTSTORE_TYPE),

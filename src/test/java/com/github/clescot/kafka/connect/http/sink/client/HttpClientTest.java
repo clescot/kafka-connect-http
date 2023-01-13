@@ -5,6 +5,7 @@ import com.github.clescot.kafka.connect.http.HttpRequest;
 import com.github.clescot.kafka.connect.http.HttpExchange;
 import com.github.clescot.kafka.connect.http.HttpResponse;
 import com.github.clescot.kafka.connect.http.sink.client.ahc.AHCHttpClient;
+import com.github.clescot.kafka.connect.http.sink.client.okhttp.OkHttpClientFactory;
 import com.google.common.base.Stopwatch;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
@@ -18,6 +19,7 @@ import org.junit.Test;
 import org.junit.experimental.runners.Enclosed;
 import org.junit.runner.RunWith;
 
+import javax.net.ssl.TrustManagerFactory;
 import java.time.OffsetDateTime;
 import java.time.ZoneId;
 import java.util.HashMap;
@@ -28,6 +30,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.github.clescot.kafka.connect.http.sink.HttpSinkTask.HEADER_X_CORRELATION_ID;
 import static com.github.clescot.kafka.connect.http.sink.HttpSinkTask.HEADER_X_REQUEST_ID;
+import static com.github.clescot.kafka.connect.http.sink.HttpSinkTaskTest.*;
+import static com.github.clescot.kafka.connect.http.sink.HttpSinkTaskTest.TRUSTSTORE_PKIX_ALGORITHM;
 import static com.github.clescot.kafka.connect.http.sink.client.ahc.AHCHttpClient.SUCCESS;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
@@ -253,6 +257,23 @@ public class HttpClientTest {
         httpRequest.getHeaders().put(HEADER_X_CORRELATION_ID,Lists.newArrayList("45-66-33"));
         httpRequest.getHeaders().put(HEADER_X_REQUEST_ID,Lists.newArrayList("77-3333-11"));
         return httpRequest;
+    }
+
+
+    @org.junit.jupiter.api.Test
+    public void test_getTrustManagerFactory_jks_nominal_case(){
+
+        //given
+        String truststorePath = Thread.currentThread().getContextClassLoader().getResource(CLIENT_TRUSTSTORE_JKS_FILENAME).getPath();
+        String password = CLIENT_TRUSTSTORE_JKS_PASSWORD;
+        OkHttpClientFactory httpClientFactory = new OkHttpClientFactory();
+
+        //when
+        TrustManagerFactory trustManagerFactory = HttpClient.getTrustManagerFactory(truststorePath, password.toCharArray(), JKS_STORE_TYPE, TRUSTSTORE_PKIX_ALGORITHM);
+        //then
+        assertThat(trustManagerFactory).isNotNull();
+        assertThat(trustManagerFactory.getTrustManagers()).hasSize(1);
+
     }
 
 

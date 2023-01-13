@@ -2,26 +2,45 @@ package com.github.clescot.kafka.connect.http.sink.client.okhttp;
 
 import com.github.clescot.kafka.connect.http.HttpRequest;
 import com.github.clescot.kafka.connect.http.HttpResponse;
-import com.github.clescot.kafka.connect.http.sink.client.HttpClient;
+import com.github.clescot.kafka.connect.http.sink.client.AbstractHttpClient;
+import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
+import kotlin.Pair;
 import okhttp3.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.net.ssl.*;
 import java.io.IOException;
-import java.util.Base64;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 
-public class OkHttpClient implements HttpClient<Request, Response> {
-    private Map<String, String> config;
+import static com.github.clescot.kafka.connect.http.sink.HttpSinkConfigDefinition.HTTPCLIENT_SSL_SKIP_HOSTNAME_VERIFICATION;
+
+public class OkHttpClient extends AbstractHttpClient<Request, Response> {
     private okhttp3.OkHttpClient client;
     private Logger LOGGER = LoggerFactory.getLogger(OkHttpClient.class);
 
     public OkHttpClient(Map<String, String> config) {
-        this.config = config;
-        client = new okhttp3.OkHttpClient();
+        super(config);
+        okhttp3.OkHttpClient.Builder builder = new okhttp3.OkHttpClient.Builder();
+
+        Optional<KeyManagerFactory> keyManagerFactoryOption = getKeyManagerFactory();
+        Optional<TrustManagerFactory> trustManagerFactoryOption = getTrustManagerFactory();
+        if(keyManagerFactoryOption.isPresent()||trustManagerFactoryOption.isPresent()) {
+            SSLSocketFactory ssl = getSSLSocketFactory(keyManagerFactoryOption.orElse(null), trustManagerFactoryOption.orElse(null), "SSL");
+            if(trustManagerFactoryOption.isPresent()) {
+                TrustManager[] trustManagers = trustManagerFactoryOption.get().getTrustManagers();
+                if(trustManagers.length>0) {
+                    builder.sslSocketFactory(ssl, (X509TrustManager) trustManagers[0]);
+                }
+            }
+            if(config.containsKey(HTTPCLIENT_SSL_SKIP_HOSTNAME_VERIFICATION) && Boolean.parseBoolean(config.get(HTTPCLIENT_SSL_SKIP_HOSTNAME_VERIFICATION))){
+                builder.hostnameVerifier((hostname, session) -> true);
+            }
+        }
+        client = builder.build();
+
+
     }
 
     @Override
@@ -60,17 +79,9 @@ public class OkHttpClient implements HttpClient<Request, Response> {
             }
             requestBody = builder.build();
         } else {
+            //TODO handle multipart
             //HttpRequest.BodyType = MULTIPART
-//            if (firstContentType.startsWith("multipart/form-data")) {
-                List<byte[]> bodyAsMultipart = httpRequest.getBodyAsMultipart();
-
-                //TODO handle multipart
-                //List<String> encodedNames = Lists.newArrayList();
-                //List<String> encodedValues = Lists.newArrayList();
-
-                //builder.add("string","value");
-                //builder.addEncoded("string","value");
-//            }
+            List<byte[]> bodyAsMultipart = httpRequest.getBodyAsMultipart();
         }
         return new Request(okHttpUrl, httpRequest.getMethod(), okHeadersBuilder.build(), requestBody, Maps.newHashMap());
     }
@@ -79,7 +90,15 @@ public class OkHttpClient implements HttpClient<Request, Response> {
     public HttpResponse buildResponse(Response response) {
         HttpResponse httpResponse;
         try {
-            httpResponse = new HttpResponse(response.code(), response.message(), response.body().string());
+            httpResponse = new HttpResponse(response.code(), response.message(), response.body()!=null?response.body().string():"");
+            Headers headers = response.headers();
+            Iterator<Pair<String, String>> iterator = headers.iterator();
+            Map<String,List<String>> responseHeaders = Maps.newHashMap();
+            while (iterator.hasNext()) {
+                Pair<String, String> header = iterator.next();
+                responseHeaders.put(header.getFirst(), Lists.newArrayList(header.getSecond()));
+            }
+            httpResponse.setResponseHeaders(responseHeaders);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }

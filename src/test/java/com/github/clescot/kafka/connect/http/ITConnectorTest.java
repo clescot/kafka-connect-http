@@ -662,6 +662,7 @@ public class ITConnectorTest {
                 new AbstractMap.SimpleImmutableEntry<>("value.converter.schema.registry.url",internalSchemaRegistryUrl),
                 new AbstractMap.SimpleImmutableEntry<>(GENERATE_MISSING_REQUEST_ID,"true"),
                 new AbstractMap.SimpleImmutableEntry<>(GENERATE_MISSING_CORRELATION_ID,"true"),
+                new AbstractMap.SimpleImmutableEntry<>(HTTPCLIENT_SSL_SKIP_HOSTNAME_VERIFICATION,"true"),
                 new AbstractMap.SimpleImmutableEntry<>(HTTPCLIENT_SSL_TRUSTSTORE_PATH,"/opt/"+CLIENT_TRUSTSTORE_JKS_FILENAME),
                 new AbstractMap.SimpleImmutableEntry<>(HTTPCLIENT_SSL_TRUSTSTORE_PASSWORD,CLIENT_TRUSTSTORE_JKS_PASSWORD),
                 new AbstractMap.SimpleImmutableEntry<>(HTTPCLIENT_SSL_TRUSTSTORE_TYPE,JKS_STORE_TYPE),

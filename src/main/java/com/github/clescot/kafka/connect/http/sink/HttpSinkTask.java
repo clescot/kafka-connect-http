@@ -166,11 +166,8 @@ public class HttpSinkTask extends SinkTask {
         }
         //build HttpRequest
         HttpRequest httpRequest = buildHttpRequest(sinkRecord);
-        LOGGER.debug("httpRequest step #1:{}", httpRequest);
         HttpRequest httpRequestWithStaticHeaders = addStaticHeaders(httpRequest);
-        LOGGER.debug("httpRequest step #2:{}", httpRequest);
         HttpRequest httpRequestWithTrackingHeaders = addTrackingHeaders(httpRequestWithStaticHeaders);
-        LOGGER.debug("httpRequest step #3:{}", httpRequest);
         //handle Request and Response
         HttpExchange httpExchange = callWithRetryPolicy(sinkRecord, httpRequestWithTrackingHeaders, defaultRetryPolicy);
         LOGGER.debug("HTTP exchange :{}", httpExchange);

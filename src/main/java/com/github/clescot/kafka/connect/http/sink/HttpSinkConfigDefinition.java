@@ -47,14 +47,29 @@ public class HttpSinkConfigDefinition {
 
     public static final String HTTPCLIENT_IMPLEMENTATION = "httpclient.implementation";
     public static final String HTTPCLIENT_IMPLEMENTATION_DOC = "define which intalled library to use : either 'ahc', a.k.a async http client, or 'okhttp' ";
+
+    public static final String HTTPCLIENT_SSL_SKIP_HOSTNAME_VERIFICATION = "httpclient.ssl.skip.hostname.verification";
+    public static final String HTTPCLIENT_SSL_SKIP_HOSTNAME_VERIFICATION_DOC = "skip hostname verification";
+
+    public static final String HTTPCLIENT_SSL_KEYSTORE_PATH = "httpclient.ssl.keystore.path";
+    public static final String HTTPCLIENT_SSL_KEYSTORE_PATH_DOC = "file path of the custom key store";
+    public static final String HTTPCLIENT_SSL_KEYSTORE_PASSWORD = "httpclient.ssl.keystore.password";
+    public static final String HTTPCLIENT_SSL_KEYSTORE_PASSWORD_DOC = "password of the custom key store";
+    public static final String HTTPCLIENT_SSL_KEYSTORE_TYPE = "httpclient.ssl.keystore.type";
+    public static final String HTTPCLIENT_SSL_KEYSTORE_TYPE_DOC = "keystore type. can be 'jks' or 'pkcs12'";
+    public static final String HTTPCLIENT_SSL_KEYSTORE_ALGORITHM = "httpclient.ssl.keystore.algorithm";
+    public static final String HTTPCLIENT_SSL_KEYSTORE_ALGORITHM_DOC = "httpclient.ssl.keystore.algorithm";
+
+
     public static final String HTTPCLIENT_SSL_TRUSTSTORE_PATH = "httpclient.ssl.truststore.path";
-    public static final String HTTPCLIENT_SSL_TRUSTSTORE_PATH_DOC = "file path of the custom trusted store";
+    public static final String HTTPCLIENT_SSL_TRUSTSTORE_PATH_DOC = "file path of the custom trust store";
     public static final String HTTPCLIENT_SSL_TRUSTSTORE_PASSWORD = "httpclient.ssl.truststore.password";
     public static final String HTTPCLIENT_SSL_TRUSTSTORE_PASSWORD_DOC = "password of the custom trusted store";
     public static final String HTTPCLIENT_SSL_TRUSTSTORE_TYPE = "httpclient.ssl.truststore.type";
     public static final String HTTPCLIENT_SSL_TRUSTSTORE_TYPE_DOC = "truststore type. can be 'jks' or 'pkcs12'";
     public static final String HTTPCLIENT_SSL_TRUSTSTORE_ALGORITHM = "httpclient.ssl.truststore.algorithm";
     public static final String HTTPCLIENT_SSL_TRUSTSTORE_ALGORITHM_DOC = "httpclient.ssl.truststore.algorithm";
+
     public static final String DEFAULT_SUCCESS_RESPONSE_CODE_REGEX = "default.success.response.code.regex";
     public static final String DEFAULT_SUCCESS_RESPONSE_CODE_REGEX_DOC = "default regex which decide if the request is a success or not, based on the response status code";
     private static final String DEFAULT_DEFAULT_SUCCESS_RESPONSE_CODE_REGEX = "^[1-2][0-9][0-9]$";
@@ -102,6 +117,11 @@ public class HttpSinkConfigDefinition {
                 .define(GENERATE_MISSING_REQUEST_ID, ConfigDef.Type.BOOLEAN, false, ConfigDef.Importance.MEDIUM, GENERATE_MISSING_REQUEST_ID_DOC)
                 .define(WAIT_TIME_REGISTRATION_QUEUE_CONSUMER_IN_MS, ConfigDef.Type.LONG, 60000L, ConfigDef.Importance.LOW, WAIT_TIME_REGISTRATION_QUEUE_CONSUMER_IN_MS_DOC)
                 .define(HTTPCLIENT_IMPLEMENTATION, ConfigDef.Type.STRING, null, ConfigDef.Importance.LOW, HTTPCLIENT_IMPLEMENTATION_DOC)
+                .define(HTTPCLIENT_SSL_SKIP_HOSTNAME_VERIFICATION, ConfigDef.Type.STRING, null, ConfigDef.Importance.LOW, HTTPCLIENT_SSL_SKIP_HOSTNAME_VERIFICATION_DOC)
+                .define(HTTPCLIENT_SSL_KEYSTORE_PATH, ConfigDef.Type.STRING, null, ConfigDef.Importance.LOW, HTTPCLIENT_SSL_KEYSTORE_PATH_DOC)
+                .define(HTTPCLIENT_SSL_KEYSTORE_PASSWORD, ConfigDef.Type.STRING, null, ConfigDef.Importance.LOW, HTTPCLIENT_SSL_KEYSTORE_PASSWORD_DOC)
+                .define(HTTPCLIENT_SSL_KEYSTORE_TYPE, ConfigDef.Type.STRING, null, ConfigDef.Importance.LOW, HTTPCLIENT_SSL_KEYSTORE_TYPE_DOC)
+                .define(HTTPCLIENT_SSL_KEYSTORE_ALGORITHM, ConfigDef.Type.STRING, null, ConfigDef.Importance.LOW, HTTPCLIENT_SSL_KEYSTORE_ALGORITHM_DOC)
                 .define(HTTPCLIENT_SSL_TRUSTSTORE_PATH, ConfigDef.Type.STRING, null, ConfigDef.Importance.LOW, HTTPCLIENT_SSL_TRUSTSTORE_PATH_DOC)
                 .define(HTTPCLIENT_SSL_TRUSTSTORE_PASSWORD, ConfigDef.Type.STRING, null, ConfigDef.Importance.LOW, HTTPCLIENT_SSL_TRUSTSTORE_PASSWORD_DOC)
                 .define(HTTPCLIENT_SSL_TRUSTSTORE_TYPE, ConfigDef.Type.STRING, null, ConfigDef.Importance.LOW, HTTPCLIENT_SSL_TRUSTSTORE_TYPE_DOC)
