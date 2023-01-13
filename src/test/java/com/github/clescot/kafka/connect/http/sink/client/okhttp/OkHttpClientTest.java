@@ -2,11 +2,10 @@ package com.github.clescot.kafka.connect.http.sink.client.okhttp;
 
 import com.github.clescot.kafka.connect.http.HttpRequest;
 import com.github.clescot.kafka.connect.http.HttpResponse;
-import com.github.clescot.kafka.connect.http.sink.client.HttpClient;
 import com.google.common.collect.Maps;
 import okhttp3.*;
 import okhttp3.internal.http.RealResponseBody;
-import okio.*;
+import okio.Buffer;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -15,7 +14,6 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.*;
 
 class OkHttpClientTest {
 
@@ -36,7 +34,7 @@ class OkHttpClientTest {
     }
 
     @Test
-    public void test_build_response() throws IOException {
+    public void test_build_response() {
         OkHttpClient client = new OkHttpClient(Maps.newHashMap());
 
 
