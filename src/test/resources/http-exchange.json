@@ -1,5 +1,6 @@
 {
-  "$schema": "http://json-schema.org/draft/2019-09/schema#",
+  "$id": "https://github.com/clescot/kafka-connect-http-sink/schemas/http-exchange",
+  "$schema": "http://json-schema.org/draft/2019-09/schema",
   "title": "Http Exchange",
   "type": "object",
   "additionalProperties": false,
@@ -17,86 +18,14 @@
       "type": "boolean"
     },
     "httpResponse": {
-      "$ref": "#/definitions/HttpResponse"
+      "$ref": "http-response.json"
     },
     "httpRequest": {
-      "$ref": "#/definitions/HttpRequest"
+      "$ref": "http-request.json"
     }
   },
   "required": [
     "success"
-  ],
-  "definitions": {
-    "HttpResponse": {
-      "type": "object",
-      "additionalProperties": false,
-      "properties": {
-        "statusCode":{
-          "type": "integer"
-        },
-        "statusMessage":  {
-          "type": "string"
-        },
-        "responseBody":  {
-          "type": "string"
-        },
-        "responseHeaders":  {
-          "type": "object",
-          "additionalProperties": {
-            "type": "array",
-            "items": {
-              "type": "string"
-            }
-          }
-        }
-      }
-    },
-    "HttpRequest": {
-      "type": "object",
-      "additionalProperties": false,
-      "properties": {
-        "url": {
-          "type": "string"
-        },
-        "headers": {
-          "type": "object",
-          "additionalProperties": {
-            "type": "array",
-            "items": {
-              "type": "string"
-            }
-          }
-        },
-        "method": {
-          "type": "string"
-        },
-        "bodyAsString": {
-          "type": "string"
-        },
-        "bodyAsByteArray": {
-          "type": "string"
-        },
-        "bodyAsMultipart":{
-          "type": "array",
-          "items": {
-            "type": "string"
-          }
-        },
-        "bodyType":
-        {
-          "type": "string",
-          "enum": [
-            "STRING",
-            "BYTE_ARRAY",
-            "MULTIPART"
-          ]
-        }
-      },
-      "required": [
-        "url",
-        "method",
-        "bodyType"
-      ]
-    }
-  }
+  ]
+
 }

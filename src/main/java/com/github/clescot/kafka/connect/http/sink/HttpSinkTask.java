@@ -15,6 +15,7 @@ import com.google.common.collect.Maps;
 import dev.failsafe.Failsafe;
 import dev.failsafe.RateLimiter;
 import dev.failsafe.RetryPolicy;
+import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.data.Struct;
 import org.apache.kafka.connect.errors.ConnectException;
 import org.apache.kafka.connect.sink.ErrantRecordReporter;
@@ -303,6 +304,12 @@ public class HttpSinkTask extends SinkTask {
                 Struct valueAsStruct = (Struct) value;
                 LOGGER.debug("Struct is {}", valueAsStruct);
                 valueAsStruct.validate();
+                Schema schema = valueAsStruct.schema();
+                String schemaTypeName = schema.type().getName();
+                LOGGER.debug("schema type name from Struct is {}", schemaTypeName);
+                Integer version = schema.version();
+                LOGGER.debug("schema version from Struct is {}", version);
+
                 httpRequest = HttpRequest
                         .Builder
                         .anHttpRequest()
@@ -326,13 +333,13 @@ public class HttpSinkTask extends SinkTask {
                 LOGGER.debug("successful httpRequest parsing :{}", httpRequest);
             }
         } catch (ConnectException connectException) {
-            LOGGER.warn("error in sinkRecord's structure : " + sinkRecord, connectException);
+            LOGGER.error("error in sinkRecord's structure : " + sinkRecord, connectException);
             if (errantRecordReporter != null) {
                 errantRecordReporter.report(sinkRecord, connectException);
             } else {
                 LOGGER.warn("errantRecordReporter has been added to Kafka Connect since 2.6.0 release. you should upgrade the Kafka Connect Runtime shortly.");
-                throw connectException;
             }
+            throw connectException;
 
         }
         return httpRequest;
