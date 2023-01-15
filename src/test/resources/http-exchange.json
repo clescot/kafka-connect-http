@@ -1,8 +1,8 @@
 {
-  "$id": "https://github.com/clescot/kafka-connect-http-sink/schemas/http-exchange",
-  "$schema": "http://json-schema.org/draft/2019-09/schema",
+  "$schema": "http://json-schema.org/draft/2019-09/schema#",
   "title": "Http Exchange",
   "type": "object",
+  "javaType" : "com.github.clescot.kafka.connect.http.HttpExchange",
   "additionalProperties": false,
   "properties": {
     "durationInMillis": {
