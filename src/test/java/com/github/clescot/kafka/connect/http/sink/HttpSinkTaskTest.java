@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.github.clescot.kafka.connect.http.*;
 import com.github.clescot.kafka.connect.http.sink.client.ahc.AHCHttpClient;
+import com.github.clescot.kafka.connect.http.sink.client.okhttp.OkHttpClient;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import org.apache.kafka.common.record.TimestampType;
@@ -132,13 +133,14 @@ public class HttpSinkTaskTest {
 
 
     @Test
-    public void test_put_add_static_headers() {
+    public void test_put_add_static_headers_with_value_as_string() {
+        //given
         Map<String, String> settings = Maps.newHashMap();
         settings.put(HTTP_CLIENT_STATIC_REQUEST_HEADER_NAMES, "param1,param2");
         settings.put("param1", "value1");
         settings.put("param2", "value2");
         httpSinkTask.start(settings);
-        AHCHttpClient httpClient = mock(AHCHttpClient.class);
+        OkHttpClient httpClient = mock(OkHttpClient.class);
         HttpExchange dummyHttpExchange = getDummyHttpExchange();
         when(httpClient.call(any(HttpRequest.class),any(AtomicInteger.class))).thenReturn(dummyHttpExchange);
         httpSinkTask.setHttpClient(httpClient);
@@ -146,17 +148,51 @@ public class HttpSinkTaskTest {
         List<Header> headers = Lists.newArrayList();
         SinkRecord sinkRecord = new SinkRecord("myTopic", 0, Schema.STRING_SCHEMA, "key", Schema.STRING_SCHEMA, getDummyHttpRequestAsString(), -1, System.currentTimeMillis(), TimestampType.CREATE_TIME, headers);
         records.add(sinkRecord);
+        //when
         httpSinkTask.put(records);
         ArgumentCaptor<HttpRequest> captor = ArgumentCaptor.forClass(HttpRequest.class);
         verify(httpClient, times(1)).call(captor.capture(),any(AtomicInteger.class));
         HttpRequest enhancedRecordBeforeHttpCall = captor.getValue();
+        //then
         assertThat(enhancedRecordBeforeHttpCall.getHeaders().size() == sinkRecord.headers().size() + httpSinkTask.getStaticRequestHeaders().size());
         assertThat(enhancedRecordBeforeHttpCall.getHeaders()).contains(Map.entry("param1", Lists.newArrayList("value1")));
         assertThat(enhancedRecordBeforeHttpCall.getHeaders()).contains(Map.entry("param2", Lists.newArrayList("value2")));
     }
 
     @Test
-    public void test_put_nominal_case() {
+    public void test_put_nominal_case_with_value_as_string() {
+        //given
+        Map<String, String> settings = Maps.newHashMap();
+        httpSinkTask.start(settings);
+
+        //mock httpClient
+        AHCHttpClient httpClient = mock(AHCHttpClient.class);
+        HttpExchange dummyHttpExchange = getDummyHttpExchange();
+        when(httpClient.call(any(HttpRequest.class),any(AtomicInteger.class))).thenReturn(dummyHttpExchange);
+        httpSinkTask.setHttpClient(httpClient);
+
+        //init sinkRecord
+        List<SinkRecord> records = Lists.newArrayList();
+        List<Header> headers = Lists.newArrayList();
+        SinkRecord sinkRecord = new SinkRecord("myTopic", 0, Schema.STRING_SCHEMA, "key", Schema.STRING_SCHEMA, getDummyHttpRequestAsString(), -1, System.currentTimeMillis(), TimestampType.CREATE_TIME, headers);
+        records.add(sinkRecord);
+
+        //when
+        httpSinkTask.put(records);
+
+        //then
+
+        //no additional headers added
+        ArgumentCaptor<HttpRequest> captor = ArgumentCaptor.forClass(HttpRequest.class);
+        verify(httpClient, times(1)).call(captor.capture(),any(AtomicInteger.class));
+        HttpRequest enhancedRecordBeforeHttpCall = captor.getValue();
+        assertThat(enhancedRecordBeforeHttpCall.getHeaders().size() == sinkRecord.headers().size());
+
+        //no records are published into the in memory queue by default
+        verify(dummyQueue, never()).offer(any(HttpExchange.class));
+    }
+    @Test
+    public void test_put_nominal_case_with_value_as_json_schema() {
         //given
         Map<String, String> settings = Maps.newHashMap();
         httpSinkTask.start(settings);
