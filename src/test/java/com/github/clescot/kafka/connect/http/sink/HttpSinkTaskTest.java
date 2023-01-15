@@ -16,6 +16,7 @@ import io.confluent.kafka.schemaregistry.client.SchemaRegistryClient;
 import io.confluent.kafka.schemaregistry.client.rest.exceptions.RestClientException;
 import io.confluent.kafka.schemaregistry.json.JsonSchema;
 import io.confluent.kafka.schemaregistry.json.JsonSchemaProvider;
+import io.confluent.kafka.serializers.json.KafkaJsonSchemaSerializer;
 import org.apache.kafka.common.record.TimestampType;
 import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.data.SchemaAndValue;
@@ -40,7 +41,6 @@ import org.skyscreamer.jsonassert.JSONCompareMode;
 import org.skyscreamer.jsonassert.comparator.CustomComparator;
 
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
 import java.time.OffsetDateTime;
 import java.time.ZoneId;
 import java.util.*;
@@ -403,7 +403,13 @@ public class HttpSinkTaskTest {
         String topic = "myTopic";
         SchemaRegistryClient schemaRegistryClient = getSchemaRegistryClient(topic, 1, 1);
         JsonSchemaConverter jsonSchemaConverter = getJsonSchemaConverter(schemaRegistryClient);
-        byte[] httpRequestAsJsonSchema = jsonSchemaConverter.fromConnectData(topic,HttpRequest.SCHEMA, dummyHttpRequest.toStruct());
+        KafkaJsonSchemaSerializer kafkaJsonSchemaSerializer = new KafkaJsonSchemaSerializer(schemaRegistryClient);
+        //low-level HttpRequest serialization : can comes from low-level kafka application
+        // or Kafka Streams : wraps KafkaJsonSchemaSerializer and KafkaJsonSchemaDeSerializer into KafkaJsonSchemaSerde
+        byte[] httpRequestAsJsonSchema = kafkaJsonSchemaSerializer.serialize(topic, dummyHttpRequest);
+        //Kafka Connect counter-part
+        //byte[] httpRequestAsJsonSchemaWithConverter = jsonSchemaConverter.fromConnectData(topic,HttpRequest.SCHEMA, dummyHttpRequest.toStruct());
+
         SchemaAndValue schemaAndValue = jsonSchemaConverter.toConnectData(topic, httpRequestAsJsonSchema);
 
         SinkRecord sinkRecord = new SinkRecord(topic, 0, Schema.STRING_SCHEMA, "key", schemaAndValue.schema(), schemaAndValue.value(), -1, System.currentTimeMillis(), TimestampType.CREATE_TIME, headers);
@@ -415,6 +421,9 @@ public class HttpSinkTaskTest {
         assertThat(httpRequest.getMethod()).isEqualTo(DUMMY_METHOD);
         assertThat(httpRequest.getBodyType().toString()).isEqualTo(DUMMY_BODY_TYPE);
     }
+
+
+
 
     @Test
     public void test_buildHttpRequest_http_request_as_struct() {
@@ -557,6 +566,9 @@ public class HttpSinkTaskTest {
     @NotNull
     private static HttpRequest getDummyHttpRequest() {
         HttpRequest httpRequest = new HttpRequest(DUMMY_URL,DUMMY_METHOD,DUMMY_BODY_TYPE);
+        Map<String,List<String>> headers = Maps.newHashMap();
+        headers.put("Content-Type",Lists.newArrayList("application/json"));
+        httpRequest.setHeaders(headers);
         httpRequest.setBodyAsString("stuff");
         return httpRequest;
     }
