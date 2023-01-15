@@ -8,14 +8,24 @@ import com.github.clescot.kafka.connect.http.sink.client.ahc.AHCHttpClient;
 import com.github.clescot.kafka.connect.http.sink.client.okhttp.OkHttpClient;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
+import io.confluent.connect.json.JsonSchemaConverter;
+import io.confluent.kafka.schemaregistry.ParsedSchema;
+import io.confluent.kafka.schemaregistry.SchemaProvider;
+import io.confluent.kafka.schemaregistry.client.MockSchemaRegistryClient;
+import io.confluent.kafka.schemaregistry.client.SchemaRegistryClient;
+import io.confluent.kafka.schemaregistry.client.rest.exceptions.RestClientException;
+import io.confluent.kafka.schemaregistry.json.JsonSchema;
+import io.confluent.kafka.schemaregistry.json.JsonSchemaProvider;
 import org.apache.kafka.common.record.TimestampType;
 import org.apache.kafka.connect.data.Schema;
+import org.apache.kafka.connect.data.SchemaAndValue;
 import org.apache.kafka.connect.data.Struct;
 import org.apache.kafka.connect.errors.ConnectException;
 import org.apache.kafka.connect.header.Header;
 import org.apache.kafka.connect.sink.ErrantRecordReporter;
 import org.apache.kafka.connect.sink.SinkRecord;
 import org.apache.kafka.connect.sink.SinkTaskContext;
+import org.jetbrains.annotations.NotNull;
 import org.json.JSONException;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
@@ -29,11 +39,11 @@ import org.skyscreamer.jsonassert.JSONAssert;
 import org.skyscreamer.jsonassert.JSONCompareMode;
 import org.skyscreamer.jsonassert.comparator.CustomComparator;
 
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.time.OffsetDateTime;
 import java.time.ZoneId;
-import java.util.List;
-import java.util.Map;
-import java.util.Queue;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.github.clescot.kafka.connect.http.sink.HttpSinkConfigDefinition.*;
@@ -386,6 +396,27 @@ public class HttpSinkTaskTest {
     }
 
     @Test
+    public void test_buildHttpRequest_http_request_as_json_schema() {
+        //given
+        List<Header> headers = Lists.newArrayList();
+        HttpRequest dummyHttpRequest = getDummyHttpRequest();
+        String topic = "myTopic";
+        SchemaRegistryClient schemaRegistryClient = getSchemaRegistryClient(topic, 1, 1);
+        JsonSchemaConverter jsonSchemaConverter = getJsonSchemaConverter(schemaRegistryClient);
+        byte[] httpRequestAsJsonSchema = jsonSchemaConverter.fromConnectData(topic,HttpRequest.SCHEMA, dummyHttpRequest.toStruct());
+        SchemaAndValue schemaAndValue = jsonSchemaConverter.toConnectData(topic, httpRequestAsJsonSchema);
+
+        SinkRecord sinkRecord = new SinkRecord(topic, 0, Schema.STRING_SCHEMA, "key", schemaAndValue.schema(), schemaAndValue.value(), -1, System.currentTimeMillis(), TimestampType.CREATE_TIME, headers);
+        //when
+        HttpRequest httpRequest = httpSinkTask.buildHttpRequest(sinkRecord);
+        //then
+        assertThat(httpRequest).isNotNull();
+        assertThat(httpRequest.getUrl()).isEqualTo(DUMMY_URL);
+        assertThat(httpRequest.getMethod()).isEqualTo(DUMMY_METHOD);
+        assertThat(httpRequest.getBodyType().toString()).isEqualTo(DUMMY_BODY_TYPE);
+    }
+
+    @Test
     public void test_buildHttpRequest_http_request_as_struct() {
         //given
         List<Header> headers = Lists.newArrayList();
@@ -491,10 +522,43 @@ public class HttpSinkTaskTest {
                 "}";
     }
 
+
+
+    @NotNull
+    private static JsonSchemaConverter getJsonSchemaConverter(SchemaRegistryClient mockSchemaRegistryClient) {
+        JsonSchemaConverter jsonSchemaConverter = new JsonSchemaConverter(mockSchemaRegistryClient);
+        Map<String,String> config = Maps.newHashMap();
+        config.put("schema.registry.url","http://dummy.com");
+        jsonSchemaConverter.configure(config,false);
+        return jsonSchemaConverter;
+    }
+
+    @NotNull
+    private static SchemaRegistryClient getSchemaRegistryClient(String topic, int schemaVersion, int schemaId) {
+        SchemaProvider provider = new JsonSchemaProvider();
+        SchemaRegistryClient mockSchemaRegistryClient = new MockSchemaRegistryClient(Collections.singletonList(provider));
+        //we test TopicNameStrategy, and the jsonSchema is owned in the Kafka value record.
+        String subject = topic +"-value";
+        io.confluent.kafka.schemaregistry.client.rest.entities.Schema schema = new io.confluent.kafka.schemaregistry.client.rest.entities.Schema(subject, schemaVersion, schemaId, JsonSchema.TYPE,Lists.newArrayList(),HttpRequest.SCHEMA_AS_STRING);
+        Optional<ParsedSchema> parsedSchema = mockSchemaRegistryClient.parseSchema(schema);
+        try {
+            mockSchemaRegistryClient.register(subject, parsedSchema.get());
+        } catch (IOException | RestClientException e) {
+            throw new RuntimeException(e);
+        }
+        return mockSchemaRegistryClient;
+    }
+
     private Struct getDummyHttpRequestAsStruct() {
+        HttpRequest httpRequest = getDummyHttpRequest();
+        return httpRequest.toStruct();
+    }
+
+    @NotNull
+    private static HttpRequest getDummyHttpRequest() {
         HttpRequest httpRequest = new HttpRequest(DUMMY_URL,DUMMY_METHOD,DUMMY_BODY_TYPE);
         httpRequest.setBodyAsString("stuff");
-        return httpRequest.toStruct();
+        return httpRequest;
     }
 
 }

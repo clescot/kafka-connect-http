@@ -12,70 +12,11 @@ import org.slf4j.LoggerFactory;
 
 import java.util.*;
 
-@io.confluent.kafka.schemaregistry.annotations.Schema(value = "{\n" +
-        "  \"$schema\": \"http://json-schema.org/draft/2019-09/schema#\",\n" +
-        "  \"title\": \"Http Request schema to drive HTTP Sink Connector\",\n" +
-        "  \"description\": \"Http Request schema to drive HTTP Sink Connector. It supports 3 modes : classical body as string (bodyPart set to 'STRING'), a Map<String,String> mode to fill HTML form, a byte Array mode to transmit binary data((bodyPart set to 'BYTE_ARRAY'), and a multipart mode ((bodyPart set to 'MULTIPART')\",\n" +
-        "  \"type\": \"object\",\n" +
-        "  \"additionalProperties\": false,\n" +
-        "  \"required\": [\"url\",\"method\",\"bodyType\"],\n" +
-        "  \"properties\": {\n" +
-        "    \"url\": {\n" +
-        "      \"type\": \"string\"\n" +
-        "    },\n" +
-        "    \"headers\": {\n" +
-        "      \"type\": \"object\",\n" +
-        "      \"connect.type\": \"map\",\n" +
-        "      \"additionalProperties\": {\n" +
-        "        \"type\": \"array\",\n" +
-        "        \"items\": {\n" +
-        "          \"type\": \"string\"\n" +
-        "        }\n" +
-        "      }\n" +
-        "    },\n" +
-        "    \"method\": {\n" +
-        "      \"type\": \"string\"\n" +
-        "    },\n" +
-        "    \"bodyAsString\":\n" +
-        "        {\n" +
-        "          \"type\": \"string\"\n" +
-        "        }\n" +
-        "      ,\n" +
-        "    \"bodyAsForm\":\n" +
-        "        {\n" +
-        "          \"type\": \"object\",\n" +
-        "          \"connect.type\": \"map\",\n" +
-        "          \"additionalProperties\": { \"type\": \"string\" }\n" +
-        "        }\n" +
-        "      ,\n" +
-        "    \"bodyAsByteArray\":  {\n" +
-        "          \"type\": \"string\"\n" +
-        "    },\n" +
-        "    \"bodyAsMultipart\": {\n" +
-        "          \"type\": \"array\",\n" +
-        "          \"items\": {\n" +
-        "            \"type\": \"string\"\n" +
-        "          }\n" +
-        "    },\n" +
-        "    \"bodyType\": {\n" +
-        "      \"type\": \"string\",\n" +
-        "      \"enum\": [\n" +
-        "        \"STRING\",\n" +
-        "        \"BYTE_ARRAY\",\n" +
-        "        \"MULTIPART\"\n" +
-        "      ]\n" +
-        "    }\n" +
-        "  },\n" +
-        "  \"required\": [\n" +
-        "    \"url\",\n" +
-        "    \"method\",\n" +
-        "    \"bodyType\"\n" +
-        "  ]\n" +
-        "}",
+@io.confluent.kafka.schemaregistry.annotations.Schema(value = HttpRequest.SCHEMA_AS_STRING,
         refs = {})
 public class HttpRequest {
 
-
+    public static final String test="";
     public static final String URL = "url";
     public static final String METHOD = "method";
     public static final String HEADERS = "headers";
@@ -109,7 +50,67 @@ public class HttpRequest {
     @JsonProperty
     private BodyType bodyType;
 
-
+    public static final String SCHEMA_AS_STRING = "{\n" +
+            "  \"$id\": \"https://github.com/clescot/kafka-connect-http-sink/schemas/http-request\",\n" +
+            "  \"$schema\": \"http://json-schema.org/draft/2019-09/schema\",\n" +
+            "  \"title\": \"Http Request schema to drive HTTP Sink Connector\",\n" +
+            "  \"description\": \"Http Request schema to drive HTTP Sink Connector. It supports 3 modes : classical body as string (bodyPart set to 'STRING'), a Map<String,String> mode to fill HTML form, a byte Array mode to transmit binary data((bodyPart set to 'BYTE_ARRAY'), and a multipart mode ((bodyPart set to 'MULTIPART')\",\n" +
+            "  \"type\": \"object\",\n" +
+            "  \"additionalProperties\": false,\n" +
+            "  \"required\": [\"url\",\"method\",\"bodyType\"],\n" +
+            "  \"properties\": {\n" +
+            "    \"url\": {\n" +
+            "      \"type\": \"string\"\n" +
+            "    },\n" +
+            "    \"headers\": {\n" +
+            "      \"type\": \"object\",\n" +
+            "      \"connect.type\": \"map\",\n" +
+            "      \"additionalProperties\": {\n" +
+            "        \"type\": \"array\",\n" +
+            "        \"items\": {\n" +
+            "          \"type\": \"string\"\n" +
+            "        }\n" +
+            "      }\n" +
+            "    },\n" +
+            "    \"method\": {\n" +
+            "      \"type\": \"string\"\n" +
+            "    },\n" +
+            "    \"bodyAsString\":\n" +
+            "    {\n" +
+            "      \"type\": \"string\"\n" +
+            "    }\n" +
+            "  ,\n" +
+            "    \"bodyAsForm\":\n" +
+            "    {\n" +
+            "      \"type\": \"object\",\n" +
+            "      \"connect.type\": \"map\",\n" +
+            "      \"additionalProperties\": { \"type\": \"string\" }\n" +
+            "    }\n" +
+            "  ,\n" +
+            "    \"bodyAsByteArray\":  {\n" +
+            "      \"type\": \"string\"\n" +
+            "    },\n" +
+            "    \"bodyAsMultipart\": {\n" +
+            "      \"type\": \"array\",\n" +
+            "      \"items\": {\n" +
+            "        \"type\": \"string\"\n" +
+            "      }\n" +
+            "    },\n" +
+            "    \"bodyType\": {\n" +
+            "      \"type\": \"string\",\n" +
+            "      \"enum\": [\n" +
+            "        \"STRING\",\n" +
+            "        \"BYTE_ARRAY\",\n" +
+            "        \"MULTIPART\"\n" +
+            "      ]\n" +
+            "    }\n" +
+            "  },\n" +
+            "  \"required\": [\n" +
+            "    \"url\",\n" +
+            "    \"method\",\n" +
+            "    \"bodyType\"\n" +
+            "  ]\n" +
+            "}";
     public static final Schema SCHEMA = SchemaBuilder
             .struct()
             .name(HttpRequest.class.getName())
