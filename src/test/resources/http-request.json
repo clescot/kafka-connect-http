@@ -1,9 +1,9 @@
 {
-  "$id": "https://github.com/clescot/kafka-connect-http-sink/schemas/http-request",
-  "$schema": "http://json-schema.org/draft/2019-09/schema",
+  "$schema": "http://json-schema.org/draft/2019-09/schema#",
   "title": "Http Request schema to drive HTTP Sink Connector",
   "description": "Http Request schema to drive HTTP Sink Connector. It supports 3 modes : classical body as string (bodyPart set to 'STRING'), a Map<String,String> mode to fill HTML form, a byte Array mode to transmit binary data((bodyPart set to 'BYTE_ARRAY'), and a multipart mode ((bodyPart set to 'MULTIPART')",
   "type": "object",
+  "javaType" : "com.github.clescot.kafka.connect.http.HttpRequest",
   "additionalProperties": false,
   "required": ["url","method","bodyType"],
   "properties": {
@@ -12,6 +12,7 @@
     },
     "headers": {
       "type": "object",
+      "existingJavaType" : "java.util.Map<String,java.util.List<String>>",
       "connect.type": "map",
       "additionalProperties": {
         "type": "array",
@@ -32,7 +33,7 @@
     {
       "type": "object",
       "connect.type": "map",
-      "additionalProperties": { "type": "string" }
+      "existingJavaType" : "java.util.Map<String,String>"
     }
   ,
     "bodyAsByteArray":  {

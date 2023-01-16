@@ -265,7 +265,7 @@ public class HttpSinkTask extends SinkTask {
     }
 
 
-    private HttpRequest addTrackingHeaders(HttpRequest httpRequest) {
+    protected HttpRequest addTrackingHeaders(HttpRequest httpRequest) {
         if (httpRequest == null) {
             LOGGER.warn("sinkRecord has got a 'null' value");
             throw new ConnectException("sinkRecord has got a 'null' value");
@@ -299,16 +299,17 @@ public class HttpSinkTask extends SinkTask {
         String stringValue = null;
         try {
             Class<?> valueClass = value.getClass();
-            LOGGER.debug("valueClass is {}", valueClass.getName());
+            LOGGER.debug("valueClass is '{}'", valueClass.getName());
+            LOGGER.debug("value Schema from SinkRecord is '{}'", sinkRecord.valueSchema());
             if (Struct.class.isAssignableFrom(valueClass)) {
                 Struct valueAsStruct = (Struct) value;
                 LOGGER.debug("Struct is {}", valueAsStruct);
                 valueAsStruct.validate();
                 Schema schema = valueAsStruct.schema();
                 String schemaTypeName = schema.type().getName();
-                LOGGER.debug("schema type name from Struct is {}", schemaTypeName);
+                LOGGER.debug("schema type name referenced in Struct is '{}'", schemaTypeName);
                 Integer version = schema.version();
-                LOGGER.debug("schema version from Struct is {}", version);
+                LOGGER.debug("schema version referenced in Struct is '{}'", version);
 
                 httpRequest = HttpRequest
                         .Builder
@@ -356,7 +357,7 @@ public class HttpSinkTask extends SinkTask {
         return httpRequest;
     }
 
-    private HttpRequest addStaticHeaders(HttpRequest httpRequest) {
+    protected HttpRequest addStaticHeaders(HttpRequest httpRequest) {
         Preconditions.checkNotNull(httpRequest,"httpRequest is null");
         this.staticRequestHeaders.forEach((key, value) -> httpRequest.getHeaders().put(key, value));
         return httpRequest;

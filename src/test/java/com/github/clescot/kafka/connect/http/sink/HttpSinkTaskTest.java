@@ -5,16 +5,30 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.github.clescot.kafka.connect.http.*;
 import com.github.clescot.kafka.connect.http.sink.client.ahc.AHCHttpClient;
+import com.github.clescot.kafka.connect.http.sink.client.okhttp.OkHttpClient;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
+import io.confluent.connect.json.JsonSchemaConverter;
+import io.confluent.kafka.schemaregistry.ParsedSchema;
+import io.confluent.kafka.schemaregistry.SchemaProvider;
+import io.confluent.kafka.schemaregistry.client.MockSchemaRegistryClient;
+import io.confluent.kafka.schemaregistry.client.SchemaRegistryClient;
+import io.confluent.kafka.schemaregistry.client.rest.exceptions.RestClientException;
+import io.confluent.kafka.schemaregistry.json.JsonSchema;
+import io.confluent.kafka.schemaregistry.json.JsonSchemaProvider;
+import io.confluent.kafka.schemaregistry.json.SpecificationVersion;
+import io.confluent.kafka.serializers.json.KafkaJsonSchemaSerializer;
+import io.confluent.kafka.serializers.json.KafkaJsonSchemaSerializerConfig;
 import org.apache.kafka.common.record.TimestampType;
 import org.apache.kafka.connect.data.Schema;
+import org.apache.kafka.connect.data.SchemaAndValue;
 import org.apache.kafka.connect.data.Struct;
 import org.apache.kafka.connect.errors.ConnectException;
 import org.apache.kafka.connect.header.Header;
 import org.apache.kafka.connect.sink.ErrantRecordReporter;
 import org.apache.kafka.connect.sink.SinkRecord;
 import org.apache.kafka.connect.sink.SinkTaskContext;
+import org.jetbrains.annotations.NotNull;
 import org.json.JSONException;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
@@ -28,22 +42,24 @@ import org.skyscreamer.jsonassert.JSONAssert;
 import org.skyscreamer.jsonassert.JSONCompareMode;
 import org.skyscreamer.jsonassert.comparator.CustomComparator;
 
+import java.io.IOException;
 import java.time.OffsetDateTime;
 import java.time.ZoneId;
-import java.util.List;
-import java.util.Map;
-import java.util.Queue;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.github.clescot.kafka.connect.http.sink.HttpSinkConfigDefinition.*;
+import static io.confluent.kafka.serializers.json.KafkaJsonSchemaDeserializerConfig.JSON_VALUE_TYPE;
+import static io.confluent.kafka.serializers.json.KafkaJsonSchemaSerializerConfig.*;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.*;
 
 public class HttpSinkTaskTest {
-
+    private static final String CONTENT_TYPE = "Content-Type";
+    private static final String APPLICATION_JSON = "application/json";
     private static final String DUMMY_BODY = "stuff";
     private static final String DUMMY_URL = "http://www." + DUMMY_BODY + ".com";
-    private static final String DUMMY_METHOD = "GET";
+    private static final String DUMMY_METHOD = "POST";
     private static final String DUMMY_BODY_TYPE = "STRING";
     public static final String CLIENT_TRUSTSTORE_JKS_FILENAME = "client_truststore.jks";
     public static final String CLIENT_TRUSTSTORE_JKS_PASSWORD = "Secret123!";
@@ -132,13 +148,14 @@ public class HttpSinkTaskTest {
 
 
     @Test
-    public void test_put_add_static_headers() {
+    public void test_put_add_static_headers_with_value_as_string() {
+        //given
         Map<String, String> settings = Maps.newHashMap();
         settings.put(HTTP_CLIENT_STATIC_REQUEST_HEADER_NAMES, "param1,param2");
         settings.put("param1", "value1");
         settings.put("param2", "value2");
         httpSinkTask.start(settings);
-        AHCHttpClient httpClient = mock(AHCHttpClient.class);
+        OkHttpClient httpClient = mock(OkHttpClient.class);
         HttpExchange dummyHttpExchange = getDummyHttpExchange();
         when(httpClient.call(any(HttpRequest.class),any(AtomicInteger.class))).thenReturn(dummyHttpExchange);
         httpSinkTask.setHttpClient(httpClient);
@@ -146,17 +163,51 @@ public class HttpSinkTaskTest {
         List<Header> headers = Lists.newArrayList();
         SinkRecord sinkRecord = new SinkRecord("myTopic", 0, Schema.STRING_SCHEMA, "key", Schema.STRING_SCHEMA, getDummyHttpRequestAsString(), -1, System.currentTimeMillis(), TimestampType.CREATE_TIME, headers);
         records.add(sinkRecord);
+        //when
         httpSinkTask.put(records);
         ArgumentCaptor<HttpRequest> captor = ArgumentCaptor.forClass(HttpRequest.class);
         verify(httpClient, times(1)).call(captor.capture(),any(AtomicInteger.class));
         HttpRequest enhancedRecordBeforeHttpCall = captor.getValue();
+        //then
         assertThat(enhancedRecordBeforeHttpCall.getHeaders().size() == sinkRecord.headers().size() + httpSinkTask.getStaticRequestHeaders().size());
         assertThat(enhancedRecordBeforeHttpCall.getHeaders()).contains(Map.entry("param1", Lists.newArrayList("value1")));
         assertThat(enhancedRecordBeforeHttpCall.getHeaders()).contains(Map.entry("param2", Lists.newArrayList("value2")));
     }
 
     @Test
-    public void test_put_nominal_case() {
+    public void test_put_nominal_case_with_value_as_string() {
+        //given
+        Map<String, String> settings = Maps.newHashMap();
+        httpSinkTask.start(settings);
+
+        //mock httpClient
+        AHCHttpClient httpClient = mock(AHCHttpClient.class);
+        HttpExchange dummyHttpExchange = getDummyHttpExchange();
+        when(httpClient.call(any(HttpRequest.class),any(AtomicInteger.class))).thenReturn(dummyHttpExchange);
+        httpSinkTask.setHttpClient(httpClient);
+
+        //init sinkRecord
+        List<SinkRecord> records = Lists.newArrayList();
+        List<Header> headers = Lists.newArrayList();
+        SinkRecord sinkRecord = new SinkRecord("myTopic", 0, Schema.STRING_SCHEMA, "key", Schema.STRING_SCHEMA, getDummyHttpRequestAsString(), -1, System.currentTimeMillis(), TimestampType.CREATE_TIME, headers);
+        records.add(sinkRecord);
+
+        //when
+        httpSinkTask.put(records);
+
+        //then
+
+        //no additional headers added
+        ArgumentCaptor<HttpRequest> captor = ArgumentCaptor.forClass(HttpRequest.class);
+        verify(httpClient, times(1)).call(captor.capture(),any(AtomicInteger.class));
+        HttpRequest enhancedRecordBeforeHttpCall = captor.getValue();
+        assertThat(enhancedRecordBeforeHttpCall.getHeaders().size() == sinkRecord.headers().size());
+
+        //no records are published into the in memory queue by default
+        verify(dummyQueue, never()).offer(any(HttpExchange.class));
+    }
+    @Test
+    public void test_put_nominal_case_with_value_as_json_schema() {
         //given
         Map<String, String> settings = Maps.newHashMap();
         httpSinkTask.start(settings);
@@ -350,6 +401,49 @@ public class HttpSinkTaskTest {
     }
 
     @Test
+    public void test_buildHttpRequest_http_request_as_json_schema() {
+        //given
+        List<Header> headers = Lists.newArrayList();
+        HttpRequest dummyHttpRequest = getDummyHttpRequest();
+        String topic = "myTopic";
+        SchemaRegistryClient schemaRegistryClient = getSchemaRegistryClient();
+        registerSchema(schemaRegistryClient,topic, 1, 1, HttpRequest.SCHEMA_AS_STRING);
+
+
+        KafkaJsonSchemaSerializer kafkaJsonSchemaSerializer = new KafkaJsonSchemaSerializer(schemaRegistryClient);
+        Map<String,String> serializerConfig = Maps.newHashMap();
+        serializerConfig.put(KafkaJsonSchemaSerializerConfig.SCHEMA_REGISTRY_URL_CONFIG,"http://dummy.com");
+        serializerConfig.put(KafkaJsonSchemaSerializerConfig.SCHEMA_SPEC_VERSION, SpecificationVersion.DRAFT_2019_09.name());
+        serializerConfig.put(WRITE_DATES_AS_ISO8601, "true");
+        serializerConfig.put(ONEOF_FOR_NULLABLES, "false");
+        serializerConfig.put(FAIL_INVALID_SCHEMA, "true");
+//        serializerConfig.put(FAIL_UNKNOWN_PROPERTIES, "false");
+
+        kafkaJsonSchemaSerializer.configure(serializerConfig,false);
+
+        //low-level HttpRequest serialization : can comes from low-level kafka application
+        // or Kafka Streams : wraps KafkaJsonSchemaSerializer and KafkaJsonSchemaDeSerializer into KafkaJsonSchemaSerde
+        byte[] httpRequestAsJsonSchema = kafkaJsonSchemaSerializer.serialize(topic, dummyHttpRequest);
+        //Kafka Connect counter-part
+        //byte[] httpRequestAsJsonSchemaWithConverter = jsonSchemaConverter.fromConnectData(topic,HttpRequest.SCHEMA, dummyHttpRequest.toStruct());
+
+        JsonSchemaConverter jsonSchemaConverter = getJsonSchemaConverter(schemaRegistryClient);
+        SchemaAndValue schemaAndValue = jsonSchemaConverter.toConnectData(topic, httpRequestAsJsonSchema);
+
+        SinkRecord sinkRecord = new SinkRecord(topic, 0, Schema.STRING_SCHEMA, "key", schemaAndValue.schema(), schemaAndValue.value(), -1, System.currentTimeMillis(), TimestampType.CREATE_TIME, headers);
+        //when
+        HttpRequest httpRequest = httpSinkTask.buildHttpRequest(sinkRecord);
+        //then
+        assertThat(httpRequest).isNotNull();
+        assertThat(httpRequest.getUrl()).isEqualTo(DUMMY_URL);
+        assertThat(httpRequest.getMethod()).isEqualTo(DUMMY_METHOD);
+        assertThat(httpRequest.getBodyType().toString()).isEqualTo(DUMMY_BODY_TYPE);
+    }
+
+
+
+
+    @Test
     public void test_buildHttpRequest_http_request_as_struct() {
         //given
         List<Header> headers = Lists.newArrayList();
@@ -455,10 +549,54 @@ public class HttpSinkTaskTest {
                 "}";
     }
 
+
+
+    @NotNull
+    private static JsonSchemaConverter getJsonSchemaConverter(SchemaRegistryClient mockSchemaRegistryClient) {
+        JsonSchemaConverter jsonSchemaConverter = new JsonSchemaConverter(mockSchemaRegistryClient);
+        Map<String,String> config = Maps.newHashMap();
+        config.put("schema.registry.url","http://dummy.com");
+        config.put(JSON_VALUE_TYPE,HttpRequest.class.getName());
+        jsonSchemaConverter.configure(config,false);
+        return jsonSchemaConverter;
+    }
+
+    @NotNull
+    private static void registerSchema(SchemaRegistryClient mockSchemaRegistryClient, String topic, int schemaVersion, int schemaId, String schemaAsString) {
+        //we test TopicNameStrategy, and the jsonSchema is owned in the Kafka value record.
+        String subject = topic +"-value";
+        io.confluent.kafka.schemaregistry.client.rest.entities.Schema schema = new io.confluent.kafka.schemaregistry.client.rest.entities.Schema(subject, schemaVersion, schemaId, JsonSchema.TYPE,Lists.newArrayList(), schemaAsString);
+        Optional<ParsedSchema> parsedSchema = mockSchemaRegistryClient.parseSchema(schema);
+        try {
+            mockSchemaRegistryClient.register(subject, parsedSchema.get());
+        } catch (IOException | RestClientException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    @NotNull
+    private static SchemaRegistryClient getSchemaRegistryClient() {
+        SchemaProvider provider = new JsonSchemaProvider();
+        SchemaRegistryClient mockSchemaRegistryClient = new MockSchemaRegistryClient(Collections.singletonList(provider));
+        return mockSchemaRegistryClient;
+    }
+
     private Struct getDummyHttpRequestAsStruct() {
-        HttpRequest httpRequest = new HttpRequest(DUMMY_URL,DUMMY_METHOD,DUMMY_BODY_TYPE);
-        httpRequest.setBodyAsString("stuff");
+        HttpRequest httpRequest = getDummyHttpRequest();
         return httpRequest.toStruct();
     }
+
+    @NotNull
+    private static HttpRequest getDummyHttpRequest() {
+        HttpRequest httpRequest = new HttpRequest(DUMMY_URL,DUMMY_METHOD,DUMMY_BODY_TYPE);
+        Map<String,List<String>> headers = Maps.newHashMap();
+        headers.put("Content-Type",Lists.newArrayList("application/json"));
+        httpRequest.setHeaders(headers);
+        httpRequest.setBodyAsString("stuff");
+        httpRequest.setBodyAsForm(Maps.newHashMap());
+        return httpRequest;
+    }
+
+
 
 }
