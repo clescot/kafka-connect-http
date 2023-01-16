@@ -16,7 +16,9 @@ import io.confluent.kafka.schemaregistry.client.SchemaRegistryClient;
 import io.confluent.kafka.schemaregistry.client.rest.exceptions.RestClientException;
 import io.confluent.kafka.schemaregistry.json.JsonSchema;
 import io.confluent.kafka.schemaregistry.json.JsonSchemaProvider;
+import io.confluent.kafka.schemaregistry.json.SpecificationVersion;
 import io.confluent.kafka.serializers.json.KafkaJsonSchemaSerializer;
+import io.confluent.kafka.serializers.json.KafkaJsonSchemaSerializerConfig;
 import org.apache.kafka.common.record.TimestampType;
 import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.data.SchemaAndValue;
@@ -47,14 +49,17 @@ import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.github.clescot.kafka.connect.http.sink.HttpSinkConfigDefinition.*;
+import static io.confluent.kafka.serializers.json.KafkaJsonSchemaDeserializerConfig.JSON_VALUE_TYPE;
+import static io.confluent.kafka.serializers.json.KafkaJsonSchemaSerializerConfig.*;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.*;
 
 public class HttpSinkTaskTest {
-
+    private static final String CONTENT_TYPE = "Content-Type";
+    private static final String APPLICATION_JSON = "application/json";
     private static final String DUMMY_BODY = "stuff";
     private static final String DUMMY_URL = "http://www." + DUMMY_BODY + ".com";
-    private static final String DUMMY_METHOD = "GET";
+    private static final String DUMMY_METHOD = "POST";
     private static final String DUMMY_BODY_TYPE = "STRING";
     public static final String CLIENT_TRUSTSTORE_JKS_FILENAME = "client_truststore.jks";
     public static final String CLIENT_TRUSTSTORE_JKS_PASSWORD = "Secret123!";
@@ -401,15 +406,28 @@ public class HttpSinkTaskTest {
         List<Header> headers = Lists.newArrayList();
         HttpRequest dummyHttpRequest = getDummyHttpRequest();
         String topic = "myTopic";
-        SchemaRegistryClient schemaRegistryClient = getSchemaRegistryClient(topic, 1, 1);
-        JsonSchemaConverter jsonSchemaConverter = getJsonSchemaConverter(schemaRegistryClient);
+        SchemaRegistryClient schemaRegistryClient = getSchemaRegistryClient();
+        registerSchema(schemaRegistryClient,topic, 1, 1, HttpRequest.SCHEMA_AS_STRING);
+
+
         KafkaJsonSchemaSerializer kafkaJsonSchemaSerializer = new KafkaJsonSchemaSerializer(schemaRegistryClient);
+        Map<String,String> serializerConfig = Maps.newHashMap();
+        serializerConfig.put(KafkaJsonSchemaSerializerConfig.SCHEMA_REGISTRY_URL_CONFIG,"http://dummy.com");
+        serializerConfig.put(KafkaJsonSchemaSerializerConfig.SCHEMA_SPEC_VERSION, SpecificationVersion.DRAFT_2019_09.name());
+        serializerConfig.put(WRITE_DATES_AS_ISO8601, "true");
+        serializerConfig.put(ONEOF_FOR_NULLABLES, "false");
+        serializerConfig.put(FAIL_INVALID_SCHEMA, "true");
+//        serializerConfig.put(FAIL_UNKNOWN_PROPERTIES, "false");
+
+        kafkaJsonSchemaSerializer.configure(serializerConfig,false);
+
         //low-level HttpRequest serialization : can comes from low-level kafka application
         // or Kafka Streams : wraps KafkaJsonSchemaSerializer and KafkaJsonSchemaDeSerializer into KafkaJsonSchemaSerde
         byte[] httpRequestAsJsonSchema = kafkaJsonSchemaSerializer.serialize(topic, dummyHttpRequest);
         //Kafka Connect counter-part
         //byte[] httpRequestAsJsonSchemaWithConverter = jsonSchemaConverter.fromConnectData(topic,HttpRequest.SCHEMA, dummyHttpRequest.toStruct());
 
+        JsonSchemaConverter jsonSchemaConverter = getJsonSchemaConverter(schemaRegistryClient);
         SchemaAndValue schemaAndValue = jsonSchemaConverter.toConnectData(topic, httpRequestAsJsonSchema);
 
         SinkRecord sinkRecord = new SinkRecord(topic, 0, Schema.STRING_SCHEMA, "key", schemaAndValue.schema(), schemaAndValue.value(), -1, System.currentTimeMillis(), TimestampType.CREATE_TIME, headers);
@@ -538,23 +556,28 @@ public class HttpSinkTaskTest {
         JsonSchemaConverter jsonSchemaConverter = new JsonSchemaConverter(mockSchemaRegistryClient);
         Map<String,String> config = Maps.newHashMap();
         config.put("schema.registry.url","http://dummy.com");
+        config.put(JSON_VALUE_TYPE,HttpRequest.class.getName());
         jsonSchemaConverter.configure(config,false);
         return jsonSchemaConverter;
     }
 
     @NotNull
-    private static SchemaRegistryClient getSchemaRegistryClient(String topic, int schemaVersion, int schemaId) {
-        SchemaProvider provider = new JsonSchemaProvider();
-        SchemaRegistryClient mockSchemaRegistryClient = new MockSchemaRegistryClient(Collections.singletonList(provider));
+    private static void registerSchema(SchemaRegistryClient mockSchemaRegistryClient, String topic, int schemaVersion, int schemaId, String schemaAsString) {
         //we test TopicNameStrategy, and the jsonSchema is owned in the Kafka value record.
         String subject = topic +"-value";
-        io.confluent.kafka.schemaregistry.client.rest.entities.Schema schema = new io.confluent.kafka.schemaregistry.client.rest.entities.Schema(subject, schemaVersion, schemaId, JsonSchema.TYPE,Lists.newArrayList(),HttpRequest.SCHEMA_AS_STRING);
+        io.confluent.kafka.schemaregistry.client.rest.entities.Schema schema = new io.confluent.kafka.schemaregistry.client.rest.entities.Schema(subject, schemaVersion, schemaId, JsonSchema.TYPE,Lists.newArrayList(), schemaAsString);
         Optional<ParsedSchema> parsedSchema = mockSchemaRegistryClient.parseSchema(schema);
         try {
             mockSchemaRegistryClient.register(subject, parsedSchema.get());
         } catch (IOException | RestClientException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    @NotNull
+    private static SchemaRegistryClient getSchemaRegistryClient() {
+        SchemaProvider provider = new JsonSchemaProvider();
+        SchemaRegistryClient mockSchemaRegistryClient = new MockSchemaRegistryClient(Collections.singletonList(provider));
         return mockSchemaRegistryClient;
     }
 
@@ -570,7 +593,10 @@ public class HttpSinkTaskTest {
         headers.put("Content-Type",Lists.newArrayList("application/json"));
         httpRequest.setHeaders(headers);
         httpRequest.setBodyAsString("stuff");
+        httpRequest.setBodyAsForm(Maps.newHashMap());
         return httpRequest;
     }
+
+
 
 }
