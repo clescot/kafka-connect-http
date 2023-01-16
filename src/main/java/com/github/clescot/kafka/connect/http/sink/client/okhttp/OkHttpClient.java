@@ -7,6 +7,7 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import kotlin.Pair;
 import okhttp3.*;
+import okhttp3.internal.http.HttpMethod;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -109,25 +110,30 @@ public class OkHttpClient extends AbstractHttpClient<Request, Response> {
             firstContentType = contentType.get(0);
         }
         RequestBody requestBody = null;
-        if (HttpRequest.BodyType.STRING.equals(httpRequest.getBodyType())) {
-            //use the contentType set in HttpRequest. if not set, use application/json
-            requestBody = RequestBody.create(httpRequest.getBodyAsString(), MediaType.parse(Optional.ofNullable(firstContentType).orElse("application/json")));
-        } else if (HttpRequest.BodyType.BYTE_ARRAY.equals(httpRequest.getBodyType())) {
-            String encoded = Base64.getEncoder().encodeToString(httpRequest.getBodyAsByteArray());
-            requestBody = RequestBody.create(encoded, MediaType.parse(Optional.ofNullable(firstContentType).orElse("application/octet-stream")));
-        }else if (HttpRequest.BodyType.FORM.equals(httpRequest.getBodyType())) {
-            FormBody.Builder formBuilder = new FormBody.Builder();
-            Map<String, String> multiparts = null;
-            for (Map.Entry<String, String> entry : multiparts.entrySet()) {
-                formBuilder.add(entry.getKey(), entry.getValue());
+        String method = httpRequest.getMethod();
+        if(HttpMethod.permitsRequestBody(method)) {
+            if (HttpRequest.BodyType.STRING.equals(httpRequest.getBodyType())) {
+                //use the contentType set in HttpRequest. if not set, use application/json
+                requestBody = RequestBody.create(httpRequest.getBodyAsString(), MediaType.parse(Optional.ofNullable(firstContentType).orElse("application/json")));
+            } else if (HttpRequest.BodyType.BYTE_ARRAY.equals(httpRequest.getBodyType())) {
+                String encoded = Base64.getEncoder().encodeToString(httpRequest.getBodyAsByteArray());
+                requestBody = RequestBody.create(encoded, MediaType.parse(Optional.ofNullable(firstContentType).orElse("application/octet-stream")));
+            } else if (HttpRequest.BodyType.FORM.equals(httpRequest.getBodyType())) {
+                FormBody.Builder formBuilder = new FormBody.Builder();
+                Map<String, String> multiparts = null;
+                for (Map.Entry<String, String> entry : multiparts.entrySet()) {
+                    formBuilder.add(entry.getKey(), entry.getValue());
+                }
+                requestBody = formBuilder.build();
+            } else {
+                //TODO handle multipart
+                //HttpRequest.BodyType = MULTIPART
+                List<byte[]> bodyAsMultipart = httpRequest.getBodyAsMultipart();
             }
-            requestBody = formBuilder.build();
-        } else {
-            //TODO handle multipart
-            //HttpRequest.BodyType = MULTIPART
-            List<byte[]> bodyAsMultipart = httpRequest.getBodyAsMultipart();
+        }else if(httpRequest.getBodyAsString()!=null && !httpRequest.getBodyAsString().isBlank()){
+            LOGGER.warn("Http Request with '{}' method does not permit a body. the provided body has been removed. please use another method to use one",method);
         }
-        builder.method(httpRequest.getMethod(),requestBody);
+        builder.method(method,requestBody);
         return builder.build();
     }
 
