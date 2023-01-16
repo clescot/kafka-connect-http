@@ -207,7 +207,8 @@ public class AHCHttpClient implements HttpClient<Request, Response> {
     }
     public HttpResponse buildResponse(Response response) throws HttpException {
         List<Map.Entry<String, String>> responseEntries = response.getHeaders() != null ? response.getHeaders().entries() : Lists.newArrayList();
-        HttpResponse httpResponse = new HttpResponse(response.getStatusCode(), response.getStatusText(), response.getResponseBody());
+        HttpResponse httpResponse = new HttpResponse(response.getStatusCode(), response.getStatusText());
+        httpResponse.setResponseBody(response.getResponseBody());
         Map<String, List<String>> responseHeaders = responseEntries.stream()
                 .map(entry -> new AbstractMap.SimpleImmutableEntry<String, List<String>>(entry.getKey(), Lists.newArrayList(entry.getValue())))
                 .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));

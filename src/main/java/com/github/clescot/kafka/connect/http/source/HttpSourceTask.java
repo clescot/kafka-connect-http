@@ -1,6 +1,7 @@
 package com.github.clescot.kafka.connect.http.source;
 
 import com.github.clescot.kafka.connect.http.HttpExchange;
+import com.github.clescot.kafka.connect.http.HttpExchangeAsStruct;
 import com.github.clescot.kafka.connect.http.KafkaRecord;
 import com.github.clescot.kafka.connect.http.QueueFactory;
 import com.github.clescot.kafka.connect.http.sink.VersionUtil;
@@ -63,7 +64,8 @@ public class HttpSourceTask extends SourceTask {
         Map<String, ?> sourcePartition = Maps.newHashMap();
         Map<String, ?> sourceOffset= Maps.newHashMap();
         HttpExchange httpExchange = kafkaRecord.getHttpExchange();
-        Struct struct = httpExchange.toStruct();
+        HttpExchangeAsStruct httpExchangeAsStruct = new HttpExchangeAsStruct(httpExchange);
+        Struct struct = httpExchangeAsStruct.toStruct();
         LOGGER.debug("HttpSourcetask Struct received :{}",struct);
         return new SourceRecord(
                 sourcePartition,

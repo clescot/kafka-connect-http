@@ -193,7 +193,7 @@ public class HttpSinkTask extends SinkTask {
                         throwable.getMessage());
                 return httpClient.buildHttpExchange(
                         httpRequest,
-                        new HttpResponse(SERVER_ERROR_STATUS_CODE, String.valueOf(throwable.getMessage()), BLANK_RESPONSE_CONTENT),
+                        new HttpResponse(SERVER_ERROR_STATUS_CODE, String.valueOf(throwable.getMessage())),
                         Stopwatch.createUnstarted(), OffsetDateTime.now(ZoneId.of(UTC_ZONE_ID)),
                         attempts,
                         FAILURE);
@@ -311,7 +311,7 @@ public class HttpSinkTask extends SinkTask {
                 Integer version = schema.version();
                 LOGGER.debug("schema version referenced in Struct is '{}'", version);
 
-                httpRequest = HttpRequest
+                httpRequest = HttpRequestAsStruct
                         .Builder
                         .anHttpRequest()
                         .withStruct(valueAsStruct)

@@ -4,30 +4,20 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
-import org.apache.kafka.connect.data.Schema;
-import org.apache.kafka.connect.data.SchemaBuilder;
-import org.apache.kafka.connect.data.Struct;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.*;
+import java.util.Base64;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 
 @io.confluent.kafka.schemaregistry.annotations.Schema(value = HttpRequest.SCHEMA_AS_STRING,
         refs = {})
 public class HttpRequest {
 
     public static final String test="";
-    public static final String URL = "url";
-    public static final String METHOD = "method";
-    public static final String HEADERS = "headers";
 
-    //only one 'body' field must be set
-    public static final String BODY_TYPE = "bodyType";
-    public static final String BODY_AS_STRING = "bodyAsString";
-    public static final String BODY_AS_FORM = "bodyAsForm";
-    public static final String BODY_AS_BYTE_ARRAY = "bodyAsByteArray";
-    public static final String BODY_AS_MULTIPART = "bodyAsMultipart";
-    public static final int VERSION = 1;
 
     private final static Logger LOGGER = LoggerFactory.getLogger(HttpRequest.class);
 
@@ -111,19 +101,6 @@ public class HttpRequest {
             "    \"bodyType\"\n" +
             "  ]\n" +
             "}";
-    public static final Schema SCHEMA = SchemaBuilder
-            .struct()
-            .name(HttpRequest.class.getName())
-            .version(VERSION)
-            //request
-            .field(HEADERS, SchemaBuilder.map(Schema.STRING_SCHEMA, SchemaBuilder.array(Schema.STRING_SCHEMA)).build())
-            .field(URL, Schema.STRING_SCHEMA)
-            .field(METHOD, Schema.STRING_SCHEMA)
-            .field(BODY_TYPE, Schema.STRING_SCHEMA)
-            .field(BODY_AS_STRING, Schema.OPTIONAL_STRING_SCHEMA)
-            .field(BODY_AS_FORM, SchemaBuilder.map(Schema.STRING_SCHEMA,Schema.STRING_SCHEMA))
-            .field(BODY_AS_BYTE_ARRAY, Schema.OPTIONAL_STRING_SCHEMA)
-            .field(BODY_AS_MULTIPART, SchemaBuilder.array(Schema.OPTIONAL_STRING_SCHEMA));
 
     public HttpRequest(String url,
                        String method,
@@ -172,6 +149,10 @@ public class HttpRequest {
 
     public byte[] getBodyAsByteArray() {
         return this.bodyAsByteArray != null ? Base64.getDecoder().decode(bodyAsByteArray) : new byte[0];
+    }
+
+    public Map<String, String> getBodyAsForm() {
+        return bodyAsForm;
     }
 
     public List<byte[]> getBodyAsMultipart() {
@@ -235,99 +216,7 @@ public class HttpRequest {
                 '}';
     }
 
-    public Struct toStruct() {
-        return new Struct(SCHEMA)
-                .put(URL, url)
-                .put(HEADERS, headers)
-                .put(METHOD, method)
-                .put(BODY_TYPE, bodyType.name())
-                .put(BODY_AS_STRING, bodyAsString)
-                .put(BODY_AS_FORM, bodyAsForm)
-                .put(BODY_AS_BYTE_ARRAY, bodyAsByteArray)
-                .put(BODY_AS_MULTIPART, bodyAsMultipart);
-    }
 
-
-    public static final class Builder {
-
-        private Struct struct;
-        private String url;
-        private String method;
-        private String bodyType;
-        private String stringBody;
-        private Map<String,String> formBody = Maps.newHashMap();
-        private byte[] byteArrayBody;
-        private List<byte[]> multipartBody = Lists.newArrayList();
-        private Map<String, List<String>> headers = Maps.newHashMap();
-
-        private Builder() {
-        }
-
-        public static Builder anHttpRequest() {
-            return new Builder();
-        }
-
-        public Builder withStruct(Struct struct) {
-            this.struct = struct;
-            //request
-
-            this.url = struct.getString(URL);
-            Preconditions.checkNotNull(url, "'url' is required");
-
-            Map<String, List<String>> headers = struct.getMap(HEADERS);
-            if(headers!=null&&!headers.isEmpty()) {
-                this.headers = headers;
-            }
-
-            this.method = struct.getString(METHOD);
-            Preconditions.checkNotNull(method, "'method' is required");
-
-            this.bodyType = struct.getString(BODY_TYPE);
-            Preconditions.checkNotNull(method, "'bodyType' is required");
-            LOGGER.debug("withStruct: stringBody:'{}'",struct.getString(BODY_AS_STRING));
-            this.stringBody = struct.getString(BODY_AS_STRING);
-            this.formBody = struct.getMap(BODY_AS_FORM);
-            this.byteArrayBody = Base64.getDecoder().decode(Optional.ofNullable(struct.getString(BODY_AS_BYTE_ARRAY)).orElse(""));
-            List<byte[]> array = struct.getArray(BODY_AS_MULTIPART);
-            if(array!=null) {
-                this.multipartBody = array;
-            }
-
-            return this;
-        }
-
-
-        public HttpRequest build() {
-
-
-            HttpRequest httpRequest = new HttpRequest(
-                    url,
-                    method,
-                    bodyType
-            );
-
-            httpRequest.setHeaders(headers);
-            LOGGER.debug("bodyType='{}'",bodyType.toString());
-            if(BodyType.STRING.name().equals(bodyType)){
-                httpRequest.setBodyAsString(this.stringBody);
-                LOGGER.debug("stringBody='{}'",stringBody);
-                LOGGER.debug("httpRequest='{}'",httpRequest);
-            }else if(BodyType.BYTE_ARRAY.name().equals(bodyType)){
-                LOGGER.debug("byteArrayBody='{}'",byteArrayBody);
-                httpRequest.setBodyAsByteArray(this.byteArrayBody);
-            }else if(BodyType.FORM.name().equals(this.bodyType)){
-                LOGGER.debug("formBody='{}'",formBody);
-                httpRequest.setBodyAsForm(this.formBody);
-            }else if(BodyType.MULTIPART.name().equals(this.bodyType)){
-                LOGGER.debug("multipartBody='{}'",multipartBody);
-                httpRequest.setBodyAsMultipart(multipartBody);
-            }else{
-                LOGGER.error("unknown BodyType: '",bodyType);
-                throw new IllegalArgumentException("unknown BodyType: '"+bodyType+"'");
-            }
-            return httpRequest;
-        }
-    }
 
 
     public enum BodyType {

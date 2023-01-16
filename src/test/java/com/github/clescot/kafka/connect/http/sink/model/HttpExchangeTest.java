@@ -26,8 +26,10 @@ public class HttpExchangeTest {
             return httpRequest;
         }
         private HttpResponse getDummyHttpResponse(int statusCode){
-            return new HttpResponse(
-                    statusCode,"OK","nfgnlksdfnlnskdfnlsf");
+            HttpResponse httpResponse = new HttpResponse(
+                    statusCode, "OK");
+            httpResponse.setResponseBody("nfgnlksdfnlnskdfnlsf");
+            return httpResponse;
         }
         @Test
         public void test_nominal_case() {

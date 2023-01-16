@@ -1,5 +1,6 @@
 {
-  "$schema": "http://json-schema.org/draft/2019-09/schema#",
+  "$id": "https://github.com/clescot/kafka-connect-http-sink/schemas/http-response.json",
+  "$schema": "http://json-schema.org/draft/2019-09/schema",
   "title": "Http Response schema.",
   "description": "Http Response schema, included into HttpExchange.",
   "type": "object",
@@ -10,6 +11,9 @@
       "type": "integer"
     },
     "statusMessage":  {
+      "type": "string"
+    },
+    "protocol":  {
       "type": "string"
     },
     "responseHeaders":  {
@@ -25,5 +29,9 @@
     "responseBody":  {
       "type": "string"
     }
-  }
+  },
+  "required": [
+    "statusCode",
+    "statusMessage"
+  ]
 }

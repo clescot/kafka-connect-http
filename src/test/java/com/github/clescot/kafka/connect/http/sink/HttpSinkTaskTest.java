@@ -462,7 +462,7 @@ public class HttpSinkTaskTest {
 
     @Test
     public void test_retry_needed(){
-        HttpResponse httpResponse = new HttpResponse(500,"Internal Server Error","");
+        HttpResponse httpResponse = new HttpResponse(500,"Internal Server Error");
         Map<String, String> settings = Maps.newHashMap();
         httpSinkTask.start(settings);
         boolean retryNeeded = httpSinkTask.retryNeeded(httpResponse);
@@ -470,7 +470,7 @@ public class HttpSinkTaskTest {
     }
     @Test
     public void test_retry_not_needed_with_400_status_code(){
-        HttpResponse httpResponse = new HttpResponse(400,"Internal Server Error","");
+        HttpResponse httpResponse = new HttpResponse(400,"Internal Server Error");
         Map<String, String> settings = Maps.newHashMap();
         httpSinkTask.start(settings);
         boolean retryNeeded = httpSinkTask.retryNeeded(httpResponse);
@@ -478,7 +478,7 @@ public class HttpSinkTaskTest {
     }
     @Test
     public void test_retry_not_needed_with_200_status_code(){
-        HttpResponse httpResponse = new HttpResponse(200,"Internal Server Error","");
+        HttpResponse httpResponse = new HttpResponse(200,"Internal Server Error");
         Map<String, String> settings = Maps.newHashMap();
         httpSinkTask.start(settings);
         boolean retryNeeded = httpSinkTask.retryNeeded(httpResponse);
@@ -488,7 +488,7 @@ public class HttpSinkTaskTest {
 
     @Test
     public void test_retry_needed_by_configuration_with_200_status_code(){
-        HttpResponse httpResponse = new HttpResponse(200,"Internal Server Error","");
+        HttpResponse httpResponse = new HttpResponse(200,"Internal Server Error");
         Map<String, String> settings = Maps.newHashMap();
         settings.put(HTTP_CLIENT_DEFAULT_RETRY_RESPONSE_CODE_REGEX,"^[1-5][0-9][0-9]$");
         httpSinkTask.start(settings);
@@ -521,7 +521,8 @@ public class HttpSinkTaskTest {
         HttpRequest httpRequest = new HttpRequest("http://www.titi.com", DUMMY_METHOD, DUMMY_BODY_TYPE);
         httpRequest.setHeaders(requestHeaders);
         httpRequest.setBodyAsString("stuff");
-        HttpResponse httpResponse = new HttpResponse(200, "OK", "my response");
+        HttpResponse httpResponse = new HttpResponse(200, "OK");
+        httpResponse.setResponseBody("my response");
         Map<String, List<String>> responseHeaders = Maps.newHashMap();
         responseHeaders.put("Content-Type", Lists.newArrayList("application/json"));
         httpResponse.setResponseHeaders(responseHeaders);
@@ -583,7 +584,8 @@ public class HttpSinkTaskTest {
 
     private Struct getDummyHttpRequestAsStruct() {
         HttpRequest httpRequest = getDummyHttpRequest();
-        return httpRequest.toStruct();
+        HttpRequestAsStruct httpRequestAsStruct = new HttpRequestAsStruct(httpRequest);
+        return httpRequestAsStruct.toStruct();
     }
 
     @NotNull

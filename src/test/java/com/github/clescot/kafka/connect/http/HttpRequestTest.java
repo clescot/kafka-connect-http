@@ -140,38 +140,38 @@ class HttpRequestTest {
         Struct value = (Struct) schemaAndValue.value();
         assertThat(expectedJsonSchema.equals(value.schema()));
         //when
-        HttpRequest parsedHttpRequest = HttpRequest.Builder.anHttpRequest().withStruct(value).build();
+        HttpRequest parsedHttpRequest = HttpRequestAsStruct.Builder.anHttpRequest().withStruct(value).build();
 
         System.out.println(parsedHttpRequest);
     }
     @Test
     public void test_with_empty_struct(){
         //given
-        Struct struct = new Struct(HttpRequest.SCHEMA);
+        Struct struct = new Struct(HttpRequestAsStruct.SCHEMA);
         //when
-        Assertions.assertThrows(NullPointerException.class,()->HttpRequest.Builder.anHttpRequest().withStruct(struct).build());
+        Assertions.assertThrows(NullPointerException.class,()->HttpRequestAsStruct.Builder.anHttpRequest().withStruct(struct).build());
     }
     @Test
     public void test_with_struct_only_url(){
         //given
-        Struct struct = new Struct(HttpRequest.SCHEMA);
+        Struct struct = new Struct(HttpRequestAsStruct.SCHEMA);
         struct.put("url","http://stuff.com");
         //when
-        Assertions.assertThrows(NullPointerException.class,()->HttpRequest.Builder.anHttpRequest().withStruct(struct).build());
+        Assertions.assertThrows(NullPointerException.class,()->HttpRequestAsStruct.Builder.anHttpRequest().withStruct(struct).build());
     }
     @Test
     public void test_with_struct_only_url_and_method(){
         //given
-        Struct struct = new Struct(HttpRequest.SCHEMA);
+        Struct struct = new Struct(HttpRequestAsStruct.SCHEMA);
         struct.put("url","http://stuff.com");
         struct.put("method","GET");
         //when
-        Assertions.assertThrows(NullPointerException.class,()->HttpRequest.Builder.anHttpRequest().withStruct(struct).build());
+        Assertions.assertThrows(NullPointerException.class,()->HttpRequestAsStruct.Builder.anHttpRequest().withStruct(struct).build());
     }
     @Test
     public void test_with_struct_nominal_case(){
         //given
-        Struct struct = new Struct(HttpRequest.SCHEMA);
+        Struct struct = new Struct(HttpRequestAsStruct.SCHEMA);
         String dummyUrl = "http://stuff.com";
         struct.put("url", dummyUrl);
         String dummyMethod = "GET";
@@ -180,7 +180,7 @@ class HttpRequestTest {
         struct.put("bodyType", dummyBodyType);
         struct.put("bodyAsString", DUMMY_BODY_AS_STRING);
         //when
-        HttpRequest httpRequest = HttpRequest.Builder.anHttpRequest().withStruct(struct).build();
+        HttpRequest httpRequest = HttpRequestAsStruct.Builder.anHttpRequest().withStruct(struct).build();
         //then
         assertThat(httpRequest).isNotNull();
         assertThat(httpRequest.getUrl()).isEqualTo(dummyUrl);

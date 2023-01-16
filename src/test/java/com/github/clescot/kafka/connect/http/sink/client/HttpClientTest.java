@@ -102,7 +102,8 @@ public class HttpClientTest {
         }
 
         private HttpResponse getDummyHttpResponse(int statusCode) {
-            HttpResponse httpResponse = new HttpResponse(statusCode,"OK","my response");
+            HttpResponse httpResponse = new HttpResponse(statusCode,"OK");
+            httpResponse.setResponseBody("my response");
             Map<String,List<String>> headers = Maps.newHashMap();
             headers.put("Content-Type",Lists.newArrayList("application/json"));
             headers.put("X-stuff",Lists.newArrayList("foo"));
