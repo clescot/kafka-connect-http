@@ -584,7 +584,8 @@ public class HttpSinkTaskTest {
 
     private Struct getDummyHttpRequestAsStruct() {
         HttpRequest httpRequest = getDummyHttpRequest();
-        return httpRequest.toStruct();
+        HttpRequestAsStruct httpRequestAsStruct = new HttpRequestAsStruct(httpRequest);
+        return httpRequestAsStruct.toStruct();
     }
 
     @NotNull

@@ -1,33 +1,11 @@
 package com.github.clescot.kafka.connect.http;
 
-import org.apache.kafka.connect.data.Schema;
-import org.apache.kafka.connect.data.SchemaBuilder;
-import org.apache.kafka.connect.data.Struct;
-
 import java.time.OffsetDateTime;
-import java.time.format.DateTimeFormatter;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class HttpExchange {
-    public static final int HTTP_EXCHANGE_VERSION = 1;
-    public static final String DURATION_IN_MILLIS = "durationInMillis";
-    public static final String MOMENT = "moment";
-    public static final String ATTEMPTS = "attempts";
-    public static final String REQUEST = "request";
-    public static final String RESPONSE = "response";
-    public final static Schema SCHEMA = SchemaBuilder
-            .struct()
-            .name(HttpExchange.class.getName())
-            .version(HTTP_EXCHANGE_VERSION)
-            //metadata fields
-            .field(DURATION_IN_MILLIS, Schema.INT64_SCHEMA)
-            .field(MOMENT, Schema.STRING_SCHEMA)
-            .field(ATTEMPTS, Schema.INT32_SCHEMA)
-            //request
-            .field(REQUEST, HttpRequest.SCHEMA)
-            // response
-            .field(RESPONSE, HttpResponse.SCHEMA)
-            .schema();
+
+
     private final Long durationInMillis;
     private final OffsetDateTime moment;
     private final AtomicInteger attempts;
@@ -92,17 +70,6 @@ public class HttpExchange {
                 '}';
     }
 
-    public Struct toStruct(){
-        Struct struct = new Struct(HttpExchange.SCHEMA);
-        struct.put(DURATION_IN_MILLIS,getDurationInMillis());
-        struct.put(MOMENT,getMoment().format(DateTimeFormatter.ISO_ZONED_DATE_TIME));
-        struct.put(ATTEMPTS,getAttempts().intValue());
-        //request fields
-        struct.put(REQUEST,getHttpRequest().toStruct());
-        // response fields
-        struct.put(RESPONSE,getHttpResponse().toStruct());
-        return struct;
-    }
 
     public static final class Builder {
         private Long durationInMillis;

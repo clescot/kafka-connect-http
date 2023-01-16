@@ -311,7 +311,7 @@ public class HttpSinkTask extends SinkTask {
                 Integer version = schema.version();
                 LOGGER.debug("schema version referenced in Struct is '{}'", version);
 
-                httpRequest = HttpRequest
+                httpRequest = HttpRequestAsStruct
                         .Builder
                         .anHttpRequest()
                         .withStruct(valueAsStruct)
