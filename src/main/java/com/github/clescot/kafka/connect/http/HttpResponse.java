@@ -16,6 +16,7 @@ public class HttpResponse {
 
     private static final String STATUS_CODE = "statusCode";
     private static final String STATUS_MESSAGE = "statusMessage";
+    private static final String PROTOCOL = "protocol";
     private static final String HEADERS = "headers";
     private static final String BODY = "body";
 
@@ -25,21 +26,22 @@ public class HttpResponse {
             .version(VERSION)
             .field(STATUS_CODE,Schema.INT64_SCHEMA)
             .field(STATUS_MESSAGE,Schema.STRING_SCHEMA)
+            .field(PROTOCOL,Schema.OPTIONAL_STRING_SCHEMA)
             .field(HEADERS, SchemaBuilder.map(Schema.STRING_SCHEMA, SchemaBuilder.array(Schema.STRING_SCHEMA)).build())
-            .field(BODY,Schema.STRING_SCHEMA);
+            .field(BODY,Schema.OPTIONAL_STRING_SCHEMA);
 
 
     private final Integer statusCode;
     private final String statusMessage;
-    private final String responseBody;
+    private String responseBody;
+    private String protocol;
 
     private Map<String, List<String>> responseHeaders = Maps.newHashMap();
 
-    public HttpResponse(Integer statusCode, String statusMessage, String responseBody) {
+    public HttpResponse(Integer statusCode, String statusMessage) {
         Preconditions.checkArgument(statusCode>0,"status code must be a positive integer");
         this.statusCode = statusCode;
         this.statusMessage = statusMessage;
-        this.responseBody = responseBody;
     }
 
     public Map<String, List<String>> getResponseHeaders() {
@@ -62,7 +64,18 @@ public class HttpResponse {
         this.responseHeaders = responseHeaders;
     }
 
+    public void setResponseBody(String responseBody) {
+        this.responseBody = responseBody;
+    }
 
+
+    public String getProtocol() {
+        return protocol;
+    }
+
+    public void setProtocol(String protocol) {
+        this.protocol = protocol;
+    }
 
     public Struct toStruct() {
         return new Struct(SCHEMA)
@@ -79,7 +92,7 @@ public class HttpResponse {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         HttpResponse that = (HttpResponse) o;
-        return statusCode.equals(that.statusCode) && statusMessage.equals(that.statusMessage) && responseBody.equals(that.responseBody) && Objects.equals(responseHeaders, that.responseHeaders);
+        return statusCode.equals(that.statusCode) && statusMessage.equals(that.statusMessage) && protocol.equals(that.protocol)&& responseBody.equals(that.responseBody) && Objects.equals(responseHeaders, that.responseHeaders);
     }
 
     @Override
@@ -92,6 +105,7 @@ public class HttpResponse {
         return "HttpResponse{" +
                 "statusCode=" + statusCode +
                 ", statusMessage='" + statusMessage + '\'' +
+                ", protocol='" + protocol + '\'' +
                 ", responseBody='" + responseBody + '\'' +
                 ", responseHeaders=" + responseHeaders +
                 '}';

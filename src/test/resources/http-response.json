@@ -12,6 +12,9 @@
     "statusMessage":  {
       "type": "string"
     },
+    "protocol":  {
+      "type": "string"
+    },
     "responseHeaders":  {
       "type": "object",
       "existingJavaType" : "java.util.Map<String,java.util.List<String>>",
@@ -25,5 +28,9 @@
     "responseBody":  {
       "type": "string"
     }
-  }
+  },
+  "required": [
+    "statusCode",
+    "statusMessage"
+  ]
 }

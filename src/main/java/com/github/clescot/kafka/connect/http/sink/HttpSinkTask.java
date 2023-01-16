@@ -193,7 +193,7 @@ public class HttpSinkTask extends SinkTask {
                         throwable.getMessage());
                 return httpClient.buildHttpExchange(
                         httpRequest,
-                        new HttpResponse(SERVER_ERROR_STATUS_CODE, String.valueOf(throwable.getMessage()), BLANK_RESPONSE_CONTENT),
+                        new HttpResponse(SERVER_ERROR_STATUS_CODE, String.valueOf(throwable.getMessage())),
                         Stopwatch.createUnstarted(), OffsetDateTime.now(ZoneId.of(UTC_ZONE_ID)),
                         attempts,
                         FAILURE);

@@ -145,7 +145,11 @@ public class OkHttpClient extends AbstractHttpClient<Request, Response> {
             LOGGER.debug("cache-control: '{}'", response.cacheControl());
             LOGGER.debug("handshake: '{}'", response.handshake());
             LOGGER.debug("challenges: '{}'", response.challenges());
-            httpResponse = new HttpResponse(response.code(), response.message(), response.body()!=null?response.body().string():"");
+            httpResponse = new HttpResponse(response.code(), response.message());
+            if(response.body()!=null) {
+                httpResponse.setResponseBody(response.body().string());
+            }
+            httpResponse.setProtocol(response.protocol().name());
             Headers headers = response.headers();
             Iterator<Pair<String, String>> iterator = headers.iterator();
             Map<String,List<String>> responseHeaders = Maps.newHashMap();

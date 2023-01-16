@@ -96,7 +96,8 @@ class HttpSourceTaskTest {
                 "STRING"
         );
         httpRequest.setBodyAsString("stuff");
-        HttpResponse httpResponse = new HttpResponse(200, "OK", "dummy response");
+        HttpResponse httpResponse = new HttpResponse(200, "OK");
+        httpResponse.setResponseBody("dummy response");
         HttpExchange httpExchange = new HttpExchange(
                 httpRequest,
                 httpResponse,
@@ -124,7 +125,8 @@ class HttpSourceTaskTest {
                 "STRING"
         );
         httpRequest.setBodyAsString("stuff");
-        HttpResponse httpResponse = new HttpResponse(500, "Internal Server Error", "dummy response");
+        HttpResponse httpResponse = new HttpResponse(500, "Internal Server Error");
+        httpResponse.setResponseBody("dummy response");
         HttpExchange httpExchange = new HttpExchange(
                 httpRequest,
                 httpResponse,
