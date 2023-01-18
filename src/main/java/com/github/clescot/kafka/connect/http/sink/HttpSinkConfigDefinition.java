@@ -20,7 +20,8 @@ public class HttpSinkConfigDefinition {
     public static final String HTTP_CLIENT_DEFAULT_RETRY_DELAY_FACTOR = "httpclient.default.retry.delay.factor";
     public static final String HTTP_CLIENT_DEFAULT_RETRY_DELAY_FACTOR_DOC = "if set with other default retry parameters, permit to define a default retry policy, which can be overriden in the httpRequest object. Define the factor to multiply the previous delay to define the current retry delay";
     public static final String HTTP_CLIENT_DEFAULT_RETRY_JITTER_IN_MS = "httpclient.default.retry.jitter.in.ms";
-    public static final String HTTP_CLIENT_DEFAULT_RETRY_JITTER_IN_MS_DOC = "if set with other default retry parameters, permit to define a default retry policy, which can be overriden in the httpRequest object. Define max entropy to add, to prevent many retry policies instances with the same parameters, to flood servers at the same time";
+    public static final String HTTP_CLIENT_DEFAULT_RETRY_JITTER_IN_MS_DOC = "if set with other default retry parameters, permit to define a default retry policy, which can be overriden in the httpRequest object. " +
+            "Define max entropy to add, to prevent many retry policies instances with the same parameters, to flood servers at the same time";
 
     public static final String HTTP_CLIENT_DEFAULT_RATE_LIMITER_PERIOD_IN_MS = "httpclient.default.rate.limiter.period.in.ms";
     public static final String HTTP_CLIENT_DEFAULT_RATE_LIMITER_PERIOD_IN_MS_DOC = "period of time in milliseconds, during the max execution cannot be exceeded";
@@ -28,8 +29,19 @@ public class HttpSinkConfigDefinition {
     public static final String HTTP_CLIENT_DEFAULT_RATE_LIMITER_MAX_EXECUTIONS = "httpclient.default.rate.limiter.max.executions";
     public static final String HTTP_CLIENT_DEFAULT_RATE_LIMITER_MAX_EXECUTIONS_DOC = "max execution in the period defined with the '"+ HTTP_CLIENT_DEFAULT_RATE_LIMITER_PERIOD_IN_MS +"' parameter";
 
+    private static final long DEFAULT_WAIT_TIME_REGISTRATION_QUEUE_CONSUMER_IN_MS = 60000L;
     public static final String WAIT_TIME_REGISTRATION_QUEUE_CONSUMER_IN_MS = "wait.time.registration.queue.consumer.in.ms";
-    public static final String WAIT_TIME_REGISTRATION_QUEUE_CONSUMER_IN_MS_DOC = "wait time defined with the '"+ HTTP_CLIENT_DEFAULT_RATE_LIMITER_PERIOD_IN_MS +"' parameter, for a queue consumer (Source Connector) registration. We wait if the "+PUBLISH_TO_IN_MEMORY_QUEUE+" parameter is set to 'true', to avoid to publish to the queue without any consumer (OutOfMemoryError possible)";
+    public static final String WAIT_TIME_REGISTRATION_QUEUE_CONSUMER_IN_MS_DOC = "wait time defined with the '"+ WAIT_TIME_REGISTRATION_QUEUE_CONSUMER_IN_MS +"' parameter, for a queue consumer (Source Connector) registration. " +
+            "We wait if the "+PUBLISH_TO_IN_MEMORY_QUEUE+" parameter is set to 'true', to avoid to publish to the queue without any consumer (OutOfMemoryError possible). default value is "+DEFAULT_WAIT_TIME_REGISTRATION_QUEUE_CONSUMER_IN_MS;
+
+    private static final int DEFAULT_POLL_DELAY_REGISTRATION_QUEUE_CONSUMER_IN_MS = 2000;
+    public static final String POLL_DELAY_REGISTRATION_QUEUE_CONSUMER_IN_MS = "poll.delay.registration.queue.consumer.in.ms";
+    public static final String POLL_DELAY_REGISTRATION_QUEUE_CONSUMER_IN_MS_DOC = "poll delay, i.e, wait time before start polling a registered consumer defined with the '"+ POLL_DELAY_REGISTRATION_QUEUE_CONSUMER_IN_MS +"' parameter, " +
+            "for a queue consumer (Source Connector) registration.if not set, default value is "+DEFAULT_POLL_DELAY_REGISTRATION_QUEUE_CONSUMER_IN_MS;
+    private static final int DEFAULT_POLL_INTERVAL_REGISTRATION_QUEUE_CONSUMER_IN_MS = 500;
+    public static final String POLL_INTERVAL_REGISTRATION_QUEUE_CONSUMER_IN_MS = "poll.interval.registration.queue.consumer.in.ms";
+    public static final String POLL_INTERVAL_REGISTRATION_QUEUE_CONSUMER_IN_MS_DOC = "poll interval, i.e, time between every poll for a registered consumer defined with the '"+ POLL_INTERVAL_REGISTRATION_QUEUE_CONSUMER_IN_MS +"' parameter, " +
+            "for a queue consumer (Source Connector) registration.if not set, default value is "+DEFAULT_POLL_INTERVAL_REGISTRATION_QUEUE_CONSUMER_IN_MS;
 
 
     public static final String HTTP_CLIENT_GENERATE_MISSING_CORRELATION_ID = "httpclient.generate.missing.correlation.id";
@@ -128,7 +140,9 @@ public class HttpSinkConfigDefinition {
                 .define(HTTP_CLIENT_DEFAULT_RATE_LIMITER_MAX_EXECUTIONS, ConfigDef.Type.LONG, HttpSinkConfigDefinition.DEFAULT_RATE_LIMITER_MAX_EXECUTIONS_VALUE, ConfigDef.Importance.MEDIUM, HTTP_CLIENT_DEFAULT_RATE_LIMITER_MAX_EXECUTIONS_DOC)
                 .define(HTTP_CLIENT_GENERATE_MISSING_CORRELATION_ID, ConfigDef.Type.BOOLEAN, false, ConfigDef.Importance.MEDIUM, HTTP_CLIENT_GENERATE_MISSING_CORRELATION_ID_DOC)
                 .define(HTTP_CLIENT_GENERATE_MISSING_REQUEST_ID, ConfigDef.Type.BOOLEAN, false, ConfigDef.Importance.MEDIUM, HTTP_CLIENT_GENERATE_MISSING_REQUEST_ID_DOC)
-                .define(WAIT_TIME_REGISTRATION_QUEUE_CONSUMER_IN_MS, ConfigDef.Type.LONG, 60000L, ConfigDef.Importance.LOW, WAIT_TIME_REGISTRATION_QUEUE_CONSUMER_IN_MS_DOC)
+                .define(WAIT_TIME_REGISTRATION_QUEUE_CONSUMER_IN_MS, ConfigDef.Type.LONG, DEFAULT_WAIT_TIME_REGISTRATION_QUEUE_CONSUMER_IN_MS, ConfigDef.Importance.LOW, WAIT_TIME_REGISTRATION_QUEUE_CONSUMER_IN_MS_DOC)
+                .define(POLL_DELAY_REGISTRATION_QUEUE_CONSUMER_IN_MS, ConfigDef.Type.INT, DEFAULT_POLL_DELAY_REGISTRATION_QUEUE_CONSUMER_IN_MS, ConfigDef.Importance.LOW, POLL_DELAY_REGISTRATION_QUEUE_CONSUMER_IN_MS_DOC)
+                .define(POLL_INTERVAL_REGISTRATION_QUEUE_CONSUMER_IN_MS, ConfigDef.Type.INT, DEFAULT_POLL_INTERVAL_REGISTRATION_QUEUE_CONSUMER_IN_MS, ConfigDef.Importance.LOW, POLL_INTERVAL_REGISTRATION_QUEUE_CONSUMER_IN_MS_DOC)
                 .define(HTTPCLIENT_IMPLEMENTATION, ConfigDef.Type.STRING, null, ConfigDef.Importance.LOW, HTTPCLIENT_IMPLEMENTATION_DOC)
                 .define(HTTPCLIENT_DEFAULT_PROTOCOLS, ConfigDef.Type.STRING, null, ConfigDef.Importance.LOW, HTTPCLIENT_DEFAULT_PROTOCOLS_DOC)
                 .define(HTTPCLIENT_SSL_SKIP_HOSTNAME_VERIFICATION, ConfigDef.Type.STRING, null, ConfigDef.Importance.LOW, HTTPCLIENT_SSL_SKIP_HOSTNAME_VERIFICATION_DOC)
