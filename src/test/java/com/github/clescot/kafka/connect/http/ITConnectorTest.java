@@ -77,7 +77,7 @@ public class ITConnectorTest {
 
     private final static Logger LOGGER = LoggerFactory.getLogger(ITConnectorTest.class);
     private final static Slf4jLogConsumer logConsumer = new Slf4jLogConsumer(LOGGER).withSeparateOutputStreams();
-    public static final String CONFLUENT_VERSION = "7.3.0";
+    public static final String CONFLUENT_VERSION = "7.3.1";
     public static final int CUSTOM_AVAILABLE_PORT = 0;
     public static final int CACHE_CAPACITY = 100;
     public static final String HTTP_REQUESTS_AS_STRING = "http-requests-string";

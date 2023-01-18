@@ -1,10 +1,12 @@
 package com.github.clescot.kafka.connect.http;
 
+import java.io.Serializable;
 import java.time.OffsetDateTime;
 import java.util.concurrent.atomic.AtomicInteger;
 
-public class HttpExchange {
+public class HttpExchange implements Serializable {
 
+    public static final long serialVersionUID = 1L;
 
     private final Long durationInMillis;
     private final OffsetDateTime moment;

@@ -3,13 +3,14 @@ package com.github.clescot.kafka.connect.http;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Maps;
 
+import java.io.Serializable;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
-public class HttpResponse {
+public class HttpResponse implements Serializable {
 
-
+    public static final long serialVersionUID = 1L;
 
     private final Integer statusCode;
     private final String statusMessage;

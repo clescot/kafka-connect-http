@@ -7,6 +7,7 @@ import com.google.common.collect.Maps;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.Serializable;
 import java.util.Base64;
 import java.util.List;
 import java.util.Map;
@@ -14,7 +15,9 @@ import java.util.Objects;
 
 @io.confluent.kafka.schemaregistry.annotations.Schema(value = HttpRequest.SCHEMA_AS_STRING,
         refs = {})
-public class HttpRequest {
+public class HttpRequest implements Serializable {
+
+    public static final long serialVersionUID = 1L;
 
     public static final String test="";
 
