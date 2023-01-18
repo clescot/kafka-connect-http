@@ -93,6 +93,7 @@ public class HttpRequest implements Serializable {
             "      \"type\": \"string\",\n" +
             "      \"enum\": [\n" +
             "        \"STRING\",\n" +
+            "        \"FORM\",\n" +
             "        \"BYTE_ARRAY\",\n" +
             "        \"MULTIPART\"\n" +
             "      ]\n" +
