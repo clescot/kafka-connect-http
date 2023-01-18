@@ -39,7 +39,7 @@ class QueueFactoryTest {
     @Test
     public void test_registerConsumerForQueue(){
         QueueFactory.registerConsumerForQueue("test");
-        assertThat(QueueFactory.hasAConsumer("test",200)).isTrue();
+        assertThat(QueueFactory.hasAConsumer("test",200, 2000, 500)).isTrue();
     }
 
     @Test
@@ -62,11 +62,11 @@ class QueueFactoryTest {
         //given
         String queueName = "test";
         QueueFactory.registerConsumerForQueue(queueName);
-        assertThat(QueueFactory.hasAConsumer(queueName,500)).isTrue();
+        assertThat(QueueFactory.hasAConsumer(queueName,500, 2000, 500)).isTrue();
 
         //when
         QueueFactory.clearRegistrations();
-        assertThat(QueueFactory.hasAConsumer(queueName,500)).isFalse();
+        assertThat(QueueFactory.hasAConsumer(queueName,500, 2000, 500)).isFalse();
     }
 
 
@@ -76,7 +76,7 @@ class QueueFactoryTest {
         //given
         QueueFactory.getQueue(queueName);
         //when
-        boolean hasAConsumer = QueueFactory.hasAConsumer(queueName, 500);
+        boolean hasAConsumer = QueueFactory.hasAConsumer(queueName, 500, 2000, 500);
         //then
         assertThat(hasAConsumer).isFalse();
     }
@@ -88,7 +88,7 @@ class QueueFactoryTest {
         QueueFactory.getQueue(queueName);
         QueueFactory.registerConsumerForQueue(queueName);
         //when
-        boolean hasAConsumer = QueueFactory.hasAConsumer(queueName, 500);
+        boolean hasAConsumer = QueueFactory.hasAConsumer(queueName, 500, 2000, 500);
         //then
         assertThat(hasAConsumer).isTrue();
     }

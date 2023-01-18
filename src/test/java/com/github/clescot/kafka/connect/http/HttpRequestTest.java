@@ -32,6 +32,7 @@ class HttpRequestTest {
 
 
     private static final String DUMMY_BODY_AS_STRING = "stuff";
+    private static final String DUMMY_TOPIC = "myTopic";
 
     @Test
     public void test_serialization() throws JsonProcessingException, JSONException {
@@ -63,7 +64,7 @@ class HttpRequestTest {
         JSONAssert.assertEquals(expectedHttpRequest, serializedHttpRequest,true);
     }
     @Test
-    public void test_deserialization() throws JsonProcessingException, JSONException {
+    public void test_deserialization() throws JsonProcessingException {
         ObjectMapper objectMapper = new ObjectMapper();
         objectMapper.registerModule(new JavaTimeModule());
         HttpRequest expectedHttpRequest = new HttpRequest(
@@ -108,7 +109,7 @@ class HttpRequestTest {
         headers.put("X-request-id", Lists.newArrayList("11-999-ff-777"));
         httpRequest.setHeaders(headers);
         SpecificationVersion jsonSchemaSpecification = SpecificationVersion.DRAFT_2019_09;
-        boolean useOneOfForNullables=true;
+        boolean useOneOfForNullables=false;
         boolean failUnknownProperties=true;
         //get JSON schema
         JsonSchema expectedJsonSchema = JsonSchemaUtils.getSchema(
@@ -128,7 +129,7 @@ class HttpRequestTest {
         jsonSchemaSerializerConfig.put(KafkaJsonSchemaSerializerConfig.FAIL_UNKNOWN_PROPERTIES,""+failUnknownProperties);
         MockSchemaRegistryClient schemaRegistryClient = new MockSchemaRegistryClient(Lists.newArrayList(new JsonSchemaProvider()));
         KafkaJsonSchemaSerializer<HttpRequest> serializer = new KafkaJsonSchemaSerializer<>(schemaRegistryClient,jsonSchemaSerializerConfig);
-        byte[] bytes = serializer.serialize(DUMMY_BODY_AS_STRING, httpRequest);
+        byte[] bytes = serializer.serialize(DUMMY_TOPIC, httpRequest);
 
         System.out.println("bytesAsString:"+new String(bytes, StandardCharsets.UTF_8));
         //like in kafka connect Sink connector, convert byte[] to struct
@@ -136,7 +137,7 @@ class HttpRequestTest {
         Map<String,String> converterConfig= Maps.newHashMap();
         converterConfig.put(JsonSchemaConverterConfig.SCHEMA_REGISTRY_URL_CONFIG,"mock://stuff.com");
         jsonSchemaConverter.configure(converterConfig,false);
-        SchemaAndValue schemaAndValue = jsonSchemaConverter.toConnectData(DUMMY_BODY_AS_STRING, bytes);
+        SchemaAndValue schemaAndValue = jsonSchemaConverter.toConnectData(DUMMY_TOPIC, bytes);
         Struct value = (Struct) schemaAndValue.value();
         assertThat(expectedJsonSchema.equals(value.schema()));
         //when

@@ -3,13 +3,52 @@ package com.github.clescot.kafka.connect.http;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Maps;
 
+import java.io.Serializable;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+@io.confluent.kafka.schemaregistry.annotations.Schema(value = HttpResponse.SCHEMA_AS_STRING,
+        refs = {})
+public class HttpResponse implements Serializable {
 
-public class HttpResponse {
-
-
+    public static final long serialVersionUID = 1L;
+    public static final String SCHEMA_AS_STRING = "{\n" +
+            "  \"$id\": \"https://github.com/clescot/kafka-connect-http-sink/schemas/http-response.json\",\n" +
+            "  \"$schema\": \"http://json-schema.org/draft/2019-09/schema\",\n" +
+            "  \"title\": \"Http Response schema.\",\n" +
+            "  \"description\": \"Http Response schema, included into HttpExchange.\",\n" +
+            "  \"type\": \"object\",\n" +
+            "  \"javaType\" : \"com.github.clescot.kafka.connect.http.HttpResponse\",\n" +
+            "  \"additionalProperties\": false,\n" +
+            "  \"properties\": {\n" +
+            "    \"statusCode\":{\n" +
+            "      \"type\": \"integer\"\n" +
+            "    },\n" +
+            "    \"statusMessage\":  {\n" +
+            "      \"type\": \"string\"\n" +
+            "    },\n" +
+            "    \"protocol\":  {\n" +
+            "      \"type\": \"string\"\n" +
+            "    },\n" +
+            "    \"responseHeaders\":  {\n" +
+            "      \"type\": \"object\",\n" +
+            "      \"existingJavaType\" : \"java.util.Map<String,java.util.List<String>>\",\n" +
+            "      \"additionalProperties\": {\n" +
+            "        \"type\": \"array\",\n" +
+            "        \"items\": {\n" +
+            "          \"type\": \"string\"\n" +
+            "        }\n" +
+            "      }\n" +
+            "    },\n" +
+            "    \"responseBody\":  {\n" +
+            "      \"type\": \"string\"\n" +
+            "    }\n" +
+            "  },\n" +
+            "  \"required\": [\n" +
+            "    \"statusCode\",\n" +
+            "    \"statusMessage\"\n" +
+            "  ]\n" +
+            "}";
 
     private final Integer statusCode;
     private final String statusMessage;

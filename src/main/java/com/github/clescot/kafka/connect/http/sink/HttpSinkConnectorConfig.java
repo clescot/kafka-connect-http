@@ -39,6 +39,8 @@ public class HttpSinkConnectorConfig extends AbstractConfig {
     private boolean generateMissingCorrelationId;
 
     private long maxWaitTimeRegistrationOfQueueConsumerInMs;
+    private int pollDelayRegistrationOfQueueConsumerInMs;
+    private int pollIntervalRegistrationOfQueueConsumerInMs;
     private String httpClientFactoryClass;
 
     public HttpSinkConnectorConfig(Map<?, ?> originals) {
@@ -63,6 +65,8 @@ public class HttpSinkConnectorConfig extends AbstractConfig {
         this.defaultRateLimiterPeriodInMs = getLong(HTTP_CLIENT_DEFAULT_RATE_LIMITER_PERIOD_IN_MS);
         this.defaultRateLimiterMaxExecutions = getLong(HTTP_CLIENT_DEFAULT_RATE_LIMITER_MAX_EXECUTIONS);
         this.maxWaitTimeRegistrationOfQueueConsumerInMs = getLong(WAIT_TIME_REGISTRATION_QUEUE_CONSUMER_IN_MS);
+        this.pollDelayRegistrationOfQueueConsumerInMs = getInt(POLL_DELAY_REGISTRATION_QUEUE_CONSUMER_IN_MS);
+        this.pollIntervalRegistrationOfQueueConsumerInMs = getInt(POLL_INTERVAL_REGISTRATION_QUEUE_CONSUMER_IN_MS);
         Optional<List<String>> staticRequestHeaderNames = Optional.ofNullable(getList(HTTP_CLIENT_STATIC_REQUEST_HEADER_NAMES));
         List<String> additionalHeaderNamesList =staticRequestHeaderNames.orElse(Lists.newArrayList());
         for(String headerName:additionalHeaderNamesList){
@@ -141,6 +145,15 @@ public class HttpSinkConnectorConfig extends AbstractConfig {
 
     public String getDefaultRetryResponseCodeRegex() {
         return defaultRetryResponseCodeRegex;
+    }
+
+
+    public int getPollDelayRegistrationOfQueueConsumerInMs() {
+        return pollDelayRegistrationOfQueueConsumerInMs;
+    }
+
+    public int getPollIntervalRegistrationOfQueueConsumerInMs() {
+        return pollIntervalRegistrationOfQueueConsumerInMs;
     }
 
     public String getHttpClientFactoryClass() {

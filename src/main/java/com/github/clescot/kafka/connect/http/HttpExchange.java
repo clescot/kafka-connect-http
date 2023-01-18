@@ -1,10 +1,50 @@
 package com.github.clescot.kafka.connect.http;
 
+import java.io.Serializable;
 import java.time.OffsetDateTime;
 import java.util.concurrent.atomic.AtomicInteger;
 
-public class HttpExchange {
+@io.confluent.kafka.schemaregistry.annotations.Schema(value = HttpExchange.SCHEMA_AS_STRING,
+        refs = {})
+public class HttpExchange implements Serializable {
 
+    public static final long serialVersionUID = 1L;
+    public static final String SCHEMA_AS_STRING = "{\n" +
+            "  \"$id\": \"https://github.com/clescot/kafka-connect-http-sink/schemas/http-exchange.json\",\n" +
+            "  \"$schema\": \"http://json-schema.org/draft/2019-09/schema\",\n" +
+            "  \"title\": \"Http Exchange\",\n" +
+            "  \"type\": \"object\",\n" +
+            "  \"javaType\" : \"com.github.clescot.kafka.connect.http.HttpExchange\",\n" +
+            "  \"additionalProperties\": false,\n" +
+            "  \"properties\": {\n" +
+            "    \"durationInMillis\": {\n" +
+            "      \"type\": \"integer\"\n" +
+            "    },\n" +
+            "    \"moment\": {\n" +
+            "      \"type\": \"number\"\n" +
+            "    },\n" +
+            "    \"attempts\": {\n" +
+            "      \"type\": \"integer\"\n" +
+            "    },\n" +
+            "    \"success\": {\n" +
+            "      \"type\": \"boolean\"\n" +
+            "    },\n" +
+            "    \"httpResponse\": {\n" +
+            "      \"$ref\": \"https://github.com/clescot/kafka-connect-http-sink/schemas/http-response.json\"\n" +
+            "    },\n" +
+            "    \"httpRequest\": {\n" +
+            "      \"$ref\": \"https://github.com/clescot/kafka-connect-http-sink/schemas/http-request.json\"\n" +
+            "    }\n" +
+            "  },\n" +
+            "  \"required\": [\n" +
+            "    \"moment\",\n" +
+            "    \"attempts\",\n" +
+            "    \"success\",\n" +
+            "    \"httpRequest\",\n" +
+            "    \"httpResponse\"\n" +
+            "  ]\n" +
+            "\n" +
+            "}";
 
     private final Long durationInMillis;
     private final OffsetDateTime moment;

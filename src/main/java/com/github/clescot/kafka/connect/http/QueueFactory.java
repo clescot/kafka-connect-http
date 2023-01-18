@@ -47,11 +47,25 @@ public class QueueFactory {
         return queueHasAConsumer != null && queueHasAConsumer;
     }
 
-    public static boolean hasAConsumer(String queueName,long maxWaitTimeInMilliSeconds){
-        Duration duration = Duration.ofMillis(maxWaitTimeInMilliSeconds);
+    public static boolean hasAConsumer(String queueName, long maxWaitTimeInMilliSeconds, int pollDelay, int pollInterval){
+        Duration maxWaitTimeDuration = Duration.ofMillis(maxWaitTimeInMilliSeconds);
         try {
-            Awaitility.await().atMost(duration).pollDelay(maxWaitTimeInMilliSeconds>5000?5000:maxWaitTimeInMilliSeconds-1,TimeUnit.MILLISECONDS).conditionEvaluationListener(new ConditionEvaluationLogger(string -> LOGGER.info("awaiting a registered consumer (Source Connector) listening on the queue : '{}'", queueName), TimeUnit.SECONDS)).until(() -> hasAConsumer(queueName));
+            Awaitility.await()
+                    .atMost(maxWaitTimeDuration)
+                    //we are waiting 2 seconds before any check
+                    .pollDelay(maxWaitTimeInMilliSeconds> pollDelay ? pollDelay :maxWaitTimeInMilliSeconds-1,TimeUnit.MILLISECONDS)
+                    //we check queue consumer every second
+                    .pollInterval(pollInterval,TimeUnit.MILLISECONDS)
+                    .conditionEvaluationListener(
+                            new ConditionEvaluationLogger(
+                                    string -> LOGGER.info("awaiting a registered consumer (Source Connector) listening on the queue : '{}'", queueName)
+                                    , TimeUnit.SECONDS))
+                    //we are waiting at most 'maxWaitTimeDuration' before throwing a timeout exception
+                    .atMost(maxWaitTimeDuration)
+                    .until(() -> hasAConsumer(queueName));
+            LOGGER.info(" registered consumer (Source Connector) is listening on the queue : '{}'",queueName);
         }catch(ConditionTimeoutException e){
+            LOGGER.error("no registered consumer (Source Connector) is listening in time on the queue : '{}'",queueName);
             return false;
         }
         return true;

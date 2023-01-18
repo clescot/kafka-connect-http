@@ -50,6 +50,7 @@
       "type": "string",
       "enum": [
         "STRING",
+        "FORM",
         "BYTE_ARRAY",
         "MULTIPART"
       ]

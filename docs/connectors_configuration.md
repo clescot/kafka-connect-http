@@ -27,7 +27,9 @@ every Kafka Connect Sink Connector need to define these required parameters :
   You can define multiple in memory queues, to permit to publish to different topics, different HTTP interactions. If
   you set this parameter to a value different than `default`, you need to configure an HTTP source Connector listening
   on the same queue name to avoid some OutOfMemoryErrors.
-
+- *wait.time.registration.queue.consumer.in.ms* : wait time for a queue consumer (Source Connector) registration. default value is 60 seconds.
+- *poll.delay.registration.queue.consumer.in.ms* : poll delay, i.e, wait time before start polling a registered consumer. default value is 2 seconds.
+- *poll.interval.registration.queue.consumer.in.ms* : poll interval, i.e, time between every poll for a registered consumer. default value is 5000 milliseconds.
 
 
 - HttpClient parameters
