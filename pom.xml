@@ -22,7 +22,7 @@
     </scm>
     <properties>
         <async.http.client.version>2.12.3</async.http.client.version>
-        <kafka.version>3.3.1</kafka.version>
+        <kafka.version>3.3.2</kafka.version>
         <confluent.platform.version>7.3.1</confluent.platform.version>
         <guava.version>31.1-jre</guava.version>
         <jackson.version>2.14.1</jackson.version>
