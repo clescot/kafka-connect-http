@@ -4,7 +4,7 @@
     <name>kafka-connect-http-sink</name>
     <groupId>com.github.clescot</groupId>
     <artifactId>kafka-connect-http-sink</artifactId>
-    <version>0.2.55-SNAPSHOT</version>
+    <version>0.2.58-SNAPSHOT</version>
     <url>https://github.com/clescot/kafka-connect-http-sink</url>
     <licenses>
         <license>
@@ -22,7 +22,7 @@
     </scm>
     <properties>
         <async.http.client.version>2.12.3</async.http.client.version>
-        <kafka.version>3.3.1</kafka.version>
+        <kafka.version>3.3.2</kafka.version>
         <confluent.platform.version>7.3.1</confluent.platform.version>
         <guava.version>31.1-jre</guava.version>
         <jackson.version>2.14.1</jackson.version>
@@ -180,7 +180,7 @@
         <dependency>
             <groupId>org.apache.kafka</groupId>
             <artifactId>connect-json</artifactId>
-            <version>3.3.1</version>
+            <version>3.3.2</version>
             <scope>test</scope>
         </dependency>
         <dependency>
