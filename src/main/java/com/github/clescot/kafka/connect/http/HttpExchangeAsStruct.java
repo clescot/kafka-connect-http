@@ -15,8 +15,8 @@ public class HttpExchangeAsStruct {
     public static final String DURATION_IN_MILLIS = "durationInMillis";
     public static final String MOMENT = "moment";
     public static final String ATTEMPTS = "attempts";
-    public static final String REQUEST = "request";
-    public static final String RESPONSE = "response";
+    public static final String HTTP_REQUEST = "httpRequest";
+    public static final String HTTP_RESPONSE = "httpResponse";
 
     public final static Schema SCHEMA = SchemaBuilder
             .struct()
@@ -27,9 +27,9 @@ public class HttpExchangeAsStruct {
             .field(MOMENT, Schema.STRING_SCHEMA)
             .field(ATTEMPTS, Schema.INT32_SCHEMA)
             //request
-            .field(REQUEST, HttpRequestAsStruct.SCHEMA)
+            .field(HTTP_REQUEST, HttpRequestAsStruct.SCHEMA)
             // response
-            .field(RESPONSE, HttpResponseAsStruct.SCHEMA)
+            .field(HTTP_RESPONSE, HttpResponseAsStruct.SCHEMA)
             .schema();
     private HttpExchange httpExchange;
 
@@ -46,11 +46,11 @@ public class HttpExchangeAsStruct {
         //request fields
         HttpRequest httpRequest = httpExchange.getHttpRequest();
         HttpRequestAsStruct httpRequestAsStruct = new HttpRequestAsStruct(httpRequest);
-        struct.put(REQUEST, httpRequestAsStruct.toStruct());
+        struct.put(HTTP_REQUEST, httpRequestAsStruct.toStruct());
         // response fields
         HttpResponse httpResponse = httpExchange.getHttpResponse();
         HttpResponseAsStruct httpResponseAsStruct = new HttpResponseAsStruct(httpResponse);
-        struct.put(RESPONSE, httpResponseAsStruct.toStruct());
+        struct.put(HTTP_RESPONSE, httpResponseAsStruct.toStruct());
         return struct;
 
     }

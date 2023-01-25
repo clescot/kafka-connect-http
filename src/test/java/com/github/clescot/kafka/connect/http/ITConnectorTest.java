@@ -280,7 +280,7 @@ public class ITConnectorTest {
                 "  \"durationInMillis\": 0,\n" +
                 "  \"moment\": \"2022-11-10T17:19:42.740852Z\",\n" +
                 "  \"attempts\": 1,\n" +
-                "  \"request\": {\n" +
+                "  \"httpRequest\": {\n" +
                 "    \"headers\": {\n" +
                 "      \"X-Correlation-ID\": [\n" +
                 "        \"e6de70d1-f222-46e8-b755-754880687822\"\n" +
@@ -297,11 +297,11 @@ public class ITConnectorTest {
                 "    \"bodyAsByteArray\": \"\",\n" +
                 "    \"bodyAsMultipart\": []\n" +
                 "  },\n" +
-                "  \"response\": {" +
+                "  \"httpResponse\": {" +
                 "   \"statusCode\":200,\n" +
                 "  \"statusMessage\": \"OK\",\n" +
-                "  \"headers\": {},\n" +
-                "  \"body\": \""+escapedJsonResponse+"\"\n" +
+                "  \"responseHeaders\": {},\n" +
+                "  \"responseBody\": \""+escapedJsonResponse+"\"\n" +
                 "}"+
                 "}";
         JSONAssert.assertEquals(expectedJSON, jsonAsString,
@@ -392,7 +392,7 @@ public class ITConnectorTest {
                 "  \"durationInMillis\": 0,\n" +
                 "  \"moment\": \"2022-11-10T17:19:42.740852Z\",\n" +
                 "  \"attempts\": 1,\n" +
-                "  \"request\": {\n" +
+                "  \"httpRequest\": {\n" +
                 "    \"headers\": {\n" +
                 "      \"X-Correlation-ID\": [\n" +
                 "        \"e6de70d1-f222-46e8-b755-754880687822\"\n" +
@@ -409,13 +409,13 @@ public class ITConnectorTest {
                 "    \"bodyAsByteArray\": \"\",\n" +
                 "    \"bodyAsMultipart\": []\n" +
                 "  },\n" +
-                "  \"response\": {\n" +
+                "  \"httpResponse\": {\n" +
                 "   \"statusCode\":200,\n" +
                 "  \"statusMessage\": \""+statusMessage+"\",\n" +
-                "  \"headers\": {" +
+                "  \"responseHeaders\": {" +
                 "\"Content-Type\":[\"application/json\"]" +
                 "},\n" +
-                "  \"body\": \""+escapedJsonResponse+"\"\n" +
+                "  \"responseBody\": \""+escapedJsonResponse+"\"\n" +
                 "}"+
                 "}";
         JSONAssert.assertEquals(expectedJSON, jsonAsString,
@@ -726,7 +726,7 @@ public class ITConnectorTest {
                 "  \"durationInMillis\": 0,\n" +
                 "  \"moment\": \"2022-11-10T17:19:42.740852Z\",\n" +
                 "  \"attempts\": 1,\n" +
-                "  \"request\": {\n" +
+                "  \"httpRequest\": {\n" +
                 "    \"headers\": {\n" +
                 "      \"X-Correlation-ID\": [\n" +
                 "        \"e6de70d1-f222-46e8-b755-754880687822\"\n" +
@@ -743,13 +743,13 @@ public class ITConnectorTest {
                 "    \"bodyAsByteArray\": \"\",\n" +
                 "    \"bodyAsMultipart\": []\n" +
                 "  },\n" +
-                "  \"response\": {\n" +
+                "  \"httpResponse\": {\n" +
                 "   \"statusCode\":200,\n" +
                 "  \"statusMessage\": \""+statusMessage+"\",\n" +
-                "  \"headers\": {" +
+                "  \"responseHeaders\": {" +
                 "\"Content-Type\":[\"application/json\"]" +
                 "},\n" +
-                "  \"body\": \""+escapedJsonResponse+"\"\n" +
+                "  \"responseBody\": \""+escapedJsonResponse+"\"\n" +
                 "}"+
                 "}";
         JSONAssert.assertEquals(expectedJSON, jsonAsString,
@@ -774,7 +774,7 @@ public class ITConnectorTest {
                     "  \"durationInMillis\": 0,\n" +
                     "  \"moment\": \"2022-11-10T17:19:42.740852Z\",\n" +
                     "  \"attempts\": 1,\n" +
-                    "  \"request\": {\n" +
+                    "  \"httpRequest\": {\n" +
                     "    \"headers\": {\n" +
                     "      \"X-Correlation-ID\": [\n" +
                     "        \"e6de70d1-f222-46e8-b755-754880687822\"\n" +
@@ -791,13 +791,13 @@ public class ITConnectorTest {
                     "    \"bodyAsByteArray\": \"\",\n" +
                     "    \"bodyAsMultipart\": []\n" +
                     "  },\n" +
-                    "  \"response\": {\n" +
+                    "  \"httpResponse\": {\n" +
                     "   \"statusCode\":" + statusCode + ",\n" +
                     "  \"statusMessage\": \"" + statusMessage + "\",\n" +
-                    "  \"headers\": {" +
+                    "  \"responseHeaders\": {" +
                     "\"Content-Type\":[\"application/json\"]" +
                     "},\n" +
-                    "  \"body\": \"" + escapedJsonResponse + "\"\n" +
+                    "  \"responseBody\": \"" + escapedJsonResponse + "\"\n" +
                     "}" +
                     "}";
             JSONAssert.assertEquals(expectedJSON, jsonAsString,

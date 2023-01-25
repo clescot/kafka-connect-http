@@ -50,12 +50,18 @@ public class HttpResponse implements Serializable {
             "  ]\n" +
             "}";
 
-    private final Integer statusCode;
-    private final String statusMessage;
+    private Integer statusCode;
+    private String statusMessage;
     private String responseBody;
     private String protocol;
 
     private Map<String, List<String>> responseHeaders = Maps.newHashMap();
+
+    /**
+     * only for json deserialization
+     */
+    protected HttpResponse() {
+    }
 
     public HttpResponse(Integer statusCode, String statusMessage) {
         Preconditions.checkArgument(statusCode>0,"status code must be a positive integer");
@@ -96,7 +102,13 @@ public class HttpResponse implements Serializable {
         this.protocol = protocol;
     }
 
+    protected void setStatusCode(Integer statusCode) {
+        this.statusCode = statusCode;
+    }
 
+    protected void setStatusMessage(String statusMessage) {
+        this.statusMessage = statusMessage;
+    }
 
     @Override
     public boolean equals(Object o) {

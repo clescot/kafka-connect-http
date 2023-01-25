@@ -10,8 +10,8 @@ public class HttpResponseAsStruct {
     private static final String STATUS_CODE = "statusCode";
     private static final String STATUS_MESSAGE = "statusMessage";
     private static final String PROTOCOL = "protocol";
-    private static final String HEADERS = "headers";
-    private static final String BODY = "body";
+    private static final String RESPONSE_HEADERS = "responseHeaders";
+    private static final String RESPONSE_BODY = "responseBody";
 
     public static final Schema SCHEMA = SchemaBuilder
             .struct()
@@ -20,8 +20,8 @@ public class HttpResponseAsStruct {
             .field(STATUS_CODE,Schema.INT64_SCHEMA)
             .field(STATUS_MESSAGE,Schema.STRING_SCHEMA)
             .field(PROTOCOL,Schema.OPTIONAL_STRING_SCHEMA)
-            .field(HEADERS, SchemaBuilder.map(Schema.STRING_SCHEMA, SchemaBuilder.array(Schema.STRING_SCHEMA)).build())
-            .field(BODY,Schema.OPTIONAL_STRING_SCHEMA);
+            .field(RESPONSE_HEADERS, SchemaBuilder.map(Schema.STRING_SCHEMA, SchemaBuilder.array(Schema.STRING_SCHEMA)).build())
+            .field(RESPONSE_BODY,Schema.OPTIONAL_STRING_SCHEMA);
 
     private HttpResponse httpResponse;
 
@@ -33,8 +33,8 @@ public class HttpResponseAsStruct {
         return new Struct(SCHEMA)
                 .put(STATUS_CODE,httpResponse.getStatusCode().longValue())
                 .put(STATUS_MESSAGE,httpResponse.getStatusMessage())
-                .put(HEADERS,httpResponse.getResponseHeaders())
-                .put(BODY,httpResponse.getResponseBody());
+                .put(RESPONSE_HEADERS,httpResponse.getResponseHeaders())
+                .put(RESPONSE_BODY,httpResponse.getResponseBody());
 
 
     }
