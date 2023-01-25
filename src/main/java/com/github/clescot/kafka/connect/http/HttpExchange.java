@@ -46,12 +46,15 @@ public class HttpExchange implements Serializable {
             "\n" +
             "}";
 
-    private final Long durationInMillis;
-    private final OffsetDateTime moment;
-    private final AtomicInteger attempts;
+    private Long durationInMillis;
+    private OffsetDateTime moment;
+    private AtomicInteger attempts;
     private boolean success;
-    private final HttpResponse httpResponse;
+    private HttpResponse httpResponse;
     private HttpRequest httpRequest;
+
+    protected HttpExchange() {
+    }
 
     public HttpExchange(
             HttpRequest httpRequest,
@@ -97,6 +100,25 @@ public class HttpExchange implements Serializable {
         return httpResponse;
     }
 
+    protected void setDurationInMillis(Long durationInMillis) {
+        this.durationInMillis = durationInMillis;
+    }
+
+    protected void setMoment(OffsetDateTime moment) {
+        this.moment = moment;
+    }
+
+    protected void setAttempts(AtomicInteger attempts) {
+        this.attempts = attempts;
+    }
+
+    protected void setHttpResponse(HttpResponse httpResponse) {
+        this.httpResponse = httpResponse;
+    }
+
+    protected void setHttpRequest(HttpRequest httpRequest) {
+        this.httpRequest = httpRequest;
+    }
 
     @Override
     public String toString() {

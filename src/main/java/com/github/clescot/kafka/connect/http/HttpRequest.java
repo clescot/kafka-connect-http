@@ -106,6 +106,12 @@ public class HttpRequest implements Serializable {
             "  ]\n" +
             "}";
 
+    /**
+     * only for json deserialization
+     */
+    protected HttpRequest() {
+    }
+
     public HttpRequest(String url,
                        String method,
                        String bodyType) {
@@ -125,11 +131,7 @@ public class HttpRequest implements Serializable {
     }
 
 
-    /**
-     * only for json deserialization
-     */
-    protected HttpRequest() {
-    }
+
 
     public void setBodyType(BodyType bodyType) {
         this.bodyType = bodyType;
