@@ -4,7 +4,7 @@
     <name>kafka-connect-http-sink</name>
     <groupId>com.github.clescot</groupId>
     <artifactId>kafka-connect-http-sink</artifactId>
-    <version>0.2.61-SNAPSHOT</version>
+    <version>0.2.62-SNAPSHOT</version>
     <url>https://github.com/clescot/kafka-connect-http</url>
     <licenses>
         <license>
