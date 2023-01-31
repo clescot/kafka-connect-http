@@ -5,7 +5,7 @@
     <groupId>com.github.clescot</groupId>
     <artifactId>kafka-connect-http-sink</artifactId>
     <version>0.2.61-SNAPSHOT</version>
-    <url>https://github.com/clescot/kafka-connect-http-sink</url>
+    <url>https://github.com/clescot/kafka-connect-http</url>
     <licenses>
         <license>
             <name>Apache License, Version 2.0</name>
@@ -17,7 +17,7 @@
     <scm>
         <connection>scm:git:${project.scm.url}</connection>
         <developerConnection>scm:git:${project.scm.url}</developerConnection>
-        <url>https://github.com/clescot/kafka-connect-http-sink.git</url>
+        <url>https://github.com/clescot/kafka-connect-http.git</url>
         <tag>HEAD</tag>
     </scm>
     <properties>
@@ -225,7 +225,7 @@
                 <artifactId>maven-shade-plugin</artifactId>
                 <version>3.4.1</version>
                 <configuration>
-                    <outputFile>${project.build.directory}/http-connector/kafka-connect-http-sink.jar</outputFile>
+                    <outputFile>${project.build.directory}/http-connector/kafka-connect-http.jar</outputFile>
                 </configuration>
                 <executions>
                     <execution>
@@ -319,12 +319,12 @@
                         </goals>
                         <configuration>
                             <title>Kafka Connect HTTP Sink and Source</title>
-                            <documentationUrl>https://github.com/clescot/kafka-connect-http-sink#readme</documentationUrl>
+                            <documentationUrl>https://github.com/clescot/kafka-connect-http#readme</documentationUrl>
                             <description>The Http Sink connector permits from Kafka to interact with HTTP servers, and optionally the Source Connector permits to store in Kafka HTTP interactions details.</description>
                             <supportProviderName>Charles Lescot</supportProviderName>
                             <supportSummary>Support is provided as best effort only. Please register any issues in the github project.</supportSummary>
-                            <supportUrl>https://github.com/clescot/kafka-connect-http-sink/issues</supportUrl>
-                            <sourceUrl>https://github.com/clescot/kafka-connect-http-sink</sourceUrl>
+                            <supportUrl>https://github.com/clescot/kafka-connect-http/issues</supportUrl>
+                            <sourceUrl>https://github.com/clescot/kafka-connect-http</sourceUrl>
                             <ownerUsername>clescot</ownerUsername>
                             <ownerType>user</ownerType>
                             <ownerName>Charles Lescot</ownerName>
@@ -384,7 +384,7 @@
         <repository>
             <id>github</id>
             <name>GitHub OWNER Apache Maven Packages</name>
-            <url>https://maven.pkg.github.com/clescot/kafka-connect-http-sink</url>
+            <url>https://maven.pkg.github.com/clescot/kafka-connect-http</url>
         </repository>
     </distributionManagement>
 
