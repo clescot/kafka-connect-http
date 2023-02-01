@@ -9,7 +9,7 @@ cluster.
 
 every Kafka Connect Sink Connector need to define these required parameters :
 
-- *connector.class* : `com.github.clescot.kafka.connect.http.sink.HttpSinkConnector`
+- *connector.class* : `sink.io.github.clescot.kafka.connect.http.HttpSinkConnector`
 - *topics* (or *topics.regex*): `http-requests` for example
 
 #### optional Kafka Connect parameters
@@ -79,7 +79,7 @@ every Kafka Connect Sink Connector need to define these required parameters :
 {
     "name": "my-http-sink-connector",
     "config": {
-    "connector.class":"com.github.clescot.kafka.connect.http.sink.HttpSinkConnector",
+    "connector.class":"sink.io.github.clescot.kafka.connect.http.HttpSinkConnector",
     "tasks.max": "1",
     "topics":"http-request",
     }
@@ -90,7 +90,7 @@ every Kafka Connect Sink Connector need to define these required parameters :
 {
     "name": "my-http-sink-connector",
     "config": {
-    "connector.class":"com.github.clescot.kafka.connect.http.sink.HttpSinkConnector",
+    "connector.class":"sink.io.github.clescot.kafka.connect.http.HttpSinkConnector",
     "tasks.max": "1",
     "topics":"http-request",
     "publish.to.in.memory.queue":"true"
@@ -104,7 +104,7 @@ every Kafka Connect Sink Connector need to define these required parameters :
 {
   "name": "my-http-sink-connector",
   "config": {
-    "connector.class":"com.github.clescot.kafka.connect.http.sink.HttpSinkConnector",
+    "connector.class":"sink.io.github.clescot.kafka.connect.http.HttpSinkConnector",
     "tasks.max": "1",
     "topics":"http-request",
     "key.converter": "org.apache.kafka.connect.storage.StringConverter",
@@ -161,7 +161,7 @@ via the `publish.to.in.memory.queue` set to `true`.
 {
     "name": "my-http-source-connector",
     "config": {
-    "connector.class":"com.github.clescot.kafka.connect.http.source.HttpSourceConnector",
+    "connector.class":"source.io.github.clescot.kafka.connect.http.HttpSourceConnector",
     "tasks.max": "1",
     "success.topic": "http-success",
     "error.topic": "http-error",

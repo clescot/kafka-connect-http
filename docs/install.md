@@ -38,10 +38,10 @@ For example, `kafka-connect-http-sink-0.2.33.zip`.
      
          [
              {
-                 "class": "com.github.clescot.kafka.connect.http.sink.HttpSinkConnector"
+                 "class": "sink.io.github.clescot.kafka.connect.http.HttpSinkConnector"
              },
              {
-                 "class": "com.github.clescot.kafka.connect.http.source.HttpSourceConnector"
+                 "class": "source.io.github.clescot.kafka.connect.http.HttpSourceConnector"
              }
          ]
      
