@@ -1,5 +1,6 @@
 package com.github.clescot.kafka.connect.http.source;
 
+import com.github.clescot.kafka.connect.http.QueueProducer;
 import com.github.clescot.kafka.connect.http.core.*;
 import com.google.common.collect.Maps;
 import org.apache.kafka.common.config.ConfigException;
