@@ -24,7 +24,7 @@ jobs:
             ${{ runner.os }}-maven-
       - name: Build with Maven
         run: mvn --batch-mode --update-snapshots package
-      - run: mkdir staging && cp target/*.jar staging
+      - run: mkdir staging && cp core/target/*.jar staging && cp -r archive/target/components/packages/clescot-kafka-connect-http-archive-*.zip staging
       - uses: actions/upload-artifact@v3
         with:
           name: Package

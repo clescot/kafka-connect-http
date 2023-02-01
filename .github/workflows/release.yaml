@@ -50,6 +50,6 @@ jobs:
       - uses: ncipollo/release-action@v1
         with:
           tag: ${{ steps.tag-name.outputs.TAG }}
-          artifacts: "target/http-connector/*.jar,target/components/packages/*.zip"
+          artifacts: "core/target/*.jar,archive/target/components/packages/*.zip"
           generateReleaseNotes: true
 
