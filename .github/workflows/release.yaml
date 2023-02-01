@@ -39,7 +39,6 @@ jobs:
           access-token: ${{ secrets.GITHUB_TOKEN }}
           version-patch: true
           gpg-enabled: "true"
-          server-id: github
           gpg-key-id: ${{ secrets.MAVEN_GPG_KEY_ID }}
           gpg-key: ${{ secrets.MAVEN_GPG_PRIVATE_KEY }}
           gpg-passphrase: ${{ secrets.MAVEN_GPG_PASSPHRASE }}
@@ -68,6 +67,7 @@ jobs:
           server-id: ossrh
           server-username: MAVEN_USERNAME
           server-password: MAVEN_PASSWORD
+          maven-servers: '[{"id": "ossrh", "username": "${{ secrets.OSSRH_USERNAME }}", "password": "${{ secrets.OSSRH_TOKEN }}"}]'
       - name: Publish to the Maven Central Repository with the 'ossrh' maven profile
         run: mvn -Possrh --batch-mode deploy
         env:
