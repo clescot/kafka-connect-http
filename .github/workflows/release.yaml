@@ -33,8 +33,6 @@ jobs:
         run: |
           git config user.email "actions@github.com"
           git config user.name "clescot"
-          git config commit.gpgsign true
-          git config  user.signingkey ${{ secrets.MAVEN_GPG_KEY_ID }}
       - name: Release
         uses: qcastel/github-actions-maven-release@v1.12.37
         with:
