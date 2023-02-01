@@ -4,3 +4,5 @@
 /dependency-reduced-pom.xml
 /src/.~lock.*
 /core/dependency-reduced-pom.xml
+/sink/dependency-reduced-pom.xml
+/source/dependency-reduced-pom.xml
