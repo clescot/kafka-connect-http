@@ -21,6 +21,10 @@
         <url>https://github.com/clescot/kafka-connect-http.git</url>
         <tag>HEAD</tag>
     </scm>
+    <issueManagement>
+        <system>github</system>
+        <url>https://github.com/clescot/kafka-connect-http/issues</url>
+    </issueManagement>
     <properties>
         <assertj.version>3.24.2</assertj.version>
         <awaitility.version>4.2.0</awaitility.version>
