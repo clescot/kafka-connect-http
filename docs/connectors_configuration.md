@@ -9,7 +9,7 @@ cluster.
 
 every Kafka Connect Sink Connector need to define these required parameters :
 
-- *connector.class* : `sink.io.github.clescot.kafka.connect.http.HttpSinkConnector`
+- *connector.class* : `io.github.clescot.kafka.connect.http.HttpSinkConnector`
 - *topics* (or *topics.regex*): `http-requests` for example
 
 #### optional Kafka Connect parameters
