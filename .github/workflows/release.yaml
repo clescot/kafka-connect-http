@@ -44,7 +44,6 @@ jobs:
           gpg-key-id: ${{ secrets.MAVEN_GPG_KEY_ID }}
           gpg-key: ${{ secrets.MAVEN_GPG_PRIVATE_KEY }}
           gpg-key-passphrase: ${{ secrets.MAVEN_GPG_PASSPHRASE }}
-          gpg-enabled: "false"
           maven-args: " -DskipIT "
           maven-servers: '[{"id": "github", "username": "$GITHUB_ACTOR", "password": "${{ secrets.GITHUB_TOKEN }}"}]'
         env:
@@ -75,17 +74,16 @@ jobs:
           MAVEN_PASSWORD: ${{ secrets.OSSRH_TOKEN }}
       - uses: actions/checkout@v3
       - name: Set up Java for publishing to Maven Central Repository
-      uses: actions/setup-java@v3
-      with:
-        java-version: '11'
-        distribution: 'adopt'
-        gpg-private-key: ${{ secrets.MAVEN_GPG_PRIVATE_KEY }}
-        gpg-passphrase: ${{ secrets.MAVEN_GPG_PASSPHRASE }}
-        server-id: ossrh
-        server-username: MAVEN_USERNAME
-        server-password: MAVEN_PASSWORD
+        uses: actions/setup-java@v3
+        with:
+          java-version: '11'
+          distribution: 'adopt'
+          gpg-private-key: ${{ secrets.MAVEN_GPG_PRIVATE_KEY }}
+          gpg-passphrase: ${{ secrets.MAVEN_GPG_PASSPHRASE }}
+          server-id: ossrh
+          server-username: MAVEN_USERNAME
+          server-password: MAVEN_PASSWORD
       - name: Publish to the Maven Central Repository with the 'ossrh' maven profile
-      - name: Publish to the Maven Central Repository
         run: mvn -Possrh --batch-mode deploy
         env:
           MAVEN_USERNAME: ${{ secrets.OSSRH_USERNAME }}
