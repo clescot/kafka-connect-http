@@ -1,6 +1,5 @@
 package com.github.clescot.kafka.connect.http.sink.client;
 
-import static org.assertj.core.api.Assertions.*;
 import com.github.clescot.kafka.connect.http.core.HttpExchange;
 import com.github.clescot.kafka.connect.http.core.HttpRequest;
 import com.github.clescot.kafka.connect.http.core.HttpResponse;
@@ -15,7 +14,7 @@ import org.asynchttpclient.ListenableFuture;
 import org.asynchttpclient.Request;
 import org.asynchttpclient.Response;
 import org.asynchttpclient.uri.Uri;
-import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentMatchers;
 import org.mockito.Mockito;
@@ -32,19 +31,19 @@ import java.util.concurrent.atomic.AtomicInteger;
 import static com.github.clescot.kafka.connect.http.sink.HttpSinkTask.HEADER_X_CORRELATION_ID;
 import static com.github.clescot.kafka.connect.http.sink.HttpSinkTask.HEADER_X_REQUEST_ID;
 import static com.github.clescot.kafka.connect.http.sink.client.ahc.AHCHttpClient.SUCCESS;
+import static org.assertj.core.api.Assertions.assertThat;
 
 public class HttpClientTest {
 
-    public static class Test_setHttpExchange {
         private AsyncHttpClient asyncHttpClient;
 
-        @BeforeAll
+        @BeforeEach
         public void setUp() {
             asyncHttpClient = Mockito.mock(AsyncHttpClient.class);
         }
 
         @Test
-        public void test_all_null() {
+        public void build_HttpExchange_test_all_null() {
             AHCHttpClient httpClient = new AHCHttpClient(asyncHttpClient);
             org.junit.jupiter.api.Assertions.assertThrows(NullPointerException.class,()->
             httpClient.buildHttpExchange(null,
@@ -59,9 +58,7 @@ public class HttpClientTest {
 
 
         @Test
-        public void test_message_is_null() {
-            HashMap<String,
-                    String> vars = Maps.newHashMap();
+        public void build_HttpExchange_test_message_is_null() {
             AHCHttpClient httpClient = new AHCHttpClient(asyncHttpClient);
             org.junit.jupiter.api.Assertions.assertThrows(NullPointerException.class,()->
             httpClient.buildHttpExchange(null,
@@ -73,7 +70,7 @@ public class HttpClientTest {
         }
 
         @Test
-        public void test_response_code_is_lower_than_0() {
+        public void build_HttpExchange_test_response_code_is_lower_than_0() {
             AHCHttpClient httpClient = new AHCHttpClient(asyncHttpClient);
             org.junit.jupiter.api.Assertions.assertThrows(IllegalArgumentException.class,()->httpClient.buildHttpExchange(getDummyHttpRequest(),
                     getDummyHttpResponse(-12),
@@ -85,7 +82,7 @@ public class HttpClientTest {
 
 
         @Test
-        public void test_nominal_case() {
+        public void build_HttpExchange_test_nominal_case() {
             HashMap<String,
                     String> vars = Maps.newHashMap();
             AHCHttpClient httpClient = new AHCHttpClient(asyncHttpClient);
@@ -106,13 +103,10 @@ public class HttpClientTest {
             httpResponse.setResponseHeaders(headers);
             return httpResponse;
         }
-    }
-
-    public static class Test_callOnceWs {
 
 
         @Test
-        public void test_nominal_case() throws ExecutionException, InterruptedException {
+        public void call_test_nominal_case() throws ExecutionException, InterruptedException {
 
             //given
             AsyncHttpClient asyncHttpClient = Mockito.mock(AsyncHttpClient.class);
@@ -143,7 +137,7 @@ public class HttpClientTest {
         }
 
         @Test
-        public void test_any_positive_int_success_code_lower_than_500() throws ExecutionException, InterruptedException {
+        public void call_test_any_positive_int_success_code_lower_than_500() throws ExecutionException, InterruptedException {
             //given
             AsyncHttpClient asyncHttpClient = Mockito.mock(AsyncHttpClient.class);
             ListenableFuture<Response> listener = Mockito.mock(ListenableFuture.class);
@@ -169,7 +163,7 @@ public class HttpClientTest {
 
 
         @Test
-        public void test_failure_server_side() throws ExecutionException, InterruptedException {
+        public void call_test_failure_server_side() throws ExecutionException, InterruptedException {
             //given
             AsyncHttpClient asyncHttpClient = Mockito.mock(AsyncHttpClient.class);
             ListenableFuture<Response> listener = Mockito.mock(ListenableFuture.class);
@@ -191,7 +185,7 @@ public class HttpClientTest {
         }
 
         @Test
-        public void test_failure_client_side() throws ExecutionException, InterruptedException {
+        public void call_test_failure_client_side() throws ExecutionException, InterruptedException {
             //given
             AsyncHttpClient asyncHttpClient = Mockito.mock(AsyncHttpClient.class);
             ListenableFuture<Response> listener = Mockito.mock(ListenableFuture.class);
@@ -232,11 +226,6 @@ public class HttpClientTest {
         }
 
 
-
-
-    }
-
-
     private static HttpRequest getDummyHttpRequest(){
         return getDummyHttpRequest("{\"param\":\"name\"}");
     }
@@ -256,8 +245,7 @@ public class HttpClientTest {
         return httpRequest;
     }
 
-
-    @org.junit.jupiter.api.Test
+    @Test
     public void test_getTrustManagerFactory_jks_nominal_case(){
 
         //given

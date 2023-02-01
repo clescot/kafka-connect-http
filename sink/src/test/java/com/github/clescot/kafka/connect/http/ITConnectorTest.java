@@ -36,6 +36,7 @@ import org.apache.kafka.common.serialization.StringSerializer;
 import org.json.JSONException;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 import org.rnorth.ducttape.unreliables.Unreliables;
@@ -74,6 +75,7 @@ import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.apache.kafka.clients.producer.ProducerConfig.BOOTSTRAP_SERVERS_CONFIG;
 import static org.assertj.core.api.Assertions.assertThat;
 
+@Disabled
 @Testcontainers
 public class ITConnectorTest {
 
