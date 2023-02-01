@@ -50,6 +50,7 @@
         <module>core</module>
         <module>sink</module>
         <module>source</module>
+        <module>archive</module>
     </modules>
 
 <dependencyManagement>
@@ -252,44 +253,6 @@
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-shade-plugin</artifactId>
-                <version>3.4.1</version>
-                <configuration>
-                    <outputFile>${project.build.directory}/http-connector/kafka-connect-http.jar</outputFile>
-                </configuration>
-                <executions>
-                    <execution>
-                        <phase>package</phase>
-                        <goals>
-                            <goal>shade</goal>
-                        </goals>
-                        <configuration>
-                            <minimizeJar>true</minimizeJar>
-                            <filters>
-                                <filter>
-                                    <artifact>*:*</artifact>
-                                    <excludes>
-                                        <exclude>module-info.class</exclude>
-                                        <exclude>META-INF/*.SF</exclude>
-                                        <exclude>META-INF/*.DSA</exclude>
-                                        <exclude>META-INF/*.RSA</exclude>
-                                        <exclude>META-INF/LICENSE*</exclude>
-                                        <exclude>META-INF/NOTICE*</exclude>
-                                        <exclude>LICENSE*</exclude>
-                                        <exclude>NOTICE*</exclude>
-                                        <exclude>META-INF/MANIFEST.MF</exclude>
-                                        <exclude>META-INF/services/*</exclude>
-                                        <exclude>META-INF/io.netty.versions.properties</exclude>
-                                        <exclude>META-INF/versions/9/module-info.class</exclude>
-                                    </excludes>
-                                </filter>
-                            </filters>
-                        </configuration>
-                    </execution>
-                </executions>
-            </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
                 <version>3.0.0-M8</version>
                 <configuration>
@@ -338,60 +301,7 @@
                     </archive>
                 </configuration>
             </plugin>
-            <plugin>
-                <groupId>io.confluent</groupId>
-                <artifactId>kafka-connect-maven-plugin</artifactId>
-                <version>0.12.0</version>
-                <executions>
-                    <execution>
-                        <goals>
-                            <goal>kafka-connect</goal>
-                        </goals>
-                        <configuration>
-                            <title>Kafka Connect HTTP Sink and Source</title>
-                            <documentationUrl>https://github.com/clescot/kafka-connect-http#readme</documentationUrl>
-                            <description>The Http Sink connector permits from Kafka to interact with HTTP servers, and optionally the Source Connector permits to store in Kafka HTTP interactions details.</description>
-                            <supportProviderName>Charles Lescot</supportProviderName>
-                            <supportSummary>Support is provided as best effort only. Please register any issues in the github project.</supportSummary>
-                            <supportUrl>https://github.com/clescot/kafka-connect-http/issues</supportUrl>
-                            <sourceUrl>https://github.com/clescot/kafka-connect-http</sourceUrl>
-                            <ownerUsername>clescot</ownerUsername>
-                            <ownerType>user</ownerType>
-                            <ownerName>Charles Lescot</ownerName>
-                            <ownerUrl>https://github.com/clescot</ownerUrl>
-                            <componentTypes>
-                                <componentType>sink</componentType>
-                                <componentType>source</componentType>
-                            </componentTypes>
-                            <tags>
-                                <tag>http</tag>
-                            </tags>
-                        </configuration>
-                    </execution>
-                </executions>
-            </plugin>
-            <plugin>
-                <groupId>org.codehaus.mojo</groupId>
-                <artifactId>build-helper-maven-plugin</artifactId>
-                <version>3.3.0</version>
-                <executions>
-                    <execution>
-                        <id>attach-artifacts</id>
-                        <phase>package</phase>
-                        <goals>
-                            <goal>attach-artifact</goal>
-                        </goals>
-                        <configuration>
-                            <artifacts>
-                                <artifact>
-                                    <file>${project.build.directory}/components/packages/clescot-${project.build.finalName}-${project.version}.zip</file>
-                                    <type>zip</type>
-                                </artifact>
-                            </artifacts>
-                        </configuration>
-                    </execution>
-                </executions>
-            </plugin>
+
         </plugins>
     </build>
 

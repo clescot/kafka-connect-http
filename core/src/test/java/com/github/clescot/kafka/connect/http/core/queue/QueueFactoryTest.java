@@ -1,4 +1,4 @@
-package com.github.clescot.kafka.connect.http;
+package com.github.clescot.kafka.connect.http.core.queue;
 
 import com.github.clescot.kafka.connect.http.core.queue.KafkaRecord;
 import com.github.clescot.kafka.connect.http.core.queue.QueueFactory;
