@@ -1,8 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <name>kafka-connect-http</name>
-    <groupId>com.github.clescot</groupId>
+    <groupId>io.github.clescot</groupId>
     <artifactId>kafka-connect-http</artifactId>
     <version>0.2.64-SNAPSHOT</version>
     <url>https://github.com/clescot/kafka-connect-http</url>
@@ -13,188 +14,228 @@
             <distribution>repo</distribution>
         </license>
     </licenses>
-    <packaging>jar</packaging>
+    <packaging>pom</packaging>
     <scm>
         <connection>scm:git:${project.scm.url}</connection>
         <developerConnection>scm:git:${project.scm.url}</developerConnection>
         <url>https://github.com/clescot/kafka-connect-http.git</url>
         <tag>HEAD</tag>
     </scm>
+    <issueManagement>
+        <system>github</system>
+        <url>https://github.com/clescot/kafka-connect-http/issues</url>
+    </issueManagement>
     <properties>
+        <assertj.version>3.24.2</assertj.version>
+        <awaitility.version>4.2.0</awaitility.version>
         <async.http.client.version>2.12.3</async.http.client.version>
+        <commons-text.version>1.10.0</commons-text.version>
+        <connect-json.version>3.3.2</connect-json.version>
+        <debezium.version>2.1.2.Final</debezium.version>
         <kafka.version>3.3.2</kafka.version>
         <confluent.platform.version>7.3.1</confluent.platform.version>
+        <failsafe.version>3.3.0</failsafe.version>
         <guava.version>31.1-jre</guava.version>
         <jackson.version>2.14.2</jackson.version>
+        <json.assert.version>1.5.1</json.assert.version>
         <junit.version>5.9.2</junit.version>
         <maven.compiler.source>11</maven.compiler.source>
         <maven.compiler.target>11</maven.compiler.target>
+        <mockito.version>5.1.1</mockito.version>
+        <okhttp.version>4.10.0</okhttp.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <project.scm.id>github</project.scm.id>
+        <slf4j.version>2.0.6</slf4j.version>
         <testcontainers.version>1.17.6</testcontainers.version>
         <skipIT>false</skipIT>
+        <wiremock.version>2.35.0</wiremock.version>
     </properties>
+    <modules>
+        <module>core</module>
+        <module>sink</module>
+        <module>source</module>
+        <module>archive</module>
+    </modules>
 
-    <dependencies>
-        <dependency>
-            <groupId>org.apache.kafka</groupId>
-            <artifactId>connect-api</artifactId>
-            <version>${kafka.version}</version>
-            <scope>provided</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.asynchttpclient</groupId>
-            <artifactId>async-http-client</artifactId>
-            <version>${async.http.client.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.asynchttpclient</groupId>
-            <artifactId>async-http-client-extras-guava</artifactId>
-            <version>${async.http.client.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.slf4j</groupId>
-            <artifactId>slf4j-api</artifactId>
-            <version>2.0.6</version>
-        </dependency>
+    <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <groupId>org.apache.kafka</groupId>
+                <artifactId>connect-api</artifactId>
+                <version>${kafka.version}</version>
+                <scope>provided</scope>
+            </dependency>
 
-        <dependency>
-            <groupId>ch.qos.logback</groupId>
-            <artifactId>logback-classic</artifactId>
-            <version>1.4.5</version>
-        </dependency>
+            <dependency>
+                <groupId>org.slf4j</groupId>
+                <artifactId>slf4j-api</artifactId>
+                <version>${slf4j.version}</version>
+            </dependency>
 
-        <dependency>
-            <groupId>com.google.guava</groupId>
-            <artifactId>guava</artifactId>
-            <version>${guava.version}</version>
-        </dependency>
+            <dependency>
+                <groupId>ch.qos.logback</groupId>
+                <artifactId>logback-classic</artifactId>
+                <version>1.4.5</version>
+            </dependency>
 
-        <dependency>
-            <groupId>dev.failsafe</groupId>
-            <artifactId>failsafe</artifactId>
-            <version>3.3.0</version>
-        </dependency>
-        <dependency>
-            <groupId>com.fasterxml.jackson.core</groupId>
-            <artifactId>jackson-core</artifactId>
-            <version>${jackson.version}</version>
-        </dependency>
+            <dependency>
+                <groupId>com.google.guava</groupId>
+                <artifactId>guava</artifactId>
+                <version>${guava.version}</version>
+            </dependency>
 
-        <dependency>
-            <groupId>com.fasterxml.jackson.datatype</groupId>
-            <artifactId>jackson-datatype-jsr310</artifactId>
-            <version>${jackson.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>io.confluent</groupId>
-            <artifactId>kafka-schema-registry-client</artifactId>
-            <version>7.3.1</version>
-        </dependency>
-        <dependency>
-            <groupId>org.awaitility</groupId>
-            <artifactId>awaitility</artifactId>
-            <version>4.2.0</version>
-        </dependency>
-        <dependency>
-            <groupId>com.squareup.okhttp3</groupId>
-            <artifactId>okhttp</artifactId>
-            <version>4.10.0</version>
-        </dependency>
+            <dependency>
+                <groupId>dev.failsafe</groupId>
+                <artifactId>failsafe</artifactId>
+                <version>${failsafe.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.fasterxml.jackson.core</groupId>
+                <artifactId>jackson-core</artifactId>
+                <version>${jackson.version}</version>
+            </dependency>
 
+            <dependency>
+                <groupId>com.fasterxml.jackson.datatype</groupId>
+                <artifactId>jackson-datatype-jsr310</artifactId>
+                <version>${jackson.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.confluent</groupId>
+                <artifactId>kafka-schema-registry-client</artifactId>
+                <version>${confluent.platform.version}</version>
+            </dependency>
 
-        <!--   test dependencies -->
-        <dependency>
-            <groupId>org.assertj</groupId>
-            <artifactId>assertj-core</artifactId>
-            <version>3.24.2</version>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.mockito</groupId>
-            <artifactId>mockito-core</artifactId>
-            <version>5.1.1</version>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.testcontainers</groupId>
-            <artifactId>testcontainers</artifactId>
-            <version>${testcontainers.version}</version>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.testcontainers</groupId>
-            <artifactId>kafka</artifactId>
-            <version>${testcontainers.version}</version>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.junit.jupiter</groupId>
-            <artifactId>junit-jupiter</artifactId>
-            <version>${junit.version}</version>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.testcontainers</groupId>
-            <artifactId>junit-jupiter</artifactId>
-            <version>${testcontainers.version}</version>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>com.github.tomakehurst</groupId>
-            <artifactId>wiremock-jre8</artifactId>
-            <version>2.35.0</version>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.skyscreamer</groupId>
-            <artifactId>jsonassert</artifactId>
-            <version>1.5.1</version>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>io.confluent</groupId>
-            <artifactId>kafka-connect-json-schema-converter</artifactId>
-            <version>${confluent.platform.version}</version>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>io.confluent</groupId>
-            <artifactId>kafka-json-schema-provider</artifactId>
-            <version>${confluent.platform.version}</version>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>io.debezium</groupId>
-            <artifactId>debezium-testing-testcontainers</artifactId>
-            <version>2.1.2.Final</version>
-            <scope>test</scope>
-            <exclusions>
-                <exclusion>
-                    <groupId>com.fasterxml.jackson.core</groupId>
-                    <artifactId>jackson-core</artifactId>
-                </exclusion>
-            </exclusions>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.kafka</groupId>
-            <artifactId>connect-json</artifactId>
-            <version>3.3.2</version>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.commons</groupId>
-            <artifactId>commons-text</artifactId>
-            <version>1.10.0</version>
-            <scope>test</scope>
-        </dependency>
-    </dependencies>
+            <dependency>
+                <groupId>org.awaitility</groupId>
+                <artifactId>awaitility</artifactId>
+                <version>${awaitility.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.asynchttpclient</groupId>
+                <artifactId>async-http-client</artifactId>
+                <version>${async.http.client.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.asynchttpclient</groupId>
+                <artifactId>async-http-client-extras-guava</artifactId>
+                <version>${async.http.client.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.squareup.okhttp3</groupId>
+                <artifactId>okhttp</artifactId>
+                <version>${okhttp.version}</version>
+            </dependency>
 
+            <!--   test dependencies -->
+            <dependency>
+                <groupId>org.assertj</groupId>
+                <artifactId>assertj-core</artifactId>
+                <version>${assertj.version}</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.mockito</groupId>
+                <artifactId>mockito-core</artifactId>
+                <version>${mockito.version}</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.testcontainers</groupId>
+                <artifactId>testcontainers</artifactId>
+                <version>${testcontainers.version}</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.testcontainers</groupId>
+                <artifactId>kafka</artifactId>
+                <version>${testcontainers.version}</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.junit.jupiter</groupId>
+                <artifactId>junit-jupiter-api</artifactId>
+                <version>${junit.version}</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.junit.jupiter</groupId>
+                <artifactId>junit-jupiter</artifactId>
+                <version>${junit.version}</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.testcontainers</groupId>
+                <artifactId>junit-jupiter</artifactId>
+                <version>${testcontainers.version}</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>com.github.tomakehurst</groupId>
+                <artifactId>wiremock-jre8</artifactId>
+                <version>${wiremock.version}</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.skyscreamer</groupId>
+                <artifactId>jsonassert</artifactId>
+                <version>${json.assert.version}</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>io.confluent</groupId>
+                <artifactId>kafka-connect-json-schema-converter</artifactId>
+                <version>${confluent.platform.version}</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>io.confluent</groupId>
+                <artifactId>kafka-json-schema-provider</artifactId>
+                <version>${confluent.platform.version}</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>io.debezium</groupId>
+                <artifactId>debezium-testing-testcontainers</artifactId>
+                <version>${debezium.version}</version>
+                <scope>test</scope>
+                <exclusions>
+                    <exclusion>
+                        <groupId>com.fasterxml.jackson.core</groupId>
+                        <artifactId>jackson-core</artifactId>
+                    </exclusion>
+                </exclusions>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.kafka</groupId>
+                <artifactId>connect-json</artifactId>
+                <version>${connect-json.version}</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.commons</groupId>
+                <artifactId>commons-text</artifactId>
+                <version>${commons-text.version}</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>io.confluent</groupId>
+                <artifactId>kafka-json-schema-serializer</artifactId>
+                <version>${confluent.platform.version}</version>
+                <scope>test</scope>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
     <build>
         <finalName>${project.artifactId}</finalName>
         <pluginManagement>
             <plugins>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-dependency-plugin</artifactId>
+                    <version>3.5.0</version>
+                </plugin>
                 <plugin>
                     <groupId>io.confluent</groupId>
                     <artifactId>kafka-connect-maven-plugin</artifactId>
@@ -214,49 +255,24 @@
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-source-plugin</artifactId>
+                <version>3.2.1</version>
+                <executions>
+                    <execution>
+                        <id>attach-sources</id>
+                        <goals>
+                            <goal>jar</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-deploy-plugin</artifactId>
                 <version>3.0.0</version>
                 <configuration>
 
                 </configuration>
-            </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-shade-plugin</artifactId>
-                <version>3.4.1</version>
-                <configuration>
-                    <outputFile>${project.build.directory}/http-connector/kafka-connect-http.jar</outputFile>
-                </configuration>
-                <executions>
-                    <execution>
-                        <phase>package</phase>
-                        <goals>
-                            <goal>shade</goal>
-                        </goals>
-                        <configuration>
-                            <minimizeJar>true</minimizeJar>
-                            <filters>
-                                <filter>
-                                    <artifact>*:*</artifact>
-                                    <excludes>
-                                        <exclude>module-info.class</exclude>
-                                        <exclude>META-INF/*.SF</exclude>
-                                        <exclude>META-INF/*.DSA</exclude>
-                                        <exclude>META-INF/*.RSA</exclude>
-                                        <exclude>META-INF/LICENSE*</exclude>
-                                        <exclude>META-INF/NOTICE*</exclude>
-                                        <exclude>LICENSE*</exclude>
-                                        <exclude>NOTICE*</exclude>
-                                        <exclude>META-INF/MANIFEST.MF</exclude>
-                                        <exclude>META-INF/services/*</exclude>
-                                        <exclude>META-INF/io.netty.versions.properties</exclude>
-                                        <exclude>META-INF/versions/9/module-info.class</exclude>
-                                    </excludes>
-                                </filter>
-                            </filters>
-                        </configuration>
-                    </execution>
-                </executions>
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
@@ -309,58 +325,35 @@
                 </configuration>
             </plugin>
             <plugin>
-                <groupId>io.confluent</groupId>
-                <artifactId>kafka-connect-maven-plugin</artifactId>
-                <version>0.12.0</version>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-gpg-plugin</artifactId>
+                <version>3.0.1</version>
                 <executions>
                     <execution>
+                        <id>sign-artifacts</id>
+                        <phase>verify</phase>
                         <goals>
-                            <goal>kafka-connect</goal>
+                            <goal>sign</goal>
                         </goals>
                         <configuration>
-                            <title>Kafka Connect HTTP Sink and Source</title>
-                            <documentationUrl>https://github.com/clescot/kafka-connect-http#readme</documentationUrl>
-                            <description>The Http Sink connector permits from Kafka to interact with HTTP servers, and optionally the Source Connector permits to store in Kafka HTTP interactions details.</description>
-                            <supportProviderName>Charles Lescot</supportProviderName>
-                            <supportSummary>Support is provided as best effort only. Please register any issues in the github project.</supportSummary>
-                            <supportUrl>https://github.com/clescot/kafka-connect-http/issues</supportUrl>
-                            <sourceUrl>https://github.com/clescot/kafka-connect-http</sourceUrl>
-                            <ownerUsername>clescot</ownerUsername>
-                            <ownerType>user</ownerType>
-                            <ownerName>Charles Lescot</ownerName>
-                            <ownerUrl>https://github.com/clescot</ownerUrl>
-                            <componentTypes>
-                                <componentType>sink</componentType>
-                                <componentType>source</componentType>
-                            </componentTypes>
-                            <tags>
-                                <tag>http</tag>
-                            </tags>
+                            <gpgArguments>
+                                <arg>--pinentry-mode</arg>
+                                <arg>loopback</arg>
+                            </gpgArguments>
                         </configuration>
                     </execution>
                 </executions>
             </plugin>
             <plugin>
-                <groupId>org.codehaus.mojo</groupId>
-                <artifactId>build-helper-maven-plugin</artifactId>
-                <version>3.3.0</version>
-                <executions>
-                    <execution>
-                        <id>attach-artifacts</id>
-                        <phase>package</phase>
-                        <goals>
-                            <goal>attach-artifact</goal>
-                        </goals>
-                        <configuration>
-                            <artifacts>
-                                <artifact>
-                                    <file>${project.build.directory}/components/packages/clescot-${project.build.finalName}-${project.version}.zip</file>
-                                    <type>zip</type>
-                                </artifact>
-                            </artifacts>
-                        </configuration>
-                    </execution>
-                </executions>
+                <groupId>org.sonatype.plugins</groupId>
+                <artifactId>nexus-staging-maven-plugin</artifactId>
+                <version>1.6.13</version>
+                <extensions>true</extensions>
+                <configuration>
+                    <serverId>ossrh</serverId>
+                    <nexusUrl>https://s01.oss.sonatype.org/</nexusUrl>
+                    <autoReleaseAfterClose>true</autoReleaseAfterClose>
+                </configuration>
             </plugin>
         </plugins>
     </build>
@@ -380,12 +373,52 @@
             <url>https://packages.confluent.io/maven/</url>
         </repository>
     </repositories>
-    <distributionManagement>
-        <repository>
+    <profiles>
+        <profile>
             <id>github</id>
-            <name>GitHub OWNER Apache Maven Packages</name>
-            <url>https://maven.pkg.github.com/clescot/kafka-connect-http</url>
-        </repository>
-    </distributionManagement>
-
+            <distributionManagement>
+                <repository>
+                    <id>github</id>
+                    <name>GitHub clescot Apache Maven Packages</name>
+                    <url>https://maven.pkg.github.com/clescot/kafka-connect-http</url>
+                </repository>
+            </distributionManagement>
+        </profile>
+        <profile>
+            <id>ossrh</id>
+            <distributionManagement>
+                <repository>
+                    <id>ossrh</id>
+                    <name>Central Repository OSSRH</name>
+                    <url>https://s01.oss.sonatype.org/service/local/staging/deploy/maven2/</url>
+                </repository>
+            </distributionManagement>
+        </profile>
+        <profile>
+            <id>coverage</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.jacoco</groupId>
+                        <artifactId>jacoco-maven-plugin</artifactId>
+                        <version>0.8.8</version>
+                        <executions>
+                            <execution>
+                                <goals>
+                                    <goal>prepare-agent</goal>
+                                </goals>
+                            </execution>
+                            <execution>
+                                <id>generate-code-coverage-report</id>
+                                <phase>test</phase>
+                                <goals>
+                                    <goal>report</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+    </profiles>
 </project>

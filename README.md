@@ -101,12 +101,12 @@ after the section dedicated to put in place the HTTP Sink and Source connectors:
 7. the HTTP exchange is saved as a `Struct`, and can be serialized as a JSON Schema or another format via converters, and the help of a Schema registry.
    It also can be serialized as a String. 
 
+
 # 2. [how to install](docs/install.md)
 # 3. [HTTP Connectors configuration](docs/connectors_configuration.md)
 # 4. [incoming message format](docs/incoming_message_format.md)
 # 5. [request handling](docs/request_handling.md)
 # 6. [outcoming message format](docs/outcoming_message_format.md)
 # 7. [missing features](docs/missing_features.md)
-
 
 
