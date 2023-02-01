@@ -3,7 +3,7 @@ package com.github.clescot.kafka.connect.http;
 import com.github.clescot.kafka.connect.http.core.HttpExchange;
 import com.github.clescot.kafka.connect.http.core.HttpRequest;
 import com.github.clescot.kafka.connect.http.core.HttpResponse;
-import com.github.clescot.kafka.connect.http.core.KafkaRecord;
+import com.github.clescot.kafka.connect.http.core.queue.KafkaRecord;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import org.jetbrains.annotations.NotNull;

@@ -1,6 +1,6 @@
 package com.github.clescot.kafka.connect.http.sink;
 
-import com.github.clescot.kafka.connect.http.core.QueueFactory;
+import com.github.clescot.kafka.connect.http.core.queue.QueueFactory;
 import com.google.common.base.Preconditions;
 import org.apache.kafka.common.config.ConfigDef;
 import org.apache.kafka.connect.connector.Task;

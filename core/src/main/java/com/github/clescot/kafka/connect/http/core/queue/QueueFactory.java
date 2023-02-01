@@ -1,4 +1,4 @@
-package com.github.clescot.kafka.connect.http.core;
+package com.github.clescot.kafka.connect.http.core.queue;
 
 import com.google.common.base.Preconditions;
 import com.google.common.base.Strings;

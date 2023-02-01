@@ -2,8 +2,8 @@ package com.github.clescot.kafka.connect.http.source;
 
 import com.github.clescot.kafka.connect.http.core.HttpExchange;
 import com.github.clescot.kafka.connect.http.core.HttpExchangeAsStruct;
-import com.github.clescot.kafka.connect.http.core.KafkaRecord;
-import com.github.clescot.kafka.connect.http.core.QueueFactory;
+import com.github.clescot.kafka.connect.http.core.queue.KafkaRecord;
+import com.github.clescot.kafka.connect.http.core.queue.QueueFactory;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;

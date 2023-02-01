@@ -1,8 +1,12 @@
-package com.github.clescot.kafka.connect.http.core;
+package com.github.clescot.kafka.connect.http.core.queue;
 
+import com.github.clescot.kafka.connect.http.core.HttpExchange;
 import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.header.Header;
 
+/**
+ * represents a Kafka Record in the in-memory queue.
+ */
 public class KafkaRecord {
 
     private Iterable<Header> headers;

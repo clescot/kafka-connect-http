@@ -1,4 +1,4 @@
-package com.github.clescot.kafka.connect.http.core;
+package com.github.clescot.kafka.connect.http.core.queue;
 
 public class ConfigConstants {
 
@@ -9,10 +9,5 @@ public class ConfigConstants {
     //common parameters
     public static final String QUEUE_NAME = "queue.name";
     public static final String QUEUE_NAME_DOC = "queue name in the in memory map.";
-
-
-    //source parameters
-
-
 
 }

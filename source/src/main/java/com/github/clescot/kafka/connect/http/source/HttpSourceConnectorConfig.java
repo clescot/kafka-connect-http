@@ -1,7 +1,7 @@
 package com.github.clescot.kafka.connect.http.source;
 
-import com.github.clescot.kafka.connect.http.core.ConfigConstants;
-import com.github.clescot.kafka.connect.http.core.QueueFactory;
+import com.github.clescot.kafka.connect.http.core.queue.ConfigConstants;
+import com.github.clescot.kafka.connect.http.core.queue.QueueFactory;
 import org.apache.kafka.common.config.AbstractConfig;
 import org.apache.kafka.common.config.ConfigDef;
 import org.slf4j.Logger;

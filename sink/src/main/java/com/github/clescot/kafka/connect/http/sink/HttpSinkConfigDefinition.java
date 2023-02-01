@@ -1,6 +1,6 @@
 package com.github.clescot.kafka.connect.http.sink;
 
-import com.github.clescot.kafka.connect.http.core.ConfigConstants;
+import com.github.clescot.kafka.connect.http.core.queue.ConfigConstants;
 import org.apache.kafka.common.config.ConfigDef;
 
 import java.util.Collections;

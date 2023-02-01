@@ -1,7 +1,7 @@
 package com.github.clescot.kafka.connect.http.sink;
 
-import com.github.clescot.kafka.connect.http.core.ConfigConstants;
-import com.github.clescot.kafka.connect.http.core.QueueFactory;
+import com.github.clescot.kafka.connect.http.core.queue.ConfigConstants;
+import com.github.clescot.kafka.connect.http.core.queue.QueueFactory;
 import com.github.clescot.kafka.connect.http.sink.client.ahc.AHCHttpClientFactory;
 import com.github.clescot.kafka.connect.http.sink.client.okhttp.OkHttpClientFactory;
 import com.google.common.base.Preconditions;

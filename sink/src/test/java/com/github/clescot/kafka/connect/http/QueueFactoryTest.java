@@ -1,14 +1,14 @@
 package com.github.clescot.kafka.connect.http;
 
-import com.github.clescot.kafka.connect.http.core.KafkaRecord;
-import com.github.clescot.kafka.connect.http.core.QueueFactory;
+import com.github.clescot.kafka.connect.http.core.queue.KafkaRecord;
+import com.github.clescot.kafka.connect.http.core.queue.QueueFactory;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 import java.util.Queue;
 
-import static com.github.clescot.kafka.connect.http.core.QueueFactory.DEFAULT_QUEUE_NAME;
+import static com.github.clescot.kafka.connect.http.core.queue.QueueFactory.DEFAULT_QUEUE_NAME;
 import static org.assertj.core.api.Assertions.assertThat;
 
 class QueueFactoryTest {

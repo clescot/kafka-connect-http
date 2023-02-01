@@ -4,6 +4,8 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.github.clescot.kafka.connect.http.core.*;
+import com.github.clescot.kafka.connect.http.core.queue.KafkaRecord;
+import com.github.clescot.kafka.connect.http.core.queue.QueueFactory;
 import com.github.clescot.kafka.connect.http.sink.client.HttpClient;
 import com.github.clescot.kafka.connect.http.sink.client.HttpClientFactory;
 import com.github.clescot.kafka.connect.http.sink.client.HttpException;
