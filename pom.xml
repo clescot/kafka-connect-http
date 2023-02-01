@@ -13,7 +13,7 @@
             <distribution>repo</distribution>
         </license>
     </licenses>
-    <packaging>jar</packaging>
+    <packaging>pom</packaging>
     <scm>
         <connection>scm:git:${project.scm.url}</connection>
         <developerConnection>scm:git:${project.scm.url}</developerConnection>
@@ -21,21 +21,38 @@
         <tag>HEAD</tag>
     </scm>
     <properties>
+        <assertj.version>3.24.2</assertj.version>
+        <awaitility.version>4.2.0</awaitility.version>
         <async.http.client.version>2.12.3</async.http.client.version>
+        <commons-text.version>1.10.0</commons-text.version>
+        <connect-json.version>3.3.2</connect-json.version>
+        <debezium.version>2.1.2.Final</debezium.version>
         <kafka.version>3.3.2</kafka.version>
         <confluent.platform.version>7.3.1</confluent.platform.version>
+        <failsafe.version>3.3.0</failsafe.version>
         <guava.version>31.1-jre</guava.version>
         <jackson.version>2.14.2</jackson.version>
+        <json.assert.version>1.5.1</json.assert.version>
         <junit.version>5.9.2</junit.version>
         <maven.compiler.source>11</maven.compiler.source>
         <maven.compiler.target>11</maven.compiler.target>
+        <mockito.version>5.1.1</mockito.version>
+        <okhttp.version>4.10.0</okhttp.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <project.scm.id>github</project.scm.id>
+        <slf4j.version>2.0.6</slf4j.version>
         <testcontainers.version>1.17.6</testcontainers.version>
         <skipIT>false</skipIT>
+        <wiremock.version>2.35.0</wiremock.version>
     </properties>
+    <modules>
+        <module>core</module>
+        <module>sink</module>
+        <module>source</module>
+    </modules>
 
+<dependencyManagement>
     <dependencies>
         <dependency>
             <groupId>org.apache.kafka</groupId>
@@ -43,20 +60,11 @@
             <version>${kafka.version}</version>
             <scope>provided</scope>
         </dependency>
-        <dependency>
-            <groupId>org.asynchttpclient</groupId>
-            <artifactId>async-http-client</artifactId>
-            <version>${async.http.client.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.asynchttpclient</groupId>
-            <artifactId>async-http-client-extras-guava</artifactId>
-            <version>${async.http.client.version}</version>
-        </dependency>
+
         <dependency>
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-api</artifactId>
-            <version>2.0.6</version>
+            <version>${slf4j.version}</version>
         </dependency>
 
         <dependency>
@@ -74,7 +82,7 @@
         <dependency>
             <groupId>dev.failsafe</groupId>
             <artifactId>failsafe</artifactId>
-            <version>3.3.0</version>
+            <version>${failsafe.version}</version>
         </dependency>
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
@@ -90,31 +98,41 @@
         <dependency>
             <groupId>io.confluent</groupId>
             <artifactId>kafka-schema-registry-client</artifactId>
-            <version>7.3.1</version>
+            <version>${confluent.platform.version}</version>
         </dependency>
+
         <dependency>
             <groupId>org.awaitility</groupId>
             <artifactId>awaitility</artifactId>
-            <version>4.2.0</version>
+            <version>${awaitility.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.asynchttpclient</groupId>
+            <artifactId>async-http-client</artifactId>
+            <version>${async.http.client.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.asynchttpclient</groupId>
+            <artifactId>async-http-client-extras-guava</artifactId>
+            <version>${async.http.client.version}</version>
         </dependency>
         <dependency>
             <groupId>com.squareup.okhttp3</groupId>
             <artifactId>okhttp</artifactId>
-            <version>4.10.0</version>
+            <version>${okhttp.version}</version>
         </dependency>
-
 
         <!--   test dependencies -->
         <dependency>
             <groupId>org.assertj</groupId>
             <artifactId>assertj-core</artifactId>
-            <version>3.24.2</version>
+            <version>${assertj.version}</version>
             <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.mockito</groupId>
             <artifactId>mockito-core</artifactId>
-            <version>5.1.1</version>
+            <version>${mockito.version}</version>
             <scope>test</scope>
         </dependency>
         <dependency>
@@ -127,6 +145,12 @@
             <groupId>org.testcontainers</groupId>
             <artifactId>kafka</artifactId>
             <version>${testcontainers.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter-api</artifactId>
+            <version>${junit.version}</version>
             <scope>test</scope>
         </dependency>
         <dependency>
@@ -144,13 +168,13 @@
         <dependency>
             <groupId>com.github.tomakehurst</groupId>
             <artifactId>wiremock-jre8</artifactId>
-            <version>2.35.0</version>
+            <version>${wiremock.version}</version>
             <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.skyscreamer</groupId>
             <artifactId>jsonassert</artifactId>
-            <version>1.5.1</version>
+            <version>${json.assert.version}</version>
             <scope>test</scope>
         </dependency>
         <dependency>
@@ -168,7 +192,7 @@
         <dependency>
             <groupId>io.debezium</groupId>
             <artifactId>debezium-testing-testcontainers</artifactId>
-            <version>2.1.2.Final</version>
+            <version>${debezium.version}</version>
             <scope>test</scope>
             <exclusions>
                 <exclusion>
@@ -180,17 +204,23 @@
         <dependency>
             <groupId>org.apache.kafka</groupId>
             <artifactId>connect-json</artifactId>
-            <version>3.3.2</version>
+            <version>${connect-json.version}</version>
             <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.apache.commons</groupId>
             <artifactId>commons-text</artifactId>
-            <version>1.10.0</version>
+            <version>${commons-text.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.confluent</groupId>
+            <artifactId>kafka-json-schema-serializer</artifactId>
+            <version>${confluent.platform.version}</version>
             <scope>test</scope>
         </dependency>
     </dependencies>
-
+</dependencyManagement>
     <build>
         <finalName>${project.artifactId}</finalName>
         <pluginManagement>
