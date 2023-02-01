@@ -33,12 +33,17 @@ jobs:
         run: |
           git config user.email "actions@github.com"
           git config user.name "clescot"
+          git config commit.gpgsign true
+          git config  user.signingkey ${{ secrets.MAVEN_GPG_KEY_ID }}
       - name: Release
         uses: qcastel/github-actions-maven-release@v1.12.37
         with:
           access-token: ${{ secrets.GITHUB_TOKEN }}
           version-patch: true
-          gpg-enabled: "false"
+          gpg-enabled: "true"
+          gpg-key-id: ${{ secrets.MAVEN_GPG_KEY_ID }}
+          gpg-key: ${{ secrets.MAVEN_GPG_PRIVATE_KEY }}
+          gpg-key-passphrase: ${{ secrets.MAVEN_GPG_PASSPHRASE }}
           maven-args: " -DskipIT "
           maven-servers: '[{"id": "github", "username": "$GITHUB_ACTOR", "password": "${{ secrets.GITHUB_TOKEN }}"}]'
         env:
@@ -59,12 +64,13 @@ jobs:
         with:
           java-version: '11'
           distribution: 'adopt'
+          gpg-private-key: ${{ secrets.MAVEN_GPG_PRIVATE_KEY }}
+          gpg-passphrase: ${{ secrets.MAVEN_GPG_PASSPHRASE }}
           server-id: ossrh
           server-username: MAVEN_USERNAME
           server-password: MAVEN_PASSWORD
-      - name: Publish to the Maven Central Repository
+      - name: Publish to the Maven Central Repository with the 'ossrh' maven profile
         run: mvn -Possrh --batch-mode deploy
         env:
           MAVEN_USERNAME: ${{ secrets.OSSRH_USERNAME }}
           MAVEN_PASSWORD: ${{ secrets.OSSRH_TOKEN }}
-
