@@ -21,6 +21,15 @@ jobs:
           server-id: github
           cache: maven
           token: ${{ secrets.GITHUB_TOKEN }}
+      -
+        name: Import GPG key
+        id: import_gpg
+        uses: crazy-max/ghaction-import-gpg@v5
+        with:
+          gpg_private_key: "${{ secrets.GPG_KEY }}"
+          passphrase: "${{ secrets.GPG_PASSPHRASE }}"
+          git_user_signingkey: true
+          git_commit_gpgsign: true
       - name: Release
         uses: qcastel/github-actions-maven-release@v1.12.37
         with:
