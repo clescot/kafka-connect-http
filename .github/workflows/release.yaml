@@ -21,12 +21,34 @@ jobs:
           server-id: github
           cache: maven
           token: ${{ secrets.GITHUB_TOKEN }}
+      -
+        name: Import GPG key
+        id: import_gpg
+        uses: crazy-max/ghaction-import-gpg@v5
+        with:
+          gpg_private_key: ${{ secrets.GPG_KEY }}
+          passphrase: ${{ secrets.GPG_PASSPHRASE }}
+          git_user_signingkey: true
+          git_commit_gpgsign: true
+      -
+        name: Sign commit and push changes
+        run: |
+          touch README.md
+          git add .
+          git commit -S -m "This commit is signed!"
+          git push
+      -
+        name: List keys
+        run: gpg -K
       - name: Configure Git user
         run: |
           git config user.email "actions@github.com"
           git config user.name "clescot"
           git config --global user.signingkey "{{ secrets.GPG_KEY_ID }}"
           git config --global commit.gpgsign true
+      - name: diagnose
+        run: |
+          gpgconf
       - name: Release
         uses: qcastel/github-actions-maven-release@v1.12.37
         with:
@@ -36,7 +58,7 @@ jobs:
           gpg-key-id: "${{ secrets.GPG_KEY_ID }}"
           gpg-key: "${{ secrets.GPG_KEY }}"
           gpg-passphrase: "${{ secrets.GPG_PASSPHRASE }}"
-          maven-args: " -X -Pgithub -DskipIT "
+          maven-args: " -X -Pgithub -DskipIT -Dgpg.passphrase=${{ secrets.GPG_PASSPHRASE }} "
           maven-servers: '[{"id": "github", "username": "$GITHUB_ACTOR", "password": "${{ secrets.GITHUB_TOKEN }}"}]'
         env:
           JAVA_HOME: /usr/lib/jvm/java-11-openjdk/
