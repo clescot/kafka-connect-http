@@ -9,7 +9,7 @@ jobs:
   publish:
     runs-on: ubuntu-latest
     permissions:
-      contents: read
+      contents: write
       packages: write
     steps:
       - uses: actions/checkout@v3
@@ -25,8 +25,28 @@ jobs:
         run: |
           git config user.email "actions@github.com"
           git config user.name "clescot"
-      - name: Publish package
-        run: mvn -Pgithub --batch-mode deploy
+      - name: Release
+        uses: qcastel/github-actions-maven-release@v1.12.37
+        with:
+          access-token: ${{ secrets.GITHUB_TOKEN }}
+          version-patch: true
+          gpg-enabled: "true"
+          gpg-key-id: "${{ secrets.GPG_KEY_ID }}"
+          gpg-key: "${{ secrets.GPG_KEY }}"
+          gpg-passphrase: "${{ secrets.GPG_PASSPHRASE }}"
+          maven-args: " -Pgithub -DskipIT "
+          maven-servers: '[{"id": "github", "username": "$GITHUB_ACTOR", "password": "${{ secrets.GITHUB_TOKEN }}"}]'
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          JAVA_HOME: /usr/lib/jvm/java-11-openjdk/
+      - name: Get tag name
+        id: tag-name
+        run: |
+          export TAG=$(git describe --tags --abbrev=0 HEAD~)
+          echo "TAG=$TAG" >> $GITHUB_OUTPUT
+      - uses: ncipollo/release-action@v1
+        with:
+          tag: ${{ steps.tag-name.outputs.TAG }}
+          artifacts: "core/target/*.jar,archive/target/components/packages/*.zip"
+          generateReleaseNotes: true
+
 
