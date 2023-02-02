@@ -33,6 +33,14 @@ jobs:
         run: |
           git config user.email "actions@github.com"
           git config user.name "clescot"
+      - name: Import GPG key
+        id: import_gpg
+        uses: crazy-max/ghaction-import-gpg@v5
+        with:
+          gpg_private_key: ${{ secrets.MAVEN_GPG_PRIVATE_KEY }}
+          passphrase: ${{ secrets.MAVEN_GPG_PASSPHRASE }}
+      - name: List keys
+        run: gpg -K
       - name: Release
         uses: qcastel/github-actions-maven-release@v1.12.37
         with:
