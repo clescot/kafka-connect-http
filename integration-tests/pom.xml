@@ -84,6 +84,7 @@
         <plugins>
             <plugin>
                 <artifactId>maven-resources-plugin</artifactId>
+                <version>3.3.0</version>
                 <executions>
                     <execution>
                         <id>copy-archive-zip</id>
