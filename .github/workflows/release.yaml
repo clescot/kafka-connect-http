@@ -31,6 +31,8 @@ jobs:
           gpg-passphrase: "${{ secrets.GPG_PASSPHRASE }}"
           maven-args: " -P github,gpg -DskipIT  "
           maven-servers: '[{"id": "github", "username": "$GITHUB_ACTOR", "password": "${{ secrets.GITHUB_TOKEN }}"}]'
+        env:
+          JAVA_HOME: /usr/lib/jvm/java-11-openjdk/
 
       - name: Publish to GitHub Packages Apache Maven
         run: mvn deploy -Pgithub
