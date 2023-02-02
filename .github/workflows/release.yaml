@@ -33,25 +33,14 @@ jobs:
         run: |
           git config user.email "actions@github.com"
           git config user.name "clescot"
-      - name: Import GPG key
-        id: import_gpg
-        uses: crazy-max/ghaction-import-gpg@v5
-        with:
-          gpg_private_key: "${{ secrets.MAVEN_GPG_PRIVATE_KEY }}"
-          passphrase: "${{ secrets.MAVEN_GPG_PASSPHRASE }}"
-      - name: List keys
-        run: gpg -K
       - name: Release
         uses: qcastel/github-actions-maven-release@v1.12.37
         with:
           access-token: ${{ secrets.GITHUB_TOKEN }}
           version-patch: true
-          gpg-enabled: "true"
-          gpg-key-id: ${{ secrets.MAVEN_GPG_KEY_ID }}
-          gpg-key: "${{ secrets.MAVEN_GPG_PRIVATE_KEY }}"
-          gpg-passphrase: "${{ secrets.MAVEN_GPG_PASSPHRASE }}"
+          gpg-enabled: "false"
           maven-args: " -DskipIT "
-          maven-servers: '[{"id": "github", "username": "$GITHUB_ACTOR", "password": "${{ secrets.GITHUB_TOKEN }}","privateKey": "${{ secrets.MAVEN_GPG_PRIVATE_KEY }}","passphrase": "${{ secrets.MAVEN_GPG_PASSPHRASE }}"}]'
+          maven-servers: '[{"id": "github", "username": "$GITHUB_ACTOR", "password": "${{ secrets.GITHUB_TOKEN }}"}]'
         env:
           JAVA_HOME: /usr/lib/jvm/java-11-openjdk/
       - name: Get tag name
@@ -70,14 +59,12 @@ jobs:
         with:
           java-version: '11'
           distribution: 'adopt'
-          gpg-private-key: ${{ secrets.MAVEN_GPG_PRIVATE_KEY }}
-          gpg-passphrase: ${{ secrets.MAVEN_GPG_PASSPHRASE }}
           server-id: ossrh
           server-username: MAVEN_USERNAME
           server-password: MAVEN_PASSWORD
-          maven-servers: '[{"id": "ossrh", "username": "${{ secrets.OSSRH_USERNAME }}", "password": "${{ secrets.OSSRH_TOKEN }}"}]'
-      - name: Publish to the Maven Central Repository with the 'ossrh' maven profile
+      - name: Publish to the Maven Central Repository
         run: mvn -Possrh --batch-mode deploy
         env:
-          MAVEN_USERNAME: "${{ secrets.OSSRH_USERNAME }}"
-          MAVEN_PASSWORD: "${{ secrets.OSSRH_TOKEN }}"
+          MAVEN_USERNAME: ${{ secrets.OSSRH_USERNAME }}
+          MAVEN_PASSWORD: ${{ secrets.OSSRH_TOKEN }}
+
