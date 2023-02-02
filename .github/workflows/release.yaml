@@ -37,7 +37,7 @@ jobs:
           gpg-key-id: "${{ secrets.GPG_KEY_ID }}"
           gpg-key: "${{ secrets.GPG_KEY }}"
           gpg-passphrase: "${{ secrets.GPG_PASSPHRASE }}"
-          maven-args: " -X -P github,gpg -DskipIT  "
+          maven-args: " -P github,gpg -DskipIT  "
           maven-servers: '[{"id": "github", "username": "$GITHUB_ACTOR", "password": "${{ secrets.GITHUB_TOKEN }}"}]'
         env:
           JAVA_HOME: /usr/lib/jvm/java-11-openjdk/
