@@ -21,6 +21,14 @@
         <url>https://github.com/clescot/kafka-connect-http.git</url>
         <tag>HEAD</tag>
     </scm>
+    <developers>
+        <developer>
+            <name>Charles Lescot</name>
+            <email>910188+clescot@users.noreply.github.com</email>
+            <organization>github</organization>
+            <organizationUrl>https://github.com/clescot</organizationUrl>
+        </developer>
+    </developers>
     <issueManagement>
         <system>github</system>
         <url>https://github.com/clescot/kafka-connect-http/issues</url>
