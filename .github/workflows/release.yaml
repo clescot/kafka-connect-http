@@ -18,29 +18,39 @@ jobs:
         with:
           java-version: '11'
           distribution: 'adopt'
-          server-id: github
-          cache: maven
-          token: ${{ secrets.GITHUB_TOKEN }}
-      -
-        name: Import GPG key
-        id: import_gpg
-        uses: crazy-max/ghaction-import-gpg@v5
-        with:
-          gpg_private_key: "${{ secrets.GPG_KEY }}"
-          passphrase: "${{ secrets.GPG_PASSPHRASE }}"
-      - name: Release
-        uses: qcastel/github-actions-maven-release@v1.12.37
-        with:
-          access-token: ${{ secrets.GITHUB_TOKEN }}
-          version-patch: true
-          gpg-enabled: "true"
-          gpg-key-id: "${{ secrets.GPG_KEY_ID }}"
-          gpg-key: "${{ secrets.GPG_KEY }}"
-          gpg-passphrase: "${{ secrets.GPG_PASSPHRASE }}"
-          maven-args: " -X -P github,gpg -DskipIT  "
-          maven-servers: '[{"id": "github", "username": "$GITHUB_ACTOR", "password": "${{ secrets.GITHUB_TOKEN }}"}]'
+          server-id: ossrh
+          server-username: MAVEN_USERNAME
+          server-password: MAVEN_PASSWORD
+          gpg-private-key: "${{ secrets.GPG_KEY }}"
+          gpg-passphrase: MAVEN_GPG_PASSPHRASE
+
+      - name: build artifact
+        run: mvn -B clean package
+
+      - name: Update package version
+        run: mvn versions:set -DnewVersion=${{ steps.get_version.outputs.VERSION }}
+
+
+      - name: Publish package
+        run: mvn --batch-mode deploy -P ossrh
         env:
-          JAVA_HOME: /usr/lib/jvm/java-11-openjdk/
+          MAVEN_USERNAME: ${{ secrets.OSSRH_USERNAME }}
+          MAVEN_PASSWORD: ${{ secrets.OSSRH_TOKEN }}
+          MAVEN_GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
+
+      - name: Set up JDK 17 for deploy to github packages
+        uses: actions/setup-java@v3
+        with:
+          distribution: 'adopt'
+          java-version: '11'
+          server-id: github
+
+
+      - name: Publish to GitHub Packages Apache Maven
+        run: mvn deploy -Pgithub
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
       - name: Get tag name
         id: tag-name
         run: |
@@ -53,3 +63,4 @@ jobs:
           generateReleaseNotes: true
 
 
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
