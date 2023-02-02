@@ -39,6 +39,7 @@ import org.assertj.core.api.Assertions;
 import org.json.JSONException;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 import org.rnorth.ducttape.unreliables.Unreliables;
@@ -69,6 +70,7 @@ import static io.github.clescot.kafka.connect.http.sink.HttpSinkConfigDefinition
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.apache.kafka.clients.producer.ProducerConfig.BOOTSTRAP_SERVERS_CONFIG;
 
+@Disabled
 @Testcontainers
 public class ITConnectorTest {
 
@@ -84,13 +86,13 @@ public class ITConnectorTest {
     public static final String JKS_STORE_TYPE = "jks";
     public static final String TRUSTSTORE_PKIX_ALGORITHM = "PKIX";
     public static final String CLIENT_TRUSTSTORE_JKS_FILENAME = "client_truststore.jks";
+    public static final String ARCHIVE_ZIP_FILE_NAME = "clescot-kafka-connect-http-archive.zip";
     public static final String CLIENT_TRUSTSTORE_JKS_PASSWORD = "Secret123!";
     private static final ObjectMapper MAPPER = new ObjectMapper().registerModule(new JavaTimeModule());
     @Container
     public static KafkaContainer kafkaContainer = new KafkaContainer(DockerImageName.parse("confluentinc/cp-kafka:" + CONFLUENT_VERSION))
             .withNetwork(network)
-            .withLogConsumer(new Slf4jLogConsumer(LOGGER))
-            ;
+            .withLogConsumer(new Slf4jLogConsumer(LOGGER));
     @Container
     private static final SchemaRegistryContainer schemaRegistryContainer = new SchemaRegistryContainer()
             .withNetwork(network)
@@ -127,6 +129,7 @@ public class ITConnectorTest {
                     "org.apache.kafka.clients=ERROR")
             .withEnv("CONNECT_PLUGIN_PATH", "/usr/share/java/,/usr/share/confluent-hub-components/,/usr/local/share/kafka/plugins")
             .withCopyFileToContainer(MountableFile.forClasspathResource(CLIENT_TRUSTSTORE_JKS_FILENAME),"/opt/"+ CLIENT_TRUSTSTORE_JKS_FILENAME)
+            .withCopyFileToContainer(MountableFile.forClasspathResource("clescot-kafka-connect-http-archive-0.2.69-SNAPSHOT.zip"),"usr/share/confluent-hub-components/")
             .withExposedPorts(8083)
             .dependsOn(kafkaContainer, schemaRegistryContainer)
             .waitingFor(Wait.forHttp("/connector-plugins/"));

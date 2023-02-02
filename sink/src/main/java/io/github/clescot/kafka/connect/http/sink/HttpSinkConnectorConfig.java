@@ -24,23 +24,23 @@ public class HttpSinkConnectorConfig extends AbstractConfig {
     private static final String AHC_IMPLEMENTATION = "ahc";
     private final String defaultSuccessResponseCodeRegex;
     private final String defaultRetryResponseCodeRegex;
-    private String queueName;
-    private boolean publishToInMemoryQueue;
-    private Integer defaultRetries;
-    private Long defaultRetryDelayInMs;
-    private Long defaultRetryMaxDelayInMs;
-    private Double defaultRetryDelayFactor;
-    private Long defaultRetryJitterInMs;
-    private Long defaultRateLimiterMaxExecutions;
-    private Long defaultRateLimiterPeriodInMs;
-    private Map<String,List<String>> staticRequestHeaders = Maps.newHashMap();
-    private boolean generateMissingRequestId;
-    private boolean generateMissingCorrelationId;
+    private final String queueName;
+    private final boolean publishToInMemoryQueue;
+    private final Integer defaultRetries;
+    private final Long defaultRetryDelayInMs;
+    private final Long defaultRetryMaxDelayInMs;
+    private final Double defaultRetryDelayFactor;
+    private final Long defaultRetryJitterInMs;
+    private final Long defaultRateLimiterMaxExecutions;
+    private final Long defaultRateLimiterPeriodInMs;
+    private final Map<String,List<String>> staticRequestHeaders = Maps.newHashMap();
+    private final boolean generateMissingRequestId;
+    private final boolean generateMissingCorrelationId;
 
-    private long maxWaitTimeRegistrationOfQueueConsumerInMs;
-    private int pollDelayRegistrationOfQueueConsumerInMs;
-    private int pollIntervalRegistrationOfQueueConsumerInMs;
-    private String httpClientFactoryClass;
+    private final long maxWaitTimeRegistrationOfQueueConsumerInMs;
+    private final int pollDelayRegistrationOfQueueConsumerInMs;
+    private final int pollIntervalRegistrationOfQueueConsumerInMs;
+    private final String httpClientFactoryClass;
 
     public HttpSinkConnectorConfig(Map<?, ?> originals) {
         this(HttpSinkConfigDefinition.config(), originals);

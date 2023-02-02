@@ -10,17 +10,37 @@
     <packaging>pom</packaging>
     <dependencies>
         <dependency>
-            <groupId>io.github.clescot</groupId>
-            <artifactId>kafka-connect-http-sink</artifactId>
-            <version>0.2.69-SNAPSHOT</version>
+            <groupId>org.testcontainers</groupId>
+            <artifactId>junit-jupiter</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.kafka</groupId>
+            <artifactId>kafka-clients</artifactId>
+            <version>7.3.1-ccs</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-databind</artifactId>
+            <version>2.14.2</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.debezium</groupId>
+            <artifactId>debezium-testing-testcontainers</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.github.tomakehurst</groupId>
+            <artifactId>wiremock-jre8</artifactId>
         </dependency>
         <dependency>
             <groupId>io.github.clescot</groupId>
-            <artifactId>kafka-connect-http-source</artifactId>
+            <artifactId>kafka-connect-http-core</artifactId>
             <version>0.2.69-SNAPSHOT</version>
+            <scope>test</scope>
         </dependency>
     </dependencies>
-<build>
+    <build>
     <plugins>
         <plugin>
             <groupId>org.apache.maven.plugins</groupId>
