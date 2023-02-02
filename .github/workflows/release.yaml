@@ -33,7 +33,7 @@ jobs:
       -
         name: Sign commit and push changes
         run: |
-          touch README.md
+          echo foo > bar.txt
           git add .
           git commit -S -m "This commit is signed!"
           git push
