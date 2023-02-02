@@ -37,8 +37,8 @@ jobs:
         id: import_gpg
         uses: crazy-max/ghaction-import-gpg@v5
         with:
-          gpg_private_key: ${{ secrets.MAVEN_GPG_PRIVATE_KEY }}
-          passphrase: ${{ secrets.MAVEN_GPG_PASSPHRASE }}
+          gpg_private_key: "${{ secrets.MAVEN_GPG_PRIVATE_KEY }}"
+          passphrase: "${{ secrets.MAVEN_GPG_PASSPHRASE }}"
       - name: List keys
         run: gpg -K
       - name: Release
@@ -48,8 +48,8 @@ jobs:
           version-patch: true
           gpg-enabled: "true"
           gpg-key-id: ${{ secrets.MAVEN_GPG_KEY_ID }}
-          gpg-key: ${{ secrets.MAVEN_GPG_PRIVATE_KEY }}
-          gpg-passphrase: ${{ secrets.MAVEN_GPG_PASSPHRASE }}
+          gpg-key: "${{ secrets.MAVEN_GPG_PRIVATE_KEY }}"
+          gpg-passphrase: "${{ secrets.MAVEN_GPG_PASSPHRASE }}"
           maven-args: " -DskipIT "
           maven-servers: '[{"id": "github", "username": "$GITHUB_ACTOR", "password": "${{ secrets.GITHUB_TOKEN }}"}]'
         env:
@@ -79,5 +79,5 @@ jobs:
       - name: Publish to the Maven Central Repository with the 'ossrh' maven profile
         run: mvn -Possrh --batch-mode deploy
         env:
-          MAVEN_USERNAME: ${{ secrets.OSSRH_USERNAME }}
-          MAVEN_PASSWORD: ${{ secrets.OSSRH_TOKEN }}
+          MAVEN_USERNAME: "${{ secrets.OSSRH_USERNAME }}"
+          MAVEN_PASSWORD: "${{ secrets.OSSRH_TOKEN }}"
