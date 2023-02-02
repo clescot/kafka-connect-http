@@ -3,7 +3,7 @@
   "$schema": "http://json-schema.org/draft/2019-09/schema",
   "title": "Http Exchange",
   "type": "object",
-  "javaType" : "com.github.clescot.kafka.connect.http.HttpExchange",
+  "javaType" : "io.github.clescot.kafka.connect.http.core.core.HttpExchange",
   "additionalProperties": false,
   "properties": {
     "durationInMillis": {

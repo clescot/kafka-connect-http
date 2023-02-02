@@ -21,6 +21,14 @@
         <url>https://github.com/clescot/kafka-connect-http.git</url>
         <tag>HEAD</tag>
     </scm>
+    <developers>
+        <developer>
+            <name>Charles Lescot</name>
+            <email>910188+clescot@users.noreply.github.com</email>
+            <organization>github</organization>
+            <organizationUrl>https://github.com/clescot</organizationUrl>
+        </developer>
+    </developers>
     <issueManagement>
         <system>github</system>
         <url>https://github.com/clescot/kafka-connect-http/issues</url>
@@ -260,6 +268,19 @@
                 <executions>
                     <execution>
                         <id>attach-sources</id>
+                        <goals>
+                            <goal>jar</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-javadoc-plugin</artifactId>
+                <version>3.4.1</version>
+                <executions>
+                    <execution>
+                        <id>attach-javadoc</id>
                         <goals>
                             <goal>jar</goal>
                         </goals>

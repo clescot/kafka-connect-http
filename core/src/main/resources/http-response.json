@@ -4,7 +4,7 @@
   "title": "Http Response schema.",
   "description": "Http Response schema, included into HttpExchange.",
   "type": "object",
-  "javaType" : "com.github.clescot.kafka.connect.http.HttpResponse",
+  "javaType" : "io.github.clescot.kafka.connect.http.core.core.HttpResponse",
   "additionalProperties": false,
   "properties": {
     "statusCode":{
