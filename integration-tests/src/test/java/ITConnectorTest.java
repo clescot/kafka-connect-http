@@ -1,13 +1,11 @@
-package io.github.clescot.kafka.connect.http;
-
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
-import io.github.clescot.kafka.connect.http.core.core.HttpRequest;
-import io.github.clescot.kafka.connect.http.core.core.queue.QueueFactory;
 import com.github.tomakehurst.wiremock.client.WireMock;
+import com.github.tomakehurst.wiremock.core.WireMockConfiguration;
 import com.github.tomakehurst.wiremock.junit5.WireMockExtension;
 import com.github.tomakehurst.wiremock.junit5.WireMockRuntimeInfo;
+import com.github.tomakehurst.wiremock.stubbing.Scenario;
 import com.google.common.base.Joiner;
 import com.google.common.base.Stopwatch;
 import com.google.common.collect.Lists;
@@ -17,11 +15,15 @@ import io.confluent.kafka.schemaregistry.client.CachedSchemaRegistryClient;
 import io.confluent.kafka.schemaregistry.client.SchemaRegistryClient;
 import io.confluent.kafka.schemaregistry.json.JsonSchemaProvider;
 import io.confluent.kafka.schemaregistry.json.SpecificationVersion;
+import io.confluent.kafka.serializers.AbstractKafkaSchemaSerDeConfig;
 import io.confluent.kafka.serializers.json.KafkaJsonSchemaDeserializer;
 import io.confluent.kafka.serializers.json.KafkaJsonSchemaSerializer;
+import io.confluent.kafka.serializers.json.KafkaJsonSchemaSerializerConfig;
 import io.debezium.testing.testcontainers.Connector;
 import io.debezium.testing.testcontainers.ConnectorConfiguration;
 import io.debezium.testing.testcontainers.DebeziumContainer;
+import io.github.clescot.kafka.connect.http.core.core.HttpRequest;
+import io.github.clescot.kafka.connect.http.core.core.queue.QueueFactory;
 import org.apache.commons.text.StringEscapeUtils;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
@@ -33,6 +35,7 @@ import org.apache.kafka.common.header.Header;
 import org.apache.kafka.common.serialization.Deserializer;
 import org.apache.kafka.common.serialization.StringDeserializer;
 import org.apache.kafka.common.serialization.StringSerializer;
+import org.assertj.core.api.Assertions;
 import org.json.JSONException;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
@@ -64,16 +67,8 @@ import java.util.*;
 import java.util.stream.Stream;
 
 import static io.github.clescot.kafka.connect.http.sink.HttpSinkConfigDefinition.*;
-import static io.github.clescot.kafka.connect.http.sink.HttpSinkTaskTest.*;
-import static com.github.tomakehurst.wiremock.client.WireMock.*;
-import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.wireMockConfig;
-import static com.github.tomakehurst.wiremock.stubbing.Scenario.STARTED;
-import static io.confluent.kafka.serializers.AbstractKafkaSchemaSerDeConfig.AUTO_REGISTER_SCHEMAS;
-import static io.confluent.kafka.serializers.AbstractKafkaSchemaSerDeConfig.SCHEMA_REGISTRY_URL_CONFIG;
-import static io.confluent.kafka.serializers.json.KafkaJsonSchemaSerializerConfig.*;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.apache.kafka.clients.producer.ProducerConfig.BOOTSTRAP_SERVERS_CONFIG;
-import static org.assertj.core.api.Assertions.assertThat;
 
 @Disabled
 @Testcontainers
@@ -87,12 +82,17 @@ public class ITConnectorTest {
     public static final String HTTP_REQUESTS_AS_STRING = "http-requests-string";
     public static final boolean PUBLISH_TO_IN_MEMORY_QUEUE_OK = true;
     private static Network network = Network.newNetwork();
+
+    public static final String JKS_STORE_TYPE = "jks";
+    public static final String TRUSTSTORE_PKIX_ALGORITHM = "PKIX";
+    public static final String CLIENT_TRUSTSTORE_JKS_FILENAME = "client_truststore.jks";
+    public static final String ARCHIVE_ZIP_FILE_NAME = "clescot-kafka-connect-http-archive.zip";
+    public static final String CLIENT_TRUSTSTORE_JKS_PASSWORD = "Secret123!";
     private static final ObjectMapper MAPPER = new ObjectMapper().registerModule(new JavaTimeModule());
     @Container
     public static KafkaContainer kafkaContainer = new KafkaContainer(DockerImageName.parse("confluentinc/cp-kafka:" + CONFLUENT_VERSION))
             .withNetwork(network)
-            .withLogConsumer(new Slf4jLogConsumer(LOGGER))
-            ;
+            .withLogConsumer(new Slf4jLogConsumer(LOGGER));
     @Container
     private static final SchemaRegistryContainer schemaRegistryContainer = new SchemaRegistryContainer()
             .withNetwork(network)
@@ -128,7 +128,8 @@ public class ITConnectorTest {
                     "org.reflections=ERROR," +
                     "org.apache.kafka.clients=ERROR")
             .withEnv("CONNECT_PLUGIN_PATH", "/usr/share/java/,/usr/share/confluent-hub-components/,/usr/local/share/kafka/plugins")
-            .withCopyFileToContainer(MountableFile.forClasspathResource(CLIENT_TRUSTSTORE_JKS_FILENAME),"/opt/"+CLIENT_TRUSTSTORE_JKS_FILENAME)
+            .withCopyFileToContainer(MountableFile.forClasspathResource(CLIENT_TRUSTSTORE_JKS_FILENAME),"/opt/"+ CLIENT_TRUSTSTORE_JKS_FILENAME)
+            .withCopyFileToContainer(MountableFile.forClasspathResource("clescot-kafka-connect-http-archive-0.2.69-SNAPSHOT.zip"),"usr/share/confluent-hub-components/")
             .withExposedPorts(8083)
             .dependsOn(kafkaContainer, schemaRegistryContainer)
             .waitingFor(Wait.forHttp("/connector-plugins/"));
@@ -141,7 +142,7 @@ public class ITConnectorTest {
     @RegisterExtension
     static WireMockExtension wmHttp = WireMockExtension.newInstance()
             .options(
-                    wireMockConfig()
+                    WireMockConfiguration.wireMockConfig()
                     .dynamicPort()
             )
             .build();
@@ -149,8 +150,8 @@ public class ITConnectorTest {
     @RegisterExtension
     static WireMockExtension wmHttps = WireMockExtension.newInstance()
             .options(
-                    wireMockConfig()
-                    .keystorePath("src/test/resources/"+CLIENT_TRUSTSTORE_JKS_FILENAME)
+                    WireMockConfiguration.wireMockConfig()
+                    .keystorePath("src/test/resources/"+ CLIENT_TRUSTSTORE_JKS_FILENAME)
                     .keystorePassword(CLIENT_TRUSTSTORE_JKS_PASSWORD)
                     .keystoreType("JKS")
                     .keyManagerPassword(CLIENT_TRUSTSTORE_JKS_PASSWORD)
@@ -171,7 +172,7 @@ public class ITConnectorTest {
 
     private static void configureSinkConnector(String connectorName, boolean publishToInMemoryQueue, String incomingTopic, String valueConverterClassName, String queueName, Map.Entry<String,String>... additionalSettings) {
         ConnectorConfiguration sinkConnectorMessagesAsStringConfiguration = ConnectorConfiguration.create()
-                .with("connector.class", "com.github.clescot.kafka.connect.http.sink.HttpSinkConnector")
+                .with("connector.class", "io.github.clescot.kafka.connect.http.sink.HttpSinkConnector")
                 .with("tasks.max", "1")
                 .with("topics", incomingTopic)
                 .with("key.converter", "org.apache.kafka.connect.storage.StringConverter")
@@ -193,7 +194,7 @@ public class ITConnectorTest {
     private static void configureSourceConnector(String connectorName, String queueName, String successTopic, String errorTopic) {
         //source connector
         ConnectorConfiguration sourceConnectorConfiguration = ConnectorConfiguration.create()
-                .with("connector.class", "com.github.clescot.kafka.connect.http.source.HttpSourceConnector")
+                .with("connector.class", "io.github.clescot.kafka.connect.http.source.HttpSourceConnector")
                 .with("tasks.max", "1")
                 .with("success.topic", successTopic)
                 .with("error.topic", errorTopic)
@@ -240,8 +241,8 @@ public class ITConnectorTest {
         String bodyResponse = "{\"result\":\"pong\"}";
         String escapedJsonResponse = StringEscapeUtils.escapeJson(bodyResponse);
         wireMock
-                .register(post("/ping")
-                        .willReturn(aResponse()
+                .register(WireMock.post("/ping")
+                        .willReturn(WireMock.aResponse()
                         .withHeader("Content-Type","application/json")
                         .withBody(bodyResponse)
                         .withStatus(200)
@@ -276,9 +277,9 @@ public class ITConnectorTest {
 
         consumer.subscribe(Lists.newArrayList(successTopic, errorTopic));
         List<ConsumerRecord<String, ? extends Object>> consumerRecords = drain(consumer, 1, 30);
-        assertThat(consumerRecords).hasSize(1);
+        Assertions.assertThat(consumerRecords).hasSize(1);
         ConsumerRecord<String, ? extends Object> consumerRecord = consumerRecords.get(0);
-        assertThat(consumerRecord.key()).isNull();
+        Assertions.assertThat(consumerRecord.key()).isNull();
         String jsonAsString = consumerRecord.value().toString();
         String expectedJSON = "{\n" +
                 "  \"durationInMillis\": 0,\n" +
@@ -318,7 +319,7 @@ public class ITConnectorTest {
                         new Customization("requestId", (o1, o2) -> true),
                         new Customization("responseHeaders.Matched-Stub-Id", (o1, o2) -> true)
                 ));
-        assertThat(consumerRecord.headers().toArray()).isEmpty();
+        Assertions.assertThat(consumerRecord.headers().toArray()).isEmpty();
     }
 
     @Test
@@ -351,8 +352,8 @@ public class ITConnectorTest {
         int statusCode = 200;
         String statusMessage = "OK";
         wireMock
-                .register(post("/ping")
-                        .willReturn(aResponse()
+                .register(WireMock.post("/ping")
+                        .willReturn(WireMock.aResponse()
                                 .withHeader("Content-Type","application/json")
                                 .withBody(bodyResponse)
                                 .withStatus(statusCode)
@@ -386,10 +387,10 @@ public class ITConnectorTest {
 
         consumer.subscribe(Lists.newArrayList(successTopic, errorTopic));
         List<ConsumerRecord<String, ? extends Object>> consumerRecords = drain(consumer, 1, 120);
-        assertThat(consumerRecords).hasSize(1);
+        Assertions.assertThat(consumerRecords).hasSize(1);
         ConsumerRecord<String, ? extends Object> consumerRecord = consumerRecords.get(0);
-        assertThat(consumerRecord.topic()).isEqualTo(successTopic);
-        assertThat(consumerRecord.key()).isNull();
+        Assertions.assertThat(consumerRecord.topic()).isEqualTo(successTopic);
+        Assertions.assertThat(consumerRecord.key()).isNull();
         String jsonAsString = consumerRecord.value().toString();
         LOGGER.info("json response  :{}",jsonAsString);
         String expectedJSON = "{\n" +
@@ -432,7 +433,7 @@ public class ITConnectorTest {
                         new Customization("requestId", (o1, o2) -> true),
                         new Customization("responseHeaders.Matched-Stub-Id", (o1, o2) -> true)
                 ));
-        assertThat(consumerRecord.headers().toArray()).isEmpty();
+        Assertions.assertThat(consumerRecord.headers().toArray()).isEmpty();
 
     }
 
@@ -473,10 +474,10 @@ public class ITConnectorTest {
         int serverErrorStatusCode = 500;
         String errorStatusMessage = "Internal Server Error";
         wireMock
-                .register(post(urlEqualTo("/ping"))
+                .register(WireMock.post(WireMock.urlEqualTo("/ping"))
                         .inScenario("retry-policy")
-                        .whenScenarioStateIs(STARTED)
-                        .willReturn(aResponse()
+                        .whenScenarioStateIs(Scenario.STARTED)
+                        .willReturn(WireMock.aResponse()
                                 .withHeader("Content-Type","application/json")
                                 .withHeader("X-Try","1")
                                 .withBody(bodyResponse)
@@ -486,10 +487,10 @@ public class ITConnectorTest {
                         .willSetStateTo("2nd step")
                 );
         wireMock
-                .register(post(urlEqualTo("/ping"))
+                .register(WireMock.post(WireMock.urlEqualTo("/ping"))
                         .inScenario("retry-policy")
                         .whenScenarioStateIs("2nd step")
-                        .willReturn(aResponse()
+                        .willReturn(WireMock.aResponse()
                                 .withHeader("Content-Type","application/json")
                                 .withHeader("X-Try","2")
                                 .withBody(bodyResponse)
@@ -499,10 +500,10 @@ public class ITConnectorTest {
                         .willSetStateTo("3rd step")
                 );
         wireMock
-                .register(post(urlEqualTo("/ping"))
+                .register(WireMock.post(WireMock.urlEqualTo("/ping"))
                         .inScenario("retry-policy")
                         .whenScenarioStateIs("3rd step")
-                        .willReturn(aResponse()
+                        .willReturn(WireMock.aResponse()
                                 .withHeader("Content-Type","application/json")
                                 .withHeader("X-Try","3")
                                 .withBody(bodyResponse)
@@ -537,7 +538,7 @@ public class ITConnectorTest {
         consumer.subscribe(Lists.newArrayList(successTopic, errorTopic));
         int messageCount = 3;
         List<ConsumerRecord<String, ? extends Object>> consumerRecords = drain(consumer, messageCount, 120);
-        assertThat(consumerRecords).hasSize(3);
+        Assertions.assertThat(consumerRecords).hasSize(3);
         int messageInErrorTopic=0;
         int messageInSuccessTopic=0;
         for (int i = 0; i < messageCount; i++) {
@@ -550,8 +551,8 @@ public class ITConnectorTest {
                 checkMessage(successTopic, escapedJsonResponse, successStatusCode, successStatusMessage, baseUrl, consumerRecord);
             }
         }
-        assertThat(messageInErrorTopic).isEqualTo(2);
-        assertThat(messageInSuccessTopic).isEqualTo(1);
+        Assertions.assertThat(messageInErrorTopic).isEqualTo(2);
+        Assertions.assertThat(messageInSuccessTopic).isEqualTo(1);
     }
 
     @Test
@@ -589,8 +590,8 @@ public class ITConnectorTest {
         int statusCode = 200;
         String statusMessage = "OK";
         wireMock
-                .register(post("/ping")
-                        .willReturn(aResponse()
+                .register(WireMock.post("/ping")
+                        .willReturn(WireMock.aResponse()
                                 .withHeader("Content-Type","application/json")
                                 .withBody(bodyResponse)
                                 .withStatus(statusCode)
@@ -628,7 +629,7 @@ public class ITConnectorTest {
 
         consumer.subscribe(Lists.newArrayList(successTopic, errorTopic));
         List<ConsumerRecord<String, ? extends Object>> consumerRecords = drain(consumer, messageCount, 40);
-        assertThat(consumerRecords).hasSize(messageCount);
+        Assertions.assertThat(consumerRecords).hasSize(messageCount);
 
         int checkedMessages=0;
         for (int i = 0; i < messageCount; i++) {
@@ -643,7 +644,7 @@ public class ITConnectorTest {
         long elapsedTimeInSeconds = stopwatch.elapsed(SECONDS);
         LOGGER.info("elapsed time '{}' seconds",elapsedTimeInSeconds);
         //we add one to avoid rounding issues
-        assertThat(elapsedTimeInSeconds+1).isGreaterThan(minExecutionTimeInSeconds);
+        Assertions.assertThat(elapsedTimeInSeconds+1).isGreaterThan(minExecutionTimeInSeconds);
 
     }
     @Test
@@ -667,10 +668,10 @@ public class ITConnectorTest {
                 new AbstractMap.SimpleImmutableEntry<>(HTTP_CLIENT_GENERATE_MISSING_CORRELATION_ID,"true"),
                 new AbstractMap.SimpleImmutableEntry<>(HTTPCLIENT_SSL_SKIP_HOSTNAME_VERIFICATION,"true"),
                 new AbstractMap.SimpleImmutableEntry<>(HTTPCLIENT_DEFAULT_PROTOCOLS, "HTTP_1_1"),
-                new AbstractMap.SimpleImmutableEntry<>(HTTPCLIENT_SSL_TRUSTSTORE_PATH,"/opt/"+CLIENT_TRUSTSTORE_JKS_FILENAME),
-                new AbstractMap.SimpleImmutableEntry<>(HTTPCLIENT_SSL_TRUSTSTORE_PASSWORD,CLIENT_TRUSTSTORE_JKS_PASSWORD),
-                new AbstractMap.SimpleImmutableEntry<>(HTTPCLIENT_SSL_TRUSTSTORE_TYPE,JKS_STORE_TYPE),
-                new AbstractMap.SimpleImmutableEntry<>(HTTPCLIENT_SSL_TRUSTSTORE_ALGORITHM,TRUSTSTORE_PKIX_ALGORITHM)
+                new AbstractMap.SimpleImmutableEntry<>(HTTPCLIENT_SSL_TRUSTSTORE_PATH,"/opt/"+ CLIENT_TRUSTSTORE_JKS_FILENAME),
+                new AbstractMap.SimpleImmutableEntry<>(HTTPCLIENT_SSL_TRUSTSTORE_PASSWORD, CLIENT_TRUSTSTORE_JKS_PASSWORD),
+                new AbstractMap.SimpleImmutableEntry<>(HTTPCLIENT_SSL_TRUSTSTORE_TYPE, JKS_STORE_TYPE),
+                new AbstractMap.SimpleImmutableEntry<>(HTTPCLIENT_SSL_TRUSTSTORE_ALGORITHM, TRUSTSTORE_PKIX_ALGORITHM)
         );
         List<String> registeredConnectors = connectContainer.getRegisteredConnectors();
         String joinedRegisteredConnectors = Joiner.on(",").join(registeredConnectors);
@@ -685,8 +686,8 @@ public class ITConnectorTest {
         int statusCode = 200;
         String statusMessage = "OK";
         wireMock
-                .register(post("/ping")
-                        .willReturn(aResponse()
+                .register(WireMock.post("/ping")
+                        .willReturn(WireMock.aResponse()
                                 .withHeader("Content-Type","application/json")
                                 .withBody(bodyResponse)
                                 .withStatus(statusCode)
@@ -720,10 +721,10 @@ public class ITConnectorTest {
 
         consumer.subscribe(Lists.newArrayList(successTopic, errorTopic));
         List<ConsumerRecord<String, ? extends Object>> consumerRecords = drain(consumer, 1, 120);
-        assertThat(consumerRecords).hasSize(1);
+        Assertions.assertThat(consumerRecords).hasSize(1);
         ConsumerRecord<String, ? extends Object> consumerRecord = consumerRecords.get(0);
-        assertThat(consumerRecord.topic()).isEqualTo(successTopic);
-        assertThat(consumerRecord.key()).isNull();
+        Assertions.assertThat(consumerRecord.topic()).isEqualTo(successTopic);
+        Assertions.assertThat(consumerRecord.key()).isNull();
         String jsonAsString = consumerRecord.value().toString();
         LOGGER.info("json response  :{}",jsonAsString);
         String expectedJSON = "{\n" +
@@ -766,12 +767,12 @@ public class ITConnectorTest {
                         new Customization("requestId", (o1, o2) -> true),
                         new Customization("responseHeaders.Matched-Stub-Id", (o1, o2) -> true)
                 ));
-        assertThat(consumerRecord.headers().toArray()).isEmpty();
+        Assertions.assertThat(consumerRecord.headers().toArray()).isEmpty();
     }
 
     private static void checkMessage(String topicName,String escapedJsonResponse, int statusCode, String statusMessage, String baseUrl, ConsumerRecord<String, ?> consumerRecord) throws JSONException {
-            assertThat(consumerRecord.topic()).isEqualTo(topicName);
-            assertThat(consumerRecord.key()).isNull();
+            Assertions.assertThat(consumerRecord.topic()).isEqualTo(topicName);
+            Assertions.assertThat(consumerRecord.key()).isNull();
             String jsonAsString = consumerRecord.value().toString();
             LOGGER.info("json response  :{}", jsonAsString);
             String expectedJSON = "{\n" +
@@ -815,7 +816,7 @@ public class ITConnectorTest {
                             new Customization("requestId", (o1, o2) -> true),
                             new Customization("responseHeaders.Matched-Stub-Id", (o1, o2) -> true)
                     ));
-            assertThat(consumerRecord.headers().toArray()).isEmpty();
+            Assertions.assertThat(consumerRecord.headers().toArray()).isEmpty();
     }
 
 
@@ -834,14 +835,14 @@ public class ITConnectorTest {
     private <T> KafkaProducer<String, T> getStructAsJSONProducer() {
         Properties props = new Properties();
         props.put(BOOTSTRAP_SERVERS_CONFIG,kafkaContainer.getBootstrapServers());
-        props.put(SCHEMA_REGISTRY_URL_CONFIG,externalSchemaRegistryUrl);
+        props.put(AbstractKafkaSchemaSerDeConfig.SCHEMA_REGISTRY_URL_CONFIG,externalSchemaRegistryUrl);
         props.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG,StringSerializer.class.getName());
         props.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG,KafkaJsonSchemaSerializer.class.getName());
-        props.put(AUTO_REGISTER_SCHEMAS,"true");
-        props.put(SCHEMA_SPEC_VERSION, SpecificationVersion.DRAFT_2019_09.toString());
-        props.put(ONEOF_FOR_NULLABLES,"true");
-        props.put(FAIL_UNKNOWN_PROPERTIES,"true");
-        props.put(WRITE_DATES_AS_ISO8601,"true");
+        props.put(AbstractKafkaSchemaSerDeConfig.AUTO_REGISTER_SCHEMAS,"true");
+        props.put(KafkaJsonSchemaSerializerConfig.SCHEMA_SPEC_VERSION, SpecificationVersion.DRAFT_2019_09.toString());
+        props.put(KafkaJsonSchemaSerializerConfig.ONEOF_FOR_NULLABLES,"true");
+        props.put(KafkaJsonSchemaSerializerConfig.FAIL_UNKNOWN_PROPERTIES,"true");
+        props.put(KafkaJsonSchemaSerializerConfig.WRITE_DATES_AS_ISO8601,"true");
         return new KafkaProducer<>(props);
     }
 

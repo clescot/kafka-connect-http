@@ -63,6 +63,7 @@
         <module>core</module>
         <module>sink</module>
         <module>source</module>
+        <module>integration-tests</module>
         <module>archive</module>
     </modules>
 
@@ -305,25 +306,25 @@
                     </excludes>
                 </configuration>
             </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-failsafe-plugin</artifactId>
-                <version>3.0.0-M8</version>
-                <executions>
-                    <execution>
-                        <goals>
-                            <goal>integration-test</goal>
-                            <goal>verify</goal>
-                        </goals>
-                    </execution>
-                </executions>
-                <configuration>
-                    <includes>
-                        <include>**/IT*.java</include>
-                    </includes>
-                    <skipTests>${skipIT}</skipTests>
-                </configuration>
-            </plugin>
+<!--            <plugin>-->
+<!--                <groupId>org.apache.maven.plugins</groupId>-->
+<!--                <artifactId>maven-failsafe-plugin</artifactId>-->
+<!--                <version>3.0.0-M8</version>-->
+<!--                <executions>-->
+<!--                    <execution>-->
+<!--                        <goals>-->
+<!--                            <goal>integration-test</goal>-->
+<!--                            <goal>verify</goal>-->
+<!--                        </goals>-->
+<!--                    </execution>-->
+<!--                </executions>-->
+<!--                <configuration>-->
+<!--                    <includes>-->
+<!--                        <include>**/IT*.java</include>-->
+<!--                    </includes>-->
+<!--                    <skipTests>${skipIT}</skipTests>-->
+<!--                </configuration>-->
+<!--            </plugin>-->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-release-plugin</artifactId>
