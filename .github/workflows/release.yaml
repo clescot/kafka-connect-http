@@ -27,11 +27,10 @@ jobs:
           version-patch: true
           gpg-enabled: "true"
           gpg-key-id: "${{ secrets.GPG_KEY_ID }}"
-          gpg-key: "${{ secrets.GPG_KEY }}"
+          gpg-key: "${{ secrets.GPG_KEY_BASE_64 }}"
           gpg-passphrase: "${{ secrets.GPG_PASSPHRASE }}"
           maven-args: " -P github,gpg -DskipIT  "
-          maven-servers: '[{"id": "github", "username": "$GITHUB_ACTOR", "password": "${{ secrets.GITHUB_TOKEN }}", "privateKey": "${{ secrets.GPG_KEY }}", "passphrase": "${{ secrets.GPG_PASSPHRASE }}"}]'
-#          maven-servers: '[{"id": "github", "username": "$GITHUB_ACTOR", "password": "${{ secrets.GITHUB_TOKEN }}", "privateKey": "${{ secrets.GPG_KEY }}", "passphrase": "${{ secrets.GPG_PASSPHRASE }}"}]'
+          maven-servers: '[{"id": "github", "username": "$GITHUB_ACTOR", "password": "${{ secrets.GITHUB_TOKEN }}"}]'
 
       - name: Publish to GitHub Packages Apache Maven
         run: mvn deploy -Pgithub
