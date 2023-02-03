@@ -6,13 +6,18 @@ on:
   release:
     types: [created]
 jobs:
-  release:
+  publish:
     runs-on: ubuntu-latest
-    permissions:
-      contents: write
-      packages: write
+    permissions: write-all
+
     steps:
       - uses: actions/checkout@v3
+      - name: Set up JDK 11 for github
+        uses: actions/setup-java@v3
+        with:
+          distribution: 'adopt'
+          java-version: '11'
+          server-id: github
 
       - name: Release
         uses: qcastel/github-actions-maven-release@v1.12.37
@@ -28,19 +33,6 @@ jobs:
         env:
           JAVA_HOME: /usr/lib/jvm/java-11-openjdk/
 
-  publish_on_github:
-    runs-on: ubuntu-latest
-    permissions:
-      contents: write
-      packages: write
-    steps:
-      - name: Set up JDK 11 for github
-        uses: actions/setup-java@v3
-        with:
-          distribution: 'adopt'
-          java-version: '11'
-          server-id: github
-
       - name: Get release tag name
         id: tag-name
         run: |
@@ -55,12 +47,7 @@ jobs:
           generateReleaseNotes: true
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-  publish_on_ossrh:
-    runs-on: ubuntu-latest
-    permissions:
-      contents: write
-      packages: write
-    steps:
+
       - name: Set up JDK 11 for ossrh
         uses: actions/setup-java@v3
         with:
@@ -72,7 +59,7 @@ jobs:
           gpg-private-key: "${{ secrets.GPG_KEY }}"
           gpg-passphrase: MAVEN_GPG_PASSPHRASE
 
-      - name: Publish to the Maven Central Repository
+      - name: Publish to the Maven Central Repository via ossrh
         run: |
           mvn -P ossrh \
             --no-transfer-progress \
