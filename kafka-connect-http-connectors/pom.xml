@@ -55,9 +55,26 @@
         </dependency>
         <dependency>
             <groupId>org.apache.kafka</groupId>
+            <artifactId>kafka-clients</artifactId>
+            <version>7.3.1-ccs</version>
+        </dependency>
+        <dependency>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-databind</artifactId>
+            <version>2.14.2</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.apache.kafka</groupId>
             <artifactId>connect-api</artifactId>
             <scope>provided</scope>
         </dependency>
+
+
+
+
+
+
         <dependency>
             <groupId>org.apache.kafka</groupId>
             <artifactId>connect-json</artifactId>
@@ -108,16 +125,7 @@
             <artifactId>wiremock-jre8</artifactId>
             <scope>test</scope>
         </dependency>
-        <dependency>
-            <groupId>org.skyscreamer</groupId>
-            <artifactId>jsonassert</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.mockito</groupId>
-            <artifactId>mockito-core</artifactId>
-            <scope>test</scope>
-        </dependency>
+
         <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter</artifactId>
@@ -140,63 +148,11 @@
             <version>7.3.1</version>
             <scope>test</scope>
         </dependency>
-        <dependency>
-            <groupId>org.assertj</groupId>
-            <artifactId>assertj-core</artifactId>
-            <scope>test</scope>
-        </dependency>
+
         <dependency>
             <groupId>io.confluent</groupId>
             <artifactId>kafka-json-schema-serializer</artifactId>
             <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.testcontainers</groupId>
-            <artifactId>junit-jupiter</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.kafka</groupId>
-            <artifactId>kafka-clients</artifactId>
-            <version>7.3.1-ccs</version>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>com.fasterxml.jackson.core</groupId>
-            <artifactId>jackson-databind</artifactId>
-            <version>2.14.2</version>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>io.debezium</groupId>
-            <artifactId>debezium-testing-testcontainers</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>com.github.tomakehurst</groupId>
-            <artifactId>wiremock-jre8</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>io.github.clescot</groupId>
-            <artifactId>kafka-connect-http-core</artifactId>
-            <version>0.2.85-SNAPSHOT</version>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.kafka</groupId>
-            <artifactId>kafka-clients</artifactId>
-            <version>7.3.1-ccs</version>
-            <scope>compile</scope>
-        </dependency>
-        <dependency>
-            <groupId>io.github.clescot</groupId>
-            <artifactId>kafka-connect-http-core</artifactId>
-            <version>0.2.85-SNAPSHOT</version>
-            <scope>compile</scope>
-        </dependency>
-        <dependency>
-            <groupId>com.fasterxml.jackson.core</groupId>
-            <artifactId>jackson-databind</artifactId>
-            <version>2.14.2</version>
-            <scope>compile</scope>
         </dependency>
 
 

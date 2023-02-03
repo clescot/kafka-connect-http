@@ -17,17 +17,11 @@ jobs:
       - name: Set up JDK 11 for github
         uses: actions/setup-java@v3
         with:
-          distribution: 'adopt'
+          distribution: 'temurin'
           java-version: '11'
           server-id: github
+          cache: 'maven'
 
-
-      - name: Cache Maven packages
-        uses: actions/cache@v2
-        with:
-          path: ~/.m2/repository
-          key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
-          restore-keys: ${{ runner.os }}-m2-repository
 
       - name: Release
         uses: qcastel/github-actions-maven-release@v1.12.37
@@ -61,21 +55,14 @@ jobs:
       - name: Set up JDK 11 for ossrh
         uses: actions/setup-java@v3
         with:
-          distribution: 'adopt'
+          distribution: 'temurin'
           java-version: '11'
           server-id: 'ossrh'
           server-username: MAVEN_USERNAME
           server-password: MAVEN_PASSWORD
           gpg-private-key: "${{ secrets.GPG_KEY }}"
           gpg-passphrase: MAVEN_GPG_PASSPHRASE
-
-
-      - name: Cache Maven packages
-        uses: actions/cache@v2
-        with:
-          path: ~/.m2/repository
-          key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
-          restore-keys: ${{ runner.os }}-m2-repository
+          cache: 'maven'
 
 
       - name: Publish to the Maven Central Repository via ossrh
