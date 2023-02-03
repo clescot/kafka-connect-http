@@ -62,7 +62,7 @@ jobs:
 
 
       - name: Publish package to ossrh
-        run: mvn --batch-mode deploy -P ossrh -Dgpg.passphrase=${{ secrets.GPG_PASSPHRASE }} -Dgpg.keyname=${{ secrets.GPG_KEY_ID }}
+        run: mvn  -X --no-transfer-progress --batch-mode deploy -P ossrh -Dgpg.passphrase=${{ secrets.GPG_PASSPHRASE }} -Dgpg.keyname=${{ secrets.GPG_KEY_ID }}
         env:
           MAVEN_USERNAME: ${{ secrets.OSSRH_USERNAME }}
           MAVEN_PASSWORD: ${{ secrets.OSSRH_TOKEN }}
