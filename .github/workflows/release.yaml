@@ -32,7 +32,7 @@ jobs:
           gpg-key-id: "${{ secrets.GPG_KEY_ID }}"
           gpg-key: "${{ secrets.GPG_KEY_BASE_64 }}"
           gpg-passphrase: "${{ secrets.GPG_PASSPHRASE }}"
-          maven-args: " -P github,gpg -DskipIT  --no-transfer-progress "
+          maven-args: " -P github,gpg -DskipIT -B --no-transfer-progress "
           maven-servers: '[{"id": "github", "username": "$GITHUB_ACTOR", "password": "${{ secrets.GITHUB_TOKEN }}"}]'
         env:
           JAVA_HOME: /usr/lib/jvm/java-11-openjdk/
@@ -67,7 +67,7 @@ jobs:
 
 
       - name: Publish to the Maven Central Repository via ossrh
-        run: mvn -X -PossrhDeploy --no-transfer-progress  -DskipTests  deploy
+        run: mvn -B -X -PossrhDeploy --no-transfer-progress  -DskipTests  deploy
         env:
           MAVEN_USERNAME: ${{ secrets.OSSRH_USERNAME }}
           MAVEN_PASSWORD: ${{ secrets.OSSRH_TOKEN }}
