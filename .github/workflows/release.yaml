@@ -6,33 +6,34 @@ on:
   release:
     types: [created]
 jobs:
-  publish:
+  release:
+    - uses: actions/checkout@v3
+
+    - name: Release
+      uses: qcastel/github-actions-maven-release@v1.12.37
+      with:
+        access-token: ${{ secrets.GITHUB_TOKEN }}
+        version-patch: true
+        gpg-enabled: "true"
+        gpg-key-id: "${{ secrets.GPG_KEY_ID }}"
+        gpg-key: "${{ secrets.GPG_KEY_BASE_64 }}"
+        gpg-passphrase: "${{ secrets.GPG_PASSPHRASE }}"
+        maven-args: " -P github,gpg -DskipIT  "
+        maven-servers: '[{"id": "github", "username": "$GITHUB_ACTOR", "password": "${{ secrets.GITHUB_TOKEN }}"}]'
+      env:
+        JAVA_HOME: /usr/lib/jvm/java-11-openjdk/
+  publish_on_github:
     runs-on: ubuntu-latest
     permissions:
       contents: write
       packages: write
     steps:
-      - uses: actions/checkout@v3
       - name: Set up JDK 11 for github
         uses: actions/setup-java@v3
         with:
           distribution: 'adopt'
           java-version: '11'
           server-id: github
-
-      - name: Release
-        uses: qcastel/github-actions-maven-release@v1.12.37
-        with:
-          access-token: ${{ secrets.GITHUB_TOKEN }}
-          version-patch: true
-          gpg-enabled: "true"
-          gpg-key-id: "${{ secrets.GPG_KEY_ID }}"
-          gpg-key: "${{ secrets.GPG_KEY_BASE_64 }}"
-          gpg-passphrase: "${{ secrets.GPG_PASSPHRASE }}"
-          maven-args: " -P github,gpg -DskipIT  "
-          maven-servers: '[{"id": "github", "username": "$GITHUB_ACTOR", "password": "${{ secrets.GITHUB_TOKEN }}"}]'
-        env:
-          JAVA_HOME: /usr/lib/jvm/java-11-openjdk/
 
       - name: Get release tag name
         id: tag-name
@@ -48,7 +49,7 @@ jobs:
           generateReleaseNotes: true
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-
+  publish_on_ossrh:
       - name: Set up JDK 11 for ossrh
         uses: actions/setup-java@v3
         with:
