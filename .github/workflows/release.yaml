@@ -67,7 +67,7 @@ jobs:
 
 
       - name: Publish to the Maven Central Repository via ossrh
-        run: sudo mvn -PossrhDeploy --no-transfer-progress  -DskipTests  deploy
+        run: sudo mvn -PossrhDeploy --no-transfer-progress  -DskipTests -Dgpg.keyname=${{secrets.GPG_KEY_ID}} -Dgpg.passphrase=${{secrets.GPG_PASSPHRASE}} deploy
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           MAVEN_USERNAME: ${{ secrets.OSSRH_USERNAME }}
