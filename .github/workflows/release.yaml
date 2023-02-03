@@ -60,7 +60,7 @@ jobs:
           server-id: 'ossrh'
           server-username: MAVEN_USERNAME
           server-password: MAVEN_PASSWORD
-          gpg-private-key: "${{ secrets.GPG_ARMOR_PRIVATE_KEY }}"
+          gpg-private-key: "${{ secrets.GPG_KEY }}"
           gpg-passphrase: MAVEN_GPG_PASSPHRASE
           cache: 'maven'
 
@@ -69,7 +69,6 @@ jobs:
       - name: Publish to the Maven Central Repository via ossrh
         run: sudo mvn -PossrhDeploy --no-transfer-progress  -DskipTests -Dgpg.keyname=${{secrets.GPG_KEY_ID}} -Dgpg.passphrase=${{secrets.GPG_PASSPHRASE}} deploy
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           MAVEN_USERNAME: ${{ secrets.OSSRH_USERNAME }}
           MAVEN_PASSWORD: ${{ secrets.OSSRH_TOKEN }}
           MAVEN_GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
