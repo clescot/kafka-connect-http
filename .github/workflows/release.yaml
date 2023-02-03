@@ -74,6 +74,6 @@ jobs:
           MAVEN_GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
           SIGN_KEY: "${{ secrets.GPG_KEY }}"
           SIGN_KEY_ID: "${{ secrets.GPG_KEY_ID }}"
-          SIGN_KEY_PASS: "${{ secrets.GPG_PASSPHRASE }}"
+          SIGN_KEY_PASS: "${{ secrets.GPG_PASSPHRASE }}" 
 
 
