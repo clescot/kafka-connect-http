@@ -8,7 +8,9 @@ on:
 jobs:
   publish:
     runs-on: ubuntu-latest
-    permissions: write-all
+    permissions:
+      contents: write
+      packages: write
 
     steps:
       - uses: actions/checkout@v3
@@ -18,6 +20,14 @@ jobs:
           distribution: 'adopt'
           java-version: '11'
           server-id: github
+
+
+      - name: Cache Maven packages
+        uses: actions/cache@v2
+        with:
+          path: ~/.m2/repository
+          key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
+          restore-keys: ${{ runner.os }}-m2-repository
 
       - name: Release
         uses: qcastel/github-actions-maven-release@v1.12.37
@@ -59,12 +69,16 @@ jobs:
           gpg-private-key: "${{ secrets.GPG_KEY }}"
           gpg-passphrase: MAVEN_GPG_PASSPHRASE
 
+
+      - name: Cache Maven packages
+        uses: actions/cache@v2
+        with:
+          path: ~/.m2/repository
+          key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
+          restore-keys: ${{ runner.os }}-m2-repository
+
       - name: Publish to the Maven Central Repository via ossrh
-        run: |
-          mvn -P ossrh \
-            --no-transfer-progress \
-            --batch-mode \
-            deploy
+        run: mvn -P ossrh --no-transfer-progress --batch-mode -DskipTests -DuseSonatype -DsignArtifacts deploy
         env:
           MAVEN_USERNAME: ${{ secrets.OSSRH_USERNAME }}
           MAVEN_PASSWORD: ${{ secrets.OSSRH_TOKEN }}
