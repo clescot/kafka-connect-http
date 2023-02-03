@@ -388,7 +388,7 @@
 
         </profile>
         <profile>
-            <id>ossrh</id>
+            <id>ossrhDeploy</id>
             <distributionManagement>
                 <repository>
                     <id>ossrh</id>
