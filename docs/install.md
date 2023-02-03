@@ -10,10 +10,10 @@ In your Dockerfile, the easiest way to install the connectors (owning the Sink a
 
 - copy from the github website, from the home page, in the package section, the zip file from the latest release 
 (we've not yet published on the confluent hub website our connector, nor on the maven central repository).
-For example, `kafka-connect-http-sink-0.2.33.zip`.
+For example, `clescot-kafka-connect-http-connectors-0.2.33.zip`.
 - include it in your Kafka connect docker image, via this command in your `Dockerfile` : 
    
-     `COPY connectors/clescot-kafka-connect-http-*.zip /tmp/kafka-connect-http.zip`
+     `COPY connectors/clescot-kafka-connect-http-connectors*.zip /tmp/kafka-connect-http-connectors.zip`
 
 - install the connector via the confluent-hub command line (we assume that your image is inherited from the confluent/kafka-connect image,
   which ships this useful tool), in the offline way : 
