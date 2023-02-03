@@ -34,11 +34,6 @@ jobs:
         env:
           JAVA_HOME: /usr/lib/jvm/java-11-openjdk/
 
-      - name: Publish to GitHub Packages Apache Maven
-        run: mvn deploy -P github,gpg -Dgpg.passphrase=${{ secrets.GPG_PASSPHRASE }} -Dgpg.keyname=${{ secrets.GPG_KEY_ID }}
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
       - name: Get tag name
         id: tag-name
         run: |
