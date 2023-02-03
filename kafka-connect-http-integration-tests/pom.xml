@@ -4,7 +4,7 @@
     <parent>
         <groupId>io.github.clescot</groupId>
         <artifactId>kafka-connect-http</artifactId>
-        <version>0.2.70-SNAPSHOT</version>
+        <version>0.2.70</version>
     </parent>
     <artifactId>kafka-connect-http-integration-tests</artifactId>
     <packaging>jar</packaging>
