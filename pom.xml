@@ -60,11 +60,11 @@
         <wiremock.version>2.35.0</wiremock.version>
     </properties>
     <modules>
-        <module>core</module>
-        <module>sink</module>
-        <module>source</module>
-        <module>integration-tests</module>
-        <module>archive</module>
+        <module>kafka-connect-http-core</module>
+        <module>kafka-connect-http-sink</module>
+        <module>kafka-connect-http-source</module>
+        <module>kafka-connect-http-integration-tests</module>
+        <module>kafka-connect-http-archive</module>
     </modules>
 
     <dependencyManagement>
