@@ -67,7 +67,7 @@ jobs:
 
 
       - name: Publish to the Maven Central Repository via ossrh
-        run: mvn -B -X -PossrhDeploy --no-transfer-progress  -DskipTests  deploy
+        run: sudo mvn -B -X -PossrhDeploy --no-transfer-progress  -DskipTests  deploy
         env:
           MAVEN_USERNAME: ${{ secrets.OSSRH_USERNAME }}
           MAVEN_PASSWORD: ${{ secrets.OSSRH_TOKEN }}
