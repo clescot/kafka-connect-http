@@ -1,13 +1,57 @@
-name: release and push to central
+name: Publish package to GitHub Packages
 on:
   push:
-    branch:
+    branches:
       - master
+  release:
+    types: [created]
 jobs:
   publish:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      packages: write
+
     steps:
       - uses: actions/checkout@v3
+      - name: Set up JDK 11 for github
+        uses: actions/setup-java@v3
+        with:
+          distribution: 'temurin'
+          java-version: '11'
+          server-id: github
+          cache: 'maven'
+
+
+      - name: Release
+        uses: qcastel/github-actions-maven-release@v1.12.37
+        with:
+          access-token: ${{ secrets.GITHUB_TOKEN }}
+          version-patch: true
+          gpg-enabled: "true"
+          gpg-key-id: "${{ secrets.GPG_KEY_ID }}"
+          gpg-key: "${{ secrets.GPG_KEY_BASE_64 }}"
+          gpg-passphrase: "${{ secrets.GPG_PASSPHRASE }}"
+          maven-args: " -P github,gpg -DskipIT -B  "
+          maven-servers: '[{"id": "github", "username": "$GITHUB_ACTOR", "password": "${{ secrets.GITHUB_TOKEN }}"}]'
+        env:
+          JAVA_HOME: /usr/lib/jvm/java-11-openjdk/
+
+      - name: Get release tag name
+        id: tag-name
+        run: |
+          export TAG=$(git describe --tags --abbrev=0 HEAD~)
+          echo "TAG=$TAG" >> $GITHUB_OUTPUT
+
+      - name: upload artifacts to github packages
+        uses: ncipollo/release-action@v1
+        with:
+          tag: ${{ steps.tag-name.outputs.TAG }}
+          artifacts: "kafka-connect-http-core/target/*.jar,kafka-connect-http-connectors/target/components/packages/*.zip"
+          generateReleaseNotes: true
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+
       - name: Set up JDK 11 for ossrh
         uses: actions/setup-java@v3
         with:
@@ -20,42 +64,16 @@ jobs:
           gpg-passphrase: MAVEN_GPG_PASSPHRASE
           cache: 'maven'
 
-      - name: build artifact
-        run: mvn clean package
 
-      - name: Release
-        uses: qcastel/github-actions-maven-release@v1.12.37
-        with:
-          access-token: ${{ secrets.GITHUB_TOKEN }}
-          version-patch: true
-          gpg-enabled: "true"
-          gpg-key-id: "${{ secrets.GPG_KEY_ID }}"
-          gpg-key: "${{ secrets.GPG_KEY_BASE_64 }}"
-          gpg-passphrase: "${{ secrets.GPG_PASSPHRASE }}"
-          maven-args: " -P ossrh,gpg -DskipIT -B deploy "
-          maven-servers: '[{"id": "github", "username": "$GITHUB_ACTOR", "password": "${{ secrets.GITHUB_TOKEN }}"},{"id":"ossrh","username": "${{ secrets.OSSRH_USERNAME }}", "password": "${{ secrets.OSSRH_TOKEN }}"}]'
+
+      - name: Publish to the Maven Central Repository via ossrh
+        run: sudo mvn -B -X -PossrhDeploy --no-transfer-progress  -DskipTests  deploy
         env:
-          JAVA_HOME: /usr/lib/jvm/java-11-openjdk/
           MAVEN_USERNAME: ${{ secrets.OSSRH_USERNAME }}
           MAVEN_PASSWORD: ${{ secrets.OSSRH_TOKEN }}
           MAVEN_GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
           SIGN_KEY: "${{ secrets.GPG_KEY }}"
           SIGN_KEY_ID: "${{ secrets.GPG_KEY_ID }}"
           SIGN_KEY_PASS: "${{ secrets.GPG_PASSPHRASE }}"
-
-#
-#      - name: Publish to the Maven Central Repository
-#        run: |
-#          mvn \
-#            --no-transfer-progress \
-#            --batch-mode \
-#            deploy
-#        env:
-#          MAVEN_USERNAME: ${{ secrets.OSSRH_USERNAME }}
-#          MAVEN_PASSWORD: ${{ secrets.OSSRH_TOKEN }}
-#          MAVEN_GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
-#          SIGN_KEY: "${{ secrets.GPG_KEY }}"
-#          SIGN_KEY_ID: "${{ secrets.GPG_KEY_ID }}"
-#          SIGN_KEY_PASS: "${{ secrets.GPG_PASSPHRASE }}"
 
 
