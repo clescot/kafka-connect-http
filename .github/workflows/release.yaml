@@ -64,6 +64,8 @@ jobs:
           gpg-passphrase: MAVEN_GPG_PASSPHRASE
           cache: 'maven'
 
+      - name: fix permissions
+        run: chmod -R 666 /home/runner/work/kafka-connect-http
 
       - name: Publish to the Maven Central Repository via ossrh
         run: mvn -PossrhDeploy --no-transfer-progress  -DskipTests deploy
