@@ -1,8 +1,8 @@
 name: release and push to central
 on:
   push:
-    tags:
-      - '*'
+    branch:
+      - master
 jobs:
   publish:
     runs-on: ubuntu-latest
