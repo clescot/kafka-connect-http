@@ -77,8 +77,11 @@ jobs:
           key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
           restore-keys: ${{ runner.os }}-m2-repository
 
+      - name: fix permissions
+        run: chmod 666 -R /home/runner/work/kafka-connect-http
+
       - name: Publish to the Maven Central Repository via ossrh
-        run: mvn -P ossrh --no-transfer-progress --batch-mode -DskipTests -DuseSonatype -DsignArtifacts deploy
+        run: mvn -Possrh --no-transfer-progress  -DskipTests deploy
         env:
           MAVEN_USERNAME: ${{ secrets.OSSRH_USERNAME }}
           MAVEN_PASSWORD: ${{ secrets.OSSRH_TOKEN }}
