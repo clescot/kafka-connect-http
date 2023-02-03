@@ -6,7 +6,7 @@
         <artifactId>kafka-connect-http</artifactId>
         <version>0.2.77-SNAPSHOT</version>
     </parent>
-    <artifactId>kafka-connect-http-bundle</artifactId>
+    <artifactId>kafka-connect-http-connectors</artifactId>
     <packaging>jar</packaging>
     <dependencies>
 

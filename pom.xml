@@ -61,7 +61,7 @@
     </properties>
     <modules>
         <module>kafka-connect-http-core</module>
-        <module>kafka-connect-http-bundle</module>
+        <module>kafka-connect-http-connectors</module>
     </modules>
 
     <dependencyManagement>
