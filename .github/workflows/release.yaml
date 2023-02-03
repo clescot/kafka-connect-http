@@ -63,7 +63,7 @@ jobs:
         with:
           distribution: 'adopt'
           java-version: '11'
-          server-id: ossrh
+          server-id: 'ossrh'
           server-username: MAVEN_USERNAME
           server-password: MAVEN_PASSWORD
           gpg-private-key: "${{ secrets.GPG_KEY }}"
@@ -77,13 +77,14 @@ jobs:
           key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
           restore-keys: ${{ runner.os }}-m2-repository
 
+
       - name: Publish to the Maven Central Repository via ossrh
-        run: mvn -P ossrh --no-transfer-progress --batch-mode -DskipTests -DuseSonatype -DsignArtifacts deploy
+        run: mvn -PossrhDeploy --no-transfer-progress  -DskipTests deploy
         env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           MAVEN_USERNAME: ${{ secrets.OSSRH_USERNAME }}
           MAVEN_PASSWORD: ${{ secrets.OSSRH_TOKEN }}
           MAVEN_GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
 
 
