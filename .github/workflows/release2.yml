@@ -33,16 +33,7 @@ jobs:
 #          export SNAPSHOT_VERSION=$(mvn --no-transfer-progress help:evaluate -Dexpression=project.version -q -DforceStdout)
 #          echo "SNAPSHOT_VERSION=$SNAPSHOT_VERSION" >> $GITHUB_OUTPUT
 #
-#      - name: get version from RELEASE
-#        id: release-version
-#        run: |
-#          export RELEASE_VERSION=${SNAPSHOT_VERSION/-SNAPSHOT/}
-#          echo "RELEASE_VERSION=$RELEASE_VERSION" >> $GITHUB_OUTPUT
-#        env:
-#          SNAPSHOT_VERSION: ${{ steps.snapshot-version.outputs.SNAPSHOT_VERSION }}
-#
-#      - name: Update package to release version
-#        run: mvn --no-transfer-progress versions:set -DnewVersion=${{ steps.release-version.outputs.RELEASE_VERSION }}
+
 #
 #      - name: build artifact
 #        run: mvn --no-transfer-progress clean package
@@ -76,7 +67,7 @@ jobs:
       - name: upload artifacts to github packages
         uses: ncipollo/release-action@v1
         with:
-          tag: ${{ steps.release-version.outputs.RELEASE_VERSION }}
+          tag: ${{ steps.tag-name.outputs.TAG }}
           artifacts: "kafka-connect-http-core/target/*.jar,kafka-connect-http-connectors/target/components/packages/*.zip"
           generateReleaseNotes: true
           token: ${{ secrets.GITHUB_TOKEN }}
