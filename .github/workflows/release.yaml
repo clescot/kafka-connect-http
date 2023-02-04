@@ -23,7 +23,7 @@ jobs:
           cache: 'maven'
 
       - name: Get initial tag name
-        id: tag-name
+        id: snapshot-tag-name
         run: |
           export TAG=$(git describe --tags --abbrev=0 HEAD~)
           echo "TAG=$TAG" >> $GITHUB_OUTPUT
@@ -43,7 +43,7 @@ jobs:
           JAVA_HOME: /usr/lib/jvm/java-11-openjdk/
 
       - name: Get release tag name
-        id: tag-name
+        id: releasetag-name
         run: |
           export TAG=$(git describe --tags --abbrev=0 HEAD~)
           echo "TAG=$TAG" >> $GITHUB_OUTPUT
