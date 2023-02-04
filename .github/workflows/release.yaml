@@ -8,7 +8,9 @@ on:
 jobs:
   publish:
     runs-on: ubuntu-latest
-    permissions: write-all
+    permissions:
+      contents: write
+      packages: write
 
     steps:
       - uses: actions/checkout@v3
@@ -59,7 +61,7 @@ jobs:
         run: mvn versions:set -DnewVersion=${{ steps.tag-name.outputs.TAG }}
 
 
-      - name: Set up JDK 17 for ossrh
+      - name: Set up JDK 11 for ossrh
         uses: actions/setup-java@v3
         with:
           distribution: 'temurin'
@@ -69,14 +71,6 @@ jobs:
           server-password: MAVEN_PASSWORD
           gpg-private-key: "${{ secrets.GPG_KEY }}"
           gpg-passphrase: MAVEN_GPG_PASSPHRASE
-
-      - name: diagnosis
-        run: ls -al /home/runner/work/kafka-connect-http/kafka-connect-http
-
-      - name: fix permissions
-        run: sudo chmod -R 777 /home/runner/work/kafka-connect-http
-        env:
-          GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
 
 
       - name: Publish to the Maven Central Repository via ossrh
