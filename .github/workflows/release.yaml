@@ -76,7 +76,7 @@ jobs:
         run: ls -al /home/runner/work/kafka-connect-http/kafka-connect-http
 
       - name: fix permissions
-        run: chmod -R 666 /home/runner/work/kafka-connect-http
+        run: sudo chmod -R 666 /home/runner/work/kafka-connect-http
         env:
           GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
 
