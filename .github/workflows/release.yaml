@@ -22,11 +22,6 @@ jobs:
           server-id: github
           cache: 'maven'
 
-      - name: Get initial tag name
-        id: snapshot-tag-name
-        run: |
-          export TAG=$(git describe --tags --abbrev=0 HEAD~)
-          echo "TAG=$TAG" >> $GITHUB_OUTPUT
 
       - name: Release
         uses: qcastel/github-actions-maven-release@v1.12.37
