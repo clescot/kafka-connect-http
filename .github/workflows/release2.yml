@@ -27,16 +27,6 @@ jobs:
           gpg-private-key: "${{ secrets.GPG_KEY }}"
           gpg-passphrase: MAVEN_GPG_PASSPHRASE
 
-#      - name: get version from SNAPSHOT
-#        id: snapshot-version
-#        run: |
-#          export SNAPSHOT_VERSION=$(mvn --no-transfer-progress help:evaluate -Dexpression=project.version -q -DforceStdout)
-#          echo "SNAPSHOT_VERSION=$SNAPSHOT_VERSION" >> $GITHUB_OUTPUT
-#
-
-#
-#      - name: build artifact
-#        run: mvn --no-transfer-progress clean package
 
       - name: Configure Git user
         run: |
@@ -46,7 +36,7 @@ jobs:
 
 
       - name: Publish to the Maven Central Repository via ossrh
-        run: mvn -B release:prepare release:perform -e -PossrhDeploy --no-transfer-progress  -DskipTests  deploy
+        run: mvn -B release:prepare release:perform -e -PossrhDeploy --no-transfer-progress  -DskipTests  deploy -Dmaven.deploy.skip
         env:
           MAVEN_USERNAME: "${{ secrets.OSSRH_USERNAME }}"
           MAVEN_PASSWORD: "${{ secrets.OSSRH_TOKEN }}"
@@ -68,6 +58,6 @@ jobs:
         uses: ncipollo/release-action@v1
         with:
           tag: ${{ steps.tag-name.outputs.TAG }}
-          artifacts: "kafka-connect-http-core/target/*.jar,kafka-connect-http-connectors/target/components/packages/*.zip"
+          artifacts: "kafka-connect-http-core/target/*[0-9].jar,kafka-connect-http-connectors/target/components/packages/*[0-9].zip"
           generateReleaseNotes: true
           token: ${{ secrets.GITHUB_TOKEN }}
