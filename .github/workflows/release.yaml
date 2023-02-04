@@ -72,6 +72,9 @@ jobs:
           gpg-private-key: "${{ secrets.GPG_KEY }}"
           gpg-passphrase: MAVEN_GPG_PASSPHRASE
 
+      - name: diagnosis
+        run: ls -al /home/runner/work/kafka-connect-http
+
       - name: Publish to the Maven Central Repository via ossrh
         run: mvn -B -X -PossrhDeploy --no-transfer-progress  -DskipTests  deploy
         env:
