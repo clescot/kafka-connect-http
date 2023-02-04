@@ -428,6 +428,7 @@
                             <nexusUrl>https://s01.oss.sonatype.org/</nexusUrl>
                             <autoReleaseAfterClose>true</autoReleaseAfterClose>
 <!--                            <skipLocalStaging>true</skipLocalStaging>-->
+                            <altStagingDirectory>/home/runner/.m2/repository</altStagingDirectory>
                         </configuration>
                     </plugin>
                     <plugin>
