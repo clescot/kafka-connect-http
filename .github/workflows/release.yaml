@@ -22,7 +22,6 @@ jobs:
           server-id: github
           cache: 'maven'
 
-
       - name: Release
         uses: qcastel/github-actions-maven-release@v1.12.37
         with:
