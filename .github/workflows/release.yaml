@@ -58,7 +58,7 @@ jobs:
           generateReleaseNotes: true
 
       - name: Update package version
-        run: mvn versions:set -DnewVersion=${{ steps.tag-name.outputs.TAG }}
+        run: mvn --no-transfer-progress versions:set -DnewVersion=${{ steps.tag-name.outputs.TAG }}
 
 
       - name: Set up JDK 11 for ossrh
@@ -73,7 +73,7 @@ jobs:
           gpg-passphrase: MAVEN_GPG_PASSPHRASE
 
       - name: create nexus stage directory
-        run: mkdir -p /nexus/workspace && chmod -R 777 /nexus/workspace
+        run: sudo mkdir -p /nexus/workspace && sudo chmod -R 777 /nexus/workspace
         env:
           GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
 
