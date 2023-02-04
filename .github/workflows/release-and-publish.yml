@@ -1,4 +1,4 @@
-name: do a release
+name: release and publish to ossrh and github packages
 on:
   push:
     branches:
@@ -36,7 +36,7 @@ jobs:
 
 
       - name: Publish to the Maven Central Repository via ossrh
-        run: mvn -B release:prepare release:perform -e -PossrhDeploy --no-transfer-progress  -DskipTests  deploy -Dmaven.deploy.skip
+        run: mvn -B release:prepare release:perform -e -PossrhDeploy --no-transfer-progress  -DskipTests  deploy  -DskipNexusStagingDeployMojo=true
         env:
           MAVEN_USERNAME: "${{ secrets.OSSRH_USERNAME }}"
           MAVEN_PASSWORD: "${{ secrets.OSSRH_TOKEN }}"
@@ -58,6 +58,6 @@ jobs:
         uses: ncipollo/release-action@v1
         with:
           tag: ${{ steps.tag-name.outputs.TAG }}
-          artifacts: "kafka-connect-http-core/target/*[0-9].jar,kafka-connect-http-connectors/target/components/packages/*[0-9].zip"
+          artifacts: "kafka-connect-http-core/target/*-${{ steps.tag-name.outputs.TAG }}.jar,kafka-connect-http-connectors/target/components/packages/*-${{ steps.tag-name.outputs.TAG }}.zip"
           generateReleaseNotes: true
           token: ${{ secrets.GITHUB_TOKEN }}
