@@ -427,6 +427,7 @@
                             <!-- cf https://central.sonatype.org/publish/publish-guide/#accessing-repositories -->
                             <nexusUrl>https://s01.oss.sonatype.org/</nexusUrl>
                             <autoReleaseAfterClose>true</autoReleaseAfterClose>
+                            <skipLocalStaging>true</skipLocalStaging>
                         </configuration>
                     </plugin>
                     <plugin>
