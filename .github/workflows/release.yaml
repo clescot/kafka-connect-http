@@ -62,8 +62,8 @@ jobs:
           gpg-passphrase: MAVEN_GPG_PASSPHRASE
           cache: 'maven'
 
-      - name: revert to the release tag
-        run: git checkout ${{ steps.tag-name.outputs.TAG }}
+      - name: Update package version
+        run: mvn versions:set -DnewVersion=${{ steps.tag-name.outputs.TAG }}
 
       - name: Publish to the Maven Central Repository via ossrh
         run: sudo mvn -B -PossrhDeploy --no-transfer-progress  -DskipTests  deploy
