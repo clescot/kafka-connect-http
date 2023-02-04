@@ -5,7 +5,7 @@
     <description>a set of Kafka Connect connectors (Sink and Source), to interact with HTTP servers, linked via an in memory queue.</description>
     <groupId>io.github.clescot</groupId>
     <artifactId>kafka-connect-http</artifactId>
-    <version>0.2.134</version>
+    <version>0.2.135-SNAPSHOT</version>
     <url>https://github.com/clescot/kafka-connect-http</url>
     <licenses>
         <license>
