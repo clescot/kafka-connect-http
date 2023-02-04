@@ -22,6 +22,11 @@ jobs:
           server-id: github
           cache: 'maven'
 
+      - name: Get initial tag name
+        id: tag-name
+        run: |
+          export TAG=$(git describe --tags --abbrev=0 HEAD~)
+          echo "TAG=$TAG" >> $GITHUB_OUTPUT
 
       - name: Release
         uses: qcastel/github-actions-maven-release@v1.12.37
@@ -64,7 +69,8 @@ jobs:
           gpg-passphrase: MAVEN_GPG_PASSPHRASE
           cache: 'maven'
 
-
+      - name: revert to the release tag
+        run: git checkout ${{ steps.tag-name.outputs.TAG }}
 
       - name: Publish to the Maven Central Repository via ossrh
         run: sudo mvn -B -PossrhDeploy --no-transfer-progress  -DskipTests  deploy
