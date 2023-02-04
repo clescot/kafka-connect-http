@@ -428,7 +428,7 @@
                             <nexusUrl>https://s01.oss.sonatype.org/</nexusUrl>
                             <autoReleaseAfterClose>true</autoReleaseAfterClose>
 <!--                            <skipLocalStaging>true</skipLocalStaging>-->
-                            <altStagingDirectory>/github/workspace</altStagingDirectory>
+                            <altStagingDirectory>/nexus/workspace</altStagingDirectory>
                         </configuration>
                     </plugin>
                     <plugin>

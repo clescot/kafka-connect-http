@@ -72,6 +72,10 @@ jobs:
           gpg-private-key: "${{ secrets.GPG_KEY }}"
           gpg-passphrase: MAVEN_GPG_PASSPHRASE
 
+      - name: create nexus stage directory
+        run: mkdir -p /nexus/workspace && chmod -R 777 /nexus/workspace
+        env:
+          GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
 
       - name: Publish to the Maven Central Repository via ossrh
         run: mvn -B -e -PossrhDeploy --no-transfer-progress  -DskipTests  deploy
