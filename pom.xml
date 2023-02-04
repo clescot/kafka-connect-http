@@ -348,7 +348,26 @@
                     </archive>
                 </configuration>
             </plugin>
-
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-gpg-plugin</artifactId>
+                <version>3.0.1</version>
+                <executions>
+                    <execution>
+                        <id>sign-artifacts</id>
+                        <phase>verify</phase>
+                        <goals>
+                            <goal>sign</goal>
+                        </goals>
+                    </execution>
+                </executions>
+                <configuration>
+                    <gpgArguments>
+                        <arg>--pinentry-mode</arg>
+                        <arg>loopback</arg>
+                    </gpgArguments>
+                </configuration>
+            </plugin>
         </plugins>
     </build>
 
@@ -377,30 +396,6 @@
                     <url>https://maven.pkg.github.com/clescot/kafka-connect-http</url>
                 </repository>
             </distributionManagement>
-            <build>
-                <plugins>
-                    <plugin>
-                        <groupId>org.apache.maven.plugins</groupId>
-                        <artifactId>maven-gpg-plugin</artifactId>
-                        <version>3.0.1</version>
-                        <executions>
-                            <execution>
-                                <id>sign-artifacts</id>
-                                <phase>verify</phase>
-                                <goals>
-                                    <goal>sign</goal>
-                                </goals>
-                            </execution>
-                        </executions>
-                        <configuration>
-                            <gpgArguments>
-                                <arg>--pinentry-mode</arg>
-                                <arg>loopback</arg>
-                            </gpgArguments>
-                        </configuration>
-                    </plugin>
-                </plugins>
-            </build>
 
         </profile>
         <profile>
@@ -427,15 +422,13 @@
                             <!-- cf https://central.sonatype.org/publish/publish-guide/#accessing-repositories -->
                             <nexusUrl>https://s01.oss.sonatype.org/</nexusUrl>
                             <autoReleaseAfterClose>true</autoReleaseAfterClose>
-<!--                            <skipLocalStaging>true</skipLocalStaging>-->
-<!--                            <altStagingDirectory>/nexus/workspace</altStagingDirectory>-->
                         </configuration>
                     </plugin>
-                    <plugin>
-                        <groupId>org.simplify4u.plugins</groupId>
-                        <artifactId>sign-maven-plugin</artifactId>
-                        <version>1.0.1</version>
-                    </plugin>
+<!--                    <plugin>-->
+<!--                        <groupId>org.simplify4u.plugins</groupId>-->
+<!--                        <artifactId>sign-maven-plugin</artifactId>-->
+<!--                        <version>1.0.1</version>-->
+<!--                    </plugin>-->
                 </plugins>
             </build>
         </profile>

@@ -30,7 +30,7 @@ jobs:
       - name: get version from SNAPSHOT
         id: snapshot-version
         run: |
-          export SNAPSHOT_VERSION=$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout)
+          export SNAPSHOT_VERSION=$(mvn --no-transfer-progress help:evaluate -Dexpression=project.version -q -DforceStdout)
           echo "SNAPSHOT_VERSION=$SNAPSHOT_VERSION" >> $GITHUB_OUTPUT
 
       - name: get version from RELEASE
@@ -45,7 +45,7 @@ jobs:
         run: mvn --no-transfer-progress versions:set -DnewVersion=${{ steps.release-version.outputs.RELEASE_VERSION }}
 
       - name: build artifact
-        run: mvn clean package
+        run: mvn --no-transfer-progress clean package
 
       - name: upload artifacts to github packages
         uses: ncipollo/release-action@v1
