@@ -37,7 +37,7 @@ jobs:
           JAVA_HOME: /usr/lib/jvm/java-11-openjdk/
 
       - name: Get release tag name
-        id: releasetag-name
+        id: tag-name
         run: |
           export TAG=$(git describe --tags --abbrev=0 HEAD~)
           echo "TAG=$TAG" >> $GITHUB_OUTPUT
@@ -48,7 +48,6 @@ jobs:
           tag: ${{ steps.tag-name.outputs.TAG }}
           artifacts: "kafka-connect-http-core/target/*.jar,kafka-connect-http-connectors/target/components/packages/*.zip"
           generateReleaseNotes: true
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
 
       - name: Set up JDK 11 for ossrh
