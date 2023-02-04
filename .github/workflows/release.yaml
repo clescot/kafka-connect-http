@@ -43,7 +43,7 @@ jobs:
           gpg-key-id: "${{ secrets.GPG_KEY_ID }}"
           gpg-key: "${{ secrets.GPG_KEY_BASE_64 }}"
           gpg-passphrase: "${{ secrets.GPG_PASSPHRASE }}"
-          maven-args: " -P github,gpg -DskipIT -B  "
+          maven-args: " -P ossrh,gpg -DskipIT -B  "
           maven-repo-server-id: ossrh
           maven-repo-server-username: "${{ secrets.OSSRH_USERNAME }}"
           maven-repo-server-password: "${{ secrets.OSSRH_TOKEN }}"
