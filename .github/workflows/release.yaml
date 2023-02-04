@@ -77,10 +77,6 @@ jobs:
 #        env:
 #          GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
 
-      - name: Configure Git user
-        run: |
-          git config user.email "actions@github.com"
-          git config user.name "clescot"
 
 
       - name: Publish to the Maven Central Repository via ossrh

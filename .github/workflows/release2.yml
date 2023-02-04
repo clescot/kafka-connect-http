@@ -47,6 +47,11 @@ jobs:
 #      - name: build artifact
 #        run: mvn --no-transfer-progress clean package
 
+      - name: Configure Git user
+        run: |
+          git config --global user.email "actions@github.com"
+          git config --global user.name "clescot"
+
 
 
       - name: Publish to the Maven Central Repository via ossrh
@@ -59,7 +64,7 @@ jobs:
           SIGN_KEY_ID: "${{ secrets.GPG_KEY_ID }}"
           SIGN_KEY_PASS: "${{ secrets.GPG_PASSPHRASE }}"
           GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
-
+          MAVEN_OPTS: " -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn "
 
       - name: upload artifacts to github packages
         uses: ncipollo/release-action@v1
