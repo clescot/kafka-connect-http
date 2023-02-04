@@ -60,13 +60,6 @@ jobs:
       - name: Update package version
         run: mvn versions:set -DnewVersion=${{ steps.tag-name.outputs.TAG }}
 
-      - name: Cache local Maven repository
-        uses: actions/cache@v3
-        with:
-          path: ~/.m2/repository
-          key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
-          restore-keys: |
-            ${{ runner.os }}-maven-
 
       - name: Set up JDK 11 for ossrh
         uses: actions/setup-java@v3
@@ -88,7 +81,7 @@ jobs:
           SIGN_KEY: "${{ secrets.GPG_KEY }}"
           SIGN_KEY_ID: "${{ secrets.GPG_KEY_ID }}"
           SIGN_KEY_PASS: "${{ secrets.GPG_PASSPHRASE }}"
-
+          GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
 
 
 
