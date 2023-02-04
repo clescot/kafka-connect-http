@@ -20,7 +20,6 @@ jobs:
           distribution: 'temurin'
           java-version: '11'
           server-id: github
-          cache: 'maven'
 
       - name: Release
         uses: qcastel/github-actions-maven-release@v1.12.37
