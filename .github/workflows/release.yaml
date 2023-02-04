@@ -62,7 +62,6 @@ jobs:
           server-password: MAVEN_PASSWORD
           gpg-private-key: "${{ secrets.GPG_KEY }}"
           gpg-passphrase: MAVEN_GPG_PASSPHRASE
-          cache: 'maven'
 
       - name: Publish to the Maven Central Repository via ossrh
         run: sudo mvn -B -PossrhDeploy --no-transfer-progress  -DskipTests  deploy
