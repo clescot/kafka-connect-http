@@ -47,6 +47,7 @@ jobs:
           maven-repo-server-id: ossrh
           maven-repo-server-username: "${{ secrets.OSSRH_USERNAME }}"
           maven-repo-server-password: "${{ secrets.OSSRH_TOKEN }}"
+          maven-servers: '[{"id": "github", "username": "$GITHUB_ACTOR", "password": "${{ secrets.GITHUB_TOKEN }}"},{"id": "ossrh", "username": "${{ secrets.OSSRH_USERNAME }}", "password": "${{ secrets.OSSRH_TOKEN }}"}]'
         env:
           JAVA_HOME: /usr/lib/jvm/java-11-openjdk/
 
