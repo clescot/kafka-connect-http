@@ -1,5 +1,5 @@
 {
-  "$id": "https://raw.githubusercontent.com/clescot/kafka-connect-http/master/kafka-connect-http-core/src/main/resources/schemas/versions/1/http-response.json",
+  "$id": "https://raw.githubusercontent.com/clescot/kafka-connect-http/master/kafka-connect-http-core/src/main/resources/schemas/json/versions/1/http-response.json",
   "$schema": "http://json-schema.org/draft/2019-09/schema",
   "title": "Http Response schema.",
   "description": "Http Response schema, included into HttpExchange.",
