@@ -3,6 +3,7 @@ package io.github.clescot.kafka.connect.http.sink;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import io.github.clescot.kafka.connect.http.VersionUtils;
 import io.github.clescot.kafka.connect.http.core.HttpExchange;
 import io.github.clescot.kafka.connect.http.core.HttpRequest;
 import io.github.clescot.kafka.connect.http.core.HttpRequestAsStruct;
@@ -69,7 +70,7 @@ public class HttpSinkTask extends SinkTask {
 
     @Override
     public String version() {
-        return QueueFactory.VersionUtil.version(this.getClass());
+        return VersionUtils.version(this.getClass());
     }
 
     /**

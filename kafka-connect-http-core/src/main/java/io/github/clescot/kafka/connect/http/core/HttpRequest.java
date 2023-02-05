@@ -43,7 +43,8 @@ public class HttpRequest implements Serializable {
     @JsonProperty
     private BodyType bodyType;
 
-    public static final String SCHEMA_ID = "https://github.com/clescot/kafka-connect-http-sink/schemas/http-request.json";
+
+    public static final String SCHEMA_ID = HttpExchange.BASE_SCHEMA_ID+"http-request.json";
     public static final String SCHEMA_AS_STRING = "{\n" +
             "  \"$id\": \"" + SCHEMA_ID + "\",\n" +
             "  \"$schema\": \"http://json-schema.org/draft/2019-09/schema\",\n" +
