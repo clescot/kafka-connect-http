@@ -43,8 +43,9 @@ public class HttpRequest implements Serializable {
     @JsonProperty
     private BodyType bodyType;
 
+    public static final String SCHEMA_ID = "https://github.com/clescot/kafka-connect-http-sink/schemas/http-request.json";
     public static final String SCHEMA_AS_STRING = "{\n" +
-            "  \"$id\": \"https://github.com/clescot/kafka-connect-http-sink/schemas/http-request\",\n" +
+            "  \"$id\": \"" + SCHEMA_ID + "\",\n" +
             "  \"$schema\": \"http://json-schema.org/draft/2019-09/schema\",\n" +
             "  \"title\": \"Http Request schema to drive HTTP Sink Connector\",\n" +
             "  \"description\": \"Http Request schema to drive HTTP Sink Connector. It supports 3 modes : classical body as string (bodyPart set to 'STRING'), a Map<String,String> mode to fill HTML form, a byte Array mode to transmit binary data((bodyPart set to 'BYTE_ARRAY'), and a multipart mode ((bodyPart set to 'MULTIPART')\",\n" +

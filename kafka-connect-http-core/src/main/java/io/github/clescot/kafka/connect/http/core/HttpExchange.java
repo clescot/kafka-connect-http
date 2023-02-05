@@ -8,8 +8,9 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class HttpExchange implements Serializable {
 
     public static final long serialVersionUID = 1L;
+    public static final String SCHEMA_ID = "https://github.com/clescot/kafka-connect-http-sink/schemas/http-exchange.json";
     public static final String SCHEMA_AS_STRING = "{\n" +
-            "  \"$id\": \"https://github.com/clescot/kafka-connect-http-sink/schemas/http-exchange.json\",\n" +
+            "  \"$id\": \"" + SCHEMA_ID + "\",\n" +
             "  \"$schema\": \"http://json-schema.org/draft/2019-09/schema\",\n" +
             "  \"title\": \"Http Exchange\",\n" +
             "  \"type\": \"object\",\n" +
