@@ -12,14 +12,13 @@ import java.util.Objects;
 public class HttpResponse implements Serializable {
 
     public static final long serialVersionUID = 1L;
-    public static final String SCHEMA_ID = "https://github.com/clescot/kafka-connect-http-sink/schemas/http-response.json";
+    public static final String SCHEMA_ID = HttpExchange.BASE_SCHEMA_ID+"http-response.json";
     public static final String SCHEMA_AS_STRING = "{\n" +
             "  \"$id\": \"" + SCHEMA_ID + "\",\n" +
             "  \"$schema\": \"http://json-schema.org/draft/2019-09/schema\",\n" +
             "  \"title\": \"Http Response schema.\",\n" +
             "  \"description\": \"Http Response schema, included into HttpExchange.\",\n" +
             "  \"type\": \"object\",\n" +
-            "  \"javaType\" : \"com.github.clescot.kafka.connect.http.HttpResponse\",\n" +
             "  \"additionalProperties\": false,\n" +
             "  \"properties\": {\n" +
             "    \"statusCode\":{\n" +

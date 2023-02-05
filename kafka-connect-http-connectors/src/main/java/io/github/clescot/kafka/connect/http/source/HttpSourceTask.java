@@ -1,12 +1,13 @@
 package io.github.clescot.kafka.connect.http.source;
 
+import com.google.common.base.Preconditions;
+import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
+import io.github.clescot.kafka.connect.http.VersionUtils;
 import io.github.clescot.kafka.connect.http.core.HttpExchange;
 import io.github.clescot.kafka.connect.http.core.HttpExchangeAsStruct;
 import io.github.clescot.kafka.connect.http.core.queue.KafkaRecord;
 import io.github.clescot.kafka.connect.http.core.queue.QueueFactory;
-import com.google.common.base.Preconditions;
-import com.google.common.collect.Lists;
-import com.google.common.collect.Maps;
 import org.apache.kafka.connect.data.Struct;
 import org.apache.kafka.connect.source.SourceRecord;
 import org.apache.kafka.connect.source.SourceTask;
@@ -28,7 +29,7 @@ public class HttpSourceTask extends SourceTask {
 
     @Override
     public String version() {
-        return QueueFactory.VersionUtil.version(this.getClass());
+        return VersionUtils.version(this.getClass());
     }
 
     @Override

@@ -76,20 +76,5 @@ public class QueueFactory {
         consumers.clear();
     }
 
-    public static class VersionUtil {
 
-        private VersionUtil() {
-            // Class with static methods
-        }
-
-        public static String version(Class<?> cls) {
-            String result = cls.getPackage().getImplementationVersion();
-
-            if (Strings.isNullOrEmpty(result)) {
-                result = "0.0.0";
-            }
-
-            return result;
-        }
-    }
 }

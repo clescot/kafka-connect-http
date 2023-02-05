@@ -1,6 +1,6 @@
 package io.github.clescot.kafka.connect.http.source;
 
-import io.github.clescot.kafka.connect.http.core.queue.QueueFactory;
+import io.github.clescot.kafka.connect.http.VersionUtils;
 import org.apache.kafka.common.config.ConfigDef;
 import org.apache.kafka.connect.connector.Task;
 import org.apache.kafka.connect.source.SourceConnector;
@@ -44,6 +44,6 @@ public class HttpSourceConnector extends SourceConnector {
 
     @Override
     public String version() {
-        return QueueFactory.VersionUtil.version(this.getClass());
+        return VersionUtils.version(this.getClass());
     }
 }
