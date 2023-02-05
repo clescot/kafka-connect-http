@@ -1,5 +1,5 @@
 {
-  "$id": "https://github.com/clescot/kafka-connect-http-sink/schemas/http-exchange.json",
+  "$id": "https://raw.githubusercontent.com/clescot/kafka-connect-http/master/kafka-connect-http-core/src/main/resources/http-exchange.json",
   "$schema": "http://json-schema.org/draft/2019-09/schema",
   "title": "Http Exchange",
   "type": "object",
@@ -19,10 +19,10 @@
       "type": "boolean"
     },
     "httpResponse": {
-      "$ref": "https://github.com/clescot/kafka-connect-http-sink/schemas/http-response.json"
+      "$ref": "./http-response.json"
     },
     "httpRequest": {
-      "$ref": "https://github.com/clescot/kafka-connect-http-sink/schemas/http-request.json"
+      "$ref": "./http-request.json"
     }
   },
   "required": [
