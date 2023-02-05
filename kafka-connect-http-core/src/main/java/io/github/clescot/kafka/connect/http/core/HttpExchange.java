@@ -8,7 +8,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class HttpExchange implements Serializable {
 
     public static final long serialVersionUID = 1L;
-    public static final String SCHEMA_ID = "https://github.com/clescot/kafka-connect-http-sink/schemas/http-exchange.json";
+    public static final String SCHEMA_ID = "https://raw.githubusercontent.com/clescot/kafka-connect-http/master/kafka-connect-http-core/src/main/resources/http-exchange.json";
     public static final String SCHEMA_AS_STRING = "{\n" +
             "  \"$id\": \"" + SCHEMA_ID + "\",\n" +
             "  \"$schema\": \"http://json-schema.org/draft/2019-09/schema\",\n" +
@@ -30,10 +30,10 @@ public class HttpExchange implements Serializable {
             "      \"type\": \"boolean\"\n" +
             "    },\n" +
             "    \"httpResponse\": {\n" +
-            "      \"$ref\": \"https://github.com/clescot/kafka-connect-http-sink/schemas/http-response.json\"\n" +
+            "      \"$ref\": \"./http-response.json\"\n" +
             "    },\n" +
             "    \"httpRequest\": {\n" +
-            "      \"$ref\": \"https://github.com/clescot/kafka-connect-http-sink/schemas/http-request.json\"\n" +
+            "      \"$ref\": \"./http-request.json\"\n" +
             "    }\n" +
             "  },\n" +
             "  \"required\": [\n" +
