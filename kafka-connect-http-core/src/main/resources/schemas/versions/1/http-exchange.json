@@ -1,0 +1,36 @@
+{
+  "$id": "https://raw.githubusercontent.com/clescot/kafka-connect-http/master/kafka-connect-http-core/src/main/resources/schemas/versions/1/http-exchange.json",
+  "$schema": "http://json-schema.org/draft/2019-09/schema",
+  "title": "Http Exchange",
+  "type": "object",
+  "javaType" : "io.github.clescot.kafka.connect.http.core.HttpExchange",
+  "additionalProperties": false,
+  "properties": {
+    "durationInMillis": {
+      "type": "integer"
+    },
+    "moment": {
+      "type": "number"
+    },
+    "attempts": {
+      "type": "integer"
+    },
+    "success": {
+      "type": "boolean"
+    },
+    "httpResponse": {
+      "$ref": "https://raw.githubusercontent.com/clescot/kafka-connect-http/master/kafka-connect-http-core/src/main/resources/schemas/versions/1/http-response.json"
+    },
+    "httpRequest": {
+      "$ref": "https://raw.githubusercontent.com/clescot/kafka-connect-http/master/kafka-connect-http-core/src/main/resources/schemas/versions/1/http-request.json"
+    }
+  },
+  "required": [
+    "moment",
+    "attempts",
+    "success",
+    "httpRequest",
+    "httpResponse"
+  ]
+
+}

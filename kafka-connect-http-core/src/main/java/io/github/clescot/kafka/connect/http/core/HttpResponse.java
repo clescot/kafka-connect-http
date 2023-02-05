@@ -19,7 +19,7 @@ public class HttpResponse implements Serializable {
             "  \"title\": \"Http Response schema.\",\n" +
             "  \"description\": \"Http Response schema, included into HttpExchange.\",\n" +
             "  \"type\": \"object\",\n" +
-            "  \"javaType\" : \"com.github.clescot.kafka.connect.http.HttpResponse\",\n" +
+            "  \"javaType\" : \"io.github.clescot.kafka.connect.http.core.HttpResponse\",\n" +
             "  \"additionalProperties\": false,\n" +
             "  \"properties\": {\n" +
             "    \"statusCode\":{\n" +

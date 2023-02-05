@@ -8,14 +8,14 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class HttpExchange implements Serializable {
 
     public static final long serialVersionUID = 1L;
-    public static final String BASE_SCHEMA_ID = "https://raw.githubusercontent.com/clescot/kafka-connect-http/master/kafka-connect-http-core/src/main/resources/schemas/";
+    public static final String BASE_SCHEMA_ID = "https://raw.githubusercontent.com/clescot/kafka-connect-http/master/kafka-connect-http-core/src/main/resources/schemas/versions/1/";
     public static final String SCHEMA_ID = BASE_SCHEMA_ID+"http-exchange.json";
     public static final String SCHEMA_AS_STRING = "{\n" +
             "  \"$id\": \"" + SCHEMA_ID + "\",\n" +
             "  \"$schema\": \"http://json-schema.org/draft/2019-09/schema\",\n" +
             "  \"title\": \"Http Exchange\",\n" +
             "  \"type\": \"object\",\n" +
-            "  \"javaType\" : \"com.github.clescot.kafka.connect.http.HttpExchange\",\n" +
+            "  \"javaType\" : \"io.github.clescot.kafka.connect.http.core.HttpExchange\",\n" +
             "  \"additionalProperties\": false,\n" +
             "  \"properties\": {\n" +
             "    \"durationInMillis\": {\n" +
@@ -31,10 +31,10 @@ public class HttpExchange implements Serializable {
             "      \"type\": \"boolean\"\n" +
             "    },\n" +
             "    \"httpResponse\": {\n" +
-            "      \"$ref\": \"./http-response.json\"\n" +
+            "      \"$ref\": \""+HttpResponse.SCHEMA_ID+"\"\n" +
             "    },\n" +
             "    \"httpRequest\": {\n" +
-            "      \"$ref\": \"./http-request.json\"\n" +
+            "      \"$ref\": \""+HttpRequest.SCHEMA_ID+"\"\n" +
             "    }\n" +
             "  },\n" +
             "  \"required\": [\n" +

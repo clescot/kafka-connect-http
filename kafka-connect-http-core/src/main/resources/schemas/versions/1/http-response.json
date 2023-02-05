@@ -1,10 +1,10 @@
 {
-  "$id": "https://github.com/clescot/kafka-connect-http-sink/schemas/http-response.json",
+  "$id": "https://raw.githubusercontent.com/clescot/kafka-connect-http/master/kafka-connect-http-core/src/main/resources/schemas/versions/1/http-response.json",
   "$schema": "http://json-schema.org/draft/2019-09/schema",
   "title": "Http Response schema.",
   "description": "Http Response schema, included into HttpExchange.",
   "type": "object",
-  "javaType" : "io.github.clescot.kafka.connect.http.core.core.HttpResponse",
+  "javaType" : "io.github.clescot.kafka.connect.http.core.HttpResponse",
   "additionalProperties": false,
   "properties": {
     "statusCode":{
