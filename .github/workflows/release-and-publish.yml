@@ -15,61 +15,6 @@ jobs:
     steps:
       - uses: actions/checkout@v3
 
-      - name: Cache local Maven repository
-        uses: actions/cache@v3
-        with:
-          path: ~/.m2/repository
-          key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
-          restore-keys: |
-            ${{ runner.os }}-maven-
-
-      - name: Set up JDK 11 for github
-        uses: actions/setup-java@v3
-        with:
-          distribution: 'adopt'
-          java-version: '11'
-          server-id: github
-
-
-      - name: Configure Git user
-        run: |
-          git config --global user.email "actions@github.com"
-          git config --global user.name "clescot"
-
-
-      - name: Release
-        uses: qcastel/github-actions-maven-release@v1.12.37
-        with:
-          access-token: ${{ secrets.GITHUB_TOKEN }}
-          version-patch: true
-          gpg-enabled: "true"
-          gpg-key-id: "${{ secrets.GPG_KEY_ID }}"
-          gpg-key: "${{ secrets.GPG_KEY_BASE_64 }}"
-          gpg-passphrase: "${{ secrets.GPG_PASSPHRASE }}"
-          maven-args: " -P github,gpg -DskipIT -B  "
-          maven-servers: '[{"id": "github", "username": "$GITHUB_ACTOR", "password": "${{ secrets.GITHUB_TOKEN }}"}]'
-        env:
-          JAVA_HOME: /usr/lib/jvm/java-11-openjdk/
-
-
-      - name: Get release tag name
-        id: tag-name
-        run: |
-          export TAG=$(git describe --tags --abbrev=0 HEAD~)
-          echo "TAG=$TAG" >> $GITHUB_OUTPUT
-
-      - name: upload artifacts to github packages
-        uses: ncipollo/release-action@v1
-        with:
-          tag: ${{ steps.tag-name.outputs.TAG }}
-          artifacts: "kafka-connect-http-core/target/**-${{ steps.tag-name.outputs.TAG }}.jar,kafka-connect-http-connectors/target/components/packages/*-${{ steps.tag-name.outputs.TAG }}.zip"
-          generateReleaseNotes: true
-          token: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Update package version
-        run: mvn --no-transfer-progress versions:set -DnewVersion=${{ steps.tag-name.outputs.TAG }}
-
-
 
       - name: Set up JDK 11 for ossrh
         uses: actions/setup-java@v3
@@ -83,13 +28,32 @@ jobs:
           gpg-passphrase: MAVEN_GPG_PASSPHRASE
 
 
+      - name: Configure Git user
+        run: |
+          git config --global user.email "actions@github.com"
+          git config --global user.name "clescot"
       - name: Publish to the Maven Central Repository via ossrh
-        run: mvn -B -e -PossrhDeploy --no-transfer-progress  -DskipTests  deploy
+        run: mvn -B release:prepare release:perform -e -PossrhDeploy --no-transfer-progress  -DskipTests  deploy  -DskipNexusStagingDeployMojo=true
         env:
           MAVEN_USERNAME: "${{ secrets.OSSRH_USERNAME }}"
           MAVEN_PASSWORD: "${{ secrets.OSSRH_TOKEN }}"
           MAVEN_GPG_PASSPHRASE: "${{ secrets.GPG_PASSPHRASE }}"
+          SIGN_KEY: "${{ secrets.GPG_KEY }}"
+          SIGN_KEY_ID: "${{ secrets.GPG_KEY_ID }}"
+          SIGN_KEY_PASS: "${{ secrets.GPG_PASSPHRASE }}"
           GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
           MAVEN_OPTS: " -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn "
 
 
+      - name: Get release tag name
+        id: tag-name
+        run: |
+          export TAG=$(git describe --tags --abbrev=0 HEAD~)
+          echo "TAG=$TAG" >> $GITHUB_OUTPUT
+      - name: upload artifacts to github packages
+        uses: ncipollo/release-action@v1
+        with:
+          tag: ${{ steps.tag-name.outputs.TAG }}
+          artifacts: "kafka-connect-http-core/target/*-${{ steps.tag-name.outputs.TAG }}.jar,kafka-connect-http-connectors/target/components/packages/*-${{ steps.tag-name.outputs.TAG }}.zip"
+          generateReleaseNotes: true
+          token: ${{ secrets.GITHUB_TOKEN }}
