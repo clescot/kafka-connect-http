@@ -1,7 +1,6 @@
 package io.github.clescot.kafka.connect.http.source;
 
 import io.github.clescot.kafka.connect.http.VersionUtils;
-import io.github.clescot.kafka.connect.http.core.queue.QueueFactory;
 import org.apache.kafka.common.config.ConfigDef;
 import org.apache.kafka.connect.connector.Task;
 import org.apache.kafka.connect.source.SourceConnector;
