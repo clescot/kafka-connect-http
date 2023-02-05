@@ -15,7 +15,6 @@ public class HttpExchange implements Serializable {
             "  \"$schema\": \"http://json-schema.org/draft/2019-09/schema\",\n" +
             "  \"title\": \"Http Exchange\",\n" +
             "  \"type\": \"object\",\n" +
-            "  \"javaType\" : \"io.github.clescot.kafka.connect.http.core.HttpExchange\",\n" +
             "  \"additionalProperties\": false,\n" +
             "  \"properties\": {\n" +
             "    \"durationInMillis\": {\n" +

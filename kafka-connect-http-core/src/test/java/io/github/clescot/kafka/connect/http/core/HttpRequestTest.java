@@ -145,6 +145,68 @@ class HttpRequestTest {
         HttpRequest deserializedHttpRequest = deserializer.deserialize(DUMMY_TOPIC, bytes);
         assertThat(deserializedHttpRequest).isEqualTo(httpRequest);
     }
+
+    @Test
+    public void test_build_http_request_from_class() throws IOException {
+        //given
+
+        //build httpRequest
+        HttpRequest httpRequest = new HttpRequest(
+                "http://www.stuff.com",
+                "GET",
+                "STRING"
+        );
+        httpRequest.setBodyAsString(DUMMY_BODY_AS_STRING);
+        Map<String, List<String>> headers = Maps.newHashMap();
+        headers.put("X-stuff", Lists.newArrayList("m-y-value"));
+        headers.put("X-correlation-id", Lists.newArrayList("44-999-33-dd"));
+        headers.put("X-request-id", Lists.newArrayList("11-999-ff-777"));
+        httpRequest.setHeaders(headers);
+
+
+        SpecificationVersion jsonSchemaSpecification = SpecificationVersion.DRAFT_2019_09;
+        boolean useOneOfForNullables=false;
+        boolean failUnknownProperties=true;
+        //get JSON schema
+        JsonSchema expectedJsonSchema = JsonSchemaUtils.getSchema(
+                httpRequest,
+                jsonSchemaSpecification,
+                useOneOfForNullables,
+                failUnknownProperties,
+                null
+        );
+
+        Map<String,String> jsonSchemaSerializerConfig = Maps.newHashMap();
+        jsonSchemaSerializerConfig.put(KafkaJsonSchemaSerializerConfig.SCHEMA_REGISTRY_URL_CONFIG,"mock://stuff.com");
+        jsonSchemaSerializerConfig.put(KafkaJsonSchemaSerializerConfig.SCHEMA_SPEC_VERSION,jsonSchemaSpecification.toString());
+        jsonSchemaSerializerConfig.put(KafkaJsonSchemaSerializerConfig.WRITE_DATES_AS_ISO8601,"true");
+        jsonSchemaSerializerConfig.put(KafkaJsonSchemaSerializerConfig.ONEOF_FOR_NULLABLES,""+useOneOfForNullables);
+        jsonSchemaSerializerConfig.put(KafkaJsonSchemaSerializerConfig.FAIL_UNKNOWN_PROPERTIES,""+failUnknownProperties);
+        MockSchemaRegistryClient schemaRegistryClient = new MockSchemaRegistryClient(Lists.newArrayList(new JsonSchemaProvider()));
+        KafkaJsonSchemaSerializer<HttpRequest> serializer = new KafkaJsonSchemaSerializer<>(schemaRegistryClient,jsonSchemaSerializerConfig);
+
+        //serialize http as byte[]
+        byte[] bytes = serializer.serialize(DUMMY_TOPIC, httpRequest);
+
+        System.out.println("bytesAsString:"+new String(bytes, StandardCharsets.UTF_8));
+        JsonSchemaConverter jsonSchemaConverter = new JsonSchemaConverter(schemaRegistryClient);
+        Map<String,String> converterConfig= Maps.newHashMap();
+        converterConfig.put(JsonSchemaConverterConfig.SCHEMA_REGISTRY_URL_CONFIG,"mock://stuff.com");
+        converterConfig.put(KafkaJsonSchemaDeserializerConfig.JSON_VALUE_TYPE,HttpRequest.class.getName());
+        jsonSchemaConverter.configure(converterConfig,false);
+
+        //like in kafka connect Sink connector, convert byte[] to struct
+        SchemaAndValue schemaAndValue = jsonSchemaConverter.toConnectData(DUMMY_TOPIC, bytes);
+        Struct value = (Struct) schemaAndValue.value();
+        assertThat(expectedJsonSchema.equals(value.schema()));
+        //when
+        HttpRequest parsedHttpRequest = HttpRequestAsStruct.Builder.anHttpRequest().withStruct(value).build();
+
+        System.out.println(parsedHttpRequest);
+    }
+
+
+
     @Test
     public void test_with_empty_struct(){
         //given

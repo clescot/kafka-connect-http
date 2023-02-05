@@ -43,7 +43,6 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 
-
 public class HttpSinkTask extends SinkTask {
     private final static Logger LOGGER = LoggerFactory.getLogger(HttpSinkTask.class);
     private final static ObjectMapper OBJECT_MAPPER = new ObjectMapper().registerModule(new JavaTimeModule());
@@ -74,7 +73,6 @@ public class HttpSinkTask extends SinkTask {
     }
 
     /**
-     *
      * @param settings
      */
     @Override
@@ -104,7 +102,7 @@ public class HttpSinkTask extends SinkTask {
         try {
             httpClientFactoryClass = (Class<HttpClientFactory>) Class.forName(httpSinkConnectorConfig.getHttpClientFactoryClass());
             httpClientFactory = httpClientFactoryClass.getDeclaredConstructor().newInstance();
-            LOGGER.debug("using HttpClientFactory implementation: {}",httpClientFactory.getClass().getName());
+            LOGGER.debug("using HttpClientFactory implementation: {}", httpClientFactory.getClass().getName());
         } catch (ClassNotFoundException | NoSuchMethodException | InstantiationException | IllegalAccessException |
                  InvocationTargetException e) {
             throw new RuntimeException(e);
@@ -132,7 +130,7 @@ public class HttpSinkTask extends SinkTask {
                     httpSinkConnectorConfig.getMaxWaitTimeRegistrationOfQueueConsumerInMs()
                     , httpSinkConnectorConfig.getPollDelayRegistrationOfQueueConsumerInMs(),
                     httpSinkConnectorConfig.getPollIntervalRegistrationOfQueueConsumerInMs()
-            ), "timeout : '"+httpSinkConnectorConfig.getMaxWaitTimeRegistrationOfQueueConsumerInMs()+
+            ), "timeout : '" + httpSinkConnectorConfig.getMaxWaitTimeRegistrationOfQueueConsumerInMs() +
                     "'ms timeout reached :" + queueName + "' queue hasn't got any consumer, " +
                     "i.e no Source Connector has been configured to consume records published in this in memory queue. " +
                     "we stop the Sink Connector to prevent any OutofMemoryError.");
@@ -247,7 +245,7 @@ public class HttpSinkTask extends SinkTask {
     private HttpExchange callWithThrottling(HttpRequest httpRequest, AtomicInteger attempts) {
         try {
             this.defaultRateLimiter.acquirePermits(HttpClient.ONE_HTTP_REQUEST);
-            LOGGER.debug("permits acquired request:'{}'",httpRequest);
+            LOGGER.debug("permits acquired request:'{}'", httpRequest);
             return httpClient.call(httpRequest, attempts);
         } catch (InterruptedException e) {
             LOGGER.error("Failed to acquire execution permit from the rate limiter {} ", e.getMessage());
@@ -347,6 +345,10 @@ public class HttpSinkTask extends SinkTask {
                 LOGGER.debug("successful httpRequest parsing :{}", httpRequest);
             }
         } catch (ConnectException connectException) {
+            Object sinkValue = sinkRecord.value();
+            if (sinkValue != null) {
+                LOGGER.error("sink value class is '{}'", sinkValue.getClass().getName());
+            }
             LOGGER.error("error in sinkRecord's structure : " + sinkRecord, connectException);
             if (errantRecordReporter != null) {
                 errantRecordReporter.report(sinkRecord, connectException);
@@ -371,7 +373,7 @@ public class HttpSinkTask extends SinkTask {
     }
 
     protected HttpRequest addStaticHeaders(HttpRequest httpRequest) {
-        Preconditions.checkNotNull(httpRequest,"httpRequest is null");
+        Preconditions.checkNotNull(httpRequest, "httpRequest is null");
         this.staticRequestHeaders.forEach((key, value) -> httpRequest.getHeaders().put(key, value));
         return httpRequest;
     }
