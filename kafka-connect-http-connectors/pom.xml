@@ -211,7 +211,7 @@
                         <configuration>
                             <artifacts>
                                 <artifact>
-                                    <file>${project.build.directory}/components/packages/clescot-${project.build.finalName}-${project.version}.zip</file>
+                                    <file>${project.build.directory}/components/packages/clescot-${project.build.finalName}.zip</file>
                                     <type>zip</type>
                                 </artifact>
                             </artifacts>
