@@ -36,14 +36,11 @@ jobs:
 
 
       - name: Publish to the Maven Central Repository via ossrh
-        run: mvn -B release:prepare release:perform -e -PossrhDeploy --no-transfer-progress  -DskipTests  deploy  -DskipNexusStagingDeployMojo=true
+        run: mvn -B release:prepare release:perform -e -PossrhDeploy --no-transfer-progress  -DskipTests  deploy
         env:
           MAVEN_USERNAME: "${{ secrets.OSSRH_USERNAME }}"
           MAVEN_PASSWORD: "${{ secrets.OSSRH_TOKEN }}"
           MAVEN_GPG_PASSPHRASE: "${{ secrets.GPG_PASSPHRASE }}"
-          SIGN_KEY: "${{ secrets.GPG_KEY }}"
-          SIGN_KEY_ID: "${{ secrets.GPG_KEY_ID }}"
-          SIGN_KEY_PASS: "${{ secrets.GPG_PASSPHRASE }}"
           GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
           MAVEN_OPTS: " -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn "
 
@@ -58,6 +55,6 @@ jobs:
         uses: ncipollo/release-action@v1
         with:
           tag: ${{ steps.tag-name.outputs.TAG }}
-          artifacts: "kafka-connect-http-core/target/*-${{ steps.tag-name.outputs.TAG }}.jar,kafka-connect-http-connectors/target/components/packages/*-${{ steps.tag-name.outputs.TAG }}.zip"
+          artifacts: "kafka-connect-http-core/target/**-${{ steps.tag-name.outputs.TAG }}.jar,kafka-connect-http-connectors/target/components/packages/*-${{ steps.tag-name.outputs.TAG }}.zip"
           generateReleaseNotes: true
           token: ${{ secrets.GITHUB_TOKEN }}
