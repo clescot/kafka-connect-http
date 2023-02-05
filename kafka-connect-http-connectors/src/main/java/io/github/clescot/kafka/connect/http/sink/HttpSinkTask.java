@@ -346,6 +346,10 @@ public class HttpSinkTask extends SinkTask {
                 LOGGER.debug("successful httpRequest parsing :{}", httpRequest);
             }
         } catch (ConnectException connectException) {
+            Object sinkValue = sinkRecord.value();
+            if(sinkValue!=null){
+                LOGGER.error("valueClass is '{}'", sinkValue.getClass().getName());
+            }
             LOGGER.error("error in sinkRecord's structure : " + sinkRecord, connectException);
             if (errantRecordReporter != null) {
                 errantRecordReporter.report(sinkRecord, connectException);
