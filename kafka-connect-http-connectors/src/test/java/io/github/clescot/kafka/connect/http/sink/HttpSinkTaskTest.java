@@ -3,6 +3,7 @@ package io.github.clescot.kafka.connect.http.sink;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import io.confluent.kafka.schemaregistry.json.JsonSchemaUtils;
 import io.github.clescot.kafka.connect.http.core.HttpExchange;
 import io.github.clescot.kafka.connect.http.core.HttpRequest;
 import io.github.clescot.kafka.connect.http.core.HttpRequestAsStruct;
@@ -51,6 +52,7 @@ import java.time.ZoneId;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import static io.github.clescot.kafka.connect.http.core.HttpRequestAsStruct.SCHEMA;
 import static io.github.clescot.kafka.connect.http.sink.HttpSinkConfigDefinition.*;
 import static io.confluent.kafka.serializers.json.KafkaJsonSchemaDeserializerConfig.JSON_VALUE_TYPE;
 import static io.confluent.kafka.serializers.json.KafkaJsonSchemaSerializerConfig.*;
@@ -404,7 +406,7 @@ public class HttpSinkTaskTest {
     }
 
     @Test
-    public void test_buildHttpRequest_http_request_as_json_schema() {
+    public void test_buildHttpRequest_http_request_as_json_schema() throws IOException {
         //given
         List<Header> headers = Lists.newArrayList();
         HttpRequest dummyHttpRequest = getDummyHttpRequest();
@@ -413,25 +415,12 @@ public class HttpSinkTaskTest {
         registerSchema(schemaRegistryClient,topic, 1, 1, HttpRequest.SCHEMA_AS_STRING);
 
 
-        KafkaJsonSchemaSerializer kafkaJsonSchemaSerializer = new KafkaJsonSchemaSerializer(schemaRegistryClient);
-        Map<String,String> serializerConfig = Maps.newHashMap();
-        serializerConfig.put(KafkaJsonSchemaSerializerConfig.SCHEMA_REGISTRY_URL_CONFIG,"http://dummy.com");
-        serializerConfig.put(KafkaJsonSchemaSerializerConfig.SCHEMA_SPEC_VERSION, SpecificationVersion.DRAFT_2019_09.name());
-        serializerConfig.put(WRITE_DATES_AS_ISO8601, "true");
-        serializerConfig.put(ONEOF_FOR_NULLABLES, "false");
-        serializerConfig.put(FAIL_INVALID_SCHEMA, "true");
-//        serializerConfig.put(FAIL_UNKNOWN_PROPERTIES, "false");
-
-        kafkaJsonSchemaSerializer.configure(serializerConfig,false);
-
-        //low-level HttpRequest serialization : can comes from low-level kafka application
-        // or Kafka Streams : wraps KafkaJsonSchemaSerializer and KafkaJsonSchemaDeSerializer into KafkaJsonSchemaSerde
-        byte[] httpRequestAsJsonSchema = kafkaJsonSchemaSerializer.serialize(topic, dummyHttpRequest);
-        //Kafka Connect counter-part
-        //byte[] httpRequestAsJsonSchemaWithConverter = jsonSchemaConverter.fromConnectData(topic,HttpRequest.SCHEMA, dummyHttpRequest.toStruct());
-
         JsonSchemaConverter jsonSchemaConverter = getJsonSchemaConverter(schemaRegistryClient);
-        SchemaAndValue schemaAndValue = jsonSchemaConverter.toConnectData(topic, httpRequestAsJsonSchema);
+
+
+        byte[] httpRequestAsJsonSchemaWithConverter = jsonSchemaConverter.fromConnectData(topic,SCHEMA, new HttpRequestAsStruct(dummyHttpRequest).toStruct());
+
+        SchemaAndValue schemaAndValue = jsonSchemaConverter.toConnectData(topic, httpRequestAsJsonSchemaWithConverter);
 
         SinkRecord sinkRecord = new SinkRecord(topic, 0, Schema.STRING_SCHEMA, "key", schemaAndValue.schema(), schemaAndValue.value(), -1, System.currentTimeMillis(), TimestampType.CREATE_TIME, headers);
         //when
