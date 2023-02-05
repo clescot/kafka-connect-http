@@ -52,7 +52,6 @@ public class HttpRequest implements Serializable {
             "  \"description\": \"Http Request schema to drive HTTP Sink Connector. It supports 4 modes : classical body as string (bodyPart set to 'STRING'), a Map<String,String> mode to fill HTML form, a byte Array mode to transmit binary data((bodyPart set to 'BYTE_ARRAY'), and a multipart mode ((bodyPart set to 'MULTIPART')\",\n" +
             "  \"type\": \"object\",\n" +
             "  \"additionalProperties\": false,\n" +
-            "  \"required\": [\"url\",\"method\",\"bodyType\"],\n" +
             "  \"properties\": {\n" +
             "    \"url\": {\n" +
             "      \"type\": \"string\"\n" +
