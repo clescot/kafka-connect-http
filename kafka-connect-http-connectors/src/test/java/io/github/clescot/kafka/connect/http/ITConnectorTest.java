@@ -842,8 +842,9 @@ public class ITConnectorTest {
         props.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG,KafkaJsonSchemaSerializer.class.getName());
         props.put(AbstractKafkaSchemaSerDeConfig.AUTO_REGISTER_SCHEMAS,"true");
         props.put(KafkaJsonSchemaSerializerConfig.SCHEMA_SPEC_VERSION, SpecificationVersion.DRAFT_2019_09.toString());
-        props.put(KafkaJsonSchemaSerializerConfig.ONEOF_FOR_NULLABLES,"true");
+        props.put(KafkaJsonSchemaSerializerConfig.ONEOF_FOR_NULLABLES,"false");
         props.put(KafkaJsonSchemaSerializerConfig.FAIL_UNKNOWN_PROPERTIES,"true");
+        props.put(KafkaJsonSchemaSerializerConfig.FAIL_INVALID_SCHEMA,"true");
         props.put(KafkaJsonSchemaSerializerConfig.WRITE_DATES_AS_ISO8601,"true");
         return new KafkaProducer<>(props);
     }

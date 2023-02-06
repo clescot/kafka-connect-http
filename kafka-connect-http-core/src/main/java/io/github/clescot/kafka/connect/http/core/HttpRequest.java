@@ -19,9 +19,6 @@ public class HttpRequest implements Serializable {
 
     public static final long serialVersionUID = 1L;
 
-    public static final String test="";
-
-
     private final static Logger LOGGER = LoggerFactory.getLogger(HttpRequest.class);
 
 
@@ -40,7 +37,7 @@ public class HttpRequest implements Serializable {
     private String bodyAsByteArray = "";
     @JsonProperty
     private List<String> bodyAsMultipart = Lists.newArrayList();
-    @JsonProperty
+    @JsonProperty(required = true)
     private BodyType bodyType;
 
 

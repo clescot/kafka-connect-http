@@ -1,5 +1,6 @@
 package io.github.clescot.kafka.connect.http.core;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Maps;
 
@@ -48,10 +49,12 @@ public class HttpResponse implements Serializable {
             "  ]\n" +
             "}";
 
+    @JsonProperty(required = true)
     private Integer statusCode;
+    @JsonProperty(required = true)
     private String statusMessage;
-    private String responseBody;
-    private String protocol;
+    private String responseBody="";
+    private String protocol="";
 
     private Map<String, List<String>> responseHeaders = Maps.newHashMap();
 

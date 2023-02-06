@@ -104,7 +104,7 @@ class HttpRequestTest {
     }
 
     @Test
-    public void test_build_http_request_from_struct() throws IOException {
+    public void test_serialize_and_deserialize_http_request_with_low_level_serializer() throws IOException {
         //given
 
         //build httpRequest
@@ -156,7 +156,7 @@ class HttpRequestTest {
     }
 
     @Test
-    public void test_build_http_request_from_class() throws IOException {
+    public void test_serialize_http_request_with_serializer_and_deserialize_with_high_level_converter() throws IOException {
         //given
 
         //build httpRequest
@@ -171,7 +171,6 @@ class HttpRequestTest {
         headers.put("X-correlation-id", Lists.newArrayList("44-999-33-dd"));
         headers.put("X-request-id", Lists.newArrayList("11-999-ff-777"));
         httpRequest.setHeaders(headers);
-
 
         SpecificationVersion jsonSchemaSpecification = SpecificationVersion.DRAFT_2019_09;
         boolean useOneOfForNullables=false;
