@@ -78,7 +78,6 @@ public class HttpRequest implements Serializable {
             "    {\n" +
             "      \"type\": \"object\",\n" +
             "      \"connect.type\": \"map\",\n" +
-            "      \"existingJavaType\": \"java.util.Map<String,String>\",\n" +
             "      \"additionalProperties\": { \"type\": \"string\" }\n" +
             "    }\n" +
             "  ,\n" +
