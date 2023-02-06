@@ -12,7 +12,7 @@ public class HttpExchange implements Serializable {
     public static final String SCHEMA_ID = BASE_SCHEMA_ID+"http-exchange.json";
     public static final String SCHEMA_AS_STRING = "{\n" +
             "  \"$id\": \"" + SCHEMA_ID + "\",\n" +
-            "  \"$schema\": \"http://json-schema.org/draft/2019-09/schema\",\n" +
+            "  \"$schema\": \"http://json-schema.org/draft/2019-09/schema#\",\n" +
             "  \"title\": \"Http Exchange\",\n" +
             "  \"type\": \"object\",\n" +
             "  \"additionalProperties\": false,\n" +
