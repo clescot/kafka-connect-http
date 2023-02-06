@@ -11,7 +11,6 @@
     },
     "headers": {
       "type": "object",
-      "existingJavaType" : "java.util.Map<String,java.util.List<String>>",
       "connect.type": "map",
       "additionalProperties": {
         "type": "array",
@@ -32,7 +31,6 @@
     {
       "type": "object",
       "connect.type": "map",
-      "existingJavaType" : "java.util.Map<String,String>",
       "additionalProperties" : { "type": "string" }
     }
   ,

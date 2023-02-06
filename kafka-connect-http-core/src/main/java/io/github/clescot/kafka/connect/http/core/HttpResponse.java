@@ -32,7 +32,6 @@ public class HttpResponse implements Serializable {
             "    },\n" +
             "    \"responseHeaders\":  {\n" +
             "      \"type\": \"object\",\n" +
-            "      \"existingJavaType\" : \"java.util.Map<String,java.util.List<String>>\",\n" +
             "      \"additionalProperties\": {\n" +
             "        \"type\": \"array\",\n" +
             "        \"items\": {\n" +
