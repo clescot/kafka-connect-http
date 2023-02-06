@@ -46,7 +46,6 @@ public class HttpRequest implements Serializable {
 
     public static final String SCHEMA_ID = HttpExchange.BASE_SCHEMA_ID+"http-request.json";
     public static final String SCHEMA_AS_STRING = "{\n" +
-            "  \"$id\": \"" + SCHEMA_ID + "\",\n" +
             "\"$schema\": \"http://json-schema.org/draft/2019-09/schema#\",\n" +
             "  \"title\": \"Http Request\",\n" +
             "  \"type\": \"object\",\n" +

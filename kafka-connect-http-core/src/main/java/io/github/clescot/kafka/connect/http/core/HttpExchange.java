@@ -29,12 +29,11 @@ public class HttpExchange implements Serializable {
             "    \"success\": {\n" +
             "      \"type\": \"boolean\"\n" +
             "    },\n" +
-            "    \"httpResponse\": {\n" +
-            "      \"$ref\": \""+HttpResponse.SCHEMA_ID+"\"\n" +
-            "    },\n" +
-            "    \"httpRequest\": {\n" +
-            "      \"$ref\": \""+HttpRequest.SCHEMA_ID+"\"\n" +
-            "    }\n" +
+            "    \"httpResponse\": \n" +
+            "     " +HttpResponse.SCHEMA_AS_STRING+
+            "    ,\n" +
+            "    \"httpRequest\": \n" +
+            "      "+HttpRequest.SCHEMA_AS_STRING+
             "  },\n" +
             "  \"required\": [\n" +
             "    \"moment\",\n" +
