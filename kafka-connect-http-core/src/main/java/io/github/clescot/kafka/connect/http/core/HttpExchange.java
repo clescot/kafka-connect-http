@@ -21,7 +21,7 @@ public class HttpExchange implements Serializable {
             "      \"type\": \"integer\"\n" +
             "    },\n" +
             "    \"moment\": {\n" +
-            "      \"type\": \"number\"\n" +
+            "      \"type\": \"string\"\n" +
             "    },\n" +
             "    \"attempts\": {\n" +
             "      \"type\": \"integer\"\n" +
@@ -29,11 +29,12 @@ public class HttpExchange implements Serializable {
             "    \"success\": {\n" +
             "      \"type\": \"boolean\"\n" +
             "    },\n" +
-            "    \"httpResponse\": \n" +
-            "     " +HttpResponse.SCHEMA_AS_STRING+
-            "    ,\n" +
-            "    \"httpRequest\": \n" +
-            "      "+HttpRequest.SCHEMA_AS_STRING+
+            "    \"httpResponse\": {\n" +
+            "      \"$ref\": \""+HttpResponse.SCHEMA_ID+"\"\n" +
+            "    },\n" +
+            "    \"httpRequest\": {\n" +
+            "      \"$ref\": \""+HttpRequest.SCHEMA_ID+"\"\n" +
+            "    }\n" +
             "  },\n" +
             "  \"required\": [\n" +
             "    \"moment\",\n" +
