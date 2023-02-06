@@ -1,12 +1,19 @@
 package io.github.clescot.kafka.connect.http.core;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.json.JsonMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
+import com.kjetland.jackson.jsonSchema.JsonSchemaConfig;
+import com.kjetland.jackson.jsonSchema.JsonSchemaDraft;
+import com.kjetland.jackson.jsonSchema.JsonSchemaGenerator;
 import io.confluent.connect.json.JsonSchemaConverter;
 import io.confluent.connect.json.JsonSchemaConverterConfig;
+import io.confluent.kafka.schemaregistry.ParsedSchema;
+import io.confluent.kafka.schemaregistry.avro.AvroSchemaProvider;
 import io.confluent.kafka.schemaregistry.client.MockSchemaRegistryClient;
 import io.confluent.kafka.schemaregistry.json.JsonSchema;
 import io.confluent.kafka.schemaregistry.json.JsonSchemaProvider;
@@ -25,8 +32,10 @@ import org.skyscreamer.jsonassert.JSONAssert;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -166,7 +175,7 @@ class HttpRequestTest {
 
         SpecificationVersion jsonSchemaSpecification = SpecificationVersion.DRAFT_2019_09;
         boolean useOneOfForNullables=false;
-        boolean failUnknownProperties=true;
+        boolean failUnknownProperties=false;
         //get JSON schema
         JsonSchema expectedJsonSchema = JsonSchemaUtils.getSchema(
                 httpRequest,
@@ -250,5 +259,63 @@ class HttpRequestTest {
         assertThat(httpRequest.getMethod()).isEqualTo(dummyMethod);
         assertThat(httpRequest.getBodyType().toString()).isEqualTo(dummyBodyType);
         assertThat(httpRequest.getBodyAsString().toString()).isEqualTo(DUMMY_BODY_AS_STRING);
+    }
+
+
+    @Test
+    public void validate_schema_with_JsonSchemaProvider(){
+        JsonSchemaProvider jsonSchemaProvider = new JsonSchemaProvider();
+        Optional<ParsedSchema> parsedSchema = jsonSchemaProvider.parseSchema(HttpRequest.SCHEMA_AS_STRING, Lists.newArrayList());
+        assertThat(parsedSchema.isPresent()).isTrue();
+        parsedSchema.get().validate();
+    }
+
+    @Test
+    public void validate_schema_with_AvroJsonSchemaProvider(){
+        AvroSchemaProvider avroSchemaProviderSchemaProvider = new AvroSchemaProvider();
+        Optional<ParsedSchema> parsedSchema = avroSchemaProviderSchemaProvider.parseSchema(HttpRequest.SCHEMA_AS_STRING, Lists.newArrayList());
+        assertThat(parsedSchema.isPresent()).isFalse();
+    }
+
+    @Test
+    public void get_http_request_jsonschema(){
+        JsonSchemaConfig jsonSchemaConfig = getConfig(false, false);
+        jsonSchemaConfig = jsonSchemaConfig.withJsonSchemaDraft(JsonSchemaDraft.DRAFT_2019_09);
+        ObjectMapper objectMapper = new JsonMapper();
+        JsonSchemaGenerator jsonSchemaGenerator = new JsonSchemaGenerator(objectMapper, jsonSchemaConfig);
+        JsonNode jsonSchema = jsonSchemaGenerator.generateJsonSchema(HttpRequest.class);
+        JsonSchema schema = new JsonSchema(jsonSchema);
+        String schemaAsString = schema.toString();
+        assertThat(schemaAsString).isNotNull();
+    }
+
+    /**
+     * from JsonSchemaUtils...
+     * @param useOneofForNullables
+     * @param failUnknownProperties
+     * @return
+     */
+    private static JsonSchemaConfig getConfig(
+            boolean useOneofForNullables, boolean failUnknownProperties) {
+        final JsonSchemaConfig vanilla = JsonSchemaConfig.vanillaJsonSchemaDraft4();
+        return JsonSchemaConfig.create(
+                vanilla.autoGenerateTitleForProperties(),
+                Optional.empty(),
+                true,
+                useOneofForNullables,
+                vanilla.usePropertyOrdering(),
+                vanilla.hidePolymorphismTypeProperty(),
+                vanilla.disableWarnings(),
+                vanilla.useMinLengthForNotNull(),
+                vanilla.useTypeIdForDefinitionName(),
+                Collections.emptyMap(),
+                vanilla.useMultipleEditorSelectViaProperty(),
+                Collections.emptySet(),
+                Collections.emptyMap(),
+                Collections.emptyMap(),
+                vanilla.subclassesResolver(),
+                failUnknownProperties,
+                null
+        );
     }
 }
