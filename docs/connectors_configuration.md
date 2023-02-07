@@ -175,7 +175,14 @@ You can create or update this connector instance with this command :
 curl -X PUT -H "Content-Type: application/json" --data @source.json http://my-kafka-connect-cluster:8083/connectors/my-http-source-connector/config
 ```
 
-### Input and output Topics partitionning
+### Http Sink and Source Connectors are linked
+
+When Http Sink and Source connectors are configured, they need to be **instantiated in the same place**, to exchange data through the in memory queue.
+Kafka Connect, loads connector plugins in isolation : each zip owning a plugin and its dependencies, are loaded with a dedicated classloader, to avoid any dependencies conflicts.
+To avoid any isolation between the Http Sink and Source plugin, and to ease the install process, we ship them in the same jar (contained in the same zip archive).
+So, any Http Sink connector, will have the ability to exchange data with the Source connector in the same classloader.
+
+Input and output Topics partitionning
 
 TODO 
 
