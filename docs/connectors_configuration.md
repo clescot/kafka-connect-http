@@ -177,14 +177,39 @@ curl -X PUT -H "Content-Type: application/json" --data @source.json http://my-ka
 
 ### Http Sink and Source Connectors are linked
 
+#### instantiated in the same place
+
 When Http Sink and Source connectors are configured, they need to be **instantiated in the same place**, to exchange data through the in memory queue.
+The above configuration permits to fullfill these needs.
+
+#### in the same classloader
+
 Kafka Connect, loads connector plugins in isolation : each zip owning a plugin and its dependencies, are loaded with a dedicated classloader, to avoid any dependencies conflicts.
-To avoid any isolation between the Http Sink and Source plugin, and to ease the install process, we ship them in the same jar (contained in the same zip archive).
-So, any Http Sink connector, will have the ability to exchange data with the Source connector in the same classloader.
 
-Input and output Topics partitionning
+To avoid any isolation issue between the Http Sink and Source plugin (to permit to exchange data via the in memory queue), and to ease the install process, we ship them in the same jar (contained in the same zip archive).
+So, any Http **Sink** connector, will have the ability to exchange data with the **Source** connector in the same classloader. on this field, you have no actions to do.
 
-TODO 
+#### on the same kafka connect instance
+
+To exchange data, also if these Connector classes are located in the same jar, they need to be instantiated both on the same kafka connect instance, with the configuration explained below.
+
+#### same partitioning for topics used by HTTP sink and source connectors. 
+
+To divide the work to be done, Kafka provide **partitioning** : 
+if data can be handled independently (without any requirement on order), you can split data between partitions to level up your throughput if needed.
+So, with multiple partitions, there is multiple parts of data to handle : configure **the same number of partitions** for topics used by the HTTP Sink and Source connectors, and don't change the partition algorithm.
+So, a record with a key in the topic used by the sink connector, will result in an HTTP Exchange, which will be stored in the same partition in the topic used by the Source connector (if you dont' choose a round-robin algorithm),
+because the in memory queue preserves the key linked to the record. 
+
+
+#### same tasks.max parameter
+
+you have to configure a *tasks.max* parameter for each connector : the kafka connect cluster will distribute partitions among tasks.
+So each connector instance will handle up to the task max config parameters.
+Kafka connect distributes tasks among workers, which are processes that execute connectors and tasks.
+
+To avoid any issue, you must configure the same 'tasks.max' parameters for the HTTP Sink and Source connectors.
+
 
 ### per site parameters
 
