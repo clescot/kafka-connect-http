@@ -21,6 +21,10 @@ import com.google.common.collect.Maps;
 import dev.failsafe.Failsafe;
 import dev.failsafe.RateLimiter;
 import dev.failsafe.RetryPolicy;
+import io.micrometer.core.instrument.Clock;
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.jmx.JmxConfig;
+import io.micrometer.jmx.JmxMeterRegistry;
 import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.data.Struct;
 import org.apache.kafka.connect.errors.ConnectException;
@@ -107,8 +111,13 @@ public class HttpSinkTask extends SinkTask {
                  InvocationTargetException e) {
             throw new RuntimeException(e);
         }
-
-        this.httpClient = httpClientFactory.build(httpSinkConnectorConfig.originalsStrings());
+        MeterRegistry registry = new JmxMeterRegistry(new JmxConfig() {
+            @Override
+            public String get(String s) {
+                return null;
+            }
+        }, Clock.SYSTEM);
+        this.httpClient = httpClientFactory.build(httpSinkConnectorConfig.originalsStrings(),registry);
         Integer defaultRetries = httpSinkConnectorConfig.getDefaultRetries();
         Long defaultRetryDelayInMs = httpSinkConnectorConfig.getDefaultRetryDelayInMs();
         Long defaultRetryMaxDelayInMs = httpSinkConnectorConfig.getDefaultRetryMaxDelayInMs();

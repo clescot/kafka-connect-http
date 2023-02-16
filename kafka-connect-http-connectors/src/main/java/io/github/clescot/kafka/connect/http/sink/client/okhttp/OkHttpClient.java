@@ -5,6 +5,9 @@ import io.github.clescot.kafka.connect.http.core.HttpResponse;
 import io.github.clescot.kafka.connect.http.sink.client.AbstractHttpClient;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.Tags;
+import io.micrometer.core.instrument.binder.okhttp3.OkHttpMetricsEventListener;
 import kotlin.Pair;
 import okhttp3.*;
 import okhttp3.internal.http.HttpMethod;
@@ -23,7 +26,7 @@ public class OkHttpClient extends AbstractHttpClient<Request, Response> {
     private okhttp3.OkHttpClient client;
     private Logger LOGGER = LoggerFactory.getLogger(OkHttpClient.class);
 
-    public OkHttpClient(Map<String, String> config) {
+    public OkHttpClient(Map<String, String> config, MeterRegistry meterRegistry) {
         super(config);
         okhttp3.OkHttpClient.Builder httpClientBuilder = new okhttp3.OkHttpClient.Builder();
         //protocols
@@ -76,8 +79,14 @@ public class OkHttpClient extends AbstractHttpClient<Request, Response> {
             int writeTimeout = Integer.parseInt(config.get(HTTPCLIENT_DEFAULT_WRITE_TIMEOUT_DOC));
             httpClientBuilder.writeTimeout(writeTimeout, TimeUnit.MILLISECONDS);
         }
-
-        client = httpClientBuilder.build();
+        client = httpClientBuilder
+                .eventListener(
+                        OkHttpMetricsEventListener.builder(meterRegistry, "okhttp.requests")
+                        .uriMapper(req -> req.url().encodedPath())//beware of tag cardinality explosion => replace .encodedPath() with .host()
+//                        .uriMapper(req -> req.url().host())
+                        .tags(Tags.of("foo", "bar"))
+                        .build())
+                .build();
 
 
     }

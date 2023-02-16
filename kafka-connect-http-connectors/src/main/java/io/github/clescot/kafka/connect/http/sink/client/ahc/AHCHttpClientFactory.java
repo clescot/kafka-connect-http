@@ -3,6 +3,7 @@ package io.github.clescot.kafka.connect.http.sink.client.ahc;
 import io.github.clescot.kafka.connect.http.sink.client.HttpClient;
 import io.github.clescot.kafka.connect.http.sink.client.HttpClientFactory;
 import com.google.common.collect.Lists;
+import io.micrometer.core.instrument.MeterRegistry;
 import io.netty.buffer.ByteBufAllocator;
 import io.netty.buffer.PooledByteBufAllocator;
 import io.netty.handler.ssl.SslContext;
@@ -150,7 +151,8 @@ public class AHCHttpClientFactory implements HttpClientFactory {
 
 
     @Override
-    public HttpClient build(Map<String, String> config) {
+    public HttpClient build(Map<String, String> config, MeterRegistry meterRegistry) {
+            //TODO handle meterRegistry
             return new AHCHttpClient(getAsyncHttpClient(config));
     }
 }
