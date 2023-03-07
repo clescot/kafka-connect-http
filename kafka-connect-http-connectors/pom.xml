@@ -4,7 +4,7 @@
     <parent>
         <groupId>io.github.clescot</groupId>
         <artifactId>kafka-connect-http</artifactId>
-        <version>0.2.153-SNAPSHOT</version>
+        <version>0.2.156-SNAPSHOT</version>
     </parent>
     <artifactId>kafka-connect-http-connectors</artifactId>
     <packaging>jar</packaging>
@@ -13,7 +13,7 @@
         <dependency>
             <groupId>io.github.clescot</groupId>
             <artifactId>kafka-connect-http-core</artifactId>
-            <version>0.2.153-SNAPSHOT</version>
+            <version>0.2.156-SNAPSHOT</version>
             <scope>compile</scope>
         </dependency>
         <dependency>
@@ -146,7 +146,7 @@
         <dependency>
             <groupId>io.confluent</groupId>
             <artifactId>kafka-schema-serializer</artifactId>
-            <version>7.3.1</version>
+            <version>7.3.2</version>
             <scope>test</scope>
         </dependency>
 
