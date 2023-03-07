@@ -66,9 +66,9 @@ public interface HttpClient<Req, Res> {
 
         Stopwatch stopwatch = Stopwatch.createStarted();
         try {
-            LOGGER.info("httpRequest: {}", httpRequest.toString());
+            LOGGER.info("httpRequest: {}", httpRequest);
             Req request = buildRequest(httpRequest);
-            LOGGER.info("native request: {}", request.toString());
+            LOGGER.info("native request: {}", request);
             OffsetDateTime now = OffsetDateTime.now(ZoneId.of(UTC_ZONE_ID));
             Res response = nativeCall(request);
             LOGGER.info("native response: {}", response);

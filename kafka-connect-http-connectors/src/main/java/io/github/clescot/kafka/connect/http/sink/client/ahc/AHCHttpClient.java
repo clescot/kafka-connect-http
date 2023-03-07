@@ -23,7 +23,7 @@ import java.util.stream.Collectors;
 
 public class AHCHttpClient implements HttpClient<Request, Response> {
 
-    private final static Logger LOGGER = LoggerFactory.getLogger(AHCHttpClient.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(AHCHttpClient.class);
     public static final String PROXY_PREFIX = "proxy-";
     public static final String REALM_PREFIX = "realm-";
     private static final String WS_PROXY_HOST = "host";
@@ -71,7 +71,7 @@ public class AHCHttpClient implements HttpClient<Request, Response> {
         if(request.getStringData()!=null) {
             LOGGER.debug("body stringData: '{}'", new String(request.getStringData()));
         }else{
-            LOGGER.debug("body stringData: null", new String(request.getStringData()));
+            LOGGER.debug("body stringData: null");
         }
         ListenableFuture<Response> responseListenableFuture = asyncHttpClient.executeRequest(request, asyncCompletionHandler);
         //we cannot use the asynchronous nature of the response yet
