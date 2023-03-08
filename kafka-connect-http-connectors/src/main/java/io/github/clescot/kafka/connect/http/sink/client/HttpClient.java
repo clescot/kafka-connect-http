@@ -59,6 +59,11 @@ public interface HttpClient<Req, Res> {
     }
 
 
+    /**
+     * convert an {@link HttpRequest} into a native (from the implementation) request.
+     * @param httpRequest
+     * @return native request.
+     */
 
     Req buildRequest(HttpRequest httpRequest);
 
@@ -87,6 +92,11 @@ public interface HttpClient<Req, Res> {
         }
     }
 
+    /**
+     * convert a native response (from the implementation) to an {@link HttpResponse}.
+     * @param response native response
+     * @return HttpResponse
+     */
 
     HttpResponse buildResponse(Res response);
     Res nativeCall(Req request);
