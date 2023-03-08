@@ -48,11 +48,12 @@ import java.util.regex.Pattern;
 
 
 public class HttpSinkTask extends SinkTask {
-    private final static Logger LOGGER = LoggerFactory.getLogger(HttpSinkTask.class);
-    private final static ObjectMapper OBJECT_MAPPER = new ObjectMapper().registerModule(new JavaTimeModule());
+    private static final Logger LOGGER = LoggerFactory.getLogger(HttpSinkTask.class);
+    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper().registerModule(new JavaTimeModule());
 
     public static final String HEADER_X_CORRELATION_ID = "X-Correlation-ID";
     public static final String HEADER_X_REQUEST_ID = "X-Request-ID";
+    public static final String SINK_RECORD_HAS_GOT_A_NULL_VALUE = "sinkRecord has got a 'null' value";
 
     private HttpClient httpClient;
     private Queue<KafkaRecord> queue;
@@ -287,8 +288,8 @@ public class HttpSinkTask extends SinkTask {
 
     protected HttpRequest addTrackingHeaders(HttpRequest httpRequest) {
         if (httpRequest == null) {
-            LOGGER.warn("sinkRecord has got a 'null' value");
-            throw new ConnectException("sinkRecord has got a 'null' value");
+            LOGGER.warn(SINK_RECORD_HAS_GOT_A_NULL_VALUE);
+            throw new ConnectException(SINK_RECORD_HAS_GOT_A_NULL_VALUE);
         }
         Map<String, List<String>> headers = Optional.ofNullable(httpRequest.getHeaders()).orElse(Maps.newHashMap());
 
@@ -311,8 +312,8 @@ public class HttpSinkTask extends SinkTask {
 
     protected HttpRequest buildHttpRequest(SinkRecord sinkRecord) {
         if (sinkRecord == null || sinkRecord.value() == null) {
-            LOGGER.warn("sinkRecord has got a 'null' value");
-            throw new ConnectException("sinkRecord has got a 'null' value");
+            LOGGER.warn(SINK_RECORD_HAS_GOT_A_NULL_VALUE);
+            throw new ConnectException(SINK_RECORD_HAS_GOT_A_NULL_VALUE);
         }
         HttpRequest httpRequest = null;
         Object value = sinkRecord.value();
