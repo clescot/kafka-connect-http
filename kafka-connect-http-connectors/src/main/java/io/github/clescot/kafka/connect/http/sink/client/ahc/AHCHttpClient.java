@@ -85,6 +85,12 @@ public class AHCHttpClient implements HttpClient<Request, Response> {
 
 
     @Override
+    public void closeResponse(Response response) {
+        //nothing to close
+    }
+
+
+    @Override
     public org.asynchttpclient.Request buildRequest(HttpRequest httpRequest) {
         Preconditions.checkNotNull(httpRequest, "'httpRequest' is required but null");
         Preconditions.checkNotNull(httpRequest.getHeaders(), "'headers' are required but null");

@@ -70,12 +70,13 @@ public interface HttpClient<Req, Res> {
     default HttpExchange call(HttpRequest httpRequest, AtomicInteger attempts) throws HttpException {
 
         Stopwatch stopwatch = Stopwatch.createStarted();
+        Res response = null;
         try {
             LOGGER.info("httpRequest: {}", httpRequest);
             Req request = buildRequest(httpRequest);
             LOGGER.info("native request: {}", request);
             OffsetDateTime now = OffsetDateTime.now(ZoneId.of(UTC_ZONE_ID));
-            Res response = nativeCall(request);
+            response = nativeCall(request);
             LOGGER.info("native response: {}", response);
             stopwatch.stop();
             HttpResponse httpResponse = buildResponse(response);
@@ -86,6 +87,9 @@ public interface HttpClient<Req, Res> {
             LOGGER.error("Failed to call web service {} ", e.getMessage());
             throw new HttpException(e.getMessage());
         } finally {
+            if(response!=null) {
+                closeResponse(response);
+            }
             if (stopwatch.isRunning()) {
                 stopwatch.stop();
             }
@@ -101,7 +105,11 @@ public interface HttpClient<Req, Res> {
     HttpResponse buildResponse(Res response);
     Res nativeCall(Req request);
 
-
+    /**
+     * release any ressource on response.
+     * @param response
+     */
+    void closeResponse(Res response);
 
     static TrustManagerFactory getTrustManagerFactory(String trustStorePath,
                                                       char[] password,

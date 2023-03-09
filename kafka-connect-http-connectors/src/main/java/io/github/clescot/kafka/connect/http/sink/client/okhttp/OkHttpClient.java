@@ -185,4 +185,11 @@ public class OkHttpClient extends AbstractHttpClient<Request, Response> {
             throw new RuntimeException(e);
         }
     }
+
+    @Override
+    public void closeResponse(Response response) {
+            if(response.body()!=null) {
+                response.close();
+            }
+    }
 }
