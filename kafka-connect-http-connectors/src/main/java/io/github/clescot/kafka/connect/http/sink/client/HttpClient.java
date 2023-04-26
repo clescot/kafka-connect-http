@@ -1,10 +1,10 @@
 package io.github.clescot.kafka.connect.http.sink.client;
 
+import com.google.common.base.Preconditions;
+import com.google.common.base.Stopwatch;
 import io.github.clescot.kafka.connect.http.core.HttpExchange;
 import io.github.clescot.kafka.connect.http.core.HttpRequest;
 import io.github.clescot.kafka.connect.http.core.HttpResponse;
-import com.google.common.base.Preconditions;
-import com.google.common.base.Stopwatch;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -22,6 +22,7 @@ import java.security.cert.CertificateException;
 import java.time.OffsetDateTime;
 import java.time.ZoneId;
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -67,11 +68,10 @@ public interface HttpClient<Req, Res> {
 
     Req buildRequest(HttpRequest httpRequest);
 
-    default HttpExchange call(HttpRequest httpRequest, AtomicInteger attempts) throws HttpException {
+    default CompletableFuture<HttpExchange> call(HttpRequest httpRequest, AtomicInteger attempts) throws HttpException {
 
         Stopwatch stopwatch = Stopwatch.createStarted();
-        Res response = null;
-        try {
+        CompletableFuture<Res> response;
             LOGGER.info("httpRequest: {}", httpRequest);
             Req request = buildRequest(httpRequest);
             LOGGER.info("native request: {}", request);
@@ -79,21 +79,14 @@ public interface HttpClient<Req, Res> {
             response = nativeCall(request);
             LOGGER.info("native response: {}", response);
             stopwatch.stop();
-            HttpResponse httpResponse = buildResponse(response);
-            LOGGER.info("httpResponse: {}", response);
-            LOGGER.info("duration: {}", stopwatch);
-            return buildHttpExchange(httpRequest, httpResponse, stopwatch, now, attempts,httpResponse.getStatusCode()<400?SUCCESS:FAILURE);
-        } catch (HttpException e) {
-            LOGGER.error("Failed to call web service {} ", e.getMessage());
-            throw new HttpException(e.getMessage());
-        } finally {
-            if(response!=null) {
-                closeResponse(response);
-            }
-            if (stopwatch.isRunning()) {
-                stopwatch.stop();
-            }
-        }
+            return response.thenApply(this::buildResponse)
+                    .thenApply(myResponse->{
+                        LOGGER.info("httpResponse: {}", myResponse);
+                        LOGGER.info("duration: {}", stopwatch);
+                        return buildHttpExchange(httpRequest, myResponse, stopwatch, now, attempts,myResponse.getStatusCode()<400?SUCCESS:FAILURE);
+                    }
+            );
+
     }
 
     /**
@@ -103,7 +96,7 @@ public interface HttpClient<Req, Res> {
      */
 
     HttpResponse buildResponse(Res response);
-    Res nativeCall(Req request);
+    CompletableFuture<Res> nativeCall(Req request);
 
     /**
      * release any ressource on response.

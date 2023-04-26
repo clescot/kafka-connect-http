@@ -110,7 +110,8 @@ public class HttpEventListener {
     }
 
     public void callStart(Call call) {
-        callStates.put(call, new CallState(registry.config().clock().monotonicTime(), call.request()));
+        //TODO JMX
+//        callStates.put(call, new CallState(registry.config().clock().monotonicTime(), call.request()));
     }
 
     public void callFailed(Call call, IOException e) {
@@ -287,9 +288,9 @@ public class HttpEventListener {
         }
 
         /**
-         * Tag keys for {@link Request#tag()} or {@link Request#tag(Class)}.
+         * Tag keys for {@link HttpRequest#getTag(Class)}.
          * <p>
-         * These keys will be added with {@literal UNKNOWN} values when {@link Request} is
+         * These keys will be added with {@literal UNKNOWN} values when {@link HttpRequest} is
          * {@literal null}. Note that this is required only for Prometheus as it requires
          * tag match for the same metric.
          *
@@ -302,9 +303,9 @@ public class HttpEventListener {
         }
 
         /**
-         * Tag keys for {@link Request#tag()} or {@link Request#tag(Class)}.
+         * Tag keys for {@link HttpRequest#getTag(Class)}.
          * <p>
-         * These keys will be added with {@literal UNKNOWN} values when {@link Request} is
+         * These keys will be added with {@literal UNKNOWN} values when {@link HttpRequest} is
          * {@literal null}. Note that this is required only for Prometheus as it requires
          * tag match for the same metric.
          *

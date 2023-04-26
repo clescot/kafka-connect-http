@@ -1,8 +1,8 @@
 package io.github.clescot.kafka.connect.http.sink.client.okhttp;
 
+import com.google.common.collect.Maps;
 import io.github.clescot.kafka.connect.http.core.HttpRequest;
 import io.github.clescot.kafka.connect.http.core.HttpResponse;
-import com.google.common.collect.Maps;
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import okhttp3.*;
 import okhttp3.internal.http.RealResponseBody;
@@ -13,7 +13,8 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
-import static org.assertj.core.api.Assertions.*;
+
+import static org.assertj.core.api.Assertions.assertThat;
 
 class OkHttpClientTest {
 

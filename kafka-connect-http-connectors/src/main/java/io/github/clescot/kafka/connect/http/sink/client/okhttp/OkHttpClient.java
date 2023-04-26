@@ -1,13 +1,11 @@
 package io.github.clescot.kafka.connect.http.sink.client.okhttp;
 
+import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
 import io.github.clescot.kafka.connect.http.core.HttpRequest;
 import io.github.clescot.kafka.connect.http.core.HttpResponse;
 import io.github.clescot.kafka.connect.http.sink.client.AbstractHttpClient;
-import com.google.common.collect.Lists;
-import com.google.common.collect.Maps;
 import io.micrometer.core.instrument.MeterRegistry;
-import io.micrometer.core.instrument.Tags;
-import io.micrometer.core.instrument.binder.okhttp3.OkHttpMetricsEventListener;
 import kotlin.Pair;
 import okhttp3.*;
 import okhttp3.internal.http.HttpMethod;
@@ -17,6 +15,7 @@ import org.slf4j.LoggerFactory;
 import javax.net.ssl.*;
 import java.io.IOException;
 import java.util.*;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 
 import static io.github.clescot.kafka.connect.http.sink.HttpSinkConfigDefinition.*;
@@ -79,14 +78,22 @@ public class OkHttpClient extends AbstractHttpClient<Request, Response> {
             int writeTimeout = Integer.parseInt(config.get(HTTPCLIENT_DEFAULT_WRITE_TIMEOUT_DOC));
             httpClientBuilder.writeTimeout(writeTimeout, TimeUnit.MILLISECONDS);
         }
-        client = httpClientBuilder
-                .eventListener(
-                        OkHttpMetricsEventListener.builder(meterRegistry, "okhttp.requests")
-                        .uriMapper(req -> req.url().encodedPath())//beware of tag cardinality explosion => replace .encodedPath() with .host()
-//                        .uriMapper(req -> req.url().host())
-                        .tags(Tags.of("foo", "bar"))
-                        .build())
-                .build();
+        //TODO JMX
+//        httpClientBuilder.eventListener(
+//                HttpEventListener.builder(meterRegistry, "okhttp.requests")
+//                        .uriMapper(req -> {
+//                            URL url;
+//                            try {
+//                                url = new URL(req.getUrl());
+//                            } catch (MalformedURLException e) {
+//                                throw new RuntimeException(e);
+//                            }
+////                            return url.getPath();
+//                            return url.getHost();
+//                        })//beware of tag cardinality explosion => replace .encodedPath() with .host()
+//                        .tags(Tags.of("foo", "bar"))
+//                        .build()); client = httpClientBuilder
+//                .build();
 
 
     }
@@ -177,13 +184,15 @@ public class OkHttpClient extends AbstractHttpClient<Request, Response> {
     }
 
     @Override
-    public Response nativeCall(Request request) {
+    public CompletableFuture<Response> nativeCall(Request request) {
         Call call = client.newCall(request);
-        try {
-            return call.execute();
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
+            return CompletableFuture.supplyAsync(()-> {
+                try {
+                    return call.execute();
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
+            });
     }
 
     @Override

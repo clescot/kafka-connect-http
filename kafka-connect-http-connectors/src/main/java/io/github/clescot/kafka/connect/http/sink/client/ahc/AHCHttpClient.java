@@ -1,12 +1,12 @@
 package io.github.clescot.kafka.connect.http.sink.client.ahc;
 
+import com.google.common.base.Preconditions;
+import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
 import io.github.clescot.kafka.connect.http.core.HttpRequest;
 import io.github.clescot.kafka.connect.http.core.HttpResponse;
 import io.github.clescot.kafka.connect.http.sink.client.HttpClient;
 import io.github.clescot.kafka.connect.http.sink.client.HttpException;
-import com.google.common.base.Preconditions;
-import com.google.common.collect.Lists;
-import com.google.common.collect.Maps;
 import org.asynchttpclient.*;
 import org.asynchttpclient.proxy.ProxyServer;
 import org.asynchttpclient.proxy.ProxyType;
@@ -18,7 +18,7 @@ import java.util.AbstractMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.concurrent.ExecutionException;
+import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 
 public class AHCHttpClient implements HttpClient<Request, Response> {
@@ -66,21 +66,16 @@ public class AHCHttpClient implements HttpClient<Request, Response> {
     }
 
     @Override
-    public org.asynchttpclient.Response nativeCall(org.asynchttpclient.Request request) {
-        LOGGER.debug("native call  {}",request);
-        if(request.getStringData()!=null) {
+    public CompletableFuture<org.asynchttpclient.Response> nativeCall(org.asynchttpclient.Request request) {
+        LOGGER.debug("native call  {}", request);
+        if (request.getStringData() != null) {
             LOGGER.debug("body stringData: '{}'", new String(request.getStringData()));
-        }else{
+        } else {
             LOGGER.debug("body stringData: null");
         }
         ListenableFuture<Response> responseListenableFuture = asyncHttpClient.executeRequest(request, asyncCompletionHandler);
         //we cannot use the asynchronous nature of the response yet
-        try {
-            return responseListenableFuture.get();
-        } catch (InterruptedException|ExecutionException e) {
-            throw new RuntimeException(e);
-        }
-
+        return responseListenableFuture.toCompletableFuture();
     }
 
 
@@ -136,7 +131,6 @@ public class AHCHttpClient implements HttpClient<Request, Response> {
         }
         return requestBuilder.build();
     }
-
 
 
     private void defineProxyServer(RequestBuilder requestBuilder, Map<String, String> proxyHeaders) {
