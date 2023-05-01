@@ -78,11 +78,12 @@ public interface HttpClient<Req, Res> {
             OffsetDateTime now = OffsetDateTime.now(ZoneId.of(UTC_ZONE_ID));
             response = nativeCall(request);
             LOGGER.info("native response: {}", response);
-            stopwatch.stop();
+
             return response.thenApply(this::buildResponse)
                     .thenApply(myResponse->{
+                        stopwatch.stop();
                         LOGGER.info("httpResponse: {}", myResponse);
-                        LOGGER.info("duration: {}", stopwatch);
+                        LOGGER.info("duration: '{}' : {}ms", httpRequest.getUrl(),stopwatch.elapsed(TimeUnit.MILLISECONDS));
                         return buildHttpExchange(httpRequest, myResponse, stopwatch, now, attempts,myResponse.getStatusCode()<400?SUCCESS:FAILURE);
                     }
             );
