@@ -3,6 +3,7 @@ package io.github.clescot.kafka.connect.http.sink;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import com.google.common.base.Stopwatch;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import io.confluent.connect.json.JsonSchemaConverter;
@@ -31,6 +32,7 @@ import org.apache.kafka.connect.header.Header;
 import org.apache.kafka.connect.sink.ErrantRecordReporter;
 import org.apache.kafka.connect.sink.SinkRecord;
 import org.apache.kafka.connect.sink.SinkTaskContext;
+import org.awaitility.Awaitility;
 import org.jetbrains.annotations.NotNull;
 import org.json.JSONException;
 import org.junit.jupiter.api.Assertions;
@@ -38,22 +40,28 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.mockito.*;
+import org.mockito.invocation.InvocationOnMock;
+import org.mockito.stubbing.Answer;
 import org.skyscreamer.jsonassert.Customization;
 import org.skyscreamer.jsonassert.JSONAssert;
 import org.skyscreamer.jsonassert.JSONCompareMode;
 import org.skyscreamer.jsonassert.comparator.CustomComparator;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.time.OffsetDateTime;
 import java.time.ZoneId;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static io.confluent.kafka.serializers.json.KafkaJsonSchemaDeserializerConfig.JSON_VALUE_TYPE;
 import static io.github.clescot.kafka.connect.http.core.HttpRequestAsStruct.SCHEMA;
 import static io.github.clescot.kafka.connect.http.sink.HttpSinkConfigDefinition.*;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.AdditionalAnswers.answersWithDelay;
 import static org.mockito.Mockito.*;
 
 public class HttpSinkTaskTest {
@@ -67,6 +75,7 @@ public class HttpSinkTaskTest {
     public static final String CLIENT_TRUSTSTORE_JKS_PASSWORD = "Secret123!";
     public static final String JKS_STORE_TYPE = "jks";
     public static final String TRUSTSTORE_PKIX_ALGORITHM = "PKIX";
+    public static final Logger LOGGER = LoggerFactory.getLogger(HttpSinkTaskTest.class.getName());
     @Mock
     ErrantRecordReporter errantRecordReporter;
     @Mock
@@ -332,6 +341,51 @@ public class HttpSinkTaskTest {
             //then
             verify(httpClient, times(1)).call(any(HttpRequest.class), any(AtomicInteger.class));
             verify(queue, times(1)).offer(any(KafkaRecord.class));
+        }
+
+        @Test
+        public void test_put_with_latencies(){
+            //given
+            Map<String, String> settings = Maps.newHashMap();
+            httpSinkTask.start(settings);
+
+            //mock httpClient
+            OkHttpClient httpClient = Mockito.mock(OkHttpClient.class);
+            HttpExchange dummyHttpExchange = getDummyHttpExchange();
+            CompletableFuture<HttpExchange> response = CompletableFuture.supplyAsync(() -> dummyHttpExchange);
+            when(httpClient.call(any(HttpRequest.class), any(AtomicInteger.class)))
+                    .thenAnswer(invocationOnMock -> {
+                        Awaitility.await().atLeast(1000,TimeUnit.MILLISECONDS);
+                        return response;
+                    });
+            httpSinkTask.setHttpClient(httpClient);
+
+            //init sinkRecord
+            List<SinkRecord> records = Lists.newArrayList();
+            List<Header> headers = Lists.newArrayList();
+            SinkRecord sinkRecord1 = new SinkRecord("myTopic", 0, Schema.STRING_SCHEMA, "key", Schema.STRING_SCHEMA, getDummyHttpRequestAsString(), -1, System.currentTimeMillis(), TimestampType.CREATE_TIME, headers);
+            records.add(sinkRecord1);
+            SinkRecord sinkRecord2 = new SinkRecord("myTopic", 0, Schema.STRING_SCHEMA, "key", Schema.STRING_SCHEMA, getDummyHttpRequestAsString(), -1, System.currentTimeMillis(), TimestampType.CREATE_TIME, headers);
+            records.add(sinkRecord2);
+            SinkRecord sinkRecord3 = new SinkRecord("myTopic", 0, Schema.STRING_SCHEMA, "key", Schema.STRING_SCHEMA, getDummyHttpRequestAsString(), -1, System.currentTimeMillis(), TimestampType.CREATE_TIME, headers);
+            records.add(sinkRecord3);
+
+            //when
+            Stopwatch stopwatch = Stopwatch.createStarted();
+            httpSinkTask.put(records);
+            stopwatch.stop();
+            long elapsedMillis = stopwatch.elapsed(TimeUnit.MILLISECONDS);
+            LOGGER.info("put method execution time :'{}' ms",elapsedMillis);
+            //then
+            assertThat(elapsedMillis).isLessThan(3000);
+            //no additional headers added
+            ArgumentCaptor<HttpRequest> captor = ArgumentCaptor.forClass(HttpRequest.class);
+            verify(httpClient, times(3)).call(captor.capture(), any(AtomicInteger.class));
+            HttpRequest enhancedRecordBeforeHttpCall = captor.getValue();
+            assertThat(enhancedRecordBeforeHttpCall.getHeaders().size() == sinkRecord1.headers().size());
+
+            //no records are published into the in memory queue by default
+            verify(dummyQueue, never()).offer(any(HttpExchange.class));
         }
 
     }
