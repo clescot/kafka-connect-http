@@ -94,7 +94,7 @@ public class OkHttpClient extends AbstractHttpClient<Request, Response> {
 //                        .tags(Tags.of("foo", "bar"))
 //                        .build()); client = httpClientBuilder
 //                .build();
-
+        this.client = httpClientBuilder.build();
 
     }
 
