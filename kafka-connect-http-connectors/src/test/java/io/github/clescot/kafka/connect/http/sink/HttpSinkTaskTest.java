@@ -35,6 +35,7 @@ import org.jetbrains.annotations.NotNull;
 import org.json.JSONException;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.mockito.*;
 import org.skyscreamer.jsonassert.Customization;
@@ -90,238 +91,249 @@ public class HttpSinkTaskTest {
         settings.put(ConfigConstants.QUEUE_NAME, "dummyQueueName");
         httpSinkTask.start(settings);
     }
- @Test
-    public void test_start_with_custom_trust_store_path_and_password() {
-        Map<String, String> settings = Maps.newHashMap();
-        String truststorePath = Thread.currentThread().getContextClassLoader().getResource(CLIENT_TRUSTSTORE_JKS_FILENAME).getPath();
-        String password = CLIENT_TRUSTSTORE_JKS_PASSWORD;
-        settings.put(HTTPCLIENT_SSL_TRUSTSTORE_PATH, truststorePath);
-        settings.put(HTTPCLIENT_SSL_TRUSTSTORE_PASSWORD, password);
-        httpSinkTask.start(settings);
-    }
-    @Test
-    public void test_start_with_custom_trust_store_path_password_and_type() {
-        Map<String, String> settings = Maps.newHashMap();
-        String truststorePath = Thread.currentThread().getContextClassLoader().getResource(CLIENT_TRUSTSTORE_JKS_FILENAME).getPath();
-        String password = CLIENT_TRUSTSTORE_JKS_PASSWORD;
-        settings.put(HTTPCLIENT_SSL_TRUSTSTORE_PATH, truststorePath);
-        settings.put(HTTPCLIENT_SSL_TRUSTSTORE_PASSWORD, password);
-        settings.put(HTTPCLIENT_SSL_TRUSTSTORE_TYPE, JKS_STORE_TYPE);
-        httpSinkTask.start(settings);
-    }
-    @Test
-    public void test_start_with_custom_trust_store_path_password_type_and_algorithm() {
-        Map<String, String> settings = Maps.newHashMap();
-        String truststorePath = Thread.currentThread().getContextClassLoader().getResource(CLIENT_TRUSTSTORE_JKS_FILENAME).getPath();
-        String password = CLIENT_TRUSTSTORE_JKS_PASSWORD;
-        settings.put(HTTPCLIENT_SSL_TRUSTSTORE_PATH, truststorePath);
-        settings.put(HTTPCLIENT_SSL_TRUSTSTORE_PASSWORD, password);
-        settings.put(HTTPCLIENT_SSL_TRUSTSTORE_TYPE, JKS_STORE_TYPE);
-        settings.put(HTTPCLIENT_SSL_TRUSTSTORE_ALGORITHM, TRUSTSTORE_PKIX_ALGORITHM);
-        httpSinkTask.start(settings);
-    }
 
-    @Test
-    public void test_start_with_static_request_headers() {
-        Map<String, String> settings = Maps.newHashMap();
-        settings.put(HTTP_CLIENT_STATIC_REQUEST_HEADER_NAMES, "param1,param2");
-        settings.put("param1", "value1");
-        settings.put("param2", "value2");
-        httpSinkTask.start(settings);
-    }
+    @Nested
+    class Start {
+        @Test
+        public void test_start_with_custom_trust_store_path_and_password() {
+            Map<String, String> settings = Maps.newHashMap();
+            String truststorePath = Thread.currentThread().getContextClassLoader().getResource(CLIENT_TRUSTSTORE_JKS_FILENAME).getPath();
+            String password = CLIENT_TRUSTSTORE_JKS_PASSWORD;
+            settings.put(HTTPCLIENT_SSL_TRUSTSTORE_PATH, truststorePath);
+            settings.put(HTTPCLIENT_SSL_TRUSTSTORE_PASSWORD, password);
+            httpSinkTask.start(settings);
+        }
 
-    @Test
-    public void test_start_with_static_request_headers_without_required_parameters() {
-        Assertions.assertThrows(NullPointerException.class, () -> {
-            HttpSinkTask wsSinkTask = new HttpSinkTask();
+        @Test
+        public void test_start_with_custom_trust_store_path_password_and_type() {
+            Map<String, String> settings = Maps.newHashMap();
+            String truststorePath = Thread.currentThread().getContextClassLoader().getResource(CLIENT_TRUSTSTORE_JKS_FILENAME).getPath();
+            String password = CLIENT_TRUSTSTORE_JKS_PASSWORD;
+            settings.put(HTTPCLIENT_SSL_TRUSTSTORE_PATH, truststorePath);
+            settings.put(HTTPCLIENT_SSL_TRUSTSTORE_PASSWORD, password);
+            settings.put(HTTPCLIENT_SSL_TRUSTSTORE_TYPE, JKS_STORE_TYPE);
+            httpSinkTask.start(settings);
+        }
+
+        @Test
+        public void test_start_with_custom_trust_store_path_password_type_and_algorithm() {
+            Map<String, String> settings = Maps.newHashMap();
+            String truststorePath = Thread.currentThread().getContextClassLoader().getResource(CLIENT_TRUSTSTORE_JKS_FILENAME).getPath();
+            String password = CLIENT_TRUSTSTORE_JKS_PASSWORD;
+            settings.put(HTTPCLIENT_SSL_TRUSTSTORE_PATH, truststorePath);
+            settings.put(HTTPCLIENT_SSL_TRUSTSTORE_PASSWORD, password);
+            settings.put(HTTPCLIENT_SSL_TRUSTSTORE_TYPE, JKS_STORE_TYPE);
+            settings.put(HTTPCLIENT_SSL_TRUSTSTORE_ALGORITHM, TRUSTSTORE_PKIX_ALGORITHM);
+            httpSinkTask.start(settings);
+        }
+
+        @Test
+        public void test_start_with_static_request_headers() {
             Map<String, String> settings = Maps.newHashMap();
             settings.put(HTTP_CLIENT_STATIC_REQUEST_HEADER_NAMES, "param1,param2");
-            wsSinkTask.start(settings);
-        });
+            settings.put("param1", "value1");
+            settings.put("param2", "value2");
+            httpSinkTask.start(settings);
+        }
+
+        @Test
+        public void test_start_with_static_request_headers_without_required_parameters() {
+            Assertions.assertThrows(NullPointerException.class, () -> {
+                HttpSinkTask wsSinkTask = new HttpSinkTask();
+                Map<String, String> settings = Maps.newHashMap();
+                settings.put(HTTP_CLIENT_STATIC_REQUEST_HEADER_NAMES, "param1,param2");
+                wsSinkTask.start(settings);
+            });
+
+        }
+
+
+        @Test
+        public void test_start_no_settings() {
+            httpSinkTask.start(Maps.newHashMap());
+        }
 
     }
 
+    @Nested
+    class Put{
+        @Test
+        public void test_put_add_static_headers_with_value_as_string() {
+            //given
+            Map<String, String> settings = Maps.newHashMap();
+            settings.put(HTTP_CLIENT_STATIC_REQUEST_HEADER_NAMES, "param1,param2");
+            settings.put("param1", "value1");
+            settings.put("param2", "value2");
+            httpSinkTask.start(settings);
+            OkHttpClient httpClient = Mockito.mock(OkHttpClient.class);
+            HttpExchange dummyHttpExchange = getDummyHttpExchange();
+            when(httpClient.call(any(HttpRequest.class), any(AtomicInteger.class))).thenReturn(CompletableFuture.supplyAsync(() -> dummyHttpExchange));
+            httpSinkTask.setHttpClient(httpClient);
+            List<SinkRecord> records = Lists.newArrayList();
+            List<Header> headers = Lists.newArrayList();
+            SinkRecord sinkRecord = new SinkRecord("myTopic", 0, Schema.STRING_SCHEMA, "key", Schema.STRING_SCHEMA, getDummyHttpRequestAsString(), -1, System.currentTimeMillis(), TimestampType.CREATE_TIME, headers);
+            records.add(sinkRecord);
+            //when
+            httpSinkTask.put(records);
+            ArgumentCaptor<HttpRequest> captor = ArgumentCaptor.forClass(HttpRequest.class);
+            verify(httpClient, times(1)).call(captor.capture(), any(AtomicInteger.class));
+            HttpRequest enhancedRecordBeforeHttpCall = captor.getValue();
+            //then
+            assertThat(enhancedRecordBeforeHttpCall.getHeaders().size() == sinkRecord.headers().size() + httpSinkTask.getStaticRequestHeaders().size());
+            assertThat(enhancedRecordBeforeHttpCall.getHeaders()).contains(Map.entry("param1", Lists.newArrayList("value1")));
+            assertThat(enhancedRecordBeforeHttpCall.getHeaders()).contains(Map.entry("param2", Lists.newArrayList("value2")));
+        }
 
-    @Test
-    public void test_start_no_settings() {
-        httpSinkTask.start(Maps.newHashMap());
-    }
+        @Test
+        public void test_put_nominal_case_with_value_as_string() {
+            //given
+            Map<String, String> settings = Maps.newHashMap();
+            httpSinkTask.start(settings);
 
+            //mock httpClient
+            AHCHttpClient httpClient = Mockito.mock(AHCHttpClient.class);
+            HttpExchange dummyHttpExchange = getDummyHttpExchange();
+            when(httpClient.call(any(HttpRequest.class), any(AtomicInteger.class))).thenReturn(CompletableFuture.supplyAsync(() -> dummyHttpExchange));
+            httpSinkTask.setHttpClient(httpClient);
 
-    @Test
-    public void test_put_add_static_headers_with_value_as_string() {
-        //given
-        Map<String, String> settings = Maps.newHashMap();
-        settings.put(HTTP_CLIENT_STATIC_REQUEST_HEADER_NAMES, "param1,param2");
-        settings.put("param1", "value1");
-        settings.put("param2", "value2");
-        httpSinkTask.start(settings);
-        OkHttpClient httpClient = Mockito.mock(OkHttpClient.class);
-        HttpExchange dummyHttpExchange = getDummyHttpExchange();
-        when(httpClient.call(any(HttpRequest.class),any(AtomicInteger.class))).thenReturn(CompletableFuture.supplyAsync(()->dummyHttpExchange));
-        httpSinkTask.setHttpClient(httpClient);
-        List<SinkRecord> records = Lists.newArrayList();
-        List<Header> headers = Lists.newArrayList();
-        SinkRecord sinkRecord = new SinkRecord("myTopic", 0, Schema.STRING_SCHEMA, "key", Schema.STRING_SCHEMA, getDummyHttpRequestAsString(), -1, System.currentTimeMillis(), TimestampType.CREATE_TIME, headers);
-        records.add(sinkRecord);
-        //when
-        httpSinkTask.put(records);
-        ArgumentCaptor<HttpRequest> captor = ArgumentCaptor.forClass(HttpRequest.class);
-        verify(httpClient, times(1)).call(captor.capture(),any(AtomicInteger.class));
-        HttpRequest enhancedRecordBeforeHttpCall = captor.getValue();
-        //then
-        assertThat(enhancedRecordBeforeHttpCall.getHeaders().size() == sinkRecord.headers().size() + httpSinkTask.getStaticRequestHeaders().size());
-        assertThat(enhancedRecordBeforeHttpCall.getHeaders()).contains(Map.entry("param1", Lists.newArrayList("value1")));
-        assertThat(enhancedRecordBeforeHttpCall.getHeaders()).contains(Map.entry("param2", Lists.newArrayList("value2")));
-    }
+            //init sinkRecord
+            List<SinkRecord> records = Lists.newArrayList();
+            List<Header> headers = Lists.newArrayList();
+            SinkRecord sinkRecord = new SinkRecord("myTopic", 0, Schema.STRING_SCHEMA, "key", Schema.STRING_SCHEMA, getDummyHttpRequestAsString(), -1, System.currentTimeMillis(), TimestampType.CREATE_TIME, headers);
+            records.add(sinkRecord);
 
-    @Test
-    public void test_put_nominal_case_with_value_as_string() {
-        //given
-        Map<String, String> settings = Maps.newHashMap();
-        httpSinkTask.start(settings);
+            //when
+            httpSinkTask.put(records);
 
-        //mock httpClient
-        AHCHttpClient httpClient = Mockito.mock(AHCHttpClient.class);
-        HttpExchange dummyHttpExchange = getDummyHttpExchange();
-        when(httpClient.call(any(HttpRequest.class),any(AtomicInteger.class))).thenReturn(CompletableFuture.supplyAsync(()->dummyHttpExchange));
-        httpSinkTask.setHttpClient(httpClient);
+            //then
 
-        //init sinkRecord
-        List<SinkRecord> records = Lists.newArrayList();
-        List<Header> headers = Lists.newArrayList();
-        SinkRecord sinkRecord = new SinkRecord("myTopic", 0, Schema.STRING_SCHEMA, "key", Schema.STRING_SCHEMA, getDummyHttpRequestAsString(), -1, System.currentTimeMillis(), TimestampType.CREATE_TIME, headers);
-        records.add(sinkRecord);
+            //no additional headers added
+            ArgumentCaptor<HttpRequest> captor = ArgumentCaptor.forClass(HttpRequest.class);
+            verify(httpClient, times(1)).call(captor.capture(), any(AtomicInteger.class));
+            HttpRequest enhancedRecordBeforeHttpCall = captor.getValue();
+            assertThat(enhancedRecordBeforeHttpCall.getHeaders().size() == sinkRecord.headers().size());
 
-        //when
-        httpSinkTask.put(records);
+            //no records are published into the in memory queue by default
+            verify(dummyQueue, never()).offer(any(HttpExchange.class));
+        }
 
-        //then
+        @Test
+        public void test_put_nominal_case_with_value_as_json_schema() {
+            //given
+            Map<String, String> settings = Maps.newHashMap();
+            httpSinkTask.start(settings);
 
-        //no additional headers added
-        ArgumentCaptor<HttpRequest> captor = ArgumentCaptor.forClass(HttpRequest.class);
-        verify(httpClient, times(1)).call(captor.capture(),any(AtomicInteger.class));
-        HttpRequest enhancedRecordBeforeHttpCall = captor.getValue();
-        assertThat(enhancedRecordBeforeHttpCall.getHeaders().size() == sinkRecord.headers().size());
+            //mock httpClient
+            AHCHttpClient httpClient = Mockito.mock(AHCHttpClient.class);
+            HttpExchange dummyHttpExchange = getDummyHttpExchange();
+            when(httpClient.call(any(HttpRequest.class), any(AtomicInteger.class))).thenReturn(CompletableFuture.supplyAsync(() -> dummyHttpExchange));
+            httpSinkTask.setHttpClient(httpClient);
 
-        //no records are published into the in memory queue by default
-        verify(dummyQueue, never()).offer(any(HttpExchange.class));
-    }
-    @Test
-    public void test_put_nominal_case_with_value_as_json_schema() {
-        //given
-        Map<String, String> settings = Maps.newHashMap();
-        httpSinkTask.start(settings);
+            //init sinkRecord
+            List<SinkRecord> records = Lists.newArrayList();
+            List<Header> headers = Lists.newArrayList();
+            SinkRecord sinkRecord = new SinkRecord("myTopic", 0, Schema.STRING_SCHEMA, "key", Schema.STRING_SCHEMA, getDummyHttpRequestAsString(), -1, System.currentTimeMillis(), TimestampType.CREATE_TIME, headers);
+            records.add(sinkRecord);
 
-        //mock httpClient
-        AHCHttpClient httpClient = Mockito.mock(AHCHttpClient.class);
-        HttpExchange dummyHttpExchange = getDummyHttpExchange();
-        when(httpClient.call(any(HttpRequest.class),any(AtomicInteger.class))).thenReturn(CompletableFuture.supplyAsync(()->dummyHttpExchange));
-        httpSinkTask.setHttpClient(httpClient);
+            //when
+            httpSinkTask.put(records);
 
-        //init sinkRecord
-        List<SinkRecord> records = Lists.newArrayList();
-        List<Header> headers = Lists.newArrayList();
-        SinkRecord sinkRecord = new SinkRecord("myTopic", 0, Schema.STRING_SCHEMA, "key", Schema.STRING_SCHEMA, getDummyHttpRequestAsString(), -1, System.currentTimeMillis(), TimestampType.CREATE_TIME, headers);
-        records.add(sinkRecord);
+            //then
 
-        //when
-        httpSinkTask.put(records);
+            //no additional headers added
+            ArgumentCaptor<HttpRequest> captor = ArgumentCaptor.forClass(HttpRequest.class);
+            verify(httpClient, times(1)).call(captor.capture(), any(AtomicInteger.class));
+            HttpRequest enhancedRecordBeforeHttpCall = captor.getValue();
+            assertThat(enhancedRecordBeforeHttpCall.getHeaders().size() == sinkRecord.headers().size());
 
-        //then
+            //no records are published into the in memory queue by default
+            verify(dummyQueue, never()).offer(any(HttpExchange.class));
+        }
 
-        //no additional headers added
-        ArgumentCaptor<HttpRequest> captor = ArgumentCaptor.forClass(HttpRequest.class);
-        verify(httpClient, times(1)).call(captor.capture(),any(AtomicInteger.class));
-        HttpRequest enhancedRecordBeforeHttpCall = captor.getValue();
-        assertThat(enhancedRecordBeforeHttpCall.getHeaders().size() == sinkRecord.headers().size());
+        @Test
+        public void test_put_sink_record_with_null_value() {
+            //given
+            Map<String, String> settings = Maps.newHashMap();
+            httpSinkTask.start(settings);
 
-        //no records are published into the in memory queue by default
-        verify(dummyQueue, never()).offer(any(HttpExchange.class));
-    }
+            //mock httpClient
+            AHCHttpClient httpClient = Mockito.mock(AHCHttpClient.class);
+            HttpExchange dummyHttpExchange = getDummyHttpExchange();
+            when(httpClient.call(any(HttpRequest.class), any(AtomicInteger.class))).thenReturn(CompletableFuture.supplyAsync(() -> dummyHttpExchange));
+            httpSinkTask.setHttpClient(httpClient);
 
-    @Test
-    public void test_put_sink_record_with_null_value() {
-        //given
-        Map<String, String> settings = Maps.newHashMap();
-        httpSinkTask.start(settings);
+            //init sinkRecord
+            List<SinkRecord> records = Lists.newArrayList();
+            List<Header> headers = Lists.newArrayList();
+            SinkRecord sinkRecord = new SinkRecord("myTopic", 0, Schema.STRING_SCHEMA, "key", Schema.STRING_SCHEMA, null, -1, System.currentTimeMillis(), TimestampType.CREATE_TIME, headers);
+            records.add(sinkRecord);
 
-        //mock httpClient
-        AHCHttpClient httpClient = Mockito.mock(AHCHttpClient.class);
-        HttpExchange dummyHttpExchange = getDummyHttpExchange();
-        when(httpClient.call(any(HttpRequest.class),any(AtomicInteger.class))).thenReturn(CompletableFuture.supplyAsync(()->dummyHttpExchange));
-        httpSinkTask.setHttpClient(httpClient);
+            //when
+            Assertions.assertThrows(ConnectException.class, () -> httpSinkTask.put(records));
 
-        //init sinkRecord
-        List<SinkRecord> records = Lists.newArrayList();
-        List<Header> headers = Lists.newArrayList();
-        SinkRecord sinkRecord = new SinkRecord("myTopic", 0, Schema.STRING_SCHEMA, "key", Schema.STRING_SCHEMA, null, -1, System.currentTimeMillis(), TimestampType.CREATE_TIME, headers);
-        records.add(sinkRecord);
+        }
 
-        //when
-        Assertions.assertThrows(ConnectException.class,()->httpSinkTask.put(records));
+        @Test
+        public void test_put_with_publish_to_in_memory_queue_without_consumer() {
+            //given
+            Map<String, String> settings = Maps.newHashMap();
+            settings.put(PUBLISH_TO_IN_MEMORY_QUEUE, "true");
+            settings.put(ConfigConstants.QUEUE_NAME, "test");
+            settings.put(WAIT_TIME_REGISTRATION_QUEUE_CONSUMER_IN_MS, "200");
+            //when
+            //then
+            Assertions.assertThrows(IllegalArgumentException.class,
+                    () -> httpSinkTask.start(settings));
 
-    }
-
-    @Test
-    public void test_put_with_publish_to_in_memory_queue_without_consumer() {
-        //given
-        Map<String, String> settings = Maps.newHashMap();
-        settings.put(PUBLISH_TO_IN_MEMORY_QUEUE, "true");
-        settings.put(ConfigConstants.QUEUE_NAME, "test");
-        settings.put(WAIT_TIME_REGISTRATION_QUEUE_CONSUMER_IN_MS, "200");
-        //when
-        //then
-        Assertions.assertThrows(IllegalArgumentException.class,
-                () ->  httpSinkTask.start(settings));
-
-    }
+        }
 
 
-    @Test
-    public void test_put_with_publish_in_memory_set_to_false() {
-        Map<String, String> settings = Maps.newHashMap();
-        settings.put(PUBLISH_TO_IN_MEMORY_QUEUE, "false");
-        httpSinkTask.start(settings);
-        AHCHttpClient httpClient = Mockito.mock(AHCHttpClient.class);
-        HttpExchange dummyHttpExchange = getDummyHttpExchange();
-        when(httpClient.call(any(HttpRequest.class),any(AtomicInteger.class))).thenReturn(CompletableFuture.supplyAsync(()->dummyHttpExchange));
-        httpSinkTask.setHttpClient(httpClient);
-        Queue<KafkaRecord> queue = mock(Queue.class);
-        httpSinkTask.setQueue(queue);
-        List<SinkRecord> records = Lists.newArrayList();
-        List<Header> headers = Lists.newArrayList();
-        SinkRecord sinkRecord = new SinkRecord("myTopic", 0, Schema.STRING_SCHEMA, "key", Schema.STRING_SCHEMA, getDummyHttpRequestAsString(), -1, System.currentTimeMillis(), TimestampType.CREATE_TIME, headers);
-        records.add(sinkRecord);
-        httpSinkTask.put(records);
-        verify(httpClient, times(1)).call(any(HttpRequest.class),any(AtomicInteger.class));
-        verify(queue, never()).offer(any(KafkaRecord.class));
-    }
+        @Test
+        public void test_put_with_publish_in_memory_set_to_false() {
+            Map<String, String> settings = Maps.newHashMap();
+            settings.put(PUBLISH_TO_IN_MEMORY_QUEUE, "false");
+            httpSinkTask.start(settings);
+            AHCHttpClient httpClient = Mockito.mock(AHCHttpClient.class);
+            HttpExchange dummyHttpExchange = getDummyHttpExchange();
+            when(httpClient.call(any(HttpRequest.class), any(AtomicInteger.class))).thenReturn(CompletableFuture.supplyAsync(() -> dummyHttpExchange));
+            httpSinkTask.setHttpClient(httpClient);
+            Queue<KafkaRecord> queue = mock(Queue.class);
+            httpSinkTask.setQueue(queue);
+            List<SinkRecord> records = Lists.newArrayList();
+            List<Header> headers = Lists.newArrayList();
+            SinkRecord sinkRecord = new SinkRecord("myTopic", 0, Schema.STRING_SCHEMA, "key", Schema.STRING_SCHEMA, getDummyHttpRequestAsString(), -1, System.currentTimeMillis(), TimestampType.CREATE_TIME, headers);
+            records.add(sinkRecord);
+            httpSinkTask.put(records);
+            verify(httpClient, times(1)).call(any(HttpRequest.class), any(AtomicInteger.class));
+            verify(queue, never()).offer(any(KafkaRecord.class));
+        }
 
-    @Test
-    public void test_put_with_publish_to_in_memory_queue_set_to_true_with_a_consumer() {
+        @Test
+        public void test_put_with_publish_to_in_memory_queue_set_to_true_with_a_consumer() {
 
-        //given
-        Map<String, String> settings = Maps.newHashMap();
-        settings.put(PUBLISH_TO_IN_MEMORY_QUEUE, "true");
-        QueueFactory.registerConsumerForQueue(QueueFactory.DEFAULT_QUEUE_NAME);
-        httpSinkTask.start(settings);
-        AHCHttpClient httpClient = Mockito.mock(AHCHttpClient.class);
-        HttpExchange dummyHttpExchange = getDummyHttpExchange();
-        when(httpClient.call(any(HttpRequest.class),any(AtomicInteger.class))).thenReturn(CompletableFuture.supplyAsync(()->dummyHttpExchange));
-        httpSinkTask.setHttpClient(httpClient);
-        Queue<KafkaRecord> queue = mock(Queue.class);
-        httpSinkTask.setQueue(queue);
-        List<SinkRecord> records = Lists.newArrayList();
-        List<Header> headers = Lists.newArrayList();
-        SinkRecord sinkRecord = new SinkRecord("myTopic", 0, Schema.STRING_SCHEMA, "key", Schema.STRING_SCHEMA, getDummyHttpRequestAsString(), -1, System.currentTimeMillis(), TimestampType.CREATE_TIME, headers);
-        records.add(sinkRecord);
-        //when
-        httpSinkTask.put(records);
+            //given
+            Map<String, String> settings = Maps.newHashMap();
+            settings.put(PUBLISH_TO_IN_MEMORY_QUEUE, "true");
+            QueueFactory.registerConsumerForQueue(QueueFactory.DEFAULT_QUEUE_NAME);
+            httpSinkTask.start(settings);
+            AHCHttpClient httpClient = Mockito.mock(AHCHttpClient.class);
+            HttpExchange dummyHttpExchange = getDummyHttpExchange();
+            when(httpClient.call(any(HttpRequest.class), any(AtomicInteger.class))).thenReturn(CompletableFuture.supplyAsync(() -> dummyHttpExchange));
+            httpSinkTask.setHttpClient(httpClient);
+            Queue<KafkaRecord> queue = mock(Queue.class);
+            httpSinkTask.setQueue(queue);
+            List<SinkRecord> records = Lists.newArrayList();
+            List<Header> headers = Lists.newArrayList();
+            SinkRecord sinkRecord = new SinkRecord("myTopic", 0, Schema.STRING_SCHEMA, "key", Schema.STRING_SCHEMA, getDummyHttpRequestAsString(), -1, System.currentTimeMillis(), TimestampType.CREATE_TIME, headers);
+            records.add(sinkRecord);
+            //when
+            httpSinkTask.put(records);
 
-        //then
-        verify(httpClient, times(1)).call(any(HttpRequest.class),any(AtomicInteger.class));
-        verify(queue, times(1)).offer(any(KafkaRecord.class));
+            //then
+            verify(httpClient, times(1)).call(any(HttpRequest.class), any(AtomicInteger.class));
+            verify(queue, times(1)).offer(any(KafkaRecord.class));
+        }
+
     }
 
 
@@ -370,137 +382,147 @@ public class HttpSinkTaskTest {
 
     }
 
+    @Nested
+    class BuildHttpRequest{
+        @Test
+        public void test_buildHttpRequest_null_sink_record() {
+            //when
+            //then
+            Assertions.assertThrows(ConnectException.class, () -> httpSinkTask.buildHttpRequest(null));
+        }
 
-    @Test
-    public void test_buildHttpRequest_null_sink_record() {
-        //when
-        //then
-        Assertions.assertThrows(ConnectException.class, () -> httpSinkTask.buildHttpRequest(null));
+        @Test
+        public void test_buildHttpRequest_null_value_sink_record() {
+            //when
+            List<Header> headers = Lists.newArrayList();
+            SinkRecord sinkRecord = new SinkRecord("myTopic", 0, Schema.STRING_SCHEMA, "key", Schema.STRING_SCHEMA, null, -1, System.currentTimeMillis(), TimestampType.CREATE_TIME, headers);
+            //then
+            Assertions.assertThrows(ConnectException.class, () -> httpSinkTask.buildHttpRequest(sinkRecord));
+        }
+
+        @Test
+        public void test_buildHttpRequest_http_request_as_string() {
+            //given
+            List<Header> headers = Lists.newArrayList();
+            SinkRecord sinkRecord = new SinkRecord("myTopic", 0, Schema.STRING_SCHEMA, "key", Schema.STRING_SCHEMA, getDummyHttpRequestAsString(), -1, System.currentTimeMillis(), TimestampType.CREATE_TIME, headers);
+            //when
+            HttpRequest httpRequest = httpSinkTask.buildHttpRequest(sinkRecord);
+            //then
+            assertThat(httpRequest).isNotNull();
+            assertThat(httpRequest.getUrl()).isEqualTo(DUMMY_URL);
+            assertThat(httpRequest.getMethod()).isEqualTo(DUMMY_METHOD);
+            assertThat(httpRequest.getBodyType().toString()).isEqualTo(DUMMY_BODY_TYPE);
+        }
+
+        @Test
+        public void test_buildHttpRequest_http_request_as_json_schema() throws IOException {
+            //given
+            List<Header> headers = Lists.newArrayList();
+            HttpRequest dummyHttpRequest = getDummyHttpRequest();
+            String topic = "myTopic";
+            SchemaRegistryClient schemaRegistryClient = getSchemaRegistryClient();
+            registerSchema(schemaRegistryClient, topic, 1, 1, HttpRequest.SCHEMA_AS_STRING);
+
+
+            JsonSchemaConverter jsonSchemaConverter = getJsonSchemaConverter(schemaRegistryClient);
+
+
+            byte[] httpRequestAsJsonSchemaWithConverter = jsonSchemaConverter.fromConnectData(topic, SCHEMA, new HttpRequestAsStruct(dummyHttpRequest).toStruct());
+
+            SchemaAndValue schemaAndValue = jsonSchemaConverter.toConnectData(topic, httpRequestAsJsonSchemaWithConverter);
+
+            SinkRecord sinkRecord = new SinkRecord(topic, 0, Schema.STRING_SCHEMA, "key", schemaAndValue.schema(), schemaAndValue.value(), -1, System.currentTimeMillis(), TimestampType.CREATE_TIME, headers);
+            //when
+            HttpRequest httpRequest = httpSinkTask.buildHttpRequest(sinkRecord);
+            //then
+            assertThat(httpRequest).isNotNull();
+            assertThat(httpRequest.getUrl()).isEqualTo(DUMMY_URL);
+            assertThat(httpRequest.getMethod()).isEqualTo(DUMMY_METHOD);
+            assertThat(httpRequest.getBodyType().toString()).isEqualTo(DUMMY_BODY_TYPE);
+        }
+
+
+        @Test
+        public void test_buildHttpRequest_http_request_as_struct() {
+            //given
+            List<Header> headers = Lists.newArrayList();
+            SinkRecord sinkRecord = new SinkRecord("myTopic", 0, Schema.STRING_SCHEMA, "key", Schema.STRING_SCHEMA, getDummyHttpRequestAsStruct(), -1, System.currentTimeMillis(), TimestampType.CREATE_TIME, headers);
+            //when
+            HttpRequest httpRequest = httpSinkTask.buildHttpRequest(sinkRecord);
+            //then
+            assertThat(httpRequest).isNotNull();
+            assertThat(httpRequest.getUrl()).isEqualTo(DUMMY_URL);
+            assertThat(httpRequest.getMethod()).isEqualTo(DUMMY_METHOD);
+            assertThat(httpRequest.getBodyType().toString()).isEqualTo(DUMMY_BODY_TYPE);
+        }
+
+
     }
 
-    @Test
-    public void test_buildHttpRequest_null_value_sink_record() {
-        //when
-        List<Header> headers = Lists.newArrayList();
-        SinkRecord sinkRecord = new SinkRecord("myTopic", 0, Schema.STRING_SCHEMA, "key", Schema.STRING_SCHEMA, null, -1, System.currentTimeMillis(), TimestampType.CREATE_TIME, headers);
-        //then
-        Assertions.assertThrows(ConnectException.class, () -> httpSinkTask.buildHttpRequest(sinkRecord));
-    }
+    @Nested
+    class RetryNeeded{
+        @Test
+        public void test_retry_needed() {
+            HttpResponse httpResponse = new HttpResponse(500, "Internal Server Error");
+            Map<String, String> settings = Maps.newHashMap();
+            httpSinkTask.start(settings);
+            boolean retryNeeded = httpSinkTask.retryNeeded(httpResponse);
+            assertThat(retryNeeded).isTrue();
+        }
 
-    @Test
-    public void test_buildHttpRequest_http_request_as_string() {
-        //given
-        List<Header> headers = Lists.newArrayList();
-        SinkRecord sinkRecord = new SinkRecord("myTopic", 0, Schema.STRING_SCHEMA, "key", Schema.STRING_SCHEMA, getDummyHttpRequestAsString(), -1, System.currentTimeMillis(), TimestampType.CREATE_TIME, headers);
-        //when
-        HttpRequest httpRequest = httpSinkTask.buildHttpRequest(sinkRecord);
-        //then
-        assertThat(httpRequest).isNotNull();
-        assertThat(httpRequest.getUrl()).isEqualTo(DUMMY_URL);
-        assertThat(httpRequest.getMethod()).isEqualTo(DUMMY_METHOD);
-        assertThat(httpRequest.getBodyType().toString()).isEqualTo(DUMMY_BODY_TYPE);
-    }
+        @Test
+        public void test_retry_not_needed_with_400_status_code() {
+            HttpResponse httpResponse = new HttpResponse(400, "Internal Server Error");
+            Map<String, String> settings = Maps.newHashMap();
+            httpSinkTask.start(settings);
+            boolean retryNeeded = httpSinkTask.retryNeeded(httpResponse);
+            assertThat(retryNeeded).isFalse();
+        }
 
-    @Test
-    public void test_buildHttpRequest_http_request_as_json_schema() throws IOException {
-        //given
-        List<Header> headers = Lists.newArrayList();
-        HttpRequest dummyHttpRequest = getDummyHttpRequest();
-        String topic = "myTopic";
-        SchemaRegistryClient schemaRegistryClient = getSchemaRegistryClient();
-        registerSchema(schemaRegistryClient,topic, 1, 1, HttpRequest.SCHEMA_AS_STRING);
+        @Test
+        public void test_retry_not_needed_with_200_status_code() {
+            HttpResponse httpResponse = new HttpResponse(200, "Internal Server Error");
+            Map<String, String> settings = Maps.newHashMap();
+            httpSinkTask.start(settings);
+            boolean retryNeeded = httpSinkTask.retryNeeded(httpResponse);
+            assertThat(retryNeeded).isFalse();
+        }
 
 
-        JsonSchemaConverter jsonSchemaConverter = getJsonSchemaConverter(schemaRegistryClient);
-
-
-        byte[] httpRequestAsJsonSchemaWithConverter = jsonSchemaConverter.fromConnectData(topic,SCHEMA, new HttpRequestAsStruct(dummyHttpRequest).toStruct());
-
-        SchemaAndValue schemaAndValue = jsonSchemaConverter.toConnectData(topic, httpRequestAsJsonSchemaWithConverter);
-
-        SinkRecord sinkRecord = new SinkRecord(topic, 0, Schema.STRING_SCHEMA, "key", schemaAndValue.schema(), schemaAndValue.value(), -1, System.currentTimeMillis(), TimestampType.CREATE_TIME, headers);
-        //when
-        HttpRequest httpRequest = httpSinkTask.buildHttpRequest(sinkRecord);
-        //then
-        assertThat(httpRequest).isNotNull();
-        assertThat(httpRequest.getUrl()).isEqualTo(DUMMY_URL);
-        assertThat(httpRequest.getMethod()).isEqualTo(DUMMY_METHOD);
-        assertThat(httpRequest.getBodyType().toString()).isEqualTo(DUMMY_BODY_TYPE);
+        @Test
+        public void test_retry_needed_by_configuration_with_200_status_code() {
+            HttpResponse httpResponse = new HttpResponse(200, "Internal Server Error");
+            Map<String, String> settings = Maps.newHashMap();
+            settings.put(HTTP_CLIENT_DEFAULT_RETRY_RESPONSE_CODE_REGEX, "^[1-5][0-9][0-9]$");
+            httpSinkTask.start(settings);
+            boolean retryNeeded = httpSinkTask.retryNeeded(httpResponse);
+            assertThat(retryNeeded).isTrue();
+        }
     }
 
 
+    @Nested
+    class IsSuccess{
+        @Test
+        public void test_is_success_with_200() {
+            HttpExchange httpExchange = getDummyHttpExchange();
+            Map<String, String> settings = Maps.newHashMap();
+            httpSinkTask.start(settings);
+            boolean success = httpSinkTask.isSuccess(httpExchange);
+            assertThat(success).isTrue();
+        }
 
-
-    @Test
-    public void test_buildHttpRequest_http_request_as_struct() {
-        //given
-        List<Header> headers = Lists.newArrayList();
-        SinkRecord sinkRecord = new SinkRecord("myTopic", 0, Schema.STRING_SCHEMA, "key", Schema.STRING_SCHEMA, getDummyHttpRequestAsStruct(), -1, System.currentTimeMillis(), TimestampType.CREATE_TIME, headers);
-        //when
-        HttpRequest httpRequest = httpSinkTask.buildHttpRequest(sinkRecord);
-        //then
-        assertThat(httpRequest).isNotNull();
-        assertThat(httpRequest.getUrl()).isEqualTo(DUMMY_URL);
-        assertThat(httpRequest.getMethod()).isEqualTo(DUMMY_METHOD);
-        assertThat(httpRequest.getBodyType().toString()).isEqualTo(DUMMY_BODY_TYPE);
+        @Test
+        public void test_is_not_success_with_200_by_configuration() {
+            HttpExchange httpExchange = getDummyHttpExchange();
+            Map<String, String> settings = Maps.newHashMap();
+            settings.put(HTTP_CLIENT_DEFAULT_SUCCESS_RESPONSE_CODE_REGEX, "^20[1-5]$");
+            httpSinkTask.start(settings);
+            boolean success = httpSinkTask.isSuccess(httpExchange);
+            assertThat(success).isFalse();
+        }
     }
 
-
-
-
-    @Test
-    public void test_retry_needed(){
-        HttpResponse httpResponse = new HttpResponse(500,"Internal Server Error");
-        Map<String, String> settings = Maps.newHashMap();
-        httpSinkTask.start(settings);
-        boolean retryNeeded = httpSinkTask.retryNeeded(httpResponse);
-        assertThat(retryNeeded).isTrue();
-    }
-    @Test
-    public void test_retry_not_needed_with_400_status_code(){
-        HttpResponse httpResponse = new HttpResponse(400,"Internal Server Error");
-        Map<String, String> settings = Maps.newHashMap();
-        httpSinkTask.start(settings);
-        boolean retryNeeded = httpSinkTask.retryNeeded(httpResponse);
-        assertThat(retryNeeded).isFalse();
-    }
-    @Test
-    public void test_retry_not_needed_with_200_status_code(){
-        HttpResponse httpResponse = new HttpResponse(200,"Internal Server Error");
-        Map<String, String> settings = Maps.newHashMap();
-        httpSinkTask.start(settings);
-        boolean retryNeeded = httpSinkTask.retryNeeded(httpResponse);
-        assertThat(retryNeeded).isFalse();
-    }
-
-
-    @Test
-    public void test_retry_needed_by_configuration_with_200_status_code(){
-        HttpResponse httpResponse = new HttpResponse(200,"Internal Server Error");
-        Map<String, String> settings = Maps.newHashMap();
-        settings.put(HTTP_CLIENT_DEFAULT_RETRY_RESPONSE_CODE_REGEX,"^[1-5][0-9][0-9]$");
-        httpSinkTask.start(settings);
-        boolean retryNeeded = httpSinkTask.retryNeeded(httpResponse);
-        assertThat(retryNeeded).isTrue();
-    }
-  @Test
-    public void test_is_success_with_200(){
-        HttpExchange httpExchange = getDummyHttpExchange();
-        Map<String, String> settings = Maps.newHashMap();
-        httpSinkTask.start(settings);
-        boolean success = httpSinkTask.isSuccess(httpExchange);
-        assertThat(success).isTrue();
-    }
-
-    @Test
-    public void test_is_not_success_with_200_by_configuration(){
-        HttpExchange httpExchange = getDummyHttpExchange();
-        Map<String, String> settings = Maps.newHashMap();
-        settings.put(HTTP_CLIENT_DEFAULT_SUCCESS_RESPONSE_CODE_REGEX,"^20[1-5]$");
-        httpSinkTask.start(settings);
-        boolean success = httpSinkTask.isSuccess(httpExchange);
-        assertThat(success).isFalse();
-    }
 
 
     private HttpExchange getDummyHttpExchange() {
@@ -539,22 +561,21 @@ public class HttpSinkTaskTest {
     }
 
 
-
     @NotNull
     private static JsonSchemaConverter getJsonSchemaConverter(SchemaRegistryClient mockSchemaRegistryClient) {
         JsonSchemaConverter jsonSchemaConverter = new JsonSchemaConverter(mockSchemaRegistryClient);
-        Map<String,String> config = Maps.newHashMap();
-        config.put("schema.registry.url","http://dummy.com");
-        config.put(JSON_VALUE_TYPE,HttpRequest.class.getName());
-        jsonSchemaConverter.configure(config,false);
+        Map<String, String> config = Maps.newHashMap();
+        config.put("schema.registry.url", "http://dummy.com");
+        config.put(JSON_VALUE_TYPE, HttpRequest.class.getName());
+        jsonSchemaConverter.configure(config, false);
         return jsonSchemaConverter;
     }
 
     @NotNull
     private static void registerSchema(SchemaRegistryClient mockSchemaRegistryClient, String topic, int schemaVersion, int schemaId, String schemaAsString) {
         //we test TopicNameStrategy, and the jsonSchema is owned in the Kafka value record.
-        String subject = topic +"-value";
-        io.confluent.kafka.schemaregistry.client.rest.entities.Schema schema = new io.confluent.kafka.schemaregistry.client.rest.entities.Schema(subject, schemaVersion, schemaId, JsonSchema.TYPE,Lists.newArrayList(), schemaAsString);
+        String subject = topic + "-value";
+        io.confluent.kafka.schemaregistry.client.rest.entities.Schema schema = new io.confluent.kafka.schemaregistry.client.rest.entities.Schema(subject, schemaVersion, schemaId, JsonSchema.TYPE, Lists.newArrayList(), schemaAsString);
         Optional<ParsedSchema> parsedSchema = mockSchemaRegistryClient.parseSchema(schema);
         try {
             mockSchemaRegistryClient.register(subject, parsedSchema.get());
@@ -578,15 +599,14 @@ public class HttpSinkTaskTest {
 
     @NotNull
     private static HttpRequest getDummyHttpRequest() {
-        HttpRequest httpRequest = new HttpRequest(DUMMY_URL,DUMMY_METHOD,DUMMY_BODY_TYPE);
-        Map<String,List<String>> headers = Maps.newHashMap();
-        headers.put("Content-Type",Lists.newArrayList("application/json"));
+        HttpRequest httpRequest = new HttpRequest(DUMMY_URL, DUMMY_METHOD, DUMMY_BODY_TYPE);
+        Map<String, List<String>> headers = Maps.newHashMap();
+        headers.put("Content-Type", Lists.newArrayList("application/json"));
         httpRequest.setHeaders(headers);
         httpRequest.setBodyAsString("stuff");
         httpRequest.setBodyAsForm(Maps.newHashMap());
         return httpRequest;
     }
-
 
 
 }
