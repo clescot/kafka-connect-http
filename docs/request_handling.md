@@ -1,5 +1,12 @@
 # request handling
 
+## Requests are asynchronously handled
+
+to avoid any website bottleneck (slow responses), we execute http requests 
+asynchronously.
+
+## Details
+
 ![Request handling](retry_mechanism.png)
 
 According to this request Handling schema, here are the steps involved in request handling : 
