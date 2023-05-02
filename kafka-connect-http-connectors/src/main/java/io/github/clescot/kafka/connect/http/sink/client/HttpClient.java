@@ -83,7 +83,7 @@ public interface HttpClient<Req, Res> {
             return response.thenApply(this::buildResponse)
                     .thenApply(myResponse->{
                         LOGGER.info("httpResponse: {}", myResponse);
-                        LOGGER.info("duration: {}", stopwatch);
+                        LOGGER.info("duration: {}ms", stopwatch.elapsed(TimeUnit.MILLISECONDS));
                         return buildHttpExchange(httpRequest, myResponse, stopwatch, now, attempts,myResponse.getStatusCode()<400?SUCCESS:FAILURE);
                     }
             );
