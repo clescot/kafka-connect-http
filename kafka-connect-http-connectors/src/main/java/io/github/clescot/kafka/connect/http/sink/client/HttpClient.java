@@ -99,12 +99,6 @@ public interface HttpClient<Req, Res> {
     HttpResponse buildResponse(Res response);
     CompletableFuture<Res> nativeCall(Req request);
 
-    /**
-     * release any ressource on response.
-     * @param response
-     */
-    void closeResponse(Res response);
-
     static TrustManagerFactory getTrustManagerFactory(String trustStorePath,
                                                       char[] password,
                                                       @Nullable String keystoreType,

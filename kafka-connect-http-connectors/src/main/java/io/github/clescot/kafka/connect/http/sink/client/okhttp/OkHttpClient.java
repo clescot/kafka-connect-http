@@ -185,10 +185,4 @@ public class OkHttpClient extends AbstractHttpClient<Request, Response> {
                 return cf;
     }
 
-    @Override
-    public void closeResponse(Response response) {
-            if(response.body()!=null) {
-                response.close();
-            }
-    }
 }

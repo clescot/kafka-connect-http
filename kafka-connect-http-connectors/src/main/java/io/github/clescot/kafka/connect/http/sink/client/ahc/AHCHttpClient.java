@@ -80,10 +80,6 @@ public class AHCHttpClient implements HttpClient<Request, Response> {
 
     }
 
-    @Override
-    public void closeResponse(Response response) {
-
-    }
 
 
     @Override
