@@ -25,7 +25,6 @@ import java.time.ZoneId;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -33,7 +32,6 @@ import static io.github.clescot.kafka.connect.http.sink.HttpSinkTask.HEADER_X_CO
 import static io.github.clescot.kafka.connect.http.sink.HttpSinkTask.HEADER_X_REQUEST_ID;
 import static io.github.clescot.kafka.connect.http.sink.client.ahc.AHCHttpClient.SUCCESS;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Mockito.when;
 
 public class HttpClientTest {
 
@@ -116,30 +114,26 @@ public class HttpClientTest {
             ListenableFuture<Object> listenerObject = Mockito.mock(ListenableFuture.class);
             Response response = Mockito.mock(Response.class);
 
-            when(response.getResponseBody()).thenReturn("body");
+            Mockito.when(response.getResponseBody()).thenReturn("body");
             int statusCode = 200;
-            when(response.getStatusCode()).thenReturn(statusCode);
+            Mockito.when(response.getStatusCode()).thenReturn(statusCode);
             String statusMessage = "OK";
-            when(response.getStatusText()).thenReturn(statusMessage);
+            Mockito.when(response.getStatusText()).thenReturn(statusMessage);
 
-            when(listener.get()).thenReturn(response);
-            when(listenerObject.get()).thenReturn(response);
-            when(asyncHttpClient.executeRequest(ArgumentMatchers.any(Request.class))).thenReturn(listener);
-            when(asyncHttpClient.executeRequest(ArgumentMatchers.any(Request.class), ArgumentMatchers.any())).thenReturn(listenerObject);
-            when(listenerObject.toCompletableFuture()).thenReturn(CompletableFuture.supplyAsync(()->response));
+            Mockito.when(listener.get()).thenReturn(response);
+            Mockito.when(listenerObject.get()).thenReturn(response);
+            Mockito.when(asyncHttpClient.executeRequest(ArgumentMatchers.any(Request.class))).thenReturn(listener);
+            Mockito.when(asyncHttpClient.executeRequest(ArgumentMatchers.any(Request.class), ArgumentMatchers.any())).thenReturn(listenerObject);
             AHCHttpClient httpClient = new AHCHttpClient(asyncHttpClient);
 
             //when
-            httpClient.call(getDummyHttpRequest(), new AtomicInteger(2))
-                    .thenAccept(
-                            exchange -> {
-                                //then
-                                assertThat(exchange).isNotNull();
-                                assertThat(exchange.getHttpRequest().getUrl()).isEqualTo("http://localhost:8089");
-                                assertThat(exchange.getHttpResponse().getStatusCode()).isEqualTo(statusCode);
-                                assertThat(exchange.getHttpResponse().getStatusMessage()).isEqualTo(statusMessage);
-                            }
-                    ).get();
+            HttpExchange httpExchange = httpClient.call(getDummyHttpRequest(), new AtomicInteger(2));
+
+            //then
+            assertThat(httpExchange).isNotNull();
+            assertThat(httpExchange.getHttpRequest().getUrl()).isEqualTo("http://localhost:8089");
+            assertThat(httpExchange.getHttpResponse().getStatusCode()).isEqualTo(statusCode);
+            assertThat(httpExchange.getHttpResponse().getStatusMessage()).isEqualTo(statusMessage);
         }
 
         @Test
@@ -150,24 +144,21 @@ public class HttpClientTest {
             ListenableFuture<Object> listenerObject = Mockito.mock(ListenableFuture.class);
             Response response = Mockito.mock(Response.class);
             Uri uri = new Uri("http", null, "fakeHost", 8080, "/toto", "param1=3", "#4");
-            when(response.getUri()).thenReturn(uri);
+            Mockito.when(response.getUri()).thenReturn(uri);
 
-            when(response.getResponseBody()).thenReturn("body");
-            when(response.getStatusCode()).thenReturn(404);
-            when(response.getStatusText()).thenReturn("OK");
-            when(listener.get()).thenReturn(response);
-            when(listenerObject.get()).thenReturn(response);
-            when(asyncHttpClient.executeRequest(ArgumentMatchers.any(Request.class))).thenReturn(listener);
-            when(asyncHttpClient.executeRequest(ArgumentMatchers.any(Request.class), ArgumentMatchers.any())).thenReturn(listenerObject);
-            when(listenerObject.toCompletableFuture()).thenReturn(CompletableFuture.supplyAsync(()->response));
+            Mockito.when(response.getResponseBody()).thenReturn("body");
+            Mockito.when(response.getStatusCode()).thenReturn(404);
+            Mockito.when(response.getStatusText()).thenReturn("OK");
+            Mockito.when(listener.get()).thenReturn(response);
+            Mockito.when(listenerObject.get()).thenReturn(response);
+            Mockito.when(asyncHttpClient.executeRequest(ArgumentMatchers.any(Request.class))).thenReturn(listener);
+            Mockito.when(asyncHttpClient.executeRequest(ArgumentMatchers.any(Request.class), ArgumentMatchers.any())).thenReturn(listenerObject);
+            HashMap<String, String> vars = Maps.newHashMap();
             AHCHttpClient httpClient = new AHCHttpClient(asyncHttpClient);
             //when
-            httpClient.call(getDummyHttpRequest(), new AtomicInteger(2))
-                    .thenAccept(exchange -> {
-                        //then
-                        assertThat(exchange).isNotNull();
-                    }).get();
-
+            HttpExchange httpExchange = httpClient.call(getDummyHttpRequest(), new AtomicInteger(2));
+            //then
+            assertThat(httpExchange).isNotNull();
         }
 
 
@@ -178,23 +169,19 @@ public class HttpClientTest {
             ListenableFuture<Response> listener = Mockito.mock(ListenableFuture.class);
             ListenableFuture<Object> listenerObject = Mockito.mock(ListenableFuture.class);
             Response response = Mockito.mock(Response.class);
-            when(response.getResponseBody()).thenReturn("body");
-            when(response.getStatusCode()).thenReturn(500);
-            when(response.getStatusText()).thenReturn("OK");
-            when(listener.get()).thenReturn(response);
-            when(listenerObject.get()).thenReturn(response);
-            when(asyncHttpClient.executeRequest(ArgumentMatchers.any(Request.class))).thenReturn(listener);
-            when(asyncHttpClient.executeRequest(ArgumentMatchers.any(Request.class), ArgumentMatchers.any())).thenReturn(listenerObject);
-            when(listener.toCompletableFuture()).thenReturn(CompletableFuture.supplyAsync(()->response));
-            when(listenerObject.toCompletableFuture()).thenReturn(CompletableFuture.supplyAsync(()->response));
+            Mockito.when(response.getResponseBody()).thenReturn("body");
+            Mockito.when(response.getStatusCode()).thenReturn(500);
+            Mockito.when(response.getStatusText()).thenReturn("OK");
+            Mockito.when(listener.get()).thenReturn(response);
+            Mockito.when(listenerObject.get()).thenReturn(response);
+            Mockito.when(asyncHttpClient.executeRequest(ArgumentMatchers.any(Request.class))).thenReturn(listener);
+            Mockito.when(asyncHttpClient.executeRequest(ArgumentMatchers.any(Request.class), ArgumentMatchers.any())).thenReturn(listenerObject);
             AHCHttpClient httpClient = new AHCHttpClient(asyncHttpClient);
 
             //when
-            httpClient.call(getDummyHttpRequest(), new AtomicInteger(2)).thenAccept(
-                    httpExchange -> //then
-                            assertThat(httpExchange).isNotNull()
-            ).get();
-
+            HttpExchange httpExchange = httpClient.call(getDummyHttpRequest(), new AtomicInteger(2));
+            //then
+            assertThat(httpExchange).isNotNull();
         }
 
         @Test
@@ -205,22 +192,22 @@ public class HttpClientTest {
             ListenableFuture<Object> listenerObject = Mockito.mock(ListenableFuture.class);
             Response response = Mockito.mock(Response.class);
             Uri uri = new Uri("http", null, "fakeHost", 8080, "/toto", "param1=3", "#4");
-            when(response.getUri()).thenReturn(uri);
+            Mockito.when(response.getUri()).thenReturn(uri);
 
-            when(response.getResponseBody()).thenReturn("body");
-            when(response.getStatusCode()).thenReturn(400);
-            when(response.getStatusText()).thenReturn("OK");
+            Mockito.when(response.getResponseBody()).thenReturn("body");
+            Mockito.when(response.getStatusCode()).thenReturn(400);
+            Mockito.when(response.getStatusText()).thenReturn("OK");
 
-            when(listener.get()).thenReturn(response);
-            when(listenerObject.get()).thenReturn(response);
-            when(asyncHttpClient.executeRequest(ArgumentMatchers.any(Request.class))).thenReturn(listener);
-            when(asyncHttpClient.executeRequest(ArgumentMatchers.any(Request.class), ArgumentMatchers.any())).thenReturn(listenerObject);
-            when(listenerObject.toCompletableFuture()).thenReturn(CompletableFuture.supplyAsync(()->response));
+            Mockito.when(listener.get()).thenReturn(response);
+            Mockito.when(listenerObject.get()).thenReturn(response);
+            Mockito.when(asyncHttpClient.executeRequest(ArgumentMatchers.any(Request.class))).thenReturn(listener);
+            Mockito.when(asyncHttpClient.executeRequest(ArgumentMatchers.any(Request.class), ArgumentMatchers.any())).thenReturn(listenerObject);
+            HashMap<String, String> vars = Maps.newHashMap();
             AHCHttpClient httpClient = new AHCHttpClient(asyncHttpClient);
             //when
-            httpClient.call(getDummyHttpRequest(), new AtomicInteger(2))
-                    .thenAccept(httpExchange -> assertThat(httpExchange).isNotNull())
-                    .get();
+            HttpExchange httpExchange = httpClient.call(getDummyHttpRequest(), new AtomicInteger(2));
+            //then
+            assertThat(httpExchange).isNotNull();
         }
 
         @Test

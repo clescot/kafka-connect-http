@@ -5,5 +5,5 @@ import io.micrometer.core.instrument.MeterRegistry;
 import java.util.Map;
 
 public interface HttpClientFactory {
-    HttpClient build(Map<String, String> config, MeterRegistry meterRegistry);
+    HttpClient build(Map<String, String> config);
 }

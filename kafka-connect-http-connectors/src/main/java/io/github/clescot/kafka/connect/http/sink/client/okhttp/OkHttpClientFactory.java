@@ -8,7 +8,7 @@ import java.util.Map;
 
 public class OkHttpClientFactory implements HttpClientFactory {
     @Override
-    public HttpClient build(Map<String, String> config, MeterRegistry meterRegistry) {
-        return new OkHttpClient(config,meterRegistry);
+    public HttpClient build(Map<String, String> config) {
+        return new OkHttpClient(config);
     }
 }

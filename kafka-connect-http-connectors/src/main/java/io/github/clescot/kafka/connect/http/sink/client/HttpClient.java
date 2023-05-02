@@ -68,26 +68,29 @@ public interface HttpClient<Req, Res> {
 
     Req buildRequest(HttpRequest httpRequest);
 
-    default CompletableFuture<HttpExchange> call(HttpRequest httpRequest, AtomicInteger attempts) throws HttpException {
+    default HttpExchange call(HttpRequest httpRequest, AtomicInteger attempts) throws HttpException {
 
         Stopwatch stopwatch = Stopwatch.createStarted();
-        CompletableFuture<Res> response;
-            LOGGER.info("httpRequest: {}", httpRequest);
+        try {
+            LOGGER.info("httpRequest: {}", httpRequest.toString());
             Req request = buildRequest(httpRequest);
-            LOGGER.info("native request: {}", request);
+            LOGGER.info("native request: {}", request.toString());
             OffsetDateTime now = OffsetDateTime.now(ZoneId.of(UTC_ZONE_ID));
-            response = nativeCall(request);
+            Res response = nativeCall(request);
             LOGGER.info("native response: {}", response);
-
-            return response.thenApply(this::buildResponse)
-                    .thenApply(myResponse->{
-                        stopwatch.stop();
-                        LOGGER.info("httpResponse: {}", myResponse);
-                        LOGGER.info("duration: '{}' : {}ms", httpRequest.getUrl(),stopwatch.elapsed(TimeUnit.MILLISECONDS));
-                        return buildHttpExchange(httpRequest, myResponse, stopwatch, now, attempts,myResponse.getStatusCode()<400?SUCCESS:FAILURE);
-                    }
-            );
-
+            stopwatch.stop();
+            HttpResponse httpResponse = buildResponse(response);
+            LOGGER.info("httpResponse: {}", response);
+            LOGGER.info("duration: {}", stopwatch);
+            return buildHttpExchange(httpRequest, httpResponse, stopwatch, now, attempts,httpResponse.getStatusCode()<400?SUCCESS:FAILURE);
+        } catch (HttpException e) {
+            LOGGER.error("Failed to call web service {} ", e.getMessage());
+            throw new HttpException(e.getMessage());
+        } finally {
+            if (stopwatch.isRunning()) {
+                stopwatch.stop();
+            }
+        }
     }
 
     /**
@@ -97,13 +100,9 @@ public interface HttpClient<Req, Res> {
      */
 
     HttpResponse buildResponse(Res response);
-    CompletableFuture<Res> nativeCall(Req request);
+    Res nativeCall(Req request);
 
-    /**
-     * release any ressource on response.
-     * @param response
-     */
-    void closeResponse(Res response);
+
 
     static TrustManagerFactory getTrustManagerFactory(String trustStorePath,
                                                       char[] password,

@@ -19,6 +19,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
 
 public class AHCHttpClient implements HttpClient<Request, Response> {
@@ -66,22 +67,21 @@ public class AHCHttpClient implements HttpClient<Request, Response> {
     }
 
     @Override
-    public CompletableFuture<org.asynchttpclient.Response> nativeCall(org.asynchttpclient.Request request) {
-        LOGGER.debug("native call  {}", request);
-        if (request.getStringData() != null) {
+    public org.asynchttpclient.Response nativeCall(org.asynchttpclient.Request request) {
+        LOGGER.debug("native call  {}",request);
+        if(request.getStringData()!=null) {
             LOGGER.debug("body stringData: '{}'", new String(request.getStringData()));
-        } else {
-            LOGGER.debug("body stringData: null");
+        }else{
+            LOGGER.debug("body stringData: null", new String(request.getStringData()));
         }
         ListenableFuture<Response> responseListenableFuture = asyncHttpClient.executeRequest(request, asyncCompletionHandler);
         //we cannot use the asynchronous nature of the response yet
-        return responseListenableFuture.toCompletableFuture();
-    }
+        try {
+            return responseListenableFuture.get();
+        } catch (InterruptedException | ExecutionException e) {
+            throw new RuntimeException(e);
+        }
 
-
-    @Override
-    public void closeResponse(Response response) {
-        //nothing to close
     }
 
 

@@ -151,7 +151,7 @@ public class AHCHttpClientFactory implements HttpClientFactory {
 
 
     @Override
-    public HttpClient build(Map<String, String> config, MeterRegistry meterRegistry) {
+    public HttpClient build(Map<String, String> config) {
             //TODO handle meterRegistry
             return new AHCHttpClient(getAsyncHttpClient(config));
     }

@@ -3,14 +3,6 @@ package io.github.clescot.kafka.connect.http.sink;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
-import com.google.common.base.Charsets;
-import com.google.common.base.Preconditions;
-import com.google.common.base.Stopwatch;
-import com.google.common.collect.Lists;
-import com.google.common.collect.Maps;
-import dev.failsafe.Failsafe;
-import dev.failsafe.RateLimiter;
-import dev.failsafe.RetryPolicy;
 import io.github.clescot.kafka.connect.http.VersionUtils;
 import io.github.clescot.kafka.connect.http.core.HttpExchange;
 import io.github.clescot.kafka.connect.http.core.HttpRequest;
@@ -21,10 +13,14 @@ import io.github.clescot.kafka.connect.http.core.queue.QueueFactory;
 import io.github.clescot.kafka.connect.http.sink.client.HttpClient;
 import io.github.clescot.kafka.connect.http.sink.client.HttpClientFactory;
 import io.github.clescot.kafka.connect.http.sink.client.HttpException;
-import io.micrometer.core.instrument.Clock;
-import io.micrometer.core.instrument.MeterRegistry;
-import io.micrometer.jmx.JmxConfig;
-import io.micrometer.jmx.JmxMeterRegistry;
+import com.google.common.base.Charsets;
+import com.google.common.base.Preconditions;
+import com.google.common.base.Stopwatch;
+import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
+import dev.failsafe.Failsafe;
+import dev.failsafe.RateLimiter;
+import dev.failsafe.RetryPolicy;
 import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.data.Struct;
 import org.apache.kafka.connect.errors.ConnectException;
@@ -40,7 +36,6 @@ import java.time.OffsetDateTime;
 import java.time.ZoneId;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -114,13 +109,8 @@ public class HttpSinkTask extends SinkTask {
                  InvocationTargetException e) {
             throw new RuntimeException(e);
         }
-        MeterRegistry registry = new JmxMeterRegistry(new JmxConfig() {
-            @Override
-            public String get(String s) {
-                return null;
-            }
-        }, Clock.SYSTEM);
-        this.httpClient = httpClientFactory.build(httpSinkConnectorConfig.originalsStrings(), registry);
+
+        this.httpClient = httpClientFactory.build(httpSinkConnectorConfig.originalsStrings());
         Integer defaultRetries = httpSinkConnectorConfig.getDefaultRetries();
         Long defaultRetryDelayInMs = httpSinkConnectorConfig.getDefaultRetryDelayInMs();
         Long defaultRetryMaxDelayInMs = httpSinkConnectorConfig.getDefaultRetryMaxDelayInMs();
@@ -159,25 +149,24 @@ public class HttpSinkTask extends SinkTask {
         }
         Preconditions.checkNotNull(httpClient, "httpClient is null. 'start' method must be called once before put");
         ;
-        List<HttpExchange> httpExchanges = records.parallelStream().map(this::process).map(CompletableFuture::join).collect(Collectors.toList());
+        List<HttpExchange> httpExchanges = records.parallelStream().map(this::process).collect(Collectors.toList());
     }
 
-    private CompletableFuture<HttpExchange> process(SinkRecord sinkRecord) {
+
+
+    private HttpExchange process(SinkRecord sinkRecord) {
+        HttpExchange httpExchange = null;
+        if (sinkRecord.value() == null) {
+            throw new ConnectException("sinkRecord Value is null :" + sinkRecord);
+        }
+        //build HttpRequest
+        HttpRequest httpRequest = buildHttpRequest(sinkRecord);
+        HttpRequest httpRequestWithStaticHeaders = addStaticHeaders(httpRequest);
+        HttpRequest httpRequestWithTrackingHeaders = addTrackingHeaders(httpRequestWithStaticHeaders);
+        //handle Request and Response
         try {
-            if (sinkRecord.value() == null) {
-                throw new ConnectException("sinkRecord Value is null :" + sinkRecord);
-            }
-            //build HttpRequest
-            HttpRequest httpRequest = buildHttpRequest(sinkRecord);
-            HttpRequest httpRequestWithStaticHeaders = addStaticHeaders(httpRequest);
-            HttpRequest httpRequestWithTrackingHeaders = addTrackingHeaders(httpRequestWithStaticHeaders);
-            //handle Request and Response
-            return callWithRetryPolicy(sinkRecord, httpRequestWithTrackingHeaders, defaultRetryPolicy).thenApply(
-                    myHttpExchange -> {
-                        LOGGER.debug("HTTP exchange :{}", myHttpExchange);
-                        return myHttpExchange;
-                    }
-            );
+          httpExchange = callWithRetryPolicy(sinkRecord, httpRequestWithTrackingHeaders, defaultRetryPolicy);
+          LOGGER.debug("HTTP exchange :{}", httpExchange);
         } catch (Exception e) {
             if (errantRecordReporter != null) {
                 // Send errant record to error reporter
@@ -185,7 +174,6 @@ public class HttpSinkTask extends SinkTask {
                 // Optionally wait till the failure's been recorded in Kafka
                 try {
                     future.get();
-                    return CompletableFuture.failedFuture(e);
                 } catch (InterruptedException | ExecutionException ex) {
                     throw new RuntimeException(ex);
                 }
@@ -194,37 +182,39 @@ public class HttpSinkTask extends SinkTask {
                 throw new ConnectException("Failed on record", e);
             }
         }
-
+        return httpExchange;
     }
 
-    private CompletableFuture<HttpExchange> callWithRetryPolicy(SinkRecord sinkRecord, HttpRequest httpRequest, Optional<RetryPolicy<HttpExchange>> retryPolicyForCall) {
+    private HttpExchange callWithRetryPolicy(SinkRecord sinkRecord, HttpRequest httpRequest, Optional<RetryPolicy<HttpExchange>> retryPolicyForCall) {
+        HttpExchange httpExchange = null;
 
         if (httpRequest != null) {
             AtomicInteger attempts = new AtomicInteger();
             try {
                 attempts.addAndGet(HttpClient.ONE_HTTP_REQUEST);
                 if (retryPolicyForCall.isPresent()) {
-                    RetryPolicy<HttpExchange> retryPolicy = retryPolicyForCall.get();
-                    CompletableFuture<HttpExchange> httpExchangeFuture = callAndPublish(sinkRecord, httpRequest, attempts)
-                            .thenApply(this::handleRetry);
-                    return Failsafe.with(List.of(retryPolicy))
-                            .getStageAsync(()->httpExchangeFuture);
+                    httpExchange = Failsafe.with(List.of(retryPolicyForCall.get()))
+                            .get(() -> {
+                                HttpExchange httpExchange1 = callAndPublish(sinkRecord, httpRequest, attempts);
+                                return handleRetry(httpExchange1);
+                            });
                 } else {
                     return callAndPublish(sinkRecord, httpRequest, attempts);
                 }
             } catch (Throwable throwable) {
                 LOGGER.error("Failed to call web service after {} retries with error({}). message:{} ", attempts, throwable,
                         throwable.getMessage());
-                return CompletableFuture.supplyAsync(() -> httpClient.buildHttpExchange(
+                return httpClient.buildHttpExchange(
                         httpRequest,
                         new HttpResponse(HttpClient.SERVER_ERROR_STATUS_CODE, String.valueOf(throwable.getMessage())),
                         Stopwatch.createUnstarted(), OffsetDateTime.now(ZoneId.of(HttpClient.UTC_ZONE_ID)),
                         attempts,
-                        HttpClient.FAILURE));
+                        HttpClient.FAILURE);
             }
         }else{
             throw new IllegalArgumentException("httpRequest is null");
         }
+        return httpExchange;
     }
 
     private HttpExchange handleRetry(HttpExchange httpExchange) {
@@ -256,7 +246,7 @@ public class HttpSinkTask extends SinkTask {
         return matcher.matches();
     }
 
-    private CompletableFuture<HttpExchange> callWithThrottling(HttpRequest httpRequest, AtomicInteger attempts) {
+    private HttpExchange callWithThrottling(HttpRequest httpRequest, AtomicInteger attempts) {
         try {
             this.defaultRateLimiter.acquirePermits(HttpClient.ONE_HTTP_REQUEST);
             LOGGER.debug("permits acquired request:'{}'", httpRequest);
@@ -268,22 +258,19 @@ public class HttpSinkTask extends SinkTask {
     }
 
 
-    private CompletableFuture<HttpExchange> callAndPublish(SinkRecord sinkRecord, HttpRequest httpRequest, AtomicInteger attempts) {
-        return callWithThrottling(httpRequest, attempts)
-                .thenApply(myHttpExchange -> {
-                    //TODO add specific pattern per site
-                    boolean success = isSuccess(myHttpExchange);
-                    myHttpExchange.setSuccess(success);
-                    //publish eventually to 'in memory' queue
-                    if (httpSinkConnectorConfig.isPublishToInMemoryQueue()) {
-                        LOGGER.debug("http exchange published to queue '{}':{}", queueName, myHttpExchange);
-                        queue.offer(new KafkaRecord(sinkRecord.headers(), sinkRecord.keySchema(), sinkRecord.key(), myHttpExchange));
-                    } else {
-                        LOGGER.debug("http exchange NOT published to queue '{}':{}", queueName, myHttpExchange);
-                    }
-                    return myHttpExchange;
-                });
-
+    private HttpExchange callAndPublish(SinkRecord sinkRecord, HttpRequest httpRequest, AtomicInteger attempts) {
+        HttpExchange httpExchange = callWithThrottling(httpRequest, attempts);
+        //TODO add specific pattern per site
+        boolean success = isSuccess(httpExchange);
+        httpExchange.setSuccess(success);
+        //publish eventually to 'in memory' queue
+        if (httpSinkConnectorConfig.isPublishToInMemoryQueue()) {
+            LOGGER.debug("http exchange published to queue '{}':{}", queueName, httpExchange);
+            queue.offer(new KafkaRecord(sinkRecord.headers(), sinkRecord.keySchema(), sinkRecord.key(), httpExchange));
+        } else {
+            LOGGER.debug("http exchange NOT published to queue '{}':{}", queueName, httpExchange);
+        }
+        return httpExchange;
     }
 
     protected boolean isSuccess(HttpExchange httpExchange) {
