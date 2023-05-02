@@ -97,9 +97,6 @@ public class HttpSinkConfigDefinition {
 
     public static final String HTTP_CLIENT_DEFAULT_SUCCESS_RESPONSE_CODE_REGEX = "httpclient.default.success.response.code.regex";
     public static final String HTTP_CLIENT_DEFAULT_SUCCESS_RESPONSE_CODE_REGEX_DOC = "default regex which decide if the request is a success or not, based on the response status code";
-    private static final String HTTP_CLIENT_DEFAULT_DEFAULT_SUCCESS_RESPONSE_CODE_REGEX = "^[1-2][0-9][0-9]$";
-    public static final String HTTP_CLIENT_DEFAULT_RETRY_RESPONSE_CODE_REGEX = "httpclient.default.retry.response.code.regex";
-    public static final String DEFAULT_RETRY_RESPONSE_CODE_REGEX_DOC = "regex which define if a retry need to be triggered, based on the response status code. default is '"+HTTP_CLIENT_DEFAULT_DEFAULT_SUCCESS_RESPONSE_CODE_REGEX+"'";
     //by default, we don't resend any http call with a response between 100 and 499
     // 1xx is for protocol information (100 continue for example),
     // 2xx is for success,
@@ -118,7 +115,12 @@ public class HttpSinkConfigDefinition {
 
     private static final String DEFAULT_DEFAULT_RETRY_RESPONSE_CODE_REGEX = "^5[0-9][0-9]$";
 
+    private static final String HTTP_CLIENT_DEFAULT_DEFAULT_SUCCESS_RESPONSE_CODE_REGEX = "^[1-2][0-9][0-9]$";
+    public static final String HTTP_CLIENT_DEFAULT_RETRY_RESPONSE_CODE_REGEX = "httpclient.default.retry.response.code.regex";
+    public static final String DEFAULT_RETRY_RESPONSE_CODE_REGEX_DOC = "regex which define if a retry need to be triggered, based on the response status code. default is '"+HTTP_CLIENT_DEFAULT_DEFAULT_SUCCESS_RESPONSE_CODE_REGEX+"'";
 
+    public static final String HTTP_CLIENT_ASYNC_FIXED_THREAD_POOL_SIZE ="httpclient.async.fixed.thread.pool.size";
+    public static final String HTTP_CLIENT_ASYNC_FIXED_THREAD_POOL_SIZE_DOC ="custom fixed thread pool size used to execute asynchronously http requests.";
 
     private HttpSinkConfigDefinition() {
         //Class with only static methods
@@ -126,9 +128,7 @@ public class HttpSinkConfigDefinition {
 
     public static ConfigDef config() {
         return new ConfigDef()
-                .define(ConfigConstants.QUEUE_NAME, ConfigDef.Type.STRING, null,ConfigDef.Importance.MEDIUM, ConfigConstants.QUEUE_NAME_DOC)
-                .define(HTTP_CLIENT_STATIC_REQUEST_HEADER_NAMES, ConfigDef.Type.LIST,  Collections.emptyList(), ConfigDef.Importance.MEDIUM, HTTP_CLIENT_STATIC_REQUEST_HEADER_NAMES_DOC)
-                .define(PUBLISH_TO_IN_MEMORY_QUEUE, ConfigDef.Type.BOOLEAN, false, ConfigDef.Importance.MEDIUM, PUBLISH_TO_IN_MEMORY_QUEUE_DOC)
+                //retry settings
                 .define(HTTP_CLIENT_DEFAULT_SUCCESS_RESPONSE_CODE_REGEX, ConfigDef.Type.STRING, HTTP_CLIENT_DEFAULT_DEFAULT_SUCCESS_RESPONSE_CODE_REGEX, ConfigDef.Importance.LOW, HTTP_CLIENT_DEFAULT_SUCCESS_RESPONSE_CODE_REGEX_DOC)
                 .define(HTTP_CLIENT_DEFAULT_RETRY_RESPONSE_CODE_REGEX, ConfigDef.Type.STRING, DEFAULT_DEFAULT_RETRY_RESPONSE_CODE_REGEX, ConfigDef.Importance.LOW, DEFAULT_RETRY_RESPONSE_CODE_REGEX_DOC)
                 .define(HTTP_CLIENT_DEFAULT_RETRIES, ConfigDef.Type.INT, DEFAULT_RETRIES_VALUE, ConfigDef.Importance.MEDIUM, HTTP_CLIENT_DEFAULT_RETRIES_DOC)
@@ -136,15 +136,27 @@ public class HttpSinkConfigDefinition {
                 .define(HTTP_CLIENT_DEFAULT_RETRY_MAX_DELAY_IN_MS, ConfigDef.Type.LONG, DEFAULT_RETRY_MAX_DELAY_IN_MS_VALUE, ConfigDef.Importance.MEDIUM, HTTP_CLIENT_DEFAULT_RETRY_MAX_DELAY_IN_MS_DOC)
                 .define(HTTP_CLIENT_DEFAULT_RETRY_DELAY_FACTOR, ConfigDef.Type.DOUBLE, DEFAULT_RETRY_DELAY_FACTOR_VALUE, ConfigDef.Importance.MEDIUM, HTTP_CLIENT_DEFAULT_RETRY_DELAY_FACTOR_DOC)
                 .define(HTTP_CLIENT_DEFAULT_RETRY_JITTER_IN_MS, ConfigDef.Type.LONG, DEFAULT_RETRY_JITTER_IN_MS_VALUE, ConfigDef.Importance.MEDIUM, HTTP_CLIENT_DEFAULT_RETRY_JITTER_IN_MS_DOC)
+                //rate limiting settings
                 .define(HTTP_CLIENT_DEFAULT_RATE_LIMITER_PERIOD_IN_MS, ConfigDef.Type.LONG, HttpSinkConfigDefinition.DEFAULT_RATE_LIMITER_PERIOD_IN_MS_VALUE, ConfigDef.Importance.MEDIUM, HTTP_CLIENT_DEFAULT_RATE_LIMITER_PERIOD_IN_MS_DOC)
                 .define(HTTP_CLIENT_DEFAULT_RATE_LIMITER_MAX_EXECUTIONS, ConfigDef.Type.LONG, HttpSinkConfigDefinition.DEFAULT_RATE_LIMITER_MAX_EXECUTIONS_VALUE, ConfigDef.Importance.MEDIUM, HTTP_CLIENT_DEFAULT_RATE_LIMITER_MAX_EXECUTIONS_DOC)
+                //header settings
+                .define(HTTP_CLIENT_STATIC_REQUEST_HEADER_NAMES, ConfigDef.Type.LIST,  Collections.emptyList(), ConfigDef.Importance.MEDIUM, HTTP_CLIENT_STATIC_REQUEST_HEADER_NAMES_DOC)
                 .define(HTTP_CLIENT_GENERATE_MISSING_CORRELATION_ID, ConfigDef.Type.BOOLEAN, false, ConfigDef.Importance.MEDIUM, HTTP_CLIENT_GENERATE_MISSING_CORRELATION_ID_DOC)
                 .define(HTTP_CLIENT_GENERATE_MISSING_REQUEST_ID, ConfigDef.Type.BOOLEAN, false, ConfigDef.Importance.MEDIUM, HTTP_CLIENT_GENERATE_MISSING_REQUEST_ID_DOC)
+                //in memory queue settings
+                .define(PUBLISH_TO_IN_MEMORY_QUEUE, ConfigDef.Type.BOOLEAN, false, ConfigDef.Importance.MEDIUM, PUBLISH_TO_IN_MEMORY_QUEUE_DOC)
+                .define(ConfigConstants.QUEUE_NAME, ConfigDef.Type.STRING, null,ConfigDef.Importance.MEDIUM, ConfigConstants.QUEUE_NAME_DOC)
                 .define(WAIT_TIME_REGISTRATION_QUEUE_CONSUMER_IN_MS, ConfigDef.Type.LONG, DEFAULT_WAIT_TIME_REGISTRATION_QUEUE_CONSUMER_IN_MS, ConfigDef.Importance.LOW, WAIT_TIME_REGISTRATION_QUEUE_CONSUMER_IN_MS_DOC)
                 .define(POLL_DELAY_REGISTRATION_QUEUE_CONSUMER_IN_MS, ConfigDef.Type.INT, DEFAULT_POLL_DELAY_REGISTRATION_QUEUE_CONSUMER_IN_MS, ConfigDef.Importance.LOW, POLL_DELAY_REGISTRATION_QUEUE_CONSUMER_IN_MS_DOC)
                 .define(POLL_INTERVAL_REGISTRATION_QUEUE_CONSUMER_IN_MS, ConfigDef.Type.INT, DEFAULT_POLL_INTERVAL_REGISTRATION_QUEUE_CONSUMER_IN_MS, ConfigDef.Importance.LOW, POLL_INTERVAL_REGISTRATION_QUEUE_CONSUMER_IN_MS_DOC)
+                //http client implementation
                 .define(HTTPCLIENT_IMPLEMENTATION, ConfigDef.Type.STRING, null, ConfigDef.Importance.LOW, HTTPCLIENT_IMPLEMENTATION_DOC)
                 .define(HTTPCLIENT_DEFAULT_PROTOCOLS, ConfigDef.Type.STRING, null, ConfigDef.Importance.LOW, HTTPCLIENT_DEFAULT_PROTOCOLS_DOC)
+                .define(HTTPCLIENT_DEFAULT_CALL_TIMEOUT, ConfigDef.Type.STRING, null, ConfigDef.Importance.MEDIUM, HTTPCLIENT_DEFAULT_CALL_TIMEOUT_DOC)
+                .define(HTTPCLIENT_DEFAULT_CONNECT_TIMEOUT, ConfigDef.Type.STRING, null, ConfigDef.Importance.MEDIUM, HTTPCLIENT_DEFAULT_CONNECT_TIMEOUT_DOC)
+                .define(HTTPCLIENT_DEFAULT_READ_TIMEOUT, ConfigDef.Type.STRING, null, ConfigDef.Importance.MEDIUM, HTTPCLIENT_DEFAULT_READ_TIMEOUT_DOC)
+                .define(HTTPCLIENT_DEFAULT_WRITE_TIMEOUT, ConfigDef.Type.STRING, null, ConfigDef.Importance.MEDIUM, HTTPCLIENT_DEFAULT_WRITE_TIMEOUT_DOC)
+                //SSL settings
                 .define(HTTPCLIENT_SSL_SKIP_HOSTNAME_VERIFICATION, ConfigDef.Type.STRING, null, ConfigDef.Importance.LOW, HTTPCLIENT_SSL_SKIP_HOSTNAME_VERIFICATION_DOC)
                 .define(HTTPCLIENT_SSL_KEYSTORE_PATH, ConfigDef.Type.STRING, null, ConfigDef.Importance.LOW, HTTPCLIENT_SSL_KEYSTORE_PATH_DOC)
                 .define(HTTPCLIENT_SSL_KEYSTORE_PASSWORD, ConfigDef.Type.STRING, null, ConfigDef.Importance.LOW, HTTPCLIENT_SSL_KEYSTORE_PASSWORD_DOC)
@@ -154,10 +166,8 @@ public class HttpSinkConfigDefinition {
                 .define(HTTPCLIENT_SSL_TRUSTSTORE_PASSWORD, ConfigDef.Type.STRING, null, ConfigDef.Importance.LOW, HTTPCLIENT_SSL_TRUSTSTORE_PASSWORD_DOC)
                 .define(HTTPCLIENT_SSL_TRUSTSTORE_TYPE, ConfigDef.Type.STRING, null, ConfigDef.Importance.LOW, HTTPCLIENT_SSL_TRUSTSTORE_TYPE_DOC)
                 .define(HTTPCLIENT_SSL_TRUSTSTORE_ALGORITHM, ConfigDef.Type.STRING, null, ConfigDef.Importance.LOW, HTTPCLIENT_SSL_TRUSTSTORE_ALGORITHM_DOC)
-                .define(HTTPCLIENT_DEFAULT_CALL_TIMEOUT, ConfigDef.Type.STRING, null, ConfigDef.Importance.MEDIUM, HTTPCLIENT_DEFAULT_CALL_TIMEOUT_DOC)
-                .define(HTTPCLIENT_DEFAULT_CONNECT_TIMEOUT, ConfigDef.Type.STRING, null, ConfigDef.Importance.MEDIUM, HTTPCLIENT_DEFAULT_CONNECT_TIMEOUT_DOC)
-                .define(HTTPCLIENT_DEFAULT_READ_TIMEOUT, ConfigDef.Type.STRING, null, ConfigDef.Importance.MEDIUM, HTTPCLIENT_DEFAULT_READ_TIMEOUT_DOC)
-                .define(HTTPCLIENT_DEFAULT_WRITE_TIMEOUT, ConfigDef.Type.STRING, null, ConfigDef.Importance.MEDIUM, HTTPCLIENT_DEFAULT_WRITE_TIMEOUT_DOC)
+                //async settings
+                .define(HTTP_CLIENT_ASYNC_FIXED_THREAD_POOL_SIZE, ConfigDef.Type.INT, null, ConfigDef.Importance.MEDIUM, HTTP_CLIENT_ASYNC_FIXED_THREAD_POOL_SIZE_DOC)
                 ;
     }
 }

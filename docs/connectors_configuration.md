@@ -81,7 +81,7 @@ every Kafka Connect Sink Connector need to define these required parameters :
     "config": {
     "connector.class":"sink.io.github.clescot.kafka.connect.http.HttpSinkConnector",
     "tasks.max": "1",
-    "topics":"http-request",
+    "topics":"http-request"
     }
 }
 ```

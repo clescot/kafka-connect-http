@@ -36,12 +36,12 @@ import java.time.OffsetDateTime;
 import java.time.ZoneId;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Future;
+import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 
 public class HttpSinkTask extends SinkTask {
@@ -68,6 +68,7 @@ public class HttpSinkTask extends SinkTask {
     private Map<String, Pattern> patternMap = Maps.newHashMap();
     private String defaultSuccessResponseCodeRegex;
     private String defaultRetryResponseCodeRegex;
+    private static ExecutorService executor;
 
     @Override
     public String version() {
@@ -99,6 +100,12 @@ public class HttpSinkTask extends SinkTask {
         this.generateMissingCorrelationId = httpSinkConnectorConfig.isGenerateMissingCorrelationId();
         this.defaultSuccessResponseCodeRegex = httpSinkConnectorConfig.getDefaultSuccessResponseCodeRegex();
         this.defaultRetryResponseCodeRegex = httpSinkConnectorConfig.getDefaultRetryResponseCodeRegex();
+
+        Integer customFixedThreadPoolSize = httpSinkConnectorConfig.getCustomFixedThreadpoolSize();
+        if(customFixedThreadPoolSize!=null &&executor==null){
+            executor = Executors.newFixedThreadPool(customFixedThreadPoolSize);
+        }
+
         Class<HttpClientFactory> httpClientFactoryClass;
         HttpClientFactory httpClientFactory;
         try {
@@ -148,8 +155,19 @@ public class HttpSinkTask extends SinkTask {
             return;
         }
         Preconditions.checkNotNull(httpClient, "httpClient is null. 'start' method must be called once before put");
-        ;
-        List<HttpExchange> httpExchanges = records.parallelStream().map(this::process).collect(Collectors.toList());
+
+        //we submit futures to the pool
+        Stream<SinkRecord> recordStream = records.stream();
+        Stream<CompletableFuture<HttpExchange>> completableFutureStream;
+        if (executor != null) {
+            completableFutureStream= recordStream.map(record -> CompletableFuture.supplyAsync(() -> process(record),executor));
+        } else {
+            completableFutureStream= recordStream.map(record -> CompletableFuture.supplyAsync(() -> process(record)));
+        }
+        List<CompletableFuture<HttpExchange>> completableFutures = completableFutureStream.collect(Collectors.toList());
+        List<HttpExchange> httpExchanges = completableFutures.stream().map(CompletableFuture::join).collect(Collectors.toList());
+
+
     }
 
 
@@ -186,7 +204,7 @@ public class HttpSinkTask extends SinkTask {
     }
 
     private HttpExchange callWithRetryPolicy(SinkRecord sinkRecord, HttpRequest httpRequest, Optional<RetryPolicy<HttpExchange>> retryPolicyForCall) {
-        HttpExchange httpExchange = null;
+        HttpExchange httpExchange;
 
         if (httpRequest != null) {
             AtomicInteger attempts = new AtomicInteger();

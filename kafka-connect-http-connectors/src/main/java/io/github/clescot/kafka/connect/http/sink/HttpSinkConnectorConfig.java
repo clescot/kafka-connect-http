@@ -41,6 +41,7 @@ public class HttpSinkConnectorConfig extends AbstractConfig {
     private final int pollDelayRegistrationOfQueueConsumerInMs;
     private final int pollIntervalRegistrationOfQueueConsumerInMs;
     private final String httpClientFactoryClass;
+    private final Integer customFixedThreadpoolSize;
 
     public HttpSinkConnectorConfig(Map<?, ?> originals) {
         this(HttpSinkConfigDefinition.config(), originals);
@@ -84,6 +85,7 @@ public class HttpSinkConnectorConfig extends AbstractConfig {
             LOGGER.error("unknown HttpClient implementation : must be either 'ahc' or 'okhttp', but is '{}'",httpClientImplementation);
             throw new IllegalArgumentException("unknown HttpClient implementation : must be either 'ahc' or 'okhttp', but is '"+httpClientImplementation+"'");
         }
+        this.customFixedThreadpoolSize = getInt(HTTP_CLIENT_ASYNC_FIXED_THREAD_POOL_SIZE);
     }
 
     public String getQueueName() {
@@ -159,6 +161,10 @@ public class HttpSinkConnectorConfig extends AbstractConfig {
         return httpClientFactoryClass;
     }
 
+    public Integer getCustomFixedThreadpoolSize() {
+        return customFixedThreadpoolSize;
+    }
+
     @Override
     public String toString() {
         return "HttpSinkConnectorConfig{" +
@@ -177,6 +183,7 @@ public class HttpSinkConnectorConfig extends AbstractConfig {
                 ", generateMissingRequestId=" + generateMissingRequestId +
                 ", generateMissingCorrelationId=" + generateMissingCorrelationId +
                 ", maxWaitTimeRegistrationOfQueueConsumerInMs=" + maxWaitTimeRegistrationOfQueueConsumerInMs +
+                ", customFixedThreadpoolSize=" + customFixedThreadpoolSize +
                 '}';
     }
 

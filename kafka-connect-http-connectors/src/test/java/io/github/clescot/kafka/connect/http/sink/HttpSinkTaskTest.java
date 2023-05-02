@@ -52,7 +52,6 @@ import java.io.IOException;
 import java.time.OffsetDateTime;
 import java.time.ZoneId;
 import java.util.*;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -294,7 +293,7 @@ public class HttpSinkTaskTest {
             records.add(sinkRecord);
 
             //when
-            Assertions.assertThrows(ConnectException.class, () -> httpSinkTask.put(records));
+            Assertions.assertThrows(RuntimeException.class, () -> httpSinkTask.put(records));
 
         }
 
@@ -432,8 +431,11 @@ public class HttpSinkTaskTest {
         }
 
         @Test
-        @DisplayName("test with multiple http requests with slow responses with AHC implementation, expected ok")
+        @DisplayName("test with multiple http requests with slow responses with OKHttp implementation, expected ok")
         public void test_put_with_latencies_and_ok_http_implementation(){
+
+            int availableProcessors = Runtime.getRuntime().availableProcessors();
+            LOGGER.info("availableProcessors:{}",availableProcessors);
             //given
             WireMockRuntimeInfo wmRuntimeInfo = wmHttp.getRuntimeInfo();
 
@@ -494,6 +496,7 @@ public class HttpSinkTaskTest {
                     );
             //when
             Stopwatch stopwatch = Stopwatch.createStarted();
+
             httpSinkTask.put(records);
             stopwatch.stop();
             long elapsedMillis = stopwatch.elapsed(TimeUnit.MILLISECONDS);
