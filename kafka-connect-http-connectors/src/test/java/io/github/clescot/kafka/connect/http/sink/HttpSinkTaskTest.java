@@ -60,6 +60,7 @@ import static io.confluent.kafka.serializers.json.KafkaJsonSchemaDeserializerCon
 import static io.github.clescot.kafka.connect.http.core.HttpRequestAsStruct.SCHEMA;
 import static io.github.clescot.kafka.connect.http.sink.HttpSinkConfigDefinition.*;
 import static io.github.clescot.kafka.connect.http.sink.HttpSinkConnectorConfig.AHC_IMPLEMENTATION;
+import static io.github.clescot.kafka.connect.http.sink.HttpSinkConnectorConfig.OKHTTP_IMPLEMENTATION;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.*;
 
@@ -359,8 +360,8 @@ public class HttpSinkTaskTest {
         }
 
         @Test
-        @DisplayName("test with multiple http requests with slow responses, expected ok")
-        public void test_put_with_latencies(){
+        @DisplayName("test with multiple http requests with slow responses with AHC implementation, expected ok")
+        public void test_put_with_latencies_and_ahc_implementation(){
             //given
             WireMockRuntimeInfo wmRuntimeInfo = wmHttp.getRuntimeInfo();
 
@@ -429,6 +430,79 @@ public class HttpSinkTaskTest {
             assertThat(elapsedMillis).isLessThan(2800);
 
         }
+
+        @Test
+        @DisplayName("test with multiple http requests with slow responses with AHC implementation, expected ok")
+        public void test_put_with_latencies_and_ok_http_implementation(){
+            //given
+            WireMockRuntimeInfo wmRuntimeInfo = wmHttp.getRuntimeInfo();
+
+            Map<String, String> settings = Maps.newHashMap();
+            settings.put(HTTP_CLIENT_DEFAULT_RATE_LIMITER_MAX_EXECUTIONS,"100");
+            settings.put(HTTPCLIENT_IMPLEMENTATION,OKHTTP_IMPLEMENTATION);
+            httpSinkTask.start(settings);
+
+
+            //init sinkRecord
+            List<SinkRecord> records = Lists.newArrayList();
+            List<Header> headers = Lists.newArrayList();
+            SinkRecord sinkRecord1 = new SinkRecord("myTopic", 0, Schema.STRING_SCHEMA, "key", Schema.STRING_SCHEMA,
+                    getLocalHttpRequestAsStringWithPath(wmRuntimeInfo.getHttpPort(),"/path1"),
+                    -1, System.currentTimeMillis(), TimestampType.CREATE_TIME, headers);
+            records.add(sinkRecord1);
+            SinkRecord sinkRecord2 = new SinkRecord("myTopic", 0, Schema.STRING_SCHEMA, "key", Schema.STRING_SCHEMA,
+                    getLocalHttpRequestAsStringWithPath(wmRuntimeInfo.getHttpPort(),"/path2"),
+                    -1, System.currentTimeMillis(), TimestampType.CREATE_TIME, headers);
+            records.add(sinkRecord2);
+            SinkRecord sinkRecord3 = new SinkRecord("myTopic", 0, Schema.STRING_SCHEMA, "key", Schema.STRING_SCHEMA,
+                    getLocalHttpRequestAsStringWithPath(wmRuntimeInfo.getHttpPort(),"/path3"),
+                    -1, System.currentTimeMillis(), TimestampType.CREATE_TIME, headers);
+            records.add(sinkRecord3);
+
+            //define the http Mock Server interaction
+            WireMock wireMock = wmRuntimeInfo.getWireMock();
+            String bodyResponse = "{\"result\":\"pong\"}";
+            wireMock
+                    .register(WireMock.post("/path1")
+                            .willReturn(WireMock.aResponse()
+                                    .withHeader("Content-Type","application/json")
+                                    .withBody(bodyResponse)
+                                    .withStatus(200)
+                                    .withStatusMessage("OK")
+                                    .withFixedDelay(1000)
+                            )
+                    );
+            wireMock
+                    .register(WireMock.post("/path2")
+                            .willReturn(WireMock.aResponse()
+                                    .withHeader("Content-Type","application/json")
+                                    .withBody(bodyResponse)
+                                    .withStatus(200)
+                                    .withStatusMessage("OK")
+                                    .withFixedDelay(1000)
+                            )
+                    );
+            wireMock
+                    .register(WireMock.post("/path3")
+                            .willReturn(WireMock.aResponse()
+                                    .withHeader("Content-Type","application/json")
+                                    .withBody(bodyResponse)
+                                    .withStatus(200)
+                                    .withStatusMessage("OK")
+                                    .withFixedDelay(1000)
+                            )
+                    );
+            //when
+            Stopwatch stopwatch = Stopwatch.createStarted();
+            httpSinkTask.put(records);
+            stopwatch.stop();
+            long elapsedMillis = stopwatch.elapsed(TimeUnit.MILLISECONDS);
+            LOGGER.info("put method execution time :'{}' ms",elapsedMillis);
+            //then
+            assertThat(elapsedMillis).isLessThan(2800);
+
+        }
+
 
     }
 
