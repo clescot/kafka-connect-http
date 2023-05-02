@@ -72,16 +72,16 @@ public interface HttpClient<Req, Res> {
 
         Stopwatch stopwatch = Stopwatch.createStarted();
         try {
-            LOGGER.info("httpRequest: {}", httpRequest.toString());
+            LOGGER.debug("httpRequest: {}", httpRequest.toString());
             Req request = buildRequest(httpRequest);
-            LOGGER.info("native request: {}", request.toString());
+            LOGGER.debug("native request: {}", request.toString());
             OffsetDateTime now = OffsetDateTime.now(ZoneId.of(UTC_ZONE_ID));
             Res response = nativeCall(request);
-            LOGGER.info("native response: {}", response);
+            LOGGER.debug("native response: {}", response);
             stopwatch.stop();
             HttpResponse httpResponse = buildResponse(response);
-            LOGGER.info("httpResponse: {}", response);
-            LOGGER.info("duration: {}", stopwatch);
+            LOGGER.debug("httpResponse: {}", response);
+            LOGGER.info("duration ({}) : {}ms",httpRequest.getUrl(),stopwatch.elapsed(TimeUnit.MILLISECONDS));
             return buildHttpExchange(httpRequest, httpResponse, stopwatch, now, attempts,httpResponse.getStatusCode()<400?SUCCESS:FAILURE);
         } catch (HttpException e) {
             LOGGER.error("Failed to call web service {} ", e.getMessage());
