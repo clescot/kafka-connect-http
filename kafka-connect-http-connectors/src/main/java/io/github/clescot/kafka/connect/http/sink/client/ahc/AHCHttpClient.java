@@ -211,7 +211,10 @@ public class AHCHttpClient implements HttpClient<Request, Response> {
         httpResponse.setResponseBody(response.getResponseBody());
         Map<String, List<String>> responseHeaders = responseEntries.stream()
                 .map(entry -> new AbstractMap.SimpleImmutableEntry<String, List<String>>(entry.getKey(), Lists.newArrayList(entry.getValue())))
-                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue,(l1,l2)->{
+                    l1.addAll(l2);
+                    return l1;
+                }));
         httpResponse.setResponseHeaders(responseHeaders);
         return httpResponse;
     }

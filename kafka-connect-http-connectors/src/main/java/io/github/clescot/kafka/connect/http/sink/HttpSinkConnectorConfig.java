@@ -20,8 +20,8 @@ import static io.github.clescot.kafka.connect.http.sink.HttpSinkConfigDefinition
 
 public class HttpSinkConnectorConfig extends AbstractConfig {
     private static final Logger LOGGER = LoggerFactory.getLogger(HttpSinkConnectorConfig.class);
-    private static final String OKHTTP_IMPLEMENTATION = "okhttp";
-    private static final String AHC_IMPLEMENTATION = "ahc";
+    public static final String OKHTTP_IMPLEMENTATION = "okhttp";
+    public static final String AHC_IMPLEMENTATION = "ahc";
     private final String defaultSuccessResponseCodeRegex;
     private final String defaultRetryResponseCodeRegex;
     private final String queueName;

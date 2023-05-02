@@ -59,6 +59,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import static io.confluent.kafka.serializers.json.KafkaJsonSchemaDeserializerConfig.JSON_VALUE_TYPE;
 import static io.github.clescot.kafka.connect.http.core.HttpRequestAsStruct.SCHEMA;
 import static io.github.clescot.kafka.connect.http.sink.HttpSinkConfigDefinition.*;
+import static io.github.clescot.kafka.connect.http.sink.HttpSinkConnectorConfig.AHC_IMPLEMENTATION;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.*;
 
@@ -365,6 +366,7 @@ public class HttpSinkTaskTest {
 
             Map<String, String> settings = Maps.newHashMap();
             settings.put(HTTP_CLIENT_DEFAULT_RATE_LIMITER_MAX_EXECUTIONS,"100");
+            settings.put(HTTPCLIENT_IMPLEMENTATION,AHC_IMPLEMENTATION);
             httpSinkTask.start(settings);
 
 
