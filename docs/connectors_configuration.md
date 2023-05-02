@@ -204,7 +204,7 @@ On this field, you have no actions to do.
 #### on the same kafka connect instance
 
 To exchange data, also if these Connector classes are located in the same jar, they need to be instantiated both on the same kafka connect instance,
-with the configuration explained below.
+with the configuration explained below. 
 
 #### same partitioning for topics used by HTTP sink and source connectors. 
 

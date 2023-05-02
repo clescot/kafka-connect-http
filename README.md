@@ -39,8 +39,10 @@ The main problem with HTTP interactions, is its request/response nature.
 
 - *the One connector strategy ?*
 
-    If you define only one connector, you can read a kafka message (with the reusable high level Kafka connect configuration), and query an HTTP server. If you want to store HTTP responses, 
-    you need to define a low level kafka client which will translate HTTP responses as kafka messages : you duplicate the Kafka configuration, with some low level and high level configurations mixed.
+    If you define only one connector, you can read a kafka message (with the reusable high level Kafka connect configuration), 
+- and query an HTTP server. If you want to store HTTP responses, 
+    you need to define a low level kafka client which will translate HTTP responses as kafka messages : 
+- you duplicate the Kafka configuration, with some low level and high level configurations mixed.
     Your configuration can became complex...
     This strategy can work if you don't bother with HTTP responses (but who don't ?), and don't configure a low level kafka client.
 
@@ -68,14 +70,29 @@ We need to revert the multiple connectors proposal in the previous section, with
 
 ### Does it cancel the distributed nature of Kafka Connect ?
 
-No, you can distribute http queries between multiple Kafka Connect instances. The local nature is only for the correlation between
+No, you can distribute http queries between multiple Kafka Connect instances. The local nature is only for 
+the correlation between
 HTTP query and HTTP responses.
 
 ### Does the unbounded in memory queue implies an *OutOfMemoryError* risk ?
 
-As both ends of the in memory queue, implies a Kafka communication, the *OutOfMemory* risk seems mitigated by the same source of problem on both sides (kafka communication problem).
+As both ends of the in memory queue, implies a Kafka communication, the *OutOfMemory* risk seems mitigated 
+by the same source of problem on both sides (kafka communication problem).
 We also check that all queues registered has got their consumer (Source Connector instance).
-Note that a queue has got only one consumer, opposite to the Topic concept, which support multiple consumers. The only one queue consumer, is the configured Source Connector.
+Note that a queue has got only one consumer, opposite to the Topic concept, which support multiple consumers. 
+The only one queue consumer, is the configured Source Connector.
+
+### Is there any constraints ?
+
+The only one constraint when you want to get the Http response (i.e using the Sink AND the Source connectors), is to 
+**colocate** in the same Kafka Connect instances both connectors.
+
+One way to resolve this constraint is to :
+- set the same partition number for topics used by HTTP sink and source connectors,
+- to deploy no more instances than the partition number :
+Each instance will have at least, one sink and source partition to handle. 
+
+
 
 # 2. Architecture
 
