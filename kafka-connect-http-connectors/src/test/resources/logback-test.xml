@@ -9,5 +9,9 @@
         <appender-ref ref="STDOUT" />
     </root>
     <logger name="io.github.clescot.kafka.connect.http" level="INFO" />
+    <logger name="io.github.clescot.kafka.connect.http.sink.HttpSinkConnectorConfig" level="INFO" />
     <logger name="org.eclipse.jetty" level="WARN" />
+    <logger name="ch.qos.logback" level="WARN" />
+    <logger name="ch.qos.logback.classic.LoggerContext" level="WARN" />
+    <logger name="ch.qos.logback.classic.model.processor.LoggerModelHandler" level="WARN" />
 </configuration>
