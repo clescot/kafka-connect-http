@@ -65,7 +65,7 @@ public class HttpSinkTask extends SinkTask {
 
     private Optional<RetryPolicy<HttpExchange>> defaultRetryPolicy = Optional.empty();
 
-    private Map<String, Pattern> patternMap = Maps.newHashMap();
+    private final Map<String, Pattern> patternMap = Maps.newHashMap();
     private String defaultSuccessResponseCodeRegex;
     private String defaultRetryResponseCodeRegex;
     private static ExecutorService executor;

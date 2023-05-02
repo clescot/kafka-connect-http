@@ -10,9 +10,7 @@ import io.netty.handler.ssl.SslContext;
 import io.netty.handler.ssl.SslContextBuilder;
 import io.netty.util.HashedWheelTimer;
 import io.netty.util.Timer;
-import org.asynchttpclient.AsyncHttpClient;
-import org.asynchttpclient.AsyncHttpClientConfig;
-import org.asynchttpclient.Dsl;
+import org.asynchttpclient.*;
 import org.asynchttpclient.channel.DefaultKeepAliveStrategy;
 import org.asynchttpclient.channel.KeepAliveStrategy;
 import org.asynchttpclient.cookie.CookieStore;
@@ -34,7 +32,7 @@ import java.util.stream.Collectors;
 import static io.github.clescot.kafka.connect.http.sink.HttpSinkConfigDefinition.*;
 import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.ASYNC_CLIENT_CONFIG_ROOT;
 
-public class AHCHttpClientFactory implements HttpClientFactory {
+public class AHCHttpClientFactory implements HttpClientFactory<Request, Response> {
 
     public static final String ASYN_HTTP_CONFIG_PREFIX = ASYNC_CLIENT_CONFIG_ROOT;
     public static final String HTTP_MAX_CONNECTIONS = ASYN_HTTP_CONFIG_PREFIX + "http.max.connections";
@@ -151,7 +149,7 @@ public class AHCHttpClientFactory implements HttpClientFactory {
 
 
     @Override
-    public HttpClient build(Map<String, String> config) {
+    public HttpClient<Request, Response> build(Map<String, String> config) {
             //TODO handle meterRegistry
             return new AHCHttpClient(getAsyncHttpClient(config));
     }
