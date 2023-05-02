@@ -178,7 +178,7 @@ public class OkHttpClient extends AbstractHttpClient<Request, Response> {
             }
 
             @Override
-            public void onResponse(Call call,Response response) throws IOException {
+            public void onResponse(Call call,Response response) {
                 cf.complete(response);
             }
         });
