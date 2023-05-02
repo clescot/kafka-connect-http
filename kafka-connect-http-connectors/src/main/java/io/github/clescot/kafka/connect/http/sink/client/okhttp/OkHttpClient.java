@@ -14,6 +14,7 @@ import org.slf4j.LoggerFactory;
 import javax.net.ssl.*;
 import java.io.IOException;
 import java.util.*;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 
 import static io.github.clescot.kafka.connect.http.sink.HttpSinkConfigDefinition.*;
@@ -168,12 +169,26 @@ public class OkHttpClient extends AbstractHttpClient<Request, Response> {
     }
 
     @Override
-    public Response nativeCall(Request request) {
-        Call call = client.newCall(request);
-        try {
-            return call.execute();
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
+    public CompletableFuture<Response> nativeCall(Request request) {
+        CompletableFuture<Response> cf = new CompletableFuture<>();
+        client.newCall(request).enqueue(new Callback() {
+            @Override
+            public void onFailure( Call call, IOException e) {
+                cf.completeExceptionally(e);
+            }
+
+            @Override
+            public void onResponse(Call call,Response response) throws IOException {
+                cf.complete(response);
+            }
+        });
+                return cf;
+    }
+
+    @Override
+    public void closeResponse(Response response) {
+            if(response.body()!=null) {
+                response.close();
+            }
     }
 }
