@@ -1,9 +1,8 @@
 package io.github.clescot.kafka.connect.http.sink.client.ahc;
 
+import com.google.common.collect.Lists;
 import io.github.clescot.kafka.connect.http.sink.client.HttpClient;
 import io.github.clescot.kafka.connect.http.sink.client.HttpClientFactory;
-import com.google.common.collect.Lists;
-import io.micrometer.core.instrument.MeterRegistry;
 import io.netty.buffer.ByteBufAllocator;
 import io.netty.buffer.PooledByteBufAllocator;
 import io.netty.handler.ssl.SslContext;
