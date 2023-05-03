@@ -1,10 +1,10 @@
 package io.github.clescot.kafka.connect.http.sink.client.okhttp;
 
+import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
 import io.github.clescot.kafka.connect.http.core.HttpRequest;
 import io.github.clescot.kafka.connect.http.core.HttpResponse;
 import io.github.clescot.kafka.connect.http.sink.client.AbstractHttpClient;
-import com.google.common.collect.Lists;
-import com.google.common.collect.Maps;
 import kotlin.Pair;
 import okhttp3.*;
 import okhttp3.internal.http.HttpMethod;
