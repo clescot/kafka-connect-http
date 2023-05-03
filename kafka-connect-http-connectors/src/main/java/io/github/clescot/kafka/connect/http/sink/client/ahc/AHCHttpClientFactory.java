@@ -150,13 +150,9 @@ public class AHCHttpClientFactory implements HttpClientFactory<Request, Response
 
     @Override
     public HttpClient<Request, Response> build(Map<String, String> config,ExecutorService executorService) {
-            //executorService is not used for AHC : we cannot set an executorService nor a thread pool to AHC
-            return this.build(config);
+        //executorService is not used for AHC : we cannot set an executorService nor a thread pool to AHC
+        return new AHCHttpClient(getAsyncHttpClient(config));
     }
-    @Override
-    public HttpClient<Request, Response> build(Map<String, String> config) {
-            //executorService is not used for AHC : we cannot set an executorService nor a thread pool to AHC
-            return new AHCHttpClient(getAsyncHttpClient(config));
-    }
+
 }
 

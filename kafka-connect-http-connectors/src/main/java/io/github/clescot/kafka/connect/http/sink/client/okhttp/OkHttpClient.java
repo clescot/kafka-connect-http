@@ -22,12 +22,9 @@ import static io.github.clescot.kafka.connect.http.sink.HttpSinkConfigDefinition
 
 public class OkHttpClient extends AbstractHttpClient<Request, Response> {
     private static final String PROTOCOL_SEPARATOR = ",";
-    private okhttp3.OkHttpClient client;
-    private Logger LOGGER = LoggerFactory.getLogger(OkHttpClient.class);
+    private final okhttp3.OkHttpClient client;
+    private final Logger LOGGER = LoggerFactory.getLogger(OkHttpClient.class);
 
-    public OkHttpClient(Map<String, String> config) {
-        this(config,null);
-    }
     public OkHttpClient(Map<String, String> config, ExecutorService executorService) {
         super(config);
         okhttp3.OkHttpClient.Builder httpClientBuilder = new okhttp3.OkHttpClient.Builder();
@@ -35,6 +32,10 @@ public class OkHttpClient extends AbstractHttpClient<Request, Response> {
             Dispatcher dispatcher = new Dispatcher(executorService);
             httpClientBuilder.dispatcher(dispatcher);
         }
+        int maxIdleConnections = 10;
+        long keepAliveDuration=1000L;
+        ConnectionPool connectionPool = new ConnectionPool(maxIdleConnections,keepAliveDuration,TimeUnit.MILLISECONDS);
+        httpClientBuilder.connectionPool(connectionPool);
         //protocols
         if(config.containsKey(HTTPCLIENT_DEFAULT_PROTOCOLS)) {
             String protocolNames = config.get(HTTPCLIENT_DEFAULT_PROTOCOLS);

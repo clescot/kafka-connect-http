@@ -22,7 +22,7 @@ class OkHttpClientTest {
 
     @Test
     public void test_build_POST_request() throws IOException {
-        io.github.clescot.kafka.connect.http.sink.client.okhttp.OkHttpClient client = new io.github.clescot.kafka.connect.http.sink.client.okhttp.OkHttpClient(Maps.newHashMap());
+        io.github.clescot.kafka.connect.http.sink.client.okhttp.OkHttpClient client = new io.github.clescot.kafka.connect.http.sink.client.okhttp.OkHttpClient(Maps.newHashMap(),null);
         HttpRequest httpRequest = new HttpRequest("http://dummy.com/", "POST", HttpRequest.BodyType.STRING.name());
         httpRequest.setBodyAsString("stuff");
         Request request = client.buildRequest(httpRequest);
@@ -38,7 +38,7 @@ class OkHttpClientTest {
 
     @Test
     public void test_build_GET_request_with_body() {
-        io.github.clescot.kafka.connect.http.sink.client.okhttp.OkHttpClient client = new io.github.clescot.kafka.connect.http.sink.client.okhttp.OkHttpClient(Maps.newHashMap());
+        io.github.clescot.kafka.connect.http.sink.client.okhttp.OkHttpClient client = new io.github.clescot.kafka.connect.http.sink.client.okhttp.OkHttpClient(Maps.newHashMap(),null);
         HttpRequest httpRequest = new HttpRequest("http://dummy.com/", "GET", HttpRequest.BodyType.STRING.name());
         httpRequest.setBodyAsString("stuff");
         Request request = client.buildRequest(httpRequest);
@@ -50,7 +50,7 @@ class OkHttpClientTest {
 
     @Test
     public void test_build_response() {
-        io.github.clescot.kafka.connect.http.sink.client.okhttp.OkHttpClient client = new OkHttpClient(Maps.newHashMap());
+        io.github.clescot.kafka.connect.http.sink.client.okhttp.OkHttpClient client = new OkHttpClient(Maps.newHashMap(),null);
 
         HttpRequest httpRequest = new HttpRequest("http://dummy.com/", "POST", HttpRequest.BodyType.STRING.name());
         httpRequest.setBodyAsString("stuff");

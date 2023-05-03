@@ -8,5 +8,4 @@ import java.util.concurrent.ExecutorService;
 
 public interface HttpClientFactory<Req,Res> {
     HttpClient<Req,Res> build(Map<String, String> config, ExecutorService executorService);
-    HttpClient<Req,Res> build(Map<String, String> config);
 }

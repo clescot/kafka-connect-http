@@ -116,8 +116,7 @@ public class HttpSinkTask extends SinkTask {
                  InvocationTargetException e) {
             throw new RuntimeException(e);
         }
-
-        this.httpClient = httpClientFactory.build(httpSinkConnectorConfig.originalsStrings());
+        this.httpClient = httpClientFactory.build(httpSinkConnectorConfig.originalsStrings(),executor);
         Integer defaultRetries = httpSinkConnectorConfig.getDefaultRetries();
         Long defaultRetryDelayInMs = httpSinkConnectorConfig.getDefaultRetryDelayInMs();
         Long defaultRetryMaxDelayInMs = httpSinkConnectorConfig.getDefaultRetryMaxDelayInMs();
@@ -159,11 +158,8 @@ public class HttpSinkTask extends SinkTask {
         //we submit futures to the pool
         Stream<SinkRecord> recordStream = records.stream();
         Stream<CompletableFuture<HttpExchange>> completableFutureStream;
-        if (executor != null) {
-            completableFutureStream= recordStream.map(record -> process(record));
-        } else {
-            completableFutureStream= recordStream.map(record -> process(record));
-        }
+        completableFutureStream= recordStream.map(record -> process(record));
+
         List<CompletableFuture<HttpExchange>> completableFutures = completableFutureStream.collect(Collectors.toList());
         List<HttpExchange> httpExchanges = completableFutures.stream().map(CompletableFuture::join).collect(Collectors.toList());
 

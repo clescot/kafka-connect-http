@@ -14,9 +14,4 @@ public class OkHttpClientFactory implements HttpClientFactory<Request, Response>
         return new OkHttpClient(config,executorService);
     }
 
-
-    @Override
-    public HttpClient<Request, Response> build(Map<String, String> config) {
-        return new OkHttpClient(config);
-    }
 }
