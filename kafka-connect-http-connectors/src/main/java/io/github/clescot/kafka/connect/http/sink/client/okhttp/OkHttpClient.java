@@ -15,6 +15,7 @@ import javax.net.ssl.*;
 import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
 
 import static io.github.clescot.kafka.connect.http.sink.HttpSinkConfigDefinition.*;
@@ -25,8 +26,15 @@ public class OkHttpClient extends AbstractHttpClient<Request, Response> {
     private Logger LOGGER = LoggerFactory.getLogger(OkHttpClient.class);
 
     public OkHttpClient(Map<String, String> config) {
+        this(config,null);
+    }
+    public OkHttpClient(Map<String, String> config, ExecutorService executorService) {
         super(config);
         okhttp3.OkHttpClient.Builder httpClientBuilder = new okhttp3.OkHttpClient.Builder();
+        if(executorService!=null){
+            Dispatcher dispatcher = new Dispatcher(executorService);
+            httpClientBuilder.dispatcher(dispatcher);
+        }
         //protocols
         if(config.containsKey(HTTPCLIENT_DEFAULT_PROTOCOLS)) {
             String protocolNames = config.get(HTTPCLIENT_DEFAULT_PROTOCOLS);

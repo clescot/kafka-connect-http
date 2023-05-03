@@ -506,6 +506,156 @@ public class HttpSinkTaskTest {
             assertThat(elapsedMillis).isLessThan(2800);
 
         }
+ @Test
+        @DisplayName("test with multiple http requests with slow responses with AHC implementation with fixed thread pool, expected ok")
+        public void test_put_with_latencies_and_ahc_implementation_and_fixed_thread_pool(){
+            //given
+            WireMockRuntimeInfo wmRuntimeInfo = wmHttp.getRuntimeInfo();
+
+            Map<String, String> settings = Maps.newHashMap();
+            settings.put(HTTP_CLIENT_DEFAULT_RATE_LIMITER_MAX_EXECUTIONS,"100");
+            settings.put(HTTPCLIENT_IMPLEMENTATION,AHC_IMPLEMENTATION);
+            settings.put(HTTP_CLIENT_ASYNC_FIXED_THREAD_POOL_SIZE,"4");
+
+            httpSinkTask.start(settings);
+
+
+            //init sinkRecord
+            List<SinkRecord> records = Lists.newArrayList();
+            List<Header> headers = Lists.newArrayList();
+            SinkRecord sinkRecord1 = new SinkRecord("myTopic", 0, Schema.STRING_SCHEMA, "key", Schema.STRING_SCHEMA,
+                    getLocalHttpRequestAsStringWithPath(wmRuntimeInfo.getHttpPort(),"/path1"),
+                    -1, System.currentTimeMillis(), TimestampType.CREATE_TIME, headers);
+            records.add(sinkRecord1);
+            SinkRecord sinkRecord2 = new SinkRecord("myTopic", 0, Schema.STRING_SCHEMA, "key", Schema.STRING_SCHEMA,
+                    getLocalHttpRequestAsStringWithPath(wmRuntimeInfo.getHttpPort(),"/path2"),
+                    -1, System.currentTimeMillis(), TimestampType.CREATE_TIME, headers);
+            records.add(sinkRecord2);
+            SinkRecord sinkRecord3 = new SinkRecord("myTopic", 0, Schema.STRING_SCHEMA, "key", Schema.STRING_SCHEMA,
+                    getLocalHttpRequestAsStringWithPath(wmRuntimeInfo.getHttpPort(),"/path3"),
+                    -1, System.currentTimeMillis(), TimestampType.CREATE_TIME, headers);
+            records.add(sinkRecord3);
+
+            //define the http Mock Server interaction
+            WireMock wireMock = wmRuntimeInfo.getWireMock();
+            String bodyResponse = "{\"result\":\"pong\"}";
+            wireMock
+                    .register(WireMock.post("/path1")
+                            .willReturn(WireMock.aResponse()
+                                    .withHeader("Content-Type","application/json")
+                                    .withBody(bodyResponse)
+                                    .withStatus(200)
+                                    .withStatusMessage("OK")
+                                    .withFixedDelay(1000)
+                            )
+                    );
+            wireMock
+                    .register(WireMock.post("/path2")
+                            .willReturn(WireMock.aResponse()
+                                    .withHeader("Content-Type","application/json")
+                                    .withBody(bodyResponse)
+                                    .withStatus(200)
+                                    .withStatusMessage("OK")
+                                    .withFixedDelay(1000)
+                            )
+                    );
+            wireMock
+                    .register(WireMock.post("/path3")
+                            .willReturn(WireMock.aResponse()
+                                    .withHeader("Content-Type","application/json")
+                                    .withBody(bodyResponse)
+                                    .withStatus(200)
+                                    .withStatusMessage("OK")
+                                    .withFixedDelay(1000)
+                            )
+                    );
+            //when
+            Stopwatch stopwatch = Stopwatch.createStarted();
+            httpSinkTask.put(records);
+            stopwatch.stop();
+            long elapsedMillis = stopwatch.elapsed(TimeUnit.MILLISECONDS);
+            LOGGER.info("put method execution time :'{}' ms",elapsedMillis);
+            //then
+            assertThat(elapsedMillis).isLessThan(2800);
+
+        }
+
+        @Test
+        @DisplayName("test with multiple http requests with slow responses with OKHttp implementation and fixed thread pool, expected ok")
+        public void test_put_with_latencies_and_ok_http_implementation_with_fixed_thread_pool(){
+
+            int availableProcessors = Runtime.getRuntime().availableProcessors();
+            LOGGER.info("availableProcessors:{}",availableProcessors);
+            //given
+            WireMockRuntimeInfo wmRuntimeInfo = wmHttp.getRuntimeInfo();
+
+            Map<String, String> settings = Maps.newHashMap();
+            settings.put(HTTP_CLIENT_DEFAULT_RATE_LIMITER_MAX_EXECUTIONS,"100");
+            settings.put(HTTPCLIENT_IMPLEMENTATION,OKHTTP_IMPLEMENTATION);
+            settings.put(HTTP_CLIENT_ASYNC_FIXED_THREAD_POOL_SIZE,"4");
+            httpSinkTask.start(settings);
+
+
+            //init sinkRecord
+            List<SinkRecord> records = Lists.newArrayList();
+            List<Header> headers = Lists.newArrayList();
+            SinkRecord sinkRecord1 = new SinkRecord("myTopic", 0, Schema.STRING_SCHEMA, "key", Schema.STRING_SCHEMA,
+                    getLocalHttpRequestAsStringWithPath(wmRuntimeInfo.getHttpPort(),"/path1"),
+                    -1, System.currentTimeMillis(), TimestampType.CREATE_TIME, headers);
+            records.add(sinkRecord1);
+            SinkRecord sinkRecord2 = new SinkRecord("myTopic", 0, Schema.STRING_SCHEMA, "key", Schema.STRING_SCHEMA,
+                    getLocalHttpRequestAsStringWithPath(wmRuntimeInfo.getHttpPort(),"/path2"),
+                    -1, System.currentTimeMillis(), TimestampType.CREATE_TIME, headers);
+            records.add(sinkRecord2);
+            SinkRecord sinkRecord3 = new SinkRecord("myTopic", 0, Schema.STRING_SCHEMA, "key", Schema.STRING_SCHEMA,
+                    getLocalHttpRequestAsStringWithPath(wmRuntimeInfo.getHttpPort(),"/path3"),
+                    -1, System.currentTimeMillis(), TimestampType.CREATE_TIME, headers);
+            records.add(sinkRecord3);
+
+            //define the http Mock Server interaction
+            WireMock wireMock = wmRuntimeInfo.getWireMock();
+            String bodyResponse = "{\"result\":\"pong\"}";
+            wireMock
+                    .register(WireMock.post("/path1")
+                            .willReturn(WireMock.aResponse()
+                                    .withHeader("Content-Type","application/json")
+                                    .withBody(bodyResponse)
+                                    .withStatus(200)
+                                    .withStatusMessage("OK")
+                                    .withFixedDelay(1000)
+                            )
+                    );
+            wireMock
+                    .register(WireMock.post("/path2")
+                            .willReturn(WireMock.aResponse()
+                                    .withHeader("Content-Type","application/json")
+                                    .withBody(bodyResponse)
+                                    .withStatus(200)
+                                    .withStatusMessage("OK")
+                                    .withFixedDelay(1000)
+                            )
+                    );
+            wireMock
+                    .register(WireMock.post("/path3")
+                            .willReturn(WireMock.aResponse()
+                                    .withHeader("Content-Type","application/json")
+                                    .withBody(bodyResponse)
+                                    .withStatus(200)
+                                    .withStatusMessage("OK")
+                                    .withFixedDelay(1000)
+                            )
+                    );
+            //when
+            Stopwatch stopwatch = Stopwatch.createStarted();
+
+            httpSinkTask.put(records);
+            stopwatch.stop();
+            long elapsedMillis = stopwatch.elapsed(TimeUnit.MILLISECONDS);
+            LOGGER.info("put method execution time :'{}' ms",elapsedMillis);
+            //then
+            assertThat(elapsedMillis).isLessThan(2800);
+
+        }
 
 
     }
@@ -690,7 +840,7 @@ public class HttpSinkTaskTest {
         public void test_is_not_success_with_200_by_configuration() {
             HttpExchange httpExchange = getDummyHttpExchange();
             Map<String, String> settings = Maps.newHashMap();
-            settings.put(HTTP_CLIENT_DEFAULT_SUCCESS_RESPONSE_CODE_REGEX, "^20[1-5]$");
+            settings.put(HTTPCLIENT_DEFAULT_SUCCESS_RESPONSE_CODE_REGEX, "^20[1-5]$");
             httpSinkTask.start(settings);
             boolean success = httpSinkTask.isSuccess(httpExchange);
             assertThat(success).isFalse();

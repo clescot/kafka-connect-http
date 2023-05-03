@@ -95,8 +95,8 @@ public class HttpSinkConfigDefinition {
     public static final String HTTPCLIENT_SSL_TRUSTSTORE_ALGORITHM = "httpclient.ssl.truststore.algorithm";
     public static final String HTTPCLIENT_SSL_TRUSTSTORE_ALGORITHM_DOC = "the standard name of the requested algorithm. See the KeyManagerFactory section in the Java Security Standard Algorithm Names Specification for information about standard algorithm names.";
 
-    public static final String HTTP_CLIENT_DEFAULT_SUCCESS_RESPONSE_CODE_REGEX = "httpclient.default.success.response.code.regex";
-    public static final String HTTP_CLIENT_DEFAULT_SUCCESS_RESPONSE_CODE_REGEX_DOC = "default regex which decide if the request is a success or not, based on the response status code";
+    public static final String HTTPCLIENT_DEFAULT_SUCCESS_RESPONSE_CODE_REGEX = "httpclient.default.success.response.code.regex";
+    public static final String HTTPCLIENT_DEFAULT_SUCCESS_RESPONSE_CODE_REGEX_DOC = "default regex which decide if the request is a success or not, based on the response status code";
     //by default, we don't resend any http call with a response between 100 and 499
     // 1xx is for protocol information (100 continue for example),
     // 2xx is for success,
@@ -136,7 +136,7 @@ public class HttpSinkConfigDefinition {
                 .define(HTTPCLIENT_DEFAULT_READ_TIMEOUT, ConfigDef.Type.STRING, null, ConfigDef.Importance.MEDIUM, HTTPCLIENT_DEFAULT_READ_TIMEOUT_DOC)
                 .define(HTTPCLIENT_DEFAULT_WRITE_TIMEOUT, ConfigDef.Type.STRING, null, ConfigDef.Importance.MEDIUM, HTTPCLIENT_DEFAULT_WRITE_TIMEOUT_DOC)
                 //retry settings
-                .define(HTTP_CLIENT_DEFAULT_SUCCESS_RESPONSE_CODE_REGEX, ConfigDef.Type.STRING, HTTP_CLIENT_DEFAULT_DEFAULT_SUCCESS_RESPONSE_CODE_REGEX, ConfigDef.Importance.LOW, HTTP_CLIENT_DEFAULT_SUCCESS_RESPONSE_CODE_REGEX_DOC)
+                .define(HTTPCLIENT_DEFAULT_SUCCESS_RESPONSE_CODE_REGEX, ConfigDef.Type.STRING, HTTP_CLIENT_DEFAULT_DEFAULT_SUCCESS_RESPONSE_CODE_REGEX, ConfigDef.Importance.LOW, HTTPCLIENT_DEFAULT_SUCCESS_RESPONSE_CODE_REGEX_DOC)
                 .define(HTTP_CLIENT_DEFAULT_RETRY_RESPONSE_CODE_REGEX, ConfigDef.Type.STRING, DEFAULT_DEFAULT_RETRY_RESPONSE_CODE_REGEX, ConfigDef.Importance.LOW, DEFAULT_RETRY_RESPONSE_CODE_REGEX_DOC)
                 .define(HTTP_CLIENT_DEFAULT_RETRIES, ConfigDef.Type.INT, DEFAULT_RETRIES_VALUE, ConfigDef.Importance.MEDIUM, HTTP_CLIENT_DEFAULT_RETRIES_DOC)
                 .define(HTTP_CLIENT_DEFAULT_RETRY_DELAY_IN_MS, ConfigDef.Type.LONG, DEFAULT_RETRY_DELAY_IN_MS_VALUE, ConfigDef.Importance.MEDIUM, HTTP_CLIENT_DEFAULT_RETRY_DELAY_IN_MS_DOC)

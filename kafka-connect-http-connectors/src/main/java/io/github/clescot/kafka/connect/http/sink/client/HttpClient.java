@@ -36,7 +36,6 @@ public interface HttpClient<Req, Res> {
     Logger LOGGER = LoggerFactory.getLogger(HttpClient.class);
 
 
-
     default HttpExchange buildHttpExchange(HttpRequest httpRequest,
                                            HttpResponse httpResponse,
                                            Stopwatch stopwatch,
@@ -62,6 +61,7 @@ public interface HttpClient<Req, Res> {
 
     /**
      * convert an {@link HttpRequest} into a native (from the implementation) request.
+     *
      * @param httpRequest
      * @return native request.
      */
@@ -72,31 +72,33 @@ public interface HttpClient<Req, Res> {
 
         Stopwatch stopwatch = Stopwatch.createStarted();
         CompletableFuture<Res> response;
-            LOGGER.info("httpRequest: {}", httpRequest);
-            Req request = buildRequest(httpRequest);
-            LOGGER.info("native request: {}", request);
-            OffsetDateTime now = OffsetDateTime.now(ZoneId.of(UTC_ZONE_ID));
-            response = nativeCall(request);
-        Preconditions.checkNotNull(response,"response is null");
+        LOGGER.info("httpRequest: {}", httpRequest);
+        Req request = buildRequest(httpRequest);
+        LOGGER.info("native request: {}", request);
+        OffsetDateTime now = OffsetDateTime.now(ZoneId.of(UTC_ZONE_ID));
+        response = nativeCall(request);
+        Preconditions.checkNotNull(response, "response is null");
         LOGGER.info("native response: {}", response);
-            stopwatch.stop();
-            return response.thenApply(this::buildResponse)
-                    .thenApply(myResponse->{
-                        LOGGER.info("httpResponse: {}", myResponse);
-                        LOGGER.info("duration: {}ms", stopwatch.elapsed(TimeUnit.MILLISECONDS));
-                        return buildHttpExchange(httpRequest, myResponse, stopwatch, now, attempts,myResponse.getStatusCode()<400?SUCCESS:FAILURE);
-                    }
-            );
+        return response.thenApply(this::buildResponse)
+                .thenApply(myResponse -> {
+                            stopwatch.stop();
+                            LOGGER.info("httpResponse: {}", myResponse);
+                            LOGGER.info("duration: {}ms", stopwatch.elapsed(TimeUnit.MILLISECONDS));
+                            return buildHttpExchange(httpRequest, myResponse, stopwatch, now, attempts, myResponse.getStatusCode() < 400 ? SUCCESS : FAILURE);
+                        }
+                );
 
     }
 
     /**
      * convert a native response (from the implementation) to an {@link HttpResponse}.
+     *
      * @param response native response
      * @return HttpResponse
      */
 
     HttpResponse buildResponse(Res response);
+
     CompletableFuture<Res> nativeCall(Req request);
 
     static TrustManagerFactory getTrustManagerFactory(String trustStorePath,

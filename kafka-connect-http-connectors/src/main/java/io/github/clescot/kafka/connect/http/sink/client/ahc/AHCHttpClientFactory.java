@@ -26,6 +26,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Properties;
+import java.util.concurrent.ExecutorService;
 import java.util.stream.Collectors;
 
 import static io.github.clescot.kafka.connect.http.sink.HttpSinkConfigDefinition.*;
@@ -148,8 +149,13 @@ public class AHCHttpClientFactory implements HttpClientFactory<Request, Response
 
 
     @Override
+    public HttpClient<Request, Response> build(Map<String, String> config,ExecutorService executorService) {
+            //executorService is not used for AHC : we cannot set an executorService nor a thread pool to AHC
+            return this.build(config);
+    }
+    @Override
     public HttpClient<Request, Response> build(Map<String, String> config) {
-            //TODO handle meterRegistry
+            //executorService is not used for AHC : we cannot set an executorService nor a thread pool to AHC
             return new AHCHttpClient(getAsyncHttpClient(config));
     }
 }

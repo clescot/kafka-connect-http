@@ -74,7 +74,7 @@ public class HttpSinkConnectorConfig extends AbstractConfig {
             Preconditions.checkNotNull(value,"'"+headerName+"' is not configured as a parameter.");
             staticRequestHeaders.put(headerName, Lists.newArrayList(value));
         }
-        this.defaultSuccessResponseCodeRegex = getString(HTTP_CLIENT_DEFAULT_SUCCESS_RESPONSE_CODE_REGEX);
+        this.defaultSuccessResponseCodeRegex = getString(HTTPCLIENT_DEFAULT_SUCCESS_RESPONSE_CODE_REGEX);
         this.defaultRetryResponseCodeRegex = getString(HTTP_CLIENT_DEFAULT_RETRY_RESPONSE_CODE_REGEX);
         String httpClientImplementation = Optional.ofNullable(getString(HTTPCLIENT_IMPLEMENTATION)).orElse(OKHTTP_IMPLEMENTATION);
         if(AHC_IMPLEMENTATION.equalsIgnoreCase(httpClientImplementation)){
