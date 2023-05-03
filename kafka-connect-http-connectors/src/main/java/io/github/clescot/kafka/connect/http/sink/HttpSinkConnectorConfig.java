@@ -20,8 +20,8 @@ import static io.github.clescot.kafka.connect.http.sink.HttpSinkConfigDefinition
 
 public class HttpSinkConnectorConfig extends AbstractConfig {
     private static final Logger LOGGER = LoggerFactory.getLogger(HttpSinkConnectorConfig.class);
-    private static final String OKHTTP_IMPLEMENTATION = "okhttp";
-    private static final String AHC_IMPLEMENTATION = "ahc";
+    public static final String OKHTTP_IMPLEMENTATION = "okhttp";
+    public static final String AHC_IMPLEMENTATION = "ahc";
     private final String defaultSuccessResponseCodeRegex;
     private final String defaultRetryResponseCodeRegex;
     private final String queueName;
@@ -41,13 +41,14 @@ public class HttpSinkConnectorConfig extends AbstractConfig {
     private final int pollDelayRegistrationOfQueueConsumerInMs;
     private final int pollIntervalRegistrationOfQueueConsumerInMs;
     private final String httpClientFactoryClass;
+    private final Integer customFixedThreadpoolSize;
 
     public HttpSinkConnectorConfig(Map<?, ?> originals) {
         this(HttpSinkConfigDefinition.config(), originals);
     }
 
     public HttpSinkConnectorConfig(ConfigDef configDef, Map<?, ?> originals){
-        super(configDef,originals);
+        super(configDef,originals,LOGGER.isDebugEnabled());
         this.queueName = Optional.ofNullable(getString(ConfigConstants.QUEUE_NAME)).orElse(QueueFactory.DEFAULT_QUEUE_NAME);
         if(QueueFactory.queueMapIsEmpty()){
             LOGGER.warn("no pre-existing queue exists. this HttpSourceConnector has created a '{}' one. It needs to consume a queue filled with a SinkConnector. Ignore this message if a SinkConnector will be created after this one.",queueName);
@@ -73,7 +74,7 @@ public class HttpSinkConnectorConfig extends AbstractConfig {
             Preconditions.checkNotNull(value,"'"+headerName+"' is not configured as a parameter.");
             staticRequestHeaders.put(headerName, Lists.newArrayList(value));
         }
-        this.defaultSuccessResponseCodeRegex = getString(HTTP_CLIENT_DEFAULT_SUCCESS_RESPONSE_CODE_REGEX);
+        this.defaultSuccessResponseCodeRegex = getString(HTTPCLIENT_DEFAULT_SUCCESS_RESPONSE_CODE_REGEX);
         this.defaultRetryResponseCodeRegex = getString(HTTP_CLIENT_DEFAULT_RETRY_RESPONSE_CODE_REGEX);
         String httpClientImplementation = Optional.ofNullable(getString(HTTPCLIENT_IMPLEMENTATION)).orElse(OKHTTP_IMPLEMENTATION);
         if(AHC_IMPLEMENTATION.equalsIgnoreCase(httpClientImplementation)){
@@ -84,6 +85,7 @@ public class HttpSinkConnectorConfig extends AbstractConfig {
             LOGGER.error("unknown HttpClient implementation : must be either 'ahc' or 'okhttp', but is '{}'",httpClientImplementation);
             throw new IllegalArgumentException("unknown HttpClient implementation : must be either 'ahc' or 'okhttp', but is '"+httpClientImplementation+"'");
         }
+        this.customFixedThreadpoolSize = getInt(HTTP_CLIENT_ASYNC_FIXED_THREAD_POOL_SIZE);
     }
 
     public String getQueueName() {
@@ -159,6 +161,10 @@ public class HttpSinkConnectorConfig extends AbstractConfig {
         return httpClientFactoryClass;
     }
 
+    public Integer getCustomFixedThreadpoolSize() {
+        return customFixedThreadpoolSize;
+    }
+
     @Override
     public String toString() {
         return "HttpSinkConnectorConfig{" +
@@ -177,6 +183,7 @@ public class HttpSinkConnectorConfig extends AbstractConfig {
                 ", generateMissingRequestId=" + generateMissingRequestId +
                 ", generateMissingCorrelationId=" + generateMissingCorrelationId +
                 ", maxWaitTimeRegistrationOfQueueConsumerInMs=" + maxWaitTimeRegistrationOfQueueConsumerInMs +
+                ", customFixedThreadpoolSize=" + customFixedThreadpoolSize +
                 '}';
     }
 

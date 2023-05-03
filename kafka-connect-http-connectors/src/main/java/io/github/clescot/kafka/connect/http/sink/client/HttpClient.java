@@ -1,10 +1,10 @@
 package io.github.clescot.kafka.connect.http.sink.client;
 
+import com.google.common.base.Preconditions;
+import com.google.common.base.Stopwatch;
 import io.github.clescot.kafka.connect.http.core.HttpExchange;
 import io.github.clescot.kafka.connect.http.core.HttpRequest;
 import io.github.clescot.kafka.connect.http.core.HttpResponse;
-import com.google.common.base.Preconditions;
-import com.google.common.base.Stopwatch;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -22,6 +22,7 @@ import java.security.cert.CertificateException;
 import java.time.OffsetDateTime;
 import java.time.ZoneId;
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -33,7 +34,6 @@ public interface HttpClient<Req, Res> {
     boolean SUCCESS = true;
     int ONE_HTTP_REQUEST = 1;
     Logger LOGGER = LoggerFactory.getLogger(HttpClient.class);
-
 
 
     default HttpExchange buildHttpExchange(HttpRequest httpRequest,
@@ -59,39 +59,47 @@ public interface HttpClient<Req, Res> {
     }
 
 
+    /**
+     * convert an {@link HttpRequest} into a native (from the implementation) request.
+     *
+     * @param httpRequest
+     * @return native request.
+     */
 
     Req buildRequest(HttpRequest httpRequest);
 
-    default HttpExchange call(HttpRequest httpRequest, AtomicInteger attempts) throws HttpException {
+    default CompletableFuture<HttpExchange> call(HttpRequest httpRequest, AtomicInteger attempts) throws HttpException {
 
         Stopwatch stopwatch = Stopwatch.createStarted();
-        try {
-            LOGGER.info("httpRequest: {}", httpRequest.toString());
-            Req request = buildRequest(httpRequest);
-            LOGGER.info("native request: {}", request.toString());
-            OffsetDateTime now = OffsetDateTime.now(ZoneId.of(UTC_ZONE_ID));
-            Res response = nativeCall(request);
-            LOGGER.info("native response: {}", response);
-            stopwatch.stop();
-            HttpResponse httpResponse = buildResponse(response);
-            LOGGER.info("httpResponse: {}", response);
-            LOGGER.info("duration: {}", stopwatch);
-            return buildHttpExchange(httpRequest, httpResponse, stopwatch, now, attempts,httpResponse.getStatusCode()<400?SUCCESS:FAILURE);
-        } catch (HttpException e) {
-            LOGGER.error("Failed to call web service {} ", e.getMessage());
-            throw new HttpException(e.getMessage());
-        } finally {
-            if (stopwatch.isRunning()) {
-                stopwatch.stop();
-            }
-        }
+        CompletableFuture<Res> response;
+        LOGGER.info("httpRequest: {}", httpRequest);
+        Req request = buildRequest(httpRequest);
+        LOGGER.info("native request: {}", request);
+        OffsetDateTime now = OffsetDateTime.now(ZoneId.of(UTC_ZONE_ID));
+        response = nativeCall(request);
+        Preconditions.checkNotNull(response, "response is null");
+        LOGGER.info("native response: {}", response);
+        return response.thenApply(this::buildResponse)
+                .thenApply(myResponse -> {
+                            stopwatch.stop();
+                            LOGGER.info("httpResponse: {}", myResponse);
+                            LOGGER.info("duration: {}ms", stopwatch.elapsed(TimeUnit.MILLISECONDS));
+                            return buildHttpExchange(httpRequest, myResponse, stopwatch, now, attempts, myResponse.getStatusCode() < 400 ? SUCCESS : FAILURE);
+                        }
+                );
+
     }
 
+    /**
+     * convert a native response (from the implementation) to an {@link HttpResponse}.
+     *
+     * @param response native response
+     * @return HttpResponse
+     */
 
     HttpResponse buildResponse(Res response);
-    Res nativeCall(Req request);
 
-
+    CompletableFuture<Res> nativeCall(Req request);
 
     static TrustManagerFactory getTrustManagerFactory(String trustStorePath,
                                                       char[] password,

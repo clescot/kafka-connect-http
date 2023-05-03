@@ -59,7 +59,7 @@ public abstract class AbstractHttpClient<Req, Res> implements HttpClient<Req, Re
     }
 
 
-    static KeyManagerFactory getKeyManagerFactory(String keyStorePath,
+    private static KeyManagerFactory getKeyManagerFactory(String keyStorePath,
                                                   char[] password,
                                                   @Nullable String keystoreType,
                                                   @Nullable String algorithm) {

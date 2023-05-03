@@ -1,12 +1,12 @@
 package io.github.clescot.kafka.connect.http.sink.client.ahc;
 
+import com.google.common.base.Preconditions;
+import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
 import io.github.clescot.kafka.connect.http.core.HttpRequest;
 import io.github.clescot.kafka.connect.http.core.HttpResponse;
 import io.github.clescot.kafka.connect.http.sink.client.HttpClient;
 import io.github.clescot.kafka.connect.http.sink.client.HttpException;
-import com.google.common.base.Preconditions;
-import com.google.common.collect.Lists;
-import com.google.common.collect.Maps;
 import org.asynchttpclient.*;
 import org.asynchttpclient.proxy.ProxyServer;
 import org.asynchttpclient.proxy.ProxyType;
@@ -18,12 +18,12 @@ import java.util.AbstractMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.concurrent.ExecutionException;
+import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 
 public class AHCHttpClient implements HttpClient<Request, Response> {
 
-    private final static Logger LOGGER = LoggerFactory.getLogger(AHCHttpClient.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(AHCHttpClient.class);
     public static final String PROXY_PREFIX = "proxy-";
     public static final String REALM_PREFIX = "realm-";
     private static final String WS_PROXY_HOST = "host";
@@ -66,26 +66,24 @@ public class AHCHttpClient implements HttpClient<Request, Response> {
     }
 
     @Override
-    public org.asynchttpclient.Response nativeCall(org.asynchttpclient.Request request) {
+    public CompletableFuture<Response> nativeCall(org.asynchttpclient.Request request) {
         LOGGER.debug("native call  {}",request);
         if(request.getStringData()!=null) {
             LOGGER.debug("body stringData: '{}'", new String(request.getStringData()));
         }else{
             LOGGER.debug("body stringData: null", new String(request.getStringData()));
         }
-        ListenableFuture<Response> responseListenableFuture = asyncHttpClient.executeRequest(request, asyncCompletionHandler);
-        //we cannot use the asynchronous nature of the response yet
-        try {
-            return responseListenableFuture.get();
-        } catch (InterruptedException|ExecutionException e) {
-            throw new RuntimeException(e);
-        }
+        ListenableFuture<Response> listenableFuture = asyncHttpClient.executeRequest(request, asyncCompletionHandler);
+        CompletableFuture<Response> completableFuture = listenableFuture.toCompletableFuture();
+        return completableFuture;
+
 
     }
 
 
+
     @Override
-    public org.asynchttpclient.Request buildRequest(HttpRequest httpRequest) {
+    public Request buildRequest(HttpRequest httpRequest) {
         Preconditions.checkNotNull(httpRequest, "'httpRequest' is required but null");
         Preconditions.checkNotNull(httpRequest.getHeaders(), "'headers' are required but null");
         Preconditions.checkNotNull(httpRequest.getBodyAsString(), "'body' is required but null");
@@ -130,7 +128,6 @@ public class AHCHttpClient implements HttpClient<Request, Response> {
         }
         return requestBuilder.build();
     }
-
 
 
     private void defineProxyServer(RequestBuilder requestBuilder, Map<String, String> proxyHeaders) {
@@ -211,7 +208,10 @@ public class AHCHttpClient implements HttpClient<Request, Response> {
         httpResponse.setResponseBody(response.getResponseBody());
         Map<String, List<String>> responseHeaders = responseEntries.stream()
                 .map(entry -> new AbstractMap.SimpleImmutableEntry<String, List<String>>(entry.getKey(), Lists.newArrayList(entry.getValue())))
-                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue,(l1,l2)->{
+                    l1.addAll(l2);
+                    return l1;
+                }));
         httpResponse.setResponseHeaders(responseHeaders);
         return httpResponse;
     }
