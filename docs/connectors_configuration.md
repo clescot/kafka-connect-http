@@ -19,35 +19,49 @@ every Kafka Connect Sink Connector need to define these required parameters :
 - *value.converter*
 - ....
 
-#### optional HTTP Sink connector parameters
 
-- *publish.to.in.memory.queue* : `false` by default. When set to `true`, publish HTTP interactions (request and responses)
-  are published into the in memory queue.
-- *queue.name* : if not set, `default` queue name is used, if the `publish.to.in.memory.queue` is set to `true`.
-  You can define multiple in memory queues, to permit to publish to different topics, different HTTP interactions. If
-  you set this parameter to a value different than `default`, you need to configure an HTTP source Connector listening
-  on the same queue name to avoid some OutOfMemoryErrors.
-- *wait.time.registration.queue.consumer.in.ms* : wait time for a queue consumer (Source Connector) registration. default value is 60 seconds.
-- *poll.delay.registration.queue.consumer.in.ms* : poll delay, i.e, wait time before start polling a registered consumer. default value is 2 seconds.
-- *poll.interval.registration.queue.consumer.in.ms* : poll interval, i.e, time between every poll for a registered consumer. default value is 5000 milliseconds.
-
-
-- HttpClient parameters
-  - http client 
-  - *httpclient.static.request.header.names* : list of headers names to attach to all requests. *Static* term, means that these headers
-      are not managed by initial kafka message, but are defined at the connector level and added globally. this list is divided by
-      `,` character. The connector will try to get the value to add to request by querying the config with the header name as parameter name.
-      For example, if set `static.request.header.names: param_name1,param_name2`, the connector will lookup the param_name1
-      and param_name2 parameters to get values to add. 
-  - *httpclient.generate.missing.request.id* : `false` by default. when set to `true`, generate an uuid bound to the `X-Request-ID` header.
-  - *httpclient.generate.missing.correlation.id* : `false` by default. when set to `true`, generate an uuid bound to the `X-Correlation-ID` header.
-  - *httpclient.implementation* : define which intalled library to use : either `ahc`, a.k.a async http client, or `okhttp`. default is `okhttp`.
-  - http client default connectivity parameters
+  - http client implementation settings
+    - *httpclient.implementation* : define which intalled library to use : either `ahc`, a.k.a async http client, or `okhttp`. default is `okhttp`.
     - *httpclient.default.call.timeout* : default timeout in _milliseconds_ for complete call . A value of `0` means no timeout, otherwise values must be between `1` and `Integer.MAX_VALUE`.
     - *httpclient.default.connect.timeout* : Sets the default connect timeout in _milliseconds_ for new connections. A value of `0` means no timeout, otherwise values must be between `1` and `Integer.MAX_VALUE`.
     - *httpclient.default.read.timeout* : Sets the default read timeout in _milliseconds_ for new connections. A value of `0` means no timeout, otherwise values must be between `1` and `Integer.MAX_VALUE`.
     - *httpclient.default.write.timeout* : Sets the default write timeout in _milliseconds_ for new connections. A value of `0` means no timeout, otherwise values must be between `1` and `Integer.MAX_VALUE`.
     - *httpclient.default.protocols* : protocols to use, in order of preference,divided by a comma.supported protocols in okhttp: `HTTP_1_1`,`HTTP_2`,`H2_PRIOR_KNOWLEDGE`,`QUIC`.
+  - retry setttings (**set them all or no one**), permit to define a default retry policy.
+    - *httpclient.default.success.response.code.regex* : default regex which decide if the request is a success or not, based on the response status code
+    - *httpclient.default.retry.response.code.regex* : regex which define if a retry need to be triggered, based on the response status code. default is '^[1-2][0-9][0-9]$'
+      by default, we don't resend any http call with a response between `100` and `499`.only `5xx` by default, trigger a resend
+      - `1xx` is for protocol information (100 continue for example),
+      - `2xx` is for success,
+      - `3xx` is for redirection
+      - `4xx` is for a client error
+      - `5xx` is for a server error
+    - *httpclient.default.retries* : if set with other default retry parameters, permit to define a default retry policy, which can be overriden in the httpRequest object. Define how many retries before an error is thrown
+    - *httpclient.default.retry.delay.in.ms* : if set with other default retry parameters, permit to define a default retry policy, which can be overriden in the httpRequest object. Define how long wait initially before first retry
+    - *httpclient.default.retry.max.delay.in.ms* : if set with other default retry parameters, permit to define a default retry policy, which can be overriden in the httpRequest object. Define how long max wait before retry
+    - *httpclient.default.retry.delay.factor* : if set with other default retry parameters, permit to define a default retry policy, which can be overriden in the httpRequest object. Define the factor to multiply the previous delay to define the current retry delay
+    - *httpclient.default.retry.jitter.in.ms* : if set with other default retry parameters, permit to define a default retry policy, which can be overriden in the httpRequest object.
+  - rate limiting settings
+    - *httpclient.default.rate.limiter.period.in.ms* : period of time in milliseconds, during the max execution cannot be exceeded
+    - *httpclient.default.rate.limiter.max.executions* : max executions in the period defined with the 'httpclient.default.rate.limiter.period.in.ms' parameter
+  - header settings
+    - *httpclient.static.request.header.names* : list of headers names to attach to all requests. *Static* term, means that these headers
+      are not managed by initial kafka message, but are defined at the connector level and added globally. this list is divided by
+      `,` character. The connector will try to get the value to add to request by querying the config with the header name as parameter name.
+      For example, if set `static.request.header.names: param_name1, param_name2`, the connector will lookup the param_name1
+      and param_name2 parameters to get values to add.
+    - *httpclient.generate.missing.request.id* : `false` by default. when set to `true`, generate an uuid bound to the `X-Request-ID` header.
+    - *httpclient.generate.missing.correlation.id* : `false` by default. when set to `true`, generate an uuid bound to the `X-Correlation-ID` header.
+  - in memory queue settings
+    - *publish.to.in.memory.queue* : `false` by default. When set to `true`, publish HTTP interactions (request and responses)
+      are published into the in memory queue.
+    - *queue.name* : if not set, `default` queue name is used, if the `publish.to.in.memory.queue` is set to `true`.
+      You can define multiple in memory queues, to permit to publish to different topics, different HTTP interactions. If
+      you set this parameter to a value different than `default`, you need to configure an HTTP source Connector listening
+      on the same queue name to avoid some OutOfMemoryErrors.
+    - *wait.time.registration.queue.consumer.in.ms* : wait time for a queue consumer (Source Connector) registration. default value is 60 seconds.
+    - *poll.delay.registration.queue.consumer.in.ms* : poll delay, i.e, wait time before start polling a registered consumer. default value is 2 seconds.
+    - *poll.interval.registration.queue.consumer.in.ms* : poll interval, i.e, time between every poll for a registered consumer. default value is 5000 milliseconds.
   - http client SSL parameters
     - *httpclient.ssl.skip.hostname.verification* : if set to `true`, skip hostname verification. Not set by default.
     - *httpclient.ssl.keystore.path* : file path of the custom key store.
@@ -58,19 +72,8 @@ every Kafka Connect Sink Connector need to define these required parameters :
     - *httpclient.ssl.truststore.password* : password of the custom trusted store.
     - *httpclient.ssl.truststore.type* : truststore type. can be `jks` or `pkcs12`.
     - *httpclient.ssl.truststore.algorithm* : the standard name of the requested algorithm. See the KeyManagerFactory section in the Java Security Standard Algorithm Names Specification for information about standard algorithm names.
-  - http client default retry policy parameters : these parameters (**set them all or no one**), permit to define a default retry policy, which can be overriden by parameters set at the request level.
-    - *httpclient.default.retries* : how many retries
-    - *httpclient.default.retry.delay.in.ms* : initial delay between retries
-    - *httpclient.default.retry.max.delay.in.ms* :max delay between retries
-    - *httpclient.default.retry.delay.factor* : by which number multiply the previous delay to calculate the current one
-    - *httpclient.default.retry.jitter.in.ms* : add a random factor to avoid multiple retry policies firing at the same time.
-    - *httpclient.default.retry.response.code.regex* : regex which define if a retry need to be triggered, based on the response status code.default is `^[1-2][0-9][0-9]$`.
-      by default, we don't resend any http call with a response between `100` and `499`.only `5xx` by default, trigger a resend
-      - `1xx` is for protocol information (100 continue for example),
-      - `2xx` is for success,
-      - `3xx` is for redirection 
-      - `4xx` is for a client error
-      - `5xx` is for a server error
+  - async settings
+    - *httpclient.async.fixed.thread.pool.size* : custom fixed thread pool size used to execute asynchronously http requests.
     
 #### Configuration example
 
@@ -81,7 +84,7 @@ every Kafka Connect Sink Connector need to define these required parameters :
     "config": {
     "connector.class":"sink.io.github.clescot.kafka.connect.http.HttpSinkConnector",
     "tasks.max": "1",
-    "topics":"http-request",
+    "topics":"http-request"
     }
 }
 ```
@@ -201,7 +204,7 @@ On this field, you have no actions to do.
 #### on the same kafka connect instance
 
 To exchange data, also if these Connector classes are located in the same jar, they need to be instantiated both on the same kafka connect instance,
-with the configuration explained below.
+with the configuration explained below. 
 
 #### same partitioning for topics used by HTTP sink and source connectors. 
 

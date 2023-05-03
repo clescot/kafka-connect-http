@@ -5,7 +5,7 @@
     <parent>
         <groupId>io.github.clescot</groupId>
         <artifactId>kafka-connect-http</artifactId>
-        <version>0.2.172-SNAPSHOT</version>
+        <version>0.3.1-SNAPSHOT</version>
     </parent>
     <artifactId>kafka-connect-http-core</artifactId>
     <packaging>jar</packaging>
@@ -21,6 +21,7 @@
         <dependency>
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-api</artifactId>
+            <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
@@ -66,7 +67,12 @@
             <artifactId>connect-json</artifactId>
             <scope>test</scope>
         </dependency>
-
+        <dependency>
+            <groupId>ch.qos.logback</groupId>
+            <artifactId>logback-classic</artifactId>
+            <version>1.4.7</version>
+            <scope>test</scope>
+        </dependency>
 
     </dependencies>
 </project>

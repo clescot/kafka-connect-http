@@ -5,7 +5,7 @@
     <description>a set of Kafka Connect connectors (Sink and Source), to interact with HTTP servers, linked via an in memory queue.</description>
     <groupId>io.github.clescot</groupId>
     <artifactId>kafka-connect-http</artifactId>
-    <version>0.2.172-SNAPSHOT</version>
+    <version>0.3.1-SNAPSHOT</version>
     <url>https://github.com/clescot/kafka-connect-http</url>
     <licenses>
         <license>
@@ -44,13 +44,13 @@
         <confluent.platform.version>7.3.3</confluent.platform.version>
         <failsafe.version>3.3.1</failsafe.version>
         <guava.version>31.1-jre</guava.version>
-        <jackson.version>2.14.2</jackson.version>
+        <jackson.version>2.15.0</jackson.version>
         <json.assert.version>1.5.1</json.assert.version>
         <junit.version>5.9.2</junit.version>
         <maven.compiler.source>11</maven.compiler.source>
         <maven.compiler.target>11</maven.compiler.target>
-        <mockito.version>5.3.0</mockito.version>
-        <okhttp.version>4.10.0</okhttp.version>
+        <mockito.version>5.3.1</mockito.version>
+        <okhttp.version>4.11.0</okhttp.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <project.scm.id>github</project.scm.id>
@@ -301,7 +301,19 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
                 <version>3.0.0</version>
+                <dependencies>
+                    <dependency>
+                        <groupId>me.fabriciorby</groupId>
+                        <artifactId>maven-surefire-junit5-tree-reporter</artifactId>
+                        <version>0.1.0</version>
+                    </dependency>
+                </dependencies>
                 <configuration>
+                    <reportFormat>plain</reportFormat>
+                    <consoleOutputReporter>
+                        <disable>true</disable>
+                    </consoleOutputReporter>
+                    <statelessTestsetInfoReporter implementation="org.apache.maven.plugin.surefire.extensions.junit5.JUnit5StatelessTestsetInfoTreeReporter" />
                     <excludes>
                         <exclude>**/IT*.java</exclude>
                     </excludes>
@@ -433,7 +445,7 @@
                     <plugin>
                         <groupId>org.jacoco</groupId>
                         <artifactId>jacoco-maven-plugin</artifactId>
-                        <version>0.8.9</version>
+                        <version>0.8.10</version>
                         <executions>
                             <execution>
                                 <goals>

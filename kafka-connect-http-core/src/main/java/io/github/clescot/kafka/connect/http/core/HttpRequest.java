@@ -8,10 +8,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.Serializable;
-import java.util.Base64;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
+import java.util.*;
 
 @io.confluent.kafka.schemaregistry.annotations.Schema(value = HttpRequest.SCHEMA_AS_STRING,
         refs = {})
@@ -39,6 +36,8 @@ public class HttpRequest implements Serializable {
     private List<String> bodyAsMultipart = Lists.newArrayList();
     @JsonProperty(required = true)
     private BodyType bodyType;
+
+    private Map<Class,Object> tags = Maps.newHashMap();
 
 
     public static final String SCHEMA_ID = HttpExchange.BASE_SCHEMA_ID+"http-request.json";
@@ -192,17 +191,26 @@ public class HttpRequest implements Serializable {
         this.headers = headers;
     }
 
+
+    public <T> Optional<T> getTag(Class<T> tagClass){
+        return Optional.ofNullable((T) tags.get(tagClass));
+    }
+
+    public  void putTag(Object tag){
+        tags.put(tag.getClass(),tag);
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         HttpRequest that = (HttpRequest) o;
-        return url.equals(that.url) && Objects.equals(headers, that.headers) && method.equals(that.method) && Objects.equals(bodyAsString, that.bodyAsString) && Objects.equals(bodyAsForm, that.bodyAsForm) && Objects.equals(bodyAsByteArray, that.bodyAsByteArray) && Objects.equals(bodyAsMultipart, that.bodyAsMultipart) && bodyType == that.bodyType;
+        return url.equals(that.url) && Objects.equals(headers, that.headers) && method.equals(that.method)  && Objects.equals(tags, that.tags)&& Objects.equals(bodyAsString, that.bodyAsString) && Objects.equals(bodyAsForm, that.bodyAsForm) && Objects.equals(bodyAsByteArray, that.bodyAsByteArray) && Objects.equals(bodyAsMultipart, that.bodyAsMultipart) && bodyType == that.bodyType;
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(url, headers, method, bodyAsString,bodyAsForm, bodyAsByteArray, bodyAsMultipart, bodyType);
+        return Objects.hash(url, headers, method, tags,bodyAsForm, bodyAsByteArray, bodyAsMultipart, bodyType);
     }
 
     @Override
@@ -210,6 +218,7 @@ public class HttpRequest implements Serializable {
         return "HttpRequest{" +
                 "url='" + url + '\'' +
                 ", headers=" + headers +
+                ", tags=" + tags +
                 ", method='" + method + '\'' +
                 ", bodyAsString='" + bodyAsString + '\'' +
                 ", bodyAsForm='" + bodyAsForm + '\'' +

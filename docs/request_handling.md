@@ -1,5 +1,16 @@
 # request handling
 
+## Requests are asynchronously handled
+
+to avoid any website bottleneck (slow responses), we execute http requests 
+asynchronously, with a fork/join Thread pool. By default, we use the 'common' fork/join Thread pool, provided by the java platform.
+But this pool can be exhausted by some long running http requests, and can imply some side-effects on other connectors running 
+in the same kafka connect instance.
+You can configure an optional dedicated per-connector Fixed-size thread pool, to be used to execute asynchronously http requests, 
+with the `httpclient.async.fixed.thread.pool.size` parameter.
+
+## Details
+
 ![Request handling](retry_mechanism.png)
 
 According to this request Handling schema, here are the steps involved in request handling : 

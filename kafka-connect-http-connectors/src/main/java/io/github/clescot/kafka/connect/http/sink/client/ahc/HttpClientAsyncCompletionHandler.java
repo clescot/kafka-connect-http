@@ -7,7 +7,7 @@ import org.slf4j.LoggerFactory;
 
 public class HttpClientAsyncCompletionHandler extends AsyncCompletionHandlerBase {
 
-    private final static Logger LOGGER = LoggerFactory.getLogger(HttpClientAsyncCompletionHandler.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(HttpClientAsyncCompletionHandler.class);
 
 
 

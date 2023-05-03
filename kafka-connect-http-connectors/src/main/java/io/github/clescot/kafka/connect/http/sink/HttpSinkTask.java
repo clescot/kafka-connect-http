@@ -36,19 +36,21 @@ import java.time.OffsetDateTime;
 import java.time.ZoneId;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Future;
+import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 
 public class HttpSinkTask extends SinkTask {
-    private final static Logger LOGGER = LoggerFactory.getLogger(HttpSinkTask.class);
-    private final static ObjectMapper OBJECT_MAPPER = new ObjectMapper().registerModule(new JavaTimeModule());
+    private static final Logger LOGGER = LoggerFactory.getLogger(HttpSinkTask.class);
+    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper().registerModule(new JavaTimeModule());
 
     public static final String HEADER_X_CORRELATION_ID = "X-Correlation-ID";
     public static final String HEADER_X_REQUEST_ID = "X-Request-ID";
+    public static final String SINK_RECORD_HAS_GOT_A_NULL_VALUE = "sinkRecord has got a 'null' value";
 
     private HttpClient httpClient;
     private Queue<KafkaRecord> queue;
@@ -63,9 +65,10 @@ public class HttpSinkTask extends SinkTask {
 
     private Optional<RetryPolicy<HttpExchange>> defaultRetryPolicy = Optional.empty();
 
-    private Map<String, Pattern> patternMap = Maps.newHashMap();
+    private final Map<String, Pattern> patternMap = Maps.newHashMap();
     private String defaultSuccessResponseCodeRegex;
     private String defaultRetryResponseCodeRegex;
+    private static ExecutorService executor;
 
     @Override
     public String version() {
@@ -97,6 +100,12 @@ public class HttpSinkTask extends SinkTask {
         this.generateMissingCorrelationId = httpSinkConnectorConfig.isGenerateMissingCorrelationId();
         this.defaultSuccessResponseCodeRegex = httpSinkConnectorConfig.getDefaultSuccessResponseCodeRegex();
         this.defaultRetryResponseCodeRegex = httpSinkConnectorConfig.getDefaultRetryResponseCodeRegex();
+
+        Integer customFixedThreadPoolSize = httpSinkConnectorConfig.getCustomFixedThreadpoolSize();
+        if(customFixedThreadPoolSize!=null &&executor==null){
+            executor = Executors.newFixedThreadPool(customFixedThreadPoolSize);
+        }
+
         Class<HttpClientFactory> httpClientFactoryClass;
         HttpClientFactory httpClientFactory;
         try {
@@ -107,8 +116,7 @@ public class HttpSinkTask extends SinkTask {
                  InvocationTargetException e) {
             throw new RuntimeException(e);
         }
-
-        this.httpClient = httpClientFactory.build(httpSinkConnectorConfig.originalsStrings());
+        this.httpClient = httpClientFactory.build(httpSinkConnectorConfig.originalsStrings(),executor);
         Integer defaultRetries = httpSinkConnectorConfig.getDefaultRetries();
         Long defaultRetryDelayInMs = httpSinkConnectorConfig.getDefaultRetryDelayInMs();
         Long defaultRetryMaxDelayInMs = httpSinkConnectorConfig.getDefaultRetryMaxDelayInMs();
@@ -147,70 +155,80 @@ public class HttpSinkTask extends SinkTask {
         }
         Preconditions.checkNotNull(httpClient, "httpClient is null. 'start' method must be called once before put");
 
-        for (SinkRecord sinkRecord : records) {
-            try {
-                // attempt to send record to data sink
-                process(sinkRecord);
-            } catch (Exception e) {
-                if (errantRecordReporter != null) {
-                    // Send errant record to error reporter
-                    Future<Void> future = errantRecordReporter.report(sinkRecord, e);
-                    // Optionally wait till the failure's been recorded in Kafka
-                    try {
-                        future.get();
-                    } catch (InterruptedException | ExecutionException ex) {
-                        throw new RuntimeException(ex);
+        //we submit futures to the pool
+        Stream<SinkRecord> recordStream = records.stream();
+        Stream<CompletableFuture<HttpExchange>> completableFutureStream;
+        completableFutureStream= recordStream.map(record -> process(record));
+
+        List<CompletableFuture<HttpExchange>> completableFutures = completableFutureStream.collect(Collectors.toList());
+        List<HttpExchange> httpExchanges = completableFutures.stream().map(CompletableFuture::join).collect(Collectors.toList());
+
+
+    }
+
+    private CompletableFuture<HttpExchange> process(SinkRecord sinkRecord) {
+        try {
+            if (sinkRecord.value() == null) {
+                throw new ConnectException("sinkRecord Value is null :" + sinkRecord);
+            }
+            //build HttpRequest
+            HttpRequest httpRequest = buildHttpRequest(sinkRecord);
+            HttpRequest httpRequestWithStaticHeaders = addStaticHeaders(httpRequest);
+            HttpRequest httpRequestWithTrackingHeaders = addTrackingHeaders(httpRequestWithStaticHeaders);
+            //handle Request and Response
+            return callWithRetryPolicy(sinkRecord, httpRequestWithTrackingHeaders, defaultRetryPolicy).thenApply(
+                    myHttpExchange -> {
+                        LOGGER.debug("HTTP exchange :{}", myHttpExchange);
+                        return myHttpExchange;
                     }
-                } else {
-                    // There's no error reporter, so fail
-                    throw new ConnectException("Failed on record", e);
+            );
+        } catch (Exception e) {
+            if (errantRecordReporter != null) {
+                // Send errant record to error reporter
+                Future<Void> future = errantRecordReporter.report(sinkRecord, e);
+                // Optionally wait till the failure's been recorded in Kafka
+                try {
+                    future.get();
+                    return CompletableFuture.failedFuture(e);
+                } catch (InterruptedException | ExecutionException ex) {
+                    throw new RuntimeException(ex);
                 }
+            } else {
+                // There's no error reporter, so fail
+                throw new ConnectException("Failed on record", e);
             }
         }
 
     }
 
-    private void process(SinkRecord sinkRecord) {
-        if (sinkRecord.value() == null) {
-            throw new ConnectException("sinkRecord Value is null :" + sinkRecord);
-        }
-        //build HttpRequest
-        HttpRequest httpRequest = buildHttpRequest(sinkRecord);
-        HttpRequest httpRequestWithStaticHeaders = addStaticHeaders(httpRequest);
-        HttpRequest httpRequestWithTrackingHeaders = addTrackingHeaders(httpRequestWithStaticHeaders);
-        //handle Request and Response
-        HttpExchange httpExchange = callWithRetryPolicy(sinkRecord, httpRequestWithTrackingHeaders, defaultRetryPolicy);
-        LOGGER.debug("HTTP exchange :{}", httpExchange);
-    }
-
-    private HttpExchange callWithRetryPolicy(SinkRecord sinkRecord, HttpRequest httpRequest, Optional<RetryPolicy<HttpExchange>> retryPolicyForCall) {
-        HttpExchange httpExchange = null;
+    private CompletableFuture<HttpExchange> callWithRetryPolicy(SinkRecord sinkRecord, HttpRequest httpRequest, Optional<RetryPolicy<HttpExchange>> retryPolicyForCall) {
 
         if (httpRequest != null) {
             AtomicInteger attempts = new AtomicInteger();
             try {
                 attempts.addAndGet(HttpClient.ONE_HTTP_REQUEST);
                 if (retryPolicyForCall.isPresent()) {
-                    httpExchange = Failsafe.with(List.of(retryPolicyForCall.get()))
-                            .get(() -> {
-                                HttpExchange httpExchange1 = callAndPublish(sinkRecord, httpRequest, attempts);
-                                return handleRetry(httpExchange1);
-                            });
+                    RetryPolicy<HttpExchange> retryPolicy = retryPolicyForCall.get();
+                    CompletableFuture<HttpExchange> httpExchangeFuture = callAndPublish(sinkRecord, httpRequest, attempts)
+                            .thenApply(this::handleRetry);
+                    return Failsafe.with(List.of(retryPolicy))
+                            .getStageAsync(()->httpExchangeFuture);
                 } else {
                     return callAndPublish(sinkRecord, httpRequest, attempts);
                 }
             } catch (Throwable throwable) {
                 LOGGER.error("Failed to call web service after {} retries with error({}). message:{} ", attempts, throwable,
                         throwable.getMessage());
-                return httpClient.buildHttpExchange(
+                return CompletableFuture.supplyAsync(() -> httpClient.buildHttpExchange(
                         httpRequest,
                         new HttpResponse(HttpClient.SERVER_ERROR_STATUS_CODE, String.valueOf(throwable.getMessage())),
                         Stopwatch.createUnstarted(), OffsetDateTime.now(ZoneId.of(HttpClient.UTC_ZONE_ID)),
                         attempts,
-                        HttpClient.FAILURE);
+                        HttpClient.FAILURE));
             }
+        }else{
+            throw new IllegalArgumentException("httpRequest is null");
         }
-        return httpExchange;
     }
 
     private HttpExchange handleRetry(HttpExchange httpExchange) {
@@ -242,7 +260,7 @@ public class HttpSinkTask extends SinkTask {
         return matcher.matches();
     }
 
-    private HttpExchange callWithThrottling(HttpRequest httpRequest, AtomicInteger attempts) {
+    private CompletableFuture<HttpExchange> callWithThrottling(HttpRequest httpRequest, AtomicInteger attempts) {
         try {
             this.defaultRateLimiter.acquirePermits(HttpClient.ONE_HTTP_REQUEST);
             LOGGER.debug("permits acquired request:'{}'", httpRequest);
@@ -254,19 +272,22 @@ public class HttpSinkTask extends SinkTask {
     }
 
 
-    private HttpExchange callAndPublish(SinkRecord sinkRecord, HttpRequest httpRequest, AtomicInteger attempts) {
-        HttpExchange httpExchange = callWithThrottling(httpRequest, attempts);
-        //TODO add specific pattern per site
-        boolean success = isSuccess(httpExchange);
-        httpExchange.setSuccess(success);
-        //publish eventually to 'in memory' queue
-        if (httpSinkConnectorConfig.isPublishToInMemoryQueue()) {
-            LOGGER.debug("http exchange published to queue '{}':{}", queueName, httpExchange);
-            queue.offer(new KafkaRecord(sinkRecord.headers(), sinkRecord.keySchema(), sinkRecord.key(), httpExchange));
-        } else {
-            LOGGER.debug("http exchange NOT published to queue '{}':{}", queueName, httpExchange);
-        }
-        return httpExchange;
+    private CompletableFuture<HttpExchange> callAndPublish(SinkRecord sinkRecord, HttpRequest httpRequest, AtomicInteger attempts) {
+        return callWithThrottling(httpRequest, attempts)
+                .thenApply(myHttpExchange -> {
+                    //TODO add specific pattern per site
+                    boolean success = isSuccess(myHttpExchange);
+                    myHttpExchange.setSuccess(success);
+                    //publish eventually to 'in memory' queue
+                    if (httpSinkConnectorConfig.isPublishToInMemoryQueue()) {
+                        LOGGER.debug("http exchange published to queue '{}':{}", queueName, myHttpExchange);
+                        queue.offer(new KafkaRecord(sinkRecord.headers(), sinkRecord.keySchema(), sinkRecord.key(), myHttpExchange));
+                    } else {
+                        LOGGER.debug("http exchange NOT published to queue '{}':{}", queueName, myHttpExchange);
+                    }
+                    return myHttpExchange;
+                });
+
     }
 
     protected boolean isSuccess(HttpExchange httpExchange) {
@@ -278,8 +299,8 @@ public class HttpSinkTask extends SinkTask {
 
     protected HttpRequest addTrackingHeaders(HttpRequest httpRequest) {
         if (httpRequest == null) {
-            LOGGER.warn("sinkRecord has got a 'null' value");
-            throw new ConnectException("sinkRecord has got a 'null' value");
+            LOGGER.warn(SINK_RECORD_HAS_GOT_A_NULL_VALUE);
+            throw new ConnectException(SINK_RECORD_HAS_GOT_A_NULL_VALUE);
         }
         Map<String, List<String>> headers = Optional.ofNullable(httpRequest.getHeaders()).orElse(Maps.newHashMap());
 
@@ -302,8 +323,8 @@ public class HttpSinkTask extends SinkTask {
 
     protected HttpRequest buildHttpRequest(SinkRecord sinkRecord) {
         if (sinkRecord == null || sinkRecord.value() == null) {
-            LOGGER.warn("sinkRecord has got a 'null' value");
-            throw new ConnectException("sinkRecord has got a 'null' value");
+            LOGGER.warn(SINK_RECORD_HAS_GOT_A_NULL_VALUE);
+            throw new ConnectException(SINK_RECORD_HAS_GOT_A_NULL_VALUE);
         }
         HttpRequest httpRequest = null;
         Object value = sinkRecord.value();
@@ -350,7 +371,7 @@ public class HttpSinkTask extends SinkTask {
             if (sinkValue != null) {
                 LOGGER.error("sink value class is '{}'", sinkValue.getClass().getName());
             }
-            
+
             LOGGER.error("error in sinkRecord's structure : " + sinkRecord, connectException);
             if (errantRecordReporter != null) {
                 errantRecordReporter.report(sinkRecord, connectException);
