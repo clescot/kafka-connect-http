@@ -22,6 +22,8 @@ import static io.github.clescot.kafka.connect.http.sink.HttpSinkConfigDefinition
 
 public class OkHttpClient extends AbstractHttpClient<Request, Response> {
     private static final String PROTOCOL_SEPARATOR = ",";
+    public static final String OKHTTP_CONNECTION_POOL_MAX_IDLE_CONNECTIONS = "okhttp.connection.pool.max.idle.connections";
+    public static final String OKHTTP_CONNECTION_POOL_KEEP_ALIVE_DURATION = "okhttp.connection.pool.keep.alive.duration";
     private final okhttp3.OkHttpClient client;
     private final Logger LOGGER = LoggerFactory.getLogger(OkHttpClient.class);
 
@@ -32,10 +34,12 @@ public class OkHttpClient extends AbstractHttpClient<Request, Response> {
             Dispatcher dispatcher = new Dispatcher(executorService);
             httpClientBuilder.dispatcher(dispatcher);
         }
-        int maxIdleConnections = 10;
-        long keepAliveDuration=1000L;
-        ConnectionPool connectionPool = new ConnectionPool(maxIdleConnections,keepAliveDuration,TimeUnit.MILLISECONDS);
-        httpClientBuilder.connectionPool(connectionPool);
+        int maxIdleConnections = Integer.parseInt(config.getOrDefault(OKHTTP_CONNECTION_POOL_MAX_IDLE_CONNECTIONS,"0"));
+        long keepAliveDuration=Long.parseLong(config.getOrDefault(OKHTTP_CONNECTION_POOL_KEEP_ALIVE_DURATION,"0"));
+        if(maxIdleConnections>0&&keepAliveDuration>0) {
+            ConnectionPool connectionPool = new ConnectionPool(maxIdleConnections, keepAliveDuration, TimeUnit.MILLISECONDS);
+            httpClientBuilder.connectionPool(connectionPool);
+        }
         //protocols
         if(config.containsKey(HTTPCLIENT_DEFAULT_PROTOCOLS)) {
             String protocolNames = config.get(HTTPCLIENT_DEFAULT_PROTOCOLS);
