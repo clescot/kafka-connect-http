@@ -116,6 +116,7 @@
             <groupId>io.confluent</groupId>
             <artifactId>kafka-json-schema-serializer</artifactId>
             <scope>test</scope>
+            <version>${confluent.platform.version}</version>
         </dependency>
         <dependency>
             <groupId>io.confluent</groupId>
@@ -146,7 +147,7 @@
         <dependency>
             <groupId>io.confluent</groupId>
             <artifactId>kafka-schema-serializer</artifactId>
-            <version>7.3.3</version>
+            <version>${confluent.platform.version}</version>
             <scope>test</scope>
         </dependency>
         <dependency>
