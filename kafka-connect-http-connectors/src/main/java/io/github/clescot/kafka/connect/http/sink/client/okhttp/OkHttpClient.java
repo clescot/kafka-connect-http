@@ -18,12 +18,28 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
 
-import static io.github.clescot.kafka.connect.http.sink.HttpSinkConfigDefinition.*;
-
 public class OkHttpClient extends AbstractHttpClient<Request, Response> {
     private static final String PROTOCOL_SEPARATOR = ",";
     public static final String OKHTTP_CONNECTION_POOL_MAX_IDLE_CONNECTIONS = "okhttp.connection.pool.max.idle.connections";
     public static final String OKHTTP_CONNECTION_POOL_KEEP_ALIVE_DURATION = "okhttp.connection.pool.keep.alive.duration";
+    //protocols to use, in order of preference,divided by a comma.supported protocols in okhttp: HTTP_1_1,HTTP_2,H2_PRIOR_KNOWLEDGE,QUIC
+    public static final String OKHTTP_DEFAULT_PROTOCOLS = "okhttp.default.protocols";
+
+    //Sets the default connect timeout in milliseconds for new connections. A value of 0 means no timeout, otherwise values must be between 1 and Integer.MAX_VALUE.
+    public static final String OKHTTP_DEFAULT_CONNECT_TIMEOUT = "okhttp.default.connect.timeout";
+    //default timeout in milliseconds for complete call . A value of 0 means no timeout, otherwise values must be between 1 and Integer.MAX_VALUE.
+    public static final String OKHTTP_DEFAULT_CALL_TIMEOUT = "okhttp.default.call.timeout";
+
+    //Sets the default read timeout in milliseconds for new connections. A value of 0 means no timeout, otherwise values must be between 1 and Integer.MAX_VALUE.
+    public static final String OKHTTP_DEFAULT_READ_TIMEOUT = "okhttp.read.timeout";
+
+    //Sets the default write timeout in milliseconds for new connections. A value of 0 means no timeout, otherwise values must be between 1 and Integer.MAX_VALUE.
+    public static final String HTTPCLIENT_DEFAULT_WRITE_TIMEOUT = "okhttp.write.timeout";
+
+
+    //if set to 'true', skip hostname verification. Not set by default.
+    public static final String OKHTTP_SSL_SKIP_HOSTNAME_VERIFICATION = "okhttp.ssl.skip.hostname.verification";
+
     private final okhttp3.OkHttpClient client;
     private final Logger LOGGER = LoggerFactory.getLogger(OkHttpClient.class);
 
@@ -41,8 +57,8 @@ public class OkHttpClient extends AbstractHttpClient<Request, Response> {
             httpClientBuilder.connectionPool(connectionPool);
         }
         //protocols
-        if(config.containsKey(HTTPCLIENT_DEFAULT_PROTOCOLS)) {
-            String protocolNames = config.get(HTTPCLIENT_DEFAULT_PROTOCOLS);
+        if(config.containsKey(OKHTTP_DEFAULT_PROTOCOLS)) {
+            String protocolNames = config.get(OKHTTP_DEFAULT_PROTOCOLS);
             List<Protocol> protocols = Lists.newArrayList();
             List<String> strings = Lists.newArrayList(protocolNames.split(PROTOCOL_SEPARATOR));
             for (String protocolName : strings) {
@@ -62,32 +78,32 @@ public class OkHttpClient extends AbstractHttpClient<Request, Response> {
                     httpClientBuilder.sslSocketFactory(ssl, (X509TrustManager) trustManagers[0]);
                 }
             }
-            if(config.containsKey(HTTPCLIENT_SSL_SKIP_HOSTNAME_VERIFICATION) && Boolean.parseBoolean(config.get(HTTPCLIENT_SSL_SKIP_HOSTNAME_VERIFICATION))){
+            if(config.containsKey(OKHTTP_SSL_SKIP_HOSTNAME_VERIFICATION) && Boolean.parseBoolean(config.get(OKHTTP_SSL_SKIP_HOSTNAME_VERIFICATION))){
                 httpClientBuilder.hostnameVerifier((hostname, session) -> true);
             }
         }
 
         //call timeout
-        if(config.containsKey(HTTPCLIENT_DEFAULT_CALL_TIMEOUT)) {
-            int callTimeout = Integer.parseInt(config.get(HTTPCLIENT_DEFAULT_CALL_TIMEOUT));
+        if(config.containsKey(OKHTTP_DEFAULT_CALL_TIMEOUT)) {
+            int callTimeout = Integer.parseInt(config.get(OKHTTP_DEFAULT_CALL_TIMEOUT));
             httpClientBuilder.callTimeout(callTimeout, TimeUnit.MILLISECONDS);
         }
 
         //connect timeout
-        if(config.containsKey(HTTPCLIENT_DEFAULT_CONNECT_TIMEOUT)) {
-            int connectTimeout = Integer.parseInt(config.get(HTTPCLIENT_DEFAULT_CONNECT_TIMEOUT_DOC));
+        if(config.containsKey(OKHTTP_DEFAULT_CONNECT_TIMEOUT)) {
+            int connectTimeout = Integer.parseInt(config.get(OKHTTP_DEFAULT_CONNECT_TIMEOUT));
             httpClientBuilder.connectTimeout(connectTimeout, TimeUnit.MILLISECONDS);
         }
 
         //read timeout
-        if(config.containsKey(HTTPCLIENT_DEFAULT_READ_TIMEOUT)) {
-            int readTimeout = Integer.parseInt(config.get(HTTPCLIENT_DEFAULT_READ_TIMEOUT_DOC));
+        if(config.containsKey(OKHTTP_DEFAULT_READ_TIMEOUT)) {
+            int readTimeout = Integer.parseInt(config.get(OKHTTP_DEFAULT_READ_TIMEOUT));
             httpClientBuilder.readTimeout(readTimeout, TimeUnit.MILLISECONDS);
         }
 
         //write timeout
         if(config.containsKey(HTTPCLIENT_DEFAULT_WRITE_TIMEOUT)) {
-            int writeTimeout = Integer.parseInt(config.get(HTTPCLIENT_DEFAULT_WRITE_TIMEOUT_DOC));
+            int writeTimeout = Integer.parseInt(config.get(HTTPCLIENT_DEFAULT_WRITE_TIMEOUT));
             httpClientBuilder.writeTimeout(writeTimeout, TimeUnit.MILLISECONDS);
         }
 
