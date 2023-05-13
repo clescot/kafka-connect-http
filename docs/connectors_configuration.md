@@ -68,7 +68,18 @@ every Kafka Connect Sink Connector need to define these required parameters :
     - *httpclient.ssl.truststore.algorithm* : the standard name of the requested algorithm. See the KeyManagerFactory section in the Java Security Standard Algorithm Names Specification for information about standard algorithm names.
   - async settings
     - *httpclient.async.fixed.thread.pool.size* : custom fixed thread pool size used to execute asynchronously http requests.
-    
+  - _okhttp_ (default) HTTP client implementation settings
+    - *okhttp.connection.pool.max.idle.connections* 
+    - *okhttp.connection.pool.keep.alive.duration*
+    - *okhttp.default.protocols*
+    - *okhttp.default.connect.timeout*
+    - *okhttp.default.call.timeout*
+    - *okhttp.read.timeout*
+    - *okhttp.write.timeout*
+    - *okhttp.ssl.skip.hostname.verification*
+  - _Async Http Client (AHC)_ implementation settings
+    - proxy
+
 #### Configuration example
 
 - `sink.json` example :
