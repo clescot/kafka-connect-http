@@ -13,6 +13,7 @@ import org.slf4j.LoggerFactory;
 
 import javax.net.ssl.*;
 import java.io.IOException;
+import java.net.Proxy;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
@@ -106,6 +107,7 @@ public class OkHttpClient extends AbstractHttpClient<Request, Response> {
             int writeTimeout = Integer.parseInt(config.get(HTTPCLIENT_DEFAULT_WRITE_TIMEOUT));
             httpClientBuilder.writeTimeout(writeTimeout, TimeUnit.MILLISECONDS);
         }
+        httpClientBuilder.proxyAuthenticator(proxy);
 
         client = httpClientBuilder.build();
 

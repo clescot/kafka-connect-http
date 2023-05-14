@@ -87,7 +87,7 @@ every Kafka Connect Sink Connector need to define these required parameters :
     - *org.asynchttpclient.cookie.store* (default `org.asynchttpclient.cookie.ThreadSafeCookieStore`)
     - *org.asynchttpclient.netty.timer* (default `io.netty.util.HashedWheelTimer`)
     - *org.asynchttpclient.byte.buffer.allocator* (default `io.netty.buffer.PooledByteBufAllocator`)
-    - 
+  
 
 #### Configuration example
 
