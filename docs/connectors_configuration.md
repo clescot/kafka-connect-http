@@ -66,19 +66,28 @@ every Kafka Connect Sink Connector need to define these required parameters :
     - *httpclient.ssl.truststore.password* : password of the custom trusted store.
     - *httpclient.ssl.truststore.type* : truststore type. can be `jks` or `pkcs12`.
     - *httpclient.ssl.truststore.algorithm* : the standard name of the requested algorithm. See the KeyManagerFactory section in the Java Security Standard Algorithm Names Specification for information about standard algorithm names.
-  - async settings
+  - http client async settings
     - *httpclient.async.fixed.thread.pool.size* : custom fixed thread pool size used to execute asynchronously http requests.
   - _okhttp_ (default) HTTP client implementation settings
     - *okhttp.connection.pool.max.idle.connections* 
     - *okhttp.connection.pool.keep.alive.duration*
     - *okhttp.default.protocols*
+    - *okhttp.ssl.skip.hostname.verification*
     - *okhttp.default.connect.timeout*
     - *okhttp.default.call.timeout*
     - *okhttp.read.timeout*
     - *okhttp.write.timeout*
-    - *okhttp.ssl.skip.hostname.verification*
   - _Async Http Client (AHC)_ implementation settings
-    - proxy
+    - *org.asynchttpclient.http.max.connections* :  (default `3`)
+    - *org.asynchttpclient.http.rate.limit.per.second* (default `3`)
+    - *org.asynchttpclient.http.max.wait.ms* (default `500 ms`)
+    - *org.asynchttpclient.keep.alive.class* (default `org.asynchttpclient.channel.DefaultKeepAliveStrategy`)
+    - *org.asynchttpclient.response.body.part.factory* (default `EAGER`)
+    - *org.asynchttpclient.connection.semaphore.factory* (default `org.asynchttpclient.netty.channel.DefaultConnectionSemaphoreFactory`)
+    - *org.asynchttpclient.cookie.store* (default `org.asynchttpclient.cookie.ThreadSafeCookieStore`)
+    - *org.asynchttpclient.netty.timer* (default `io.netty.util.HashedWheelTimer`)
+    - *org.asynchttpclient.byte.buffer.allocator* (default `io.netty.buffer.PooledByteBufAllocator`)
+    - 
 
 #### Configuration example
 
