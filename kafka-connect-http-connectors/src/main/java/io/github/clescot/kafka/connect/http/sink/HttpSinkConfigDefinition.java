@@ -57,24 +57,17 @@ public class HttpSinkConfigDefinition {
     private static final long DEFAULT_RETRY_JITTER_IN_MS_VALUE = 500;
 
 
-    public static final String HTTPCLIENT_DEFAULT_CALL_TIMEOUT = "httpclient.default.call.timeout";
-    public static final String HTTPCLIENT_DEFAULT_CALL_TIMEOUT_DOC = "default timeout in milliseconds for complete call . A value of 0 means no timeout, otherwise values must be between 1 and Integer.MAX_VALUE.";
 
-    public static final String HTTPCLIENT_DEFAULT_CONNECT_TIMEOUT = "httpclient.connect.timeout";
-    public static final String HTTPCLIENT_DEFAULT_CONNECT_TIMEOUT_DOC = "Sets the default connect timeout in milliseconds for new connections. A value of 0 means no timeout, otherwise values must be between 1 and Integer.MAX_VALUE.";
-    public static final String HTTPCLIENT_DEFAULT_READ_TIMEOUT = "httpclient.read.timeout";
-    public static final String HTTPCLIENT_DEFAULT_READ_TIMEOUT_DOC = "Sets the default read timeout in milliseconds for new connections. A value of 0 means no timeout, otherwise values must be between 1 and Integer.MAX_VALUE.";
 
-    public static final String HTTPCLIENT_DEFAULT_WRITE_TIMEOUT = "httpclient.write.timeout";
-    public static final String HTTPCLIENT_DEFAULT_WRITE_TIMEOUT_DOC = "Sets the default write timeout in milliseconds for new connections. A value of 0 means no timeout, otherwise values must be between 1 and Integer.MAX_VALUE.";
+
+
+
 
     public static final String HTTPCLIENT_IMPLEMENTATION = "httpclient.implementation";
     public static final String HTTPCLIENT_IMPLEMENTATION_DOC = "define which intalled library to use : either 'ahc', a.k.a async http client, or 'okhttp'. default is 'okhttp'.";
-    public static final String HTTPCLIENT_DEFAULT_PROTOCOLS = "httpclient.protocols";
-    public static final String HTTPCLIENT_DEFAULT_PROTOCOLS_DOC = "protocols to use, in order of preference,divided by a comma.supported protocols in okhttp: HTTP_1_1,HTTP_2,H2_PRIOR_KNOWLEDGE,QUIC";
 
-    public static final String HTTPCLIENT_SSL_SKIP_HOSTNAME_VERIFICATION = "httpclient.ssl.skip.hostname.verification";
-    public static final String HTTPCLIENT_SSL_SKIP_HOSTNAME_VERIFICATION_DOC = "if set to 'true', skip hostname verification. Not set by default.";
+
+
 
     public static final String HTTPCLIENT_SSL_KEYSTORE_PATH = "httpclient.ssl.keystore.path";
     public static final String HTTPCLIENT_SSL_KEYSTORE_PATH_DOC = "file path of the custom key store.";
@@ -130,11 +123,6 @@ public class HttpSinkConfigDefinition {
         return new ConfigDef()
                 //http client implementation settings
                 .define(HTTPCLIENT_IMPLEMENTATION, ConfigDef.Type.STRING, null, ConfigDef.Importance.LOW, HTTPCLIENT_IMPLEMENTATION_DOC)
-                .define(HTTPCLIENT_DEFAULT_PROTOCOLS, ConfigDef.Type.STRING, null, ConfigDef.Importance.LOW, HTTPCLIENT_DEFAULT_PROTOCOLS_DOC)
-                .define(HTTPCLIENT_DEFAULT_CALL_TIMEOUT, ConfigDef.Type.STRING, null, ConfigDef.Importance.MEDIUM, HTTPCLIENT_DEFAULT_CALL_TIMEOUT_DOC)
-                .define(HTTPCLIENT_DEFAULT_CONNECT_TIMEOUT, ConfigDef.Type.STRING, null, ConfigDef.Importance.MEDIUM, HTTPCLIENT_DEFAULT_CONNECT_TIMEOUT_DOC)
-                .define(HTTPCLIENT_DEFAULT_READ_TIMEOUT, ConfigDef.Type.STRING, null, ConfigDef.Importance.MEDIUM, HTTPCLIENT_DEFAULT_READ_TIMEOUT_DOC)
-                .define(HTTPCLIENT_DEFAULT_WRITE_TIMEOUT, ConfigDef.Type.STRING, null, ConfigDef.Importance.MEDIUM, HTTPCLIENT_DEFAULT_WRITE_TIMEOUT_DOC)
                 //retry settings
                 .define(HTTPCLIENT_DEFAULT_SUCCESS_RESPONSE_CODE_REGEX, ConfigDef.Type.STRING, HTTP_CLIENT_DEFAULT_DEFAULT_SUCCESS_RESPONSE_CODE_REGEX, ConfigDef.Importance.LOW, HTTPCLIENT_DEFAULT_SUCCESS_RESPONSE_CODE_REGEX_DOC)
                 .define(HTTP_CLIENT_DEFAULT_RETRY_RESPONSE_CODE_REGEX, ConfigDef.Type.STRING, DEFAULT_DEFAULT_RETRY_RESPONSE_CODE_REGEX, ConfigDef.Importance.LOW, DEFAULT_RETRY_RESPONSE_CODE_REGEX_DOC)
@@ -157,7 +145,6 @@ public class HttpSinkConfigDefinition {
                 .define(POLL_DELAY_REGISTRATION_QUEUE_CONSUMER_IN_MS, ConfigDef.Type.INT, DEFAULT_POLL_DELAY_REGISTRATION_QUEUE_CONSUMER_IN_MS, ConfigDef.Importance.LOW, POLL_DELAY_REGISTRATION_QUEUE_CONSUMER_IN_MS_DOC)
                 .define(POLL_INTERVAL_REGISTRATION_QUEUE_CONSUMER_IN_MS, ConfigDef.Type.INT, DEFAULT_POLL_INTERVAL_REGISTRATION_QUEUE_CONSUMER_IN_MS, ConfigDef.Importance.LOW, POLL_INTERVAL_REGISTRATION_QUEUE_CONSUMER_IN_MS_DOC)
                 //SSL settings
-                .define(HTTPCLIENT_SSL_SKIP_HOSTNAME_VERIFICATION, ConfigDef.Type.STRING, null, ConfigDef.Importance.LOW, HTTPCLIENT_SSL_SKIP_HOSTNAME_VERIFICATION_DOC)
                 .define(HTTPCLIENT_SSL_KEYSTORE_PATH, ConfigDef.Type.STRING, null, ConfigDef.Importance.LOW, HTTPCLIENT_SSL_KEYSTORE_PATH_DOC)
                 .define(HTTPCLIENT_SSL_KEYSTORE_PASSWORD, ConfigDef.Type.STRING, null, ConfigDef.Importance.LOW, HTTPCLIENT_SSL_KEYSTORE_PASSWORD_DOC)
                 .define(HTTPCLIENT_SSL_KEYSTORE_TYPE, ConfigDef.Type.STRING, null, ConfigDef.Importance.LOW, HTTPCLIENT_SSL_KEYSTORE_TYPE_DOC)

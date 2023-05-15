@@ -22,11 +22,6 @@ every Kafka Connect Sink Connector need to define these required parameters :
 
   - http client implementation settings
     - *httpclient.implementation* : define which intalled library to use : either `ahc`, a.k.a async http client, or `okhttp`. default is `okhttp`.
-    - *httpclient.default.call.timeout* : default timeout in _milliseconds_ for complete call . A value of `0` means no timeout, otherwise values must be between `1` and `Integer.MAX_VALUE`.
-    - *httpclient.default.connect.timeout* : Sets the default connect timeout in _milliseconds_ for new connections. A value of `0` means no timeout, otherwise values must be between `1` and `Integer.MAX_VALUE`.
-    - *httpclient.default.read.timeout* : Sets the default read timeout in _milliseconds_ for new connections. A value of `0` means no timeout, otherwise values must be between `1` and `Integer.MAX_VALUE`.
-    - *httpclient.default.write.timeout* : Sets the default write timeout in _milliseconds_ for new connections. A value of `0` means no timeout, otherwise values must be between `1` and `Integer.MAX_VALUE`.
-    - *httpclient.default.protocols* : protocols to use, in order of preference,divided by a comma.supported protocols in okhttp: `HTTP_1_1`,`HTTP_2`,`H2_PRIOR_KNOWLEDGE`,`QUIC`.
   - retry setttings (**set them all or no one**), permit to define a default retry policy.
     - *httpclient.default.success.response.code.regex* : default regex which decide if the request is a success or not, based on the response status code
     - *httpclient.default.retry.response.code.regex* : regex which define if a retry need to be triggered, based on the response status code. default is '^[1-2][0-9][0-9]$'
@@ -63,7 +58,6 @@ every Kafka Connect Sink Connector need to define these required parameters :
     - *poll.delay.registration.queue.consumer.in.ms* : poll delay, i.e, wait time before start polling a registered consumer. default value is 2 seconds.
     - *poll.interval.registration.queue.consumer.in.ms* : poll interval, i.e, time between every poll for a registered consumer. default value is 5000 milliseconds.
   - http client SSL parameters
-    - *httpclient.ssl.skip.hostname.verification* : if set to `true`, skip hostname verification. Not set by default.
     - *httpclient.ssl.keystore.path* : file path of the custom key store.
     - *httpclient.ssl.keystore.password* : password of the custom key store.
     - *httpclient.ssl.keystore.type"* : keystore type. can be `jks` or `pkcs12`.
@@ -72,9 +66,29 @@ every Kafka Connect Sink Connector need to define these required parameters :
     - *httpclient.ssl.truststore.password* : password of the custom trusted store.
     - *httpclient.ssl.truststore.type* : truststore type. can be `jks` or `pkcs12`.
     - *httpclient.ssl.truststore.algorithm* : the standard name of the requested algorithm. See the KeyManagerFactory section in the Java Security Standard Algorithm Names Specification for information about standard algorithm names.
-  - async settings
+  - http client async settings
     - *httpclient.async.fixed.thread.pool.size* : custom fixed thread pool size used to execute asynchronously http requests.
-    
+  - _okhttp_ (default) HTTP client implementation settings
+    - *okhttp.connection.pool.max.idle.connections* 
+    - *okhttp.connection.pool.keep.alive.duration*
+    - *okhttp.default.protocols*
+    - *okhttp.ssl.skip.hostname.verification*
+    - *okhttp.default.connect.timeout*
+    - *okhttp.default.call.timeout*
+    - *okhttp.read.timeout*
+    - *okhttp.write.timeout*
+  - _Async Http Client (AHC)_ implementation settings
+    - *org.asynchttpclient.http.max.connections* :  (default `3`)
+    - *org.asynchttpclient.http.rate.limit.per.second* (default `3`)
+    - *org.asynchttpclient.http.max.wait.ms* (default `500 ms`)
+    - *org.asynchttpclient.keep.alive.class* (default `org.asynchttpclient.channel.DefaultKeepAliveStrategy`)
+    - *org.asynchttpclient.response.body.part.factory* (default `EAGER`)
+    - *org.asynchttpclient.connection.semaphore.factory* (default `org.asynchttpclient.netty.channel.DefaultConnectionSemaphoreFactory`)
+    - *org.asynchttpclient.cookie.store* (default `org.asynchttpclient.cookie.ThreadSafeCookieStore`)
+    - *org.asynchttpclient.netty.timer* (default `io.netty.util.HashedWheelTimer`)
+    - *org.asynchttpclient.byte.buffer.allocator* (default `io.netty.buffer.PooledByteBufAllocator`)
+  
+
 #### Configuration example
 
 - `sink.json` example :
