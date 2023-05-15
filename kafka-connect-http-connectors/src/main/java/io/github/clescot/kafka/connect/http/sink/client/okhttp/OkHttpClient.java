@@ -107,6 +107,7 @@ public class OkHttpClient extends AbstractHttpClient<Request, Response> {
             int writeTimeout = Integer.parseInt(config.get(HTTPCLIENT_DEFAULT_WRITE_TIMEOUT));
             httpClientBuilder.writeTimeout(writeTimeout, TimeUnit.MILLISECONDS);
         }
+
         client = httpClientBuilder.build();
 
 
