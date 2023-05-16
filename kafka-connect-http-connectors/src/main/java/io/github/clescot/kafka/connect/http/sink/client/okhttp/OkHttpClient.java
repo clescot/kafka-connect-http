@@ -2,18 +2,23 @@ package io.github.clescot.kafka.connect.http.sink.client.okhttp;
 
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
+import com.google.common.jimfs.Configuration;
+import com.google.common.jimfs.Jimfs;
 import io.github.clescot.kafka.connect.http.core.HttpRequest;
 import io.github.clescot.kafka.connect.http.core.HttpResponse;
 import io.github.clescot.kafka.connect.http.sink.client.AbstractHttpClient;
 import kotlin.Pair;
 import okhttp3.*;
 import okhttp3.internal.http.HttpMethod;
+import okhttp3.internal.io.FileSystem;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.net.ssl.*;
+import java.io.File;
 import java.io.IOException;
-import java.net.Proxy;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
@@ -40,6 +45,14 @@ public class OkHttpClient extends AbstractHttpClient<Request, Response> {
 
     //if set to 'true', skip hostname verification. Not set by default.
     public static final String OKHTTP_SSL_SKIP_HOSTNAME_VERIFICATION = "okhttp.ssl.skip.hostname.verification";
+
+    //file system path of the cache directory
+    public static final String OKHTTP_CACHE_DIRECTORY_PATH ="okhttp.cache.directory.path";
+    //either "file"(default), or "inmemory".
+    public static final String OKHTTP_CACHE_TYPE="okhttp.cache.type";
+    public static final String OKHTTP_CACHE_MAX_SIZE="okhttp.cache.max.size";
+    public static final String OKHTTP_CACHE_ACTIVATE ="okhttp.cache.activate";
+
 
     private final okhttp3.OkHttpClient client;
     private final Logger LOGGER = LoggerFactory.getLogger(OkHttpClient.class);
@@ -106,6 +119,27 @@ public class OkHttpClient extends AbstractHttpClient<Request, Response> {
         if(config.containsKey(HTTPCLIENT_DEFAULT_WRITE_TIMEOUT)) {
             int writeTimeout = Integer.parseInt(config.get(HTTPCLIENT_DEFAULT_WRITE_TIMEOUT));
             httpClientBuilder.writeTimeout(writeTimeout, TimeUnit.MILLISECONDS);
+        }
+
+        //cache
+        if(config.containsKey(OKHTTP_CACHE_ACTIVATE)){
+            String defaultDirectoryPath = "/tmp/kafka-connect-http-cache";
+            if("inmemory".equalsIgnoreCase(config.getOrDefault(OKHTTP_CACHE_TYPE,"file"))){
+                java.nio.file.FileSystem fs = Jimfs.newFileSystem(Configuration.unix());
+                String jimfsCacheDirectory = "/jimfs/kafka-connect-http-cache";
+                Path jimfsDirectory = fs.getPath(jimfsCacheDirectory);
+                defaultDirectoryPath = jimfsCacheDirectory;
+                try {
+                    Files.createDirectory(jimfsDirectory);
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
+            }
+
+            File cacheDirectory = new File(config.getOrDefault(OKHTTP_CACHE_DIRECTORY_PATH,defaultDirectoryPath));
+            long maxSize=Long.parseLong(config.getOrDefault(OKHTTP_CACHE_MAX_SIZE,"10000"));
+            Cache cache = new Cache(cacheDirectory,maxSize, FileSystem.SYSTEM);
+            httpClientBuilder.cache(cache);
         }
 
         client = httpClientBuilder.build();
