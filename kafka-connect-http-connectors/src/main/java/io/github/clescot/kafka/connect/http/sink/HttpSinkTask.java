@@ -158,7 +158,7 @@ public class HttpSinkTask extends SinkTask {
         //we submit futures to the pool
         Stream<SinkRecord> recordStream = records.stream();
         Stream<CompletableFuture<HttpExchange>> completableFutureStream;
-        completableFutureStream= recordStream.map(record -> process(record));
+        completableFutureStream= recordStream.map(this::process);
 
         List<CompletableFuture<HttpExchange>> completableFutures = completableFutureStream.collect(Collectors.toList());
         List<HttpExchange> httpExchanges = completableFutures.stream().map(CompletableFuture::join).collect(Collectors.toList());
@@ -292,8 +292,7 @@ public class HttpSinkTask extends SinkTask {
 
     protected boolean isSuccess(HttpExchange httpExchange) {
         Pattern pattern = getPattern(this.defaultSuccessResponseCodeRegex);
-        boolean success = pattern.matcher(httpExchange.getHttpResponse().getStatusCode() + "").matches();
-        return success;
+        return pattern.matcher(httpExchange.getHttpResponse().getStatusCode() + "").matches();
     }
 
 
