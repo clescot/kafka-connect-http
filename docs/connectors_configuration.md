@@ -77,6 +77,10 @@ every Kafka Connect Sink Connector need to define these required parameters :
     - *okhttp.default.call.timeout*
     - *okhttp.read.timeout*
     - *okhttp.write.timeout*
+    - *okhttp.cache.activate* (`true` to activate, `false` by default)
+    - *okhttp.cache.max.size* (default `10000` max cache entries)
+    - *okhttp.cache.directory.path* (default `/tmp/kafka-connect-http-cache` directory path for `file` type, default `/kafka-connect-http-cache` for `inmemory` type)
+    - *okhttp.cache.type* (default `file`, and can be set to `inmemory`)
   - _Async Http Client (AHC)_ implementation settings
     - *org.asynchttpclient.http.max.connections* :  (default `3`)
     - *org.asynchttpclient.http.rate.limit.per.second* (default `3`)
