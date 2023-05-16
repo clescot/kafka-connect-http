@@ -125,7 +125,7 @@ after the section dedicated to put in place the HTTP Sink and Source connectors:
 # 4. [incoming message format](docs/incoming_message_format.md)
 # 5. [request handling](docs/request_handling.md)
 # 6. [outcoming message format](docs/outcoming_message_format.md)
-# 7. [missing features](docs/missing_features.md)
+# 7. [missing features](https://github.com/clescot/kafka-connect-http/issues)
 
 
 

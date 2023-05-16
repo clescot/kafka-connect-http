@@ -52,6 +52,9 @@ public class OkHttpClient extends AbstractHttpClient<Request, Response> {
     public static final String OKHTTP_CACHE_TYPE="okhttp.cache.type";
     public static final String OKHTTP_CACHE_MAX_SIZE="okhttp.cache.max.size";
     public static final String OKHTTP_CACHE_ACTIVATE ="okhttp.cache.activate";
+    public static final String IN_MEMORY_CACHE_TYPE = "inmemory";
+    public static final String DEFAULT_MAX_CACHE_ENTRIES = "10000";
+    public static final String FILE_CACHE_TYPE = "file";
 
 
     private final okhttp3.OkHttpClient client;
@@ -123,12 +126,19 @@ public class OkHttpClient extends AbstractHttpClient<Request, Response> {
 
         //cache
         if(config.containsKey(OKHTTP_CACHE_ACTIVATE)){
-            String defaultDirectoryPath = "/tmp/kafka-connect-http-cache";
-            if("inmemory".equalsIgnoreCase(config.getOrDefault(OKHTTP_CACHE_TYPE,"file"))){
+            String cacheType = config.getOrDefault(OKHTTP_CACHE_TYPE, FILE_CACHE_TYPE);
+            String defaultDirectoryPath;
+            if(IN_MEMORY_CACHE_TYPE.equalsIgnoreCase(cacheType)){
+                defaultDirectoryPath = "/kafka-connect-http-cache";
+            }else{
+                defaultDirectoryPath = "/tmp/kafka-connect-http-cache";
+            }
+
+            String directoryPath = config.getOrDefault(OKHTTP_CACHE_DIRECTORY_PATH,defaultDirectoryPath);
+
+            if(IN_MEMORY_CACHE_TYPE.equalsIgnoreCase(cacheType)){
                 java.nio.file.FileSystem fs = Jimfs.newFileSystem(Configuration.unix());
-                String jimfsCacheDirectory = "/kafka-connect-http-cache";
-                Path jimfsDirectory = fs.getPath(jimfsCacheDirectory);
-                defaultDirectoryPath = jimfsCacheDirectory;
+                Path jimfsDirectory = fs.getPath(directoryPath);
                 try {
                     Files.createDirectory(jimfsDirectory);
                 } catch (IOException e) {
@@ -136,8 +146,8 @@ public class OkHttpClient extends AbstractHttpClient<Request, Response> {
                 }
             }
 
-            File cacheDirectory = new File(config.getOrDefault(OKHTTP_CACHE_DIRECTORY_PATH,defaultDirectoryPath));
-            long maxSize=Long.parseLong(config.getOrDefault(OKHTTP_CACHE_MAX_SIZE,"10000"));
+            File cacheDirectory = new File(directoryPath);
+            long maxSize=Long.parseLong(config.getOrDefault(OKHTTP_CACHE_MAX_SIZE, DEFAULT_MAX_CACHE_ENTRIES));
             Cache cache = new Cache(cacheDirectory,maxSize, FileSystem.SYSTEM);
             httpClientBuilder.cache(cache);
         }
