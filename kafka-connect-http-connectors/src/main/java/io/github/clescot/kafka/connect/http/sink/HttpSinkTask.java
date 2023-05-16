@@ -243,7 +243,7 @@ public class HttpSinkTask extends SinkTask {
         return httpExchange;
     }
 
-    private Pattern getPattern(String pattern) {
+    private Pattern getRetryPattern(String pattern) {
 
         if (this.patternMap.get(pattern) == null) {
             //Pattern.compile should be reused for performance, but wsSuccessCode can change....
@@ -254,21 +254,26 @@ public class HttpSinkTask extends SinkTask {
     }
 
     protected boolean retryNeeded(HttpResponse httpResponse) {
-        //TODO add specific pattern per site
-        Pattern retryPattern = getPattern(this.defaultRetryResponseCodeRegex);
+        //TODO add specific retry pattern per site
+        Pattern retryPattern = getRetryPattern(this.defaultRetryResponseCodeRegex);
         Matcher matcher = retryPattern.matcher("" + httpResponse.getStatusCode());
         return matcher.matches();
     }
 
     private CompletableFuture<HttpExchange> callWithThrottling(HttpRequest httpRequest, AtomicInteger attempts) {
         try {
-            this.defaultRateLimiter.acquirePermits(HttpClient.ONE_HTTP_REQUEST);
+            getRateLimiter(httpRequest).acquirePermits(HttpClient.ONE_HTTP_REQUEST);
             LOGGER.debug("permits acquired request:'{}'", httpRequest);
             return httpClient.call(httpRequest, attempts);
         } catch (InterruptedException e) {
             LOGGER.error("Failed to acquire execution permit from the rate limiter {} ", e.getMessage());
             throw new HttpException(e.getMessage());
         }
+    }
+
+    private RateLimiter<HttpExchange> getRateLimiter(HttpRequest httpRequest){
+        //TODO add specific rate limiter per site
+        return this.defaultRateLimiter;
     }
 
 
@@ -291,7 +296,7 @@ public class HttpSinkTask extends SinkTask {
     }
 
     protected boolean isSuccess(HttpExchange httpExchange) {
-        Pattern pattern = getPattern(this.defaultSuccessResponseCodeRegex);
+        Pattern pattern = getRetryPattern(this.defaultSuccessResponseCodeRegex);
         return pattern.matcher(httpExchange.getHttpResponse().getStatusCode() + "").matches();
     }
 
