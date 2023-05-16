@@ -126,7 +126,7 @@ public class OkHttpClient extends AbstractHttpClient<Request, Response> {
             String defaultDirectoryPath = "/tmp/kafka-connect-http-cache";
             if("inmemory".equalsIgnoreCase(config.getOrDefault(OKHTTP_CACHE_TYPE,"file"))){
                 java.nio.file.FileSystem fs = Jimfs.newFileSystem(Configuration.unix());
-                String jimfsCacheDirectory = "/jimfs/kafka-connect-http-cache";
+                String jimfsCacheDirectory = "/kafka-connect-http-cache";
                 Path jimfsDirectory = fs.getPath(jimfsCacheDirectory);
                 defaultDirectoryPath = jimfsCacheDirectory;
                 try {
