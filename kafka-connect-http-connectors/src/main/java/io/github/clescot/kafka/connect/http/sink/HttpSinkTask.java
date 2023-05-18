@@ -21,7 +21,6 @@ import com.google.common.collect.Maps;
 import dev.failsafe.Failsafe;
 import dev.failsafe.RateLimiter;
 import dev.failsafe.RetryPolicy;
-import org.apache.commons.lang3.tuple.Pair;
 import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.data.Struct;
 import org.apache.kafka.connect.errors.ConnectException;
@@ -39,13 +38,10 @@ import java.time.temporal.ChronoUnit;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.function.Predicate;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-
-import static io.github.clescot.kafka.connect.http.sink.HttpSinkConfigDefinition.RATE_LIMITER_MAX_EXECUTIONS;
 
 
 public class HttpSinkTask extends SinkTask {
@@ -56,11 +52,7 @@ public class HttpSinkTask extends SinkTask {
     public static final String HEADER_X_REQUEST_ID = "X-Request-ID";
     public static final String SINK_RECORD_HAS_GOT_A_NULL_VALUE = "sinkRecord has got a 'null' value";
 
-    public static final String URL_REGEX = "url.regex";
-    public static final String METHOD_REGEX = "method.regex";
-    public static final String BODYTYPE_REGEX = "bodytype.regex";
-    public static final String HEADER_KEY = "header.key";
-    public static final String HEADER_VALUE = "header.value";
+
 
     private HttpClient httpClient;
     private Queue<KafkaRecord> queue;
@@ -78,6 +70,7 @@ public class HttpSinkTask extends SinkTask {
     private final Map<String, Pattern> patternMap = Maps.newHashMap();
     private String defaultSuccessResponseCodeRegex;
     private String defaultRetryResponseCodeRegex;
+    private CopyOnWriteArrayList<Configuration> customConfigurations;
     private static ExecutorService executor;
 
     @Override
@@ -142,7 +135,7 @@ public class HttpSinkTask extends SinkTask {
         );
         setDefaultRateLimiter(httpSinkConnectorConfig.getDefaultRateLimiterPeriodInMs(), httpSinkConnectorConfig.getDefaultRateLimiterMaxExecutions());
 
-
+        customConfigurations = buildCustomConfigurations(httpSinkConnectorConfig);
 
 
         if (httpSinkConnectorConfig.isPublishToInMemoryQueue()) {
@@ -159,49 +152,13 @@ public class HttpSinkTask extends SinkTask {
     }
 
 
-    private ConcurrentMap<Pair<String,Collection<Predicate<HttpRequest>>>,Object> buildCustomConfigurations(){
-        ConcurrentMap<Pair<String,Collection<Predicate<HttpRequest>>>,Object> configurationsMap = Maps.newConcurrentMap();
-        //TODO build function
+    private CopyOnWriteArrayList<Configuration> buildCustomConfigurations(HttpSinkConnectorConfig httpSinkConnectorConfig){
+        CopyOnWriteArrayList<Configuration> configurations = Lists.newCopyOnWriteArrayList();
         for (String configId: httpSinkConnectorConfig.getConfigurationIds()) {
-            Map<String, Object> configMap = httpSinkConnectorConfig.originalsWithPrefix("httpclient." + configId);
-            Collection<Predicate<HttpRequest>> configPredicate = Lists.newArrayList();
-
-            if(configMap.containsKey(URL_REGEX)){
-                String urlRegex = (String) configMap.get(URL_REGEX);
-                Pattern urlPattern = Pattern.compile(urlRegex);
-                configPredicate.add(httpRequest -> urlPattern.matcher(httpRequest.getUrl()).matches());
-            }
-            if(configMap.containsKey(METHOD_REGEX)){
-                String methodRegex = (String) configMap.get(METHOD_REGEX);
-                Pattern methodPattern = Pattern.compile(methodRegex);
-                configPredicate.add(httpRequest -> methodPattern.matcher(httpRequest.getMethod()).matches());
-            }
-            if(configMap.containsKey(BODYTYPE_REGEX)){
-                String bodytypeRegex = (String) configMap.get(BODYTYPE_REGEX);
-                Pattern bodytypePattern = Pattern.compile(bodytypeRegex);
-                configPredicate.add(httpRequest -> bodytypePattern.matcher(httpRequest.getBodyType().name()).matches());
-            }
-            if(configMap.containsKey(HEADER_KEY)){
-                String headerKey = (String) configMap.get(HEADER_KEY);
-
-                Predicate<HttpRequest> headerPredicate = httpRequest -> httpRequest.getHeaders().containsKey(headerKey);
-
-                if(configMap.containsKey(HEADER_VALUE)){
-                    String headerValue = (String) configMap.get(HEADER_VALUE);
-                    Pattern headerValuePattern = Pattern.compile(headerValue);
-                    headerPredicate = headerPredicate.and(httpRequest -> headerValuePattern.matcher(httpRequest.getHeaders().get(headerKey).get(0)).matches());
-                }
-                configPredicate.add(headerPredicate);
-            }
-            if(configMap.containsKey(RATE_LIMITER_MAX_EXECUTIONS)){
-                long maxExecutions = Long.parseLong((String) configMap.get(RATE_LIMITER_MAX_EXECUTIONS));
-                long periodInMs = Long.parseLong(Optional.ofNullable((String) configMap.get(RATE_LIMITER_MAX_EXECUTIONS)).orElse(httpSinkConnectorConfig.getDefaultRateLimiterPeriodInMs()+""));
-                //TODO put rateLimiter
-                RateLimiter<HttpExchange> rateLimiter = RateLimiter.<HttpExchange>smoothBuilder(maxExecutions, Duration.of(periodInMs, ChronoUnit.MILLIS)).build();
-                configurationsMap.put(Pair.of(configId,configPredicate),rateLimiter);
-            }
+           Configuration configuration = new Configuration(configId,httpSinkConnectorConfig);
+            configurations.add(configuration);
         }
-        return configurationsMap;
+        return configurations;
     }
 
 
@@ -234,8 +191,13 @@ public class HttpSinkTask extends SinkTask {
             HttpRequest httpRequest = buildHttpRequest(sinkRecord);
             HttpRequest httpRequestWithStaticHeaders = addStaticHeaders(httpRequest);
             HttpRequest httpRequestWithTrackingHeaders = addTrackingHeaders(httpRequestWithStaticHeaders);
+
+            //TODO get configuration from HttpRequest
+            Configuration defaultConfiguration = null;
+            Configuration foundConfiguration = customConfigurations.stream().filter(config -> config.matches(httpRequest)).findFirst().orElse(defaultConfiguration);
+
             //handle Request and Response
-            return callWithRetryPolicy(sinkRecord, httpRequestWithTrackingHeaders, defaultRetryPolicy).thenApply(
+            return callWithRetryPolicy(sinkRecord, httpRequestWithTrackingHeaders, defaultRetryPolicy,foundConfiguration).thenApply(
                     myHttpExchange -> {
                         LOGGER.debug("HTTP exchange :{}", myHttpExchange);
                         return myHttpExchange;
@@ -260,7 +222,7 @@ public class HttpSinkTask extends SinkTask {
 
     }
 
-    private CompletableFuture<HttpExchange> callWithRetryPolicy(SinkRecord sinkRecord, HttpRequest httpRequest, Optional<RetryPolicy<HttpExchange>> retryPolicyForCall) {
+    private CompletableFuture<HttpExchange> callWithRetryPolicy(SinkRecord sinkRecord, HttpRequest httpRequest, Optional<RetryPolicy<HttpExchange>> retryPolicyForCall,Configuration configuration) {
 
         if (httpRequest != null) {
             AtomicInteger attempts = new AtomicInteger();
@@ -268,12 +230,12 @@ public class HttpSinkTask extends SinkTask {
                 attempts.addAndGet(HttpClient.ONE_HTTP_REQUEST);
                 if (retryPolicyForCall.isPresent()) {
                     RetryPolicy<HttpExchange> retryPolicy = retryPolicyForCall.get();
-                    CompletableFuture<HttpExchange> httpExchangeFuture = callAndPublish(sinkRecord, httpRequest, attempts)
+                    CompletableFuture<HttpExchange> httpExchangeFuture = callAndPublish(sinkRecord, httpRequest, attempts,configuration)
                             .thenApply(this::handleRetry);
                     return Failsafe.with(List.of(retryPolicy))
                             .getStageAsync(()->httpExchangeFuture);
                 } else {
-                    return callAndPublish(sinkRecord, httpRequest, attempts);
+                    return callAndPublish(sinkRecord, httpRequest, attempts,configuration);
                 }
             } catch (Throwable throwable) {
                 LOGGER.error("Failed to call web service after {} retries with error({}). message:{} ", attempts, throwable,
@@ -319,9 +281,9 @@ public class HttpSinkTask extends SinkTask {
         return matcher.matches();
     }
 
-    private CompletableFuture<HttpExchange> callWithThrottling(HttpRequest httpRequest, AtomicInteger attempts) {
+    private CompletableFuture<HttpExchange> callWithThrottling(HttpRequest httpRequest, AtomicInteger attempts,Configuration configuration) {
         try {
-            getRateLimiter(httpRequest).acquirePermits(HttpClient.ONE_HTTP_REQUEST);
+            configuration.getRateLimiter().acquirePermits(HttpClient.ONE_HTTP_REQUEST);
             LOGGER.debug("permits acquired request:'{}'", httpRequest);
             return httpClient.call(httpRequest, attempts);
         } catch (InterruptedException e) {
@@ -330,14 +292,9 @@ public class HttpSinkTask extends SinkTask {
         }
     }
 
-    private RateLimiter<HttpExchange> getRateLimiter(HttpRequest httpRequest){
-        //TODO add specific rate limiter per site
-        return this.defaultRateLimiter;
-    }
 
-
-    private CompletableFuture<HttpExchange> callAndPublish(SinkRecord sinkRecord, HttpRequest httpRequest, AtomicInteger attempts) {
-        return callWithThrottling(httpRequest, attempts)
+    private CompletableFuture<HttpExchange> callAndPublish(SinkRecord sinkRecord, HttpRequest httpRequest, AtomicInteger attempts,Configuration configuration) {
+        return callWithThrottling(httpRequest, attempts,configuration)
                 .thenApply(myHttpExchange -> {
                     //TODO add specific pattern per site
                     boolean success = isSuccess(myHttpExchange);
