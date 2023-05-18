@@ -1,12 +1,12 @@
 package io.github.clescot.kafka.connect.http.sink;
 
+import com.google.common.base.Preconditions;
+import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
 import io.github.clescot.kafka.connect.http.core.queue.ConfigConstants;
 import io.github.clescot.kafka.connect.http.core.queue.QueueFactory;
 import io.github.clescot.kafka.connect.http.sink.client.ahc.AHCHttpClientFactory;
 import io.github.clescot.kafka.connect.http.sink.client.okhttp.OkHttpClientFactory;
-import com.google.common.base.Preconditions;
-import com.google.common.collect.Lists;
-import com.google.common.collect.Maps;
 import org.apache.kafka.common.config.AbstractConfig;
 import org.apache.kafka.common.config.ConfigDef;
 import org.slf4j.Logger;
@@ -22,6 +22,7 @@ public class HttpSinkConnectorConfig extends AbstractConfig {
     private static final Logger LOGGER = LoggerFactory.getLogger(HttpSinkConnectorConfig.class);
     public static final String OKHTTP_IMPLEMENTATION = "okhttp";
     public static final String AHC_IMPLEMENTATION = "ahc";
+
     private final String defaultSuccessResponseCodeRegex;
     private final String defaultRetryResponseCodeRegex;
     private final String queueName;
@@ -33,7 +34,7 @@ public class HttpSinkConnectorConfig extends AbstractConfig {
     private final Long defaultRetryJitterInMs;
     private final Long defaultRateLimiterMaxExecutions;
     private final Long defaultRateLimiterPeriodInMs;
-    private final Map<String,List<String>> staticRequestHeaders = Maps.newHashMap();
+    private final Map<String, List<String>> staticRequestHeaders = Maps.newHashMap();
     private final boolean generateMissingRequestId;
     private final boolean generateMissingCorrelationId;
 
@@ -42,16 +43,17 @@ public class HttpSinkConnectorConfig extends AbstractConfig {
     private final int pollIntervalRegistrationOfQueueConsumerInMs;
     private final String httpClientFactoryClass;
     private final Integer customFixedThreadpoolSize;
+    private final List<String> configurationIds;
 
     public HttpSinkConnectorConfig(Map<?, ?> originals) {
         this(HttpSinkConfigDefinition.config(), originals);
     }
 
-    public HttpSinkConnectorConfig(ConfigDef configDef, Map<?, ?> originals){
-        super(configDef,originals,LOGGER.isDebugEnabled());
+    public HttpSinkConnectorConfig(ConfigDef configDef, Map<?, ?> originals) {
+        super(configDef, originals, LOGGER.isDebugEnabled());
         this.queueName = Optional.ofNullable(getString(ConfigConstants.QUEUE_NAME)).orElse(QueueFactory.DEFAULT_QUEUE_NAME);
-        if(QueueFactory.queueMapIsEmpty()){
-            LOGGER.warn("no pre-existing queue exists. this HttpSourceConnector has created a '{}' one. It needs to consume a queue filled with a SinkConnector. Ignore this message if a SinkConnector will be created after this one.",queueName);
+        if (QueueFactory.queueMapIsEmpty()) {
+            LOGGER.warn("no pre-existing queue exists. this HttpSourceConnector has created a '{}' one. It needs to consume a queue filled with a SinkConnector. Ignore this message if a SinkConnector will be created after this one.", queueName);
         }
         this.publishToInMemoryQueue = Optional.ofNullable(getBoolean(PUBLISH_TO_IN_MEMORY_QUEUE)).orElse(false);
 
@@ -68,24 +70,28 @@ public class HttpSinkConnectorConfig extends AbstractConfig {
         this.pollDelayRegistrationOfQueueConsumerInMs = getInt(POLL_DELAY_REGISTRATION_QUEUE_CONSUMER_IN_MS);
         this.pollIntervalRegistrationOfQueueConsumerInMs = getInt(POLL_INTERVAL_REGISTRATION_QUEUE_CONSUMER_IN_MS);
         Optional<List<String>> staticRequestHeaderNames = Optional.ofNullable(getList(HTTP_CLIENT_STATIC_REQUEST_HEADER_NAMES));
-        List<String> additionalHeaderNamesList =staticRequestHeaderNames.orElse(Lists.newArrayList());
-        for(String headerName:additionalHeaderNamesList){
+        List<String> additionalHeaderNamesList = staticRequestHeaderNames.orElse(Lists.newArrayList());
+        for (String headerName : additionalHeaderNamesList) {
             String value = (String) originals().get(headerName);
-            Preconditions.checkNotNull(value,"'"+headerName+"' is not configured as a parameter.");
+            Preconditions.checkNotNull(value, "'" + headerName + "' is not configured as a parameter.");
             staticRequestHeaders.put(headerName, Lists.newArrayList(value));
         }
         this.defaultSuccessResponseCodeRegex = getString(HTTPCLIENT_DEFAULT_SUCCESS_RESPONSE_CODE_REGEX);
         this.defaultRetryResponseCodeRegex = getString(HTTP_CLIENT_DEFAULT_RETRY_RESPONSE_CODE_REGEX);
         String httpClientImplementation = Optional.ofNullable(getString(HTTPCLIENT_IMPLEMENTATION)).orElse(OKHTTP_IMPLEMENTATION);
-        if(AHC_IMPLEMENTATION.equalsIgnoreCase(httpClientImplementation)){
+        if (AHC_IMPLEMENTATION.equalsIgnoreCase(httpClientImplementation)) {
             this.httpClientFactoryClass = AHCHttpClientFactory.class.getName();
-        }else if(OKHTTP_IMPLEMENTATION.equalsIgnoreCase(httpClientImplementation)){
+        } else if (OKHTTP_IMPLEMENTATION.equalsIgnoreCase(httpClientImplementation)) {
             this.httpClientFactoryClass = OkHttpClientFactory.class.getName();
-        }else{
-            LOGGER.error("unknown HttpClient implementation : must be either 'ahc' or 'okhttp', but is '{}'",httpClientImplementation);
-            throw new IllegalArgumentException("unknown HttpClient implementation : must be either 'ahc' or 'okhttp', but is '"+httpClientImplementation+"'");
+        } else {
+            LOGGER.error("unknown HttpClient implementation : must be either 'ahc' or 'okhttp', but is '{}'", httpClientImplementation);
+            throw new IllegalArgumentException("unknown HttpClient implementation : must be either 'ahc' or 'okhttp', but is '" + httpClientImplementation + "'");
         }
         this.customFixedThreadpoolSize = getInt(HTTP_CLIENT_ASYNC_FIXED_THREAD_POOL_SIZE);
+
+        configurationIds = Optional.ofNullable(getList(HTTP_CLIENT_CUSTOM_CONFIGURATION_IDS)).orElse(Lists.newArrayList());
+
+
     }
 
     public String getQueueName() {
@@ -165,6 +171,10 @@ public class HttpSinkConnectorConfig extends AbstractConfig {
         return customFixedThreadpoolSize;
     }
 
+    public List<String> getConfigurationIds() {
+        return configurationIds;
+    }
+
     @Override
     public String toString() {
         return "HttpSinkConnectorConfig{" +
@@ -184,6 +194,7 @@ public class HttpSinkConnectorConfig extends AbstractConfig {
                 ", generateMissingCorrelationId=" + generateMissingCorrelationId +
                 ", maxWaitTimeRegistrationOfQueueConsumerInMs=" + maxWaitTimeRegistrationOfQueueConsumerInMs +
                 ", customFixedThreadpoolSize=" + customFixedThreadpoolSize +
+                ", configurationIds=" + configurationIds +
                 '}';
     }
 

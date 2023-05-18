@@ -119,8 +119,8 @@ public class HttpSinkConfigDefinition {
     public static final String HTTP_CLIENT_ASYNC_FIXED_THREAD_POOL_SIZE ="httpclient.async.fixed.thread.pool.size";
     public static final String HTTP_CLIENT_ASYNC_FIXED_THREAD_POOL_SIZE_DOC ="custom fixed thread pool size used to execute asynchronously http requests.";
 
-    public static final String HTTP_CLIENT_CONFIGURATIONS_LIST="httpclient.configs";
-    public static final String HTTP_CLIENT_CONFIGURATIONS_LIST_DOC="custom configurations id list.";
+    public static final String HTTP_CLIENT_CUSTOM_CONFIGURATION_IDS ="httpclient.custom.config.ids";
+    public static final String HTTP_CLIENT_CUSTOM_CONFIGURATION_IDS_DOC ="custom configurations id list.";
 
     private HttpSinkConfigDefinition() {
         //Class with only static methods
@@ -163,7 +163,7 @@ public class HttpSinkConfigDefinition {
                 //async settings
                 .define(HTTP_CLIENT_ASYNC_FIXED_THREAD_POOL_SIZE, ConfigDef.Type.INT, null, ConfigDef.Importance.MEDIUM, HTTP_CLIENT_ASYNC_FIXED_THREAD_POOL_SIZE_DOC)
                 //custom configurations
-                .define(HTTP_CLIENT_CONFIGURATIONS_LIST,ConfigDef.Type.LIST, Lists.newArrayList(),ConfigDef.Importance.LOW,HTTP_CLIENT_CONFIGURATIONS_LIST_DOC)
+                .define(HTTP_CLIENT_CUSTOM_CONFIGURATION_IDS,ConfigDef.Type.LIST, Lists.newArrayList(),ConfigDef.Importance.LOW, HTTP_CLIENT_CUSTOM_CONFIGURATION_IDS_DOC)
                 ;
     }
 }

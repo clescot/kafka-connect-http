@@ -21,6 +21,7 @@ import com.google.common.collect.Maps;
 import dev.failsafe.Failsafe;
 import dev.failsafe.RateLimiter;
 import dev.failsafe.RetryPolicy;
+import org.apache.commons.lang3.tuple.Pair;
 import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.data.Struct;
 import org.apache.kafka.connect.errors.ConnectException;
@@ -38,10 +39,13 @@ import java.time.temporal.ChronoUnit;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Predicate;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+
+import static io.github.clescot.kafka.connect.http.sink.HttpSinkConfigDefinition.RATE_LIMITER_MAX_EXECUTIONS;
 
 
 public class HttpSinkTask extends SinkTask {
@@ -51,6 +55,12 @@ public class HttpSinkTask extends SinkTask {
     public static final String HEADER_X_CORRELATION_ID = "X-Correlation-ID";
     public static final String HEADER_X_REQUEST_ID = "X-Request-ID";
     public static final String SINK_RECORD_HAS_GOT_A_NULL_VALUE = "sinkRecord has got a 'null' value";
+
+    public static final String URL_REGEX = "url.regex";
+    public static final String METHOD_REGEX = "method.regex";
+    public static final String BODYTYPE_REGEX = "bodytype.regex";
+    public static final String HEADER_KEY = "header.key";
+    public static final String HEADER_VALUE = "header.value";
 
     private HttpClient httpClient;
     private Queue<KafkaRecord> queue;
@@ -132,6 +142,9 @@ public class HttpSinkTask extends SinkTask {
         );
         setDefaultRateLimiter(httpSinkConnectorConfig.getDefaultRateLimiterPeriodInMs(), httpSinkConnectorConfig.getDefaultRateLimiterMaxExecutions());
 
+
+
+
         if (httpSinkConnectorConfig.isPublishToInMemoryQueue()) {
             Preconditions.checkArgument(QueueFactory.hasAConsumer(
                     queueName,
@@ -143,6 +156,52 @@ public class HttpSinkTask extends SinkTask {
                     "i.e no Source Connector has been configured to consume records published in this in memory queue. " +
                     "we stop the Sink Connector to prevent any OutofMemoryError.");
         }
+    }
+
+
+    private ConcurrentMap<Pair<String,Collection<Predicate<HttpRequest>>>,Object> buildCustomConfigurations(){
+        ConcurrentMap<Pair<String,Collection<Predicate<HttpRequest>>>,Object> configurationsMap = Maps.newConcurrentMap();
+        //TODO build function
+        for (String configId: httpSinkConnectorConfig.getConfigurationIds()) {
+            Map<String, Object> configMap = httpSinkConnectorConfig.originalsWithPrefix("httpclient." + configId);
+            Collection<Predicate<HttpRequest>> configPredicate = Lists.newArrayList();
+
+            if(configMap.containsKey(URL_REGEX)){
+                String urlRegex = (String) configMap.get(URL_REGEX);
+                Pattern urlPattern = Pattern.compile(urlRegex);
+                configPredicate.add(httpRequest -> urlPattern.matcher(httpRequest.getUrl()).matches());
+            }
+            if(configMap.containsKey(METHOD_REGEX)){
+                String methodRegex = (String) configMap.get(METHOD_REGEX);
+                Pattern methodPattern = Pattern.compile(methodRegex);
+                configPredicate.add(httpRequest -> methodPattern.matcher(httpRequest.getMethod()).matches());
+            }
+            if(configMap.containsKey(BODYTYPE_REGEX)){
+                String bodytypeRegex = (String) configMap.get(BODYTYPE_REGEX);
+                Pattern bodytypePattern = Pattern.compile(bodytypeRegex);
+                configPredicate.add(httpRequest -> bodytypePattern.matcher(httpRequest.getBodyType().name()).matches());
+            }
+            if(configMap.containsKey(HEADER_KEY)){
+                String headerKey = (String) configMap.get(HEADER_KEY);
+
+                Predicate<HttpRequest> headerPredicate = httpRequest -> httpRequest.getHeaders().containsKey(headerKey);
+
+                if(configMap.containsKey(HEADER_VALUE)){
+                    String headerValue = (String) configMap.get(HEADER_VALUE);
+                    Pattern headerValuePattern = Pattern.compile(headerValue);
+                    headerPredicate = headerPredicate.and(httpRequest -> headerValuePattern.matcher(httpRequest.getHeaders().get(headerKey).get(0)).matches());
+                }
+                configPredicate.add(headerPredicate);
+            }
+            if(configMap.containsKey(RATE_LIMITER_MAX_EXECUTIONS)){
+                long maxExecutions = Long.parseLong((String) configMap.get(RATE_LIMITER_MAX_EXECUTIONS));
+                long periodInMs = Long.parseLong(Optional.ofNullable((String) configMap.get(RATE_LIMITER_MAX_EXECUTIONS)).orElse(httpSinkConnectorConfig.getDefaultRateLimiterPeriodInMs()+""));
+                //TODO put rateLimiter
+                RateLimiter<HttpExchange> rateLimiter = RateLimiter.<HttpExchange>smoothBuilder(maxExecutions, Duration.of(periodInMs, ChronoUnit.MILLIS)).build();
+                configurationsMap.put(Pair.of(configId,configPredicate),rateLimiter);
+            }
+        }
+        return configurationsMap;
     }
 
 
