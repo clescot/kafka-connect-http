@@ -193,7 +193,7 @@ public class HttpSinkTask extends SinkTask {
             HttpRequest httpRequestWithTrackingHeaders = addTrackingHeaders(httpRequestWithStaticHeaders);
 
             //TODO get configuration from HttpRequest
-            Configuration defaultConfiguration = null;
+            Configuration defaultConfiguration = new Configuration("default",httpSinkConnectorConfig);;
             Configuration foundConfiguration = customConfigurations.stream().filter(config -> config.matches(httpRequest)).findFirst().orElse(defaultConfiguration);
 
             //handle Request and Response
@@ -283,8 +283,11 @@ public class HttpSinkTask extends SinkTask {
 
     private CompletableFuture<HttpExchange> callWithThrottling(HttpRequest httpRequest, AtomicInteger attempts,Configuration configuration) {
         try {
-            configuration.getRateLimiter().acquirePermits(HttpClient.ONE_HTTP_REQUEST);
-            LOGGER.debug("permits acquired request:'{}'", httpRequest);
+            RateLimiter<HttpExchange> rateLimiter = configuration.getRateLimiter();
+            if(rateLimiter!=null) {
+                rateLimiter.acquirePermits(HttpClient.ONE_HTTP_REQUEST);
+                LOGGER.debug("permits acquired request:'{}'", httpRequest);
+            }
             return httpClient.call(httpRequest, attempts);
         } catch (InterruptedException e) {
             LOGGER.error("Failed to acquire execution permit from the rate limiter {} ", e.getMessage());

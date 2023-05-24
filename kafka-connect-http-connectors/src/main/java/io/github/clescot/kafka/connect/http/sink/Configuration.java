@@ -1,13 +1,11 @@
 package io.github.clescot.kafka.connect.http.sink;
 
-import com.google.common.collect.Lists;
 import dev.failsafe.RateLimiter;
 import io.github.clescot.kafka.connect.http.core.HttpExchange;
 import io.github.clescot.kafka.connect.http.core.HttpRequest;
 
 import java.time.Duration;
 import java.time.temporal.ChronoUnit;
-import java.util.Collection;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.Predicate;
@@ -24,7 +22,7 @@ public class Configuration {
     private RateLimiter<HttpExchange> rateLimiter;
     private Predicate<HttpRequest> mainpredicate = httpRequest -> true;
     public Configuration(String id,HttpSinkConnectorConfig httpSinkConnectorConfig) {
-        Map<String, Object> configMap = httpSinkConnectorConfig.originalsWithPrefix("httpclient." + id);
+        Map<String, Object> configMap = httpSinkConnectorConfig.originalsWithPrefix("httpclient." + id+".");
 
         if(configMap.containsKey(URL_REGEX)){
             String urlRegex = (String) configMap.get(URL_REGEX);
@@ -44,8 +42,8 @@ public class Configuration {
         if(configMap.containsKey(HEADER_KEY)){
             String headerKey = (String) configMap.get(HEADER_KEY);
 
-            Predicate<HttpRequest> headerPredicate = httpRequest -> httpRequest.getHeaders().containsKey(headerKey);
-
+            Predicate<HttpRequest> headerKeyPredicate = httpRequest -> httpRequest.getHeaders().containsKey(headerKey);
+            mainpredicate = mainpredicate.and(headerKeyPredicate);
             if(configMap.containsKey(HEADER_VALUE)){
                 String headerValue = (String) configMap.get(HEADER_VALUE);
                 Pattern headerValuePattern = Pattern.compile(headerValue);
