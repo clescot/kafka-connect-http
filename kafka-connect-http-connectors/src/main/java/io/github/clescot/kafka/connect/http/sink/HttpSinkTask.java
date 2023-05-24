@@ -63,7 +63,6 @@ public class HttpSinkTask extends SinkTask {
     private ErrantRecordReporter errantRecordReporter;
     private boolean generateMissingCorrelationId;
     private boolean generateMissingRequestId;
-    private RateLimiter<HttpExchange> defaultRateLimiter = RateLimiter.<HttpExchange>smoothBuilder(HttpSinkConfigDefinition.DEFAULT_RATE_LIMITER_MAX_EXECUTIONS_VALUE, Duration.of(HttpSinkConfigDefinition.DEFAULT_RATE_LIMITER_PERIOD_IN_MS_VALUE, ChronoUnit.MILLIS)).build();
 
     private Optional<RetryPolicy<HttpExchange>> defaultRetryPolicy = Optional.empty();
 
@@ -133,7 +132,6 @@ public class HttpSinkTask extends SinkTask {
                 defaultRetryDelayFactor,
                 defaultRetryJitterInMs
         );
-        setDefaultRateLimiter(httpSinkConnectorConfig.getDefaultRateLimiterPeriodInMs(), httpSinkConnectorConfig.getDefaultRateLimiterMaxExecutions());
 
         customConfigurations = buildCustomConfigurations(httpSinkConnectorConfig);
 
@@ -283,9 +281,9 @@ public class HttpSinkTask extends SinkTask {
 
     private CompletableFuture<HttpExchange> callWithThrottling(HttpRequest httpRequest, AtomicInteger attempts,Configuration configuration) {
         try {
-            RateLimiter<HttpExchange> rateLimiter = configuration.getRateLimiter();
-            if(rateLimiter!=null) {
-                rateLimiter.acquirePermits(HttpClient.ONE_HTTP_REQUEST);
+            Optional<RateLimiter<HttpExchange>> rateLimiter = configuration.getRateLimiter();
+            if(rateLimiter.isPresent()) {
+                rateLimiter.get().acquirePermits(HttpClient.ONE_HTTP_REQUEST);
                 LOGGER.debug("permits acquired request:'{}'", httpRequest);
             }
             return httpClient.call(httpRequest, attempts);
@@ -445,11 +443,6 @@ public class HttpSinkTask extends SinkTask {
         this.queue = queue;
     }
 
-
-    public void setDefaultRateLimiter(long periodInMs, long maxExecutions) {
-        LOGGER.info("default rate limiter set with  {} executions every {} ms", maxExecutions, periodInMs);
-        this.defaultRateLimiter = RateLimiter.<HttpExchange>smoothBuilder(maxExecutions, Duration.of(periodInMs, ChronoUnit.MILLIS)).build();
-    }
 
     private void setDefaultRetryPolicy(Integer retries, Long retryDelayInMs, Long retryMaxDelayInMs, Double retryDelayFactor, Long retryJitterInMs) {
         this.defaultRetryPolicy = Optional.of(buildRetryPolicy(retries, retryDelayInMs, retryMaxDelayInMs, retryDelayFactor, retryJitterInMs));

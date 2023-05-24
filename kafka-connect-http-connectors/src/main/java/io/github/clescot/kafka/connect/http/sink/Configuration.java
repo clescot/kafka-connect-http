@@ -59,8 +59,8 @@ public class Configuration {
         }
     }
 
-    public RateLimiter<HttpExchange> getRateLimiter() {
-        return rateLimiter;
+    public Optional<RateLimiter<HttpExchange>> getRateLimiter() {
+        return Optional.ofNullable(rateLimiter);
     }
 
     public boolean matches(HttpRequest httpRequest){
