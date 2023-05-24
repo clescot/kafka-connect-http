@@ -3,6 +3,14 @@ package io.github.clescot.kafka.connect.http.sink;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import com.google.common.base.Charsets;
+import com.google.common.base.Preconditions;
+import com.google.common.base.Stopwatch;
+import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
+import dev.failsafe.Failsafe;
+import dev.failsafe.RateLimiter;
+import dev.failsafe.RetryPolicy;
 import io.github.clescot.kafka.connect.http.VersionUtils;
 import io.github.clescot.kafka.connect.http.core.HttpExchange;
 import io.github.clescot.kafka.connect.http.core.HttpRequest;
@@ -13,14 +21,6 @@ import io.github.clescot.kafka.connect.http.core.queue.QueueFactory;
 import io.github.clescot.kafka.connect.http.sink.client.HttpClient;
 import io.github.clescot.kafka.connect.http.sink.client.HttpClientFactory;
 import io.github.clescot.kafka.connect.http.sink.client.HttpException;
-import com.google.common.base.Charsets;
-import com.google.common.base.Preconditions;
-import com.google.common.base.Stopwatch;
-import com.google.common.collect.Lists;
-import com.google.common.collect.Maps;
-import dev.failsafe.Failsafe;
-import dev.failsafe.RateLimiter;
-import dev.failsafe.RetryPolicy;
 import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.data.Struct;
 import org.apache.kafka.connect.errors.ConnectException;
@@ -31,10 +31,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.lang.reflect.InvocationTargetException;
-import java.time.Duration;
 import java.time.OffsetDateTime;
 import java.time.ZoneId;
-import java.time.temporal.ChronoUnit;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -63,8 +61,6 @@ public class HttpSinkTask extends SinkTask {
     private ErrantRecordReporter errantRecordReporter;
     private boolean generateMissingCorrelationId;
     private boolean generateMissingRequestId;
-
-    private Optional<RetryPolicy<HttpExchange>> defaultRetryPolicy = Optional.empty();
 
     private final Map<String, Pattern> patternMap = Maps.newHashMap();
     private String defaultSuccessResponseCodeRegex;
@@ -119,19 +115,6 @@ public class HttpSinkTask extends SinkTask {
             throw new RuntimeException(e);
         }
         this.httpClient = httpClientFactory.build(httpSinkConnectorConfig.originalsStrings(),executor);
-        Integer defaultRetries = httpSinkConnectorConfig.getDefaultRetries();
-        Long defaultRetryDelayInMs = httpSinkConnectorConfig.getDefaultRetryDelayInMs();
-        Long defaultRetryMaxDelayInMs = httpSinkConnectorConfig.getDefaultRetryMaxDelayInMs();
-        Double defaultRetryDelayFactor = httpSinkConnectorConfig.getDefaultRetryDelayFactor();
-        Long defaultRetryJitterInMs = httpSinkConnectorConfig.getDefaultRetryJitterInMs();
-
-        setDefaultRetryPolicy(
-                defaultRetries,
-                defaultRetryDelayInMs,
-                defaultRetryMaxDelayInMs,
-                defaultRetryDelayFactor,
-                defaultRetryJitterInMs
-        );
 
         customConfigurations = buildCustomConfigurations(httpSinkConnectorConfig);
 
@@ -191,11 +174,11 @@ public class HttpSinkTask extends SinkTask {
             HttpRequest httpRequestWithTrackingHeaders = addTrackingHeaders(httpRequestWithStaticHeaders);
 
             //TODO get configuration from HttpRequest
-            Configuration defaultConfiguration = new Configuration("default",httpSinkConnectorConfig);;
+            Configuration defaultConfiguration = new Configuration("default",httpSinkConnectorConfig);
             Configuration foundConfiguration = customConfigurations.stream().filter(config -> config.matches(httpRequest)).findFirst().orElse(defaultConfiguration);
 
             //handle Request and Response
-            return callWithRetryPolicy(sinkRecord, httpRequestWithTrackingHeaders, defaultRetryPolicy,foundConfiguration).thenApply(
+            return callWithRetryPolicy(sinkRecord, httpRequestWithTrackingHeaders, foundConfiguration.getRetryPolicy(),foundConfiguration).thenApply(
                     myHttpExchange -> {
                         LOGGER.debug("HTTP exchange :{}", myHttpExchange);
                         return myHttpExchange;
@@ -444,25 +427,7 @@ public class HttpSinkTask extends SinkTask {
     }
 
 
-    private void setDefaultRetryPolicy(Integer retries, Long retryDelayInMs, Long retryMaxDelayInMs, Double retryDelayFactor, Long retryJitterInMs) {
-        this.defaultRetryPolicy = Optional.of(buildRetryPolicy(retries, retryDelayInMs, retryMaxDelayInMs, retryDelayFactor, retryJitterInMs));
-    }
 
-    private RetryPolicy<HttpExchange> buildRetryPolicy(Integer retries,
-                                                       Long retryDelayInMs,
-                                                       Long retryMaxDelayInMs,
-                                                       Double retryDelayFactor,
-                                                       Long retryJitterInMs) {
-        return RetryPolicy.<HttpExchange>builder()
-                //we retry only if the error comes from the WS server (server-side technical error)
-                .handle(HttpException.class)
-                .withBackoff(Duration.ofMillis(retryDelayInMs), Duration.ofMillis(retryMaxDelayInMs), retryDelayFactor)
-                .withJitter(Duration.ofMillis(retryJitterInMs))
-                .withMaxRetries(retries)
-                .onRetry(listener -> LOGGER.warn("Retry ws call result:{}, failure:{}", listener.getLastResult(), listener.getLastException()))
-                .onFailure(listener -> LOGGER.warn("ws call failed ! result:{},exception:{}", listener.getResult(), listener.getException()))
-                .onAbort(listener -> LOGGER.warn("ws call aborted ! result:{},exception:{}", listener.getResult(), listener.getException()))
-                .build();
-    }
+
 
 }

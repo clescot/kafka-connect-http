@@ -13,15 +13,20 @@ public class HttpSinkConfigDefinition {
     public static final String PUBLISH_TO_IN_MEMORY_QUEUE = "publish.to.in.memory.queue";
     public static final String PUBLISH_TO_IN_MEMORY_QUEUE_DOC = "when set to false, ignore HTTP responses, i.e does not publish responses in the in memory queue. No Source Connector is needed when set to false. When set to true, a Source Connector is needed to consume published Http exchanges in this in memory queue.";
     public static final String HTTPCLIENT_DEFAULT = "httpclient.default.";
-    public static final String HTTP_CLIENT_DEFAULT_RETRIES = HTTPCLIENT_DEFAULT + "retries";
+    public static final String RETRIES = "retries";
+    public static final String HTTP_CLIENT_DEFAULT_RETRIES = HTTPCLIENT_DEFAULT + RETRIES;
     public static final String HTTP_CLIENT_DEFAULT_RETRIES_DOC = "if set with other default retry parameters, permit to define a default retry policy, which can be overriden in the httpRequest object. Define how many retries before an error is thrown";
-    public static final String HTTP_CLIENT_DEFAULT_RETRY_DELAY_IN_MS = HTTPCLIENT_DEFAULT + "retry.delay.in.ms";
+    public static final String RETRY_DELAY_IN_MS = "retry.delay.in.ms";
+    public static final String HTTP_CLIENT_DEFAULT_RETRY_DELAY_IN_MS = HTTPCLIENT_DEFAULT + RETRY_DELAY_IN_MS;
     public static final String HTTP_CLIENT_DEFAULT_RETRY_DELAY_IN_MS_DOC = "if set with other default retry parameters, permit to define a default retry policy, which can be overriden in the httpRequest object. Define how long wait initially before first retry";
-    public static final String HTTP_CLIENT_DEFAULT_RETRY_MAX_DELAY_IN_MS = HTTPCLIENT_DEFAULT + "retry.max.delay.in.ms";
+    public static final String RETRY_MAX_DELAY_IN_MS = "retry.max.delay.in.ms";
+    public static final String HTTP_CLIENT_DEFAULT_RETRY_MAX_DELAY_IN_MS = HTTPCLIENT_DEFAULT + RETRY_MAX_DELAY_IN_MS;
     public static final String HTTP_CLIENT_DEFAULT_RETRY_MAX_DELAY_IN_MS_DOC = "if set with other default retry parameters, permit to define a default retry policy, which can be overriden in the httpRequest object. Define how long max wait before retry";
-    public static final String HTTP_CLIENT_DEFAULT_RETRY_DELAY_FACTOR = HTTPCLIENT_DEFAULT + "retry.delay.factor";
+    public static final String RETRY_DELAY_FACTOR = "retry.delay.factor";
+    public static final String HTTP_CLIENT_DEFAULT_RETRY_DELAY_FACTOR = HTTPCLIENT_DEFAULT + RETRY_DELAY_FACTOR;
     public static final String HTTP_CLIENT_DEFAULT_RETRY_DELAY_FACTOR_DOC = "if set with other default retry parameters, permit to define a default retry policy, which can be overriden in the httpRequest object. Define the factor to multiply the previous delay to define the current retry delay";
-    public static final String HTTP_CLIENT_DEFAULT_RETRY_JITTER_IN_MS = HTTPCLIENT_DEFAULT + "retry.jitter.in.ms";
+    public static final String RETRY_JITTER_IN_MS = "retry.jitter.in.ms";
+    public static final String HTTP_CLIENT_DEFAULT_RETRY_JITTER_IN_MS = HTTPCLIENT_DEFAULT + RETRY_JITTER_IN_MS;
     public static final String HTTP_CLIENT_DEFAULT_RETRY_JITTER_IN_MS_DOC = "if set with other default retry parameters, permit to define a default retry policy, which can be overriden in the httpRequest object. " +
             "Define max entropy to add, to prevent many retry policies instances with the same parameters, to flood servers at the same time";
 
