@@ -44,7 +44,7 @@
         <confluent.platform.version>7.4.0</confluent.platform.version>
         <failsafe.version>3.3.1</failsafe.version>
         <guava.version>32.0.0-jre</guava.version>
-        <jackson.version>2.15.1</jackson.version>
+        <jackson.version>2.15.2</jackson.version>
         <json.assert.version>1.5.1</json.assert.version>
         <junit.version>5.9.3</junit.version>
         <maven.compiler.source>11</maven.compiler.source>
