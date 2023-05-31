@@ -5,7 +5,7 @@
     <description>a set of Kafka Connect connectors (Sink and Source), to interact with HTTP servers, linked via an in memory queue.</description>
     <groupId>io.github.clescot</groupId>
     <artifactId>kafka-connect-http</artifactId>
-    <version>0.4.5-SNAPSHOT</version>
+    <version>0.4.9-SNAPSHOT</version>
     <url>https://github.com/clescot/kafka-connect-http</url>
     <licenses>
         <license>
@@ -43,8 +43,8 @@
         <kafka.version>3.4.0</kafka.version>
         <confluent.platform.version>7.4.0</confluent.platform.version>
         <failsafe.version>3.3.1</failsafe.version>
-        <guava.version>31.1-jre</guava.version>
-        <jackson.version>2.15.1</jackson.version>
+        <guava.version>32.0.0-jre</guava.version>
+        <jackson.version>2.15.2</jackson.version>
         <json.assert.version>1.5.1</json.assert.version>
         <junit.version>5.9.3</junit.version>
         <maven.compiler.source>11</maven.compiler.source>
@@ -55,7 +55,7 @@
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <project.scm.id>github</project.scm.id>
         <slf4j.version>2.0.7</slf4j.version>
-        <testcontainers.version>1.18.1</testcontainers.version>
+        <testcontainers.version>1.18.2</testcontainers.version>
         <skipIT>false</skipIT>
         <wiremock.version>2.35.0</wiremock.version>
     </properties>
