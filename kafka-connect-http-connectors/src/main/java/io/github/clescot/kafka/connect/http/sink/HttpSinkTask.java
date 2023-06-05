@@ -173,12 +173,13 @@ public class HttpSinkTask extends SinkTask {
             HttpRequest httpRequestWithStaticHeaders = addStaticHeaders(httpRequest);
             HttpRequest httpRequestWithTrackingHeaders = addTrackingHeaders(httpRequestWithStaticHeaders);
 
-            //TODO get configuration from HttpRequest
+
             Configuration defaultConfiguration = new Configuration(DEFAULT_CONFIGURATION_ID,httpSinkConnectorConfig);
+            //is there a matching configuration against the request ?
             Configuration foundConfiguration = customConfigurations.stream().filter(config -> config.matches(httpRequest)).findFirst().orElse(defaultConfiguration);
 
             //handle Request and Response
-            return callWithRetryPolicy(sinkRecord, httpRequestWithTrackingHeaders, foundConfiguration.getRetryPolicy(),foundConfiguration).thenApply(
+            return callWithRetryPolicy(sinkRecord, httpRequestWithTrackingHeaders, foundConfiguration).thenApply(
                     myHttpExchange -> {
                         LOGGER.debug("HTTP exchange :{}", myHttpExchange);
                         return myHttpExchange;
@@ -203,8 +204,10 @@ public class HttpSinkTask extends SinkTask {
 
     }
 
-    private CompletableFuture<HttpExchange> callWithRetryPolicy(SinkRecord sinkRecord, HttpRequest httpRequest, Optional<RetryPolicy<HttpExchange>> retryPolicyForCall,Configuration configuration) {
-
+    private CompletableFuture<HttpExchange> callWithRetryPolicy(SinkRecord sinkRecord,
+                                                                HttpRequest httpRequest,
+                                                                Configuration configuration) {
+        Optional<RetryPolicy<HttpExchange>> retryPolicyForCall = configuration.getRetryPolicy();
         if (httpRequest != null) {
             AtomicInteger attempts = new AtomicInteger();
             try {
@@ -277,7 +280,10 @@ public class HttpSinkTask extends SinkTask {
     }
 
 
-    private CompletableFuture<HttpExchange> callAndPublish(SinkRecord sinkRecord, HttpRequest httpRequest, AtomicInteger attempts,Configuration configuration) {
+    private CompletableFuture<HttpExchange> callAndPublish(SinkRecord sinkRecord,
+                                                           HttpRequest httpRequest,
+                                                           AtomicInteger attempts,
+                                                           Configuration configuration) {
         return callWithThrottling(httpRequest, attempts,configuration)
                 .thenApply(myHttpExchange -> {
                     //TODO add specific pattern per site
