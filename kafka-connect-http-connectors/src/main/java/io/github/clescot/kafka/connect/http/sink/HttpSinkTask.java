@@ -49,7 +49,7 @@ public class HttpSinkTask extends SinkTask {
     public static final String HEADER_X_CORRELATION_ID = "X-Correlation-ID";
     public static final String HEADER_X_REQUEST_ID = "X-Request-ID";
     public static final String SINK_RECORD_HAS_GOT_A_NULL_VALUE = "sinkRecord has got a 'null' value";
-
+    public static final String DEFAULT_CONFIGURATION_ID = "default";
 
 
     private HttpClient httpClient;
@@ -174,7 +174,7 @@ public class HttpSinkTask extends SinkTask {
             HttpRequest httpRequestWithTrackingHeaders = addTrackingHeaders(httpRequestWithStaticHeaders);
 
             //TODO get configuration from HttpRequest
-            Configuration defaultConfiguration = new Configuration("default",httpSinkConnectorConfig);
+            Configuration defaultConfiguration = new Configuration(DEFAULT_CONFIGURATION_ID,httpSinkConnectorConfig);
             Configuration foundConfiguration = customConfigurations.stream().filter(config -> config.matches(httpRequest)).findFirst().orElse(defaultConfiguration);
 
             //handle Request and Response
