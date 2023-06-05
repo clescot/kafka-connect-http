@@ -30,6 +30,7 @@ public class Configuration {
     public Configuration(String id,HttpSinkConnectorConfig httpSinkConnectorConfig) {
         Map<String, Object> configMap = httpSinkConnectorConfig.originalsWithPrefix("httpclient." + id+".");
 
+        //main predicate
         if(configMap.containsKey(URL_REGEX)){
             String urlRegex = (String) configMap.get(URL_REGEX);
             Pattern urlPattern = Pattern.compile(urlRegex);
@@ -57,11 +58,15 @@ public class Configuration {
             }
 
         }
+
+        //rate limiter
         if(configMap.containsKey(RATE_LIMITER_MAX_EXECUTIONS)){
             long maxExecutions = Long.parseLong((String) configMap.get(RATE_LIMITER_MAX_EXECUTIONS));
             long periodInMs = Long.parseLong(Optional.ofNullable((String) configMap.get(RATE_LIMITER_MAX_EXECUTIONS)).orElse(httpSinkConnectorConfig.getDefaultRateLimiterPeriodInMs()+""));
             this.rateLimiter = RateLimiter.<HttpExchange>smoothBuilder(maxExecutions, Duration.of(periodInMs, ChronoUnit.MILLIS)).build();
         }
+
+        //retry policy
         if(configMap.containsKey(RETRIES)) {
             Integer retries = Integer.parseInt((String) configMap.get(RETRIES));
             Long retryDelayInMs = Long.parseLong((String) configMap.get(RETRY_DELAY_IN_MS));
