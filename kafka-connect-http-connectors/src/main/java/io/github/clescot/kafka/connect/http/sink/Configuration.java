@@ -24,6 +24,7 @@ public class Configuration {
     public static final String BODYTYPE_REGEX = "bodytype.regex";
     public static final String HEADER_KEY = "header.key";
     public static final String HEADER_VALUE = "header.value";
+    private String retryResponseCodeRegex;
     private RateLimiter<HttpExchange> rateLimiter;
     private RetryPolicy<HttpExchange> retryPolicy;
     private Predicate<HttpRequest> mainpredicate = httpRequest -> true;
@@ -66,6 +67,11 @@ public class Configuration {
             this.rateLimiter = RateLimiter.<HttpExchange>smoothBuilder(maxExecutions, Duration.of(periodInMs, ChronoUnit.MILLIS)).build();
         }
 
+        //retry response code regex
+        if(configMap.containsKey(RETRY_RESPONSE_CODE_REGEX)){
+            this.retryResponseCodeRegex = (String) configMap.get(RETRY_RESPONSE_CODE_REGEX);
+        }
+
         //retry policy
         if(configMap.containsKey(RETRIES)) {
             Integer retries = Integer.parseInt((String) configMap.get(RETRIES));
@@ -75,6 +81,7 @@ public class Configuration {
             Long retryJitterInMs = Long.parseLong((String) configMap.get(RETRY_JITTER_IN_MS));
             this.retryPolicy = buildRetryPolicy(retries, retryDelayInMs, retryMaxDelayInMs, retryDelayFactor, retryJitterInMs);
         }
+
     }
 
     public Optional<RateLimiter<HttpExchange>> getRateLimiter() {
@@ -83,6 +90,10 @@ public class Configuration {
 
     public Optional<RetryPolicy<HttpExchange>> getRetryPolicy() {
         return Optional.ofNullable(retryPolicy);
+    }
+
+    public Optional<String> getRetryResponseCodeRegex(){
+        return Optional.ofNullable(retryResponseCodeRegex);
     }
 
     private RetryPolicy<HttpExchange> buildRetryPolicy(Integer retries,

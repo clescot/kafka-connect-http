@@ -39,7 +39,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 
 public class HttpSinkTask extends SinkTask {
@@ -67,6 +66,7 @@ public class HttpSinkTask extends SinkTask {
     private String defaultRetryResponseCodeRegex;
     private CopyOnWriteArrayList<Configuration> customConfigurations;
     private static ExecutorService executor;
+    private Configuration defaultConfiguration;
 
     @Override
     public String version() {
@@ -115,8 +115,8 @@ public class HttpSinkTask extends SinkTask {
             throw new RuntimeException(e);
         }
         this.httpClient = httpClientFactory.build(httpSinkConnectorConfig.originalsStrings(),executor);
-
-        customConfigurations = buildCustomConfigurations(httpSinkConnectorConfig);
+        this.defaultConfiguration = new Configuration(DEFAULT_CONFIGURATION_ID,httpSinkConnectorConfig);
+        customConfigurations = buildCustomConfigurations(httpSinkConnectorConfig,defaultConfiguration);
 
 
         if (httpSinkConnectorConfig.isPublishToInMemoryQueue()) {
@@ -133,7 +133,7 @@ public class HttpSinkTask extends SinkTask {
     }
 
 
-    private CopyOnWriteArrayList<Configuration> buildCustomConfigurations(HttpSinkConnectorConfig httpSinkConnectorConfig){
+    private CopyOnWriteArrayList<Configuration> buildCustomConfigurations(HttpSinkConnectorConfig httpSinkConnectorConfig, Configuration defaultConfiguration){
         CopyOnWriteArrayList<Configuration> configurations = Lists.newCopyOnWriteArrayList();
         for (String configId: httpSinkConnectorConfig.getConfigurationIds()) {
            Configuration configuration = new Configuration(configId,httpSinkConnectorConfig);
@@ -170,9 +170,13 @@ public class HttpSinkTask extends SinkTask {
             HttpRequest httpRequestWithTrackingHeaders = addTrackingHeaders(httpRequestWithStaticHeaders);
 
 
-            Configuration defaultConfiguration = new Configuration(DEFAULT_CONFIGURATION_ID,httpSinkConnectorConfig);
+
             //is there a matching configuration against the request ?
-            Configuration foundConfiguration = customConfigurations.stream().filter(config -> config.matches(httpRequest)).findFirst().orElse(defaultConfiguration);
+            Configuration foundConfiguration = customConfigurations
+                    .stream()
+                    .filter(config -> config.matches(httpRequest))
+                    .findFirst()
+                    .orElse(defaultConfiguration);
 
             //handle Request and Response
             return callWithRetryPolicy(sinkRecord, httpRequestWithTrackingHeaders, foundConfiguration).thenApply(
@@ -211,9 +215,10 @@ public class HttpSinkTask extends SinkTask {
                 if (retryPolicyForCall.isPresent()) {
                     RetryPolicy<HttpExchange> retryPolicy = retryPolicyForCall.get();
                     CompletableFuture<HttpExchange> httpExchangeFuture = callAndPublish(sinkRecord, httpRequest, attempts,configuration)
-                            .thenApply(this::handleRetry);
+                       .thenApply(httpExchange-> handleRetry(httpExchange,configuration)
+                    );
                     return Failsafe.with(List.of(retryPolicy))
-                            .getStageAsync(()->httpExchangeFuture);
+                       .getStageAsync(()->httpExchangeFuture);
                 } else {
                     return callAndPublish(sinkRecord, httpRequest, attempts,configuration);
                 }
@@ -232,9 +237,9 @@ public class HttpSinkTask extends SinkTask {
         }
     }
 
-    private HttpExchange handleRetry(HttpExchange httpExchange) {
+    private HttpExchange handleRetry(HttpExchange httpExchange,Configuration configuration) {
         //we don't retry success HTTP Exchange
-        boolean responseCodeImpliesRetry = retryNeeded(httpExchange.getHttpResponse());
+        boolean responseCodeImpliesRetry = retryNeeded(httpExchange.getHttpResponse(),configuration);
         LOGGER.debug("httpExchange success :'{}'", httpExchange.isSuccess());
         LOGGER.debug("response code('{}') implies retry:'{}'", httpExchange.getHttpResponse().getStatusCode(), "" + responseCodeImpliesRetry);
         if (!httpExchange.isSuccess()
@@ -254,11 +259,15 @@ public class HttpSinkTask extends SinkTask {
         return patternMap.get(pattern);
     }
 
-    protected boolean retryNeeded(HttpResponse httpResponse) {
-        //TODO add specific retry pattern per site
-        Pattern retryPattern = getRetryPattern(this.defaultRetryResponseCodeRegex);
-        Matcher matcher = retryPattern.matcher("" + httpResponse.getStatusCode());
-        return matcher.matches();
+    protected boolean retryNeeded(HttpResponse httpResponse,Configuration configuration) {
+        Optional<String> retryResponseCodeRegex = configuration.getRetryResponseCodeRegex();
+        if(retryResponseCodeRegex.isPresent()) {
+            Pattern retryPattern = getRetryPattern(retryResponseCodeRegex.get());
+            Matcher matcher = retryPattern.matcher("" + httpResponse.getStatusCode());
+            return matcher.matches();
+        }else {
+            return false;
+        }
     }
 
     private CompletableFuture<HttpExchange> callWithThrottling(HttpRequest httpRequest, AtomicInteger attempts,Configuration configuration) {
