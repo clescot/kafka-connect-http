@@ -153,7 +153,8 @@ public class HttpSinkTask extends SinkTask {
         Preconditions.checkNotNull(httpClient, "httpClient is null. 'start' method must be called once before put");
 
         //we submit futures to the pool
-        List<HttpExchange> httpExchanges = records.stream().map(this::process).map(CompletableFuture::join).collect(Collectors.toList());
+        List<CompletableFuture<HttpExchange>> completableFutures = records.stream().map(this::process).collect(Collectors.toList());
+        List<HttpExchange> httpExchanges = completableFutures.stream().map(CompletableFuture::join).collect(Collectors.toList());
 
 
     }
