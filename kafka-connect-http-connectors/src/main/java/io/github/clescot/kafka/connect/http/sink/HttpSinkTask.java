@@ -40,6 +40,8 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
+import static io.github.clescot.kafka.connect.http.sink.HttpSinkConfigDefinition.HTTP_CLIENT_DEFAULT_DEFAULT_SUCCESS_RESPONSE_CODE_REGEX;
+
 
 public class HttpSinkTask extends SinkTask {
     private static final Logger LOGGER = LoggerFactory.getLogger(HttpSinkTask.class);
@@ -61,12 +63,10 @@ public class HttpSinkTask extends SinkTask {
     private boolean generateMissingCorrelationId;
     private boolean generateMissingRequestId;
 
-    private final Map<String, Pattern> patternMap = Maps.newHashMap();
-    private String defaultSuccessResponseCodeRegex;
-    private String defaultRetryResponseCodeRegex;
     private CopyOnWriteArrayList<Configuration> customConfigurations;
     private static ExecutorService executor;
     private Configuration defaultConfiguration;
+    private final Pattern defaultSuccessPattern = Pattern.compile(HTTP_CLIENT_DEFAULT_DEFAULT_SUCCESS_RESPONSE_CODE_REGEX);
 
     @Override
     public String version() {
@@ -96,8 +96,6 @@ public class HttpSinkTask extends SinkTask {
         this.staticRequestHeaders = httpSinkConnectorConfig.getStaticRequestHeaders();
         this.generateMissingRequestId = httpSinkConnectorConfig.isGenerateMissingRequestId();
         this.generateMissingCorrelationId = httpSinkConnectorConfig.isGenerateMissingCorrelationId();
-        this.defaultSuccessResponseCodeRegex = httpSinkConnectorConfig.getDefaultSuccessResponseCodeRegex();
-        this.defaultRetryResponseCodeRegex = httpSinkConnectorConfig.getDefaultRetryResponseCodeRegex();
 
         Integer customFixedThreadPoolSize = httpSinkConnectorConfig.getCustomFixedThreadpoolSize();
         if(customFixedThreadPoolSize!=null &&executor==null){
@@ -249,20 +247,11 @@ public class HttpSinkTask extends SinkTask {
         return httpExchange;
     }
 
-    private Pattern getRetryPattern(String pattern) {
-
-        if (this.patternMap.get(pattern) == null) {
-            //Pattern.compile should be reused for performance, but wsSuccessCode can change....
-            Pattern httpSuccessPattern = Pattern.compile(pattern);
-            patternMap.put(pattern, httpSuccessPattern);
-        }
-        return patternMap.get(pattern);
-    }
 
     protected boolean retryNeeded(HttpResponse httpResponse,Configuration configuration) {
-        Optional<String> retryResponseCodeRegex = configuration.getRetryResponseCodeRegex();
+        Optional<Pattern> retryResponseCodeRegex = configuration.getRetryResponseCodeRegex();
         if(retryResponseCodeRegex.isPresent()) {
-            Pattern retryPattern = getRetryPattern(retryResponseCodeRegex.get());
+            Pattern retryPattern = retryResponseCodeRegex.get();
             Matcher matcher = retryPattern.matcher("" + httpResponse.getStatusCode());
             return matcher.matches();
         }else {
@@ -291,8 +280,7 @@ public class HttpSinkTask extends SinkTask {
                                                            Configuration configuration) {
         return callWithThrottling(httpRequest, attempts,configuration)
                 .thenApply(myHttpExchange -> {
-                    //TODO add specific pattern per site
-                    boolean success = isSuccess(myHttpExchange);
+                    boolean success = isSuccess(myHttpExchange,configuration);
                     myHttpExchange.setSuccess(success);
                     //publish eventually to 'in memory' queue
                     if (httpSinkConnectorConfig.isPublishToInMemoryQueue()) {
@@ -306,9 +294,13 @@ public class HttpSinkTask extends SinkTask {
 
     }
 
-    protected boolean isSuccess(HttpExchange httpExchange) {
-        Pattern pattern = getRetryPattern(this.defaultSuccessResponseCodeRegex);
+    protected boolean isSuccess(HttpExchange httpExchange,Configuration configuration) {
+        Pattern pattern = defaultSuccessPattern;
+        if(configuration.getSuccessResponseCodeRegex().isPresent()) {
+            pattern = configuration.getSuccessResponseCodeRegex().get();
+        }
         return pattern.matcher(httpExchange.getHttpResponse().getStatusCode() + "").matches();
+
     }
 
 

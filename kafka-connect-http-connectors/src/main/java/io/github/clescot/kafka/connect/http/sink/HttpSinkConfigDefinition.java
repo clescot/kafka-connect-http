@@ -97,7 +97,8 @@ public class HttpSinkConfigDefinition {
     public static final String HTTPCLIENT_SSL_TRUSTSTORE_ALGORITHM = "httpclient.ssl.truststore.algorithm";
     public static final String HTTPCLIENT_SSL_TRUSTSTORE_ALGORITHM_DOC = "the standard name of the requested algorithm. See the KeyManagerFactory section in the Java Security Standard Algorithm Names Specification for information about standard algorithm names.";
 
-    public static final String HTTPCLIENT_DEFAULT_SUCCESS_RESPONSE_CODE_REGEX = HTTPCLIENT_DEFAULT + "success.response.code.regex";
+    public static final String SUCCESS_RESPONSE_CODE_REGEX = "success.response.code.regex";
+    public static final String HTTPCLIENT_DEFAULT_SUCCESS_RESPONSE_CODE_REGEX = HTTPCLIENT_DEFAULT + SUCCESS_RESPONSE_CODE_REGEX;
     public static final String HTTPCLIENT_DEFAULT_SUCCESS_RESPONSE_CODE_REGEX_DOC = "default regex which decide if the request is a success or not, based on the response status code";
     //by default, we don't resend any http call with a response between 100 and 499
     // 1xx is for protocol information (100 continue for example),
@@ -117,7 +118,7 @@ public class HttpSinkConfigDefinition {
 
     private static final String DEFAULT_DEFAULT_RETRY_RESPONSE_CODE_REGEX = "^5[0-9][0-9]$";
 
-    private static final String HTTP_CLIENT_DEFAULT_DEFAULT_SUCCESS_RESPONSE_CODE_REGEX = "^[1-2][0-9][0-9]$";
+    public static final String HTTP_CLIENT_DEFAULT_DEFAULT_SUCCESS_RESPONSE_CODE_REGEX = "^[1-2][0-9][0-9]$";
     public static final String RETRY_RESPONSE_CODE_REGEX = "retry.response.code.regex";
     public static final String HTTP_CLIENT_DEFAULT_RETRY_RESPONSE_CODE_REGEX = HTTPCLIENT_DEFAULT + RETRY_RESPONSE_CODE_REGEX;
     public static final String DEFAULT_RETRY_RESPONSE_CODE_REGEX_DOC = "regex which define if a retry need to be triggered, based on the response status code. default is '"+HTTP_CLIENT_DEFAULT_DEFAULT_SUCCESS_RESPONSE_CODE_REGEX+"'";
