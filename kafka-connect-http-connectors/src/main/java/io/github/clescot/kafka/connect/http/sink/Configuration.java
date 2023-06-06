@@ -64,7 +64,7 @@ public class Configuration {
         //rate limiter
         if(configMap.containsKey(RATE_LIMITER_MAX_EXECUTIONS)){
             long maxExecutions = Long.parseLong((String) configMap.get(RATE_LIMITER_MAX_EXECUTIONS));
-            long periodInMs = Long.parseLong(Optional.ofNullable((String) configMap.get(RATE_LIMITER_MAX_EXECUTIONS)).orElse(httpSinkConnectorConfig.getDefaultRateLimiterPeriodInMs()+""));
+            long periodInMs = Long.parseLong(Optional.ofNullable((String) configMap.get(RATE_LIMITER_PERIOD_IN_MS)).orElse(httpSinkConnectorConfig.getDefaultRateLimiterPeriodInMs()+""));
             this.rateLimiter = RateLimiter.<HttpExchange>smoothBuilder(maxExecutions, Duration.of(periodInMs, ChronoUnit.MILLIS)).build();
         }
 
@@ -72,7 +72,8 @@ public class Configuration {
         if(configMap.containsKey(SUCCESS_RESPONSE_CODE_REGEX)){
             this.successResponseCodeRegex = Pattern.compile((String) configMap.get(SUCCESS_RESPONSE_CODE_REGEX));
         }
-//retry response code regex
+
+        //retry response code regex
         if(configMap.containsKey(RETRY_RESPONSE_CODE_REGEX)){
             this.retryResponseCodeRegex = Pattern.compile((String) configMap.get(RETRY_RESPONSE_CODE_REGEX));
         }
