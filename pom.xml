@@ -40,7 +40,7 @@
         <commons-text.version>1.10.0</commons-text.version>
         <connect-json.version>3.4.0</connect-json.version>
         <debezium.version>2.2.1.Final</debezium.version>
-        <kafka.version>3.4.0</kafka.version>
+        <kafka.version>3.4.1</kafka.version>
         <confluent.platform.version>7.4.0</confluent.platform.version>
         <failsafe.version>3.3.1</failsafe.version>
         <guava.version>32.0.0-jre</guava.version>
