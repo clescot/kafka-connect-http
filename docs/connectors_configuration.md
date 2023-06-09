@@ -247,17 +247,27 @@ To avoid any issue, you must configure the same `tasks.max` parameters for the H
 
 ### per site parameters
 
-Http Client is driven by some specific parameters, and a configuration, which owns : 
- - a rate limiter
- - a success response code regex
- - a retry response code regex
- - a retry policy
 
-There is a default configuration that you can configure, and you can define some specific configuration linked to some web sites.
-Each configuration is identified by a prefix, in the form : 
+#### default configuration
+
+Http Client is driven by some specific parameters, and a configuration, which owns :
+- a rate limiter
+- a success response code regex
+- a retry response code regex
+- a retry policy
+
+
+There is a _default_ configuration.
+
+#### custom configurations
+But you can override this configuration, for some specific HTTP requests.
+
+
+Each specific configuration is identified by a _prefix_, in the form : 
 `httpclient.<configurationid>.`
 
-The prefix for the default configuration is `httpclient.default.`
+The prefix for the _default_ configuration is `httpclient.default.` (its configuration id is `default`).
+
 To register some custom configurations, you need to register them by their configurationid in the parameter :
 `httpclient.custom.config.ids`, with the configuration ids separated by commas.
 
