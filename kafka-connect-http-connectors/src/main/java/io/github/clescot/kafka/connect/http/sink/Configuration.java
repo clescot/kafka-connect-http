@@ -17,6 +17,16 @@ import java.util.regex.Pattern;
 
 import static io.github.clescot.kafka.connect.http.sink.HttpSinkConfigDefinition.*;
 
+/**
+ * Configuration of the http call mechanism, specific to some websites according to the configured <span class="strong">predicate</span>.
+ *
+ * It permits to customize :
+ * <ul>
+ * <li>a success http response code regex</li>
+ * <li>a retry http response code regex</li>
+ * <li>a custom rate limiter</li>
+ * </ul>
+ */
 public class Configuration {
     private static final Logger LOGGER = LoggerFactory.getLogger(Configuration.class);
     public static final String URL_REGEX = "url.regex";
