@@ -21,8 +21,8 @@ every Kafka Connect Sink Connector need to define these required parameters :
 
 
   - http client implementation settings
-    - *httpclient.implementation* : define which intalled library to use : either `ahc`, a.k.a async http client, or `okhttp`. default is `okhttp`.
-  - retry setttings (**set them all or no one**), permit to define a default retry policy.
+    - *httpclient.implementation* : define which installed library to use : either `ahc`, a.k.a async http client, or `okhttp`. default is `okhttp`.
+  - retry settings (**set them all or no one**), permit to define a default retry policy.
     - *httpclient.default.success.response.code.regex* : default regex which decide if the request is a success or not, based on the response status code
     - *httpclient.default.retry.response.code.regex* : regex which define if a retry need to be triggered, based on the response status code. default is `^[1-2][0-9][0-9]$`
       by default, we don't resend any http call with a response between `100` and `499`.only `5xx` by default, trigger a resend
