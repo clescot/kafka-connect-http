@@ -247,7 +247,57 @@ To avoid any issue, you must configure the same `tasks.max` parameters for the H
 
 ### per site parameters
 
-TODO 
+
+#### default configuration
+
+Http Client is driven by some specific parameters, and a configuration, which owns :
+- a rate limiter
+- a success response code regex
+- a retry response code regex
+- a retry policy
+
+
+There is a _default_ configuration.
+
+#### custom configurations
+But you can override this configuration, for some specific HTTP requests.
+
+
+Each specific configuration is identified by a _prefix_, in the form : 
+`httpclient.<configurationid>.`
+
+The prefix for the _default_ configuration is `httpclient.default.` (its configuration id is `default`).
+
+To register some custom configurations, you need to register them by their configurationid in the parameter :
+`httpclient.custom.config.ids`, with the configuration ids separated by commas.
+
+exemple : 
+```
+"httpclient.custom.config.ids": "id1,id2,stuff"
+```
+
+for example, if you've registered a configuration with the id `test2`, it needs to be present in the field `httpclient.custom.config.ids`.
+
+You must register a **predicate** to detect the matching between the http request and the configuration.
+A predicate can be composed of multiple matchers (composed with a logical AND), configured with these parameters : 
+- `httpclient.test2.url.regex`
+- `httpclient.test2.method.regex`
+- `httpclient.test2.bodytype.regex`
+- `httpclient.test2.header.key`
+- `httpclient.test2.header.value` (can be added, only if the previous parameter is also configured)
+
+You will have the ability to define optionnaly :
+- a **rate limiter** with the parameters :
+  - `httpclient.test2.rate.limiter.max.executions`
+  - `httpclient.test2.rate.limiter.period.in.ms`
+  - a **success response code regex** with the parameter : `httpclient.test2.success.response.code.regex`
+  - a **retry response code regex** with the parameter : `httpclient.test2.retry.response.code.regex`
+  - a **retry policy** with the parameters : 
+    - `httpclient.test2.retries`
+    - `httpclient.test2.retry.delay.in.ms`
+    - `httpclient.test2.retry.max.delay.in.ms`
+    - `httpclient.test2.retry.delay.factor`
+    - `httpclient.test2.retry.jitter.in.ms`
 
 ### site authentication methods
 

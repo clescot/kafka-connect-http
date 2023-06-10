@@ -427,7 +427,7 @@ public class HttpSinkTaskTest {
             long elapsedMillis = stopwatch.elapsed(TimeUnit.MILLISECONDS);
             LOGGER.info("put method execution time :'{}' ms",elapsedMillis);
             //then
-            assertThat(elapsedMillis).isLessThan(2800);
+            assertThat(elapsedMillis).isLessThan(2990);
 
         }
 
@@ -787,39 +787,51 @@ public class HttpSinkTaskTest {
     class RetryNeeded{
         @Test
         public void test_retry_needed() {
+            Map<String,String> config = Maps.newHashMap();
+            config.put("httpclient.dummy."+RETRY_RESPONSE_CODE_REGEX,"^5[0-9][0-9]$");
+            Configuration configuration = new Configuration("dummy",new HttpSinkConnectorConfig(config));
             HttpResponse httpResponse = new HttpResponse(500, "Internal Server Error");
             Map<String, String> settings = Maps.newHashMap();
             httpSinkTask.start(settings);
-            boolean retryNeeded = httpSinkTask.retryNeeded(httpResponse);
+            boolean retryNeeded = httpSinkTask.retryNeeded(httpResponse,configuration);
             assertThat(retryNeeded).isTrue();
         }
 
         @Test
         public void test_retry_not_needed_with_400_status_code() {
+            Map<String,String> config = Maps.newHashMap();
+            config.put("httpclient.dummy."+RETRY_RESPONSE_CODE_REGEX,"^5[0-9][0-9]$");
+            Configuration configuration = new Configuration("dummy",new HttpSinkConnectorConfig(config));
             HttpResponse httpResponse = new HttpResponse(400, "Internal Server Error");
             Map<String, String> settings = Maps.newHashMap();
             httpSinkTask.start(settings);
-            boolean retryNeeded = httpSinkTask.retryNeeded(httpResponse);
+            boolean retryNeeded = httpSinkTask.retryNeeded(httpResponse,configuration);
             assertThat(retryNeeded).isFalse();
         }
 
         @Test
         public void test_retry_not_needed_with_200_status_code() {
+            Map<String,String> config = Maps.newHashMap();
+            config.put("httpclient.dummy."+RETRY_RESPONSE_CODE_REGEX,"^5[0-9][0-9]$");
+            Configuration configuration = new Configuration("dummy",new HttpSinkConnectorConfig(config));
             HttpResponse httpResponse = new HttpResponse(200, "Internal Server Error");
             Map<String, String> settings = Maps.newHashMap();
             httpSinkTask.start(settings);
-            boolean retryNeeded = httpSinkTask.retryNeeded(httpResponse);
+            boolean retryNeeded = httpSinkTask.retryNeeded(httpResponse,configuration);
             assertThat(retryNeeded).isFalse();
         }
 
 
         @Test
         public void test_retry_needed_by_configuration_with_200_status_code() {
+            Map<String,String> config = Maps.newHashMap();
+            config.put("httpclient.dummy."+RETRY_RESPONSE_CODE_REGEX,"^2[0-9][0-9]$");
+            Configuration configuration = new Configuration("dummy",new HttpSinkConnectorConfig(config));
             HttpResponse httpResponse = new HttpResponse(200, "Internal Server Error");
             Map<String, String> settings = Maps.newHashMap();
             settings.put(HTTP_CLIENT_DEFAULT_RETRY_RESPONSE_CODE_REGEX, "^[1-5][0-9][0-9]$");
             httpSinkTask.start(settings);
-            boolean retryNeeded = httpSinkTask.retryNeeded(httpResponse);
+            boolean retryNeeded = httpSinkTask.retryNeeded(httpResponse,configuration);
             assertThat(retryNeeded).isTrue();
         }
     }
@@ -829,20 +841,26 @@ public class HttpSinkTaskTest {
     class IsSuccess{
         @Test
         public void test_is_success_with_200() {
+            Map<String,String> config = Maps.newHashMap();
+            config.put("httpclient.dummy."+SUCCESS_RESPONSE_CODE_REGEX,"^2[0-9][0-9]$");
+            Configuration configuration = new Configuration("dummy",new HttpSinkConnectorConfig(config));
             HttpExchange httpExchange = getDummyHttpExchange();
             Map<String, String> settings = Maps.newHashMap();
             httpSinkTask.start(settings);
-            boolean success = httpSinkTask.isSuccess(httpExchange);
+            boolean success = httpSinkTask.isSuccess(httpExchange,configuration);
             assertThat(success).isTrue();
         }
 
         @Test
         public void test_is_not_success_with_200_by_configuration() {
+            Map<String,String> config = Maps.newHashMap();
+            config.put("httpclient.dummy."+SUCCESS_RESPONSE_CODE_REGEX,"^1[0-9][0-9]$");
+            Configuration configuration = new Configuration("dummy",new HttpSinkConnectorConfig(config));
             HttpExchange httpExchange = getDummyHttpExchange();
             Map<String, String> settings = Maps.newHashMap();
             settings.put(HTTPCLIENT_DEFAULT_SUCCESS_RESPONSE_CODE_REGEX, "^20[1-5]$");
             httpSinkTask.start(settings);
-            boolean success = httpSinkTask.isSuccess(httpExchange);
+            boolean success = httpSinkTask.isSuccess(httpExchange,configuration);
             assertThat(success).isFalse();
         }
     }

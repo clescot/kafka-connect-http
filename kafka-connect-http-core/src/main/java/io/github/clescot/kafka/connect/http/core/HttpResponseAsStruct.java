@@ -7,11 +7,11 @@ import org.apache.kafka.connect.data.Struct;
 public class HttpResponseAsStruct {
     private static final Integer VERSION = 1;
 
-    private static final String STATUS_CODE = "statusCode";
-    private static final String STATUS_MESSAGE = "statusMessage";
-    private static final String PROTOCOL = "protocol";
-    private static final String RESPONSE_HEADERS = "responseHeaders";
-    private static final String RESPONSE_BODY = "responseBody";
+    public static final String STATUS_CODE = "statusCode";
+    public static final String STATUS_MESSAGE = "statusMessage";
+    public static final String PROTOCOL = "protocol";
+    public static final String RESPONSE_HEADERS = "responseHeaders";
+    public static final String RESPONSE_BODY = "responseBody";
 
     public static final Schema SCHEMA = SchemaBuilder
             .struct()

@@ -46,8 +46,6 @@ public class AHCHttpClientFactory implements HttpClientFactory<Request, Response
     private static final String BYTE_BUFFER_ALLOCATOR = ASYN_HTTP_CONFIG_PREFIX + "byte.buffer.allocator";
 
 
-    private static AHCHttpClient httpClient;
-
     private final static Logger LOGGER = LoggerFactory.getLogger(AHCHttpClientFactory.class);
 
 

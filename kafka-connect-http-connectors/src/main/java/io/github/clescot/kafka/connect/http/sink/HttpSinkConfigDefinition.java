@@ -1,6 +1,7 @@
 package io.github.clescot.kafka.connect.http.sink;
 
 import io.github.clescot.kafka.connect.http.core.queue.ConfigConstants;
+import org.apache.commons.compress.utils.Lists;
 import org.apache.kafka.common.config.ConfigDef;
 
 import java.util.Collections;
@@ -11,22 +12,30 @@ public class HttpSinkConfigDefinition {
     public static final String HTTP_CLIENT_STATIC_REQUEST_HEADER_NAMES_DOC = "list of static parameters names which will be added to all http requests. these parameter names need to be added with their values as parameters in complement of this list";
     public static final String PUBLISH_TO_IN_MEMORY_QUEUE = "publish.to.in.memory.queue";
     public static final String PUBLISH_TO_IN_MEMORY_QUEUE_DOC = "when set to false, ignore HTTP responses, i.e does not publish responses in the in memory queue. No Source Connector is needed when set to false. When set to true, a Source Connector is needed to consume published Http exchanges in this in memory queue.";
-    public static final String HTTP_CLIENT_DEFAULT_RETRIES = "httpclient.default.retries";
+    public static final String HTTPCLIENT_DEFAULT = "httpclient.default.";
+    public static final String RETRIES = "retries";
+    public static final String HTTP_CLIENT_DEFAULT_RETRIES = HTTPCLIENT_DEFAULT + RETRIES;
     public static final String HTTP_CLIENT_DEFAULT_RETRIES_DOC = "if set with other default retry parameters, permit to define a default retry policy, which can be overriden in the httpRequest object. Define how many retries before an error is thrown";
-    public static final String HTTP_CLIENT_DEFAULT_RETRY_DELAY_IN_MS = "httpclient.default.retry.delay.in.ms";
+    public static final String RETRY_DELAY_IN_MS = "retry.delay.in.ms";
+    public static final String HTTP_CLIENT_DEFAULT_RETRY_DELAY_IN_MS = HTTPCLIENT_DEFAULT + RETRY_DELAY_IN_MS;
     public static final String HTTP_CLIENT_DEFAULT_RETRY_DELAY_IN_MS_DOC = "if set with other default retry parameters, permit to define a default retry policy, which can be overriden in the httpRequest object. Define how long wait initially before first retry";
-    public static final String HTTP_CLIENT_DEFAULT_RETRY_MAX_DELAY_IN_MS = "httpclient.default.retry.max.delay.in.ms";
+    public static final String RETRY_MAX_DELAY_IN_MS = "retry.max.delay.in.ms";
+    public static final String HTTP_CLIENT_DEFAULT_RETRY_MAX_DELAY_IN_MS = HTTPCLIENT_DEFAULT + RETRY_MAX_DELAY_IN_MS;
     public static final String HTTP_CLIENT_DEFAULT_RETRY_MAX_DELAY_IN_MS_DOC = "if set with other default retry parameters, permit to define a default retry policy, which can be overriden in the httpRequest object. Define how long max wait before retry";
-    public static final String HTTP_CLIENT_DEFAULT_RETRY_DELAY_FACTOR = "httpclient.default.retry.delay.factor";
+    public static final String RETRY_DELAY_FACTOR = "retry.delay.factor";
+    public static final String HTTP_CLIENT_DEFAULT_RETRY_DELAY_FACTOR = HTTPCLIENT_DEFAULT + RETRY_DELAY_FACTOR;
     public static final String HTTP_CLIENT_DEFAULT_RETRY_DELAY_FACTOR_DOC = "if set with other default retry parameters, permit to define a default retry policy, which can be overriden in the httpRequest object. Define the factor to multiply the previous delay to define the current retry delay";
-    public static final String HTTP_CLIENT_DEFAULT_RETRY_JITTER_IN_MS = "httpclient.default.retry.jitter.in.ms";
+    public static final String RETRY_JITTER_IN_MS = "retry.jitter.in.ms";
+    public static final String HTTP_CLIENT_DEFAULT_RETRY_JITTER_IN_MS = HTTPCLIENT_DEFAULT + RETRY_JITTER_IN_MS;
     public static final String HTTP_CLIENT_DEFAULT_RETRY_JITTER_IN_MS_DOC = "if set with other default retry parameters, permit to define a default retry policy, which can be overriden in the httpRequest object. " +
             "Define max entropy to add, to prevent many retry policies instances with the same parameters, to flood servers at the same time";
 
-    public static final String HTTP_CLIENT_DEFAULT_RATE_LIMITER_PERIOD_IN_MS = "httpclient.default.rate.limiter.period.in.ms";
+    public static final String RATE_LIMITER_PERIOD_IN_MS = "rate.limiter.period.in.ms";
+    public static final String HTTP_CLIENT_DEFAULT_RATE_LIMITER_PERIOD_IN_MS = HTTPCLIENT_DEFAULT + RATE_LIMITER_PERIOD_IN_MS;
     public static final String HTTP_CLIENT_DEFAULT_RATE_LIMITER_PERIOD_IN_MS_DOC = "period of time in milliseconds, during the max execution cannot be exceeded";
 
-    public static final String HTTP_CLIENT_DEFAULT_RATE_LIMITER_MAX_EXECUTIONS = "httpclient.default.rate.limiter.max.executions";
+    public static final String RATE_LIMITER_MAX_EXECUTIONS = "rate.limiter.max.executions";
+    public static final String HTTP_CLIENT_DEFAULT_RATE_LIMITER_MAX_EXECUTIONS = HTTPCLIENT_DEFAULT + RATE_LIMITER_MAX_EXECUTIONS;
     public static final String HTTP_CLIENT_DEFAULT_RATE_LIMITER_MAX_EXECUTIONS_DOC = "max executions in the period defined with the '"+ HTTP_CLIENT_DEFAULT_RATE_LIMITER_PERIOD_IN_MS +"' parameter";
 
     private static final long DEFAULT_WAIT_TIME_REGISTRATION_QUEUE_CONSUMER_IN_MS = 60000L;
@@ -88,7 +97,8 @@ public class HttpSinkConfigDefinition {
     public static final String HTTPCLIENT_SSL_TRUSTSTORE_ALGORITHM = "httpclient.ssl.truststore.algorithm";
     public static final String HTTPCLIENT_SSL_TRUSTSTORE_ALGORITHM_DOC = "the standard name of the requested algorithm. See the KeyManagerFactory section in the Java Security Standard Algorithm Names Specification for information about standard algorithm names.";
 
-    public static final String HTTPCLIENT_DEFAULT_SUCCESS_RESPONSE_CODE_REGEX = "httpclient.default.success.response.code.regex";
+    public static final String SUCCESS_RESPONSE_CODE_REGEX = "success.response.code.regex";
+    public static final String HTTPCLIENT_DEFAULT_SUCCESS_RESPONSE_CODE_REGEX = HTTPCLIENT_DEFAULT + SUCCESS_RESPONSE_CODE_REGEX;
     public static final String HTTPCLIENT_DEFAULT_SUCCESS_RESPONSE_CODE_REGEX_DOC = "default regex which decide if the request is a success or not, based on the response status code";
     //by default, we don't resend any http call with a response between 100 and 499
     // 1xx is for protocol information (100 continue for example),
@@ -108,12 +118,16 @@ public class HttpSinkConfigDefinition {
 
     private static final String DEFAULT_DEFAULT_RETRY_RESPONSE_CODE_REGEX = "^5[0-9][0-9]$";
 
-    private static final String HTTP_CLIENT_DEFAULT_DEFAULT_SUCCESS_RESPONSE_CODE_REGEX = "^[1-2][0-9][0-9]$";
-    public static final String HTTP_CLIENT_DEFAULT_RETRY_RESPONSE_CODE_REGEX = "httpclient.default.retry.response.code.regex";
+    public static final String HTTP_CLIENT_DEFAULT_DEFAULT_SUCCESS_RESPONSE_CODE_REGEX = "^[1-2][0-9][0-9]$";
+    public static final String RETRY_RESPONSE_CODE_REGEX = "retry.response.code.regex";
+    public static final String HTTP_CLIENT_DEFAULT_RETRY_RESPONSE_CODE_REGEX = HTTPCLIENT_DEFAULT + RETRY_RESPONSE_CODE_REGEX;
     public static final String DEFAULT_RETRY_RESPONSE_CODE_REGEX_DOC = "regex which define if a retry need to be triggered, based on the response status code. default is '"+HTTP_CLIENT_DEFAULT_DEFAULT_SUCCESS_RESPONSE_CODE_REGEX+"'";
 
     public static final String HTTP_CLIENT_ASYNC_FIXED_THREAD_POOL_SIZE ="httpclient.async.fixed.thread.pool.size";
     public static final String HTTP_CLIENT_ASYNC_FIXED_THREAD_POOL_SIZE_DOC ="custom fixed thread pool size used to execute asynchronously http requests.";
+
+    public static final String HTTP_CLIENT_CUSTOM_CONFIGURATION_IDS ="httpclient.custom.config.ids";
+    public static final String HTTP_CLIENT_CUSTOM_CONFIGURATION_IDS_DOC ="custom configurations id list.";
 
     private HttpSinkConfigDefinition() {
         //Class with only static methods
@@ -155,6 +169,8 @@ public class HttpSinkConfigDefinition {
                 .define(HTTPCLIENT_SSL_TRUSTSTORE_ALGORITHM, ConfigDef.Type.STRING, null, ConfigDef.Importance.LOW, HTTPCLIENT_SSL_TRUSTSTORE_ALGORITHM_DOC)
                 //async settings
                 .define(HTTP_CLIENT_ASYNC_FIXED_THREAD_POOL_SIZE, ConfigDef.Type.INT, null, ConfigDef.Importance.MEDIUM, HTTP_CLIENT_ASYNC_FIXED_THREAD_POOL_SIZE_DOC)
+                //custom configurations
+                .define(HTTP_CLIENT_CUSTOM_CONFIGURATION_IDS,ConfigDef.Type.LIST, Lists.newArrayList(),ConfigDef.Importance.LOW, HTTP_CLIENT_CUSTOM_CONFIGURATION_IDS_DOC)
                 ;
     }
 }
