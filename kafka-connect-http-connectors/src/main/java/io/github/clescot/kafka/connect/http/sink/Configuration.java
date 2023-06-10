@@ -34,6 +34,7 @@ public class Configuration {
     public static final String BODYTYPE_REGEX = "bodytype.regex";
     public static final String HEADER_KEY = "header.key";
     public static final String HEADER_VALUE = "header.value";
+    public static final String STATIC_SCOPE = "static";
     private Pattern successResponseCodeRegex;
     private Pattern retryResponseCodeRegex;
     private RateLimiter<HttpExchange> rateLimiter;
@@ -75,7 +76,11 @@ public class Configuration {
         if(configMap.containsKey(RATE_LIMITER_MAX_EXECUTIONS)){
             long maxExecutions = Long.parseLong((String) configMap.get(RATE_LIMITER_MAX_EXECUTIONS));
             long periodInMs = Long.parseLong(Optional.ofNullable((String) configMap.get(RATE_LIMITER_PERIOD_IN_MS)).orElse(httpSinkConnectorConfig.getDefaultRateLimiterPeriodInMs()+""));
-            this.rateLimiter = RateLimiter.<HttpExchange>smoothBuilder(maxExecutions, Duration.of(periodInMs, ChronoUnit.MILLIS)).build();
+            if(configMap.containsKey(RATE_LIMITER_SCOPE)&&STATIC_SCOPE.equalsIgnoreCase((String) configMap.get(RATE_LIMITER_SCOPE))){
+
+            }else {
+                this.rateLimiter = RateLimiter.<HttpExchange>smoothBuilder(maxExecutions, Duration.of(periodInMs, ChronoUnit.MILLIS)).build();
+            }
         }
 
         //success response code regex

@@ -18,10 +18,10 @@ import java.util.concurrent.atomic.AtomicInteger;
 import static io.github.clescot.kafka.connect.http.sink.client.HttpClient.*;
 
 public class QueueProducer implements Runnable {
-    private Queue<KafkaRecord> transferQueue;
+    private final Queue<KafkaRecord> transferQueue;
 
-    private long numberOfSuccessfulMessages;
-    private long numberOfErrorMessages;
+    private final long numberOfSuccessfulMessages;
+    private final long numberOfErrorMessages;
 
     public AtomicInteger numberOfProducedMessages = new AtomicInteger();
 
