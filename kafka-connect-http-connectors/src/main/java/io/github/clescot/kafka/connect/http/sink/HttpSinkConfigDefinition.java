@@ -38,6 +38,10 @@ public class HttpSinkConfigDefinition {
     public static final String HTTP_CLIENT_DEFAULT_RATE_LIMITER_MAX_EXECUTIONS = HTTPCLIENT_DEFAULT + RATE_LIMITER_MAX_EXECUTIONS;
     public static final String HTTP_CLIENT_DEFAULT_RATE_LIMITER_MAX_EXECUTIONS_DOC = "max executions in the period defined with the '"+ HTTP_CLIENT_DEFAULT_RATE_LIMITER_PERIOD_IN_MS +"' parameter";
 
+    public static final String RATE_LIMITER_SCOPE = "rate.limiter.scope";
+    public static final String HTTP_CLIENT_DEFAULT_RATE_LIMITER_SCOPE = HTTPCLIENT_DEFAULT + RATE_LIMITER_SCOPE;
+    public static final String HTTP_CLIENT_DEFAULT_RATE_LIMITER_SCOPE_DOC = "scope of the '"+ HTTP_CLIENT_DEFAULT_RATE_LIMITER_SCOPE +"' parameter. can be either 'instance' (i.e a rate limiter per configuration in the connector instance),  or 'static' (a rate limiter per configuration shared with all connectors instances in the same Java Virtual Machine.";
+
     private static final long DEFAULT_WAIT_TIME_REGISTRATION_QUEUE_CONSUMER_IN_MS = 60000L;
     public static final String WAIT_TIME_REGISTRATION_QUEUE_CONSUMER_IN_MS = "wait.time.registration.queue.consumer.in.ms";
     public static final String WAIT_TIME_REGISTRATION_QUEUE_CONSUMER_IN_MS_DOC = "wait time defined with the '"+ WAIT_TIME_REGISTRATION_QUEUE_CONSUMER_IN_MS +"' parameter, for a queue consumer (Source Connector) registration. " +
