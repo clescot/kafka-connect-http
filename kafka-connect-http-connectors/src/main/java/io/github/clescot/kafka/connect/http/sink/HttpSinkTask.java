@@ -114,7 +114,7 @@ public class HttpSinkTask extends SinkTask {
         }
         this.httpClient = httpClientFactory.build(httpSinkConnectorConfig.originalsStrings(),executor);
         this.defaultConfiguration = new Configuration(DEFAULT_CONFIGURATION_ID,httpSinkConnectorConfig);
-        customConfigurations = buildCustomConfigurations(httpSinkConnectorConfig,defaultConfiguration);
+        customConfigurations = buildCustomConfigurations(httpSinkConnectorConfig);
 
 
         if (httpSinkConnectorConfig.isPublishToInMemoryQueue()) {
