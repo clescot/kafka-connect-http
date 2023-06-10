@@ -44,7 +44,7 @@ public class QueueProducer implements Runnable {
         }
     }
 
-    public static  KafkaRecord toKafkaRecord(HttpExchange httpExchange){
+    public static KafkaRecord toKafkaRecord(HttpExchange httpExchange){
         return new KafkaRecord(Lists.newArrayList(),null,null,httpExchange);
     }
 
