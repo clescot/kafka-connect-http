@@ -2,11 +2,14 @@ package io.github.clescot.kafka.connect.http.sink;
 
 import com.google.common.collect.Maps;
 import io.github.clescot.kafka.connect.http.core.HttpRequest;
+import org.apache.commons.compress.utils.Lists;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
+import java.util.Arrays;
+import java.util.List;
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -61,6 +64,24 @@ class ConfigurationTest {
             HttpSinkConnectorConfig httpSinkConnectorConfig = new HttpSinkConnectorConfig(settings);
             Configuration configuration = new Configuration("test", httpSinkConnectorConfig);
             HttpRequest httpRequest1 = new HttpRequest("http://toto.com","GET", HttpRequest.BodyType.STRING.name());
+            assertThat(configuration.matches(httpRequest1)).isTrue();
+            HttpRequest httpRequest2 = new HttpRequest("http://toto.com","GET", HttpRequest.BodyType.FORM.name());
+            assertThat(configuration.matches(httpRequest2)).isFalse();
+
+        }
+
+        @Test
+        @DisplayName("test Configuration constructor with url predicate and header key")
+        public void test_constructor_with_url_predicate_and_header_key(){
+            Map<String,String> settings = Maps.newHashMap();
+            settings.put("httpclient.test.url.regex","^.*toto\\.com$");
+            settings.put("httpclient.test.header.key","SUPERNOVA");
+            HttpSinkConnectorConfig httpSinkConnectorConfig = new HttpSinkConnectorConfig(settings);
+            Configuration configuration = new Configuration("test", httpSinkConnectorConfig);
+            HttpRequest httpRequest1 = new HttpRequest("http://toto.com","GET", HttpRequest.BodyType.STRING.name());
+            Map<String, List<String>> headers = Maps.newHashMap();
+            headers.put("SUPERNOVA", List.of("stuff"));
+            httpRequest1.setHeaders(headers);
             assertThat(configuration.matches(httpRequest1)).isTrue();
             HttpRequest httpRequest2 = new HttpRequest("http://toto.com","GET", HttpRequest.BodyType.FORM.name());
             assertThat(configuration.matches(httpRequest2)).isFalse();
