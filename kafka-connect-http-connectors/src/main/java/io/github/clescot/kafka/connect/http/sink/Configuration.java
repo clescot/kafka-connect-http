@@ -47,6 +47,8 @@ public class Configuration {
     private RetryPolicy<HttpExchange> retryPolicy;
 
     public Configuration(String id,HttpSinkConnectorConfig httpSinkConnectorConfig) {
+        Preconditions.checkNotNull(id,"id must not be null");
+        Preconditions.checkNotNull(httpSinkConnectorConfig,"httpSinkConnectorConfig must not be null");
         Map<String, Object> configMap = httpSinkConnectorConfig.originalsWithPrefix("httpclient." + id+".");
 
         //main predicate
