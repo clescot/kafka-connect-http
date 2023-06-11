@@ -149,6 +149,34 @@ class ConfigurationTest {
             Configuration configuration2 = new Configuration("test", httpSinkConnectorConfig);
             Optional<RateLimiter<HttpExchange>> rateLimiter2 = configuration2.getRateLimiter();
             assertThat(rateLimiter2.isPresent()).isTrue();
+            assertThat(rateLimiter.get()==rateLimiter2.get()).isTrue();
+        }
+        @Test
+        @DisplayName("test rate limiter with static scope")
+        public void test_rate_limiter_with_static_scope_and_different_ids(){
+            Map<String,String> settings = Maps.newHashMap();
+            settings.put("httpclient.test.url.regex","^.*toto\\.com$");
+            settings.put("httpclient.test.header.key","SUPERNOVA");
+            settings.put("httpclient.test.header.value","top");
+            settings.put("httpclient.test.rate.limiter.max.executions","3");
+            settings.put("httpclient.test.rate.limiter.rate.limiter.period.in.ms","1000");
+            settings.put("httpclient.test.rate.limiter.scope","static");
+            HttpSinkConnectorConfig httpSinkConnectorConfig = new HttpSinkConnectorConfig(settings);
+            Configuration configuration = new Configuration("test", httpSinkConnectorConfig);
+            Optional<RateLimiter<HttpExchange>> rateLimiter = configuration.getRateLimiter();
+            assertThat(rateLimiter.isPresent()).isTrue();
+            Map<String,String> settings2 = Maps.newHashMap();
+            settings2.put("httpclient.test2.url.regex","^.*toto\\.com$");
+            settings2.put("httpclient.test2.header.key","SUPERNOVA");
+            settings2.put("httpclient.test2.header.value","top");
+            settings2.put("httpclient.test2.rate.limiter.max.executions","3");
+            settings2.put("httpclient.test2.rate.limiter.rate.limiter.period.in.ms","1000");
+            settings2.put("httpclient.test2.rate.limiter.scope","static");
+            HttpSinkConnectorConfig httpSinkConnectorConfig2 = new HttpSinkConnectorConfig(settings2);
+            Configuration configuration2 = new Configuration("test2", httpSinkConnectorConfig2);
+            Optional<RateLimiter<HttpExchange>> rateLimiter2 = configuration2.getRateLimiter();
+            assertThat(rateLimiter2.isPresent()).isTrue();
+            assertThat(rateLimiter.get()!=rateLimiter2.get()).isTrue();
         }
 
     }
