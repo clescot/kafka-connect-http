@@ -85,7 +85,27 @@ class ConfigurationTest {
             assertThat(configuration.matches(httpRequest1)).isTrue();
             HttpRequest httpRequest2 = new HttpRequest("http://toto.com","GET", HttpRequest.BodyType.FORM.name());
             assertThat(configuration.matches(httpRequest2)).isFalse();
+        }
 
+        @Test
+        @DisplayName("test Configuration constructor with url predicate and header key")
+        public void test_constructor_with_url_predicate_header_key_and_value(){
+            Map<String,String> settings = Maps.newHashMap();
+            settings.put("httpclient.test.url.regex","^.*toto\\.com$");
+            settings.put("httpclient.test.header.key","SUPERNOVA");
+            settings.put("httpclient.test.header.value","top");
+            HttpSinkConnectorConfig httpSinkConnectorConfig = new HttpSinkConnectorConfig(settings);
+            Configuration configuration = new Configuration("test", httpSinkConnectorConfig);
+            HttpRequest httpRequest1 = new HttpRequest("http://toto.com","GET", HttpRequest.BodyType.STRING.name());
+            Map<String, List<String>> headers = Maps.newHashMap();
+            headers.put("SUPERNOVA", List.of("top"));
+            httpRequest1.setHeaders(headers);
+            assertThat(configuration.matches(httpRequest1)).isTrue();
+            HttpRequest httpRequest2 = new HttpRequest("http://toto.com","GET", HttpRequest.BodyType.STRING.name());
+            Map<String, List<String>> headers2 = Maps.newHashMap();
+            headers2.put("SUPERNOVA", List.of("tip"));
+            httpRequest2.setHeaders(headers2);
+            assertThat(configuration.matches(httpRequest2)).isFalse();
         }
     }
 
