@@ -1,23 +1,24 @@
 package io.github.clescot.kafka.connect.http.sink;
 
 import com.google.common.collect.Maps;
+import dev.failsafe.RateLimiter;
+import io.github.clescot.kafka.connect.http.core.HttpExchange;
 import io.github.clescot.kafka.connect.http.core.HttpRequest;
-import org.apache.commons.compress.utils.Lists;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
-import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
 class ConfigurationTest {
 
     @Nested
-    class constructor{
+    class TestConstructor{
         @Test
         @DisplayName("test Configuration constructor with null parameters")
         public void test_constructor_with_null_parameters(){
@@ -107,6 +108,49 @@ class ConfigurationTest {
             httpRequest2.setHeaders(headers2);
             assertThat(configuration.matches(httpRequest2)).isFalse();
         }
+    }
+
+    @Nested
+    class TestStaticRatLimiter{
+
+        @Test
+        @DisplayName("test rate limiter with implicit instance scope")
+        public void test_rate_limiter_with_implicit_instance_scope(){
+            Map<String,String> settings = Maps.newHashMap();
+            settings.put("httpclient.test.url.regex","^.*toto\\.com$");
+            settings.put("httpclient.test.header.key","SUPERNOVA");
+            settings.put("httpclient.test.header.value","top");
+            settings.put("httpclient.test.rate.limiter.max.executions","3");
+            settings.put("httpclient.test.rate.limiter.rate.limiter.period.in.ms","1000");
+            HttpSinkConnectorConfig httpSinkConnectorConfig = new HttpSinkConnectorConfig(settings);
+            Configuration configuration = new Configuration("test", httpSinkConnectorConfig);
+            Optional<RateLimiter<HttpExchange>> rateLimiter = configuration.getRateLimiter();
+            assertThat(rateLimiter.isPresent()).isTrue();
+            Configuration configuration2 = new Configuration("test", httpSinkConnectorConfig);
+            Optional<RateLimiter<HttpExchange>> rateLimiter2 = configuration2.getRateLimiter();
+            assertThat(rateLimiter2.isPresent()).isTrue();
+            assertThat(rateLimiter.get()!=rateLimiter2.get()).isTrue();
+        }
+
+        @Test
+        @DisplayName("test rate limiter with static scope")
+        public void test_rate_limiter_with_static_scope(){
+            Map<String,String> settings = Maps.newHashMap();
+            settings.put("httpclient.test.url.regex","^.*toto\\.com$");
+            settings.put("httpclient.test.header.key","SUPERNOVA");
+            settings.put("httpclient.test.header.value","top");
+            settings.put("httpclient.test.rate.limiter.max.executions","3");
+            settings.put("httpclient.test.rate.limiter.rate.limiter.period.in.ms","1000");
+            settings.put("httpclient.test.rate.limiter.scope","static");
+            HttpSinkConnectorConfig httpSinkConnectorConfig = new HttpSinkConnectorConfig(settings);
+            Configuration configuration = new Configuration("test", httpSinkConnectorConfig);
+            Optional<RateLimiter<HttpExchange>> rateLimiter = configuration.getRateLimiter();
+            assertThat(rateLimiter.isPresent()).isTrue();
+            Configuration configuration2 = new Configuration("test", httpSinkConnectorConfig);
+            Optional<RateLimiter<HttpExchange>> rateLimiter2 = configuration2.getRateLimiter();
+            assertThat(rateLimiter2.isPresent()).isTrue();
+        }
+
     }
 
 }
