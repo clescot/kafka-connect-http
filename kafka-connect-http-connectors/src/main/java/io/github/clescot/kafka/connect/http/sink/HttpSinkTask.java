@@ -19,7 +19,6 @@ import io.github.clescot.kafka.connect.http.core.HttpResponse;
 import io.github.clescot.kafka.connect.http.core.queue.KafkaRecord;
 import io.github.clescot.kafka.connect.http.core.queue.QueueFactory;
 import io.github.clescot.kafka.connect.http.sink.client.HttpClient;
-import io.github.clescot.kafka.connect.http.sink.client.HttpClientFactory;
 import io.github.clescot.kafka.connect.http.sink.client.HttpException;
 import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.data.Struct;
@@ -30,7 +29,6 @@ import org.apache.kafka.connect.sink.SinkTask;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.lang.reflect.InvocationTargetException;
 import java.time.OffsetDateTime;
 import java.time.ZoneId;
 import java.util.*;
@@ -53,7 +51,6 @@ public class HttpSinkTask extends SinkTask {
     public static final String DEFAULT_CONFIGURATION_ID = "default";
 
 
-    private HttpClient httpClient;
     private Queue<KafkaRecord> queue;
     private String queueName;
 
@@ -102,19 +99,8 @@ public class HttpSinkTask extends SinkTask {
             executor = Executors.newFixedThreadPool(customFixedThreadPoolSize);
         }
 
-        Class<HttpClientFactory> httpClientFactoryClass;
-        HttpClientFactory httpClientFactory;
-        try {
-            httpClientFactoryClass = (Class<HttpClientFactory>) Class.forName(httpSinkConnectorConfig.getHttpClientFactoryClass());
-            httpClientFactory = httpClientFactoryClass.getDeclaredConstructor().newInstance();
-            LOGGER.debug("using HttpClientFactory implementation: {}", httpClientFactory.getClass().getName());
-        } catch (ClassNotFoundException | NoSuchMethodException | InstantiationException | IllegalAccessException |
-                 InvocationTargetException e) {
-            throw new RuntimeException(e);
-        }
-        this.httpClient = httpClientFactory.build(httpSinkConnectorConfig.originalsStrings(),executor);
-        this.defaultConfiguration = new Configuration(DEFAULT_CONFIGURATION_ID,httpSinkConnectorConfig);
-        customConfigurations = buildCustomConfigurations(httpSinkConnectorConfig);
+        this.defaultConfiguration = new Configuration(DEFAULT_CONFIGURATION_ID,httpSinkConnectorConfig,executor);
+        customConfigurations = buildCustomConfigurations(httpSinkConnectorConfig,defaultConfiguration.getHttpClient(),executor);
 
 
         if (httpSinkConnectorConfig.isPublishToInMemoryQueue()) {
@@ -130,11 +116,11 @@ public class HttpSinkTask extends SinkTask {
         }
     }
 
-
-    private List<Configuration> buildCustomConfigurations(HttpSinkConnectorConfig httpSinkConnectorConfig){
+    private List<Configuration> buildCustomConfigurations(HttpSinkConnectorConfig httpSinkConnectorConfig,HttpClient defaultHttpClient,ExecutorService executorService){
         CopyOnWriteArrayList<Configuration> configurations = Lists.newCopyOnWriteArrayList();
         for (String configId: httpSinkConnectorConfig.getConfigurationIds()) {
-           Configuration configuration = new Configuration(configId,httpSinkConnectorConfig);
+           Configuration configuration = new Configuration(configId,httpSinkConnectorConfig,executorService);
+           configuration.setHttpClient(defaultHttpClient);
             configurations.add(configuration);
         }
         return configurations;
@@ -148,7 +134,7 @@ public class HttpSinkTask extends SinkTask {
         if (records.isEmpty()) {
             return;
         }
-        Preconditions.checkNotNull(httpClient, "httpClient is null. 'start' method must be called once before put");
+        Preconditions.checkNotNull(defaultConfiguration, "defaultConfiguration is null. 'start' method must be called once before put");
 
         //we submit futures to the pool
         List<CompletableFuture<HttpExchange>> completableFutures = records.stream().map(this::process).collect(Collectors.toList());
@@ -223,7 +209,7 @@ public class HttpSinkTask extends SinkTask {
             } catch (Throwable throwable) {
                 LOGGER.error("Failed to call web service after {} retries with error({}). message:{} ", attempts, throwable,
                         throwable.getMessage());
-                return CompletableFuture.supplyAsync(() -> httpClient.buildHttpExchange(
+                return CompletableFuture.supplyAsync(() -> defaultConfiguration.getHttpClient().buildHttpExchange(
                         httpRequest,
                         new HttpResponse(HttpClient.SERVER_ERROR_STATUS_CODE, String.valueOf(throwable.getMessage())),
                         Stopwatch.createUnstarted(), OffsetDateTime.now(ZoneId.of(HttpClient.UTC_ZONE_ID)),
@@ -266,7 +252,7 @@ public class HttpSinkTask extends SinkTask {
                 rateLimiter.get().acquirePermits(HttpClient.ONE_HTTP_REQUEST);
                 LOGGER.debug("permits acquired request:'{}'", httpRequest);
             }
-            return httpClient.call(httpRequest, attempts);
+            return configuration.getHttpClient().call(httpRequest, attempts);
         } catch (InterruptedException e) {
             LOGGER.error("Failed to acquire execution permit from the rate limiter {} ", e.getMessage());
             throw new HttpException(e.getMessage());
@@ -414,10 +400,6 @@ public class HttpSinkTask extends SinkTask {
         //Producer are stopped in connector stop
     }
 
-    //for testing purpose
-    protected void setHttpClient(HttpClient httpClient) {
-        this.httpClient = httpClient;
-    }
 
     //for testing purpose
     protected Map<String, List<String>> getStaticRequestHeaders() {
@@ -429,5 +411,7 @@ public class HttpSinkTask extends SinkTask {
         this.queue = queue;
     }
 
-
+    public Configuration getDefaultConfiguration() {
+        return defaultConfiguration;
+    }
 }

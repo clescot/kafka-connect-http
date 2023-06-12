@@ -6,14 +6,18 @@ import dev.failsafe.RateLimiter;
 import dev.failsafe.RetryPolicy;
 import io.github.clescot.kafka.connect.http.core.HttpExchange;
 import io.github.clescot.kafka.connect.http.core.HttpRequest;
+import io.github.clescot.kafka.connect.http.sink.client.HttpClient;
+import io.github.clescot.kafka.connect.http.sink.client.HttpClientFactory;
 import io.github.clescot.kafka.connect.http.sink.client.HttpException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.lang.reflect.InvocationTargetException;
 import java.time.Duration;
 import java.time.temporal.ChronoUnit;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.ExecutorService;
 import java.util.function.Predicate;
 import java.util.regex.Pattern;
 
@@ -21,7 +25,7 @@ import static io.github.clescot.kafka.connect.http.sink.HttpSinkConfigDefinition
 
 /**
  * Configuration of the http call mechanism, specific to some websites according to the configured <span class="strong">predicate</span>.
- *
+ * <p>
  * It permits to customize :
  * <ul>
  * <li>a success http response code regex</li>
@@ -38,41 +42,43 @@ public class Configuration {
     public static final String HEADER_VALUE = "header.value";
     public static final String STATIC_SCOPE = "static";
 
-    private static final Map<String,RateLimiter<HttpExchange>> sharedRateLimiters = Maps.newHashMap();
+    private static final Map<String, RateLimiter<HttpExchange>> sharedRateLimiters = Maps.newHashMap();
 
     private Predicate<HttpRequest> mainpredicate = httpRequest -> true;
     private Pattern successResponseCodeRegex;
     private Pattern retryResponseCodeRegex;
     private RateLimiter<HttpExchange> rateLimiter;
     private RetryPolicy<HttpExchange> retryPolicy;
+    private HttpClient httpClient;
 
-    public Configuration(String id,HttpSinkConnectorConfig httpSinkConnectorConfig) {
-        Preconditions.checkNotNull(id,"id must not be null");
-        Preconditions.checkNotNull(httpSinkConnectorConfig,"httpSinkConnectorConfig must not be null");
-        Map<String, Object> configMap = httpSinkConnectorConfig.originalsWithPrefix("httpclient." + id+".");
+    public Configuration(String id, HttpSinkConnectorConfig httpSinkConnectorConfig, ExecutorService executorService) {
+        this.httpClient = buildHttpClient(httpSinkConnectorConfig, executorService);
+        Preconditions.checkNotNull(id, "id must not be null");
+        Preconditions.checkNotNull(httpSinkConnectorConfig, "httpSinkConnectorConfig must not be null");
+        Map<String, Object> configMap = httpSinkConnectorConfig.originalsWithPrefix("httpclient." + id + ".");
 
         //main predicate
-        if(configMap.containsKey(URL_REGEX)){
+        if (configMap.containsKey(URL_REGEX)) {
             String urlRegex = (String) configMap.get(URL_REGEX);
             Pattern urlPattern = Pattern.compile(urlRegex);
             mainpredicate = mainpredicate.and(httpRequest -> urlPattern.matcher(httpRequest.getUrl()).matches());
         }
-        if(configMap.containsKey(METHOD_REGEX)){
+        if (configMap.containsKey(METHOD_REGEX)) {
             String methodRegex = (String) configMap.get(METHOD_REGEX);
             Pattern methodPattern = Pattern.compile(methodRegex);
             mainpredicate = mainpredicate.and(httpRequest -> methodPattern.matcher(httpRequest.getMethod()).matches());
         }
-        if(configMap.containsKey(BODYTYPE_REGEX)){
+        if (configMap.containsKey(BODYTYPE_REGEX)) {
             String bodytypeRegex = (String) configMap.get(BODYTYPE_REGEX);
             Pattern bodytypePattern = Pattern.compile(bodytypeRegex);
             mainpredicate = mainpredicate.and(httpRequest -> bodytypePattern.matcher(httpRequest.getBodyType().name()).matches());
         }
-        if(configMap.containsKey(HEADER_KEY)){
+        if (configMap.containsKey(HEADER_KEY)) {
             String headerKey = (String) configMap.get(HEADER_KEY);
 
             Predicate<HttpRequest> headerKeyPredicate = httpRequest -> httpRequest.getHeaders().containsKey(headerKey);
             mainpredicate = mainpredicate.and(headerKeyPredicate);
-            if(configMap.containsKey(HEADER_VALUE)){
+            if (configMap.containsKey(HEADER_VALUE)) {
                 String headerValue = (String) configMap.get(HEADER_VALUE);
                 Pattern headerValuePattern = Pattern.compile(headerValue);
                 mainpredicate = mainpredicate.and(httpRequest -> headerValuePattern.matcher(httpRequest.getHeaders().get(headerKey).get(0)).matches());
@@ -81,35 +87,35 @@ public class Configuration {
         }
 
         //rate limiter
-        if(configMap.containsKey(RATE_LIMITER_MAX_EXECUTIONS)){
+        if (configMap.containsKey(RATE_LIMITER_MAX_EXECUTIONS)) {
             long maxExecutions = Long.parseLong((String) configMap.get(RATE_LIMITER_MAX_EXECUTIONS));
-            long periodInMs = Long.parseLong(Optional.ofNullable((String) configMap.get(RATE_LIMITER_PERIOD_IN_MS)).orElse(httpSinkConnectorConfig.getDefaultRateLimiterPeriodInMs()+""));
-            if(configMap.containsKey(RATE_LIMITER_SCOPE)&&STATIC_SCOPE.equalsIgnoreCase((String) configMap.get(RATE_LIMITER_SCOPE))){
+            long periodInMs = Long.parseLong(Optional.ofNullable((String) configMap.get(RATE_LIMITER_PERIOD_IN_MS)).orElse(httpSinkConnectorConfig.getDefaultRateLimiterPeriodInMs() + ""));
+            if (configMap.containsKey(RATE_LIMITER_SCOPE) && STATIC_SCOPE.equalsIgnoreCase((String) configMap.get(RATE_LIMITER_SCOPE))) {
                 Optional<RateLimiter<HttpExchange>> sharedRateLimiter = Optional.ofNullable(sharedRateLimiters.get(id));
-                if(sharedRateLimiter.isPresent()){
+                if (sharedRateLimiter.isPresent()) {
                     this.rateLimiter = sharedRateLimiter.get();
-                }else{
+                } else {
                     RateLimiter<HttpExchange> myRateLimiter = RateLimiter.<HttpExchange>smoothBuilder(maxExecutions, Duration.of(periodInMs, ChronoUnit.MILLIS)).build();
-                    registerRateLimiter(id,myRateLimiter);
+                    registerRateLimiter(id, myRateLimiter);
                     this.rateLimiter = myRateLimiter;
                 }
-            }else {
+            } else {
                 this.rateLimiter = RateLimiter.<HttpExchange>smoothBuilder(maxExecutions, Duration.of(periodInMs, ChronoUnit.MILLIS)).build();
             }
         }
 
         //success response code regex
-        if(configMap.containsKey(SUCCESS_RESPONSE_CODE_REGEX)){
+        if (configMap.containsKey(SUCCESS_RESPONSE_CODE_REGEX)) {
             this.successResponseCodeRegex = Pattern.compile((String) configMap.get(SUCCESS_RESPONSE_CODE_REGEX));
         }
 
         //retry response code regex
-        if(configMap.containsKey(RETRY_RESPONSE_CODE_REGEX)){
+        if (configMap.containsKey(RETRY_RESPONSE_CODE_REGEX)) {
             this.retryResponseCodeRegex = Pattern.compile((String) configMap.get(RETRY_RESPONSE_CODE_REGEX));
         }
 
         //retry policy
-        if(configMap.containsKey(RETRIES)) {
+        if (configMap.containsKey(RETRIES)) {
             Integer retries = Integer.parseInt((String) configMap.get(RETRIES));
             Long retryDelayInMs = Long.parseLong((String) configMap.get(RETRY_DELAY_IN_MS));
             Long retryMaxDelayInMs = Long.parseLong((String) configMap.get(RETRY_MAX_DELAY_IN_MS));
@@ -120,11 +126,34 @@ public class Configuration {
 
     }
 
-    public static void registerRateLimiter(String configurationId,RateLimiter<HttpExchange> rateLimiter){
-        Preconditions.checkNotNull(configurationId,"we cannot register a rateLimiter for a 'null' configurationId");
-        Preconditions.checkNotNull(rateLimiter,"we cannot register a 'null' rate limiter for the configurationId "+configurationId);
-        LOGGER.info("registration of a shared rateLimiter for the configurationId '{}'",configurationId);
-        sharedRateLimiters.put(configurationId,rateLimiter);
+    private HttpClient buildHttpClient(HttpSinkConnectorConfig httpSinkConnectorConfig, ExecutorService executorService) {
+        Class<HttpClientFactory> httpClientFactoryClass;
+        HttpClientFactory httpClientFactory;
+        try {
+            httpClientFactoryClass = (Class<HttpClientFactory>) Class.forName(httpSinkConnectorConfig.getHttpClientFactoryClass());
+            httpClientFactory = httpClientFactoryClass.getDeclaredConstructor().newInstance();
+            LOGGER.debug("using HttpClientFactory implementation: {}", httpClientFactory.getClass().getName());
+        } catch (ClassNotFoundException | NoSuchMethodException | InstantiationException | IllegalAccessException |
+                 InvocationTargetException e) {
+            throw new RuntimeException(e);
+        }
+        return httpClientFactory.build(httpSinkConnectorConfig.originalsStrings(), executorService);
+    }
+
+
+    public HttpClient getHttpClient() {
+        return httpClient;
+    }
+
+    public void setHttpClient(HttpClient httpClient) {
+        this.httpClient = httpClient;
+    }
+
+    public static void registerRateLimiter(String configurationId, RateLimiter<HttpExchange> rateLimiter) {
+        Preconditions.checkNotNull(configurationId, "we cannot register a rateLimiter for a 'null' configurationId");
+        Preconditions.checkNotNull(rateLimiter, "we cannot register a 'null' rate limiter for the configurationId " + configurationId);
+        LOGGER.info("registration of a shared rateLimiter for the configurationId '{}'", configurationId);
+        sharedRateLimiters.put(configurationId, rateLimiter);
     }
 
     public Optional<RateLimiter<HttpExchange>> getRateLimiter() {
@@ -139,7 +168,7 @@ public class Configuration {
         return Optional.ofNullable(successResponseCodeRegex);
     }
 
-    public Optional<Pattern> getRetryResponseCodeRegex(){
+    public Optional<Pattern> getRetryResponseCodeRegex() {
         return Optional.ofNullable(retryResponseCodeRegex);
     }
 
@@ -160,7 +189,7 @@ public class Configuration {
                 .build();
     }
 
-    public boolean matches(HttpRequest httpRequest){
+    public boolean matches(HttpRequest httpRequest) {
         return this.mainpredicate.test(httpRequest);
     }
 
