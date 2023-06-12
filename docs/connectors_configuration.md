@@ -39,6 +39,7 @@ every Kafka Connect Sink Connector need to define these required parameters :
   - rate limiting settings
     - *httpclient.default.rate.limiter.period.in.ms* : period of time in milliseconds, during the max execution cannot be exceeded
     - *httpclient.default.rate.limiter.max.executions* : max executions in the period defined with the 'httpclient.default.rate.limiter.period.in.ms' parameter
+    - *httpclient.default.rate.limiter.scope* : can be either `instance` (default option when not set, i.e a rate limiter per configuration in the connector instance),  or `static` (a rate limiter per configuration shared with all connectors instances in the same Java Virtual Machine.
   - header settings
     - *httpclient.static.request.header.names* : list of headers names to attach to all requests. *Static* term, means that these headers
       are not managed by initial kafka message, but are defined at the connector level and added globally. this list is divided by
