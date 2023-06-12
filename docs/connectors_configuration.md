@@ -268,8 +268,9 @@ Each specific configuration is identified by a _prefix_, in the form :
 
 The prefix for the _default_ configuration is `httpclient.default.` (its configuration id is `default`).
 
-To register some custom configurations, you need to register them by their configurationid in the parameter :
-`httpclient.custom.config.ids`, with the configuration ids separated by commas.
+To register some custom configurations, you need to register them by their id in the parameter :
+`httpclient.custom.config.ids`.
+These configuration ids are separated by commas.
 
 exemple : 
 ```
