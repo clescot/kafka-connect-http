@@ -33,6 +33,7 @@ public class HttpSinkConnectorConfig extends AbstractConfig {
     private final Double defaultRetryDelayFactor;
     private final Long defaultRetryJitterInMs;
     private final Long defaultRateLimiterMaxExecutions;
+    private final String defaultRateLimiterScope;
     private final Long defaultRateLimiterPeriodInMs;
     private final Map<String, List<String>> staticRequestHeaders = Maps.newHashMap();
     private final boolean generateMissingRequestId;
@@ -66,6 +67,7 @@ public class HttpSinkConnectorConfig extends AbstractConfig {
         this.generateMissingCorrelationId = getBoolean(HTTP_CLIENT_GENERATE_MISSING_CORRELATION_ID);
         this.defaultRateLimiterPeriodInMs = getLong(HTTP_CLIENT_DEFAULT_RATE_LIMITER_PERIOD_IN_MS);
         this.defaultRateLimiterMaxExecutions = getLong(HTTP_CLIENT_DEFAULT_RATE_LIMITER_MAX_EXECUTIONS);
+        this.defaultRateLimiterScope = getString(HTTP_CLIENT_DEFAULT_RATE_LIMITER_SCOPE);
         this.maxWaitTimeRegistrationOfQueueConsumerInMs = getLong(WAIT_TIME_REGISTRATION_QUEUE_CONSUMER_IN_MS);
         this.pollDelayRegistrationOfQueueConsumerInMs = getInt(POLL_DELAY_REGISTRATION_QUEUE_CONSUMER_IN_MS);
         this.pollIntervalRegistrationOfQueueConsumerInMs = getInt(POLL_INTERVAL_REGISTRATION_QUEUE_CONSUMER_IN_MS);
@@ -175,6 +177,10 @@ public class HttpSinkConnectorConfig extends AbstractConfig {
         return configurationIds;
     }
 
+    public String getDefaultRateLimiterScope() {
+        return defaultRateLimiterScope;
+    }
+
     @Override
     public String toString() {
         return "HttpSinkConnectorConfig{" +
@@ -189,6 +195,7 @@ public class HttpSinkConnectorConfig extends AbstractConfig {
                 ", defaultRetryJitterInMs=" + defaultRetryJitterInMs +
                 ", defaultRateLimiterMaxExecutions=" + defaultRateLimiterMaxExecutions +
                 ", defaultRateLimiterPeriodInMs=" + defaultRateLimiterPeriodInMs +
+                ", defaultRateLimiterScope=" + defaultRateLimiterScope +
                 ", staticRequestHeaders=" + staticRequestHeaders +
                 ", generateMissingRequestId=" + generateMissingRequestId +
                 ", generateMissingCorrelationId=" + generateMissingCorrelationId +
