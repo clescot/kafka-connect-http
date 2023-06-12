@@ -9,6 +9,8 @@ import io.github.clescot.kafka.connect.http.core.HttpRequest;
 import io.github.clescot.kafka.connect.http.sink.client.HttpClient;
 import io.github.clescot.kafka.connect.http.sink.client.HttpClientFactory;
 import io.github.clescot.kafka.connect.http.sink.client.HttpException;
+import io.github.clescot.kafka.connect.http.sink.client.ahc.AHCHttpClientFactory;
+import io.github.clescot.kafka.connect.http.sink.client.okhttp.OkHttpClientFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -35,6 +37,8 @@ import static io.github.clescot.kafka.connect.http.sink.HttpSinkConfigDefinition
  */
 public class Configuration {
     private static final Logger LOGGER = LoggerFactory.getLogger(Configuration.class);
+    public static final String OKHTTP_IMPLEMENTATION = "okhttp";
+    public static final String AHC_IMPLEMENTATION = "ahc";
     public static final String URL_REGEX = "url.regex";
     public static final String METHOD_REGEX = "method.regex";
     public static final String BODYTYPE_REGEX = "bodytype.regex";
@@ -52,10 +56,10 @@ public class Configuration {
     private HttpClient httpClient;
 
     public Configuration(String id, HttpSinkConnectorConfig httpSinkConnectorConfig, ExecutorService executorService) {
-        this.httpClient = buildHttpClient(httpSinkConnectorConfig, executorService);
         Preconditions.checkNotNull(id, "id must not be null");
         Preconditions.checkNotNull(httpSinkConnectorConfig, "httpSinkConnectorConfig must not be null");
         Map<String, Object> configMap = httpSinkConnectorConfig.originalsWithPrefix("httpclient." + id + ".");
+        this.httpClient = buildHttpClient(configMap, executorService);
 
         //main predicate
         if (configMap.containsKey(URL_REGEX)) {
@@ -126,18 +130,28 @@ public class Configuration {
 
     }
 
-    private HttpClient buildHttpClient(HttpSinkConnectorConfig httpSinkConnectorConfig, ExecutorService executorService) {
-        Class<HttpClientFactory> httpClientFactoryClass;
+    private HttpClient buildHttpClient(Map<String, Object> config, ExecutorService executorService) {
+
+        Class<? extends HttpClientFactory> httpClientFactoryClass;
+        String httpClientImplementation = (String) Optional.ofNullable(config.get(HTTPCLIENT_IMPLEMENTATION)).orElse(OKHTTP_IMPLEMENTATION);
+        if (AHC_IMPLEMENTATION.equalsIgnoreCase(httpClientImplementation)) {
+            httpClientFactoryClass = AHCHttpClientFactory.class;
+        } else if (OKHTTP_IMPLEMENTATION.equalsIgnoreCase(httpClientImplementation)) {
+            httpClientFactoryClass = OkHttpClientFactory.class;
+        } else {
+            LOGGER.error("unknown HttpClient implementation : must be either 'ahc' or 'okhttp', but is '{}'", httpClientImplementation);
+            throw new IllegalArgumentException("unknown HttpClient implementation : must be either 'ahc' or 'okhttp', but is '" + httpClientImplementation + "'");
+        }
         HttpClientFactory httpClientFactory;
         try {
-            httpClientFactoryClass = (Class<HttpClientFactory>) Class.forName(httpSinkConnectorConfig.getHttpClientFactoryClass());
+            httpClientFactoryClass = (Class<HttpClientFactory>) Class.forName(httpClientFactoryClass.getName());
             httpClientFactory = httpClientFactoryClass.getDeclaredConstructor().newInstance();
             LOGGER.debug("using HttpClientFactory implementation: {}", httpClientFactory.getClass().getName());
         } catch (ClassNotFoundException | NoSuchMethodException | InstantiationException | IllegalAccessException |
                  InvocationTargetException e) {
             throw new RuntimeException(e);
         }
-        return httpClientFactory.build(httpSinkConnectorConfig.originalsStrings(), executorService);
+        return httpClientFactory.build(config, executorService);
     }
 
 

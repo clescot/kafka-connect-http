@@ -60,9 +60,9 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import static io.confluent.kafka.serializers.json.KafkaJsonSchemaDeserializerConfig.JSON_VALUE_TYPE;
 import static io.github.clescot.kafka.connect.http.core.HttpRequestAsStruct.SCHEMA;
+import static io.github.clescot.kafka.connect.http.sink.Configuration.AHC_IMPLEMENTATION;
+import static io.github.clescot.kafka.connect.http.sink.Configuration.OKHTTP_IMPLEMENTATION;
 import static io.github.clescot.kafka.connect.http.sink.HttpSinkConfigDefinition.*;
-import static io.github.clescot.kafka.connect.http.sink.HttpSinkConnectorConfig.AHC_IMPLEMENTATION;
-import static io.github.clescot.kafka.connect.http.sink.HttpSinkConnectorConfig.OKHTTP_IMPLEMENTATION;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.*;
 

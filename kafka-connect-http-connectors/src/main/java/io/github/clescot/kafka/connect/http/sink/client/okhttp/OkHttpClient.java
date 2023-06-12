@@ -40,7 +40,7 @@ public class OkHttpClient extends AbstractHttpClient<Request, Response> {
     public static final String OKHTTP_DEFAULT_READ_TIMEOUT = "okhttp.read.timeout";
 
     //Sets the default write timeout in milliseconds for new connections. A value of 0 means no timeout, otherwise values must be between 1 and Integer.MAX_VALUE.
-    public static final String HTTPCLIENT_DEFAULT_WRITE_TIMEOUT = "okhttp.write.timeout";
+    public static final String OKHTTP_DEFAULT_WRITE_TIMEOUT = "okhttp.write.timeout";
 
 
     //if set to 'true', skip hostname verification. Not set by default.
@@ -119,8 +119,8 @@ public class OkHttpClient extends AbstractHttpClient<Request, Response> {
         }
 
         //write timeout
-        if(config.containsKey(HTTPCLIENT_DEFAULT_WRITE_TIMEOUT)) {
-            int writeTimeout = Integer.parseInt(config.get(HTTPCLIENT_DEFAULT_WRITE_TIMEOUT));
+        if(config.containsKey(OKHTTP_DEFAULT_WRITE_TIMEOUT)) {
+            int writeTimeout = Integer.parseInt(config.get(OKHTTP_DEFAULT_WRITE_TIMEOUT));
             httpClientBuilder.writeTimeout(writeTimeout, TimeUnit.MILLISECONDS);
         }
 

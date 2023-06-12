@@ -5,8 +5,6 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import io.github.clescot.kafka.connect.http.core.queue.ConfigConstants;
 import io.github.clescot.kafka.connect.http.core.queue.QueueFactory;
-import io.github.clescot.kafka.connect.http.sink.client.ahc.AHCHttpClientFactory;
-import io.github.clescot.kafka.connect.http.sink.client.okhttp.OkHttpClientFactory;
 import org.apache.kafka.common.config.AbstractConfig;
 import org.apache.kafka.common.config.ConfigDef;
 import org.slf4j.Logger;
@@ -20,8 +18,7 @@ import static io.github.clescot.kafka.connect.http.sink.HttpSinkConfigDefinition
 
 public class HttpSinkConnectorConfig extends AbstractConfig {
     private static final Logger LOGGER = LoggerFactory.getLogger(HttpSinkConnectorConfig.class);
-    public static final String OKHTTP_IMPLEMENTATION = "okhttp";
-    public static final String AHC_IMPLEMENTATION = "ahc";
+
 
     private final String defaultSuccessResponseCodeRegex;
     private final String defaultRetryResponseCodeRegex;
@@ -42,7 +39,6 @@ public class HttpSinkConnectorConfig extends AbstractConfig {
     private final long maxWaitTimeRegistrationOfQueueConsumerInMs;
     private final int pollDelayRegistrationOfQueueConsumerInMs;
     private final int pollIntervalRegistrationOfQueueConsumerInMs;
-    private final String httpClientFactoryClass;
     private final Integer customFixedThreadpoolSize;
     private final List<String> configurationIds;
 
@@ -80,19 +76,9 @@ public class HttpSinkConnectorConfig extends AbstractConfig {
         }
         this.defaultSuccessResponseCodeRegex = getString(HTTPCLIENT_DEFAULT_SUCCESS_RESPONSE_CODE_REGEX);
         this.defaultRetryResponseCodeRegex = getString(HTTP_CLIENT_DEFAULT_RETRY_RESPONSE_CODE_REGEX);
-        String httpClientImplementation = Optional.ofNullable(getString(HTTPCLIENT_IMPLEMENTATION)).orElse(OKHTTP_IMPLEMENTATION);
-        if (AHC_IMPLEMENTATION.equalsIgnoreCase(httpClientImplementation)) {
-            this.httpClientFactoryClass = AHCHttpClientFactory.class.getName();
-        } else if (OKHTTP_IMPLEMENTATION.equalsIgnoreCase(httpClientImplementation)) {
-            this.httpClientFactoryClass = OkHttpClientFactory.class.getName();
-        } else {
-            LOGGER.error("unknown HttpClient implementation : must be either 'ahc' or 'okhttp', but is '{}'", httpClientImplementation);
-            throw new IllegalArgumentException("unknown HttpClient implementation : must be either 'ahc' or 'okhttp', but is '" + httpClientImplementation + "'");
-        }
+
         this.customFixedThreadpoolSize = getInt(HTTP_CLIENT_ASYNC_FIXED_THREAD_POOL_SIZE);
-
         configurationIds = Optional.ofNullable(getList(HTTP_CLIENT_CUSTOM_CONFIGURATION_IDS)).orElse(Lists.newArrayList());
-
 
     }
 
@@ -165,9 +151,6 @@ public class HttpSinkConnectorConfig extends AbstractConfig {
         return pollIntervalRegistrationOfQueueConsumerInMs;
     }
 
-    public String getHttpClientFactoryClass() {
-        return httpClientFactoryClass;
-    }
 
     public Integer getCustomFixedThreadpoolSize() {
         return customFixedThreadpoolSize;
