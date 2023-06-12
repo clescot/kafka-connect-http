@@ -38,6 +38,10 @@ public class HttpSinkConfigDefinition {
     public static final String HTTP_CLIENT_DEFAULT_RATE_LIMITER_MAX_EXECUTIONS = HTTPCLIENT_DEFAULT + RATE_LIMITER_MAX_EXECUTIONS;
     public static final String HTTP_CLIENT_DEFAULT_RATE_LIMITER_MAX_EXECUTIONS_DOC = "max executions in the period defined with the '"+ HTTP_CLIENT_DEFAULT_RATE_LIMITER_PERIOD_IN_MS +"' parameter";
 
+    public static final String RATE_LIMITER_SCOPE = "rate.limiter.scope";
+    public static final String HTTP_CLIENT_DEFAULT_RATE_LIMITER_SCOPE = HTTPCLIENT_DEFAULT + RATE_LIMITER_SCOPE;
+    public static final String HTTP_CLIENT_DEFAULT_RATE_LIMITER_SCOPE_DOC = "scope of the '"+ HTTP_CLIENT_DEFAULT_RATE_LIMITER_SCOPE +"' parameter. can be either 'instance' (i.e a rate limiter per configuration in the connector instance),  or 'static' (a rate limiter per configuration shared with all connectors instances in the same Java Virtual Machine.";
+
     private static final long DEFAULT_WAIT_TIME_REGISTRATION_QUEUE_CONSUMER_IN_MS = 60000L;
     public static final String WAIT_TIME_REGISTRATION_QUEUE_CONSUMER_IN_MS = "wait.time.registration.queue.consumer.in.ms";
     public static final String WAIT_TIME_REGISTRATION_QUEUE_CONSUMER_IN_MS_DOC = "wait time defined with the '"+ WAIT_TIME_REGISTRATION_QUEUE_CONSUMER_IN_MS +"' parameter, for a queue consumer (Source Connector) registration. " +
@@ -59,6 +63,7 @@ public class HttpSinkConfigDefinition {
     public static final String HTTP_CLIENT_GENERATE_MISSING_REQUEST_ID_DOC = "if not present in the HttpRequest headers, generate an UUID bound to the 'X-Request-ID' name";
     public static final long DEFAULT_RATE_LIMITER_PERIOD_IN_MS_VALUE = 1000L;
     public static final long DEFAULT_RATE_LIMITER_MAX_EXECUTIONS_VALUE = 1L;
+    public static final String DEFAULT_RATE_LIMITER_SCOPE_VALUE = "instance";
     private static final int DEFAULT_RETRIES_VALUE = 1;
     private static final long DEFAULT_RETRY_DELAY_IN_MS_VALUE = 2000L;
     private static final long DEFAULT_RETRY_MAX_DELAY_IN_MS_VALUE = 20000L;
@@ -148,6 +153,7 @@ public class HttpSinkConfigDefinition {
                 //rate limiting settings
                 .define(HTTP_CLIENT_DEFAULT_RATE_LIMITER_PERIOD_IN_MS, ConfigDef.Type.LONG, HttpSinkConfigDefinition.DEFAULT_RATE_LIMITER_PERIOD_IN_MS_VALUE, ConfigDef.Importance.MEDIUM, HTTP_CLIENT_DEFAULT_RATE_LIMITER_PERIOD_IN_MS_DOC)
                 .define(HTTP_CLIENT_DEFAULT_RATE_LIMITER_MAX_EXECUTIONS, ConfigDef.Type.LONG, HttpSinkConfigDefinition.DEFAULT_RATE_LIMITER_MAX_EXECUTIONS_VALUE, ConfigDef.Importance.MEDIUM, HTTP_CLIENT_DEFAULT_RATE_LIMITER_MAX_EXECUTIONS_DOC)
+                .define(HTTP_CLIENT_DEFAULT_RATE_LIMITER_SCOPE, ConfigDef.Type.STRING, HttpSinkConfigDefinition.DEFAULT_RATE_LIMITER_SCOPE_VALUE, ConfigDef.Importance.MEDIUM, HTTP_CLIENT_DEFAULT_RATE_LIMITER_SCOPE_DOC)
                 //header settings
                 .define(HTTP_CLIENT_STATIC_REQUEST_HEADER_NAMES, ConfigDef.Type.LIST,  Collections.emptyList(), ConfigDef.Importance.MEDIUM, HTTP_CLIENT_STATIC_REQUEST_HEADER_NAMES_DOC)
                 .define(HTTP_CLIENT_GENERATE_MISSING_CORRELATION_ID, ConfigDef.Type.BOOLEAN, false, ConfigDef.Importance.MEDIUM, HTTP_CLIENT_GENERATE_MISSING_CORRELATION_ID_DOC)

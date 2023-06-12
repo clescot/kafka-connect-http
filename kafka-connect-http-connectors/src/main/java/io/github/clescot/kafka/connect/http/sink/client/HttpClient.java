@@ -29,7 +29,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 public interface HttpClient<Req, Res> {
     boolean FAILURE = false;
     int SERVER_ERROR_STATUS_CODE = 500;
-    String BLANK_RESPONSE_CONTENT = "";
     String UTC_ZONE_ID = "UTC";
     boolean SUCCESS = true;
     int ONE_HTTP_REQUEST = 1;

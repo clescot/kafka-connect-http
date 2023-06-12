@@ -63,7 +63,7 @@ public class HttpSinkTask extends SinkTask {
     private boolean generateMissingCorrelationId;
     private boolean generateMissingRequestId;
 
-    private CopyOnWriteArrayList<Configuration> customConfigurations;
+    private List<Configuration> customConfigurations;
     private static ExecutorService executor;
     private Configuration defaultConfiguration;
     private final Pattern defaultSuccessPattern = Pattern.compile(HTTP_CLIENT_DEFAULT_DEFAULT_SUCCESS_RESPONSE_CODE_REGEX);
@@ -114,7 +114,7 @@ public class HttpSinkTask extends SinkTask {
         }
         this.httpClient = httpClientFactory.build(httpSinkConnectorConfig.originalsStrings(),executor);
         this.defaultConfiguration = new Configuration(DEFAULT_CONFIGURATION_ID,httpSinkConnectorConfig);
-        customConfigurations = buildCustomConfigurations(httpSinkConnectorConfig,defaultConfiguration);
+        customConfigurations = buildCustomConfigurations(httpSinkConnectorConfig);
 
 
         if (httpSinkConnectorConfig.isPublishToInMemoryQueue()) {
@@ -131,7 +131,7 @@ public class HttpSinkTask extends SinkTask {
     }
 
 
-    private CopyOnWriteArrayList<Configuration> buildCustomConfigurations(HttpSinkConnectorConfig httpSinkConnectorConfig, Configuration defaultConfiguration){
+    private List<Configuration> buildCustomConfigurations(HttpSinkConnectorConfig httpSinkConnectorConfig){
         CopyOnWriteArrayList<Configuration> configurations = Lists.newCopyOnWriteArrayList();
         for (String configId: httpSinkConnectorConfig.getConfigurationIds()) {
            Configuration configuration = new Configuration(configId,httpSinkConnectorConfig);
@@ -428,9 +428,6 @@ public class HttpSinkTask extends SinkTask {
     protected void setQueue(Queue<KafkaRecord> queue) {
         this.queue = queue;
     }
-
-
-
 
 
 }

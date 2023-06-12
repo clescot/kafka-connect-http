@@ -21,10 +21,10 @@ every Kafka Connect Sink Connector need to define these required parameters :
 
 
   - http client implementation settings
-    - *httpclient.implementation* : define which intalled library to use : either `ahc`, a.k.a async http client, or `okhttp`. default is `okhttp`.
-  - retry setttings (**set them all or no one**), permit to define a default retry policy.
+    - *httpclient.implementation* : define which installed library to use : either `ahc`, a.k.a async http client, or `okhttp`. default is `okhttp`.
+  - retry settings (**set them all or no one**), permit to define a default retry policy.
     - *httpclient.default.success.response.code.regex* : default regex which decide if the request is a success or not, based on the response status code
-    - *httpclient.default.retry.response.code.regex* : regex which define if a retry need to be triggered, based on the response status code. default is '^[1-2][0-9][0-9]$'
+    - *httpclient.default.retry.response.code.regex* : regex which define if a retry need to be triggered, based on the response status code. default is `^[1-2][0-9][0-9]$`
       by default, we don't resend any http call with a response between `100` and `499`.only `5xx` by default, trigger a resend
       - `1xx` is for protocol information (100 continue for example),
       - `2xx` is for success,
@@ -39,6 +39,7 @@ every Kafka Connect Sink Connector need to define these required parameters :
   - rate limiting settings
     - *httpclient.default.rate.limiter.period.in.ms* : period of time in milliseconds, during the max execution cannot be exceeded
     - *httpclient.default.rate.limiter.max.executions* : max executions in the period defined with the 'httpclient.default.rate.limiter.period.in.ms' parameter
+    - *httpclient.default.rate.limiter.scope* : can be either `instance` (default option when not set, i.e a rate limiter per configuration in the connector instance),  or `static` (a rate limiter per configuration id shared with all connectors instances in the same Java Virtual Machine.
   - header settings
     - *httpclient.static.request.header.names* : list of headers names to attach to all requests. *Static* term, means that these headers
       are not managed by initial kafka message, but are defined at the connector level and added globally. this list is divided by
@@ -185,7 +186,7 @@ via the `publish.to.in.memory.queue` set to `true`.
     "connector.class":"source.io.github.clescot.kafka.connect.http.HttpSourceConnector",
     "tasks.max": "1",
     "success.topic": "http-success",
-    "error.topic": "http-error",
+    "error.topic": "http-error"
     }
 }
 ```
@@ -268,8 +269,9 @@ Each specific configuration is identified by a _prefix_, in the form :
 
 The prefix for the _default_ configuration is `httpclient.default.` (its configuration id is `default`).
 
-To register some custom configurations, you need to register them by their configurationid in the parameter :
-`httpclient.custom.config.ids`, with the configuration ids separated by commas.
+To register some custom configurations, you need to register them by their id in the parameter :
+`httpclient.custom.config.ids`.
+These configuration ids are separated by commas.
 
 exemple : 
 ```
@@ -298,11 +300,3 @@ You will have the ability to define optionnaly :
     - `httpclient.test2.retry.max.delay.in.ms`
     - `httpclient.test2.retry.delay.factor`
     - `httpclient.test2.retry.jitter.in.ms`
-
-### site authentication methods
-
-TODO 
-
-### monitoring
-
-TODO
