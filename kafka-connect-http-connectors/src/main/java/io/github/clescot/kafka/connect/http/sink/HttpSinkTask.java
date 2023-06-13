@@ -54,7 +54,6 @@ public class HttpSinkTask extends SinkTask {
     private Queue<KafkaRecord> queue;
     private String queueName;
 
-    private Map<String, List<String>> staticRequestHeaders;
     private HttpSinkConnectorConfig httpSinkConnectorConfig;
     private ErrantRecordReporter errantRecordReporter;
     private boolean generateMissingCorrelationId;
@@ -90,7 +89,6 @@ public class HttpSinkTask extends SinkTask {
 
         this.queueName = httpSinkConnectorConfig.getQueueName();
         this.queue = QueueFactory.getQueue(queueName);
-        this.staticRequestHeaders = httpSinkConnectorConfig.getStaticRequestHeaders();
         this.generateMissingRequestId = httpSinkConnectorConfig.isGenerateMissingRequestId();
         this.generateMissingCorrelationId = httpSinkConnectorConfig.isGenerateMissingCorrelationId();
 
@@ -100,7 +98,7 @@ public class HttpSinkTask extends SinkTask {
         }
 
         this.defaultConfiguration = new Configuration(DEFAULT_CONFIGURATION_ID,httpSinkConnectorConfig,executor);
-        customConfigurations = buildCustomConfigurations(httpSinkConnectorConfig,defaultConfiguration.getHttpClient(),executor);
+        customConfigurations = buildCustomConfigurations(httpSinkConnectorConfig,defaultConfiguration,executor);
 
 
         if (httpSinkConnectorConfig.isPublishToInMemoryQueue()) {
@@ -116,11 +114,13 @@ public class HttpSinkTask extends SinkTask {
         }
     }
 
-    private List<Configuration> buildCustomConfigurations(HttpSinkConnectorConfig httpSinkConnectorConfig,HttpClient defaultHttpClient,ExecutorService executorService){
+    private List<Configuration> buildCustomConfigurations(HttpSinkConnectorConfig httpSinkConnectorConfig,Configuration defaultConfiguration,ExecutorService executorService){
         CopyOnWriteArrayList<Configuration> configurations = Lists.newCopyOnWriteArrayList();
         for (String configId: httpSinkConnectorConfig.getConfigurationIds()) {
            Configuration configuration = new Configuration(configId,httpSinkConnectorConfig,executorService);
-           configuration.setHttpClient(defaultHttpClient);
+           if(configuration.getHttpClient()==null) {
+               configuration.setHttpClient(defaultConfiguration.getHttpClient());
+           }
             configurations.add(configuration);
         }
         return configurations;
@@ -150,10 +150,6 @@ public class HttpSinkTask extends SinkTask {
             }
             //build HttpRequest
             HttpRequest httpRequest = buildHttpRequest(sinkRecord);
-            HttpRequest httpRequestWithStaticHeaders = addStaticHeaders(httpRequest);
-            HttpRequest httpRequestWithTrackingHeaders = addTrackingHeaders(httpRequestWithStaticHeaders);
-
-
 
             //is there a matching configuration against the request ?
             Configuration foundConfiguration = customConfigurations
@@ -161,9 +157,10 @@ public class HttpSinkTask extends SinkTask {
                     .filter(config -> config.matches(httpRequest))
                     .findFirst()
                     .orElse(defaultConfiguration);
-
+            HttpRequest enhancedHttpRequest = foundConfiguration.addStaticHeaders(httpRequest);
+            enhancedHttpRequest = foundConfiguration.addTrackingHeaders(httpRequest);
             //handle Request and Response
-            return callWithRetryPolicy(sinkRecord, httpRequestWithTrackingHeaders, foundConfiguration).thenApply(
+            return callWithRetryPolicy(sinkRecord, enhancedHttpRequest, foundConfiguration).thenApply(
                     myHttpExchange -> {
                         LOGGER.debug("HTTP exchange :{}", myHttpExchange);
                         return myHttpExchange;
@@ -290,29 +287,7 @@ public class HttpSinkTask extends SinkTask {
     }
 
 
-    protected HttpRequest addTrackingHeaders(HttpRequest httpRequest) {
-        if (httpRequest == null) {
-            LOGGER.warn(SINK_RECORD_HAS_GOT_A_NULL_VALUE);
-            throw new ConnectException(SINK_RECORD_HAS_GOT_A_NULL_VALUE);
-        }
-        Map<String, List<String>> headers = Optional.ofNullable(httpRequest.getHeaders()).orElse(Maps.newHashMap());
 
-        //we generate an 'X-Request-ID' header if not present
-        Optional<List<String>> requestId = Optional.ofNullable(httpRequest.getHeaders().get(HEADER_X_REQUEST_ID));
-        if (requestId.isEmpty() && this.generateMissingRequestId) {
-            requestId = Optional.of(Lists.newArrayList(UUID.randomUUID().toString()));
-        }
-        requestId.ifPresent(reqId -> headers.put(HEADER_X_REQUEST_ID, Lists.newArrayList(reqId)));
-
-        //we generate an 'X-Correlation-ID' header if not present
-        Optional<List<String>> correlationId = Optional.ofNullable(httpRequest.getHeaders().get(HEADER_X_CORRELATION_ID));
-        if (correlationId.isEmpty() && this.generateMissingCorrelationId) {
-            correlationId = Optional.of(Lists.newArrayList(UUID.randomUUID().toString()));
-        }
-        correlationId.ifPresent(corrId -> headers.put(HEADER_X_CORRELATION_ID, Lists.newArrayList(corrId)));
-
-        return httpRequest;
-    }
 
     protected HttpRequest buildHttpRequest(SinkRecord sinkRecord) {
         if (sinkRecord == null || sinkRecord.value() == null) {
@@ -388,23 +363,9 @@ public class HttpSinkTask extends SinkTask {
         return httpRequest;
     }
 
-    protected HttpRequest addStaticHeaders(HttpRequest httpRequest) {
-        Preconditions.checkNotNull(httpRequest, "httpRequest is null");
-        this.staticRequestHeaders.forEach((key, value) -> httpRequest.getHeaders().put(key, value));
-        return httpRequest;
-    }
-
-
     @Override
     public void stop() {
         //Producer are stopped in connector stop
-    }
-
-
-    //for testing purpose
-    protected Map<String, List<String>> getStaticRequestHeaders() {
-        //we return a copy
-        return Maps.newHashMap(staticRequestHeaders);
     }
 
     protected void setQueue(Queue<KafkaRecord> queue) {

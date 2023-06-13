@@ -1,6 +1,7 @@
 package io.github.clescot.kafka.connect.http.sink;
 
 import com.google.common.base.Preconditions;
+import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import dev.failsafe.RateLimiter;
 import dev.failsafe.RetryPolicy;
@@ -11,19 +12,21 @@ import io.github.clescot.kafka.connect.http.sink.client.HttpClientFactory;
 import io.github.clescot.kafka.connect.http.sink.client.HttpException;
 import io.github.clescot.kafka.connect.http.sink.client.ahc.AHCHttpClientFactory;
 import io.github.clescot.kafka.connect.http.sink.client.okhttp.OkHttpClientFactory;
+import org.apache.kafka.connect.errors.ConnectException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.lang.reflect.InvocationTargetException;
 import java.time.Duration;
 import java.time.temporal.ChronoUnit;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 import java.util.concurrent.ExecutorService;
 import java.util.function.Predicate;
 import java.util.regex.Pattern;
 
 import static io.github.clescot.kafka.connect.http.sink.HttpSinkConfigDefinition.*;
+import static io.github.clescot.kafka.connect.http.sink.HttpSinkTask.HEADER_X_CORRELATION_ID;
+import static io.github.clescot.kafka.connect.http.sink.HttpSinkTask.HEADER_X_REQUEST_ID;
 
 /**
  * Configuration of the http call mechanism, specific to some websites according to the configured <span class="strong">predicate</span>.
@@ -54,11 +57,27 @@ public class Configuration {
     private RateLimiter<HttpExchange> rateLimiter;
     private RetryPolicy<HttpExchange> retryPolicy;
     private HttpClient httpClient;
+    private final Map<String, List<String>> staticRequestHeaders = Maps.newHashMap();
+    private final boolean generateMissingCorrelationId;
+    private final boolean generateMissingRequestId;
 
     public Configuration(String id, HttpSinkConnectorConfig httpSinkConnectorConfig, ExecutorService executorService) {
         Preconditions.checkNotNull(id, "id must not be null");
         Preconditions.checkNotNull(httpSinkConnectorConfig, "httpSinkConnectorConfig must not be null");
         Map<String, Object> configMap = httpSinkConnectorConfig.originalsWithPrefix("httpclient." + id + ".");
+
+        Optional<String> staticHeaderParam = Optional.ofNullable((String) configMap.get(STATIC_REQUEST_HEADER_NAMES));
+        if (staticHeaderParam.isPresent()) {
+            List<String> staticRequestHeaderNames = Arrays.asList(staticHeaderParam.get().split(","));
+            for (String headerName : staticRequestHeaderNames) {
+                String value = (String) configMap.get(headerName);
+                Preconditions.checkNotNull(value, "'" + headerName + "' is not configured as a parameter.");
+                staticRequestHeaders.put(headerName, Lists.newArrayList(value));
+            }
+        }
+        this.generateMissingRequestId = (boolean) Optional.ofNullable(configMap.get(GENERATE_MISSING_REQUEST_ID)).orElse(false);
+        this.generateMissingCorrelationId = (boolean) Optional.ofNullable(configMap.get(GENERATE_MISSING_CORRELATION_ID)).orElse(false);
+
         this.httpClient = buildHttpClient(configMap, executorService);
 
         //main predicate
@@ -128,6 +147,36 @@ public class Configuration {
             this.retryPolicy = buildRetryPolicy(retries, retryDelayInMs, retryMaxDelayInMs, retryDelayFactor, retryJitterInMs);
         }
 
+    }
+
+    protected HttpRequest addStaticHeaders(HttpRequest httpRequest) {
+        Preconditions.checkNotNull(httpRequest, "httpRequest is null");
+        this.staticRequestHeaders.forEach((key, value) -> httpRequest.getHeaders().put(key, value));
+        return httpRequest;
+    }
+
+    protected HttpRequest addTrackingHeaders(HttpRequest httpRequest) {
+        if (httpRequest == null) {
+            LOGGER.warn("httpRequest is null");
+            throw new ConnectException("httpRequest is null");
+        }
+        Map<String, List<String>> headers = Optional.ofNullable(httpRequest.getHeaders()).orElse(Maps.newHashMap());
+
+        //we generate an 'X-Request-ID' header if not present
+        Optional<List<String>> requestId = Optional.ofNullable(httpRequest.getHeaders().get(HEADER_X_REQUEST_ID));
+        if (requestId.isEmpty() && this.generateMissingRequestId) {
+            requestId = Optional.of(Lists.newArrayList(UUID.randomUUID().toString()));
+        }
+        requestId.ifPresent(reqId -> headers.put(HEADER_X_REQUEST_ID, Lists.newArrayList(reqId)));
+
+        //we generate an 'X-Correlation-ID' header if not present
+        Optional<List<String>> correlationId = Optional.ofNullable(httpRequest.getHeaders().get(HEADER_X_CORRELATION_ID));
+        if (correlationId.isEmpty() && this.generateMissingCorrelationId) {
+            correlationId = Optional.of(Lists.newArrayList(UUID.randomUUID().toString()));
+        }
+        correlationId.ifPresent(corrId -> headers.put(HEADER_X_CORRELATION_ID, Lists.newArrayList(corrId)));
+
+        return httpRequest;
     }
 
     private HttpClient buildHttpClient(Map<String, Object> config, ExecutorService executorService) {
@@ -208,4 +257,17 @@ public class Configuration {
     }
 
 
+    public Map<String, List<String>> getStaticRequestHeaders() {
+        return staticRequestHeaders;
+    }
+
+
+
+    public boolean isGenerateMissingCorrelationId() {
+        return generateMissingCorrelationId;
+    }
+
+    public boolean isGenerateMissingRequestId() {
+        return generateMissingRequestId;
+    }
 }

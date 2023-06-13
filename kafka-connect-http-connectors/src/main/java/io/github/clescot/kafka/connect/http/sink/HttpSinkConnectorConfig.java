@@ -67,7 +67,7 @@ public class HttpSinkConnectorConfig extends AbstractConfig {
         this.maxWaitTimeRegistrationOfQueueConsumerInMs = getLong(WAIT_TIME_REGISTRATION_QUEUE_CONSUMER_IN_MS);
         this.pollDelayRegistrationOfQueueConsumerInMs = getInt(POLL_DELAY_REGISTRATION_QUEUE_CONSUMER_IN_MS);
         this.pollIntervalRegistrationOfQueueConsumerInMs = getInt(POLL_INTERVAL_REGISTRATION_QUEUE_CONSUMER_IN_MS);
-        Optional<List<String>> staticRequestHeaderNames = Optional.ofNullable(getList(HTTP_CLIENT_STATIC_REQUEST_HEADER_NAMES));
+        Optional<List<String>> staticRequestHeaderNames = Optional.ofNullable(getList(STATIC_REQUEST_HEADER_NAMES));
         List<String> additionalHeaderNamesList = staticRequestHeaderNames.orElse(Lists.newArrayList());
         for (String headerName : additionalHeaderNamesList) {
             String value = (String) originals().get(headerName);

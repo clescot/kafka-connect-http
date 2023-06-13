@@ -8,7 +8,7 @@ import java.util.Collections;
 
 public class HttpSinkConfigDefinition {
 
-    public static final String HTTP_CLIENT_STATIC_REQUEST_HEADER_NAMES = "httpclient.static.request.header.names";
+    public static final String STATIC_REQUEST_HEADER_NAMES = "static.request.header.names";
     public static final String HTTP_CLIENT_STATIC_REQUEST_HEADER_NAMES_DOC = "list of static parameters names which will be added to all http requests. these parameter names need to be added with their values as parameters in complement of this list";
     public static final String PUBLISH_TO_IN_MEMORY_QUEUE = "publish.to.in.memory.queue";
     public static final String PUBLISH_TO_IN_MEMORY_QUEUE_DOC = "when set to false, ignore HTTP responses, i.e does not publish responses in the in memory queue. No Source Connector is needed when set to false. When set to true, a Source Connector is needed to consume published Http exchanges in this in memory queue.";
@@ -57,9 +57,11 @@ public class HttpSinkConfigDefinition {
             "for a queue consumer (Source Connector) registration.if not set, default value is "+DEFAULT_POLL_INTERVAL_REGISTRATION_QUEUE_CONSUMER_IN_MS;
 
 
-    public static final String HTTP_CLIENT_GENERATE_MISSING_CORRELATION_ID = "httpclient.generate.missing.correlation.id";
+    public static final String GENERATE_MISSING_CORRELATION_ID = "generate.missing.correlation.id";
+    public static final String HTTP_CLIENT_GENERATE_MISSING_CORRELATION_ID = HTTPCLIENT_DEFAULT+ GENERATE_MISSING_CORRELATION_ID;
     public static final String HTTP_CLIENT_GENERATE_MISSING_CORRELATION_ID_DOC = "if not present in the HttpRequest headers, generate an UUID bound to the 'X-Correlation-ID' name";
-    public static final String HTTP_CLIENT_GENERATE_MISSING_REQUEST_ID = "httpclient.generate.missing.request.id";
+    public static final String GENERATE_MISSING_REQUEST_ID = "generate.missing.request.id";
+    public static final String HTTP_CLIENT_GENERATE_MISSING_REQUEST_ID = HTTPCLIENT_DEFAULT+ GENERATE_MISSING_REQUEST_ID;
     public static final String HTTP_CLIENT_GENERATE_MISSING_REQUEST_ID_DOC = "if not present in the HttpRequest headers, generate an UUID bound to the 'X-Request-ID' name";
     public static final long DEFAULT_RATE_LIMITER_PERIOD_IN_MS_VALUE = 1000L;
     public static final long DEFAULT_RATE_LIMITER_MAX_EXECUTIONS_VALUE = 1L;
@@ -155,7 +157,7 @@ public class HttpSinkConfigDefinition {
                 .define(HTTP_CLIENT_DEFAULT_RATE_LIMITER_MAX_EXECUTIONS, ConfigDef.Type.LONG, HttpSinkConfigDefinition.DEFAULT_RATE_LIMITER_MAX_EXECUTIONS_VALUE, ConfigDef.Importance.MEDIUM, HTTP_CLIENT_DEFAULT_RATE_LIMITER_MAX_EXECUTIONS_DOC)
                 .define(HTTP_CLIENT_DEFAULT_RATE_LIMITER_SCOPE, ConfigDef.Type.STRING, HttpSinkConfigDefinition.DEFAULT_RATE_LIMITER_SCOPE_VALUE, ConfigDef.Importance.MEDIUM, HTTP_CLIENT_DEFAULT_RATE_LIMITER_SCOPE_DOC)
                 //header settings
-                .define(HTTP_CLIENT_STATIC_REQUEST_HEADER_NAMES, ConfigDef.Type.LIST,  Collections.emptyList(), ConfigDef.Importance.MEDIUM, HTTP_CLIENT_STATIC_REQUEST_HEADER_NAMES_DOC)
+                .define(STATIC_REQUEST_HEADER_NAMES, ConfigDef.Type.LIST,  Collections.emptyList(), ConfigDef.Importance.MEDIUM, HTTP_CLIENT_STATIC_REQUEST_HEADER_NAMES_DOC)
                 .define(HTTP_CLIENT_GENERATE_MISSING_CORRELATION_ID, ConfigDef.Type.BOOLEAN, false, ConfigDef.Importance.MEDIUM, HTTP_CLIENT_GENERATE_MISSING_CORRELATION_ID_DOC)
                 .define(HTTP_CLIENT_GENERATE_MISSING_REQUEST_ID, ConfigDef.Type.BOOLEAN, false, ConfigDef.Importance.MEDIUM, HTTP_CLIENT_GENERATE_MISSING_REQUEST_ID_DOC)
                 //in memory queue settings

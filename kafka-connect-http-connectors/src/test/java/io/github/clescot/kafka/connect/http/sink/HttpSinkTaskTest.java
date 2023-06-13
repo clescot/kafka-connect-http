@@ -160,7 +160,7 @@ public class HttpSinkTaskTest {
         @Test
         public void test_start_with_static_request_headers() {
             Map<String, String> settings = Maps.newHashMap();
-            settings.put(HTTP_CLIENT_STATIC_REQUEST_HEADER_NAMES, "param1,param2");
+            settings.put(STATIC_REQUEST_HEADER_NAMES, "param1,param2");
             settings.put("param1", "value1");
             settings.put("param2", "value2");
             httpSinkTask.start(settings);
@@ -171,7 +171,7 @@ public class HttpSinkTaskTest {
             Assertions.assertThrows(NullPointerException.class, () -> {
                 HttpSinkTask wsSinkTask = new HttpSinkTask();
                 Map<String, String> settings = Maps.newHashMap();
-                settings.put(HTTP_CLIENT_STATIC_REQUEST_HEADER_NAMES, "param1,param2");
+                settings.put(STATIC_REQUEST_HEADER_NAMES, "param1,param2");
                 wsSinkTask.start(settings);
             });
 
@@ -191,9 +191,9 @@ public class HttpSinkTaskTest {
         public void test_put_add_static_headers_with_value_as_string() {
             //given
             Map<String, String> settings = Maps.newHashMap();
-            settings.put(HTTP_CLIENT_STATIC_REQUEST_HEADER_NAMES, "param1,param2");
-            settings.put("param1", "value1");
-            settings.put("param2", "value2");
+            settings.put(HTTPCLIENT_DEFAULT+STATIC_REQUEST_HEADER_NAMES, "param1,param2");
+            settings.put(HTTPCLIENT_DEFAULT+"param1", "value1");
+            settings.put(HTTPCLIENT_DEFAULT+"param2", "value2");
             httpSinkTask.start(settings);
             OkHttpClient httpClient = Mockito.mock(OkHttpClient.class);
             HttpExchange dummyHttpExchange = getDummyHttpExchange();
@@ -209,7 +209,7 @@ public class HttpSinkTaskTest {
             verify(httpClient, times(1)).call(captor.capture(), any(AtomicInteger.class));
             HttpRequest enhancedRecordBeforeHttpCall = captor.getValue();
             //then
-            assertThat(enhancedRecordBeforeHttpCall.getHeaders().size() == sinkRecord.headers().size() + httpSinkTask.getStaticRequestHeaders().size());
+            assertThat(enhancedRecordBeforeHttpCall.getHeaders().size() == sinkRecord.headers().size() + httpSinkTask.getDefaultConfiguration().getStaticRequestHeaders().size());
             assertThat(enhancedRecordBeforeHttpCall.getHeaders()).contains(Map.entry("param1", Lists.newArrayList("value1")));
             assertThat(enhancedRecordBeforeHttpCall.getHeaders()).contains(Map.entry("param2", Lists.newArrayList("value2")));
         }
