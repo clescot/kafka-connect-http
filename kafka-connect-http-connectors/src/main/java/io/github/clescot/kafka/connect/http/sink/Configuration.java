@@ -212,6 +212,10 @@ public class Configuration {
         this.httpClient = httpClient;
     }
 
+    public void setRetryPolicy(RetryPolicy<HttpExchange> retryPolicy) {
+        this.retryPolicy = retryPolicy;
+    }
+
     public static void registerRateLimiter(String configurationId, RateLimiter<HttpExchange> rateLimiter) {
         Preconditions.checkNotNull(configurationId, "we cannot register a rateLimiter for a 'null' configurationId");
         Preconditions.checkNotNull(rateLimiter, "we cannot register a 'null' rate limiter for the configurationId " + configurationId);

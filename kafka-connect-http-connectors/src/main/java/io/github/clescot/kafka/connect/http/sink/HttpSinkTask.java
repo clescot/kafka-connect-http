@@ -110,12 +110,17 @@ public class HttpSinkTask extends SinkTask {
         }
     }
 
-    private List<Configuration> buildCustomConfigurations(HttpSinkConnectorConfig httpSinkConnectorConfig,Configuration defaultConfiguration,ExecutorService executorService){
+    private List<Configuration> buildCustomConfigurations(HttpSinkConnectorConfig httpSinkConnectorConfig,
+                                                          Configuration defaultConfiguration,
+                                                          ExecutorService executorService){
         CopyOnWriteArrayList<Configuration> configurations = Lists.newCopyOnWriteArrayList();
         for (String configId: httpSinkConnectorConfig.getConfigurationIds()) {
            Configuration configuration = new Configuration(configId,httpSinkConnectorConfig,executorService);
            if(configuration.getHttpClient()==null) {
                configuration.setHttpClient(defaultConfiguration.getHttpClient());
+           }
+           if(configuration.getRetryPolicy().isEmpty()&&defaultConfiguration.getRetryPolicy().isPresent()){
+               configuration.setRetryPolicy(defaultConfiguration.getRetryPolicy().get());
            }
             configurations.add(configuration);
         }
