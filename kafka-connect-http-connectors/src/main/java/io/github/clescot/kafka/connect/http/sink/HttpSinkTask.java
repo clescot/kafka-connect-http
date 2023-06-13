@@ -119,9 +119,12 @@ public class HttpSinkTask extends SinkTask {
             if (configuration.getHttpClient() == null) {
                 configuration.setHttpClient(defaultConfiguration.getHttpClient());
             }
+
+            //we reuse the default retry policy if not set
             if (configuration.getRetryPolicy().isEmpty() && defaultConfiguration.getRetryPolicy().isPresent()) {
                 configuration.setRetryPolicy(defaultConfiguration.getRetryPolicy().get());
             }
+            //we reuse the default success response code regex if not set
             if (configuration.getSuccessResponseCodeRegex().isEmpty() && defaultConfiguration.getSuccessResponseCodeRegex().isPresent()) {
                 configuration.setSuccessResponseCodeRegex(defaultConfiguration.getSuccessResponseCodeRegex().get());
             }
