@@ -56,8 +56,6 @@ public class HttpSinkTask extends SinkTask {
 
     private HttpSinkConnectorConfig httpSinkConnectorConfig;
     private ErrantRecordReporter errantRecordReporter;
-    private boolean generateMissingCorrelationId;
-    private boolean generateMissingRequestId;
 
     private List<Configuration> customConfigurations;
     private static ExecutorService executor;
@@ -89,8 +87,6 @@ public class HttpSinkTask extends SinkTask {
 
         this.queueName = httpSinkConnectorConfig.getQueueName();
         this.queue = QueueFactory.getQueue(queueName);
-        this.generateMissingRequestId = httpSinkConnectorConfig.isGenerateMissingRequestId();
-        this.generateMissingCorrelationId = httpSinkConnectorConfig.isGenerateMissingCorrelationId();
 
         Integer customFixedThreadPoolSize = httpSinkConnectorConfig.getCustomFixedThreadpoolSize();
         if(customFixedThreadPoolSize!=null &&executor==null){
