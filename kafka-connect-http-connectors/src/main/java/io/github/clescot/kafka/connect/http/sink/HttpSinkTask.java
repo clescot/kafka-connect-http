@@ -89,12 +89,12 @@ public class HttpSinkTask extends SinkTask {
         this.queue = QueueFactory.getQueue(queueName);
 
         Integer customFixedThreadPoolSize = httpSinkConnectorConfig.getCustomFixedThreadpoolSize();
-        if(customFixedThreadPoolSize!=null &&executor==null){
+        if (customFixedThreadPoolSize != null && executor == null) {
             executor = Executors.newFixedThreadPool(customFixedThreadPoolSize);
         }
 
-        this.defaultConfiguration = new Configuration(DEFAULT_CONFIGURATION_ID,httpSinkConnectorConfig,executor);
-        customConfigurations = buildCustomConfigurations(httpSinkConnectorConfig,defaultConfiguration,executor);
+        this.defaultConfiguration = new Configuration(DEFAULT_CONFIGURATION_ID, httpSinkConnectorConfig, executor);
+        customConfigurations = buildCustomConfigurations(httpSinkConnectorConfig, defaultConfiguration, executor);
 
 
         if (httpSinkConnectorConfig.isPublishToInMemoryQueue()) {
@@ -112,16 +112,23 @@ public class HttpSinkTask extends SinkTask {
 
     private List<Configuration> buildCustomConfigurations(HttpSinkConnectorConfig httpSinkConnectorConfig,
                                                           Configuration defaultConfiguration,
-                                                          ExecutorService executorService){
+                                                          ExecutorService executorService) {
         CopyOnWriteArrayList<Configuration> configurations = Lists.newCopyOnWriteArrayList();
-        for (String configId: httpSinkConnectorConfig.getConfigurationIds()) {
-           Configuration configuration = new Configuration(configId,httpSinkConnectorConfig,executorService);
-           if(configuration.getHttpClient()==null) {
-               configuration.setHttpClient(defaultConfiguration.getHttpClient());
-           }
-           if(configuration.getRetryPolicy().isEmpty()&&defaultConfiguration.getRetryPolicy().isPresent()){
-               configuration.setRetryPolicy(defaultConfiguration.getRetryPolicy().get());
-           }
+        for (String configId : httpSinkConnectorConfig.getConfigurationIds()) {
+            Configuration configuration = new Configuration(configId, httpSinkConnectorConfig, executorService);
+            if (configuration.getHttpClient() == null) {
+                configuration.setHttpClient(defaultConfiguration.getHttpClient());
+            }
+            if (configuration.getRetryPolicy().isEmpty() && defaultConfiguration.getRetryPolicy().isPresent()) {
+                configuration.setRetryPolicy(defaultConfiguration.getRetryPolicy().get());
+            }
+            if (configuration.getSuccessResponseCodeRegex().isEmpty() && defaultConfiguration.getSuccessResponseCodeRegex().isPresent()) {
+                configuration.setSuccessResponseCodeRegex(defaultConfiguration.getSuccessResponseCodeRegex().get());
+            }
+            if (configuration.getRetryResponseCodeRegex().isEmpty() && defaultConfiguration.getRetryResponseCodeRegex().isPresent()) {
+                configuration.setRetryResponseCodeRegex(defaultConfiguration.getRetryResponseCodeRegex().get());
+            }
+
             configurations.add(configuration);
         }
         return configurations;
@@ -196,13 +203,13 @@ public class HttpSinkTask extends SinkTask {
                 attempts.addAndGet(HttpClient.ONE_HTTP_REQUEST);
                 if (retryPolicyForCall.isPresent()) {
                     RetryPolicy<HttpExchange> retryPolicy = retryPolicyForCall.get();
-                    CompletableFuture<HttpExchange> httpExchangeFuture = callAndPublish(sinkRecord, httpRequest, attempts,configuration)
-                       .thenApply(httpExchange-> handleRetry(httpExchange,configuration)
-                    );
+                    CompletableFuture<HttpExchange> httpExchangeFuture = callAndPublish(sinkRecord, httpRequest, attempts, configuration)
+                            .thenApply(httpExchange -> handleRetry(httpExchange, configuration)
+                            );
                     return Failsafe.with(List.of(retryPolicy))
-                       .getStageAsync(()->httpExchangeFuture);
+                            .getStageAsync(() -> httpExchangeFuture);
                 } else {
-                    return callAndPublish(sinkRecord, httpRequest, attempts,configuration);
+                    return callAndPublish(sinkRecord, httpRequest, attempts, configuration);
                 }
             } catch (Throwable throwable) {
                 LOGGER.error("Failed to call web service after {} retries with error({}). message:{} ", attempts, throwable,
@@ -214,14 +221,14 @@ public class HttpSinkTask extends SinkTask {
                         attempts,
                         HttpClient.FAILURE));
             }
-        }else{
+        } else {
             throw new IllegalArgumentException("httpRequest is null");
         }
     }
 
-    private HttpExchange handleRetry(HttpExchange httpExchange,Configuration configuration) {
+    private HttpExchange handleRetry(HttpExchange httpExchange, Configuration configuration) {
         //we don't retry success HTTP Exchange
-        boolean responseCodeImpliesRetry = retryNeeded(httpExchange.getHttpResponse(),configuration);
+        boolean responseCodeImpliesRetry = retryNeeded(httpExchange.getHttpResponse(), configuration);
         LOGGER.debug("httpExchange success :'{}'", httpExchange.isSuccess());
         LOGGER.debug("response code('{}') implies retry:'{}'", httpExchange.getHttpResponse().getStatusCode(), "" + responseCodeImpliesRetry);
         if (!httpExchange.isSuccess()
@@ -232,21 +239,21 @@ public class HttpSinkTask extends SinkTask {
     }
 
 
-    protected boolean retryNeeded(HttpResponse httpResponse,Configuration configuration) {
+    protected boolean retryNeeded(HttpResponse httpResponse, Configuration configuration) {
         Optional<Pattern> retryResponseCodeRegex = configuration.getRetryResponseCodeRegex();
-        if(retryResponseCodeRegex.isPresent()) {
+        if (retryResponseCodeRegex.isPresent()) {
             Pattern retryPattern = retryResponseCodeRegex.get();
             Matcher matcher = retryPattern.matcher("" + httpResponse.getStatusCode());
             return matcher.matches();
-        }else {
+        } else {
             return false;
         }
     }
 
-    private CompletableFuture<HttpExchange> callWithThrottling(HttpRequest httpRequest, AtomicInteger attempts,Configuration configuration) {
+    private CompletableFuture<HttpExchange> callWithThrottling(HttpRequest httpRequest, AtomicInteger attempts, Configuration configuration) {
         try {
             Optional<RateLimiter<HttpExchange>> rateLimiter = configuration.getRateLimiter();
-            if(rateLimiter.isPresent()) {
+            if (rateLimiter.isPresent()) {
                 rateLimiter.get().acquirePermits(HttpClient.ONE_HTTP_REQUEST);
                 LOGGER.debug("permits acquired request:'{}'", httpRequest);
             }
@@ -262,9 +269,9 @@ public class HttpSinkTask extends SinkTask {
                                                            HttpRequest httpRequest,
                                                            AtomicInteger attempts,
                                                            Configuration configuration) {
-        return callWithThrottling(httpRequest, attempts,configuration)
+        return callWithThrottling(httpRequest, attempts, configuration)
                 .thenApply(myHttpExchange -> {
-                    boolean success = isSuccess(myHttpExchange,configuration);
+                    boolean success = isSuccess(myHttpExchange, configuration);
                     myHttpExchange.setSuccess(success);
                     //publish eventually to 'in memory' queue
                     if (httpSinkConnectorConfig.isPublishToInMemoryQueue()) {
@@ -278,16 +285,14 @@ public class HttpSinkTask extends SinkTask {
 
     }
 
-    protected boolean isSuccess(HttpExchange httpExchange,Configuration configuration) {
+    protected boolean isSuccess(HttpExchange httpExchange, Configuration configuration) {
         Pattern pattern = defaultSuccessPattern;
-        if(configuration.getSuccessResponseCodeRegex().isPresent()) {
+        if (configuration.getSuccessResponseCodeRegex().isPresent()) {
             pattern = configuration.getSuccessResponseCodeRegex().get();
         }
         return pattern.matcher(httpExchange.getHttpResponse().getStatusCode() + "").matches();
 
     }
-
-
 
 
     protected HttpRequest buildHttpRequest(SinkRecord sinkRecord) {

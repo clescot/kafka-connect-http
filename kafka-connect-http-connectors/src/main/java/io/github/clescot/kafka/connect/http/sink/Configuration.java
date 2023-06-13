@@ -212,6 +212,18 @@ public class Configuration {
         this.httpClient = httpClient;
     }
 
+    public void setRateLimiter(RateLimiter<HttpExchange> rateLimiter) {
+        this.rateLimiter = rateLimiter;
+    }
+
+    public void setSuccessResponseCodeRegex(Pattern successResponseCodeRegex) {
+        this.successResponseCodeRegex = successResponseCodeRegex;
+    }
+
+    public void setRetryResponseCodeRegex(Pattern retryResponseCodeRegex) {
+        this.retryResponseCodeRegex = retryResponseCodeRegex;
+    }
+
     public void setRetryPolicy(RetryPolicy<HttpExchange> retryPolicy) {
         this.retryPolicy = retryPolicy;
     }
