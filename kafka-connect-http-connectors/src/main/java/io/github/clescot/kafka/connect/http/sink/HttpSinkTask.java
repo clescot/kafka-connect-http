@@ -68,7 +68,7 @@ public class HttpSinkTask extends SinkTask {
     }
 
     /**
-     * @param settings
+     * @param settings configure the connector
      */
     @Override
     public void start(Map<String, String> settings) {

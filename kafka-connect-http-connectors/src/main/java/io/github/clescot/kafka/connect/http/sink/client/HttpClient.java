@@ -61,7 +61,7 @@ public interface HttpClient<Req, Res> {
     /**
      * convert an {@link HttpRequest} into a native (from the implementation) request.
      *
-     * @param httpRequest
+     * @param httpRequest http request to build.
      * @return native request.
      */
 
