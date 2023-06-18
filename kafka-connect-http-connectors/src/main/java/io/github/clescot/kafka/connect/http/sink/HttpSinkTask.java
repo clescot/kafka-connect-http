@@ -374,7 +374,11 @@ public class HttpSinkTask extends SinkTask {
 
     @Override
     public void stop() {
-        //Producer are stopped in connector stop
+        if (!executor.isShutdown()) {
+            executor.shutdown();
+        }
+        LOGGER.info("executor is shutdown : '{}'",executor.isShutdown());
+        LOGGER.info("executor tasks are terminated : '{}'",executor.isTerminated());
     }
 
     protected void setQueue(Queue<KafkaRecord> queue) {
