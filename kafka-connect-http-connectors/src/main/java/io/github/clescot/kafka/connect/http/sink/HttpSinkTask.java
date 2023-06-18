@@ -7,7 +7,6 @@ import com.google.common.base.Charsets;
 import com.google.common.base.Preconditions;
 import com.google.common.base.Stopwatch;
 import com.google.common.collect.Lists;
-import com.google.common.collect.Maps;
 import dev.failsafe.Failsafe;
 import dev.failsafe.RateLimiter;
 import dev.failsafe.RetryPolicy;
@@ -58,7 +57,7 @@ public class HttpSinkTask extends SinkTask {
     private ErrantRecordReporter errantRecordReporter;
 
     private List<Configuration> customConfigurations;
-    private static ExecutorService executor;
+    private static ExecutorService executorService;
     private Configuration defaultConfiguration;
     private final Pattern defaultSuccessPattern = Pattern.compile(HTTP_CLIENT_DEFAULT_DEFAULT_SUCCESS_RESPONSE_CODE_REGEX);
 
@@ -89,12 +88,12 @@ public class HttpSinkTask extends SinkTask {
         this.queue = QueueFactory.getQueue(queueName);
 
         Integer customFixedThreadPoolSize = httpSinkConnectorConfig.getCustomFixedThreadpoolSize();
-        if (customFixedThreadPoolSize != null && executor == null) {
-            executor = Executors.newFixedThreadPool(customFixedThreadPoolSize);
+        if (customFixedThreadPoolSize != null && executorService == null) {
+            executorService = Executors.newFixedThreadPool(customFixedThreadPoolSize);
         }
 
-        this.defaultConfiguration = new Configuration(DEFAULT_CONFIGURATION_ID, httpSinkConnectorConfig, executor);
-        customConfigurations = buildCustomConfigurations(httpSinkConnectorConfig, defaultConfiguration, executor);
+        this.defaultConfiguration = new Configuration(DEFAULT_CONFIGURATION_ID, httpSinkConnectorConfig, executorService);
+        customConfigurations = buildCustomConfigurations(httpSinkConnectorConfig, defaultConfiguration, executorService);
 
 
         if (httpSinkConnectorConfig.isPublishToInMemoryQueue()) {
@@ -374,11 +373,19 @@ public class HttpSinkTask extends SinkTask {
 
     @Override
     public void stop() {
-        if (!executor.isShutdown()) {
-            executor.shutdown();
+        if (!executorService.isShutdown()) {
+            executorService.shutdown();
         }
-        LOGGER.info("executor is shutdown : '{}'",executor.isShutdown());
-        LOGGER.info("executor tasks are terminated : '{}'",executor.isTerminated());
+        try {
+            boolean awaitTermination = executorService.awaitTermination(30, TimeUnit.SECONDS);
+            if(!awaitTermination) {
+                LOGGER.warn("timeout elapsed before executor termination");
+            }
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
+        LOGGER.info("executor is shutdown : '{}'", executorService.isShutdown());
+        LOGGER.info("executor tasks are terminated : '{}'", executorService.isTerminated());
     }
 
     protected void setQueue(Queue<KafkaRecord> queue) {
