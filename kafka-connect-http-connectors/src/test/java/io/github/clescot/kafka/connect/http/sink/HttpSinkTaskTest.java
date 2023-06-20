@@ -834,7 +834,7 @@ public class HttpSinkTaskTest {
             Configuration configuration = new Configuration("dummy",new HttpSinkConnectorConfig(config),executorService);
             HttpResponse httpResponse = new HttpResponse(200, "Internal Server Error");
             Map<String, String> settings = Maps.newHashMap();
-            settings.put(HTTP_CLIENT_DEFAULT_RETRY_RESPONSE_CODE_REGEX, "^[1-5][0-9][0-9]$");
+            settings.put(CONFIG_DEFAULT_RETRY_RESPONSE_CODE_REGEX, "^[1-5][0-9][0-9]$");
             httpSinkTask.start(settings);
             boolean retryNeeded = httpSinkTask.retryNeeded(httpResponse,configuration);
             assertThat(retryNeeded).isTrue();
@@ -863,7 +863,7 @@ public class HttpSinkTaskTest {
             Configuration configuration = new Configuration("dummy",new HttpSinkConnectorConfig(config),executorService);
             HttpExchange httpExchange = getDummyHttpExchange();
             Map<String, String> settings = Maps.newHashMap();
-            settings.put(HTTPCLIENT_DEFAULT_SUCCESS_RESPONSE_CODE_REGEX, "^20[1-5]$");
+            settings.put(CONFIG_DEFAULT_SUCCESS_RESPONSE_CODE_REGEX, "^20[1-5]$");
             httpSinkTask.start(settings);
             boolean success = httpSinkTask.isSuccess(httpExchange,configuration);
             assertThat(success).isFalse();

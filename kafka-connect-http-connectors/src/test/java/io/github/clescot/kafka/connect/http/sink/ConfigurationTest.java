@@ -122,9 +122,10 @@ class ConfigurationTest {
         public void test_rate_limiter_with_implicit_instance_scope(){
             Map<String,String> settings = Maps.newHashMap();
             settings.put("config.test.predicate.url.regex","^.*toto\\.com$");
+            settings.put("config.test.static.request.header.names","SUPERNOVA");
             settings.put("config.test.static.request.header.names.SUPERNOVA","top");
             settings.put("config.test.rate.limiter.max.executions","3");
-            settings.put("config.test.rate.limiter.rate.limiter.period.in.ms","1000");
+            settings.put("config.test.rate.limiter.period.in.ms","1000");
             HttpSinkConnectorConfig httpSinkConnectorConfig = new HttpSinkConnectorConfig(settings);
             Configuration configuration = new Configuration("test", httpSinkConnectorConfig,executorService);
             Optional<RateLimiter<HttpExchange>> rateLimiter = configuration.getRateLimiter();
@@ -143,7 +144,7 @@ class ConfigurationTest {
             settings.put("config.test.predicate.header.key","SUPERNOVA");
             settings.put("config.test.predicate.header.value","top");
             settings.put("config.test.rate.limiter.max.executions","3");
-            settings.put("config.test.rate.limiter.rate.limiter.period.in.ms","1000");
+            settings.put("config.test.rate.limiter.period.in.ms","1000");
             settings.put("config.test.rate.limiter.scope","static");
             HttpSinkConnectorConfig httpSinkConnectorConfig = new HttpSinkConnectorConfig(settings);
             Configuration configuration = new Configuration("test", httpSinkConnectorConfig,executorService);
@@ -162,7 +163,7 @@ class ConfigurationTest {
             settings.put("config.test.predicate.header.key","SUPERNOVA");
             settings.put("config.test.predicate.header.value","top");
             settings.put("config.test.rate.limiter.max.executions","3");
-            settings.put("config.test.rate.limiter.rate.limiter.period.in.ms","1000");
+            settings.put("config.test.rate.limiter.period.in.ms","1000");
             settings.put("config.test.rate.limiter.scope","static");
             HttpSinkConnectorConfig httpSinkConnectorConfig = new HttpSinkConnectorConfig(settings);
             Configuration configuration = new Configuration("test", httpSinkConnectorConfig,executorService);
@@ -173,7 +174,7 @@ class ConfigurationTest {
             settings2.put("config.test2.predicate.header.key","SUPERNOVA");
             settings2.put("config.test2.predicate.header.value","top");
             settings2.put("config.test2.rate.limiter.max.executions","3");
-            settings2.put("config.test2.rate.limiter.rate.limiter.period.in.ms","1000");
+            settings2.put("config.test2.rate.limiter.period.in.ms","1000");
             settings2.put("config.test2.rate.limiter.scope","static");
             HttpSinkConnectorConfig httpSinkConnectorConfig2 = new HttpSinkConnectorConfig(settings2);
             Configuration configuration2 = new Configuration("test2", httpSinkConnectorConfig2,executorService);

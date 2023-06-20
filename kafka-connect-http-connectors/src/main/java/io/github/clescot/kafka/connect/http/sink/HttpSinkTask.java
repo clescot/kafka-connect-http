@@ -37,7 +37,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
-import static io.github.clescot.kafka.connect.http.sink.HttpSinkConfigDefinition.HTTP_CLIENT_DEFAULT_DEFAULT_SUCCESS_RESPONSE_CODE_REGEX;
+import static io.github.clescot.kafka.connect.http.sink.HttpSinkConfigDefinition.CONFIG_DEFAULT_DEFAULT_SUCCESS_RESPONSE_CODE_REGEX;
 
 
 public class HttpSinkTask extends SinkTask {
@@ -59,7 +59,7 @@ public class HttpSinkTask extends SinkTask {
     private List<Configuration> customConfigurations;
     private static ExecutorService executorService;
     private Configuration defaultConfiguration;
-    private final Pattern defaultSuccessPattern = Pattern.compile(HTTP_CLIENT_DEFAULT_DEFAULT_SUCCESS_RESPONSE_CODE_REGEX);
+    private final Pattern defaultSuccessPattern = Pattern.compile(CONFIG_DEFAULT_DEFAULT_SUCCESS_RESPONSE_CODE_REGEX);
 
     @Override
     public String version() {

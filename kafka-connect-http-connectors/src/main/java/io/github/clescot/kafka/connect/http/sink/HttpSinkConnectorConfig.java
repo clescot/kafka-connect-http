@@ -54,11 +54,11 @@ public class HttpSinkConnectorConfig extends AbstractConfig {
         }
         this.publishToInMemoryQueue = Optional.ofNullable(getBoolean(PUBLISH_TO_IN_MEMORY_QUEUE)).orElse(false);
 
-        this.defaultRetries = getInt(HTTP_CLIENT_DEFAULT_RETRIES);
-        this.defaultRetryDelayInMs = getLong(HTTP_CLIENT_DEFAULT_RETRY_DELAY_IN_MS);
-        this.defaultRetryMaxDelayInMs = getLong(HTTP_CLIENT_DEFAULT_RETRY_MAX_DELAY_IN_MS);
-        this.defaultRetryDelayFactor = getDouble(HTTP_CLIENT_DEFAULT_RETRY_DELAY_FACTOR);
-        this.defaultRetryJitterInMs = getLong(HTTP_CLIENT_DEFAULT_RETRY_JITTER_IN_MS);
+        this.defaultRetries = getInt(CONFIG_DEFAULT_RETRIES);
+        this.defaultRetryDelayInMs = getLong(CONFIG_DEFAULT_RETRY_DELAY_IN_MS);
+        this.defaultRetryMaxDelayInMs = getLong(CONFIG_DEFAULT_RETRY_MAX_DELAY_IN_MS);
+        this.defaultRetryDelayFactor = getDouble(CONFIG_DEFAULT_RETRY_DELAY_FACTOR);
+        this.defaultRetryJitterInMs = getLong(CONFIG_DEFAULT_RETRY_JITTER_IN_MS);
         this.generateMissingRequestId = getBoolean(CONFIG_GENERATE_MISSING_REQUEST_ID);
         this.generateMissingCorrelationId = getBoolean(CONFIG_GENERATE_MISSING_CORRELATION_ID);
         this.defaultRateLimiterPeriodInMs = getLong(CONFIG_DEFAULT_RATE_LIMITER_PERIOD_IN_MS);
@@ -74,8 +74,8 @@ public class HttpSinkConnectorConfig extends AbstractConfig {
             Preconditions.checkNotNull(value, "'" + headerName + "' is not configured as a parameter.");
             staticRequestHeaders.put(headerName, Lists.newArrayList(value));
         }
-        this.defaultSuccessResponseCodeRegex = getString(HTTPCLIENT_DEFAULT_SUCCESS_RESPONSE_CODE_REGEX);
-        this.defaultRetryResponseCodeRegex = getString(HTTP_CLIENT_DEFAULT_RETRY_RESPONSE_CODE_REGEX);
+        this.defaultSuccessResponseCodeRegex = getString(CONFIG_DEFAULT_SUCCESS_RESPONSE_CODE_REGEX);
+        this.defaultRetryResponseCodeRegex = getString(CONFIG_DEFAULT_RETRY_RESPONSE_CODE_REGEX);
 
         this.customFixedThreadpoolSize = getInt(CONFIG_HTTP_CLIENT_ASYNC_FIXED_THREAD_POOL_SIZE);
         configurationIds = Optional.ofNullable(getList(CONFIGURATION_IDS)).orElse(Lists.newArrayList());

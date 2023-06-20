@@ -457,11 +457,11 @@ public class ITConnectorTest {
                 new AbstractMap.SimpleImmutableEntry<>("value.converter.schema.registry.url",internalSchemaRegistryUrl),
                 new AbstractMap.SimpleImmutableEntry<>(CONFIG_GENERATE_MISSING_REQUEST_ID,"true"),
                 new AbstractMap.SimpleImmutableEntry<>(CONFIG_GENERATE_MISSING_CORRELATION_ID,"true"),
-                new AbstractMap.SimpleImmutableEntry<>(HTTP_CLIENT_DEFAULT_RETRIES,"3"),
-                new AbstractMap.SimpleImmutableEntry<>(HTTP_CLIENT_DEFAULT_RETRY_DELAY_IN_MS,"1000"),
-                new AbstractMap.SimpleImmutableEntry<>(HTTP_CLIENT_DEFAULT_RETRY_MAX_DELAY_IN_MS,"100000"),
-                new AbstractMap.SimpleImmutableEntry<>(HTTP_CLIENT_DEFAULT_RETRY_DELAY_FACTOR,"1.5"),
-                new AbstractMap.SimpleImmutableEntry<>(HTTP_CLIENT_DEFAULT_RETRY_JITTER_IN_MS,"500")
+                new AbstractMap.SimpleImmutableEntry<>(CONFIG_DEFAULT_RETRIES,"3"),
+                new AbstractMap.SimpleImmutableEntry<>(CONFIG_DEFAULT_RETRY_DELAY_IN_MS,"1000"),
+                new AbstractMap.SimpleImmutableEntry<>(CONFIG_DEFAULT_RETRY_MAX_DELAY_IN_MS,"100000"),
+                new AbstractMap.SimpleImmutableEntry<>(CONFIG_DEFAULT_RETRY_DELAY_FACTOR,"1.5"),
+                new AbstractMap.SimpleImmutableEntry<>(CONFIG_DEFAULT_RETRY_JITTER_IN_MS,"500")
         );
         List<String> registeredConnectors = connectContainer.getRegisteredConnectors();
         String joinedRegisteredConnectors = Joiner.on(",").join(registeredConnectors);
