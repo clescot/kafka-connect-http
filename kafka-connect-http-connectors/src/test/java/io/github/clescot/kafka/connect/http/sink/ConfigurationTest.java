@@ -33,7 +33,7 @@ class ConfigurationTest {
         @DisplayName("test Configuration constructor with url predicate")
         public void test_constructor_with_url_predicate(){
             Map<String,String> settings = Maps.newHashMap();
-            settings.put("httpclient.test.url.regex","^.*toto\\.com$");
+            settings.put("config.test.predicate.url.regex","^.*toto\\.com$");
             HttpSinkConnectorConfig httpSinkConnectorConfig = new HttpSinkConnectorConfig(settings);
             Configuration configuration = new Configuration("test", httpSinkConnectorConfig,executorService);
             HttpRequest httpRequest = new HttpRequest("http://toto.com","GET", HttpRequest.BodyType.STRING.name());
@@ -46,8 +46,8 @@ class ConfigurationTest {
         @DisplayName("test Configuration constructor with url predicate and method")
         public void test_constructor_with_url_predicate_and_method(){
             Map<String,String> settings = Maps.newHashMap();
-            settings.put("httpclient.test.url.regex","^.*toto\\.com$");
-            settings.put("httpclient.test.method.regex","^GET|PUT$");
+            settings.put("config.test.predicate.url.regex","^.*toto\\.com$");
+            settings.put("config.test.predicate.method.regex","^GET|PUT$");
             HttpSinkConnectorConfig httpSinkConnectorConfig = new HttpSinkConnectorConfig(settings);
             Configuration configuration = new Configuration("test", httpSinkConnectorConfig,executorService);
             HttpRequest httpRequest = new HttpRequest("http://toto.com","GET", HttpRequest.BodyType.STRING.name());
@@ -64,8 +64,8 @@ class ConfigurationTest {
         @DisplayName("test Configuration constructor with url predicate and body type")
         public void test_constructor_with_url_predicate_and_bodytype(){
             Map<String,String> settings = Maps.newHashMap();
-            settings.put("httpclient.test.url.regex","^.*toto\\.com$");
-            settings.put("httpclient.test.bodytype.regex","^STRING$");
+            settings.put("config.test.predicate.url.regex","^.*toto\\.com$");
+            settings.put("config.test.predicate.bodytype.regex","^STRING$");
             HttpSinkConnectorConfig httpSinkConnectorConfig = new HttpSinkConnectorConfig(settings);
             Configuration configuration = new Configuration("test", httpSinkConnectorConfig,executorService);
             HttpRequest httpRequest1 = new HttpRequest("http://toto.com","GET", HttpRequest.BodyType.STRING.name());
@@ -79,8 +79,8 @@ class ConfigurationTest {
         @DisplayName("test Configuration constructor with url predicate and header key")
         public void test_constructor_with_url_predicate_and_header_key(){
             Map<String,String> settings = Maps.newHashMap();
-            settings.put("httpclient.test.url.regex","^.*toto\\.com$");
-            settings.put("httpclient.test.header.key","SUPERNOVA");
+            settings.put("config.test.predicate.url.regex","^.*toto\\.com$");
+            settings.put("config.test.predicate.header.key","SUPERNOVA");
             HttpSinkConnectorConfig httpSinkConnectorConfig = new HttpSinkConnectorConfig(settings);
             Configuration configuration = new Configuration("test", httpSinkConnectorConfig,executorService);
             HttpRequest httpRequest1 = new HttpRequest("http://toto.com","GET", HttpRequest.BodyType.STRING.name());
@@ -96,9 +96,9 @@ class ConfigurationTest {
         @DisplayName("test Configuration constructor with url predicate and header key")
         public void test_constructor_with_url_predicate_header_key_and_value(){
             Map<String,String> settings = Maps.newHashMap();
-            settings.put("httpclient.test.url.regex","^.*toto\\.com$");
-            settings.put("httpclient.test.header.key","SUPERNOVA");
-            settings.put("httpclient.test.header.value","top");
+            settings.put("config.test.predicate.url.regex","^.*toto\\.com$");
+            settings.put("config.test.predicate.header.key","SUPERNOVA");
+            settings.put("config.test.predicate.header.value","top");
             HttpSinkConnectorConfig httpSinkConnectorConfig = new HttpSinkConnectorConfig(settings);
             Configuration configuration = new Configuration("test", httpSinkConnectorConfig,executorService);
             HttpRequest httpRequest1 = new HttpRequest("http://toto.com","GET", HttpRequest.BodyType.STRING.name());
@@ -121,11 +121,10 @@ class ConfigurationTest {
         @DisplayName("test rate limiter with implicit instance scope")
         public void test_rate_limiter_with_implicit_instance_scope(){
             Map<String,String> settings = Maps.newHashMap();
-            settings.put("httpclient.test.url.regex","^.*toto\\.com$");
-            settings.put("httpclient.test.header.key","SUPERNOVA");
-            settings.put("httpclient.test.header.value","top");
-            settings.put("httpclient.test.rate.limiter.max.executions","3");
-            settings.put("httpclient.test.rate.limiter.rate.limiter.period.in.ms","1000");
+            settings.put("config.test.predicate.url.regex","^.*toto\\.com$");
+            settings.put("config.test.static.request.header.names.SUPERNOVA","top");
+            settings.put("config.test.rate.limiter.max.executions","3");
+            settings.put("config.test.rate.limiter.rate.limiter.period.in.ms","1000");
             HttpSinkConnectorConfig httpSinkConnectorConfig = new HttpSinkConnectorConfig(settings);
             Configuration configuration = new Configuration("test", httpSinkConnectorConfig,executorService);
             Optional<RateLimiter<HttpExchange>> rateLimiter = configuration.getRateLimiter();
@@ -140,12 +139,12 @@ class ConfigurationTest {
         @DisplayName("test rate limiter with static scope")
         public void test_rate_limiter_with_static_scope(){
             Map<String,String> settings = Maps.newHashMap();
-            settings.put("httpclient.test.url.regex","^.*toto\\.com$");
-            settings.put("httpclient.test.header.key","SUPERNOVA");
-            settings.put("httpclient.test.header.value","top");
-            settings.put("httpclient.test.rate.limiter.max.executions","3");
-            settings.put("httpclient.test.rate.limiter.rate.limiter.period.in.ms","1000");
-            settings.put("httpclient.test.rate.limiter.scope","static");
+            settings.put("config.test.predicate.url.regex","^.*toto\\.com$");
+            settings.put("config.test.predicate.header.key","SUPERNOVA");
+            settings.put("config.test.predicate.header.value","top");
+            settings.put("config.test.rate.limiter.max.executions","3");
+            settings.put("config.test.rate.limiter.rate.limiter.period.in.ms","1000");
+            settings.put("config.test.rate.limiter.scope","static");
             HttpSinkConnectorConfig httpSinkConnectorConfig = new HttpSinkConnectorConfig(settings);
             Configuration configuration = new Configuration("test", httpSinkConnectorConfig,executorService);
             Optional<RateLimiter<HttpExchange>> rateLimiter = configuration.getRateLimiter();
@@ -159,23 +158,23 @@ class ConfigurationTest {
         @DisplayName("test rate limiter with static scope")
         public void test_rate_limiter_with_static_scope_and_different_ids(){
             Map<String,String> settings = Maps.newHashMap();
-            settings.put("httpclient.test.url.regex","^.*toto\\.com$");
-            settings.put("httpclient.test.header.key","SUPERNOVA");
-            settings.put("httpclient.test.header.value","top");
-            settings.put("httpclient.test.rate.limiter.max.executions","3");
-            settings.put("httpclient.test.rate.limiter.rate.limiter.period.in.ms","1000");
-            settings.put("httpclient.test.rate.limiter.scope","static");
+            settings.put("config.test.predicate.url.regex","^.*toto\\.com$");
+            settings.put("config.test.predicate.header.key","SUPERNOVA");
+            settings.put("config.test.predicate.header.value","top");
+            settings.put("config.test.rate.limiter.max.executions","3");
+            settings.put("config.test.rate.limiter.rate.limiter.period.in.ms","1000");
+            settings.put("config.test.rate.limiter.scope","static");
             HttpSinkConnectorConfig httpSinkConnectorConfig = new HttpSinkConnectorConfig(settings);
             Configuration configuration = new Configuration("test", httpSinkConnectorConfig,executorService);
             Optional<RateLimiter<HttpExchange>> rateLimiter = configuration.getRateLimiter();
             assertThat(rateLimiter.isPresent()).isTrue();
             Map<String,String> settings2 = Maps.newHashMap();
-            settings2.put("httpclient.test2.url.regex","^.*toto\\.com$");
-            settings2.put("httpclient.test2.header.key","SUPERNOVA");
-            settings2.put("httpclient.test2.header.value","top");
-            settings2.put("httpclient.test2.rate.limiter.max.executions","3");
-            settings2.put("httpclient.test2.rate.limiter.rate.limiter.period.in.ms","1000");
-            settings2.put("httpclient.test2.rate.limiter.scope","static");
+            settings2.put("config.test2.predicate.url.regex","^.*toto\\.com$");
+            settings2.put("config.test2.predicate.header.key","SUPERNOVA");
+            settings2.put("config.test2.predicate.header.value","top");
+            settings2.put("config.test2.rate.limiter.max.executions","3");
+            settings2.put("config.test2.rate.limiter.rate.limiter.period.in.ms","1000");
+            settings2.put("config.test2.rate.limiter.scope","static");
             HttpSinkConnectorConfig httpSinkConnectorConfig2 = new HttpSinkConnectorConfig(settings2);
             Configuration configuration2 = new Configuration("test2", httpSinkConnectorConfig2,executorService);
             Optional<RateLimiter<HttpExchange>> rateLimiter2 = configuration2.getRateLimiter();

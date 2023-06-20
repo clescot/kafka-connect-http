@@ -19,6 +19,20 @@ every Kafka Connect Sink Connector need to define these required parameters :
 - *value.converter*
 - ....
 
+#### configuration
+
+The connector ships with a `default` configuration.
+
+A configuration  :
+- can add static headers
+- can generate a missing correlationId
+- can generate a missing requestId
+- owns a rate limiter
+- owns a retry policy
+- owns a success regex
+- owns a retry regex
+- owns an HTTP Client
+
 
   - http client implementation settings
     - *httpclient.implementation* : define which installed library to use : either `ahc`, a.k.a async http client, or `okhttp`. default is `okhttp`.

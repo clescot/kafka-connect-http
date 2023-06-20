@@ -129,8 +129,8 @@ public class HttpSinkTaskTest {
             Map<String, String> settings = Maps.newHashMap();
             String truststorePath = Thread.currentThread().getContextClassLoader().getResource(CLIENT_TRUSTSTORE_JKS_FILENAME).getPath();
             String password = CLIENT_TRUSTSTORE_JKS_PASSWORD;
-            settings.put(HTTPCLIENT_SSL_TRUSTSTORE_PATH, truststorePath);
-            settings.put(HTTPCLIENT_SSL_TRUSTSTORE_PASSWORD, password);
+            settings.put(CONFIG_HTTPCLIENT_SSL_TRUSTSTORE_PATH, truststorePath);
+            settings.put(CONFIG_HTTPCLIENT_SSL_TRUSTSTORE_PASSWORD, password);
             httpSinkTask.start(settings);
         }
 
@@ -139,9 +139,9 @@ public class HttpSinkTaskTest {
             Map<String, String> settings = Maps.newHashMap();
             String truststorePath = Thread.currentThread().getContextClassLoader().getResource(CLIENT_TRUSTSTORE_JKS_FILENAME).getPath();
             String password = CLIENT_TRUSTSTORE_JKS_PASSWORD;
-            settings.put(HTTPCLIENT_SSL_TRUSTSTORE_PATH, truststorePath);
-            settings.put(HTTPCLIENT_SSL_TRUSTSTORE_PASSWORD, password);
-            settings.put(HTTPCLIENT_SSL_TRUSTSTORE_TYPE, JKS_STORE_TYPE);
+            settings.put(CONFIG_HTTPCLIENT_SSL_TRUSTSTORE_PATH, truststorePath);
+            settings.put(CONFIG_HTTPCLIENT_SSL_TRUSTSTORE_PASSWORD, password);
+            settings.put(CONFIG_HTTPCLIENT_SSL_TRUSTSTORE_TYPE, JKS_STORE_TYPE);
             httpSinkTask.start(settings);
         }
 
@@ -150,10 +150,10 @@ public class HttpSinkTaskTest {
             Map<String, String> settings = Maps.newHashMap();
             String truststorePath = Thread.currentThread().getContextClassLoader().getResource(CLIENT_TRUSTSTORE_JKS_FILENAME).getPath();
             String password = CLIENT_TRUSTSTORE_JKS_PASSWORD;
-            settings.put(HTTPCLIENT_SSL_TRUSTSTORE_PATH, truststorePath);
-            settings.put(HTTPCLIENT_SSL_TRUSTSTORE_PASSWORD, password);
-            settings.put(HTTPCLIENT_SSL_TRUSTSTORE_TYPE, JKS_STORE_TYPE);
-            settings.put(HTTPCLIENT_SSL_TRUSTSTORE_ALGORITHM, TRUSTSTORE_PKIX_ALGORITHM);
+            settings.put(CONFIG_HTTPCLIENT_SSL_TRUSTSTORE_PATH, truststorePath);
+            settings.put(CONFIG_HTTPCLIENT_SSL_TRUSTSTORE_PASSWORD, password);
+            settings.put(CONFIG_HTTPCLIENT_SSL_TRUSTSTORE_TYPE, JKS_STORE_TYPE);
+            settings.put(CONFIG_HTTPCLIENT_SSL_TRUSTSTORE_ALGORITHM, TRUSTSTORE_PKIX_ALGORITHM);
             httpSinkTask.start(settings);
         }
 
@@ -191,9 +191,9 @@ public class HttpSinkTaskTest {
         public void test_put_add_static_headers_with_value_as_string() {
             //given
             Map<String, String> settings = Maps.newHashMap();
-            settings.put(HTTPCLIENT_DEFAULT+STATIC_REQUEST_HEADER_NAMES, "param1,param2");
-            settings.put(HTTPCLIENT_DEFAULT+"param1", "value1");
-            settings.put(HTTPCLIENT_DEFAULT+"param2", "value2");
+            settings.put(DEFAULT_CONFIGURATION_PREFIX +STATIC_REQUEST_HEADER_NAMES, "param1,param2");
+            settings.put(DEFAULT_CONFIGURATION_PREFIX +STATIC_REQUEST_HEADER_NAMES+"param1", "value1");
+            settings.put(DEFAULT_CONFIGURATION_PREFIX +STATIC_REQUEST_HEADER_NAMES+"param2", "value2");
             httpSinkTask.start(settings);
             OkHttpClient httpClient = Mockito.mock(OkHttpClient.class);
             HttpExchange dummyHttpExchange = getDummyHttpExchange();
@@ -371,7 +371,7 @@ public class HttpSinkTaskTest {
             WireMockRuntimeInfo wmRuntimeInfo = wmHttp.getRuntimeInfo();
 
             Map<String, String> settings = Maps.newHashMap();
-            settings.put(HTTP_CLIENT_DEFAULT_RATE_LIMITER_MAX_EXECUTIONS,"100");
+            settings.put(CONFIG_DEFAULT_RATE_LIMITER_MAX_EXECUTIONS,"100");
             settings.put(HTTPCLIENT_IMPLEMENTATION,AHC_IMPLEMENTATION);
             httpSinkTask.start(settings);
 
@@ -446,7 +446,7 @@ public class HttpSinkTaskTest {
             WireMockRuntimeInfo wmRuntimeInfo = wmHttp.getRuntimeInfo();
 
             Map<String, String> settings = Maps.newHashMap();
-            settings.put(HTTP_CLIENT_DEFAULT_RATE_LIMITER_MAX_EXECUTIONS,"100");
+            settings.put(CONFIG_DEFAULT_RATE_LIMITER_MAX_EXECUTIONS,"100");
             settings.put(HTTPCLIENT_IMPLEMENTATION,OKHTTP_IMPLEMENTATION);
             httpSinkTask.start(settings);
 
@@ -518,9 +518,9 @@ public class HttpSinkTaskTest {
             WireMockRuntimeInfo wmRuntimeInfo = wmHttp.getRuntimeInfo();
 
             Map<String, String> settings = Maps.newHashMap();
-            settings.put(HTTP_CLIENT_DEFAULT_RATE_LIMITER_MAX_EXECUTIONS,"100");
+            settings.put(CONFIG_DEFAULT_RATE_LIMITER_MAX_EXECUTIONS,"100");
             settings.put(HTTPCLIENT_IMPLEMENTATION,AHC_IMPLEMENTATION);
-            settings.put(HTTP_CLIENT_ASYNC_FIXED_THREAD_POOL_SIZE,"4");
+            settings.put(CONFIG_HTTP_CLIENT_ASYNC_FIXED_THREAD_POOL_SIZE,"4");
 
             httpSinkTask.start(settings);
 
@@ -595,9 +595,9 @@ public class HttpSinkTaskTest {
             WireMockRuntimeInfo wmRuntimeInfo = wmHttp.getRuntimeInfo();
 
             Map<String, String> settings = Maps.newHashMap();
-            settings.put(HTTP_CLIENT_DEFAULT_RATE_LIMITER_MAX_EXECUTIONS,"100");
+            settings.put(CONFIG_DEFAULT_RATE_LIMITER_MAX_EXECUTIONS,"100");
             settings.put(HTTPCLIENT_IMPLEMENTATION,OKHTTP_IMPLEMENTATION);
-            settings.put(HTTP_CLIENT_ASYNC_FIXED_THREAD_POOL_SIZE,"4");
+            settings.put(CONFIG_HTTP_CLIENT_ASYNC_FIXED_THREAD_POOL_SIZE,"4");
             httpSinkTask.start(settings);
 
 
@@ -830,7 +830,7 @@ public class HttpSinkTaskTest {
         @Test
         public void test_retry_needed_by_configuration_with_200_status_code() {
             Map<String,String> config = Maps.newHashMap();
-            config.put("httpclient.dummy."+RETRY_RESPONSE_CODE_REGEX,"^2[0-9][0-9]$");
+            config.put("config.dummy."+RETRY_RESPONSE_CODE_REGEX,"^2[0-9][0-9]$");
             Configuration configuration = new Configuration("dummy",new HttpSinkConnectorConfig(config),executorService);
             HttpResponse httpResponse = new HttpResponse(200, "Internal Server Error");
             Map<String, String> settings = Maps.newHashMap();
@@ -847,7 +847,7 @@ public class HttpSinkTaskTest {
         @Test
         public void test_is_success_with_200() {
             Map<String,String> config = Maps.newHashMap();
-            config.put("httpclient.dummy."+SUCCESS_RESPONSE_CODE_REGEX,"^2[0-9][0-9]$");
+            config.put("config.dummy."+SUCCESS_RESPONSE_CODE_REGEX,"^2[0-9][0-9]$");
             Configuration configuration = new Configuration("dummy",new HttpSinkConnectorConfig(config),executorService);
             HttpExchange httpExchange = getDummyHttpExchange();
             Map<String, String> settings = Maps.newHashMap();
@@ -859,7 +859,7 @@ public class HttpSinkTaskTest {
         @Test
         public void test_is_not_success_with_200_by_configuration() {
             Map<String,String> config = Maps.newHashMap();
-            config.put("httpclient.dummy."+SUCCESS_RESPONSE_CODE_REGEX,"^1[0-9][0-9]$");
+            config.put("config.dummy."+SUCCESS_RESPONSE_CODE_REGEX,"^1[0-9][0-9]$");
             Configuration configuration = new Configuration("dummy",new HttpSinkConnectorConfig(config),executorService);
             HttpExchange httpExchange = getDummyHttpExchange();
             Map<String, String> settings = Maps.newHashMap();

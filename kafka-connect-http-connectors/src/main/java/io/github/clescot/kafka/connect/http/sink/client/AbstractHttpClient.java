@@ -27,14 +27,14 @@ public abstract class AbstractHttpClient<Req, Res> implements HttpClient<Req, Re
     }
 
     protected Optional<TrustManagerFactory> getTrustManagerFactory() {
-        if (config.containsKey(HTTPCLIENT_SSL_TRUSTSTORE_PATH) && config.containsKey(HTTPCLIENT_SSL_TRUSTSTORE_PASSWORD)) {
+        if (config.containsKey(CONFIG_HTTPCLIENT_SSL_TRUSTSTORE_PATH) && config.containsKey(CONFIG_HTTPCLIENT_SSL_TRUSTSTORE_PASSWORD)) {
 
             Optional<TrustManagerFactory> trustManagerFactory = Optional.ofNullable(
                     HttpClient.getTrustManagerFactory(
-                            config.get(HTTPCLIENT_SSL_TRUSTSTORE_PATH),
-                            config.get(HTTPCLIENT_SSL_TRUSTSTORE_PASSWORD).toCharArray(),
-                            config.get(HTTPCLIENT_SSL_TRUSTSTORE_TYPE),
-                            config.get(HTTPCLIENT_SSL_TRUSTSTORE_ALGORITHM)));
+                            config.get(CONFIG_HTTPCLIENT_SSL_TRUSTSTORE_PATH),
+                            config.get(CONFIG_HTTPCLIENT_SSL_TRUSTSTORE_PASSWORD).toCharArray(),
+                            config.get(CONFIG_HTTPCLIENT_SSL_TRUSTSTORE_TYPE),
+                            config.get(CONFIG_HTTPCLIENT_SSL_TRUSTSTORE_ALGORITHM)));
             if (trustManagerFactory.isPresent()) {
                 return Optional.of(trustManagerFactory.get());
             }
@@ -43,14 +43,14 @@ public abstract class AbstractHttpClient<Req, Res> implements HttpClient<Req, Re
     }
 
     protected Optional<KeyManagerFactory> getKeyManagerFactory() {
-        if (config.containsKey(HTTPCLIENT_SSL_KEYSTORE_PATH) && config.containsKey(HTTPCLIENT_SSL_KEYSTORE_PASSWORD)) {
+        if (config.containsKey(CONFIG_HTTPCLIENT_SSL_KEYSTORE_PATH) && config.containsKey(CONFIG_HTTPCLIENT_SSL_KEYSTORE_PASSWORD)) {
 
             Optional<KeyManagerFactory> keyManagerFactory = Optional.ofNullable(
                     getKeyManagerFactory(
-                            config.get(HTTPCLIENT_SSL_KEYSTORE_PATH),
-                            config.get(HTTPCLIENT_SSL_KEYSTORE_PASSWORD).toCharArray(),
-                            config.get(HTTPCLIENT_SSL_KEYSTORE_TYPE),
-                            config.get(HTTPCLIENT_SSL_KEYSTORE_ALGORITHM)));
+                            config.get(CONFIG_HTTPCLIENT_SSL_KEYSTORE_PATH),
+                            config.get(CONFIG_HTTPCLIENT_SSL_KEYSTORE_PASSWORD).toCharArray(),
+                            config.get(CONFIG_HTTPCLIENT_SSL_KEYSTORE_TYPE),
+                            config.get(CONFIG_HTTPCLIENT_SSL_KEYSTORE_ALGORITHM)));
             if (keyManagerFactory.isPresent()) {
                 return Optional.of(keyManagerFactory.get());
             }

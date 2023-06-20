@@ -123,14 +123,14 @@ public class AHCHttpClientFactory implements HttpClientFactory<Request, Response
             propertyBasedASyncHttpClientConfig.setByteBufAllocator(new PooledByteBufAllocator());
             LOGGER.error("we rollback to the default byte buffer allocator");
         }
-        if (config.containsKey(HTTPCLIENT_SSL_TRUSTSTORE_PATH) && config.containsKey(HTTPCLIENT_SSL_TRUSTSTORE_PASSWORD)) {
+        if (config.containsKey(CONFIG_HTTPCLIENT_SSL_TRUSTSTORE_PATH) && config.containsKey(CONFIG_HTTPCLIENT_SSL_TRUSTSTORE_PASSWORD)) {
 
             Optional<TrustManagerFactory> trustManagerFactory = Optional.ofNullable(
                     HttpClient.getTrustManagerFactory(
-                            config.get(HTTPCLIENT_SSL_TRUSTSTORE_PATH),
-                            config.get(HTTPCLIENT_SSL_TRUSTSTORE_PASSWORD).toCharArray(),
-                            config.get(HTTPCLIENT_SSL_TRUSTSTORE_TYPE),
-                            config.get(HTTPCLIENT_SSL_TRUSTSTORE_ALGORITHM)));
+                            config.get(CONFIG_HTTPCLIENT_SSL_TRUSTSTORE_PATH),
+                            config.get(CONFIG_HTTPCLIENT_SSL_TRUSTSTORE_PASSWORD).toCharArray(),
+                            config.get(CONFIG_HTTPCLIENT_SSL_TRUSTSTORE_TYPE),
+                            config.get(CONFIG_HTTPCLIENT_SSL_TRUSTSTORE_ALGORITHM)));
             if (trustManagerFactory.isPresent()) {
                 SslContext nettySSLContext;
                 try {

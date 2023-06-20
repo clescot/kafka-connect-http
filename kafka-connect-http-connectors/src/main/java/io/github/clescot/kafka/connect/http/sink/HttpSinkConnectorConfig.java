@@ -59,26 +59,26 @@ public class HttpSinkConnectorConfig extends AbstractConfig {
         this.defaultRetryMaxDelayInMs = getLong(HTTP_CLIENT_DEFAULT_RETRY_MAX_DELAY_IN_MS);
         this.defaultRetryDelayFactor = getDouble(HTTP_CLIENT_DEFAULT_RETRY_DELAY_FACTOR);
         this.defaultRetryJitterInMs = getLong(HTTP_CLIENT_DEFAULT_RETRY_JITTER_IN_MS);
-        this.generateMissingRequestId = getBoolean(HTTP_CLIENT_GENERATE_MISSING_REQUEST_ID);
-        this.generateMissingCorrelationId = getBoolean(HTTP_CLIENT_GENERATE_MISSING_CORRELATION_ID);
-        this.defaultRateLimiterPeriodInMs = getLong(HTTP_CLIENT_DEFAULT_RATE_LIMITER_PERIOD_IN_MS);
-        this.defaultRateLimiterMaxExecutions = getLong(HTTP_CLIENT_DEFAULT_RATE_LIMITER_MAX_EXECUTIONS);
-        this.defaultRateLimiterScope = getString(HTTP_CLIENT_DEFAULT_RATE_LIMITER_SCOPE);
+        this.generateMissingRequestId = getBoolean(CONFIG_GENERATE_MISSING_REQUEST_ID);
+        this.generateMissingCorrelationId = getBoolean(CONFIG_GENERATE_MISSING_CORRELATION_ID);
+        this.defaultRateLimiterPeriodInMs = getLong(CONFIG_DEFAULT_RATE_LIMITER_PERIOD_IN_MS);
+        this.defaultRateLimiterMaxExecutions = getLong(CONFIG_DEFAULT_RATE_LIMITER_MAX_EXECUTIONS);
+        this.defaultRateLimiterScope = getString(CONFIG_DEFAULT_RATE_LIMITER_SCOPE);
         this.maxWaitTimeRegistrationOfQueueConsumerInMs = getLong(WAIT_TIME_REGISTRATION_QUEUE_CONSUMER_IN_MS);
         this.pollDelayRegistrationOfQueueConsumerInMs = getInt(POLL_DELAY_REGISTRATION_QUEUE_CONSUMER_IN_MS);
         this.pollIntervalRegistrationOfQueueConsumerInMs = getInt(POLL_INTERVAL_REGISTRATION_QUEUE_CONSUMER_IN_MS);
-        Optional<List<String>> staticRequestHeaderNames = Optional.ofNullable(getList(STATIC_REQUEST_HEADER_NAMES));
+        Optional<List<String>> staticRequestHeaderNames = Optional.ofNullable(getList(CONFIG_STATIC_REQUEST_HEADER_NAMES));
         List<String> additionalHeaderNamesList = staticRequestHeaderNames.orElse(Lists.newArrayList());
         for (String headerName : additionalHeaderNamesList) {
-            String value = (String) originals().get(headerName);
+            String value = (String) originals().get(DEFAULT_CONFIGURATION_PREFIX+STATIC_REQUEST_HEADER_NAMES+headerName);
             Preconditions.checkNotNull(value, "'" + headerName + "' is not configured as a parameter.");
             staticRequestHeaders.put(headerName, Lists.newArrayList(value));
         }
         this.defaultSuccessResponseCodeRegex = getString(HTTPCLIENT_DEFAULT_SUCCESS_RESPONSE_CODE_REGEX);
         this.defaultRetryResponseCodeRegex = getString(HTTP_CLIENT_DEFAULT_RETRY_RESPONSE_CODE_REGEX);
 
-        this.customFixedThreadpoolSize = getInt(HTTP_CLIENT_ASYNC_FIXED_THREAD_POOL_SIZE);
-        configurationIds = Optional.ofNullable(getList(HTTP_CLIENT_CUSTOM_CONFIGURATION_IDS)).orElse(Lists.newArrayList());
+        this.customFixedThreadpoolSize = getInt(CONFIG_HTTP_CLIENT_ASYNC_FIXED_THREAD_POOL_SIZE);
+        configurationIds = Optional.ofNullable(getList(CONFIGURATION_IDS)).orElse(Lists.newArrayList());
 
     }
 

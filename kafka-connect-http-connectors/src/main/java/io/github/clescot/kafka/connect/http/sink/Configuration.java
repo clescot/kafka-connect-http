@@ -42,11 +42,12 @@ public class Configuration {
     private static final Logger LOGGER = LoggerFactory.getLogger(Configuration.class);
     public static final String OKHTTP_IMPLEMENTATION = "okhttp";
     public static final String AHC_IMPLEMENTATION = "ahc";
-    public static final String URL_REGEX = "url.regex";
-    public static final String METHOD_REGEX = "method.regex";
-    public static final String BODYTYPE_REGEX = "bodytype.regex";
-    public static final String HEADER_KEY = "header.key";
-    public static final String HEADER_VALUE = "header.value";
+    public static final String PREDICATE = "predicate.";
+    public static final String URL_REGEX = PREDICATE+"url.regex";
+    public static final String METHOD_REGEX = PREDICATE+"method.regex";
+    public static final String BODYTYPE_REGEX = PREDICATE+"bodytype.regex";
+    public static final String HEADER_KEY = PREDICATE+"header.key";
+    public static final String HEADER_VALUE = PREDICATE+"header.value";
     public static final String STATIC_SCOPE = "static";
 
     private static final Map<String, RateLimiter<HttpExchange>> sharedRateLimiters = Maps.newHashMap();
@@ -60,17 +61,21 @@ public class Configuration {
     private final Map<String, List<String>> staticRequestHeaders = Maps.newHashMap();
     private final boolean generateMissingCorrelationId;
     private final boolean generateMissingRequestId;
+    public final String id;
 
     public Configuration(String id, HttpSinkConnectorConfig httpSinkConnectorConfig, ExecutorService executorService) {
+        this.id = id;
         Preconditions.checkNotNull(id, "id must not be null");
         Preconditions.checkNotNull(httpSinkConnectorConfig, "httpSinkConnectorConfig must not be null");
-        Map<String, Object> configMap = httpSinkConnectorConfig.originalsWithPrefix("httpclient." + id + ".");
+
+        //configuration id prefix is not present into the configMap
+        Map<String, Object> configMap = httpSinkConnectorConfig.originalsWithPrefix("config." + id + ".");
 
         Optional<String> staticHeaderParam = Optional.ofNullable((String) configMap.get(STATIC_REQUEST_HEADER_NAMES));
         if (staticHeaderParam.isPresent()) {
             List<String> staticRequestHeaderNames = Arrays.asList(staticHeaderParam.get().split(","));
             for (String headerName : staticRequestHeaderNames) {
-                String value = (String) configMap.get(headerName);
+                String value = (String) configMap.get(STATIC_REQUEST_HEADER_NAMES+headerName);
                 Preconditions.checkNotNull(value, "'" + headerName + "' is not configured as a parameter.");
                 staticRequestHeaders.put(headerName, Lists.newArrayList(value));
             }
@@ -285,5 +290,9 @@ public class Configuration {
 
     public boolean isGenerateMissingRequestId() {
         return generateMissingRequestId;
+    }
+
+    public String getId() {
+        return id;
     }
 }

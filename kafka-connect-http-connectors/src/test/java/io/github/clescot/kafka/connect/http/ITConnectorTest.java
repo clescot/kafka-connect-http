@@ -233,8 +233,8 @@ public class ITConnectorTest {
                 PUBLISH_TO_IN_MEMORY_QUEUE_OK,
                 HTTP_REQUESTS_AS_STRING,
                 "org.apache.kafka.connect.storage.StringConverter", "test_sink_and_source_with_input_as_string",
-                new AbstractMap.SimpleImmutableEntry<>(HTTP_CLIENT_GENERATE_MISSING_REQUEST_ID,"true"),
-                new AbstractMap.SimpleImmutableEntry<>(HTTP_CLIENT_GENERATE_MISSING_CORRELATION_ID,"true")
+                new AbstractMap.SimpleImmutableEntry<>(CONFIG_GENERATE_MISSING_REQUEST_ID,"true"),
+                new AbstractMap.SimpleImmutableEntry<>(CONFIG_GENERATE_MISSING_CORRELATION_ID,"true")
         );
         List<String> registeredConnectors = connectContainer.getRegisteredConnectors();
         String joinedRegisteredConnectors = Joiner.on(",").join(registeredConnectors);
@@ -340,8 +340,8 @@ public class ITConnectorTest {
                 incomingTopic,
                 "io.confluent.connect.json.JsonSchemaConverter", "test_" + suffix,
                 new AbstractMap.SimpleImmutableEntry<>("value.converter.schema.registry.url",internalSchemaRegistryUrl),
-                new AbstractMap.SimpleImmutableEntry<>(HTTP_CLIENT_GENERATE_MISSING_REQUEST_ID,"true"),
-                new AbstractMap.SimpleImmutableEntry<>(HTTP_CLIENT_GENERATE_MISSING_CORRELATION_ID,"true")
+                new AbstractMap.SimpleImmutableEntry<>(CONFIG_GENERATE_MISSING_REQUEST_ID,"true"),
+                new AbstractMap.SimpleImmutableEntry<>(CONFIG_GENERATE_MISSING_CORRELATION_ID,"true")
         );
         List<String> registeredConnectors = connectContainer.getRegisteredConnectors();
         String joinedRegisteredConnectors = Joiner.on(",").join(registeredConnectors);
@@ -455,8 +455,8 @@ public class ITConnectorTest {
                 incomingTopic,
                 "io.confluent.connect.json.JsonSchemaConverter", "test_" + suffix,
                 new AbstractMap.SimpleImmutableEntry<>("value.converter.schema.registry.url",internalSchemaRegistryUrl),
-                new AbstractMap.SimpleImmutableEntry<>(HTTP_CLIENT_GENERATE_MISSING_REQUEST_ID,"true"),
-                new AbstractMap.SimpleImmutableEntry<>(HTTP_CLIENT_GENERATE_MISSING_CORRELATION_ID,"true"),
+                new AbstractMap.SimpleImmutableEntry<>(CONFIG_GENERATE_MISSING_REQUEST_ID,"true"),
+                new AbstractMap.SimpleImmutableEntry<>(CONFIG_GENERATE_MISSING_CORRELATION_ID,"true"),
                 new AbstractMap.SimpleImmutableEntry<>(HTTP_CLIENT_DEFAULT_RETRIES,"3"),
                 new AbstractMap.SimpleImmutableEntry<>(HTTP_CLIENT_DEFAULT_RETRY_DELAY_IN_MS,"1000"),
                 new AbstractMap.SimpleImmutableEntry<>(HTTP_CLIENT_DEFAULT_RETRY_MAX_DELAY_IN_MS,"100000"),
@@ -576,10 +576,10 @@ public class ITConnectorTest {
                 incomingTopic,
                 "io.confluent.connect.json.JsonSchemaConverter", "test_" + suffix,
                 new AbstractMap.SimpleImmutableEntry<>("value.converter.schema.registry.url",internalSchemaRegistryUrl),
-                new AbstractMap.SimpleImmutableEntry<>(HTTP_CLIENT_GENERATE_MISSING_REQUEST_ID,"true"),
-                new AbstractMap.SimpleImmutableEntry<>(HTTP_CLIENT_GENERATE_MISSING_CORRELATION_ID,"true"),
-                new AbstractMap.SimpleImmutableEntry<>(HTTP_CLIENT_DEFAULT_RATE_LIMITER_PERIOD_IN_MS,"1000"),
-                new AbstractMap.SimpleImmutableEntry<>(HTTP_CLIENT_DEFAULT_RATE_LIMITER_MAX_EXECUTIONS, maxExecutionsPerSecond+"")
+                new AbstractMap.SimpleImmutableEntry<>(CONFIG_GENERATE_MISSING_REQUEST_ID,"true"),
+                new AbstractMap.SimpleImmutableEntry<>(CONFIG_GENERATE_MISSING_CORRELATION_ID,"true"),
+                new AbstractMap.SimpleImmutableEntry<>(CONFIG_DEFAULT_RATE_LIMITER_PERIOD_IN_MS,"1000"),
+                new AbstractMap.SimpleImmutableEntry<>(CONFIG_DEFAULT_RATE_LIMITER_MAX_EXECUTIONS, maxExecutionsPerSecond+"")
         );
         List<String> registeredConnectors = connectContainer.getRegisteredConnectors();
         String joinedRegisteredConnectors = Joiner.on(",").join(registeredConnectors);
@@ -668,14 +668,14 @@ public class ITConnectorTest {
                 incomingTopic,
                 "io.confluent.connect.json.JsonSchemaConverter", "test_" + suffix,
                 new AbstractMap.SimpleImmutableEntry<>("value.converter.schema.registry.url",internalSchemaRegistryUrl),
-                new AbstractMap.SimpleImmutableEntry<>(HTTP_CLIENT_GENERATE_MISSING_REQUEST_ID,"true"),
-                new AbstractMap.SimpleImmutableEntry<>(HTTP_CLIENT_GENERATE_MISSING_CORRELATION_ID,"true"),
+                new AbstractMap.SimpleImmutableEntry<>(CONFIG_GENERATE_MISSING_REQUEST_ID,"true"),
+                new AbstractMap.SimpleImmutableEntry<>(CONFIG_GENERATE_MISSING_CORRELATION_ID,"true"),
                 new AbstractMap.SimpleImmutableEntry<>(OKHTTP_SSL_SKIP_HOSTNAME_VERIFICATION,"true"),
                 new AbstractMap.SimpleImmutableEntry<>(OKHTTP_DEFAULT_PROTOCOLS, "HTTP_1_1"),
-                new AbstractMap.SimpleImmutableEntry<>(HTTPCLIENT_SSL_TRUSTSTORE_PATH,"/opt/"+ CLIENT_TRUSTSTORE_JKS_FILENAME),
-                new AbstractMap.SimpleImmutableEntry<>(HTTPCLIENT_SSL_TRUSTSTORE_PASSWORD, CLIENT_TRUSTSTORE_JKS_PASSWORD),
-                new AbstractMap.SimpleImmutableEntry<>(HTTPCLIENT_SSL_TRUSTSTORE_TYPE, JKS_STORE_TYPE),
-                new AbstractMap.SimpleImmutableEntry<>(HTTPCLIENT_SSL_TRUSTSTORE_ALGORITHM, TRUSTSTORE_PKIX_ALGORITHM)
+                new AbstractMap.SimpleImmutableEntry<>(CONFIG_HTTPCLIENT_SSL_TRUSTSTORE_PATH,"/opt/"+ CLIENT_TRUSTSTORE_JKS_FILENAME),
+                new AbstractMap.SimpleImmutableEntry<>(CONFIG_HTTPCLIENT_SSL_TRUSTSTORE_PASSWORD, CLIENT_TRUSTSTORE_JKS_PASSWORD),
+                new AbstractMap.SimpleImmutableEntry<>(CONFIG_HTTPCLIENT_SSL_TRUSTSTORE_TYPE, JKS_STORE_TYPE),
+                new AbstractMap.SimpleImmutableEntry<>(CONFIG_HTTPCLIENT_SSL_TRUSTSTORE_ALGORITHM, TRUSTSTORE_PKIX_ALGORITHM)
         );
         List<String> registeredConnectors = connectContainer.getRegisteredConnectors();
         String joinedRegisteredConnectors = Joiner.on(",").join(registeredConnectors);
