@@ -793,7 +793,7 @@ public class HttpSinkTaskTest {
         @Test
         public void test_retry_needed() {
             Map<String,String> config = Maps.newHashMap();
-            config.put("httpclient.dummy."+RETRY_RESPONSE_CODE_REGEX,"^5[0-9][0-9]$");
+            config.put("config.dummy."+RETRY_RESPONSE_CODE_REGEX,"^5[0-9][0-9]$");
             Configuration configuration = new Configuration("dummy",new HttpSinkConnectorConfig(config),executorService);
             HttpResponse httpResponse = new HttpResponse(500, "Internal Server Error");
             Map<String, String> settings = Maps.newHashMap();
