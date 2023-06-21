@@ -25,8 +25,6 @@ import java.util.function.Predicate;
 import java.util.regex.Pattern;
 
 import static io.github.clescot.kafka.connect.http.sink.HttpSinkConfigDefinition.*;
-import static io.github.clescot.kafka.connect.http.sink.HttpSinkTask.HEADER_X_CORRELATION_ID;
-import static io.github.clescot.kafka.connect.http.sink.HttpSinkTask.HEADER_X_REQUEST_ID;
 
 /**
  * Configuration of the http call mechanism, specific to some websites according to the configured <span class="strong">predicate</span>.
@@ -40,15 +38,20 @@ import static io.github.clescot.kafka.connect.http.sink.HttpSinkTask.HEADER_X_RE
  */
 public class Configuration {
     private static final Logger LOGGER = LoggerFactory.getLogger(Configuration.class);
-    public static final String OKHTTP_IMPLEMENTATION = "okhttp";
-    public static final String AHC_IMPLEMENTATION = "ahc";
+
+    //predicate
     public static final String PREDICATE = "predicate.";
     public static final String URL_REGEX = PREDICATE+"url.regex";
     public static final String METHOD_REGEX = PREDICATE+"method.regex";
     public static final String BODYTYPE_REGEX = PREDICATE+"bodytype.regex";
     public static final String HEADER_KEY = PREDICATE+"header.key";
     public static final String HEADER_VALUE = PREDICATE+"header.value";
+
+    public static final String OKHTTP_IMPLEMENTATION = "okhttp";
+    public static final String AHC_IMPLEMENTATION = "ahc";
     public static final String STATIC_SCOPE = "static";
+    public static final String HEADER_X_CORRELATION_ID = "X-Correlation-ID";
+    public static final String HEADER_X_REQUEST_ID = "X-Request-ID";
 
     private static final Map<String, RateLimiter<HttpExchange>> sharedRateLimiters = Maps.newHashMap();
 

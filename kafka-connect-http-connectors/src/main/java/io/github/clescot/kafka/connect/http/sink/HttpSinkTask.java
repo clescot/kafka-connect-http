@@ -44,8 +44,7 @@ public class HttpSinkTask extends SinkTask {
     private static final Logger LOGGER = LoggerFactory.getLogger(HttpSinkTask.class);
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper().registerModule(new JavaTimeModule());
 
-    public static final String HEADER_X_CORRELATION_ID = "X-Correlation-ID";
-    public static final String HEADER_X_REQUEST_ID = "X-Request-ID";
+
     public static final String SINK_RECORD_HAS_GOT_A_NULL_VALUE = "sinkRecord has got a 'null' value";
     public static final String DEFAULT_CONFIGURATION_ID = "default";
 
