@@ -126,10 +126,12 @@ public class HttpSinkConfigDefinition {
 
     //http client prefix
     public static final String HTTP_CLIENT_PREFIX = "httpclient.";
+
     public static final String HTTPCLIENT_IMPLEMENTATION = DEFAULT_CONFIGURATION_PREFIX + HTTP_CLIENT_PREFIX + "implementation";
     public static final String HTTPCLIENT_IMPLEMENTATION_DOC = "define which intalled library to use : either 'ahc', a.k.a async http client, or 'okhttp'. default is 'okhttp'.";
 
-
+    public static final String OKHTTP_IMPLEMENTATION = "okhttp";
+    public static final String AHC_IMPLEMENTATION = "ahc";
 
 
     public static final String CONFIG_HTTPCLIENT_SSL_KEYSTORE_PATH =  DEFAULT_CONFIGURATION_PREFIX + HTTP_CLIENT_PREFIX +"ssl.keystore.path";

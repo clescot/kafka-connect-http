@@ -168,6 +168,7 @@ public class HttpSinkTask extends SinkTask {
                     .orElse(defaultConfiguration);
             HttpRequest enhancedHttpRequest = foundConfiguration.addStaticHeaders(httpRequest);
             enhancedHttpRequest = foundConfiguration.addTrackingHeaders(httpRequest);
+
             //handle Request and Response
             return callWithRetryPolicy(sinkRecord, enhancedHttpRequest, foundConfiguration).thenApply(
                     myHttpExchange -> {

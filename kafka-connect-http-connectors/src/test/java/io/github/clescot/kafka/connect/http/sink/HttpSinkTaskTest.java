@@ -60,15 +60,11 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import static io.confluent.kafka.serializers.json.KafkaJsonSchemaDeserializerConfig.JSON_VALUE_TYPE;
 import static io.github.clescot.kafka.connect.http.core.HttpRequestAsStruct.SCHEMA;
-import static io.github.clescot.kafka.connect.http.sink.Configuration.AHC_IMPLEMENTATION;
-import static io.github.clescot.kafka.connect.http.sink.Configuration.OKHTTP_IMPLEMENTATION;
 import static io.github.clescot.kafka.connect.http.sink.HttpSinkConfigDefinition.*;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.*;
 
 public class HttpSinkTaskTest {
-    private static final String CONTENT_TYPE = "Content-Type";
-    private static final String APPLICATION_JSON = "application/json";
     private static final String DUMMY_BODY = "stuff";
     private static final String DUMMY_URL = "http://www." + DUMMY_BODY + ".com";
     private static final String DUMMY_METHOD = "POST";
