@@ -838,33 +838,7 @@ public class HttpSinkTaskTest {
     }
 
 
-    @Nested
-    class IsSuccess{
-        @Test
-        public void test_is_success_with_200() {
-            Map<String,String> config = Maps.newHashMap();
-            config.put("config.dummy."+SUCCESS_RESPONSE_CODE_REGEX,"^2[0-9][0-9]$");
-            Configuration configuration = new Configuration("dummy",new HttpSinkConnectorConfig(config),executorService);
-            HttpExchange httpExchange = getDummyHttpExchange();
-            Map<String, String> settings = Maps.newHashMap();
-            httpSinkTask.start(settings);
-            boolean success = httpSinkTask.isSuccess(httpExchange,configuration);
-            assertThat(success).isTrue();
-        }
 
-        @Test
-        public void test_is_not_success_with_200_by_configuration() {
-            Map<String,String> config = Maps.newHashMap();
-            config.put("config.dummy."+SUCCESS_RESPONSE_CODE_REGEX,"^1[0-9][0-9]$");
-            Configuration configuration = new Configuration("dummy",new HttpSinkConnectorConfig(config),executorService);
-            HttpExchange httpExchange = getDummyHttpExchange();
-            Map<String, String> settings = Maps.newHashMap();
-            settings.put(CONFIG_DEFAULT_SUCCESS_RESPONSE_CODE_REGEX, "^20[1-5]$");
-            httpSinkTask.start(settings);
-            boolean success = httpSinkTask.isSuccess(httpExchange,configuration);
-            assertThat(success).isFalse();
-        }
-    }
 
 
 

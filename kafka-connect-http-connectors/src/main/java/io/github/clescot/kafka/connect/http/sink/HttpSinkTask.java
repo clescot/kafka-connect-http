@@ -58,7 +58,7 @@ public class HttpSinkTask extends SinkTask {
     private List<Configuration> customConfigurations;
     private static ExecutorService executorService;
     private Configuration defaultConfiguration;
-    private final Pattern defaultSuccessPattern = Pattern.compile(CONFIG_DEFAULT_DEFAULT_SUCCESS_RESPONSE_CODE_REGEX);
+
 
     @Override
     public String version() {
@@ -273,7 +273,7 @@ public class HttpSinkTask extends SinkTask {
                                                            Configuration configuration) {
         return callWithThrottling(httpRequest, attempts, configuration)
                 .thenApply(myHttpExchange -> {
-                    boolean success = isSuccess(myHttpExchange, configuration);
+                    boolean success = configuration.isSuccess(myHttpExchange, configuration);
                     myHttpExchange.setSuccess(success);
                     //publish eventually to 'in memory' queue
                     if (httpSinkConnectorConfig.isPublishToInMemoryQueue()) {
@@ -287,14 +287,7 @@ public class HttpSinkTask extends SinkTask {
 
     }
 
-    protected boolean isSuccess(HttpExchange httpExchange, Configuration configuration) {
-        Pattern pattern = defaultSuccessPattern;
-        if (configuration.getSuccessResponseCodeRegex().isPresent()) {
-            pattern = configuration.getSuccessResponseCodeRegex().get();
-        }
-        return pattern.matcher(httpExchange.getHttpResponse().getStatusCode() + "").matches();
 
-    }
 
 
     protected HttpRequest buildHttpRequest(SinkRecord sinkRecord) {

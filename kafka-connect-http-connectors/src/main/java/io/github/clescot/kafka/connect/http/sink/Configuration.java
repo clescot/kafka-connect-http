@@ -39,6 +39,7 @@ import static io.github.clescot.kafka.connect.http.sink.HttpSinkConfigDefinition
 public class Configuration {
     private static final Logger LOGGER = LoggerFactory.getLogger(Configuration.class);
 
+
     //predicate
     public static final String PREDICATE = "predicate.";
     public static final String URL_REGEX = PREDICATE+"url.regex";
@@ -47,22 +48,31 @@ public class Configuration {
     public static final String HEADER_KEY = PREDICATE+"header.key";
     public static final String HEADER_VALUE = PREDICATE+"header.value";
 
+    private Predicate<HttpRequest> mainpredicate = httpRequest -> true;
+
 
     public static final String STATIC_SCOPE = "static";
+
+    //enrich
+    private final Pattern defaultSuccessPattern = Pattern.compile(CONFIG_DEFAULT_DEFAULT_SUCCESS_RESPONSE_CODE_REGEX);
     public static final String HEADER_X_CORRELATION_ID = "X-Correlation-ID";
     public static final String HEADER_X_REQUEST_ID = "X-Request-ID";
-
-    private static final Map<String, RateLimiter<HttpExchange>> sharedRateLimiters = Maps.newHashMap();
-
-    private Predicate<HttpRequest> mainpredicate = httpRequest -> true;
     private Pattern successResponseCodeRegex;
-    private Pattern retryResponseCodeRegex;
-    private RateLimiter<HttpExchange> rateLimiter;
-    private RetryPolicy<HttpExchange> retryPolicy;
-    private HttpClient httpClient;
     private final Map<String, List<String>> staticRequestHeaders = Maps.newHashMap();
     private final boolean generateMissingCorrelationId;
     private final boolean generateMissingRequestId;
+
+    //rate limiter
+    private static final Map<String, RateLimiter<HttpExchange>> sharedRateLimiters = Maps.newHashMap();
+    private RateLimiter<HttpExchange> rateLimiter;
+    private Pattern retryResponseCodeRegex;
+
+
+    //retry policy
+    private RetryPolicy<HttpExchange> retryPolicy;
+
+    //http client
+    private HttpClient httpClient;
     public final String id;
 
     public Configuration(String id, HttpSinkConnectorConfig httpSinkConnectorConfig, ExecutorService executorService) {
@@ -296,5 +306,13 @@ public class Configuration {
 
     public String getId() {
         return id;
+    }
+
+    protected boolean isSuccess(HttpExchange httpExchange, Configuration configuration) {
+        Pattern pattern = defaultSuccessPattern;
+        if (configuration.getSuccessResponseCodeRegex().isPresent()) {
+            pattern = configuration.getSuccessResponseCodeRegex().get();
+        }
+        return pattern.matcher(httpExchange.getHttpResponse().getStatusCode() + "").matches();
     }
 }
