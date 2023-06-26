@@ -166,7 +166,7 @@ public class HttpSinkTask extends SinkTask {
                     .filter(config -> config.matches(httpRequest))
                     .findFirst()
                     .orElse(defaultConfiguration);
-            HttpRequest enhancedHttpRequest = foundConfiguration.addStaticHeaders(httpRequest);
+            HttpRequest enhancedHttpRequest = foundConfiguration.enrich(httpRequest);
             enhancedHttpRequest = foundConfiguration.addTrackingHeaders(httpRequest);
 
             //handle Request and Response

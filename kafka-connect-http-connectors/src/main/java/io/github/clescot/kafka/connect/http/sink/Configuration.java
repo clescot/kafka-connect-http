@@ -58,7 +58,7 @@ public class Configuration {
     public static final String HEADER_X_CORRELATION_ID = "X-Correlation-ID";
     public static final String HEADER_X_REQUEST_ID = "X-Request-ID";
     private Pattern successResponseCodeRegex;
-    private final Map<String, List<String>> staticRequestHeaders = Maps.newHashMap();
+    private StaticHeadersFunction staticHeadersFunction;
     private final boolean generateMissingCorrelationId;
     private final boolean generateMissingRequestId;
 
@@ -83,7 +83,9 @@ public class Configuration {
         //configuration id prefix is not present into the configMap
         Map<String, Object> configMap = httpSinkConnectorConfig.originalsWithPrefix("config." + id + ".");
 
+        //build staticHeaders Function
         Optional<String> staticHeaderParam = Optional.ofNullable((String) configMap.get(STATIC_REQUEST_HEADER_NAMES));
+        Map<String,List<String>> staticRequestHeaders = Maps.newHashMap();
         if (staticHeaderParam.isPresent()) {
             List<String> staticRequestHeaderNames = Arrays.asList(staticHeaderParam.get().split(","));
             for (String headerName : staticRequestHeaderNames) {
@@ -92,6 +94,8 @@ public class Configuration {
                 staticRequestHeaders.put(headerName, Lists.newArrayList(value));
             }
         }
+        this.staticHeadersFunction = new StaticHeadersFunction(staticRequestHeaders);
+
         this.generateMissingRequestId = (boolean) Optional.ofNullable(configMap.get(GENERATE_MISSING_REQUEST_ID)).orElse(false);
         this.generateMissingCorrelationId = (boolean) Optional.ofNullable(configMap.get(GENERATE_MISSING_CORRELATION_ID)).orElse(false);
 
@@ -166,10 +170,9 @@ public class Configuration {
 
     }
 
-    protected HttpRequest addStaticHeaders(HttpRequest httpRequest) {
-        Preconditions.checkNotNull(httpRequest, "httpRequest is null");
-        this.staticRequestHeaders.forEach((key, value) -> httpRequest.getHeaders().put(key, value));
-        return httpRequest;
+    public HttpRequest enrich(HttpRequest httpRequest) {
+        return staticHeadersFunction.apply(httpRequest);
+
     }
 
     protected HttpRequest addTrackingHeaders(HttpRequest httpRequest) {
@@ -291,7 +294,7 @@ public class Configuration {
 
 
     public Map<String, List<String>> getStaticRequestHeaders() {
-        return staticRequestHeaders;
+        return staticHeadersFunction.getStaticHeaders();
     }
 
 
