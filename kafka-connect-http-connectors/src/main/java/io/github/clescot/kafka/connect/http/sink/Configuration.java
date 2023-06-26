@@ -182,6 +182,11 @@ public class Configuration {
     }
 
 
+    public HttpExchange enrich(HttpExchange httpExchange) {
+        boolean success = isSuccess(httpExchange);
+        httpExchange.setSuccess(success);
+        return httpExchange;
+    }
     private HttpClient buildHttpClient(Map<String, Object> config, ExecutorService executorService) {
 
         Class<? extends HttpClientFactory> httpClientFactoryClass;
@@ -281,13 +286,15 @@ public class Configuration {
         return id;
     }
 
-    protected boolean isSuccess(HttpExchange httpExchange, Configuration configuration) {
+    protected boolean isSuccess(HttpExchange httpExchange) {
         Pattern pattern = defaultSuccessPattern;
-        if (configuration.getSuccessResponseCodeRegex().isPresent()) {
-            pattern = configuration.getSuccessResponseCodeRegex().get();
+        if (this.getSuccessResponseCodeRegex().isPresent()) {
+            pattern = this.getSuccessResponseCodeRegex().get();
         }
         return pattern.matcher(httpExchange.getHttpResponse().getStatusCode() + "").matches();
     }
+
+
 
     public AddStaticHeadersFunction getAddStaticHeadersFunction() {
         return addStaticHeadersFunction;

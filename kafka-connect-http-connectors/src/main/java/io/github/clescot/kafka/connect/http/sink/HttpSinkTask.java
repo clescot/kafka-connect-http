@@ -272,16 +272,16 @@ public class HttpSinkTask extends SinkTask {
                                                            Configuration configuration) {
         return callWithThrottling(httpRequest, attempts, configuration)
                 .thenApply(myHttpExchange -> {
-                    boolean success = configuration.isSuccess(myHttpExchange, configuration);
-                    myHttpExchange.setSuccess(success);
+                    HttpExchange enrichedHttpExchange = configuration.enrich(myHttpExchange);
+
                     //publish eventually to 'in memory' queue
                     if (httpSinkConnectorConfig.isPublishToInMemoryQueue()) {
-                        LOGGER.debug("http exchange published to queue '{}':{}", queueName, myHttpExchange);
-                        queue.offer(new KafkaRecord(sinkRecord.headers(), sinkRecord.keySchema(), sinkRecord.key(), myHttpExchange));
+                        LOGGER.debug("http exchange published to queue '{}':{}", queueName, enrichedHttpExchange);
+                        queue.offer(new KafkaRecord(sinkRecord.headers(), sinkRecord.keySchema(), sinkRecord.key(), enrichedHttpExchange));
                     } else {
-                        LOGGER.debug("http exchange NOT published to queue '{}':{}", queueName, myHttpExchange);
+                        LOGGER.debug("http exchange NOT published to queue '{}':{}", queueName, enrichedHttpExchange);
                     }
-                    return myHttpExchange;
+                    return enrichedHttpExchange;
                 });
 
     }
