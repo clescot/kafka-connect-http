@@ -205,7 +205,7 @@ public class HttpSinkTaskTest {
             verify(httpClient, times(1)).call(captor.capture(), any(AtomicInteger.class));
             HttpRequest enhancedRecordBeforeHttpCall = captor.getValue();
             //then
-            assertThat(enhancedRecordBeforeHttpCall.getHeaders().size() == sinkRecord.headers().size() + httpSinkTask.getDefaultConfiguration().getStaticRequestHeaders().size());
+            assertThat(enhancedRecordBeforeHttpCall.getHeaders().size() == sinkRecord.headers().size() + httpSinkTask.getDefaultConfiguration().getAddStaticHeadersFunction().getStaticHeaders().size());
             assertThat(enhancedRecordBeforeHttpCall.getHeaders()).contains(Map.entry("param1", Lists.newArrayList("value1")));
             assertThat(enhancedRecordBeforeHttpCall.getHeaders()).contains(Map.entry("param2", Lists.newArrayList("value2")));
         }

@@ -1,4 +1,4 @@
-package io.github.clescot.kafka.connect.http.sink;
+package io.github.clescot.kafka.connect.http.sink.config;
 
 import com.google.common.base.Preconditions;
 import io.github.clescot.kafka.connect.http.core.HttpRequest;
@@ -7,11 +7,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
 
-public class StaticHeadersFunction implements Function<HttpRequest,HttpRequest> {
+public class AddStaticHeadersFunction implements Function<HttpRequest,HttpRequest> {
 
     private final Map<String, List<String>> staticHeaders;
 
-    public StaticHeadersFunction(Map<String, List<String>> staticHeaders) {
+    public AddStaticHeadersFunction(Map<String, List<String>> staticHeaders) {
         Preconditions.checkNotNull(staticHeaders, "staticHeaders map is null");
         this.staticHeaders = staticHeaders;
     }

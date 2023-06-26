@@ -12,14 +12,18 @@ import io.github.clescot.kafka.connect.http.sink.client.HttpClientFactory;
 import io.github.clescot.kafka.connect.http.sink.client.HttpException;
 import io.github.clescot.kafka.connect.http.sink.client.ahc.AHCHttpClientFactory;
 import io.github.clescot.kafka.connect.http.sink.client.okhttp.OkHttpClientFactory;
-import org.apache.kafka.connect.errors.ConnectException;
+import io.github.clescot.kafka.connect.http.sink.config.AddStaticHeadersFunction;
+import io.github.clescot.kafka.connect.http.sink.config.AddTrackingHeadersFunction;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.lang.reflect.InvocationTargetException;
 import java.time.Duration;
 import java.time.temporal.ChronoUnit;
-import java.util.*;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.ExecutorService;
 import java.util.function.Predicate;
 import java.util.regex.Pattern;
@@ -55,12 +59,11 @@ public class Configuration {
 
     //enrich
     private final Pattern defaultSuccessPattern = Pattern.compile(CONFIG_DEFAULT_DEFAULT_SUCCESS_RESPONSE_CODE_REGEX);
-    public static final String HEADER_X_CORRELATION_ID = "X-Correlation-ID";
-    public static final String HEADER_X_REQUEST_ID = "X-Request-ID";
+
     private Pattern successResponseCodeRegex;
-    private StaticHeadersFunction staticHeadersFunction;
-    private final boolean generateMissingCorrelationId;
-    private final boolean generateMissingRequestId;
+    private final AddStaticHeadersFunction addStaticHeadersFunction;
+    private final AddTrackingHeadersFunction addTrackingHeadersFunction;
+
 
     //rate limiter
     private static final Map<String, RateLimiter<HttpExchange>> sharedRateLimiters = Maps.newHashMap();
@@ -83,7 +86,7 @@ public class Configuration {
         //configuration id prefix is not present into the configMap
         Map<String, Object> configMap = httpSinkConnectorConfig.originalsWithPrefix("config." + id + ".");
 
-        //build staticHeaders Function
+        //build addStaticHeadersFunction
         Optional<String> staticHeaderParam = Optional.ofNullable((String) configMap.get(STATIC_REQUEST_HEADER_NAMES));
         Map<String,List<String>> staticRequestHeaders = Maps.newHashMap();
         if (staticHeaderParam.isPresent()) {
@@ -94,10 +97,12 @@ public class Configuration {
                 staticRequestHeaders.put(headerName, Lists.newArrayList(value));
             }
         }
-        this.staticHeadersFunction = new StaticHeadersFunction(staticRequestHeaders);
+        this.addStaticHeadersFunction = new AddStaticHeadersFunction(staticRequestHeaders);
 
-        this.generateMissingRequestId = (boolean) Optional.ofNullable(configMap.get(GENERATE_MISSING_REQUEST_ID)).orElse(false);
-        this.generateMissingCorrelationId = (boolean) Optional.ofNullable(configMap.get(GENERATE_MISSING_CORRELATION_ID)).orElse(false);
+        //build addTrackingHeadersFunction
+        boolean generateMissingRequestId = (boolean) Optional.ofNullable(configMap.get(GENERATE_MISSING_REQUEST_ID)).orElse(false);
+        boolean generateMissingCorrelationId = (boolean) Optional.ofNullable(configMap.get(GENERATE_MISSING_CORRELATION_ID)).orElse(false);
+        this.addTrackingHeadersFunction = new AddTrackingHeadersFunction(generateMissingRequestId,generateMissingCorrelationId);
 
         this.httpClient = buildHttpClient(configMap, executorService);
 
@@ -171,33 +176,11 @@ public class Configuration {
     }
 
     public HttpRequest enrich(HttpRequest httpRequest) {
-        return staticHeadersFunction.apply(httpRequest);
-
+        return addStaticHeadersFunction
+                .andThen(addTrackingHeadersFunction)
+                .apply(httpRequest);
     }
 
-    protected HttpRequest addTrackingHeaders(HttpRequest httpRequest) {
-        if (httpRequest == null) {
-            LOGGER.warn("httpRequest is null");
-            throw new ConnectException("httpRequest is null");
-        }
-        Map<String, List<String>> headers = Optional.ofNullable(httpRequest.getHeaders()).orElse(Maps.newHashMap());
-
-        //we generate an 'X-Request-ID' header if not present
-        Optional<List<String>> requestId = Optional.ofNullable(httpRequest.getHeaders().get(HEADER_X_REQUEST_ID));
-        if (requestId.isEmpty() && this.generateMissingRequestId) {
-            requestId = Optional.of(Lists.newArrayList(UUID.randomUUID().toString()));
-        }
-        requestId.ifPresent(reqId -> headers.put(HEADER_X_REQUEST_ID, Lists.newArrayList(reqId)));
-
-        //we generate an 'X-Correlation-ID' header if not present
-        Optional<List<String>> correlationId = Optional.ofNullable(httpRequest.getHeaders().get(HEADER_X_CORRELATION_ID));
-        if (correlationId.isEmpty() && this.generateMissingCorrelationId) {
-            correlationId = Optional.of(Lists.newArrayList(UUID.randomUUID().toString()));
-        }
-        correlationId.ifPresent(corrId -> headers.put(HEADER_X_CORRELATION_ID, Lists.newArrayList(corrId)));
-
-        return httpRequest;
-    }
 
     private HttpClient buildHttpClient(Map<String, Object> config, ExecutorService executorService) {
 
@@ -293,19 +276,6 @@ public class Configuration {
     }
 
 
-    public Map<String, List<String>> getStaticRequestHeaders() {
-        return staticHeadersFunction.getStaticHeaders();
-    }
-
-
-
-    public boolean isGenerateMissingCorrelationId() {
-        return generateMissingCorrelationId;
-    }
-
-    public boolean isGenerateMissingRequestId() {
-        return generateMissingRequestId;
-    }
 
     public String getId() {
         return id;
@@ -317,5 +287,13 @@ public class Configuration {
             pattern = configuration.getSuccessResponseCodeRegex().get();
         }
         return pattern.matcher(httpExchange.getHttpResponse().getStatusCode() + "").matches();
+    }
+
+    public AddStaticHeadersFunction getAddStaticHeadersFunction() {
+        return addStaticHeadersFunction;
+    }
+
+    public AddTrackingHeadersFunction getAddTrackingHeadersFunction() {
+        return addTrackingHeadersFunction;
     }
 }
