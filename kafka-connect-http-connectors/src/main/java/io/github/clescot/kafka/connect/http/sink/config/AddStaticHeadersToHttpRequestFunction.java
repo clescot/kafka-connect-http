@@ -7,11 +7,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
 
-public class AddStaticHeadersFunction implements Function<HttpRequest,HttpRequest> {
+public class AddStaticHeadersToHttpRequestFunction implements Function<HttpRequest,HttpRequest> {
 
     private final Map<String, List<String>> staticHeaders;
 
-    public AddStaticHeadersFunction(Map<String, List<String>> staticHeaders) {
+    public AddStaticHeadersToHttpRequestFunction(Map<String, List<String>> staticHeaders) {
         Preconditions.checkNotNull(staticHeaders, "staticHeaders map is null");
         this.staticHeaders = staticHeaders;
     }

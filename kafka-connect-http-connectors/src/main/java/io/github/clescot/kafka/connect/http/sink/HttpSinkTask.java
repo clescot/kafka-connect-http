@@ -123,9 +123,8 @@ public class HttpSinkTask extends SinkTask {
                 configuration.setRetryPolicy(defaultConfiguration.getRetryPolicy().get());
             }
             //we reuse the default success response code regex if not set
-            if (configuration.getSuccessResponseCodeRegex().isEmpty() && defaultConfiguration.getSuccessResponseCodeRegex().isPresent()) {
-                configuration.setSuccessResponseCodeRegex(defaultConfiguration.getSuccessResponseCodeRegex().get());
-            }
+            configuration.setSuccessResponseCodeRegex(defaultConfiguration.getSuccessResponseCodeRegex());
+
             if (configuration.getRetryResponseCodeRegex().isEmpty() && defaultConfiguration.getRetryResponseCodeRegex().isPresent()) {
                 configuration.setRetryResponseCodeRegex(defaultConfiguration.getRetryResponseCodeRegex().get());
             }

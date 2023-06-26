@@ -12,8 +12,9 @@ import io.github.clescot.kafka.connect.http.sink.client.HttpClientFactory;
 import io.github.clescot.kafka.connect.http.sink.client.HttpException;
 import io.github.clescot.kafka.connect.http.sink.client.ahc.AHCHttpClientFactory;
 import io.github.clescot.kafka.connect.http.sink.client.okhttp.OkHttpClientFactory;
-import io.github.clescot.kafka.connect.http.sink.config.AddStaticHeadersFunction;
-import io.github.clescot.kafka.connect.http.sink.config.AddTrackingHeadersFunction;
+import io.github.clescot.kafka.connect.http.sink.config.AddStaticHeadersToHttpRequestFunction;
+import io.github.clescot.kafka.connect.http.sink.config.AddSuccessStatusToHttpExchangeFunction;
+import io.github.clescot.kafka.connect.http.sink.config.AddTrackingHeadersToHttpRequestFunction;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -52,6 +53,7 @@ public class Configuration {
     public static final String HEADER_KEY = PREDICATE+"header.key";
     public static final String HEADER_VALUE = PREDICATE+"header.value";
 
+
     private Predicate<HttpRequest> mainpredicate = httpRequest -> true;
 
 
@@ -60,10 +62,10 @@ public class Configuration {
     //enrich
     private final Pattern defaultSuccessPattern = Pattern.compile(CONFIG_DEFAULT_DEFAULT_SUCCESS_RESPONSE_CODE_REGEX);
 
-    private Pattern successResponseCodeRegex;
-    private final AddStaticHeadersFunction addStaticHeadersFunction;
-    private final AddTrackingHeadersFunction addTrackingHeadersFunction;
 
+    private final AddStaticHeadersToHttpRequestFunction addStaticHeadersToHttpRequestFunction;
+    private final AddTrackingHeadersToHttpRequestFunction addTrackingHeadersToHttpRequestFunction;
+    private AddSuccessStatusToHttpExchangeFunction addSuccessStatusToHttpExchangeFunction;
 
     //rate limiter
     private static final Map<String, RateLimiter<HttpExchange>> sharedRateLimiters = Maps.newHashMap();
@@ -97,12 +99,12 @@ public class Configuration {
                 staticRequestHeaders.put(headerName, Lists.newArrayList(value));
             }
         }
-        this.addStaticHeadersFunction = new AddStaticHeadersFunction(staticRequestHeaders);
+        this.addStaticHeadersToHttpRequestFunction = new AddStaticHeadersToHttpRequestFunction(staticRequestHeaders);
 
         //build addTrackingHeadersFunction
         boolean generateMissingRequestId = (boolean) Optional.ofNullable(configMap.get(GENERATE_MISSING_REQUEST_ID)).orElse(false);
         boolean generateMissingCorrelationId = (boolean) Optional.ofNullable(configMap.get(GENERATE_MISSING_CORRELATION_ID)).orElse(false);
-        this.addTrackingHeadersFunction = new AddTrackingHeadersFunction(generateMissingRequestId,generateMissingCorrelationId);
+        this.addTrackingHeadersToHttpRequestFunction = new AddTrackingHeadersToHttpRequestFunction(generateMissingRequestId,generateMissingCorrelationId);
 
         this.httpClient = buildHttpClient(configMap, executorService);
 
@@ -154,9 +156,14 @@ public class Configuration {
         }
 
         //success response code regex
+        Pattern successResponseCodeRegex;
         if (configMap.containsKey(SUCCESS_RESPONSE_CODE_REGEX)) {
-            this.successResponseCodeRegex = Pattern.compile((String) configMap.get(SUCCESS_RESPONSE_CODE_REGEX));
+            successResponseCodeRegex = Pattern.compile((String) configMap.get(SUCCESS_RESPONSE_CODE_REGEX));
+        }else{
+            successResponseCodeRegex = defaultSuccessPattern;
         }
+        this.addSuccessStatusToHttpExchangeFunction = new AddSuccessStatusToHttpExchangeFunction(successResponseCodeRegex);
+
 
         //retry response code regex
         if (configMap.containsKey(RETRY_RESPONSE_CODE_REGEX)) {
@@ -176,16 +183,14 @@ public class Configuration {
     }
 
     public HttpRequest enrich(HttpRequest httpRequest) {
-        return addStaticHeadersFunction
-                .andThen(addTrackingHeadersFunction)
+        return addStaticHeadersToHttpRequestFunction
+                .andThen(addTrackingHeadersToHttpRequestFunction)
                 .apply(httpRequest);
     }
 
 
     public HttpExchange enrich(HttpExchange httpExchange) {
-        boolean success = isSuccess(httpExchange);
-        httpExchange.setSuccess(success);
-        return httpExchange;
+        return this.addSuccessStatusToHttpExchangeFunction.apply(httpExchange);
     }
     private HttpClient buildHttpClient(Map<String, Object> config, ExecutorService executorService) {
 
@@ -225,7 +230,7 @@ public class Configuration {
     }
 
     public void setSuccessResponseCodeRegex(Pattern successResponseCodeRegex) {
-        this.successResponseCodeRegex = successResponseCodeRegex;
+        this.addSuccessStatusToHttpExchangeFunction =new AddSuccessStatusToHttpExchangeFunction(successResponseCodeRegex);
     }
 
     public void setRetryResponseCodeRegex(Pattern retryResponseCodeRegex) {
@@ -251,8 +256,8 @@ public class Configuration {
         return Optional.ofNullable(retryPolicy);
     }
 
-    public Optional<Pattern> getSuccessResponseCodeRegex() {
-        return Optional.ofNullable(successResponseCodeRegex);
+    public Pattern getSuccessResponseCodeRegex() {
+        return addSuccessStatusToHttpExchangeFunction.getSuccessResponseCodeRegex();
     }
 
     public Optional<Pattern> getRetryResponseCodeRegex() {
@@ -286,21 +291,15 @@ public class Configuration {
         return id;
     }
 
-    protected boolean isSuccess(HttpExchange httpExchange) {
-        Pattern pattern = defaultSuccessPattern;
-        if (this.getSuccessResponseCodeRegex().isPresent()) {
-            pattern = this.getSuccessResponseCodeRegex().get();
-        }
-        return pattern.matcher(httpExchange.getHttpResponse().getStatusCode() + "").matches();
+
+
+
+
+    public AddStaticHeadersToHttpRequestFunction getAddStaticHeadersFunction() {
+        return addStaticHeadersToHttpRequestFunction;
     }
 
-
-
-    public AddStaticHeadersFunction getAddStaticHeadersFunction() {
-        return addStaticHeadersFunction;
-    }
-
-    public AddTrackingHeadersFunction getAddTrackingHeadersFunction() {
-        return addTrackingHeadersFunction;
+    public AddTrackingHeadersToHttpRequestFunction getAddTrackingHeadersFunction() {
+        return addTrackingHeadersToHttpRequestFunction;
     }
 }

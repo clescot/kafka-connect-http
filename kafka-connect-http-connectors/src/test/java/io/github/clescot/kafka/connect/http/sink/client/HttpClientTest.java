@@ -29,8 +29,8 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static io.github.clescot.kafka.connect.http.sink.client.ahc.AHCHttpClient.SUCCESS;
-import static io.github.clescot.kafka.connect.http.sink.config.AddTrackingHeadersFunction.HEADER_X_CORRELATION_ID;
-import static io.github.clescot.kafka.connect.http.sink.config.AddTrackingHeadersFunction.HEADER_X_REQUEST_ID;
+import static io.github.clescot.kafka.connect.http.sink.config.AddTrackingHeadersToHttpRequestFunction.HEADER_X_CORRELATION_ID;
+import static io.github.clescot.kafka.connect.http.sink.config.AddTrackingHeadersToHttpRequestFunction.HEADER_X_REQUEST_ID;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.when;
 

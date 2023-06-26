@@ -13,15 +13,15 @@ import java.util.Optional;
 import java.util.UUID;
 import java.util.function.Function;
 
-public class AddTrackingHeadersFunction implements Function<HttpRequest,HttpRequest> {
+public class AddTrackingHeadersToHttpRequestFunction implements Function<HttpRequest,HttpRequest> {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(AddTrackingHeadersFunction.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(AddTrackingHeadersToHttpRequestFunction.class);
     public static final String HEADER_X_CORRELATION_ID = "X-Correlation-ID";
     public static final String HEADER_X_REQUEST_ID = "X-Request-ID";
     private final boolean generateMissingRequestId;
     private final boolean generateMissingCorrelationId;
-    public AddTrackingHeadersFunction(boolean generateMissingRequestId,
-                                      boolean generateMissingCorrelationId) {
+    public AddTrackingHeadersToHttpRequestFunction(boolean generateMissingRequestId,
+                                                   boolean generateMissingCorrelationId) {
         this.generateMissingRequestId = generateMissingRequestId;
         this.generateMissingCorrelationId = generateMissingCorrelationId;
     }
