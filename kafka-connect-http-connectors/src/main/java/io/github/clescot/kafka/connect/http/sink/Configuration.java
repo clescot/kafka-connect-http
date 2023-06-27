@@ -102,8 +102,8 @@ public class Configuration {
         this.addStaticHeadersToHttpRequestFunction = new AddStaticHeadersToHttpRequestFunction(staticRequestHeaders);
 
         //build addTrackingHeadersFunction
-        boolean generateMissingRequestId = (boolean) Optional.ofNullable(configMap.get(GENERATE_MISSING_REQUEST_ID)).orElse(false);
-        boolean generateMissingCorrelationId = (boolean) Optional.ofNullable(configMap.get(GENERATE_MISSING_CORRELATION_ID)).orElse(false);
+        boolean generateMissingRequestId =  Boolean.parseBoolean((String) configMap.get(GENERATE_MISSING_REQUEST_ID));
+        boolean generateMissingCorrelationId = Boolean.parseBoolean((String) configMap.get(GENERATE_MISSING_CORRELATION_ID));
         this.addTrackingHeadersToHttpRequestFunction = new AddTrackingHeadersToHttpRequestFunction(generateMissingRequestId,generateMissingCorrelationId);
 
         this.httpClient = buildHttpClient(configMap, executorService);

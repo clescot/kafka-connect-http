@@ -210,6 +210,26 @@ class ConfigurationTest {
             assertThat(headers).containsEntry("X-Stuff-Id",Lists.newArrayList("12345"));
             assertThat(headers).containsEntry("X-Super-Option",Lists.newArrayList("ABC"));
         }
+        @Test
+        public void test_generate_missing_request_id(){
+            Map<String, String> config = Maps.newHashMap();
+            config.put("config.dummy." + GENERATE_MISSING_REQUEST_ID, "true");
+            Configuration configuration = new Configuration("dummy", new HttpSinkConnectorConfig(config), executorService);
+            HttpRequest httpRequest = getDummyHttpRequest();
+            HttpRequest enrichedHttpRequest = configuration.enrich(httpRequest);
+            Map<String, List<String>> headers = enrichedHttpRequest.getHeaders();
+            assertThat(headers).containsKey("X-Request-ID");;
+        }
+        @Test
+        public void test_generate_missing_correlation_id(){
+            Map<String, String> config = Maps.newHashMap();
+            config.put("config.dummy." + GENERATE_MISSING_CORRELATION_ID, "true");
+            Configuration configuration = new Configuration("dummy", new HttpSinkConnectorConfig(config), executorService);
+            HttpRequest httpRequest = getDummyHttpRequest();
+            HttpRequest enrichedHttpRequest = configuration.enrich(httpRequest);
+            Map<String, List<String>> headers = enrichedHttpRequest.getHeaders();
+            assertThat(headers).containsKey("X-Correlation-ID");;
+        }
     }
 
     @Nested
