@@ -1,6 +1,6 @@
-# HTTP Connectors configuration
+# HTTP Connectors settings
 
-Here are the configuration to setup an HTTP Sink connector, and optionally an HTTP Source Connector, into a Kafka Connect
+Here are the settings to setup an HTTP Sink connector, and optionally an HTTP Source Connector, into a Kafka Connect
 cluster. 
 
 ### HTTP Sink Connector
@@ -21,47 +21,69 @@ every Kafka Connect Sink Connector need to define these required parameters :
 
 #### configuration
 
-The connector ships with a `default` configuration.
+The connector ships with a `default` configuration, and we can, if needed, configure more configurations.
+A configuration is identified with a unique `id`.
 
-A configuration  :
-- can add static headers
-- can generate a missing correlationId
-- can generate a missing requestId
+Configurations are listed by their id, divided by comma (`,`), with the property : `config.ids`.
+
+example : ```"config.ids":"config1,config2,config3"```.
+
+Note that the `default` configuration is always created, and must not be referenced in the `config.ids` property.
+
+
+For example, the `test4` configuration will have all its settings starting with the `config.test4` prefix,
+following by other prefixes listed above. 
+
+##### predicate
+A configuration apply to some http requests based on a predicate  : all http requests not managed by a configuration are catch by the `default` configuration)
+All the settings of the predicate, are starting with the `config.<configurationId>.predicate`.
+The predicate permits to filter some http requests, and can be composed, cumulatively, with : 
+
+- an _URL_ regex with the settings for `test4` configuration : ```"config.test4.predicate.url.regex":"myregex"``` 
+- a _method_ regex with the settings for `test4` configuration : ```"config.test4.predicate.method.regex":"myregex"``` 
+- a _bodytype_ regex with the settings for `test4` configuration : ```"config.test4.predicate.bodytype.regex":"myregex"``` 
+- a _header key_ with the settings for `test4` configuration (despite any value, when alone) : ```"config.test4.predicate.header.key":"myheaderKey"```
+- a _header value_ with the settings for `test4` configuration (can only be cofnigured with a header key) : ```"config.test4.predicate.header.value":"myheaderValue"```
+
+- can enrich HttpRequest by 
+  - adding static headers
+  - generating a missing correlationId
+  - generating a missing requestId
+- can enrich the HttpExchange with a success regex
 - owns a rate limiter
 - owns a retry policy
-- owns a success regex
-- owns a retry regex
 - owns an HTTP Client
 
 
   - http client implementation settings
     - *httpclient.implementation* : define which installed library to use : either `ahc`, a.k.a async http client, or `okhttp`. default is `okhttp`.
   - retry settings (**set them all or no one**), permit to define a default retry policy.
-    - *httpclient.default.success.response.code.regex* : default regex which decide if the request is a success or not, based on the response status code
-    - *httpclient.default.retry.response.code.regex* : regex which define if a retry need to be triggered, based on the response status code. default is `^[1-2][0-9][0-9]$`
+    - *config.default.success.response.code.regex* : default regex which decide if the request is a success or not, based on the response status code
+    - *config.default.retry.response.code.regex* : regex which define if a retry need to be triggered, based on the response status code. default is `^[1-2][0-9][0-9]$`
       by default, we don't resend any http call with a response between `100` and `499`.only `5xx` by default, trigger a resend
       - `1xx` is for protocol information (100 continue for example),
       - `2xx` is for success,
       - `3xx` is for redirection
       - `4xx` is for a client error
       - `5xx` is for a server error
-    - *httpclient.default.retries* : if set with other default retry parameters, permit to define a default retry policy, which can be overriden in the httpRequest object. Define how many retries before an error is thrown
-    - *httpclient.default.retry.delay.in.ms* : if set with other default retry parameters, permit to define a default retry policy, which can be overriden in the httpRequest object. Define how long wait initially before first retry
-    - *httpclient.default.retry.max.delay.in.ms* : if set with other default retry parameters, permit to define a default retry policy, which can be overriden in the httpRequest object. Define how long max wait before retry
-    - *httpclient.default.retry.delay.factor* : if set with other default retry parameters, permit to define a default retry policy, which can be overriden in the httpRequest object. Define the factor to multiply the previous delay to define the current retry delay
-    - *httpclient.default.retry.jitter.in.ms* : if set with other default retry parameters, permit to define a default retry policy, which can be overriden in the httpRequest object.
+    - *config.default.retries* : if set with other default retry parameters, permit to define a default retry policy, which can be overriden in the httpRequest object. Define how many retries before an error is thrown
+    - *config.default.retry.delay.in.ms* : if set with other default retry parameters, permit to define a default retry policy, which can be overriden in the httpRequest object. Define how long wait initially before first retry
+    - *config.default.retry.max.delay.in.ms* : if set with other default retry parameters, permit to define a default retry policy, which can be overriden in the httpRequest object. Define how long max wait before retry
+    - *config.default.retry.delay.factor* : if set with other default retry parameters, permit to define a default retry policy, which can be overriden in the httpRequest object. Define the factor to multiply the previous delay to define the current retry delay
+    - *config.default.retry.jitter.in.ms* : if set with other default retry parameters, permit to define a default retry policy, which can be overriden in the httpRequest object.
   - rate limiting settings
-    - *httpclient.default.rate.limiter.period.in.ms* : period of time in milliseconds, during the max execution cannot be exceeded
-    - *httpclient.default.rate.limiter.max.executions* : max executions in the period defined with the 'httpclient.default.rate.limiter.period.in.ms' parameter
-    - *httpclient.default.rate.limiter.scope* : can be either `instance` (default option when not set, i.e a rate limiter per configuration in the connector instance),  or `static` (a rate limiter per configuration id shared with all connectors instances in the same Java Virtual Machine.
+    - *config.default.rate.limiter.period.in.ms* : period of time in milliseconds, during the max execution cannot be exceeded
+    - *config.default.rate.limiter.max.executions* : max executions in the period defined with the 'httpclient.default.rate.limiter.period.in.ms' parameter
+    - *config.default.rate.limiter.scope* : can be either `instance` (default option when not set, i.e a rate limiter per configuration in the connector instance),  or `static` (a rate limiter per configuration id shared with all connectors instances in the same Java Virtual Machine.
+    - - owns a retry regex
   - header settings
-    - *httpclient.static.request.header.names* : list of headers names to attach to all requests. *Static* term, means that these headers
+    - *config.static.request.header.names* : list of headers names to attach to all requests. *Static* term, means that these headers
       are not managed by initial kafka message, but are defined at the connector level and added globally. this list is divided by
       `,` character. The connector will try to get the value to add to request by querying the config with the header name as parameter name.
       For example, if set `static.request.header.names: param_name1, param_name2`, the connector will lookup the param_name1
       and param_name2 parameters to get values to add.
-    - *httpclient.generate.missing.request.id* : `false` by default. when set to `true`, generate an uuid bound to the `X-Request-ID` header.
-    - *httpclient.generate.missing.correlation.id* : `false` by default. when set to `true`, generate an uuid bound to the `X-Correlation-ID` header.
+    - *config.generate.missing.request.id* : `false` by default. when set to `true`, generate an uuid bound to the `X-Request-ID` header.
+    - *config.generate.missing.correlation.id* : `false` by default. when set to `true`, generate an uuid bound to the `X-Correlation-ID` header.
   - in memory queue settings
     - *publish.to.in.memory.queue* : `false` by default. When set to `true`, publish HTTP interactions (request and responses)
       are published into the in memory queue.
@@ -154,15 +176,15 @@ A configuration  :
     "generate.missing.request.id": "true",
     "generate.missing.correlation.id": "true",
     "publish.to.in.memory.queue":"true",
-    "httpclient.default.retries":"3",
-    "httpclient.default.retry.delay.in.ms":"2000",
-    "httpclient.default.retry.max.delay.in.ms":"600000",
-    "httpclient.default.retry.delay.factor":"1.5",
-    "httpclient.default.retry.jitter.in.ms":"500",
-    "httpclient.default.rate.limiter.period.in.ms":"1000",
-    "httpclient.default.rate.limiter.max.executions":"5",
-    "httpclient.default.retry.response.code.regex":"^5[0-9][0-9]$",
-    "httpclient.default.success.response.code.regex":"^[1-2][0-9][0-9]$",
+    "config.default.retries":"3",
+    "config.default.retry.delay.in.ms":"2000",
+    "config.default.retry.max.delay.in.ms":"600000",
+    "config.default.retry.delay.factor":"1.5",
+    "config.default.retry.jitter.in.ms":"500",
+    "config.default.rate.limiter.period.in.ms":"1000",
+    "config.default.rate.limiter.max.executions":"5",
+    "config.default.retry.response.code.regex":"^5[0-9][0-9]$",
+    "config.default.success.response.code.regex":"^[1-2][0-9][0-9]$",
     "httpclient.ssl.truststore.path": "/path/to/my.truststore.jks",
     "httpclient.ssl.truststore.password": "mySecret_Pass",
     "httpclient.ssl.truststore.type": "jks"
@@ -279,38 +301,38 @@ But you can override this configuration, for some specific HTTP requests.
 
 
 Each specific configuration is identified by a _prefix_, in the form : 
-`httpclient.<configurationid>.`
+`config.<configurationid>.`
 
 The prefix for the _default_ configuration is `httpclient.default.` (its configuration id is `default`).
 
 To register some custom configurations, you need to register them by their id in the parameter :
-`httpclient.custom.config.ids`.
+`config.custom.config.ids`.
 These configuration ids are separated by commas.
 
 exemple : 
 ```
-"httpclient.custom.config.ids": "id1,id2,stuff"
+"config.custom.config.ids": "id1,id2,stuff"
 ```
 
 for example, if you've registered a configuration with the id `test2`, it needs to be present in the field `httpclient.custom.config.ids`.
 
 You must register a **predicate** to detect the matching between the http request and the configuration.
 A predicate can be composed of multiple matchers (composed with a logical AND), configured with these parameters : 
-- `httpclient.test2.url.regex`
-- `httpclient.test2.method.regex`
-- `httpclient.test2.bodytype.regex`
-- `httpclient.test2.header.key`
-- `httpclient.test2.header.value` (can be added, only if the previous parameter is also configured)
+- `config.test2.url.regex`
+- `config.test2.method.regex`
+- `config.test2.bodytype.regex`
+- `config.test2.header.key`
+- `config.test2.header.value` (can be added, only if the previous parameter is also configured)
 
 You will have the ability to define optionnaly :
 - a **rate limiter** with the parameters :
-  - `httpclient.test2.rate.limiter.max.executions`
-  - `httpclient.test2.rate.limiter.period.in.ms`
+  - `config.test2.rate.limiter.max.executions`
+  - `config.test2.rate.limiter.period.in.ms`
   - a **success response code regex** with the parameter : `httpclient.test2.success.response.code.regex`
   - a **retry response code regex** with the parameter : `httpclient.test2.retry.response.code.regex`
   - a **retry policy** with the parameters : 
-    - `httpclient.test2.retries`
-    - `httpclient.test2.retry.delay.in.ms`
-    - `httpclient.test2.retry.max.delay.in.ms`
-    - `httpclient.test2.retry.delay.factor`
-    - `httpclient.test2.retry.jitter.in.ms`
+    - `config.test2.retries`
+    - `config.test2.retry.delay.in.ms`
+    - `config.test2.retry.max.delay.in.ms`
+    - `config.test2.retry.delay.factor`
+    - `config.test2.retry.jitter.in.ms`
