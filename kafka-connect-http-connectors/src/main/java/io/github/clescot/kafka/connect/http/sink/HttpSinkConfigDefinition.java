@@ -123,7 +123,7 @@ public class HttpSinkConfigDefinition {
     private static final String DEFAULT_DEFAULT_RETRY_RESPONSE_CODE_REGEX = "^5[0-9][0-9]$";
 
     public static final String CONFIG_DEFAULT_DEFAULT_SUCCESS_RESPONSE_CODE_REGEX = "^[1-2][0-9][0-9]$";
-    public static final String RETRY_RESPONSE_CODE_REGEX = "retry.response.code.regex";
+    public static final String RETRY_RESPONSE_CODE_REGEX = DEFAULT_RETRY_POLICY_PREFIX+"response.code.regex";
     public static final String CONFIG_DEFAULT_RETRY_RESPONSE_CODE_REGEX = DEFAULT_CONFIGURATION_PREFIX + RETRY_RESPONSE_CODE_REGEX;
     public static final String DEFAULT_RETRY_RESPONSE_CODE_REGEX_DOC = "regex which define if a retry need to be triggered, based on the response status code. default is '"+ CONFIG_DEFAULT_DEFAULT_SUCCESS_RESPONSE_CODE_REGEX +"'";
 
