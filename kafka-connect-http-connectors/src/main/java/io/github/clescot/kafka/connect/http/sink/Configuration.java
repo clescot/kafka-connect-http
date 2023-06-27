@@ -88,6 +88,8 @@ public class Configuration {
         //configuration id prefix is not present into the configMap
         Map<String, Object> configMap = httpSinkConnectorConfig.originalsWithPrefix("config." + id + ".");
 
+
+        //enrich request
         //build addStaticHeadersFunction
         Optional<String> staticHeaderParam = Optional.ofNullable((String) configMap.get(STATIC_REQUEST_HEADER_NAMES));
         Map<String,List<String>> staticRequestHeaders = Maps.newHashMap();
@@ -105,6 +107,19 @@ public class Configuration {
         boolean generateMissingRequestId =  Boolean.parseBoolean((String) configMap.get(GENERATE_MISSING_REQUEST_ID));
         boolean generateMissingCorrelationId = Boolean.parseBoolean((String) configMap.get(GENERATE_MISSING_CORRELATION_ID));
         this.addTrackingHeadersToHttpRequestFunction = new AddTrackingHeadersToHttpRequestFunction(generateMissingRequestId,generateMissingCorrelationId);
+
+        //enrich exchange
+        //success response code regex
+        Pattern successResponseCodeRegex;
+        if (configMap.containsKey(SUCCESS_RESPONSE_CODE_REGEX)) {
+            successResponseCodeRegex = Pattern.compile((String) configMap.get(SUCCESS_RESPONSE_CODE_REGEX));
+        }else{
+            successResponseCodeRegex = defaultSuccessPattern;
+        }
+        this.addSuccessStatusToHttpExchangeFunction = new AddSuccessStatusToHttpExchangeFunction(successResponseCodeRegex);
+
+
+
 
         this.httpClient = buildHttpClient(configMap, executorService);
 
@@ -155,22 +170,13 @@ public class Configuration {
             }
         }
 
-        //success response code regex
-        Pattern successResponseCodeRegex;
-        if (configMap.containsKey(SUCCESS_RESPONSE_CODE_REGEX)) {
-            successResponseCodeRegex = Pattern.compile((String) configMap.get(SUCCESS_RESPONSE_CODE_REGEX));
-        }else{
-            successResponseCodeRegex = defaultSuccessPattern;
-        }
-        this.addSuccessStatusToHttpExchangeFunction = new AddSuccessStatusToHttpExchangeFunction(successResponseCodeRegex);
 
-
+        //retry policy
         //retry response code regex
         if (configMap.containsKey(RETRY_RESPONSE_CODE_REGEX)) {
             this.retryResponseCodeRegex = Pattern.compile((String) configMap.get(RETRY_RESPONSE_CODE_REGEX));
         }
 
-        //retry policy
         if (configMap.containsKey(RETRIES)) {
             Integer retries = Integer.parseInt((String) configMap.get(RETRIES));
             Long retryDelayInMs = Long.parseLong((String) configMap.get(RETRY_DELAY_IN_MS));
