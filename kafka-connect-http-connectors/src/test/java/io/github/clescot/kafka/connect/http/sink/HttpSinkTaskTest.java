@@ -188,8 +188,8 @@ public class HttpSinkTaskTest {
             //given
             Map<String, String> settings = Maps.newHashMap();
             settings.put(DEFAULT_CONFIGURATION_PREFIX +STATIC_REQUEST_HEADER_NAMES, "param1,param2");
-            settings.put(DEFAULT_CONFIGURATION_PREFIX +STATIC_REQUEST_HEADER_NAMES+"param1", "value1");
-            settings.put(DEFAULT_CONFIGURATION_PREFIX +STATIC_REQUEST_HEADER_NAMES+"param2", "value2");
+            settings.put(DEFAULT_CONFIGURATION_PREFIX +STATIC_REQUEST_HEADER_PREFIX+"param1", "value1");
+            settings.put(DEFAULT_CONFIGURATION_PREFIX +STATIC_REQUEST_HEADER_PREFIX+"param2", "value2");
             httpSinkTask.start(settings);
             OkHttpClient httpClient = Mockito.mock(OkHttpClient.class);
             HttpExchange dummyHttpExchange = getDummyHttpExchange();

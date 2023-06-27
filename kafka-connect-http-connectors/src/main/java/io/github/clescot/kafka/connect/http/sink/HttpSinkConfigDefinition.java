@@ -85,23 +85,24 @@ public class HttpSinkConfigDefinition {
 
     //enrich HttpRequest
     public static final String ENRICH_REQUEST ="enrich.request.";
-    public static final String STATIC_REQUEST_HEADER_NAMES ="static.header.names.";
-    public static final String CONFIG_STATIC_REQUEST_HEADER_NAMES =DEFAULT_CONFIGURATION_PREFIX +ENRICH_REQUEST+ STATIC_REQUEST_HEADER_NAMES;
+    public static final String STATIC_REQUEST_HEADER_PREFIX =ENRICH_REQUEST+"static.header.";
+    public static final String STATIC_REQUEST_HEADER_NAMES =STATIC_REQUEST_HEADER_PREFIX+"names";
+    public static final String CONFIG_STATIC_REQUEST_HEADER_NAMES =DEFAULT_CONFIGURATION_PREFIX + STATIC_REQUEST_HEADER_NAMES;
     public static final String CONFIG_STATIC_REQUEST_HEADER_NAMES_DOC = "list of static parameters names which will be added to all http requests. these parameter names need to be added with their values as parameters in complement of this list";
 
 
-    public static final String GENERATE_MISSING_CORRELATION_ID = "generate.missing.correlation.id";
-    public static final String CONFIG_GENERATE_MISSING_CORRELATION_ID = DEFAULT_CONFIGURATION_PREFIX +ENRICH_REQUEST+ GENERATE_MISSING_CORRELATION_ID;
+    public static final String GENERATE_MISSING_CORRELATION_ID = ENRICH_REQUEST+"generate.missing.correlation.id";
+    public static final String CONFIG_GENERATE_MISSING_CORRELATION_ID = DEFAULT_CONFIGURATION_PREFIX + GENERATE_MISSING_CORRELATION_ID;
     public static final String CONFIG_GENERATE_MISSING_CORRELATION_ID_DOC = "if not present in the HttpRequest headers, generate an UUID bound to the 'X-Correlation-ID' name";
 
-    public static final String GENERATE_MISSING_REQUEST_ID = "generate.missing.request.id";
-    public static final String CONFIG_GENERATE_MISSING_REQUEST_ID = DEFAULT_CONFIGURATION_PREFIX +ENRICH_REQUEST+ GENERATE_MISSING_REQUEST_ID;
+    public static final String GENERATE_MISSING_REQUEST_ID = ENRICH_REQUEST+"generate.missing.request.id";
+    public static final String CONFIG_GENERATE_MISSING_REQUEST_ID = DEFAULT_CONFIGURATION_PREFIX + GENERATE_MISSING_REQUEST_ID;
     public static final String CONFIG_GENERATE_MISSING_REQUEST_ID_DOC = "if not present in the HttpRequest headers, generate an UUID bound to the 'X-Request-ID' name";
 
     //enrich httpExchange
     public static final String ENRICH_EXCHANGE ="enrich.exchange.";
-    public static final String SUCCESS_RESPONSE_CODE_REGEX = "success.response.code.regex";
-    public static final String CONFIG_DEFAULT_SUCCESS_RESPONSE_CODE_REGEX = DEFAULT_CONFIGURATION_PREFIX + ENRICH_EXCHANGE+SUCCESS_RESPONSE_CODE_REGEX;
+    public static final String SUCCESS_RESPONSE_CODE_REGEX = ENRICH_EXCHANGE+"success.response.code.regex";
+    public static final String CONFIG_DEFAULT_SUCCESS_RESPONSE_CODE_REGEX = DEFAULT_CONFIGURATION_PREFIX + SUCCESS_RESPONSE_CODE_REGEX;
     public static final String CONFIG_DEFAULT_SUCCESS_RESPONSE_CODE_REGEX_DOC = "default regex which decide if the request is a success or not, based on the response status code";
     //by default, we don't resend any http call with a response between 100 and 499
     // 1xx is for protocol information (100 continue for example),

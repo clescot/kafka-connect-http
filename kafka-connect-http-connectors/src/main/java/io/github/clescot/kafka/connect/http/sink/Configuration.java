@@ -94,7 +94,7 @@ public class Configuration {
         if (staticHeaderParam.isPresent()) {
             List<String> staticRequestHeaderNames = Arrays.asList(staticHeaderParam.get().split(","));
             for (String headerName : staticRequestHeaderNames) {
-                String value = (String) configMap.get(STATIC_REQUEST_HEADER_NAMES+headerName);
+                String value = (String) configMap.get(STATIC_REQUEST_HEADER_PREFIX+headerName);
                 Preconditions.checkNotNull(value, "'" + headerName + "' is not configured as a parameter.");
                 staticRequestHeaders.put(headerName, Lists.newArrayList(value));
             }

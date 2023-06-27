@@ -6,6 +6,7 @@ import dev.failsafe.RateLimiter;
 import io.github.clescot.kafka.connect.http.core.HttpExchange;
 import io.github.clescot.kafka.connect.http.core.HttpRequest;
 import io.github.clescot.kafka.connect.http.core.HttpResponse;
+import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -20,12 +21,13 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static io.github.clescot.kafka.connect.http.sink.HttpSinkConfigDefinition.SUCCESS_RESPONSE_CODE_REGEX;
+import static io.github.clescot.kafka.connect.http.sink.HttpSinkConfigDefinition.*;
 import static org.assertj.core.api.Assertions.assertThat;
 
 class ConfigurationTest {
     private ExecutorService executorService = Executors.newFixedThreadPool(2);
-
+    private static final String DUMMY_METHOD = "POST";
+    private static final String DUMMY_BODY_TYPE = "STRING";
     @Nested
     class TestConstructor{
 
@@ -193,10 +195,25 @@ class ConfigurationTest {
     }
 
     @Nested
-    class TestEnrichHttpExchange{
+    class TestEnrichHttpRequest{
+        private ExecutorService executorService = Executors.newFixedThreadPool(2);
+        @Test
+        public void test_add_static_headers(){
+            Map<String, String> config = Maps.newHashMap();
+            config.put("config.dummy." + STATIC_REQUEST_HEADER_NAMES, "X-Stuff-Id,X-Super-Option");
+            config.put("config.dummy." + STATIC_REQUEST_HEADER_PREFIX+"X-Stuff-Id","12345");
+            config.put("config.dummy." + STATIC_REQUEST_HEADER_PREFIX+"X-Super-Option","ABC");
+            Configuration configuration = new Configuration("dummy", new HttpSinkConnectorConfig(config), executorService);
+            HttpRequest httpRequest = getDummyHttpRequest();
+            HttpRequest enrichedHttpRequest = configuration.enrich(httpRequest);
+            Map<String, List<String>> headers = enrichedHttpRequest.getHeaders();
+            assertThat(headers).containsEntry("X-Stuff-Id",Lists.newArrayList("12345"));
+            assertThat(headers).containsEntry("X-Super-Option",Lists.newArrayList("ABC"));
+        }
+    }
 
-        private static final String DUMMY_METHOD = "POST";
-        private static final String DUMMY_BODY_TYPE = "STRING";
+    @Nested
+    class TestEnrichHttpExchange{
 
         private ExecutorService executorService = Executors.newFixedThreadPool(2);
 
@@ -224,11 +241,7 @@ class ConfigurationTest {
 
 
         private HttpExchange getDummyHttpExchange() {
-            Map<String, List<String>> requestHeaders = Maps.newHashMap();
-            requestHeaders.put("X-dummy", Lists.newArrayList("blabla"));
-            HttpRequest httpRequest = new HttpRequest("http://www.titi.com", DUMMY_METHOD, DUMMY_BODY_TYPE);
-            httpRequest.setHeaders(requestHeaders);
-            httpRequest.setBodyAsString("stuff");
+            HttpRequest httpRequest = getDummyHttpRequest();
             HttpResponse httpResponse = new HttpResponse(200, "OK");
             httpResponse.setResponseBody("my response");
             Map<String, List<String>> responseHeaders = Maps.newHashMap();
@@ -243,6 +256,16 @@ class ConfigurationTest {
                     true
             );
         }
-    }
 
+
+    }
+    @NotNull
+    private HttpRequest getDummyHttpRequest() {
+        Map<String, List<String>> requestHeaders = Maps.newHashMap();
+        requestHeaders.put("X-dummy", Lists.newArrayList("blabla"));
+        HttpRequest httpRequest = new HttpRequest("http://www.titi.com", DUMMY_METHOD, DUMMY_BODY_TYPE);
+        httpRequest.setHeaders(requestHeaders);
+        httpRequest.setBodyAsString("stuff");
+        return httpRequest;
+    }
 }
