@@ -33,11 +33,7 @@ import java.time.ZoneId;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 import java.util.stream.Collectors;
-
-import static io.github.clescot.kafka.connect.http.sink.HttpSinkConfigDefinition.CONFIG_DEFAULT_DEFAULT_SUCCESS_RESPONSE_CODE_REGEX;
 
 
 public class HttpSinkTask extends SinkTask {
@@ -204,10 +200,8 @@ public class HttpSinkTask extends SinkTask {
                 if (retryPolicyForCall.isPresent()) {
                     RetryPolicy<HttpExchange> retryPolicy = retryPolicyForCall.get();
                     CompletableFuture<HttpExchange> httpExchangeFuture = callAndPublish(sinkRecord, httpRequest, attempts, configuration)
-                            .thenApply(httpExchange -> configuration.handleRetry(httpExchange)
-                            );
-                    return Failsafe.with(List.of(retryPolicy))
-                            .getStageAsync(() -> httpExchangeFuture);
+                                                                         .thenApply(httpExchange -> configuration.handleRetry(httpExchange));
+                    return Failsafe.with(List.of(retryPolicy)).getStageAsync(() -> httpExchangeFuture);
                 } else {
                     return callAndPublish(sinkRecord, httpRequest, attempts, configuration);
                 }
