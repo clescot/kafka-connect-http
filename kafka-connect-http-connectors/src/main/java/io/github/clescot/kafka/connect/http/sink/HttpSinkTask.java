@@ -204,7 +204,7 @@ public class HttpSinkTask extends SinkTask {
                 if (retryPolicyForCall.isPresent()) {
                     RetryPolicy<HttpExchange> retryPolicy = retryPolicyForCall.get();
                     CompletableFuture<HttpExchange> httpExchangeFuture = callAndPublish(sinkRecord, httpRequest, attempts, configuration)
-                            .thenApply(httpExchange -> configuration.handleRetry(httpExchange, configuration)
+                            .thenApply(httpExchange -> configuration.handleRetry(httpExchange)
                             );
                     return Failsafe.with(List.of(retryPolicy))
                             .getStageAsync(() -> httpExchangeFuture);

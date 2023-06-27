@@ -289,9 +289,9 @@ public class Configuration {
                 .build();
     }
 
-    public HttpExchange handleRetry(HttpExchange httpExchange, Configuration configuration) {
+    public HttpExchange handleRetry(HttpExchange httpExchange) {
         //we don't retry success HTTP Exchange
-        boolean responseCodeImpliesRetry = retryNeeded(httpExchange.getHttpResponse(), configuration);
+        boolean responseCodeImpliesRetry = retryNeeded(httpExchange.getHttpResponse());
         LOGGER.debug("httpExchange success :'{}'", httpExchange.isSuccess());
         LOGGER.debug("response code('{}') implies retry:'{}'", httpExchange.getHttpResponse().getStatusCode(), "" + responseCodeImpliesRetry);
         if (!httpExchange.isSuccess()
@@ -302,8 +302,8 @@ public class Configuration {
     }
 
 
-    protected boolean retryNeeded(HttpResponse httpResponse, Configuration configuration) {
-        Optional<Pattern> retryResponseCodeRegex = configuration.getRetryResponseCodeRegex();
+    protected boolean retryNeeded(HttpResponse httpResponse) {
+        Optional<Pattern> retryResponseCodeRegex = getRetryResponseCodeRegex();
         if (retryResponseCodeRegex.isPresent()) {
             Pattern retryPattern = retryResponseCodeRegex.get();
             Matcher matcher = retryPattern.matcher("" + httpResponse.getStatusCode());

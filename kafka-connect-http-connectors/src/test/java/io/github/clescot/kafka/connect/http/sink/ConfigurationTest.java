@@ -271,7 +271,7 @@ class ConfigurationTest {
             config.put("config.dummy."+RETRY_RESPONSE_CODE_REGEX,"^5[0-9][0-9]$");
             Configuration configuration = new Configuration("dummy",new HttpSinkConnectorConfig(config),executorService);
             HttpResponse httpResponse = new HttpResponse(500, "Internal Server Error");
-            boolean retryNeeded = configuration.retryNeeded(httpResponse,configuration);
+            boolean retryNeeded = configuration.retryNeeded(httpResponse);
             assertThat(retryNeeded).isTrue();
         }
 
@@ -281,7 +281,7 @@ class ConfigurationTest {
             config.put("httpclient.dummy."+RETRY_RESPONSE_CODE_REGEX,"^5[0-9][0-9]$");
             Configuration configuration = new Configuration("dummy",new HttpSinkConnectorConfig(config),executorService);
             HttpResponse httpResponse = new HttpResponse(400, "Internal Server Error");
-            boolean retryNeeded = configuration.retryNeeded(httpResponse,configuration);
+            boolean retryNeeded = configuration.retryNeeded(httpResponse);
             assertThat(retryNeeded).isFalse();
         }
 
@@ -291,7 +291,7 @@ class ConfigurationTest {
             config.put("httpclient.dummy."+RETRY_RESPONSE_CODE_REGEX,"^5[0-9][0-9]$");
             Configuration configuration = new Configuration("dummy",new HttpSinkConnectorConfig(config),executorService);
             HttpResponse httpResponse = new HttpResponse(200, "Internal Server Error");
-            boolean retryNeeded = configuration.retryNeeded(httpResponse,configuration);
+            boolean retryNeeded = configuration.retryNeeded(httpResponse);
             assertThat(retryNeeded).isFalse();
         }
 
@@ -304,7 +304,7 @@ class ConfigurationTest {
             Configuration configuration = new Configuration("dummy",new HttpSinkConnectorConfig(config),executorService);
             HttpResponse httpResponse = new HttpResponse(200, "Internal Server Error");
 
-            boolean retryNeeded = configuration.retryNeeded(httpResponse,configuration);
+            boolean retryNeeded = configuration.retryNeeded(httpResponse);
             assertThat(retryNeeded).isTrue();
         }
     }
