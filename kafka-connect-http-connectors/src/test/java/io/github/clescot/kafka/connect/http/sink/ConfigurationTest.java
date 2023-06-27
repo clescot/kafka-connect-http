@@ -7,6 +7,7 @@ import io.github.clescot.kafka.connect.http.core.HttpExchange;
 import io.github.clescot.kafka.connect.http.core.HttpRequest;
 import io.github.clescot.kafka.connect.http.core.HttpResponse;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.TestOnly;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -26,6 +27,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 class ConfigurationTest {
     private ExecutorService executorService = Executors.newFixedThreadPool(2);
+    private static final String DUMMY_BODY = "stuff";
+    private static final String DUMMY_URL = "http://www." + DUMMY_BODY + ".com";
     private static final String DUMMY_METHOD = "POST";
     private static final String DUMMY_BODY_TYPE = "STRING";
     @Nested
@@ -258,34 +261,79 @@ class ConfigurationTest {
             assertThat(success).isFalse();
         }
 
+    }
 
+    @Nested
+    class RetryNeeded{
+        @Test
+        public void test_retry_needed() {
+            Map<String,String> config = Maps.newHashMap();
+            config.put("config.dummy."+RETRY_RESPONSE_CODE_REGEX,"^5[0-9][0-9]$");
+            Configuration configuration = new Configuration("dummy",new HttpSinkConnectorConfig(config),executorService);
+            HttpResponse httpResponse = new HttpResponse(500, "Internal Server Error");
+            boolean retryNeeded = configuration.retryNeeded(httpResponse,configuration);
+            assertThat(retryNeeded).isTrue();
+        }
 
-        private HttpExchange getDummyHttpExchange() {
-            HttpRequest httpRequest = getDummyHttpRequest();
-            HttpResponse httpResponse = new HttpResponse(200, "OK");
-            httpResponse.setResponseBody("my response");
-            Map<String, List<String>> responseHeaders = Maps.newHashMap();
-            responseHeaders.put("Content-Type", Lists.newArrayList("application/json"));
-            httpResponse.setResponseHeaders(responseHeaders);
-            return new HttpExchange(
-                    httpRequest,
-                    httpResponse,
-                    245L,
-                    OffsetDateTime.now(ZoneId.of("UTC")),
-                    new AtomicInteger(1),
-                    true
-            );
+        @Test
+        public void test_retry_not_needed_with_400_status_code() {
+            Map<String,String> config = Maps.newHashMap();
+            config.put("httpclient.dummy."+RETRY_RESPONSE_CODE_REGEX,"^5[0-9][0-9]$");
+            Configuration configuration = new Configuration("dummy",new HttpSinkConnectorConfig(config),executorService);
+            HttpResponse httpResponse = new HttpResponse(400, "Internal Server Error");
+            boolean retryNeeded = configuration.retryNeeded(httpResponse,configuration);
+            assertThat(retryNeeded).isFalse();
+        }
+
+        @Test
+        public void test_retry_not_needed_with_200_status_code() {
+            Map<String,String> config = Maps.newHashMap();
+            config.put("httpclient.dummy."+RETRY_RESPONSE_CODE_REGEX,"^5[0-9][0-9]$");
+            Configuration configuration = new Configuration("dummy",new HttpSinkConnectorConfig(config),executorService);
+            HttpResponse httpResponse = new HttpResponse(200, "Internal Server Error");
+            boolean retryNeeded = configuration.retryNeeded(httpResponse,configuration);
+            assertThat(retryNeeded).isFalse();
         }
 
 
+        @Test
+        public void test_retry_needed_by_configuration_with_200_status_code() {
+            Map<String,String> config = Maps.newHashMap();
+            config.put("config.dummy."+RETRY_RESPONSE_CODE_REGEX,"^2[0-9][0-9]$");
+            config.put(CONFIG_DEFAULT_RETRY_RESPONSE_CODE_REGEX, "^[1-5][0-9][0-9]$");
+            Configuration configuration = new Configuration("dummy",new HttpSinkConnectorConfig(config),executorService);
+            HttpResponse httpResponse = new HttpResponse(200, "Internal Server Error");
+
+            boolean retryNeeded = configuration.retryNeeded(httpResponse,configuration);
+            assertThat(retryNeeded).isTrue();
+        }
     }
+
+    private HttpExchange getDummyHttpExchange() {
+        HttpRequest httpRequest = getDummyHttpRequest();
+        HttpResponse httpResponse = new HttpResponse(200, "OK");
+        httpResponse.setResponseBody("my response");
+        Map<String, List<String>> responseHeaders = Maps.newHashMap();
+        responseHeaders.put("Content-Type", Lists.newArrayList("application/json"));
+        httpResponse.setResponseHeaders(responseHeaders);
+        return new HttpExchange(
+                httpRequest,
+                httpResponse,
+                245L,
+                OffsetDateTime.now(ZoneId.of("UTC")),
+                new AtomicInteger(1),
+                true
+        );
+    }
+
     @NotNull
-    private HttpRequest getDummyHttpRequest() {
-        Map<String, List<String>> requestHeaders = Maps.newHashMap();
-        requestHeaders.put("X-dummy", Lists.newArrayList("blabla"));
-        HttpRequest httpRequest = new HttpRequest("http://www.titi.com", DUMMY_METHOD, DUMMY_BODY_TYPE);
-        httpRequest.setHeaders(requestHeaders);
+    private static HttpRequest getDummyHttpRequest() {
+        HttpRequest httpRequest = new HttpRequest(DUMMY_URL, DUMMY_METHOD, DUMMY_BODY_TYPE);
+        Map<String, List<String>> headers = Maps.newHashMap();
+        headers.put("Content-Type", Lists.newArrayList("application/json"));
+        httpRequest.setHeaders(headers);
         httpRequest.setBodyAsString("stuff");
+        httpRequest.setBodyAsForm(Maps.newHashMap());
         return httpRequest;
     }
 }

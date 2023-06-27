@@ -7,6 +7,7 @@ import dev.failsafe.RateLimiter;
 import dev.failsafe.RetryPolicy;
 import io.github.clescot.kafka.connect.http.core.HttpExchange;
 import io.github.clescot.kafka.connect.http.core.HttpRequest;
+import io.github.clescot.kafka.connect.http.core.HttpResponse;
 import io.github.clescot.kafka.connect.http.sink.client.HttpClient;
 import io.github.clescot.kafka.connect.http.sink.client.HttpClientFactory;
 import io.github.clescot.kafka.connect.http.sink.client.HttpException;
@@ -27,6 +28,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ExecutorService;
 import java.util.function.Predicate;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import static io.github.clescot.kafka.connect.http.sink.HttpSinkConfigDefinition.*;
@@ -286,6 +288,32 @@ public class Configuration {
                 .onAbort(listener -> LOGGER.warn("ws call aborted ! result:{},exception:{}", listener.getResult(), listener.getException()))
                 .build();
     }
+
+    public HttpExchange handleRetry(HttpExchange httpExchange, Configuration configuration) {
+        //we don't retry success HTTP Exchange
+        boolean responseCodeImpliesRetry = retryNeeded(httpExchange.getHttpResponse(), configuration);
+        LOGGER.debug("httpExchange success :'{}'", httpExchange.isSuccess());
+        LOGGER.debug("response code('{}') implies retry:'{}'", httpExchange.getHttpResponse().getStatusCode(), "" + responseCodeImpliesRetry);
+        if (!httpExchange.isSuccess()
+                && responseCodeImpliesRetry) {
+            throw new HttpException(httpExchange, "retry needed");
+        }
+        return httpExchange;
+    }
+
+
+    protected boolean retryNeeded(HttpResponse httpResponse, Configuration configuration) {
+        Optional<Pattern> retryResponseCodeRegex = configuration.getRetryResponseCodeRegex();
+        if (retryResponseCodeRegex.isPresent()) {
+            Pattern retryPattern = retryResponseCodeRegex.get();
+            Matcher matcher = retryPattern.matcher("" + httpResponse.getStatusCode());
+            return matcher.matches();
+        } else {
+            return false;
+        }
+    }
+
+
 
     public boolean matches(HttpRequest httpRequest) {
         return this.mainpredicate.test(httpRequest);

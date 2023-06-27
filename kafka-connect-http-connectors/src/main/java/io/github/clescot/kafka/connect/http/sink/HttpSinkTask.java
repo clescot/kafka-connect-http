@@ -204,7 +204,7 @@ public class HttpSinkTask extends SinkTask {
                 if (retryPolicyForCall.isPresent()) {
                     RetryPolicy<HttpExchange> retryPolicy = retryPolicyForCall.get();
                     CompletableFuture<HttpExchange> httpExchangeFuture = callAndPublish(sinkRecord, httpRequest, attempts, configuration)
-                            .thenApply(httpExchange -> handleRetry(httpExchange, configuration)
+                            .thenApply(httpExchange -> configuration.handleRetry(httpExchange, configuration)
                             );
                     return Failsafe.with(List.of(retryPolicy))
                             .getStageAsync(() -> httpExchangeFuture);
@@ -226,29 +226,7 @@ public class HttpSinkTask extends SinkTask {
         }
     }
 
-    private HttpExchange handleRetry(HttpExchange httpExchange, Configuration configuration) {
-        //we don't retry success HTTP Exchange
-        boolean responseCodeImpliesRetry = retryNeeded(httpExchange.getHttpResponse(), configuration);
-        LOGGER.debug("httpExchange success :'{}'", httpExchange.isSuccess());
-        LOGGER.debug("response code('{}') implies retry:'{}'", httpExchange.getHttpResponse().getStatusCode(), "" + responseCodeImpliesRetry);
-        if (!httpExchange.isSuccess()
-                && responseCodeImpliesRetry) {
-            throw new HttpException(httpExchange, "retry needed");
-        }
-        return httpExchange;
-    }
 
-
-    protected boolean retryNeeded(HttpResponse httpResponse, Configuration configuration) {
-        Optional<Pattern> retryResponseCodeRegex = configuration.getRetryResponseCodeRegex();
-        if (retryResponseCodeRegex.isPresent()) {
-            Pattern retryPattern = retryResponseCodeRegex.get();
-            Matcher matcher = retryPattern.matcher("" + httpResponse.getStatusCode());
-            return matcher.matches();
-        } else {
-            return false;
-        }
-    }
 
     private CompletableFuture<HttpExchange> callWithThrottling(HttpRequest httpRequest, AtomicInteger attempts, Configuration configuration) {
         try {

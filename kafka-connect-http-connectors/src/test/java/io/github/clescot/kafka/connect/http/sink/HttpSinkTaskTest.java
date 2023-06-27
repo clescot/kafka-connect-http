@@ -784,58 +784,7 @@ public class HttpSinkTaskTest {
 
     }
 
-    @Nested
-    class RetryNeeded{
-        @Test
-        public void test_retry_needed() {
-            Map<String,String> config = Maps.newHashMap();
-            config.put("config.dummy."+RETRY_RESPONSE_CODE_REGEX,"^5[0-9][0-9]$");
-            Configuration configuration = new Configuration("dummy",new HttpSinkConnectorConfig(config),executorService);
-            HttpResponse httpResponse = new HttpResponse(500, "Internal Server Error");
-            Map<String, String> settings = Maps.newHashMap();
-            httpSinkTask.start(settings);
-            boolean retryNeeded = httpSinkTask.retryNeeded(httpResponse,configuration);
-            assertThat(retryNeeded).isTrue();
-        }
 
-        @Test
-        public void test_retry_not_needed_with_400_status_code() {
-            Map<String,String> config = Maps.newHashMap();
-            config.put("httpclient.dummy."+RETRY_RESPONSE_CODE_REGEX,"^5[0-9][0-9]$");
-            Configuration configuration = new Configuration("dummy",new HttpSinkConnectorConfig(config),executorService);
-            HttpResponse httpResponse = new HttpResponse(400, "Internal Server Error");
-            Map<String, String> settings = Maps.newHashMap();
-            httpSinkTask.start(settings);
-            boolean retryNeeded = httpSinkTask.retryNeeded(httpResponse,configuration);
-            assertThat(retryNeeded).isFalse();
-        }
-
-        @Test
-        public void test_retry_not_needed_with_200_status_code() {
-            Map<String,String> config = Maps.newHashMap();
-            config.put("httpclient.dummy."+RETRY_RESPONSE_CODE_REGEX,"^5[0-9][0-9]$");
-            Configuration configuration = new Configuration("dummy",new HttpSinkConnectorConfig(config),executorService);
-            HttpResponse httpResponse = new HttpResponse(200, "Internal Server Error");
-            Map<String, String> settings = Maps.newHashMap();
-            httpSinkTask.start(settings);
-            boolean retryNeeded = httpSinkTask.retryNeeded(httpResponse,configuration);
-            assertThat(retryNeeded).isFalse();
-        }
-
-
-        @Test
-        public void test_retry_needed_by_configuration_with_200_status_code() {
-            Map<String,String> config = Maps.newHashMap();
-            config.put("config.dummy."+RETRY_RESPONSE_CODE_REGEX,"^2[0-9][0-9]$");
-            Configuration configuration = new Configuration("dummy",new HttpSinkConnectorConfig(config),executorService);
-            HttpResponse httpResponse = new HttpResponse(200, "Internal Server Error");
-            Map<String, String> settings = Maps.newHashMap();
-            settings.put(CONFIG_DEFAULT_RETRY_RESPONSE_CODE_REGEX, "^[1-5][0-9][0-9]$");
-            httpSinkTask.start(settings);
-            boolean retryNeeded = httpSinkTask.retryNeeded(httpResponse,configuration);
-            assertThat(retryNeeded).isTrue();
-        }
-    }
 
 
 
