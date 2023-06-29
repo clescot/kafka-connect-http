@@ -92,7 +92,7 @@ class ConfigurationTest {
         public void test_constructor_with_url_predicate_and_header_key(){
             Map<String,String> settings = Maps.newHashMap();
             settings.put("config.test.predicate.url.regex","^.*toto\\.com$");
-            settings.put("config.test.predicate.header.key","SUPERNOVA");
+            settings.put("config.test.predicate.header.key.regex","SUPERNOVA");
             HttpSinkConnectorConfig httpSinkConnectorConfig = new HttpSinkConnectorConfig(settings);
             Configuration configuration = new Configuration("test", httpSinkConnectorConfig,executorService);
             HttpRequest httpRequest1 = new HttpRequest("http://toto.com","GET", HttpRequest.BodyType.STRING.name());
@@ -109,8 +109,8 @@ class ConfigurationTest {
         public void test_constructor_with_url_predicate_header_key_and_value(){
             Map<String,String> settings = Maps.newHashMap();
             settings.put("config.test.predicate.url.regex","^.*toto\\.com$");
-            settings.put("config.test.predicate.header.key","SUPERNOVA");
-            settings.put("config.test.predicate.header.value","top");
+            settings.put("config.test.predicate.header.key.regex","SUPERNOVA");
+            settings.put("config.test.predicate.header.value.regex","top");
             HttpSinkConnectorConfig httpSinkConnectorConfig = new HttpSinkConnectorConfig(settings);
             Configuration configuration = new Configuration("test", httpSinkConnectorConfig,executorService);
             HttpRequest httpRequest1 = new HttpRequest("http://toto.com","GET", HttpRequest.BodyType.STRING.name());

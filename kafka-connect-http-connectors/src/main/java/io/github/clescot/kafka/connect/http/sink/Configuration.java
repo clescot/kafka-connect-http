@@ -49,11 +49,11 @@ public class Configuration {
 
     //predicate
     public static final String PREDICATE = "predicate.";
-    public static final String URL_REGEX = PREDICATE+"url.regex";
-    public static final String METHOD_REGEX = PREDICATE+"method.regex";
-    public static final String BODYTYPE_REGEX = PREDICATE+"bodytype.regex";
-    public static final String HEADER_KEY = PREDICATE+"header.key";
-    public static final String HEADER_VALUE = PREDICATE+"header.value";
+    public static final String URL_REGEX = PREDICATE + "url.regex";
+    public static final String METHOD_REGEX = PREDICATE + "method.regex";
+    public static final String BODYTYPE_REGEX = PREDICATE + "bodytype.regex";
+    public static final String HEADER_KEY_REGEX = PREDICATE + "header.key.regex";
+    public static final String HEADER_VALUE_REGEX = PREDICATE + "header.value.regex";
 
 
     private Predicate<HttpRequest> mainpredicate = httpRequest -> true;
@@ -94,11 +94,11 @@ public class Configuration {
         //enrich request
         //build addStaticHeadersFunction
         Optional<String> staticHeaderParam = Optional.ofNullable((String) configMap.get(STATIC_REQUEST_HEADER_NAMES));
-        Map<String,List<String>> staticRequestHeaders = Maps.newHashMap();
+        Map<String, List<String>> staticRequestHeaders = Maps.newHashMap();
         if (staticHeaderParam.isPresent()) {
             List<String> staticRequestHeaderNames = Arrays.asList(staticHeaderParam.get().split(","));
             for (String headerName : staticRequestHeaderNames) {
-                String value = (String) configMap.get(STATIC_REQUEST_HEADER_PREFIX+headerName);
+                String value = (String) configMap.get(STATIC_REQUEST_HEADER_PREFIX + headerName);
                 Preconditions.checkNotNull(value, "'" + headerName + "' is not configured as a parameter.");
                 staticRequestHeaders.put(headerName, Lists.newArrayList(value));
             }
@@ -106,21 +106,19 @@ public class Configuration {
         this.addStaticHeadersToHttpRequestFunction = new AddStaticHeadersToHttpRequestFunction(staticRequestHeaders);
 
         //build addTrackingHeadersFunction
-        boolean generateMissingRequestId =  Boolean.parseBoolean((String) configMap.get(GENERATE_MISSING_REQUEST_ID));
+        boolean generateMissingRequestId = Boolean.parseBoolean((String) configMap.get(GENERATE_MISSING_REQUEST_ID));
         boolean generateMissingCorrelationId = Boolean.parseBoolean((String) configMap.get(GENERATE_MISSING_CORRELATION_ID));
-        this.addTrackingHeadersToHttpRequestFunction = new AddTrackingHeadersToHttpRequestFunction(generateMissingRequestId,generateMissingCorrelationId);
+        this.addTrackingHeadersToHttpRequestFunction = new AddTrackingHeadersToHttpRequestFunction(generateMissingRequestId, generateMissingCorrelationId);
 
         //enrich exchange
         //success response code regex
         Pattern successResponseCodeRegex;
         if (configMap.containsKey(SUCCESS_RESPONSE_CODE_REGEX)) {
             successResponseCodeRegex = Pattern.compile((String) configMap.get(SUCCESS_RESPONSE_CODE_REGEX));
-        }else{
+        } else {
             successResponseCodeRegex = defaultSuccessPattern;
         }
         this.addSuccessStatusToHttpExchangeFunction = new AddSuccessStatusToHttpExchangeFunction(successResponseCodeRegex);
-
-
 
 
         this.httpClient = buildHttpClient(configMap, executorService);
@@ -141,17 +139,28 @@ public class Configuration {
             Pattern bodytypePattern = Pattern.compile(bodytypeRegex);
             mainpredicate = mainpredicate.and(httpRequest -> bodytypePattern.matcher(httpRequest.getBodyType().name()).matches());
         }
-        if (configMap.containsKey(HEADER_KEY)) {
-            String headerKey = (String) configMap.get(HEADER_KEY);
+        if (configMap.containsKey(HEADER_KEY_REGEX)) {
+            String headerKeyRegex = (String) configMap.get(HEADER_KEY_REGEX);
+            Pattern headerKeyPattern = Pattern.compile(headerKeyRegex);
+            Predicate<HttpRequest> headerKeyPredicate = httpRequest -> httpRequest
+                    .getHeaders()
+                    .entrySet()
+                    .stream()
+                    .anyMatch(entry -> {
+                        boolean headerKeyFound = headerKeyPattern.matcher(entry.getKey()).matches();
+                        if(headerKeyFound
+                           && entry.getValue()!=null
+                           && !entry.getValue().isEmpty()
+                           &&configMap.containsKey(HEADER_VALUE_REGEX)){
+                            String headerValue = (String) configMap.get(HEADER_VALUE_REGEX);
+                            Pattern headerValuePattern = Pattern.compile(headerValue);
+                            return headerValuePattern.matcher(entry.getValue().get(0)).matches();
+                        }else{
+                            return headerKeyFound;
+                        }
 
-            Predicate<HttpRequest> headerKeyPredicate = httpRequest -> httpRequest.getHeaders().containsKey(headerKey);
+                    });
             mainpredicate = mainpredicate.and(headerKeyPredicate);
-            if (configMap.containsKey(HEADER_VALUE)) {
-                String headerValue = (String) configMap.get(HEADER_VALUE);
-                Pattern headerValuePattern = Pattern.compile(headerValue);
-                mainpredicate = mainpredicate.and(httpRequest -> headerValuePattern.matcher(httpRequest.getHeaders().get(headerKey).get(0)).matches());
-            }
-
         }
 
         //rate limiter
@@ -200,6 +209,7 @@ public class Configuration {
     public HttpExchange enrich(HttpExchange httpExchange) {
         return this.addSuccessStatusToHttpExchangeFunction.apply(httpExchange);
     }
+
     private HttpClient buildHttpClient(Map<String, Object> config, ExecutorService executorService) {
 
         Class<? extends HttpClientFactory> httpClientFactoryClass;
@@ -238,7 +248,7 @@ public class Configuration {
     }
 
     public void setSuccessResponseCodeRegex(Pattern successResponseCodeRegex) {
-        this.addSuccessStatusToHttpExchangeFunction =new AddSuccessStatusToHttpExchangeFunction(successResponseCodeRegex);
+        this.addSuccessStatusToHttpExchangeFunction = new AddSuccessStatusToHttpExchangeFunction(successResponseCodeRegex);
     }
 
     public void setRetryResponseCodeRegex(Pattern retryResponseCodeRegex) {
@@ -314,19 +324,14 @@ public class Configuration {
     }
 
 
-
     public boolean matches(HttpRequest httpRequest) {
         return this.mainpredicate.test(httpRequest);
     }
 
 
-
     public String getId() {
         return id;
     }
-
-
-
 
 
     public AddStaticHeadersToHttpRequestFunction getAddStaticHeadersFunction() {
