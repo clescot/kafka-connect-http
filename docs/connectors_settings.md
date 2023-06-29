@@ -327,8 +327,8 @@ A predicate can be composed of multiple matchers (composed with a logical AND), 
 - `config.test2.url.regex`
 - `config.test2.method.regex`
 - `config.test2.bodytype.regex`
-- `config.test2.header.key`
-- `config.test2.header.value` (can be added, only if the previous parameter is also configured)
+- `config.test2.header.key.regex`
+- `config.test2.header.value.regex` (can be added, only if the previous parameter is also configured)
 
 You will have the ability to define optionnaly :
 - a **rate limiter** with the parameters :
