@@ -39,26 +39,30 @@ A configuration apply to some http requests based on a predicate  : all http req
 All the settings of the predicate, are starting with the `config.<configurationId>.predicate`.
 The predicate permits to filter some http requests, and can be composed, cumulatively, with : 
 
-- an _URL_ regex with the settings for `test4` configuration : ```"config.test4.predicate.url.regex":"myregex"``` 
-- a _method_ regex with the settings for `test4` configuration : ```"config.test4.predicate.method.regex":"myregex"``` 
-- a _bodytype_ regex with the settings for `test4` configuration : ```"config.test4.predicate.bodytype.regex":"myregex"``` 
-- a _header key_ with the settings for `test4` configuration (despite any value, when alone) : ```"config.test4.predicate.header.key":"myheaderKey"```
-- a _header value_ with the settings for `test4` configuration (can only be cofnigured with a header key) : ```"config.test4.predicate.header.value":"myheaderValue"```
+- an _URL_ regex with the settings for the `default` configuration : ```"config.default.predicate.url.regex":"myregex"``` 
+- a _method_ regex with the settings for the `default` configuration : ```"config.default.predicate.method.regex":"myregex"``` 
+- a _bodytype_ regex with the settings for the `default` configuration : ```"config.default.predicate.bodytype.regex":"myregex"``` 
+- a _header key_ with the settings for the `default` configuration (despite any value, when alone) : ```"config.default.predicate.header.key":"myheaderKey"```
+- a _header value_ with the settings for the `default` configuration (can only be configured with a header key setting) : ```"config.default.predicate.header.value":"myheaderValue"```
 
 - can enrich HttpRequest by 
-  - adding static headers
-  - generating a missing correlationId
-  - generating a missing requestId
+  - adding static headers with the settings for `default` configuration : 
+  ``` 
+   "config.default.enrich.request.static.header.names":"header1,header2"
+   "config.default.enrich.request.static.header.header1":"value1"
+   "config.default.enrich.request.static.header.header2":"value2"
+  ```
+  
+  - generating a missing correlationId  with the settings for the `default` configuration : ``` "config.default.enrich.request.generate.missing.correlation.id":true ```
+  - generating a missing requestId with the settings for the `default` configuration : ``` "config.default.enrich.request.generate.missing.request.id":true ```
 - can enrich the HttpExchange with a success regex
 - owns a rate limiter
 - owns a retry policy
 - owns an HTTP Client
 
 
-  - http client implementation settings
-    - *httpclient.implementation* : define which installed library to use : either `ahc`, a.k.a async http client, or `okhttp`. default is `okhttp`.
+
   - retry settings (**set them all or no one**), permit to define a default retry policy.
-    - *config.default.success.response.code.regex* : default regex which decide if the request is a success or not, based on the response status code
     - *config.default.retry.response.code.regex* : regex which define if a retry need to be triggered, based on the response status code. default is `^[1-2][0-9][0-9]$`
       by default, we don't resend any http call with a response between `100` and `499`.only `5xx` by default, trigger a resend
       - `1xx` is for protocol information (100 continue for example),
@@ -94,6 +98,8 @@ The predicate permits to filter some http requests, and can be composed, cumulat
     - *wait.time.registration.queue.consumer.in.ms* : wait time for a queue consumer (Source Connector) registration. default value is 60 seconds.
     - *poll.delay.registration.queue.consumer.in.ms* : poll delay, i.e, wait time before start polling a registered consumer. default value is 2 seconds.
     - *poll.interval.registration.queue.consumer.in.ms* : poll interval, i.e, time between every poll for a registered consumer. default value is 5000 milliseconds.
+  - http client implementation settings
+    - *httpclient.implementation* : define which installed library to use : either `ahc`, a.k.a async http client, or `okhttp`. default is `okhttp`.
   - http client SSL parameters
     - *httpclient.ssl.keystore.path* : file path of the custom key store.
     - *httpclient.ssl.keystore.password* : password of the custom key store.
