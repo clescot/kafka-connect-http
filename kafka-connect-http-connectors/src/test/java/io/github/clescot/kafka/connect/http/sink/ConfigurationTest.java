@@ -88,7 +88,7 @@ class ConfigurationTest {
         }
 
         @Test
-        @DisplayName("test Configuration constructor with url predicate and header key")
+        @DisplayName("test Configuration constructor with url predicate and raw header key")
         public void test_constructor_with_url_predicate_and_header_key(){
             Map<String,String> settings = Maps.newHashMap();
             settings.put("config.test.predicate.url.regex","^.*toto\\.com$");
@@ -105,7 +105,25 @@ class ConfigurationTest {
         }
 
         @Test
-        @DisplayName("test Configuration constructor with url predicate and header key")
+        @DisplayName("test Configuration constructor with url predicate and header key regex")
+        public void test_constructor_with_url_predicate_and_header_key_regex(){
+            Map<String,String> settings = Maps.newHashMap();
+            settings.put("config.test.predicate.url.regex","^.*toto\\.com$");
+            settings.put("config.test.predicate.header.key.regex","^SUPER.*$");
+            HttpSinkConnectorConfig httpSinkConnectorConfig = new HttpSinkConnectorConfig(settings);
+            Configuration configuration = new Configuration("test", httpSinkConnectorConfig,executorService);
+            HttpRequest httpRequest1 = new HttpRequest("http://toto.com","GET", HttpRequest.BodyType.STRING.name());
+            Map<String, List<String>> headers = Maps.newHashMap();
+            headers.put("SUPERNOVA", List.of("stuff"));
+            httpRequest1.setHeaders(headers);
+            assertThat(configuration.matches(httpRequest1)).isTrue();
+            HttpRequest httpRequest2 = new HttpRequest("http://toto.com","GET", HttpRequest.BodyType.FORM.name());
+            assertThat(configuration.matches(httpRequest2)).isFalse();
+        }
+
+
+        @Test
+        @DisplayName("test Configuration constructor with url predicate and raw header key and value")
         public void test_constructor_with_url_predicate_header_key_and_value(){
             Map<String,String> settings = Maps.newHashMap();
             settings.put("config.test.predicate.url.regex","^.*toto\\.com$");
@@ -116,6 +134,27 @@ class ConfigurationTest {
             HttpRequest httpRequest1 = new HttpRequest("http://toto.com","GET", HttpRequest.BodyType.STRING.name());
             Map<String, List<String>> headers = Maps.newHashMap();
             headers.put("SUPERNOVA", List.of("top"));
+            httpRequest1.setHeaders(headers);
+            assertThat(configuration.matches(httpRequest1)).isTrue();
+            HttpRequest httpRequest2 = new HttpRequest("http://toto.com","GET", HttpRequest.BodyType.STRING.name());
+            Map<String, List<String>> headers2 = Maps.newHashMap();
+            headers2.put("SUPERNOVA", List.of("tip"));
+            httpRequest2.setHeaders(headers2);
+            assertThat(configuration.matches(httpRequest2)).isFalse();
+        }
+
+        @Test
+        @DisplayName("test Configuration constructor with url predicate and header key and value regex")
+        public void test_constructor_with_url_predicate_header_key_and_value_regex(){
+            Map<String,String> settings = Maps.newHashMap();
+            settings.put("config.test.predicate.url.regex","^.*toto\\.com$");
+            settings.put("config.test.predicate.header.key.regex","^SUPER.*$");
+            settings.put("config.test.predicate.header.value.regex","^top.$");
+            HttpSinkConnectorConfig httpSinkConnectorConfig = new HttpSinkConnectorConfig(settings);
+            Configuration configuration = new Configuration("test", httpSinkConnectorConfig,executorService);
+            HttpRequest httpRequest1 = new HttpRequest("http://toto.com","GET", HttpRequest.BodyType.STRING.name());
+            Map<String, List<String>> headers = Maps.newHashMap();
+            headers.put("SUPERNOVA", List.of("top1"));
             httpRequest1.setHeaders(headers);
             assertThat(configuration.matches(httpRequest1)).isTrue();
             HttpRequest httpRequest2 = new HttpRequest("http://toto.com","GET", HttpRequest.BodyType.STRING.name());
