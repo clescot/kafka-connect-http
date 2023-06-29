@@ -71,7 +71,6 @@ public class Configuration {
 
     //rate limiter
     private static final Map<String, RateLimiter<HttpExchange>> sharedRateLimiters = Maps.newHashMap();
-    private RateLimiter<HttpExchange> rateLimiter;
     private Pattern retryResponseCodeRegex;
 
 
@@ -126,7 +125,8 @@ public class Configuration {
         this.httpClient = buildHttpClient(configMap, executorService);
 
         //rate limiter
-        this.rateLimiter = buildRateLimiter(id, httpSinkConnectorConfig, configMap);
+        Preconditions.checkNotNull(httpClient,"httpClient is null");
+        httpClient.setRateLimiter(buildRateLimiter(id, httpSinkConnectorConfig, configMap));
 
 
         //retry policy
@@ -258,11 +258,7 @@ public class Configuration {
         this.httpClient = httpClient;
     }
 
-    public void setRateLimiter(RateLimiter<HttpExchange> rateLimiter) {
-        this.rateLimiter = rateLimiter;
-    }
-
-    public void setSuccessResponseCodeRegex(Pattern successResponseCodeRegex) {
+     public void setSuccessResponseCodeRegex(Pattern successResponseCodeRegex) {
         this.addSuccessStatusToHttpExchangeFunction = new AddSuccessStatusToHttpExchangeFunction(successResponseCodeRegex);
     }
 
@@ -281,9 +277,6 @@ public class Configuration {
         sharedRateLimiters.put(configurationId, rateLimiter);
     }
 
-    public Optional<RateLimiter<HttpExchange>> getRateLimiter() {
-        return Optional.ofNullable(rateLimiter);
-    }
 
     public Optional<RetryPolicy<HttpExchange>> getRetryPolicy() {
         return Optional.ofNullable(retryPolicy);

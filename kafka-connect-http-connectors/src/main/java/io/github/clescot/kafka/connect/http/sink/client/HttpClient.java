@@ -2,6 +2,7 @@ package io.github.clescot.kafka.connect.http.sink.client;
 
 import com.google.common.base.Preconditions;
 import com.google.common.base.Stopwatch;
+import dev.failsafe.RateLimiter;
 import io.github.clescot.kafka.connect.http.core.HttpExchange;
 import io.github.clescot.kafka.connect.http.core.HttpRequest;
 import io.github.clescot.kafka.connect.http.core.HttpResponse;
@@ -75,7 +76,7 @@ public interface HttpClient<Req, Res> {
         Req request = buildRequest(httpRequest);
         LOGGER.info("native request: {}", request);
         OffsetDateTime now = OffsetDateTime.now(ZoneId.of(UTC_ZONE_ID));
-        response = nativeCall(request);
+        response = call(request);
         Preconditions.checkNotNull(response, "response is null");
         LOGGER.info("native response: {}", response);
         return response.thenApply(this::buildResponse)
@@ -88,6 +89,8 @@ public interface HttpClient<Req, Res> {
                 );
 
     }
+
+    CompletableFuture<Res> call(Req request);
 
     /**
      * convert a native response (from the implementation) to an {@link HttpResponse}.
@@ -125,4 +128,8 @@ public interface HttpClient<Req, Res> {
         }
         return trustManagerFactory;
     }
+
+    void setRateLimiter(RateLimiter<HttpExchange> rateLimiter);
+
+    Optional<RateLimiter<HttpExchange>> getRateLimiter();
 }

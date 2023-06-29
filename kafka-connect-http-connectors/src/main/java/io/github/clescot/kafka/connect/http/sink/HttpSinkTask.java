@@ -221,27 +221,12 @@ public class HttpSinkTask extends SinkTask {
     }
 
 
-
-    private CompletableFuture<HttpExchange> callWithThrottling(HttpRequest httpRequest, AtomicInteger attempts, Configuration configuration) {
-        try {
-            Optional<RateLimiter<HttpExchange>> rateLimiter = configuration.getRateLimiter();
-            if (rateLimiter.isPresent()) {
-                rateLimiter.get().acquirePermits(HttpClient.ONE_HTTP_REQUEST);
-                LOGGER.debug("permits acquired request:'{}'", httpRequest);
-            }
-            return configuration.getHttpClient().call(httpRequest, attempts);
-        } catch (InterruptedException e) {
-            LOGGER.error("Failed to acquire execution permit from the rate limiter {} ", e.getMessage());
-            throw new HttpException(e.getMessage());
-        }
-    }
-
-
     private CompletableFuture<HttpExchange> callAndPublish(SinkRecord sinkRecord,
                                                            HttpRequest httpRequest,
                                                            AtomicInteger attempts,
                                                            Configuration configuration) {
-        return callWithThrottling(httpRequest, attempts, configuration)
+        CompletableFuture<HttpExchange> completableFuture = configuration.getHttpClient().call(httpRequest, attempts);
+        return completableFuture
                 .thenApply(myHttpExchange -> {
                     HttpExchange enrichedHttpExchange = configuration.enrich(myHttpExchange);
 
