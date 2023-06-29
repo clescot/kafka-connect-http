@@ -56,7 +56,7 @@ public class Configuration {
     public static final String HEADER_VALUE_REGEX = PREDICATE + "header.value.regex";
 
 
-    private Predicate<HttpRequest> mainpredicate = httpRequest -> true;
+    private final Predicate<HttpRequest> mainpredicate;
 
 
     public static final String STATIC_SCOPE = "static";
@@ -90,6 +90,8 @@ public class Configuration {
         //configuration id prefix is not present into the configMap
         Map<String, Object> configMap = httpSinkConnectorConfig.originalsWithPrefix("config." + id + ".");
 
+        //main predicate
+        this.mainpredicate = buildPredicate(configMap);
 
         //enrich request
         //build addStaticHeadersFunction
@@ -123,7 +125,50 @@ public class Configuration {
 
         this.httpClient = buildHttpClient(configMap, executorService);
 
-        //main predicate
+        //rate limiter
+        this.rateLimiter = buildRateLimiter(id, httpSinkConnectorConfig, configMap);
+
+
+        //retry policy
+        //retry response code regex
+        if (configMap.containsKey(RETRY_RESPONSE_CODE_REGEX)) {
+            this.retryResponseCodeRegex = Pattern.compile((String) configMap.get(RETRY_RESPONSE_CODE_REGEX));
+        }
+
+        if (configMap.containsKey(RETRIES)) {
+            Integer retries = Integer.parseInt((String) configMap.get(RETRIES));
+            Long retryDelayInMs = Long.parseLong((String) configMap.get(RETRY_DELAY_IN_MS));
+            Long retryMaxDelayInMs = Long.parseLong((String) configMap.get(RETRY_MAX_DELAY_IN_MS));
+            Double retryDelayFactor = Double.parseDouble((String) configMap.get(RETRY_DELAY_FACTOR));
+            Long retryJitterInMs = Long.parseLong((String) configMap.get(RETRY_JITTER_IN_MS));
+            this.retryPolicy = buildRetryPolicy(retries, retryDelayInMs, retryMaxDelayInMs, retryDelayFactor, retryJitterInMs);
+        }
+
+    }
+
+    private RateLimiter<HttpExchange> buildRateLimiter(String id, HttpSinkConnectorConfig httpSinkConnectorConfig, Map<String, Object> configMap) {
+        RateLimiter<HttpExchange> rateLimiter = null;
+        if (configMap.containsKey(RATE_LIMITER_MAX_EXECUTIONS)) {
+            long maxExecutions = Long.parseLong((String) configMap.get(RATE_LIMITER_MAX_EXECUTIONS));
+            long periodInMs = Long.parseLong(Optional.ofNullable((String) configMap.get(RATE_LIMITER_PERIOD_IN_MS)).orElse(httpSinkConnectorConfig.getDefaultRateLimiterPeriodInMs() + ""));
+            if (configMap.containsKey(RATE_LIMITER_SCOPE) && STATIC_SCOPE.equalsIgnoreCase((String) configMap.get(RATE_LIMITER_SCOPE))) {
+                Optional<RateLimiter<HttpExchange>> sharedRateLimiter = Optional.ofNullable(sharedRateLimiters.get(id));
+                if (sharedRateLimiter.isPresent()) {
+                    rateLimiter = sharedRateLimiter.get();
+                } else {
+                    RateLimiter<HttpExchange> myRateLimiter = RateLimiter.<HttpExchange>smoothBuilder(maxExecutions, Duration.of(periodInMs, ChronoUnit.MILLIS)).build();
+                    registerRateLimiter(id, myRateLimiter);
+                    rateLimiter = myRateLimiter;
+                }
+            } else {
+                rateLimiter = RateLimiter.<HttpExchange>smoothBuilder(maxExecutions, Duration.of(periodInMs, ChronoUnit.MILLIS)).build();
+            }
+        }
+        return rateLimiter;
+    }
+
+    private Predicate<HttpRequest> buildPredicate(Map<String, Object> configMap) {
+        Predicate<HttpRequest> mainpredicate = httpRequest -> true;
         if (configMap.containsKey(URL_REGEX)) {
             String urlRegex = (String) configMap.get(URL_REGEX);
             Pattern urlPattern = Pattern.compile(urlRegex);
@@ -151,7 +196,7 @@ public class Configuration {
                         if(headerKeyFound
                            && entry.getValue()!=null
                            && !entry.getValue().isEmpty()
-                           &&configMap.containsKey(HEADER_VALUE_REGEX)){
+                           && configMap.containsKey(HEADER_VALUE_REGEX)){
                             String headerValue = (String) configMap.get(HEADER_VALUE_REGEX);
                             Pattern headerValuePattern = Pattern.compile(headerValue);
                             return headerValuePattern.matcher(entry.getValue().get(0)).matches();
@@ -162,41 +207,7 @@ public class Configuration {
                     });
             mainpredicate = mainpredicate.and(headerKeyPredicate);
         }
-
-        //rate limiter
-        if (configMap.containsKey(RATE_LIMITER_MAX_EXECUTIONS)) {
-            long maxExecutions = Long.parseLong((String) configMap.get(RATE_LIMITER_MAX_EXECUTIONS));
-            long periodInMs = Long.parseLong(Optional.ofNullable((String) configMap.get(RATE_LIMITER_PERIOD_IN_MS)).orElse(httpSinkConnectorConfig.getDefaultRateLimiterPeriodInMs() + ""));
-            if (configMap.containsKey(RATE_LIMITER_SCOPE) && STATIC_SCOPE.equalsIgnoreCase((String) configMap.get(RATE_LIMITER_SCOPE))) {
-                Optional<RateLimiter<HttpExchange>> sharedRateLimiter = Optional.ofNullable(sharedRateLimiters.get(id));
-                if (sharedRateLimiter.isPresent()) {
-                    this.rateLimiter = sharedRateLimiter.get();
-                } else {
-                    RateLimiter<HttpExchange> myRateLimiter = RateLimiter.<HttpExchange>smoothBuilder(maxExecutions, Duration.of(periodInMs, ChronoUnit.MILLIS)).build();
-                    registerRateLimiter(id, myRateLimiter);
-                    this.rateLimiter = myRateLimiter;
-                }
-            } else {
-                this.rateLimiter = RateLimiter.<HttpExchange>smoothBuilder(maxExecutions, Duration.of(periodInMs, ChronoUnit.MILLIS)).build();
-            }
-        }
-
-
-        //retry policy
-        //retry response code regex
-        if (configMap.containsKey(RETRY_RESPONSE_CODE_REGEX)) {
-            this.retryResponseCodeRegex = Pattern.compile((String) configMap.get(RETRY_RESPONSE_CODE_REGEX));
-        }
-
-        if (configMap.containsKey(RETRIES)) {
-            Integer retries = Integer.parseInt((String) configMap.get(RETRIES));
-            Long retryDelayInMs = Long.parseLong((String) configMap.get(RETRY_DELAY_IN_MS));
-            Long retryMaxDelayInMs = Long.parseLong((String) configMap.get(RETRY_MAX_DELAY_IN_MS));
-            Double retryDelayFactor = Double.parseDouble((String) configMap.get(RETRY_DELAY_FACTOR));
-            Long retryJitterInMs = Long.parseLong((String) configMap.get(RETRY_JITTER_IN_MS));
-            this.retryPolicy = buildRetryPolicy(retries, retryDelayInMs, retryMaxDelayInMs, retryDelayFactor, retryJitterInMs);
-        }
-
+        return mainpredicate;
     }
 
     public HttpRequest enrich(HttpRequest httpRequest) {
