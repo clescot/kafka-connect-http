@@ -2,7 +2,6 @@ package io.github.clescot.kafka.connect.http.sink.client.ahc;
 
 import io.netty.channel.Channel;
 import org.asynchttpclient.AsyncCompletionHandler;
-import org.asynchttpclient.AsyncHandler;
 import org.asynchttpclient.Response;
 import org.asynchttpclient.netty.request.NettyRequest;
 

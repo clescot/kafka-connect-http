@@ -69,8 +69,8 @@ import java.util.*;
 import java.util.stream.Stream;
 
 import static io.github.clescot.kafka.connect.http.sink.HttpSinkConfigDefinition.*;
-import static io.github.clescot.kafka.connect.http.sink.client.okhttp.OkHttpClient.OKHTTP_SSL_SKIP_HOSTNAME_VERIFICATION;
 import static io.github.clescot.kafka.connect.http.sink.client.okhttp.OkHttpClient.OKHTTP_DEFAULT_PROTOCOLS;
+import static io.github.clescot.kafka.connect.http.sink.client.okhttp.OkHttpClient.OKHTTP_SSL_SKIP_HOSTNAME_VERIFICATION;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.apache.kafka.clients.producer.ProducerConfig.BOOTSTRAP_SERVERS_CONFIG;
 

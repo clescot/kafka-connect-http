@@ -7,7 +7,6 @@ import io.github.clescot.kafka.connect.http.core.HttpRequest;
 import io.github.clescot.kafka.connect.http.core.HttpResponse;
 import io.github.clescot.kafka.connect.http.sink.HttpSinkTaskTest;
 import io.github.clescot.kafka.connect.http.sink.client.HttpClient;
-import io.github.clescot.kafka.connect.http.sink.client.ahc.AHCHttpClient;
 import org.asynchttpclient.AsyncHttpClient;
 import org.asynchttpclient.ListenableFuture;
 import org.asynchttpclient.Request;

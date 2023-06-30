@@ -36,7 +36,6 @@ import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 
 import static io.github.clescot.kafka.connect.http.sink.HttpSinkConfigDefinition.*;
-import static io.github.clescot.kafka.connect.http.sink.HttpSinkConfigDefinition.CONFIG_HTTPCLIENT_SSL_TRUSTSTORE_ALGORITHM;
 import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.ASYNC_CLIENT_CONFIG_ROOT;
 
 public class AHCHttpClient extends AbstractHttpClient<Request, Response> {
@@ -100,13 +99,12 @@ public class AHCHttpClient extends AbstractHttpClient<Request, Response> {
     public CompletableFuture<Response> nativeCall(org.asynchttpclient.Request request) {
         LOGGER.debug("native call  {}",request);
         if(request.getStringData()!=null) {
-            LOGGER.debug("body stringData: '{}'", new String(request.getStringData()));
+            LOGGER.debug("body stringData: '{}'", request.getStringData());
         }else{
-            LOGGER.debug("body stringData: null", new String(request.getStringData()));
+            LOGGER.debug("body stringData: null");
         }
         ListenableFuture<Response> listenableFuture = asyncHttpClient.executeRequest(request, asyncCompletionHandler);
-        CompletableFuture<Response> completableFuture = listenableFuture.toCompletableFuture();
-        return completableFuture;
+        return listenableFuture.toCompletableFuture();
 
 
     }
@@ -247,9 +245,9 @@ public class AHCHttpClient extends AbstractHttpClient<Request, Response> {
         return httpResponse;
     }
     private AsyncHttpClient getAsyncHttpClient(Map<String, Object> config) {
-        AsyncHttpClient asyncHttpClient;
+        AsyncHttpClient asyncClient;
         Map<String, String> asyncConfig = config.entrySet().stream().filter(entry -> entry.getKey().startsWith(ASYN_HTTP_CONFIG_PREFIX))
-                .map((k)->Map.entry(k.getKey(),k.getValue().toString()))
+                .map(k->Map.entry(k.getKey(),k.getValue().toString()))
                 .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
         Properties asyncHttpProperties = new Properties();
         asyncHttpProperties.putAll(asyncConfig);
@@ -335,13 +333,13 @@ public class AHCHttpClient extends AbstractHttpClient<Request, Response> {
                 try {
                     nettySSLContext = SslContextBuilder.forClient().trustManager(trustManagerFactory.get()).build();
                 } catch (SSLException e) {
-                    throw new RuntimeException(e);
+                    throw new HttpException(e);
                 }
                 propertyBasedASyncHttpClientConfig.setSslContext(nettySSLContext);
             }
         }
-        asyncHttpClient = Dsl.asyncHttpClient(propertyBasedASyncHttpClientConfig);
-        return asyncHttpClient;
+        asyncClient = Dsl.asyncHttpClient(propertyBasedASyncHttpClientConfig);
+        return asyncClient;
     }
 
 }

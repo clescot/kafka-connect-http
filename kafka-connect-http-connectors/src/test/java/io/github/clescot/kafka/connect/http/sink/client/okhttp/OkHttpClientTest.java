@@ -3,7 +3,6 @@ package io.github.clescot.kafka.connect.http.sink.client.okhttp;
 import com.google.common.collect.Maps;
 import io.github.clescot.kafka.connect.http.core.HttpRequest;
 import io.github.clescot.kafka.connect.http.core.HttpResponse;
-import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import okhttp3.*;
 import okhttp3.internal.http.RealResponseBody;
 import okio.Buffer;
