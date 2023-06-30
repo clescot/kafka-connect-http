@@ -71,10 +71,10 @@ public class Configuration {
 
     //rate limiter
     private static final Map<String, RateLimiter<HttpExchange>> sharedRateLimiters = Maps.newHashMap();
-    private Pattern retryResponseCodeRegex;
 
 
     //retry policy
+    private Pattern retryResponseCodeRegex;
     private RetryPolicy<HttpExchange> retryPolicy;
 
     //http client
