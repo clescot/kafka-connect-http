@@ -115,7 +115,7 @@ public interface HttpClient<Req, Res> {
             String finalKeystoreType = Optional.ofNullable(keystoreType).orElse(KeyStore.getDefaultType());
             trustStore = KeyStore.getInstance(finalKeystoreType);
         } catch (NoSuchAlgorithmException | KeyStoreException e) {
-            throw new RuntimeException(e);
+            throw new HttpException(e);
         }
 
         Path path = Path.of(trustStorePath);
@@ -124,7 +124,7 @@ public interface HttpClient<Req, Res> {
             trustStore.load(inputStream, password);
             trustManagerFactory.init(trustStore);
         } catch (IOException | NoSuchAlgorithmException | CertificateException | KeyStoreException e) {
-            throw new RuntimeException(e);
+            throw new HttpException(e);
         }
         return trustManagerFactory;
     }

@@ -16,7 +16,7 @@ import java.util.Optional;
 
 public class HttpRequestAsStruct {
 
-    private final static Logger LOGGER = LoggerFactory.getLogger(HttpRequestAsStruct.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(HttpRequestAsStruct.class);
     public static final String URL = "url";
     public static final String METHOD = "method";
     public static final String HEADERS = "headers";
@@ -120,7 +120,7 @@ public class HttpRequestAsStruct {
             );
 
             httpRequest.setHeaders(headers);
-            LOGGER.debug("bodyType='{}'",bodyType.toString());
+            LOGGER.debug("bodyType='{}'", bodyType);
             if(HttpRequest.BodyType.STRING.name().equals(bodyType)){
                 httpRequest.setBodyAsString(this.stringBody);
                 LOGGER.debug("stringBody='{}'",stringBody);
@@ -135,7 +135,7 @@ public class HttpRequestAsStruct {
                 LOGGER.debug("multipartBody='{}'",multipartBody);
                 httpRequest.setBodyAsMultipart(multipartBody);
             }else{
-                LOGGER.error("unknown BodyType: '",bodyType);
+                LOGGER.error("unknown BodyType: '{}'",bodyType);
                 throw new IllegalArgumentException("unknown BodyType: '"+bodyType+"'");
             }
             return httpRequest;

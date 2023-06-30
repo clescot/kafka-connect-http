@@ -3,12 +3,10 @@ package io.github.clescot.kafka.connect.http.sink;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
-import com.google.common.base.Charsets;
 import com.google.common.base.Preconditions;
 import com.google.common.base.Stopwatch;
 import com.google.common.collect.Lists;
 import dev.failsafe.Failsafe;
-import dev.failsafe.RateLimiter;
 import dev.failsafe.RetryPolicy;
 import io.github.clescot.kafka.connect.http.VersionUtils;
 import io.github.clescot.kafka.connect.http.core.HttpExchange;
@@ -18,7 +16,6 @@ import io.github.clescot.kafka.connect.http.core.HttpResponse;
 import io.github.clescot.kafka.connect.http.core.queue.KafkaRecord;
 import io.github.clescot.kafka.connect.http.core.queue.QueueFactory;
 import io.github.clescot.kafka.connect.http.sink.client.HttpClient;
-import io.github.clescot.kafka.connect.http.sink.client.HttpException;
 import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.data.Struct;
 import org.apache.kafka.connect.errors.ConnectException;
@@ -28,6 +25,7 @@ import org.apache.kafka.connect.sink.SinkTask;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.nio.charset.StandardCharsets;
 import java.time.OffsetDateTime;
 import java.time.ZoneId;
 import java.util.*;
@@ -83,9 +81,7 @@ public class HttpSinkTask extends SinkTask {
         this.queue = QueueFactory.getQueue(queueName);
 
         Integer customFixedThreadPoolSize = httpSinkConnectorConfig.getCustomFixedThreadpoolSize();
-        if (customFixedThreadPoolSize != null && executorService == null) {
-            executorService = Executors.newFixedThreadPool(customFixedThreadPoolSize);
-        }
+        setThreadPoolSize(customFixedThreadPoolSize);
 
         this.defaultConfiguration = new Configuration(DEFAULT_CONFIGURATION_ID, httpSinkConnectorConfig, executorService);
         customConfigurations = buildCustomConfigurations(httpSinkConnectorConfig, defaultConfiguration, executorService);
@@ -101,6 +97,16 @@ public class HttpSinkTask extends SinkTask {
                     "'ms timeout reached :" + queueName + "' queue hasn't got any consumer, " +
                     "i.e no Source Connector has been configured to consume records published in this in memory queue. " +
                     "we stop the Sink Connector to prevent any OutofMemoryError.");
+        }
+    }
+
+    /**
+     * define a static field from a non static method need a static synchronized method
+     * @param customFixedThreadPoolSize
+     */
+    private static synchronized void setThreadPoolSize(Integer customFixedThreadPoolSize) {
+        if (customFixedThreadPoolSize != null && executorService == null) {
+            executorService = Executors.newFixedThreadPool(customFixedThreadPoolSize);
         }
     }
 
@@ -143,7 +149,7 @@ public class HttpSinkTask extends SinkTask {
         //we submit futures to the pool
         List<CompletableFuture<HttpExchange>> completableFutures = records.stream().map(this::process).collect(Collectors.toList());
         List<HttpExchange> httpExchanges = completableFutures.stream().map(CompletableFuture::join).collect(Collectors.toList());
-
+        LOGGER.debug("HttpExchanges created :'{}'",httpExchanges.size());
 
     }
 
@@ -179,7 +185,8 @@ public class HttpSinkTask extends SinkTask {
                     future.get();
                     return CompletableFuture.failedFuture(e);
                 } catch (InterruptedException | ExecutionException ex) {
-                    throw new RuntimeException(ex);
+                    Thread.currentThread().interrupt();
+                    throw new ConnectException(ex);
                 }
             } else {
                 // There's no error reporter, so fail
@@ -205,12 +212,12 @@ public class HttpSinkTask extends SinkTask {
                 } else {
                     return callAndPublish(sinkRecord, httpRequest, attempts, configuration);
                 }
-            } catch (Throwable throwable) {
-                LOGGER.error("Failed to call web service after {} retries with error({}). message:{} ", attempts, throwable,
-                        throwable.getMessage());
+            } catch (Exception exception) {
+                LOGGER.error("Failed to call web service after {} retries with error({}). message:{} ", attempts, exception,
+                        exception.getMessage());
                 return CompletableFuture.supplyAsync(() -> defaultConfiguration.getHttpClient().buildHttpExchange(
                         httpRequest,
-                        new HttpResponse(HttpClient.SERVER_ERROR_STATUS_CODE, String.valueOf(throwable.getMessage())),
+                        new HttpResponse(HttpClient.SERVER_ERROR_STATUS_CODE, String.valueOf(exception.getMessage())),
                         Stopwatch.createUnstarted(), OffsetDateTime.now(ZoneId.of(HttpClient.UTC_ZONE_ID)),
                         attempts,
                         HttpClient.FAILURE));
@@ -273,15 +280,15 @@ public class HttpSinkTask extends SinkTask {
                         .withStruct(valueAsStruct)
                         .build();
                 LOGGER.debug("httpRequest : {}", httpRequest);
-            } else if ("[B".equals(valueClass.getName())) {
+            } else if (byte[].class.isAssignableFrom(valueClass)) {
                 //we assume the value is a byte array
-                stringValue = new String((byte[]) value, Charsets.UTF_8);
+                stringValue = new String((byte[]) value, StandardCharsets.UTF_8);
                 LOGGER.debug("byte[] is {}", stringValue);
             } else if (String.class.isAssignableFrom(valueClass)) {
                 stringValue = (String) value;
                 LOGGER.debug("String is {}", stringValue);
             } else {
-                LOGGER.warn("value is an instance of the class " + valueClass.getName() + " not handled by the WsSinkTask");
+                LOGGER.warn("value is an instance of the class '{}' not handled by the WsSinkTask",valueClass.getName());
                 throw new ConnectException("value is an instance of the class " + valueClass.getName() + " not handled by the WsSinkTask");
             }
             if (httpRequest == null) {
@@ -296,7 +303,6 @@ public class HttpSinkTask extends SinkTask {
                 LOGGER.error("sink value class is '{}'", sinkValue.getClass().getName());
             }
 
-            LOGGER.error("error in sinkRecord's structure : " + sinkRecord, connectException);
             if (errantRecordReporter != null) {
                 errantRecordReporter.report(sinkRecord, connectException);
             } else {
@@ -313,7 +319,6 @@ public class HttpSinkTask extends SinkTask {
         try {
             httpRequest = OBJECT_MAPPER.readValue(value, HttpRequest.class);
         } catch (JsonProcessingException e) {
-            LOGGER.error(e.getMessage(), e);
             throw new ConnectException(e);
         }
         return httpRequest;
@@ -330,7 +335,8 @@ public class HttpSinkTask extends SinkTask {
                 LOGGER.warn("timeout elapsed before executor termination");
             }
         } catch (InterruptedException e) {
-            throw new RuntimeException(e);
+            Thread.currentThread().interrupt();
+            throw new ConnectException(e);
         }
         LOGGER.info("executor is shutdown : '{}'", executorService.isShutdown());
         LOGGER.info("executor tasks are terminated : '{}'", executorService.isTerminated());

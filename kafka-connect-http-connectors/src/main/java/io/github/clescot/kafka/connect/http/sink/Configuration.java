@@ -54,6 +54,7 @@ public class Configuration {
     public static final String BODYTYPE_REGEX = PREDICATE + "bodytype.regex";
     public static final String HEADER_KEY_REGEX = PREDICATE + "header.key.regex";
     public static final String HEADER_VALUE_REGEX = PREDICATE + "header.value.regex";
+    public static final String HAS_BEEN_SET = " has been set.";
 
 
     private final Predicate<HttpRequest> mainpredicate;
@@ -138,13 +139,13 @@ public class Configuration {
         if (configMap.containsKey(RETRIES)) {
             Integer retries = Integer.parseInt((String) configMap.get(RETRIES));
             Long retryDelayInMs = Long.parseLong((String) configMap.get(RETRY_DELAY_IN_MS));
-            Preconditions.checkNotNull(retryDelayInMs,RETRIES+" has been set."+RETRY_DELAY_IN_MS+" must be set too.");
+            Preconditions.checkNotNull(retryDelayInMs,RETRIES+ HAS_BEEN_SET +RETRY_DELAY_IN_MS+" must be set too.");
             Long retryMaxDelayInMs = Long.parseLong((String) configMap.get(RETRY_MAX_DELAY_IN_MS));
-            Preconditions.checkNotNull(retryDelayInMs,RETRIES+" has been set."+RETRY_MAX_DELAY_IN_MS+" must be set too.");
+            Preconditions.checkNotNull(retryDelayInMs,RETRIES+ HAS_BEEN_SET +RETRY_MAX_DELAY_IN_MS+" must be set too.");
             Double retryDelayFactor = Double.parseDouble((String) configMap.get(RETRY_DELAY_FACTOR));
-            Preconditions.checkNotNull(retryDelayInMs,RETRIES+" has been set."+RETRY_DELAY_FACTOR+" must be set too.");
+            Preconditions.checkNotNull(retryDelayInMs,RETRIES+ HAS_BEEN_SET +RETRY_DELAY_FACTOR+" must be set too.");
             Long retryJitterInMs = Long.parseLong((String) configMap.get(RETRY_JITTER_IN_MS));
-            Preconditions.checkNotNull(retryDelayInMs,RETRIES+" has been set."+RETRY_JITTER_IN_MS+" must be set too.");
+            Preconditions.checkNotNull(retryDelayInMs,RETRIES+ HAS_BEEN_SET +RETRY_JITTER_IN_MS+" must be set too.");
             this.retryPolicy = buildRetryPolicy(retries, retryDelayInMs, retryMaxDelayInMs, retryDelayFactor, retryJitterInMs);
         }
 

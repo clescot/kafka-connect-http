@@ -99,7 +99,7 @@ public class HttpEventListener {
 
         List<Tag> unknownRequestTags = new ArrayList<>();
         for (String requestTagKey : requestTagKeys) {
-            unknownRequestTags.add(Tag.of(requestTagKey, "UNKNOWN"));
+            unknownRequestTags.add(Tag.of(requestTagKey, TAG_VALUE_UNKNOWN));
         }
         this.unknownRequestTags = unknownRequestTags;
 
@@ -153,7 +153,7 @@ public class HttpEventListener {
             try {
                 url = new URL(urlAsString);
             } catch (MalformedURLException e) {
-                throw new RuntimeException(e);
+                throw new HttpException(e);
             }
             tags = Tags.of(tags).and("host", requestAvailable ? url.getHost() : TAG_VALUE_UNKNOWN);
         }
@@ -172,7 +172,7 @@ public class HttpEventListener {
         try {
             url = new URL(urlAsString);
         } catch (MalformedURLException e) {
-            throw new RuntimeException(e);
+            throw new HttpException(e);
         }
         return Tags.of(TAG_TARGET_SCHEME, url.getProtocol(), TAG_TARGET_HOST, url.getHost(),
                 TAG_TARGET_PORT, Integer.toString(url.getPort()));
@@ -220,7 +220,7 @@ public class HttpEventListener {
 
         private Function<HttpRequest, String> uriMapper = (request) -> {
             Map<String, List<String>> headers = request.getHeaders();
-            return Optional.ofNullable(headers.get(URI_PATTERN) != null && headers.get(URI_PATTERN).size() > 0 ? headers.get(URI_PATTERN).get(0) : null)
+            return Optional.ofNullable(headers.get(URI_PATTERN) != null && !headers.get(URI_PATTERN).isEmpty() ? headers.get(URI_PATTERN).get(0) : null)
                     .orElse("none");
         };
 

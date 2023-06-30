@@ -1,11 +1,9 @@
 package io.github.clescot.kafka.connect.http.sink.client.okhttp;
 
 import io.micrometer.core.instrument.MeterRegistry;
-import io.micrometer.core.instrument.Tags;
 import io.micrometer.core.instrument.binder.okhttp3.OkHttpMetricsEventListener;
 import okhttp3.Call;
 import okhttp3.EventListener;
-import okhttp3.HttpUrl;
 import org.jetbrains.annotations.NotNull;
 
 public class KchEventListenerFactory implements EventListener.Factory {
