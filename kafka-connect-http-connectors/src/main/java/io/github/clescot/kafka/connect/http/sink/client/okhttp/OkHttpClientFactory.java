@@ -10,7 +10,7 @@ import java.util.concurrent.ExecutorService;
 
 public class OkHttpClientFactory implements HttpClientFactory<Request, Response> {
     @Override
-    public HttpClient<Request, Response> build(Map<String, String> config, ExecutorService executorService) {
+    public HttpClient<Request, Response> build(Map<String, Object> config, ExecutorService executorService) {
         return new OkHttpClient(config,executorService);
     }
 

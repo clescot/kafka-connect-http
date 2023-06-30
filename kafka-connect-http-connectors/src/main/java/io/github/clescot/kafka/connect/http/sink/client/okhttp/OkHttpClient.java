@@ -40,7 +40,7 @@ public class OkHttpClient extends AbstractHttpClient<Request, Response> {
     public static final String OKHTTP_DEFAULT_READ_TIMEOUT = "okhttp.read.timeout";
 
     //Sets the default write timeout in milliseconds for new connections. A value of 0 means no timeout, otherwise values must be between 1 and Integer.MAX_VALUE.
-    public static final String HTTPCLIENT_DEFAULT_WRITE_TIMEOUT = "okhttp.write.timeout";
+    public static final String OKHTTP_DEFAULT_WRITE_TIMEOUT = "okhttp.write.timeout";
 
 
     //if set to 'true', skip hostname verification. Not set by default.
@@ -60,22 +60,22 @@ public class OkHttpClient extends AbstractHttpClient<Request, Response> {
     private final okhttp3.OkHttpClient client;
     private final Logger LOGGER = LoggerFactory.getLogger(OkHttpClient.class);
 
-    public OkHttpClient(Map<String, String> config, ExecutorService executorService) {
+    public OkHttpClient(Map<String, Object> config, ExecutorService executorService) {
         super(config);
         okhttp3.OkHttpClient.Builder httpClientBuilder = new okhttp3.OkHttpClient.Builder();
         if(executorService!=null){
             Dispatcher dispatcher = new Dispatcher(executorService);
             httpClientBuilder.dispatcher(dispatcher);
         }
-        int maxIdleConnections = Integer.parseInt(config.getOrDefault(OKHTTP_CONNECTION_POOL_MAX_IDLE_CONNECTIONS,"0"));
-        long keepAliveDuration=Long.parseLong(config.getOrDefault(OKHTTP_CONNECTION_POOL_KEEP_ALIVE_DURATION,"0"));
+        int maxIdleConnections = Integer.parseInt(config.getOrDefault(OKHTTP_CONNECTION_POOL_MAX_IDLE_CONNECTIONS,"0").toString());
+        long keepAliveDuration=Long.parseLong(config.getOrDefault(OKHTTP_CONNECTION_POOL_KEEP_ALIVE_DURATION,"0").toString());
         if(maxIdleConnections>0&&keepAliveDuration>0) {
             ConnectionPool connectionPool = new ConnectionPool(maxIdleConnections, keepAliveDuration, TimeUnit.MILLISECONDS);
             httpClientBuilder.connectionPool(connectionPool);
         }
         //protocols
         if(config.containsKey(OKHTTP_DEFAULT_PROTOCOLS)) {
-            String protocolNames = config.get(OKHTTP_DEFAULT_PROTOCOLS);
+            String protocolNames = config.get(OKHTTP_DEFAULT_PROTOCOLS).toString();
             List<Protocol> protocols = Lists.newArrayList();
             List<String> strings = Lists.newArrayList(protocolNames.split(PROTOCOL_SEPARATOR));
             for (String protocolName : strings) {
@@ -95,38 +95,38 @@ public class OkHttpClient extends AbstractHttpClient<Request, Response> {
                     httpClientBuilder.sslSocketFactory(ssl, (X509TrustManager) trustManagers[0]);
                 }
             }
-            if(config.containsKey(OKHTTP_SSL_SKIP_HOSTNAME_VERIFICATION) && Boolean.parseBoolean(config.get(OKHTTP_SSL_SKIP_HOSTNAME_VERIFICATION))){
+            if(config.containsKey(OKHTTP_SSL_SKIP_HOSTNAME_VERIFICATION) && Boolean.parseBoolean(config.get(OKHTTP_SSL_SKIP_HOSTNAME_VERIFICATION).toString())){
                 httpClientBuilder.hostnameVerifier((hostname, session) -> true);
             }
         }
 
         //call timeout
         if(config.containsKey(OKHTTP_DEFAULT_CALL_TIMEOUT)) {
-            int callTimeout = Integer.parseInt(config.get(OKHTTP_DEFAULT_CALL_TIMEOUT));
+            int callTimeout = Integer.parseInt(config.get(OKHTTP_DEFAULT_CALL_TIMEOUT).toString());
             httpClientBuilder.callTimeout(callTimeout, TimeUnit.MILLISECONDS);
         }
 
         //connect timeout
         if(config.containsKey(OKHTTP_DEFAULT_CONNECT_TIMEOUT)) {
-            int connectTimeout = Integer.parseInt(config.get(OKHTTP_DEFAULT_CONNECT_TIMEOUT));
+            int connectTimeout = Integer.parseInt(config.get(OKHTTP_DEFAULT_CONNECT_TIMEOUT).toString());
             httpClientBuilder.connectTimeout(connectTimeout, TimeUnit.MILLISECONDS);
         }
 
         //read timeout
         if(config.containsKey(OKHTTP_DEFAULT_READ_TIMEOUT)) {
-            int readTimeout = Integer.parseInt(config.get(OKHTTP_DEFAULT_READ_TIMEOUT));
+            int readTimeout = Integer.parseInt(config.get(OKHTTP_DEFAULT_READ_TIMEOUT).toString());
             httpClientBuilder.readTimeout(readTimeout, TimeUnit.MILLISECONDS);
         }
 
         //write timeout
-        if(config.containsKey(HTTPCLIENT_DEFAULT_WRITE_TIMEOUT)) {
-            int writeTimeout = Integer.parseInt(config.get(HTTPCLIENT_DEFAULT_WRITE_TIMEOUT));
+        if(config.containsKey(OKHTTP_DEFAULT_WRITE_TIMEOUT)) {
+            int writeTimeout = Integer.parseInt(config.get(OKHTTP_DEFAULT_WRITE_TIMEOUT).toString());
             httpClientBuilder.writeTimeout(writeTimeout, TimeUnit.MILLISECONDS);
         }
 
         //cache
         if(config.containsKey(OKHTTP_CACHE_ACTIVATE)){
-            String cacheType = config.getOrDefault(OKHTTP_CACHE_TYPE, FILE_CACHE_TYPE);
+            String cacheType = config.getOrDefault(OKHTTP_CACHE_TYPE, FILE_CACHE_TYPE).toString();
             String defaultDirectoryPath;
             if(IN_MEMORY_CACHE_TYPE.equalsIgnoreCase(cacheType)){
                 defaultDirectoryPath = "/kafka-connect-http-cache";
@@ -134,7 +134,7 @@ public class OkHttpClient extends AbstractHttpClient<Request, Response> {
                 defaultDirectoryPath = "/tmp/kafka-connect-http-cache";
             }
 
-            String directoryPath = config.getOrDefault(OKHTTP_CACHE_DIRECTORY_PATH,defaultDirectoryPath);
+            String directoryPath = config.getOrDefault(OKHTTP_CACHE_DIRECTORY_PATH,defaultDirectoryPath).toString();
 
             if(IN_MEMORY_CACHE_TYPE.equalsIgnoreCase(cacheType)){
                 java.nio.file.FileSystem fs = Jimfs.newFileSystem(Configuration.unix());
@@ -147,7 +147,7 @@ public class OkHttpClient extends AbstractHttpClient<Request, Response> {
             }
 
             File cacheDirectory = new File(directoryPath);
-            long maxSize=Long.parseLong(config.getOrDefault(OKHTTP_CACHE_MAX_SIZE, DEFAULT_MAX_CACHE_ENTRIES));
+            long maxSize=Long.parseLong(config.getOrDefault(OKHTTP_CACHE_MAX_SIZE, DEFAULT_MAX_CACHE_ENTRIES).toString());
             Cache cache = new Cache(cacheDirectory,maxSize, FileSystem.SYSTEM);
             httpClientBuilder.cache(cache);
         }

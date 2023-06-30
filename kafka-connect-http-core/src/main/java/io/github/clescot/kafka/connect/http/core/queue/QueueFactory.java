@@ -1,7 +1,6 @@
 package io.github.clescot.kafka.connect.http.core.queue;
 
 import com.google.common.base.Preconditions;
-import com.google.common.base.Strings;
 import com.google.common.collect.Maps;
 import org.awaitility.Awaitility;
 import org.awaitility.core.ConditionEvaluationLogger;
@@ -21,11 +20,11 @@ public class QueueFactory {
     private static final Map<String,Queue<KafkaRecord>> queueMap = Maps.newHashMap();
 
     private static final Map<String,Boolean> consumers = Maps.newHashMap();
+
+    private QueueFactory(){}
+
     public static synchronized Queue<KafkaRecord> getQueue(String queueName){
-        if(queueMap.get(queueName) == null){
-            LOGGER.debug("creating the '{}' queue",queueName);
-            queueMap.put(queueName, new ConcurrentLinkedQueue<>());
-        }
+        queueMap.computeIfAbsent(queueName,q->new ConcurrentLinkedQueue<>());
         return queueMap.get(queueName);
     }
     public static synchronized Queue<KafkaRecord> getQueue(){

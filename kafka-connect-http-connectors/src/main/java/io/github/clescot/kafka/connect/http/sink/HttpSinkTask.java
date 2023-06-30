@@ -3,13 +3,10 @@ package io.github.clescot.kafka.connect.http.sink;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
-import com.google.common.base.Charsets;
 import com.google.common.base.Preconditions;
 import com.google.common.base.Stopwatch;
 import com.google.common.collect.Lists;
-import com.google.common.collect.Maps;
 import dev.failsafe.Failsafe;
-import dev.failsafe.RateLimiter;
 import dev.failsafe.RetryPolicy;
 import io.github.clescot.kafka.connect.http.VersionUtils;
 import io.github.clescot.kafka.connect.http.core.HttpExchange;
@@ -19,8 +16,6 @@ import io.github.clescot.kafka.connect.http.core.HttpResponse;
 import io.github.clescot.kafka.connect.http.core.queue.KafkaRecord;
 import io.github.clescot.kafka.connect.http.core.queue.QueueFactory;
 import io.github.clescot.kafka.connect.http.sink.client.HttpClient;
-import io.github.clescot.kafka.connect.http.sink.client.HttpClientFactory;
-import io.github.clescot.kafka.connect.http.sink.client.HttpException;
 import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.data.Struct;
 import org.apache.kafka.connect.errors.ConnectException;
@@ -30,43 +25,34 @@ import org.apache.kafka.connect.sink.SinkTask;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.lang.reflect.InvocationTargetException;
+import java.nio.charset.StandardCharsets;
 import java.time.OffsetDateTime;
 import java.time.ZoneId;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 import java.util.stream.Collectors;
-
-import static io.github.clescot.kafka.connect.http.sink.HttpSinkConfigDefinition.HTTP_CLIENT_DEFAULT_DEFAULT_SUCCESS_RESPONSE_CODE_REGEX;
 
 
 public class HttpSinkTask extends SinkTask {
     private static final Logger LOGGER = LoggerFactory.getLogger(HttpSinkTask.class);
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper().registerModule(new JavaTimeModule());
 
-    public static final String HEADER_X_CORRELATION_ID = "X-Correlation-ID";
-    public static final String HEADER_X_REQUEST_ID = "X-Request-ID";
+
     public static final String SINK_RECORD_HAS_GOT_A_NULL_VALUE = "sinkRecord has got a 'null' value";
     public static final String DEFAULT_CONFIGURATION_ID = "default";
 
 
-    private HttpClient httpClient;
     private Queue<KafkaRecord> queue;
     private String queueName;
 
-    private Map<String, List<String>> staticRequestHeaders;
     private HttpSinkConnectorConfig httpSinkConnectorConfig;
     private ErrantRecordReporter errantRecordReporter;
-    private boolean generateMissingCorrelationId;
-    private boolean generateMissingRequestId;
 
     private List<Configuration> customConfigurations;
-    private static ExecutorService executor;
+    private static ExecutorService executorService;
     private Configuration defaultConfiguration;
-    private final Pattern defaultSuccessPattern = Pattern.compile(HTTP_CLIENT_DEFAULT_DEFAULT_SUCCESS_RESPONSE_CODE_REGEX);
+
 
     @Override
     public String version() {
@@ -74,7 +60,7 @@ public class HttpSinkTask extends SinkTask {
     }
 
     /**
-     * @param settings
+     * @param settings configure the connector
      */
     @Override
     public void start(Map<String, String> settings) {
@@ -93,28 +79,12 @@ public class HttpSinkTask extends SinkTask {
 
         this.queueName = httpSinkConnectorConfig.getQueueName();
         this.queue = QueueFactory.getQueue(queueName);
-        this.staticRequestHeaders = httpSinkConnectorConfig.getStaticRequestHeaders();
-        this.generateMissingRequestId = httpSinkConnectorConfig.isGenerateMissingRequestId();
-        this.generateMissingCorrelationId = httpSinkConnectorConfig.isGenerateMissingCorrelationId();
 
         Integer customFixedThreadPoolSize = httpSinkConnectorConfig.getCustomFixedThreadpoolSize();
-        if(customFixedThreadPoolSize!=null &&executor==null){
-            executor = Executors.newFixedThreadPool(customFixedThreadPoolSize);
-        }
+        setThreadPoolSize(customFixedThreadPoolSize);
 
-        Class<HttpClientFactory> httpClientFactoryClass;
-        HttpClientFactory httpClientFactory;
-        try {
-            httpClientFactoryClass = (Class<HttpClientFactory>) Class.forName(httpSinkConnectorConfig.getHttpClientFactoryClass());
-            httpClientFactory = httpClientFactoryClass.getDeclaredConstructor().newInstance();
-            LOGGER.debug("using HttpClientFactory implementation: {}", httpClientFactory.getClass().getName());
-        } catch (ClassNotFoundException | NoSuchMethodException | InstantiationException | IllegalAccessException |
-                 InvocationTargetException e) {
-            throw new RuntimeException(e);
-        }
-        this.httpClient = httpClientFactory.build(httpSinkConnectorConfig.originalsStrings(),executor);
-        this.defaultConfiguration = new Configuration(DEFAULT_CONFIGURATION_ID,httpSinkConnectorConfig);
-        customConfigurations = buildCustomConfigurations(httpSinkConnectorConfig);
+        this.defaultConfiguration = new Configuration(DEFAULT_CONFIGURATION_ID, httpSinkConnectorConfig, executorService);
+        customConfigurations = buildCustomConfigurations(httpSinkConnectorConfig, defaultConfiguration, executorService);
 
 
         if (httpSinkConnectorConfig.isPublishToInMemoryQueue()) {
@@ -130,11 +100,37 @@ public class HttpSinkTask extends SinkTask {
         }
     }
 
+    /**
+     * define a static field from a non static method need a static synchronized method
+     * @param customFixedThreadPoolSize
+     */
+    private static synchronized void setThreadPoolSize(Integer customFixedThreadPoolSize) {
+        if (customFixedThreadPoolSize != null && executorService == null) {
+            executorService = Executors.newFixedThreadPool(customFixedThreadPoolSize);
+        }
+    }
 
-    private List<Configuration> buildCustomConfigurations(HttpSinkConnectorConfig httpSinkConnectorConfig){
+    private List<Configuration> buildCustomConfigurations(HttpSinkConnectorConfig httpSinkConnectorConfig,
+                                                          Configuration defaultConfiguration,
+                                                          ExecutorService executorService) {
         CopyOnWriteArrayList<Configuration> configurations = Lists.newCopyOnWriteArrayList();
-        for (String configId: httpSinkConnectorConfig.getConfigurationIds()) {
-           Configuration configuration = new Configuration(configId,httpSinkConnectorConfig);
+        for (String configId : httpSinkConnectorConfig.getConfigurationIds()) {
+            Configuration configuration = new Configuration(configId, httpSinkConnectorConfig, executorService);
+            if (configuration.getHttpClient() == null) {
+                configuration.setHttpClient(defaultConfiguration.getHttpClient());
+            }
+
+            //we reuse the default retry policy if not set
+            if (configuration.getRetryPolicy().isEmpty() && defaultConfiguration.getRetryPolicy().isPresent()) {
+                configuration.setRetryPolicy(defaultConfiguration.getRetryPolicy().get());
+            }
+            //we reuse the default success response code regex if not set
+            configuration.setSuccessResponseCodeRegex(defaultConfiguration.getSuccessResponseCodeRegex());
+
+            if (configuration.getRetryResponseCodeRegex().isEmpty() && defaultConfiguration.getRetryResponseCodeRegex().isPresent()) {
+                configuration.setRetryResponseCodeRegex(defaultConfiguration.getRetryResponseCodeRegex().get());
+            }
+
             configurations.add(configuration);
         }
         return configurations;
@@ -148,12 +144,12 @@ public class HttpSinkTask extends SinkTask {
         if (records.isEmpty()) {
             return;
         }
-        Preconditions.checkNotNull(httpClient, "httpClient is null. 'start' method must be called once before put");
+        Preconditions.checkNotNull(defaultConfiguration, "defaultConfiguration is null. 'start' method must be called once before put");
 
         //we submit futures to the pool
         List<CompletableFuture<HttpExchange>> completableFutures = records.stream().map(this::process).collect(Collectors.toList());
         List<HttpExchange> httpExchanges = completableFutures.stream().map(CompletableFuture::join).collect(Collectors.toList());
-
+        LOGGER.debug("HttpExchanges created :'{}'",httpExchanges.size());
 
     }
 
@@ -164,10 +160,6 @@ public class HttpSinkTask extends SinkTask {
             }
             //build HttpRequest
             HttpRequest httpRequest = buildHttpRequest(sinkRecord);
-            HttpRequest httpRequestWithStaticHeaders = addStaticHeaders(httpRequest);
-            HttpRequest httpRequestWithTrackingHeaders = addTrackingHeaders(httpRequestWithStaticHeaders);
-
-
 
             //is there a matching configuration against the request ?
             Configuration foundConfiguration = customConfigurations
@@ -177,7 +169,7 @@ public class HttpSinkTask extends SinkTask {
                     .orElse(defaultConfiguration);
 
             //handle Request and Response
-            return callWithRetryPolicy(sinkRecord, httpRequestWithTrackingHeaders, foundConfiguration).thenApply(
+            return callWithRetryPolicy(sinkRecord, httpRequest, foundConfiguration).thenApply(
                     myHttpExchange -> {
                         LOGGER.debug("HTTP exchange :{}", myHttpExchange);
                         return myHttpExchange;
@@ -192,7 +184,8 @@ public class HttpSinkTask extends SinkTask {
                     future.get();
                     return CompletableFuture.failedFuture(e);
                 } catch (InterruptedException | ExecutionException ex) {
-                    throw new RuntimeException(ex);
+                    Thread.currentThread().interrupt();
+                    throw new ConnectException(ex);
                 }
             } else {
                 // There's no error reporter, so fail
@@ -212,64 +205,24 @@ public class HttpSinkTask extends SinkTask {
                 attempts.addAndGet(HttpClient.ONE_HTTP_REQUEST);
                 if (retryPolicyForCall.isPresent()) {
                     RetryPolicy<HttpExchange> retryPolicy = retryPolicyForCall.get();
-                    CompletableFuture<HttpExchange> httpExchangeFuture = callAndPublish(sinkRecord, httpRequest, attempts,configuration)
-                       .thenApply(httpExchange-> handleRetry(httpExchange,configuration)
-                    );
-                    return Failsafe.with(List.of(retryPolicy))
-                       .getStageAsync(()->httpExchangeFuture);
+                    CompletableFuture<HttpExchange> httpExchangeFuture = callAndPublish(sinkRecord, httpRequest, attempts, configuration)
+                                                                         .thenApply(configuration::handleRetry);
+                    return Failsafe.with(List.of(retryPolicy)).getStageAsync(() -> httpExchangeFuture);
                 } else {
-                    return callAndPublish(sinkRecord, httpRequest, attempts,configuration);
+                    return callAndPublish(sinkRecord, httpRequest, attempts, configuration);
                 }
-            } catch (Throwable throwable) {
-                LOGGER.error("Failed to call web service after {} retries with error({}). message:{} ", attempts, throwable,
-                        throwable.getMessage());
-                return CompletableFuture.supplyAsync(() -> httpClient.buildHttpExchange(
+            } catch (Exception exception) {
+                LOGGER.error("Failed to call web service after {} retries with error({}). message:{} ", attempts, exception,
+                        exception.getMessage());
+                return CompletableFuture.supplyAsync(() -> defaultConfiguration.getHttpClient().buildHttpExchange(
                         httpRequest,
-                        new HttpResponse(HttpClient.SERVER_ERROR_STATUS_CODE, String.valueOf(throwable.getMessage())),
+                        new HttpResponse(HttpClient.SERVER_ERROR_STATUS_CODE, String.valueOf(exception.getMessage())),
                         Stopwatch.createUnstarted(), OffsetDateTime.now(ZoneId.of(HttpClient.UTC_ZONE_ID)),
                         attempts,
                         HttpClient.FAILURE));
             }
-        }else{
+        } else {
             throw new IllegalArgumentException("httpRequest is null");
-        }
-    }
-
-    private HttpExchange handleRetry(HttpExchange httpExchange,Configuration configuration) {
-        //we don't retry success HTTP Exchange
-        boolean responseCodeImpliesRetry = retryNeeded(httpExchange.getHttpResponse(),configuration);
-        LOGGER.debug("httpExchange success :'{}'", httpExchange.isSuccess());
-        LOGGER.debug("response code('{}') implies retry:'{}'", httpExchange.getHttpResponse().getStatusCode(), "" + responseCodeImpliesRetry);
-        if (!httpExchange.isSuccess()
-                && responseCodeImpliesRetry) {
-            throw new HttpException(httpExchange, "retry needed");
-        }
-        return httpExchange;
-    }
-
-
-    protected boolean retryNeeded(HttpResponse httpResponse,Configuration configuration) {
-        Optional<Pattern> retryResponseCodeRegex = configuration.getRetryResponseCodeRegex();
-        if(retryResponseCodeRegex.isPresent()) {
-            Pattern retryPattern = retryResponseCodeRegex.get();
-            Matcher matcher = retryPattern.matcher("" + httpResponse.getStatusCode());
-            return matcher.matches();
-        }else {
-            return false;
-        }
-    }
-
-    private CompletableFuture<HttpExchange> callWithThrottling(HttpRequest httpRequest, AtomicInteger attempts,Configuration configuration) {
-        try {
-            Optional<RateLimiter<HttpExchange>> rateLimiter = configuration.getRateLimiter();
-            if(rateLimiter.isPresent()) {
-                rateLimiter.get().acquirePermits(HttpClient.ONE_HTTP_REQUEST);
-                LOGGER.debug("permits acquired request:'{}'", httpRequest);
-            }
-            return httpClient.call(httpRequest, attempts);
-        } catch (InterruptedException e) {
-            LOGGER.error("Failed to acquire execution permit from the rate limiter {} ", e.getMessage());
-            throw new HttpException(e.getMessage());
         }
     }
 
@@ -278,55 +231,26 @@ public class HttpSinkTask extends SinkTask {
                                                            HttpRequest httpRequest,
                                                            AtomicInteger attempts,
                                                            Configuration configuration) {
-        return callWithThrottling(httpRequest, attempts,configuration)
+        HttpRequest enrichedHttpRequest = configuration.enrich(httpRequest);
+        CompletableFuture<HttpExchange> completableFuture = configuration.getHttpClient().call(enrichedHttpRequest, attempts);
+        return completableFuture
                 .thenApply(myHttpExchange -> {
-                    boolean success = isSuccess(myHttpExchange,configuration);
-                    myHttpExchange.setSuccess(success);
+                    HttpExchange enrichedHttpExchange = configuration.enrich(myHttpExchange);
+
                     //publish eventually to 'in memory' queue
                     if (httpSinkConnectorConfig.isPublishToInMemoryQueue()) {
-                        LOGGER.debug("http exchange published to queue '{}':{}", queueName, myHttpExchange);
-                        queue.offer(new KafkaRecord(sinkRecord.headers(), sinkRecord.keySchema(), sinkRecord.key(), myHttpExchange));
+                        LOGGER.debug("http exchange published to queue '{}':{}", queueName, enrichedHttpExchange);
+                        queue.offer(new KafkaRecord(sinkRecord.headers(), sinkRecord.keySchema(), sinkRecord.key(), enrichedHttpExchange));
                     } else {
-                        LOGGER.debug("http exchange NOT published to queue '{}':{}", queueName, myHttpExchange);
+                        LOGGER.debug("http exchange NOT published to queue '{}':{}", queueName, enrichedHttpExchange);
                     }
-                    return myHttpExchange;
+                    return enrichedHttpExchange;
                 });
 
     }
 
-    protected boolean isSuccess(HttpExchange httpExchange,Configuration configuration) {
-        Pattern pattern = defaultSuccessPattern;
-        if(configuration.getSuccessResponseCodeRegex().isPresent()) {
-            pattern = configuration.getSuccessResponseCodeRegex().get();
-        }
-        return pattern.matcher(httpExchange.getHttpResponse().getStatusCode() + "").matches();
-
-    }
 
 
-    protected HttpRequest addTrackingHeaders(HttpRequest httpRequest) {
-        if (httpRequest == null) {
-            LOGGER.warn(SINK_RECORD_HAS_GOT_A_NULL_VALUE);
-            throw new ConnectException(SINK_RECORD_HAS_GOT_A_NULL_VALUE);
-        }
-        Map<String, List<String>> headers = Optional.ofNullable(httpRequest.getHeaders()).orElse(Maps.newHashMap());
-
-        //we generate an 'X-Request-ID' header if not present
-        Optional<List<String>> requestId = Optional.ofNullable(httpRequest.getHeaders().get(HEADER_X_REQUEST_ID));
-        if (requestId.isEmpty() && this.generateMissingRequestId) {
-            requestId = Optional.of(Lists.newArrayList(UUID.randomUUID().toString()));
-        }
-        requestId.ifPresent(reqId -> headers.put(HEADER_X_REQUEST_ID, Lists.newArrayList(reqId)));
-
-        //we generate an 'X-Correlation-ID' header if not present
-        Optional<List<String>> correlationId = Optional.ofNullable(httpRequest.getHeaders().get(HEADER_X_CORRELATION_ID));
-        if (correlationId.isEmpty() && this.generateMissingCorrelationId) {
-            correlationId = Optional.of(Lists.newArrayList(UUID.randomUUID().toString()));
-        }
-        correlationId.ifPresent(corrId -> headers.put(HEADER_X_CORRELATION_ID, Lists.newArrayList(corrId)));
-
-        return httpRequest;
-    }
 
     protected HttpRequest buildHttpRequest(SinkRecord sinkRecord) {
         if (sinkRecord == null || sinkRecord.value() == null) {
@@ -356,15 +280,15 @@ public class HttpSinkTask extends SinkTask {
                         .withStruct(valueAsStruct)
                         .build();
                 LOGGER.debug("httpRequest : {}", httpRequest);
-            } else if ("[B".equals(valueClass.getName())) {
+            } else if (byte[].class.isAssignableFrom(valueClass)) {
                 //we assume the value is a byte array
-                stringValue = new String((byte[]) value, Charsets.UTF_8);
+                stringValue = new String((byte[]) value, StandardCharsets.UTF_8);
                 LOGGER.debug("byte[] is {}", stringValue);
             } else if (String.class.isAssignableFrom(valueClass)) {
                 stringValue = (String) value;
                 LOGGER.debug("String is {}", stringValue);
             } else {
-                LOGGER.warn("value is an instance of the class " + valueClass.getName() + " not handled by the WsSinkTask");
+                LOGGER.warn("value is an instance of the class '{}' not handled by the WsSinkTask",valueClass.getName());
                 throw new ConnectException("value is an instance of the class " + valueClass.getName() + " not handled by the WsSinkTask");
             }
             if (httpRequest == null) {
@@ -379,7 +303,6 @@ public class HttpSinkTask extends SinkTask {
                 LOGGER.error("sink value class is '{}'", sinkValue.getClass().getName());
             }
 
-            LOGGER.error("error in sinkRecord's structure : " + sinkRecord, connectException);
             if (errantRecordReporter != null) {
                 errantRecordReporter.report(sinkRecord, connectException);
             } else {
@@ -396,38 +319,34 @@ public class HttpSinkTask extends SinkTask {
         try {
             httpRequest = OBJECT_MAPPER.readValue(value, HttpRequest.class);
         } catch (JsonProcessingException e) {
-            LOGGER.error(e.getMessage(), e);
             throw new ConnectException(e);
         }
         return httpRequest;
     }
 
-    protected HttpRequest addStaticHeaders(HttpRequest httpRequest) {
-        Preconditions.checkNotNull(httpRequest, "httpRequest is null");
-        this.staticRequestHeaders.forEach((key, value) -> httpRequest.getHeaders().put(key, value));
-        return httpRequest;
-    }
-
-
     @Override
     public void stop() {
-        //Producer are stopped in connector stop
-    }
-
-    //for testing purpose
-    protected void setHttpClient(HttpClient httpClient) {
-        this.httpClient = httpClient;
-    }
-
-    //for testing purpose
-    protected Map<String, List<String>> getStaticRequestHeaders() {
-        //we return a copy
-        return Maps.newHashMap(staticRequestHeaders);
+        if (!executorService.isShutdown()) {
+            executorService.shutdown();
+        }
+        try {
+            boolean awaitTermination = executorService.awaitTermination(30, TimeUnit.SECONDS);
+            if(!awaitTermination) {
+                LOGGER.warn("timeout elapsed before executor termination");
+            }
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new ConnectException(e);
+        }
+        LOGGER.info("executor is shutdown : '{}'", executorService.isShutdown());
+        LOGGER.info("executor tasks are terminated : '{}'", executorService.isTerminated());
     }
 
     protected void setQueue(Queue<KafkaRecord> queue) {
         this.queue = queue;
     }
 
-
+    public Configuration getDefaultConfiguration() {
+        return defaultConfiguration;
+    }
 }

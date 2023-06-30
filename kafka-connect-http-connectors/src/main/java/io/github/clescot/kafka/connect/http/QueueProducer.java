@@ -1,11 +1,11 @@
 package io.github.clescot.kafka.connect.http;
 
+import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
 import io.github.clescot.kafka.connect.http.core.HttpExchange;
 import io.github.clescot.kafka.connect.http.core.HttpRequest;
 import io.github.clescot.kafka.connect.http.core.HttpResponse;
 import io.github.clescot.kafka.connect.http.core.queue.KafkaRecord;
-import com.google.common.collect.Lists;
-import com.google.common.collect.Maps;
 import org.jetbrains.annotations.NotNull;
 
 import java.time.OffsetDateTime;

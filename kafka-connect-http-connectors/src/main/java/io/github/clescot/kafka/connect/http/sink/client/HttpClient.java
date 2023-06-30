@@ -2,6 +2,7 @@ package io.github.clescot.kafka.connect.http.sink.client;
 
 import com.google.common.base.Preconditions;
 import com.google.common.base.Stopwatch;
+import dev.failsafe.RateLimiter;
 import io.github.clescot.kafka.connect.http.core.HttpExchange;
 import io.github.clescot.kafka.connect.http.core.HttpRequest;
 import io.github.clescot.kafka.connect.http.core.HttpResponse;
@@ -61,7 +62,7 @@ public interface HttpClient<Req, Res> {
     /**
      * convert an {@link HttpRequest} into a native (from the implementation) request.
      *
-     * @param httpRequest
+     * @param httpRequest http request to build.
      * @return native request.
      */
 
@@ -75,7 +76,7 @@ public interface HttpClient<Req, Res> {
         Req request = buildRequest(httpRequest);
         LOGGER.info("native request: {}", request);
         OffsetDateTime now = OffsetDateTime.now(ZoneId.of(UTC_ZONE_ID));
-        response = nativeCall(request);
+        response = call(request);
         Preconditions.checkNotNull(response, "response is null");
         LOGGER.info("native response: {}", response);
         return response.thenApply(this::buildResponse)
@@ -88,6 +89,8 @@ public interface HttpClient<Req, Res> {
                 );
 
     }
+
+    CompletableFuture<Res> call(Req request);
 
     /**
      * convert a native response (from the implementation) to an {@link HttpResponse}.
@@ -112,7 +115,7 @@ public interface HttpClient<Req, Res> {
             String finalKeystoreType = Optional.ofNullable(keystoreType).orElse(KeyStore.getDefaultType());
             trustStore = KeyStore.getInstance(finalKeystoreType);
         } catch (NoSuchAlgorithmException | KeyStoreException e) {
-            throw new RuntimeException(e);
+            throw new HttpException(e);
         }
 
         Path path = Path.of(trustStorePath);
@@ -121,8 +124,12 @@ public interface HttpClient<Req, Res> {
             trustStore.load(inputStream, password);
             trustManagerFactory.init(trustStore);
         } catch (IOException | NoSuchAlgorithmException | CertificateException | KeyStoreException e) {
-            throw new RuntimeException(e);
+            throw new HttpException(e);
         }
         return trustManagerFactory;
     }
+
+    void setRateLimiter(RateLimiter<HttpExchange> rateLimiter);
+
+    Optional<RateLimiter<HttpExchange>> getRateLimiter();
 }

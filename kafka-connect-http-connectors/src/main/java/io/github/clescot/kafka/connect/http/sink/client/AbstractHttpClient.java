@@ -1,5 +1,8 @@
 package io.github.clescot.kafka.connect.http.sink.client;
 
+import dev.failsafe.RateLimiter;
+import io.github.clescot.kafka.connect.http.core.HttpExchange;
+
 import javax.annotation.Nullable;
 import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.SSLContext;
@@ -14,27 +17,29 @@ import java.security.*;
 import java.security.cert.CertificateException;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
 
 import static io.github.clescot.kafka.connect.http.sink.HttpSinkConfigDefinition.*;
 
 public abstract class AbstractHttpClient<Req, Res> implements HttpClient<Req, Res> {
 
     private static final String DEFAULT_SSL_PROTOCOL = "SSL";
-    protected Map<String, String> config;
+    protected Map<String, Object> config;
+    private Optional<RateLimiter<HttpExchange>> rateLimiter = Optional.empty();
 
-    public AbstractHttpClient(Map<String, String> config) {
+    public AbstractHttpClient(Map<String, Object> config) {
         this.config = config;
     }
 
     protected Optional<TrustManagerFactory> getTrustManagerFactory() {
-        if (config.containsKey(HTTPCLIENT_SSL_TRUSTSTORE_PATH) && config.containsKey(HTTPCLIENT_SSL_TRUSTSTORE_PASSWORD)) {
+        if (config.containsKey(CONFIG_HTTPCLIENT_SSL_TRUSTSTORE_PATH) && config.containsKey(CONFIG_HTTPCLIENT_SSL_TRUSTSTORE_PASSWORD)) {
 
             Optional<TrustManagerFactory> trustManagerFactory = Optional.ofNullable(
                     HttpClient.getTrustManagerFactory(
-                            config.get(HTTPCLIENT_SSL_TRUSTSTORE_PATH),
-                            config.get(HTTPCLIENT_SSL_TRUSTSTORE_PASSWORD).toCharArray(),
-                            config.get(HTTPCLIENT_SSL_TRUSTSTORE_TYPE),
-                            config.get(HTTPCLIENT_SSL_TRUSTSTORE_ALGORITHM)));
+                            config.get(CONFIG_HTTPCLIENT_SSL_TRUSTSTORE_PATH).toString(),
+                            config.get(CONFIG_HTTPCLIENT_SSL_TRUSTSTORE_PASSWORD).toString().toCharArray(),
+                            config.get(CONFIG_HTTPCLIENT_SSL_TRUSTSTORE_TYPE).toString(),
+                            config.get(CONFIG_HTTPCLIENT_SSL_TRUSTSTORE_ALGORITHM).toString()));
             if (trustManagerFactory.isPresent()) {
                 return Optional.of(trustManagerFactory.get());
             }
@@ -43,14 +48,14 @@ public abstract class AbstractHttpClient<Req, Res> implements HttpClient<Req, Re
     }
 
     protected Optional<KeyManagerFactory> getKeyManagerFactory() {
-        if (config.containsKey(HTTPCLIENT_SSL_KEYSTORE_PATH) && config.containsKey(HTTPCLIENT_SSL_KEYSTORE_PASSWORD)) {
+        if (config.containsKey(CONFIG_HTTPCLIENT_SSL_KEYSTORE_PATH) && config.containsKey(CONFIG_HTTPCLIENT_SSL_KEYSTORE_PASSWORD)) {
 
             Optional<KeyManagerFactory> keyManagerFactory = Optional.ofNullable(
                     getKeyManagerFactory(
-                            config.get(HTTPCLIENT_SSL_KEYSTORE_PATH),
-                            config.get(HTTPCLIENT_SSL_KEYSTORE_PASSWORD).toCharArray(),
-                            config.get(HTTPCLIENT_SSL_KEYSTORE_TYPE),
-                            config.get(HTTPCLIENT_SSL_KEYSTORE_ALGORITHM)));
+                            config.get(CONFIG_HTTPCLIENT_SSL_KEYSTORE_PATH).toString(),
+                            config.get(CONFIG_HTTPCLIENT_SSL_KEYSTORE_PASSWORD).toString().toCharArray(),
+                            config.get(CONFIG_HTTPCLIENT_SSL_KEYSTORE_TYPE).toString(),
+                            config.get(CONFIG_HTTPCLIENT_SSL_KEYSTORE_ALGORITHM).toString()));
             if (keyManagerFactory.isPresent()) {
                 return Optional.of(keyManagerFactory.get());
             }
@@ -98,6 +103,31 @@ public abstract class AbstractHttpClient<Req, Res> implements HttpClient<Req, Re
         } catch (NoSuchAlgorithmException | KeyManagementException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    @Override
+    public CompletableFuture<Res> call(Req request){
+        try {
+            Optional<RateLimiter<HttpExchange>> rateLimiter = getRateLimiter();
+            if (rateLimiter.isPresent()) {
+                rateLimiter.get().acquirePermits(HttpClient.ONE_HTTP_REQUEST);
+                LOGGER.debug("permits acquired request:'{}'", request);
+            }
+            return nativeCall(request);
+        } catch (InterruptedException e) {
+            LOGGER.error("Failed to acquire execution permit from the rate limiter {} ", e.getMessage());
+            throw new HttpException(e.getMessage());
+        }
+    }
+
+    @Override
+    public void setRateLimiter(RateLimiter<HttpExchange> rateLimiter) {
+        this.rateLimiter = Optional.ofNullable(rateLimiter);
+    }
+
+    @Override
+    public Optional<RateLimiter<HttpExchange>> getRateLimiter() {
+        return this.rateLimiter;
     }
 
 }

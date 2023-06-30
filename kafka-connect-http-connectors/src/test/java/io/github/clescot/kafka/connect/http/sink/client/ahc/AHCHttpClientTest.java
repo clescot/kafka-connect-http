@@ -1,14 +1,12 @@
-package io.github.clescot.kafka.connect.http.sink.client;
+package io.github.clescot.kafka.connect.http.sink.client.ahc;
 
-import io.github.clescot.kafka.connect.http.core.HttpExchange;
-import io.github.clescot.kafka.connect.http.core.HttpRequest;
-import io.github.clescot.kafka.connect.http.core.HttpResponse;
-import io.github.clescot.kafka.connect.http.sink.HttpSinkTaskTest;
-import io.github.clescot.kafka.connect.http.sink.client.ahc.AHCHttpClient;
-import io.github.clescot.kafka.connect.http.sink.client.okhttp.OkHttpClientFactory;
 import com.google.common.base.Stopwatch;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
+import io.github.clescot.kafka.connect.http.core.HttpRequest;
+import io.github.clescot.kafka.connect.http.core.HttpResponse;
+import io.github.clescot.kafka.connect.http.sink.HttpSinkTaskTest;
+import io.github.clescot.kafka.connect.http.sink.client.HttpClient;
 import org.asynchttpclient.AsyncHttpClient;
 import org.asynchttpclient.ListenableFuture;
 import org.asynchttpclient.Request;
@@ -29,13 +27,13 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static io.github.clescot.kafka.connect.http.sink.HttpSinkTask.HEADER_X_CORRELATION_ID;
-import static io.github.clescot.kafka.connect.http.sink.HttpSinkTask.HEADER_X_REQUEST_ID;
 import static io.github.clescot.kafka.connect.http.sink.client.ahc.AHCHttpClient.SUCCESS;
+import static io.github.clescot.kafka.connect.http.sink.config.AddMissingCorrelationIdHeaderToHttpRequestFunction.HEADER_X_CORRELATION_ID;
+import static io.github.clescot.kafka.connect.http.sink.config.AddMissingRequestIdHeaderToHttpRequestFunction.HEADER_X_REQUEST_ID;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.when;
 
-public class HttpClientTest {
+public class AHCHttpClientTest {
 
         private AsyncHttpClient asyncHttpClient;
 
@@ -264,7 +262,6 @@ public class HttpClientTest {
         //given
         String truststorePath = Thread.currentThread().getContextClassLoader().getResource(HttpSinkTaskTest.CLIENT_TRUSTSTORE_JKS_FILENAME).getPath();
         String password = HttpSinkTaskTest.CLIENT_TRUSTSTORE_JKS_PASSWORD;
-        OkHttpClientFactory httpClientFactory = new OkHttpClientFactory();
 
         //when
         TrustManagerFactory trustManagerFactory = HttpClient.getTrustManagerFactory(truststorePath, password.toCharArray(), HttpSinkTaskTest.JKS_STORE_TYPE, HttpSinkTaskTest.TRUSTSTORE_PKIX_ALGORITHM);

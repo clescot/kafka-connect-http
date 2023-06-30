@@ -5,8 +5,6 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import io.github.clescot.kafka.connect.http.core.queue.ConfigConstants;
 import io.github.clescot.kafka.connect.http.core.queue.QueueFactory;
-import io.github.clescot.kafka.connect.http.sink.client.ahc.AHCHttpClientFactory;
-import io.github.clescot.kafka.connect.http.sink.client.okhttp.OkHttpClientFactory;
 import org.apache.kafka.common.config.AbstractConfig;
 import org.apache.kafka.common.config.ConfigDef;
 import org.slf4j.Logger;
@@ -20,8 +18,7 @@ import static io.github.clescot.kafka.connect.http.sink.HttpSinkConfigDefinition
 
 public class HttpSinkConnectorConfig extends AbstractConfig {
     private static final Logger LOGGER = LoggerFactory.getLogger(HttpSinkConnectorConfig.class);
-    public static final String OKHTTP_IMPLEMENTATION = "okhttp";
-    public static final String AHC_IMPLEMENTATION = "ahc";
+
 
     private final String defaultSuccessResponseCodeRegex;
     private final String defaultRetryResponseCodeRegex;
@@ -42,7 +39,6 @@ public class HttpSinkConnectorConfig extends AbstractConfig {
     private final long maxWaitTimeRegistrationOfQueueConsumerInMs;
     private final int pollDelayRegistrationOfQueueConsumerInMs;
     private final int pollIntervalRegistrationOfQueueConsumerInMs;
-    private final String httpClientFactoryClass;
     private final Integer customFixedThreadpoolSize;
     private final List<String> configurationIds;
 
@@ -58,41 +54,31 @@ public class HttpSinkConnectorConfig extends AbstractConfig {
         }
         this.publishToInMemoryQueue = Optional.ofNullable(getBoolean(PUBLISH_TO_IN_MEMORY_QUEUE)).orElse(false);
 
-        this.defaultRetries = getInt(HTTP_CLIENT_DEFAULT_RETRIES);
-        this.defaultRetryDelayInMs = getLong(HTTP_CLIENT_DEFAULT_RETRY_DELAY_IN_MS);
-        this.defaultRetryMaxDelayInMs = getLong(HTTP_CLIENT_DEFAULT_RETRY_MAX_DELAY_IN_MS);
-        this.defaultRetryDelayFactor = getDouble(HTTP_CLIENT_DEFAULT_RETRY_DELAY_FACTOR);
-        this.defaultRetryJitterInMs = getLong(HTTP_CLIENT_DEFAULT_RETRY_JITTER_IN_MS);
-        this.generateMissingRequestId = getBoolean(HTTP_CLIENT_GENERATE_MISSING_REQUEST_ID);
-        this.generateMissingCorrelationId = getBoolean(HTTP_CLIENT_GENERATE_MISSING_CORRELATION_ID);
-        this.defaultRateLimiterPeriodInMs = getLong(HTTP_CLIENT_DEFAULT_RATE_LIMITER_PERIOD_IN_MS);
-        this.defaultRateLimiterMaxExecutions = getLong(HTTP_CLIENT_DEFAULT_RATE_LIMITER_MAX_EXECUTIONS);
-        this.defaultRateLimiterScope = getString(HTTP_CLIENT_DEFAULT_RATE_LIMITER_SCOPE);
+        this.defaultRetries = getInt(CONFIG_DEFAULT_RETRIES);
+        this.defaultRetryDelayInMs = getLong(CONFIG_DEFAULT_RETRY_DELAY_IN_MS);
+        this.defaultRetryMaxDelayInMs = getLong(CONFIG_DEFAULT_RETRY_MAX_DELAY_IN_MS);
+        this.defaultRetryDelayFactor = getDouble(CONFIG_DEFAULT_RETRY_DELAY_FACTOR);
+        this.defaultRetryJitterInMs = getLong(CONFIG_DEFAULT_RETRY_JITTER_IN_MS);
+        this.generateMissingRequestId = getBoolean(CONFIG_GENERATE_MISSING_REQUEST_ID);
+        this.generateMissingCorrelationId = getBoolean(CONFIG_GENERATE_MISSING_CORRELATION_ID);
+        this.defaultRateLimiterPeriodInMs = getLong(CONFIG_DEFAULT_RATE_LIMITER_PERIOD_IN_MS);
+        this.defaultRateLimiterMaxExecutions = getLong(CONFIG_DEFAULT_RATE_LIMITER_MAX_EXECUTIONS);
+        this.defaultRateLimiterScope = getString(CONFIG_DEFAULT_RATE_LIMITER_SCOPE);
         this.maxWaitTimeRegistrationOfQueueConsumerInMs = getLong(WAIT_TIME_REGISTRATION_QUEUE_CONSUMER_IN_MS);
         this.pollDelayRegistrationOfQueueConsumerInMs = getInt(POLL_DELAY_REGISTRATION_QUEUE_CONSUMER_IN_MS);
         this.pollIntervalRegistrationOfQueueConsumerInMs = getInt(POLL_INTERVAL_REGISTRATION_QUEUE_CONSUMER_IN_MS);
-        Optional<List<String>> staticRequestHeaderNames = Optional.ofNullable(getList(HTTP_CLIENT_STATIC_REQUEST_HEADER_NAMES));
+        Optional<List<String>> staticRequestHeaderNames = Optional.ofNullable(getList(CONFIG_STATIC_REQUEST_HEADER_NAMES));
         List<String> additionalHeaderNamesList = staticRequestHeaderNames.orElse(Lists.newArrayList());
         for (String headerName : additionalHeaderNamesList) {
-            String value = (String) originals().get(headerName);
+            String value = (String) originals().get(DEFAULT_CONFIGURATION_PREFIX+STATIC_REQUEST_HEADER_PREFIX+headerName);
             Preconditions.checkNotNull(value, "'" + headerName + "' is not configured as a parameter.");
             staticRequestHeaders.put(headerName, Lists.newArrayList(value));
         }
-        this.defaultSuccessResponseCodeRegex = getString(HTTPCLIENT_DEFAULT_SUCCESS_RESPONSE_CODE_REGEX);
-        this.defaultRetryResponseCodeRegex = getString(HTTP_CLIENT_DEFAULT_RETRY_RESPONSE_CODE_REGEX);
-        String httpClientImplementation = Optional.ofNullable(getString(HTTPCLIENT_IMPLEMENTATION)).orElse(OKHTTP_IMPLEMENTATION);
-        if (AHC_IMPLEMENTATION.equalsIgnoreCase(httpClientImplementation)) {
-            this.httpClientFactoryClass = AHCHttpClientFactory.class.getName();
-        } else if (OKHTTP_IMPLEMENTATION.equalsIgnoreCase(httpClientImplementation)) {
-            this.httpClientFactoryClass = OkHttpClientFactory.class.getName();
-        } else {
-            LOGGER.error("unknown HttpClient implementation : must be either 'ahc' or 'okhttp', but is '{}'", httpClientImplementation);
-            throw new IllegalArgumentException("unknown HttpClient implementation : must be either 'ahc' or 'okhttp', but is '" + httpClientImplementation + "'");
-        }
-        this.customFixedThreadpoolSize = getInt(HTTP_CLIENT_ASYNC_FIXED_THREAD_POOL_SIZE);
+        this.defaultSuccessResponseCodeRegex = getString(CONFIG_DEFAULT_SUCCESS_RESPONSE_CODE_REGEX);
+        this.defaultRetryResponseCodeRegex = getString(CONFIG_DEFAULT_RETRY_RESPONSE_CODE_REGEX);
 
-        configurationIds = Optional.ofNullable(getList(HTTP_CLIENT_CUSTOM_CONFIGURATION_IDS)).orElse(Lists.newArrayList());
-
+        this.customFixedThreadpoolSize = getInt(CONFIG_HTTP_CLIENT_ASYNC_FIXED_THREAD_POOL_SIZE);
+        configurationIds = Optional.ofNullable(getList(CONFIGURATION_IDS)).orElse(Lists.newArrayList());
 
     }
 
@@ -165,9 +151,6 @@ public class HttpSinkConnectorConfig extends AbstractConfig {
         return pollIntervalRegistrationOfQueueConsumerInMs;
     }
 
-    public String getHttpClientFactoryClass() {
-        return httpClientFactoryClass;
-    }
 
     public Integer getCustomFixedThreadpoolSize() {
         return customFixedThreadpoolSize;

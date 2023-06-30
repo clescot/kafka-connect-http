@@ -4,15 +4,15 @@ package io.github.clescot.kafka.connect.http.sink.model;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import io.confluent.kafka.schemaregistry.client.MockSchemaRegistryClient;
+import io.confluent.kafka.schemaregistry.json.JsonSchema;
 import io.confluent.kafka.schemaregistry.json.JsonSchemaProvider;
+import io.confluent.kafka.schemaregistry.json.JsonSchemaUtils;
+import io.confluent.kafka.schemaregistry.json.SpecificationVersion;
 import io.confluent.kafka.serializers.json.KafkaJsonSchemaSerializer;
 import io.confluent.kafka.serializers.json.KafkaJsonSchemaSerializerConfig;
 import io.github.clescot.kafka.connect.http.core.HttpExchange;
 import io.github.clescot.kafka.connect.http.core.HttpRequest;
 import io.github.clescot.kafka.connect.http.core.HttpResponse;
-import io.confluent.kafka.schemaregistry.json.JsonSchema;
-import io.confluent.kafka.schemaregistry.json.JsonSchemaUtils;
-import io.confluent.kafka.schemaregistry.json.SpecificationVersion;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;

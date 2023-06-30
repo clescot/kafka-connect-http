@@ -5,23 +5,40 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import io.github.clescot.kafka.connect.http.core.HttpRequest;
 import io.github.clescot.kafka.connect.http.core.HttpResponse;
+import io.github.clescot.kafka.connect.http.sink.client.AbstractHttpClient;
 import io.github.clescot.kafka.connect.http.sink.client.HttpClient;
 import io.github.clescot.kafka.connect.http.sink.client.HttpException;
+import io.netty.buffer.ByteBufAllocator;
+import io.netty.buffer.PooledByteBufAllocator;
+import io.netty.handler.ssl.SslContext;
+import io.netty.handler.ssl.SslContextBuilder;
+import io.netty.util.HashedWheelTimer;
+import io.netty.util.Timer;
 import org.asynchttpclient.*;
+import org.asynchttpclient.channel.DefaultKeepAliveStrategy;
+import org.asynchttpclient.channel.KeepAliveStrategy;
+import org.asynchttpclient.cookie.CookieStore;
+import org.asynchttpclient.cookie.ThreadSafeCookieStore;
+import org.asynchttpclient.extras.guava.RateLimitedThrottleRequestFilter;
+import org.asynchttpclient.netty.channel.ConnectionSemaphoreFactory;
+import org.asynchttpclient.netty.channel.DefaultConnectionSemaphoreFactory;
 import org.asynchttpclient.proxy.ProxyServer;
 import org.asynchttpclient.proxy.ProxyType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.net.ssl.SSLException;
+import javax.net.ssl.TrustManagerFactory;
+import java.lang.reflect.InvocationTargetException;
 import java.nio.charset.Charset;
-import java.util.AbstractMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 
-public class AHCHttpClient implements HttpClient<Request, Response> {
+import static io.github.clescot.kafka.connect.http.sink.HttpSinkConfigDefinition.*;
+import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.ASYNC_CLIENT_CONFIG_ROOT;
+
+public class AHCHttpClient extends AbstractHttpClient<Request, Response> {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(AHCHttpClient.class);
     public static final String PROXY_PREFIX = "proxy-";
@@ -50,32 +67,44 @@ public class AHCHttpClient implements HttpClient<Request, Response> {
     public static final String HTTP_PROXY_TYPE = "HTTP";
     public static final String UTF_8 = "UTF-8";
 
-    public static final boolean FAILURE = false;
-
     public static final String WS_REQUEST_TIMEOUT_IN_MS = "request-timeout-in-ms";
     public static final String WS_READ_TIMEOUT_IN_MS = "read-timeout-in-ms";
     private static final String WS_REALM_PASS = "password";
 
-
+    public static final String ASYN_HTTP_CONFIG_PREFIX = ASYNC_CLIENT_CONFIG_ROOT;
+    public static final String HTTP_MAX_CONNECTIONS = ASYN_HTTP_CONFIG_PREFIX + "http.max.connections";
+    public static final String HTTP_RATE_LIMIT_PER_SECOND = ASYN_HTTP_CONFIG_PREFIX + "http.rate.limit.per.second";
+    public static final String HTTP_MAX_WAIT_MS = ASYN_HTTP_CONFIG_PREFIX + "http.max.wait.ms";
+    public static final String KEEP_ALIVE_STRATEGY_CLASS = ASYN_HTTP_CONFIG_PREFIX + "keep.alive.class";
+    public static final String RESPONSE_BODY_PART_FACTORY = ASYN_HTTP_CONFIG_PREFIX + "response.body.part.factory";
+    private static final String CONNECTION_SEMAPHORE_FACTORY = ASYN_HTTP_CONFIG_PREFIX + "connection.semaphore.factory";
+    private static final String COOKIE_STORE = ASYN_HTTP_CONFIG_PREFIX + "cookie.store";
+    private static final String NETTY_TIMER = ASYN_HTTP_CONFIG_PREFIX + "netty.timer";
+    private static final String BYTE_BUFFER_ALLOCATOR = ASYN_HTTP_CONFIG_PREFIX + "byte.buffer.allocator";
     private final AsyncHttpClient asyncHttpClient;
 
     private final HttpClientAsyncCompletionHandler asyncCompletionHandler = new HttpClientAsyncCompletionHandler();
 
-    public AHCHttpClient(AsyncHttpClient asyncHttpClient) {
-        this.asyncHttpClient = asyncHttpClient;
+    public AHCHttpClient(Map<String, Object> config) {
+        super(config);
+        this.asyncHttpClient = getAsyncHttpClient(config);
+    }
+    //for tests only
+    protected AHCHttpClient(AsyncHttpClient asyncHttpClient) {
+        super(Maps.newHashMap());
+        this.asyncHttpClient =asyncHttpClient;
     }
 
     @Override
     public CompletableFuture<Response> nativeCall(org.asynchttpclient.Request request) {
         LOGGER.debug("native call  {}",request);
         if(request.getStringData()!=null) {
-            LOGGER.debug("body stringData: '{}'", new String(request.getStringData()));
+            LOGGER.debug("body stringData: '{}'", request.getStringData());
         }else{
-            LOGGER.debug("body stringData: null", new String(request.getStringData()));
+            LOGGER.debug("body stringData: null");
         }
         ListenableFuture<Response> listenableFuture = asyncHttpClient.executeRequest(request, asyncCompletionHandler);
-        CompletableFuture<Response> completableFuture = listenableFuture.toCompletableFuture();
-        return completableFuture;
+        return listenableFuture.toCompletableFuture();
 
 
     }
@@ -215,6 +244,102 @@ public class AHCHttpClient implements HttpClient<Request, Response> {
         httpResponse.setResponseHeaders(responseHeaders);
         return httpResponse;
     }
+    private AsyncHttpClient getAsyncHttpClient(Map<String, Object> config) {
+        AsyncHttpClient asyncClient;
+        Map<String, String> asyncConfig = config.entrySet().stream().filter(entry -> entry.getKey().startsWith(ASYN_HTTP_CONFIG_PREFIX))
+                .map(k->Map.entry(k.getKey(),k.getValue().toString()))
+                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+        Properties asyncHttpProperties = new Properties();
+        asyncHttpProperties.putAll(asyncConfig);
+        PropertyBasedASyncHttpClientConfig propertyBasedASyncHttpClientConfig = new PropertyBasedASyncHttpClientConfig(asyncHttpProperties);
+        //define throttling
+        int maxConnections = Integer.parseInt(config.getOrDefault(HTTP_MAX_CONNECTIONS, "3").toString());
+        double rateLimitPerSecond = Double.parseDouble(config.getOrDefault(HTTP_RATE_LIMIT_PER_SECOND, "3").toString());
+        int maxWaitMs = Integer.parseInt(config.getOrDefault(HTTP_MAX_WAIT_MS, "500").toString());
+        propertyBasedASyncHttpClientConfig.setRequestFilters(Lists.newArrayList(new RateLimitedThrottleRequestFilter(maxConnections, rateLimitPerSecond, maxWaitMs)));
 
+        String defaultKeepAliveStrategyClassName = config.getOrDefault(KEEP_ALIVE_STRATEGY_CLASS, "org.asynchttpclient.channel.DefaultKeepAliveStrategy").toString();
+
+        //define keep alive strategy
+        KeepAliveStrategy keepAliveStrategy;
+        try {
+            //we instantiate the default constructor, public or not
+            keepAliveStrategy = (KeepAliveStrategy) Class.forName(defaultKeepAliveStrategyClassName).getDeclaredConstructor().newInstance();
+        } catch (ClassNotFoundException | IllegalAccessException | InstantiationException |
+                 InvocationTargetException | NoSuchMethodException e) {
+            LOGGER.error(e.getMessage());
+            LOGGER.error("we rollback to the default keep alive strategy");
+            keepAliveStrategy = new DefaultKeepAliveStrategy();
+        }
+        propertyBasedASyncHttpClientConfig.setKeepAliveStrategy(keepAliveStrategy);
+
+        //set response body part factory mode
+        String responseBodyPartFactoryMode = config.getOrDefault(RESPONSE_BODY_PART_FACTORY, "EAGER").toString();
+        propertyBasedASyncHttpClientConfig.setResponseBodyPartFactory(AsyncHttpClientConfig.ResponseBodyPartFactory.valueOf(responseBodyPartFactoryMode));
+
+        //define connection semaphore factory
+        String connectionSemaphoreFactoryClassName = config.getOrDefault(CONNECTION_SEMAPHORE_FACTORY, "org.asynchttpclient.netty.channel.DefaultConnectionSemaphoreFactory").toString();
+        try {
+            propertyBasedASyncHttpClientConfig.setConnectionSemaphoreFactory((ConnectionSemaphoreFactory) Class.forName(connectionSemaphoreFactoryClassName).getDeclaredConstructor().newInstance());
+        } catch (InstantiationException | IllegalAccessException | InvocationTargetException |
+                 NoSuchMethodException | ClassNotFoundException e) {
+            LOGGER.error(e.getMessage());
+            propertyBasedASyncHttpClientConfig.setConnectionSemaphoreFactory(new DefaultConnectionSemaphoreFactory());
+            LOGGER.error("we rollback to the default connection semaphore factory");
+        }
+
+        //cookie store
+        String cookieStoreClassName = config.getOrDefault(COOKIE_STORE, "org.asynchttpclient.cookie.ThreadSafeCookieStore").toString();
+        try {
+            propertyBasedASyncHttpClientConfig.setCookieStore((CookieStore) Class.forName(cookieStoreClassName).getDeclaredConstructor().newInstance());
+        } catch (InstantiationException | IllegalAccessException | InvocationTargetException |
+                 NoSuchMethodException | ClassNotFoundException e) {
+            LOGGER.error(e.getMessage());
+            propertyBasedASyncHttpClientConfig.setCookieStore(new ThreadSafeCookieStore());
+            LOGGER.error("we rollback to the default cookie store");
+        }
+
+        //netty timer
+        String nettyTimerClassName = config.getOrDefault(NETTY_TIMER, "io.netty.util.HashedWheelTimer").toString();
+        try {
+            propertyBasedASyncHttpClientConfig.setNettyTimer((Timer) Class.forName(nettyTimerClassName).getDeclaredConstructor().newInstance());
+        } catch (InstantiationException | IllegalAccessException | InvocationTargetException |
+                 NoSuchMethodException | ClassNotFoundException e) {
+            LOGGER.error(e.getMessage());
+            propertyBasedASyncHttpClientConfig.setNettyTimer(new HashedWheelTimer());
+            LOGGER.error("we rollback to the default netty timer");
+        }
+
+        //byte buffer allocator
+        String byteBufferAllocatorClassName = config.getOrDefault(BYTE_BUFFER_ALLOCATOR, "io.netty.buffer.PooledByteBufAllocator").toString();
+        try {
+            propertyBasedASyncHttpClientConfig.setByteBufAllocator((ByteBufAllocator) Class.forName(byteBufferAllocatorClassName).getDeclaredConstructor().newInstance());
+        } catch (InstantiationException | IllegalAccessException | InvocationTargetException |
+                 NoSuchMethodException | ClassNotFoundException e) {
+            LOGGER.error(e.getMessage());
+            propertyBasedASyncHttpClientConfig.setByteBufAllocator(new PooledByteBufAllocator());
+            LOGGER.error("we rollback to the default byte buffer allocator");
+        }
+        if (config.containsKey(CONFIG_HTTPCLIENT_SSL_TRUSTSTORE_PATH) && config.containsKey(CONFIG_HTTPCLIENT_SSL_TRUSTSTORE_PASSWORD)) {
+
+            Optional<TrustManagerFactory> trustManagerFactory = Optional.ofNullable(
+                    HttpClient.getTrustManagerFactory(
+                            config.get(CONFIG_HTTPCLIENT_SSL_TRUSTSTORE_PATH).toString(),
+                            config.get(CONFIG_HTTPCLIENT_SSL_TRUSTSTORE_PASSWORD).toString().toCharArray(),
+                            config.get(CONFIG_HTTPCLIENT_SSL_TRUSTSTORE_TYPE).toString(),
+                            config.get(CONFIG_HTTPCLIENT_SSL_TRUSTSTORE_ALGORITHM).toString()));
+            if (trustManagerFactory.isPresent()) {
+                SslContext nettySSLContext;
+                try {
+                    nettySSLContext = SslContextBuilder.forClient().trustManager(trustManagerFactory.get()).build();
+                } catch (SSLException e) {
+                    throw new HttpException(e);
+                }
+                propertyBasedASyncHttpClientConfig.setSslContext(nettySSLContext);
+            }
+        }
+        asyncClient = Dsl.asyncHttpClient(propertyBasedASyncHttpClientConfig);
+        return asyncClient;
+    }
 
 }
