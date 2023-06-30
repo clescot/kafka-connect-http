@@ -22,10 +22,14 @@ import java.security.NoSuchAlgorithmException;
 import java.security.cert.CertificateException;
 import java.time.OffsetDateTime;
 import java.time.ZoneId;
+import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
+
+import static io.github.clescot.kafka.connect.http.sink.HttpSinkConfigDefinition.*;
+import static io.github.clescot.kafka.connect.http.sink.HttpSinkConfigDefinition.CONFIG_HTTPCLIENT_SSL_TRUSTSTORE_ALGORITHM;
 
 public interface HttpClient<Req, Res> {
     boolean FAILURE = false;
@@ -34,6 +38,7 @@ public interface HttpClient<Req, Res> {
     boolean SUCCESS = true;
     int ONE_HTTP_REQUEST = 1;
     Logger LOGGER = LoggerFactory.getLogger(HttpClient.class);
+    String IS_NOT_SET = " is not set";
 
 
     default HttpExchange buildHttpExchange(HttpRequest httpRequest,
@@ -128,6 +133,31 @@ public interface HttpClient<Req, Res> {
         }
         return trustManagerFactory;
     }
+
+    static TrustManagerFactory getTrustManagerFactory(Map<String,Object> config){
+        if(config.containsKey(CONFIG_HTTPCLIENT_SSL_TRUSTSTORE_ALWAYS_TRUST)&& Boolean.TRUE.equals(config.get(CONFIG_HTTPCLIENT_SSL_TRUSTSTORE_ALWAYS_TRUST))){
+            return new AlwaysTrustManagerFactory();
+        }else {
+            String trustStorePath = (String) config.get(CONFIG_HTTPCLIENT_SSL_TRUSTSTORE_PATH);
+            Preconditions.checkNotNull(trustStorePath,CONFIG_HTTPCLIENT_SSL_TRUSTSTORE_PATH+ IS_NOT_SET);
+
+            String truststorePassword = (String) config.get(CONFIG_HTTPCLIENT_SSL_TRUSTSTORE_PASSWORD);
+            Preconditions.checkNotNull(truststorePassword,CONFIG_HTTPCLIENT_SSL_TRUSTSTORE_PASSWORD+ IS_NOT_SET);
+
+            String trustStoreType = (String) config.get(CONFIG_HTTPCLIENT_SSL_TRUSTSTORE_TYPE);
+            Preconditions.checkNotNull(trustStoreType,CONFIG_HTTPCLIENT_SSL_TRUSTSTORE_TYPE+ IS_NOT_SET);
+
+            String truststoreAlgorithm = (String) config.get(CONFIG_HTTPCLIENT_SSL_TRUSTSTORE_ALGORITHM);
+            Preconditions.checkNotNull(truststoreAlgorithm,CONFIG_HTTPCLIENT_SSL_TRUSTSTORE_ALGORITHM+ IS_NOT_SET);
+
+            return getTrustManagerFactory(
+                    trustStorePath,
+                    truststorePassword.toCharArray(),
+                    trustStoreType,
+                    truststoreAlgorithm);
+        }
+    }
+
 
     void setRateLimiter(RateLimiter<HttpExchange> rateLimiter);
 
