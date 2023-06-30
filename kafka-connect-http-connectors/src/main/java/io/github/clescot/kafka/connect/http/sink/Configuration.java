@@ -173,21 +173,21 @@ public class Configuration {
     }
 
     private Predicate<HttpRequest> buildPredicate(Map<String, Object> configMap) {
-        Predicate<HttpRequest> mainpredicate = httpRequest -> true;
+        Predicate<HttpRequest> predicate = httpRequest -> true;
         if (configMap.containsKey(URL_REGEX)) {
             String urlRegex = (String) configMap.get(URL_REGEX);
             Pattern urlPattern = Pattern.compile(urlRegex);
-            mainpredicate = mainpredicate.and(httpRequest -> urlPattern.matcher(httpRequest.getUrl()).matches());
+            predicate = predicate.and(httpRequest -> urlPattern.matcher(httpRequest.getUrl()).matches());
         }
         if (configMap.containsKey(METHOD_REGEX)) {
             String methodRegex = (String) configMap.get(METHOD_REGEX);
             Pattern methodPattern = Pattern.compile(methodRegex);
-            mainpredicate = mainpredicate.and(httpRequest -> methodPattern.matcher(httpRequest.getMethod()).matches());
+            predicate = predicate.and(httpRequest -> methodPattern.matcher(httpRequest.getMethod()).matches());
         }
         if (configMap.containsKey(BODYTYPE_REGEX)) {
             String bodytypeRegex = (String) configMap.get(BODYTYPE_REGEX);
             Pattern bodytypePattern = Pattern.compile(bodytypeRegex);
-            mainpredicate = mainpredicate.and(httpRequest -> bodytypePattern.matcher(httpRequest.getBodyType().name()).matches());
+            predicate = predicate.and(httpRequest -> bodytypePattern.matcher(httpRequest.getBodyType().name()).matches());
         }
         if (configMap.containsKey(HEADER_KEY_REGEX)) {
             String headerKeyRegex = (String) configMap.get(HEADER_KEY_REGEX);
@@ -210,9 +210,9 @@ public class Configuration {
                         }
 
                     });
-            mainpredicate = mainpredicate.and(headerKeyPredicate);
+            predicate = predicate.and(headerKeyPredicate);
         }
-        return mainpredicate;
+        return predicate;
     }
 
     public HttpRequest enrich(HttpRequest httpRequest) {
@@ -311,7 +311,7 @@ public class Configuration {
         //we don't retry success HTTP Exchange
         boolean responseCodeImpliesRetry = retryNeeded(httpExchange.getHttpResponse());
         LOGGER.debug("httpExchange success :'{}'", httpExchange.isSuccess());
-        LOGGER.debug("response code('{}') implies retry:'{}'", httpExchange.getHttpResponse().getStatusCode(), "" + responseCodeImpliesRetry);
+        LOGGER.debug("response code('{}') implies retry:'{}'", httpExchange.getHttpResponse().getStatusCode(), responseCodeImpliesRetry);
         if (!httpExchange.isSuccess()
                 && responseCodeImpliesRetry) {
             throw new HttpException(httpExchange, "retry needed");

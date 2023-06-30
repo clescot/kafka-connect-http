@@ -11,9 +11,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
-import java.util.function.Function;
+import java.util.function.UnaryOperator;
 
-public class AddTrackingHeadersToHttpRequestFunction implements Function<HttpRequest,HttpRequest> {
+public class AddTrackingHeadersToHttpRequestFunction implements UnaryOperator<HttpRequest> {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(AddTrackingHeadersToHttpRequestFunction.class);
     public static final String HEADER_X_CORRELATION_ID = "X-Correlation-ID";

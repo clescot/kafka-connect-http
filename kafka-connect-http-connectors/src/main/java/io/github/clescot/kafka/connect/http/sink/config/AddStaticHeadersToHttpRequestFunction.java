@@ -5,9 +5,9 @@ import io.github.clescot.kafka.connect.http.core.HttpRequest;
 
 import java.util.List;
 import java.util.Map;
-import java.util.function.Function;
+import java.util.function.UnaryOperator;
 
-public class AddStaticHeadersToHttpRequestFunction implements Function<HttpRequest,HttpRequest> {
+public class AddStaticHeadersToHttpRequestFunction implements UnaryOperator<HttpRequest> {
 
     private final Map<String, List<String>> staticHeaders;
 

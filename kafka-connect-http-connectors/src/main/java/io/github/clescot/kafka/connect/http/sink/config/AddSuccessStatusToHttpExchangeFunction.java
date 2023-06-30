@@ -2,13 +2,13 @@ package io.github.clescot.kafka.connect.http.sink.config;
 
 import io.github.clescot.kafka.connect.http.core.HttpExchange;
 
-import java.util.function.Function;
+import java.util.function.UnaryOperator;
 import java.util.regex.Pattern;
 
 
-public class AddSuccessStatusToHttpExchangeFunction implements Function<HttpExchange, HttpExchange> {
+public class AddSuccessStatusToHttpExchangeFunction implements UnaryOperator<HttpExchange> {
 
-    private Pattern successResponseCodeRegex;
+    private final Pattern successResponseCodeRegex;
 
     public AddSuccessStatusToHttpExchangeFunction(Pattern successResponseCodeRegex) {
         this.successResponseCodeRegex = successResponseCodeRegex;
