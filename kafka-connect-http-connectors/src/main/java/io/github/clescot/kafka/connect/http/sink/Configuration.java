@@ -225,7 +225,7 @@ public class Configuration {
         return this.addSuccessStatusToHttpExchangeFunction.apply(httpExchange);
     }
 
-    private HttpClient buildHttpClient(Map<String, Object> config, ExecutorService executorService) {
+    private <Req,Res> HttpClient<Req,Res> buildHttpClient(Map<String, Object> config, ExecutorService executorService) {
 
         Class<? extends HttpClientFactory> httpClientFactoryClass;
         String httpClientImplementation = (String) Optional.ofNullable(config.get(HTTPCLIENT_IMPLEMENTATION)).orElse(OKHTTP_IMPLEMENTATION);
@@ -237,12 +237,11 @@ public class Configuration {
             LOGGER.error("unknown HttpClient implementation : must be either 'ahc' or 'okhttp', but is '{}'", httpClientImplementation);
             throw new IllegalArgumentException("unknown HttpClient implementation : must be either 'ahc' or 'okhttp', but is '" + httpClientImplementation + "'");
         }
-        HttpClientFactory httpClientFactory;
+        HttpClientFactory<Req,Res> httpClientFactory;
         try {
-            httpClientFactoryClass = (Class<HttpClientFactory>) Class.forName(httpClientFactoryClass.getName());
             httpClientFactory = httpClientFactoryClass.getDeclaredConstructor().newInstance();
             LOGGER.debug("using HttpClientFactory implementation: {}", httpClientFactory.getClass().getName());
-        } catch (ClassNotFoundException | NoSuchMethodException | InstantiationException | IllegalAccessException |
+        } catch (NoSuchMethodException | InstantiationException | IllegalAccessException |
                  InvocationTargetException e) {
             throw new RuntimeException(e);
         }

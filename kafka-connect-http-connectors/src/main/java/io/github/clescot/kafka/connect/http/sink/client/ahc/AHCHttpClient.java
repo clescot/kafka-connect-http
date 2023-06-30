@@ -86,7 +86,7 @@ public class AHCHttpClient extends AbstractHttpClient<Request, Response> {
 
     private final HttpClientAsyncCompletionHandler asyncCompletionHandler = new HttpClientAsyncCompletionHandler();
 
-    public AHCHttpClient(Map<String, String> config) {
+    public AHCHttpClient(Map<String, Object> config) {
         super(config);
         this.asyncHttpClient = getAsyncHttpClient(config);
     }
@@ -246,19 +246,21 @@ public class AHCHttpClient extends AbstractHttpClient<Request, Response> {
         httpResponse.setResponseHeaders(responseHeaders);
         return httpResponse;
     }
-    private AsyncHttpClient getAsyncHttpClient(Map<String, String> config) {
+    private AsyncHttpClient getAsyncHttpClient(Map<String, Object> config) {
         AsyncHttpClient asyncHttpClient;
-        Map<String, String> asyncConfig = config.entrySet().stream().filter(entry -> entry.getKey().startsWith(ASYN_HTTP_CONFIG_PREFIX)).collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+        Map<String, String> asyncConfig = config.entrySet().stream().filter(entry -> entry.getKey().startsWith(ASYN_HTTP_CONFIG_PREFIX))
+                .map((k)->Map.entry(k.getKey(),k.getValue().toString()))
+                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
         Properties asyncHttpProperties = new Properties();
         asyncHttpProperties.putAll(asyncConfig);
         PropertyBasedASyncHttpClientConfig propertyBasedASyncHttpClientConfig = new PropertyBasedASyncHttpClientConfig(asyncHttpProperties);
         //define throttling
-        int maxConnections = Integer.parseInt(config.getOrDefault(HTTP_MAX_CONNECTIONS, "3"));
-        double rateLimitPerSecond = Double.parseDouble(config.getOrDefault(HTTP_RATE_LIMIT_PER_SECOND, "3"));
-        int maxWaitMs = Integer.parseInt(config.getOrDefault(HTTP_MAX_WAIT_MS, "500"));
+        int maxConnections = Integer.parseInt(config.getOrDefault(HTTP_MAX_CONNECTIONS, "3").toString());
+        double rateLimitPerSecond = Double.parseDouble(config.getOrDefault(HTTP_RATE_LIMIT_PER_SECOND, "3").toString());
+        int maxWaitMs = Integer.parseInt(config.getOrDefault(HTTP_MAX_WAIT_MS, "500").toString());
         propertyBasedASyncHttpClientConfig.setRequestFilters(Lists.newArrayList(new RateLimitedThrottleRequestFilter(maxConnections, rateLimitPerSecond, maxWaitMs)));
 
-        String defaultKeepAliveStrategyClassName = config.getOrDefault(KEEP_ALIVE_STRATEGY_CLASS, "org.asynchttpclient.channel.DefaultKeepAliveStrategy");
+        String defaultKeepAliveStrategyClassName = config.getOrDefault(KEEP_ALIVE_STRATEGY_CLASS, "org.asynchttpclient.channel.DefaultKeepAliveStrategy").toString();
 
         //define keep alive strategy
         KeepAliveStrategy keepAliveStrategy;
@@ -274,11 +276,11 @@ public class AHCHttpClient extends AbstractHttpClient<Request, Response> {
         propertyBasedASyncHttpClientConfig.setKeepAliveStrategy(keepAliveStrategy);
 
         //set response body part factory mode
-        String responseBodyPartFactoryMode = config.getOrDefault(RESPONSE_BODY_PART_FACTORY, "EAGER");
+        String responseBodyPartFactoryMode = config.getOrDefault(RESPONSE_BODY_PART_FACTORY, "EAGER").toString();
         propertyBasedASyncHttpClientConfig.setResponseBodyPartFactory(AsyncHttpClientConfig.ResponseBodyPartFactory.valueOf(responseBodyPartFactoryMode));
 
         //define connection semaphore factory
-        String connectionSemaphoreFactoryClassName = config.getOrDefault(CONNECTION_SEMAPHORE_FACTORY, "org.asynchttpclient.netty.channel.DefaultConnectionSemaphoreFactory");
+        String connectionSemaphoreFactoryClassName = config.getOrDefault(CONNECTION_SEMAPHORE_FACTORY, "org.asynchttpclient.netty.channel.DefaultConnectionSemaphoreFactory").toString();
         try {
             propertyBasedASyncHttpClientConfig.setConnectionSemaphoreFactory((ConnectionSemaphoreFactory) Class.forName(connectionSemaphoreFactoryClassName).getDeclaredConstructor().newInstance());
         } catch (InstantiationException | IllegalAccessException | InvocationTargetException |
@@ -289,7 +291,7 @@ public class AHCHttpClient extends AbstractHttpClient<Request, Response> {
         }
 
         //cookie store
-        String cookieStoreClassName = config.getOrDefault(COOKIE_STORE, "org.asynchttpclient.cookie.ThreadSafeCookieStore");
+        String cookieStoreClassName = config.getOrDefault(COOKIE_STORE, "org.asynchttpclient.cookie.ThreadSafeCookieStore").toString();
         try {
             propertyBasedASyncHttpClientConfig.setCookieStore((CookieStore) Class.forName(cookieStoreClassName).getDeclaredConstructor().newInstance());
         } catch (InstantiationException | IllegalAccessException | InvocationTargetException |
@@ -300,7 +302,7 @@ public class AHCHttpClient extends AbstractHttpClient<Request, Response> {
         }
 
         //netty timer
-        String nettyTimerClassName = config.getOrDefault(NETTY_TIMER, "io.netty.util.HashedWheelTimer");
+        String nettyTimerClassName = config.getOrDefault(NETTY_TIMER, "io.netty.util.HashedWheelTimer").toString();
         try {
             propertyBasedASyncHttpClientConfig.setNettyTimer((Timer) Class.forName(nettyTimerClassName).getDeclaredConstructor().newInstance());
         } catch (InstantiationException | IllegalAccessException | InvocationTargetException |
@@ -311,7 +313,7 @@ public class AHCHttpClient extends AbstractHttpClient<Request, Response> {
         }
 
         //byte buffer allocator
-        String byteBufferAllocatorClassName = config.getOrDefault(BYTE_BUFFER_ALLOCATOR, "io.netty.buffer.PooledByteBufAllocator");
+        String byteBufferAllocatorClassName = config.getOrDefault(BYTE_BUFFER_ALLOCATOR, "io.netty.buffer.PooledByteBufAllocator").toString();
         try {
             propertyBasedASyncHttpClientConfig.setByteBufAllocator((ByteBufAllocator) Class.forName(byteBufferAllocatorClassName).getDeclaredConstructor().newInstance());
         } catch (InstantiationException | IllegalAccessException | InvocationTargetException |
@@ -324,10 +326,10 @@ public class AHCHttpClient extends AbstractHttpClient<Request, Response> {
 
             Optional<TrustManagerFactory> trustManagerFactory = Optional.ofNullable(
                     HttpClient.getTrustManagerFactory(
-                            config.get(CONFIG_HTTPCLIENT_SSL_TRUSTSTORE_PATH),
-                            config.get(CONFIG_HTTPCLIENT_SSL_TRUSTSTORE_PASSWORD).toCharArray(),
-                            config.get(CONFIG_HTTPCLIENT_SSL_TRUSTSTORE_TYPE),
-                            config.get(CONFIG_HTTPCLIENT_SSL_TRUSTSTORE_ALGORITHM)));
+                            config.get(CONFIG_HTTPCLIENT_SSL_TRUSTSTORE_PATH).toString(),
+                            config.get(CONFIG_HTTPCLIENT_SSL_TRUSTSTORE_PASSWORD).toString().toCharArray(),
+                            config.get(CONFIG_HTTPCLIENT_SSL_TRUSTSTORE_TYPE).toString(),
+                            config.get(CONFIG_HTTPCLIENT_SSL_TRUSTSTORE_ALGORITHM).toString()));
             if (trustManagerFactory.isPresent()) {
                 SslContext nettySSLContext;
                 try {

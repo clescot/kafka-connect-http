@@ -24,10 +24,10 @@ import static io.github.clescot.kafka.connect.http.sink.HttpSinkConfigDefinition
 public abstract class AbstractHttpClient<Req, Res> implements HttpClient<Req, Res> {
 
     private static final String DEFAULT_SSL_PROTOCOL = "SSL";
-    protected Map<String, String> config;
+    protected Map<String, Object> config;
     private Optional<RateLimiter<HttpExchange>> rateLimiter = Optional.empty();
 
-    public AbstractHttpClient(Map<String, String> config) {
+    public AbstractHttpClient(Map<String, Object> config) {
         this.config = config;
     }
 
@@ -36,10 +36,10 @@ public abstract class AbstractHttpClient<Req, Res> implements HttpClient<Req, Re
 
             Optional<TrustManagerFactory> trustManagerFactory = Optional.ofNullable(
                     HttpClient.getTrustManagerFactory(
-                            config.get(CONFIG_HTTPCLIENT_SSL_TRUSTSTORE_PATH),
-                            config.get(CONFIG_HTTPCLIENT_SSL_TRUSTSTORE_PASSWORD).toCharArray(),
-                            config.get(CONFIG_HTTPCLIENT_SSL_TRUSTSTORE_TYPE),
-                            config.get(CONFIG_HTTPCLIENT_SSL_TRUSTSTORE_ALGORITHM)));
+                            config.get(CONFIG_HTTPCLIENT_SSL_TRUSTSTORE_PATH).toString(),
+                            config.get(CONFIG_HTTPCLIENT_SSL_TRUSTSTORE_PASSWORD).toString().toCharArray(),
+                            config.get(CONFIG_HTTPCLIENT_SSL_TRUSTSTORE_TYPE).toString(),
+                            config.get(CONFIG_HTTPCLIENT_SSL_TRUSTSTORE_ALGORITHM).toString()));
             if (trustManagerFactory.isPresent()) {
                 return Optional.of(trustManagerFactory.get());
             }
@@ -52,10 +52,10 @@ public abstract class AbstractHttpClient<Req, Res> implements HttpClient<Req, Re
 
             Optional<KeyManagerFactory> keyManagerFactory = Optional.ofNullable(
                     getKeyManagerFactory(
-                            config.get(CONFIG_HTTPCLIENT_SSL_KEYSTORE_PATH),
-                            config.get(CONFIG_HTTPCLIENT_SSL_KEYSTORE_PASSWORD).toCharArray(),
-                            config.get(CONFIG_HTTPCLIENT_SSL_KEYSTORE_TYPE),
-                            config.get(CONFIG_HTTPCLIENT_SSL_KEYSTORE_ALGORITHM)));
+                            config.get(CONFIG_HTTPCLIENT_SSL_KEYSTORE_PATH).toString(),
+                            config.get(CONFIG_HTTPCLIENT_SSL_KEYSTORE_PASSWORD).toString().toCharArray(),
+                            config.get(CONFIG_HTTPCLIENT_SSL_KEYSTORE_TYPE).toString(),
+                            config.get(CONFIG_HTTPCLIENT_SSL_KEYSTORE_ALGORITHM).toString()));
             if (keyManagerFactory.isPresent()) {
                 return Optional.of(keyManagerFactory.get());
             }

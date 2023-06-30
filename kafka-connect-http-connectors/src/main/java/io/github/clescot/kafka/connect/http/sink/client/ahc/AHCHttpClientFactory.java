@@ -44,7 +44,7 @@ public class AHCHttpClientFactory implements HttpClientFactory<Request, Response
 
 
     @Override
-    public HttpClient<Request, Response> build(Map<String, String> config,ExecutorService executorService) {
+    public HttpClient<Request, Response> build(Map<String, Object> config,ExecutorService executorService) {
         //executorService is not used for AHC : we cannot set an executorService nor a thread pool to AHC
         return new AHCHttpClient(config);
     }

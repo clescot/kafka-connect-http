@@ -85,20 +85,20 @@ class OkHttpClientTest {
 
     @Test
     public void test_activated_cache_with_file_type(){
-        HashMap<String, String> config = Maps.newHashMap();
+        HashMap<String, Object> config = Maps.newHashMap();
         config.put(OKHTTP_CACHE_ACTIVATE,"true");
         io.github.clescot.kafka.connect.http.sink.client.okhttp.OkHttpClient client = new io.github.clescot.kafka.connect.http.sink.client.okhttp.OkHttpClient(config,null);
     }
     @Test
     public void test_activated_cache_with_file_type_and_max_entries(){
-        HashMap<String, String> config = Maps.newHashMap();
+        HashMap<String, Object> config = Maps.newHashMap();
         config.put(OKHTTP_CACHE_ACTIVATE,"true");
         config.put(OKHTTP_CACHE_MAX_SIZE,"50000");
         io.github.clescot.kafka.connect.http.sink.client.okhttp.OkHttpClient client = new io.github.clescot.kafka.connect.http.sink.client.okhttp.OkHttpClient(config,null);
     }
     @Test
     public void test_activated_cache_with_file_type_and_max_entries_and_location(){
-        HashMap<String, String> config = Maps.newHashMap();
+        HashMap<String, Object> config = Maps.newHashMap();
         config.put(OKHTTP_CACHE_ACTIVATE,"true");
         config.put(OKHTTP_CACHE_MAX_SIZE,"50000");
         config.put(OKHTTP_CACHE_DIRECTORY_PATH,"/tmp/toto");
@@ -106,7 +106,7 @@ class OkHttpClientTest {
     }
     @Test
     public void test_activated_cache_with_inmemory_type(){
-        HashMap<String, String> config = Maps.newHashMap();
+        HashMap<String, Object> config = Maps.newHashMap();
         config.put(OKHTTP_CACHE_ACTIVATE,"true");
         config.put(OKHTTP_CACHE_TYPE,"inmemory");
         io.github.clescot.kafka.connect.http.sink.client.okhttp.OkHttpClient client = new io.github.clescot.kafka.connect.http.sink.client.okhttp.OkHttpClient(config,null);
@@ -114,13 +114,13 @@ class OkHttpClientTest {
 
     @Test
     public void test_inactivated_cache(){
-        HashMap<String, String> config = Maps.newHashMap();
+        HashMap<String, Object> config = Maps.newHashMap();
         config.put(OKHTTP_CACHE_ACTIVATE,"false");
         io.github.clescot.kafka.connect.http.sink.client.okhttp.OkHttpClient client = new io.github.clescot.kafka.connect.http.sink.client.okhttp.OkHttpClient(config,null);
     }
     @Test
     public void test_no_cache(){
-        HashMap<String, String> config = Maps.newHashMap();
+        HashMap<String, Object> config = Maps.newHashMap();
         io.github.clescot.kafka.connect.http.sink.client.okhttp.OkHttpClient client = new io.github.clescot.kafka.connect.http.sink.client.okhttp.OkHttpClient(config,null);
     }
 
