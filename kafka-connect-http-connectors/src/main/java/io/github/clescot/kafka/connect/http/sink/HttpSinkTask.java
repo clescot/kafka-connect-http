@@ -167,10 +167,9 @@ public class HttpSinkTask extends SinkTask {
                     .filter(config -> config.matches(httpRequest))
                     .findFirst()
                     .orElse(defaultConfiguration);
-            HttpRequest enhancedHttpRequest = foundConfiguration.enrich(httpRequest);
 
             //handle Request and Response
-            return callWithRetryPolicy(sinkRecord, enhancedHttpRequest, foundConfiguration).thenApply(
+            return callWithRetryPolicy(sinkRecord, httpRequest, foundConfiguration).thenApply(
                     myHttpExchange -> {
                         LOGGER.debug("HTTP exchange :{}", myHttpExchange);
                         return myHttpExchange;
@@ -232,7 +231,8 @@ public class HttpSinkTask extends SinkTask {
                                                            HttpRequest httpRequest,
                                                            AtomicInteger attempts,
                                                            Configuration configuration) {
-        CompletableFuture<HttpExchange> completableFuture = configuration.getHttpClient().call(httpRequest, attempts);
+        HttpRequest enrichedHttpRequest = configuration.enrich(httpRequest);
+        CompletableFuture<HttpExchange> completableFuture = configuration.getHttpClient().call(enrichedHttpRequest, attempts);
         return completableFuture
                 .thenApply(myHttpExchange -> {
                     HttpExchange enrichedHttpExchange = configuration.enrich(myHttpExchange);

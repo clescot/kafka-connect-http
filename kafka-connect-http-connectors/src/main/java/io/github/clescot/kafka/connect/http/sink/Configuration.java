@@ -13,9 +13,10 @@ import io.github.clescot.kafka.connect.http.sink.client.HttpClientFactory;
 import io.github.clescot.kafka.connect.http.sink.client.HttpException;
 import io.github.clescot.kafka.connect.http.sink.client.ahc.AHCHttpClientFactory;
 import io.github.clescot.kafka.connect.http.sink.client.okhttp.OkHttpClientFactory;
+import io.github.clescot.kafka.connect.http.sink.config.AddMissingCorrelationIdHeaderToHttpRequestFunction;
 import io.github.clescot.kafka.connect.http.sink.config.AddStaticHeadersToHttpRequestFunction;
 import io.github.clescot.kafka.connect.http.sink.config.AddSuccessStatusToHttpExchangeFunction;
-import io.github.clescot.kafka.connect.http.sink.config.AddTrackingHeadersToHttpRequestFunction;
+import io.github.clescot.kafka.connect.http.sink.config.AddMissingRequestIdHeaderToHttpRequestFunction;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -67,7 +68,8 @@ public class Configuration {
 
 
     private final AddStaticHeadersToHttpRequestFunction addStaticHeadersToHttpRequestFunction;
-    private final AddTrackingHeadersToHttpRequestFunction addTrackingHeadersToHttpRequestFunction;
+    private final AddMissingRequestIdHeaderToHttpRequestFunction addMissingRequestIdHeaderToHttpRequestFunction;
+    private final AddMissingCorrelationIdHeaderToHttpRequestFunction addMissingCorrelationIdHeaderToHttpRequestFunction;
     private AddSuccessStatusToHttpExchangeFunction addSuccessStatusToHttpExchangeFunction;
 
     //rate limiter
@@ -110,7 +112,8 @@ public class Configuration {
         //build addTrackingHeadersFunction
         boolean generateMissingRequestId = Boolean.parseBoolean((String) configMap.get(GENERATE_MISSING_REQUEST_ID));
         boolean generateMissingCorrelationId = Boolean.parseBoolean((String) configMap.get(GENERATE_MISSING_CORRELATION_ID));
-        this.addTrackingHeadersToHttpRequestFunction = new AddTrackingHeadersToHttpRequestFunction(generateMissingRequestId, generateMissingCorrelationId);
+        this.addMissingRequestIdHeaderToHttpRequestFunction = new AddMissingRequestIdHeaderToHttpRequestFunction(generateMissingRequestId);
+        this.addMissingCorrelationIdHeaderToHttpRequestFunction = new AddMissingCorrelationIdHeaderToHttpRequestFunction(generateMissingCorrelationId);
 
         //enrich exchange
         //success response code regex
@@ -217,7 +220,8 @@ public class Configuration {
 
     public HttpRequest enrich(HttpRequest httpRequest) {
         return addStaticHeadersToHttpRequestFunction
-                .andThen(addTrackingHeadersToHttpRequestFunction)
+                .andThen(addMissingRequestIdHeaderToHttpRequestFunction)
+                .andThen(addMissingCorrelationIdHeaderToHttpRequestFunction)
                 .apply(httpRequest);
     }
 
@@ -346,7 +350,7 @@ public class Configuration {
         return addStaticHeadersToHttpRequestFunction;
     }
 
-    public AddTrackingHeadersToHttpRequestFunction getAddTrackingHeadersFunction() {
-        return addTrackingHeadersToHttpRequestFunction;
+    public AddMissingRequestIdHeaderToHttpRequestFunction getAddTrackingHeadersFunction() {
+        return addMissingRequestIdHeaderToHttpRequestFunction;
     }
 }

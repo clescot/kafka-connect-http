@@ -13,17 +13,13 @@ import java.util.Optional;
 import java.util.UUID;
 import java.util.function.UnaryOperator;
 
-public class AddTrackingHeadersToHttpRequestFunction implements UnaryOperator<HttpRequest> {
+public class AddMissingRequestIdHeaderToHttpRequestFunction implements UnaryOperator<HttpRequest> {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(AddTrackingHeadersToHttpRequestFunction.class);
-    public static final String HEADER_X_CORRELATION_ID = "X-Correlation-ID";
+    private static final Logger LOGGER = LoggerFactory.getLogger(AddMissingRequestIdHeaderToHttpRequestFunction.class);
     public static final String HEADER_X_REQUEST_ID = "X-Request-ID";
     private final boolean generateMissingRequestId;
-    private final boolean generateMissingCorrelationId;
-    public AddTrackingHeadersToHttpRequestFunction(boolean generateMissingRequestId,
-                                                   boolean generateMissingCorrelationId) {
+    public AddMissingRequestIdHeaderToHttpRequestFunction(boolean generateMissingRequestId) {
         this.generateMissingRequestId = generateMissingRequestId;
-        this.generateMissingCorrelationId = generateMissingCorrelationId;
     }
 
     @Override
@@ -41,12 +37,6 @@ public class AddTrackingHeadersToHttpRequestFunction implements UnaryOperator<Ht
         }
         requestId.ifPresent(reqId -> headers.put(HEADER_X_REQUEST_ID, Lists.newArrayList(reqId)));
 
-        //we generate an 'X-Correlation-ID' header if not present
-        Optional<List<String>> correlationId = Optional.ofNullable(httpRequest.getHeaders().get(HEADER_X_CORRELATION_ID));
-        if (correlationId.isEmpty() && this.generateMissingCorrelationId) {
-            correlationId = Optional.of(Lists.newArrayList(UUID.randomUUID().toString()));
-        }
-        correlationId.ifPresent(corrId -> headers.put(HEADER_X_CORRELATION_ID, Lists.newArrayList(corrId)));
 
         return httpRequest;
     }
