@@ -98,7 +98,7 @@ The predicate permits to filter some http requests, and can be composed, cumulat
     - *wait.time.registration.queue.consumer.in.ms* : wait time for a queue consumer (Source Connector) registration. default value is 60 seconds.
     - *poll.delay.registration.queue.consumer.in.ms* : poll delay, i.e, wait time before start polling a registered consumer. default value is 2 seconds.
     - *poll.interval.registration.queue.consumer.in.ms* : poll interval, i.e, time between every poll for a registered consumer. default value is 5000 milliseconds.
-  - http client implementation settings
+  - http client implementation settings (prefixed by `config.<config_id>` )
     - *httpclient.implementation* : define which installed library to use : either `ahc`, a.k.a async http client, or `okhttp`. default is `okhttp`.
   - http client SSL parameters
     - *httpclient.ssl.keystore.path* : file path of the custom key store.
@@ -109,6 +109,7 @@ The predicate permits to filter some http requests, and can be composed, cumulat
     - *httpclient.ssl.truststore.password* : password of the custom trusted store.
     - *httpclient.ssl.truststore.type* : truststore type. can be `jks` or `pkcs12`.
     - *httpclient.ssl.truststore.algorithm* : the standard name of the requested algorithm. See the KeyManagerFactory section in the Java Security Standard Algorithm Names Specification for information about standard algorithm names.
+    - *httpclient.ssl.truststore.always.trust* : add a truststore that always trust *any* certificates. Transport security is disabled. Be careful that the server cannot be trusted with this option ! 
   - http client async settings
     - *httpclient.async.fixed.thread.pool.size* : custom fixed thread pool size used to execute asynchronously http requests.
   - _okhttp_ (default) HTTP client implementation settings
