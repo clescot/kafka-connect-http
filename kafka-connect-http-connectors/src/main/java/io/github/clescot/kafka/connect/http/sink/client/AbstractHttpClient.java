@@ -27,7 +27,7 @@ public abstract class AbstractHttpClient<Req, Res> implements HttpClient<Req, Re
     protected Map<String, Object> config;
     private Optional<RateLimiter<HttpExchange>> rateLimiter = Optional.empty();
 
-    public AbstractHttpClient(Map<String, Object> config) {
+    protected AbstractHttpClient(Map<String, Object> config) {
         this.config = config;
     }
 
@@ -76,7 +76,7 @@ public abstract class AbstractHttpClient<Req, Res> implements HttpClient<Req, Re
             String finalKeystoreType = Optional.ofNullable(keystoreType).orElse(KeyStore.getDefaultType());
             keyStore = KeyStore.getInstance(finalKeystoreType);
         } catch (NoSuchAlgorithmException | KeyStoreException e) {
-            throw new RuntimeException(e);
+            throw new HttpException(e);
         }
 
         Path path = Path.of(keyStorePath);
@@ -86,7 +86,7 @@ public abstract class AbstractHttpClient<Req, Res> implements HttpClient<Req, Re
             keyManagerFactory.init(keyStore,password);
         } catch (IOException | NoSuchAlgorithmException | CertificateException | KeyStoreException |
                  UnrecoverableKeyException e) {
-            throw new RuntimeException(e);
+            throw new HttpException(e);
         }
         return keyManagerFactory;
     }
@@ -101,21 +101,21 @@ public abstract class AbstractHttpClient<Req, Res> implements HttpClient<Req, Re
             sslContext.init(keyManagerFactory!=null?keyManagerFactory.getKeyManagers():null,trustManagerFactory!=null?trustManagerFactory.getTrustManagers():null, random);
             return sslContext.getSocketFactory();
         } catch (NoSuchAlgorithmException | KeyManagementException e) {
-            throw new RuntimeException(e);
+            throw new HttpException(e);
         }
     }
 
     @Override
     public CompletableFuture<Res> call(Req request){
         try {
-            Optional<RateLimiter<HttpExchange>> rateLimiter = getRateLimiter();
-            if (rateLimiter.isPresent()) {
-                rateLimiter.get().acquirePermits(HttpClient.ONE_HTTP_REQUEST);
+            Optional<RateLimiter<HttpExchange>> limiter = getRateLimiter();
+            if (limiter.isPresent()) {
+                limiter.get().acquirePermits(HttpClient.ONE_HTTP_REQUEST);
                 LOGGER.debug("permits acquired request:'{}'", request);
             }
             return nativeCall(request);
         } catch (InterruptedException e) {
-            LOGGER.error("Failed to acquire execution permit from the rate limiter {} ", e.getMessage());
+            Thread.currentThread().interrupt();
             throw new HttpException(e.getMessage());
         }
     }
