@@ -63,7 +63,7 @@ The predicate permits to filter some http requests, and can be composed, cumulat
 
 
   - retry settings (**set them all or no one**), permit to define a default retry policy.
-    - *config.default.retry.response.code.regex* : regex which define if a retry need to be triggered, based on the response status code. default is `^[1-2][0-9][0-9]$`
+    - *config.default.retry.policy.response.code.regex* : regex which define if a retry need to be triggered, based on the response status code. default is `^[1-2][0-9][0-9]$`
       by default, we don't resend any http call with a response between `100` and `499`.only `5xx` by default, trigger a resend
       - `1xx` is for protocol information (100 continue for example),
       - `2xx` is for success,
@@ -189,7 +189,7 @@ The predicate permits to filter some http requests, and can be composed, cumulat
     "config.default.retry.jitter.in.ms":"500",
     "config.default.rate.limiter.period.in.ms":"1000",
     "config.default.rate.limiter.max.executions":"5",
-    "config.default.retry.response.code.regex":"^5[0-9][0-9]$",
+    "config.default.retry.policy.response.code.regex":"^5[0-9][0-9]$",
     "config.default.success.response.code.regex":"^[1-2][0-9][0-9]$",
     "httpclient.ssl.truststore.path": "/path/to/my.truststore.jks",
     "httpclient.ssl.truststore.password": "mySecret_Pass",
@@ -335,7 +335,7 @@ You will have the ability to define optionnaly :
   - `config.test2.rate.limiter.max.executions`
   - `config.test2.rate.limiter.period.in.ms`
   - a **success response code regex** with the parameter : `httpclient.test2.success.response.code.regex`
-  - a **retry response code regex** with the parameter : `httpclient.test2.retry.response.code.regex`
+  - a **retry response code regex** with the parameter : `httpclient.test2.retry.policy.response.code.regex`
   - a **retry policy** with the parameters : 
     - `config.test2.retries`
     - `config.test2.retry.delay.in.ms`
