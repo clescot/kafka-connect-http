@@ -323,11 +323,7 @@ public class AHCHttpClient extends AbstractHttpClient<Request, Response> {
         if (config.containsKey(CONFIG_HTTPCLIENT_SSL_TRUSTSTORE_PATH) && config.containsKey(CONFIG_HTTPCLIENT_SSL_TRUSTSTORE_PASSWORD)) {
 
             Optional<TrustManagerFactory> trustManagerFactory = Optional.ofNullable(
-                    HttpClient.getTrustManagerFactory(
-                            config.get(CONFIG_HTTPCLIENT_SSL_TRUSTSTORE_PATH).toString(),
-                            config.get(CONFIG_HTTPCLIENT_SSL_TRUSTSTORE_PASSWORD).toString().toCharArray(),
-                            config.get(CONFIG_HTTPCLIENT_SSL_TRUSTSTORE_TYPE).toString(),
-                            config.get(CONFIG_HTTPCLIENT_SSL_TRUSTSTORE_ALGORITHM).toString()));
+                    HttpClient.getTrustManagerFactory(config));
             if (trustManagerFactory.isPresent()) {
                 SslContext nettySSLContext;
                 try {

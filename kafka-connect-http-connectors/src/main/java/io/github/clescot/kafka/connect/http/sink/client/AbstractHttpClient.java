@@ -32,14 +32,11 @@ public abstract class AbstractHttpClient<Req, Res> implements HttpClient<Req, Re
     }
 
     protected Optional<TrustManagerFactory> getTrustManagerFactory() {
-        if (config.containsKey(CONFIG_HTTPCLIENT_SSL_TRUSTSTORE_PATH) && config.containsKey(CONFIG_HTTPCLIENT_SSL_TRUSTSTORE_PASSWORD)) {
+        if (config.containsKey(CONFIG_HTTPCLIENT_SSL_TRUSTSTORE_PATH)
+                && config.containsKey(CONFIG_HTTPCLIENT_SSL_TRUSTSTORE_PASSWORD)) {
 
             Optional<TrustManagerFactory> trustManagerFactory = Optional.ofNullable(
-                    HttpClient.getTrustManagerFactory(
-                            config.get(CONFIG_HTTPCLIENT_SSL_TRUSTSTORE_PATH).toString(),
-                            config.get(CONFIG_HTTPCLIENT_SSL_TRUSTSTORE_PASSWORD).toString().toCharArray(),
-                            config.get(CONFIG_HTTPCLIENT_SSL_TRUSTSTORE_TYPE).toString(),
-                            config.get(CONFIG_HTTPCLIENT_SSL_TRUSTSTORE_ALGORITHM).toString()));
+                    HttpClient.getTrustManagerFactory(config));
             if (trustManagerFactory.isPresent()) {
                 return Optional.of(trustManagerFactory.get());
             }
@@ -48,7 +45,8 @@ public abstract class AbstractHttpClient<Req, Res> implements HttpClient<Req, Re
     }
 
     protected Optional<KeyManagerFactory> getKeyManagerFactory() {
-        if (config.containsKey(CONFIG_HTTPCLIENT_SSL_KEYSTORE_PATH) && config.containsKey(CONFIG_HTTPCLIENT_SSL_KEYSTORE_PASSWORD)) {
+        if (config.containsKey(CONFIG_HTTPCLIENT_SSL_KEYSTORE_PATH)
+                && config.containsKey(CONFIG_HTTPCLIENT_SSL_KEYSTORE_PASSWORD)) {
 
             Optional<KeyManagerFactory> keyManagerFactory = Optional.ofNullable(
                     getKeyManagerFactory(

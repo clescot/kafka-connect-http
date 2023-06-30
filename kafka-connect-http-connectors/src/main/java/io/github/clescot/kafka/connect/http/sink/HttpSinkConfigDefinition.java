@@ -147,13 +147,19 @@ public class HttpSinkConfigDefinition {
     public static final String CONFIG_HTTPCLIENT_SSL_KEYSTORE_ALGORITHM =  DEFAULT_CONFIGURATION_PREFIX + HTTP_CLIENT_PREFIX +"ssl.keystore.algorithm";
     public static final String CONFIG_HTTPCLIENT_SSL_KEYSTORE_ALGORITHM_DOC = "the standard name of the requested algorithm. See the KeyManagerFactory section in the Java Security Standard Algorithm Names Specification for information about standard algorithm names.";
 
+    public static final String CONFIG_HTTPCLIENT_SSL_TRUSTSTORE_ALWAYS_TRUST =  DEFAULT_CONFIGURATION_PREFIX + HTTP_CLIENT_PREFIX +"ssl.truststore.always.trust";
+    public static final String CONFIG_HTTPCLIENT_SSL_TRUSTSTORE_ALWAYS_TRUST_DOC = "trust store that always trust any certificate. this option remove any security on the transport layer. be careful when you activate this option ! you will have no guarantee that you don't contact any hacked server ! ";
+
 
     public static final String CONFIG_HTTPCLIENT_SSL_TRUSTSTORE_PATH =  DEFAULT_CONFIGURATION_PREFIX + HTTP_CLIENT_PREFIX +"ssl.truststore.path";
     public static final String CONFIG_HTTPCLIENT_SSL_TRUSTSTORE_PATH_DOC = "file path of the custom trust store.";
+
     public static final String CONFIG_HTTPCLIENT_SSL_TRUSTSTORE_PASSWORD =  DEFAULT_CONFIGURATION_PREFIX + HTTP_CLIENT_PREFIX +"ssl.truststore.password";
     public static final String CONFIG_HTTPCLIENT_SSL_TRUSTSTORE_PASSWORD_DOC = "password of the custom trusted store.";
+
     public static final String CONFIG_HTTPCLIENT_SSL_TRUSTSTORE_TYPE =  DEFAULT_CONFIGURATION_PREFIX + HTTP_CLIENT_PREFIX +"ssl.truststore.type";
     public static final String CONFIG_HTTPCLIENT_SSL_TRUSTSTORE_TYPE_DOC = "truststore type. can be 'jks' or 'pkcs12'.";
+
     public static final String CONFIG_HTTPCLIENT_SSL_TRUSTSTORE_ALGORITHM =  DEFAULT_CONFIGURATION_PREFIX + HTTP_CLIENT_PREFIX +"ssl.truststore.algorithm";
     public static final String CONFIG_HTTPCLIENT_SSL_TRUSTSTORE_ALGORITHM_DOC = "the standard name of the requested algorithm. See the KeyManagerFactory section in the Java Security Standard Algorithm Names Specification for information about standard algorithm names.";
 
@@ -198,6 +204,7 @@ public class HttpSinkConfigDefinition {
                 .define(CONFIG_HTTPCLIENT_SSL_KEYSTORE_PASSWORD, ConfigDef.Type.STRING, null, ConfigDef.Importance.LOW, CONFIG_HTTPCLIENT_SSL_KEYSTORE_PASSWORD_DOC)
                 .define(CONFIG_HTTPCLIENT_SSL_KEYSTORE_TYPE, ConfigDef.Type.STRING, null, ConfigDef.Importance.LOW, CONFIG_HTTPCLIENT_SSL_KEYSTORE_TYPE_DOC)
                 .define(CONFIG_HTTPCLIENT_SSL_KEYSTORE_ALGORITHM, ConfigDef.Type.STRING, null, ConfigDef.Importance.LOW, CONFIG_HTTPCLIENT_SSL_KEYSTORE_ALGORITHM_DOC)
+                .define(CONFIG_HTTPCLIENT_SSL_TRUSTSTORE_ALWAYS_TRUST, ConfigDef.Type.BOOLEAN, false, ConfigDef.Importance.LOW, CONFIG_HTTPCLIENT_SSL_TRUSTSTORE_ALWAYS_TRUST_DOC)
                 .define(CONFIG_HTTPCLIENT_SSL_TRUSTSTORE_PATH, ConfigDef.Type.STRING, null, ConfigDef.Importance.LOW, CONFIG_HTTPCLIENT_SSL_TRUSTSTORE_PATH_DOC)
                 .define(CONFIG_HTTPCLIENT_SSL_TRUSTSTORE_PASSWORD, ConfigDef.Type.STRING, null, ConfigDef.Importance.LOW, CONFIG_HTTPCLIENT_SSL_TRUSTSTORE_PASSWORD_DOC)
                 .define(CONFIG_HTTPCLIENT_SSL_TRUSTSTORE_TYPE, ConfigDef.Type.STRING, null, ConfigDef.Importance.LOW, CONFIG_HTTPCLIENT_SSL_TRUSTSTORE_TYPE_DOC)
