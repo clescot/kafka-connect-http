@@ -22,7 +22,7 @@ after the section dedicated to put in place the HTTP Sink and Source connectors:
 7. the HTTP exchange is saved as a `Struct`, and can be serialized as a JSON Schema or another format via converters, and the help of a Schema registry.
    It also can be serialized as a String. 
 
-# Http Sink Connector
+# Http Sink Connector detailed Architecture
 
 ![Http Sink Connector organization](http_sink_connector.png)
 
