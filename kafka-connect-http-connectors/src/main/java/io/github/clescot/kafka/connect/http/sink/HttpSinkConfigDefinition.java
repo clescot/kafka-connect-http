@@ -163,12 +163,17 @@ public class HttpSinkConfigDefinition {
     public static final String CONFIG_HTTPCLIENT_SSL_TRUSTSTORE_ALGORITHM =  DEFAULT_CONFIGURATION_PREFIX + HTTP_CLIENT_PREFIX +"ssl.truststore.algorithm";
     public static final String CONFIG_HTTPCLIENT_SSL_TRUSTSTORE_ALGORITHM_DOC = "the standard name of the requested algorithm. See the KeyManagerFactory section in the Java Security Standard Algorithm Names Specification for information about standard algorithm names.";
 
-
     public static final String CONFIG_HTTP_CLIENT_ASYNC_FIXED_THREAD_POOL_SIZE = DEFAULT_CONFIGURATION_PREFIX + HTTP_CLIENT_PREFIX +"async.fixed.thread.pool.size";
     public static final String CONFIG_HTTP_CLIENT_ASYNC_FIXED_THREAD_POOL_SIZE_DOC ="custom fixed thread pool size used to execute asynchronously http requests.";
 
+    public static final String CONFIG_HTTPCLIENT_AUTHENTICATION_BASIC_ACTIVATE =  DEFAULT_CONFIGURATION_PREFIX + HTTP_CLIENT_PREFIX +"authentication.basic.activate";
+    public static final String CONFIG_HTTPCLIENT_AUTHENTICATION_BASIC_ACTIVATE_DOC = "activate the BASIC authentication";
 
+    public static final String CONFIG_HTTPCLIENT_AUTHENTICATION_BASIC_USER =  DEFAULT_CONFIGURATION_PREFIX + HTTP_CLIENT_PREFIX +"authentication.basic.user";
+    public static final String CONFIG_HTTPCLIENT_AUTHENTICATION_BASIC_USER_DOC = "activate the BASIC authentication";
 
+    public static final String CONFIG_HTTPCLIENT_AUTHENTICATION_BASIC_PASSWORD =  DEFAULT_CONFIGURATION_PREFIX + HTTP_CLIENT_PREFIX +"authentication.basic.password";
+    public static final String CONFIG_HTTPCLIENT_AUTHENTICATION_BASIC_PASSWORD_DOC = "activate the BASIC authentication";
     private HttpSinkConfigDefinition() {
         //Class with only static methods
     }
@@ -209,6 +214,9 @@ public class HttpSinkConfigDefinition {
                 .define(CONFIG_HTTPCLIENT_SSL_TRUSTSTORE_PASSWORD, ConfigDef.Type.STRING, null, ConfigDef.Importance.LOW, CONFIG_HTTPCLIENT_SSL_TRUSTSTORE_PASSWORD_DOC)
                 .define(CONFIG_HTTPCLIENT_SSL_TRUSTSTORE_TYPE, ConfigDef.Type.STRING, null, ConfigDef.Importance.LOW, CONFIG_HTTPCLIENT_SSL_TRUSTSTORE_TYPE_DOC)
                 .define(CONFIG_HTTPCLIENT_SSL_TRUSTSTORE_ALGORITHM, ConfigDef.Type.STRING, null, ConfigDef.Importance.LOW, CONFIG_HTTPCLIENT_SSL_TRUSTSTORE_ALGORITHM_DOC)
+                .define(CONFIG_HTTPCLIENT_AUTHENTICATION_BASIC_ACTIVATE, ConfigDef.Type.BOOLEAN, false, ConfigDef.Importance.LOW, CONFIG_HTTPCLIENT_AUTHENTICATION_BASIC_ACTIVATE_DOC)
+                .define(CONFIG_HTTPCLIENT_AUTHENTICATION_BASIC_USER, ConfigDef.Type.STRING, null, ConfigDef.Importance.LOW, CONFIG_HTTPCLIENT_AUTHENTICATION_BASIC_USER_DOC)
+                .define(CONFIG_HTTPCLIENT_AUTHENTICATION_BASIC_PASSWORD, ConfigDef.Type.STRING, null, ConfigDef.Importance.LOW, CONFIG_HTTPCLIENT_AUTHENTICATION_BASIC_PASSWORD_DOC)
                 //async settings
                 .define(CONFIG_HTTP_CLIENT_ASYNC_FIXED_THREAD_POOL_SIZE, ConfigDef.Type.INT, null, ConfigDef.Importance.MEDIUM, CONFIG_HTTP_CLIENT_ASYNC_FIXED_THREAD_POOL_SIZE_DOC)
                 //custom configurations

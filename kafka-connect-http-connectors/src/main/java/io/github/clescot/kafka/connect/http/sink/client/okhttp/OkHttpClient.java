@@ -24,6 +24,8 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
 
+import static io.github.clescot.kafka.connect.http.sink.HttpSinkConfigDefinition.*;
+
 public class OkHttpClient extends AbstractHttpClient<Request, Response> {
     private static final String PROTOCOL_SEPARATOR = ",";
     public static final String OKHTTP_CONNECTION_POOL_MAX_IDLE_CONNECTIONS = "okhttp.connection.pool.max.idle.connections";
@@ -58,7 +60,7 @@ public class OkHttpClient extends AbstractHttpClient<Request, Response> {
 
 
     private final okhttp3.OkHttpClient client;
-    private final Logger LOGGER = LoggerFactory.getLogger(OkHttpClient.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(OkHttpClient.class);
 
     public OkHttpClient(Map<String, Object> config, ExecutorService executorService) {
         super(config);
@@ -150,6 +152,12 @@ public class OkHttpClient extends AbstractHttpClient<Request, Response> {
             long maxSize=Long.parseLong(config.getOrDefault(OKHTTP_CACHE_MAX_SIZE, DEFAULT_MAX_CACHE_ENTRIES).toString());
             Cache cache = new Cache(cacheDirectory,maxSize, FileSystem.SYSTEM);
             httpClientBuilder.cache(cache);
+        }
+        if(config.containsKey(CONFIG_HTTPCLIENT_AUTHENTICATION_BASIC_ACTIVATE)&&Boolean.TRUE.equals(config.get(CONFIG_HTTPCLIENT_AUTHENTICATION_BASIC_ACTIVATE))){
+            String username = (String) config.get(CONFIG_HTTPCLIENT_AUTHENTICATION_BASIC_USER);
+            String password = (String) config.get(CONFIG_HTTPCLIENT_AUTHENTICATION_BASIC_PASSWORD);
+            Authenticator authenticator = new BasicAuthenticator(username,password);
+            httpClientBuilder.authenticator(authenticator);
         }
 
         client = httpClientBuilder.build();
