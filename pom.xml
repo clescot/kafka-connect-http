@@ -47,6 +47,7 @@
         <jackson.version>2.15.2</jackson.version>
         <json.assert.version>1.5.1</json.assert.version>
         <junit.version>5.9.3</junit.version>
+        <logback.version>1.4.8</logback.version>
         <maven.compiler.source>11</maven.compiler.source>
         <maven.compiler.target>11</maven.compiler.target>
         <mockito.version>5.4.0</mockito.version>
