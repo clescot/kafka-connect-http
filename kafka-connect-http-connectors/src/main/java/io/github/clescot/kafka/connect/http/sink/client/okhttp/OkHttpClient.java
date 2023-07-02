@@ -62,6 +62,7 @@ public class OkHttpClient extends AbstractHttpClient<Request, Response> {
     private final okhttp3.OkHttpClient client;
     private static final Logger LOGGER = LoggerFactory.getLogger(OkHttpClient.class);
 
+    @SuppressWarnings("java:S5527")
     public OkHttpClient(Map<String, Object> config, ExecutorService executorService) {
         super(config);
         okhttp3.OkHttpClient.Builder httpClientBuilder = new okhttp3.OkHttpClient.Builder();
