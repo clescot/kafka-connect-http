@@ -180,9 +180,9 @@ class OkHttpClientTest {
             WireMock wireMock = wmRuntimeInfo.getWireMock();
 
             HashMap<String, Object> config = Maps.newHashMap();
-            config.put("config.default.httpclient.authentication.basic.activate",true);
-            config.put("config.default.httpclient.authentication.basic.user",username);
-            config.put("config.default.httpclient.authentication.basic.password",password);
+            config.put("httpclient.authentication.basic.activate",true);
+            config.put("httpclient.authentication.basic.username",username);
+            config.put("httpclient.authentication.basic.password",password);
 
             OkHttpClient client = new OkHttpClient(config, null);
 

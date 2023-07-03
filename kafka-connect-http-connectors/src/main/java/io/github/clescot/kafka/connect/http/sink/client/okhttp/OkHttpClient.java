@@ -3,6 +3,7 @@ package io.github.clescot.kafka.connect.http.sink.client.okhttp;
 import com.burgstaller.okhttp.AuthenticationCacheInterceptor;
 import com.burgstaller.okhttp.CachingAuthenticatorDecorator;
 import com.burgstaller.okhttp.DispatchingAuthenticator;
+import com.burgstaller.okhttp.basic.BasicAuthenticator;
 import com.burgstaller.okhttp.digest.CachingAuthenticator;
 import com.burgstaller.okhttp.digest.DigestAuthenticator;
 import com.google.common.collect.Lists;
@@ -22,6 +23,7 @@ import org.slf4j.LoggerFactory;
 import javax.net.ssl.*;
 import java.io.File;
 import java.io.IOException;
+import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.*;
@@ -29,8 +31,6 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
-
-import com.burgstaller.okhttp.basic.BasicAuthenticator;
 
 import static io.github.clescot.kafka.connect.http.sink.HttpSinkConfigDefinition.*;
 
@@ -161,26 +161,48 @@ public class OkHttpClient extends AbstractHttpClient<Request, Response> {
             Cache cache = new Cache(cacheDirectory, maxSize, FileSystem.SYSTEM);
             httpClientBuilder.cache(cache);
         }
-        if (config.containsKey(CONFIG_HTTPCLIENT_AUTHENTICATION_BASIC_ACTIVATE) && Boolean.TRUE.equals(config.get(CONFIG_HTTPCLIENT_AUTHENTICATION_BASIC_ACTIVATE))) {
-            String username = (String) config.get(CONFIG_HTTPCLIENT_AUTHENTICATION_BASIC_USER);
-            String password = (String) config.get(CONFIG_HTTPCLIENT_AUTHENTICATION_BASIC_PASSWORD);
-
-            final Map<String, CachingAuthenticator> authCache = new ConcurrentHashMap<>();
-
+        final Map<String, CachingAuthenticator> authCache = new ConcurrentHashMap<>();
+        BasicAuthenticator basicAuthenticator = null;
+        if (config.containsKey(HTTP_CLIENT_AUTHENTICATION_BASIC_ACTIVATE) && Boolean.TRUE.equals(config.get(HTTP_CLIENT_AUTHENTICATION_BASIC_ACTIVATE))) {
+            String username = (String) config.get(HTTP_CLIENT_AUTHENTICATION_BASIC_USERNAME);
+            String password = (String) config.get(HTTP_CLIENT_AUTHENTICATION_BASIC_PASSWORD);
             com.burgstaller.okhttp.digest.Credentials credentials = new com.burgstaller.okhttp.digest.Credentials(username, password);
-            final BasicAuthenticator basicAuthenticator = new BasicAuthenticator(credentials);
-            final DigestAuthenticator digestAuthenticator = new DigestAuthenticator(credentials);
 
-            // note that all auth schemes should be registered as lowercase!
-            DispatchingAuthenticator authenticator = new DispatchingAuthenticator.Builder()
-                    .with("digest", digestAuthenticator)
-                    .with("basic", basicAuthenticator)
-                    .build();
 
-            httpClientBuilder.authenticator(new CachingAuthenticatorDecorator(authenticator, authCache));
+            //basic charset
+            String basicCredentialCharset = "ISO-8859-1";
+            if (config.containsKey(HTTP_CLIENT_AUTHENTICATION_BASIC_CHARSET)) {
+                basicCredentialCharset = String.valueOf(config.get(HTTP_CLIENT_AUTHENTICATION_BASIC_CHARSET));
+            }
+            Charset basicCharset = Charset.forName(basicCredentialCharset);
+            basicAuthenticator = new BasicAuthenticator(credentials, basicCharset);
+        }
+        DigestAuthenticator digestAuthenticator = null;
+        if (config.containsKey(HTTP_CLIENT_AUTHENTICATION_DIGEST_ACTIVATE) && Boolean.TRUE.equals(config.get(HTTP_CLIENT_AUTHENTICATION_DIGEST_ACTIVATE))) {
+            String username = (String) config.get(HTTP_CLIENT_AUTHENTICATION_DIGEST_USERNAME);
+            String password = (String) config.get(HTTP_CLIENT_AUTHENTICATION_DIGEST_PASSWORD);
+            com.burgstaller.okhttp.digest.Credentials credentials = new com.burgstaller.okhttp.digest.Credentials(username, password);
+            //digest charset
+            String digestCredentialCharset = "US-ASCII";
+            if(config.containsKey(HTTP_CLIENT_AUTHENTICATION_DIGEST_CHARSET)){
+                digestCredentialCharset = String.valueOf(config.get(HTTP_CLIENT_AUTHENTICATION_DIGEST_CHARSET));
+            }
+            Charset digestCharset = Charset.forName(digestCredentialCharset);
+            digestAuthenticator = new DigestAuthenticator(credentials,digestCharset);
+
+        }
+        // note that all auth schemes should be registered as lowercase!
+        DispatchingAuthenticator.Builder authenticatorBuilder = new DispatchingAuthenticator.Builder();
+        if(basicAuthenticator!=null){
+            authenticatorBuilder = authenticatorBuilder.with("basic", basicAuthenticator);
+        }
+        if(digestAuthenticator!=null){
+            authenticatorBuilder = authenticatorBuilder.with("digest", digestAuthenticator);
+        }
+        if(basicAuthenticator!=null||digestAuthenticator!=null) {
+            httpClientBuilder.authenticator(new CachingAuthenticatorDecorator(authenticatorBuilder.build(), authCache));
             httpClientBuilder.addInterceptor(new AuthenticationCacheInterceptor(authCache));
             httpClientBuilder.addNetworkInterceptor(new LoggingInterceptor());
-
         }
 
         client = httpClientBuilder.build();

@@ -81,13 +81,13 @@ The predicate permits to filter some http requests, and can be composed, cumulat
     - *config.default.rate.limiter.scope* : can be either `instance` (default option when not set, i.e a rate limiter per configuration in the connector instance),  or `static` (a rate limiter per configuration id shared with all connectors instances in the same Java Virtual Machine.
     - - owns a retry regex
   - header settings
-    - *config.static.request.header.names* : list of headers names to attach to all requests. *Static* term, means that these headers
+    - *config.default.static.request.header.names* : list of headers names to attach to all requests. *Static* term, means that these headers
       are not managed by initial kafka message, but are defined at the connector level and added globally. this list is divided by
       `,` character. The connector will try to get the value to add to request by querying the config with the header name as parameter name.
       For example, if set `static.request.header.names: param_name1, param_name2`, the connector will lookup the param_name1
       and param_name2 parameters to get values to add.
-    - *config.generate.missing.request.id* : `false` by default. when set to `true`, generate an uuid bound to the `X-Request-ID` header.
-    - *config.generate.missing.correlation.id* : `false` by default. when set to `true`, generate an uuid bound to the `X-Correlation-ID` header.
+    - *config.default.generate.missing.request.id* : `false` by default. when set to `true`, generate an uuid bound to the `X-Request-ID` header.
+    - *config.default.generate.missing.correlation.id* : `false` by default. when set to `true`, generate an uuid bound to the `X-Correlation-ID` header.
   - in memory queue settings
     - *publish.to.in.memory.queue* : `false` by default. When set to `true`, publish HTTP interactions (request and responses)
       are published into the in memory queue.
@@ -100,16 +100,21 @@ The predicate permits to filter some http requests, and can be composed, cumulat
     - *poll.interval.registration.queue.consumer.in.ms* : poll interval, i.e, time between every poll for a registered consumer. default value is 5000 milliseconds.
   - http client implementation settings (prefixed by `config.<config_id>` )
     - *httpclient.implementation* : define which installed library to use : either `ahc`, a.k.a async http client, or `okhttp`. default is `okhttp`.
+  - http client authentication parameters
+    - *config.default.httpclient.authentication.basic.activate* : activate basic authentication response with credentials, for web sites matching this configuration (required)
+    - *config.default.httpclient.authentication.basic.username* : username used to authenticate against the basic challenge (required)
+    - *config.default.httpclient.authentication.basic.password* : password used to authenticate against the basic challenge (required)
+    - *config.default.httpclient.authentication.basic.charset* : character set used by the http client to encode credentials (optional `ISO_8859_1` if not set)
   - http client SSL parameters
-    - *httpclient.ssl.keystore.path* : file path of the custom key store.
-    - *httpclient.ssl.keystore.password* : password of the custom key store.
-    - *httpclient.ssl.keystore.type"* : keystore type. can be `jks` or `pkcs12`.
-    - *httpclient.ssl.keystore.algorithm* : the standard name of the requested algorithm. See the KeyManagerFactory section in the Java Security Standard Algorithm Names Specification for information about standard algorithm names.
-    - *httpclient.ssl.truststore.path* : file path of the custom trust store.
-    - *httpclient.ssl.truststore.password* : password of the custom trusted store.
-    - *httpclient.ssl.truststore.type* : truststore type. can be `jks` or `pkcs12`.
-    - *httpclient.ssl.truststore.algorithm* : the standard name of the requested algorithm. See the KeyManagerFactory section in the Java Security Standard Algorithm Names Specification for information about standard algorithm names.
-    - *httpclient.ssl.truststore.always.trust* : add a truststore that always trust *any* certificates. Transport security is disabled. Be careful that the server cannot be trusted with this option ! 
+    - *config.default.httpclient.ssl.keystore.path* : file path of the custom key store.
+    - *config.default.httpclient.ssl.keystore.password* : password of the custom key store.
+    - *config.default.httpclient.ssl.keystore.type"* : keystore type. can be `jks` or `pkcs12`.
+    - *config.default.httpclient.ssl.keystore.algorithm* : the standard name of the requested algorithm. See the KeyManagerFactory section in the Java Security Standard Algorithm Names Specification for information about standard algorithm names.
+    - *config.default.httpclient.ssl.truststore.path* : file path of the custom trust store.
+    - *config.default.httpclient.ssl.truststore.password* : password of the custom trusted store.
+    - *config.default.httpclient.ssl.truststore.type* : truststore type. can be `jks` or `pkcs12`.
+    - *config.default.httpclient.ssl.truststore.algorithm* : the standard name of the requested algorithm. See the KeyManagerFactory section in the Java Security Standard Algorithm Names Specification for information about standard algorithm names.
+    - *config.default.httpclient.ssl.truststore.always.trust* : add a truststore that always trust *any* certificates. Transport security is disabled. Be careful that the server cannot be trusted with this option ! 
   - http client async settings
     - *httpclient.async.fixed.thread.pool.size* : custom fixed thread pool size used to execute asynchronously http requests.
   - _okhttp_ (default) HTTP client implementation settings

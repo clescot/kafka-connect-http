@@ -320,7 +320,7 @@ public class AHCHttpClient extends AbstractHttpClient<Request, Response> {
             propertyBasedASyncHttpClientConfig.setByteBufAllocator(new PooledByteBufAllocator());
             LOGGER.error("we rollback to the default byte buffer allocator");
         }
-        if (config.containsKey(CONFIG_HTTPCLIENT_SSL_TRUSTSTORE_PATH) && config.containsKey(CONFIG_HTTPCLIENT_SSL_TRUSTSTORE_PASSWORD)) {
+        if (config.containsKey(CONFIG_HTTP_CLIENT_SSL_TRUSTSTORE_PATH) && config.containsKey(CONFIG_HTTP_CLIENT_SSL_TRUSTSTORE_PASSWORD)) {
 
             Optional<TrustManagerFactory> trustManagerFactory = Optional.ofNullable(
                     HttpClient.getTrustManagerFactory(config));

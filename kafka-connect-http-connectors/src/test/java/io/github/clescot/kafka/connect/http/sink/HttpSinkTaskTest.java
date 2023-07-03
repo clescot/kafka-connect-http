@@ -125,8 +125,8 @@ public class HttpSinkTaskTest {
             Map<String, String> settings = Maps.newHashMap();
             String truststorePath = Thread.currentThread().getContextClassLoader().getResource(CLIENT_TRUSTSTORE_JKS_FILENAME).getPath();
             String password = CLIENT_TRUSTSTORE_JKS_PASSWORD;
-            settings.put(CONFIG_HTTPCLIENT_SSL_TRUSTSTORE_PATH, truststorePath);
-            settings.put(CONFIG_HTTPCLIENT_SSL_TRUSTSTORE_PASSWORD, password);
+            settings.put(CONFIG_HTTP_CLIENT_SSL_TRUSTSTORE_PATH, truststorePath);
+            settings.put(CONFIG_HTTP_CLIENT_SSL_TRUSTSTORE_PASSWORD, password);
             httpSinkTask.start(settings);
         }
 
@@ -135,9 +135,9 @@ public class HttpSinkTaskTest {
             Map<String, String> settings = Maps.newHashMap();
             String truststorePath = Thread.currentThread().getContextClassLoader().getResource(CLIENT_TRUSTSTORE_JKS_FILENAME).getPath();
             String password = CLIENT_TRUSTSTORE_JKS_PASSWORD;
-            settings.put(CONFIG_HTTPCLIENT_SSL_TRUSTSTORE_PATH, truststorePath);
-            settings.put(CONFIG_HTTPCLIENT_SSL_TRUSTSTORE_PASSWORD, password);
-            settings.put(CONFIG_HTTPCLIENT_SSL_TRUSTSTORE_TYPE, JKS_STORE_TYPE);
+            settings.put(CONFIG_HTTP_CLIENT_SSL_TRUSTSTORE_PATH, truststorePath);
+            settings.put(CONFIG_HTTP_CLIENT_SSL_TRUSTSTORE_PASSWORD, password);
+            settings.put(CONFIG_HTTP_CLIENT_SSL_TRUSTSTORE_TYPE, JKS_STORE_TYPE);
             httpSinkTask.start(settings);
         }
 
@@ -146,10 +146,10 @@ public class HttpSinkTaskTest {
             Map<String, String> settings = Maps.newHashMap();
             String truststorePath = Thread.currentThread().getContextClassLoader().getResource(CLIENT_TRUSTSTORE_JKS_FILENAME).getPath();
             String password = CLIENT_TRUSTSTORE_JKS_PASSWORD;
-            settings.put(CONFIG_HTTPCLIENT_SSL_TRUSTSTORE_PATH, truststorePath);
-            settings.put(CONFIG_HTTPCLIENT_SSL_TRUSTSTORE_PASSWORD, password);
-            settings.put(CONFIG_HTTPCLIENT_SSL_TRUSTSTORE_TYPE, JKS_STORE_TYPE);
-            settings.put(CONFIG_HTTPCLIENT_SSL_TRUSTSTORE_ALGORITHM, TRUSTSTORE_PKIX_ALGORITHM);
+            settings.put(CONFIG_HTTP_CLIENT_SSL_TRUSTSTORE_PATH, truststorePath);
+            settings.put(CONFIG_HTTP_CLIENT_SSL_TRUSTSTORE_PASSWORD, password);
+            settings.put(CONFIG_HTTP_CLIENT_SSL_TRUSTSTORE_TYPE, JKS_STORE_TYPE);
+            settings.put(CONFIG_HTTP_CLIENT_SSL_TRUSTSTORE_ALGORITHM, TRUSTSTORE_PKIX_ALGORITHM);
             httpSinkTask.start(settings);
         }
 
@@ -368,7 +368,7 @@ public class HttpSinkTaskTest {
 
             Map<String, String> settings = Maps.newHashMap();
             settings.put(CONFIG_DEFAULT_RATE_LIMITER_MAX_EXECUTIONS,"100");
-            settings.put(HTTPCLIENT_IMPLEMENTATION,AHC_IMPLEMENTATION);
+            settings.put(HTTP_CLIENT_IMPLEMENTATION,AHC_IMPLEMENTATION);
             httpSinkTask.start(settings);
 
 
@@ -443,7 +443,7 @@ public class HttpSinkTaskTest {
 
             Map<String, String> settings = Maps.newHashMap();
             settings.put(CONFIG_DEFAULT_RATE_LIMITER_MAX_EXECUTIONS,"100");
-            settings.put(HTTPCLIENT_IMPLEMENTATION,OKHTTP_IMPLEMENTATION);
+            settings.put(HTTP_CLIENT_IMPLEMENTATION,OKHTTP_IMPLEMENTATION);
             httpSinkTask.start(settings);
 
 
@@ -515,7 +515,7 @@ public class HttpSinkTaskTest {
 
             Map<String, String> settings = Maps.newHashMap();
             settings.put(CONFIG_DEFAULT_RATE_LIMITER_MAX_EXECUTIONS,"100");
-            settings.put(HTTPCLIENT_IMPLEMENTATION,AHC_IMPLEMENTATION);
+            settings.put(HTTP_CLIENT_IMPLEMENTATION,AHC_IMPLEMENTATION);
             settings.put(CONFIG_HTTP_CLIENT_ASYNC_FIXED_THREAD_POOL_SIZE,"4");
 
             httpSinkTask.start(settings);
@@ -592,7 +592,7 @@ public class HttpSinkTaskTest {
 
             Map<String, String> settings = Maps.newHashMap();
             settings.put(CONFIG_DEFAULT_RATE_LIMITER_MAX_EXECUTIONS,"100");
-            settings.put(HTTPCLIENT_IMPLEMENTATION,OKHTTP_IMPLEMENTATION);
+            settings.put(HTTP_CLIENT_IMPLEMENTATION,OKHTTP_IMPLEMENTATION);
             settings.put(CONFIG_HTTP_CLIENT_ASYNC_FIXED_THREAD_POOL_SIZE,"4");
             httpSinkTask.start(settings);
 
