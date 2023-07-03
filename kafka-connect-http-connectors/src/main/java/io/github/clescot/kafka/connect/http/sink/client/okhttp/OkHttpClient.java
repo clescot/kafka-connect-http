@@ -1,5 +1,10 @@
 package io.github.clescot.kafka.connect.http.sink.client.okhttp;
 
+import com.burgstaller.okhttp.AuthenticationCacheInterceptor;
+import com.burgstaller.okhttp.CachingAuthenticatorDecorator;
+import com.burgstaller.okhttp.DispatchingAuthenticator;
+import com.burgstaller.okhttp.digest.CachingAuthenticator;
+import com.burgstaller.okhttp.digest.DigestAuthenticator;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.jimfs.Configuration;
@@ -21,8 +26,11 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
+
+import com.burgstaller.okhttp.basic.BasicAuthenticator;
 
 import static io.github.clescot.kafka.connect.http.sink.HttpSinkConfigDefinition.*;
 
@@ -49,11 +57,11 @@ public class OkHttpClient extends AbstractHttpClient<Request, Response> {
     public static final String OKHTTP_SSL_SKIP_HOSTNAME_VERIFICATION = "okhttp.ssl.skip.hostname.verification";
 
     //file system path of the cache directory
-    public static final String OKHTTP_CACHE_DIRECTORY_PATH ="okhttp.cache.directory.path";
+    public static final String OKHTTP_CACHE_DIRECTORY_PATH = "okhttp.cache.directory.path";
     //either "file"(default), or "inmemory".
-    public static final String OKHTTP_CACHE_TYPE="okhttp.cache.type";
-    public static final String OKHTTP_CACHE_MAX_SIZE="okhttp.cache.max.size";
-    public static final String OKHTTP_CACHE_ACTIVATE ="okhttp.cache.activate";
+    public static final String OKHTTP_CACHE_TYPE = "okhttp.cache.type";
+    public static final String OKHTTP_CACHE_MAX_SIZE = "okhttp.cache.max.size";
+    public static final String OKHTTP_CACHE_ACTIVATE = "okhttp.cache.activate";
     public static final String IN_MEMORY_CACHE_TYPE = "inmemory";
     public static final String DEFAULT_MAX_CACHE_ENTRIES = "10000";
     public static final String FILE_CACHE_TYPE = "file";
@@ -66,18 +74,18 @@ public class OkHttpClient extends AbstractHttpClient<Request, Response> {
     public OkHttpClient(Map<String, Object> config, ExecutorService executorService) {
         super(config);
         okhttp3.OkHttpClient.Builder httpClientBuilder = new okhttp3.OkHttpClient.Builder();
-        if(executorService!=null){
+        if (executorService != null) {
             Dispatcher dispatcher = new Dispatcher(executorService);
             httpClientBuilder.dispatcher(dispatcher);
         }
-        int maxIdleConnections = Integer.parseInt(config.getOrDefault(OKHTTP_CONNECTION_POOL_MAX_IDLE_CONNECTIONS,"0").toString());
-        long keepAliveDuration=Long.parseLong(config.getOrDefault(OKHTTP_CONNECTION_POOL_KEEP_ALIVE_DURATION,"0").toString());
-        if(maxIdleConnections>0&&keepAliveDuration>0) {
+        int maxIdleConnections = Integer.parseInt(config.getOrDefault(OKHTTP_CONNECTION_POOL_MAX_IDLE_CONNECTIONS, "0").toString());
+        long keepAliveDuration = Long.parseLong(config.getOrDefault(OKHTTP_CONNECTION_POOL_KEEP_ALIVE_DURATION, "0").toString());
+        if (maxIdleConnections > 0 && keepAliveDuration > 0) {
             ConnectionPool connectionPool = new ConnectionPool(maxIdleConnections, keepAliveDuration, TimeUnit.MILLISECONDS);
             httpClientBuilder.connectionPool(connectionPool);
         }
         //protocols
-        if(config.containsKey(OKHTTP_DEFAULT_PROTOCOLS)) {
+        if (config.containsKey(OKHTTP_DEFAULT_PROTOCOLS)) {
             String protocolNames = config.get(OKHTTP_DEFAULT_PROTOCOLS).toString();
             List<Protocol> protocols = Lists.newArrayList();
             List<String> strings = Lists.newArrayList(protocolNames.split(PROTOCOL_SEPARATOR));
@@ -90,59 +98,58 @@ public class OkHttpClient extends AbstractHttpClient<Request, Response> {
         //KeyManager/trustManager/SSLSocketFactory
         Optional<KeyManagerFactory> keyManagerFactoryOption = getKeyManagerFactory();
         Optional<TrustManagerFactory> trustManagerFactoryOption = getTrustManagerFactory();
-        if(keyManagerFactoryOption.isPresent()||trustManagerFactoryOption.isPresent()) {
+        if (keyManagerFactoryOption.isPresent() || trustManagerFactoryOption.isPresent()) {
             SSLSocketFactory ssl = AbstractHttpClient.getSSLSocketFactory(keyManagerFactoryOption.orElse(null), trustManagerFactoryOption.orElse(null), "SSL");
-            if(trustManagerFactoryOption.isPresent()) {
+            if (trustManagerFactoryOption.isPresent()) {
                 TrustManager[] trustManagers = trustManagerFactoryOption.get().getTrustManagers();
-                if(trustManagers.length>0) {
+                if (trustManagers.length > 0) {
                     httpClientBuilder.sslSocketFactory(ssl, (X509TrustManager) trustManagers[0]);
                 }
             }
-            if(config.containsKey(OKHTTP_SSL_SKIP_HOSTNAME_VERIFICATION) && Boolean.parseBoolean(config.get(OKHTTP_SSL_SKIP_HOSTNAME_VERIFICATION).toString())){
+            if (config.containsKey(OKHTTP_SSL_SKIP_HOSTNAME_VERIFICATION) && Boolean.parseBoolean(config.get(OKHTTP_SSL_SKIP_HOSTNAME_VERIFICATION).toString())) {
                 httpClientBuilder.hostnameVerifier((hostname, session) -> true);
             }
         }
 
         //call timeout
-        if(config.containsKey(OKHTTP_DEFAULT_CALL_TIMEOUT)) {
+        if (config.containsKey(OKHTTP_DEFAULT_CALL_TIMEOUT)) {
             int callTimeout = Integer.parseInt(config.get(OKHTTP_DEFAULT_CALL_TIMEOUT).toString());
             httpClientBuilder.callTimeout(callTimeout, TimeUnit.MILLISECONDS);
         }
 
         //connect timeout
-        if(config.containsKey(OKHTTP_DEFAULT_CONNECT_TIMEOUT)) {
+        if (config.containsKey(OKHTTP_DEFAULT_CONNECT_TIMEOUT)) {
             int connectTimeout = Integer.parseInt(config.get(OKHTTP_DEFAULT_CONNECT_TIMEOUT).toString());
             httpClientBuilder.connectTimeout(connectTimeout, TimeUnit.MILLISECONDS);
         }
 
         //read timeout
-        if(config.containsKey(OKHTTP_DEFAULT_READ_TIMEOUT)) {
+        if (config.containsKey(OKHTTP_DEFAULT_READ_TIMEOUT)) {
             int readTimeout = Integer.parseInt(config.get(OKHTTP_DEFAULT_READ_TIMEOUT).toString());
             httpClientBuilder.readTimeout(readTimeout, TimeUnit.MILLISECONDS);
         }
 
         //write timeout
-        if(config.containsKey(OKHTTP_DEFAULT_WRITE_TIMEOUT)) {
+        if (config.containsKey(OKHTTP_DEFAULT_WRITE_TIMEOUT)) {
             int writeTimeout = Integer.parseInt(config.get(OKHTTP_DEFAULT_WRITE_TIMEOUT).toString());
             httpClientBuilder.writeTimeout(writeTimeout, TimeUnit.MILLISECONDS);
         }
 
         //cache
-        if(config.containsKey(OKHTTP_CACHE_ACTIVATE)){
+        if (config.containsKey(OKHTTP_CACHE_ACTIVATE)) {
             String cacheType = config.getOrDefault(OKHTTP_CACHE_TYPE, FILE_CACHE_TYPE).toString();
             String defaultDirectoryPath;
-            if(IN_MEMORY_CACHE_TYPE.equalsIgnoreCase(cacheType)){
+            if (IN_MEMORY_CACHE_TYPE.equalsIgnoreCase(cacheType)) {
                 defaultDirectoryPath = "/kafka-connect-http-cache";
-            }else{
+            } else {
                 defaultDirectoryPath = "/tmp/kafka-connect-http-cache";
             }
 
-            String directoryPath = config.getOrDefault(OKHTTP_CACHE_DIRECTORY_PATH,defaultDirectoryPath).toString();
+            String directoryPath = config.getOrDefault(OKHTTP_CACHE_DIRECTORY_PATH, defaultDirectoryPath).toString();
 
-            if(IN_MEMORY_CACHE_TYPE.equalsIgnoreCase(cacheType)){
-                java.nio.file.FileSystem fs = Jimfs.newFileSystem(Configuration.unix());
-                Path jimfsDirectory = fs.getPath(directoryPath);
-                try {
+            if (IN_MEMORY_CACHE_TYPE.equalsIgnoreCase(cacheType)) {
+                try (java.nio.file.FileSystem fs = Jimfs.newFileSystem(Configuration.unix())) {
+                    Path jimfsDirectory = fs.getPath(directoryPath);
                     Files.createDirectory(jimfsDirectory);
                 } catch (IOException e) {
                     throw new RuntimeException(e);
@@ -150,15 +157,30 @@ public class OkHttpClient extends AbstractHttpClient<Request, Response> {
             }
 
             File cacheDirectory = new File(directoryPath);
-            long maxSize=Long.parseLong(config.getOrDefault(OKHTTP_CACHE_MAX_SIZE, DEFAULT_MAX_CACHE_ENTRIES).toString());
-            Cache cache = new Cache(cacheDirectory,maxSize, FileSystem.SYSTEM);
+            long maxSize = Long.parseLong(config.getOrDefault(OKHTTP_CACHE_MAX_SIZE, DEFAULT_MAX_CACHE_ENTRIES).toString());
+            Cache cache = new Cache(cacheDirectory, maxSize, FileSystem.SYSTEM);
             httpClientBuilder.cache(cache);
         }
-        if(config.containsKey(CONFIG_HTTPCLIENT_AUTHENTICATION_BASIC_ACTIVATE)&&Boolean.TRUE.equals(config.get(CONFIG_HTTPCLIENT_AUTHENTICATION_BASIC_ACTIVATE))){
+        if (config.containsKey(CONFIG_HTTPCLIENT_AUTHENTICATION_BASIC_ACTIVATE) && Boolean.TRUE.equals(config.get(CONFIG_HTTPCLIENT_AUTHENTICATION_BASIC_ACTIVATE))) {
             String username = (String) config.get(CONFIG_HTTPCLIENT_AUTHENTICATION_BASIC_USER);
             String password = (String) config.get(CONFIG_HTTPCLIENT_AUTHENTICATION_BASIC_PASSWORD);
-            Authenticator authenticator = new BasicAuthenticator(username,password);
-            httpClientBuilder.authenticator(authenticator);
+
+            final Map<String, CachingAuthenticator> authCache = new ConcurrentHashMap<>();
+
+            com.burgstaller.okhttp.digest.Credentials credentials = new com.burgstaller.okhttp.digest.Credentials(username, password);
+            final BasicAuthenticator basicAuthenticator = new BasicAuthenticator(credentials);
+            final DigestAuthenticator digestAuthenticator = new DigestAuthenticator(credentials);
+
+            // note that all auth schemes should be registered as lowercase!
+            DispatchingAuthenticator authenticator = new DispatchingAuthenticator.Builder()
+                    .with("digest", digestAuthenticator)
+                    .with("basic", basicAuthenticator)
+                    .build();
+
+            httpClientBuilder.authenticator(new CachingAuthenticatorDecorator(authenticator, authCache));
+            httpClientBuilder.addInterceptor(new AuthenticationCacheInterceptor(authCache));
+            httpClientBuilder.addNetworkInterceptor(new LoggingInterceptor());
+
         }
 
         client = httpClientBuilder.build();
@@ -195,7 +217,7 @@ public class OkHttpClient extends AbstractHttpClient<Request, Response> {
         }
         RequestBody requestBody = null;
         String method = httpRequest.getMethod();
-        if(HttpMethod.permitsRequestBody(method)) {
+        if (HttpMethod.permitsRequestBody(method)) {
             if (HttpRequest.BodyType.STRING.equals(httpRequest.getBodyType())) {
                 //use the contentType set in HttpRequest. if not set, use application/json
                 requestBody = RequestBody.create(httpRequest.getBodyAsString(), MediaType.parse(Optional.ofNullable(firstContentType).orElse("application/json")));
@@ -214,10 +236,10 @@ public class OkHttpClient extends AbstractHttpClient<Request, Response> {
                 //HttpRequest.BodyType = MULTIPART
                 List<byte[]> bodyAsMultipart = httpRequest.getBodyAsMultipart();
             }
-        }else if(httpRequest.getBodyAsString()!=null && !httpRequest.getBodyAsString().isBlank()){
-            LOGGER.warn("Http Request with '{}' method does not permit a body. the provided body has been removed. please use another method to use one",method);
+        } else if (httpRequest.getBodyAsString() != null && !httpRequest.getBodyAsString().isBlank()) {
+            LOGGER.warn("Http Request with '{}' method does not permit a body. the provided body has been removed. please use another method to use one", method);
         }
-        builder.method(method,requestBody);
+        builder.method(method, requestBody);
         return builder.build();
     }
 
@@ -231,15 +253,15 @@ public class OkHttpClient extends AbstractHttpClient<Request, Response> {
             LOGGER.debug("handshake: '{}'", response.handshake());
             LOGGER.debug("challenges: '{}'", response.challenges());
             httpResponse = new HttpResponse(response.code(), response.message());
-            if(response.body()!=null) {
+            if (response.body() != null) {
                 httpResponse.setResponseBody(response.body().string());
             }
-            if(protocol!=null) {
+            if (protocol != null) {
                 httpResponse.setProtocol(protocol.name());
             }
             Headers headers = response.headers();
             Iterator<Pair<String, String>> iterator = headers.iterator();
-            Map<String,List<String>> responseHeaders = Maps.newHashMap();
+            Map<String, List<String>> responseHeaders = Maps.newHashMap();
             while (iterator.hasNext()) {
                 Pair<String, String> header = iterator.next();
                 responseHeaders.put(header.getFirst(), Lists.newArrayList(header.getSecond()));
@@ -256,16 +278,16 @@ public class OkHttpClient extends AbstractHttpClient<Request, Response> {
         CompletableFuture<Response> cf = new CompletableFuture<>();
         client.newCall(request).enqueue(new Callback() {
             @Override
-            public void onFailure( Call call, IOException e) {
+            public void onFailure(Call call, IOException e) {
                 cf.completeExceptionally(e);
             }
 
             @Override
-            public void onResponse(Call call,Response response) {
+            public void onResponse(Call call, Response response) {
                 cf.complete(response);
             }
         });
-                return cf;
+        return cf;
     }
 
 }

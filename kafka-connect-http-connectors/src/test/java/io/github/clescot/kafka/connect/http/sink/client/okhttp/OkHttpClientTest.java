@@ -1,27 +1,52 @@
 package io.github.clescot.kafka.connect.http.sink.client.okhttp;
 
+import com.github.tomakehurst.wiremock.client.BasicCredentials;
+import com.github.tomakehurst.wiremock.client.WireMock;
+import com.github.tomakehurst.wiremock.core.WireMockConfiguration;
+import com.github.tomakehurst.wiremock.junit5.WireMockExtension;
+import com.github.tomakehurst.wiremock.junit5.WireMockRuntimeInfo;
+import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
+import io.github.clescot.kafka.connect.http.core.HttpExchange;
 import io.github.clescot.kafka.connect.http.core.HttpRequest;
 import io.github.clescot.kafka.connect.http.core.HttpResponse;
+import io.github.clescot.kafka.connect.http.core.queue.QueueFactory;
 import okhttp3.*;
 import okhttp3.internal.http.RealResponseBody;
 import okio.Buffer;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.RegisterExtension;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.net.DatagramSocket;
+import java.net.InetAddress;
 import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
+import java.util.List;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.atomic.AtomicInteger;
 
-import org.junit.jupiter.api.*;
-
+import static com.github.tomakehurst.wiremock.client.WireMock.containing;
+import static com.github.tomakehurst.wiremock.stubbing.Scenario.STARTED;
 import static io.github.clescot.kafka.connect.http.sink.client.okhttp.OkHttpClient.*;
 import static org.assertj.core.api.Assertions.assertThat;
 
 class OkHttpClientTest {
 
-    private Logger LOGGER = LoggerFactory.getLogger(OkHttpClientTest.class);
+    private final Logger LOGGER = LoggerFactory.getLogger(OkHttpClientTest.class);
+
+    @RegisterExtension
+    static WireMockExtension wmHttp = WireMockExtension.newInstance()
+            .options(
+                    WireMockConfiguration.wireMockConfig()
+                            .dynamicPort()
+            )
+            .build();
 
     @Nested
     class BuildRequest {
@@ -138,6 +163,105 @@ class OkHttpClientTest {
         public void test_no_cache() {
             HashMap<String, Object> config = Maps.newHashMap();
             io.github.clescot.kafka.connect.http.sink.client.okhttp.OkHttpClient client = new io.github.clescot.kafka.connect.http.sink.client.okhttp.OkHttpClient(config, null);
+        }
+    }
+
+    @Nested
+    class TestAuthentication {
+
+        @Test
+        @DisplayName("test Basic Authentication : two calls")
+        public void test_basic_authentication() throws ExecutionException, InterruptedException {
+
+            String username = "user1";
+            String password = "password1";
+            String bodyResponse = "{\"result\":\"pong\"}";
+            WireMockRuntimeInfo wmRuntimeInfo = wmHttp.getRuntimeInfo();
+            WireMock wireMock = wmRuntimeInfo.getWireMock();
+
+            HashMap<String, Object> config = Maps.newHashMap();
+            config.put("config.default.httpclient.authentication.basic.activate",true);
+            config.put("config.default.httpclient.authentication.basic.user",username);
+            config.put("config.default.httpclient.authentication.basic.password",password);
+
+            OkHttpClient client = new OkHttpClient(config, null);
+
+            String baseUrl = "http://" + getIP() + ":" + wmRuntimeInfo.getHttpPort();
+            String url = baseUrl + "/ping";
+            HashMap<String, List<String>> headers = Maps.newHashMap();
+            headers.put("Content-Type", Lists.newArrayList("text/plain"));
+            headers.put("X-Correlation-ID", Lists.newArrayList("e6de70d1-f222-46e8-b755-754880687822"));
+            headers.put("X-Request-ID", Lists.newArrayList("e6de70d1-f222-46e8-b755-11111"));
+            HttpRequest httpRequest = new HttpRequest(
+                    url,
+                    "POST",
+                    "STRING"
+            );
+            httpRequest.setHeaders(headers);
+            httpRequest.setBodyAsString("stuff");
+
+
+            wireMock
+                    .register(WireMock.post("/ping").inScenario("Basic Authentication")
+                            .whenScenarioStateIs(STARTED)
+                            .willReturn(WireMock.aResponse()
+                                    .withHeader("Date","Wed, 21 Oct 2022 05:21:23 GMT")
+                                    .withHeader("WWW-Authenticate","Basic realm=\"Access to staging site\"")
+                                    .withBody(bodyResponse)
+                                    .withStatus(401)
+                                    .withStatusMessage("Unauthorized")
+                            ).willSetStateTo("unauthorized")
+                    );
+            wireMock
+                    .register(WireMock.post("/ping").inScenario("Basic Authentication")
+                            .whenScenarioStateIs("unauthorized")
+                            .withBasicAuth(username,password)
+                            .withHeader("Content-Type", containing("text/plain"))
+                            .withHeader("X-Correlation-ID", containing("e6de70d1-f222-46e8-b755-754880687822"))
+                            .withHeader("X-Request-ID", containing("e6de70d1-f222-46e8-b755-11111"))
+                            .willReturn(WireMock.aResponse()
+                                    .withBody(bodyResponse)
+                                    .withStatus(200)
+                                    .withStatusMessage("OK")
+                            ).willSetStateTo("access granted")
+                    );
+            wireMock
+                    .register(WireMock.post("/ping").inScenario("Basic Authentication")
+                            .whenScenarioStateIs("access granted")
+                            .withBasicAuth(username,password)
+                            .withHeader("Content-Type", containing("text/plain"))
+                            .withHeader("X-Correlation-ID", containing("e6de70d1-f222-46e8-b755-754880687822"))
+                            .withHeader("X-Request-ID", containing("e6de70d1-f222-46e8-b755-11111"))
+                            .willReturn(WireMock.aResponse()
+                                    .withBody(bodyResponse)
+                                    .withStatus(200)
+                                    .withStatusMessage("OK")
+                            ).willSetStateTo("access granted")
+                    );
+
+
+            BasicCredentials basicCredentials = new BasicCredentials(username, password);
+            HttpExchange httpExchange1 = client.call(httpRequest, new AtomicInteger(1)).get();
+            assertThat(httpExchange1.getHttpResponse().getStatusCode()).isEqualTo(200);
+            HttpExchange httpExchange2 = client.call(httpRequest, new AtomicInteger(1)).get();
+            assertThat(httpExchange2.getHttpResponse().getStatusCode()).isEqualTo(200);
+
+        }
+
+        private String getIP() {
+            try (DatagramSocket datagramSocket = new DatagramSocket()) {
+                datagramSocket.connect(InetAddress.getByName("8.8.8.8"), 12345);
+                return datagramSocket.getLocalAddress().getHostAddress();
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        }
+
+
+        @AfterEach
+        public void afterEach() {
+            wmHttp.resetAll();
+            QueueFactory.clearRegistrations();
         }
     }
 
