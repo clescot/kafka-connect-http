@@ -101,10 +101,16 @@ The predicate permits to filter some http requests, and can be composed, cumulat
   - http client implementation settings (prefixed by `config.<config_id>` )
     - *httpclient.implementation* : define which installed library to use : either `ahc`, a.k.a async http client, or `okhttp`. default is `okhttp`.
   - http client authentication parameters
-    - *config.default.httpclient.authentication.basic.activate* : activate basic authentication response with credentials, for web sites matching this configuration (required)
-    - *config.default.httpclient.authentication.basic.username* : username used to authenticate against the basic challenge (required)
-    - *config.default.httpclient.authentication.basic.password* : password used to authenticate against the basic challenge (required)
-    - *config.default.httpclient.authentication.basic.charset* : character set used by the http client to encode credentials (optional `ISO_8859_1` if not set)
+    - `basic` authentication settings
+      - *config.default.httpclient.authentication.basic.activate* : activate `basic` authentication response with credentials, for web sites matching this configuration (_required_)
+      - *config.default.httpclient.authentication.basic.username* : username used to authenticate against the `basic` challenge (_required_)
+      - *config.default.httpclient.authentication.basic.password* : password used to authenticate against the `basic` challenge (_required_)
+      - *config.default.httpclient.authentication.basic.charset* : character set used by the http client to encode `basic` credentials (_optional_ `ISO_8859_1` if not set)
+    - `digest` authentication settings
+      - *config.default.httpclient.authentication.digest.activate* : activate `digest` authentication response with credentials, for web sites matching this configuration (_required_)
+      - *config.default.httpclient.authentication.digest.username* : username used to authenticate against the `digest` challenge (_required_)
+      - *config.default.httpclient.authentication.digest.password* : password used to authenticate against the `digest` challenge (_required_)
+      - *config.default.httpclient.authentication.digest.charset* : character set used by the http client to encode `digest` credentials (_optional_ `US-ASCII` if not set) 
   - http client SSL parameters
     - *config.default.httpclient.ssl.keystore.path* : file path of the custom key store.
     - *config.default.httpclient.ssl.keystore.password* : password of the custom key store.
