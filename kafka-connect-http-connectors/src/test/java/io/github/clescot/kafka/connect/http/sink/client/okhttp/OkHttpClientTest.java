@@ -1,6 +1,5 @@
 package io.github.clescot.kafka.connect.http.sink.client.okhttp;
 
-import com.github.tomakehurst.wiremock.client.BasicCredentials;
 import com.github.tomakehurst.wiremock.client.WireMock;
 import com.github.tomakehurst.wiremock.core.WireMockConfiguration;
 import com.github.tomakehurst.wiremock.junit5.WireMockExtension;
@@ -240,7 +239,6 @@ class OkHttpClientTest {
                     );
 
 
-            BasicCredentials basicCredentials = new BasicCredentials(username, password);
             HttpExchange httpExchange1 = client.call(httpRequest, new AtomicInteger(1)).get();
             assertThat(httpExchange1.getHttpResponse().getStatusCode()).isEqualTo(200);
             HttpExchange httpExchange2 = client.call(httpRequest, new AtomicInteger(1)).get();
