@@ -111,6 +111,7 @@ The predicate permits to filter some http requests, and can be composed, cumulat
       - *config.default.httpclient.authentication.digest.username* : username used to authenticate against the `digest` challenge (_required_)
       - *config.default.httpclient.authentication.digest.password* : password used to authenticate against the `digest` challenge (_required_)
       - *config.default.httpclient.authentication.digest.charset* : character set used by the http client to encode `digest` credentials (_optional_ `US-ASCII` if not set) 
+      - *config.default.httpclient.authentication.digest.secure.random.prng.algorithm* : pseudo random number generation algorithm name according to the [java supported random algorithm names](https://docs.oracle.com/en/java/javase/11/docs/specs/security/standard-names.html#securerandom-number-generation-algorithms) default to `SHA1PRNG`. 
   - http client SSL parameters
     - *config.default.httpclient.ssl.keystore.path* : file path of the custom key store.
     - *config.default.httpclient.ssl.keystore.password* : password of the custom key store.

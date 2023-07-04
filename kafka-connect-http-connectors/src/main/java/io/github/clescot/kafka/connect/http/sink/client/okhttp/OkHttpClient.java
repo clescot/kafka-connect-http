@@ -5,7 +5,6 @@ import com.burgstaller.okhttp.CachingAuthenticatorDecorator;
 import com.burgstaller.okhttp.DispatchingAuthenticator;
 import com.burgstaller.okhttp.basic.BasicAuthenticator;
 import com.burgstaller.okhttp.digest.CachingAuthenticator;
-import com.burgstaller.okhttp.digest.DigestAuthenticator;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.jimfs.Configuration;
@@ -13,6 +12,7 @@ import com.google.common.jimfs.Jimfs;
 import io.github.clescot.kafka.connect.http.core.HttpRequest;
 import io.github.clescot.kafka.connect.http.core.HttpResponse;
 import io.github.clescot.kafka.connect.http.sink.client.AbstractHttpClient;
+import io.github.clescot.kafka.connect.http.sink.client.HttpException;
 import kotlin.Pair;
 import okhttp3.*;
 import okhttp3.internal.http.HttpMethod;
@@ -26,6 +26,8 @@ import java.io.IOException;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.security.NoSuchAlgorithmException;
+import java.security.SecureRandom;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
@@ -184,22 +186,33 @@ public class OkHttpClient extends AbstractHttpClient<Request, Response> {
             com.burgstaller.okhttp.digest.Credentials credentials = new com.burgstaller.okhttp.digest.Credentials(username, password);
             //digest charset
             String digestCredentialCharset = "US-ASCII";
-            if(config.containsKey(HTTP_CLIENT_AUTHENTICATION_DIGEST_CHARSET)){
+            if (config.containsKey(HTTP_CLIENT_AUTHENTICATION_DIGEST_CHARSET)) {
                 digestCredentialCharset = String.valueOf(config.get(HTTP_CLIENT_AUTHENTICATION_DIGEST_CHARSET));
             }
             Charset digestCharset = Charset.forName(digestCredentialCharset);
-            digestAuthenticator = new DigestAuthenticator(credentials,digestCharset);
+
+            SecureRandom random;
+            String rngAlgorithm = "SHA1PRNG";
+            if (config.containsKey(HTTP_CLIENT_AUTHENTICATION_DIGEST_SECURE_RANDOM_PRNG_ALGORITHM)) {
+                rngAlgorithm = (String) config.get(HTTP_CLIENT_AUTHENTICATION_DIGEST_SECURE_RANDOM_PRNG_ALGORITHM);
+            }
+            try {
+                random = SecureRandom.getInstance(rngAlgorithm);
+            } catch (NoSuchAlgorithmException e) {
+                throw new HttpException(e);
+            }
+            digestAuthenticator = new DigestAuthenticator(credentials, digestCharset, random);
 
         }
         // note that all auth schemes should be registered as lowercase!
         DispatchingAuthenticator.Builder authenticatorBuilder = new DispatchingAuthenticator.Builder();
-        if(basicAuthenticator!=null){
+        if (basicAuthenticator != null) {
             authenticatorBuilder = authenticatorBuilder.with("basic", basicAuthenticator);
         }
-        if(digestAuthenticator!=null){
+        if (digestAuthenticator != null) {
             authenticatorBuilder = authenticatorBuilder.with("digest", digestAuthenticator);
         }
-        if(basicAuthenticator!=null||digestAuthenticator!=null) {
+        if (basicAuthenticator != null || digestAuthenticator != null) {
             httpClientBuilder.authenticator(new CachingAuthenticatorDecorator(authenticatorBuilder.build(), authCache));
             httpClientBuilder.addInterceptor(new AuthenticationCacheInterceptor(authCache));
             httpClientBuilder.addNetworkInterceptor(new LoggingInterceptor());
