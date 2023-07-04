@@ -17,6 +17,9 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import static io.github.clescot.kafka.connect.http.sink.client.HttpClient.*;
 
+/**
+ * for tests only.
+ */
 public class QueueProducer implements Runnable {
     private final Queue<KafkaRecord> transferQueue;
 
