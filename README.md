@@ -1,5 +1,6 @@
 # Kafka Connect HTTP Sink and (optionally) Source connectors project
 
+![Architecture](architecture.png)
 
 # 1. [Project Intention](docs/project_intention.md)
 # 2.[Architecture](docs/architecture.md)
