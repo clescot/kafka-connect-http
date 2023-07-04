@@ -67,6 +67,9 @@ public class OkHttpClient extends AbstractHttpClient<Request, Response> {
     public static final String IN_MEMORY_CACHE_TYPE = "inmemory";
     public static final String DEFAULT_MAX_CACHE_ENTRIES = "10000";
     public static final String FILE_CACHE_TYPE = "file";
+    public static final String SHA_1_PRNG = "SHA1PRNG";
+    public static final String US_ASCII = "US-ASCII";
+    public static final String ISO_8859_1 = "ISO-8859-1";
 
 
     private final okhttp3.OkHttpClient client;
@@ -154,7 +157,7 @@ public class OkHttpClient extends AbstractHttpClient<Request, Response> {
                     Path jimfsDirectory = fs.getPath(directoryPath);
                     Files.createDirectory(jimfsDirectory);
                 } catch (IOException e) {
-                    throw new RuntimeException(e);
+                    throw new HttpException(e);
                 }
             }
 
@@ -172,7 +175,7 @@ public class OkHttpClient extends AbstractHttpClient<Request, Response> {
 
 
             //basic charset
-            String basicCredentialCharset = "ISO-8859-1";
+            String basicCredentialCharset = ISO_8859_1;
             if (config.containsKey(HTTP_CLIENT_AUTHENTICATION_BASIC_CHARSET)) {
                 basicCredentialCharset = String.valueOf(config.get(HTTP_CLIENT_AUTHENTICATION_BASIC_CHARSET));
             }
@@ -185,14 +188,14 @@ public class OkHttpClient extends AbstractHttpClient<Request, Response> {
             String password = (String) config.get(HTTP_CLIENT_AUTHENTICATION_DIGEST_PASSWORD);
             com.burgstaller.okhttp.digest.Credentials credentials = new com.burgstaller.okhttp.digest.Credentials(username, password);
             //digest charset
-            String digestCredentialCharset = "US-ASCII";
+            String digestCredentialCharset = US_ASCII;
             if (config.containsKey(HTTP_CLIENT_AUTHENTICATION_DIGEST_CHARSET)) {
                 digestCredentialCharset = String.valueOf(config.get(HTTP_CLIENT_AUTHENTICATION_DIGEST_CHARSET));
             }
             Charset digestCharset = Charset.forName(digestCredentialCharset);
 
             SecureRandom random;
-            String rngAlgorithm = "SHA1PRNG";
+            String rngAlgorithm = SHA_1_PRNG;
             if (config.containsKey(HTTP_CLIENT_AUTHENTICATION_DIGEST_SECURE_RANDOM_PRNG_ALGORITHM)) {
                 rngAlgorithm = (String) config.get(HTTP_CLIENT_AUTHENTICATION_DIGEST_SECURE_RANDOM_PRNG_ALGORITHM);
             }
@@ -303,7 +306,7 @@ public class OkHttpClient extends AbstractHttpClient<Request, Response> {
             }
             httpResponse.setResponseHeaders(responseHeaders);
         } catch (IOException e) {
-            throw new RuntimeException(e);
+            throw new HttpException(e);
         }
         return httpResponse;
     }
