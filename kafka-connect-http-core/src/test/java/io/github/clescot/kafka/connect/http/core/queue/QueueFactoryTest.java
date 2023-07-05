@@ -17,7 +17,7 @@ class QueueFactoryTest {
         Queue<KafkaRecord> queue = QueueFactory.getQueue();
         assertThat(queue).isNotNull();
         Queue<KafkaRecord> queue2 = QueueFactory.getQueue();
-        assertThat(queue2 == queue);
+        assertThat(queue2).isSameAs(queue);
     }
 
     @Test
@@ -25,14 +25,14 @@ class QueueFactoryTest {
         Queue<KafkaRecord> queue = QueueFactory.getQueue(DEFAULT_QUEUE_NAME);
         assertThat(queue).isNotNull();
         Queue<KafkaRecord> queue2 = QueueFactory.getQueue();
-        assertThat(queue2 == queue);
+        assertThat(queue2).isSameAs(queue);
         Queue<KafkaRecord> queue3 = QueueFactory.getQueue("dummy");
-        assertThat(queue3 != queue);
+        assertThat(queue3).isNotSameAs(queue);
         Queue<KafkaRecord> queue4 = QueueFactory.getQueue("dummy");
-        assertThat(queue3 == queue4);
+        assertThat(queue3).isSameAs(queue4);
         Queue<KafkaRecord> queue5 = QueueFactory.getQueue("dummy2");
-        assertThat(queue5 != queue4);
-        assertThat(queue5 != queue);
+        assertThat(queue5).isNotSameAs(queue4);
+        assertThat(queue5).isNotSameAs(queue);
     }
 
 

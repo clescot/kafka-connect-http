@@ -8,9 +8,10 @@ We publish on each release, a Confluent Hub archive file (zip), useful with the 
 
 In your Dockerfile, the easiest way to install the connectors (owning the Sink and Source code) archive is to :
 
-- copy from the github website, from the home page, in the package section, the zip file from the latest release 
-(we've not yet published on the confluent hub website our connector, nor on the maven central repository).
-For example, `clescot-kafka-connect-http-connectors-0.2.33.zip`.
+- copy from the github website (from the home page, in the package section, the zip file from the latest release), or
+ from the the maven central repository (https://repo1.maven.org/maven2/io/github/clescot/kafka-connect-http-connectors/0.6.2/kafka-connect-http-connectors-0.6.2.zip for example)
+(we've not yet published on the confluent hub website our connector).
+For example, `clescot-kafka-connect-http-connectors-0.6.2.zip`.
 - include it in your Kafka connect docker image, via this command in your `Dockerfile` : 
    
      `COPY connectors/clescot-kafka-connect-http-connectors*.zip /tmp/kafka-connect-http-connectors.zip`

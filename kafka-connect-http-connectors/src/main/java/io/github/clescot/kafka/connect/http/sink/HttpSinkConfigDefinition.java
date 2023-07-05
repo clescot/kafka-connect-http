@@ -131,42 +131,79 @@ public class HttpSinkConfigDefinition {
     //http client prefix
     public static final String HTTP_CLIENT_PREFIX = "httpclient.";
 
-    public static final String HTTPCLIENT_IMPLEMENTATION = DEFAULT_CONFIGURATION_PREFIX + HTTP_CLIENT_PREFIX + "implementation";
-    public static final String HTTPCLIENT_IMPLEMENTATION_DOC = "define which intalled library to use : either 'ahc', a.k.a async http client, or 'okhttp'. default is 'okhttp'.";
+    public static final String HTTP_CLIENT_IMPLEMENTATION = DEFAULT_CONFIGURATION_PREFIX + HTTP_CLIENT_PREFIX + "implementation";
+    public static final String HTTP_CLIENT_IMPLEMENTATION_DOC = "define which intalled library to use : either 'ahc', a.k.a async http client, or 'okhttp'. default is 'okhttp'.";
 
     public static final String OKHTTP_IMPLEMENTATION = "okhttp";
     public static final String AHC_IMPLEMENTATION = "ahc";
 
 
-    public static final String CONFIG_HTTPCLIENT_SSL_KEYSTORE_PATH =  DEFAULT_CONFIGURATION_PREFIX + HTTP_CLIENT_PREFIX +"ssl.keystore.path";
-    public static final String CONFIG_HTTPCLIENT_SSL_KEYSTORE_PATH_DOC = "file path of the custom key store.";
-    public static final String CONFIG_HTTPCLIENT_SSL_KEYSTORE_PASSWORD =  DEFAULT_CONFIGURATION_PREFIX + HTTP_CLIENT_PREFIX +"ssl.keystore.password";
-    public static final String CONFIG_HTTPCLIENT_SSL_KEYSTORE_PASSWORD_DOC = "password of the custom key store.";
-    public static final String CONFIG_HTTPCLIENT_SSL_KEYSTORE_TYPE =  DEFAULT_CONFIGURATION_PREFIX + HTTP_CLIENT_PREFIX +"ssl.keystore.type";
-    public static final String CONFIG_HTTPCLIENT_SSL_KEYSTORE_TYPE_DOC = "keystore type. can be 'jks' or 'pkcs12'.";
-    public static final String CONFIG_HTTPCLIENT_SSL_KEYSTORE_ALGORITHM =  DEFAULT_CONFIGURATION_PREFIX + HTTP_CLIENT_PREFIX +"ssl.keystore.algorithm";
-    public static final String CONFIG_HTTPCLIENT_SSL_KEYSTORE_ALGORITHM_DOC = "the standard name of the requested algorithm. See the KeyManagerFactory section in the Java Security Standard Algorithm Names Specification for information about standard algorithm names.";
+    public static final String CONFIG_HTTP_CLIENT_SSL_KEYSTORE_PATH =  DEFAULT_CONFIGURATION_PREFIX + HTTP_CLIENT_PREFIX +"ssl.keystore.path";
+    public static final String CONFIG_HTTP_CLIENT_SSL_KEYSTORE_PATH_DOC = "file path of the custom key store.";
+    public static final String CONFIG_HTTP_CLIENT_SSL_KEYSTORE_PASSWORD =  DEFAULT_CONFIGURATION_PREFIX + HTTP_CLIENT_PREFIX +"ssl.keystore.password";
+    public static final String CONFIG_HTTP_CLIENT_SSL_KEYSTORE_PASSWORD_DOC = "password of the custom key store.";
+    public static final String CONFIG_HTTP_CLIENT_SSL_KEYSTORE_TYPE =  DEFAULT_CONFIGURATION_PREFIX + HTTP_CLIENT_PREFIX +"ssl.keystore.type";
+    public static final String CONFIG_HTTP_CLIENT_SSL_KEYSTORE_TYPE_DOC = "keystore type. can be 'jks' or 'pkcs12'.";
+    public static final String CONFIG_HTTP_CLIENT_SSL_KEYSTORE_ALGORITHM =  DEFAULT_CONFIGURATION_PREFIX + HTTP_CLIENT_PREFIX +"ssl.keystore.algorithm";
+    public static final String CONFIG_HTTP_CLIENT_SSL_KEYSTORE_ALGORITHM_DOC = "the standard name of the requested algorithm. See the KeyManagerFactory section in the Java Security Standard Algorithm Names Specification for information about standard algorithm names.";
 
-    public static final String CONFIG_HTTPCLIENT_SSL_TRUSTSTORE_ALWAYS_TRUST =  DEFAULT_CONFIGURATION_PREFIX + HTTP_CLIENT_PREFIX +"ssl.truststore.always.trust";
-    public static final String CONFIG_HTTPCLIENT_SSL_TRUSTSTORE_ALWAYS_TRUST_DOC = "trust store that always trust any certificate. this option remove any security on the transport layer. be careful when you activate this option ! you will have no guarantee that you don't contact any hacked server ! ";
+    public static final String CONFIG_HTTP_CLIENT_SSL_TRUSTSTORE_ALWAYS_TRUST =  DEFAULT_CONFIGURATION_PREFIX + HTTP_CLIENT_PREFIX +"ssl.truststore.always.trust";
+    public static final String CONFIG_HTTP_CLIENT_SSL_TRUSTSTORE_ALWAYS_TRUST_DOC = "trust store that always trust any certificate. this option remove any security on the transport layer. be careful when you activate this option ! you will have no guarantee that you don't contact any hacked server ! ";
 
 
-    public static final String CONFIG_HTTPCLIENT_SSL_TRUSTSTORE_PATH =  DEFAULT_CONFIGURATION_PREFIX + HTTP_CLIENT_PREFIX +"ssl.truststore.path";
-    public static final String CONFIG_HTTPCLIENT_SSL_TRUSTSTORE_PATH_DOC = "file path of the custom trust store.";
+    public static final String CONFIG_HTTP_CLIENT_SSL_TRUSTSTORE_PATH =  DEFAULT_CONFIGURATION_PREFIX + HTTP_CLIENT_PREFIX +"ssl.truststore.path";
+    public static final String CONFIG_HTTP_CLIENT_SSL_TRUSTSTORE_PATH_DOC = "file path of the custom trust store.";
 
-    public static final String CONFIG_HTTPCLIENT_SSL_TRUSTSTORE_PASSWORD =  DEFAULT_CONFIGURATION_PREFIX + HTTP_CLIENT_PREFIX +"ssl.truststore.password";
-    public static final String CONFIG_HTTPCLIENT_SSL_TRUSTSTORE_PASSWORD_DOC = "password of the custom trusted store.";
+    public static final String CONFIG_HTTP_CLIENT_SSL_TRUSTSTORE_PASSWORD =  DEFAULT_CONFIGURATION_PREFIX + HTTP_CLIENT_PREFIX +"ssl.truststore.password";
+    public static final String CONFIG_HTTP_CLIENT_SSL_TRUSTSTORE_PASSWORD_DOC = "password of the custom trusted store.";
 
-    public static final String CONFIG_HTTPCLIENT_SSL_TRUSTSTORE_TYPE =  DEFAULT_CONFIGURATION_PREFIX + HTTP_CLIENT_PREFIX +"ssl.truststore.type";
-    public static final String CONFIG_HTTPCLIENT_SSL_TRUSTSTORE_TYPE_DOC = "truststore type. can be 'jks' or 'pkcs12'.";
+    public static final String CONFIG_HTTP_CLIENT_SSL_TRUSTSTORE_TYPE =  DEFAULT_CONFIGURATION_PREFIX + HTTP_CLIENT_PREFIX +"ssl.truststore.type";
+    public static final String CONFIG_HTTP_CLIENT_SSL_TRUSTSTORE_TYPE_DOC = "truststore type. can be 'jks' or 'pkcs12'.";
 
-    public static final String CONFIG_HTTPCLIENT_SSL_TRUSTSTORE_ALGORITHM =  DEFAULT_CONFIGURATION_PREFIX + HTTP_CLIENT_PREFIX +"ssl.truststore.algorithm";
-    public static final String CONFIG_HTTPCLIENT_SSL_TRUSTSTORE_ALGORITHM_DOC = "the standard name of the requested algorithm. See the KeyManagerFactory section in the Java Security Standard Algorithm Names Specification for information about standard algorithm names.";
-
+    public static final String CONFIG_HTTP_CLIENT_SSL_TRUSTSTORE_ALGORITHM =  DEFAULT_CONFIGURATION_PREFIX + HTTP_CLIENT_PREFIX +"ssl.truststore.algorithm";
+    public static final String CONFIG_HTTP_CLIENT_SSL_TRUSTSTORE_ALGORITHM_DOC = "the standard name of the requested algorithm. See the KeyManagerFactory section in the Java Security Standard Algorithm Names Specification for information about standard algorithm names.";
 
     public static final String CONFIG_HTTP_CLIENT_ASYNC_FIXED_THREAD_POOL_SIZE = DEFAULT_CONFIGURATION_PREFIX + HTTP_CLIENT_PREFIX +"async.fixed.thread.pool.size";
     public static final String CONFIG_HTTP_CLIENT_ASYNC_FIXED_THREAD_POOL_SIZE_DOC ="custom fixed thread pool size used to execute asynchronously http requests.";
 
+    public static final String HTTP_CLIENT_AUTHENTICATION_BASIC_ACTIVATE = HTTP_CLIENT_PREFIX+"authentication.basic.activate";
+    public static final String CONFIG_DEFAULT_HTTP_CLIENT_AUTHENTICATION_BASIC_ACTIVATE =  DEFAULT_CONFIGURATION_PREFIX + HTTP_CLIENT_AUTHENTICATION_BASIC_ACTIVATE;
+    public static final String CONFIG_DEFAULT_HTTP_CLIENT_AUTHENTICATION_BASIC_ACTIVATE_DOC = "activate the BASIC authentication";
+
+
+    public static final String HTTP_CLIENT_AUTHENTICATION_BASIC_USERNAME = HTTP_CLIENT_PREFIX + "authentication.basic.username";
+    public static final String CONFIG_DEFAULT_HTTPCLIENT_AUTHENTICATION_BASIC_USERNAME = DEFAULT_CONFIGURATION_PREFIX + HTTP_CLIENT_AUTHENTICATION_BASIC_USERNAME;
+    public static final String CONFIG_DEFAULT_HTTPCLIENT_AUTHENTICATION_BASIC_USER_DOC = "username for basic authentication";
+
+    public static final String HTTP_CLIENT_AUTHENTICATION_BASIC_PASSWORD = HTTP_CLIENT_PREFIX + "authentication.basic.password";
+    public static final String CONFIG_DEFAULT_HTTP_CLIENT_AUTHENTICATION_BASIC_PASSWORD = DEFAULT_CONFIGURATION_PREFIX + HTTP_CLIENT_AUTHENTICATION_BASIC_PASSWORD;
+    public static final String CONFIG_DEFAULT_HTTP_CLIENT_AUTHENTICATION_BASIC_PASSWORD_DOC = "password for basic authentication";
+
+    public static final String HTTP_CLIENT_AUTHENTICATION_BASIC_CHARSET = HTTP_CLIENT_PREFIX + "authentication.basic.charset";
+    public static final String CONFIG_DEFAULT_HTTP_CLIENT_AUTHENTICATION_BASIC_CHARSET = DEFAULT_CONFIGURATION_PREFIX + HTTP_CLIENT_AUTHENTICATION_BASIC_CHARSET;
+    public static final String CONFIG_DEFAULT_HTTP_CLIENT_AUTHENTICATION_BASIC_CHARSET_DOC = "charset used to encode basic credentials. default is 'ISO-8859-1'";
+
+    public static final String HTTP_CLIENT_AUTHENTICATION_DIGEST_ACTIVATE = HTTP_CLIENT_PREFIX+"authentication.digest.activate";
+    public static final String CONFIG_DEFAULT_HTTP_CLIENT_AUTHENTICATION_DIGEST_ACTIVATE =  DEFAULT_CONFIGURATION_PREFIX + HTTP_CLIENT_AUTHENTICATION_DIGEST_ACTIVATE;
+    public static final String CONFIG_DEFAULT_HTTP_CLIENT_AUTHENTICATION_DIGEST_ACTIVATE_DOC = "activate the DIGEST authentication";
+
+
+    public static final String HTTP_CLIENT_AUTHENTICATION_DIGEST_USERNAME = HTTP_CLIENT_PREFIX + "authentication.digest.username";
+    public static final String CONFIG_DEFAULT_HTTPCLIENT_AUTHENTICATION_DIGEST_USERNAME = DEFAULT_CONFIGURATION_PREFIX + HTTP_CLIENT_AUTHENTICATION_DIGEST_USERNAME;
+    public static final String CONFIG_DEFAULT_HTTPCLIENT_AUTHENTICATION_DIGEST_USER_DOC = "username for digest authentication";
+
+    public static final String HTTP_CLIENT_AUTHENTICATION_DIGEST_PASSWORD = HTTP_CLIENT_PREFIX + "authentication.digest.password";
+    public static final String CONFIG_DEFAULT_HTTP_CLIENT_AUTHENTICATION_DIGEST_PASSWORD = DEFAULT_CONFIGURATION_PREFIX + HTTP_CLIENT_AUTHENTICATION_DIGEST_PASSWORD;
+    public static final String CONFIG_DEFAULT_HTTP_CLIENT_AUTHENTICATION_DIGEST_PASSWORD_DOC = "password for digest authentication";
+
+
+    public static final String HTTP_CLIENT_AUTHENTICATION_DIGEST_CHARSET = HTTP_CLIENT_PREFIX + "authentication.digest.charset";
+    public static final String CONFIG_DEFAULT_HTTP_CLIENT_AUTHENTICATION_DIGEST_CHARSET = DEFAULT_CONFIGURATION_PREFIX + HTTP_CLIENT_AUTHENTICATION_DIGEST_CHARSET;
+    public static final String CONFIG_DEFAULT_HTTP_CLIENT_AUTHENTICATION_DIGEST_CHARSET_DOC = "charset used to encode 'digest' credentials. default is 'US-ASCII'";
+
+    public static final String HTTP_CLIENT_AUTHENTICATION_DIGEST_SECURE_RANDOM_PRNG_ALGORITHM = HTTP_CLIENT_PREFIX + "authentication.digest.secure.random.prng.algorithm";
+    public static final String CONFIG_DEFAULT_HTTP_CLIENT_AUTHENTICATION_DIGEST_SECURE_RANDOM_PRNG_ALGORITHM = DEFAULT_CONFIGURATION_PREFIX + HTTP_CLIENT_AUTHENTICATION_DIGEST_SECURE_RANDOM_PRNG_ALGORITHM;
+    public static final String CONFIG_DEFAULT_HTTP_CLIENT_AUTHENTICATION_DIGEST_SECURE_RANDOM_PRNG_ALGORITHM_DOC = "name of the Random Number Generator (RNG) algorithm used in the digest algorithm. cf https://docs.oracle.com/en/java/javase/11/docs/specs/security/standard-names.html#securerandom-number-generation-algorithms";
 
 
     private HttpSinkConfigDefinition() {
@@ -176,7 +213,7 @@ public class HttpSinkConfigDefinition {
     public static ConfigDef config() {
         return new ConfigDef()
                 //http client implementation settings
-                .define(HTTPCLIENT_IMPLEMENTATION, ConfigDef.Type.STRING, null, ConfigDef.Importance.LOW, HTTPCLIENT_IMPLEMENTATION_DOC)
+                .define(HTTP_CLIENT_IMPLEMENTATION, ConfigDef.Type.STRING, null, ConfigDef.Importance.LOW, HTTP_CLIENT_IMPLEMENTATION_DOC)
                 //retry settings
                 .define(CONFIG_DEFAULT_SUCCESS_RESPONSE_CODE_REGEX, ConfigDef.Type.STRING, CONFIG_DEFAULT_DEFAULT_SUCCESS_RESPONSE_CODE_REGEX, ConfigDef.Importance.LOW, CONFIG_DEFAULT_SUCCESS_RESPONSE_CODE_REGEX_DOC)
                 .define(CONFIG_DEFAULT_RETRY_RESPONSE_CODE_REGEX, ConfigDef.Type.STRING, DEFAULT_DEFAULT_RETRY_RESPONSE_CODE_REGEX, ConfigDef.Importance.LOW, DEFAULT_RETRY_RESPONSE_CODE_REGEX_DOC)
@@ -200,15 +237,27 @@ public class HttpSinkConfigDefinition {
                 .define(POLL_DELAY_REGISTRATION_QUEUE_CONSUMER_IN_MS, ConfigDef.Type.INT, DEFAULT_POLL_DELAY_REGISTRATION_QUEUE_CONSUMER_IN_MS, ConfigDef.Importance.LOW, POLL_DELAY_REGISTRATION_QUEUE_CONSUMER_IN_MS_DOC)
                 .define(POLL_INTERVAL_REGISTRATION_QUEUE_CONSUMER_IN_MS, ConfigDef.Type.INT, DEFAULT_POLL_INTERVAL_REGISTRATION_QUEUE_CONSUMER_IN_MS, ConfigDef.Importance.LOW, POLL_INTERVAL_REGISTRATION_QUEUE_CONSUMER_IN_MS_DOC)
                 //SSL settings
-                .define(CONFIG_HTTPCLIENT_SSL_KEYSTORE_PATH, ConfigDef.Type.STRING, null, ConfigDef.Importance.LOW, CONFIG_HTTPCLIENT_SSL_KEYSTORE_PATH_DOC)
-                .define(CONFIG_HTTPCLIENT_SSL_KEYSTORE_PASSWORD, ConfigDef.Type.STRING, null, ConfigDef.Importance.LOW, CONFIG_HTTPCLIENT_SSL_KEYSTORE_PASSWORD_DOC)
-                .define(CONFIG_HTTPCLIENT_SSL_KEYSTORE_TYPE, ConfigDef.Type.STRING, null, ConfigDef.Importance.LOW, CONFIG_HTTPCLIENT_SSL_KEYSTORE_TYPE_DOC)
-                .define(CONFIG_HTTPCLIENT_SSL_KEYSTORE_ALGORITHM, ConfigDef.Type.STRING, null, ConfigDef.Importance.LOW, CONFIG_HTTPCLIENT_SSL_KEYSTORE_ALGORITHM_DOC)
-                .define(CONFIG_HTTPCLIENT_SSL_TRUSTSTORE_ALWAYS_TRUST, ConfigDef.Type.BOOLEAN, false, ConfigDef.Importance.LOW, CONFIG_HTTPCLIENT_SSL_TRUSTSTORE_ALWAYS_TRUST_DOC)
-                .define(CONFIG_HTTPCLIENT_SSL_TRUSTSTORE_PATH, ConfigDef.Type.STRING, null, ConfigDef.Importance.LOW, CONFIG_HTTPCLIENT_SSL_TRUSTSTORE_PATH_DOC)
-                .define(CONFIG_HTTPCLIENT_SSL_TRUSTSTORE_PASSWORD, ConfigDef.Type.STRING, null, ConfigDef.Importance.LOW, CONFIG_HTTPCLIENT_SSL_TRUSTSTORE_PASSWORD_DOC)
-                .define(CONFIG_HTTPCLIENT_SSL_TRUSTSTORE_TYPE, ConfigDef.Type.STRING, null, ConfigDef.Importance.LOW, CONFIG_HTTPCLIENT_SSL_TRUSTSTORE_TYPE_DOC)
-                .define(CONFIG_HTTPCLIENT_SSL_TRUSTSTORE_ALGORITHM, ConfigDef.Type.STRING, null, ConfigDef.Importance.LOW, CONFIG_HTTPCLIENT_SSL_TRUSTSTORE_ALGORITHM_DOC)
+                .define(CONFIG_HTTP_CLIENT_SSL_KEYSTORE_PATH, ConfigDef.Type.STRING, null, ConfigDef.Importance.LOW, CONFIG_HTTP_CLIENT_SSL_KEYSTORE_PATH_DOC)
+                .define(CONFIG_HTTP_CLIENT_SSL_KEYSTORE_PASSWORD, ConfigDef.Type.STRING, null, ConfigDef.Importance.LOW, CONFIG_HTTP_CLIENT_SSL_KEYSTORE_PASSWORD_DOC)
+                .define(CONFIG_HTTP_CLIENT_SSL_KEYSTORE_TYPE, ConfigDef.Type.STRING, null, ConfigDef.Importance.LOW, CONFIG_HTTP_CLIENT_SSL_KEYSTORE_TYPE_DOC)
+                .define(CONFIG_HTTP_CLIENT_SSL_KEYSTORE_ALGORITHM, ConfigDef.Type.STRING, null, ConfigDef.Importance.LOW, CONFIG_HTTP_CLIENT_SSL_KEYSTORE_ALGORITHM_DOC)
+                .define(CONFIG_HTTP_CLIENT_SSL_TRUSTSTORE_ALWAYS_TRUST, ConfigDef.Type.BOOLEAN, false, ConfigDef.Importance.LOW, CONFIG_HTTP_CLIENT_SSL_TRUSTSTORE_ALWAYS_TRUST_DOC)
+                .define(CONFIG_HTTP_CLIENT_SSL_TRUSTSTORE_PATH, ConfigDef.Type.STRING, null, ConfigDef.Importance.LOW, CONFIG_HTTP_CLIENT_SSL_TRUSTSTORE_PATH_DOC)
+                .define(CONFIG_HTTP_CLIENT_SSL_TRUSTSTORE_PASSWORD, ConfigDef.Type.STRING, null, ConfigDef.Importance.LOW, CONFIG_HTTP_CLIENT_SSL_TRUSTSTORE_PASSWORD_DOC)
+                .define(CONFIG_HTTP_CLIENT_SSL_TRUSTSTORE_TYPE, ConfigDef.Type.STRING, null, ConfigDef.Importance.LOW, CONFIG_HTTP_CLIENT_SSL_TRUSTSTORE_TYPE_DOC)
+                .define(CONFIG_HTTP_CLIENT_SSL_TRUSTSTORE_ALGORITHM, ConfigDef.Type.STRING, null, ConfigDef.Importance.LOW, CONFIG_HTTP_CLIENT_SSL_TRUSTSTORE_ALGORITHM_DOC)
+                //authentication
+                //basic
+                .define(CONFIG_DEFAULT_HTTP_CLIENT_AUTHENTICATION_BASIC_ACTIVATE, ConfigDef.Type.BOOLEAN, false, ConfigDef.Importance.LOW, CONFIG_DEFAULT_HTTP_CLIENT_AUTHENTICATION_BASIC_ACTIVATE_DOC)
+                .define(CONFIG_DEFAULT_HTTPCLIENT_AUTHENTICATION_BASIC_USERNAME, ConfigDef.Type.STRING, null, ConfigDef.Importance.LOW, CONFIG_DEFAULT_HTTPCLIENT_AUTHENTICATION_BASIC_USER_DOC)
+                .define(CONFIG_DEFAULT_HTTP_CLIENT_AUTHENTICATION_BASIC_PASSWORD, ConfigDef.Type.STRING, null, ConfigDef.Importance.LOW, CONFIG_DEFAULT_HTTP_CLIENT_AUTHENTICATION_BASIC_PASSWORD_DOC)
+                .define(CONFIG_DEFAULT_HTTP_CLIENT_AUTHENTICATION_BASIC_CHARSET, ConfigDef.Type.STRING, "ISO-8859-1", ConfigDef.Importance.LOW, CONFIG_DEFAULT_HTTP_CLIENT_AUTHENTICATION_BASIC_CHARSET_DOC)
+                //digest
+                .define(CONFIG_DEFAULT_HTTP_CLIENT_AUTHENTICATION_DIGEST_ACTIVATE, ConfigDef.Type.BOOLEAN, false, ConfigDef.Importance.LOW, CONFIG_DEFAULT_HTTP_CLIENT_AUTHENTICATION_DIGEST_ACTIVATE_DOC)
+                .define(CONFIG_DEFAULT_HTTPCLIENT_AUTHENTICATION_DIGEST_USERNAME, ConfigDef.Type.STRING, null, ConfigDef.Importance.LOW, CONFIG_DEFAULT_HTTPCLIENT_AUTHENTICATION_DIGEST_USER_DOC)
+                .define(CONFIG_DEFAULT_HTTP_CLIENT_AUTHENTICATION_DIGEST_PASSWORD, ConfigDef.Type.STRING, null, ConfigDef.Importance.LOW, CONFIG_DEFAULT_HTTP_CLIENT_AUTHENTICATION_DIGEST_PASSWORD_DOC)
+                .define(CONFIG_DEFAULT_HTTP_CLIENT_AUTHENTICATION_DIGEST_CHARSET, ConfigDef.Type.STRING, "US-ASCII", ConfigDef.Importance.LOW, CONFIG_DEFAULT_HTTP_CLIENT_AUTHENTICATION_DIGEST_CHARSET_DOC)
+                .define(CONFIG_DEFAULT_HTTP_CLIENT_AUTHENTICATION_DIGEST_SECURE_RANDOM_PRNG_ALGORITHM, ConfigDef.Type.STRING, "SHA1PRNG", ConfigDef.Importance.LOW, CONFIG_DEFAULT_HTTP_CLIENT_AUTHENTICATION_DIGEST_SECURE_RANDOM_PRNG_ALGORITHM_DOC)
                 //async settings
                 .define(CONFIG_HTTP_CLIENT_ASYNC_FIXED_THREAD_POOL_SIZE, ConfigDef.Type.INT, null, ConfigDef.Importance.MEDIUM, CONFIG_HTTP_CLIENT_ASYNC_FIXED_THREAD_POOL_SIZE_DOC)
                 //custom configurations

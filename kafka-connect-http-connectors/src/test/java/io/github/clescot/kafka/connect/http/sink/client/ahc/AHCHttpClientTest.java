@@ -22,7 +22,6 @@ import org.mockito.Mockito;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.TrustManagerFactory;
 import javax.net.ssl.X509TrustManager;
-import java.awt.image.ImagingOpException;
 import java.io.IOException;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
@@ -36,7 +35,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static io.github.clescot.kafka.connect.http.sink.HttpSinkConfigDefinition.*;
-import static io.github.clescot.kafka.connect.http.sink.HttpSinkConfigDefinition.CONFIG_HTTPCLIENT_SSL_TRUSTSTORE_ALGORITHM;
+import static io.github.clescot.kafka.connect.http.sink.HttpSinkConfigDefinition.CONFIG_HTTP_CLIENT_SSL_TRUSTSTORE_ALGORITHM;
 import static io.github.clescot.kafka.connect.http.sink.client.ahc.AHCHttpClient.SUCCESS;
 import static io.github.clescot.kafka.connect.http.sink.config.AddMissingCorrelationIdHeaderToHttpRequestFunction.HEADER_X_CORRELATION_ID;
 import static io.github.clescot.kafka.connect.http.sink.config.AddMissingRequestIdHeaderToHttpRequestFunction.HEADER_X_REQUEST_ID;
@@ -272,10 +271,10 @@ public class AHCHttpClientTest {
         String truststorePath = Thread.currentThread().getContextClassLoader().getResource(HttpSinkTaskTest.CLIENT_TRUSTSTORE_JKS_FILENAME).getPath();
         String password = HttpSinkTaskTest.CLIENT_TRUSTSTORE_JKS_PASSWORD;
         Map<String, Object> config = Maps.newHashMap();
-        config.put(CONFIG_HTTPCLIENT_SSL_TRUSTSTORE_PATH, truststorePath);
-        config.put(CONFIG_HTTPCLIENT_SSL_TRUSTSTORE_PASSWORD, password);
-        config.put(CONFIG_HTTPCLIENT_SSL_TRUSTSTORE_TYPE, HttpSinkTaskTest.JKS_STORE_TYPE);
-        config.put(CONFIG_HTTPCLIENT_SSL_TRUSTSTORE_ALGORITHM, HttpSinkTaskTest.TRUSTSTORE_PKIX_ALGORITHM);
+        config.put(CONFIG_HTTP_CLIENT_SSL_TRUSTSTORE_PATH, truststorePath);
+        config.put(CONFIG_HTTP_CLIENT_SSL_TRUSTSTORE_PASSWORD, password);
+        config.put(CONFIG_HTTP_CLIENT_SSL_TRUSTSTORE_TYPE, HttpSinkTaskTest.JKS_STORE_TYPE);
+        config.put(CONFIG_HTTP_CLIENT_SSL_TRUSTSTORE_ALGORITHM, HttpSinkTaskTest.TRUSTSTORE_PKIX_ALGORITHM);
         //when
         TrustManagerFactory trustManagerFactory = HttpClient.getTrustManagerFactory(config);
         //then
@@ -288,7 +287,7 @@ public class AHCHttpClientTest {
 
         //given
         Map<String, Object> config = Maps.newHashMap();
-        config.put(CONFIG_HTTPCLIENT_SSL_TRUSTSTORE_ALWAYS_TRUST, true);
+        config.put(CONFIG_HTTP_CLIENT_SSL_TRUSTSTORE_ALWAYS_TRUST, true);
         //when
         TrustManagerFactory trustManagerFactory = HttpClient.getTrustManagerFactory(config);
         //then
@@ -307,13 +306,13 @@ public class AHCHttpClientTest {
 
         //given
         Map<String, Object> config = Maps.newHashMap();
-        config.put(CONFIG_HTTPCLIENT_SSL_TRUSTSTORE_ALWAYS_TRUST, false);
+        config.put(CONFIG_HTTP_CLIENT_SSL_TRUSTSTORE_ALWAYS_TRUST, false);
         String truststorePath = Thread.currentThread().getContextClassLoader().getResource(HttpSinkTaskTest.CLIENT_TRUSTSTORE_JKS_FILENAME).getPath();
-        config.put(CONFIG_HTTPCLIENT_SSL_TRUSTSTORE_PATH, truststorePath);
+        config.put(CONFIG_HTTP_CLIENT_SSL_TRUSTSTORE_PATH, truststorePath);
         String password = HttpSinkTaskTest.CLIENT_TRUSTSTORE_JKS_PASSWORD;
-        config.put(CONFIG_HTTPCLIENT_SSL_TRUSTSTORE_PASSWORD, password);
-        config.put(CONFIG_HTTPCLIENT_SSL_TRUSTSTORE_TYPE, HttpSinkTaskTest.JKS_STORE_TYPE);
-        config.put(CONFIG_HTTPCLIENT_SSL_TRUSTSTORE_ALGORITHM, HttpSinkTaskTest.TRUSTSTORE_PKIX_ALGORITHM);
+        config.put(CONFIG_HTTP_CLIENT_SSL_TRUSTSTORE_PASSWORD, password);
+        config.put(CONFIG_HTTP_CLIENT_SSL_TRUSTSTORE_TYPE, HttpSinkTaskTest.JKS_STORE_TYPE);
+        config.put(CONFIG_HTTP_CLIENT_SSL_TRUSTSTORE_ALGORITHM, HttpSinkTaskTest.TRUSTSTORE_PKIX_ALGORITHM);
         //when
         TrustManagerFactory trustManagerFactory = HttpClient.getTrustManagerFactory(config);
         //then
