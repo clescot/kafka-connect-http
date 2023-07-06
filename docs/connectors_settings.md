@@ -125,18 +125,20 @@ The predicate permits to filter some http requests, and can be composed, cumulat
   - http client async settings
     - *httpclient.async.fixed.thread.pool.size* : custom fixed thread pool size used to execute asynchronously http requests.
   - _okhttp_ (default) HTTP client implementation settings
-    - *okhttp.connection.pool.max.idle.connections* 
-    - *okhttp.connection.pool.keep.alive.duration*
-    - *okhttp.default.protocols*
-    - *okhttp.ssl.skip.hostname.verification*
-    - *okhttp.default.connect.timeout*
-    - *okhttp.default.call.timeout*
-    - *okhttp.read.timeout*
-    - *okhttp.write.timeout*
-    - *okhttp.cache.activate* (`true` to activate, `false` by default)
-    - *okhttp.cache.max.size* (default `10000` max cache entries)
-    - *okhttp.cache.directory.path* (default `/tmp/kafka-connect-http-cache` directory path for `file` type, default `/kafka-connect-http-cache` for `inmemory` type)
-    - *okhttp.cache.type* (default `file`, and can be set to `inmemory`)
+    - *config.default.okhttp.connection.pool.max.idle.connections* 
+    - *config.default.okhttp.connection.pool.keep.alive.duration*
+    - *config.default.okhttp.protocols*
+    - *config.default.okhttp.ssl.skip.hostname.verification*
+    - *config.default.okhttp.connect.timeout*
+    - *config.default.okhttp.call.timeout*
+    - *config.default.okhttp.read.timeout*
+    - *config.default.okhttp.write.timeout*
+    - *config.default.okhttp.follow.redirect*
+    - *config.default.okhttp.follow.ssl.redirect*
+    - *config.default.okhttp.cache.activate* (`true` to activate, `false` by default)
+    - *config.default.okhttp.cache.max.size* (default `10000` max cache entries)
+    - *config.default.okhttp.cache.directory.path* (default `/tmp/kafka-connect-http-cache` directory path for `file` type, default `/kafka-connect-http-cache` for `inmemory` type)
+    - *config.default.okhttp.cache.type* (default `file`, and can be set to `inmemory`)
   - _Async Http Client (AHC)_ implementation settings
     - *org.asynchttpclient.http.max.connections* :  (default `3`)
     - *org.asynchttpclient.http.rate.limit.per.second* (default `3`)
