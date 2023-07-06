@@ -130,6 +130,8 @@ public class HttpSinkConfigDefinition {
 
     //http client prefix
     public static final String HTTP_CLIENT_PREFIX = "httpclient.";
+    public static final String OKHTTP_PREFIX = "okhttp.";
+    public static final String AHC_PREFIX = "ahc.";
 
     public static final String HTTP_CLIENT_IMPLEMENTATION = DEFAULT_CONFIGURATION_PREFIX + HTTP_CLIENT_PREFIX + "implementation";
     public static final String HTTP_CLIENT_IMPLEMENTATION_DOC = "define which intalled library to use : either 'ahc', a.k.a async http client, or 'okhttp'. default is 'okhttp'.";
@@ -205,6 +207,68 @@ public class HttpSinkConfigDefinition {
     public static final String CONFIG_DEFAULT_HTTP_CLIENT_AUTHENTICATION_DIGEST_SECURE_RANDOM_PRNG_ALGORITHM = DEFAULT_CONFIGURATION_PREFIX + HTTP_CLIENT_AUTHENTICATION_DIGEST_SECURE_RANDOM_PRNG_ALGORITHM;
     public static final String CONFIG_DEFAULT_HTTP_CLIENT_AUTHENTICATION_DIGEST_SECURE_RANDOM_PRNG_ALGORITHM_DOC = "name of the Random Number Generator (RNG) algorithm used in the digest algorithm. cf https://docs.oracle.com/en/java/javase/11/docs/specs/security/standard-names.html#securerandom-number-generation-algorithms";
 
+    //okhttp settings
+    //cache
+    public static final String OKHTTP_CACHE_ACTIVATE = OKHTTP_PREFIX+"cache.activate";
+    public static final String CONFIG_DEFAULT_OKHTTP_CACHE_ACTIVATE = DEFAULT_CONFIGURATION_PREFIX+OKHTTP_CACHE_ACTIVATE;
+    public static final String CONFIG_DEFAULT_OKHTTP_CACHE_ACTIVATE_DOC = "set to true to activate page cache (if cache hit, the server will not receive the request, and the response will comes from the cache). default is false.";
+
+    public static final String OKHTTP_CACHE_MAX_SIZE = OKHTTP_PREFIX+"cache.max.size";
+    public static final String CONFIG_DEFAULT_OKHTTP_CACHE_MAX_SIZE = DEFAULT_CONFIGURATION_PREFIX+OKHTTP_CACHE_MAX_SIZE;
+    public static final String CONFIG_DEFAULT_OKHTTP_CACHE_MAX_SIZE_DOC = "max size of the page cache.";
+
+    public static final String OKHTTP_CACHE_TYPE = OKHTTP_PREFIX+"cache.type";
+    public static final String CONFIG_DEFAULT_OKHTTP_CACHE_TYPE = DEFAULT_CONFIGURATION_PREFIX+OKHTTP_CACHE_TYPE;
+    public static final String CONFIG_DEFAULT_OKHTTP_CACHE_TYPE_DOC = "persistance of the cache : either 'file'(default), or 'inmemory'.";
+
+    public static final String OKHTTP_CACHE_DIRECTORY_PATH = OKHTTP_PREFIX+"cache.directory.path";
+    public static final String CONFIG_DEFAULT_OKHTTP_CACHE_DIRECTORY_PATH = DEFAULT_CONFIGURATION_PREFIX+OKHTTP_CACHE_DIRECTORY_PATH;
+    public static final String CONFIG_DEFAULT_OKHTTP_CACHE_DIRECTORY_PATH_DOC = "file system path of the cache directory.";
+
+
+    //connection
+    public static final String OKHTTP_CALL_TIMEOUT = OKHTTP_PREFIX+"call.timeout";
+    public static final String CONFIG_DEFAULT_OKHTTP_CALL_TIMEOUT = DEFAULT_CONFIGURATION_PREFIX+OKHTTP_CALL_TIMEOUT;
+    public static final String CONFIG_DEFAULT_OKHTTP_CALL_TIMEOUT_DOC = "default timeout in milliseconds for complete call . A value of 0 means no timeout, otherwise values must be between 1 and Integer.MAX_VALUE.";
+
+    public static final String OKHTTP_READ_TIMEOUT = OKHTTP_PREFIX+"read.timeout";
+    public static final String CONFIG_DEFAULT_OKHTTP_READ_TIMEOUT = DEFAULT_CONFIGURATION_PREFIX+OKHTTP_READ_TIMEOUT;
+    public static final String CONFIG_DEFAULT_OKHTTP_READ_TIMEOUT_DOC = "Sets the default read timeout in milliseconds for new connections. A value of 0 means no timeout, otherwise values must be between 1 and Integer.MAX_VALUE.";
+
+    public static final String OKHTTP_CONNECT_TIMEOUT = OKHTTP_PREFIX+"connect.timeout";
+    public static final String CONFIG_DEFAULT_OKHTTP_CONNECT_TIMEOUT = DEFAULT_CONFIGURATION_PREFIX+OKHTTP_CONNECT_TIMEOUT;
+    public static final String CONFIG_DEFAULT_OKHTTP_CONNECT_TIMEOUT_DOC = "Sets the default connect timeout in milliseconds for new connections. A value of 0 means no timeout, otherwise values must be between 1 and Integer.MAX_VALUE.";
+
+    public static final String OKHTTP_WRITE_TIMEOUT = OKHTTP_PREFIX+"write.timeout";
+    public static final String CONFIG_DEFAULT_OKHTTP_WRITE_TIMEOUT = DEFAULT_CONFIGURATION_PREFIX+OKHTTP_WRITE_TIMEOUT;
+    public static final String CONFIG_DEFAULT_OKHTTP_WRITE_TIMEOUT_DOC = "Sets the default write timeout in milliseconds for new connections. A value of 0 means no timeout, otherwise values must be between 1 and Integer.MAX_VALUE.";
+
+    public static final String OKHTTP_SSL_SKIP_HOSTNAME_VERIFICATION = OKHTTP_PREFIX+"ssl.skip.hostname.verification";
+    public static final String CONFIG_DEFAULT_OKHTTP_SSL_SKIP_HOSTNAME_VERIFICATION = DEFAULT_CONFIGURATION_PREFIX+OKHTTP_SSL_SKIP_HOSTNAME_VERIFICATION;
+    public static final String CONFIG_DEFAULT_OKHTTP_SSL_SKIP_HOSTNAME_VERIFICATION_DOC = "if set to 'true', skip hostname verification. Not set by default.";
+
+
+    //protocols to use, in order of preference,divided by a comma.supported protocols in okhttp: HTTP_1_1,HTTP_2,H2_PRIOR_KNOWLEDGE,QUIC
+    public static final String OKHTTP_PROTOCOLS = OKHTTP_PREFIX+"protocols";
+    public static final String CONFIG_DEFAULT_OKHTTP_PROTOCOLS =DEFAULT_CONFIGURATION_PREFIX+ OKHTTP_PROTOCOLS;
+    public static final String CONFIG_DEFAULT_OKHTTP_PROTOCOLS_DOC ="the protocols to use, in order of preference. If the list contains Protocol.H2_PRIOR_KNOWLEDGE then that must be the only protocol and HTTPS URLs will not be supported. Otherwise the list must contain Protocol.HTTP_1_1. The list must not contain null or Protocol.HTTP_1_0.";
+
+    public static final String OKHTTP_CONNECTION_POOL_KEEP_ALIVE_DURATION = OKHTTP_PREFIX+"connection.pool.keep.alive.duration";
+    public static final String CONFIG_DEFAULT_OKHTTP_CONNECTION_POOL_KEEP_ALIVE_DURATION = DEFAULT_CONFIGURATION_PREFIX+OKHTTP_CONNECTION_POOL_KEEP_ALIVE_DURATION;
+    public static final String CONFIG_DEFAULT_OKHTTP_CONNECTION_POOL_KEEP_ALIVE_DURATION_DOC = "Time in milliseconds to keep the connection alive in the pool before closing it. Default is 0 (no connection pool).";
+
+    public static final String OKHTTP_CONNECTION_POOL_MAX_IDLE_CONNECTIONS = OKHTTP_PREFIX+"connection.pool.max.idle.connections";
+    public static final String CONFIG_DEFAULT_OKHTTP_CONNECTION_POOL_MAX_IDLE_CONNECTIONS = DEFAULT_CONFIGURATION_PREFIX+OKHTTP_CONNECTION_POOL_MAX_IDLE_CONNECTIONS;
+    public static final String CONFIG_DEFAULT_OKHTTP_CONNECTION_POOL_MAX_IDLE_CONNECTIONS_DOC ="amount of connections to keep idle, to avoid the connection creation time when needed. Default is 0 (no connection pool)";
+
+    public static final String OKHTTP_FOLLOW_REDIRECT = OKHTTP_PREFIX + "follow.redirect";
+    public static final String CONFIG_DEFAULT_OKHTTP_FOLLOW_REDIRECT = DEFAULT_CONFIGURATION_PREFIX + OKHTTP_FOLLOW_REDIRECT;
+    public static final String CONFIG_DEFAULT_OKHTTP_FOLLOW_REDIRECT_DOC = "does the http client need to follow a redirect response from the server. default to true.";
+
+    public static final String OKHTTP_FOLLOW_SSL_REDIRECT = OKHTTP_PREFIX + "follow.ssl.redirect";
+    public static final String CONFIG_DEFAULT_OKHTTP_FOLLOW_SSL_REDIRECT = DEFAULT_CONFIGURATION_PREFIX + OKHTTP_FOLLOW_SSL_REDIRECT;
+    public static final String CONFIG_DEFAULT_OKHTTP_FOLLOW_SSL_REDIRECT_DOC = "does the http client need to follow an SSL redirect response from the server. default to true.";
+
 
     private HttpSinkConfigDefinition() {
         //Class with only static methods
@@ -262,6 +326,28 @@ public class HttpSinkConfigDefinition {
                 .define(CONFIG_HTTP_CLIENT_ASYNC_FIXED_THREAD_POOL_SIZE, ConfigDef.Type.INT, null, ConfigDef.Importance.MEDIUM, CONFIG_HTTP_CLIENT_ASYNC_FIXED_THREAD_POOL_SIZE_DOC)
                 //custom configurations
                 .define(CONFIGURATION_IDS,ConfigDef.Type.LIST, Lists.newArrayList(),ConfigDef.Importance.LOW, CONFIGURATION_IDS_DOC)
+
+                //'okhttp' settings
+                //cache
+                .define(CONFIG_DEFAULT_OKHTTP_CACHE_ACTIVATE,ConfigDef.Type.BOOLEAN,false, ConfigDef.Importance.LOW,CONFIG_DEFAULT_OKHTTP_CACHE_ACTIVATE_DOC)
+                .define(CONFIG_DEFAULT_OKHTTP_CACHE_MAX_SIZE,ConfigDef.Type.LONG,0, ConfigDef.Importance.LOW,CONFIG_DEFAULT_OKHTTP_CACHE_MAX_SIZE_DOC)
+                .define(CONFIG_DEFAULT_OKHTTP_CACHE_TYPE,ConfigDef.Type.STRING,"file", ConfigDef.Importance.LOW,CONFIG_DEFAULT_OKHTTP_CACHE_TYPE_DOC)
+                .define(CONFIG_DEFAULT_OKHTTP_CACHE_DIRECTORY_PATH,ConfigDef.Type.STRING,null, ConfigDef.Importance.LOW,CONFIG_DEFAULT_OKHTTP_CACHE_DIRECTORY_PATH_DOC)
+
+                //connection
+                .define(CONFIG_DEFAULT_OKHTTP_CALL_TIMEOUT,ConfigDef.Type.INT,0, ConfigDef.Importance.LOW,CONFIG_DEFAULT_OKHTTP_CALL_TIMEOUT_DOC)
+                .define(CONFIG_DEFAULT_OKHTTP_READ_TIMEOUT,ConfigDef.Type.INT,0, ConfigDef.Importance.LOW,CONFIG_DEFAULT_OKHTTP_READ_TIMEOUT_DOC)
+                .define(CONFIG_DEFAULT_OKHTTP_CONNECT_TIMEOUT,ConfigDef.Type.INT,0, ConfigDef.Importance.LOW,CONFIG_DEFAULT_OKHTTP_CONNECT_TIMEOUT_DOC)
+                .define(CONFIG_DEFAULT_OKHTTP_WRITE_TIMEOUT,ConfigDef.Type.INT,0, ConfigDef.Importance.LOW,CONFIG_DEFAULT_OKHTTP_WRITE_TIMEOUT_DOC)
+                .define(CONFIG_DEFAULT_OKHTTP_PROTOCOLS,ConfigDef.Type.STRING,null, ConfigDef.Importance.LOW,CONFIG_DEFAULT_OKHTTP_PROTOCOLS_DOC)
+                .define(CONFIG_DEFAULT_OKHTTP_SSL_SKIP_HOSTNAME_VERIFICATION,ConfigDef.Type.BOOLEAN,false, ConfigDef.Importance.LOW,CONFIG_DEFAULT_OKHTTP_SSL_SKIP_HOSTNAME_VERIFICATION_DOC)
+                //connection pool
+                .define(CONFIG_DEFAULT_OKHTTP_CONNECTION_POOL_MAX_IDLE_CONNECTIONS,ConfigDef.Type.INT, 0,ConfigDef.Importance.MEDIUM, CONFIG_DEFAULT_OKHTTP_CONNECTION_POOL_MAX_IDLE_CONNECTIONS_DOC)
+                .define(CONFIG_DEFAULT_OKHTTP_CONNECTION_POOL_KEEP_ALIVE_DURATION,ConfigDef.Type.LONG, 0,ConfigDef.Importance.MEDIUM, CONFIG_DEFAULT_OKHTTP_CONNECTION_POOL_KEEP_ALIVE_DURATION_DOC)
+
+                //follow redirect
+                .define(CONFIG_DEFAULT_OKHTTP_FOLLOW_REDIRECT,ConfigDef.Type.BOOLEAN, true,ConfigDef.Importance.LOW, CONFIG_DEFAULT_OKHTTP_FOLLOW_REDIRECT_DOC)
+                .define(CONFIG_DEFAULT_OKHTTP_FOLLOW_SSL_REDIRECT,ConfigDef.Type.BOOLEAN, true,ConfigDef.Importance.LOW, CONFIG_DEFAULT_OKHTTP_FOLLOW_SSL_REDIRECT_DOC)
                 ;
     }
 }

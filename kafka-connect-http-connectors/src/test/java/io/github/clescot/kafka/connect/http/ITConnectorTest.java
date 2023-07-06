@@ -69,8 +69,6 @@ import java.util.*;
 import java.util.stream.Stream;
 
 import static io.github.clescot.kafka.connect.http.sink.HttpSinkConfigDefinition.*;
-import static io.github.clescot.kafka.connect.http.sink.client.okhttp.OkHttpClient.OKHTTP_DEFAULT_PROTOCOLS;
-import static io.github.clescot.kafka.connect.http.sink.client.okhttp.OkHttpClient.OKHTTP_SSL_SKIP_HOSTNAME_VERIFICATION;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.apache.kafka.clients.producer.ProducerConfig.BOOTSTRAP_SERVERS_CONFIG;
 
@@ -671,7 +669,7 @@ public class ITConnectorTest {
                 new AbstractMap.SimpleImmutableEntry<>(CONFIG_GENERATE_MISSING_REQUEST_ID,"true"),
                 new AbstractMap.SimpleImmutableEntry<>(CONFIG_GENERATE_MISSING_CORRELATION_ID,"true"),
                 new AbstractMap.SimpleImmutableEntry<>(OKHTTP_SSL_SKIP_HOSTNAME_VERIFICATION,"true"),
-                new AbstractMap.SimpleImmutableEntry<>(OKHTTP_DEFAULT_PROTOCOLS, "HTTP_1_1"),
+                new AbstractMap.SimpleImmutableEntry<>(OKHTTP_PROTOCOLS, "HTTP_1_1"),
                 new AbstractMap.SimpleImmutableEntry<>(CONFIG_HTTP_CLIENT_SSL_TRUSTSTORE_PATH,"/opt/"+ CLIENT_TRUSTSTORE_JKS_FILENAME),
                 new AbstractMap.SimpleImmutableEntry<>(CONFIG_HTTP_CLIENT_SSL_TRUSTSTORE_PASSWORD, CLIENT_TRUSTSTORE_JKS_PASSWORD),
                 new AbstractMap.SimpleImmutableEntry<>(CONFIG_HTTP_CLIENT_SSL_TRUSTSTORE_TYPE, JKS_STORE_TYPE),
