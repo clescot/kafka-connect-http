@@ -5,6 +5,7 @@ import com.burgstaller.okhttp.CachingAuthenticatorDecorator;
 import com.burgstaller.okhttp.DispatchingAuthenticator;
 import com.burgstaller.okhttp.basic.BasicAuthenticator;
 import com.burgstaller.okhttp.digest.CachingAuthenticator;
+import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.jimfs.Configuration;
@@ -17,6 +18,7 @@ import kotlin.Pair;
 import okhttp3.*;
 import okhttp3.internal.http.HttpMethod;
 import okhttp3.internal.io.FileSystem;
+import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -155,23 +157,27 @@ public class OkHttpClient extends AbstractHttpClient<Request, Response> {
     private void configureAuthentication(Map<String, Object> config, okhttp3.OkHttpClient.Builder httpClientBuilder) {
         final Map<String, CachingAuthenticator> authCache = new ConcurrentHashMap<>();
 
-        //Basic authentication
-        BasicAuthenticator basicAuthenticator = null;
-        if (config.containsKey(HTTP_CLIENT_AUTHENTICATION_BASIC_ACTIVATE) && Boolean.TRUE.equals(config.get(HTTP_CLIENT_AUTHENTICATION_BASIC_ACTIVATE))) {
-            String username = (String) config.get(HTTP_CLIENT_AUTHENTICATION_BASIC_USERNAME);
-            String password = (String) config.get(HTTP_CLIENT_AUTHENTICATION_BASIC_PASSWORD);
-            com.burgstaller.okhttp.digest.Credentials credentials = new com.burgstaller.okhttp.digest.Credentials(username, password);
+        BasicAuthenticator basicAuthenticator = configureBasicAuthentication(config);
 
+        DigestAuthenticator digestAuthenticator = configureDigestAuthenticator(config);
 
-            //basic charset
-            String basicCredentialCharset = ISO_8859_1;
-            if (config.containsKey(HTTP_CLIENT_AUTHENTICATION_BASIC_CHARSET)) {
-                basicCredentialCharset = String.valueOf(config.get(HTTP_CLIENT_AUTHENTICATION_BASIC_CHARSET));
-            }
-            Charset basicCharset = Charset.forName(basicCredentialCharset);
-            basicAuthenticator = new BasicAuthenticator(credentials, basicCharset);
+        // note that all auth schemes should be registered as lowercase!
+        DispatchingAuthenticator.Builder authenticatorBuilder = new DispatchingAuthenticator.Builder();
+        if (basicAuthenticator != null) {
+            authenticatorBuilder = authenticatorBuilder.with("basic", basicAuthenticator);
         }
+        if (digestAuthenticator != null) {
+            authenticatorBuilder = authenticatorBuilder.with("digest", digestAuthenticator);
+        }
+        if (basicAuthenticator != null || digestAuthenticator != null) {
+            httpClientBuilder.authenticator(new CachingAuthenticatorDecorator(authenticatorBuilder.build(), authCache));
+            httpClientBuilder.addInterceptor(new AuthenticationCacheInterceptor(authCache));
+            httpClientBuilder.addNetworkInterceptor(new LoggingInterceptor());
+        }
+    }
 
+    @Nullable
+    private DigestAuthenticator configureDigestAuthenticator(Map<String, Object> config) {
         //Digest Authentication
         DigestAuthenticator digestAuthenticator = null;
         if (config.containsKey(HTTP_CLIENT_AUTHENTICATION_DIGEST_ACTIVATE) && Boolean.TRUE.equals(config.get(HTTP_CLIENT_AUTHENTICATION_DIGEST_ACTIVATE))) {
@@ -198,20 +204,28 @@ public class OkHttpClient extends AbstractHttpClient<Request, Response> {
             digestAuthenticator = new DigestAuthenticator(credentials, digestCharset, random);
 
         }
+        return digestAuthenticator;
+    }
 
-        // note that all auth schemes should be registered as lowercase!
-        DispatchingAuthenticator.Builder authenticatorBuilder = new DispatchingAuthenticator.Builder();
-        if (basicAuthenticator != null) {
-            authenticatorBuilder = authenticatorBuilder.with("basic", basicAuthenticator);
+    @Nullable
+    private BasicAuthenticator configureBasicAuthentication(Map<String, Object> config) {
+        //Basic authentication
+        BasicAuthenticator basicAuthenticator = null;
+        if (config.containsKey(HTTP_CLIENT_AUTHENTICATION_BASIC_ACTIVATE) && Boolean.TRUE.equals(config.get(HTTP_CLIENT_AUTHENTICATION_BASIC_ACTIVATE))) {
+            String username = (String) config.get(HTTP_CLIENT_AUTHENTICATION_BASIC_USERNAME);
+            String password = (String) config.get(HTTP_CLIENT_AUTHENTICATION_BASIC_PASSWORD);
+            com.burgstaller.okhttp.digest.Credentials credentials = new com.burgstaller.okhttp.digest.Credentials(username, password);
+
+
+            //basic charset
+            String basicCredentialCharset = ISO_8859_1;
+            if (config.containsKey(HTTP_CLIENT_AUTHENTICATION_BASIC_CHARSET)) {
+                basicCredentialCharset = String.valueOf(config.get(HTTP_CLIENT_AUTHENTICATION_BASIC_CHARSET));
+            }
+            Charset basicCharset = Charset.forName(basicCredentialCharset);
+            basicAuthenticator = new BasicAuthenticator(credentials, basicCharset);
         }
-        if (digestAuthenticator != null) {
-            authenticatorBuilder = authenticatorBuilder.with("digest", digestAuthenticator);
-        }
-        if (basicAuthenticator != null || digestAuthenticator != null) {
-            httpClientBuilder.authenticator(new CachingAuthenticatorDecorator(authenticatorBuilder.build(), authCache));
-            httpClientBuilder.addInterceptor(new AuthenticationCacheInterceptor(authCache));
-            httpClientBuilder.addNetworkInterceptor(new LoggingInterceptor());
-        }
+        return basicAuthenticator;
     }
 
     private void configureCache(Map<String, Object> config, okhttp3.OkHttpClient.Builder httpClientBuilder) {
@@ -249,14 +263,13 @@ public class OkHttpClient extends AbstractHttpClient<Request, Response> {
         //url
         String url = httpRequest.getUrl();
         HttpUrl okHttpUrl = HttpUrl.parse(url);
+        Preconditions.checkNotNull(okHttpUrl,"url cannot be null");
         builder.url(okHttpUrl);
 
         //headers
         Headers.Builder okHeadersBuilder = new Headers.Builder();
         Map<String, List<String>> headers = httpRequest.getHeaders();
-        headers.entrySet().forEach(entry -> {
-            String key = entry.getKey();
-            List<String> values = entry.getValue();
+        headers.forEach((key, values) -> {
             for (String value : values) {
                 okHeadersBuilder.add(key, value);
             }
