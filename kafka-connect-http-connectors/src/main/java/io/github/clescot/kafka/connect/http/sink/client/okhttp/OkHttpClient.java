@@ -78,7 +78,7 @@ public class OkHttpClient extends AbstractHttpClient<Request, Response> {
 
     }
 
-    private static void configureProtocols(Map<String, Object> config, okhttp3.OkHttpClient.Builder httpClientBuilder) {
+    private void configureProtocols(Map<String, Object> config, okhttp3.OkHttpClient.Builder httpClientBuilder) {
         if (config.containsKey(OKHTTP_PROTOCOLS)) {
             String protocolNames = config.get(OKHTTP_PROTOCOLS).toString();
             List<Protocol> protocols = Lists.newArrayList();
@@ -91,7 +91,7 @@ public class OkHttpClient extends AbstractHttpClient<Request, Response> {
         }
     }
 
-    private static void configureConnection(Map<String, Object> config, okhttp3.OkHttpClient.Builder httpClientBuilder) {
+    private void configureConnection(Map<String, Object> config, okhttp3.OkHttpClient.Builder httpClientBuilder) {
         //call timeout
         if (config.containsKey(OKHTTP_CALL_TIMEOUT)) {
             int callTimeout = (Integer)config.get(OKHTTP_CALL_TIMEOUT);
