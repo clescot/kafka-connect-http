@@ -98,7 +98,7 @@ public class OkHttpClient extends AbstractHttpClient<Request, Response> {
     private void configureConnection(Map<String, Object> config, okhttp3.OkHttpClient.Builder httpClientBuilder) {
         //call timeout
         if (config.containsKey(OKHTTP_CALL_TIMEOUT)) {
-            int callTimeout = (Integer)config.get(OKHTTP_CALL_TIMEOUT);
+            int callTimeout = (Integer) config.get(OKHTTP_CALL_TIMEOUT);
             httpClientBuilder.callTimeout(callTimeout, TimeUnit.MILLISECONDS);
         }
 
@@ -121,22 +121,22 @@ public class OkHttpClient extends AbstractHttpClient<Request, Response> {
         }
 
         //follow redirects
-        if(config.containsKey(OKHTTP_FOLLOW_REDIRECT)){
+        if (config.containsKey(OKHTTP_FOLLOW_REDIRECT)) {
             httpClientBuilder.followRedirects((Boolean) config.get(OKHTTP_FOLLOW_REDIRECT));
         }
 
         //follow https redirects
-        if(config.containsKey(OKHTTP_FOLLOW_SSL_REDIRECT)){
+        if (config.containsKey(OKHTTP_FOLLOW_SSL_REDIRECT)) {
             httpClientBuilder.followSslRedirects((Boolean) config.get(OKHTTP_FOLLOW_SSL_REDIRECT));
         }
 
-        if(config.containsKey(HTTP_CLIENT_PROXY_HOSTNAME)) {
+        if (config.containsKey(HTTP_CLIENT_PROXY_HOSTNAME)) {
             String proxyHostName = (String) config.get(HTTP_CLIENT_PROXY_HOSTNAME);
             int proxyPort = (Integer) config.get(HTTP_CLIENT_PROXY_PORT);
-            SocketAddress socketAddress = new InetSocketAddress(proxyHostName,proxyPort);
+            SocketAddress socketAddress = new InetSocketAddress(proxyHostName, proxyPort);
             String proxyTypeLabel = (String) Optional.ofNullable(config.get(HTTP_CLIENT_PROXY_TYPE)).orElse("HTTP");
             Proxy.Type proxyType = Proxy.Type.valueOf(proxyTypeLabel);
-            Proxy proxy = new Proxy(proxyType,socketAddress);
+            Proxy proxy = new Proxy(proxyType, socketAddress);
             httpClientBuilder.proxy(proxy);
         }
 //        httpClientBuilder.proxyAuthenticator()
@@ -173,6 +173,22 @@ public class OkHttpClient extends AbstractHttpClient<Request, Response> {
     private void configureAuthentication(Map<String, Object> config, okhttp3.OkHttpClient.Builder httpClientBuilder) {
         final Map<String, CachingAuthenticator> authCache = new ConcurrentHashMap<>();
 
+        CachingAuthenticatorDecorator authenticator = getCachingAuthenticatorDecorator(config, authCache);
+        if (authenticator != null) {
+            httpClientBuilder.authenticator(authenticator);
+            httpClientBuilder.addInterceptor(new AuthenticationCacheInterceptor(authCache));
+        }
+
+        CachingAuthenticatorDecorator proxyAuthenticator = getCachingAuthenticatorDecorator(config, authCache);
+        if (authenticator != null) {
+            httpClientBuilder.authenticator(authenticator);
+            httpClientBuilder.addInterceptor(new AuthenticationCacheInterceptor(authCache));
+        }
+        httpClientBuilder.addNetworkInterceptor(new LoggingInterceptor());
+    }
+
+    @Nullable
+    private CachingAuthenticatorDecorator getCachingAuthenticatorDecorator(Map<String, Object> config, Map<String, CachingAuthenticator> authCache) {
         BasicAuthenticator basicAuthenticator = configureBasicAuthentication(config);
 
         DigestAuthenticator digestAuthenticator = configureDigestAuthenticator(config);
@@ -185,11 +201,12 @@ public class OkHttpClient extends AbstractHttpClient<Request, Response> {
         if (digestAuthenticator != null) {
             authenticatorBuilder = authenticatorBuilder.with("digest", digestAuthenticator);
         }
+        CachingAuthenticatorDecorator authenticator = null;
         if (basicAuthenticator != null || digestAuthenticator != null) {
-            httpClientBuilder.authenticator(new CachingAuthenticatorDecorator(authenticatorBuilder.build(), authCache));
-            httpClientBuilder.addInterceptor(new AuthenticationCacheInterceptor(authCache));
-            httpClientBuilder.addNetworkInterceptor(new LoggingInterceptor());
+            authenticator = new CachingAuthenticatorDecorator(authenticatorBuilder.build(), authCache);
         }
+        return authenticator;
+
     }
 
     @Nullable
@@ -279,7 +296,7 @@ public class OkHttpClient extends AbstractHttpClient<Request, Response> {
         //url
         String url = httpRequest.getUrl();
         HttpUrl okHttpUrl = HttpUrl.parse(url);
-        Preconditions.checkNotNull(okHttpUrl,"url cannot be null");
+        Preconditions.checkNotNull(okHttpUrl, "url cannot be null");
         builder.url(okHttpUrl);
 
         //headers
