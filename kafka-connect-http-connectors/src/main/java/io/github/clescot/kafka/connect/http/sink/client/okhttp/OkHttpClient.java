@@ -14,6 +14,7 @@ import io.github.clescot.kafka.connect.http.core.HttpRequest;
 import io.github.clescot.kafka.connect.http.core.HttpResponse;
 import io.github.clescot.kafka.connect.http.sink.client.AbstractHttpClient;
 import io.github.clescot.kafka.connect.http.sink.client.HttpException;
+
 import kotlin.Pair;
 import okhttp3.*;
 import okhttp3.internal.http.HttpMethod;
@@ -25,6 +26,9 @@ import org.slf4j.LoggerFactory;
 import javax.net.ssl.*;
 import java.io.File;
 import java.io.IOException;
+import java.net.InetSocketAddress;
+import java.net.Proxy;
+import java.net.SocketAddress;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -125,6 +129,18 @@ public class OkHttpClient extends AbstractHttpClient<Request, Response> {
         if(config.containsKey(OKHTTP_FOLLOW_SSL_REDIRECT)){
             httpClientBuilder.followSslRedirects((Boolean) config.get(OKHTTP_FOLLOW_SSL_REDIRECT));
         }
+
+        if(config.containsKey(HTTP_CLIENT_PROXY_HOSTNAME)) {
+            String proxyHostName = (String) config.get(HTTP_CLIENT_PROXY_HOSTNAME);
+            int proxyPort = (Integer) config.get(HTTP_CLIENT_PROXY_PORT);
+            SocketAddress socketAddress = new InetSocketAddress(proxyHostName,proxyPort);
+            String proxyTypeLabel = (String) Optional.ofNullable(config.get(HTTP_CLIENT_PROXY_TYPE)).orElse("HTTP");
+            Proxy.Type proxyType = Proxy.Type.valueOf(proxyTypeLabel);
+            Proxy proxy = new Proxy(proxyType,socketAddress);
+            httpClientBuilder.proxy(proxy);
+        }
+//        httpClientBuilder.proxySelector();
+//        httpClientBuilder.proxyAuthenticator()
     }
 
     private void configureSSL(Map<String, Object> config, okhttp3.OkHttpClient.Builder httpClientBuilder) {

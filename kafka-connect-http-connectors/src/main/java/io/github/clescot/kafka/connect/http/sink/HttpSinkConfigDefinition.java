@@ -207,6 +207,19 @@ public class HttpSinkConfigDefinition {
     public static final String CONFIG_DEFAULT_HTTP_CLIENT_AUTHENTICATION_DIGEST_SECURE_RANDOM_PRNG_ALGORITHM = DEFAULT_CONFIGURATION_PREFIX + HTTP_CLIENT_AUTHENTICATION_DIGEST_SECURE_RANDOM_PRNG_ALGORITHM;
     public static final String CONFIG_DEFAULT_HTTP_CLIENT_AUTHENTICATION_DIGEST_SECURE_RANDOM_PRNG_ALGORITHM_DOC = "name of the Random Number Generator (RNG) algorithm used in the digest algorithm. cf https://docs.oracle.com/en/java/javase/11/docs/specs/security/standard-names.html#securerandom-number-generation-algorithms";
 
+    //proxy
+    public static final String HTTP_CLIENT_PROXY_HOSTNAME = HTTP_CLIENT_PREFIX + "proxy.hostname";
+    public static final String CONFIG_DEFAULT_HTTP_CLIENT_PROXY_HOSTNAME = DEFAULT_CONFIGURATION_PREFIX + HTTP_CLIENT_PROXY_HOSTNAME;
+    public static final String CONFIG_DEFAULT_HTTP_CLIENT_PROXY_HOSTNAME_DOC = "hostname of the proxy host.";
+
+    public static final String HTTP_CLIENT_PROXY_PORT = HTTP_CLIENT_PREFIX + "proxy.port";
+    public static final String CONFIG_DEFAULT_HTTP_CLIENT_PROXY_PORT = DEFAULT_CONFIGURATION_PREFIX + HTTP_CLIENT_PROXY_PORT;
+    public static final String CONFIG_DEFAULT_HTTP_CLIENT_PROXY_PORT_DOC = "hostname of the proxy host.";
+
+    public static final String HTTP_CLIENT_PROXY_TYPE = HTTP_CLIENT_PREFIX + "proxy.type";
+    public static final String CONFIG_DEFAULT_HTTP_CLIENT_PROXY_TYPE = DEFAULT_CONFIGURATION_PREFIX + HTTP_CLIENT_PROXY_TYPE;
+    public static final String CONFIG_DEFAULT_HTTP_CLIENT_PROXY_TYPE_DOC = "type of proxy. can be either 'HTTP' (default), 'DIRECT' (i.e no proxy), or 'SOCKS'";
+
     //okhttp settings
     //cache
     public static final String OKHTTP_CACHE_ACTIVATE = OKHTTP_PREFIX+"cache.activate";
