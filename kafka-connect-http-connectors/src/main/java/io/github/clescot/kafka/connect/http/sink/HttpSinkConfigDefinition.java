@@ -139,7 +139,7 @@ public class HttpSinkConfigDefinition {
     public static final String OKHTTP_IMPLEMENTATION = "okhttp";
     public static final String AHC_IMPLEMENTATION = "ahc";
 
-
+    //SSL
     public static final String CONFIG_HTTP_CLIENT_SSL_KEYSTORE_PATH =  DEFAULT_CONFIGURATION_PREFIX + HTTP_CLIENT_PREFIX +"ssl.keystore.path";
     public static final String CONFIG_HTTP_CLIENT_SSL_KEYSTORE_PATH_DOC = "file path of the custom key store.";
     public static final String CONFIG_HTTP_CLIENT_SSL_KEYSTORE_PASSWORD =  DEFAULT_CONFIGURATION_PREFIX + HTTP_CLIENT_PREFIX +"ssl.keystore.password";
@@ -168,6 +168,7 @@ public class HttpSinkConfigDefinition {
     public static final String CONFIG_HTTP_CLIENT_ASYNC_FIXED_THREAD_POOL_SIZE = DEFAULT_CONFIGURATION_PREFIX + HTTP_CLIENT_PREFIX +"async.fixed.thread.pool.size";
     public static final String CONFIG_HTTP_CLIENT_ASYNC_FIXED_THREAD_POOL_SIZE_DOC ="custom fixed thread pool size used to execute asynchronously http requests.";
 
+    //authentication
     public static final String HTTP_CLIENT_AUTHENTICATION_BASIC_ACTIVATE = HTTP_CLIENT_PREFIX+"authentication.basic.activate";
     public static final String CONFIG_DEFAULT_HTTP_CLIENT_AUTHENTICATION_BASIC_ACTIVATE =  DEFAULT_CONFIGURATION_PREFIX + HTTP_CLIENT_AUTHENTICATION_BASIC_ACTIVATE;
     public static final String CONFIG_DEFAULT_HTTP_CLIENT_AUTHENTICATION_BASIC_ACTIVATE_DOC = "activate the BASIC authentication";
@@ -361,6 +362,10 @@ public class HttpSinkConfigDefinition {
                 //follow redirect
                 .define(CONFIG_DEFAULT_OKHTTP_FOLLOW_REDIRECT,ConfigDef.Type.BOOLEAN, true,ConfigDef.Importance.LOW, CONFIG_DEFAULT_OKHTTP_FOLLOW_REDIRECT_DOC)
                 .define(CONFIG_DEFAULT_OKHTTP_FOLLOW_SSL_REDIRECT,ConfigDef.Type.BOOLEAN, true,ConfigDef.Importance.LOW, CONFIG_DEFAULT_OKHTTP_FOLLOW_SSL_REDIRECT_DOC)
+                //proxy
+                .define(CONFIG_DEFAULT_HTTP_CLIENT_PROXY_HOSTNAME,ConfigDef.Type.STRING, null,ConfigDef.Importance.LOW, CONFIG_DEFAULT_HTTP_CLIENT_PROXY_HOSTNAME_DOC)
+                .define(CONFIG_DEFAULT_HTTP_CLIENT_PROXY_PORT,ConfigDef.Type.STRING, null,ConfigDef.Importance.LOW, CONFIG_DEFAULT_HTTP_CLIENT_PROXY_PORT_DOC)
+                .define(CONFIG_DEFAULT_HTTP_CLIENT_PROXY_TYPE,ConfigDef.Type.STRING, null,ConfigDef.Importance.LOW, CONFIG_DEFAULT_HTTP_CLIENT_PROXY_TYPE_DOC)
                 ;
     }
 }

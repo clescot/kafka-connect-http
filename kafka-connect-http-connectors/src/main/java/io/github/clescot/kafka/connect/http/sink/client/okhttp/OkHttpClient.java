@@ -139,8 +139,8 @@ public class OkHttpClient extends AbstractHttpClient<Request, Response> {
             Proxy proxy = new Proxy(proxyType,socketAddress);
             httpClientBuilder.proxy(proxy);
         }
-//        httpClientBuilder.proxySelector();
 //        httpClientBuilder.proxyAuthenticator()
+//        httpClientBuilder.proxySelector();
     }
 
     private void configureSSL(Map<String, Object> config, okhttp3.OkHttpClient.Builder httpClientBuilder) {
