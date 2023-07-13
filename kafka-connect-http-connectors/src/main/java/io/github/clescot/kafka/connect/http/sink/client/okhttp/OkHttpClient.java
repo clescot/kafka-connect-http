@@ -39,6 +39,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 import static io.github.clescot.kafka.connect.http.sink.HttpSinkConfigDefinition.*;
 
@@ -173,15 +174,21 @@ public class OkHttpClient extends AbstractHttpClient<Request, Response> {
     private void configureAuthentication(Map<String, Object> config, okhttp3.OkHttpClient.Builder httpClientBuilder) {
         final Map<String, CachingAuthenticator> authCache = new ConcurrentHashMap<>();
 
+        //authentication
         CachingAuthenticatorDecorator authenticator = getCachingAuthenticatorDecorator(config, authCache);
         if (authenticator != null) {
             httpClientBuilder.authenticator(authenticator);
-            httpClientBuilder.addInterceptor(new AuthenticationCacheInterceptor(authCache));
         }
 
-        CachingAuthenticatorDecorator proxyAuthenticator = getCachingAuthenticatorDecorator(config, authCache);
-        if (authenticator != null) {
-            httpClientBuilder.authenticator(authenticator);
+        //proxy authentication
+        Map<String, Object> proxyConfig = config.entrySet().stream().filter(entry -> entry.getKey().startsWith(PROXY_PREFIX)).collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+        CachingAuthenticatorDecorator proxyAuthenticator = getCachingAuthenticatorDecorator(proxyConfig, authCache);
+        if (proxyAuthenticator != null) {
+            httpClientBuilder.proxyAuthenticator(proxyAuthenticator);
+        }
+
+        //authentication cache
+        if(authenticator!=null ||proxyAuthenticator!=null){
             httpClientBuilder.addInterceptor(new AuthenticationCacheInterceptor(authCache));
         }
         httpClientBuilder.addNetworkInterceptor(new LoggingInterceptor());
