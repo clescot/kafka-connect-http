@@ -14,4 +14,4 @@
 
 
 [![Maven Central](https://maven-badges.herokuapp.com/maven-central/io.github.clescot/kafka-connect-http/badge.svg)](https://maven-badges.herokuapp.com/maven-central/io.github.clescot/kafka-connect-http)
-![build](https://github.com/clescot/kafka-connect-http/.github/workflows/build.yml/badge.svg)
+![build](https://github.com/clescot/kafka-connect-http/actions/workflows/build.yml/badge.svg)
