@@ -250,17 +250,35 @@ public class HttpSinkConfigDefinition {
     public static final String CONFIG_DEFAULT_HTTP_CLIENT_PROXY_AUTHENTICATION_DIGEST_SECURE_RANDOM_PRNG_ALGORITHM_DOC = "name of the Random Number Generator (RNG) algorithm used in the digest algorithm for proxy. cf https://docs.oracle.com/en/java/javase/11/docs/specs/security/standard-names.html#securerandom-number-generation-algorithms";
 
     //proxy
-    public static final String HTTP_CLIENT_PROXY_HOSTNAME = PROXY_PREFIX+HTTP_CLIENT_PREFIX + "hostname";
-    public static final String CONFIG_DEFAULT_HTTP_CLIENT_PROXY_HOSTNAME = DEFAULT_CONFIGURATION_PREFIX + HTTP_CLIENT_PROXY_HOSTNAME;
-    public static final String CONFIG_DEFAULT_HTTP_CLIENT_PROXY_HOSTNAME_DOC = "hostname of the proxy host.";
+    public static final String PROXY_HTTP_CLIENT_HOSTNAME = PROXY_PREFIX+HTTP_CLIENT_PREFIX + "hostname";
+    public static final String CONFIG_DEFAULT_PROXY_HTTP_CLIENT_HOSTNAME = DEFAULT_CONFIGURATION_PREFIX + PROXY_HTTP_CLIENT_HOSTNAME;
+    public static final String CONFIG_DEFAULT_PROXY_HTTP_CLIENT_HOSTNAME_DOC = "hostname of the proxy host.";
 
-    public static final String HTTP_CLIENT_PROXY_PORT = PROXY_PREFIX+HTTP_CLIENT_PREFIX + "port";
-    public static final String CONFIG_DEFAULT_HTTP_CLIENT_PROXY_PORT = DEFAULT_CONFIGURATION_PREFIX + HTTP_CLIENT_PROXY_PORT;
-    public static final String CONFIG_DEFAULT_HTTP_CLIENT_PROXY_PORT_DOC = "hostname of the proxy host.";
+    public static final String PROXY_HTTP_CLIENT_PORT = PROXY_PREFIX+HTTP_CLIENT_PREFIX + "port";
+    public static final String CONFIG_DEFAULT_PROXY_HTTP_CLIENT_PORT = DEFAULT_CONFIGURATION_PREFIX + PROXY_HTTP_CLIENT_PORT;
+    public static final String CONFIG_DEFAULT_PROXY_HTTP_CLIENT_PORT_DOC = "hostname of the proxy host.";
 
-    public static final String HTTP_CLIENT_PROXY_TYPE = PROXY_PREFIX+HTTP_CLIENT_PREFIX + "type";
-    public static final String CONFIG_DEFAULT_HTTP_CLIENT_PROXY_TYPE = DEFAULT_CONFIGURATION_PREFIX + HTTP_CLIENT_PROXY_TYPE;
-    public static final String CONFIG_DEFAULT_HTTP_CLIENT_PROXY_TYPE_DOC = "type of proxy. can be either 'HTTP' (default), 'DIRECT' (i.e no proxy), or 'SOCKS'";
+    public static final String PROXY_HTTP_CLIENT_TYPE = PROXY_PREFIX+HTTP_CLIENT_PREFIX + "type";
+    public static final String CONFIG_DEFAULT_PROXY_HTTP_CLIENT_TYPE = DEFAULT_CONFIGURATION_PREFIX + PROXY_HTTP_CLIENT_TYPE;
+    public static final String CONFIG_DEFAULT_PROXY_HTTP_CLIENT_TYPE_DOC = "type of proxy. can be either 'HTTP' (default), 'DIRECT' (i.e no proxy), or 'SOCKS'";
+
+    //proxy selector
+    public static final String PROXY_HTTP_CLIENT_0_HOSTNAME = PROXY_PREFIX+HTTP_CLIENT_PREFIX +"0."+ "hostname";
+    public static final String CONFIG_DEFAULT_PROXY_HTTP_CLIENT_0_HOSTNAME = DEFAULT_CONFIGURATION_PREFIX + PROXY_HTTP_CLIENT_0_HOSTNAME;
+    public static final String CONFIG_DEFAULT_PROXY_HTTP_CLIENT_0_HOSTNAME_DOC = "hostname of the proxy host.";
+
+    public static final String PROXY_HTTP_CLIENT_0_PORT = PROXY_PREFIX+HTTP_CLIENT_PREFIX + "0."+"port";
+    public static final String CONFIG_DEFAULT_PROXY_HTTP_CLIENT_0_PORT = DEFAULT_CONFIGURATION_PREFIX + PROXY_HTTP_CLIENT_0_PORT;
+    public static final String CONFIG_DEFAULT_PROXY_HTTP_CLIENT_0_PORT_DOC = "hostname of the proxy host.";
+
+    public static final String PROXY_HTTP_CLIENT_0_TYPE = PROXY_PREFIX+HTTP_CLIENT_PREFIX + "0."+"type";
+    public static final String CONFIG_DEFAULT_PROXY_HTTP_CLIENT_0_TYPE = DEFAULT_CONFIGURATION_PREFIX + PROXY_HTTP_CLIENT_0_TYPE;
+    public static final String CONFIG_DEFAULT_PROXY_HTTP_CLIENT_0_TYPE_DOC = "type of proxy. can be either 'HTTP' (default), 'DIRECT' (i.e no proxy), or 'SOCKS'";
+
+    public static final String PROXY_HTTP_CLIENT_NON_PROXY_HOSTS_URI_REGEX = PROXY_PREFIX+HTTP_CLIENT_PREFIX+"non.proxy.hosts.uri.regex";
+    public static final String CONFIG_DEFAULT_PROXY_HTTP_CLIENT_NON_PROXY_HOSTS_URI_REGEX = DEFAULT_CONFIGURATION_PREFIX + PROXY_HTTP_CLIENT_NON_PROXY_HOSTS_URI_REGEX;
+    public static final String CONFIG_DEFAULT_PROXY_HTTP_CLIENT_NON_PROXY_HOSTS_URI_REGEX_DOC = "hosts which don't need to be proxied to be reached.";
+
 
     //okhttp settings
     //cache
@@ -417,9 +435,14 @@ public class HttpSinkConfigDefinition {
                 .define(CONFIG_DEFAULT_OKHTTP_FOLLOW_REDIRECT,ConfigDef.Type.BOOLEAN, true,ConfigDef.Importance.LOW, CONFIG_DEFAULT_OKHTTP_FOLLOW_REDIRECT_DOC)
                 .define(CONFIG_DEFAULT_OKHTTP_FOLLOW_SSL_REDIRECT,ConfigDef.Type.BOOLEAN, true,ConfigDef.Importance.LOW, CONFIG_DEFAULT_OKHTTP_FOLLOW_SSL_REDIRECT_DOC)
                 //proxy
-                .define(CONFIG_DEFAULT_HTTP_CLIENT_PROXY_HOSTNAME,ConfigDef.Type.STRING, null,ConfigDef.Importance.LOW, CONFIG_DEFAULT_HTTP_CLIENT_PROXY_HOSTNAME_DOC)
-                .define(CONFIG_DEFAULT_HTTP_CLIENT_PROXY_PORT,ConfigDef.Type.STRING, null,ConfigDef.Importance.LOW, CONFIG_DEFAULT_HTTP_CLIENT_PROXY_PORT_DOC)
-                .define(CONFIG_DEFAULT_HTTP_CLIENT_PROXY_TYPE,ConfigDef.Type.STRING, null,ConfigDef.Importance.LOW, CONFIG_DEFAULT_HTTP_CLIENT_PROXY_TYPE_DOC)
+                .define(CONFIG_DEFAULT_PROXY_HTTP_CLIENT_HOSTNAME,ConfigDef.Type.STRING, null,ConfigDef.Importance.LOW, CONFIG_DEFAULT_PROXY_HTTP_CLIENT_HOSTNAME_DOC)
+                .define(CONFIG_DEFAULT_PROXY_HTTP_CLIENT_PORT,ConfigDef.Type.STRING, null,ConfigDef.Importance.LOW, CONFIG_DEFAULT_PROXY_HTTP_CLIENT_PORT_DOC)
+                .define(CONFIG_DEFAULT_PROXY_HTTP_CLIENT_TYPE,ConfigDef.Type.STRING, null,ConfigDef.Importance.LOW, CONFIG_DEFAULT_PROXY_HTTP_CLIENT_TYPE_DOC)
+                //proxy selector
+                .define(CONFIG_DEFAULT_PROXY_HTTP_CLIENT_0_HOSTNAME,ConfigDef.Type.STRING, null,ConfigDef.Importance.LOW, CONFIG_DEFAULT_PROXY_HTTP_CLIENT_0_HOSTNAME_DOC)
+                .define(CONFIG_DEFAULT_PROXY_HTTP_CLIENT_0_PORT,ConfigDef.Type.STRING, null,ConfigDef.Importance.LOW, CONFIG_DEFAULT_PROXY_HTTP_CLIENT_0_PORT_DOC)
+                .define(CONFIG_DEFAULT_PROXY_HTTP_CLIENT_0_TYPE,ConfigDef.Type.STRING, null,ConfigDef.Importance.LOW, CONFIG_DEFAULT_PROXY_HTTP_CLIENT_0_TYPE_DOC)
+                .define(CONFIG_DEFAULT_PROXY_HTTP_CLIENT_NON_PROXY_HOSTS_URI_REGEX,ConfigDef.Type.STRING, null,ConfigDef.Importance.LOW, CONFIG_DEFAULT_PROXY_HTTP_CLIENT_NON_PROXY_HOSTS_URI_REGEX_DOC)
                 ;
     }
 }

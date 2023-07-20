@@ -159,9 +159,9 @@ public class AHCHttpClient extends AbstractHttpClient<Request, Response> {
 
     private void defineProxyServer(RequestBuilder requestBuilder, Map<String, String> proxyHeaders) {
         //proxy stuff
-        String proxyHost = proxyHeaders.get(HTTP_CLIENT_PROXY_HOSTNAME);
+        String proxyHost = proxyHeaders.get(PROXY_HTTP_CLIENT_HOSTNAME);
         if (proxyHost != null) {
-            int proxyPort = Integer.parseInt(proxyHeaders.get(HTTP_CLIENT_PROXY_PORT));
+            int proxyPort = Integer.parseInt(proxyHeaders.get(PROXY_HTTP_CLIENT_PORT));
             ProxyServer.Builder proxyBuilder = new ProxyServer.Builder(proxyHost, proxyPort);
 
             String securedPortAsString = proxyHeaders.get(WS_PROXY_SECURED_PORT);

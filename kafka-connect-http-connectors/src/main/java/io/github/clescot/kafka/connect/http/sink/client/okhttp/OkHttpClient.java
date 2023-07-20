@@ -14,11 +14,11 @@ import io.github.clescot.kafka.connect.http.core.HttpRequest;
 import io.github.clescot.kafka.connect.http.core.HttpResponse;
 import io.github.clescot.kafka.connect.http.sink.client.AbstractHttpClient;
 import io.github.clescot.kafka.connect.http.sink.client.HttpException;
-
 import kotlin.Pair;
 import okhttp3.*;
 import okhttp3.internal.http.HttpMethod;
 import okhttp3.internal.io.FileSystem;
+import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -26,9 +26,7 @@ import org.slf4j.LoggerFactory;
 import javax.net.ssl.*;
 import java.io.File;
 import java.io.IOException;
-import java.net.InetSocketAddress;
-import java.net.Proxy;
-import java.net.SocketAddress;
+import java.net.*;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -39,6 +37,8 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Predicate;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import static io.github.clescot.kafka.connect.http.sink.HttpSinkConfigDefinition.*;
@@ -131,18 +131,50 @@ public class OkHttpClient extends AbstractHttpClient<Request, Response> {
             httpClientBuilder.followSslRedirects((Boolean) config.get(OKHTTP_FOLLOW_SSL_REDIRECT));
         }
 
-        if (config.containsKey(HTTP_CLIENT_PROXY_HOSTNAME)) {
-            String proxyHostName = (String) config.get(HTTP_CLIENT_PROXY_HOSTNAME);
-            int proxyPort = (Integer) config.get(HTTP_CLIENT_PROXY_PORT);
+        if (config.containsKey(PROXY_HTTP_CLIENT_HOSTNAME)) {
+            String proxyHostName = (String) config.get(PROXY_HTTP_CLIENT_HOSTNAME);
+            int proxyPort = (Integer) config.get(PROXY_HTTP_CLIENT_PORT);
             SocketAddress socketAddress = new InetSocketAddress(proxyHostName, proxyPort);
-            String proxyTypeLabel = (String) Optional.ofNullable(config.get(HTTP_CLIENT_PROXY_TYPE)).orElse("HTTP");
+            String proxyTypeLabel = (String) Optional.ofNullable(config.get(PROXY_HTTP_CLIENT_TYPE)).orElse("HTTP");
             Proxy.Type proxyType = Proxy.Type.valueOf(proxyTypeLabel);
             Proxy proxy = new Proxy(proxyType, socketAddress);
             httpClientBuilder.proxy(proxy);
         }
-//        httpClientBuilder.proxyAuthenticator()
-//        httpClientBuilder.proxySelector();
+        if(config.containsKey(PROXY_HTTP_CLIENT_0_HOSTNAME)) {
+            httpClientBuilder.proxySelector(buildProxySelector(config, httpClientBuilder));
+        }
     }
+
+    private ProxySelector buildProxySelector(Map<String, Object> config, okhttp3.OkHttpClient.Builder httpClientBuilder){
+        //build each proxy
+        //type,hostname,port
+        int proxyIndex=0;
+        List<ImmutablePair<Predicate<URI>,Proxy>> proxies = Lists.newArrayList();
+        //handle NON_PROXY_HOSTS
+        String proxyHostNames = (String) config.get(PROXY_HTTP_CLIENT_NON_PROXY_HOSTS_URI_REGEX);
+
+        while(config.get(PROXY_PREFIX+HTTP_CLIENT_PREFIX+proxyIndex+"."+"hostname")!=null){
+
+            //build URI predicate
+            String uriPredicate = (String) config.get(PROXY_PREFIX+HTTP_CLIENT_PREFIX+proxyIndex+"."+"predicate.uri.regex");
+            Pattern uriPattern = Pattern.compile(uriPredicate);
+            Predicate<URI> predicate = httpRequest -> true;
+            predicate = predicate.and(uri -> uriPattern.matcher(uri.toString()).matches());
+            //build proxy
+            String proxyHostName = (String) config.get(PROXY_PREFIX+HTTP_CLIENT_PREFIX+proxyIndex+"."+"hostname");
+            int proxyPort = (Integer) config.get(PROXY_PREFIX+HTTP_CLIENT_PREFIX+proxyIndex+"."+"port");
+            SocketAddress socketAddress = new InetSocketAddress(proxyHostName, proxyPort);
+            String proxyTypeLabel = (String) Optional.ofNullable(config.get(PROXY_PREFIX+HTTP_CLIENT_PREFIX+proxyIndex+"."+"type")).orElse("HTTP");
+            Proxy.Type proxyType = Proxy.Type.valueOf(proxyTypeLabel);
+            Proxy proxy = new Proxy(proxyType, socketAddress);
+
+            proxies.add(ImmutablePair.of(predicate,proxy));
+            proxyIndex++;
+
+        }
+        return new SimpleProxySelector(proxies);
+    }
+
 
     private void configureSSL(Map<String, Object> config, okhttp3.OkHttpClient.Builder httpClientBuilder) {
         //KeyManager/trustManager/SSLSocketFactory
