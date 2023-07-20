@@ -172,7 +172,7 @@ public class OkHttpClient extends AbstractHttpClient<Request, Response> {
                 basicCharset = StandardCharsets.ISO_8859_1;
             }
 
-            httpClientBuilder.proxyAuthenticator(new ProxyBasicAuthenticator(username,password,basicCharset));
+//            httpClientBuilder.proxyAuthenticator(new ProxyBasicAuthenticator(username,password,basicCharset));
 
         }
     }
@@ -249,7 +249,9 @@ public class OkHttpClient extends AbstractHttpClient<Request, Response> {
         }
 
         //proxy authentication
-        Map<String, Object> proxyConfig = config.entrySet().stream().filter(entry -> entry.getKey().startsWith(PROXY_PREFIX)).collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+        Map<String, Object> proxyConfig = config.entrySet().stream()
+                .filter(entry -> entry.getKey().startsWith(PROXY_PREFIX))
+                .map((entry)->Map.entry(entry.getKey().substring(PROXY_PREFIX.length()),entry.getValue())).collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
         CachingAuthenticatorDecorator proxyAuthenticator = getCachingAuthenticatorDecorator(proxyConfig, authCache);
         if (proxyAuthenticator != null) {
             httpClientBuilder.proxyAuthenticator(proxyAuthenticator);
