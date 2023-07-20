@@ -51,10 +51,16 @@ class OkHttpClientTest {
     class BuildRequest {
         @Test
         public void test_build_POST_request() throws IOException {
+
+            //given
             io.github.clescot.kafka.connect.http.sink.client.okhttp.OkHttpClient client = new io.github.clescot.kafka.connect.http.sink.client.okhttp.OkHttpClient(Maps.newHashMap(), null);
             HttpRequest httpRequest = new HttpRequest("http://dummy.com/", "POST", HttpRequest.BodyType.STRING.name());
             httpRequest.setBodyAsString("stuff");
+
+            //given
             Request request = client.buildRequest(httpRequest);
+
+            //then
             LOGGER.debug("request:{}", request);
             assertThat(request.url().url().toString()).isEqualTo(httpRequest.getUrl());
             assertThat(request.method()).isEqualTo(httpRequest.getMethod());
@@ -67,10 +73,16 @@ class OkHttpClientTest {
 
         @Test
         public void test_build_GET_request_with_body() {
+
+            //given
             io.github.clescot.kafka.connect.http.sink.client.okhttp.OkHttpClient client = new io.github.clescot.kafka.connect.http.sink.client.okhttp.OkHttpClient(Maps.newHashMap(), null);
             HttpRequest httpRequest = new HttpRequest("http://dummy.com/", "GET", HttpRequest.BodyType.STRING.name());
             httpRequest.setBodyAsString("stuff");
+
+            //when
             Request request = client.buildRequest(httpRequest);
+
+            //then
             LOGGER.debug("request:{}", request);
             assertThat(request.url().url().toString()).isEqualTo(httpRequest.getUrl());
             assertThat(request.method()).isEqualTo(httpRequest.getMethod());
@@ -83,6 +95,8 @@ class OkHttpClientTest {
     class BuildResponse {
         @Test
         public void test_build_response() {
+
+            //given
             io.github.clescot.kafka.connect.http.sink.client.okhttp.OkHttpClient client = new OkHttpClient(Maps.newHashMap(), null);
 
             HttpRequest httpRequest = new HttpRequest("http://dummy.com/", "POST", HttpRequest.BodyType.STRING.name());
@@ -105,7 +119,11 @@ class OkHttpClientTest {
             builder.body(responseBody);
             builder.protocol(Protocol.HTTP_1_1);
             Response response = builder.build();
+
+            //when
             HttpResponse httpResponse = client.buildResponse(response);
+
+            //then
             LOGGER.debug("response:{}", response);
             assertThat(response.code()).isEqualTo(httpResponse.getStatusCode());
             assertThat(response.message()).isEqualTo(httpResponse.getStatusMessage());
@@ -179,9 +197,9 @@ class OkHttpClientTest {
             WireMock wireMock = wmRuntimeInfo.getWireMock();
 
             HashMap<String, Object> config = Maps.newHashMap();
-            config.put("httpclient.authentication.basic.activate",true);
-            config.put("httpclient.authentication.basic.username",username);
-            config.put("httpclient.authentication.basic.password",password);
+            config.put("httpclient.authentication.basic.activate", true);
+            config.put("httpclient.authentication.basic.username", username);
+            config.put("httpclient.authentication.basic.password", password);
 
             OkHttpClient client = new OkHttpClient(config, null);
 
@@ -204,17 +222,18 @@ class OkHttpClientTest {
                     .register(WireMock.post("/ping").inScenario("Basic Authentication")
                             .whenScenarioStateIs(STARTED)
                             .willReturn(WireMock.aResponse()
-                                    .withHeader("Date","Wed, 21 Oct 2022 05:21:23 GMT")
-                                    .withHeader("WWW-Authenticate","Basic realm=\"Access to staging site\"")
+                                    .withHeader("Date", "Wed, 21 Oct 2022 05:21:23 GMT")
+                                    .withHeader("WWW-Authenticate", "Basic realm=\"Access to staging site\"")
                                     .withBody(bodyResponse)
                                     .withStatus(401)
                                     .withStatusMessage("Unauthorized")
                             ).willSetStateTo("unauthorized")
                     );
+            String scenario = "Basic Authentication";
             wireMock
-                    .register(WireMock.post("/ping").inScenario("Basic Authentication")
+                    .register(WireMock.post("/ping").inScenario(scenario)
                             .whenScenarioStateIs("unauthorized")
-                            .withBasicAuth(username,password)
+                            .withBasicAuth(username, password)
                             .withHeader("Content-Type", containing("text/plain"))
                             .withHeader("X-Correlation-ID", containing("e6de70d1-f222-46e8-b755-754880687822"))
                             .withHeader("X-Request-ID", containing("e6de70d1-f222-46e8-b755-11111"))
@@ -227,7 +246,7 @@ class OkHttpClientTest {
             wireMock
                     .register(WireMock.post("/ping").inScenario("Basic Authentication")
                             .whenScenarioStateIs("access granted")
-                            .withBasicAuth(username,password)
+                            .withBasicAuth(username, password)
                             .withHeader("Content-Type", containing("text/plain"))
                             .withHeader("X-Correlation-ID", containing("e6de70d1-f222-46e8-b755-754880687822"))
                             .withHeader("X-Request-ID", containing("e6de70d1-f222-46e8-b755-11111"))
@@ -245,23 +264,160 @@ class OkHttpClientTest {
             assertThat(httpExchange2.getHttpResponse().getStatusCode()).isEqualTo(200);
 
         }
+    }
 
-        private String getIP() {
-            try (DatagramSocket datagramSocket = new DatagramSocket()) {
-                datagramSocket.connect(InetAddress.getByName("8.8.8.8"), 12345);
-                return datagramSocket.getLocalAddress().getHostAddress();
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            }
-        }
-
-
-        @AfterEach
-        public void afterEach() {
-            wmHttp.resetAll();
-            QueueFactory.clearRegistrations();
+    private String getIP() {
+        try (DatagramSocket datagramSocket = new DatagramSocket()) {
+            datagramSocket.connect(InetAddress.getByName("8.8.8.8"), 12345);
+            return datagramSocket.getLocalAddress().getHostAddress();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
         }
     }
 
+    @Nested
+    class TestProxy {
+        @Test
+        @DisplayName("test proxy without authentication")
+        public void test_proxy_without_authentication() throws ExecutionException, InterruptedException {
 
+
+            String bodyResponse = "{\"result\":\"pong\"}";
+            WireMockRuntimeInfo wmRuntimeInfo = wmHttp.getRuntimeInfo();
+            WireMock wireMock = wmRuntimeInfo.getWireMock();
+            //the test will call the proxy to try to forward the request, but wiremock won't relay.
+            String baseUrl = "http://" + "dummy.com" + ":22222";
+            String url = baseUrl + "/ping";
+
+            HashMap<String, Object> config = Maps.newHashMap();
+            config.put(PROXY_HTTP_CLIENT_HOSTNAME, getIP());
+            config.put(PROXY_HTTP_CLIENT_PORT, wmRuntimeInfo.getHttpPort());
+
+
+            OkHttpClient client = new OkHttpClient(config, null);
+
+            HashMap<String, List<String>> headers = Maps.newHashMap();
+            headers.put("Content-Type", Lists.newArrayList("text/plain"));
+            headers.put("X-Correlation-ID", Lists.newArrayList("e6de70d1-f222-46e8-b755-754880687822"));
+            headers.put("X-Request-ID", Lists.newArrayList("e6de70d1-f222-46e8-b755-11111"));
+            HttpRequest httpRequest = new HttpRequest(
+                    url,
+                    "POST",
+                    "STRING"
+            );
+            httpRequest.setHeaders(headers);
+            httpRequest.setBodyAsString("stuff");
+
+
+            String scenario = "Proxy";
+
+            wireMock
+                    .register(WireMock.post("/ping").inScenario(scenario)
+                            .whenScenarioStateIs(STARTED)
+                            .willReturn(WireMock.aResponse()
+                                    .withBody(bodyResponse)
+                                    .withStatus(200)
+                                    .withStatusMessage("OK")
+                            ).willSetStateTo("Started")
+                    );
+
+            HttpExchange httpExchange1 = client.call(httpRequest, new AtomicInteger(1)).get();
+            assertThat(httpExchange1.getHttpResponse().getStatusCode()).isEqualTo(200);
+            HttpExchange httpExchange2 = client.call(httpRequest, new AtomicInteger(1)).get();
+            assertThat(httpExchange2.getHttpResponse().getStatusCode()).isEqualTo(200);
+
+        }
+
+
+        @Test
+        @DisplayName("test proxy with authentication")
+        public void test_proxy_with_authentication() throws ExecutionException, InterruptedException {
+
+
+            String bodyResponse = "{\"result\":\"pong\"}";
+            WireMockRuntimeInfo wmRuntimeInfo = wmHttp.getRuntimeInfo();
+            WireMock wireMock = wmRuntimeInfo.getWireMock();
+            //the test will call the proxy to try to forward the request, but wiremock won't relay.
+            String baseUrl = "http://" + "dummy.com" + ":22222";
+            String url = baseUrl + "/ping";
+
+            HashMap<String, Object> config = Maps.newHashMap();
+            config.put(PROXY_HTTP_CLIENT_HOSTNAME, getIP());
+            config.put(PROXY_HTTP_CLIENT_PORT, wmRuntimeInfo.getHttpPort());
+            config.put(PROXY_HTTP_CLIENT_TYPE, "HTTP");
+            config.put(HTTP_CLIENT_PROXY_AUTHENTICATION_BASIC_ACTIVATE, true);
+            String username = "user1";
+            config.put(HTTP_CLIENT_PROXY_AUTHENTICATION_BASIC_USERNAME, username);
+            String password = "password1";
+            config.put(HTTP_CLIENT_PROXY_AUTHENTICATION_BASIC_PASSWORD, password);
+
+
+            OkHttpClient client = new OkHttpClient(config, null);
+
+            HashMap<String, List<String>> headers = Maps.newHashMap();
+            headers.put("Content-Type", Lists.newArrayList("text/plain"));
+            headers.put("X-Correlation-ID", Lists.newArrayList("e6de70d1-f222-46e8-b755-754880687822"));
+            headers.put("X-Request-ID", Lists.newArrayList("e6de70d1-f222-46e8-b755-11111"));
+            HttpRequest httpRequest = new HttpRequest(
+                    url,
+                    "POST",
+                    "STRING"
+            );
+            httpRequest.setHeaders(headers);
+            httpRequest.setBodyAsString("stuff");
+
+
+            String scenario = "Proxy with authentication";
+
+            wireMock
+                    .register(WireMock.post("/ping").inScenario(scenario)
+                            .whenScenarioStateIs(STARTED)
+                            .willReturn(WireMock.aResponse()
+                                    .withHeader("Date", "Wed, 21 Oct 2022 05:21:23 GMT")
+                                    .withHeader("Proxy-Authenticate", "Basic realm=\"Access to staging site\"")
+                                    .withStatus(407)
+                                    .withStatusMessage("Proxy Authentication Required")
+                            ).willSetStateTo("Proxy Authentication Required")
+                    );
+            wireMock
+                    .register(WireMock.post("/ping").inScenario(scenario)
+                            .whenScenarioStateIs("Proxy Authentication Required")
+                            .withHeader("Proxy-Authorization", containing("Basic dXNlcjE6cGFzc3dvcmQx"))
+                            .withHeader("Content-Type", containing("text/plain"))
+                            .withHeader("X-Correlation-ID", containing("e6de70d1-f222-46e8-b755-754880687822"))
+                            .withHeader("X-Request-ID", containing("e6de70d1-f222-46e8-b755-11111"))
+                            .willReturn(WireMock.aResponse()
+                                    .withBody(bodyResponse)
+                                    .withStatus(200)
+                                    .withStatusMessage("OK")
+                            ).willSetStateTo("access granted")
+                    );
+            wireMock
+                    .register(WireMock.post("/ping").inScenario(scenario)
+                            .whenScenarioStateIs("access granted")
+                            .withHeader("Content-Type", containing("text/plain"))
+                            .withHeader("X-Correlation-ID", containing("e6de70d1-f222-46e8-b755-754880687822"))
+                            .withHeader("X-Request-ID", containing("e6de70d1-f222-46e8-b755-11111"))
+                            .willReturn(WireMock.aResponse()
+                                    .withBody(bodyResponse)
+                                    .withStatus(200)
+                                    .withStatusMessage("OK")
+                            ).willSetStateTo("access granted")
+                    );
+
+            HttpExchange httpExchange1 = client.call(httpRequest, new AtomicInteger(1)).get();
+            assertThat(httpExchange1.getHttpResponse().getStatusCode()).isEqualTo(200);
+            HttpExchange httpExchange2 = client.call(httpRequest, new AtomicInteger(1)).get();
+            assertThat(httpExchange2.getHttpResponse().getStatusCode()).isEqualTo(200);
+
+        }
+
+    }
+
+
+    @AfterEach
+    public void afterEach() {
+        wmHttp.resetAll();
+        QueueFactory.clearRegistrations();
+    }
 }

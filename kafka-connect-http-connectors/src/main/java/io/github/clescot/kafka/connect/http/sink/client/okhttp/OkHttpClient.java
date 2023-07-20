@@ -28,6 +28,7 @@ import java.io.File;
 import java.io.IOException;
 import java.net.*;
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.security.NoSuchAlgorithmException;
@@ -78,6 +79,10 @@ public class OkHttpClient extends AbstractHttpClient<Request, Response> {
 
         //authentication
         configureAuthentication(config, httpClientBuilder);
+
+
+        //interceptor
+        httpClientBuilder.addNetworkInterceptor(new LoggingInterceptor());
 
         client = httpClientBuilder.build();
 
@@ -140,9 +145,35 @@ public class OkHttpClient extends AbstractHttpClient<Request, Response> {
             Proxy.Type proxyType = Proxy.Type.valueOf(proxyTypeLabel);
             Proxy proxy = new Proxy(proxyType, socketAddress);
             httpClientBuilder.proxy(proxy);
+
         }
         if(config.containsKey(PROXY_HTTP_CLIENT_0_HOSTNAME)) {
             httpClientBuilder.proxySelector(buildProxySelector(config));
+        }
+
+        if(
+            //test if proxy is activated
+            (config.containsKey(PROXY_HTTP_CLIENT_HOSTNAME)||config.containsKey(PROXY_HTTP_CLIENT_0_HOSTNAME))
+            //test basic authentication
+            &&config.containsKey(HTTP_CLIENT_PROXY_AUTHENTICATION_BASIC_ACTIVATE)){
+            String username = (String) config.get(HTTP_CLIENT_PROXY_AUTHENTICATION_BASIC_USERNAME);
+            if (username == null) {
+                throw new IllegalArgumentException("proxy basic authentication is actived : need " + HTTP_CLIENT_PROXY_AUTHENTICATION_BASIC_USERNAME + "config");
+            }
+            String password = (String) config.get(HTTP_CLIENT_PROXY_AUTHENTICATION_BASIC_PASSWORD);
+            if (password == null) {
+                throw new IllegalArgumentException("proxy basic authentication is actived : need " + HTTP_CLIENT_PROXY_AUTHENTICATION_BASIC_PASSWORD + "config");
+            }
+            Charset basicCharset;
+            String charset = Optional.ofNullable((String) config.get(HTTP_CLIENT_PROXY_AUTHENTICATION_BASIC_PASSWORD)).orElse("ISO-8859-1");
+            if(Charset.isSupported(charset)){
+                basicCharset = Charset.forName(charset);
+            }else{
+                basicCharset = StandardCharsets.ISO_8859_1;
+            }
+
+            httpClientBuilder.proxyAuthenticator(new ProxyBasicAuthenticator(username,password,basicCharset));
+
         }
     }
 
@@ -228,7 +259,7 @@ public class OkHttpClient extends AbstractHttpClient<Request, Response> {
         if(authenticator!=null ||proxyAuthenticator!=null){
             httpClientBuilder.addInterceptor(new AuthenticationCacheInterceptor(authCache));
         }
-        httpClientBuilder.addNetworkInterceptor(new LoggingInterceptor());
+
     }
 
     @Nullable
