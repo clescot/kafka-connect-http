@@ -42,6 +42,7 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import static io.github.clescot.kafka.connect.http.sink.HttpSinkConfigDefinition.*;
+import static java.net.Proxy.NO_PROXY;
 
 public class OkHttpClient extends AbstractHttpClient<Request, Response> {
     private static final String PROTOCOL_SEPARATOR = ",";
@@ -141,25 +142,29 @@ public class OkHttpClient extends AbstractHttpClient<Request, Response> {
             httpClientBuilder.proxy(proxy);
         }
         if(config.containsKey(PROXY_HTTP_CLIENT_0_HOSTNAME)) {
-            httpClientBuilder.proxySelector(buildProxySelector(config, httpClientBuilder));
+            httpClientBuilder.proxySelector(buildProxySelector(config));
         }
     }
 
-    private ProxySelector buildProxySelector(Map<String, Object> config, okhttp3.OkHttpClient.Builder httpClientBuilder){
+    private ProxySelector buildProxySelector(Map<String, Object> config){
         //build each proxy
         //type,hostname,port
         int proxyIndex=0;
         List<ImmutablePair<Predicate<URI>,Proxy>> proxies = Lists.newArrayList();
         //handle NON_PROXY_HOSTS
-        String proxyHostNames = (String) config.get(PROXY_HTTP_CLIENT_NON_PROXY_HOSTS_URI_REGEX);
-
+        Optional<String> nonProxyHostNames = Optional.ofNullable((String) config.get(PROXY_HTTP_CLIENT_NON_PROXY_HOSTS_URI_REGEX));
+        if(nonProxyHostNames.isPresent()){
+            String nonProxyHosts = nonProxyHostNames.get();
+            Pattern uriPattern = Pattern.compile(nonProxyHosts);
+            Predicate<URI> predicate = uri -> uriPattern.matcher(uri.toString()).matches();
+            proxies.add(ImmutablePair.of(predicate,NO_PROXY));
+        }
         while(config.get(PROXY_PREFIX+HTTP_CLIENT_PREFIX+proxyIndex+"."+"hostname")!=null){
 
             //build URI predicate
             String uriPredicate = (String) config.get(PROXY_PREFIX+HTTP_CLIENT_PREFIX+proxyIndex+"."+"predicate.uri.regex");
             Pattern uriPattern = Pattern.compile(uriPredicate);
-            Predicate<URI> predicate = httpRequest -> true;
-            predicate = predicate.and(uri -> uriPattern.matcher(uri.toString()).matches());
+            Predicate<URI> predicate = uri -> uriPattern.matcher(uri.toString()).matches();
             //build proxy
             String proxyHostName = (String) config.get(PROXY_PREFIX+HTTP_CLIENT_PREFIX+proxyIndex+"."+"hostname");
             int proxyPort = (Integer) config.get(PROXY_PREFIX+HTTP_CLIENT_PREFIX+proxyIndex+"."+"port");
