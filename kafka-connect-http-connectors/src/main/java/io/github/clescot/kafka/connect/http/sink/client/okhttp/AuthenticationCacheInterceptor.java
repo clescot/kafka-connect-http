@@ -49,9 +49,9 @@ public class AuthenticationCacheInterceptor implements Interceptor {
 
         if (authenticator != null && (
                 (cacheKeyProvider.applyToProxy() && responseCode == HTTP_PROXY_AUTH) ||
-                !cacheKeyProvider.applyToProxy() && responseCode == HTTP_UNAUTHORIZED)
+                        !cacheKeyProvider.applyToProxy() && responseCode == HTTP_UNAUTHORIZED)
         ) {
-            removeCacheEntry(chain,key,request, response);
+            removeCacheEntry(chain, key, request, response);
         }
         return response;
     }
@@ -62,7 +62,10 @@ public class AuthenticationCacheInterceptor implements Interceptor {
             response.body().close();
             Platform.get().log("Cached authentication expired. Sending a new request.", Platform.INFO, null);
             // Force sending a new request without "Authorization" header
+            //interceptor at the proxy level is a Network Interceptor which does not permit to call proceed more than once.
+            if (!cacheKeyProvider.applyToProxy()) {
                 response = chain.proceed(request);
+            }
         }
     }
 }
