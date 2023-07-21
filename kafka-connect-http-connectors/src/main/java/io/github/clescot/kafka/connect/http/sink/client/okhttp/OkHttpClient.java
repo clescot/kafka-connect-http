@@ -1,6 +1,7 @@
 package io.github.clescot.kafka.connect.http.sink.client.okhttp;
 
 import com.burgstaller.okhttp.DispatchingAuthenticator;
+import com.burgstaller.okhttp.basic.BasicAuthenticator;
 import com.burgstaller.okhttp.digest.CachingAuthenticator;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
