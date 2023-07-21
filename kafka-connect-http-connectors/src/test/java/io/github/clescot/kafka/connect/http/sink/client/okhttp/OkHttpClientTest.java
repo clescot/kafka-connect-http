@@ -497,10 +497,10 @@ class OkHttpClientTest {
                             ).willSetStateTo("access granted")
                     );
             wireMock
-                    .register(WireMock.post("/ping2").inScenario(scenario)
+                    .register(WireMock.post("/ping").inScenario(scenario)
                             .whenScenarioStateIs("access granted")
                             .withHeader("Proxy-Authorization", containing("Basic cHJveHl1c2VyMTpwcm94eXBhc3N3b3JkMQ=="))
-                            .withBasicAuth(proxyUsername, proxyPassword)
+                            .withBasicAuth(username, password)
                             .withHeader("Content-Type", containing("text/plain"))
                             .withHeader("X-Correlation-ID", containing("e6de70d1-f222-46e8-b755-754880687822"))
                             .withHeader("X-Request-ID", containing("e6de70d1-f222-46e8-b755-11111"))

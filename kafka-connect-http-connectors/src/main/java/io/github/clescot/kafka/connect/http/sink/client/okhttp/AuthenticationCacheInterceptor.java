@@ -27,9 +27,9 @@ public class AuthenticationCacheInterceptor implements Interceptor {
     public Response intercept(Chain chain) throws IOException {
         final Request request = chain.request();
         final String key;
-        if(cacheKeyProvider.applyToProxy()){
+        if (cacheKeyProvider.applyToProxy()) {
             key = cacheKeyProvider.getCachingKey(chain.connection().route().proxy());
-        }else {
+        } else {
             key = cacheKeyProvider.getCachingKey(request);
         }
         CachingAuthenticator authenticator = authCache.get(key);
@@ -46,15 +46,23 @@ public class AuthenticationCacheInterceptor implements Interceptor {
 
         // Cached response was used, but it produced unauthorized response (cache expired).
         int responseCode = response != null ? response.code() : 0;
-        if (authenticator != null && (responseCode == HTTP_UNAUTHORIZED || responseCode == HTTP_PROXY_AUTH)) {
-            // Remove cached authenticator and resend request
-            if (authCache.remove(key) != null) {
-                response.body().close();
-                Platform.get().log("Cached authentication expired. Sending a new request.", Platform.INFO, null);
-                // Force sending a new request without "Authorization" header
-                response = chain.proceed(request);
-            }
+
+        if (authenticator != null && (
+                (cacheKeyProvider.applyToProxy() && responseCode == HTTP_PROXY_AUTH) ||
+                !cacheKeyProvider.applyToProxy() && responseCode == HTTP_UNAUTHORIZED)
+        ) {
+            removeCacheEntry(chain,key,request, response);
         }
         return response;
+    }
+
+    private void removeCacheEntry(Chain chain, String key, Request request, Response response) throws IOException {
+        // Remove cached authenticator and resend request
+        if (authCache.remove(key) != null) {
+            response.body().close();
+            Platform.get().log("Cached authentication expired. Sending a new request.", Platform.INFO, null);
+            // Force sending a new request without "Authorization" header
+                response = chain.proceed(request);
+        }
     }
 }
