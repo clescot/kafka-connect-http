@@ -236,7 +236,7 @@ public class OkHttpClient extends AbstractHttpClient<Request, Response> {
             httpClientBuilder.addNetworkInterceptor(new AuthenticationCacheInterceptor(authCache,new DefaultProxyCacheKeyProvider()));
         }
         if(authenticator!=null){
-            httpClientBuilder.addNetworkInterceptor(new AuthenticationCacheInterceptor(authCache,new DefaultRequestCacheKeyProvider()));
+            httpClientBuilder.addInterceptor(new AuthenticationCacheInterceptor(authCache,new DefaultRequestCacheKeyProvider()));
         }
 
     }
