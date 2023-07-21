@@ -330,8 +330,8 @@ class OkHttpClientTest {
 
 
         @Test
-        @DisplayName("test proxy with authentication")
-        public void test_proxy_with_authentication() throws ExecutionException, InterruptedException {
+        @DisplayName("test proxy with basic authentication")
+        public void test_proxy_with_basic_authentication() throws ExecutionException, InterruptedException {
 
 
             String bodyResponse = "{\"result\":\"pong\"}";
@@ -395,6 +395,112 @@ class OkHttpClientTest {
             wireMock
                     .register(WireMock.post("/ping").inScenario(scenario)
                             .whenScenarioStateIs("access granted")
+                            .withHeader("Content-Type", containing("text/plain"))
+                            .withHeader("X-Correlation-ID", containing("e6de70d1-f222-46e8-b755-754880687822"))
+                            .withHeader("X-Request-ID", containing("e6de70d1-f222-46e8-b755-11111"))
+                            .willReturn(WireMock.aResponse()
+                                    .withBody(bodyResponse)
+                                    .withStatus(200)
+                                    .withStatusMessage("OK")
+                            ).willSetStateTo("access granted")
+                    );
+
+            HttpExchange httpExchange1 = client.call(httpRequest, new AtomicInteger(1)).get();
+            assertThat(httpExchange1.getHttpResponse().getStatusCode()).isEqualTo(200);
+            HttpExchange httpExchange2 = client.call(httpRequest, new AtomicInteger(1)).get();
+            assertThat(httpExchange2.getHttpResponse().getStatusCode()).isEqualTo(200);
+
+        }
+
+        @Test
+        @DisplayName("test proxy with basic authentication and basic authentication on website")
+        public void test_proxy_with_basic_authentication_and_basic_authentication_on_website() throws ExecutionException, InterruptedException {
+
+
+            String bodyResponse = "{\"result\":\"pong\"}";
+            WireMockRuntimeInfo wmRuntimeInfo = wmHttp.getRuntimeInfo();
+            WireMock wireMock = wmRuntimeInfo.getWireMock();
+            //the test will call the proxy to try to forward the request, but wiremock won't relay.
+            String baseUrl = "http://" + getIP() + ":"+wmHttp.getPort();
+            String url = baseUrl + "/ping";
+
+            HashMap<String, Object> config = Maps.newHashMap();
+
+            config.put(PROXY_HTTP_CLIENT_HOSTNAME, getIP());
+            config.put(PROXY_HTTP_CLIENT_PORT, wmRuntimeInfo.getHttpPort());
+            config.put(PROXY_HTTP_CLIENT_TYPE, "HTTP");
+            config.put(HTTP_CLIENT_PROXY_AUTHENTICATION_BASIC_ACTIVATE, true);
+            String proxyUsername = "proxyuser1";
+            config.put(HTTP_CLIENT_PROXY_AUTHENTICATION_BASIC_USERNAME, proxyUsername);
+            String proxyPassword = "proxypassword1";
+            config.put(HTTP_CLIENT_PROXY_AUTHENTICATION_BASIC_PASSWORD, proxyPassword);
+
+            config.put("httpclient.authentication.basic.activate", true);
+            String username = "user1";
+            String password = "password1";
+            config.put("httpclient.authentication.basic.username", username);
+            config.put("httpclient.authentication.basic.password", password);
+
+            OkHttpClient client = new OkHttpClient(config, null);
+
+            HashMap<String, List<String>> headers = Maps.newHashMap();
+            headers.put("Content-Type", Lists.newArrayList("text/plain"));
+            headers.put("X-Correlation-ID", Lists.newArrayList("e6de70d1-f222-46e8-b755-754880687822"));
+            headers.put("X-Request-ID", Lists.newArrayList("e6de70d1-f222-46e8-b755-11111"));
+            HttpRequest httpRequest = new HttpRequest(
+                    url,
+                    "POST",
+                    "STRING"
+            );
+            httpRequest.setHeaders(headers);
+            httpRequest.setBodyAsString("stuff");
+
+
+            String scenario = "Proxy with authentication";
+
+            wireMock
+                    .register(WireMock.post("/ping").inScenario(scenario)
+                            .whenScenarioStateIs(STARTED)
+                            .willReturn(WireMock.aResponse()
+                                    .withHeader("Date", "Wed, 21 Oct 2022 05:21:23 GMT")
+                                    .withHeader("Proxy-Authenticate", "Basic realm=\"Access to staging site\"")
+                                    .withStatus(407)
+                                    .withStatusMessage("Proxy Authentication Required")
+                            ).willSetStateTo("Proxy Authentication Required")
+                    );
+            wireMock
+                    .register(WireMock.post("/ping").inScenario(scenario)
+                            .whenScenarioStateIs("Proxy Authentication Required")
+                            .withHeader("Proxy-Authorization", containing("Basic cHJveHl1c2VyMTpwcm94eXBhc3N3b3JkMQ=="))
+                            .withHeader("Content-Type", containing("text/plain"))
+                            .withHeader("X-Correlation-ID", containing("e6de70d1-f222-46e8-b755-754880687822"))
+                            .withHeader("X-Request-ID", containing("e6de70d1-f222-46e8-b755-11111"))
+                            .willReturn(WireMock.aResponse()
+                                    .withHeader("Date", "Wed, 21 Oct 2022 05:21:23 GMT")
+                                    .withHeader("WWW-Authenticate", "Basic realm=\"Access to staging site\"")
+                                    .withStatus(401)
+                                    .withStatusMessage("Unauthorized")
+                            ).willSetStateTo("Unauthorized")
+                    );
+            wireMock
+                    .register(WireMock.post("/ping").inScenario(scenario)
+                            .whenScenarioStateIs("Unauthorized")
+                            .withHeader("Proxy-Authorization", containing("Basic cHJveHl1c2VyMTpwcm94eXBhc3N3b3JkMQ=="))
+                            .withBasicAuth(username, password)
+                            .withHeader("Content-Type", containing("text/plain"))
+                            .withHeader("X-Correlation-ID", containing("e6de70d1-f222-46e8-b755-754880687822"))
+                            .withHeader("X-Request-ID", containing("e6de70d1-f222-46e8-b755-11111"))
+                            .willReturn(WireMock.aResponse()
+                                    .withBody(bodyResponse)
+                                    .withStatus(200)
+                                    .withStatusMessage("OK")
+                            ).willSetStateTo("access granted")
+                    );
+            wireMock
+                    .register(WireMock.post("/ping2").inScenario(scenario)
+                            .whenScenarioStateIs("access granted")
+                            .withHeader("Proxy-Authorization", containing("Basic cHJveHl1c2VyMTpwcm94eXBhc3N3b3JkMQ=="))
+                            .withBasicAuth(proxyUsername, proxyPassword)
                             .withHeader("Content-Type", containing("text/plain"))
                             .withHeader("X-Correlation-ID", containing("e6de70d1-f222-46e8-b755-754880687822"))
                             .withHeader("X-Request-ID", containing("e6de70d1-f222-46e8-b755-11111"))
