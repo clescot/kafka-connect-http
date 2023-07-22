@@ -355,20 +355,22 @@ class OkHttpClientTest {
                             .inScenario(scenario)
                             .whenScenarioStateIs(UNAUTHORIZED)
                             .withHeader("Authorization",
-                                    containing("Digest username=\"user1\"")
-                               .and(containing("realm=\"Access to staging site\""))
-                               .and(containing("nonce=\"dcd98b7102dd2f0e8b11d0f615bfb0c093\""))
-                               .and(containing("uri=\"/ping\""))
-                               .and(containing("response=\"15615fe29619fb8d064b7d8d49ef273a\""))
-                               .and(containing("qop=auth"))
-                               .and(containing("nc=00000001"))
-                               .and(containing("cnonce=\"0001020304050607\""))
-                               .and(containing("algorithm=MD5"))
-                               .and(containing("opaque=\"5cdc029c403ebaf9f0171e9517f40e41\""))
+                                    equalTo("Digest " +
+                                            "username=\"user1\", " +
+                                            "realm=\"Access to staging site\", " +
+                                            "nonce=\"dcd98b7102dd2f0e8b11d0f615bfb0c093\", " +
+                                            "uri=\"/ping\", " +
+                                            "response=\"15615fe29619fb8d064b7d8d49ef273a\", " +
+                                            "qop=auth, " +
+                                            "nc=00000001, " +
+                                            "cnonce=\"0001020304050607\", " +
+                                            "algorithm=MD5, " +
+                                            "opaque=\"5cdc029c403ebaf9f0171e9517f40e41\""
+                                    )
                             )
                             .withHeader("Content-Type", containing("text/plain"))
-                            .withHeader("X-Correlation-ID", containing("e6de70d1-f222-46e8-b755-754880687822"))
-                            .withHeader("X-Request-ID", containing("e6de70d1-f222-46e8-b755-11111"))
+                            .withHeader("X-Correlation-ID", equalTo("e6de70d1-f222-46e8-b755-754880687822"))
+                            .withHeader("X-Request-ID", equalTo("e6de70d1-f222-46e8-b755-11111"))
                             .willReturn(WireMock.aResponse()
                                     .withBody(bodyResponse)
                                     .withStatus(200)
@@ -395,9 +397,9 @@ class OkHttpClientTest {
                                             "opaque=\"5cdc029c403ebaf9f0171e9517f40e41\""
                                     )
                             )
-//                            .withHeader("Content-Type", containing("text/plain; charset=utf-8"))
-                            .withHeader("X-Correlation-ID", containing("e6de70d1-f222-46e8-b755-754880687822"))
-//                            .withHeader("X-Request-ID", containing("22222-33333-000-000-0000"))
+                            .withHeader("Content-Type", containing("text/plain"))
+                            .withHeader("X-Correlation-ID", equalTo("e6de70d1-f222-46e8-b755-754880687822"))
+                            .withHeader("X-Request-ID", equalTo("22222-33333-000-000-0000"))
                             .willReturn(WireMock.aResponse()
                                     .withBody(bodyResponse)
                                     .withStatus(200)
