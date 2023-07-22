@@ -56,9 +56,16 @@ public class OkHttpClient extends AbstractHttpClient<Request, Response> {
     private final okhttp3.OkHttpClient client;
     private static final Logger LOGGER = LoggerFactory.getLogger(OkHttpClient.class);
 
+    private Random random;
+
     @SuppressWarnings("java:S5527")
     public OkHttpClient(Map<String, Object> config, ExecutorService executorService) {
+        this(config, executorService, null);
+    }
+
+    public OkHttpClient(Map<String, Object> config, ExecutorService executorService, Random random) {
         super(config);
+        this.random = random;
         okhttp3.OkHttpClient.Builder httpClientBuilder = new okhttp3.OkHttpClient.Builder();
         if (executorService != null) {
             Dispatcher dispatcher = new Dispatcher(executorService);
@@ -144,41 +151,41 @@ public class OkHttpClient extends AbstractHttpClient<Request, Response> {
             httpClientBuilder.proxy(proxy);
 
         }
-        if(config.containsKey(PROXY_HTTP_CLIENT_0_HOSTNAME)) {
+        if (config.containsKey(PROXY_HTTP_CLIENT_0_HOSTNAME)) {
             httpClientBuilder.proxySelector(buildProxySelector(config));
         }
 
 
     }
 
-    private ProxySelector buildProxySelector(Map<String, Object> config){
+    private ProxySelector buildProxySelector(Map<String, Object> config) {
         //build each proxy
         //type,hostname,port
-        int proxyIndex=0;
-        List<ImmutablePair<Predicate<URI>,Proxy>> proxies = Lists.newArrayList();
+        int proxyIndex = 0;
+        List<ImmutablePair<Predicate<URI>, Proxy>> proxies = Lists.newArrayList();
         //handle NON_PROXY_HOSTS
         Optional<String> nonProxyHostNames = Optional.ofNullable((String) config.get(PROXY_HTTP_CLIENT_NON_PROXY_HOSTS_URI_REGEX));
-        if(nonProxyHostNames.isPresent()){
+        if (nonProxyHostNames.isPresent()) {
             String nonProxyHosts = nonProxyHostNames.get();
             Pattern uriPattern = Pattern.compile(nonProxyHosts);
             Predicate<URI> predicate = uri -> uriPattern.matcher(uri.toString()).matches();
-            proxies.add(ImmutablePair.of(predicate,NO_PROXY));
+            proxies.add(ImmutablePair.of(predicate, NO_PROXY));
         }
-        while(config.get(PROXY_PREFIX+HTTP_CLIENT_PREFIX+proxyIndex+"."+"hostname")!=null){
+        while (config.get(PROXY_PREFIX + HTTP_CLIENT_PREFIX + proxyIndex + "." + "hostname") != null) {
 
             //build URI predicate
-            String uriPredicate = (String) config.get(PROXY_PREFIX+HTTP_CLIENT_PREFIX+proxyIndex+"."+"predicate.uri.regex");
+            String uriPredicate = (String) config.get(PROXY_PREFIX + HTTP_CLIENT_PREFIX + proxyIndex + "." + "predicate.uri.regex");
             Pattern uriPattern = Pattern.compile(uriPredicate);
             Predicate<URI> predicate = uri -> uriPattern.matcher(uri.toString()).matches();
             //build proxy
-            String proxyHostName = (String) config.get(PROXY_PREFIX+HTTP_CLIENT_PREFIX+proxyIndex+"."+"hostname");
-            int proxyPort = (Integer) config.get(PROXY_PREFIX+HTTP_CLIENT_PREFIX+proxyIndex+"."+"port");
+            String proxyHostName = (String) config.get(PROXY_PREFIX + HTTP_CLIENT_PREFIX + proxyIndex + "." + "hostname");
+            int proxyPort = (Integer) config.get(PROXY_PREFIX + HTTP_CLIENT_PREFIX + proxyIndex + "." + "port");
             SocketAddress socketAddress = new InetSocketAddress(proxyHostName, proxyPort);
-            String proxyTypeLabel = (String) Optional.ofNullable(config.get(PROXY_PREFIX+HTTP_CLIENT_PREFIX+proxyIndex+"."+"type")).orElse("HTTP");
+            String proxyTypeLabel = (String) Optional.ofNullable(config.get(PROXY_PREFIX + HTTP_CLIENT_PREFIX + proxyIndex + "." + "type")).orElse("HTTP");
             Proxy.Type proxyType = Proxy.Type.valueOf(proxyTypeLabel);
             Proxy proxy = new Proxy(proxyType, socketAddress);
 
-            proxies.add(ImmutablePair.of(predicate,proxy));
+            proxies.add(ImmutablePair.of(predicate, proxy));
             proxyIndex++;
 
         }
@@ -217,7 +224,7 @@ public class OkHttpClient extends AbstractHttpClient<Request, Response> {
         final Map<String, CachingAuthenticator> authCache = new ConcurrentHashMap<>();
 
         //authentication
-        CachingAuthenticatorDecorator authenticator = getCachingAuthenticatorDecorator(config, authCache,false);
+        CachingAuthenticatorDecorator authenticator = getCachingAuthenticatorDecorator(config, authCache, false);
         if (authenticator != null) {
             httpClientBuilder.authenticator(authenticator);
         }
@@ -225,24 +232,24 @@ public class OkHttpClient extends AbstractHttpClient<Request, Response> {
         //proxy authentication
         Map<String, Object> proxyConfig = config.entrySet().stream()
                 .filter(entry -> entry.getKey().startsWith(PROXY_PREFIX))
-                .map((entry)->Map.entry(entry.getKey().substring(PROXY_PREFIX.length()),entry.getValue())).collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
-        io.github.clescot.kafka.connect.http.sink.client.okhttp.CachingAuthenticatorDecorator proxyAuthenticator = getCachingAuthenticatorDecorator(proxyConfig, authCache,true);
+                .map((entry) -> Map.entry(entry.getKey().substring(PROXY_PREFIX.length()), entry.getValue())).collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+        io.github.clescot.kafka.connect.http.sink.client.okhttp.CachingAuthenticatorDecorator proxyAuthenticator = getCachingAuthenticatorDecorator(proxyConfig, authCache, true);
         if (proxyAuthenticator != null) {
             httpClientBuilder.proxyAuthenticator(proxyAuthenticator);
         }
 
         //authentication cache
-        if(proxyAuthenticator!=null){
-            httpClientBuilder.addNetworkInterceptor(new AuthenticationCacheInterceptor(authCache,new DefaultProxyCacheKeyProvider()));
+        if (proxyAuthenticator != null) {
+            httpClientBuilder.addNetworkInterceptor(new AuthenticationCacheInterceptor(authCache, new DefaultProxyCacheKeyProvider()));
         }
-        if(authenticator!=null){
-            httpClientBuilder.addInterceptor(new AuthenticationCacheInterceptor(authCache,new DefaultRequestCacheKeyProvider()));
+        if (authenticator != null) {
+            httpClientBuilder.addInterceptor(new AuthenticationCacheInterceptor(authCache, new DefaultRequestCacheKeyProvider()));
         }
 
     }
 
     @Nullable
-    private CachingAuthenticatorDecorator getCachingAuthenticatorDecorator(Map<String, Object> config, Map<String, CachingAuthenticator> authCache,boolean proxy) {
+    private CachingAuthenticatorDecorator getCachingAuthenticatorDecorator(Map<String, Object> config, Map<String, CachingAuthenticator> authCache, boolean proxy) {
         BasicAuthenticator basicAuthenticator = configureBasicAuthentication(config);
 
         DigestAuthenticator digestAuthenticator = configureDigestAuthenticator(config);
@@ -257,7 +264,7 @@ public class OkHttpClient extends AbstractHttpClient<Request, Response> {
         }
         io.github.clescot.kafka.connect.http.sink.client.okhttp.CachingAuthenticatorDecorator authenticator = null;
         if (basicAuthenticator != null || digestAuthenticator != null) {
-            authenticator = new CachingAuthenticatorDecorator(authenticatorBuilder.build(), authCache,proxy);
+            authenticator = new CachingAuthenticatorDecorator(authenticatorBuilder.build(), authCache, proxy);
         }
         return authenticator;
 
@@ -278,15 +285,18 @@ public class OkHttpClient extends AbstractHttpClient<Request, Response> {
             }
             Charset digestCharset = Charset.forName(digestCredentialCharset);
 
-            SecureRandom random;
-            String rngAlgorithm = SHA_1_PRNG;
-            if (config.containsKey(HTTP_CLIENT_AUTHENTICATION_DIGEST_SECURE_RANDOM_PRNG_ALGORITHM)) {
-                rngAlgorithm = (String) config.get(HTTP_CLIENT_AUTHENTICATION_DIGEST_SECURE_RANDOM_PRNG_ALGORITHM);
-            }
-            try {
-                random = SecureRandom.getInstance(rngAlgorithm);
-            } catch (NoSuchAlgorithmException e) {
-                throw new HttpException(e);
+            //get random if not set in the constructor (inject a mocked Random object for tests).
+            if (random == null) {
+                String rngAlgorithm = SHA_1_PRNG;
+
+                if (config.containsKey(HTTP_CLIENT_AUTHENTICATION_DIGEST_SECURE_RANDOM_PRNG_ALGORITHM)) {
+                    rngAlgorithm = (String) config.get(HTTP_CLIENT_AUTHENTICATION_DIGEST_SECURE_RANDOM_PRNG_ALGORITHM);
+                }
+                try {
+                    random = SecureRandom.getInstance(rngAlgorithm);
+                } catch (NoSuchAlgorithmException e) {
+                    throw new HttpException(e);
+                }
             }
             digestAuthenticator = new DigestAuthenticator(credentials, digestCharset, random);
 
