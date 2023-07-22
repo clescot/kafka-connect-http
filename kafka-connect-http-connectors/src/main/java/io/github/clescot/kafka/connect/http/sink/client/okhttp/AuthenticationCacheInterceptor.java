@@ -51,12 +51,12 @@ public class AuthenticationCacheInterceptor implements Interceptor {
                 (cacheKeyProvider.applyToProxy() && responseCode == HTTP_PROXY_AUTH) ||
                         !cacheKeyProvider.applyToProxy() && responseCode == HTTP_UNAUTHORIZED)
         ) {
-            removeCacheEntry(chain, key, request, response);
+            response = removeCacheEntry(chain, key, request, response);
         }
         return response;
     }
 
-    private void removeCacheEntry(Chain chain, String key, Request request, Response response) throws IOException {
+    private Response removeCacheEntry(Chain chain, String key, Request request, Response response) throws IOException {
         // Remove cached authenticator and resend request
         if (authCache.remove(key) != null) {
             response.body().close();
@@ -66,6 +66,8 @@ public class AuthenticationCacheInterceptor implements Interceptor {
             if (!cacheKeyProvider.applyToProxy()) {
                 response = chain.proceed(request);
             }
+            return response;
         }
+        return response;
     }
 }
