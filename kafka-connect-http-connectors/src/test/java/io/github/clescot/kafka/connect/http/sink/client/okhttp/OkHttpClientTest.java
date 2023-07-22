@@ -33,6 +33,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.containing;
+import static com.github.tomakehurst.wiremock.client.WireMock.equalTo;
 import static com.github.tomakehurst.wiremock.stubbing.Scenario.STARTED;
 import static io.github.clescot.kafka.connect.http.sink.HttpSinkConfigDefinition.*;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -316,6 +317,18 @@ class OkHttpClientTest {
             httpRequest.setHeaders(headers);
             httpRequest.setBodyAsString("stuff");
 
+            String url2 = baseUrl + "/ping2";
+            HashMap<String, List<String>> headers2 = Maps.newHashMap();
+            headers2.put("Content-Type", Lists.newArrayList("text/plain"));
+            headers2.put("X-Correlation-ID", Lists.newArrayList("e6de70d1-f222-46e8-b755-754880687822"));
+            headers2.put("X-Request-ID", Lists.newArrayList("22222-33333-000-000-0000"));
+            HttpRequest httpRequest2 = new HttpRequest(
+                    url2,
+                    "POST",
+                    "STRING"
+            );
+            httpRequest2.setHeaders(headers2);
+            httpRequest2.setBodyAsString("stuff2");
 
             String scenario = "Digest Authentication";
             wireMock
@@ -340,17 +353,15 @@ class OkHttpClientTest {
                     .register(WireMock.post("/ping")
                             .withName("2")
                             .inScenario(scenario)
-//                            .whenScenarioStateIs(UNAUTHORIZED)
+                            .whenScenarioStateIs(UNAUTHORIZED)
                             .withHeader("Authorization",
                                     containing("Digest username=\"user1\"")
                                .and(containing("realm=\"Access to staging site\""))
                                .and(containing("nonce=\"dcd98b7102dd2f0e8b11d0f615bfb0c093\""))
                                .and(containing("uri=\"/ping\""))
-//                               .and(containing("response=15615fe29619fb8d064b7d8d49ef273a"))
-                               .and(containing("response="))
+                               .and(containing("response=\"15615fe29619fb8d064b7d8d49ef273a\""))
                                .and(containing("qop=auth"))
-//                               .and(containing("nc=00000001"))
-                               .and(containing("nc=0000000"))
+                               .and(containing("nc=00000001"))
                                .and(containing("cnonce=\"0001020304050607\""))
                                .and(containing("algorithm=MD5"))
                                .and(containing("opaque=\"5cdc029c403ebaf9f0171e9517f40e41\""))
@@ -366,17 +377,27 @@ class OkHttpClientTest {
                     );
 
             wireMock
-                    .register(WireMock.post("/ping")
+                    .register(WireMock.post("/ping2")
                             .withName("3")
                             .inScenario(scenario)
                             .whenScenarioStateIs(ACCESS_GRANTED)
                             .withHeader("Authorization",
-                                    containing("Digest username=\"user1\", realm=\"Access to staging site\", nonce=\"dcd98b7102dd2f0e8b11d0f615bfb0c093\", uri=\"/ping\", response=\"076af98b58f8e675c80b3368d6bd511d\", qop=auth, nc=00000002, cnonce=\"0001020304050607\", algorithm=MD5, opaque=\"5cdc029c403ebaf9f0171e9517f40e41\""
+                                    equalTo("Digest " +
+                                            "username=\"user1\", " +
+                                            "realm=\"Access to staging site\", " +
+                                            "nonce=\"dcd98b7102dd2f0e8b11d0f615bfb0c093\", " +
+                                            "uri=\"/ping2\", " +
+                                            "response=\"2b0343d234053807ee3c9d478d0f0874\", " +
+                                            "qop=auth, " +
+                                            "nc=00000002, " +
+                                            "cnonce=\"0001020304050607\", " +
+                                            "algorithm=MD5, " +
+                                            "opaque=\"5cdc029c403ebaf9f0171e9517f40e41\""
                                     )
                             )
-                            .withHeader("Content-Type", containing("text/plain; charset=utf-8"))
+//                            .withHeader("Content-Type", containing("text/plain; charset=utf-8"))
                             .withHeader("X-Correlation-ID", containing("e6de70d1-f222-46e8-b755-754880687822"))
-                            .withHeader("X-Request-ID", containing("e6de70d1-f222-46e8-b755-11111"))
+//                            .withHeader("X-Request-ID", containing("22222-33333-000-000-0000"))
                             .willReturn(WireMock.aResponse()
                                     .withBody(bodyResponse)
                                     .withStatus(200)
@@ -387,7 +408,8 @@ class OkHttpClientTest {
 
             HttpExchange httpExchange1 = client.call(httpRequest, new AtomicInteger(1)).get();
             assertThat(httpExchange1.getHttpResponse().getStatusCode()).isEqualTo(200);
-            HttpExchange httpExchange2 = client.call(httpRequest, new AtomicInteger(1)).get();
+
+            HttpExchange httpExchange2 = client.call(httpRequest2, new AtomicInteger(1)).get();
             assertThat(httpExchange2.getHttpResponse().getStatusCode()).isEqualTo(200);
 
         }
