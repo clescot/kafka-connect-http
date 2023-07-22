@@ -280,7 +280,7 @@ class OkHttpClientTest {
 
         @Test
         @DisplayName("test Digest Authentication : two calls")
-        public void test_digest_authentication() throws ExecutionException, InterruptedException {
+        void test_digest_authentication() throws ExecutionException, InterruptedException {
 
             String username = "user1";
             String password = "password1";
@@ -430,7 +430,7 @@ class OkHttpClientTest {
     class TestProxy {
         @Test
         @DisplayName("test proxy without authentication")
-        public void test_proxy_without_authentication() throws ExecutionException, InterruptedException {
+        void test_proxy_without_authentication() throws ExecutionException, InterruptedException {
 
 
             String bodyResponse = "{\"result\":\"pong\"}";
@@ -482,7 +482,7 @@ class OkHttpClientTest {
 
         @Test
         @DisplayName("test proxy with basic authentication")
-        public void test_proxy_with_basic_authentication() throws ExecutionException, InterruptedException {
+        void test_proxy_with_basic_authentication() throws ExecutionException, InterruptedException {
 
 
             String bodyResponse = "{\"result\":\"pong\"}";
@@ -565,7 +565,7 @@ class OkHttpClientTest {
 
         @Test
         @DisplayName("test proxy with basic authentication and basic authentication on website")
-        public void test_proxy_with_basic_authentication_and_basic_authentication_on_website() throws ExecutionException, InterruptedException {
+        void test_proxy_with_basic_authentication_and_basic_authentication_on_website() throws ExecutionException, InterruptedException {
 
 
             String bodyResponse = "{\"result\":\"pong\"}";
