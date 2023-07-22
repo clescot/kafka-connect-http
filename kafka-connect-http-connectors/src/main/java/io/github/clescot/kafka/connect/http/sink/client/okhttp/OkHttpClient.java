@@ -174,7 +174,8 @@ public class OkHttpClient extends AbstractHttpClient<Request, Response> {
         while (config.get(PROXY_PREFIX + HTTP_CLIENT_PREFIX + proxyIndex + "." + "hostname") != null) {
 
             //build URI predicate
-            String uriPredicate = (String) config.get(PROXY_PREFIX + HTTP_CLIENT_PREFIX + proxyIndex + "." + "predicate.uri.regex");
+            String uriPredicate = (String) config.get(PROXY_PREFIX + HTTP_CLIENT_PREFIX + proxyIndex + "." + "uri.regex");
+            Preconditions.checkNotNull(uriPredicate,"'"+PROXY_PREFIX + HTTP_CLIENT_PREFIX + proxyIndex + "." +"uri.regex"+"' must be set");
             Pattern uriPattern = Pattern.compile(uriPredicate);
             Predicate<URI> predicate = uri -> uriPattern.matcher(uri.toString()).matches();
             //build proxy

@@ -2,7 +2,6 @@ package io.github.clescot.kafka.connect.http.sink.client.okhttp;
 
 import com.github.tomakehurst.wiremock.client.WireMock;
 import com.github.tomakehurst.wiremock.core.WireMockConfiguration;
-import com.github.tomakehurst.wiremock.http.trafficlistener.ConsoleNotifyingWiremockNetworkTrafficListener;
 import com.github.tomakehurst.wiremock.junit5.WireMockExtension;
 import com.github.tomakehurst.wiremock.junit5.WireMockRuntimeInfo;
 import com.google.common.collect.Lists;
@@ -49,13 +48,14 @@ class OkHttpClientTest {
 
     @RegisterExtension
     static WireMockExtension wmHttp;
+
     static {
 
         wmHttp = WireMockExtension.newInstance()
                 .options(
                         WireMockConfiguration.wireMockConfig()
                                 .dynamicPort()
-                                .networkTrafficListener(new ConsoleNotifyingWiremockNetworkTrafficListener())
+//                                .networkTrafficListener(new ConsoleNotifyingWiremockNetworkTrafficListener())
 
                 )
                 .build();
@@ -294,14 +294,14 @@ class OkHttpClientTest {
             config.put("httpclient.authentication.digest.password", password);
             Random random = mock(Random.class);
             byte[] randomBytes = {0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07};
-            doAnswer(invocation-> {
+            doAnswer(invocation -> {
                 Object[] args = invocation.getArguments();
                 byte[] rnd = (byte[]) args[0];
-                System.arraycopy(randomBytes,0,rnd,0,randomBytes.length);
+                System.arraycopy(randomBytes, 0, rnd, 0, randomBytes.length);
                 return null;
             })
-            .when(random).nextBytes(any(byte[].class));
-            OkHttpClient client = new OkHttpClient(config, null,random);
+                    .when(random).nextBytes(any(byte[].class));
+            OkHttpClient client = new OkHttpClient(config, null, random);
 
             String baseUrl = "http://" + getIP() + ":" + wmRuntimeInfo.getHttpPort();
             String url = baseUrl + "/ping";
@@ -572,7 +572,7 @@ class OkHttpClientTest {
             WireMockRuntimeInfo wmRuntimeInfo = wmHttp.getRuntimeInfo();
             WireMock wireMock = wmRuntimeInfo.getWireMock();
             //the test will call the proxy to try to forward the request, but wiremock won't relay.
-            String baseUrl = "http://" + getIP() + ":"+wmHttp.getPort();
+            String baseUrl = "http://" + getIP() + ":" + wmHttp.getPort();
             String url = baseUrl + "/ping";
 
             HashMap<String, Object> config = Maps.newHashMap();
@@ -671,10 +671,61 @@ class OkHttpClientTest {
 
     }
 
+    @Nested
+    class TestProxySelector {
+        @Test
+        @DisplayName("test proxy with basic authentication and basic authentication on website")
+        void test_proxy_selector_without_authentication() throws ExecutionException, InterruptedException {
+            String bodyResponse = "{\"result\":\"pong\"}";
+            WireMockRuntimeInfo wmRuntimeInfo = wmHttp.getRuntimeInfo();
+            WireMock wireMock = wmRuntimeInfo.getWireMock();
+            //the test will call the proxy to try to forward the request, but wiremock won't relay.
+            String baseUrl = "http://" + "dummy.com" + ":22222";
+            String url = baseUrl + "/ping";
 
-    @AfterEach
-    public void afterEach() {
-        wmHttp.resetAll();
-        QueueFactory.clearRegistrations();
+            HashMap<String, Object> config = Maps.newHashMap();
+            config.put(PROXY_HTTP_CLIENT_0_HOSTNAME, getIP());
+            config.put(PROXY_HTTP_CLIENT_0_PORT, wmRuntimeInfo.getHttpPort());
+            config.put(PROXY_PREFIX+HTTP_CLIENT_PREFIX +"0."+"uri.regex", ".*");
+
+
+            OkHttpClient client = new OkHttpClient(config, null);
+
+            HashMap<String, List<String>> headers = Maps.newHashMap();
+            headers.put("Content-Type", Lists.newArrayList("text/plain"));
+            headers.put("X-Correlation-ID", Lists.newArrayList("e6de70d1-f222-46e8-b755-754880687822"));
+            headers.put("X-Request-ID", Lists.newArrayList("e6de70d1-f222-46e8-b755-11111"));
+            HttpRequest httpRequest = new HttpRequest(
+                    url,
+                    "POST",
+                    "STRING"
+            );
+            httpRequest.setHeaders(headers);
+            httpRequest.setBodyAsString("stuff");
+
+
+            String scenario = "Proxy";
+
+            wireMock
+                    .register(WireMock.post("/ping").inScenario(scenario)
+                            .whenScenarioStateIs(STARTED)
+                            .willReturn(WireMock.aResponse()
+                                    .withBody(bodyResponse)
+                                    .withStatus(200)
+                                    .withStatusMessage("OK")
+                            ).willSetStateTo("Started")
+                    );
+
+            HttpExchange httpExchange1 = client.call(httpRequest, new AtomicInteger(1)).get();
+            assertThat(httpExchange1.getHttpResponse().getStatusCode()).isEqualTo(200);
+            HttpExchange httpExchange2 = client.call(httpRequest, new AtomicInteger(1)).get();
+            assertThat(httpExchange2.getHttpResponse().getStatusCode()).isEqualTo(200);
+        }
+
+        @AfterEach
+        public void afterEach() {
+            wmHttp.resetAll();
+            QueueFactory.clearRegistrations();
+        }
     }
 }

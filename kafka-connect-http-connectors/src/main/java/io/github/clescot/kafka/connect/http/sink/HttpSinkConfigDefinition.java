@@ -275,6 +275,10 @@ public class HttpSinkConfigDefinition {
     public static final String CONFIG_DEFAULT_PROXY_HTTP_CLIENT_0_TYPE = DEFAULT_CONFIGURATION_PREFIX + PROXY_HTTP_CLIENT_0_TYPE;
     public static final String CONFIG_DEFAULT_PROXY_HTTP_CLIENT_0_TYPE_DOC = "type of proxy. can be either 'HTTP' (default), 'DIRECT' (i.e no proxy), or 'SOCKS'";
 
+    public static final String PROXY_HTTP_CLIENT_0_URI_REGEX = PROXY_PREFIX+HTTP_CLIENT_PREFIX + "0."+"uri.regex";
+    public static final String CONFIG_DEFAULT_PROXY_HTTP_CLIENT_0_URI_REGEX = DEFAULT_CONFIGURATION_PREFIX + PROXY_HTTP_CLIENT_0_URI_REGEX;
+    public static final String CONFIG_DEFAULT_PROXY_HTTP_CLIENT_0_URI_REGEX_DOC = "uri regex matching this proxy";
+
     public static final String PROXY_HTTP_CLIENT_NON_PROXY_HOSTS_URI_REGEX = PROXY_PREFIX+HTTP_CLIENT_PREFIX+"non.proxy.hosts.uri.regex";
     public static final String CONFIG_DEFAULT_PROXY_HTTP_CLIENT_NON_PROXY_HOSTS_URI_REGEX = DEFAULT_CONFIGURATION_PREFIX + PROXY_HTTP_CLIENT_NON_PROXY_HOSTS_URI_REGEX;
     public static final String CONFIG_DEFAULT_PROXY_HTTP_CLIENT_NON_PROXY_HOSTS_URI_REGEX_DOC = "hosts which don't need to be proxied to be reached.";
@@ -442,6 +446,7 @@ public class HttpSinkConfigDefinition {
                 .define(CONFIG_DEFAULT_PROXY_HTTP_CLIENT_0_HOSTNAME,ConfigDef.Type.STRING, null,ConfigDef.Importance.LOW, CONFIG_DEFAULT_PROXY_HTTP_CLIENT_0_HOSTNAME_DOC)
                 .define(CONFIG_DEFAULT_PROXY_HTTP_CLIENT_0_PORT,ConfigDef.Type.STRING, null,ConfigDef.Importance.LOW, CONFIG_DEFAULT_PROXY_HTTP_CLIENT_0_PORT_DOC)
                 .define(CONFIG_DEFAULT_PROXY_HTTP_CLIENT_0_TYPE,ConfigDef.Type.STRING, null,ConfigDef.Importance.LOW, CONFIG_DEFAULT_PROXY_HTTP_CLIENT_0_TYPE_DOC)
+                .define(CONFIG_DEFAULT_PROXY_HTTP_CLIENT_0_URI_REGEX,ConfigDef.Type.STRING, null,ConfigDef.Importance.LOW, CONFIG_DEFAULT_PROXY_HTTP_CLIENT_0_URI_REGEX_DOC)
                 .define(CONFIG_DEFAULT_PROXY_HTTP_CLIENT_NON_PROXY_HOSTS_URI_REGEX,ConfigDef.Type.STRING, null,ConfigDef.Importance.LOW, CONFIG_DEFAULT_PROXY_HTTP_CLIENT_NON_PROXY_HOSTS_URI_REGEX_DOC)
                 ;
     }
