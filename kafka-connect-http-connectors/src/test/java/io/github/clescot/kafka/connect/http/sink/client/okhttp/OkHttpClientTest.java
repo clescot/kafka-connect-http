@@ -2,6 +2,7 @@ package io.github.clescot.kafka.connect.http.sink.client.okhttp;
 
 import com.github.tomakehurst.wiremock.client.WireMock;
 import com.github.tomakehurst.wiremock.core.WireMockConfiguration;
+import com.github.tomakehurst.wiremock.http.trafficlistener.ConsoleNotifyingWiremockNetworkTrafficListener;
 import com.github.tomakehurst.wiremock.junit5.WireMockExtension;
 import com.github.tomakehurst.wiremock.junit5.WireMockRuntimeInfo;
 import com.google.common.collect.Lists;
@@ -53,6 +54,7 @@ class OkHttpClientTest {
                 .options(
                         WireMockConfiguration.wireMockConfig()
                                 .dynamicPort()
+                                .networkTrafficListener(new ConsoleNotifyingWiremockNetworkTrafficListener())
 
                 )
                 .build();
