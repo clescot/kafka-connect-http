@@ -12,11 +12,11 @@ import java.util.List;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
-public class SimpleProxySelector extends ProxySelector {
+public class URIRegexProxySelector extends ProxySelector {
 
     private final List<ImmutablePair<Predicate<URI>, Proxy>> proxies;
 
-    public SimpleProxySelector(List<ImmutablePair<Predicate<URI>,Proxy>> proxies) {
+    public URIRegexProxySelector(List<ImmutablePair<Predicate<URI>,Proxy>> proxies) {
         this.proxies = proxies;
     }
 

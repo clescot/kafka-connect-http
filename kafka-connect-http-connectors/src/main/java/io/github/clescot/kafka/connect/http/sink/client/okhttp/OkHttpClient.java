@@ -190,7 +190,7 @@ public class OkHttpClient extends AbstractHttpClient<Request, Response> {
             proxyIndex++;
 
         }
-        return new SimpleProxySelector(proxies);
+        return new URIRegexProxySelector(proxies);
     }
 
 
