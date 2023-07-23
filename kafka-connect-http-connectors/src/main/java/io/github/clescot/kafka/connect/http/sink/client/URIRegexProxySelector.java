@@ -1,4 +1,4 @@
-package io.github.clescot.kafka.connect.http.sink.client.okhttp;
+package io.github.clescot.kafka.connect.http.sink.client;
 
 
 import org.apache.commons.lang3.tuple.ImmutablePair;
