@@ -674,8 +674,8 @@ class OkHttpClientTest {
     @Nested
     class TestProxySelector {
         @Test
-        @DisplayName("test proxy with basic authentication and basic authentication on website")
-        void test_proxy_selector_without_authentication() throws ExecutionException, InterruptedException {
+        @DisplayName("test proxy selector without authentication with one proxy")
+        void test_proxy_selector_without_authentication_one_proxy() throws ExecutionException, InterruptedException {
             String bodyResponse = "{\"result\":\"pong\"}";
             WireMockRuntimeInfo wmRuntimeInfo = wmHttp.getRuntimeInfo();
             WireMock wireMock = wmRuntimeInfo.getWireMock();
@@ -687,6 +687,58 @@ class OkHttpClientTest {
             config.put(PROXY_HTTP_CLIENT_0_HOSTNAME, getIP());
             config.put(PROXY_HTTP_CLIENT_0_PORT, wmRuntimeInfo.getHttpPort());
             config.put(PROXY_PREFIX+HTTP_CLIENT_PREFIX +"0."+"uri.regex", ".*");
+
+
+            OkHttpClient client = new OkHttpClient(config, null);
+
+            HashMap<String, List<String>> headers = Maps.newHashMap();
+            headers.put("Content-Type", Lists.newArrayList("text/plain"));
+            headers.put("X-Correlation-ID", Lists.newArrayList("e6de70d1-f222-46e8-b755-754880687822"));
+            headers.put("X-Request-ID", Lists.newArrayList("e6de70d1-f222-46e8-b755-11111"));
+            HttpRequest httpRequest = new HttpRequest(
+                    url,
+                    "POST",
+                    "STRING"
+            );
+            httpRequest.setHeaders(headers);
+            httpRequest.setBodyAsString("stuff");
+
+
+            String scenario = "Proxy";
+
+            wireMock
+                    .register(WireMock.post("/ping").inScenario(scenario)
+                            .whenScenarioStateIs(STARTED)
+                            .willReturn(WireMock.aResponse()
+                                    .withBody(bodyResponse)
+                                    .withStatus(200)
+                                    .withStatusMessage("OK")
+                            ).willSetStateTo("Started")
+                    );
+
+            HttpExchange httpExchange1 = client.call(httpRequest, new AtomicInteger(1)).get();
+            assertThat(httpExchange1.getHttpResponse().getStatusCode()).isEqualTo(200);
+            HttpExchange httpExchange2 = client.call(httpRequest, new AtomicInteger(1)).get();
+            assertThat(httpExchange2.getHttpResponse().getStatusCode()).isEqualTo(200);
+        }  @Test
+        @DisplayName("test proxy selector without authentication with two proxies")
+        void test_proxy_selector_without_authentication_two_proxies() throws ExecutionException, InterruptedException {
+            String bodyResponse = "{\"result\":\"pong\"}";
+            WireMockRuntimeInfo wmRuntimeInfo = wmHttp.getRuntimeInfo();
+            WireMock wireMock = wmRuntimeInfo.getWireMock();
+            //the test will call the proxy to try to forward the request, but wiremock won't relay.
+            String baseUrl = "http://" + "dummy.com" + ":22222";
+            String url = baseUrl + "/ping";
+
+            HashMap<String, Object> config = Maps.newHashMap();
+
+            config.put(PROXY_PREFIX+HTTP_CLIENT_PREFIX +"0."+ "hostname", "111.222.888.999");
+            config.put(PROXY_PREFIX+HTTP_CLIENT_PREFIX +"0."+ "port", 5555);
+            config.put(PROXY_PREFIX+HTTP_CLIENT_PREFIX +"0."+"uri.regex", "http://toto\\.com.*");
+
+            config.put(PROXY_PREFIX+HTTP_CLIENT_PREFIX +"1."+ "hostname", getIP());
+            config.put(PROXY_PREFIX+HTTP_CLIENT_PREFIX +"1."+"port", wmRuntimeInfo.getHttpPort());
+            config.put(PROXY_PREFIX+HTTP_CLIENT_PREFIX +"1."+"uri.regex", "http://dummy\\.com.*");
 
 
             OkHttpClient client = new OkHttpClient(config, null);
