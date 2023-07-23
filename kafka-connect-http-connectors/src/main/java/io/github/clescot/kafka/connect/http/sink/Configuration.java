@@ -14,19 +14,18 @@ import io.github.clescot.kafka.connect.http.sink.client.HttpException;
 import io.github.clescot.kafka.connect.http.sink.client.ahc.AHCHttpClientFactory;
 import io.github.clescot.kafka.connect.http.sink.client.okhttp.OkHttpClientFactory;
 import io.github.clescot.kafka.connect.http.sink.config.AddMissingCorrelationIdHeaderToHttpRequestFunction;
+import io.github.clescot.kafka.connect.http.sink.config.AddMissingRequestIdHeaderToHttpRequestFunction;
 import io.github.clescot.kafka.connect.http.sink.config.AddStaticHeadersToHttpRequestFunction;
 import io.github.clescot.kafka.connect.http.sink.config.AddSuccessStatusToHttpExchangeFunction;
-import io.github.clescot.kafka.connect.http.sink.config.AddMissingRequestIdHeaderToHttpRequestFunction;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.lang.reflect.InvocationTargetException;
+import java.security.NoSuchAlgorithmException;
+import java.security.SecureRandom;
 import java.time.Duration;
 import java.time.temporal.ChronoUnit;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 import java.util.concurrent.ExecutorService;
 import java.util.function.Predicate;
 import java.util.regex.Matcher;
@@ -56,7 +55,7 @@ public class Configuration {
     public static final String HEADER_KEY_REGEX = PREDICATE + "header.key.regex";
     public static final String HEADER_VALUE_REGEX = PREDICATE + "header.value.regex";
     public static final String HAS_BEEN_SET = " has been set.";
-
+    public static final String SHA_1_PRNG = "SHA1PRNG";
 
     private final Predicate<HttpRequest> mainpredicate;
 
@@ -129,7 +128,7 @@ public class Configuration {
         this.httpClient = buildHttpClient(configMap, executorService);
 
         //rate limiter
-        Preconditions.checkNotNull(httpClient,"httpClient is null");
+        Preconditions.checkNotNull(httpClient, "httpClient is null");
         httpClient.setRateLimiter(buildRateLimiter(id, httpSinkConnectorConfig, configMap));
 
 
@@ -142,13 +141,13 @@ public class Configuration {
         if (configMap.containsKey(RETRIES)) {
             Integer retries = Integer.parseInt((String) configMap.get(RETRIES));
             Long retryDelayInMs = Long.parseLong((String) configMap.get(RETRY_DELAY_IN_MS));
-            Preconditions.checkNotNull(retryDelayInMs,RETRIES+ HAS_BEEN_SET +RETRY_DELAY_IN_MS+" must be set too.");
+            Preconditions.checkNotNull(retryDelayInMs, RETRIES + HAS_BEEN_SET + RETRY_DELAY_IN_MS + " must be set too.");
             Long retryMaxDelayInMs = Long.parseLong((String) configMap.get(RETRY_MAX_DELAY_IN_MS));
-            Preconditions.checkNotNull(retryDelayInMs,RETRIES+ HAS_BEEN_SET +RETRY_MAX_DELAY_IN_MS+" must be set too.");
+            Preconditions.checkNotNull(retryDelayInMs, RETRIES + HAS_BEEN_SET + RETRY_MAX_DELAY_IN_MS + " must be set too.");
             Double retryDelayFactor = Double.parseDouble((String) configMap.get(RETRY_DELAY_FACTOR));
-            Preconditions.checkNotNull(retryDelayInMs,RETRIES+ HAS_BEEN_SET +RETRY_DELAY_FACTOR+" must be set too.");
+            Preconditions.checkNotNull(retryDelayInMs, RETRIES + HAS_BEEN_SET + RETRY_DELAY_FACTOR + " must be set too.");
             Long retryJitterInMs = Long.parseLong((String) configMap.get(RETRY_JITTER_IN_MS));
-            Preconditions.checkNotNull(retryDelayInMs,RETRIES+ HAS_BEEN_SET +RETRY_JITTER_IN_MS+" must be set too.");
+            Preconditions.checkNotNull(retryDelayInMs, RETRIES + HAS_BEEN_SET + RETRY_JITTER_IN_MS + " must be set too.");
             this.retryPolicy = buildRetryPolicy(retries, retryDelayInMs, retryMaxDelayInMs, retryDelayFactor, retryJitterInMs);
         }
 
@@ -201,14 +200,14 @@ public class Configuration {
                     .stream()
                     .anyMatch(entry -> {
                         boolean headerKeyFound = headerKeyPattern.matcher(entry.getKey()).matches();
-                        if(headerKeyFound
-                           && entry.getValue()!=null
-                           && !entry.getValue().isEmpty()
-                           && configMap.containsKey(HEADER_VALUE_REGEX)){
+                        if (headerKeyFound
+                                && entry.getValue() != null
+                                && !entry.getValue().isEmpty()
+                                && configMap.containsKey(HEADER_VALUE_REGEX)) {
                             String headerValue = (String) configMap.get(HEADER_VALUE_REGEX);
                             Pattern headerValuePattern = Pattern.compile(headerValue);
                             return headerValuePattern.matcher(entry.getValue().get(0)).matches();
-                        }else{
+                        } else {
                             return headerKeyFound;
                         }
 
@@ -230,7 +229,7 @@ public class Configuration {
         return this.addSuccessStatusToHttpExchangeFunction.apply(httpExchange);
     }
 
-    private <Req,Res> HttpClient<Req,Res> buildHttpClient(Map<String, Object> config, ExecutorService executorService) {
+    private <Req, Res> HttpClient<Req, Res> buildHttpClient(Map<String, Object> config, ExecutorService executorService) {
 
         Class<? extends HttpClientFactory> httpClientFactoryClass;
         String httpClientImplementation = (String) Optional.ofNullable(config.get(HTTP_CLIENT_IMPLEMENTATION)).orElse(OKHTTP_IMPLEMENTATION);
@@ -242,7 +241,7 @@ public class Configuration {
             LOGGER.error("unknown HttpClient implementation : must be either 'ahc' or 'okhttp', but is '{}'", httpClientImplementation);
             throw new IllegalArgumentException("unknown HttpClient implementation : must be either 'ahc' or 'okhttp', but is '" + httpClientImplementation + "'");
         }
-        HttpClientFactory<Req,Res> httpClientFactory;
+        HttpClientFactory<Req, Res> httpClientFactory;
         try {
             httpClientFactory = httpClientFactoryClass.getDeclaredConstructor().newInstance();
             LOGGER.debug("using HttpClientFactory implementation: {}", httpClientFactory.getClass().getName());
@@ -250,7 +249,20 @@ public class Configuration {
                  InvocationTargetException e) {
             throw new RuntimeException(e);
         }
-        return httpClientFactory.build(config, executorService);
+
+        //get random
+        Random random;
+        String rngAlgorithm = SHA_1_PRNG;
+
+        if (config.containsKey(HTTP_CLIENT_SECURE_RANDOM_PRNG_ALGORITHM)) {
+            rngAlgorithm = (String) config.get(HTTP_CLIENT_SECURE_RANDOM_PRNG_ALGORITHM);
+        }
+        try {
+            random = SecureRandom.getInstance(rngAlgorithm);
+        } catch (NoSuchAlgorithmException e) {
+            throw new HttpException(e);
+        }
+        return httpClientFactory.build(config, executorService, random);
     }
 
 
@@ -262,7 +274,7 @@ public class Configuration {
         this.httpClient = httpClient;
     }
 
-     public void setSuccessResponseCodeRegex(Pattern successResponseCodeRegex) {
+    public void setSuccessResponseCodeRegex(Pattern successResponseCodeRegex) {
         this.addSuccessStatusToHttpExchangeFunction = new AddSuccessStatusToHttpExchangeFunction(successResponseCodeRegex);
     }
 

@@ -67,7 +67,7 @@ class OkHttpClientTest {
         public void test_build_POST_request() throws IOException {
 
             //given
-            io.github.clescot.kafka.connect.http.sink.client.okhttp.OkHttpClient client = new io.github.clescot.kafka.connect.http.sink.client.okhttp.OkHttpClient(Maps.newHashMap(), null);
+            OkHttpClient client = new OkHttpClient(Maps.newHashMap(), null,new Random());
             HttpRequest httpRequest = new HttpRequest("http://dummy.com/", "POST", HttpRequest.BodyType.STRING.name());
             httpRequest.setBodyAsString("stuff");
 
@@ -89,7 +89,7 @@ class OkHttpClientTest {
         public void test_build_GET_request_with_body() {
 
             //given
-            io.github.clescot.kafka.connect.http.sink.client.okhttp.OkHttpClient client = new io.github.clescot.kafka.connect.http.sink.client.okhttp.OkHttpClient(Maps.newHashMap(), null);
+            OkHttpClient client = new OkHttpClient(Maps.newHashMap(), null,new Random());
             HttpRequest httpRequest = new HttpRequest("http://dummy.com/", "GET", HttpRequest.BodyType.STRING.name());
             httpRequest.setBodyAsString("stuff");
 
@@ -111,7 +111,7 @@ class OkHttpClientTest {
         public void test_build_response() {
 
             //given
-            io.github.clescot.kafka.connect.http.sink.client.okhttp.OkHttpClient client = new OkHttpClient(Maps.newHashMap(), null);
+            OkHttpClient client = new OkHttpClient(Maps.newHashMap(), null,new Random());
 
             HttpRequest httpRequest = new HttpRequest("http://dummy.com/", "POST", HttpRequest.BodyType.STRING.name());
             httpRequest.setBodyAsString("stuff");
@@ -155,7 +155,7 @@ class OkHttpClientTest {
         public void test_activated_cache_with_file_type() {
             HashMap<String, Object> config = Maps.newHashMap();
             config.put(OKHTTP_CACHE_ACTIVATE, "true");
-            io.github.clescot.kafka.connect.http.sink.client.okhttp.OkHttpClient client = new io.github.clescot.kafka.connect.http.sink.client.okhttp.OkHttpClient(config, null);
+            OkHttpClient client = new OkHttpClient(config, null,new Random());
         }
 
         @Test
@@ -163,7 +163,7 @@ class OkHttpClientTest {
             HashMap<String, Object> config = Maps.newHashMap();
             config.put(OKHTTP_CACHE_ACTIVATE, "true");
             config.put(OKHTTP_CACHE_MAX_SIZE, "50000");
-            io.github.clescot.kafka.connect.http.sink.client.okhttp.OkHttpClient client = new io.github.clescot.kafka.connect.http.sink.client.okhttp.OkHttpClient(config, null);
+            OkHttpClient client = new OkHttpClient(config, null,new Random());
         }
 
         @Test
@@ -172,7 +172,7 @@ class OkHttpClientTest {
             config.put(OKHTTP_CACHE_ACTIVATE, "true");
             config.put(OKHTTP_CACHE_MAX_SIZE, "50000");
             config.put(OKHTTP_CACHE_DIRECTORY_PATH, "/tmp/toto");
-            io.github.clescot.kafka.connect.http.sink.client.okhttp.OkHttpClient client = new io.github.clescot.kafka.connect.http.sink.client.okhttp.OkHttpClient(config, null);
+            OkHttpClient client = new OkHttpClient(config, null,new Random());
         }
 
         @Test
@@ -180,20 +180,20 @@ class OkHttpClientTest {
             HashMap<String, Object> config = Maps.newHashMap();
             config.put(OKHTTP_CACHE_ACTIVATE, "true");
             config.put(OKHTTP_CACHE_TYPE, "inmemory");
-            io.github.clescot.kafka.connect.http.sink.client.okhttp.OkHttpClient client = new io.github.clescot.kafka.connect.http.sink.client.okhttp.OkHttpClient(config, null);
+            OkHttpClient client = new OkHttpClient(config, null,new Random());
         }
 
         @Test
         public void test_inactivated_cache() {
             HashMap<String, Object> config = Maps.newHashMap();
             config.put(OKHTTP_CACHE_ACTIVATE, "false");
-            io.github.clescot.kafka.connect.http.sink.client.okhttp.OkHttpClient client = new io.github.clescot.kafka.connect.http.sink.client.okhttp.OkHttpClient(config, null);
+            OkHttpClient client = new OkHttpClient(config, null,new Random());
         }
 
         @Test
         public void test_no_cache() {
             HashMap<String, Object> config = Maps.newHashMap();
-            io.github.clescot.kafka.connect.http.sink.client.okhttp.OkHttpClient client = new io.github.clescot.kafka.connect.http.sink.client.okhttp.OkHttpClient(config, null);
+            OkHttpClient client = new OkHttpClient(config, null,new Random());
         }
     }
 
@@ -215,7 +215,7 @@ class OkHttpClientTest {
             config.put("httpclient.authentication.basic.username", username);
             config.put("httpclient.authentication.basic.password", password);
 
-            OkHttpClient client = new OkHttpClient(config, null);
+            OkHttpClient client = new OkHttpClient(config, null,new Random());
 
             String baseUrl = "http://" + getIP() + ":" + wmRuntimeInfo.getHttpPort();
             String url = baseUrl + "/ping";
@@ -445,7 +445,7 @@ class OkHttpClientTest {
             config.put(PROXY_HTTP_CLIENT_PORT, wmRuntimeInfo.getHttpPort());
 
 
-            OkHttpClient client = new OkHttpClient(config, null);
+            OkHttpClient client = new OkHttpClient(config, null,new Random());
 
             HashMap<String, List<String>> headers = Maps.newHashMap();
             headers.put("Content-Type", Lists.newArrayList("text/plain"));
@@ -503,7 +503,7 @@ class OkHttpClientTest {
             config.put(HTTP_CLIENT_PROXY_AUTHENTICATION_BASIC_PASSWORD, password);
 
 
-            OkHttpClient client = new OkHttpClient(config, null);
+            OkHttpClient client = new OkHttpClient(config, null,new Random());
 
             HashMap<String, List<String>> headers = Maps.newHashMap();
             headers.put("Content-Type", Lists.newArrayList("text/plain"));
@@ -592,7 +592,7 @@ class OkHttpClientTest {
             config.put("httpclient.authentication.basic.username", username);
             config.put("httpclient.authentication.basic.password", password);
 
-            OkHttpClient client = new OkHttpClient(config, null);
+            OkHttpClient client = new OkHttpClient(config, null,new Random());
 
             HashMap<String, List<String>> headers = Maps.newHashMap();
             headers.put("Content-Type", Lists.newArrayList("text/plain"));
@@ -689,7 +689,7 @@ class OkHttpClientTest {
             config.put(PROXY_PREFIX+HTTP_CLIENT_PREFIX +"0."+"uri.regex", ".*");
 
 
-            OkHttpClient client = new OkHttpClient(config, null);
+            OkHttpClient client = new OkHttpClient(config, null,new Random());
 
             HashMap<String, List<String>> headers = Maps.newHashMap();
             headers.put("Content-Type", Lists.newArrayList("text/plain"));
@@ -741,7 +741,7 @@ class OkHttpClientTest {
             config.put(PROXY_PREFIX+HTTP_CLIENT_PREFIX +"1."+"uri.regex", "http://dummy\\.com.*");
 
 
-            OkHttpClient client = new OkHttpClient(config, null);
+            OkHttpClient client = new OkHttpClient(config, null,new Random());
 
             HashMap<String, List<String>> headers = Maps.newHashMap();
             headers.put("Content-Type", Lists.newArrayList("text/plain"));

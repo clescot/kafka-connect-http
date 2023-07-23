@@ -30,8 +30,6 @@ import java.net.*;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.security.NoSuchAlgorithmException;
-import java.security.SecureRandom;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
@@ -49,7 +47,7 @@ public class OkHttpClient extends AbstractHttpClient<Request, Response> {
     public static final String IN_MEMORY_CACHE_TYPE = "inmemory";
     public static final String DEFAULT_MAX_CACHE_ENTRIES = "10000";
     public static final String FILE_CACHE_TYPE = "file";
-    public static final String SHA_1_PRNG = "SHA1PRNG";
+
     public static final String US_ASCII = "US-ASCII";
     public static final String ISO_8859_1 = "ISO-8859-1";
 
@@ -57,29 +55,12 @@ public class OkHttpClient extends AbstractHttpClient<Request, Response> {
     private final okhttp3.OkHttpClient client;
     private static final Logger LOGGER = LoggerFactory.getLogger(OkHttpClient.class);
 
-    private Random random;
-
-    @SuppressWarnings("java:S5527")
-    public OkHttpClient(Map<String, Object> config, ExecutorService executorService) {
-        this(config, executorService, null);
-    }
+    private final Random random;
 
     public OkHttpClient(Map<String, Object> config, ExecutorService executorService, Random random) {
         super(config);
         this.random = random;
-        //get random if not set in the constructor (inject a mocked Random object for tests).
-        if (random == null) {
-            String rngAlgorithm = SHA_1_PRNG;
 
-            if (config.containsKey(HTTP_CLIENT_SECURE_RANDOM_PRNG_ALGORITHM)) {
-                rngAlgorithm = (String) config.get(HTTP_CLIENT_SECURE_RANDOM_PRNG_ALGORITHM);
-            }
-            try {
-                random = SecureRandom.getInstance(rngAlgorithm);
-            } catch (NoSuchAlgorithmException e) {
-                throw new HttpException(e);
-            }
-        }
         okhttp3.OkHttpClient.Builder httpClientBuilder = new okhttp3.OkHttpClient.Builder();
         if (executorService != null) {
             Dispatcher dispatcher = new Dispatcher(executorService);
