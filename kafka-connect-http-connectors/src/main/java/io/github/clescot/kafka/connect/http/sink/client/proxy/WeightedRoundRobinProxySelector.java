@@ -9,13 +9,13 @@ import java.util.List;
 import java.util.NavigableMap;
 import java.util.Random;
 
-public class FixedWeightedProxySelector extends ProxySelector {
+public class WeightedRoundRobinProxySelector extends ProxySelector {
 
     private final NavigableMap<Integer, Proxy> proxies;
     private final Random random;
     private final int totalWeight;
 
-    public FixedWeightedProxySelector(NavigableMap<Integer,Proxy> proxies, Random random) {
+    public WeightedRoundRobinProxySelector(NavigableMap<Integer,Proxy> proxies, Random random) {
         this.proxies = proxies;
         this.random = random;
         this.totalWeight = proxies.keySet().stream().reduce(0, Integer::sum);
