@@ -12,9 +12,7 @@ import io.github.clescot.kafka.connect.http.core.HttpRequest;
 import io.github.clescot.kafka.connect.http.core.HttpResponse;
 import io.github.clescot.kafka.connect.http.sink.client.AbstractHttpClient;
 import io.github.clescot.kafka.connect.http.sink.client.HttpException;
-import io.github.clescot.kafka.connect.http.sink.client.proxy.ProxySelectorDecorator;
-import io.github.clescot.kafka.connect.http.sink.client.proxy.RandomProxySelector;
-import io.github.clescot.kafka.connect.http.sink.client.proxy.URIRegexProxySelector;
+import io.github.clescot.kafka.connect.http.sink.client.proxy.*;
 import kotlin.Pair;
 import okhttp3.*;
 import okhttp3.internal.http.HttpMethod;
@@ -210,11 +208,32 @@ public class OkHttpClient extends AbstractHttpClient<Request, Response> {
         return proxySelector;
     }
     private ProxySelector buildWeightedRandomProxySelector(Map<String, Object> config) {
-        return null;
+        return new WeightedRandomProxySelector(getWeightedProxies(config),random);
+    }
+
+    private NavigableMap<Integer, Proxy> getWeightedProxies(Map<String, Object> config) {
+        NavigableMap<Integer, Proxy> proxies =new TreeMap<>();
+        int proxyIndex = 0;
+
+        while (config.get(PROXY_PREFIX + HTTP_CLIENT_PREFIX + proxyIndex + "." + "hostname") != null) {
+            //build proxy
+            String proxyHostName = (String) config.get(PROXY_PREFIX + HTTP_CLIENT_PREFIX + proxyIndex + "." + "hostname");
+            int proxyPort = (Integer) config.get(PROXY_PREFIX + HTTP_CLIENT_PREFIX + proxyIndex + "." + "port");
+            SocketAddress socketAddress = new InetSocketAddress(proxyHostName, proxyPort);
+            String proxyTypeLabel = (String) Optional.ofNullable(config.get(PROXY_PREFIX + HTTP_CLIENT_PREFIX + proxyIndex + "." + "type")).orElse("HTTP");
+            Proxy.Type proxyType = Proxy.Type.valueOf(proxyTypeLabel);
+            Proxy proxy = new Proxy(proxyType, socketAddress);
+            //weight
+            Integer proxyWeight = (Integer)config.get(PROXY_PREFIX + HTTP_CLIENT_PREFIX + proxyIndex + "." +"weight");
+            Preconditions.checkNotNull(proxyWeight,"'weight' for proxy host '"+proxyHostName+"' cannot be null in a WeightedRandomProxySelector");
+            proxies.put(proxyWeight,proxy);
+            proxyIndex++;
+        }
+        return proxies;
     }
 
     private ProxySelector buildHostHashProxySelector(Map<String, Object> config) {
-        return null;
+        return new HostHashProxySelector(getProxies(config));
     }
 
     private ProxySelector buildRandomProxySelector(Map<String, Object> config,Random random) {
