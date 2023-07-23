@@ -263,7 +263,7 @@ public class HttpSinkConfigDefinition {
     //proxy selector
     public static final String PROXY_SELECTOR_IMPLEMENTATION = PROXY_PREFIX+HTTP_CLIENT_PREFIX +"impl";
     public static final String CONFIG_DEFAULT_PROXY_SELECTOR_IMPLEMENTATION = DEFAULT_CONFIGURATION_PREFIX + PROXY_SELECTOR_IMPLEMENTATION;
-    public static final String CONFIG_DEFAULT_PROXY_SELECTOR_IMPLEMENTATION_DOC = "implementation of the proxy selector. default is 'uriregex'.";
+    public static final String CONFIG_DEFAULT_PROXY_SELECTOR_IMPLEMENTATION_DOC = "implementation of the proxy selector.can be 'uriregex', 'random', 'weightedrandom', or 'hosthash'. Default is 'uriregex'.";
 
 
     public static final String PROXY_HTTP_CLIENT_0_HOSTNAME = PROXY_PREFIX+HTTP_CLIENT_PREFIX +"0."+ "hostname";
