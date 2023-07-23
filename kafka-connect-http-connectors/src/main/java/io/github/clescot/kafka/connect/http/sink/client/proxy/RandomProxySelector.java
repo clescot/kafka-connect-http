@@ -9,12 +9,12 @@ import java.net.URI;
 import java.util.List;
 import java.util.Random;
 
-public class RoundRobinProxySelector extends ProxySelector {
+public class RandomProxySelector extends ProxySelector {
 
     private final List<Proxy> proxies;
     private final Random random;
 
-    public RoundRobinProxySelector(List<Proxy> proxies, Random random) {
+    public RandomProxySelector(List<Proxy> proxies, Random random) {
         this.proxies = proxies;
         this.random = random;
     }
