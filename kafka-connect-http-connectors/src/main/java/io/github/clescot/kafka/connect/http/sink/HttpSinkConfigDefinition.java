@@ -140,6 +140,12 @@ public class HttpSinkConfigDefinition {
     public static final String OKHTTP_IMPLEMENTATION = "okhttp";
     public static final String AHC_IMPLEMENTATION = "ahc";
 
+
+    public static final String HTTP_CLIENT_SECURE_RANDOM_PRNG_ALGORITHM = HTTP_CLIENT_PREFIX + "secure.random.prng.algorithm";
+    public static final String CONFIG_DEFAULT_HTTP_CLIENT_SECURE_RANDOM_PRNG_ALGORITHM = DEFAULT_CONFIGURATION_PREFIX + HTTP_CLIENT_SECURE_RANDOM_PRNG_ALGORITHM;
+    public static final String CONFIG_DEFAULT_HTTP_CLIENT_SECURE_RANDOM_PRNG_ALGORITHM_DOC = "name of the Random Number Generator (RNG) algorithm used to get a Secure Random instance. cf https://docs.oracle.com/en/java/javase/11/docs/specs/security/standard-names.html#securerandom-number-generation-algorithms";
+
+
     //SSL
     public static final String CONFIG_HTTP_CLIENT_SSL_KEYSTORE_PATH =  DEFAULT_CONFIGURATION_PREFIX + HTTP_CLIENT_PREFIX +"ssl.keystore.path";
     public static final String CONFIG_HTTP_CLIENT_SSL_KEYSTORE_PATH_DOC = "file path of the custom key store.";
@@ -205,10 +211,6 @@ public class HttpSinkConfigDefinition {
     public static final String CONFIG_DEFAULT_HTTP_CLIENT_AUTHENTICATION_DIGEST_CHARSET = DEFAULT_CONFIGURATION_PREFIX + HTTP_CLIENT_AUTHENTICATION_DIGEST_CHARSET;
     public static final String CONFIG_DEFAULT_HTTP_CLIENT_AUTHENTICATION_DIGEST_CHARSET_DOC = "charset used to encode 'digest' credentials. default is 'US-ASCII'";
 
-    public static final String HTTP_CLIENT_AUTHENTICATION_DIGEST_SECURE_RANDOM_PRNG_ALGORITHM = HTTP_CLIENT_PREFIX + "authentication.digest.secure.random.prng.algorithm";
-    public static final String CONFIG_DEFAULT_HTTP_CLIENT_AUTHENTICATION_DIGEST_SECURE_RANDOM_PRNG_ALGORITHM = DEFAULT_CONFIGURATION_PREFIX + HTTP_CLIENT_AUTHENTICATION_DIGEST_SECURE_RANDOM_PRNG_ALGORITHM;
-    public static final String CONFIG_DEFAULT_HTTP_CLIENT_AUTHENTICATION_DIGEST_SECURE_RANDOM_PRNG_ALGORITHM_DOC = "name of the Random Number Generator (RNG) algorithm used in the digest algorithm. cf https://docs.oracle.com/en/java/javase/11/docs/specs/security/standard-names.html#securerandom-number-generation-algorithms";
-
     //proxy authentication
     public static final String HTTP_CLIENT_PROXY_AUTHENTICATION_BASIC_ACTIVATE = PROXY_PREFIX+HTTP_CLIENT_PREFIX+"authentication.basic.activate";
     public static final String CONFIG_DEFAULT_HTTP_CLIENT_PROXY_AUTHENTICATION_BASIC_ACTIVATE =  DEFAULT_CONFIGURATION_PREFIX + HTTP_CLIENT_PROXY_AUTHENTICATION_BASIC_ACTIVATE;
@@ -245,10 +247,6 @@ public class HttpSinkConfigDefinition {
     public static final String CONFIG_DEFAULT_HTTP_CLIENT_PROXY_AUTHENTICATION_DIGEST_CHARSET = DEFAULT_CONFIGURATION_PREFIX + HTTP_CLIENT_PROXY_AUTHENTICATION_DIGEST_CHARSET;
     public static final String CONFIG_DEFAULT_HTTP_CLIENT_PROXY_AUTHENTICATION_DIGEST_CHARSET_DOC = "charset used to encode proxy 'digest' credentials. default is 'US-ASCII'";
 
-    public static final String HTTP_CLIENT_PROXY_AUTHENTICATION_DIGEST_SECURE_RANDOM_PRNG_ALGORITHM = PROXY_PREFIX+HTTP_CLIENT_PREFIX + "authentication.digest.secure.random.prng.algorithm";
-    public static final String CONFIG_DEFAULT_HTTP_CLIENT_PROXY_AUTHENTICATION_DIGEST_SECURE_RANDOM_PRNG_ALGORITHM = DEFAULT_CONFIGURATION_PREFIX + HTTP_CLIENT_PROXY_AUTHENTICATION_DIGEST_SECURE_RANDOM_PRNG_ALGORITHM;
-    public static final String CONFIG_DEFAULT_HTTP_CLIENT_PROXY_AUTHENTICATION_DIGEST_SECURE_RANDOM_PRNG_ALGORITHM_DOC = "name of the Random Number Generator (RNG) algorithm used in the digest algorithm for proxy. cf https://docs.oracle.com/en/java/javase/11/docs/specs/security/standard-names.html#securerandom-number-generation-algorithms";
-
     //proxy
     public static final String PROXY_HTTP_CLIENT_HOSTNAME = PROXY_PREFIX+HTTP_CLIENT_PREFIX + "hostname";
     public static final String CONFIG_DEFAULT_PROXY_HTTP_CLIENT_HOSTNAME = DEFAULT_CONFIGURATION_PREFIX + PROXY_HTTP_CLIENT_HOSTNAME;
@@ -263,6 +261,11 @@ public class HttpSinkConfigDefinition {
     public static final String CONFIG_DEFAULT_PROXY_HTTP_CLIENT_TYPE_DOC = "type of proxy. can be either 'HTTP' (default), 'DIRECT' (i.e no proxy), or 'SOCKS'";
 
     //proxy selector
+    public static final String PROXY_SELECTOR_IMPLEMENTATION = PROXY_PREFIX+HTTP_CLIENT_PREFIX +"impl";
+    public static final String CONFIG_DEFAULT_PROXY_SELECTOR_IMPLEMENTATION = DEFAULT_CONFIGURATION_PREFIX + PROXY_SELECTOR_IMPLEMENTATION;
+    public static final String CONFIG_DEFAULT_PROXY_SELECTOR_IMPLEMENTATION_DOC = "implementation of the proxy selector. default is 'uriregex'.";
+
+
     public static final String PROXY_HTTP_CLIENT_0_HOSTNAME = PROXY_PREFIX+HTTP_CLIENT_PREFIX +"0."+ "hostname";
     public static final String CONFIG_DEFAULT_PROXY_HTTP_CLIENT_0_HOSTNAME = DEFAULT_CONFIGURATION_PREFIX + PROXY_HTTP_CLIENT_0_HOSTNAME;
     public static final String CONFIG_DEFAULT_PROXY_HTTP_CLIENT_0_HOSTNAME_DOC = "hostname of the proxy host.";
@@ -355,6 +358,7 @@ public class HttpSinkConfigDefinition {
         return new ConfigDef()
                 //http client implementation settings
                 .define(HTTP_CLIENT_IMPLEMENTATION, ConfigDef.Type.STRING, null, ConfigDef.Importance.LOW, HTTP_CLIENT_IMPLEMENTATION_DOC)
+                .define(CONFIG_DEFAULT_HTTP_CLIENT_SECURE_RANDOM_PRNG_ALGORITHM, ConfigDef.Type.STRING, "SHA1PRNG", ConfigDef.Importance.LOW, CONFIG_DEFAULT_HTTP_CLIENT_SECURE_RANDOM_PRNG_ALGORITHM_DOC)
                 //retry settings
                 .define(CONFIG_DEFAULT_SUCCESS_RESPONSE_CODE_REGEX, ConfigDef.Type.STRING, CONFIG_DEFAULT_DEFAULT_SUCCESS_RESPONSE_CODE_REGEX, ConfigDef.Importance.LOW, CONFIG_DEFAULT_SUCCESS_RESPONSE_CODE_REGEX_DOC)
                 .define(CONFIG_DEFAULT_RETRY_RESPONSE_CODE_REGEX, ConfigDef.Type.STRING, DEFAULT_DEFAULT_RETRY_RESPONSE_CODE_REGEX, ConfigDef.Importance.LOW, DEFAULT_RETRY_RESPONSE_CODE_REGEX_DOC)
@@ -398,7 +402,6 @@ public class HttpSinkConfigDefinition {
                 .define(CONFIG_DEFAULT_HTTPCLIENT_AUTHENTICATION_DIGEST_USERNAME, ConfigDef.Type.STRING, null, ConfigDef.Importance.LOW, CONFIG_DEFAULT_HTTPCLIENT_AUTHENTICATION_DIGEST_USER_DOC)
                 .define(CONFIG_DEFAULT_HTTP_CLIENT_AUTHENTICATION_DIGEST_PASSWORD, ConfigDef.Type.STRING, null, ConfigDef.Importance.LOW, CONFIG_DEFAULT_HTTP_CLIENT_AUTHENTICATION_DIGEST_PASSWORD_DOC)
                 .define(CONFIG_DEFAULT_HTTP_CLIENT_AUTHENTICATION_DIGEST_CHARSET, ConfigDef.Type.STRING, "US-ASCII", ConfigDef.Importance.LOW, CONFIG_DEFAULT_HTTP_CLIENT_AUTHENTICATION_DIGEST_CHARSET_DOC)
-                .define(CONFIG_DEFAULT_HTTP_CLIENT_AUTHENTICATION_DIGEST_SECURE_RANDOM_PRNG_ALGORITHM, ConfigDef.Type.STRING, "SHA1PRNG", ConfigDef.Importance.LOW, CONFIG_DEFAULT_HTTP_CLIENT_AUTHENTICATION_DIGEST_SECURE_RANDOM_PRNG_ALGORITHM_DOC)
                 //proxy authentication
                 //basic
                 .define(CONFIG_DEFAULT_HTTP_CLIENT_PROXY_AUTHENTICATION_BASIC_ACTIVATE, ConfigDef.Type.BOOLEAN, false, ConfigDef.Importance.LOW, CONFIG_DEFAULT_HTTP_CLIENT_PROXY_AUTHENTICATION_BASIC_ACTIVATE_DOC)
@@ -410,7 +413,7 @@ public class HttpSinkConfigDefinition {
                 .define(CONFIG_DEFAULT_HTTPCLIENT_PROXY_AUTHENTICATION_DIGEST_USERNAME, ConfigDef.Type.STRING, null, ConfigDef.Importance.LOW, CONFIG_DEFAULT_HTTPCLIENT_PROXY_AUTHENTICATION_DIGEST_USER_DOC)
                 .define(CONFIG_DEFAULT_HTTP_CLIENT_PROXY_AUTHENTICATION_DIGEST_PASSWORD, ConfigDef.Type.STRING, null, ConfigDef.Importance.LOW, CONFIG_DEFAULT_HTTP_CLIENT_PROXY_AUTHENTICATION_DIGEST_PASSWORD_DOC)
                 .define(CONFIG_DEFAULT_HTTP_CLIENT_PROXY_AUTHENTICATION_DIGEST_CHARSET, ConfigDef.Type.STRING, "US-ASCII", ConfigDef.Importance.LOW, CONFIG_DEFAULT_HTTP_CLIENT_PROXY_AUTHENTICATION_DIGEST_CHARSET_DOC)
-                .define(CONFIG_DEFAULT_HTTP_CLIENT_PROXY_AUTHENTICATION_DIGEST_SECURE_RANDOM_PRNG_ALGORITHM, ConfigDef.Type.STRING, "SHA1PRNG", ConfigDef.Importance.LOW, CONFIG_DEFAULT_HTTP_CLIENT_PROXY_AUTHENTICATION_DIGEST_SECURE_RANDOM_PRNG_ALGORITHM_DOC)
+
 
                 //async settings
                 .define(CONFIG_HTTP_CLIENT_ASYNC_FIXED_THREAD_POOL_SIZE, ConfigDef.Type.INT, null, ConfigDef.Importance.MEDIUM, CONFIG_HTTP_CLIENT_ASYNC_FIXED_THREAD_POOL_SIZE_DOC)
@@ -443,6 +446,7 @@ public class HttpSinkConfigDefinition {
                 .define(CONFIG_DEFAULT_PROXY_HTTP_CLIENT_PORT,ConfigDef.Type.STRING, null,ConfigDef.Importance.LOW, CONFIG_DEFAULT_PROXY_HTTP_CLIENT_PORT_DOC)
                 .define(CONFIG_DEFAULT_PROXY_HTTP_CLIENT_TYPE,ConfigDef.Type.STRING, null,ConfigDef.Importance.LOW, CONFIG_DEFAULT_PROXY_HTTP_CLIENT_TYPE_DOC)
                 //proxy selector
+                .define(CONFIG_DEFAULT_PROXY_SELECTOR_IMPLEMENTATION,ConfigDef.Type.STRING, "uriregex",ConfigDef.Importance.LOW, CONFIG_DEFAULT_PROXY_SELECTOR_IMPLEMENTATION_DOC)
                 .define(CONFIG_DEFAULT_PROXY_HTTP_CLIENT_0_HOSTNAME,ConfigDef.Type.STRING, null,ConfigDef.Importance.LOW, CONFIG_DEFAULT_PROXY_HTTP_CLIENT_0_HOSTNAME_DOC)
                 .define(CONFIG_DEFAULT_PROXY_HTTP_CLIENT_0_PORT,ConfigDef.Type.STRING, null,ConfigDef.Importance.LOW, CONFIG_DEFAULT_PROXY_HTTP_CLIENT_0_PORT_DOC)
                 .define(CONFIG_DEFAULT_PROXY_HTTP_CLIENT_0_TYPE,ConfigDef.Type.STRING, null,ConfigDef.Importance.LOW, CONFIG_DEFAULT_PROXY_HTTP_CLIENT_0_TYPE_DOC)

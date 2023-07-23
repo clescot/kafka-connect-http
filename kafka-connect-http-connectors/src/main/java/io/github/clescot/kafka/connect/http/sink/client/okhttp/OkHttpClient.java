@@ -13,6 +13,7 @@ import io.github.clescot.kafka.connect.http.core.HttpResponse;
 import io.github.clescot.kafka.connect.http.sink.client.AbstractHttpClient;
 import io.github.clescot.kafka.connect.http.sink.client.HttpException;
 import io.github.clescot.kafka.connect.http.sink.client.proxy.ProxySelectorDecorator;
+import io.github.clescot.kafka.connect.http.sink.client.proxy.RandomProxySelector;
 import io.github.clescot.kafka.connect.http.sink.client.proxy.URIRegexProxySelector;
 import kotlin.Pair;
 import okhttp3.*;
@@ -68,6 +69,19 @@ public class OkHttpClient extends AbstractHttpClient<Request, Response> {
     public OkHttpClient(Map<String, Object> config, ExecutorService executorService, Random random) {
         super(config);
         this.random = random;
+        //get random if not set in the constructor (inject a mocked Random object for tests).
+        if (random == null) {
+            String rngAlgorithm = SHA_1_PRNG;
+
+            if (config.containsKey(HTTP_CLIENT_SECURE_RANDOM_PRNG_ALGORITHM)) {
+                rngAlgorithm = (String) config.get(HTTP_CLIENT_SECURE_RANDOM_PRNG_ALGORITHM);
+            }
+            try {
+                random = SecureRandom.getInstance(rngAlgorithm);
+            } catch (NoSuchAlgorithmException e) {
+                throw new HttpException(e);
+            }
+        }
         okhttp3.OkHttpClient.Builder httpClientBuilder = new okhttp3.OkHttpClient.Builder();
         if (executorService != null) {
             Dispatcher dispatcher = new Dispatcher(executorService);
@@ -169,10 +183,63 @@ public class OkHttpClient extends AbstractHttpClient<Request, Response> {
             nonProxyHostsuriPattern = Pattern.compile(nonProxyHosts);
         }
 
-
-        URIRegexProxySelector proxySelector =  buildUriRegexProxySelector(config);
-
+        ProxySelector proxySelector = getProxySelector(config);
         return nonProxyHostsuriPattern!=null?new ProxySelectorDecorator(proxySelector,nonProxyHostsuriPattern):proxySelector;
+    }
+
+    private ProxySelector getProxySelector(Map<String, Object> config){
+        String proxySelectorImpl = Optional.ofNullable((String) config.get(PROXY_SELECTOR_IMPLEMENTATION)).orElse("uriregex");
+        ProxySelector proxySelector;
+        switch(proxySelectorImpl){
+            case "weightedrandom":
+                proxySelector = buildWeightedRandomProxySelector(config);
+                break;
+            case "hosthash":
+                proxySelector = buildHostHashProxySelector(config);
+                break;
+            case "random":
+                proxySelector = buildRandomProxySelector(config,random);
+                break;
+            case "uriregex":
+                proxySelector = buildUriRegexProxySelector(config);
+                break;
+            default:
+                proxySelector = buildUriRegexProxySelector(config);
+                break;
+        }
+        return proxySelector;
+    }
+    private ProxySelector buildWeightedRandomProxySelector(Map<String, Object> config) {
+        return null;
+    }
+
+    private ProxySelector buildHostHashProxySelector(Map<String, Object> config) {
+        return null;
+    }
+
+    private ProxySelector buildRandomProxySelector(Map<String, Object> config,Random random) {
+        //build each proxy
+        //type,hostname,port
+        List<Proxy> proxies = getProxies(config);
+        return new RandomProxySelector(proxies,random);
+    }
+
+    private List<Proxy> getProxies(Map<String, Object> config) {
+        List<Proxy> proxies = Lists.newArrayList();
+        int proxyIndex = 0;
+
+        while (config.get(PROXY_PREFIX + HTTP_CLIENT_PREFIX + proxyIndex + "." + "hostname") != null) {
+            //build proxy
+            String proxyHostName = (String) config.get(PROXY_PREFIX + HTTP_CLIENT_PREFIX + proxyIndex + "." + "hostname");
+            int proxyPort = (Integer) config.get(PROXY_PREFIX + HTTP_CLIENT_PREFIX + proxyIndex + "." + "port");
+            SocketAddress socketAddress = new InetSocketAddress(proxyHostName, proxyPort);
+            String proxyTypeLabel = (String) Optional.ofNullable(config.get(PROXY_PREFIX + HTTP_CLIENT_PREFIX + proxyIndex + "." + "type")).orElse("HTTP");
+            Proxy.Type proxyType = Proxy.Type.valueOf(proxyTypeLabel);
+            Proxy proxy = new Proxy(proxyType, socketAddress);
+            proxies.add(proxy);
+            proxyIndex++;
+        }
+        return proxies;
     }
 
     @NotNull
@@ -181,8 +248,8 @@ public class OkHttpClient extends AbstractHttpClient<Request, Response> {
         //type,hostname,port
         List<ImmutablePair<Predicate<URI>, Proxy>> proxies = Lists.newArrayList();
         int proxyIndex = 0;
-        while (config.get(PROXY_PREFIX + HTTP_CLIENT_PREFIX + proxyIndex + "." + "hostname") != null) {
 
+        while (config.get(PROXY_PREFIX + HTTP_CLIENT_PREFIX + proxyIndex + "." + "hostname") != null) {
             //build URI predicate
             String uriPredicate = (String) config.get(PROXY_PREFIX + HTTP_CLIENT_PREFIX + proxyIndex + "." + "uri.regex");
             Preconditions.checkNotNull(uriPredicate,"'"+PROXY_PREFIX + HTTP_CLIENT_PREFIX + proxyIndex + "." +"uri.regex"+"' must be set");
@@ -296,19 +363,7 @@ public class OkHttpClient extends AbstractHttpClient<Request, Response> {
             }
             Charset digestCharset = Charset.forName(digestCredentialCharset);
 
-            //get random if not set in the constructor (inject a mocked Random object for tests).
-            if (random == null) {
-                String rngAlgorithm = SHA_1_PRNG;
 
-                if (config.containsKey(HTTP_CLIENT_AUTHENTICATION_DIGEST_SECURE_RANDOM_PRNG_ALGORITHM)) {
-                    rngAlgorithm = (String) config.get(HTTP_CLIENT_AUTHENTICATION_DIGEST_SECURE_RANDOM_PRNG_ALGORITHM);
-                }
-                try {
-                    random = SecureRandom.getInstance(rngAlgorithm);
-                } catch (NoSuchAlgorithmException e) {
-                    throw new HttpException(e);
-                }
-            }
             digestAuthenticator = new DigestAuthenticator(credentials, digestCharset, random);
 
         }
