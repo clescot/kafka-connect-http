@@ -13,7 +13,7 @@ public final class DefaultProxyCacheKeyProvider implements CacheKeyProvider<Prox
 
     /**
      *
-     * @param proxy
+     * @param proxy used to calculate the key.
      * @return the cache key.
      */
     @Override
