@@ -12,12 +12,14 @@ import io.github.clescot.kafka.connect.http.core.HttpRequest;
 import io.github.clescot.kafka.connect.http.core.HttpResponse;
 import io.github.clescot.kafka.connect.http.sink.client.AbstractHttpClient;
 import io.github.clescot.kafka.connect.http.sink.client.HttpException;
+import io.github.clescot.kafka.connect.http.sink.client.proxy.ProxySelectorDecorator;
 import io.github.clescot.kafka.connect.http.sink.client.proxy.URIRegexProxySelector;
 import kotlin.Pair;
 import okhttp3.*;
 import okhttp3.internal.http.HttpMethod;
 import okhttp3.internal.io.FileSystem;
 import org.apache.commons.lang3.tuple.ImmutablePair;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -41,7 +43,6 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import static io.github.clescot.kafka.connect.http.sink.HttpSinkConfigDefinition.*;
-import static java.net.Proxy.NO_PROXY;
 
 public class OkHttpClient extends AbstractHttpClient<Request, Response> {
     private static final String PROTOCOL_SEPARATOR = ",";
@@ -160,18 +161,26 @@ public class OkHttpClient extends AbstractHttpClient<Request, Response> {
     }
 
     private ProxySelector buildProxySelector(Map<String, Object> config) {
-        //build each proxy
-        //type,hostname,port
-        int proxyIndex = 0;
-        List<ImmutablePair<Predicate<URI>, Proxy>> proxies = Lists.newArrayList();
         //handle NON_PROXY_HOSTS
         Optional<String> nonProxyHostNames = Optional.ofNullable((String) config.get(PROXY_HTTP_CLIENT_NON_PROXY_HOSTS_URI_REGEX));
+        Pattern nonProxyHostsuriPattern = null;
         if (nonProxyHostNames.isPresent()) {
             String nonProxyHosts = nonProxyHostNames.get();
-            Pattern uriPattern = Pattern.compile(nonProxyHosts);
-            Predicate<URI> predicate = uri -> uriPattern.matcher(uri.toString()).matches();
-            proxies.add(ImmutablePair.of(predicate, NO_PROXY));
+            nonProxyHostsuriPattern = Pattern.compile(nonProxyHosts);
         }
+
+
+        URIRegexProxySelector proxySelector =  buildUriRegexProxySelector(config);
+
+        return nonProxyHostsuriPattern!=null?new ProxySelectorDecorator(proxySelector,nonProxyHostsuriPattern):proxySelector;
+    }
+
+    @NotNull
+    private URIRegexProxySelector buildUriRegexProxySelector(Map<String, Object> config) {
+        //build each proxy
+        //type,hostname,port
+        List<ImmutablePair<Predicate<URI>, Proxy>> proxies = Lists.newArrayList();
+        int proxyIndex = 0;
         while (config.get(PROXY_PREFIX + HTTP_CLIENT_PREFIX + proxyIndex + "." + "hostname") != null) {
 
             //build URI predicate
