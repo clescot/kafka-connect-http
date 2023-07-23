@@ -1,4 +1,4 @@
-package io.github.clescot.kafka.connect.http.sink.client;
+package io.github.clescot.kafka.connect.http.sink.client.proxy;
 
 
 import java.io.IOException;

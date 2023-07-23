@@ -12,7 +12,7 @@ import io.github.clescot.kafka.connect.http.core.HttpRequest;
 import io.github.clescot.kafka.connect.http.core.HttpResponse;
 import io.github.clescot.kafka.connect.http.sink.client.AbstractHttpClient;
 import io.github.clescot.kafka.connect.http.sink.client.HttpException;
-import io.github.clescot.kafka.connect.http.sink.client.URIRegexProxySelector;
+import io.github.clescot.kafka.connect.http.sink.client.proxy.URIRegexProxySelector;
 import kotlin.Pair;
 import okhttp3.*;
 import okhttp3.internal.http.HttpMethod;
