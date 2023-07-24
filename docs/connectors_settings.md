@@ -122,14 +122,14 @@ The predicate permits to filter some http requests, and can be composed, cumulat
   - http client proxy settings
     - *config.default.proxy.httpclient.hostname* : hostname of the proxy. 
     - *config.default.proxy.httpclient.port* : port of the proxy.
-    - *config.default.proxy.httpclient.type* : proxy type. can be either 'HTTP' (default), 'DIRECT' (i.e no proxy), or 'SOCKS'.
+    - *config.default.proxy.httpclient.type* : proxy type. can be either `HTTP` (default), `DIRECT` (i.e no proxy), or `SOCKS`.
   - http client proxy selector settings (<index> is an increasing integer starting with 0)
-    - *config.default.proxyselector.httpclient.algorithm* : algorithm of the proxy selector.can be 'uriregex', 'random', 'weightedrandom', or 'hosthash'. Default is 'uriregex'. 
+    - *config.default.proxyselector.httpclient.algorithm* : algorithm of the proxy selector.can be `uriregex`, `random`, `weightedrandom`, or `hosthash`. Default is `uriregex`. 
     - *config.default.proxyselector.httpclient.<index>.hostname* : host of the first entry proxy list.
     - *config.default.proxyselector.httpclient.<index>.port* : port of the proxy.
-    - *config.default.proxyselector.httpclient.<index>.type* : proxy type. can be either 'HTTP' (default), 'DIRECT' (i.e no proxy), or 'SOCKS'.
-    - *config.default.proxyselector.httpclient.<index>.uri.regex* : uri regex matching this proxy ;  settings only for the 'uriregex' algorithm.
-    - *config.default.proxyselector.httpclient.<index>.weight* : integer used with the 'weightedrandom' algorithm.
+    - *config.default.proxyselector.httpclient.<index>.type* : proxy type. can be either `HTTP` (default), `DIRECT` (i.e no proxy), or `SOCKS`.
+    - *config.default.proxyselector.httpclient.<index>.uri.regex* : uri regex matching this proxy ;  settings only for the `uriregex` algorithm.
+    - *config.default.proxyselector.httpclient.<index>.weight* : integer used with the `weightedrandom` algorithm.
     - *config.default.proxyselector.httpclient.non.proxy.hosts.uri.regex* : hosts which don't need to be proxied to be reached.
   - http client async settings
     - *httpclient.async.fixed.thread.pool.size* : custom fixed thread pool size used to execute asynchronously http requests.
