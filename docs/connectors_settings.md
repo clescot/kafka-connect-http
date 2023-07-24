@@ -19,6 +19,18 @@ every Kafka Connect Sink Connector need to define these required parameters :
 - *value.converter*
 - ....
 
+#### publish into the _in memory_ queue : 
+
+- *publish.to.in.memory.queue* : `false` by default. When set to `true`, publish HTTP interactions (request and responses)
+  are published into the in memory queue.
+- *queue.name* : if not set, `default` queue name is used, if the `publish.to.in.memory.queue` is set to `true`.
+  You can define multiple in memory queues, to permit to publish to different topics, different HTTP interactions. If
+  you set this parameter to a value different than `default`, you need to configure an HTTP source Connector listening
+  on the same queue name to avoid some OutOfMemoryErrors.
+- *wait.time.registration.queue.consumer.in.ms* : wait time for a queue consumer (Source Connector) registration. default value is 60 seconds.
+- *poll.delay.registration.queue.consumer.in.ms* : poll delay, i.e, wait time before start polling a registered consumer. default value is 2 seconds.
+- *poll.interval.registration.queue.consumer.in.ms* : poll interval, i.e, time between every poll for a registered consumer. default value is 5000 milliseconds.
+
 #### configuration
 
 The connector ships with a `default` configuration, and we can, if needed, configure more configurations.
@@ -85,16 +97,6 @@ The predicate permits to filter some http requests, and can be composed, cumulat
       and param_name2 parameters to get values to add.
     - *config.default.generate.missing.request.id* : `false` by default. when set to `true`, generate an uuid bound to the `X-Request-ID` header.
     - *config.default.generate.missing.correlation.id* : `false` by default. when set to `true`, generate an uuid bound to the `X-Correlation-ID` header.
-  - in memory queue settings
-    - *publish.to.in.memory.queue* : `false` by default. When set to `true`, publish HTTP interactions (request and responses)
-      are published into the in memory queue.
-    - *queue.name* : if not set, `default` queue name is used, if the `publish.to.in.memory.queue` is set to `true`.
-      You can define multiple in memory queues, to permit to publish to different topics, different HTTP interactions. If
-      you set this parameter to a value different than `default`, you need to configure an HTTP source Connector listening
-      on the same queue name to avoid some OutOfMemoryErrors.
-    - *wait.time.registration.queue.consumer.in.ms* : wait time for a queue consumer (Source Connector) registration. default value is 60 seconds.
-    - *poll.delay.registration.queue.consumer.in.ms* : poll delay, i.e, wait time before start polling a registered consumer. default value is 2 seconds.
-    - *poll.interval.registration.queue.consumer.in.ms* : poll interval, i.e, time between every poll for a registered consumer. default value is 5000 milliseconds.
   - http client implementation settings (prefixed by `config.<config_id>` )
     - *httpclient.implementation* : define which installed library to use : either `ahc`, a.k.a async http client, or `okhttp`. default is `okhttp`.
   - http client authentication parameters
