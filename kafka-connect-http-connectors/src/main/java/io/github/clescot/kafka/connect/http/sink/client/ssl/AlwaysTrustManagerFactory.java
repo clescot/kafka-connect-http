@@ -1,4 +1,4 @@
-package io.github.clescot.kafka.connect.http.sink.client.okhttp.ssl;
+package io.github.clescot.kafka.connect.http.sink.client.ssl;
 
 import javax.net.ssl.TrustManagerFactory;
 

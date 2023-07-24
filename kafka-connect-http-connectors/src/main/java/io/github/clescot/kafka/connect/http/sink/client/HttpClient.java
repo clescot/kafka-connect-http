@@ -6,7 +6,7 @@ import dev.failsafe.RateLimiter;
 import io.github.clescot.kafka.connect.http.core.HttpExchange;
 import io.github.clescot.kafka.connect.http.core.HttpRequest;
 import io.github.clescot.kafka.connect.http.core.HttpResponse;
-import io.github.clescot.kafka.connect.http.sink.client.okhttp.ssl.AlwaysTrustManagerFactory;
+import io.github.clescot.kafka.connect.http.sink.client.ssl.AlwaysTrustManagerFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
