@@ -1,4 +1,4 @@
-package io.github.clescot.kafka.connect.http.sink.client.okhttp;
+package io.github.clescot.kafka.connect.http.sink.client.okhttp.authentication;
 
 public interface CacheKeyProvider<T> {
 

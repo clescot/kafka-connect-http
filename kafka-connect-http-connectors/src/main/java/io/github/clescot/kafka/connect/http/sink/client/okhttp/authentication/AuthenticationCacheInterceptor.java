@@ -1,4 +1,4 @@
-package io.github.clescot.kafka.connect.http.sink.client.okhttp;
+package io.github.clescot.kafka.connect.http.sink.client.okhttp.authentication;
 
 import com.burgstaller.okhttp.digest.CachingAuthenticator;
 import okhttp3.*;

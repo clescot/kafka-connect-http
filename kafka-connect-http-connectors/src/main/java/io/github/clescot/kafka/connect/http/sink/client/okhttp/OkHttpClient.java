@@ -12,6 +12,7 @@ import io.github.clescot.kafka.connect.http.core.HttpRequest;
 import io.github.clescot.kafka.connect.http.core.HttpResponse;
 import io.github.clescot.kafka.connect.http.sink.client.AbstractHttpClient;
 import io.github.clescot.kafka.connect.http.sink.client.HttpException;
+import io.github.clescot.kafka.connect.http.sink.client.okhttp.authentication.*;
 import kotlin.Pair;
 import okhttp3.*;
 import okhttp3.internal.http.HttpMethod;
@@ -183,7 +184,7 @@ public class OkHttpClient extends AbstractHttpClient<Request, Response> {
         Map<String, Object> proxyConfig = config.entrySet().stream()
                 .filter(entry -> entry.getKey().startsWith(PROXY_PREFIX))
                 .map((entry) -> Map.entry(entry.getKey().substring(PROXY_PREFIX.length()), entry.getValue())).collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
-        io.github.clescot.kafka.connect.http.sink.client.okhttp.CachingAuthenticatorDecorator proxyAuthenticator = getCachingAuthenticatorDecorator(proxyConfig, authCache, true);
+        CachingAuthenticatorDecorator proxyAuthenticator = getCachingAuthenticatorDecorator(proxyConfig, authCache, true);
         if (proxyAuthenticator != null) {
             httpClientBuilder.proxyAuthenticator(proxyAuthenticator);
         }
@@ -212,7 +213,7 @@ public class OkHttpClient extends AbstractHttpClient<Request, Response> {
         if (digestAuthenticator != null) {
             authenticatorBuilder = authenticatorBuilder.with("digest", digestAuthenticator);
         }
-        io.github.clescot.kafka.connect.http.sink.client.okhttp.CachingAuthenticatorDecorator authenticator = null;
+        CachingAuthenticatorDecorator authenticator = null;
         if (basicAuthenticator != null || digestAuthenticator != null) {
             authenticator = new CachingAuthenticatorDecorator(authenticatorBuilder.build(), authCache, proxy);
         }
