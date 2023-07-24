@@ -13,6 +13,7 @@ import io.github.clescot.kafka.connect.http.sink.client.HttpClientFactory;
 import io.github.clescot.kafka.connect.http.sink.client.HttpException;
 import io.github.clescot.kafka.connect.http.sink.client.ahc.AHCHttpClientFactory;
 import io.github.clescot.kafka.connect.http.sink.client.okhttp.OkHttpClientFactory;
+import io.github.clescot.kafka.connect.http.sink.client.proxy.ProxySelectorFactory;
 import io.github.clescot.kafka.connect.http.sink.config.AddMissingCorrelationIdHeaderToHttpRequestFunction;
 import io.github.clescot.kafka.connect.http.sink.config.AddMissingRequestIdHeaderToHttpRequestFunction;
 import io.github.clescot.kafka.connect.http.sink.config.AddStaticHeadersToHttpRequestFunction;
@@ -21,6 +22,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.lang.reflect.InvocationTargetException;
+import java.net.InetSocketAddress;
+import java.net.Proxy;
+import java.net.ProxySelector;
+import java.net.SocketAddress;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.time.Duration;
@@ -262,7 +267,20 @@ public class Configuration {
         } catch (NoSuchAlgorithmException e) {
             throw new HttpException(e);
         }
-        return httpClientFactory.build(config, executorService, random);
+        //get proxy
+        Proxy proxy = null;
+        if (config.containsKey(PROXY_HTTP_CLIENT_HOSTNAME)) {
+            String proxyHostName = (String) config.get(PROXY_HTTP_CLIENT_HOSTNAME);
+            int proxyPort = (Integer) config.get(PROXY_HTTP_CLIENT_PORT);
+            SocketAddress socketAddress = new InetSocketAddress(proxyHostName, proxyPort);
+            String proxyTypeLabel = (String) Optional.ofNullable(config.get(PROXY_HTTP_CLIENT_TYPE)).orElse("HTTP");
+            Proxy.Type proxyType = Proxy.Type.valueOf(proxyTypeLabel);
+            proxy = new Proxy(proxyType, socketAddress);
+        }
+
+        ProxySelectorFactory proxySelectorFactory = new ProxySelectorFactory();
+        ProxySelector proxySelector = proxySelectorFactory.build(config, random);
+        return httpClientFactory.build(config, executorService, random,proxy,proxySelector);
     }
 
 

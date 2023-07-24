@@ -12,13 +12,10 @@ import io.github.clescot.kafka.connect.http.core.HttpRequest;
 import io.github.clescot.kafka.connect.http.core.HttpResponse;
 import io.github.clescot.kafka.connect.http.sink.client.AbstractHttpClient;
 import io.github.clescot.kafka.connect.http.sink.client.HttpException;
-import io.github.clescot.kafka.connect.http.sink.client.proxy.*;
 import kotlin.Pair;
 import okhttp3.*;
 import okhttp3.internal.http.HttpMethod;
 import okhttp3.internal.io.FileSystem;
-import org.apache.commons.lang3.tuple.ImmutablePair;
-import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -26,7 +23,8 @@ import org.slf4j.LoggerFactory;
 import javax.net.ssl.*;
 import java.io.File;
 import java.io.IOException;
-import java.net.*;
+import java.net.Proxy;
+import java.net.ProxySelector;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -35,8 +33,6 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
-import java.util.function.Predicate;
-import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import static io.github.clescot.kafka.connect.http.sink.HttpSinkConfigDefinition.*;
@@ -57,7 +53,7 @@ public class OkHttpClient extends AbstractHttpClient<Request, Response> {
 
     private final Random random;
 
-    public OkHttpClient(Map<String, Object> config, ExecutorService executorService, Random random) {
+    public OkHttpClient(Map<String, Object> config, ExecutorService executorService, Random random, Proxy proxy, ProxySelector proxySelector) {
         super(config);
         this.random = random;
 
@@ -66,6 +62,15 @@ public class OkHttpClient extends AbstractHttpClient<Request, Response> {
             Dispatcher dispatcher = new Dispatcher(executorService);
             httpClientBuilder.dispatcher(dispatcher);
         }
+
+        if (proxy != null) {
+            httpClientBuilder.proxy(proxy);
+        }
+
+        if(proxySelector!=null){
+            httpClientBuilder.proxySelector(proxySelector);
+        }
+
         configureConnectionPool(config, httpClientBuilder);
         //protocols
         configureProtocols(config, httpClientBuilder);
@@ -136,139 +141,10 @@ public class OkHttpClient extends AbstractHttpClient<Request, Response> {
             httpClientBuilder.followSslRedirects((Boolean) config.get(OKHTTP_FOLLOW_SSL_REDIRECT));
         }
 
-        if (config.containsKey(PROXY_HTTP_CLIENT_HOSTNAME)) {
-            String proxyHostName = (String) config.get(PROXY_HTTP_CLIENT_HOSTNAME);
-            int proxyPort = (Integer) config.get(PROXY_HTTP_CLIENT_PORT);
-            SocketAddress socketAddress = new InetSocketAddress(proxyHostName, proxyPort);
-            String proxyTypeLabel = (String) Optional.ofNullable(config.get(PROXY_HTTP_CLIENT_TYPE)).orElse("HTTP");
-            Proxy.Type proxyType = Proxy.Type.valueOf(proxyTypeLabel);
-            Proxy proxy = new Proxy(proxyType, socketAddress);
-            httpClientBuilder.proxy(proxy);
-
-        }
-        if (config.containsKey(PROXY_HTTP_CLIENT_0_HOSTNAME)) {
-            httpClientBuilder.proxySelector(buildProxySelector(config));
-        }
-
-
     }
 
-    private ProxySelector buildProxySelector(Map<String, Object> config) {
-        //handle NON_PROXY_HOSTS
-        Optional<String> nonProxyHostNames = Optional.ofNullable((String) config.get(PROXY_HTTP_CLIENT_NON_PROXY_HOSTS_URI_REGEX));
-        Pattern nonProxyHostsuriPattern = null;
-        if (nonProxyHostNames.isPresent()) {
-            String nonProxyHosts = nonProxyHostNames.get();
-            nonProxyHostsuriPattern = Pattern.compile(nonProxyHosts);
-        }
 
-        ProxySelector proxySelector = getProxySelector(config);
-        return nonProxyHostsuriPattern!=null?new ProxySelectorDecorator(proxySelector,nonProxyHostsuriPattern):proxySelector;
-    }
 
-    private ProxySelector getProxySelector(Map<String, Object> config){
-        String proxySelectorImpl = Optional.ofNullable((String) config.get(PROXY_SELECTOR_IMPLEMENTATION)).orElse("uriregex");
-        ProxySelector proxySelector;
-        switch(proxySelectorImpl){
-            case "weightedrandom":
-                proxySelector = buildWeightedRandomProxySelector(config);
-                break;
-            case "hosthash":
-                proxySelector = buildHostHashProxySelector(config);
-                break;
-            case "random":
-                proxySelector = buildRandomProxySelector(config,random);
-                break;
-            case "uriregex":
-                proxySelector = buildUriRegexProxySelector(config);
-                break;
-            default:
-                proxySelector = buildUriRegexProxySelector(config);
-                break;
-        }
-        return proxySelector;
-    }
-    private ProxySelector buildWeightedRandomProxySelector(Map<String, Object> config) {
-        return new WeightedRandomProxySelector(getWeightedProxies(config),random);
-    }
-
-    private NavigableMap<Integer, Proxy> getWeightedProxies(Map<String, Object> config) {
-        NavigableMap<Integer, Proxy> proxies =new TreeMap<>();
-        int proxyIndex = 0;
-
-        while (config.get(PROXY_PREFIX + HTTP_CLIENT_PREFIX + proxyIndex + "." + "hostname") != null) {
-            //build proxy
-            String proxyHostName = (String) config.get(PROXY_PREFIX + HTTP_CLIENT_PREFIX + proxyIndex + "." + "hostname");
-            int proxyPort = (Integer) config.get(PROXY_PREFIX + HTTP_CLIENT_PREFIX + proxyIndex + "." + "port");
-            SocketAddress socketAddress = new InetSocketAddress(proxyHostName, proxyPort);
-            String proxyTypeLabel = (String) Optional.ofNullable(config.get(PROXY_PREFIX + HTTP_CLIENT_PREFIX + proxyIndex + "." + "type")).orElse("HTTP");
-            Proxy.Type proxyType = Proxy.Type.valueOf(proxyTypeLabel);
-            Proxy proxy = new Proxy(proxyType, socketAddress);
-            //weight
-            Integer proxyWeight = (Integer)config.get(PROXY_PREFIX + HTTP_CLIENT_PREFIX + proxyIndex + "." +"weight");
-            Preconditions.checkNotNull(proxyWeight,"'weight' for proxy host '"+proxyHostName+"' cannot be null in a WeightedRandomProxySelector");
-            proxies.put(proxyWeight,proxy);
-            proxyIndex++;
-        }
-        return proxies;
-    }
-
-    private ProxySelector buildHostHashProxySelector(Map<String, Object> config) {
-        return new HostHashProxySelector(getProxies(config));
-    }
-
-    private ProxySelector buildRandomProxySelector(Map<String, Object> config,Random random) {
-        //build each proxy
-        //type,hostname,port
-        List<Proxy> proxies = getProxies(config);
-        return new RandomProxySelector(proxies,random);
-    }
-
-    private List<Proxy> getProxies(Map<String, Object> config) {
-        List<Proxy> proxies = Lists.newArrayList();
-        int proxyIndex = 0;
-
-        while (config.get(PROXY_PREFIX + HTTP_CLIENT_PREFIX + proxyIndex + "." + "hostname") != null) {
-            //build proxy
-            String proxyHostName = (String) config.get(PROXY_PREFIX + HTTP_CLIENT_PREFIX + proxyIndex + "." + "hostname");
-            int proxyPort = (Integer) config.get(PROXY_PREFIX + HTTP_CLIENT_PREFIX + proxyIndex + "." + "port");
-            SocketAddress socketAddress = new InetSocketAddress(proxyHostName, proxyPort);
-            String proxyTypeLabel = (String) Optional.ofNullable(config.get(PROXY_PREFIX + HTTP_CLIENT_PREFIX + proxyIndex + "." + "type")).orElse("HTTP");
-            Proxy.Type proxyType = Proxy.Type.valueOf(proxyTypeLabel);
-            Proxy proxy = new Proxy(proxyType, socketAddress);
-            proxies.add(proxy);
-            proxyIndex++;
-        }
-        return proxies;
-    }
-
-    @NotNull
-    private URIRegexProxySelector buildUriRegexProxySelector(Map<String, Object> config) {
-        //build each proxy
-        //type,hostname,port
-        List<ImmutablePair<Predicate<URI>, Proxy>> proxies = Lists.newArrayList();
-        int proxyIndex = 0;
-
-        while (config.get(PROXY_PREFIX + HTTP_CLIENT_PREFIX + proxyIndex + "." + "hostname") != null) {
-            //build URI predicate
-            String uriPredicate = (String) config.get(PROXY_PREFIX + HTTP_CLIENT_PREFIX + proxyIndex + "." + "uri.regex");
-            Preconditions.checkNotNull(uriPredicate,"'"+PROXY_PREFIX + HTTP_CLIENT_PREFIX + proxyIndex + "." +"uri.regex"+"' must be set");
-            Pattern uriPattern = Pattern.compile(uriPredicate);
-            Predicate<URI> predicate = uri -> uriPattern.matcher(uri.toString()).matches();
-            //build proxy
-            String proxyHostName = (String) config.get(PROXY_PREFIX + HTTP_CLIENT_PREFIX + proxyIndex + "." + "hostname");
-            int proxyPort = (Integer) config.get(PROXY_PREFIX + HTTP_CLIENT_PREFIX + proxyIndex + "." + "port");
-            SocketAddress socketAddress = new InetSocketAddress(proxyHostName, proxyPort);
-            String proxyTypeLabel = (String) Optional.ofNullable(config.get(PROXY_PREFIX + HTTP_CLIENT_PREFIX + proxyIndex + "." + "type")).orElse("HTTP");
-            Proxy.Type proxyType = Proxy.Type.valueOf(proxyTypeLabel);
-            Proxy proxy = new Proxy(proxyType, socketAddress);
-
-            proxies.add(ImmutablePair.of(predicate, proxy));
-            proxyIndex++;
-
-        }
-        return new URIRegexProxySelector(proxies);
-    }
 
 
     private void configureSSL(Map<String, Object> config, okhttp3.OkHttpClient.Builder httpClientBuilder) {
