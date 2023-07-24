@@ -16,7 +16,7 @@ import static io.github.clescot.kafka.connect.http.sink.HttpSinkConfigDefinition
 public class ProxySelectorFactory {
     public ProxySelector build(Map<String, Object> config,Random random){
         //handle NON_PROXY_HOSTS
-        Optional<String> nonProxyHostNames = Optional.ofNullable((String) config.get(PROXY_HTTP_CLIENT_NON_PROXY_HOSTS_URI_REGEX));
+        Optional<String> nonProxyHostNames = Optional.ofNullable((String) config.get(PROXY_SELECTOR_HTTP_CLIENT_NON_PROXY_HOSTS_URI_REGEX));
         Pattern nonProxyHostsuriPattern = null;
         if (nonProxyHostNames.isPresent()) {
             String nonProxyHosts = nonProxyHostNames.get();
@@ -28,7 +28,7 @@ public class ProxySelectorFactory {
     }
 
     private ProxySelector getProxySelector(Map<String, Object> config,Random random) {
-        String proxySelectorImpl = Optional.ofNullable((String) config.get(PROXY_SELECTOR_IMPLEMENTATION)).orElse("uriregex");
+        String proxySelectorImpl = Optional.ofNullable((String) config.get(PROXY_SELECTOR_ALGORITHM)).orElse("uriregex");
         ProxySelector proxySelector;
         switch (proxySelectorImpl) {
             case "weightedrandom":
@@ -58,16 +58,16 @@ public class ProxySelectorFactory {
         NavigableMap<Integer, Proxy> proxies = new TreeMap<>();
         int proxyIndex = 0;
 
-        while (config.get(PROXY_PREFIX + HTTP_CLIENT_PREFIX + proxyIndex + "." + "hostname") != null) {
+        while (config.get(PROXYSELECTOR_PREFIX + HTTP_CLIENT_PREFIX + proxyIndex + "." + "hostname") != null) {
             //build proxy
-            String proxyHostName = (String) config.get(PROXY_PREFIX + HTTP_CLIENT_PREFIX + proxyIndex + "." + "hostname");
-            int proxyPort = (Integer) config.get(PROXY_PREFIX + HTTP_CLIENT_PREFIX + proxyIndex + "." + "port");
+            String proxyHostName = (String) config.get(PROXYSELECTOR_PREFIX + HTTP_CLIENT_PREFIX + proxyIndex + "." + "hostname");
+            int proxyPort = (Integer) config.get(PROXYSELECTOR_PREFIX + HTTP_CLIENT_PREFIX + proxyIndex + "." + "port");
             SocketAddress socketAddress = new InetSocketAddress(proxyHostName, proxyPort);
-            String proxyTypeLabel = (String) Optional.ofNullable(config.get(PROXY_PREFIX + HTTP_CLIENT_PREFIX + proxyIndex + "." + "type")).orElse("HTTP");
+            String proxyTypeLabel = (String) Optional.ofNullable(config.get(PROXYSELECTOR_PREFIX + HTTP_CLIENT_PREFIX + proxyIndex + "." + "type")).orElse("HTTP");
             Proxy.Type proxyType = Proxy.Type.valueOf(proxyTypeLabel);
             Proxy proxy = new Proxy(proxyType, socketAddress);
             //weight
-            Integer proxyWeight = (Integer) config.get(PROXY_PREFIX + HTTP_CLIENT_PREFIX + proxyIndex + "." + "weight");
+            Integer proxyWeight = (Integer) config.get(PROXYSELECTOR_PREFIX + HTTP_CLIENT_PREFIX + proxyIndex + "." + "weight");
             Preconditions.checkNotNull(proxyWeight, "'weight' for proxy host '" + proxyHostName + "' cannot be null in a WeightedRandomProxySelector");
             proxies.put(proxyWeight, proxy);
             proxyIndex++;

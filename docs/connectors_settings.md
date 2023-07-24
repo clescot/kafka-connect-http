@@ -97,8 +97,6 @@ The predicate permits to filter some http requests, and can be composed, cumulat
       and param_name2 parameters to get values to add.
     - *config.default.generate.missing.request.id* : `false` by default. when set to `true`, generate an uuid bound to the `X-Request-ID` header.
     - *config.default.generate.missing.correlation.id* : `false` by default. when set to `true`, generate an uuid bound to the `X-Correlation-ID` header.
-  - http client implementation settings (prefixed by `config.<config_id>` )
-    - *httpclient.implementation* : define which installed library to use : either `ahc`, a.k.a async http client, or `okhttp`. default is `okhttp`.
   - http client authentication parameters
     - `basic` authentication settings
       - *config.default.httpclient.authentication.basic.activate* : activate `basic` authentication response with credentials, for web sites matching this configuration (_required_)
@@ -120,9 +118,23 @@ The predicate permits to filter some http requests, and can be composed, cumulat
     - *config.default.httpclient.ssl.truststore.password* : password of the custom trusted store.
     - *config.default.httpclient.ssl.truststore.type* : truststore type. can be `jks` or `pkcs12`.
     - *config.default.httpclient.ssl.truststore.algorithm* : the standard name of the requested algorithm. See the KeyManagerFactory section in the Java Security Standard Algorithm Names Specification for information about standard algorithm names.
-    - *config.default.httpclient.ssl.truststore.always.trust* : add a truststore that always trust *any* certificates. Transport security is disabled. Be careful that the server cannot be trusted with this option ! 
+    - *config.default.httpclient.ssl.truststore.always.trust* : add a truststore that always trust *any* certificates. Transport security is disabled. Be careful that the server cannot be trusted with this option !
+  - http client proxy settings
+    - *config.default.proxy.httpclient.hostname* : hostname of the proxy. 
+    - *config.default.proxy.httpclient.port* : port of the proxy.
+    - *config.default.proxy.httpclient.type* : proxy type. can be either 'HTTP' (default), 'DIRECT' (i.e no proxy), or 'SOCKS'.
+  - http client proxy selector settings (<index> is an increasing integer starting with 0)
+    - *config.default.proxyselector.httpclient.algorithm* : algorithm of the proxy selector.can be 'uriregex', 'random', 'weightedrandom', or 'hosthash'. Default is 'uriregex'. 
+    - *config.default.proxyselector.httpclient.<index>.hostname* : host of the first entry proxy list.
+    - *config.default.proxyselector.httpclient.<index>.port* : port of the proxy.
+    - *config.default.proxyselector.httpclient.<index>.type* : proxy type. can be either 'HTTP' (default), 'DIRECT' (i.e no proxy), or 'SOCKS'.
+    - *config.default.proxyselector.httpclient.<index>.uri.regex* : uri regex matching this proxy ;  settings only for the 'uriregex' algorithm.
+    - *config.default.proxyselector.httpclient.<index>.weight* : integer used with the 'weightedrandom' algorithm.
+    - *config.default.proxyselector.httpclient.non.proxy.hosts.uri.regex* : hosts which don't need to be proxied to be reached.
   - http client async settings
     - *httpclient.async.fixed.thread.pool.size* : custom fixed thread pool size used to execute asynchronously http requests.
+  - http client implementation settings (prefixed by `config.<config_id>` )
+    - *httpclient.implementation* : define which installed library to use : either `ahc`, a.k.a async http client, or `okhttp`. default is `okhttp`.  
   - _okhttp_ (default) HTTP client implementation settings
     - *config.default.okhttp.connection.pool.max.idle.connections* 
     - *config.default.okhttp.connection.pool.keep.alive.duration*
