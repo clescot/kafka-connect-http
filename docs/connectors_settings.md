@@ -9,27 +9,27 @@ cluster.
 
 every Kafka Connect Sink Connector need to define these required parameters :
 
-- *connector.class* : `io.github.clescot.kafka.connect.http.HttpSinkConnector`
-- *topics* (or *topics.regex*): `http-requests` for example
+- *`connector.class`* : `io.github.clescot.kafka.connect.http.HttpSinkConnector`
+- *`topics`* (or *`topics.regex`*): `http-requests` for example
 
 #### optional Kafka Connect parameters
 
-- *tasks.max*  (default to `1`)
-- *key.converter*
-- *value.converter*
+- *`tasks.max`*  (default to `1`)
+- *`key.converter`*
+- *`value.converter`*
 - ....
 
 #### publish into the _in memory_ queue : 
 
-- *publish.to.in.memory.queue* : `false` by default. When set to `true`, publish HTTP interactions (request and responses)
+- *`publish.to.in.memory.queue`* : `false` by default. When set to `true`, publish HTTP interactions (request and responses)
   are published into the in memory queue.
-- *queue.name* : if not set, `default` queue name is used, if the `publish.to.in.memory.queue` is set to `true`.
+- *`queue.name`* : if not set, `default` queue name is used, if the `publish.to.in.memory.queue` is set to `true`.
   You can define multiple in memory queues, to permit to publish to different topics, different HTTP interactions. If
   you set this parameter to a value different than `default`, you need to configure an HTTP source Connector listening
   on the same queue name to avoid some OutOfMemoryErrors.
-- *wait.time.registration.queue.consumer.in.ms* : wait time for a queue consumer (Source Connector) registration. default value is 60 seconds.
-- *poll.delay.registration.queue.consumer.in.ms* : poll delay, i.e, wait time before start polling a registered consumer. default value is 2 seconds.
-- *poll.interval.registration.queue.consumer.in.ms* : poll interval, i.e, time between every poll for a registered consumer. default value is 5000 milliseconds.
+- *`wait.time.registration.queue.consumer.in.ms`* : wait time for a queue consumer (Source Connector) registration. default value is 60 seconds.
+- *`poll.delay.registration.queue.consumer.in.ms`* : poll delay, i.e, wait time before start polling a registered consumer. default value is 2 seconds.
+- *`poll.interval.registration.queue.consumer.in.ms`* : poll interval, i.e, time between every poll for a registered consumer. default value is 5000 milliseconds.
 
 #### configuration
 
@@ -72,94 +72,94 @@ The predicate permits to filter some http requests, and can be composed, cumulat
 - owns a retry policy
 - owns an HTTP Client  with the available settings : 
   - retry settings (**set them all or no one**), permit to define a default retry policy.
-    - *config.default.retry.policy.response.code.regex* : regex which define if a retry need to be triggered, based on the response status code. default is `^[1-2][0-9][0-9]$`
+    - *`config.default.retry.policy.response.code.regex`* : regex which define if a retry need to be triggered, based on the response status code. default is `^[1-2][0-9][0-9]$`
       by default, we don't resend any http call with a response between `100` and `499`.only `5xx` by default, trigger a resend
       - `1xx` is for protocol information (100 continue for example),
       - `2xx` is for success,
       - `3xx` is for redirection
       - `4xx` is for a client error
       - `5xx` is for a server error
-    - *config.default.retries* : if set with other default retry parameters, permit to define a default retry policy, which can be overriden in the httpRequest object. Define how many retries before an error is thrown
-    - *config.default.retry.delay.in.ms* : if set with other default retry parameters, permit to define a default retry policy, which can be overriden in the httpRequest object. Define how long wait initially before first retry
-    - *config.default.retry.max.delay.in.ms* : if set with other default retry parameters, permit to define a default retry policy, which can be overriden in the httpRequest object. Define how long max wait before retry
-    - *config.default.retry.delay.factor* : if set with other default retry parameters, permit to define a default retry policy, which can be overriden in the httpRequest object. Define the factor to multiply the previous delay to define the current retry delay
-    - *config.default.retry.jitter.in.ms* : if set with other default retry parameters, permit to define a default retry policy, which can be overriden in the httpRequest object.
+    - *`config.default.retries`* : if set with other default retry parameters, permit to define a default retry policy, which can be overriden in the httpRequest object. Define how many retries before an error is thrown
+    - *`config.default.retry.delay.in.ms`* : if set with other default retry parameters, permit to define a default retry policy, which can be overriden in the httpRequest object. Define how long wait initially before first retry
+    - *`config.default.retry.max.delay.in.ms`* : if set with other default retry parameters, permit to define a default retry policy, which can be overriden in the httpRequest object. Define how long max wait before retry
+    - *`config.default.retry.delay.factor`* : if set with other default retry parameters, permit to define a default retry policy, which can be overriden in the httpRequest object. Define the factor to multiply the previous delay to define the current retry delay
+    - *`config.default.retry.jitter.in.ms`* : if set with other default retry parameters, permit to define a default retry policy, which can be overriden in the httpRequest object.
   - rate limiting settings
-    - *config.default.rate.limiter.period.in.ms* : period of time in milliseconds, during the max execution cannot be exceeded
-    - *config.default.rate.limiter.max.executions* : max executions in the period defined with the 'httpclient.default.rate.limiter.period.in.ms' parameter
-    - *config.default.rate.limiter.scope* : can be either `instance` (default option when not set, i.e a rate limiter per configuration in the connector instance),  or `static` (a rate limiter per configuration id shared with all connectors instances in the same Java Virtual Machine.
+    - *`config.default.rate.limiter.period.in.ms`* : period of time in milliseconds, during the max execution cannot be exceeded
+    - *`config.default.rate.limiter.max.executions`* : max executions in the period defined with the 'httpclient.default.rate.limiter.period.in.ms' parameter
+    - *`config.default.rate.limiter.scope`* : can be either `instance` (default option when not set, i.e a rate limiter per configuration in the connector instance),  or `static` (a rate limiter per configuration id shared with all connectors instances in the same Java Virtual Machine.
     - - owns a retry regex
   - header settings
-    - *config.default.static.request.header.names* : list of headers names to attach to all requests. *Static* term, means that these headers
+    - *`config.default.static.request.header.names`* : list of headers names to attach to all requests. *Static* term, means that these headers
       are not managed by initial kafka message, but are defined at the connector level and added globally. this list is divided by
       `,` character. The connector will try to get the value to add to request by querying the config with the header name as parameter name.
       For example, if set `static.request.header.names: param_name1, param_name2`, the connector will lookup the param_name1
       and param_name2 parameters to get values to add.
-    - *config.default.generate.missing.request.id* : `false` by default. when set to `true`, generate an uuid bound to the `X-Request-ID` header.
-    - *config.default.generate.missing.correlation.id* : `false` by default. when set to `true`, generate an uuid bound to the `X-Correlation-ID` header.
+    - *`config.default.generate.missing.request.id`* : `false` by default. when set to `true`, generate an uuid bound to the `X-Request-ID` header.
+    - *`config.default.generate.missing.correlation.id`* : `false` by default. when set to `true`, generate an uuid bound to the `X-Correlation-ID` header.
   - http client authentication parameters
     - `basic` authentication settings
-      - *config.default.httpclient.authentication.basic.activate* : activate `basic` authentication response with credentials, for web sites matching this configuration (_required_)
-      - *config.default.httpclient.authentication.basic.username* : username used to authenticate against the `basic` challenge (_required_)
-      - *config.default.httpclient.authentication.basic.password* : password used to authenticate against the `basic` challenge (_required_)
-      - *config.default.httpclient.authentication.basic.charset* : character set used by the http client to encode `basic` credentials (_optional_ `ISO_8859_1` if not set)
+      - *`config.default.httpclient.authentication.basic.activate`* : activate `basic` authentication response with credentials, for web sites matching this configuration (_required_)
+      - *`config.default.httpclient.authentication.basic.username`* : username used to authenticate against the `basic` challenge (_required_)
+      - *`config.default.httpclient.authentication.basic.password`* : password used to authenticate against the `basic` challenge (_required_)
+      - *`config.default.httpclient.authentication.basic.charset`* : character set used by the http client to encode `basic` credentials (_optional_ `ISO_8859_1` if not set)
     - `digest` authentication settings
-      - *config.default.httpclient.authentication.digest.activate* : activate `digest` authentication response with credentials, for web sites matching this configuration (_required_)
-      - *config.default.httpclient.authentication.digest.username* : username used to authenticate against the `digest` challenge (_required_)
-      - *config.default.httpclient.authentication.digest.password* : password used to authenticate against the `digest` challenge (_required_)
-      - *config.default.httpclient.authentication.digest.charset* : character set used by the http client to encode `digest` credentials (_optional_ `US-ASCII` if not set) 
-      - *config.default.httpclient.authentication.digest.secure.random.prng.algorithm* : pseudo random number generation algorithm name according to the [java supported random algorithm names](https://docs.oracle.com/en/java/javase/11/docs/specs/security/standard-names.html#securerandom-number-generation-algorithms) default to `SHA1PRNG`. 
+      - *`config.default.httpclient.authentication.digest.activate`* : activate `digest` authentication response with credentials, for web sites matching this configuration (_required_)
+      - *`config.default.httpclient.authentication.digest.username`* : username used to authenticate against the `digest` challenge (_required_)
+      - *`config.default.httpclient.authentication.digest.password`* : password used to authenticate against the `digest` challenge (_required_)
+      - *`config.default.httpclient.authentication.digest.charset`* : character set used by the http client to encode `digest` credentials (_optional_ `US-ASCII` if not set) 
+      - *`config.default.httpclient.authentication.digest.secure.random.prng.algorithm`* : pseudo random number generation algorithm name according to the [java supported random algorithm names](https://docs.oracle.com/en/java/javase/11/docs/specs/security/standard-names.html#securerandom-number-generation-algorithms) default to `SHA1PRNG`. 
   - http client SSL parameters
-    - *config.default.httpclient.ssl.keystore.path* : file path of the custom key store.
-    - *config.default.httpclient.ssl.keystore.password* : password of the custom key store.
-    - *config.default.httpclient.ssl.keystore.type"* : keystore type. can be `jks` or `pkcs12`.
-    - *config.default.httpclient.ssl.keystore.algorithm* : the standard name of the requested algorithm. See the KeyManagerFactory section in the Java Security Standard Algorithm Names Specification for information about standard algorithm names.
-    - *config.default.httpclient.ssl.truststore.path* : file path of the custom trust store.
-    - *config.default.httpclient.ssl.truststore.password* : password of the custom trusted store.
-    - *config.default.httpclient.ssl.truststore.type* : truststore type. can be `jks` or `pkcs12`.
-    - *config.default.httpclient.ssl.truststore.algorithm* : the standard name of the requested algorithm. See the KeyManagerFactory section in the Java Security Standard Algorithm Names Specification for information about standard algorithm names.
-    - *config.default.httpclient.ssl.truststore.always.trust* : add a truststore that always trust *any* certificates. Transport security is disabled. Be careful that the server cannot be trusted with this option !
+    - *`config.default.httpclient.ssl.keystore.path`* : file path of the custom key store.
+    - *`config.default.httpclient.ssl.keystore.password`* : password of the custom key store.
+    - *`config.default.httpclient.ssl.keystore.type`* : keystore type. can be `jks` or `pkcs12`.
+    - *`config.default.httpclient.ssl.keystore.algorithm`* : the standard name of the requested algorithm. See the KeyManagerFactory section in the Java Security Standard Algorithm Names Specification for information about standard algorithm names.
+    - *`config.default.httpclient.ssl.truststore.path`* : file path of the custom trust store.
+    - *`config.default.httpclient.ssl.truststore.password`* : password of the custom trusted store.
+    - *`config.default.httpclient.ssl.truststore.type`* : truststore type. can be `jks` or `pkcs12`.
+    - *`config.default.httpclient.ssl.truststore.algorithm`* : the standard name of the requested algorithm. See the KeyManagerFactory section in the Java Security Standard Algorithm Names Specification for information about standard algorithm names.
+    - *`config.default.httpclient.ssl.truststore.always.trust`* : add a truststore that always trust *any* certificates. Transport security is disabled. Be careful that the server cannot be trusted with this option !
   - http client proxy settings
-    - *config.default.proxy.httpclient.hostname* : hostname of the proxy. 
-    - *config.default.proxy.httpclient.port* : port of the proxy.
-    - *config.default.proxy.httpclient.type* : proxy type. can be either `HTTP` (default), `DIRECT` (i.e no proxy), or `SOCKS`.
+    - *`config.default.proxy.httpclient.hostname`* : hostname of the proxy. 
+    - *`config.default.proxy.httpclient.port`* : port of the proxy.
+    - *`config.default.proxy.httpclient.type`* : proxy type. can be either `HTTP` (default), `DIRECT` (i.e no proxy), or `SOCKS`.
   - http client proxy selector settings (`<index`> is an increasing integer starting with 0)
-    - *config.default.proxyselector.httpclient.algorithm* : algorithm of the proxy selector.can be `uriregex`, `random`, `weightedrandom`, or `hosthash`. Default is `uriregex`. 
-    - *config.default.proxyselector.httpclient.<index>.hostname* : host of the first entry proxy list.
-    - *config.default.proxyselector.httpclient.<index>.port* : port of the proxy.
-    - *config.default.proxyselector.httpclient.<index>.type* : proxy type. can be either `HTTP` (default), `DIRECT` (i.e no proxy), or `SOCKS`.
-    - *config.default.proxyselector.httpclient.<index>.uri.regex* : uri regex matching this proxy ;  settings only for the `uriregex` algorithm.
-    - *config.default.proxyselector.httpclient.<index>.weight* : integer used with the `weightedrandom` algorithm.
-    - *config.default.proxyselector.httpclient.non.proxy.hosts.uri.regex* : hosts which don't need to be proxied to be reached.
+    - *`config.default.proxyselector.httpclient.algorithm`* : algorithm of the proxy selector.can be `uriregex`, `random`, `weightedrandom`, or `hosthash`. Default is `uriregex`. 
+    - *`config.default.proxyselector.httpclient.<index>.hostname`* : host of the first entry proxy list.
+    - *`config.default.proxyselector.httpclient.<index>.port`* : port of the proxy.
+    - *`config.default.proxyselector.httpclient.<index>.type`* : proxy type. can be either `HTTP` (default), `DIRECT` (i.e no proxy), or `SOCKS`.
+    - *`config.default.proxyselector.httpclient.<index>.uri.regex`* : uri regex matching this proxy ;  settings only for the `uriregex` algorithm.
+    - *`config.default.proxyselector.httpclient.<index>.weight`* : integer used with the `weightedrandom` algorithm.
+    - *`config.default.proxyselector.httpclient.non.proxy.hosts.uri.regex`* : hosts which don't need to be proxied to be reached.
   - http client async settings
-    - *httpclient.async.fixed.thread.pool.size* : custom fixed thread pool size used to execute asynchronously http requests.
+    - *`httpclient.async.fixed.thread.pool.size`* : custom fixed thread pool size used to execute asynchronously http requests.
   - http client implementation settings (prefixed by `config.<config_id>` )
-    - *httpclient.implementation* : define which installed library to use : either `ahc`, a.k.a async http client, or `okhttp`. default is `okhttp`.  
+    - *`httpclient.implementation`* : define which installed library to use : either `ahc`, a.k.a async http client, or `okhttp`. default is `okhttp`.  
   - _okhttp_ (default) HTTP client implementation settings
-    - *config.default.okhttp.connection.pool.max.idle.connections* 
-    - *config.default.okhttp.connection.pool.keep.alive.duration*
-    - *config.default.okhttp.protocols*
-    - *config.default.okhttp.ssl.skip.hostname.verification*
-    - *config.default.okhttp.connect.timeout*
-    - *config.default.okhttp.call.timeout*
-    - *config.default.okhttp.read.timeout*
-    - *config.default.okhttp.write.timeout*
-    - *config.default.okhttp.follow.redirect*
-    - *config.default.okhttp.follow.ssl.redirect*
-    - *config.default.okhttp.cache.activate* (`true` to activate, `false` by default)
-    - *config.default.okhttp.cache.max.size* (default `10000` max cache entries)
-    - *config.default.okhttp.cache.directory.path* (default `/tmp/kafka-connect-http-cache` directory path for `file` type, default `/kafka-connect-http-cache` for `inmemory` type)
-    - *config.default.okhttp.cache.type* (default `file`, and can be set to `inmemory`)
+    - *`config.default.okhttp.connection.pool.max.idle.connections`* 
+    - *`config.default.okhttp.connection.pool.keep.alive.duration`*
+    - *`config.default.okhttp.protocols`*
+    - *`config.default.okhttp.ssl.skip.hostname.verification`*
+    - *`config.default.okhttp.connect.timeout`*
+    - *`config.default.okhttp.call.timeout`*
+    - *`config.default.okhttp.read.timeout`*
+    - *`config.default.okhttp.write.timeout`*
+    - *`config.default.okhttp.follow.redirect`*
+    - *`config.default.okhttp.follow.ssl.redirect`*
+    - *`config.default.okhttp.cache.activate`* (`true` to activate, `false` by default)
+    - *`config.default.okhttp.cache.max.size`* (default `10000` max cache entries)
+    - *`config.default.okhttp.cache.directory.path`* (default `/tmp/kafka-connect-http-cache` directory path for `file` type, default `/kafka-connect-http-cache` for `inmemory` type)
+    - *`config.default.okhttp.cache.type`* (default `file`, and can be set to `inmemory`)
   - _Async Http Client (AHC)_ implementation settings
-    - *org.asynchttpclient.http.max.connections* :  (default `3`)
-    - *org.asynchttpclient.http.rate.limit.per.second* (default `3`)
-    - *org.asynchttpclient.http.max.wait.ms* (default `500 ms`)
-    - *org.asynchttpclient.keep.alive.class* (default `org.asynchttpclient.channel.DefaultKeepAliveStrategy`)
-    - *org.asynchttpclient.response.body.part.factory* (default `EAGER`)
-    - *org.asynchttpclient.connection.semaphore.factory* (default `org.asynchttpclient.netty.channel.DefaultConnectionSemaphoreFactory`)
-    - *org.asynchttpclient.cookie.store* (default `org.asynchttpclient.cookie.ThreadSafeCookieStore`)
-    - *org.asynchttpclient.netty.timer* (default `io.netty.util.HashedWheelTimer`)
-    - *org.asynchttpclient.byte.buffer.allocator* (default `io.netty.buffer.PooledByteBufAllocator`)
+    - *`org.asynchttpclient.http.max.connections`* :  (default `3`)
+    - *`org.asynchttpclient.http.rate.limit.per.second`* (default `3`)
+    - *`org.asynchttpclient.http.max.wait.ms`* (default `500 ms`)
+    - *`org.asynchttpclient.keep.alive.class`* (default `org.asynchttpclient.channel.DefaultKeepAliveStrategy`)
+    - *`org.asynchttpclient.response.body.part.factory`* (default `EAGER`)
+    - *`org.asynchttpclient.connection.semaphore.factory`* (default `org.asynchttpclient.netty.channel.DefaultConnectionSemaphoreFactory`)
+    - *`org.asynchttpclient.cookie.store`* (default `org.asynchttpclient.cookie.ThreadSafeCookieStore`)
+    - *`org.asynchttpclient.netty.timer`* (default `io.netty.util.HashedWheelTimer`)
+    - *`org.asynchttpclient.byte.buffer.allocator`* (default `io.netty.buffer.PooledByteBufAllocator`)
   
 
 #### Configuration example
@@ -236,12 +236,12 @@ via the `publish.to.in.memory.queue` set to `true`.
 
 #### required HTTP Source connector parameters
 
-- *success.topic* : Topic to receive successful http request/responses, for example, http-success
-- *error.topic* : Topic to receive errors from http request/responses, for example, http-error
+- *`success.topic`* : Topic to receive successful http request/responses, for example, http-success
+- *`error.topic`* : Topic to receive errors from http request/responses, for example, http-error
 
 #### optional HTTP Source connector parameters
 
-- *queue.name* : if not set, listen on the 'default' queue.
+- *`queue.name`* : if not set, listen on the 'default' queue.
 
 #### Configuration example
 
