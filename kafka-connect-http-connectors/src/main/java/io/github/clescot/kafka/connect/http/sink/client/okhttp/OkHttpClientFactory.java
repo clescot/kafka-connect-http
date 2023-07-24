@@ -13,7 +13,11 @@ import java.util.concurrent.ExecutorService;
 
 public class OkHttpClientFactory implements HttpClientFactory<Request, Response> {
     @Override
-    public HttpClient<Request, Response> build(Map<String, Object> config, ExecutorService executorService, Random random, Proxy proxy, ProxySelector proxySelector) {
+    public HttpClient<Request, Response> build(Map<String, Object> config,
+                                               ExecutorService executorService,
+                                               Random random,
+                                               Proxy proxy,
+                                               ProxySelector proxySelector) {
         return new OkHttpClient(config,executorService,random,proxy,proxySelector);
     }
 

@@ -143,10 +143,6 @@ public class OkHttpClient extends AbstractHttpClient<Request, Response> {
 
     }
 
-
-
-
-
     private void configureSSL(Map<String, Object> config, okhttp3.OkHttpClient.Builder httpClientBuilder) {
         //KeyManager/trustManager/SSLSocketFactory
         Optional<KeyManagerFactory> keyManagerFactoryOption = getKeyManagerFactory();
