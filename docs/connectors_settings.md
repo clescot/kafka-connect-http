@@ -58,10 +58,7 @@ The predicate permits to filter some http requests, and can be composed, cumulat
 - can enrich the HttpExchange with a success regex
 - owns a rate limiter
 - owns a retry policy
-- owns an HTTP Client
-
-
-
+- owns an HTTP Client  with the available settings : 
   - retry settings (**set them all or no one**), permit to define a default retry policy.
     - *config.default.retry.policy.response.code.regex* : regex which define if a retry need to be triggered, based on the response status code. default is `^[1-2][0-9][0-9]$`
       by default, we don't resend any http call with a response between `100` and `499`.only `5xx` by default, trigger a resend
