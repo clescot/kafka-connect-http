@@ -123,7 +123,7 @@ The predicate permits to filter some http requests, and can be composed, cumulat
     - *config.default.proxy.httpclient.hostname* : hostname of the proxy. 
     - *config.default.proxy.httpclient.port* : port of the proxy.
     - *config.default.proxy.httpclient.type* : proxy type. can be either `HTTP` (default), `DIRECT` (i.e no proxy), or `SOCKS`.
-  - http client proxy selector settings (<index> is an increasing integer starting with 0)
+  - http client proxy selector settings (`<index`> is an increasing integer starting with 0)
     - *config.default.proxyselector.httpclient.algorithm* : algorithm of the proxy selector.can be `uriregex`, `random`, `weightedrandom`, or `hosthash`. Default is `uriregex`. 
     - *config.default.proxyselector.httpclient.<index>.hostname* : host of the first entry proxy list.
     - *config.default.proxyselector.httpclient.<index>.port* : port of the proxy.
