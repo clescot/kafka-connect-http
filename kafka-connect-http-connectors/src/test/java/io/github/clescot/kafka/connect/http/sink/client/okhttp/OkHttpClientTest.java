@@ -59,10 +59,10 @@ class OkHttpClientTest {
 
         wmHttp = WireMockExtension.newInstance()
                 .options(
-                    WireMockConfiguration.wireMockConfig()
-                    .dynamicPort()
-                    .networkTrafficListener(new ConsoleNotifyingWiremockNetworkTrafficListener())
-                    .useChunkedTransferEncoding(Options.ChunkedEncodingPolicy.NEVER)
+                        WireMockConfiguration.wireMockConfig()
+                                .dynamicPort()
+                                .networkTrafficListener(new ConsoleNotifyingWiremockNetworkTrafficListener())
+                                .useChunkedTransferEncoding(Options.ChunkedEncodingPolicy.NEVER)
                 )
                 .build();
     }
@@ -73,7 +73,7 @@ class OkHttpClientTest {
         public void test_build_POST_request() throws IOException {
 
             //given
-            OkHttpClient client = new OkHttpClient(Maps.newHashMap(), null,new Random(),null,null);
+            OkHttpClient client = new OkHttpClient(Maps.newHashMap(), null, new Random(), null, null);
             HttpRequest httpRequest = new HttpRequest("http://dummy.com/", "POST", HttpRequest.BodyType.STRING.name());
             httpRequest.setBodyAsString("stuff");
 
@@ -95,7 +95,7 @@ class OkHttpClientTest {
         public void test_build_GET_request_with_body() {
 
             //given
-            OkHttpClient client = new OkHttpClient(Maps.newHashMap(), null,new Random(),null,null);
+            OkHttpClient client = new OkHttpClient(Maps.newHashMap(), null, new Random(), null, null);
             HttpRequest httpRequest = new HttpRequest("http://dummy.com/", "GET", HttpRequest.BodyType.STRING.name());
             httpRequest.setBodyAsString("stuff");
 
@@ -117,7 +117,7 @@ class OkHttpClientTest {
         public void test_build_response() {
 
             //given
-            OkHttpClient client = new OkHttpClient(Maps.newHashMap(), null,new Random(),null,null);
+            OkHttpClient client = new OkHttpClient(Maps.newHashMap(), null, new Random(), null, null);
 
             HttpRequest httpRequest = new HttpRequest("http://dummy.com/", "POST", HttpRequest.BodyType.STRING.name());
             httpRequest.setBodyAsString("stuff");
@@ -161,7 +161,7 @@ class OkHttpClientTest {
         void test_activated_cache_with_file_type() {
             HashMap<String, Object> config = Maps.newHashMap();
             config.put(OKHTTP_CACHE_ACTIVATE, "true");
-            OkHttpClient client = new OkHttpClient(config, null,new Random(),null,null);
+            OkHttpClient client = new OkHttpClient(config, null, new Random(), null, null);
         }
 
         @Test
@@ -169,7 +169,7 @@ class OkHttpClientTest {
             HashMap<String, Object> config = Maps.newHashMap();
             config.put(OKHTTP_CACHE_ACTIVATE, "true");
             config.put(OKHTTP_CACHE_MAX_SIZE, "50000");
-            OkHttpClient client = new OkHttpClient(config, null,new Random(),null,null);
+            OkHttpClient client = new OkHttpClient(config, null, new Random(), null, null);
         }
 
         @Test
@@ -178,7 +178,7 @@ class OkHttpClientTest {
             config.put(OKHTTP_CACHE_ACTIVATE, "true");
             config.put(OKHTTP_CACHE_MAX_SIZE, "50000");
             config.put(OKHTTP_CACHE_DIRECTORY_PATH, "/tmp/toto");
-            OkHttpClient client = new OkHttpClient(config, null,new Random(),null,null);
+            OkHttpClient client = new OkHttpClient(config, null, new Random(), null, null);
         }
 
         @Test
@@ -186,20 +186,20 @@ class OkHttpClientTest {
             HashMap<String, Object> config = Maps.newHashMap();
             config.put(OKHTTP_CACHE_ACTIVATE, "true");
             config.put(OKHTTP_CACHE_TYPE, "inmemory");
-            OkHttpClient client = new OkHttpClient(config, null,new Random(),null,null);
+            OkHttpClient client = new OkHttpClient(config, null, new Random(), null, null);
         }
 
         @Test
         void test_inactivated_cache() {
             HashMap<String, Object> config = Maps.newHashMap();
             config.put(OKHTTP_CACHE_ACTIVATE, "false");
-            OkHttpClient client = new OkHttpClient(config, null,new Random(),null,null);
+            OkHttpClient client = new OkHttpClient(config, null, new Random(), null, null);
         }
 
         @Test
         void test_no_cache() {
             HashMap<String, Object> config = Maps.newHashMap();
-            OkHttpClient client = new OkHttpClient(config, null,new Random(),null,null);
+            OkHttpClient client = new OkHttpClient(config, null, new Random(), null, null);
         }
     }
 
@@ -220,7 +220,7 @@ class OkHttpClientTest {
             config.put("httpclient.authentication.basic.username", username);
             config.put("httpclient.authentication.basic.password", password);
 
-            OkHttpClient client = new OkHttpClient(config, null,new Random(),null,null);
+            OkHttpClient client = new OkHttpClient(config, null, new Random(), null, null);
 
             String baseUrl = "http://" + getIP() + ":" + wmRuntimeInfo.getHttpPort();
             String url = baseUrl + "/ping";
@@ -306,7 +306,7 @@ class OkHttpClientTest {
                 return null;
             })
                     .when(random).nextBytes(any(byte[].class));
-            OkHttpClient client = new OkHttpClient(config, null, random,null,null);
+            OkHttpClient client = new OkHttpClient(config, null, random, null, null);
 
             String baseUrl = "http://" + getIP() + ":" + wmRuntimeInfo.getHttpPort();
             String url = baseUrl + "/ping";
@@ -446,10 +446,10 @@ class OkHttpClientTest {
             String url = baseUrl + "/ping";
 
             HashMap<String, Object> config = Maps.newHashMap();
-            Proxy proxy = new Proxy(Proxy.Type.HTTP,new InetSocketAddress(getIP(),wmRuntimeInfo.getHttpPort()));
+            Proxy proxy = new Proxy(Proxy.Type.HTTP, new InetSocketAddress(getIP(), wmRuntimeInfo.getHttpPort()));
 
 
-            OkHttpClient client = new OkHttpClient(config, null,new Random(),proxy,null);
+            OkHttpClient client = new OkHttpClient(config, null, new Random(), proxy, null);
 
             HashMap<String, List<String>> headers = Maps.newHashMap();
             headers.put("Content-Type", Lists.newArrayList("text/plain"));
@@ -502,9 +502,9 @@ class OkHttpClientTest {
             config.put(HTTP_CLIENT_PROXY_AUTHENTICATION_BASIC_USERNAME, username);
             String password = "password1";
             config.put(HTTP_CLIENT_PROXY_AUTHENTICATION_BASIC_PASSWORD, password);
-            Proxy proxy = new Proxy(Proxy.Type.HTTP,new InetSocketAddress(getIP(),wmRuntimeInfo.getHttpPort()));
+            Proxy proxy = new Proxy(Proxy.Type.HTTP, new InetSocketAddress(getIP(), wmRuntimeInfo.getHttpPort()));
 
-            OkHttpClient client = new OkHttpClient(config, null,new Random(),proxy,null);
+            OkHttpClient client = new OkHttpClient(config, null, new Random(), proxy, null);
 
             HashMap<String, List<String>> headers = Maps.newHashMap();
             headers.put("Content-Type", Lists.newArrayList("text/plain"));
@@ -589,9 +589,9 @@ class OkHttpClientTest {
             String password = "password1";
             config.put("httpclient.authentication.basic.username", username);
             config.put("httpclient.authentication.basic.password", password);
-            Proxy proxy = new Proxy(Proxy.Type.HTTP,new InetSocketAddress(getIP(),wmRuntimeInfo.getHttpPort()));
+            Proxy proxy = new Proxy(Proxy.Type.HTTP, new InetSocketAddress(getIP(), wmRuntimeInfo.getHttpPort()));
 
-            OkHttpClient client = new OkHttpClient(config, null,new Random(),proxy,null);
+            OkHttpClient client = new OkHttpClient(config, null, new Random(), proxy, null);
 
             HashMap<String, List<String>> headers = Maps.newHashMap();
             headers.put("Content-Type", Lists.newArrayList("text/plain"));
@@ -692,7 +692,7 @@ class OkHttpClientTest {
             String password = "password1";
             config.put("httpclient.authentication.digest.username", username);
             config.put("httpclient.authentication.digest.password", password);
-            Proxy proxy = new Proxy(Proxy.Type.HTTP,new InetSocketAddress(getIP(),wmRuntimeInfo.getHttpPort()));
+            Proxy proxy = new Proxy(Proxy.Type.HTTP, new InetSocketAddress(getIP(), wmRuntimeInfo.getHttpPort()));
             Random random = mock(Random.class);
             byte[] randomBytes = {0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07};
             doAnswer(invocation -> {
@@ -702,7 +702,7 @@ class OkHttpClientTest {
                 return null;
             }).when(random).nextBytes(any(byte[].class));
 
-            OkHttpClient client = new OkHttpClient(config, null,random,proxy,null);
+            OkHttpClient client = new OkHttpClient(config, null, random, proxy, null);
 
             HashMap<String, List<String>> headers = Maps.newHashMap();
             headers.put("Content-Type", Lists.newArrayList("text/plain"));
@@ -861,14 +861,14 @@ class OkHttpClientTest {
 
             HashMap<String, Object> config = Maps.newHashMap();
 
-            List<ImmutablePair<Predicate<URI>,Proxy>> proxies = Lists.newArrayList();
+            List<ImmutablePair<Predicate<URI>, Proxy>> proxies = Lists.newArrayList();
             Pattern uriPattern = Pattern.compile(".*");
             Predicate<URI> predicate = uri -> uriPattern.matcher(uri.toString()).matches();
-            Proxy proxy = new Proxy(Proxy.Type.HTTP,new InetSocketAddress(getIP(),wmRuntimeInfo.getHttpPort()));
-            ImmutablePair<Predicate<URI>,Proxy> pair = new ImmutablePair(predicate,proxy);
+            Proxy proxy = new Proxy(Proxy.Type.HTTP, new InetSocketAddress(getIP(), wmRuntimeInfo.getHttpPort()));
+            ImmutablePair<Predicate<URI>, Proxy> pair = new ImmutablePair(predicate, proxy);
             proxies.add(pair);
             URIRegexProxySelector proxySelector = new URIRegexProxySelector(proxies);
-            OkHttpClient client = new OkHttpClient(config, null,new Random(),null,proxySelector);
+            OkHttpClient client = new OkHttpClient(config, null, new Random(), null, proxySelector);
 
             HashMap<String, List<String>> headers = Maps.newHashMap();
             headers.put("Content-Type", Lists.newArrayList("text/plain"));
@@ -899,7 +899,9 @@ class OkHttpClientTest {
             assertThat(httpExchange1.getHttpResponse().getStatusCode()).isEqualTo(200);
             HttpExchange httpExchange2 = client.call(httpRequest, new AtomicInteger(1)).get();
             assertThat(httpExchange2.getHttpResponse().getStatusCode()).isEqualTo(200);
-        }  @Test
+        }
+
+        @Test
         @DisplayName("test proxy selector without authentication with two proxies")
         void test_proxy_selector_without_authentication_two_proxies() throws ExecutionException, InterruptedException {
             String bodyResponse = "{\"result\":\"pong\"}";
@@ -912,22 +914,23 @@ class OkHttpClientTest {
             HashMap<String, Object> config = Maps.newHashMap();
 
 
-            List<ImmutablePair<Predicate<URI>,Proxy>> proxies = Lists.newArrayList();
-
+            List<ImmutablePair<Predicate<URI>, Proxy>> proxies = Lists.newArrayList();
+            //proxy non used in this test
             Pattern uriPattern = Pattern.compile("http://toto\\.com.*");
             Predicate<URI> predicate = uri -> uriPattern.matcher(uri.toString()).matches();
-            Proxy proxy = new Proxy(Proxy.Type.HTTP,new InetSocketAddress("111.222.888.999",5555));
-            ImmutablePair<Predicate<URI>,Proxy> pair = new ImmutablePair(predicate,proxy);
+            Proxy proxy = new Proxy(Proxy.Type.HTTP, new InetSocketAddress("111.222.888.999", 5555));
+            ImmutablePair<Predicate<URI>, Proxy> pair = new ImmutablePair(predicate, proxy);
             proxies.add(pair);
+            //proxy used in this test
             Pattern uriPattern2 = Pattern.compile("http://dummy\\.com.*");
             Predicate<URI> predicate2 = uri -> uriPattern2.matcher(uri.toString()).matches();
-            Proxy proxy2 = new Proxy(Proxy.Type.HTTP,new InetSocketAddress(getIP(),wmRuntimeInfo.getHttpPort()));
-            ImmutablePair<Predicate<URI>,Proxy> pair2 = new ImmutablePair(predicate2,proxy2);
+            Proxy proxy2 = new Proxy(Proxy.Type.HTTP, new InetSocketAddress(getIP(), wmRuntimeInfo.getHttpPort()));
+            ImmutablePair<Predicate<URI>, Proxy> pair2 = new ImmutablePair(predicate2, proxy2);
             proxies.add(pair2);
 
             URIRegexProxySelector proxySelector = new URIRegexProxySelector(proxies);
 
-            OkHttpClient client = new OkHttpClient(config, null,new Random(),null,proxySelector);
+            OkHttpClient client = new OkHttpClient(config, null, new Random(), null, proxySelector);
 
             HashMap<String, List<String>> headers = Maps.newHashMap();
             headers.put("Content-Type", Lists.newArrayList("text/plain"));
