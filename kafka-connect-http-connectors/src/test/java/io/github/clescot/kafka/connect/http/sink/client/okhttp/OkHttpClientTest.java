@@ -46,9 +46,10 @@ import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
 
 class OkHttpClientTest {
+    public static final String ACCESS_GRANTED_STATE = "access_granted";
+    public static final String UNAUTHORIZED_STATE = "Unauthorized";
+    public static final String PROXY_AUTHENTICATION_REQUIRED_STATE = "Proxy_Authentication_Required";
 
-    public static final String UNAUTHORIZED = "unauthorized";
-    public static final String ACCESS_GRANTED = "access granted";
     private final Logger LOGGER = LoggerFactory.getLogger(OkHttpClientTest.class);
 
     @RegisterExtension
@@ -204,7 +205,6 @@ class OkHttpClientTest {
 
     @Nested
     class TestAuthentication {
-
         @Test
         @DisplayName("test Basic Authentication : two calls")
         public void test_basic_authentication() throws ExecutionException, InterruptedException {
@@ -246,11 +246,11 @@ class OkHttpClientTest {
                                     .withHeader("WWW-Authenticate", "Basic realm=\"Access to staging site\"")
                                     .withStatus(401)
                                     .withStatusMessage("Unauthorized")
-                            ).willSetStateTo(UNAUTHORIZED)
+                            ).willSetStateTo(UNAUTHORIZED_STATE)
                     );
             wireMock
                     .register(WireMock.post("/ping").inScenario(scenario)
-                            .whenScenarioStateIs(UNAUTHORIZED)
+                            .whenScenarioStateIs(UNAUTHORIZED_STATE)
                             .withBasicAuth(username, password)
                             .withHeader("Content-Type", containing("text/plain"))
                             .withHeader("X-Correlation-ID", containing("e6de70d1-f222-46e8-b755-754880687822"))
@@ -259,11 +259,11 @@ class OkHttpClientTest {
                                     .withBody(bodyResponse)
                                     .withStatus(200)
                                     .withStatusMessage("OK")
-                            ).willSetStateTo(ACCESS_GRANTED)
+                            ).willSetStateTo(ACCESS_GRANTED_STATE)
                     );
             wireMock
                     .register(WireMock.post("/ping").inScenario(scenario)
-                            .whenScenarioStateIs(ACCESS_GRANTED)
+                            .whenScenarioStateIs(ACCESS_GRANTED_STATE)
                             .withBasicAuth(username, password)
                             .withHeader("Content-Type", containing("text/plain"))
                             .withHeader("X-Correlation-ID", containing("e6de70d1-f222-46e8-b755-754880687822"))
@@ -272,7 +272,7 @@ class OkHttpClientTest {
                                     .withBody(bodyResponse)
                                     .withStatus(200)
                                     .withStatusMessage("OK")
-                            ).willSetStateTo(ACCESS_GRANTED)
+                            ).willSetStateTo(ACCESS_GRANTED_STATE)
                     );
 
 
@@ -351,14 +351,14 @@ class OkHttpClientTest {
                                                     "opaque=\"5cdc029c403ebaf9f0171e9517f40e41\"")
                                     .withStatus(401)
                                     .withStatusMessage("Unauthorized")
-                            ).willSetStateTo(UNAUTHORIZED)
+                            ).willSetStateTo(UNAUTHORIZED_STATE)
                     );
 
             wireMock
                     .register(WireMock.post("/ping")
                             .withName("2")
                             .inScenario(scenario)
-                            .whenScenarioStateIs(UNAUTHORIZED)
+                            .whenScenarioStateIs(UNAUTHORIZED_STATE)
                             .withHeader("Authorization",
                                     equalTo("Digest " +
                                             "username=\"user1\", " +
@@ -380,14 +380,14 @@ class OkHttpClientTest {
                                     .withBody(bodyResponse)
                                     .withStatus(200)
                                     .withStatusMessage("OK")
-                            ).willSetStateTo(ACCESS_GRANTED)
+                            ).willSetStateTo(ACCESS_GRANTED_STATE)
                     );
 
             wireMock
                     .register(WireMock.post("/ping2")
                             .withName("3")
                             .inScenario(scenario)
-                            .whenScenarioStateIs(ACCESS_GRANTED)
+                            .whenScenarioStateIs(ACCESS_GRANTED_STATE)
                             .withHeader("Authorization",
                                     equalTo("Digest " +
                                             "username=\"user1\", " +
@@ -409,7 +409,7 @@ class OkHttpClientTest {
                                     .withBody(bodyResponse)
                                     .withStatus(200)
                                     .withStatusMessage("OK")
-                            ).willSetStateTo(ACCESS_GRANTED)
+                            ).willSetStateTo(ACCESS_GRANTED_STATE)
                     );
 
 
@@ -542,11 +542,11 @@ class OkHttpClientTest {
                                     .withBody(bodyResponse)
                                     .withStatus(200)
                                     .withStatusMessage("OK")
-                            ).willSetStateTo(ACCESS_GRANTED)
+                            ).willSetStateTo(ACCESS_GRANTED_STATE)
                     );
             wireMock
                     .register(WireMock.post("/ping").inScenario(scenario)
-                            .whenScenarioStateIs(ACCESS_GRANTED)
+                            .whenScenarioStateIs(ACCESS_GRANTED_STATE)
                             .withHeader("Content-Type", containing("text/plain"))
                             .withHeader("X-Correlation-ID", containing("e6de70d1-f222-46e8-b755-754880687822"))
                             .withHeader("X-Request-ID", containing("e6de70d1-f222-46e8-b755-11111"))
@@ -554,7 +554,7 @@ class OkHttpClientTest {
                                     .withBody(bodyResponse)
                                     .withStatus(200)
                                     .withStatusMessage("OK")
-                            ).willSetStateTo(ACCESS_GRANTED)
+                            ).willSetStateTo(ACCESS_GRANTED_STATE)
                     );
 
             HttpExchange httpExchange1 = client.call(httpRequest, new AtomicInteger(1)).get();
@@ -644,11 +644,11 @@ class OkHttpClientTest {
                                     .withBody(bodyResponse)
                                     .withStatus(200)
                                     .withStatusMessage("OK")
-                            ).willSetStateTo(ACCESS_GRANTED)
+                            ).willSetStateTo(ACCESS_GRANTED_STATE)
                     );
             wireMock
                     .register(WireMock.post("/ping").inScenario(scenario)
-                            .whenScenarioStateIs(ACCESS_GRANTED)
+                            .whenScenarioStateIs(ACCESS_GRANTED_STATE)
                             .withHeader("Proxy-Authorization", containing("Basic cHJveHl1c2VyMTpwcm94eXBhc3N3b3JkMQ=="))
                             .withBasicAuth(username, password)
                             .withHeader("Content-Type", containing("text/plain"))
@@ -658,7 +658,184 @@ class OkHttpClientTest {
                                     .withBody(bodyResponse)
                                     .withStatus(200)
                                     .withStatusMessage("OK")
-                            ).willSetStateTo(ACCESS_GRANTED)
+                            ).willSetStateTo(ACCESS_GRANTED_STATE)
+                    );
+
+            HttpExchange httpExchange1 = client.call(httpRequest, new AtomicInteger(1)).get();
+            assertThat(httpExchange1.getHttpResponse().getStatusCode()).isEqualTo(200);
+            HttpExchange httpExchange2 = client.call(httpRequest, new AtomicInteger(1)).get();
+            assertThat(httpExchange2.getHttpResponse().getStatusCode()).isEqualTo(200);
+
+        }
+
+        @Test
+        @DisplayName("test proxy with digest authentication and digest authentication on website")
+        void test_proxy_with_digest_authentication_and_digest_authentication_on_website() throws ExecutionException, InterruptedException {
+
+            String bodyResponse = "{\"result\":\"pong\"}";
+            WireMockRuntimeInfo wmRuntimeInfo = wmHttp.getRuntimeInfo();
+            WireMock wireMock = wmRuntimeInfo.getWireMock();
+            //the test will call the proxy to try to forward the request, but wiremock won't relay.
+            String baseUrl = "http://" + getIP() + ":" + wmHttp.getPort();
+            String url = baseUrl + "/ping";
+
+            HashMap<String, Object> config = Maps.newHashMap();
+
+            config.put(HTTP_CLIENT_PROXY_AUTHENTICATION_DIGEST_ACTIVATE, true);
+            String proxyUsername = "proxyuser1";
+            config.put(HTTP_CLIENT_PROXY_AUTHENTICATION_DIGEST_USERNAME, proxyUsername);
+            String proxyPassword = "proxypassword1";
+            config.put(HTTP_CLIENT_PROXY_AUTHENTICATION_DIGEST_PASSWORD, proxyPassword);
+
+            config.put("httpclient.authentication.digest.activate", true);
+            String username = "user1";
+            String password = "password1";
+            config.put("httpclient.authentication.digest.username", username);
+            config.put("httpclient.authentication.digest.password", password);
+            Proxy proxy = new Proxy(Proxy.Type.HTTP,new InetSocketAddress(getIP(),wmRuntimeInfo.getHttpPort()));
+            Random random = mock(Random.class);
+            byte[] randomBytes = {0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07};
+            doAnswer(invocation -> {
+                Object[] args = invocation.getArguments();
+                byte[] rnd = (byte[]) args[0];
+                System.arraycopy(randomBytes, 0, rnd, 0, randomBytes.length);
+                return null;
+            }).when(random).nextBytes(any(byte[].class));
+
+            OkHttpClient client = new OkHttpClient(config, null,random,proxy,null);
+
+            HashMap<String, List<String>> headers = Maps.newHashMap();
+            headers.put("Content-Type", Lists.newArrayList("text/plain"));
+            headers.put("X-Correlation-ID", Lists.newArrayList("e6de70d1-f222-46e8-b755-754880687822"));
+            headers.put("X-Request-ID", Lists.newArrayList("e6de70d1-f222-46e8-b755-11111"));
+            HttpRequest httpRequest = new HttpRequest(
+                    url,
+                    "GET",
+                    "STRING"
+            );
+            httpRequest.setHeaders(headers);
+
+
+            String scenario = "Proxy with authentication";
+
+            wireMock
+                    .register(WireMock.get("/ping").inScenario(scenario)
+                            .whenScenarioStateIs(STARTED)
+                            .willReturn(WireMock.aResponse()
+                                    .withHeader("Date", "Wed, 21 Oct 2022 05:21:23 GMT")
+                                    .withHeader("Proxy-Authenticate",
+                                            "Digest " +
+                                                    "realm=\"Access to proxy site\"," +
+                                                    "qop=\"auth,auth-int\"," +
+                                                    "nonce=\"dcd98b7102dd2f0e8b11d0f615bfb0c093\"," +
+                                                    "opaque=\"5cdc029c403ebaf9f0171e9517f40e41\"")
+                                    .withStatus(407)
+                                    .withStatusMessage("Proxy Authentication Required")
+                            ).willSetStateTo(PROXY_AUTHENTICATION_REQUIRED_STATE)
+                    );
+            wireMock
+                    .register(WireMock.get("/ping").inScenario(scenario)
+                            .whenScenarioStateIs(PROXY_AUTHENTICATION_REQUIRED_STATE)
+                            .withHeader("Proxy-Authorization",
+                                    equalTo("Digest " +
+                                            "username=\"proxyuser1\", " +
+                                            "realm=\"Access to proxy site\", " +
+                                            "nonce=\"dcd98b7102dd2f0e8b11d0f615bfb0c093\", " +
+                                            "uri=\"/ping\", " +
+                                            "response=\"e9920e89b8c768223a62dda432a33ab1\", " +
+                                            "qop=auth, " +
+                                            "nc=00000001, " +
+                                            "cnonce=\"0001020304050607\", " +
+                                            "algorithm=MD5, " +
+                                            "opaque=\"5cdc029c403ebaf9f0171e9517f40e41\""
+                                    )
+                            )
+                            .willReturn(WireMock.aResponse()
+                                    .withHeader("Date", "Wed, 21 Oct 2022 05:21:23 GMT")
+                                    .withHeader("WWW-Authenticate", "Digest " +
+                                            "realm=\"Access to web site\"," +
+                                            "qop=\"auth,auth-int\"," +
+                                            "nonce=\"aad55b7102dd2f0e8c99d123456fb0c011\"," +
+                                            "opaque=\"5caa029c403ebaf9f3333e9517f40e66\"")
+                                    .withStatus(401)
+                                    .withStatusMessage("Unauthorized")
+                            ).willSetStateTo(UNAUTHORIZED_STATE)
+                    );
+            wireMock
+                    .register(WireMock.get("/ping").inScenario(scenario)
+                            .whenScenarioStateIs(UNAUTHORIZED_STATE)
+                            .withHeader("Proxy-Authorization",
+                                    equalTo("Digest " +
+                                            "username=\"proxyuser1\", " +
+                                            "realm=\"Access to proxy site\", " +
+                                            "nonce=\"dcd98b7102dd2f0e8b11d0f615bfb0c093\", " +
+                                            "uri=\"/ping\", " +
+                                            "response=\"e9920e89b8c768223a62dda432a33ab1\", " +
+                                            "qop=auth, " +
+                                            "nc=00000001, " +
+                                            "cnonce=\"0001020304050607\", " +
+                                            "algorithm=MD5, " +
+                                            "opaque=\"5cdc029c403ebaf9f0171e9517f40e41\""
+                                    )
+                            )
+                            .withHeader("Authorization",
+                                    equalTo("Digest " +
+                                            "username=\"user1\", " +
+                                            "realm=\"Access to web site\", " +
+                                            "nonce=\"aad55b7102dd2f0e8c99d123456fb0c011\", " +
+                                            "uri=\"/ping\", " +
+                                            "response=\"cbe92e92eb135ebea5c11fdf80d728d4\", " +
+                                            "qop=auth, " +
+                                            "nc=00000001, " +
+                                            "cnonce=\"0001020304050607\", " +
+                                            "algorithm=MD5, " +
+                                            "opaque=\"5caa029c403ebaf9f3333e9517f40e66\""
+                                    )
+                            )
+                            .willReturn(WireMock.aResponse()
+                                    .withHeader("Content/Type", "text/plain")
+                                    .withBody(bodyResponse)
+                                    .withStatus(200)
+                                    .withStatusMessage("OK")
+                            ).willSetStateTo(ACCESS_GRANTED_STATE)
+                    );
+            wireMock
+                    .register(WireMock.get("/ping").inScenario(scenario)
+                            .whenScenarioStateIs(ACCESS_GRANTED_STATE)
+                            .withHeader("Proxy-Authorization",
+                                    equalTo("Digest " +
+                                            "username=\"proxyuser1\", " +
+                                            "realm=\"Access to proxy site\", " +
+                                            "nonce=\"dcd98b7102dd2f0e8b11d0f615bfb0c093\", " +
+                                            "uri=\"/ping\", " +
+                                            "response=\"ab6c6c6d8399935a747dba23f84d99e1\", " +
+                                            "qop=auth, " +
+                                            "nc=00000002, " +
+                                            "cnonce=\"0001020304050607\", " +
+                                            "algorithm=MD5, " +
+                                            "opaque=\"5cdc029c403ebaf9f0171e9517f40e41\""
+                                    )
+                            )
+                            .withHeader("Authorization",
+                                    equalTo("Digest " +
+                                            "username=\"user1\", " +
+                                            "realm=\"Access to web site\", " +
+                                            "nonce=\"aad55b7102dd2f0e8c99d123456fb0c011\", " +
+                                            "uri=\"/ping\", " +
+                                            "response=\"3855fd23f16597806e6df635bf4a40fb\", " +
+                                            "qop=auth, " +
+                                            "nc=00000002, " +
+                                            "cnonce=\"0001020304050607\", " +
+                                            "algorithm=MD5, " +
+                                            "opaque=\"5caa029c403ebaf9f3333e9517f40e66\""
+                                    )
+                            )
+                            .willReturn(WireMock.aResponse()
+                                    .withHeader("Content/Type", "text/plain")
+                                    .withBody(bodyResponse)
+                                    .withStatus(200)
+                                    .withStatusMessage("OK")
+                            ).willSetStateTo(ACCESS_GRANTED_STATE)
                     );
 
             HttpExchange httpExchange1 = client.call(httpRequest, new AtomicInteger(1)).get();
