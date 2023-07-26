@@ -1,7 +1,9 @@
 package io.github.clescot.kafka.connect.http.sink.client.okhttp;
 
 import com.github.tomakehurst.wiremock.client.WireMock;
+import com.github.tomakehurst.wiremock.core.Options;
 import com.github.tomakehurst.wiremock.core.WireMockConfiguration;
+import com.github.tomakehurst.wiremock.http.trafficlistener.ConsoleNotifyingWiremockNetworkTrafficListener;
 import com.github.tomakehurst.wiremock.junit5.WireMockExtension;
 import com.github.tomakehurst.wiremock.junit5.WireMockRuntimeInfo;
 import com.google.common.collect.Lists;
@@ -56,10 +58,10 @@ class OkHttpClientTest {
 
         wmHttp = WireMockExtension.newInstance()
                 .options(
-                        WireMockConfiguration.wireMockConfig()
-                                .dynamicPort()
-//                                .networkTrafficListener(new ConsoleNotifyingWiremockNetworkTrafficListener())
-
+                    WireMockConfiguration.wireMockConfig()
+                    .dynamicPort()
+                    .networkTrafficListener(new ConsoleNotifyingWiremockNetworkTrafficListener())
+                    .useChunkedTransferEncoding(Options.ChunkedEncodingPolicy.NEVER)
                 )
                 .build();
     }
@@ -155,14 +157,14 @@ class OkHttpClientTest {
     @Nested
     class Cache {
         @Test
-        public void test_activated_cache_with_file_type() {
+        void test_activated_cache_with_file_type() {
             HashMap<String, Object> config = Maps.newHashMap();
             config.put(OKHTTP_CACHE_ACTIVATE, "true");
             OkHttpClient client = new OkHttpClient(config, null,new Random(),null,null);
         }
 
         @Test
-        public void test_activated_cache_with_file_type_and_max_entries() {
+        void test_activated_cache_with_file_type_and_max_entries() {
             HashMap<String, Object> config = Maps.newHashMap();
             config.put(OKHTTP_CACHE_ACTIVATE, "true");
             config.put(OKHTTP_CACHE_MAX_SIZE, "50000");
@@ -170,7 +172,7 @@ class OkHttpClientTest {
         }
 
         @Test
-        public void test_activated_cache_with_file_type_and_max_entries_and_location() {
+        void test_activated_cache_with_file_type_and_max_entries_and_location() {
             HashMap<String, Object> config = Maps.newHashMap();
             config.put(OKHTTP_CACHE_ACTIVATE, "true");
             config.put(OKHTTP_CACHE_MAX_SIZE, "50000");
@@ -179,7 +181,7 @@ class OkHttpClientTest {
         }
 
         @Test
-        public void test_activated_cache_with_inmemory_type() {
+        void test_activated_cache_with_inmemory_type() {
             HashMap<String, Object> config = Maps.newHashMap();
             config.put(OKHTTP_CACHE_ACTIVATE, "true");
             config.put(OKHTTP_CACHE_TYPE, "inmemory");
@@ -187,14 +189,14 @@ class OkHttpClientTest {
         }
 
         @Test
-        public void test_inactivated_cache() {
+        void test_inactivated_cache() {
             HashMap<String, Object> config = Maps.newHashMap();
             config.put(OKHTTP_CACHE_ACTIVATE, "false");
             OkHttpClient client = new OkHttpClient(config, null,new Random(),null,null);
         }
 
         @Test
-        public void test_no_cache() {
+        void test_no_cache() {
             HashMap<String, Object> config = Maps.newHashMap();
             OkHttpClient client = new OkHttpClient(config, null,new Random(),null,null);
         }
