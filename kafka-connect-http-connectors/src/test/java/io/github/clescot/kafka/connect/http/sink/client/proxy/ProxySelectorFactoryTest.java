@@ -129,6 +129,16 @@ class ProxySelectorFactoryTest {
             ProxySelector proxySelector = proxySelectorFactory.build(config, new Random());
             assertThat(RandomProxySelector.class).isAssignableFrom(proxySelector.getClass());
         }
+        @Test
+        public void test_proxyselector_algorithm_set_to_round_robin() {
+            ProxySelectorFactory proxySelectorFactory = new ProxySelectorFactory();
+            HashMap<String, Object> config = Maps.newHashMap();
+            config.put(PROXY_SELECTOR_ALGORITHM,"roundrobin");
+            config.put(PROXYSELECTOR_PREFIX + HTTP_CLIENT_PREFIX +"0.hostname",getIP());
+            config.put(PROXYSELECTOR_PREFIX + HTTP_CLIENT_PREFIX +"0.port",wmHttp.getPort());
+            ProxySelector proxySelector = proxySelectorFactory.build(config, new Random());
+            assertThat(RoundRobinProxySelector.class).isAssignableFrom(proxySelector.getClass());
+        }
     }
     private String getIP() {
         try (DatagramSocket datagramSocket = new DatagramSocket()) {
