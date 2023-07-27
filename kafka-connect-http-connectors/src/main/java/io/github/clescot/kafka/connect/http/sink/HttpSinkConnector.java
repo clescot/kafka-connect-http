@@ -14,7 +14,7 @@ import java.util.Map;
 public class HttpSinkConnector extends SinkConnector {
 
     private HttpSinkConnectorConfig httpSinkConnectorConfig;
-
+    private static final VersionUtils VERSION_UTILS = new VersionUtils();
     @Override
     public void start(Map<String, String> settings) {
         Preconditions.checkNotNull(settings);
@@ -46,6 +46,6 @@ public class HttpSinkConnector extends SinkConnector {
 
     @Override
     public String version() {
-        return VersionUtils.version(this.getClass());
+        return VERSION_UTILS.getVersion();
     }
 }
