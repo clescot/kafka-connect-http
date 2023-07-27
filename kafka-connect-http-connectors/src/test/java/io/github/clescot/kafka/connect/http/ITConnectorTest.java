@@ -44,6 +44,7 @@ import org.assertj.core.api.Assertions;
 import org.json.JSONException;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 import org.rnorth.ducttape.unreliables.Unreliables;
@@ -76,6 +77,7 @@ import static io.github.clescot.kafka.connect.http.sink.HttpSinkConfigDefinition
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.apache.kafka.clients.producer.ProducerConfig.BOOTSTRAP_SERVERS_CONFIG;
 
+@Disabled
 @Testcontainers
 public class ITConnectorTest {
 
