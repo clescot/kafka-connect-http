@@ -80,8 +80,9 @@ class ProxySelectorFactoryTest {
             config.put(PROXYSELECTOR_PREFIX + HTTP_CLIENT_PREFIX +"0.port",wmHttp.getPort());
             config.put(PROXYSELECTOR_PREFIX + HTTP_CLIENT_PREFIX +"0.type", "HTTP");
             config.put(PROXYSELECTOR_PREFIX + HTTP_CLIENT_PREFIX +"0.uri.regex","http://dummy\\.com.*");
+            config.put(PROXY_SELECTOR_HTTP_CLIENT_NON_PROXY_HOSTS_URI_REGEX,"http(s?):\\/\\/test\\.net.*");
             ProxySelector proxySelector = proxySelectorFactory.build(config, new Random());
-            assertThat(URIRegexProxySelector.class).isAssignableFrom(proxySelector.getClass());
+            assertThat(ProxySelectorDecorator.class).isAssignableFrom(proxySelector.getClass());
         }
 
         @Test
