@@ -78,7 +78,7 @@ public class ITConnectorTest {
 
     private final static Logger LOGGER = LoggerFactory.getLogger(ITConnectorTest.class);
     private final static Slf4jLogConsumer logConsumer = new Slf4jLogConsumer(LOGGER).withSeparateOutputStreams();
-    public static final String CONFLUENT_VERSION = "7.3.1";
+    public static final String CONFLUENT_VERSION = "7.4.1";
     public static final int CUSTOM_AVAILABLE_PORT = 0;
     public static final int CACHE_CAPACITY = 100;
     public static final String HTTP_REQUESTS_AS_STRING = "http-requests-string";
@@ -91,6 +91,7 @@ public class ITConnectorTest {
     public static final String ARCHIVE_ZIP_FILE_NAME = "clescot-kafka-connect-http-archive.zip";
     public static final String CLIENT_TRUSTSTORE_JKS_PASSWORD = "Secret123!";
     private static final ObjectMapper MAPPER = new ObjectMapper().registerModule(new JavaTimeModule());
+    private static final VersionUtils VERSION_UTILS = new VersionUtils();
     @Container
     public static KafkaContainer kafkaContainer = new KafkaContainer(DockerImageName.parse("confluentinc/cp-kafka:" + CONFLUENT_VERSION))
             .withNetwork(network)
@@ -103,6 +104,8 @@ public class ITConnectorTest {
             .dependsOn(kafkaContainer)
             .withStartupTimeout(Duration.ofSeconds(90));
     private static final String FAKE_SSL_DOMAIN_NAME = "it.mycorp.com";
+
+
     @Container
     public static DebeziumContainer connectContainer = new DebeziumContainer("confluentinc/cp-kafka-connect:"+CONFLUENT_VERSION)
             .withFileSystemBind("target/http-connector", "/usr/local/share/kafka/plugins")
@@ -131,7 +134,7 @@ public class ITConnectorTest {
                     "org.apache.kafka.clients=ERROR")
             .withEnv("CONNECT_PLUGIN_PATH", "/usr/share/java/,/usr/share/confluent-hub-components/,/usr/local/share/kafka/plugins")
             .withCopyFileToContainer(MountableFile.forClasspathResource(CLIENT_TRUSTSTORE_JKS_FILENAME),"/opt/"+ CLIENT_TRUSTSTORE_JKS_FILENAME)
-            .withCopyFileToContainer(MountableFile.forClasspathResource("clescot-kafka-connect-http-archive-0.2.69-SNAPSHOT.zip"),"usr/share/confluent-hub-components/")
+            .withCopyFileToContainer(MountableFile.forClasspathResource("components/packages/clescot-kafka-connect-http-connectors-"+VERSION_UTILS.getVersion()+".zip"),"usr/share/confluent-hub-components/")
             .withExposedPorts(8083)
             .dependsOn(kafkaContainer, schemaRegistryContainer)
             .waitingFor(Wait.forHttp("/connector-plugins/"));
