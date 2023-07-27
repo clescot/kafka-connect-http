@@ -48,7 +48,6 @@ class ProxySelectorFactoryTest {
         public void test_empty_config_map() {
             ProxySelectorFactory proxySelectorFactory = new ProxySelectorFactory();
             Assertions.assertThrows(IllegalArgumentException.class,()->proxySelectorFactory.build(Maps.newHashMap(), new Random()));
-
         }
 
         @Test
