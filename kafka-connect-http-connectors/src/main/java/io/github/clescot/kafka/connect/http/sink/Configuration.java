@@ -279,7 +279,10 @@ public class Configuration {
         }
 
         ProxySelectorFactory proxySelectorFactory = new ProxySelectorFactory();
-        ProxySelector proxySelector = proxySelectorFactory.build(config, random);
+        ProxySelector proxySelector = null;
+        if(config.get(PROXY_SELECTOR_HTTP_CLIENT_0_HOSTNAME) != null) {
+            proxySelector = proxySelectorFactory.build(config, random);
+        }
         return httpClientFactory.build(config, executorService, random,proxy,proxySelector);
     }
 
