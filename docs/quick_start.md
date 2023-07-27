@@ -37,6 +37,8 @@ This configuration publish HTTP results to an in memory queue.
 }
 ```
 
+>Warning: when the option `publish.to.in.memory.queue` is set to `true`, a source connector on the same kafka connect instance is mandatory. 
+
 ### Source Connector configuration
 
 This configuration listen to the in memory queue, to publish HTTP results in the configured `success.topic` or `error.topic`topic,
