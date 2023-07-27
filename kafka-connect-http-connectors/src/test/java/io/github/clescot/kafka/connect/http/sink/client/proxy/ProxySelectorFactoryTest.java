@@ -11,10 +11,9 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
 import java.io.IOException;
-import java.net.DatagramSocket;
-import java.net.InetAddress;
-import java.net.ProxySelector;
+import java.net.*;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Random;
 
 import static io.github.clescot.kafka.connect.http.sink.HttpSinkConfigDefinition.*;
@@ -71,7 +70,7 @@ class ProxySelectorFactoryTest {
             assertThat(URIRegexProxySelector.class).isAssignableFrom(proxySelector.getClass());
         }
         @Test
-        public void test_proxyselector_algorithm_set_to_uriregex_with_hostname_and_regex_with_non_proxy_hosts() {
+        public void test_proxyselector_algorithm_set_to_uriregex_with_hostname_and_regex_with_non_proxy_hosts() throws URISyntaxException {
             ProxySelectorFactory proxySelectorFactory = new ProxySelectorFactory();
             HashMap<String, Object> config = Maps.newHashMap();
             config.put(PROXY_SELECTOR_ALGORITHM,"uriregex");
@@ -82,6 +81,19 @@ class ProxySelectorFactoryTest {
             config.put(PROXY_SELECTOR_HTTP_CLIENT_NON_PROXY_HOSTS_URI_REGEX,"http(s?):\\/\\/test\\.net.*");
             ProxySelector proxySelector = proxySelectorFactory.build(config, new Random());
             assertThat(ProxySelectorDecorator.class).isAssignableFrom(proxySelector.getClass());
+
+            //proxy url
+            List<Proxy> proxies = proxySelector.select(new URI("http://dummy.com/ping"));
+            assertThat(proxies).hasSize(1);
+            Proxy proxy = proxies.get(0);
+            assertThat(proxy.type()).isEqualTo(Proxy.Type.HTTP);
+            assertThat(proxy.address().toString()).isEqualTo("/"+getIP()+":"+wmHttp.getPort());
+
+            //non proxy url
+            List<Proxy> proxies2 = proxySelector.select(new URI("https://test.net/stuff"));
+            assertThat(proxies2).hasSize(1);
+            Proxy proxy2 = proxies2.get(0);
+            assertThat(proxy2).isEqualTo(Proxy.NO_PROXY);
         }
 
         @Test
