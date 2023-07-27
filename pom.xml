@@ -47,7 +47,6 @@
         <json.assert.version>1.5.1</json.assert.version>
         <junit.version>5.10.0</junit.version>
         <logback.version>1.4.8</logback.version>
-        <maven.build.timestamp.format>yyyy-MM-dd'T'HH:mm:ss'Z'</maven.build.timestamp.format>
         <maven.compiler.source>11</maven.compiler.source>
         <maven.compiler.target>11</maven.compiler.target>
         <mockito.version>5.4.0</mockito.version>
