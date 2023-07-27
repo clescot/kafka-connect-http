@@ -248,7 +248,6 @@
                                 <tag>http</tag>
                             </tags>
                             <title>Kafka Connect HTTP Sink and Source</title>
-
                         </configuration>
                     </execution>
                 </executions>
@@ -275,44 +274,54 @@
                     </execution>
                 </executions>
             </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-failsafe-plugin</artifactId>
-                <version>3.1.2</version>
-                <executions>
-                    <execution>
-                        <goals>
-                            <goal>integration-test</goal>
-                            <goal>verify</goal>
-                        </goals>
-                    </execution>
-                </executions>
-                <configuration>
-                    <include>**/IT*.java</include>
-                </configuration>
-            </plugin>
-            <plugin>
-                <groupId>com.spotify</groupId>
-                <artifactId>dockerfile-maven-plugin</artifactId>
-                <version>1.4.13</version>
-                <executions>
-                    <execution>
-                        <phase>pre-integration-test</phase>
-                        <id>default</id>
-                        <goals>
-                            <goal>build</goal>
-                        </goals>
-                    </execution>
-                </executions>
-                <configuration>
-                    <dockerfile>src/test/resources/Dockerfile</dockerfile>
-                    <repository>clescot/kafka-connect-http</repository>
-                    <tag>${project.version}</tag>
-                    <buildArgs>
-                        <ZIP_FILE>clescot-${project.build.finalName}.zip</ZIP_FILE>
-                    </buildArgs>
-                </configuration>
-            </plugin>
+
         </plugins>
     </build>
+    <profiles>
+        <profile>
+            <id>integration-tests</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-failsafe-plugin</artifactId>
+                        <version>3.1.2</version>
+                        <executions>
+                            <execution>
+                                <goals>
+                                    <goal>integration-test</goal>
+                                    <goal>verify</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                        <configuration>
+                            <include>**/IT*.java</include>
+                        </configuration>
+                    </plugin>
+                    <plugin>
+                        <groupId>com.spotify</groupId>
+                        <artifactId>dockerfile-maven-plugin</artifactId>
+                        <version>1.4.13</version>
+                        <executions>
+                            <execution>
+                                <phase>pre-integration-test</phase>
+                                <id>default</id>
+                                <goals>
+                                    <goal>build</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                        <configuration>
+                            <dockerfile>src/test/resources/Dockerfile</dockerfile>
+                            <repository>clescot/kafka-connect-http</repository>
+                            <tag>${project.version}</tag>
+                            <buildArgs>
+                                <ZIP_FILE>clescot-${project.build.finalName}.zip</ZIP_FILE>
+                            </buildArgs>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+    </profiles>
 </project>
