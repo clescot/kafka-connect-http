@@ -69,7 +69,19 @@ class ProxySelectorFactoryTest {
             config.put(PROXYSELECTOR_PREFIX + HTTP_CLIENT_PREFIX +"0.type", "HTTP");
             config.put(PROXYSELECTOR_PREFIX + HTTP_CLIENT_PREFIX +"0.uri.regex","http://dummy\\.com.*");
             ProxySelector proxySelector = proxySelectorFactory.build(config, new Random());
-            assertThat(URIRegexProxySelector.class.isAssignableFrom(proxySelector.getClass()));
+            assertThat(URIRegexProxySelector.class).isAssignableFrom(proxySelector.getClass());
+        }
+        @Test
+        public void test_proxyselector_algorithm_set_to_uriregex_with_hostname_and_regex_with_non_proxy_hosts() {
+            ProxySelectorFactory proxySelectorFactory = new ProxySelectorFactory();
+            HashMap<String, Object> config = Maps.newHashMap();
+            config.put(PROXY_SELECTOR_ALGORITHM,"uriregex");
+            config.put(PROXYSELECTOR_PREFIX + HTTP_CLIENT_PREFIX +"0.hostname",getIP());
+            config.put(PROXYSELECTOR_PREFIX + HTTP_CLIENT_PREFIX +"0.port",wmHttp.getPort());
+            config.put(PROXYSELECTOR_PREFIX + HTTP_CLIENT_PREFIX +"0.type", "HTTP");
+            config.put(PROXYSELECTOR_PREFIX + HTTP_CLIENT_PREFIX +"0.uri.regex","http://dummy\\.com.*");
+            ProxySelector proxySelector = proxySelectorFactory.build(config, new Random());
+            assertThat(URIRegexProxySelector.class).isAssignableFrom(proxySelector.getClass());
         }
 
         @Test
@@ -81,7 +93,7 @@ class ProxySelectorFactoryTest {
             config.put(PROXYSELECTOR_PREFIX + HTTP_CLIENT_PREFIX +"0.port",wmHttp.getPort());
             config.put(PROXYSELECTOR_PREFIX + HTTP_CLIENT_PREFIX +"0.weight",20);
             ProxySelector proxySelector = proxySelectorFactory.build(config, new Random());
-            assertThat(WeightedRandomProxySelector.class.isAssignableFrom(proxySelector.getClass()));
+            assertThat(WeightedRandomProxySelector.class).isAssignableFrom(proxySelector.getClass());
         }
 
         @Test
@@ -92,7 +104,7 @@ class ProxySelectorFactoryTest {
             config.put(PROXYSELECTOR_PREFIX + HTTP_CLIENT_PREFIX +"0.hostname",getIP());
             config.put(PROXYSELECTOR_PREFIX + HTTP_CLIENT_PREFIX +"0.port",wmHttp.getPort());
             ProxySelector proxySelector = proxySelectorFactory.build(config, new Random());
-            assertThat(HostHashProxySelector.class.isAssignableFrom(proxySelector.getClass()));
+            assertThat(HostHashProxySelector.class).isAssignableFrom(proxySelector.getClass());
         }
 
         @Test
@@ -103,7 +115,7 @@ class ProxySelectorFactoryTest {
             config.put(PROXYSELECTOR_PREFIX + HTTP_CLIENT_PREFIX +"0.hostname",getIP());
             config.put(PROXYSELECTOR_PREFIX + HTTP_CLIENT_PREFIX +"0.port",wmHttp.getPort());
             ProxySelector proxySelector = proxySelectorFactory.build(config, new Random());
-            assertThat(RandomProxySelector.class.isAssignableFrom(proxySelector.getClass()));
+            assertThat(RandomProxySelector.class).isAssignableFrom(proxySelector.getClass());
         }
     }
     private String getIP() {
