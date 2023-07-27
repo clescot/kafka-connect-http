@@ -5,13 +5,20 @@ import io.github.clescot.kafka.connect.http.sink.client.HttpClientFactory;
 import okhttp3.Request;
 import okhttp3.Response;
 
+import java.net.Proxy;
+import java.net.ProxySelector;
 import java.util.Map;
+import java.util.Random;
 import java.util.concurrent.ExecutorService;
 
 public class OkHttpClientFactory implements HttpClientFactory<Request, Response> {
     @Override
-    public HttpClient<Request, Response> build(Map<String, Object> config, ExecutorService executorService) {
-        return new OkHttpClient(config,executorService);
+    public HttpClient<Request, Response> build(Map<String, Object> config,
+                                               ExecutorService executorService,
+                                               Random random,
+                                               Proxy proxy,
+                                               ProxySelector proxySelector) {
+        return new OkHttpClient(config,executorService,random,proxy,proxySelector);
     }
 
 }

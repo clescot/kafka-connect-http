@@ -24,12 +24,12 @@ public class HttpSourceTask extends SourceTask {
     private String queueName;
     private HttpSourceConnectorConfig sourceConfig;
     private final static Logger LOGGER = LoggerFactory.getLogger(HttpSourceTask.class);
-
+    private static final VersionUtils VERSION_UTILS = new VersionUtils();
 
 
     @Override
     public String version() {
-        return VersionUtils.version(this.getClass());
+        return VERSION_UTILS.getVersion();
     }
 
     @Override

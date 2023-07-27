@@ -42,8 +42,11 @@ The main problem with HTTP interactions, is its request/response nature.
   you need to define a low level kafka client which will translate HTTP responses as kafka messages :
 - you duplicate the Kafka configuration, with some low level and high level configurations mixed.
   Your configuration can became complex...
-  This strategy can work if you don't bother with HTTP responses (but who don't ?), and don't configure a low level kafka client.
-  It can also work if the connector handle all the gory details of the low level kafka client for you, but maybe with a more complex code.
+  This strategy can work : 
+  - if you don't bother with HTTP responses (but who don't ?), and don't configure a low level kafka client.
+    
+  - It can also work if the connector handle all the gory details of the low level kafka client for you with a more internal complex code,
+    and you **won't have the ability to use some SMT** (Single Message Transformations) out of the box on the Source side (low level kafka client side). 
 
 - *Multiple connectors to solve the problem ?*
 

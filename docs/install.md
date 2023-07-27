@@ -24,7 +24,7 @@ For example, `clescot-kafka-connect-http-connectors-0.6.2.zip`.
 
 # check the connector installation
 
-- you can check the installation, when you run your container, by listing the connectors installed via (the plugin REST API)[https://docs.confluent.io/platform/current/connect/references/restapi.html#connector-plugins] :
+- you can check the installation, when you run your container, by listing the connectors installed via [the plugin REST API](https://docs.confluent.io/platform/current/connect/references/restapi.html#connector-plugins) :
      ```
      GET /connector-plugins/ HTTP/1.1
      Host: connect.example.com

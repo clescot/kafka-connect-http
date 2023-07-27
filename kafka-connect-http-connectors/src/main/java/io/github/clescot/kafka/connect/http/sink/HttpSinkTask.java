@@ -37,7 +37,7 @@ import java.util.stream.Collectors;
 public class HttpSinkTask extends SinkTask {
     private static final Logger LOGGER = LoggerFactory.getLogger(HttpSinkTask.class);
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper().registerModule(new JavaTimeModule());
-
+    private static final VersionUtils VERSION_UTILS = new VersionUtils();
 
     public static final String SINK_RECORD_HAS_GOT_A_NULL_VALUE = "sinkRecord has got a 'null' value";
     public static final String DEFAULT_CONFIGURATION_ID = "default";
@@ -56,7 +56,7 @@ public class HttpSinkTask extends SinkTask {
 
     @Override
     public String version() {
-        return VersionUtils.version(this.getClass());
+        return VERSION_UTILS.getVersion();
     }
 
     /**

@@ -43,8 +43,6 @@ public class AHCHttpClient extends AbstractHttpClient<Request, Response> {
     private static final Logger LOGGER = LoggerFactory.getLogger(AHCHttpClient.class);
     public static final String PROXY_PREFIX = "proxy-";
     public static final String REALM_PREFIX = "realm-";
-    private static final String WS_PROXY_HOST = "host";
-    private static final String WS_PROXY_PORT = "port";
     private static final String WS_PROXY_SECURED_PORT = "secured-port";
     private static final String WS_PROXY_NON_PROXY_HOSTS = "non-proxy-hosts";
     private static final String WS_PROXY_TYPE = "type";
@@ -161,9 +159,9 @@ public class AHCHttpClient extends AbstractHttpClient<Request, Response> {
 
     private void defineProxyServer(RequestBuilder requestBuilder, Map<String, String> proxyHeaders) {
         //proxy stuff
-        String proxyHost = proxyHeaders.get(WS_PROXY_HOST);
+        String proxyHost = proxyHeaders.get(PROXY_HTTP_CLIENT_HOSTNAME);
         if (proxyHost != null) {
-            int proxyPort = Integer.parseInt(proxyHeaders.get(WS_PROXY_PORT));
+            int proxyPort = Integer.parseInt(proxyHeaders.get(PROXY_HTTP_CLIENT_PORT));
             ProxyServer.Builder proxyBuilder = new ProxyServer.Builder(proxyHost, proxyPort);
 
             String securedPortAsString = proxyHeaders.get(WS_PROXY_SECURED_PORT);

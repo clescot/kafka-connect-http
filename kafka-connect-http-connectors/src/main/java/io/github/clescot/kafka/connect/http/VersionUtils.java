@@ -1,20 +1,23 @@
 package io.github.clescot.kafka.connect.http;
 
-import com.google.common.base.Strings;
+import org.apache.kafka.connect.errors.ConnectException;
+
+import java.io.IOException;
+import java.util.Properties;
 
 public class VersionUtils {
 
-        private VersionUtils() {
-            // Class with static methods
+
+    public String getVersion(){
+        final Properties properties = new Properties();
+        try {
+            properties.load(VersionUtils.class.getClassLoader().getResourceAsStream("project.properties"));
+        } catch (IOException e) {
+            throw new ConnectException(e);
         }
+        return (String) properties.get("version");
+    }
 
-        public static String version(Class<?> cls) {
-            String result = cls.getPackage().getImplementationVersion();
 
-            if (Strings.isNullOrEmpty(result)) {
-                result = "0.0.0";
-            }
 
-            return result;
-        }
 }

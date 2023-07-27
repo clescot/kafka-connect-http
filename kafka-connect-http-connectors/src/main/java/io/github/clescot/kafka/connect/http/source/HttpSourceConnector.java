@@ -10,7 +10,7 @@ import java.util.List;
 import java.util.Map;
 
 public class HttpSourceConnector extends SourceConnector {
-
+    private static final VersionUtils VERSION_UTILS = new VersionUtils();
     private HttpSourceConnectorConfig httpSourceConnectorConfig;
     @Override
     public void start(Map<String, String> props) {
@@ -44,6 +44,6 @@ public class HttpSourceConnector extends SourceConnector {
 
     @Override
     public String version() {
-        return VersionUtils.version(this.getClass());
+        return VERSION_UTILS.getVersion();
     }
 }

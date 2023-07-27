@@ -4,7 +4,7 @@
     <parent>
         <groupId>io.github.clescot</groupId>
         <artifactId>kafka-connect-http</artifactId>
-        <version>0.6.13-SNAPSHOT</version>
+        <version>0.7.0-SNAPSHOT</version>
     </parent>
     <artifactId>kafka-connect-http-connectors</artifactId>
     <packaging>jar</packaging>
@@ -14,7 +14,7 @@
             <groupId>io.github.clescot</groupId>
             <artifactId>kafka-connect-http-core</artifactId>
             <scope>compile</scope>
-            <version>0.6.13-SNAPSHOT</version>
+            <version>0.7.0-SNAPSHOT</version>
         </dependency>
         <dependency>
             <groupId>org.asynchttpclient</groupId>
@@ -112,6 +112,11 @@
             <artifactId>okhttp-digest</artifactId>
             <version>3.0.1</version>
         </dependency>
+        <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-lang3</artifactId>
+            <version>3.12.0</version>
+        </dependency>
 
 
 
@@ -193,6 +198,12 @@
 
     </dependencies>
     <build>
+        <resources>
+            <resource>
+                <directory>src/main/resources</directory>
+                <filtering>true</filtering>
+            </resource>
+        </resources>
         <plugins>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
@@ -220,24 +231,25 @@
                             <goal>kafka-connect</goal>
                         </goals>
                         <configuration>
-                            <title>Kafka Connect HTTP Sink and Source</title>
-                            <documentationUrl>https://github.com/clescot/kafka-connect-http#readme</documentationUrl>
-                            <description>The Http Sink connector permits from Kafka to interact with HTTP servers, and optionally the Source Connector permits to store in Kafka HTTP interactions details.</description>
-                            <supportProviderName>Charles Lescot</supportProviderName>
-                            <supportSummary>Support is provided as best effort only. Please register any issues in the github project.</supportSummary>
-                            <supportUrl>https://github.com/clescot/kafka-connect-http/issues</supportUrl>
-                            <sourceUrl>https://github.com/clescot/kafka-connect-http</sourceUrl>
-                            <ownerUsername>clescot</ownerUsername>
-                            <ownerType>user</ownerType>
-                            <ownerName>Charles Lescot</ownerName>
-                            <ownerUrl>https://github.com/clescot</ownerUrl>
                             <componentTypes>
                                 <componentType>sink</componentType>
                                 <componentType>source</componentType>
                             </componentTypes>
+                            <documentationUrl>https://github.com/clescot/kafka-connect-http#readme</documentationUrl>
+                            <description>The Http Sink connector permits from Kafka to interact with HTTP servers, and optionally the Source Connector permits to store in Kafka HTTP interactions details.</description>
+                            <ownerUsername>clescot</ownerUsername>
+                            <ownerType>user</ownerType>
+                            <ownerName>Charles Lescot</ownerName>
+                            <ownerUrl>https://github.com/clescot</ownerUrl>
+                            <supportProviderName>Charles Lescot</supportProviderName>
+                            <supportSummary>Support is provided as best effort only. Please register any issues in the github project.</supportSummary>
+                            <supportUrl>https://github.com/clescot/kafka-connect-http/issues</supportUrl>
+                            <sourceUrl>https://github.com/clescot/kafka-connect-http</sourceUrl>
                             <tags>
                                 <tag>http</tag>
                             </tags>
+                            <title>Kafka Connect HTTP Sink and Source</title>
+
                         </configuration>
                     </execution>
                 </executions>
@@ -263,6 +275,44 @@
                         </configuration>
                     </execution>
                 </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-failsafe-plugin</artifactId>
+                <version>3.1.2</version>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>integration-test</goal>
+                            <goal>verify</goal>
+                        </goals>
+                    </execution>
+                </executions>
+                <configuration>
+                    <include>**/IT*.java</include>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>com.spotify</groupId>
+                <artifactId>dockerfile-maven-plugin</artifactId>
+                <version>1.4.13</version>
+                <executions>
+                    <execution>
+                        <phase>pre-integration-test</phase>
+                        <id>default</id>
+                        <goals>
+                            <goal>build</goal>
+                        </goals>
+                    </execution>
+                </executions>
+                <configuration>
+                    <dockerfile>src/test/resources/Dockerfile</dockerfile>
+                    <repository>clescot/kafka-connect-http</repository>
+                    <tag>${project.version}</tag>
+                    <buildArgs>
+                        <ZIP_FILE>clescot-${project.build.finalName}.zip</ZIP_FILE>
+                    </buildArgs>
+                </configuration>
             </plugin>
         </plugins>
     </build>
