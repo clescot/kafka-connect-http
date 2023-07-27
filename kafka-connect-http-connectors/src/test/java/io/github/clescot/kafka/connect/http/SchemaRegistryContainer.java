@@ -10,7 +10,7 @@ import org.testcontainers.containers.Network;
 
 public class SchemaRegistryContainer extends GenericContainer<SchemaRegistryContainer> {
 
-    private static final String SCHEMA_REGISTRY_DOCKER_IMAGE_NAME = "confluentinc/cp-schema-registry:7.3.0";
+    private static final String SCHEMA_REGISTRY_DOCKER_IMAGE_NAME = "confluentinc/cp-schema-registry:7.4.1";
     private static final Integer SCHEMA_REGISTRY_EXPOSED_PORT = 8081;
     public static final Integer KAFKA_EXPOSED_PORT = 9092;
 
