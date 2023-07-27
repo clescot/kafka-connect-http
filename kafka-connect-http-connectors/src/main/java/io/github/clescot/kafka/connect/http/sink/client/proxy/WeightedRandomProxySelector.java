@@ -1,5 +1,7 @@
 package io.github.clescot.kafka.connect.http.sink.client.proxy;
 
+import com.google.common.base.Preconditions;
+
 import java.io.IOException;
 import java.net.Proxy;
 import java.net.ProxySelector;
@@ -16,6 +18,9 @@ public class WeightedRandomProxySelector extends ProxySelector {
     private final int totalWeight;
 
     public WeightedRandomProxySelector(NavigableMap<Integer,Proxy> proxies, Random random) {
+        Preconditions.checkNotNull(proxies,"proxies list must not be null");
+        Preconditions.checkArgument(!proxies.isEmpty(),"(weight,proxies) list must not be empty");
+        Preconditions.checkNotNull(random,"random must not be null");
         this.proxies = proxies;
         this.random = random;
         this.totalWeight = proxies.keySet().stream().reduce(0, Integer::sum);

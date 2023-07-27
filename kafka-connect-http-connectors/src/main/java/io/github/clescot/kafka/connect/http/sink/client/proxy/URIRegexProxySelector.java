@@ -1,6 +1,7 @@
 package io.github.clescot.kafka.connect.http.sink.client.proxy;
 
 
+import com.google.common.base.Preconditions;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 
 import java.io.IOException;
@@ -17,6 +18,8 @@ public class URIRegexProxySelector extends ProxySelector {
     private final List<ImmutablePair<Predicate<URI>, Proxy>> proxies;
 
     public URIRegexProxySelector(List<ImmutablePair<Predicate<URI>,Proxy>> proxies) {
+        Preconditions.checkNotNull(proxies,"proxies list must not be null");
+        Preconditions.checkArgument(!proxies.isEmpty(),"proxies list must not be empty");
         this.proxies = proxies;
     }
 
