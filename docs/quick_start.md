@@ -25,7 +25,6 @@ This configuration does NOT publish HTTP results to an in memory queue.
 
 This configuration publish HTTP results to an in memory queue.
 
-- 
 ```json 
 {
     "name": "my-http-sink-connector",
