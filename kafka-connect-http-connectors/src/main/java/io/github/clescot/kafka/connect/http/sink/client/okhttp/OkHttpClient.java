@@ -158,14 +158,17 @@ public class OkHttpClient extends AbstractHttpClient<Request, Response> {
     private void configureConnectionPool(Map<String, Object> config, okhttp3.OkHttpClient.Builder httpClientBuilder) {
         String connectionPoolScope = config.getOrDefault(OKHTTP_CONNECTION_POOL_SCOPE, "instance").toString();
         ConnectionPool connectionPool = null;
-        if(!"static".equalsIgnoreCase(connectionPoolScope)){
-            connectionPool = buildConnectionPool(config, connectionPool);
-        }else{
-            if(OkHttpClient.connectionPool ==null){
+        if("static".equalsIgnoreCase(connectionPoolScope)){
+            if(getSharedConnectionPool()==null){
                 connectionPool = buildConnectionPool(config, connectionPool);
+                setSharedConnectionPool(connectionPool);
+            }else{
+                connectionPool = getSharedConnectionPool();
             }
-            setSharedConnectionPool(connectionPool);
+        }else{
+           connectionPool = buildConnectionPool(config, connectionPool);
         }
+
         if(connectionPool!=null){
             httpClientBuilder.connectionPool(connectionPool);
         }
@@ -174,6 +177,9 @@ public class OkHttpClient extends AbstractHttpClient<Request, Response> {
 
     private static void setSharedConnectionPool(ConnectionPool connectionPool){
         OkHttpClient.connectionPool = connectionPool;
+    }
+    private static ConnectionPool getSharedConnectionPool(){
+        return OkHttpClient.connectionPool;
     }
 
     private static ConnectionPool buildConnectionPool(Map<String, Object> config, ConnectionPool connectionPool) {
@@ -315,4 +321,11 @@ public class OkHttpClient extends AbstractHttpClient<Request, Response> {
         return cf;
     }
 
+    /**
+     * for tests only.
+     * @return
+     */
+    protected okhttp3.OkHttpClient getInternalClient(){
+        return client;
+    }
 }
