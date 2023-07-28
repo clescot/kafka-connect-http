@@ -77,7 +77,7 @@ public class HttpSinkConfigDefinition {
 
     public static final String RATE_LIMITER_SCOPE = DEFAULT_RATE_LIMITER_PREFIX+"scope";
     public static final String CONFIG_DEFAULT_RATE_LIMITER_SCOPE = DEFAULT_CONFIGURATION_PREFIX + RATE_LIMITER_SCOPE;
-    public static final String CONFIG_DEFAULT_RATE_LIMITER_SCOPE_DOC = "scope of the '"+ CONFIG_DEFAULT_RATE_LIMITER_SCOPE +"' parameter. can be either 'instance' (i.e a rate limiter per configuration in the connector instance),  or 'static' (a rate limiter per configuration shared with all connectors instances in the same Java Virtual Machine.";
+    public static final String CONFIG_DEFAULT_RATE_LIMITER_SCOPE_DOC = "scope of the '"+ CONFIG_DEFAULT_RATE_LIMITER_SCOPE +"' parameter. can be either 'instance' (i.e a rate limiter per configuration in the connector instance),  or 'static' (a rate limiter per configuration id shared with all connectors instances in the same Java Virtual Machine.";
 
     public static final long DEFAULT_RATE_LIMITER_PERIOD_IN_MS_VALUE = 1000L;
     public static final long DEFAULT_RATE_LIMITER_MAX_EXECUTIONS_VALUE = 1L;
@@ -332,11 +332,15 @@ public class HttpSinkConfigDefinition {
     //protocols to use, in order of preference,divided by a comma.supported protocols in okhttp: HTTP_1_1,HTTP_2,H2_PRIOR_KNOWLEDGE,QUIC
     public static final String OKHTTP_PROTOCOLS = OKHTTP_PREFIX+"protocols";
     public static final String CONFIG_DEFAULT_OKHTTP_PROTOCOLS =DEFAULT_CONFIGURATION_PREFIX+ OKHTTP_PROTOCOLS;
-    public static final String CONFIG_DEFAULT_OKHTTP_PROTOCOLS_DOC ="the protocols to use, in order of preference. If the list contains Protocol.H2_PRIOR_KNOWLEDGE then that must be the only protocol and HTTPS URLs will not be supported. Otherwise the list must contain Protocol.HTTP_1_1. The list must not contain null or Protocol.HTTP_1_0.";
+    public static final String CONFIG_DEFAULT_OKHTTP_PROTOCOLS_DOC ="the protocols to use, in order of preference. If the list contains 'H2_PRIOR_KNOWLEDGE' then that must be the only protocol and HTTPS URLs will not be supported. Otherwise the list must contain 'HTTP_1_1'. The list must not contain null or 'HTTP_1_0'.";
 
     public static final String OKHTTP_CONNECTION_POOL_KEEP_ALIVE_DURATION = OKHTTP_PREFIX+"connection.pool.keep.alive.duration";
     public static final String CONFIG_DEFAULT_OKHTTP_CONNECTION_POOL_KEEP_ALIVE_DURATION = DEFAULT_CONFIGURATION_PREFIX+OKHTTP_CONNECTION_POOL_KEEP_ALIVE_DURATION;
     public static final String CONFIG_DEFAULT_OKHTTP_CONNECTION_POOL_KEEP_ALIVE_DURATION_DOC = "Time in milliseconds to keep the connection alive in the pool before closing it. Default is 0 (no connection pool).";
+
+    public static final String OKHTTP_CONNECTION_POOL_SCOPE = OKHTTP_PREFIX+"connection.pool.scope";
+    public static final String CONFIG_DEFAULT_OKHTTP_CONNECTION_POOL_SCOPE = DEFAULT_CONFIGURATION_PREFIX+OKHTTP_CONNECTION_POOL_SCOPE;
+    public static final String CONFIG_DEFAULT_OKHTTP_CONNECTION_POOL_SCOPE_DOC ="scope of the '"+ CONFIG_DEFAULT_OKHTTP_CONNECTION_POOL_SCOPE +"' parameter. can be either 'instance' (i.e a connection pool per configuration in the connector instance),  or 'static' (a connection pool shared with all connectors instances in the same Java Virtual Machine).";
 
     public static final String OKHTTP_CONNECTION_POOL_MAX_IDLE_CONNECTIONS = OKHTTP_PREFIX+"connection.pool.max.idle.connections";
     public static final String CONFIG_DEFAULT_OKHTTP_CONNECTION_POOL_MAX_IDLE_CONNECTIONS = DEFAULT_CONFIGURATION_PREFIX+OKHTTP_CONNECTION_POOL_MAX_IDLE_CONNECTIONS;
@@ -436,6 +440,7 @@ public class HttpSinkConfigDefinition {
                 .define(CONFIG_DEFAULT_OKHTTP_PROTOCOLS,ConfigDef.Type.STRING,null, ConfigDef.Importance.LOW,CONFIG_DEFAULT_OKHTTP_PROTOCOLS_DOC)
                 .define(CONFIG_DEFAULT_OKHTTP_SSL_SKIP_HOSTNAME_VERIFICATION,ConfigDef.Type.BOOLEAN,false, ConfigDef.Importance.LOW,CONFIG_DEFAULT_OKHTTP_SSL_SKIP_HOSTNAME_VERIFICATION_DOC)
                 //connection pool
+                .define(CONFIG_DEFAULT_OKHTTP_CONNECTION_POOL_SCOPE,ConfigDef.Type.INT, 0,ConfigDef.Importance.LOW, CONFIG_DEFAULT_OKHTTP_CONNECTION_POOL_SCOPE_DOC)
                 .define(CONFIG_DEFAULT_OKHTTP_CONNECTION_POOL_MAX_IDLE_CONNECTIONS,ConfigDef.Type.INT, 0,ConfigDef.Importance.MEDIUM, CONFIG_DEFAULT_OKHTTP_CONNECTION_POOL_MAX_IDLE_CONNECTIONS_DOC)
                 .define(CONFIG_DEFAULT_OKHTTP_CONNECTION_POOL_KEEP_ALIVE_DURATION,ConfigDef.Type.LONG, 0,ConfigDef.Importance.MEDIUM, CONFIG_DEFAULT_OKHTTP_CONNECTION_POOL_KEEP_ALIVE_DURATION_DOC)
 

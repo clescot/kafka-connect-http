@@ -136,16 +136,17 @@ The predicate permits to filter some http requests, and can be composed, cumulat
   - http client implementation settings (prefixed by `config.<config_id>` )
     - *`httpclient.implementation`* : define which installed library to use : either `ahc`, a.k.a async http client, or `okhttp`. default is `okhttp`.  
   - _okhttp_ (default) HTTP client implementation settings
-    - *`config.default.okhttp.connection.pool.max.idle.connections`* 
-    - *`config.default.okhttp.connection.pool.keep.alive.duration`*
-    - *`config.default.okhttp.protocols`*
-    - *`config.default.okhttp.ssl.skip.hostname.verification`*
-    - *`config.default.okhttp.connect.timeout`*
-    - *`config.default.okhttp.call.timeout`*
-    - *`config.default.okhttp.read.timeout`*
-    - *`config.default.okhttp.write.timeout`*
-    - *`config.default.okhttp.follow.redirect`*
-    - *`config.default.okhttp.follow.ssl.redirect`*
+    - *`config.default.okhttp.connection.pool.scope`*  : scope of the connection pool. can be either 'instance' (i.e a connection pool per configuration in the connector instance),  or 'static' (a connection pool shared with all connectors instances in the same Java Virtual Machine).
+    - *`config.default.okhttp.connection.pool.max.idle.connections`* : amount of connections to keep idle, to avoid the connection creation time when needed. Default is 0 (no connection pool).
+    - *`config.default.okhttp.connection.pool.keep.alive.duration`* : Time in milliseconds to keep the connection alive in the pool before closing it. Default is 0 (no connection pool).
+    - *`config.default.okhttp.protocols`* : the protocols to use, in order of preference. If the list contains 'H2_PRIOR_KNOWLEDGE' then that must be the only protocol and HTTPS URLs will not be supported. Otherwise the list must contain 'HTTP_1_1'. The list must not contain null or 'HTTP_1_0'.
+    - *`config.default.okhttp.ssl.skip.hostname.verification`* : if set to 'true', skip hostname verification. Not set by default.
+    - *`config.default.okhttp.connect.timeout`* : Sets the default connect timeout in milliseconds for new connections. A value of 0 means no timeout, otherwise values must be between 1 and Integer.MAX_VALUE.
+    - *`config.default.okhttp.call.timeout`* : default timeout in milliseconds for complete call . A value of 0 means no timeout, otherwise values must be between 1 and Integer.MAX_VALUE.
+    - *`config.default.okhttp.read.timeout`* : Sets the default read timeout in milliseconds for new connections. A value of 0 means no timeout, otherwise values must be between 1 and Integer.MAX_VALUE.
+    - *`config.default.okhttp.write.timeout`* : Sets the default write timeout in milliseconds for new connections. A value of 0 means no timeout, otherwise values must be between 1 and Integer.MAX_VALUE.
+    - *`config.default.okhttp.follow.redirect`* : does the http client need to follow a redirect response from the server. default to true.
+    - *`config.default.okhttp.follow.ssl.redirect`* : does the http client need to follow an SSL redirect response from the server. default to true.
     - *`config.default.okhttp.cache.activate`* (`true` to activate, `false` by default)
     - *`config.default.okhttp.cache.max.size`* (default `10000` max cache entries)
     - *`config.default.okhttp.cache.directory.path`* (default `/tmp/kafka-connect-http-cache` directory path for `file` type, default `/kafka-connect-http-cache` for `inmemory` type)

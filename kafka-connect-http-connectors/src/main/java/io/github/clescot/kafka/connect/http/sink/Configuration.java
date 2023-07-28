@@ -47,6 +47,7 @@ import static io.github.clescot.kafka.connect.http.sink.HttpSinkConfigDefinition
  * <li>a retry http response code regex</li>
  * <li>a custom rate limiter</li>
  * </ul>
+ * Each configuration owns an Http Client instance.
  */
 public class Configuration {
     private static final Logger LOGGER = LoggerFactory.getLogger(Configuration.class);

@@ -969,4 +969,114 @@ class OkHttpClientTest {
             QueueFactory.clearRegistrations();
         }
     }
+
+    @Nested
+    class TestConnectionPool {
+        @Test
+        @DisplayName("test connection pool")
+        public void test_connection_pool() throws ExecutionException, InterruptedException {
+
+            String bodyResponse = "{\"result\":\"pong\"}";
+            WireMockRuntimeInfo wmRuntimeInfo = wmHttp.getRuntimeInfo();
+            WireMock wireMock = wmRuntimeInfo.getWireMock();
+
+            HashMap<String, Object> config = Maps.newHashMap();
+            config.put("okhttp.connection.pool.max.idle.connections", 10);
+            config.put("okhttp.connection.pool.keep.alive.duration", 1000);
+
+
+            OkHttpClient client = new OkHttpClient(config, null, new Random(), null, null);
+
+            String baseUrl = "http://" + getIP() + ":" + wmRuntimeInfo.getHttpPort();
+            String url = baseUrl + "/ping";
+            HashMap<String, List<String>> headers = Maps.newHashMap();
+            headers.put("Content-Type", Lists.newArrayList("text/plain"));
+            headers.put("X-Correlation-ID", Lists.newArrayList("e6de70d1-f222-46e8-b755-754880687822"));
+            headers.put("X-Request-ID", Lists.newArrayList("e6de70d1-f222-46e8-b755-11111"));
+            HttpRequest httpRequest = new HttpRequest(
+                    url,
+                    "POST",
+                    "STRING"
+            );
+            httpRequest.setHeaders(headers);
+            httpRequest.setBodyAsString("stuff");
+
+
+            String scenario = "connection_pool";
+            wireMock
+                    .register(WireMock.post("/ping").inScenario(scenario)
+                            .willReturn(WireMock.aResponse()
+                                    .withStatus(200)
+                                    .withStatusMessage(ACCESS_GRANTED_STATE)
+                                    .withBody(bodyResponse)
+                            )
+                    );
+
+            HttpExchange httpExchange1 = client.call(httpRequest, new AtomicInteger(1)).get();
+            assertThat(httpExchange1.getHttpResponse().getStatusCode()).isEqualTo(200);
+            HttpExchange httpExchange2 = client.call(httpRequest, new AtomicInteger(1)).get();
+            assertThat(httpExchange2.getHttpResponse().getStatusCode()).isEqualTo(200);
+
+        }
+
+        @Test
+        @DisplayName("test connection pool with static scope")
+        public void test_connection_pool_with_static_scope() throws ExecutionException, InterruptedException {
+
+            String bodyResponse = "{\"result\":\"pong\"}";
+            WireMockRuntimeInfo wmRuntimeInfo = wmHttp.getRuntimeInfo();
+            WireMock wireMock = wmRuntimeInfo.getWireMock();
+
+            HashMap<String, Object> config = Maps.newHashMap();
+            config.put("okhttp.connection.pool.scope", "static");
+            config.put("okhttp.connection.pool.max.idle.connections", 10);
+            config.put("okhttp.connection.pool.keep.alive.duration", 1000);
+
+            OkHttpClient client = new OkHttpClient(config, null, new Random(), null, null);
+
+            HashMap<String, Object> config2 = Maps.newHashMap();
+            config2.put("okhttp.connection.pool.scope", "static");
+            config2.put("okhttp.connection.pool.max.idle.connections", 10);
+            config2.put("okhttp.connection.pool.keep.alive.duration", 1000);
+
+
+            OkHttpClient client2 = new OkHttpClient(config2, null, new Random(), null, null);
+
+            String baseUrl = "http://" + getIP() + ":" + wmRuntimeInfo.getHttpPort();
+            String url = baseUrl + "/ping";
+            HashMap<String, List<String>> headers = Maps.newHashMap();
+            headers.put("Content-Type", Lists.newArrayList("text/plain"));
+            headers.put("X-Correlation-ID", Lists.newArrayList("e6de70d1-f222-46e8-b755-754880687822"));
+            headers.put("X-Request-ID", Lists.newArrayList("e6de70d1-f222-46e8-b755-11111"));
+            HttpRequest httpRequest = new HttpRequest(
+                    url,
+                    "POST",
+                    "STRING"
+            );
+            httpRequest.setHeaders(headers);
+            httpRequest.setBodyAsString("stuff");
+
+
+            String scenario = "connection_pool";
+            wireMock
+                    .register(WireMock.post("/ping").inScenario(scenario)
+                            .willReturn(WireMock.aResponse()
+                                    .withStatus(200)
+                                    .withStatusMessage(ACCESS_GRANTED_STATE)
+                                    .withBody(bodyResponse)
+                            )
+                    );
+
+            HttpExchange httpExchange1 = client.call(httpRequest, new AtomicInteger(1)).get();
+            assertThat(httpExchange1.getHttpResponse().getStatusCode()).isEqualTo(200);
+            HttpExchange httpExchange2 = client.call(httpRequest, new AtomicInteger(1)).get();
+            assertThat(httpExchange2.getHttpResponse().getStatusCode()).isEqualTo(200);
+            HttpExchange httpExchange3 = client2.call(httpRequest, new AtomicInteger(1)).get();
+            assertThat(httpExchange3.getHttpResponse().getStatusCode()).isEqualTo(200);
+            HttpExchange httpExchange4 = client2.call(httpRequest, new AtomicInteger(1)).get();
+            assertThat(httpExchange4.getHttpResponse().getStatusCode()).isEqualTo(200);
+
+            assertThat(client.getInternalClient().connectionPool()).isEqualTo(client2.getInternalClient().connectionPool());
+        }
+    }
 }

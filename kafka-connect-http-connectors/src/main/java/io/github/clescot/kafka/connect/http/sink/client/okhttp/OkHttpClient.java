@@ -1,8 +1,5 @@
 package io.github.clescot.kafka.connect.http.sink.client.okhttp;
 
-import com.burgstaller.okhttp.DispatchingAuthenticator;
-import com.burgstaller.okhttp.basic.BasicAuthenticator;
-import com.burgstaller.okhttp.digest.CachingAuthenticator;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
@@ -12,12 +9,11 @@ import io.github.clescot.kafka.connect.http.core.HttpRequest;
 import io.github.clescot.kafka.connect.http.core.HttpResponse;
 import io.github.clescot.kafka.connect.http.sink.client.AbstractHttpClient;
 import io.github.clescot.kafka.connect.http.sink.client.HttpException;
-import io.github.clescot.kafka.connect.http.sink.client.okhttp.authentication.*;
+import io.github.clescot.kafka.connect.http.sink.client.okhttp.configuration.AuthenticationConfigurer;
 import kotlin.Pair;
 import okhttp3.*;
 import okhttp3.internal.http.HttpMethod;
 import okhttp3.internal.io.FileSystem;
-import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -26,15 +22,12 @@ import java.io.File;
 import java.io.IOException;
 import java.net.Proxy;
 import java.net.ProxySelector;
-import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
-import java.util.stream.Collectors;
 
 import static io.github.clescot.kafka.connect.http.sink.HttpSinkConfigDefinition.*;
 
@@ -45,18 +38,16 @@ public class OkHttpClient extends AbstractHttpClient<Request, Response> {
     public static final String DEFAULT_MAX_CACHE_ENTRIES = "10000";
     public static final String FILE_CACHE_TYPE = "file";
 
-    public static final String US_ASCII = "US-ASCII";
-    public static final String ISO_8859_1 = "ISO-8859-1";
+
 
 
     private final okhttp3.OkHttpClient client;
     private static final Logger LOGGER = LoggerFactory.getLogger(OkHttpClient.class);
 
-    private final Random random;
+    private static ConnectionPool connectionPool;
 
     public OkHttpClient(Map<String, Object> config, ExecutorService executorService, Random random, Proxy proxy, ProxySelector proxySelector) {
         super(config);
-        this.random = random;
 
         okhttp3.OkHttpClient.Builder httpClientBuilder = new okhttp3.OkHttpClient.Builder();
         if (executorService != null) {
@@ -83,7 +74,8 @@ public class OkHttpClient extends AbstractHttpClient<Request, Response> {
         configureCache(config, httpClientBuilder);
 
         //authentication
-        configureAuthentication(config, httpClientBuilder);
+        AuthenticationConfigurer authenticationConfigurer = new AuthenticationConfigurer(random);
+        authenticationConfigurer.configure(config, httpClientBuilder);
 
 
         //interceptor
@@ -144,6 +136,7 @@ public class OkHttpClient extends AbstractHttpClient<Request, Response> {
 
     }
 
+    @SuppressWarnings("java:S5527")
     private void configureSSL(Map<String, Object> config, okhttp3.OkHttpClient.Builder httpClientBuilder) {
         //KeyManager/trustManager/SSLSocketFactory
         Optional<KeyManagerFactory> keyManagerFactoryOption = getKeyManagerFactory();
@@ -163,108 +156,41 @@ public class OkHttpClient extends AbstractHttpClient<Request, Response> {
     }
 
     private void configureConnectionPool(Map<String, Object> config, okhttp3.OkHttpClient.Builder httpClientBuilder) {
+        String connectionPoolScope = config.getOrDefault(OKHTTP_CONNECTION_POOL_SCOPE, "instance").toString();
+        ConnectionPool connectionPool = null;
+        if("static".equalsIgnoreCase(connectionPoolScope)){
+            if(getSharedConnectionPool()==null){
+                connectionPool = buildConnectionPool(config, connectionPool);
+                setSharedConnectionPool(connectionPool);
+            }else{
+                connectionPool = getSharedConnectionPool();
+            }
+        }else{
+           connectionPool = buildConnectionPool(config, connectionPool);
+        }
+
+        if(connectionPool!=null){
+            httpClientBuilder.connectionPool(connectionPool);
+        }
+
+    }
+
+    private static void setSharedConnectionPool(ConnectionPool connectionPool){
+        OkHttpClient.connectionPool = connectionPool;
+    }
+    private static ConnectionPool getSharedConnectionPool(){
+        return OkHttpClient.connectionPool;
+    }
+
+    private static ConnectionPool buildConnectionPool(Map<String, Object> config, ConnectionPool connectionPool) {
         int maxIdleConnections = Integer.parseInt(config.getOrDefault(OKHTTP_CONNECTION_POOL_MAX_IDLE_CONNECTIONS, "0").toString());
         long keepAliveDuration = Long.parseLong(config.getOrDefault(OKHTTP_CONNECTION_POOL_KEEP_ALIVE_DURATION, "0").toString());
         if (maxIdleConnections > 0 && keepAliveDuration > 0) {
-            ConnectionPool connectionPool = new ConnectionPool(maxIdleConnections, keepAliveDuration, TimeUnit.MILLISECONDS);
-            httpClientBuilder.connectionPool(connectionPool);
+            connectionPool = new ConnectionPool(maxIdleConnections, keepAliveDuration, TimeUnit.MILLISECONDS);
         }
+        return connectionPool;
     }
 
-    private void configureAuthentication(Map<String, Object> config, okhttp3.OkHttpClient.Builder httpClientBuilder) {
-        final Map<String, CachingAuthenticator> authCache = new ConcurrentHashMap<>();
-
-        //authentication
-        CachingAuthenticatorDecorator authenticator = getCachingAuthenticatorDecorator(config, authCache, false);
-        if (authenticator != null) {
-            httpClientBuilder.authenticator(authenticator);
-        }
-
-        //proxy authentication
-        Map<String, Object> proxyConfig = config.entrySet().stream()
-                .filter(entry -> entry.getKey().startsWith(PROXY_PREFIX))
-                .map((entry) -> Map.entry(entry.getKey().substring(PROXY_PREFIX.length()), entry.getValue())).collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
-        CachingAuthenticatorDecorator proxyAuthenticator = getCachingAuthenticatorDecorator(proxyConfig, authCache, true);
-        if (proxyAuthenticator != null) {
-            httpClientBuilder.proxyAuthenticator(proxyAuthenticator);
-        }
-
-        //authentication cache
-        if (proxyAuthenticator != null) {
-            httpClientBuilder.addNetworkInterceptor(new AuthenticationCacheInterceptor(authCache, new DefaultProxyCacheKeyProvider()));
-        }
-        if (authenticator != null) {
-            httpClientBuilder.addInterceptor(new AuthenticationCacheInterceptor(authCache, new DefaultRequestCacheKeyProvider()));
-        }
-
-    }
-
-    @Nullable
-    private CachingAuthenticatorDecorator getCachingAuthenticatorDecorator(Map<String, Object> config, Map<String, CachingAuthenticator> authCache, boolean proxy) {
-        BasicAuthenticator basicAuthenticator = configureBasicAuthentication(config);
-
-        DigestAuthenticator digestAuthenticator = configureDigestAuthenticator(config);
-
-        // note that all auth schemes should be registered as lowercase!
-        DispatchingAuthenticator.Builder authenticatorBuilder = new DispatchingAuthenticator.Builder();
-        if (basicAuthenticator != null) {
-            authenticatorBuilder = authenticatorBuilder.with("basic", basicAuthenticator);
-        }
-        if (digestAuthenticator != null) {
-            authenticatorBuilder = authenticatorBuilder.with("digest", digestAuthenticator);
-        }
-        CachingAuthenticatorDecorator authenticator = null;
-        if (basicAuthenticator != null || digestAuthenticator != null) {
-            authenticator = new CachingAuthenticatorDecorator(authenticatorBuilder.build(), authCache, proxy);
-        }
-        return authenticator;
-
-    }
-
-    @Nullable
-    private DigestAuthenticator configureDigestAuthenticator(Map<String, Object> config) {
-        //Digest Authentication
-        DigestAuthenticator digestAuthenticator = null;
-        if (config.containsKey(HTTP_CLIENT_AUTHENTICATION_DIGEST_ACTIVATE) && Boolean.TRUE.equals(config.get(HTTP_CLIENT_AUTHENTICATION_DIGEST_ACTIVATE))) {
-            String username = (String) config.get(HTTP_CLIENT_AUTHENTICATION_DIGEST_USERNAME);
-            Preconditions.checkNotNull(username,"'"+HTTP_CLIENT_AUTHENTICATION_DIGEST_USERNAME+"' is null");
-            String password = (String) config.get(HTTP_CLIENT_AUTHENTICATION_DIGEST_PASSWORD);
-            Preconditions.checkNotNull(password,"'"+HTTP_CLIENT_AUTHENTICATION_DIGEST_PASSWORD+"' is null");
-            com.burgstaller.okhttp.digest.Credentials credentials = new com.burgstaller.okhttp.digest.Credentials(username, password);
-            //digest charset
-            String digestCredentialCharset = US_ASCII;
-            if (config.containsKey(HTTP_CLIENT_AUTHENTICATION_DIGEST_CHARSET)) {
-                digestCredentialCharset = String.valueOf(config.get(HTTP_CLIENT_AUTHENTICATION_DIGEST_CHARSET));
-            }
-            Charset digestCharset = Charset.forName(digestCredentialCharset);
-
-
-            digestAuthenticator = new DigestAuthenticator(credentials, digestCharset, random);
-
-        }
-        return digestAuthenticator;
-    }
-
-    @Nullable
-    private BasicAuthenticator configureBasicAuthentication(Map<String, Object> config) {
-        //Basic authentication
-        BasicAuthenticator basicAuthenticator = null;
-        if (config.containsKey(HTTP_CLIENT_AUTHENTICATION_BASIC_ACTIVATE) && Boolean.TRUE.equals(config.get(HTTP_CLIENT_AUTHENTICATION_BASIC_ACTIVATE))) {
-            String username = (String) config.get(HTTP_CLIENT_AUTHENTICATION_BASIC_USERNAME);
-            String password = (String) config.get(HTTP_CLIENT_AUTHENTICATION_BASIC_PASSWORD);
-            com.burgstaller.okhttp.digest.Credentials credentials = new com.burgstaller.okhttp.digest.Credentials(username, password);
-
-
-            //basic charset
-            String basicCredentialCharset = ISO_8859_1;
-            if (config.containsKey(HTTP_CLIENT_AUTHENTICATION_BASIC_CHARSET)) {
-                basicCredentialCharset = String.valueOf(config.get(HTTP_CLIENT_AUTHENTICATION_BASIC_CHARSET));
-            }
-            Charset basicCharset = Charset.forName(basicCredentialCharset);
-            basicAuthenticator = new BasicAuthenticator(credentials, basicCharset);
-        }
-        return basicAuthenticator;
-    }
 
     private void configureCache(Map<String, Object> config, okhttp3.OkHttpClient.Builder httpClientBuilder) {
         if (config.containsKey(OKHTTP_CACHE_ACTIVATE)) {
@@ -395,4 +321,11 @@ public class OkHttpClient extends AbstractHttpClient<Request, Response> {
         return cf;
     }
 
+    /**
+     * for tests only.
+     * @return
+     */
+    protected okhttp3.OkHttpClient getInternalClient(){
+        return client;
+    }
 }
