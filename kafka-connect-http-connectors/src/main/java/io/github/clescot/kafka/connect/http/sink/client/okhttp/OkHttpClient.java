@@ -144,6 +144,7 @@ public class OkHttpClient extends AbstractHttpClient<Request, Response> {
 
     }
 
+    @SuppressWarnings("java:S5527")
     private void configureSSL(Map<String, Object> config, okhttp3.OkHttpClient.Builder httpClientBuilder) {
         //KeyManager/trustManager/SSLSocketFactory
         Optional<KeyManagerFactory> keyManagerFactoryOption = getKeyManagerFactory();
@@ -183,7 +184,7 @@ public class OkHttpClient extends AbstractHttpClient<Request, Response> {
         //proxy authentication
         Map<String, Object> proxyConfig = config.entrySet().stream()
                 .filter(entry -> entry.getKey().startsWith(PROXY_PREFIX))
-                .map((entry) -> Map.entry(entry.getKey().substring(PROXY_PREFIX.length()), entry.getValue())).collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+                .map(entry -> Map.entry(entry.getKey().substring(PROXY_PREFIX.length()), entry.getValue())).collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
         CachingAuthenticatorDecorator proxyAuthenticator = getCachingAuthenticatorDecorator(proxyConfig, authCache, true);
         if (proxyAuthenticator != null) {
             httpClientBuilder.proxyAuthenticator(proxyAuthenticator);
