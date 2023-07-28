@@ -44,12 +44,10 @@ public class OkHttpClient extends AbstractHttpClient<Request, Response> {
     private final okhttp3.OkHttpClient client;
     private static final Logger LOGGER = LoggerFactory.getLogger(OkHttpClient.class);
 
-    private final Random random;
-    private static ConnectionPool CONNECTION_POOL;
+    private static ConnectionPool connectionPool;
 
     public OkHttpClient(Map<String, Object> config, ExecutorService executorService, Random random, Proxy proxy, ProxySelector proxySelector) {
         super(config);
-        this.random = random;
 
         okhttp3.OkHttpClient.Builder httpClientBuilder = new okhttp3.OkHttpClient.Builder();
         if (executorService != null) {
@@ -163,7 +161,7 @@ public class OkHttpClient extends AbstractHttpClient<Request, Response> {
         if(!"static".equalsIgnoreCase(connectionPoolScope)){
             connectionPool = buildConnectionPool(config, connectionPool);
         }else{
-            if(CONNECTION_POOL==null){
+            if(OkHttpClient.connectionPool ==null){
                 connectionPool = buildConnectionPool(config, connectionPool);
             }
             setSharedConnectionPool(connectionPool);
@@ -175,7 +173,7 @@ public class OkHttpClient extends AbstractHttpClient<Request, Response> {
     }
 
     private static void setSharedConnectionPool(ConnectionPool connectionPool){
-        CONNECTION_POOL = connectionPool;
+        OkHttpClient.connectionPool = connectionPool;
     }
 
     private static ConnectionPool buildConnectionPool(Map<String, Object> config, ConnectionPool connectionPool) {

@@ -16,6 +16,9 @@ import java.util.stream.Collectors;
 import static io.github.clescot.kafka.connect.http.sink.HttpSinkConfigDefinition.*;
 import static io.github.clescot.kafka.connect.http.sink.HttpSinkConfigDefinition.HTTP_CLIENT_AUTHENTICATION_BASIC_CHARSET;
 
+/**
+ * configure authentication settings for {@link io.github.clescot.kafka.connect.http.sink.client.okhttp.OkHttpClient}.
+ */
 public class AuthenticationConfigurer {
     public static final String US_ASCII = "US-ASCII";
     public static final String ISO_8859_1 = "ISO-8859-1";
