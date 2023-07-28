@@ -323,7 +323,7 @@ public class OkHttpClient extends AbstractHttpClient<Request, Response> {
 
     /**
      * for tests only.
-     * @return
+     * @return {@link okhttp3.OkHttpClient}
      */
     protected okhttp3.OkHttpClient getInternalClient(){
         return client;
