@@ -295,7 +295,9 @@
                             </execution>
                         </executions>
                         <configuration>
-                            <include>**/IT*.java</include>
+                            <includes>
+                                <include>**/IT*.java</include>
+                            </includes>
                         </configuration>
                     </plugin>
                     <plugin>
