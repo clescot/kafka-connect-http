@@ -53,6 +53,7 @@ public class OkHttpClient extends AbstractHttpClient<Request, Response> {
     private static final Logger LOGGER = LoggerFactory.getLogger(OkHttpClient.class);
 
     private final Random random;
+    private static ConnectionPool CONNECTION_POOL;
 
     public OkHttpClient(Map<String, Object> config, ExecutorService executorService, Random random, Proxy proxy, ProxySelector proxySelector) {
         super(config);
@@ -164,12 +165,33 @@ public class OkHttpClient extends AbstractHttpClient<Request, Response> {
     }
 
     private void configureConnectionPool(Map<String, Object> config, okhttp3.OkHttpClient.Builder httpClientBuilder) {
+        String connectionPoolScope = config.getOrDefault(OKHTTP_CONNECTION_POOL_SCOPE, "instance").toString();
+        ConnectionPool connectionPool = null;
+        if(!"static".equalsIgnoreCase(connectionPoolScope)){
+            connectionPool = buildConnectionPool(config, connectionPool);
+        }else{
+            if(CONNECTION_POOL==null){
+                connectionPool = buildConnectionPool(config, connectionPool);
+            }
+            setSharedConnectionPool(connectionPool);
+        }
+        if(connectionPool!=null){
+            httpClientBuilder.connectionPool(connectionPool);
+        }
+
+    }
+
+    private static void setSharedConnectionPool(ConnectionPool connectionPool){
+        CONNECTION_POOL = connectionPool;
+    }
+
+    private static ConnectionPool buildConnectionPool(Map<String, Object> config, ConnectionPool connectionPool) {
         int maxIdleConnections = Integer.parseInt(config.getOrDefault(OKHTTP_CONNECTION_POOL_MAX_IDLE_CONNECTIONS, "0").toString());
         long keepAliveDuration = Long.parseLong(config.getOrDefault(OKHTTP_CONNECTION_POOL_KEEP_ALIVE_DURATION, "0").toString());
         if (maxIdleConnections > 0 && keepAliveDuration > 0) {
-            ConnectionPool connectionPool = new ConnectionPool(maxIdleConnections, keepAliveDuration, TimeUnit.MILLISECONDS);
-            httpClientBuilder.connectionPool(connectionPool);
+            connectionPool = new ConnectionPool(maxIdleConnections, keepAliveDuration, TimeUnit.MILLISECONDS);
         }
+        return connectionPool;
     }
 
     private void configureAuthentication(Map<String, Object> config, okhttp3.OkHttpClient.Builder httpClientBuilder) {
