@@ -280,7 +280,7 @@ class OkHttpClientTest {
             assertThat(httpExchange1.getHttpResponse().getStatusCode()).isEqualTo(200);
             HttpExchange httpExchange2 = client.call(httpRequest, new AtomicInteger(1)).get();
             assertThat(httpExchange2.getHttpResponse().getStatusCode()).isEqualTo(200);
-
+//            Awaitility.await().atMost(3, TimeUnit.MINUTES).until(()-> true!=true);
         }
 
         @Test
@@ -962,6 +962,7 @@ class OkHttpClientTest {
             HttpExchange httpExchange2 = client.call(httpRequest, new AtomicInteger(1)).get();
             assertThat(httpExchange2.getHttpResponse().getStatusCode()).isEqualTo(200);
         }
+
 
         @AfterEach
         public void afterEach() {

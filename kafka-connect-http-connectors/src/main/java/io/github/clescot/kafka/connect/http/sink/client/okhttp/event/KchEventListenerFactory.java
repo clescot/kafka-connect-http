@@ -1,4 +1,4 @@
-package io.github.clescot.kafka.connect.http.sink.client.okhttp;
+package io.github.clescot.kafka.connect.http.sink.client.okhttp.event;
 
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.binder.okhttp3.OkHttpMetricsEventListener;
@@ -8,7 +8,7 @@ import org.jetbrains.annotations.NotNull;
 
 public class KchEventListenerFactory implements EventListener.Factory {
 
-    private MeterRegistry meterRegistry;
+    private final MeterRegistry meterRegistry;
 
     public KchEventListenerFactory(MeterRegistry meterRegistry) {
         this.meterRegistry = meterRegistry;

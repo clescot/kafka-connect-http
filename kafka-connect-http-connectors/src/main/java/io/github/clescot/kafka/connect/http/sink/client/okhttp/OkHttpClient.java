@@ -10,6 +10,10 @@ import io.github.clescot.kafka.connect.http.core.HttpResponse;
 import io.github.clescot.kafka.connect.http.sink.client.AbstractHttpClient;
 import io.github.clescot.kafka.connect.http.sink.client.HttpException;
 import io.github.clescot.kafka.connect.http.sink.client.okhttp.configuration.AuthenticationConfigurer;
+import io.github.clescot.kafka.connect.http.sink.client.okhttp.event.KchEventListenerFactory;
+import io.micrometer.core.instrument.Clock;
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.jmx.JmxMeterRegistry;
 import kotlin.Pair;
 import okhttp3.*;
 import okhttp3.internal.http.HttpMethod;
@@ -80,6 +84,10 @@ public class OkHttpClient extends AbstractHttpClient<Request, Response> {
 
         //interceptor
         httpClientBuilder.addNetworkInterceptor(new LoggingInterceptor());
+
+        //events
+        MeterRegistry meterRegistry = new JmxMeterRegistry(s -> null, Clock.SYSTEM);
+        httpClientBuilder.eventListenerFactory(new KchEventListenerFactory(meterRegistry));
 
         client = httpClientBuilder.build();
 
