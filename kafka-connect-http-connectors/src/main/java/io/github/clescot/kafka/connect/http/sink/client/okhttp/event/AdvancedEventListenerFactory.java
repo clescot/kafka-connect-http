@@ -6,11 +6,11 @@ import okhttp3.Call;
 import okhttp3.EventListener;
 import org.jetbrains.annotations.NotNull;
 
-public class KchEventListenerFactory implements EventListener.Factory {
+public class AdvancedEventListenerFactory implements EventListener.Factory {
 
     private final MeterRegistry meterRegistry;
 
-    public KchEventListenerFactory(MeterRegistry meterRegistry) {
+    public AdvancedEventListenerFactory(MeterRegistry meterRegistry) {
         this.meterRegistry = meterRegistry;
     }
 
@@ -21,6 +21,8 @@ public class KchEventListenerFactory implements EventListener.Factory {
                 .uriMapper(req -> req.url().encodedPath())//beware of tag cardinality explosion => replace .encodedPath() with .host()
 //                        .uriMapper(req -> req.url().host())
 //                .tags(Tags.of("foo", "bar"))
+                .includeHostTag(true)
+                .requestTagKeys()
                 .build();
     }
 }
