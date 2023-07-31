@@ -76,7 +76,12 @@
         <dependency>
             <groupId>io.micrometer</groupId>
             <artifactId>micrometer-registry-jmx</artifactId>
-            <version>1.11.2</version>
+            <version>${micrometer.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>io.micrometer</groupId>
+            <artifactId>micrometer-registry-prometheus</artifactId>
+            <version>${micrometer.version}</version>
         </dependency>
 
         <dependency>

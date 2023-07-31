@@ -18,7 +18,14 @@ import io.github.clescot.kafka.connect.http.core.queue.QueueFactory;
 import io.github.clescot.kafka.connect.http.sink.client.HttpClient;
 import io.micrometer.core.instrument.Clock;
 import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.binder.jvm.ExecutorServiceMetrics;
+import io.micrometer.core.instrument.binder.jvm.JvmInfoMetrics;
+import io.micrometer.core.instrument.binder.jvm.JvmMemoryMetrics;
+import io.micrometer.core.instrument.binder.jvm.JvmThreadMetrics;
+import io.micrometer.core.instrument.composite.CompositeMeterRegistry;
 import io.micrometer.jmx.JmxMeterRegistry;
+import io.micrometer.prometheus.PrometheusConfig;
+import io.micrometer.prometheus.PrometheusMeterRegistry;
 import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.data.Struct;
 import org.apache.kafka.connect.errors.ConnectException;
@@ -85,7 +92,10 @@ public class HttpSinkTask extends SinkTask {
 
         Integer customFixedThreadPoolSize = httpSinkConnectorConfig.getCustomFixedThreadpoolSize();
         setThreadPoolSize(customFixedThreadPoolSize);
-        MeterRegistry meterRegistry = new JmxMeterRegistry(s -> null, Clock.SYSTEM);
+
+        MeterRegistry meterRegistry = buildMeterRegistry();
+        bindMetrics(meterRegistry);
+
         this.defaultConfiguration = new Configuration(DEFAULT_CONFIGURATION_ID, httpSinkConnectorConfig, executorService, meterRegistry);
         customConfigurations = buildCustomConfigurations(httpSinkConnectorConfig, defaultConfiguration, executorService, meterRegistry);
 
@@ -103,6 +113,13 @@ public class HttpSinkTask extends SinkTask {
         }
     }
 
+    private static void bindMetrics(MeterRegistry meterRegistry) {
+        new ExecutorServiceMetrics(executorService,"HttpSinkTask",Lists.newArrayList()).bindTo(meterRegistry);
+        new JvmMemoryMetrics().bindTo(meterRegistry);
+        new JvmThreadMetrics().bindTo(meterRegistry);
+        new JvmInfoMetrics().bindTo(meterRegistry);
+    }
+
     /**
      * define a static field from a non static method need a static synchronized method
      * @param customFixedThreadPoolSize
@@ -111,6 +128,15 @@ public class HttpSinkTask extends SinkTask {
         if (customFixedThreadPoolSize != null && executorService == null) {
             executorService = Executors.newFixedThreadPool(customFixedThreadPoolSize);
         }
+    }
+
+    private MeterRegistry buildMeterRegistry(){
+        CompositeMeterRegistry compositeMeterRegistry = new CompositeMeterRegistry();
+        MeterRegistry jmxMeterRegistry = new JmxMeterRegistry(s -> null, Clock.SYSTEM);
+        compositeMeterRegistry.add(jmxMeterRegistry);
+        PrometheusMeterRegistry prometheusRegistry = new PrometheusMeterRegistry(PrometheusConfig.DEFAULT);
+        compositeMeterRegistry.add(prometheusRegistry);
+        return compositeMeterRegistry;
     }
 
     private List<Configuration> buildCustomConfigurations(HttpSinkConnectorConfig httpSinkConnectorConfig,

@@ -12,6 +12,7 @@ import io.github.clescot.kafka.connect.http.sink.client.HttpException;
 import io.github.clescot.kafka.connect.http.sink.client.okhttp.configuration.AuthenticationConfigurer;
 import io.github.clescot.kafka.connect.http.sink.client.okhttp.event.AdvancedEventListenerFactory;
 import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.binder.system.DiskSpaceMetrics;
 import kotlin.Pair;
 import okhttp3.*;
 import okhttp3.internal.http.HttpMethod;
@@ -47,6 +48,7 @@ public class OkHttpClient extends AbstractHttpClient<Request, Response> {
     private static final Logger LOGGER = LoggerFactory.getLogger(OkHttpClient.class);
 
     private static ConnectionPool connectionPool;
+    private final MeterRegistry meterRegistry;
 
     public OkHttpClient(Map<String, Object> config,
                         ExecutorService executorService,
@@ -55,6 +57,7 @@ public class OkHttpClient extends AbstractHttpClient<Request, Response> {
                         ProxySelector proxySelector,
                         MeterRegistry meterRegistry) {
         super(config);
+        this.meterRegistry = meterRegistry;
 
         okhttp3.OkHttpClient.Builder httpClientBuilder = new okhttp3.OkHttpClient.Builder();
         if (executorService != null) {
@@ -227,6 +230,9 @@ public class OkHttpClient extends AbstractHttpClient<Request, Response> {
             long maxSize = Long.parseLong(config.getOrDefault(OKHTTP_CACHE_MAX_SIZE, DEFAULT_MAX_CACHE_ENTRIES).toString());
             Cache cache = new Cache(cacheDirectory, maxSize, FileSystem.SYSTEM);
             httpClientBuilder.cache(cache);
+
+            DiskSpaceMetrics diskSpaceMetrics = new DiskSpaceMetrics(cacheDirectory);
+            diskSpaceMetrics.bindTo(meterRegistry);
         }
     }
 
