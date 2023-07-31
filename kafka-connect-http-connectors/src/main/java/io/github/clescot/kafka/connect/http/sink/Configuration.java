@@ -18,6 +18,7 @@ import io.github.clescot.kafka.connect.http.sink.config.AddMissingCorrelationIdH
 import io.github.clescot.kafka.connect.http.sink.config.AddMissingRequestIdHeaderToHttpRequestFunction;
 import io.github.clescot.kafka.connect.http.sink.config.AddStaticHeadersToHttpRequestFunction;
 import io.github.clescot.kafka.connect.http.sink.config.AddSuccessStatusToHttpExchangeFunction;
+import io.micrometer.core.instrument.MeterRegistry;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -89,7 +90,10 @@ public class Configuration {
     private HttpClient httpClient;
     public final String id;
 
-    public Configuration(String id, HttpSinkConnectorConfig httpSinkConnectorConfig, ExecutorService executorService) {
+    public Configuration(String id,
+                         HttpSinkConnectorConfig httpSinkConnectorConfig,
+                         ExecutorService executorService,
+                         MeterRegistry meterRegistry) {
         this.id = id;
         Preconditions.checkNotNull(id, "id must not be null");
         Preconditions.checkNotNull(httpSinkConnectorConfig, "httpSinkConnectorConfig must not be null");
@@ -131,7 +135,7 @@ public class Configuration {
         this.addSuccessStatusToHttpExchangeFunction = new AddSuccessStatusToHttpExchangeFunction(successResponseCodeRegex);
 
 
-        this.httpClient = buildHttpClient(configMap, executorService);
+        this.httpClient = buildHttpClient(configMap, executorService, meterRegistry);
 
         //rate limiter
         Preconditions.checkNotNull(httpClient, "httpClient is null");
@@ -235,7 +239,7 @@ public class Configuration {
         return this.addSuccessStatusToHttpExchangeFunction.apply(httpExchange);
     }
 
-    private <Req, Res> HttpClient<Req, Res> buildHttpClient(Map<String, Object> config, ExecutorService executorService) {
+    private <Req, Res> HttpClient<Req, Res> buildHttpClient(Map<String, Object> config, ExecutorService executorService, MeterRegistry meterRegistry) {
 
         Class<? extends HttpClientFactory> httpClientFactoryClass;
         String httpClientImplementation = (String) Optional.ofNullable(config.get(HTTP_CLIENT_IMPLEMENTATION)).orElse(OKHTTP_IMPLEMENTATION);
@@ -284,7 +288,7 @@ public class Configuration {
         if(config.get(PROXY_SELECTOR_HTTP_CLIENT_0_HOSTNAME) != null) {
             proxySelector = proxySelectorFactory.build(config, random);
         }
-        return httpClientFactory.build(config, executorService, random,proxy,proxySelector);
+        return httpClientFactory.build(config, executorService, random,proxy,proxySelector, meterRegistry);
     }
 
 

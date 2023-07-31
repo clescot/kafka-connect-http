@@ -16,6 +16,9 @@ import io.github.clescot.kafka.connect.http.core.HttpResponse;
 import io.github.clescot.kafka.connect.http.core.queue.KafkaRecord;
 import io.github.clescot.kafka.connect.http.core.queue.QueueFactory;
 import io.github.clescot.kafka.connect.http.sink.client.HttpClient;
+import io.micrometer.core.instrument.Clock;
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.jmx.JmxMeterRegistry;
 import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.data.Struct;
 import org.apache.kafka.connect.errors.ConnectException;
@@ -82,9 +85,9 @@ public class HttpSinkTask extends SinkTask {
 
         Integer customFixedThreadPoolSize = httpSinkConnectorConfig.getCustomFixedThreadpoolSize();
         setThreadPoolSize(customFixedThreadPoolSize);
-
-        this.defaultConfiguration = new Configuration(DEFAULT_CONFIGURATION_ID, httpSinkConnectorConfig, executorService);
-        customConfigurations = buildCustomConfigurations(httpSinkConnectorConfig, defaultConfiguration, executorService);
+        MeterRegistry meterRegistry = new JmxMeterRegistry(s -> null, Clock.SYSTEM);
+        this.defaultConfiguration = new Configuration(DEFAULT_CONFIGURATION_ID, httpSinkConnectorConfig, executorService, meterRegistry);
+        customConfigurations = buildCustomConfigurations(httpSinkConnectorConfig, defaultConfiguration, executorService, meterRegistry);
 
 
         if (httpSinkConnectorConfig.isPublishToInMemoryQueue()) {
@@ -112,10 +115,11 @@ public class HttpSinkTask extends SinkTask {
 
     private List<Configuration> buildCustomConfigurations(HttpSinkConnectorConfig httpSinkConnectorConfig,
                                                           Configuration defaultConfiguration,
-                                                          ExecutorService executorService) {
+                                                          ExecutorService executorService,
+                                                          MeterRegistry meterRegistry) {
         CopyOnWriteArrayList<Configuration> configurations = Lists.newCopyOnWriteArrayList();
         for (String configId : httpSinkConnectorConfig.getConfigurationIds()) {
-            Configuration configuration = new Configuration(configId, httpSinkConnectorConfig, executorService);
+            Configuration configuration = new Configuration(configId, httpSinkConnectorConfig, executorService, meterRegistry);
             if (configuration.getHttpClient() == null) {
                 configuration.setHttpClient(defaultConfiguration.getHttpClient());
             }

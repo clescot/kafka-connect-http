@@ -13,14 +13,13 @@ import io.github.clescot.kafka.connect.http.core.HttpRequest;
 import io.github.clescot.kafka.connect.http.core.HttpResponse;
 import io.github.clescot.kafka.connect.http.core.queue.QueueFactory;
 import io.github.clescot.kafka.connect.http.sink.client.proxy.URIRegexProxySelector;
+import io.micrometer.core.instrument.Clock;
+import io.micrometer.jmx.JmxMeterRegistry;
 import okhttp3.*;
 import okhttp3.internal.http.RealResponseBody;
 import okio.Buffer;
 import org.apache.commons.lang3.tuple.ImmutablePair;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Nested;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.extension.RegisterExtension;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -66,6 +65,10 @@ class OkHttpClientTest {
                 )
                 .build();
     }
+    @AfterAll
+    public static void afterAll() {
+//        Awaitility.await().atMost(5, TimeUnit.MINUTES).until(()-> true!=true);
+    }
 
     @Nested
     class BuildRequest {
@@ -73,7 +76,7 @@ class OkHttpClientTest {
         public void test_build_POST_request() throws IOException {
 
             //given
-            OkHttpClient client = new OkHttpClient(Maps.newHashMap(), null, new Random(), null, null);
+            OkHttpClient client = new OkHttpClient(Maps.newHashMap(), null, new Random(), null, null,new JmxMeterRegistry(s -> null, Clock.SYSTEM));
             HttpRequest httpRequest = new HttpRequest("http://dummy.com/", "POST", HttpRequest.BodyType.STRING.name());
             httpRequest.setBodyAsString("stuff");
 
@@ -95,7 +98,7 @@ class OkHttpClientTest {
         public void test_build_GET_request_with_body() {
 
             //given
-            OkHttpClient client = new OkHttpClient(Maps.newHashMap(), null, new Random(), null, null);
+            OkHttpClient client = new OkHttpClient(Maps.newHashMap(), null, new Random(), null, null, new JmxMeterRegistry(s -> null, Clock.SYSTEM));
             HttpRequest httpRequest = new HttpRequest("http://dummy.com/", "GET", HttpRequest.BodyType.STRING.name());
             httpRequest.setBodyAsString("stuff");
 
@@ -117,7 +120,7 @@ class OkHttpClientTest {
         public void test_build_response() {
 
             //given
-            OkHttpClient client = new OkHttpClient(Maps.newHashMap(), null, new Random(), null, null);
+            OkHttpClient client = new OkHttpClient(Maps.newHashMap(), null, new Random(), null, null, new JmxMeterRegistry(s -> null, Clock.SYSTEM));
 
             HttpRequest httpRequest = new HttpRequest("http://dummy.com/", "POST", HttpRequest.BodyType.STRING.name());
             httpRequest.setBodyAsString("stuff");
@@ -161,7 +164,7 @@ class OkHttpClientTest {
         void test_activated_cache_with_file_type() {
             HashMap<String, Object> config = Maps.newHashMap();
             config.put(OKHTTP_CACHE_ACTIVATE, "true");
-            OkHttpClient client = new OkHttpClient(config, null, new Random(), null, null);
+            OkHttpClient client = new OkHttpClient(config, null, new Random(), null, null, new JmxMeterRegistry(s -> null, Clock.SYSTEM));
         }
 
         @Test
@@ -169,7 +172,7 @@ class OkHttpClientTest {
             HashMap<String, Object> config = Maps.newHashMap();
             config.put(OKHTTP_CACHE_ACTIVATE, "true");
             config.put(OKHTTP_CACHE_MAX_SIZE, "50000");
-            OkHttpClient client = new OkHttpClient(config, null, new Random(), null, null);
+            OkHttpClient client = new OkHttpClient(config, null, new Random(), null, null, new JmxMeterRegistry(s -> null, Clock.SYSTEM));
         }
 
         @Test
@@ -178,7 +181,7 @@ class OkHttpClientTest {
             config.put(OKHTTP_CACHE_ACTIVATE, "true");
             config.put(OKHTTP_CACHE_MAX_SIZE, "50000");
             config.put(OKHTTP_CACHE_DIRECTORY_PATH, "/tmp/toto");
-            OkHttpClient client = new OkHttpClient(config, null, new Random(), null, null);
+            OkHttpClient client = new OkHttpClient(config, null, new Random(), null, null, new JmxMeterRegistry(s -> null, Clock.SYSTEM));
         }
 
         @Test
@@ -186,20 +189,20 @@ class OkHttpClientTest {
             HashMap<String, Object> config = Maps.newHashMap();
             config.put(OKHTTP_CACHE_ACTIVATE, "true");
             config.put(OKHTTP_CACHE_TYPE, "inmemory");
-            OkHttpClient client = new OkHttpClient(config, null, new Random(), null, null);
+            OkHttpClient client = new OkHttpClient(config, null, new Random(), null, null, new JmxMeterRegistry(s -> null, Clock.SYSTEM));
         }
 
         @Test
         void test_inactivated_cache() {
             HashMap<String, Object> config = Maps.newHashMap();
             config.put(OKHTTP_CACHE_ACTIVATE, "false");
-            OkHttpClient client = new OkHttpClient(config, null, new Random(), null, null);
+            OkHttpClient client = new OkHttpClient(config, null, new Random(), null, null, new JmxMeterRegistry(s -> null, Clock.SYSTEM));
         }
 
         @Test
         void test_no_cache() {
             HashMap<String, Object> config = Maps.newHashMap();
-            OkHttpClient client = new OkHttpClient(config, null, new Random(), null, null);
+            OkHttpClient client = new OkHttpClient(config, null, new Random(), null, null, new JmxMeterRegistry(s -> null, Clock.SYSTEM));
         }
     }
 
@@ -220,7 +223,7 @@ class OkHttpClientTest {
             config.put("httpclient.authentication.basic.username", username);
             config.put("httpclient.authentication.basic.password", password);
 
-            OkHttpClient client = new OkHttpClient(config, null, new Random(), null, null);
+            OkHttpClient client = new OkHttpClient(config, null, new Random(), null, null, new JmxMeterRegistry(s -> null, Clock.SYSTEM));
 
             String baseUrl = "http://" + getIP() + ":" + wmRuntimeInfo.getHttpPort();
             String url = baseUrl + "/ping";
@@ -280,7 +283,6 @@ class OkHttpClientTest {
             assertThat(httpExchange1.getHttpResponse().getStatusCode()).isEqualTo(200);
             HttpExchange httpExchange2 = client.call(httpRequest, new AtomicInteger(1)).get();
             assertThat(httpExchange2.getHttpResponse().getStatusCode()).isEqualTo(200);
-//            Awaitility.await().atMost(3, TimeUnit.MINUTES).until(()-> true!=true);
         }
 
         @Test
@@ -306,7 +308,7 @@ class OkHttpClientTest {
                 return null;
             })
                     .when(random).nextBytes(any(byte[].class));
-            OkHttpClient client = new OkHttpClient(config, null, random, null, null);
+            OkHttpClient client = new OkHttpClient(config, null, random, null, null, new JmxMeterRegistry(s -> null, Clock.SYSTEM));
 
             String baseUrl = "http://" + getIP() + ":" + wmRuntimeInfo.getHttpPort();
             String url = baseUrl + "/ping";
@@ -449,7 +451,7 @@ class OkHttpClientTest {
             Proxy proxy = new Proxy(Proxy.Type.HTTP, new InetSocketAddress(getIP(), wmRuntimeInfo.getHttpPort()));
 
 
-            OkHttpClient client = new OkHttpClient(config, null, new Random(), proxy, null);
+            OkHttpClient client = new OkHttpClient(config, null, new Random(), proxy, null, new JmxMeterRegistry(s -> null, Clock.SYSTEM));
 
             HashMap<String, List<String>> headers = Maps.newHashMap();
             headers.put("Content-Type", Lists.newArrayList("text/plain"));
@@ -504,7 +506,7 @@ class OkHttpClientTest {
             config.put(HTTP_CLIENT_PROXY_AUTHENTICATION_BASIC_PASSWORD, password);
             Proxy proxy = new Proxy(Proxy.Type.HTTP, new InetSocketAddress(getIP(), wmRuntimeInfo.getHttpPort()));
 
-            OkHttpClient client = new OkHttpClient(config, null, new Random(), proxy, null);
+            OkHttpClient client = new OkHttpClient(config, null, new Random(), proxy, null, new JmxMeterRegistry(s -> null, Clock.SYSTEM));
 
             HashMap<String, List<String>> headers = Maps.newHashMap();
             headers.put("Content-Type", Lists.newArrayList("text/plain"));
@@ -591,7 +593,7 @@ class OkHttpClientTest {
             config.put("httpclient.authentication.basic.password", password);
             Proxy proxy = new Proxy(Proxy.Type.HTTP, new InetSocketAddress(getIP(), wmRuntimeInfo.getHttpPort()));
 
-            OkHttpClient client = new OkHttpClient(config, null, new Random(), proxy, null);
+            OkHttpClient client = new OkHttpClient(config, null, new Random(), proxy, null, new JmxMeterRegistry(s -> null, Clock.SYSTEM));
 
             HashMap<String, List<String>> headers = Maps.newHashMap();
             headers.put("Content-Type", Lists.newArrayList("text/plain"));
@@ -702,7 +704,7 @@ class OkHttpClientTest {
                 return null;
             }).when(random).nextBytes(any(byte[].class));
 
-            OkHttpClient client = new OkHttpClient(config, null, random, proxy, null);
+            OkHttpClient client = new OkHttpClient(config, null, random, proxy, null, new JmxMeterRegistry(s -> null, Clock.SYSTEM));
 
             HashMap<String, List<String>> headers = Maps.newHashMap();
             headers.put("Content-Type", Lists.newArrayList("text/plain"));
@@ -868,7 +870,7 @@ class OkHttpClientTest {
             ImmutablePair<Predicate<URI>, Proxy> pair = new ImmutablePair(predicate, proxy);
             proxies.add(pair);
             URIRegexProxySelector proxySelector = new URIRegexProxySelector(proxies);
-            OkHttpClient client = new OkHttpClient(config, null, new Random(), null, proxySelector);
+            OkHttpClient client = new OkHttpClient(config, null, new Random(), null, proxySelector, new JmxMeterRegistry(s -> null, Clock.SYSTEM));
 
             HashMap<String, List<String>> headers = Maps.newHashMap();
             headers.put("Content-Type", Lists.newArrayList("text/plain"));
@@ -930,7 +932,7 @@ class OkHttpClientTest {
 
             URIRegexProxySelector proxySelector = new URIRegexProxySelector(proxies);
 
-            OkHttpClient client = new OkHttpClient(config, null, new Random(), null, proxySelector);
+            OkHttpClient client = new OkHttpClient(config, null, new Random(), null, proxySelector, new JmxMeterRegistry(s -> null, Clock.SYSTEM));
 
             HashMap<String, List<String>> headers = Maps.newHashMap();
             headers.put("Content-Type", Lists.newArrayList("text/plain"));
@@ -969,6 +971,8 @@ class OkHttpClientTest {
             wmHttp.resetAll();
             QueueFactory.clearRegistrations();
         }
+
+
     }
 
     @Nested
@@ -986,7 +990,7 @@ class OkHttpClientTest {
             config.put("okhttp.connection.pool.keep.alive.duration", 1000);
 
 
-            OkHttpClient client = new OkHttpClient(config, null, new Random(), null, null);
+            OkHttpClient client = new OkHttpClient(config, null, new Random(), null, null, new JmxMeterRegistry(s -> null, Clock.SYSTEM));
 
             String baseUrl = "http://" + getIP() + ":" + wmRuntimeInfo.getHttpPort();
             String url = baseUrl + "/ping";
@@ -1033,7 +1037,7 @@ class OkHttpClientTest {
             config.put("okhttp.connection.pool.max.idle.connections", 10);
             config.put("okhttp.connection.pool.keep.alive.duration", 1000);
 
-            OkHttpClient client = new OkHttpClient(config, null, new Random(), null, null);
+            OkHttpClient client = new OkHttpClient(config, null, new Random(), null, null, new JmxMeterRegistry(s -> null, Clock.SYSTEM));
 
             HashMap<String, Object> config2 = Maps.newHashMap();
             config2.put("okhttp.connection.pool.scope", "static");
@@ -1041,7 +1045,7 @@ class OkHttpClientTest {
             config2.put("okhttp.connection.pool.keep.alive.duration", 1000);
 
 
-            OkHttpClient client2 = new OkHttpClient(config2, null, new Random(), null, null);
+            OkHttpClient client2 = new OkHttpClient(config2, null, new Random(), null, null, new JmxMeterRegistry(s -> null, Clock.SYSTEM));
 
             String baseUrl = "http://" + getIP() + ":" + wmRuntimeInfo.getHttpPort();
             String url = baseUrl + "/ping";

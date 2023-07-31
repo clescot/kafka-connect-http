@@ -145,8 +145,8 @@ public class AdvancedEventListener extends EventListener {
         this.unknownRequestTags = unknownRequestTags;
     }
 
-    public static AdvancedEventListener.Builder builder(MeterRegistry registry, String name) {
-        return new AdvancedEventListener.Builder(registry, name);
+    public static AdvancedEventListener.Builder builder(MeterRegistry registry) {
+        return new AdvancedEventListener.Builder(registry);
     }
 
     @Override
@@ -524,7 +524,6 @@ public class AdvancedEventListener extends EventListener {
 
         private final MeterRegistry registry;
 
-        private final String name;
 
         private Function<Request, String> uriMapper = (request) -> Optional.ofNullable(request.header(URI_PATTERN))
                 .orElse("none");
@@ -537,9 +536,8 @@ public class AdvancedEventListener extends EventListener {
 
         private Iterable<String> requestTagKeys = Collections.emptyList();
 
-        Builder(MeterRegistry registry, String name) {
+        Builder(MeterRegistry registry) {
             this.registry = registry;
-            this.name = name;
         }
 
         public AdvancedEventListener.Builder tags(Iterable<Tag> tags) {
