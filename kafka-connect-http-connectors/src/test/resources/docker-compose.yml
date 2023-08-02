@@ -133,7 +133,26 @@ services:
       CONNECT_LOG4J_ROOT_LOGLEVEL: INFO
       CONNECT_LOG4J_LOGGERS: org.reflections=ERROR
       KAFKA_OPTS: "-javaagent:/tmp/jmx_prometheus_javaagent.jar=9100:/tmp/kafka-connect.yml"
-
+  init-kafka:
+    image: confluentinc/cp-kafka:7.4.1
+    depends_on:
+      - kafka1
+      - kafka2
+      - kafka3
+    entrypoint: [ '/bin/sh', '-c' ]
+    command: |
+      "
+      # blocks until kafka is reachable
+      kafka-topics --bootstrap-server 'kafka1:39092,kafka2:39093,kafka3:39094' --list
+      
+      echo -e 'Creating kafka topics'
+      kafka-topics --bootstrap-server 'kafka1:39092,kafka2:39093,kafka3:39094' --create --if-not-exists --topic http-request --replication-factor 3 --partitions 1
+      kafka-topics --bootstrap-server 'kafka1:39092,kafka2:39093,kafka3:39094' --create --if-not-exists --topic http-success --replication-factor 3 --partitions 1
+      kafka-topics --bootstrap-server 'kafka1:39092,kafka2:39093,kafka3:39094' --create --if-not-exists --topic http-error --replication-factor 3 --partitions 1
+      
+      echo -e 'Successfully created the following topics:'
+      kafka-topics --bootstrap-server 'kafka1:39092,kafka2:39093,kafka3:39094' --list
+      "
   akhq:
     image: tchiotludo/akhq:0.24.0
     restart: unless-stopped
