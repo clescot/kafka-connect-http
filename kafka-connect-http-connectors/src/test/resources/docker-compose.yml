@@ -109,6 +109,7 @@ services:
     build: .
     ports:
       - "8083:8083"
+      - "9101:9100"
     environment:
       CONNECT_BOOTSTRAP_SERVERS: 'kafka1:39092,kafka2:39093,kafka3:39094'
       CONNECT_LISTENERS: http://0.0.0.0:8083
@@ -131,6 +132,7 @@ services:
       CONNECT_REST_ADVERTISED_HOST_NAME: "localhost"
       CONNECT_LOG4J_ROOT_LOGLEVEL: INFO
       CONNECT_LOG4J_LOGGERS: org.reflections=ERROR
+      KAFKA_OPTS: "-javaagent:/tmp/jmx_prometheus_javaagent.jar=9100:/tmp/kafka-connect.yml"
 
   akhq:
     image: tchiotludo/akhq:0.24.0
