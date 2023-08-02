@@ -322,9 +322,6 @@
                             <dockerfile>src/test/resources/Dockerfile</dockerfile>
                             <repository>clescot/kafka-connect-http</repository>
                             <tag>${project.version}</tag>
-                            <buildArgs>
-                                <ZIP_FILE>clescot-${project.build.finalName}.zip</ZIP_FILE>
-                            </buildArgs>
                         </configuration>
                     </plugin>
                 </plugins>
