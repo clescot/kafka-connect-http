@@ -2,7 +2,7 @@
 version: "3.8"
 services:
   kafka-gen:
-    image: confluentinc/cp-kafka:7.3.3
+    image: confluentinc/cp-kafka:7.4.1
     hostname: kafka-gen
     container_name: kafka-gen
     volumes:
@@ -12,7 +12,7 @@ services:
 
 
   kafka1:
-    image: confluentinc/cp-kafka:7.3.3
+    image: confluentinc/cp-kafka:7.4.1
     hostname: kafka1
     container_name: kafka1
     ports:
@@ -34,12 +34,11 @@ services:
       KAFKA_PROCESS_ROLES: 'controller,broker'
     volumes:
       - kafka1-data:/var/lib/kafka/data
-      - ./scripts/update_run.sh:/tmp/update_run.sh
       - ./clusterID:/tmp/clusterID
-    command: "bash -c '/tmp/update_run.sh && /etc/confluent/docker/run'"
+    command: "bash -c 'export CLUSTER_ID=$(cat /tmp/clusterID/clusterID) && /etc/confluent/docker/run'"
 
   kafka2:
-    image: confluentinc/cp-kafka:7.3.3
+    image: confluentinc/cp-kafka:7.4.1
     hostname: kafka2
     container_name: kafka2
     ports:
@@ -61,12 +60,11 @@ services:
       KAFKA_PROCESS_ROLES: 'controller,broker'
     volumes:
       - kafka2-data:/var/lib/kafka/data
-      - ./scripts/update_run.sh:/tmp/update_run.sh
       - ./clusterID:/tmp/clusterID
-    command: "bash -c '/tmp/update_run.sh && /etc/confluent/docker/run'"
+    command: "bash -c 'export CLUSTER_ID=$(cat /tmp/clusterID/clusterID) && /etc/confluent/docker/run'"
 
   kafka3:
-    image: confluentinc/cp-kafka:7.3.3
+    image: confluentinc/cp-kafka:7.4.1
     hostname: kafka3
     container_name: kafka3
     ports:
@@ -88,12 +86,26 @@ services:
       KAFKA_PROCESS_ROLES: 'controller,broker'
     volumes:
       - kafka3-data:/var/lib/kafka/data
-      - ./scripts/update_run.sh:/tmp/update_run.sh
       - ./clusterID:/tmp/clusterID
-    command: "bash -c '/tmp/update_run.sh && /etc/confluent/docker/run'"
+    command: "bash -c 'export CLUSTER_ID=$(cat /tmp/clusterID/clusterID) && /etc/confluent/docker/run'"
+
+
+  schema-registry:
+    image: confluentinc/cp-schema-registry:7.4.1
+    container_name: schema-registry
+    hostname: schema-registry
+    ports:
+      - "8081:8081"
+    environment:
+      SCHEMA_REGISTRY_HOST_NAME: schema-registry
+      SCHEMA_REGISTRY_KAFKASTORE_BOOTSTRAP_SERVERS: 'kafka1:39092,kafka2:39093,kafka3:39094'
+      SCHEMA_REGISTRY_LISTENERS: 'http://0.0.0.0:8081'
+    depends_on:
+      - kafka1
+      - kafka2
+      - kafka3
 
 volumes:
   kafka1-data:
   kafka2-data:
   kafka3-data:
-  kafka-cluster-id:
