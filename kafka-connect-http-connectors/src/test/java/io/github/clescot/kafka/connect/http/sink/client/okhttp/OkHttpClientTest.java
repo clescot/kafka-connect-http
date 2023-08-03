@@ -164,7 +164,7 @@ class OkHttpClientTest {
         void test_activated_cache_with_file_type() {
             HashMap<String, Object> config = Maps.newHashMap();
             config.put(OKHTTP_CACHE_ACTIVATE, "true");
-            OkHttpClient client = new OkHttpClient(config, null, new Random(), null, null, new JmxMeterRegistry(s -> null, Clock.SYSTEM));
+            new OkHttpClient(config, null, new Random(), null, null, new JmxMeterRegistry(s -> null, Clock.SYSTEM));
         }
 
         @Test
@@ -172,7 +172,7 @@ class OkHttpClientTest {
             HashMap<String, Object> config = Maps.newHashMap();
             config.put(OKHTTP_CACHE_ACTIVATE, "true");
             config.put(OKHTTP_CACHE_MAX_SIZE, "50000");
-            OkHttpClient client = new OkHttpClient(config, null, new Random(), null, null, new JmxMeterRegistry(s -> null, Clock.SYSTEM));
+            new OkHttpClient(config, null, new Random(), null, null, new JmxMeterRegistry(s -> null, Clock.SYSTEM));
         }
 
         @Test
@@ -181,7 +181,7 @@ class OkHttpClientTest {
             config.put(OKHTTP_CACHE_ACTIVATE, "true");
             config.put(OKHTTP_CACHE_MAX_SIZE, "50000");
             config.put(OKHTTP_CACHE_DIRECTORY_PATH, "/tmp/toto");
-            OkHttpClient client = new OkHttpClient(config, null, new Random(), null, null, new JmxMeterRegistry(s -> null, Clock.SYSTEM));
+            new OkHttpClient(config, null, new Random(), null, null, new JmxMeterRegistry(s -> null, Clock.SYSTEM));
         }
 
         @Test
@@ -189,20 +189,20 @@ class OkHttpClientTest {
             HashMap<String, Object> config = Maps.newHashMap();
             config.put(OKHTTP_CACHE_ACTIVATE, "true");
             config.put(OKHTTP_CACHE_TYPE, "inmemory");
-            OkHttpClient client = new OkHttpClient(config, null, new Random(), null, null, new JmxMeterRegistry(s -> null, Clock.SYSTEM));
+            new OkHttpClient(config, null, new Random(), null, null, new JmxMeterRegistry(s -> null, Clock.SYSTEM));
         }
 
         @Test
         void test_inactivated_cache() {
             HashMap<String, Object> config = Maps.newHashMap();
             config.put(OKHTTP_CACHE_ACTIVATE, "false");
-            OkHttpClient client = new OkHttpClient(config, null, new Random(), null, null, new JmxMeterRegistry(s -> null, Clock.SYSTEM));
+            new OkHttpClient(config, null, new Random(), null, null, new JmxMeterRegistry(s -> null, Clock.SYSTEM));
         }
 
         @Test
         void test_no_cache() {
             HashMap<String, Object> config = Maps.newHashMap();
-            OkHttpClient client = new OkHttpClient(config, null, new Random(), null, null, new JmxMeterRegistry(s -> null, Clock.SYSTEM));
+            new OkHttpClient(config, null, new Random(), null, null, new JmxMeterRegistry(s -> null, Clock.SYSTEM));
         }
     }
 
@@ -867,7 +867,7 @@ class OkHttpClientTest {
             Pattern uriPattern = Pattern.compile(".*");
             Predicate<URI> predicate = uri -> uriPattern.matcher(uri.toString()).matches();
             Proxy proxy = new Proxy(Proxy.Type.HTTP, new InetSocketAddress(getIP(), wmRuntimeInfo.getHttpPort()));
-            ImmutablePair<Predicate<URI>, Proxy> pair = new ImmutablePair(predicate, proxy);
+            ImmutablePair<Predicate<URI>, Proxy> pair = new ImmutablePair<>(predicate, proxy);
             proxies.add(pair);
             URIRegexProxySelector proxySelector = new URIRegexProxySelector(proxies);
             OkHttpClient client = new OkHttpClient(config, null, new Random(), null, proxySelector, new JmxMeterRegistry(s -> null, Clock.SYSTEM));
@@ -921,13 +921,13 @@ class OkHttpClientTest {
             Pattern uriPattern = Pattern.compile("http://toto\\.com.*");
             Predicate<URI> predicate = uri -> uriPattern.matcher(uri.toString()).matches();
             Proxy proxy = new Proxy(Proxy.Type.HTTP, new InetSocketAddress("111.222.888.999", 5555));
-            ImmutablePair<Predicate<URI>, Proxy> pair = new ImmutablePair(predicate, proxy);
+            ImmutablePair<Predicate<URI>, Proxy> pair = new ImmutablePair<>(predicate, proxy);
             proxies.add(pair);
             //proxy used in this test
             Pattern uriPattern2 = Pattern.compile("http://dummy\\.com.*");
             Predicate<URI> predicate2 = uri -> uriPattern2.matcher(uri.toString()).matches();
             Proxy proxy2 = new Proxy(Proxy.Type.HTTP, new InetSocketAddress(getIP(), wmRuntimeInfo.getHttpPort()));
-            ImmutablePair<Predicate<URI>, Proxy> pair2 = new ImmutablePair(predicate2, proxy2);
+            ImmutablePair<Predicate<URI>, Proxy> pair2 = new ImmutablePair<>(predicate2, proxy2);
             proxies.add(pair2);
 
             URIRegexProxySelector proxySelector = new URIRegexProxySelector(proxies);
