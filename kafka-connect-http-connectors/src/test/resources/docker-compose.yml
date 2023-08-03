@@ -18,6 +18,7 @@ services:
     ports:
       - "39092:39092"
     environment:
+      CONFLUENT_METRICS_ENABLE: 'false'
       KAFKA_ADVERTISED_LISTENERS: BROKER://kafka1:19092,EXTERNAL://kafka1:39092
       KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
       KAFKA_CONTROLLER_QUORUM_VOTERS: '1@kafka1:9093,2@kafka2:9093,3@kafka3:9093'
@@ -44,6 +45,7 @@ services:
     ports:
       - "39093:39093"
     environment:
+      CONFLUENT_METRICS_ENABLE: 'false'
       KAFKA_ADVERTISED_LISTENERS: BROKER://kafka2:19093,EXTERNAL://kafka2:39093
       KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
       KAFKA_CONTROLLER_QUORUM_VOTERS: '1@kafka1:9093,2@kafka2:9093,3@kafka3:9093'
@@ -70,6 +72,7 @@ services:
     ports:
       - "39094:39094"
     environment:
+      CONFLUENT_METRICS_ENABLE: 'false'
       KAFKA_ADVERTISED_LISTENERS: BROKER://kafka3:19094,EXTERNAL://kafka3:39094
       KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
       KAFKA_CONTROLLER_QUORUM_VOTERS: '1@kafka1:9093,2@kafka2:9093,3@kafka3:9093'
@@ -133,6 +136,10 @@ services:
       CONNECT_LOG4J_ROOT_LOGLEVEL: INFO
       CONNECT_LOG4J_LOGGERS: org.reflections=ERROR
       KAFKA_OPTS: "-javaagent:/tmp/jmx_prometheus_javaagent.jar=9100:/tmp/kafka-connect.yml"
+#  schema-registry-gitops:
+#    image: domnikl/schema-registry-gitops:1.9.0
+#    environment:
+#      SCHEMA_REGISTRY_GITOPS_SCHEMA_REGISTRY_URL: "http://schema-registry:8081"
   init-kafka:
     image: confluentinc/cp-kafka:7.4.1
     depends_on:
