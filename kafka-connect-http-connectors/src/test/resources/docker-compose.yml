@@ -209,6 +209,7 @@ services:
           {
             "connector.class":"io.github.clescot.kafka.connect.http.sink.HttpSinkConnector",
             "tasks.max": "1",
+            "value.converter":"org.apache.kafka.connect.storage.StringConverter",
             "topics":"http-request",
             "publish.to.in.memory.queue":"true"
           }
@@ -227,9 +228,10 @@ services:
           "config":
           {
             "connector.class":"io.github.clescot.kafka.connect.http.source.HttpSourceConnector",
+            "tasks.max": "1",
+            "value.converter":"org.apache.kafka.connect.storage.StringConverter",
             "success.topic": "http-success",
-            "error.topic": "http-error",
-            "tasks.max": "1"
+            "error.topic": "http-error"
           }
         }'
     depends_on:
