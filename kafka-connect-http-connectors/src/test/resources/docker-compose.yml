@@ -164,6 +164,11 @@ services:
     ports:
       - "8083:8083"
       - "9101:9100"
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:8083/connectors" ]
+      interval: 30s
+      timeout: 10s
+      retries: 5
     environment:
       CONNECT_BOOTSTRAP_SERVERS: 'kafka1:39092,kafka2:39093,kafka3:39094'
       CONNECT_LISTENERS: http://0.0.0.0:8083
@@ -195,7 +200,6 @@ services:
       - schema-registry
   connect-config-sink:
     image: curlimages/curl:8.2.1
-    restart: on-failure
     command: |
       -X POST \
         http://connect:8083/connectors \
@@ -210,10 +214,11 @@ services:
           }
         }'
     depends_on:
-      - connect
+      connect:
+        condition: service_healthy
+        restart: true
   connect-config-source:
     image: curlimages/curl:8.2.1
-    restart: on-failure
     command: |
       -X POST \
         http://connect:8083/connectors \
@@ -228,7 +233,9 @@ services:
           }
         }'
     depends_on:
-      - connect
+      connect:
+        condition: service_healthy
+        restart: true
   akhq:
     image: tchiotludo/akhq:0.24.0
     restart: unless-stopped
