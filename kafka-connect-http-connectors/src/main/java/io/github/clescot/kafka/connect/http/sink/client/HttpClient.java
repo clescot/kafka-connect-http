@@ -31,7 +31,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import static io.github.clescot.kafka.connect.http.sink.HttpSinkConfigDefinition.*;
 
-public interface HttpClient<Req, Res> {
+public interface HttpClient<Q, S> {
     boolean FAILURE = false;
     int SERVER_ERROR_STATUS_CODE = 500;
     String UTC_ZONE_ID = "UTC";
@@ -71,14 +71,14 @@ public interface HttpClient<Req, Res> {
      * @return native request.
      */
 
-    Req buildRequest(HttpRequest httpRequest);
+    Q buildRequest(HttpRequest httpRequest);
 
     default CompletableFuture<HttpExchange> call(HttpRequest httpRequest, AtomicInteger attempts) throws HttpException {
 
         Stopwatch stopwatch = Stopwatch.createStarted();
-        CompletableFuture<Res> response;
+        CompletableFuture<S> response;
         LOGGER.info("httpRequest: {}", httpRequest);
-        Req request = buildRequest(httpRequest);
+        Q request = buildRequest(httpRequest);
         LOGGER.info("native request: {}", request);
         OffsetDateTime now = OffsetDateTime.now(ZoneId.of(UTC_ZONE_ID));
         response = call(request);
@@ -91,11 +91,14 @@ public interface HttpClient<Req, Res> {
                             LOGGER.info("duration: {}ms", stopwatch.elapsed(TimeUnit.MILLISECONDS));
                             return buildHttpExchange(httpRequest, myResponse, stopwatch, now, attempts, myResponse.getStatusCode() < 400 ? SUCCESS : FAILURE);
                         }
-                );
+                ).exceptionally((throwable-> {
+                    HttpResponse httpResponse = new HttpResponse(400,throwable.getMessage());
+                    return buildHttpExchange(httpRequest, httpResponse, stopwatch, now, attempts,FAILURE);
+                }));
 
     }
 
-    CompletableFuture<Res> call(Req request);
+    CompletableFuture<S> call(Q request);
 
     /**
      * convert a native response (from the implementation) to an {@link HttpResponse}.
@@ -104,9 +107,9 @@ public interface HttpClient<Req, Res> {
      * @return HttpResponse
      */
 
-    HttpResponse buildResponse(Res response);
+    HttpResponse buildResponse(S response);
 
-    CompletableFuture<Res> nativeCall(Req request);
+    CompletableFuture<S> nativeCall(Q request);
 
     static TrustManagerFactory getTrustManagerFactory(String trustStorePath,
                                                       char[] password,
