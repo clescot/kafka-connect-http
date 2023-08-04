@@ -13,6 +13,6 @@
 
 
 
-[![build](https://github.com/clescot/kafka-connect-http/workflows/build/badge.svg)](https://github.com/clescot/kafka-connect-http/actions)
+[![build](https://github.com/clescot/kafka-connect-http/workflows/build/badge.svg)](https://github.com/clescot/kafka-connect-http/actions/workflows/build.yaml)
 [![Maven Central](https://maven-badges.herokuapp.com/maven-central/io.github.clescot/kafka-connect-http/badge.svg)](https://maven-badges.herokuapp.com/maven-central/io.github.clescot/kafka-connect-http)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
