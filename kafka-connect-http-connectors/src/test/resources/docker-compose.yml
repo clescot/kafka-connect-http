@@ -107,6 +107,11 @@ services:
       - kafka1
       - kafka2
       - kafka3
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:8081" ]
+      interval: 30s
+      timeout: 10s
+      retries: 5
   connect:
     container_name: connect
     build: .
@@ -136,10 +141,32 @@ services:
       CONNECT_LOG4J_ROOT_LOGLEVEL: INFO
       CONNECT_LOG4J_LOGGERS: org.reflections=ERROR
       KAFKA_OPTS: "-javaagent:/tmp/jmx_prometheus_javaagent.jar=9100:/tmp/kafka-connect.yml"
-#  schema-registry-gitops:
-#    image: domnikl/schema-registry-gitops:1.9.0
-#    environment:
-#      SCHEMA_REGISTRY_GITOPS_SCHEMA_REGISTRY_URL: "http://schema-registry:8081"
+  schema-registry-gitops:
+    restart: on-failure
+    image: clescot/kafka-connect-http-gitops
+    build:
+      context: ./schema-registry
+    command: "apply /opt/state1.yml"
+    environment:
+      SCHEMA_REGISTRY_GITOPS_SCHEMA_REGISTRY_URL: "http://schema-registry:8081"
+    depends_on:
+      - kafka1
+      - kafka2
+      - kafka3
+      - schema-registry
+  schema-registry-gitops-2:
+    restart: on-failure
+    image: clescot/kafka-connect-http-gitops
+    build:
+      context: ./schema-registry
+    command: "apply /opt/state2.yml"
+    environment:
+      SCHEMA_REGISTRY_GITOPS_SCHEMA_REGISTRY_URL: "http://schema-registry:8081"
+    depends_on:
+      - kafka1
+      - kafka2
+      - kafka3
+      - schema-registry
   init-kafka:
     image: confluentinc/cp-kafka:7.4.1
     depends_on:
