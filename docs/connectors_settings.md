@@ -9,7 +9,7 @@ cluster.
 
 every Kafka Connect Sink Connector need to define these required parameters :
 
-- *`connector.class`* : `io.github.clescot.kafka.connect.http.HttpSinkConnector`
+- *`connector.class`* : `io.github.clescot.kafka.connect.http.sink.HttpSinkConnector`
 - *`topics`* (or *`topics.regex`*): `http-requests` for example
 
 #### optional Kafka Connect parameters
@@ -170,7 +170,7 @@ The predicate permits to filter some http requests, and can be composed, cumulat
 {
     "name": "my-http-sink-connector",
     "config": {
-    "connector.class":"sink.io.github.clescot.kafka.connect.http.HttpSinkConnector",
+    "connector.class":"io.github.clescot.kafka.connect.http.sink.HttpSinkConnector",
     "tasks.max": "1",
     "topics":"http-request"
     }
@@ -181,7 +181,7 @@ The predicate permits to filter some http requests, and can be composed, cumulat
 {
     "name": "my-http-sink-connector",
     "config": {
-    "connector.class":"sink.io.github.clescot.kafka.connect.http.HttpSinkConnector",
+    "connector.class":"io.github.clescot.kafka.connect.http.sink.HttpSinkConnector",
     "tasks.max": "1",
     "topics":"http-request",
     "publish.to.in.memory.queue":"true"
@@ -195,7 +195,7 @@ The predicate permits to filter some http requests, and can be composed, cumulat
 {
   "name": "my-http-sink-connector",
   "config": {
-    "connector.class":"sink.io.github.clescot.kafka.connect.http.HttpSinkConnector",
+    "connector.class":"io.github.clescot.kafka.connect.http.sink.HttpSinkConnector",
     "tasks.max": "1",
     "topics":"http-request",
     "key.converter": "org.apache.kafka.connect.storage.StringConverter",
@@ -252,7 +252,7 @@ via the `publish.to.in.memory.queue` set to `true`.
 {
     "name": "my-http-source-connector",
     "config": {
-    "connector.class":"source.io.github.clescot.kafka.connect.http.HttpSourceConnector",
+    "connector.class":"io.github.clescot.kafka.connect.http.source.HttpSourceConnector",
     "tasks.max": "1",
     "success.topic": "http-success",
     "error.topic": "http-error"

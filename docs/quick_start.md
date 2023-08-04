@@ -12,7 +12,7 @@ This configuration does NOT publish HTTP results to an in memory queue.
 {
     "name": "my-http-sink-connector",
     "config": {
-    "connector.class":"sink.io.github.clescot.kafka.connect.http.HttpSinkConnector",
+    "connector.class":"io.github.clescot.kafka.connect.http.sink.HttpSinkConnector",
     "tasks.max": "1",
     "topics":"http-request"
     }
@@ -29,7 +29,7 @@ This configuration publish HTTP results to an in memory queue.
 {
     "name": "my-http-sink-connector",
     "config": {
-    "connector.class":"sink.io.github.clescot.kafka.connect.http.HttpSinkConnector",
+    "connector.class":"io.github.clescot.kafka.connect.http.sink.HttpSinkConnector",
     "tasks.max": "1",
     "topics":"http-request",
     "publish.to.in.memory.queue":"true"
@@ -48,7 +48,7 @@ depending on the HTTP result.
 {
     "name": "my-http-source-connector",
     "config": {
-    "connector.class":"source.io.github.clescot.kafka.connect.http.HttpSourceConnector",
+    "connector.class":"io.github.clescot.kafka.connect.http.source.HttpSourceConnector",
     "tasks.max": "1",
     "success.topic": "http-success",
     "error.topic": "http-error"
