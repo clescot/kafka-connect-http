@@ -351,20 +351,22 @@ public class HttpSinkTask extends SinkTask {
 
     @Override
     public void stop() {
-        if (!executorService.isShutdown()) {
-            executorService.shutdown();
-        }
-        try {
-            boolean awaitTermination = executorService.awaitTermination(30, TimeUnit.SECONDS);
-            if (!awaitTermination) {
-                LOGGER.warn("timeout elapsed before executor termination");
+        if(executorService!=null) {
+            if (!executorService.isShutdown()) {
+                executorService.shutdown();
             }
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            throw new ConnectException(e);
+            try {
+                boolean awaitTermination = executorService.awaitTermination(30, TimeUnit.SECONDS);
+                if (!awaitTermination) {
+                    LOGGER.warn("timeout elapsed before executor termination");
+                }
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                throw new ConnectException(e);
+            }
+            LOGGER.info("executor is shutdown : '{}'", executorService.isShutdown());
+            LOGGER.info("executor tasks are terminated : '{}'", executorService.isTerminated());
         }
-        LOGGER.info("executor is shutdown : '{}'", executorService.isShutdown());
-        LOGGER.info("executor tasks are terminated : '{}'", executorService.isTerminated());
     }
 
     protected void setQueue(Queue<KafkaRecord> queue) {

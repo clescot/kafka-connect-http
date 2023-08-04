@@ -191,6 +191,20 @@ public class HttpSinkTaskTest {
     }
 
     @Nested
+    class Stop{
+        @Test
+        void test_stop_with_start_and_no_setttings() {
+            httpSinkTask.start(Maps.newHashMap());
+            Assertions.assertDoesNotThrow(()->httpSinkTask.stop());
+        }
+        @Test
+        void test_stop_without_start() {
+            Assertions.assertDoesNotThrow(()->httpSinkTask.stop());
+        }
+
+    }
+
+    @Nested
     class Put {
         @Test
         void test_put_add_static_headers_with_value_as_string() {
