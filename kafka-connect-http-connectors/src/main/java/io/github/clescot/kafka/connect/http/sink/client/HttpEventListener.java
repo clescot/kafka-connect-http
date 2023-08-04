@@ -147,7 +147,7 @@ public class HttpEventListener {
                         .map(contextTag -> contextTag.apply(request, state.response)).collect(toList()))
                 .and(getRequestTags(request)).and(generateTagsForRoute(request));
 
-        if (includeHostTag) {
+        if (requestAvailable && includeHostTag) {
             String urlAsString = request.getUrl();
             URL url;
             try {
@@ -155,7 +155,7 @@ public class HttpEventListener {
             } catch (MalformedURLException e) {
                 throw new HttpException(e);
             }
-            tags = Tags.of(tags).and("host", requestAvailable ? url.getHost() : TAG_VALUE_UNKNOWN);
+            tags = Tags.of(tags).and("host",url.getHost());
         }
 
         Timer.builder(this.requestsMetricName).tags(tags).description("Timer of OkHttp operation").register(registry)
@@ -218,7 +218,7 @@ public class HttpEventListener {
 
         private final String name;
 
-        private Function<HttpRequest, String> uriMapper = (request) -> {
+        private Function<HttpRequest, String> uriMapper = request -> {
             Map<String, List<String>> headers = request.getHeaders();
             return Optional.ofNullable(headers.get(URI_PATTERN) != null && !headers.get(URI_PATTERN).isEmpty() ? headers.get(URI_PATTERN).get(0) : null)
                     .orElse("none");
@@ -226,7 +226,7 @@ public class HttpEventListener {
 
         private Tags tags = Tags.empty();
 
-        private Collection<BiFunction<HttpRequest, HttpResponse, Tag>> contextSpecificTags = new ArrayList<>();
+        private final Collection<BiFunction<HttpRequest, HttpResponse, Tag>> contextSpecificTags = new ArrayList<>();
 
         private boolean includeHostTag = true;
 
