@@ -1,10 +1,10 @@
 package io.github.clescot.kafka.connect.http.sink.client.okhttp.configuration;
 
-import com.burgstaller.okhttp.DispatchingAuthenticator;
+import com.burgstaller.okhttp.*;
 import com.burgstaller.okhttp.basic.BasicAuthenticator;
 import com.burgstaller.okhttp.digest.CachingAuthenticator;
+import com.burgstaller.okhttp.digest.DigestAuthenticator;
 import com.google.common.base.Preconditions;
-import io.github.clescot.kafka.connect.http.sink.client.okhttp.authentication.*;
 import org.jetbrains.annotations.Nullable;
 
 import java.nio.charset.Charset;
@@ -14,7 +14,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
 import static io.github.clescot.kafka.connect.http.sink.HttpSinkConfigDefinition.*;
-import static io.github.clescot.kafka.connect.http.sink.HttpSinkConfigDefinition.HTTP_CLIENT_AUTHENTICATION_BASIC_CHARSET;
 
 /**
  * configure authentication settings for {@link io.github.clescot.kafka.connect.http.sink.client.okhttp.OkHttpClient}.
