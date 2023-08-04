@@ -92,7 +92,7 @@ services:
       - ./clusterID:/tmp/clusterID
     command: "bash -c 'export CLUSTER_ID=$(cat /tmp/clusterID/clusterID) && /etc/confluent/docker/run'"
 
-  init-kafka:
+  kafka-init:
     image: confluentinc/cp-kafka:7.4.1
     depends_on:
       - kafka1
@@ -187,7 +187,13 @@ services:
       CONNECT_LOG4J_ROOT_LOGLEVEL: INFO
       CONNECT_LOG4J_LOGGERS: org.reflections=ERROR
       KAFKA_OPTS: "-javaagent:/tmp/jmx_prometheus_javaagent.jar=9100:/tmp/kafka-connect.yml"
-  connect-config:
+    depends_on:
+      - kafka1
+      - kafka2
+      - kafka3
+      - kafka-init
+      - schema-registry
+  connect-config-sink:
     image: curlimages/curl:8.2.1
     restart: on-failure
     command: |
@@ -197,11 +203,32 @@ services:
         -d '{ "name": "my-http-sink-connector",
           "config":
           {
-            "topics":"http-request",
             "connector.class":"io.github.clescot.kafka.connect.http.sink.HttpSinkConnector",
+            "tasks.max": "1",
+            "topics":"http-request",
+            "publish.to.in.memory.queue":"true"
+          }
+        }'
+    depends_on:
+      - connect
+  connect-config-source:
+    image: curlimages/curl:8.2.1
+    restart: on-failure
+    command: |
+      -X POST \
+        http://connect:8083/connectors \
+        -H 'Content-Type: application/json' \
+        -d '{ "name": "my-http-source-connector",
+          "config":
+          {
+            "connector.class":"io.github.clescot.kafka.connect.http.source.HttpSourceConnector",
+            "success.topic": "http-success",
+            "error.topic": "http-error",
             "tasks.max": "1"
           }
         }'
+    depends_on:
+      - connect
   akhq:
     image: tchiotludo/akhq:0.24.0
     restart: unless-stopped
