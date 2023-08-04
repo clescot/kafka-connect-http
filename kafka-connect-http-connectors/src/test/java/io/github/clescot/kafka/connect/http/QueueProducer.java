@@ -21,12 +21,14 @@ import static io.github.clescot.kafka.connect.http.sink.client.HttpClient.*;
  * for tests only.
  */
 public class QueueProducer implements Runnable {
+    public static final String APPLICATION_JSON = "application/json";
+    public static final String CONTENT_TYPE = "Content-Type";
     private final Queue<KafkaRecord> transferQueue;
 
     private final long numberOfSuccessfulMessages;
     private final long numberOfErrorMessages;
 
-    public AtomicInteger numberOfProducedMessages = new AtomicInteger();
+    private static final AtomicInteger numberOfProducedMessages = new AtomicInteger();
 
 
     public QueueProducer(Queue<KafkaRecord> transferQueue, long numberOfSuccessfulMessages, long numberOfErrorMessages) {
@@ -55,7 +57,7 @@ public class QueueProducer implements Runnable {
         Map<String, List<String>> requestheaders = Maps.newHashMap();
         requestheaders.put("X-Request-ID", Lists.newArrayList("sdqd-qsdqd-446564"));
         requestheaders.put("X-Correlation-ID",Lists.newArrayList("222-qsdqd-446564"));
-        requestheaders.put("Content-Type",Lists.newArrayList("application/json"));
+        requestheaders.put(CONTENT_TYPE,Lists.newArrayList(APPLICATION_JSON));
         HttpRequest httpRequest = new HttpRequest("http://www.toto.com","POST","STRING");
         httpRequest.setHeaders(requestheaders);
         httpRequest.setBodyAsString("fummy body");
@@ -65,7 +67,7 @@ public class QueueProducer implements Runnable {
     @NotNull
     private static HttpExchange getSuccessfulHttpExchange(HttpRequest httpRequest) {
         Map<String,List<String>> responseHeaders = Maps.newHashMap();
-        responseHeaders.put("Content-Type",Lists.newArrayList("application/json"));
+        responseHeaders.put(CONTENT_TYPE,Lists.newArrayList(APPLICATION_JSON));
         HttpResponse httpResponse = new HttpResponse(200,"OK");
         httpResponse.setResponseBody("body");
         httpResponse.setResponseHeaders(responseHeaders);
@@ -88,7 +90,7 @@ public class QueueProducer implements Runnable {
     @NotNull
     private static HttpExchange getErrorHttpExchange(HttpRequest httpRequest) {
         Map<String,List<String>> responseHeaders = Maps.newHashMap();
-        responseHeaders.put("Content-Type",Lists.newArrayList("application/json"));
+        responseHeaders.put(CONTENT_TYPE,Lists.newArrayList(APPLICATION_JSON));
         HttpResponse httpResponse = new HttpResponse(500,"Internal Server Error");
         httpResponse.setResponseBody("Houston, we've got a problem....");
         httpResponse.setResponseHeaders(responseHeaders);
