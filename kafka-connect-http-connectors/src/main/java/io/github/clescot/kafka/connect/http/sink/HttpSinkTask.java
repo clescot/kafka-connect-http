@@ -114,7 +114,7 @@ public class HttpSinkTask extends SinkTask {
     }
 
     private static void bindMetrics(MeterRegistry meterRegistry) {
-        new ExecutorServiceMetrics(executorService,"HttpSinkTask",Lists.newArrayList()).bindTo(meterRegistry);
+        new ExecutorServiceMetrics(executorService, "HttpSinkTask", Lists.newArrayList()).bindTo(meterRegistry);
         new JvmMemoryMetrics().bindTo(meterRegistry);
         new JvmThreadMetrics().bindTo(meterRegistry);
         new JvmInfoMetrics().bindTo(meterRegistry);
@@ -130,7 +130,7 @@ public class HttpSinkTask extends SinkTask {
         }
     }
 
-    private MeterRegistry buildMeterRegistry(){
+    private MeterRegistry buildMeterRegistry() {
         CompositeMeterRegistry compositeMeterRegistry = new CompositeMeterRegistry();
         MeterRegistry jmxMeterRegistry = new JmxMeterRegistry(s -> null, Clock.SYSTEM);
         compositeMeterRegistry.add(jmxMeterRegistry);
@@ -179,7 +179,7 @@ public class HttpSinkTask extends SinkTask {
         //we submit futures to the pool
         List<CompletableFuture<HttpExchange>> completableFutures = records.stream().map(this::process).collect(Collectors.toList());
         List<HttpExchange> httpExchanges = completableFutures.stream().map(CompletableFuture::join).collect(Collectors.toList());
-        LOGGER.debug("HttpExchanges created :'{}'",httpExchanges.size());
+        LOGGER.debug("HttpExchanges created :'{}'", httpExchanges.size());
 
     }
 
@@ -236,7 +236,7 @@ public class HttpSinkTask extends SinkTask {
                 if (retryPolicyForCall.isPresent()) {
                     RetryPolicy<HttpExchange> retryPolicy = retryPolicyForCall.get();
                     CompletableFuture<HttpExchange> httpExchangeFuture = callAndPublish(sinkRecord, httpRequest, attempts, configuration)
-                                                                         .thenApply(configuration::handleRetry);
+                            .thenApply(configuration::handleRetry);
                     return Failsafe.with(List.of(retryPolicy)).getStageAsync(() -> httpExchangeFuture);
                 } else {
                     return callAndPublish(sinkRecord, httpRequest, attempts, configuration);
@@ -280,8 +280,6 @@ public class HttpSinkTask extends SinkTask {
     }
 
 
-
-
     protected HttpRequest buildHttpRequest(SinkRecord sinkRecord) {
         if (sinkRecord == null || sinkRecord.value() == null) {
             LOGGER.warn(SINK_RECORD_HAS_GOT_A_NULL_VALUE);
@@ -318,7 +316,7 @@ public class HttpSinkTask extends SinkTask {
                 stringValue = (String) value;
                 LOGGER.debug("String is {}", stringValue);
             } else {
-                LOGGER.warn("value is an instance of the class '{}' not handled by the WsSinkTask",valueClass.getName());
+                LOGGER.warn("value is an instance of the class '{}' not handled by the WsSinkTask", valueClass.getName());
                 throw new ConnectException("value is an instance of the class " + valueClass.getName() + " not handled by the WsSinkTask");
             }
             if (httpRequest == null) {
@@ -327,11 +325,8 @@ public class HttpSinkTask extends SinkTask {
                 LOGGER.debug("successful httpRequest parsing :{}", httpRequest);
             }
         } catch (ConnectException connectException) {
-            Object sinkValue = sinkRecord.value();
 
-            if (sinkValue != null) {
-                LOGGER.error("sink value class is '{}'", sinkValue.getClass().getName());
-            }
+            LOGGER.error("sink value class is '{}'", value.getClass().getName());
 
             if (errantRecordReporter != null) {
                 errantRecordReporter.report(sinkRecord, connectException);
@@ -361,7 +356,7 @@ public class HttpSinkTask extends SinkTask {
         }
         try {
             boolean awaitTermination = executorService.awaitTermination(30, TimeUnit.SECONDS);
-            if(!awaitTermination) {
+            if (!awaitTermination) {
                 LOGGER.warn("timeout elapsed before executor termination");
             }
         } catch (InterruptedException e) {
