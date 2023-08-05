@@ -107,7 +107,12 @@ public class HttpRequest implements Serializable {
      */
     protected HttpRequest() {
     }
-
+    public HttpRequest(String url){
+        this(url,"GET","STRING");
+    }
+    public HttpRequest(String url,String method){
+        this(url,method,"STRING");
+    }
     public HttpRequest(String url,
                        String method,
                        String bodyType) {
