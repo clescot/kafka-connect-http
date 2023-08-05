@@ -41,6 +41,7 @@ import java.time.ZoneId;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 
@@ -109,7 +110,7 @@ public class HttpSinkTask extends SinkTask {
             ), "timeout : '" + httpSinkConnectorConfig.getMaxWaitTimeRegistrationOfQueueConsumerInMs() +
                     "'ms timeout reached :" + queueName + "' queue hasn't got any consumer, " +
                     "i.e no Source Connector has been configured to consume records published in this in memory queue. " +
-                    "we stop the Sink Connector to prevent any OutofMemoryError.");
+                    "we stop the Sink Connector to prevent any OutOfMemoryError.");
         }
     }
 
@@ -121,8 +122,8 @@ public class HttpSinkTask extends SinkTask {
     }
 
     /**
-     * define a static field from a non static method need a static synchronized method
-     * @param customFixedThreadPoolSize
+     * define a static field from a non-static method need a static synchronized method
+     * @param customFixedThreadPoolSize max thread pool size for the executorService.
      */
     private static synchronized void setThreadPoolSize(Integer customFixedThreadPoolSize) {
         if (customFixedThreadPoolSize != null && executorService == null) {
@@ -151,14 +152,16 @@ public class HttpSinkTask extends SinkTask {
             }
 
             //we reuse the default retry policy if not set
-            if (configuration.getRetryPolicy().isEmpty() && defaultConfiguration.getRetryPolicy().isPresent()) {
-                configuration.setRetryPolicy(defaultConfiguration.getRetryPolicy().get());
+            Optional<RetryPolicy<HttpExchange>> defaultRetryPolicy = defaultConfiguration.getRetryPolicy();
+            if (configuration.getRetryPolicy().isEmpty() && defaultRetryPolicy.isPresent()) {
+                configuration.setRetryPolicy(defaultRetryPolicy.get());
             }
             //we reuse the default success response code regex if not set
             configuration.setSuccessResponseCodeRegex(defaultConfiguration.getSuccessResponseCodeRegex());
 
-            if (configuration.getRetryResponseCodeRegex().isEmpty() && defaultConfiguration.getRetryResponseCodeRegex().isPresent()) {
-                configuration.setRetryResponseCodeRegex(defaultConfiguration.getRetryResponseCodeRegex().get());
+            Optional<Pattern> defaultRetryResponseCodeRegex = defaultConfiguration.getRetryResponseCodeRegex();
+            if (configuration.getRetryResponseCodeRegex().isEmpty() && defaultRetryResponseCodeRegex.isPresent()) {
+                configuration.setRetryResponseCodeRegex(defaultRetryResponseCodeRegex.get());
             }
 
             configurations.add(configuration);
