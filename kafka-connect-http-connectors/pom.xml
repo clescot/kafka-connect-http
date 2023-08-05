@@ -264,7 +264,7 @@
                 <executions>
                     <execution>
                         <id>attach-artifacts</id>
-                        <phase>package</phase>
+                        <phase>prepare-package</phase>
                         <goals>
                             <goal>attach-artifact</goal>
                         </goals>
@@ -279,7 +279,26 @@
                     </execution>
                 </executions>
             </plugin>
-
+            <plugin>
+                <groupId>com.spotify</groupId>
+                <artifactId>dockerfile-maven-plugin</artifactId>
+                <version>1.4.13</version>
+                <executions>
+                    <execution>
+                        <phase>package</phase>
+                        <id>default</id>
+                        <goals>
+                            <goal>build</goal>
+                        </goals>
+                    </execution>
+                </executions>
+                <configuration>
+                    <contextDirectory>${project.build.directory}</contextDirectory>
+                    <dockerfile>${project.build.testOutputDirectory}/Dockerfile</dockerfile>
+                    <repository>clescot/kafka-connect-http</repository>
+                    <tag>${project.version}</tag>
+                </configuration>
+            </plugin>
         </plugins>
     </build>
     <profiles>
@@ -303,25 +322,6 @@
                             <includes>
                                 <include>**/IT*.java</include>
                             </includes>
-                        </configuration>
-                    </plugin>
-                    <plugin>
-                        <groupId>com.spotify</groupId>
-                        <artifactId>dockerfile-maven-plugin</artifactId>
-                        <version>1.4.13</version>
-                        <executions>
-                            <execution>
-                                <phase>pre-integration-test</phase>
-                                <id>default</id>
-                                <goals>
-                                    <goal>build</goal>
-                                </goals>
-                            </execution>
-                        </executions>
-                        <configuration>
-                            <dockerfile>src/test/resources/Dockerfile</dockerfile>
-                            <repository>clescot/kafka-connect-http</repository>
-                            <tag>${project.version}</tag>
                         </configuration>
                     </plugin>
                 </plugins>
