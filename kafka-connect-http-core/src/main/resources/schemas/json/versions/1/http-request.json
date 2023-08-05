@@ -19,7 +19,8 @@
       }
     },
     "method": {
-      "type": "string"
+      "type": "string",
+      "default": "GET"
     },
     "bodyAsString":
     {
@@ -44,6 +45,7 @@
     },
     "bodyType": {
       "type": "string",
+      "default": "STRING",
       "enum": [
         "STRING",
         "FORM",
@@ -53,8 +55,6 @@
     }
   },
   "required": [
-    "url",
-    "method",
-    "bodyType"
+    "url"
   ]
 }
