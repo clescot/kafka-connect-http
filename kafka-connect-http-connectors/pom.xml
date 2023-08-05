@@ -231,6 +231,7 @@
                 <version>0.12.0</version>
                 <executions>
                     <execution>
+                        <phase>package</phase>
                         <goals>
                             <goal>kafka-connect</goal>
                         </goals>
@@ -253,6 +254,31 @@
                                 <tag>http</tag>
                             </tags>
                             <title>Kafka Connect HTTP Sink and Source</title>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <artifactId>maven-resources-plugin</artifactId>
+                <version>3.3.1</version>
+                <executions>
+                    <execution>
+                        <id>copy-resource-one</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>copy-resources</goal>
+                        </goals>
+
+                        <configuration>
+                            <outputDirectory>${project.build.testOutputDirectory}/components/packages</outputDirectory>
+                            <resources>
+                                <resource>
+                                    <directory>${project.build.directory}/components/packages</directory>
+                                    <includes>
+                                        <include>clescot-${project.build.finalName}.zip</include>
+                                    </includes>
+                                </resource>
+                            </resources>
                         </configuration>
                     </execution>
                 </executions>
@@ -293,7 +319,7 @@
                     </execution>
                 </executions>
                 <configuration>
-                    <contextDirectory>${project.build.directory}</contextDirectory>
+                    <contextDirectory>${project.build.testOutputDirectory}</contextDirectory>
                     <dockerfile>${project.build.testOutputDirectory}/Dockerfile</dockerfile>
                     <repository>clescot/kafka-connect-http</repository>
                     <tag>${project.version}</tag>
