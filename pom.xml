@@ -47,7 +47,7 @@
         <jackson.version>2.15.2</jackson.version>
         <json.assert.version>1.5.1</json.assert.version>
         <junit.version>5.10.0</junit.version>
-        <logback.version>1.4.9</logback.version>
+        <logback.version>1.4.11</logback.version>
         <maven.compiler.source>11</maven.compiler.source>
         <maven.compiler.target>11</maven.compiler.target>
         <mockito.version>5.4.0</mockito.version>
@@ -83,7 +83,7 @@
             <dependency>
                 <groupId>ch.qos.logback</groupId>
                 <artifactId>logback-classic</artifactId>
-                <version>1.4.9</version>
+                <version>1.4.11</version>
             </dependency>
 
             <dependency>
