@@ -56,7 +56,7 @@
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <project.scm.id>github</project.scm.id>
         <slf4j.version>2.0.7</slf4j.version>
-        <testcontainers.version>1.18.3</testcontainers.version>
+        <testcontainers.version>1.19.0</testcontainers.version>
         <skipIT>false</skipIT>
         <wiremock.version>2.35.0</wiremock.version>
     </properties>
