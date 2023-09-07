@@ -58,7 +58,7 @@
         <slf4j.version>2.0.9</slf4j.version>
         <testcontainers.version>1.19.0</testcontainers.version>
         <skipIT>false</skipIT>
-        <wiremock.version>2.35.0</wiremock.version>
+        <wiremock.version>2.35.1</wiremock.version>
     </properties>
     <modules>
         <module>kafka-connect-http-core</module>
