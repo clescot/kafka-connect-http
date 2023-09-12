@@ -134,7 +134,8 @@ public class HttpSinkTask extends SinkTask {
 
     private MeterRegistry buildMeterRegistry() {
         CompositeMeterRegistry compositeMeterRegistry = new CompositeMeterRegistry();
-        MeterRegistry jmxMeterRegistry = new JmxMeterRegistry(JmxConfig.DEFAULT, Clock.SYSTEM);
+        JmxMeterRegistry jmxMeterRegistry = new JmxMeterRegistry(JmxConfig.DEFAULT, Clock.SYSTEM);
+        jmxMeterRegistry.start();
         compositeMeterRegistry.add(jmxMeterRegistry);
         PrometheusMeterRegistry prometheusRegistry = new PrometheusMeterRegistry(PrometheusConfig.DEFAULT);
         compositeMeterRegistry.add(prometheusRegistry);
