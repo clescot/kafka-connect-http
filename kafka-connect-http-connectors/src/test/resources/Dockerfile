@@ -1,4 +1,4 @@
-FROM confluentinc/cp-kafka-connect:7.4.1
+FROM confluentinc/cp-kafka-connect:7.5.0
 USER root
 
 ENV jmx_exporter_version=0.19.0
