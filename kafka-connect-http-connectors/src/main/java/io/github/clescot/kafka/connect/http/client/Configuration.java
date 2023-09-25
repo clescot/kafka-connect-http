@@ -1,4 +1,4 @@
-package io.github.clescot.kafka.connect.http.sink;
+package io.github.clescot.kafka.connect.http.client;
 
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
@@ -8,12 +8,10 @@ import dev.failsafe.RetryPolicy;
 import io.github.clescot.kafka.connect.http.core.HttpExchange;
 import io.github.clescot.kafka.connect.http.core.HttpRequest;
 import io.github.clescot.kafka.connect.http.core.HttpResponse;
-import io.github.clescot.kafka.connect.http.client.HttpClient;
-import io.github.clescot.kafka.connect.http.client.HttpClientFactory;
-import io.github.clescot.kafka.connect.http.client.HttpException;
 import io.github.clescot.kafka.connect.http.client.ahc.AHCHttpClientFactory;
 import io.github.clescot.kafka.connect.http.client.okhttp.OkHttpClientFactory;
 import io.github.clescot.kafka.connect.http.client.proxy.ProxySelectorFactory;
+import io.github.clescot.kafka.connect.http.sink.HttpSinkConnectorConfig;
 import io.github.clescot.kafka.connect.http.sink.config.AddMissingCorrelationIdHeaderToHttpRequestFunction;
 import io.github.clescot.kafka.connect.http.sink.config.AddMissingRequestIdHeaderToHttpRequestFunction;
 import io.github.clescot.kafka.connect.http.sink.config.AddStaticHeadersToHttpRequestFunction;

@@ -1,4 +1,4 @@
-package io.github.clescot.kafka.connect.http.sink;
+package io.github.clescot.kafka.connect.http.client;
 
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
@@ -6,6 +6,7 @@ import dev.failsafe.RateLimiter;
 import io.github.clescot.kafka.connect.http.core.HttpExchange;
 import io.github.clescot.kafka.connect.http.core.HttpRequest;
 import io.github.clescot.kafka.connect.http.core.HttpResponse;
+import io.github.clescot.kafka.connect.http.sink.HttpSinkConnectorConfig;
 import io.micrometer.core.instrument.Clock;
 import io.micrometer.jmx.JmxMeterRegistry;
 import org.jetbrains.annotations.NotNull;
