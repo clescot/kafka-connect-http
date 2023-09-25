@@ -89,15 +89,15 @@ public class Configuration {
     public final String id;
 
     public Configuration(String id,
-                         AbstractConfig httpSinkConnectorConfig,
+                         AbstractConfig config,
                          ExecutorService executorService,
                          MeterRegistry meterRegistry) {
         this.id = id;
         Preconditions.checkNotNull(id, "id must not be null");
-        Preconditions.checkNotNull(httpSinkConnectorConfig, "httpSinkConnectorConfig must not be null");
+        Preconditions.checkNotNull(config, "httpSinkConnectorConfig must not be null");
 
         //configuration id prefix is not present into the configMap
-        Map<String, Object> configMap = httpSinkConnectorConfig.originalsWithPrefix("config." + id + ".");
+        Map<String, Object> configMap = config.originalsWithPrefix("config." + id + ".");
 
         //main predicate
         this.mainpredicate = buildPredicate(configMap);
@@ -137,7 +137,7 @@ public class Configuration {
 
         //rate limiter
         Preconditions.checkNotNull(httpClient, "httpClient is null");
-        httpClient.setRateLimiter(buildRateLimiter(id, httpSinkConnectorConfig, configMap));
+        httpClient.setRateLimiter(buildRateLimiter(id, config, configMap));
 
 
         //retry policy

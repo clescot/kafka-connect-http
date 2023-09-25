@@ -1,19 +1,16 @@
 package io.github.clescot.kafka.connect.http.sink;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.google.common.base.Preconditions;
 import com.google.common.base.Stopwatch;
 import com.google.common.collect.Lists;
 import dev.failsafe.Failsafe;
 import dev.failsafe.RetryPolicy;
+import io.github.clescot.kafka.connect.http.HttpTask;
 import io.github.clescot.kafka.connect.http.VersionUtils;
 import io.github.clescot.kafka.connect.http.client.Configuration;
 import io.github.clescot.kafka.connect.http.client.HttpClient;
 import io.github.clescot.kafka.connect.http.core.HttpExchange;
 import io.github.clescot.kafka.connect.http.core.HttpRequest;
-import io.github.clescot.kafka.connect.http.core.HttpRequestAsStruct;
 import io.github.clescot.kafka.connect.http.core.HttpResponse;
 import io.github.clescot.kafka.connect.http.core.queue.KafkaRecord;
 import io.github.clescot.kafka.connect.http.core.queue.QueueFactory;
@@ -28,9 +25,6 @@ import io.micrometer.jmx.JmxConfig;
 import io.micrometer.jmx.JmxMeterRegistry;
 import io.micrometer.prometheus.PrometheusConfig;
 import io.micrometer.prometheus.PrometheusMeterRegistry;
-import org.apache.kafka.common.config.AbstractConfig;
-import org.apache.kafka.connect.data.Schema;
-import org.apache.kafka.connect.data.Struct;
 import org.apache.kafka.connect.errors.ConnectException;
 import org.apache.kafka.connect.sink.ErrantRecordReporter;
 import org.apache.kafka.connect.sink.SinkRecord;
@@ -38,24 +32,20 @@ import org.apache.kafka.connect.sink.SinkTask;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.nio.charset.StandardCharsets;
 import java.time.OffsetDateTime;
 import java.time.ZoneId;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.regex.Pattern;
 import java.util.stream.Collectors;
-
-import static io.github.clescot.kafka.connect.http.sink.HttpSinkConfigDefinition.CONFIGURATION_IDS;
 
 
 public class HttpSinkTask extends SinkTask {
     private static final Logger LOGGER = LoggerFactory.getLogger(HttpSinkTask.class);
-    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper().registerModule(new JavaTimeModule());
+
     private static final VersionUtils VERSION_UTILS = new VersionUtils();
 
-    public static final String SINK_RECORD_HAS_GOT_A_NULL_VALUE = "sinkRecord has got a 'null' value";
+
     public static final String DEFAULT_CONFIGURATION_ID = "default";
 
 
@@ -68,6 +58,7 @@ public class HttpSinkTask extends SinkTask {
     private List<Configuration> customConfigurations;
     private static ExecutorService executorService;
     private Configuration defaultConfiguration;
+    private HttpTask<SinkRecord> httpTask;
 
 
     @Override
@@ -97,13 +88,16 @@ public class HttpSinkTask extends SinkTask {
         this.queue = QueueFactory.getQueue(queueName);
 
         Integer customFixedThreadPoolSize = httpSinkConnectorConfig.getCustomFixedThreadpoolSize();
-        setThreadPoolSize(customFixedThreadPoolSize);
+        if (customFixedThreadPoolSize != null && executorService == null) {
+            setThreadPoolSize(customFixedThreadPoolSize);
+        }
 
         MeterRegistry meterRegistry = buildMeterRegistry();
-        bindMetrics(meterRegistry);
+        bindMetrics(meterRegistry, executorService);
 
         this.defaultConfiguration = new Configuration(DEFAULT_CONFIGURATION_ID, httpSinkConnectorConfig, executorService, meterRegistry);
-        customConfigurations = buildCustomConfigurations(httpSinkConnectorConfig, defaultConfiguration, executorService, meterRegistry);
+        httpTask = new HttpTask<>();
+        customConfigurations = httpTask.buildCustomConfigurations(httpSinkConnectorConfig, defaultConfiguration, executorService, meterRegistry);
 
 
         if (httpSinkConnectorConfig.isPublishToInMemoryQueue()) {
@@ -119,8 +113,8 @@ public class HttpSinkTask extends SinkTask {
         }
     }
 
-    private static void bindMetrics(MeterRegistry meterRegistry) {
-        new ExecutorServiceMetrics(executorService, "HttpSinkTask", Lists.newArrayList()).bindTo(meterRegistry);
+    private static void bindMetrics(MeterRegistry meterRegistry, ExecutorService myExecutorService) {
+        new ExecutorServiceMetrics(myExecutorService, "HttpSinkTask", Lists.newArrayList()).bindTo(meterRegistry);
         new JvmMemoryMetrics().bindTo(meterRegistry);
         new JvmThreadMetrics().bindTo(meterRegistry);
         new JvmInfoMetrics().bindTo(meterRegistry);
@@ -128,12 +122,11 @@ public class HttpSinkTask extends SinkTask {
 
     /**
      * define a static field from a non-static method need a static synchronized method
+     *
      * @param customFixedThreadPoolSize max thread pool size for the executorService.
      */
     private static synchronized void setThreadPoolSize(Integer customFixedThreadPoolSize) {
-        if (customFixedThreadPoolSize != null && executorService == null) {
-            executorService = Executors.newFixedThreadPool(customFixedThreadPoolSize);
-        }
+        executorService = Executors.newFixedThreadPool(customFixedThreadPoolSize);
     }
 
     private MeterRegistry buildMeterRegistry() {
@@ -144,36 +137,6 @@ public class HttpSinkTask extends SinkTask {
         PrometheusMeterRegistry prometheusRegistry = new PrometheusMeterRegistry(PrometheusConfig.DEFAULT);
         compositeMeterRegistry.add(prometheusRegistry);
         return compositeMeterRegistry;
-    }
-
-    private List<Configuration> buildCustomConfigurations(AbstractConfig config,
-                                                          Configuration defaultConfiguration,
-                                                          ExecutorService executorService,
-                                                          MeterRegistry meterRegistry) {
-        CopyOnWriteArrayList<Configuration> configurations = Lists.newCopyOnWriteArrayList();
-
-        for (String configId : Optional.ofNullable(config.getList(CONFIGURATION_IDS)).orElse(Lists.newArrayList())) {
-            Configuration configuration = new Configuration(configId, config, executorService, meterRegistry);
-            if (configuration.getHttpClient() == null) {
-                configuration.setHttpClient(defaultConfiguration.getHttpClient());
-            }
-
-            //we reuse the default retry policy if not set
-            Optional<RetryPolicy<HttpExchange>> defaultRetryPolicy = defaultConfiguration.getRetryPolicy();
-            if (configuration.getRetryPolicy().isEmpty() && defaultRetryPolicy.isPresent()) {
-                configuration.setRetryPolicy(defaultRetryPolicy.get());
-            }
-            //we reuse the default success response code regex if not set
-            configuration.setSuccessResponseCodeRegex(defaultConfiguration.getSuccessResponseCodeRegex());
-
-            Optional<Pattern> defaultRetryResponseCodeRegex = defaultConfiguration.getRetryResponseCodeRegex();
-            if (configuration.getRetryResponseCodeRegex().isEmpty() && defaultRetryResponseCodeRegex.isPresent()) {
-                configuration.setRetryResponseCodeRegex(defaultRetryResponseCodeRegex.get());
-            }
-
-            configurations.add(configuration);
-        }
-        return configurations;
     }
 
 
@@ -199,7 +162,25 @@ public class HttpSinkTask extends SinkTask {
                 throw new ConnectException("sinkRecord Value is null :" + sinkRecord);
             }
             //build HttpRequest
-            HttpRequest httpRequest = buildHttpRequest(sinkRecord);
+            HttpRequest httpRequest;
+            Object value = sinkRecord.value();
+            Class<?> valueClass = value.getClass();
+            LOGGER.debug("valueClass is '{}'", valueClass.getName());
+            LOGGER.debug("value Schema from SinkRecord is '{}'", sinkRecord.valueSchema());
+            try {
+                httpRequest = httpTask.buildHttpRequest(sinkRecord);
+            } catch (ConnectException connectException) {
+
+                LOGGER.error("sink value class is '{}'", valueClass.getName());
+
+                if (errantRecordReporter != null) {
+                    errantRecordReporter.report(sinkRecord, connectException);
+                } else {
+                    LOGGER.warn("errantRecordReporter has been added to Kafka Connect since 2.6.0 release. you should upgrade the Kafka Connect Runtime shortly.");
+                }
+                throw connectException;
+
+            }
 
             //is there a matching configuration against the request ?
             Configuration foundConfiguration = customConfigurations
@@ -290,78 +271,9 @@ public class HttpSinkTask extends SinkTask {
     }
 
 
-    protected HttpRequest buildHttpRequest(SinkRecord sinkRecord) {
-        if (sinkRecord == null || sinkRecord.value() == null) {
-            LOGGER.warn(SINK_RECORD_HAS_GOT_A_NULL_VALUE);
-            throw new ConnectException(SINK_RECORD_HAS_GOT_A_NULL_VALUE);
-        }
-        HttpRequest httpRequest = null;
-        Object value = sinkRecord.value();
-        String stringValue = null;
-        try {
-            Class<?> valueClass = value.getClass();
-            LOGGER.debug("valueClass is '{}'", valueClass.getName());
-            LOGGER.debug("value Schema from SinkRecord is '{}'", sinkRecord.valueSchema());
-            if (Struct.class.isAssignableFrom(valueClass)) {
-                Struct valueAsStruct = (Struct) value;
-                LOGGER.debug("Struct is {}", valueAsStruct);
-                valueAsStruct.validate();
-                Schema schema = valueAsStruct.schema();
-                String schemaTypeName = schema.type().getName();
-                LOGGER.debug("schema type name referenced in Struct is '{}'", schemaTypeName);
-                Integer version = schema.version();
-                LOGGER.debug("schema version referenced in Struct is '{}'", version);
-
-                httpRequest = HttpRequestAsStruct
-                        .Builder
-                        .anHttpRequest()
-                        .withStruct(valueAsStruct)
-                        .build();
-                LOGGER.debug("httpRequest : {}", httpRequest);
-            } else if (byte[].class.isAssignableFrom(valueClass)) {
-                //we assume the value is a byte array
-                stringValue = new String((byte[]) value, StandardCharsets.UTF_8);
-                LOGGER.debug("byte[] is {}", stringValue);
-            } else if (String.class.isAssignableFrom(valueClass)) {
-                stringValue = (String) value;
-                LOGGER.debug("String is {}", stringValue);
-            } else {
-                LOGGER.warn("value is an instance of the class '{}' not handled by the WsSinkTask", valueClass.getName());
-                throw new ConnectException("value is an instance of the class " + valueClass.getName() + " not handled by the WsSinkTask");
-            }
-            if (httpRequest == null) {
-                LOGGER.debug("stringValue :{}", stringValue);
-                httpRequest = parseHttpRequestAsJsonString(stringValue);
-                LOGGER.debug("successful httpRequest parsing :{}", httpRequest);
-            }
-        } catch (ConnectException connectException) {
-
-            LOGGER.error("sink value class is '{}'", value.getClass().getName());
-
-            if (errantRecordReporter != null) {
-                errantRecordReporter.report(sinkRecord, connectException);
-            } else {
-                LOGGER.warn("errantRecordReporter has been added to Kafka Connect since 2.6.0 release. you should upgrade the Kafka Connect Runtime shortly.");
-            }
-            throw connectException;
-
-        }
-        return httpRequest;
-    }
-
-    private HttpRequest parseHttpRequestAsJsonString(String value) throws ConnectException {
-        HttpRequest httpRequest;
-        try {
-            httpRequest = OBJECT_MAPPER.readValue(value, HttpRequest.class);
-        } catch (JsonProcessingException e) {
-            throw new ConnectException(e);
-        }
-        return httpRequest;
-    }
-
     @Override
     public void stop() {
-        if(executorService!=null) {
+        if (executorService != null) {
             if (!executorService.isShutdown()) {
                 executorService.shutdown();
             }
