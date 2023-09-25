@@ -10,12 +10,10 @@ import io.confluent.kafka.schemaregistry.client.SchemaRegistryClient;
 import io.confluent.kafka.schemaregistry.client.rest.exceptions.RestClientException;
 import io.confluent.kafka.schemaregistry.json.JsonSchema;
 import io.confluent.kafka.schemaregistry.json.JsonSchemaProvider;
-import io.github.clescot.kafka.connect.http.client.Configuration;
 import io.github.clescot.kafka.connect.http.core.HttpRequest;
 import io.github.clescot.kafka.connect.http.core.HttpRequestAsStruct;
 import io.github.clescot.kafka.connect.http.core.queue.QueueFactory;
-import io.github.clescot.kafka.connect.http.sink.HttpSinkConnectorConfig;
-import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
+import org.apache.kafka.common.config.AbstractConfig;
 import org.apache.kafka.common.record.TimestampType;
 import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.data.SchemaAndValue;
@@ -39,8 +37,8 @@ import java.util.concurrent.Executors;
 
 import static io.confluent.kafka.serializers.json.KafkaJsonSchemaDeserializerConfig.JSON_VALUE_TYPE;
 import static io.github.clescot.kafka.connect.http.core.HttpRequestAsStruct.SCHEMA;
-import static io.github.clescot.kafka.connect.http.sink.HttpSinkTask.DEFAULT_CONFIGURATION_ID;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.mock;
 
 class HttpTaskTest {
     private static final String DUMMY_BODY = "stuff";
@@ -55,9 +53,8 @@ class HttpTaskTest {
 
         @BeforeEach
         public void setUp(){
-
-            Configuration defaultConfiguration = new Configuration(DEFAULT_CONFIGURATION_ID, new HttpSinkConnectorConfig(Maps.newHashMap()), executorService, new SimpleMeterRegistry());
-            httpTask = new HttpTask<>(defaultConfiguration,true, QueueFactory.DEFAULT_QUEUE_NAME);
+            AbstractConfig config = mock(AbstractConfig.class);
+            httpTask = new HttpTask<>(config,executorService,true, QueueFactory.DEFAULT_QUEUE_NAME);
         }
         @Test
         void test_buildHttpRequest_null_sink_record() {

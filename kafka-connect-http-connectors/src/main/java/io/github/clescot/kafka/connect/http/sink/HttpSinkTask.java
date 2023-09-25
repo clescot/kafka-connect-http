@@ -1,25 +1,12 @@
 package io.github.clescot.kafka.connect.http.sink;
 
 import com.google.common.base.Preconditions;
-import com.google.common.collect.Lists;
 import io.github.clescot.kafka.connect.http.HttpTask;
 import io.github.clescot.kafka.connect.http.VersionUtils;
 import io.github.clescot.kafka.connect.http.client.Configuration;
 import io.github.clescot.kafka.connect.http.core.HttpExchange;
-import io.github.clescot.kafka.connect.http.core.HttpRequest;
 import io.github.clescot.kafka.connect.http.core.queue.KafkaRecord;
 import io.github.clescot.kafka.connect.http.core.queue.QueueFactory;
-import io.micrometer.core.instrument.Clock;
-import io.micrometer.core.instrument.MeterRegistry;
-import io.micrometer.core.instrument.binder.jvm.ExecutorServiceMetrics;
-import io.micrometer.core.instrument.binder.jvm.JvmInfoMetrics;
-import io.micrometer.core.instrument.binder.jvm.JvmMemoryMetrics;
-import io.micrometer.core.instrument.binder.jvm.JvmThreadMetrics;
-import io.micrometer.core.instrument.composite.CompositeMeterRegistry;
-import io.micrometer.jmx.JmxConfig;
-import io.micrometer.jmx.JmxMeterRegistry;
-import io.micrometer.prometheus.PrometheusConfig;
-import io.micrometer.prometheus.PrometheusMeterRegistry;
 import org.apache.kafka.connect.errors.ConnectException;
 import org.apache.kafka.connect.sink.ErrantRecordReporter;
 import org.apache.kafka.connect.sink.SinkRecord;
@@ -39,18 +26,11 @@ public class HttpSinkTask extends SinkTask {
 
     private static final VersionUtils VERSION_UTILS = new VersionUtils();
 
-
-    public static final String DEFAULT_CONFIGURATION_ID = "default";
-
-
     private String queueName;
 
     private HttpSinkConnectorConfig httpSinkConnectorConfig;
     private ErrantRecordReporter errantRecordReporter;
-
-    private List<Configuration> customConfigurations;
     private static ExecutorService executorService;
-    private Configuration defaultConfiguration;
     private HttpTask<SinkRecord> httpTask;
 
 
@@ -84,13 +64,9 @@ public class HttpSinkTask extends SinkTask {
             setThreadPoolSize(customFixedThreadPoolSize);
         }
 
-        MeterRegistry meterRegistry = buildMeterRegistry();
-        bindMetrics(meterRegistry, executorService);
 
-        this.defaultConfiguration = new Configuration(DEFAULT_CONFIGURATION_ID, httpSinkConnectorConfig, executorService, meterRegistry);
         boolean publishToInMemoryQueue = Optional.ofNullable(httpSinkConnectorConfig.getBoolean(PUBLISH_TO_IN_MEMORY_QUEUE)).orElse(false);
-        httpTask = new HttpTask<>(defaultConfiguration, publishToInMemoryQueue, queueName);
-        customConfigurations = httpTask.buildCustomConfigurations(httpSinkConnectorConfig, defaultConfiguration, executorService, meterRegistry);
+        httpTask = new HttpTask<>(httpSinkConnectorConfig, executorService,publishToInMemoryQueue, queueName);
 
 
         if (httpSinkConnectorConfig.isPublishToInMemoryQueue()) {
@@ -106,12 +82,7 @@ public class HttpSinkTask extends SinkTask {
         }
     }
 
-    private static void bindMetrics(MeterRegistry meterRegistry, ExecutorService myExecutorService) {
-        new ExecutorServiceMetrics(myExecutorService, "HttpSinkTask", Lists.newArrayList()).bindTo(meterRegistry);
-        new JvmMemoryMetrics().bindTo(meterRegistry);
-        new JvmThreadMetrics().bindTo(meterRegistry);
-        new JvmInfoMetrics().bindTo(meterRegistry);
-    }
+
 
     /**
      * define a static field from a non-static method need a static synchronized method
@@ -122,15 +93,7 @@ public class HttpSinkTask extends SinkTask {
         executorService = Executors.newFixedThreadPool(customFixedThreadPoolSize);
     }
 
-    private MeterRegistry buildMeterRegistry() {
-        CompositeMeterRegistry compositeMeterRegistry = new CompositeMeterRegistry();
-        JmxMeterRegistry jmxMeterRegistry = new JmxMeterRegistry(JmxConfig.DEFAULT, Clock.SYSTEM);
-        jmxMeterRegistry.start();
-        compositeMeterRegistry.add(jmxMeterRegistry);
-        PrometheusMeterRegistry prometheusRegistry = new PrometheusMeterRegistry(PrometheusConfig.DEFAULT);
-        compositeMeterRegistry.add(prometheusRegistry);
-        return compositeMeterRegistry;
-    }
+
 
 
     @Override
@@ -140,7 +103,7 @@ public class HttpSinkTask extends SinkTask {
         if (records.isEmpty()) {
             return;
         }
-        Preconditions.checkNotNull(defaultConfiguration, "defaultConfiguration is null. 'start' method must be called once before put");
+        Preconditions.checkNotNull(httpTask, "httpTask is null. 'start' method must be called once before put");
 
         //we submit futures to the pool
         List<CompletableFuture<HttpExchange>> completableFutures = records.stream().map(this::process).collect(Collectors.toList());
@@ -150,7 +113,6 @@ public class HttpSinkTask extends SinkTask {
     }
 
     private CompletableFuture<HttpExchange> process(SinkRecord sinkRecord) {
-        HttpRequest httpRequest;
         Object value = sinkRecord.value();
         Class<?> valueClass = value.getClass();
         LOGGER.debug("valueClass is '{}'", valueClass.getName());
@@ -159,35 +121,15 @@ public class HttpSinkTask extends SinkTask {
             if (sinkRecord.value() == null) {
                 throw new ConnectException("sinkRecord Value is null :" + sinkRecord);
             }
-            //build HttpRequest
-            httpRequest = httpTask.buildHttpRequest(sinkRecord);
-
-            //is there a matching configuration against the request ?
-            Configuration foundConfiguration = customConfigurations
-                    .stream()
-                    .filter(config -> config.matches(httpRequest))
-                    .findFirst()
-                    .orElse(defaultConfiguration);
-
-            //handle Request and Response
-            return httpTask.callWithRetryPolicy(sinkRecord, httpRequest, foundConfiguration).thenApply(
-                    myHttpExchange -> {
-                        LOGGER.debug("HTTP exchange :{}", myHttpExchange);
-                        return myHttpExchange;
-                    }
-            );
+            return httpTask.processRecord(sinkRecord);
         } catch (ConnectException connectException) {
-
             LOGGER.error("sink value class is '{}'", valueClass.getName());
-
             if (errantRecordReporter != null) {
                 errantRecordReporter.report(sinkRecord, connectException);
             } else {
                 LOGGER.warn("errantRecordReporter has been added to Kafka Connect since 2.6.0 release. you should upgrade the Kafka Connect Runtime shortly.");
             }
             throw connectException;
-
-
         } catch (Exception e) {
             if (errantRecordReporter != null) {
                 // Send errant record to error reporter
@@ -207,6 +149,7 @@ public class HttpSinkTask extends SinkTask {
         }
 
     }
+
 
 
     @Override
@@ -234,6 +177,6 @@ public class HttpSinkTask extends SinkTask {
     }
 
     public Configuration getDefaultConfiguration() {
-        return defaultConfiguration;
+        return httpTask.getDefaultConfiguration();
     }
 }

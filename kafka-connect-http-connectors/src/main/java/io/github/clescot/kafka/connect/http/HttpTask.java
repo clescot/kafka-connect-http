@@ -15,7 +15,17 @@ import io.github.clescot.kafka.connect.http.core.HttpRequestAsStruct;
 import io.github.clescot.kafka.connect.http.core.HttpResponse;
 import io.github.clescot.kafka.connect.http.core.queue.KafkaRecord;
 import io.github.clescot.kafka.connect.http.core.queue.QueueFactory;
+import io.micrometer.core.instrument.Clock;
 import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.binder.jvm.ExecutorServiceMetrics;
+import io.micrometer.core.instrument.binder.jvm.JvmInfoMetrics;
+import io.micrometer.core.instrument.binder.jvm.JvmMemoryMetrics;
+import io.micrometer.core.instrument.binder.jvm.JvmThreadMetrics;
+import io.micrometer.core.instrument.composite.CompositeMeterRegistry;
+import io.micrometer.jmx.JmxConfig;
+import io.micrometer.jmx.JmxMeterRegistry;
+import io.micrometer.prometheus.PrometheusConfig;
+import io.micrometer.prometheus.PrometheusMeterRegistry;
 import org.apache.kafka.common.config.AbstractConfig;
 import org.apache.kafka.connect.connector.ConnectRecord;
 import org.apache.kafka.connect.data.Schema;
@@ -39,6 +49,8 @@ import java.util.regex.Pattern;
 import static io.github.clescot.kafka.connect.http.sink.HttpSinkConfigDefinition.CONFIGURATION_IDS;
 
 public class HttpTask<T extends ConnectRecord<T>> {
+
+    public static final String DEFAULT_CONFIGURATION_ID = "default";
     private static final Logger LOGGER = LoggerFactory.getLogger(HttpTask.class);
     public static final String SINK_RECORD_HAS_GOT_A_NULL_VALUE = "sinkRecord has got a 'null' value";
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper().registerModule(new JavaTimeModule());
@@ -46,19 +58,22 @@ public class HttpTask<T extends ConnectRecord<T>> {
     private final boolean publishToInMemoryQueue;
     private final String queueName;
     private Queue<KafkaRecord> queue;
+    private final MeterRegistry meterRegistry;
+    private final List<Configuration> customConfigurations;
 
-
-    public HttpTask(Configuration defaultConfiguration, boolean publishToInMemoryQueue, String queueName) {
-        this.defaultConfiguration = defaultConfiguration;
+    public HttpTask(AbstractConfig config,ExecutorService executorService, boolean publishToInMemoryQueue, String queueName) {
+        this.meterRegistry = buildMeterRegistry();
+        bindMetrics(meterRegistry,executorService);
+        this.defaultConfiguration = new Configuration(DEFAULT_CONFIGURATION_ID, config, executorService, meterRegistry);
         this.publishToInMemoryQueue = publishToInMemoryQueue;
         this.queueName = queueName;
         this.queue = QueueFactory.getQueue(queueName);
+        this.customConfigurations = buildCustomConfigurations(config,defaultConfiguration,executorService);
     }
 
     public List<Configuration> buildCustomConfigurations(AbstractConfig config,
                                                          Configuration defaultConfiguration,
-                                                         ExecutorService executorService,
-                                                         MeterRegistry meterRegistry) {
+                                                         ExecutorService executorService) {
         CopyOnWriteArrayList<Configuration> configurations = Lists.newCopyOnWriteArrayList();
 
         for (String configId : Optional.ofNullable(config.getList(CONFIGURATION_IDS)).orElse(Lists.newArrayList())) {
@@ -85,7 +100,7 @@ public class HttpTask<T extends ConnectRecord<T>> {
         return configurations;
     }
 
-    public HttpRequest buildHttpRequest(ConnectRecord<T> sinkRecord) throws ConnectException {
+    protected HttpRequest buildHttpRequest(ConnectRecord<T> sinkRecord) throws ConnectException {
         if (sinkRecord == null || sinkRecord.value() == null) {
             LOGGER.warn(SINK_RECORD_HAS_GOT_A_NULL_VALUE);
             throw new ConnectException(SINK_RECORD_HAS_GOT_A_NULL_VALUE);
@@ -142,7 +157,7 @@ public class HttpTask<T extends ConnectRecord<T>> {
     }
 
 
-    private CompletableFuture<HttpExchange> callAndPublish(ConnectRecord sinkRecord,
+    private CompletableFuture<HttpExchange> callAndPublish(ConnectRecord<T> sinkRecord,
                                                            HttpRequest httpRequest,
                                                            AtomicInteger attempts,
                                                            Configuration configuration) {
@@ -164,7 +179,7 @@ public class HttpTask<T extends ConnectRecord<T>> {
 
     }
 
-    public CompletableFuture<HttpExchange> callWithRetryPolicy(ConnectRecord sinkRecord,
+    private CompletableFuture<HttpExchange> callWithRetryPolicy(ConnectRecord<T> sinkRecord,
                                                                 HttpRequest httpRequest,
                                                                 Configuration configuration) {
         Optional<RetryPolicy<HttpExchange>> retryPolicyForCall = configuration.getRetryPolicy();
@@ -195,7 +210,49 @@ public class HttpTask<T extends ConnectRecord<T>> {
         }
     }
 
+    public CompletableFuture<HttpExchange> processRecord(ConnectRecord<T> sinkRecord) {
+        HttpRequest httpRequest;
+        //build HttpRequest
+        httpRequest = buildHttpRequest(sinkRecord);
+
+        //is there a matching configuration against the request ?
+        Configuration foundConfiguration = customConfigurations
+                .stream()
+                .filter(config -> config.matches(httpRequest))
+                .findFirst()
+                .orElse(defaultConfiguration);
+
+        //handle Request and Response
+        return callWithRetryPolicy(sinkRecord, httpRequest, foundConfiguration).thenApply(
+                myHttpExchange -> {
+                    LOGGER.debug("HTTP exchange :{}", myHttpExchange);
+                    return myHttpExchange;
+                }
+        );
+    }
+
+    private MeterRegistry buildMeterRegistry() {
+        CompositeMeterRegistry compositeMeterRegistry = new CompositeMeterRegistry();
+        JmxMeterRegistry jmxMeterRegistry = new JmxMeterRegistry(JmxConfig.DEFAULT, Clock.SYSTEM);
+        jmxMeterRegistry.start();
+        compositeMeterRegistry.add(jmxMeterRegistry);
+        PrometheusMeterRegistry prometheusRegistry = new PrometheusMeterRegistry(PrometheusConfig.DEFAULT);
+        compositeMeterRegistry.add(prometheusRegistry);
+        return compositeMeterRegistry;
+    }
+
+    private static void bindMetrics(MeterRegistry meterRegistry, ExecutorService myExecutorService) {
+        new ExecutorServiceMetrics(myExecutorService, "HttpSinkTask", Lists.newArrayList()).bindTo(meterRegistry);
+        new JvmMemoryMetrics().bindTo(meterRegistry);
+        new JvmThreadMetrics().bindTo(meterRegistry);
+        new JvmInfoMetrics().bindTo(meterRegistry);
+    }
+
     public void setQueue(Queue<KafkaRecord> queue) {
         this.queue = queue;
+    }
+
+    public Configuration getDefaultConfiguration() {
+        return defaultConfiguration;
     }
 }
