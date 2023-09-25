@@ -15,7 +15,7 @@ import io.github.clescot.kafka.connect.http.core.HttpRequestAsStruct;
 import io.github.clescot.kafka.connect.http.core.HttpResponse;
 import io.github.clescot.kafka.connect.http.core.queue.KafkaRecord;
 import io.github.clescot.kafka.connect.http.core.queue.QueueFactory;
-import io.github.clescot.kafka.connect.http.sink.client.HttpClient;
+import io.github.clescot.kafka.connect.http.client.HttpClient;
 import io.micrometer.core.instrument.Clock;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.binder.jvm.ExecutorServiceMetrics;

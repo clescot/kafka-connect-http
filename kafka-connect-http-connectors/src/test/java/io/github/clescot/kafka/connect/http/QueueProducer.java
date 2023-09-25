@@ -15,7 +15,7 @@ import java.util.Map;
 import java.util.Queue;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static io.github.clescot.kafka.connect.http.sink.client.HttpClient.*;
+import static io.github.clescot.kafka.connect.http.client.HttpClient.*;
 
 /**
  * for tests only.
