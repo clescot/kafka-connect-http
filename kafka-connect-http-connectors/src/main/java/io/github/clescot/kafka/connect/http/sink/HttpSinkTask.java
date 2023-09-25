@@ -25,6 +25,7 @@ import io.micrometer.jmx.JmxConfig;
 import io.micrometer.jmx.JmxMeterRegistry;
 import io.micrometer.prometheus.PrometheusConfig;
 import io.micrometer.prometheus.PrometheusMeterRegistry;
+import org.apache.kafka.connect.connector.ConnectRecord;
 import org.apache.kafka.connect.errors.ConnectException;
 import org.apache.kafka.connect.sink.ErrantRecordReporter;
 import org.apache.kafka.connect.sink.SinkRecord;
@@ -216,7 +217,7 @@ public class HttpSinkTask extends SinkTask {
 
     }
 
-    private CompletableFuture<HttpExchange> callWithRetryPolicy(SinkRecord sinkRecord,
+    private CompletableFuture<HttpExchange> callWithRetryPolicy(ConnectRecord sinkRecord,
                                                                 HttpRequest httpRequest,
                                                                 Configuration configuration) {
         Optional<RetryPolicy<HttpExchange>> retryPolicyForCall = configuration.getRetryPolicy();
@@ -248,7 +249,7 @@ public class HttpSinkTask extends SinkTask {
     }
 
 
-    private CompletableFuture<HttpExchange> callAndPublish(SinkRecord sinkRecord,
+    private CompletableFuture<HttpExchange> callAndPublish(ConnectRecord sinkRecord,
                                                            HttpRequest httpRequest,
                                                            AtomicInteger attempts,
                                                            Configuration configuration) {

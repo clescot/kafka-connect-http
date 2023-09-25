@@ -118,4 +118,6 @@ public class HttpTask<T extends ConnectRecord<T>> {
         return httpRequest;
     }
 
+
+
 }
