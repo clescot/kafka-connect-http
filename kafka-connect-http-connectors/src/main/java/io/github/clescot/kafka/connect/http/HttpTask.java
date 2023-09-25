@@ -3,12 +3,18 @@ package io.github.clescot.kafka.connect.http;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import com.google.common.base.Stopwatch;
 import com.google.common.collect.Lists;
+import dev.failsafe.Failsafe;
 import dev.failsafe.RetryPolicy;
 import io.github.clescot.kafka.connect.http.client.Configuration;
+import io.github.clescot.kafka.connect.http.client.HttpClient;
 import io.github.clescot.kafka.connect.http.core.HttpExchange;
 import io.github.clescot.kafka.connect.http.core.HttpRequest;
 import io.github.clescot.kafka.connect.http.core.HttpRequestAsStruct;
+import io.github.clescot.kafka.connect.http.core.HttpResponse;
+import io.github.clescot.kafka.connect.http.core.queue.KafkaRecord;
+import io.github.clescot.kafka.connect.http.core.queue.QueueFactory;
 import io.micrometer.core.instrument.MeterRegistry;
 import org.apache.kafka.common.config.AbstractConfig;
 import org.apache.kafka.connect.connector.ConnectRecord;
@@ -19,10 +25,15 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.nio.charset.StandardCharsets;
+import java.time.OffsetDateTime;
+import java.time.ZoneId;
 import java.util.List;
 import java.util.Optional;
+import java.util.Queue;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Pattern;
 
 import static io.github.clescot.kafka.connect.http.sink.HttpSinkConfigDefinition.CONFIGURATION_IDS;
@@ -31,6 +42,18 @@ public class HttpTask<T extends ConnectRecord<T>> {
     private static final Logger LOGGER = LoggerFactory.getLogger(HttpTask.class);
     public static final String SINK_RECORD_HAS_GOT_A_NULL_VALUE = "sinkRecord has got a 'null' value";
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper().registerModule(new JavaTimeModule());
+    private final Configuration defaultConfiguration;
+    private final boolean publishToInMemoryQueue;
+    private final String queueName;
+    private Queue<KafkaRecord> queue;
+
+
+    public HttpTask(Configuration defaultConfiguration, boolean publishToInMemoryQueue, String queueName) {
+        this.defaultConfiguration = defaultConfiguration;
+        this.publishToInMemoryQueue = publishToInMemoryQueue;
+        this.queueName = queueName;
+        this.queue = QueueFactory.getQueue(queueName);
+    }
 
     public List<Configuration> buildCustomConfigurations(AbstractConfig config,
                                                          Configuration defaultConfiguration,
@@ -119,5 +142,60 @@ public class HttpTask<T extends ConnectRecord<T>> {
     }
 
 
+    private CompletableFuture<HttpExchange> callAndPublish(ConnectRecord sinkRecord,
+                                                           HttpRequest httpRequest,
+                                                           AtomicInteger attempts,
+                                                           Configuration configuration) {
+        HttpRequest enrichedHttpRequest = configuration.enrich(httpRequest);
+        CompletableFuture<HttpExchange> completableFuture = configuration.getHttpClient().call(enrichedHttpRequest, attempts);
+        return completableFuture
+                .thenApply(myHttpExchange -> {
+                    HttpExchange enrichedHttpExchange = configuration.enrich(myHttpExchange);
 
+                    //publish eventually to 'in memory' queue
+                    if (this.publishToInMemoryQueue) {
+                        LOGGER.debug("http exchange published to queue '{}':{}", queueName, enrichedHttpExchange);
+                        queue.offer(new KafkaRecord(sinkRecord.headers(), sinkRecord.keySchema(), sinkRecord.key(), enrichedHttpExchange));
+                    } else {
+                        LOGGER.debug("http exchange NOT published to queue '{}':{}", queueName, enrichedHttpExchange);
+                    }
+                    return enrichedHttpExchange;
+                });
+
+    }
+
+    public CompletableFuture<HttpExchange> callWithRetryPolicy(ConnectRecord sinkRecord,
+                                                                HttpRequest httpRequest,
+                                                                Configuration configuration) {
+        Optional<RetryPolicy<HttpExchange>> retryPolicyForCall = configuration.getRetryPolicy();
+        if (httpRequest != null) {
+            AtomicInteger attempts = new AtomicInteger();
+            try {
+                attempts.addAndGet(HttpClient.ONE_HTTP_REQUEST);
+                if (retryPolicyForCall.isPresent()) {
+                    RetryPolicy<HttpExchange> retryPolicy = retryPolicyForCall.get();
+                    CompletableFuture<HttpExchange> httpExchangeFuture = callAndPublish(sinkRecord, httpRequest, attempts, configuration)
+                            .thenApply(configuration::handleRetry);
+                    return Failsafe.with(List.of(retryPolicy)).getStageAsync(() -> httpExchangeFuture);
+                } else {
+                    return callAndPublish(sinkRecord, httpRequest, attempts, configuration);
+                }
+            } catch (Exception exception) {
+                LOGGER.error("Failed to call web service after {} retries with error({}). message:{} ", attempts, exception,
+                        exception.getMessage());
+                return CompletableFuture.supplyAsync(() -> defaultConfiguration.getHttpClient().buildHttpExchange(
+                        httpRequest,
+                        new HttpResponse(HttpClient.SERVER_ERROR_STATUS_CODE, String.valueOf(exception.getMessage())),
+                        Stopwatch.createUnstarted(), OffsetDateTime.now(ZoneId.of(HttpClient.UTC_ZONE_ID)),
+                        attempts,
+                        HttpClient.FAILURE));
+            }
+        } else {
+            throw new IllegalArgumentException("httpRequest is null");
+        }
+    }
+
+    public void setQueue(Queue<KafkaRecord> queue) {
+        this.queue = queue;
+    }
 }

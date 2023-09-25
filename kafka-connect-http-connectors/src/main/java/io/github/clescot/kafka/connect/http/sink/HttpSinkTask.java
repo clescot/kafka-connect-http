@@ -1,17 +1,12 @@
 package io.github.clescot.kafka.connect.http.sink;
 
 import com.google.common.base.Preconditions;
-import com.google.common.base.Stopwatch;
 import com.google.common.collect.Lists;
-import dev.failsafe.Failsafe;
-import dev.failsafe.RetryPolicy;
 import io.github.clescot.kafka.connect.http.HttpTask;
 import io.github.clescot.kafka.connect.http.VersionUtils;
 import io.github.clescot.kafka.connect.http.client.Configuration;
-import io.github.clescot.kafka.connect.http.client.HttpClient;
 import io.github.clescot.kafka.connect.http.core.HttpExchange;
 import io.github.clescot.kafka.connect.http.core.HttpRequest;
-import io.github.clescot.kafka.connect.http.core.HttpResponse;
 import io.github.clescot.kafka.connect.http.core.queue.KafkaRecord;
 import io.github.clescot.kafka.connect.http.core.queue.QueueFactory;
 import io.micrometer.core.instrument.Clock;
@@ -25,7 +20,6 @@ import io.micrometer.jmx.JmxConfig;
 import io.micrometer.jmx.JmxMeterRegistry;
 import io.micrometer.prometheus.PrometheusConfig;
 import io.micrometer.prometheus.PrometheusMeterRegistry;
-import org.apache.kafka.connect.connector.ConnectRecord;
 import org.apache.kafka.connect.errors.ConnectException;
 import org.apache.kafka.connect.sink.ErrantRecordReporter;
 import org.apache.kafka.connect.sink.SinkRecord;
@@ -33,12 +27,11 @@ import org.apache.kafka.connect.sink.SinkTask;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.time.OffsetDateTime;
-import java.time.ZoneId;
 import java.util.*;
 import java.util.concurrent.*;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
+
+import static io.github.clescot.kafka.connect.http.sink.HttpSinkConfigDefinition.PUBLISH_TO_IN_MEMORY_QUEUE;
 
 
 public class HttpSinkTask extends SinkTask {
@@ -50,7 +43,6 @@ public class HttpSinkTask extends SinkTask {
     public static final String DEFAULT_CONFIGURATION_ID = "default";
 
 
-    private Queue<KafkaRecord> queue;
     private String queueName;
 
     private HttpSinkConnectorConfig httpSinkConnectorConfig;
@@ -86,7 +78,6 @@ public class HttpSinkTask extends SinkTask {
         this.httpSinkConnectorConfig = new HttpSinkConnectorConfig(HttpSinkConfigDefinition.config(), settings);
 
         this.queueName = httpSinkConnectorConfig.getQueueName();
-        this.queue = QueueFactory.getQueue(queueName);
 
         Integer customFixedThreadPoolSize = httpSinkConnectorConfig.getCustomFixedThreadpoolSize();
         if (customFixedThreadPoolSize != null && executorService == null) {
@@ -97,7 +88,8 @@ public class HttpSinkTask extends SinkTask {
         bindMetrics(meterRegistry, executorService);
 
         this.defaultConfiguration = new Configuration(DEFAULT_CONFIGURATION_ID, httpSinkConnectorConfig, executorService, meterRegistry);
-        httpTask = new HttpTask<>();
+        boolean publishToInMemoryQueue = Optional.ofNullable(httpSinkConnectorConfig.getBoolean(PUBLISH_TO_IN_MEMORY_QUEUE)).orElse(false);
+        httpTask = new HttpTask<>(defaultConfiguration, publishToInMemoryQueue, queueName);
         customConfigurations = httpTask.buildCustomConfigurations(httpSinkConnectorConfig, defaultConfiguration, executorService, meterRegistry);
 
 
@@ -158,30 +150,17 @@ public class HttpSinkTask extends SinkTask {
     }
 
     private CompletableFuture<HttpExchange> process(SinkRecord sinkRecord) {
+        HttpRequest httpRequest;
+        Object value = sinkRecord.value();
+        Class<?> valueClass = value.getClass();
+        LOGGER.debug("valueClass is '{}'", valueClass.getName());
+        LOGGER.debug("value Schema from SinkRecord is '{}'", sinkRecord.valueSchema());
         try {
             if (sinkRecord.value() == null) {
                 throw new ConnectException("sinkRecord Value is null :" + sinkRecord);
             }
             //build HttpRequest
-            HttpRequest httpRequest;
-            Object value = sinkRecord.value();
-            Class<?> valueClass = value.getClass();
-            LOGGER.debug("valueClass is '{}'", valueClass.getName());
-            LOGGER.debug("value Schema from SinkRecord is '{}'", sinkRecord.valueSchema());
-            try {
-                httpRequest = httpTask.buildHttpRequest(sinkRecord);
-            } catch (ConnectException connectException) {
-
-                LOGGER.error("sink value class is '{}'", valueClass.getName());
-
-                if (errantRecordReporter != null) {
-                    errantRecordReporter.report(sinkRecord, connectException);
-                } else {
-                    LOGGER.warn("errantRecordReporter has been added to Kafka Connect since 2.6.0 release. you should upgrade the Kafka Connect Runtime shortly.");
-                }
-                throw connectException;
-
-            }
+            httpRequest = httpTask.buildHttpRequest(sinkRecord);
 
             //is there a matching configuration against the request ?
             Configuration foundConfiguration = customConfigurations
@@ -191,12 +170,24 @@ public class HttpSinkTask extends SinkTask {
                     .orElse(defaultConfiguration);
 
             //handle Request and Response
-            return callWithRetryPolicy(sinkRecord, httpRequest, foundConfiguration).thenApply(
+            return httpTask.callWithRetryPolicy(sinkRecord, httpRequest, foundConfiguration).thenApply(
                     myHttpExchange -> {
                         LOGGER.debug("HTTP exchange :{}", myHttpExchange);
                         return myHttpExchange;
                     }
             );
+        } catch (ConnectException connectException) {
+
+            LOGGER.error("sink value class is '{}'", valueClass.getName());
+
+            if (errantRecordReporter != null) {
+                errantRecordReporter.report(sinkRecord, connectException);
+            } else {
+                LOGGER.warn("errantRecordReporter has been added to Kafka Connect since 2.6.0 release. you should upgrade the Kafka Connect Runtime shortly.");
+            }
+            throw connectException;
+
+
         } catch (Exception e) {
             if (errantRecordReporter != null) {
                 // Send errant record to error reporter
@@ -214,60 +205,6 @@ public class HttpSinkTask extends SinkTask {
                 throw new ConnectException("Failed on record", e);
             }
         }
-
-    }
-
-    private CompletableFuture<HttpExchange> callWithRetryPolicy(ConnectRecord sinkRecord,
-                                                                HttpRequest httpRequest,
-                                                                Configuration configuration) {
-        Optional<RetryPolicy<HttpExchange>> retryPolicyForCall = configuration.getRetryPolicy();
-        if (httpRequest != null) {
-            AtomicInteger attempts = new AtomicInteger();
-            try {
-                attempts.addAndGet(HttpClient.ONE_HTTP_REQUEST);
-                if (retryPolicyForCall.isPresent()) {
-                    RetryPolicy<HttpExchange> retryPolicy = retryPolicyForCall.get();
-                    CompletableFuture<HttpExchange> httpExchangeFuture = callAndPublish(sinkRecord, httpRequest, attempts, configuration)
-                            .thenApply(configuration::handleRetry);
-                    return Failsafe.with(List.of(retryPolicy)).getStageAsync(() -> httpExchangeFuture);
-                } else {
-                    return callAndPublish(sinkRecord, httpRequest, attempts, configuration);
-                }
-            } catch (Exception exception) {
-                LOGGER.error("Failed to call web service after {} retries with error({}). message:{} ", attempts, exception,
-                        exception.getMessage());
-                return CompletableFuture.supplyAsync(() -> defaultConfiguration.getHttpClient().buildHttpExchange(
-                        httpRequest,
-                        new HttpResponse(HttpClient.SERVER_ERROR_STATUS_CODE, String.valueOf(exception.getMessage())),
-                        Stopwatch.createUnstarted(), OffsetDateTime.now(ZoneId.of(HttpClient.UTC_ZONE_ID)),
-                        attempts,
-                        HttpClient.FAILURE));
-            }
-        } else {
-            throw new IllegalArgumentException("httpRequest is null");
-        }
-    }
-
-
-    private CompletableFuture<HttpExchange> callAndPublish(ConnectRecord sinkRecord,
-                                                           HttpRequest httpRequest,
-                                                           AtomicInteger attempts,
-                                                           Configuration configuration) {
-        HttpRequest enrichedHttpRequest = configuration.enrich(httpRequest);
-        CompletableFuture<HttpExchange> completableFuture = configuration.getHttpClient().call(enrichedHttpRequest, attempts);
-        return completableFuture
-                .thenApply(myHttpExchange -> {
-                    HttpExchange enrichedHttpExchange = configuration.enrich(myHttpExchange);
-
-                    //publish eventually to 'in memory' queue
-                    if (httpSinkConnectorConfig.isPublishToInMemoryQueue()) {
-                        LOGGER.debug("http exchange published to queue '{}':{}", queueName, enrichedHttpExchange);
-                        queue.offer(new KafkaRecord(sinkRecord.headers(), sinkRecord.keySchema(), sinkRecord.key(), enrichedHttpExchange));
-                    } else {
-                        LOGGER.debug("http exchange NOT published to queue '{}':{}", queueName, enrichedHttpExchange);
-                    }
-                    return enrichedHttpExchange;
-                });
 
     }
 
@@ -293,7 +230,7 @@ public class HttpSinkTask extends SinkTask {
     }
 
     protected void setQueue(Queue<KafkaRecord> queue) {
-        this.queue = queue;
+        this.httpTask.setQueue(queue);
     }
 
     public Configuration getDefaultConfiguration() {

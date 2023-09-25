@@ -10,8 +10,12 @@ import io.confluent.kafka.schemaregistry.client.SchemaRegistryClient;
 import io.confluent.kafka.schemaregistry.client.rest.exceptions.RestClientException;
 import io.confluent.kafka.schemaregistry.json.JsonSchema;
 import io.confluent.kafka.schemaregistry.json.JsonSchemaProvider;
+import io.github.clescot.kafka.connect.http.client.Configuration;
 import io.github.clescot.kafka.connect.http.core.HttpRequest;
 import io.github.clescot.kafka.connect.http.core.HttpRequestAsStruct;
+import io.github.clescot.kafka.connect.http.core.queue.QueueFactory;
+import io.github.clescot.kafka.connect.http.sink.HttpSinkConnectorConfig;
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import org.apache.kafka.common.record.TimestampType;
 import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.data.SchemaAndValue;
@@ -21,6 +25,7 @@ import org.apache.kafka.connect.header.Header;
 import org.apache.kafka.connect.sink.SinkRecord;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
@@ -29,9 +34,12 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 import static io.confluent.kafka.serializers.json.KafkaJsonSchemaDeserializerConfig.JSON_VALUE_TYPE;
 import static io.github.clescot.kafka.connect.http.core.HttpRequestAsStruct.SCHEMA;
+import static io.github.clescot.kafka.connect.http.sink.HttpSinkTask.DEFAULT_CONFIGURATION_ID;
 import static org.assertj.core.api.Assertions.assertThat;
 
 class HttpTaskTest {
@@ -39,12 +47,18 @@ class HttpTaskTest {
     private static final String DUMMY_URL = "http://www." + DUMMY_BODY + ".com";
     private static final String DUMMY_METHOD = "POST";
     private static final String DUMMY_BODY_TYPE = "STRING";
-
+    private static final ExecutorService executorService = Executors.newFixedThreadPool(2);
     @Nested
     class BuildHttpRequest {
 
-        private HttpTask<SinkRecord> httpTask = new HttpTask<>();
+        private HttpTask<SinkRecord> httpTask;
 
+        @BeforeEach
+        public void setUp(){
+
+            Configuration defaultConfiguration = new Configuration(DEFAULT_CONFIGURATION_ID, new HttpSinkConnectorConfig(Maps.newHashMap()), executorService, new SimpleMeterRegistry());
+            httpTask = new HttpTask<>(defaultConfiguration,true, QueueFactory.DEFAULT_QUEUE_NAME);
+        }
         @Test
         void test_buildHttpRequest_null_sink_record() {
             //when

@@ -18,7 +18,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import static io.github.clescot.kafka.connect.http.client.HttpClient.*;
 
 /**
- * for tests only.
+ * produce some dummy KafkaRecord for tests only.
  */
 public class QueueProducer implements Runnable {
     public static final String APPLICATION_JSON = "application/json";
