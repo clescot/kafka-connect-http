@@ -146,14 +146,14 @@ public class HttpSinkTask extends SinkTask {
         return compositeMeterRegistry;
     }
 
-    private List<Configuration> buildCustomConfigurations(AbstractConfig httpSinkConnectorConfig,
+    private List<Configuration> buildCustomConfigurations(AbstractConfig config,
                                                           Configuration defaultConfiguration,
                                                           ExecutorService executorService,
                                                           MeterRegistry meterRegistry) {
         CopyOnWriteArrayList<Configuration> configurations = Lists.newCopyOnWriteArrayList();
 
-        for (String configId : Optional.ofNullable(httpSinkConnectorConfig.getList(CONFIGURATION_IDS)).orElse(Lists.newArrayList())) {
-            Configuration configuration = new Configuration(configId, httpSinkConnectorConfig, executorService, meterRegistry);
+        for (String configId : Optional.ofNullable(config.getList(CONFIGURATION_IDS)).orElse(Lists.newArrayList())) {
+            Configuration configuration = new Configuration(configId, config, executorService, meterRegistry);
             if (configuration.getHttpClient() == null) {
                 configuration.setHttpClient(defaultConfiguration.getHttpClient());
             }
