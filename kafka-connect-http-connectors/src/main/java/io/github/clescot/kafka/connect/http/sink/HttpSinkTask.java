@@ -14,11 +14,12 @@ import org.apache.kafka.connect.sink.SinkTask;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.*;
+import java.util.Collection;
+import java.util.List;
+import java.util.Map;
+import java.util.Queue;
 import java.util.concurrent.*;
 import java.util.stream.Collectors;
-
-import static io.github.clescot.kafka.connect.http.sink.HttpSinkConfigDefinition.PUBLISH_TO_IN_MEMORY_QUEUE;
 
 
 public class HttpSinkTask extends SinkTask {
@@ -58,16 +59,7 @@ public class HttpSinkTask extends SinkTask {
         this.httpSinkConnectorConfig = new HttpSinkConnectorConfig(HttpSinkConfigDefinition.config(), settings);
 
         this.queueName = httpSinkConnectorConfig.getQueueName();
-
-        Integer customFixedThreadPoolSize = httpSinkConnectorConfig.getCustomFixedThreadpoolSize();
-        if (customFixedThreadPoolSize != null && executorService == null) {
-            setThreadPoolSize(customFixedThreadPoolSize);
-        }
-
-
-        boolean publishToInMemoryQueue = Optional.ofNullable(httpSinkConnectorConfig.getBoolean(PUBLISH_TO_IN_MEMORY_QUEUE)).orElse(false);
-        httpTask = new HttpTask<>(httpSinkConnectorConfig, executorService,publishToInMemoryQueue, queueName);
-
+        httpTask = new HttpTask<>(httpSinkConnectorConfig);
 
         if (httpSinkConnectorConfig.isPublishToInMemoryQueue()) {
             Preconditions.checkArgument(QueueFactory.hasAConsumer(
@@ -84,14 +76,7 @@ public class HttpSinkTask extends SinkTask {
 
 
 
-    /**
-     * define a static field from a non-static method need a static synchronized method
-     *
-     * @param customFixedThreadPoolSize max thread pool size for the executorService.
-     */
-    private static synchronized void setThreadPoolSize(Integer customFixedThreadPoolSize) {
-        executorService = Executors.newFixedThreadPool(customFixedThreadPoolSize);
-    }
+
 
 
 

@@ -13,6 +13,7 @@ import io.github.clescot.kafka.connect.http.core.HttpExchange;
 import io.github.clescot.kafka.connect.http.core.HttpRequest;
 import io.github.clescot.kafka.connect.http.core.HttpRequestAsStruct;
 import io.github.clescot.kafka.connect.http.core.HttpResponse;
+import io.github.clescot.kafka.connect.http.core.queue.ConfigConstants;
 import io.github.clescot.kafka.connect.http.core.queue.KafkaRecord;
 import io.github.clescot.kafka.connect.http.core.queue.QueueFactory;
 import io.micrometer.core.instrument.Clock;
@@ -43,10 +44,11 @@ import java.util.Queue;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Pattern;
 
-import static io.github.clescot.kafka.connect.http.sink.HttpSinkConfigDefinition.CONFIGURATION_IDS;
+import static io.github.clescot.kafka.connect.http.sink.HttpSinkConfigDefinition.*;
 
 public class HttpTask<T extends ConnectRecord<T>> {
 
@@ -54,6 +56,7 @@ public class HttpTask<T extends ConnectRecord<T>> {
     private static final Logger LOGGER = LoggerFactory.getLogger(HttpTask.class);
     public static final String SINK_RECORD_HAS_GOT_A_NULL_VALUE = "sinkRecord has got a 'null' value";
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper().registerModule(new JavaTimeModule());
+    private static ExecutorService executorService;
     private final Configuration defaultConfiguration;
     private final boolean publishToInMemoryQueue;
     private final String queueName;
@@ -61,12 +64,16 @@ public class HttpTask<T extends ConnectRecord<T>> {
     private final MeterRegistry meterRegistry;
     private final List<Configuration> customConfigurations;
 
-    public HttpTask(AbstractConfig config,ExecutorService executorService, boolean publishToInMemoryQueue, String queueName) {
+    public HttpTask(AbstractConfig config) {
         this.meterRegistry = buildMeterRegistry();
+        Integer customFixedThreadPoolSize = Optional.ofNullable(config.getInt(CONFIG_HTTP_CLIENT_ASYNC_FIXED_THREAD_POOL_SIZE)).orElse(1);
+        if (executorService == null) {
+            setThreadPoolSize(customFixedThreadPoolSize);
+        }
         bindMetrics(meterRegistry,executorService);
         this.defaultConfiguration = new Configuration(DEFAULT_CONFIGURATION_ID, config, executorService, meterRegistry);
-        this.publishToInMemoryQueue = publishToInMemoryQueue;
-        this.queueName = queueName;
+        this.publishToInMemoryQueue = Optional.ofNullable(config.getBoolean(PUBLISH_TO_IN_MEMORY_QUEUE)).orElse(false);
+        this.queueName = Optional.ofNullable(config.getString(ConfigConstants.QUEUE_NAME)).orElse(QueueFactory.DEFAULT_QUEUE_NAME);
         this.queue = QueueFactory.getQueue(queueName);
         this.customConfigurations = buildCustomConfigurations(config,defaultConfiguration,executorService);
     }
@@ -247,7 +254,14 @@ public class HttpTask<T extends ConnectRecord<T>> {
         new JvmThreadMetrics().bindTo(meterRegistry);
         new JvmInfoMetrics().bindTo(meterRegistry);
     }
-
+    /**
+     * define a static field from a non-static method need a static synchronized method
+     *
+     * @param customFixedThreadPoolSize max thread pool size for the executorService.
+     */
+    private static synchronized void setThreadPoolSize(Integer customFixedThreadPoolSize) {
+        executorService = Executors.newFixedThreadPool(customFixedThreadPoolSize);
+    }
     public void setQueue(Queue<KafkaRecord> queue) {
         this.queue = queue;
     }
