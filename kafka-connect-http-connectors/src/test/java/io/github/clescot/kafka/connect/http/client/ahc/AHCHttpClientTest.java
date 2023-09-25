@@ -37,8 +37,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 import static io.github.clescot.kafka.connect.http.sink.HttpSinkConfigDefinition.*;
 import static io.github.clescot.kafka.connect.http.sink.HttpSinkConfigDefinition.CONFIG_HTTP_CLIENT_SSL_TRUSTSTORE_ALGORITHM;
 import static io.github.clescot.kafka.connect.http.client.ahc.AHCHttpClient.SUCCESS;
-import static io.github.clescot.kafka.connect.http.sink.config.AddMissingCorrelationIdHeaderToHttpRequestFunction.HEADER_X_CORRELATION_ID;
-import static io.github.clescot.kafka.connect.http.sink.config.AddMissingRequestIdHeaderToHttpRequestFunction.HEADER_X_REQUEST_ID;
+import static io.github.clescot.kafka.connect.http.client.config.AddMissingCorrelationIdHeaderToHttpRequestFunction.HEADER_X_CORRELATION_ID;
+import static io.github.clescot.kafka.connect.http.client.config.AddMissingRequestIdHeaderToHttpRequestFunction.HEADER_X_REQUEST_ID;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.when;
 

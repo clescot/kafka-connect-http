@@ -1,4 +1,4 @@
-package io.github.clescot.kafka.connect.http.sink.config;
+package io.github.clescot.kafka.connect.http.client.config;
 
 import io.github.clescot.kafka.connect.http.core.HttpExchange;
 
