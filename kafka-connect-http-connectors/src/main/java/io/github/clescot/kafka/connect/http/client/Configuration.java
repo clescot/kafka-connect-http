@@ -5,18 +5,18 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import dev.failsafe.RateLimiter;
 import dev.failsafe.RetryPolicy;
-import io.github.clescot.kafka.connect.http.core.HttpExchange;
-import io.github.clescot.kafka.connect.http.core.HttpRequest;
-import io.github.clescot.kafka.connect.http.core.HttpResponse;
 import io.github.clescot.kafka.connect.http.client.ahc.AHCHttpClientFactory;
-import io.github.clescot.kafka.connect.http.client.okhttp.OkHttpClientFactory;
-import io.github.clescot.kafka.connect.http.client.proxy.ProxySelectorFactory;
-import io.github.clescot.kafka.connect.http.sink.HttpSinkConnectorConfig;
 import io.github.clescot.kafka.connect.http.client.config.AddMissingCorrelationIdHeaderToHttpRequestFunction;
 import io.github.clescot.kafka.connect.http.client.config.AddMissingRequestIdHeaderToHttpRequestFunction;
 import io.github.clescot.kafka.connect.http.client.config.AddStaticHeadersToHttpRequestFunction;
 import io.github.clescot.kafka.connect.http.client.config.AddSuccessStatusToHttpExchangeFunction;
+import io.github.clescot.kafka.connect.http.client.okhttp.OkHttpClientFactory;
+import io.github.clescot.kafka.connect.http.client.proxy.ProxySelectorFactory;
+import io.github.clescot.kafka.connect.http.core.HttpExchange;
+import io.github.clescot.kafka.connect.http.core.HttpRequest;
+import io.github.clescot.kafka.connect.http.core.HttpResponse;
 import io.micrometer.core.instrument.MeterRegistry;
+import org.apache.kafka.common.config.AbstractConfig;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -89,7 +89,7 @@ public class Configuration {
     public final String id;
 
     public Configuration(String id,
-                         HttpSinkConnectorConfig httpSinkConnectorConfig,
+                         AbstractConfig httpSinkConnectorConfig,
                          ExecutorService executorService,
                          MeterRegistry meterRegistry) {
         this.id = id;
@@ -161,11 +161,12 @@ public class Configuration {
 
     }
 
-    private RateLimiter<HttpExchange> buildRateLimiter(String id, HttpSinkConnectorConfig httpSinkConnectorConfig, Map<String, Object> configMap) {
+    private RateLimiter<HttpExchange> buildRateLimiter(String id, AbstractConfig httpSinkConnectorConfig, Map<String, Object> configMap) {
         RateLimiter<HttpExchange> rateLimiter = null;
         if (configMap.containsKey(RATE_LIMITER_MAX_EXECUTIONS)) {
             long maxExecutions = Long.parseLong((String) configMap.get(RATE_LIMITER_MAX_EXECUTIONS));
-            long periodInMs = Long.parseLong(Optional.ofNullable((String) configMap.get(RATE_LIMITER_PERIOD_IN_MS)).orElse(httpSinkConnectorConfig.getDefaultRateLimiterPeriodInMs() + ""));
+            long defaultMaxExecutions = httpSinkConnectorConfig.getLong(CONFIG_DEFAULT_RATE_LIMITER_PERIOD_IN_MS);
+            long periodInMs = Long.parseLong(Optional.ofNullable((String) configMap.get(RATE_LIMITER_PERIOD_IN_MS)).orElse(defaultMaxExecutions+""));
             if (configMap.containsKey(RATE_LIMITER_SCOPE) && STATIC_SCOPE.equalsIgnoreCase((String) configMap.get(RATE_LIMITER_SCOPE))) {
                 Optional<RateLimiter<HttpExchange>> sharedRateLimiter = Optional.ofNullable(sharedRateLimiters.get(id));
                 if (sharedRateLimiter.isPresent()) {
