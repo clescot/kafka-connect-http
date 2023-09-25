@@ -269,4 +269,8 @@ public class HttpTask<T extends ConnectRecord<T>> {
     public Configuration getDefaultConfiguration() {
         return defaultConfiguration;
     }
+
+    public static ExecutorService getExecutorService() {
+        return executorService;
+    }
 }

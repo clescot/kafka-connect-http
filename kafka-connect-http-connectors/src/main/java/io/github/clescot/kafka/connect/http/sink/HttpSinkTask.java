@@ -27,11 +27,7 @@ public class HttpSinkTask extends SinkTask {
 
     private static final VersionUtils VERSION_UTILS = new VersionUtils();
 
-    private String queueName;
-
-    private HttpSinkConnectorConfig httpSinkConnectorConfig;
     private ErrantRecordReporter errantRecordReporter;
-    private static ExecutorService executorService;
     private HttpTask<SinkRecord> httpTask;
 
 
@@ -45,6 +41,8 @@ public class HttpSinkTask extends SinkTask {
      */
     @Override
     public void start(Map<String, String> settings) {
+        HttpSinkConnectorConfig httpSinkConnectorConfig;
+        String queueName;
         Preconditions.checkNotNull(settings, "settings cannot be null");
         try {
             errantRecordReporter = context.errantRecordReporter();
@@ -56,9 +54,9 @@ public class HttpSinkTask extends SinkTask {
             errantRecordReporter = null;
         }
 
-        this.httpSinkConnectorConfig = new HttpSinkConnectorConfig(HttpSinkConfigDefinition.config(), settings);
+        httpSinkConnectorConfig = new HttpSinkConnectorConfig(HttpSinkConfigDefinition.config(), settings);
 
-        this.queueName = httpSinkConnectorConfig.getQueueName();
+        queueName = httpSinkConnectorConfig.getQueueName();
         httpTask = new HttpTask<>(httpSinkConnectorConfig);
 
         if (httpSinkConnectorConfig.isPublishToInMemoryQueue()) {
@@ -73,13 +71,6 @@ public class HttpSinkTask extends SinkTask {
                     "we stop the Sink Connector to prevent any OutOfMemoryError.");
         }
     }
-
-
-
-
-
-
-
 
     @Override
     public void put(Collection<SinkRecord> records) {
@@ -139,6 +130,7 @@ public class HttpSinkTask extends SinkTask {
 
     @Override
     public void stop() {
+        ExecutorService executorService = HttpTask.getExecutorService();
         if (executorService != null) {
             if (!executorService.isShutdown()) {
                 executorService.shutdown();
