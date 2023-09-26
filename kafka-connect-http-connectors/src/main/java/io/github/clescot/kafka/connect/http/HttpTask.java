@@ -18,10 +18,9 @@ import io.github.clescot.kafka.connect.http.core.queue.KafkaRecord;
 import io.github.clescot.kafka.connect.http.core.queue.QueueFactory;
 import io.micrometer.core.instrument.Clock;
 import io.micrometer.core.instrument.MeterRegistry;
-import io.micrometer.core.instrument.binder.jvm.ExecutorServiceMetrics;
-import io.micrometer.core.instrument.binder.jvm.JvmInfoMetrics;
-import io.micrometer.core.instrument.binder.jvm.JvmMemoryMetrics;
-import io.micrometer.core.instrument.binder.jvm.JvmThreadMetrics;
+import io.micrometer.core.instrument.binder.jvm.*;
+import io.micrometer.core.instrument.binder.logging.LogbackMetrics;
+import io.micrometer.core.instrument.binder.system.ProcessorMetrics;
 import io.micrometer.core.instrument.composite.CompositeMeterRegistry;
 import io.micrometer.jmx.JmxConfig;
 import io.micrometer.jmx.JmxMeterRegistry;
@@ -253,6 +252,14 @@ public class HttpTask<T extends ConnectRecord<T>> {
         new JvmMemoryMetrics().bindTo(meterRegistry);
         new JvmThreadMetrics().bindTo(meterRegistry);
         new JvmInfoMetrics().bindTo(meterRegistry);
+        try(JvmGcMetrics gcMetrics = new JvmGcMetrics()){
+            gcMetrics.bindTo(meterRegistry);
+        }
+        new ClassLoaderMetrics().bindTo(meterRegistry);
+        new ProcessorMetrics().bindTo(meterRegistry);
+        try(LogbackMetrics logbackMetrics = new LogbackMetrics()){
+            logbackMetrics.bindTo(meterRegistry);
+        }
     }
     /**
      * define a static field from a non-static method need a static synchronized method
