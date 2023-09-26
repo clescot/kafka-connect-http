@@ -259,7 +259,7 @@ public class HttpTask<T extends ConnectRecord<T>> {
      *
      * @param customFixedThreadPoolSize max thread pool size for the executorService.
      */
-    private static synchronized void setThreadPoolSize(Integer customFixedThreadPoolSize) {
+    public static synchronized void setThreadPoolSize(Integer customFixedThreadPoolSize) {
         executorService = Executors.newFixedThreadPool(customFixedThreadPoolSize);
     }
     public void setQueue(Queue<KafkaRecord> queue) {

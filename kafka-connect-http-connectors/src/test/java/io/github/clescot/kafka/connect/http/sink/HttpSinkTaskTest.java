@@ -10,6 +10,7 @@ import com.github.tomakehurst.wiremock.junit5.WireMockRuntimeInfo;
 import com.google.common.base.Stopwatch;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
+import io.github.clescot.kafka.connect.http.HttpTask;
 import io.github.clescot.kafka.connect.http.client.ahc.AHCHttpClient;
 import io.github.clescot.kafka.connect.http.client.okhttp.OkHttpClient;
 import io.github.clescot.kafka.connect.http.core.HttpExchange;
@@ -41,8 +42,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Queue;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -61,7 +60,6 @@ public class HttpSinkTaskTest {
     public static final String TRUSTSTORE_PKIX_ALGORITHM = "PKIX";
     public static final Logger LOGGER = LoggerFactory.getLogger(HttpSinkTaskTest.class.getName());
 
-    private final ExecutorService executorService = Executors.newFixedThreadPool(2);
 
     @Mock
     ErrantRecordReporter errantRecordReporter;
@@ -83,7 +81,10 @@ public class HttpSinkTaskTest {
             )
             .build();
 
-
+    @BeforeAll
+    public static void init(){
+        HttpTask.setThreadPoolSize(2);
+    }
     @BeforeEach
     public void setUp() {
         QueueFactory.clearRegistrations();
