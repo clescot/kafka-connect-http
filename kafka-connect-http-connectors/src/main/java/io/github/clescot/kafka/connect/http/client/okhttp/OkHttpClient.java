@@ -47,7 +47,7 @@ public class OkHttpClient extends AbstractHttpClient<Request, Response> {
     private final okhttp3.OkHttpClient client;
     private static final Logger LOGGER = LoggerFactory.getLogger(OkHttpClient.class);
 
-    private static ConnectionPool connectionPool;
+    private static ConnectionPool sharedConnectionPool;
     private final MeterRegistry meterRegistry;
 
     public OkHttpClient(Map<String, Object> config,
@@ -189,10 +189,10 @@ public class OkHttpClient extends AbstractHttpClient<Request, Response> {
     }
 
     private static void setSharedConnectionPool(ConnectionPool connectionPool){
-        OkHttpClient.connectionPool = connectionPool;
+        OkHttpClient.sharedConnectionPool = connectionPool;
     }
     private static ConnectionPool getSharedConnectionPool(){
-        return OkHttpClient.connectionPool;
+        return OkHttpClient.sharedConnectionPool;
     }
 
     private static ConnectionPool buildConnectionPool(Map<String, Object> config, ConnectionPool connectionPool) {
