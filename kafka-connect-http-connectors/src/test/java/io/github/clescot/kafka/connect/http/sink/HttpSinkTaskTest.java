@@ -97,6 +97,13 @@ public class HttpSinkTaskTest {
         wmHttp.resetAll();
     }
 
+    @AfterAll
+    public static void shutdown(){
+//        Awaitility.await()
+//                .timeout(660, SECONDS)
+//                .pollDelay(650, SECONDS)
+//                .untilAsserted(() -> Assertions.assertTrue(true));
+    }
     @Test
     void test_start_with_queue_name() {
         Assertions.assertDoesNotThrow(() -> {

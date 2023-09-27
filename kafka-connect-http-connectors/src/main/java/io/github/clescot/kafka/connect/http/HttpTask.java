@@ -9,6 +9,7 @@ import dev.failsafe.Failsafe;
 import dev.failsafe.RetryPolicy;
 import io.github.clescot.kafka.connect.http.client.Configuration;
 import io.github.clescot.kafka.connect.http.client.HttpClient;
+import io.github.clescot.kafka.connect.http.client.HttpException;
 import io.github.clescot.kafka.connect.http.core.HttpExchange;
 import io.github.clescot.kafka.connect.http.core.HttpRequest;
 import io.github.clescot.kafka.connect.http.core.HttpRequestAsStruct;
@@ -26,6 +27,7 @@ import io.micrometer.jmx.JmxConfig;
 import io.micrometer.jmx.JmxMeterRegistry;
 import io.micrometer.prometheus.PrometheusConfig;
 import io.micrometer.prometheus.PrometheusMeterRegistry;
+import io.prometheus.client.exporter.HTTPServer;
 import org.apache.kafka.common.config.AbstractConfig;
 import org.apache.kafka.connect.connector.ConnectRecord;
 import org.apache.kafka.connect.data.Schema;
@@ -34,6 +36,8 @@ import org.apache.kafka.connect.errors.ConnectException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.IOException;
+import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
 import java.time.OffsetDateTime;
 import java.time.ZoneId;
@@ -60,26 +64,28 @@ public class HttpTask<T extends ConnectRecord<T>> {
     private final boolean publishToInMemoryQueue;
     private final String queueName;
     private Queue<KafkaRecord> queue;
-    private final MeterRegistry meterRegistry;
+    private static MeterRegistry meterRegistry;
     private final List<Configuration> customConfigurations;
 
     public HttpTask(AbstractConfig config) {
-        this.meterRegistry = buildMeterRegistry();
+        if (meterRegistry == null) {
+            HttpTask.meterRegistry = buildMeterRegistry(config);
+        }
         Integer customFixedThreadPoolSize = Optional.ofNullable(config.getInt(CONFIG_HTTP_CLIENT_ASYNC_FIXED_THREAD_POOL_SIZE)).orElse(1);
         if (executorService == null) {
             setThreadPoolSize(customFixedThreadPoolSize);
         }
-        bindMetrics(meterRegistry,executorService);
+        bindMetrics(config, meterRegistry, executorService);
         this.defaultConfiguration = new Configuration(DEFAULT_CONFIGURATION_ID, config, executorService, meterRegistry);
         this.publishToInMemoryQueue = Optional.ofNullable(config.getBoolean(PUBLISH_TO_IN_MEMORY_QUEUE)).orElse(false);
         this.queueName = Optional.ofNullable(config.getString(ConfigConstants.QUEUE_NAME)).orElse(QueueFactory.DEFAULT_QUEUE_NAME);
         this.queue = QueueFactory.getQueue(queueName);
-        this.customConfigurations = buildCustomConfigurations(config,defaultConfiguration,executorService);
+        this.customConfigurations = buildCustomConfigurations(config, defaultConfiguration, executorService);
     }
 
-    public List<Configuration> buildCustomConfigurations(AbstractConfig config,
-                                                         Configuration defaultConfiguration,
-                                                         ExecutorService executorService) {
+    private List<Configuration> buildCustomConfigurations(AbstractConfig config,
+                                                          Configuration defaultConfiguration,
+                                                          ExecutorService executorService) {
         CopyOnWriteArrayList<Configuration> configurations = Lists.newCopyOnWriteArrayList();
 
         for (String configId : Optional.ofNullable(config.getList(CONFIGURATION_IDS)).orElse(Lists.newArrayList())) {
@@ -237,30 +243,73 @@ public class HttpTask<T extends ConnectRecord<T>> {
         );
     }
 
-    private MeterRegistry buildMeterRegistry() {
+    private MeterRegistry buildMeterRegistry(AbstractConfig config) {
         CompositeMeterRegistry compositeMeterRegistry = new CompositeMeterRegistry();
-        JmxMeterRegistry jmxMeterRegistry = new JmxMeterRegistry(JmxConfig.DEFAULT, Clock.SYSTEM);
-        jmxMeterRegistry.start();
-        compositeMeterRegistry.add(jmxMeterRegistry);
-        PrometheusMeterRegistry prometheusRegistry = new PrometheusMeterRegistry(PrometheusConfig.DEFAULT);
-        compositeMeterRegistry.add(prometheusRegistry);
+        boolean activateJMX = config.getBoolean(METER_REGISTRY_EXPORTER_JMX_ACTIVATE);
+        if (activateJMX) {
+            JmxMeterRegistry jmxMeterRegistry = new JmxMeterRegistry(JmxConfig.DEFAULT, Clock.SYSTEM);
+            jmxMeterRegistry.start();
+            compositeMeterRegistry.add(jmxMeterRegistry);
+        }
+        boolean activatePrometheus = config.getBoolean(METER_REGISTRY_EXPORTER_PROMETHEUS_ACTIVATE);
+        if (activatePrometheus) {
+            PrometheusMeterRegistry prometheusRegistry = new PrometheusMeterRegistry(PrometheusConfig.DEFAULT);
+            Integer prometheusPort = config.getInt(METER_REGISTRY_EXPORTER_PROMETHEUS_PORT);
+            // you can set the daemon flag to false if you want the server to block
+            HTTPServer httpServer = null;
+            try {
+                httpServer = new HTTPServer(new InetSocketAddress(prometheusPort != null ? prometheusPort : 9090), prometheusRegistry.getPrometheusRegistry(), true);
+            } catch (IOException e) {
+                throw new HttpException(e);
+            } finally {
+                if (httpServer != null) {
+                    httpServer.close();
+                }
+            }
+            compositeMeterRegistry.add(prometheusRegistry);
+        }
         return compositeMeterRegistry;
     }
 
-    private static void bindMetrics(MeterRegistry meterRegistry, ExecutorService myExecutorService) {
-        new ExecutorServiceMetrics(myExecutorService, "HttpSinkTask", Lists.newArrayList()).bindTo(meterRegistry);
-        new JvmMemoryMetrics().bindTo(meterRegistry);
-        new JvmThreadMetrics().bindTo(meterRegistry);
-        new JvmInfoMetrics().bindTo(meterRegistry);
-        try(JvmGcMetrics gcMetrics = new JvmGcMetrics()){
-            gcMetrics.bindTo(meterRegistry);
+    private static void bindMetrics(AbstractConfig config, MeterRegistry meterRegistry, ExecutorService myExecutorService) {
+        boolean bindExecutorServiceMetrics = config.getBoolean(METER_REGISTRY_BIND_METRICS_EXECUTOR_SERVICE);
+        if (bindExecutorServiceMetrics) {
+            new ExecutorServiceMetrics(myExecutorService, "HttpSinkTask", Lists.newArrayList()).bindTo(meterRegistry);
         }
-        new ClassLoaderMetrics().bindTo(meterRegistry);
-        new ProcessorMetrics().bindTo(meterRegistry);
-        try(LogbackMetrics logbackMetrics = new LogbackMetrics()){
-            logbackMetrics.bindTo(meterRegistry);
+        boolean bindJvmMemoryMetrics = config.getBoolean(METER_REGISTRY_BIND_METRICS_JVM_MEMORY);
+        if (bindJvmMemoryMetrics) {
+            new JvmMemoryMetrics().bindTo(meterRegistry);
+        }
+        boolean bindJvmThreadMetrics = config.getBoolean(METER_REGISTRY_BIND_METRICS_JVM_THREAD);
+        if (bindJvmThreadMetrics) {
+            new JvmThreadMetrics().bindTo(meterRegistry);
+        }
+        boolean bindJvmInfoMetrics = config.getBoolean(METER_REGISTRY_BIND_METRICS_JVM_INFO);
+        if (bindJvmInfoMetrics) {
+            new JvmInfoMetrics().bindTo(meterRegistry);
+        }
+        boolean bindJvmGcMetrics = config.getBoolean(METER_REGISTRY_BIND_METRICS_JVM_GC);
+        if (bindJvmGcMetrics) {
+            try (JvmGcMetrics gcMetrics = new JvmGcMetrics()) {
+                gcMetrics.bindTo(meterRegistry);
+            }
+        }
+        boolean bindJVMClassLoaderMetrics = config.getBoolean(METER_REGISTRY_BIND_METRICS_JVM_CLASSLOADER);
+        if (bindJVMClassLoaderMetrics) {
+            new ClassLoaderMetrics().bindTo(meterRegistry);
+        }
+        boolean bindJVMProcessorMetrics = config.getBoolean(METER_REGISTRY_BIND_METRICS_JVM_PROCESSOR);
+        if (bindJVMProcessorMetrics) {
+            new ProcessorMetrics().bindTo(meterRegistry);
+        }
+        boolean bindLogbackMetrics = config.getBoolean(METER_REGISTRY_BIND_METRICS_LOGBACK);
+        if (bindLogbackMetrics) {
+            try (LogbackMetrics logbackMetrics = new LogbackMetrics()) {
+                logbackMetrics.bindTo(meterRegistry);
+            }
         }
     }
+
     /**
      * define a static field from a non-static method need a static synchronized method
      *
@@ -269,6 +318,7 @@ public class HttpTask<T extends ConnectRecord<T>> {
     public static synchronized void setThreadPoolSize(Integer customFixedThreadPoolSize) {
         executorService = Executors.newFixedThreadPool(customFixedThreadPoolSize);
     }
+
     public void setQueue(Queue<KafkaRecord> queue) {
         this.queue = queue;
     }

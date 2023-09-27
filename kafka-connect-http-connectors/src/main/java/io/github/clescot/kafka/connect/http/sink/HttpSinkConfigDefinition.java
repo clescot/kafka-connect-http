@@ -8,6 +8,29 @@ import java.util.Collections;
 
 public class HttpSinkConfigDefinition {
 
+    //meter registry
+    public static final String METER_REGISTRY_EXPORTER_JMX_ACTIVATE = "meter.registry.exporter.jmx.activate";
+    public static final String METER_REGISTRY_EXPORTER_JMX_ACTIVATE_DOC = "activate exposure of metrics via JMX";
+    public static final String METER_REGISTRY_EXPORTER_PROMETHEUS_ACTIVATE = "meter.registry.exporter.prometheus.activate";
+    public static final String METER_REGISTRY_EXPORTER_PROMETHEUS_ACTIVATE_DOC = "activate exposure of metrics via prometheus";
+    public static final String METER_REGISTRY_EXPORTER_PROMETHEUS_PORT = "meter.registry.exporter.prometheus.port";
+    public static final String METER_REGISTRY_EXPORTER_PROMETHEUS_PORT_DOC = "define the port to use for prometheus exposition.";
+    public static final String METER_REGISTRY_BIND_METRICS_EXECUTOR_SERVICE = "meter.registry.bind.metrics.executor.service";
+    public static final String METER_REGISTRY_BIND_METRICS_EXECUTOR_SERVICE_DOC = "bind executor service metrics into registry";
+    public static final String METER_REGISTRY_BIND_METRICS_JVM_MEMORY = "meter.registry.bind.metrics.jvm.memory";
+    public static final String METER_REGISTRY_BIND_METRICS_JVM_MEMORY_DOC = "bind jvm memory metrics into registry";
+    public static final String METER_REGISTRY_BIND_METRICS_JVM_THREAD = "meter.registry.bind.metrics.jvm.thread";
+    public static final String METER_REGISTRY_BIND_METRICS_JVM_THREAD_DOC = "bind jvm thread metrics into registry";
+    public static final String METER_REGISTRY_BIND_METRICS_JVM_INFO = "meter.registry.bind.metrics.jvm.info";
+    public static final String METER_REGISTRY_BIND_METRICS_JVM_INFO_DOC = "bind jvm info metrics into registry";
+    public static final String METER_REGISTRY_BIND_METRICS_JVM_GC = "meter.registry.bind.metrics.jvm.gc";
+    public static final String METER_REGISTRY_BIND_METRICS_JVM_GC_DOC = "bind jvm garbage collector (GC) metrics into registry";
+    public static final String METER_REGISTRY_BIND_METRICS_JVM_CLASSLOADER = "meter.registry.bind.metrics.jvm.classloader";
+    public static final String METER_REGISTRY_BIND_METRICS_JVM_CLASSLOADER_DOC = "bind jvm classloader metrics into registry";
+    public static final String METER_REGISTRY_BIND_METRICS_JVM_PROCESSOR = "meter.registry.bind.metrics.jvm.processor";
+    public static final String METER_REGISTRY_BIND_METRICS_JVM_PROCESSOR_DOC = "bind jvm processor metrics into registry";
+    public static final String METER_REGISTRY_BIND_METRICS_LOGBACK = "meter.registry.bind.metrics.logback";
+    public static final String METER_REGISTRY_BIND_METRICS_LOGBACK_DOC = "bind logback metrics into registry";
 
     //publish to in memory queue
     public static final String PUBLISH_TO_IN_MEMORY_QUEUE = "publish.to.in.memory.queue";
@@ -361,6 +384,18 @@ public class HttpSinkConfigDefinition {
 
     public static ConfigDef config() {
         return new ConfigDef()
+                //meter registry
+                .define(METER_REGISTRY_EXPORTER_JMX_ACTIVATE, ConfigDef.Type.BOOLEAN, false, ConfigDef.Importance.LOW, METER_REGISTRY_EXPORTER_JMX_ACTIVATE_DOC)
+                .define(METER_REGISTRY_EXPORTER_PROMETHEUS_ACTIVATE, ConfigDef.Type.BOOLEAN, false, ConfigDef.Importance.LOW, METER_REGISTRY_EXPORTER_PROMETHEUS_ACTIVATE_DOC)
+                .define(METER_REGISTRY_EXPORTER_PROMETHEUS_PORT, ConfigDef.Type.INT, 9090, ConfigDef.Importance.LOW, METER_REGISTRY_EXPORTER_PROMETHEUS_PORT_DOC)
+                .define(METER_REGISTRY_BIND_METRICS_EXECUTOR_SERVICE, ConfigDef.Type.BOOLEAN, false, ConfigDef.Importance.LOW, METER_REGISTRY_BIND_METRICS_EXECUTOR_SERVICE_DOC)
+                .define(METER_REGISTRY_BIND_METRICS_JVM_CLASSLOADER, ConfigDef.Type.BOOLEAN, false, ConfigDef.Importance.LOW, METER_REGISTRY_BIND_METRICS_JVM_CLASSLOADER_DOC)
+                .define(METER_REGISTRY_BIND_METRICS_JVM_PROCESSOR, ConfigDef.Type.BOOLEAN, false, ConfigDef.Importance.LOW, METER_REGISTRY_BIND_METRICS_JVM_PROCESSOR_DOC)
+                .define(METER_REGISTRY_BIND_METRICS_JVM_GC, ConfigDef.Type.BOOLEAN, false, ConfigDef.Importance.LOW, METER_REGISTRY_BIND_METRICS_JVM_GC_DOC)
+                .define(METER_REGISTRY_BIND_METRICS_JVM_INFO, ConfigDef.Type.BOOLEAN, false, ConfigDef.Importance.LOW, METER_REGISTRY_BIND_METRICS_JVM_INFO_DOC)
+                .define(METER_REGISTRY_BIND_METRICS_JVM_MEMORY, ConfigDef.Type.BOOLEAN, false, ConfigDef.Importance.LOW, METER_REGISTRY_BIND_METRICS_JVM_MEMORY_DOC)
+                .define(METER_REGISTRY_BIND_METRICS_JVM_THREAD, ConfigDef.Type.BOOLEAN, false, ConfigDef.Importance.LOW, METER_REGISTRY_BIND_METRICS_JVM_THREAD_DOC)
+                .define(METER_REGISTRY_BIND_METRICS_LOGBACK, ConfigDef.Type.BOOLEAN, false, ConfigDef.Importance.LOW, METER_REGISTRY_BIND_METRICS_LOGBACK_DOC)
                 //http client implementation settings
                 .define(HTTP_CLIENT_IMPLEMENTATION, ConfigDef.Type.STRING, null, ConfigDef.Importance.LOW, HTTP_CLIENT_IMPLEMENTATION_DOC)
                 .define(CONFIG_DEFAULT_HTTP_CLIENT_SECURE_RANDOM_PRNG_ALGORITHM, ConfigDef.Type.STRING, "SHA1PRNG", ConfigDef.Importance.LOW, CONFIG_DEFAULT_HTTP_CLIENT_SECURE_RANDOM_PRNG_ALGORITHM_DOC)
