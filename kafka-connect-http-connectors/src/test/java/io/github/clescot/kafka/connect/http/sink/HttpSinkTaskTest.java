@@ -97,10 +97,12 @@ public class HttpSinkTaskTest {
     @AfterEach
     public void tearsDown() {
         wmHttp.resetAll();
+        HttpTask.removeCompositeMeterRegistry();
     }
 
     @AfterAll
     public static void shutdown(){
+
 //        Awaitility.await()
 //                .timeout(660, SECONDS)
 //                .pollDelay(650, SECONDS)
