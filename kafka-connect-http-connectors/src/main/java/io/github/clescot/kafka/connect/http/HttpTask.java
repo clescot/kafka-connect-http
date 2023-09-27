@@ -64,7 +64,7 @@ public class HttpTask<T extends ConnectRecord<T>> {
     private final boolean publishToInMemoryQueue;
     private final String queueName;
     private Queue<KafkaRecord> queue;
-    private static MeterRegistry meterRegistry;
+    private static CompositeMeterRegistry meterRegistry;
     private final List<Configuration> customConfigurations;
 
     public HttpTask(AbstractConfig config) {
@@ -243,7 +243,7 @@ public class HttpTask<T extends ConnectRecord<T>> {
         );
     }
 
-    private MeterRegistry buildMeterRegistry(AbstractConfig config) {
+    private CompositeMeterRegistry buildMeterRegistry(AbstractConfig config) {
         CompositeMeterRegistry compositeMeterRegistry = new CompositeMeterRegistry();
         boolean activateJMX = config.getBoolean(METER_REGISTRY_EXPORTER_JMX_ACTIVATE);
         if (activateJMX) {
@@ -329,5 +329,9 @@ public class HttpTask<T extends ConnectRecord<T>> {
 
     public static ExecutorService getExecutorService() {
         return executorService;
+    }
+
+    public static CompositeMeterRegistry getMeterRegistry() {
+        return meterRegistry;
     }
 }

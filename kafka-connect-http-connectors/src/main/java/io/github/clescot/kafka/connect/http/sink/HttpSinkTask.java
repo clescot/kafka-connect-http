@@ -156,4 +156,8 @@ public class HttpSinkTask extends SinkTask {
     public Configuration getDefaultConfiguration() {
         return httpTask.getDefaultConfiguration();
     }
+
+    public HttpTask<SinkRecord> getHttpTask() {
+        return httpTask;
+    }
 }
