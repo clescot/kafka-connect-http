@@ -131,16 +131,16 @@ public class AdvancedEventListener extends EventListener {
 
     protected AdvancedEventListener(MeterRegistry registry, Function<Request, String> urlMapper,
                                     Iterable<Tag> extraTags, Iterable<BiFunction<Request, Response, Tag>> contextSpecificTags,
-                                    Iterable<String> requestTagKeys, boolean includeHostTag) {
+                                    Iterable<String> requestTagKeys, boolean includeLegacyHostTag) {
         this.registry = registry;
         this.urlMapper = urlMapper;
         this.extraTags = extraTags;
         this.contextSpecificTags = contextSpecificTags;
-        this.includeHostTag = includeHostTag;
+        this.includeHostTag = includeLegacyHostTag;
 
         List<Tag> unknownRequestTags = new ArrayList<>();
         for (String requestTagKey : requestTagKeys) {
-            unknownRequestTags.add(Tag.of(requestTagKey, "UNKNOWN"));
+            unknownRequestTags.add(Tag.of(requestTagKey, TAG_VALUE_UNKNOWN));
         }
         this.unknownRequestTags = unknownRequestTags;
     }
@@ -525,7 +525,7 @@ public class AdvancedEventListener extends EventListener {
         private final MeterRegistry registry;
 
 
-        private Function<Request, String> uriMapper = (request) -> Optional.ofNullable(request.header(URI_PATTERN))
+        private Function<Request, String> uriMapper = request -> Optional.ofNullable(request.header(URI_PATTERN))
                 .orElse("none");
 
         private Tags tags = Tags.empty();

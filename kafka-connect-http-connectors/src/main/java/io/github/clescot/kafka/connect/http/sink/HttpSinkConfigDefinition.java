@@ -31,6 +31,10 @@ public class HttpSinkConfigDefinition {
     public static final String METER_REGISTRY_BIND_METRICS_JVM_PROCESSOR_DOC = "bind jvm processor metrics into registry";
     public static final String METER_REGISTRY_BIND_METRICS_LOGBACK = "meter.registry.bind.metrics.logback";
     public static final String METER_REGISTRY_BIND_METRICS_LOGBACK_DOC = "bind logback metrics into registry";
+    public static final String METER_REGISTRY_TAG_INCLUDE_LEGACY_HOST = "meter.registry.tag.include.legacy.host";
+    public static final String METER_REGISTRY_TAG_INCLUDE_LEGACY_HOST_DOC = "include the legacy tag 'host'. host is already present in the 'target.host' tag.";
+    public static final String METER_REGISTRY_TAG_INCLUDE_URL_PATH = "meter.registry.tag.include.url.path";
+    public static final String METER_REGISTRY_TAG_INCLUDE_URL_PATH_DOC = "include the legacy tag 'host'. host is already present in the 'target.host' tag.";
 
     //publish to in memory queue
     public static final String PUBLISH_TO_IN_MEMORY_QUEUE = "publish.to.in.memory.queue";
@@ -385,9 +389,11 @@ public class HttpSinkConfigDefinition {
     public static ConfigDef config() {
         return new ConfigDef()
                 //meter registry
+                //exporters
                 .define(METER_REGISTRY_EXPORTER_JMX_ACTIVATE, ConfigDef.Type.BOOLEAN, false, ConfigDef.Importance.LOW, METER_REGISTRY_EXPORTER_JMX_ACTIVATE_DOC)
                 .define(METER_REGISTRY_EXPORTER_PROMETHEUS_ACTIVATE, ConfigDef.Type.BOOLEAN, false, ConfigDef.Importance.LOW, METER_REGISTRY_EXPORTER_PROMETHEUS_ACTIVATE_DOC)
                 .define(METER_REGISTRY_EXPORTER_PROMETHEUS_PORT, ConfigDef.Type.INT, 9090, ConfigDef.Importance.LOW, METER_REGISTRY_EXPORTER_PROMETHEUS_PORT_DOC)
+                //bind metrics
                 .define(METER_REGISTRY_BIND_METRICS_EXECUTOR_SERVICE, ConfigDef.Type.BOOLEAN, false, ConfigDef.Importance.LOW, METER_REGISTRY_BIND_METRICS_EXECUTOR_SERVICE_DOC)
                 .define(METER_REGISTRY_BIND_METRICS_JVM_CLASSLOADER, ConfigDef.Type.BOOLEAN, false, ConfigDef.Importance.LOW, METER_REGISTRY_BIND_METRICS_JVM_CLASSLOADER_DOC)
                 .define(METER_REGISTRY_BIND_METRICS_JVM_PROCESSOR, ConfigDef.Type.BOOLEAN, false, ConfigDef.Importance.LOW, METER_REGISTRY_BIND_METRICS_JVM_PROCESSOR_DOC)
@@ -396,6 +402,9 @@ public class HttpSinkConfigDefinition {
                 .define(METER_REGISTRY_BIND_METRICS_JVM_MEMORY, ConfigDef.Type.BOOLEAN, false, ConfigDef.Importance.LOW, METER_REGISTRY_BIND_METRICS_JVM_MEMORY_DOC)
                 .define(METER_REGISTRY_BIND_METRICS_JVM_THREAD, ConfigDef.Type.BOOLEAN, false, ConfigDef.Importance.LOW, METER_REGISTRY_BIND_METRICS_JVM_THREAD_DOC)
                 .define(METER_REGISTRY_BIND_METRICS_LOGBACK, ConfigDef.Type.BOOLEAN, false, ConfigDef.Importance.LOW, METER_REGISTRY_BIND_METRICS_LOGBACK_DOC)
+                //tags
+                .define(METER_REGISTRY_TAG_INCLUDE_LEGACY_HOST, ConfigDef.Type.BOOLEAN, false, ConfigDef.Importance.LOW, METER_REGISTRY_TAG_INCLUDE_LEGACY_HOST_DOC)
+                .define(METER_REGISTRY_TAG_INCLUDE_URL_PATH, ConfigDef.Type.BOOLEAN, false, ConfigDef.Importance.LOW, METER_REGISTRY_TAG_INCLUDE_URL_PATH_DOC)
                 //http client implementation settings
                 .define(HTTP_CLIENT_IMPLEMENTATION, ConfigDef.Type.STRING, null, ConfigDef.Importance.LOW, HTTP_CLIENT_IMPLEMENTATION_DOC)
                 .define(CONFIG_DEFAULT_HTTP_CLIENT_SECURE_RANDOM_PRNG_ALGORITHM, ConfigDef.Type.STRING, "SHA1PRNG", ConfigDef.Importance.LOW, CONFIG_DEFAULT_HTTP_CLIENT_SECURE_RANDOM_PRNG_ALGORITHM_DOC)

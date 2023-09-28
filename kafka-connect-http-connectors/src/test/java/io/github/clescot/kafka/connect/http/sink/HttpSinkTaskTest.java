@@ -52,6 +52,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.*;
 
 public class HttpSinkTaskTest {
+    private static final Logger LOGGER = LoggerFactory.getLogger(HttpSinkTaskTest.class);
     private static final String DUMMY_BODY = "stuff";
     private static final String DUMMY_URL = "http://www." + DUMMY_BODY + ".com";
     private static final String DUMMY_METHOD = "POST";
@@ -60,7 +61,6 @@ public class HttpSinkTaskTest {
     public static final String CLIENT_TRUSTSTORE_JKS_PASSWORD = "Secret123!";
     public static final String JKS_STORE_TYPE = "jks";
     public static final String TRUSTSTORE_PKIX_ALGORITHM = "PKIX";
-    public static final Logger LOGGER = LoggerFactory.getLogger(HttpSinkTaskTest.class.getName());
 
 
     @Mock
@@ -258,6 +258,10 @@ public class HttpSinkTaskTest {
                 MeterRegistry meterRegistry1 = meterRegistryList.get(0);
                 assertThat(JmxMeterRegistry.class.isAssignableFrom(meterRegistry1.getClass()));
                 List<Meter> meters = meterRegistry1.getMeters();
+                assertThat(meters).isNotEmpty();
+                for (Meter meter : meters) {
+                    LOGGER.info("meter : {}",meter.getId());
+                }
             });
         }
 
@@ -334,7 +338,10 @@ public class HttpSinkTaskTest {
                 MeterRegistry meterRegistry1 = meterRegistryList.get(0);
                 assertThat(JmxMeterRegistry.class.isAssignableFrom(meterRegistry1.getClass()));
                 List<Meter> meters = meterRegistry1.getMeters();
-
+                assertThat(meters).isNotEmpty();
+                for (Meter meter : meters) {
+                    LOGGER.info("meter : {}",meter.getId());
+                }
             });
         }
 

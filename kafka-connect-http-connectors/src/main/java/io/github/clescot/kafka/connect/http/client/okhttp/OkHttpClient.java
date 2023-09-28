@@ -92,7 +92,9 @@ public class OkHttpClient extends AbstractHttpClient<Request, Response> {
         httpClientBuilder.addNetworkInterceptor(new LoggingInterceptor());
 
         //events
-        httpClientBuilder.eventListenerFactory(new AdvancedEventListenerFactory(meterRegistry,true,true));
+        boolean includeLegacyHostTag = (boolean) config.getOrDefault(METER_REGISTRY_TAG_INCLUDE_LEGACY_HOST,false);
+        boolean includeUrlPath = (boolean) config.getOrDefault(METER_REGISTRY_TAG_INCLUDE_URL_PATH,false);
+        httpClientBuilder.eventListenerFactory(new AdvancedEventListenerFactory(meterRegistry,includeLegacyHostTag,includeUrlPath));
 
         client = httpClientBuilder.build();
 

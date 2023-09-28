@@ -61,6 +61,7 @@ public class Configuration {
     public static final String HEADER_VALUE_REGEX = PREDICATE + "header.value.regex";
     public static final String HAS_BEEN_SET = " has been set.";
     public static final String SHA_1_PRNG = "SHA1PRNG";
+    public static final String MUST_BE_SET_TOO = " must be set too.";
 
     private final Predicate<HttpRequest> mainpredicate;
 
@@ -96,7 +97,7 @@ public class Configuration {
         Preconditions.checkNotNull(id, "id must not be null");
         Preconditions.checkNotNull(config, "httpSinkConnectorConfig must not be null");
 
-        //configuration id prefix is not present into the configMap
+        //configuration id prefix is not present in the resulting configMap
         Map<String, Object> configMap = config.originalsWithPrefix("config." + id + ".");
 
         //main predicate
@@ -149,13 +150,13 @@ public class Configuration {
         if (configMap.containsKey(RETRIES)) {
             Integer retries = Integer.parseInt((String) configMap.get(RETRIES));
             Long retryDelayInMs = Long.parseLong((String) configMap.get(RETRY_DELAY_IN_MS));
-            Preconditions.checkNotNull(retryDelayInMs, RETRIES + HAS_BEEN_SET + RETRY_DELAY_IN_MS + " must be set too.");
+            Preconditions.checkNotNull(retryDelayInMs, RETRIES + HAS_BEEN_SET + RETRY_DELAY_IN_MS + MUST_BE_SET_TOO);
             Long retryMaxDelayInMs = Long.parseLong((String) configMap.get(RETRY_MAX_DELAY_IN_MS));
-            Preconditions.checkNotNull(retryDelayInMs, RETRIES + HAS_BEEN_SET + RETRY_MAX_DELAY_IN_MS + " must be set too.");
+            Preconditions.checkNotNull(retryDelayInMs, RETRIES + HAS_BEEN_SET + RETRY_MAX_DELAY_IN_MS + MUST_BE_SET_TOO);
             Double retryDelayFactor = Double.parseDouble((String) configMap.get(RETRY_DELAY_FACTOR));
-            Preconditions.checkNotNull(retryDelayInMs, RETRIES + HAS_BEEN_SET + RETRY_DELAY_FACTOR + " must be set too.");
+            Preconditions.checkNotNull(retryDelayInMs, RETRIES + HAS_BEEN_SET + RETRY_DELAY_FACTOR + MUST_BE_SET_TOO);
             Long retryJitterInMs = Long.parseLong((String) configMap.get(RETRY_JITTER_IN_MS));
-            Preconditions.checkNotNull(retryDelayInMs, RETRIES + HAS_BEEN_SET + RETRY_JITTER_IN_MS + " must be set too.");
+            Preconditions.checkNotNull(retryDelayInMs, RETRIES + HAS_BEEN_SET + RETRY_JITTER_IN_MS + MUST_BE_SET_TOO);
             this.retryPolicy = buildRetryPolicy(retries, retryDelayInMs, retryMaxDelayInMs, retryDelayFactor, retryJitterInMs);
         }
 

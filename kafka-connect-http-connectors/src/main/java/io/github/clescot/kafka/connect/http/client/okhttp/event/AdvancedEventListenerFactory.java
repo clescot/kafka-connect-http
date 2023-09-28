@@ -11,13 +11,13 @@ import java.util.Optional;
 public class AdvancedEventListenerFactory implements EventListener.Factory {
 
     private final MeterRegistry meterRegistry;
-    private boolean includeHostTag;
+    private boolean includeLegacyHostTag;
     private final boolean includUrlPath;
     private final String[] tags;
 
-    public AdvancedEventListenerFactory(MeterRegistry meterRegistry,boolean includeHostTag,boolean includUrlPath,String... tags) {
+    public AdvancedEventListenerFactory(MeterRegistry meterRegistry, boolean includeLegacyHostTag, boolean includUrlPath, String... tags) {
         this.meterRegistry = meterRegistry;
-        this.includeHostTag = includeHostTag;
+        this.includeLegacyHostTag = includeLegacyHostTag;
         this.includUrlPath = includUrlPath;
         this.tags = tags;
     }
@@ -25,13 +25,13 @@ public class AdvancedEventListenerFactory implements EventListener.Factory {
     @NotNull
     @Override
     public EventListener create(@NotNull Call call) {
-        includeHostTag = true;
+        includeLegacyHostTag = true;
         return AdvancedEventListener.builder(meterRegistry)
                 .uriMapper(includUrlPath?
                         req -> req.url().encodedPath()
-                        :(request) -> Optional.ofNullable(request.header(AdvancedEventListener.URI_PATTERN)).orElse("none"))
+                        :request -> Optional.ofNullable(request.header(AdvancedEventListener.URI_PATTERN)).orElse("none"))
                 .tags(Tags.of(tags))
-                .includeHostTag(includeHostTag)
+                .includeHostTag(includeLegacyHostTag)
                 .requestTagKeys()
                 .build();
     }
