@@ -23,6 +23,7 @@ import io.micrometer.core.instrument.Meter;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.composite.CompositeMeterRegistry;
 import io.micrometer.jmx.JmxMeterRegistry;
+import io.micrometer.prometheus.PrometheusMeterRegistry;
 import org.apache.kafka.common.record.TimestampType;
 import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.header.Header;
@@ -337,6 +338,179 @@ public class HttpSinkTaskTest {
                 List<MeterRegistry> meterRegistryList = Arrays.asList(registries.toArray(new MeterRegistry[0]));
                 MeterRegistry meterRegistry1 = meterRegistryList.get(0);
                 assertThat(JmxMeterRegistry.class.isAssignableFrom(meterRegistry1.getClass()));
+                List<Meter> meters = meterRegistry1.getMeters();
+                assertThat(meters).isNotEmpty();
+                for (Meter meter : meters) {
+                    LOGGER.info("meter : {}",meter.getId());
+                }
+            });
+        }
+        @Test
+        void test_meter_registry_activate_jmx_and_prometheus() {
+            Assertions.assertDoesNotThrow(() -> {
+                HashMap<String, String> settings = Maps.newHashMap();
+                settings.put(METER_REGISTRY_EXPORTER_JMX_ACTIVATE,"true");
+                settings.put(METER_REGISTRY_EXPORTER_PROMETHEUS_ACTIVATE,"true");
+                settings.put(METER_REGISTRY_EXPORTER_PROMETHEUS_PORT,"9090");
+                httpSinkTask.start(settings);
+
+                //given
+                WireMockRuntimeInfo wmRuntimeInfo = wmHttp.getRuntimeInfo();
+
+
+                //init sinkRecord
+                List<SinkRecord> records = Lists.newArrayList();
+                List<Header> headers = Lists.newArrayList();
+                SinkRecord sinkRecord1 = new SinkRecord("myTopic", 0, Schema.STRING_SCHEMA, "key", Schema.STRING_SCHEMA,
+                        getLocalHttpRequestAsStringWithPath(wmRuntimeInfo.getHttpPort(), "/path1"),
+                        -1, System.currentTimeMillis(), TimestampType.CREATE_TIME, headers);
+                records.add(sinkRecord1);
+                SinkRecord sinkRecord2 = new SinkRecord("myTopic", 0, Schema.STRING_SCHEMA, "key", Schema.STRING_SCHEMA,
+                        getLocalHttpRequestAsStringWithPath(wmRuntimeInfo.getHttpPort(), "/path2"),
+                        -1, System.currentTimeMillis(), TimestampType.CREATE_TIME, headers);
+                records.add(sinkRecord2);
+                SinkRecord sinkRecord3 = new SinkRecord("myTopic", 0, Schema.STRING_SCHEMA, "key", Schema.STRING_SCHEMA,
+                        getLocalHttpRequestAsStringWithPath(wmRuntimeInfo.getHttpPort(), "/path3"),
+                        -1, System.currentTimeMillis(), TimestampType.CREATE_TIME, headers);
+                records.add(sinkRecord3);
+
+                //define the http Mock Server interaction
+                WireMock wireMock = wmRuntimeInfo.getWireMock();
+                String bodyResponse = "{\"result\":\"pong\"}";
+                wireMock
+                        .register(WireMock.post("/path1")
+                                .willReturn(WireMock.aResponse()
+                                        .withHeader("Content-Type", "application/json")
+                                        .withBody(bodyResponse)
+                                        .withStatus(200)
+                                        .withStatusMessage("OK")
+                                        .withFixedDelay(1000)
+                                )
+                        );
+                wireMock
+                        .register(WireMock.post("/path2")
+                                .willReturn(WireMock.aResponse()
+                                        .withHeader("Content-Type", "application/json")
+                                        .withBody(bodyResponse)
+                                        .withStatus(200)
+                                        .withStatusMessage("OK")
+                                        .withFixedDelay(1000)
+                                )
+                        );
+                wireMock
+                        .register(WireMock.post("/path3")
+                                .willReturn(WireMock.aResponse()
+                                        .withHeader("Content-Type", "application/json")
+                                        .withBody(bodyResponse)
+                                        .withStatus(200)
+                                        .withStatusMessage("OK")
+                                        .withFixedDelay(1000)
+                                )
+                        );
+                //when
+
+                httpSinkTask.put(records);
+
+
+                CompositeMeterRegistry meterRegistry = HttpTask.getMeterRegistry();
+                Set<MeterRegistry> registries = meterRegistry.getRegistries();
+                assertThat(registries).hasSize(2);
+                List<MeterRegistry> meterRegistryList = Arrays.asList(registries.toArray(new MeterRegistry[0]));
+                MeterRegistry meterRegistry1 = meterRegistryList.get(0);
+                assertThat(JmxMeterRegistry.class.isAssignableFrom(meterRegistry1.getClass())||PrometheusMeterRegistry.class.isAssignableFrom(meterRegistry1.getClass()));
+                MeterRegistry meterRegistry2 = meterRegistryList.get(1);
+                assertThat(PrometheusMeterRegistry.class.isAssignableFrom(meterRegistry2.getClass())||JmxMeterRegistry.class.isAssignableFrom(meterRegistry2.getClass()));
+                List<Meter> meters = meterRegistry1.getMeters();
+                assertThat(meters).isNotEmpty();
+                for (Meter meter : meters) {
+                    LOGGER.info("meter : {}",meter.getId());
+                }
+            });
+        }
+
+        @Test
+        void test_meter_registry_activate_jmx_and_prometheus_with_all_bindings() {
+            Assertions.assertDoesNotThrow(() -> {
+                HashMap<String, String> settings = Maps.newHashMap();
+                settings.put(METER_REGISTRY_EXPORTER_JMX_ACTIVATE,"true");
+                settings.put(METER_REGISTRY_EXPORTER_PROMETHEUS_ACTIVATE,"true");
+                settings.put(METER_REGISTRY_EXPORTER_PROMETHEUS_PORT,"9090");
+                settings.put(METER_REGISTRY_BIND_METRICS_EXECUTOR_SERVICE,"true");
+                settings.put(METER_REGISTRY_BIND_METRICS_JVM_MEMORY,"true");
+                settings.put(METER_REGISTRY_BIND_METRICS_JVM_THREAD,"true");
+                settings.put(METER_REGISTRY_BIND_METRICS_JVM_INFO,"true");
+                settings.put(METER_REGISTRY_BIND_METRICS_JVM_GC,"true");
+                settings.put(METER_REGISTRY_BIND_METRICS_JVM_CLASSLOADER,"true");
+                settings.put(METER_REGISTRY_BIND_METRICS_JVM_PROCESSOR,"true");
+                settings.put(METER_REGISTRY_BIND_METRICS_LOGBACK,"true");
+                httpSinkTask.start(settings);
+
+                //given
+                WireMockRuntimeInfo wmRuntimeInfo = wmHttp.getRuntimeInfo();
+
+
+                //init sinkRecord
+                List<SinkRecord> records = Lists.newArrayList();
+                List<Header> headers = Lists.newArrayList();
+                SinkRecord sinkRecord1 = new SinkRecord("myTopic", 0, Schema.STRING_SCHEMA, "key", Schema.STRING_SCHEMA,
+                        getLocalHttpRequestAsStringWithPath(wmRuntimeInfo.getHttpPort(), "/path1"),
+                        -1, System.currentTimeMillis(), TimestampType.CREATE_TIME, headers);
+                records.add(sinkRecord1);
+                SinkRecord sinkRecord2 = new SinkRecord("myTopic", 0, Schema.STRING_SCHEMA, "key", Schema.STRING_SCHEMA,
+                        getLocalHttpRequestAsStringWithPath(wmRuntimeInfo.getHttpPort(), "/path2"),
+                        -1, System.currentTimeMillis(), TimestampType.CREATE_TIME, headers);
+                records.add(sinkRecord2);
+                SinkRecord sinkRecord3 = new SinkRecord("myTopic", 0, Schema.STRING_SCHEMA, "key", Schema.STRING_SCHEMA,
+                        getLocalHttpRequestAsStringWithPath(wmRuntimeInfo.getHttpPort(), "/path3"),
+                        -1, System.currentTimeMillis(), TimestampType.CREATE_TIME, headers);
+                records.add(sinkRecord3);
+
+                //define the http Mock Server interaction
+                WireMock wireMock = wmRuntimeInfo.getWireMock();
+                String bodyResponse = "{\"result\":\"pong\"}";
+                wireMock
+                        .register(WireMock.post("/path1")
+                                .willReturn(WireMock.aResponse()
+                                        .withHeader("Content-Type", "application/json")
+                                        .withBody(bodyResponse)
+                                        .withStatus(200)
+                                        .withStatusMessage("OK")
+                                        .withFixedDelay(1000)
+                                )
+                        );
+                wireMock
+                        .register(WireMock.post("/path2")
+                                .willReturn(WireMock.aResponse()
+                                        .withHeader("Content-Type", "application/json")
+                                        .withBody(bodyResponse)
+                                        .withStatus(200)
+                                        .withStatusMessage("OK")
+                                        .withFixedDelay(1000)
+                                )
+                        );
+                wireMock
+                        .register(WireMock.post("/path3")
+                                .willReturn(WireMock.aResponse()
+                                        .withHeader("Content-Type", "application/json")
+                                        .withBody(bodyResponse)
+                                        .withStatus(200)
+                                        .withStatusMessage("OK")
+                                        .withFixedDelay(1000)
+                                )
+                        );
+                //when
+
+                httpSinkTask.put(records);
+
+
+                CompositeMeterRegistry meterRegistry = HttpTask.getMeterRegistry();
+                Set<MeterRegistry> registries = meterRegistry.getRegistries();
+                assertThat(registries).hasSize(2);
+                List<MeterRegistry> meterRegistryList = Arrays.asList(registries.toArray(new MeterRegistry[0]));
+                MeterRegistry meterRegistry1 = meterRegistryList.get(0);
+                assertThat(JmxMeterRegistry.class.isAssignableFrom(meterRegistry1.getClass())||PrometheusMeterRegistry.class.isAssignableFrom(meterRegistry1.getClass()));
+                MeterRegistry meterRegistry2 = meterRegistryList.get(1);
+                assertThat(PrometheusMeterRegistry.class.isAssignableFrom(meterRegistry2.getClass())||JmxMeterRegistry.class.isAssignableFrom(meterRegistry2.getClass()));
                 List<Meter> meters = meterRegistry1.getMeters();
                 assertThat(meters).isNotEmpty();
                 for (Meter meter : meters) {
