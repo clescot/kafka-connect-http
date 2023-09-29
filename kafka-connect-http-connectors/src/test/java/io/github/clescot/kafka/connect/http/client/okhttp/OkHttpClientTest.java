@@ -14,11 +14,15 @@ import io.github.clescot.kafka.connect.http.core.HttpResponse;
 import io.github.clescot.kafka.connect.http.core.queue.QueueFactory;
 import io.github.clescot.kafka.connect.http.client.proxy.URIRegexProxySelector;
 import io.micrometer.core.instrument.Clock;
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.composite.CompositeMeterRegistry;
 import io.micrometer.jmx.JmxMeterRegistry;
 import okhttp3.*;
 import okhttp3.internal.http.RealResponseBody;
 import okio.Buffer;
 import org.apache.commons.lang3.tuple.ImmutablePair;
+import org.assertj.core.util.Sets;
+import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.extension.RegisterExtension;
 import org.slf4j.Logger;
@@ -28,6 +32,7 @@ import java.io.IOException;
 import java.net.*;
 import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Random;
 import java.util.concurrent.ExecutionException;
@@ -70,13 +75,21 @@ class OkHttpClientTest {
 //        Awaitility.await().atMost(5, TimeUnit.MINUTES).until(()-> true!=true);
     }
 
+    @NotNull
+    private CompositeMeterRegistry getCompositeMeterRegistry() {
+        JmxMeterRegistry jmxMeterRegistry = new JmxMeterRegistry(s -> null, Clock.SYSTEM);
+        HashSet<MeterRegistry> registries = Sets.newHashSet();
+        registries.add(jmxMeterRegistry);
+        return new CompositeMeterRegistry(Clock.SYSTEM, registries);
+    }
+
     @Nested
     class BuildRequest {
         @Test
         public void test_build_POST_request() throws IOException {
 
             //given
-            io.github.clescot.kafka.connect.http.client.okhttp.OkHttpClient client = new io.github.clescot.kafka.connect.http.client.okhttp.OkHttpClient(Maps.newHashMap(), null, new Random(), null, null,new JmxMeterRegistry(s -> null, Clock.SYSTEM));
+            io.github.clescot.kafka.connect.http.client.okhttp.OkHttpClient client = new io.github.clescot.kafka.connect.http.client.okhttp.OkHttpClient(Maps.newHashMap(), null, new Random(), null, null,getCompositeMeterRegistry());
             HttpRequest httpRequest = new HttpRequest("http://dummy.com/", "POST", HttpRequest.BodyType.STRING.name());
             httpRequest.setBodyAsString("stuff");
 
@@ -98,7 +111,7 @@ class OkHttpClientTest {
         public void test_build_GET_request_with_body() {
 
             //given
-            io.github.clescot.kafka.connect.http.client.okhttp.OkHttpClient client = new io.github.clescot.kafka.connect.http.client.okhttp.OkHttpClient(Maps.newHashMap(), null, new Random(), null, null, new JmxMeterRegistry(s -> null, Clock.SYSTEM));
+            io.github.clescot.kafka.connect.http.client.okhttp.OkHttpClient client = new io.github.clescot.kafka.connect.http.client.okhttp.OkHttpClient(Maps.newHashMap(), null, new Random(), null, null, getCompositeMeterRegistry());
             HttpRequest httpRequest = new HttpRequest("http://dummy.com/", "GET", HttpRequest.BodyType.STRING.name());
             httpRequest.setBodyAsString("stuff");
 
@@ -120,7 +133,7 @@ class OkHttpClientTest {
         public void test_build_response() {
 
             //given
-            io.github.clescot.kafka.connect.http.client.okhttp.OkHttpClient client = new io.github.clescot.kafka.connect.http.client.okhttp.OkHttpClient(Maps.newHashMap(), null, new Random(), null, null, new JmxMeterRegistry(s -> null, Clock.SYSTEM));
+            io.github.clescot.kafka.connect.http.client.okhttp.OkHttpClient client = new io.github.clescot.kafka.connect.http.client.okhttp.OkHttpClient(Maps.newHashMap(), null, new Random(), null, null, getCompositeMeterRegistry());
 
             HttpRequest httpRequest = new HttpRequest("http://dummy.com/", "POST", HttpRequest.BodyType.STRING.name());
             httpRequest.setBodyAsString("stuff");
@@ -164,7 +177,7 @@ class OkHttpClientTest {
         void test_activated_cache_with_file_type() {
             HashMap<String, Object> config = Maps.newHashMap();
             config.put(OKHTTP_CACHE_ACTIVATE, "true");
-            new io.github.clescot.kafka.connect.http.client.okhttp.OkHttpClient(config, null, new Random(), null, null, new JmxMeterRegistry(s -> null, Clock.SYSTEM));
+            new io.github.clescot.kafka.connect.http.client.okhttp.OkHttpClient(config, null, new Random(), null, null, getCompositeMeterRegistry());
         }
 
         @Test
@@ -172,7 +185,7 @@ class OkHttpClientTest {
             HashMap<String, Object> config = Maps.newHashMap();
             config.put(OKHTTP_CACHE_ACTIVATE, "true");
             config.put(OKHTTP_CACHE_MAX_SIZE, "50000");
-            new io.github.clescot.kafka.connect.http.client.okhttp.OkHttpClient(config, null, new Random(), null, null, new JmxMeterRegistry(s -> null, Clock.SYSTEM));
+            new io.github.clescot.kafka.connect.http.client.okhttp.OkHttpClient(config, null, new Random(), null, null, getCompositeMeterRegistry());
         }
 
         @Test
@@ -181,7 +194,7 @@ class OkHttpClientTest {
             config.put(OKHTTP_CACHE_ACTIVATE, "true");
             config.put(OKHTTP_CACHE_MAX_SIZE, "50000");
             config.put(OKHTTP_CACHE_DIRECTORY_PATH, "/tmp/toto");
-            new io.github.clescot.kafka.connect.http.client.okhttp.OkHttpClient(config, null, new Random(), null, null, new JmxMeterRegistry(s -> null, Clock.SYSTEM));
+            new io.github.clescot.kafka.connect.http.client.okhttp.OkHttpClient(config, null, new Random(), null, null, getCompositeMeterRegistry());
         }
 
         @Test
@@ -189,20 +202,20 @@ class OkHttpClientTest {
             HashMap<String, Object> config = Maps.newHashMap();
             config.put(OKHTTP_CACHE_ACTIVATE, "true");
             config.put(OKHTTP_CACHE_TYPE, "inmemory");
-            new io.github.clescot.kafka.connect.http.client.okhttp.OkHttpClient(config, null, new Random(), null, null, new JmxMeterRegistry(s -> null, Clock.SYSTEM));
+            new io.github.clescot.kafka.connect.http.client.okhttp.OkHttpClient(config, null, new Random(), null, null, getCompositeMeterRegistry());
         }
 
         @Test
         void test_inactivated_cache() {
             HashMap<String, Object> config = Maps.newHashMap();
             config.put(OKHTTP_CACHE_ACTIVATE, "false");
-            new io.github.clescot.kafka.connect.http.client.okhttp.OkHttpClient(config, null, new Random(), null, null, new JmxMeterRegistry(s -> null, Clock.SYSTEM));
+            new io.github.clescot.kafka.connect.http.client.okhttp.OkHttpClient(config, null, new Random(), null, null, getCompositeMeterRegistry());
         }
 
         @Test
         void test_no_cache() {
             HashMap<String, Object> config = Maps.newHashMap();
-            new io.github.clescot.kafka.connect.http.client.okhttp.OkHttpClient(config, null, new Random(), null, null, new JmxMeterRegistry(s -> null, Clock.SYSTEM));
+            new io.github.clescot.kafka.connect.http.client.okhttp.OkHttpClient(config, null, new Random(), null, null, getCompositeMeterRegistry());
         }
     }
 
@@ -223,7 +236,7 @@ class OkHttpClientTest {
             config.put("httpclient.authentication.basic.username", username);
             config.put("httpclient.authentication.basic.password", password);
 
-            io.github.clescot.kafka.connect.http.client.okhttp.OkHttpClient client = new io.github.clescot.kafka.connect.http.client.okhttp.OkHttpClient(config, null, new Random(), null, null, new JmxMeterRegistry(s -> null, Clock.SYSTEM));
+            io.github.clescot.kafka.connect.http.client.okhttp.OkHttpClient client = new io.github.clescot.kafka.connect.http.client.okhttp.OkHttpClient(config, null, new Random(), null, null, getCompositeMeterRegistry());
 
             String baseUrl = "http://" + getIP() + ":" + wmRuntimeInfo.getHttpPort();
             String url = baseUrl + "/ping";
@@ -308,7 +321,7 @@ class OkHttpClientTest {
                 return null;
             })
                     .when(random).nextBytes(any(byte[].class));
-            io.github.clescot.kafka.connect.http.client.okhttp.OkHttpClient client = new io.github.clescot.kafka.connect.http.client.okhttp.OkHttpClient(config, null, random, null, null, new JmxMeterRegistry(s -> null, Clock.SYSTEM));
+            io.github.clescot.kafka.connect.http.client.okhttp.OkHttpClient client = new io.github.clescot.kafka.connect.http.client.okhttp.OkHttpClient(config, null, random, null, null, getCompositeMeterRegistry());
 
             String baseUrl = "http://" + getIP() + ":" + wmRuntimeInfo.getHttpPort();
             String url = baseUrl + "/ping";
@@ -451,7 +464,7 @@ class OkHttpClientTest {
             Proxy proxy = new Proxy(Proxy.Type.HTTP, new InetSocketAddress(getIP(), wmRuntimeInfo.getHttpPort()));
 
 
-            io.github.clescot.kafka.connect.http.client.okhttp.OkHttpClient client = new io.github.clescot.kafka.connect.http.client.okhttp.OkHttpClient(config, null, new Random(), proxy, null, new JmxMeterRegistry(s -> null, Clock.SYSTEM));
+            io.github.clescot.kafka.connect.http.client.okhttp.OkHttpClient client = new io.github.clescot.kafka.connect.http.client.okhttp.OkHttpClient(config, null, new Random(), proxy, null, getCompositeMeterRegistry());
 
             HashMap<String, List<String>> headers = Maps.newHashMap();
             headers.put("Content-Type", Lists.newArrayList("text/plain"));
@@ -506,7 +519,7 @@ class OkHttpClientTest {
             config.put(HTTP_CLIENT_PROXY_AUTHENTICATION_BASIC_PASSWORD, password);
             Proxy proxy = new Proxy(Proxy.Type.HTTP, new InetSocketAddress(getIP(), wmRuntimeInfo.getHttpPort()));
 
-            io.github.clescot.kafka.connect.http.client.okhttp.OkHttpClient client = new io.github.clescot.kafka.connect.http.client.okhttp.OkHttpClient(config, null, new Random(), proxy, null, new JmxMeterRegistry(s -> null, Clock.SYSTEM));
+            io.github.clescot.kafka.connect.http.client.okhttp.OkHttpClient client = new io.github.clescot.kafka.connect.http.client.okhttp.OkHttpClient(config, null, new Random(), proxy, null, getCompositeMeterRegistry());
 
             HashMap<String, List<String>> headers = Maps.newHashMap();
             headers.put("Content-Type", Lists.newArrayList("text/plain"));
@@ -593,7 +606,7 @@ class OkHttpClientTest {
             config.put("httpclient.authentication.basic.password", password);
             Proxy proxy = new Proxy(Proxy.Type.HTTP, new InetSocketAddress(getIP(), wmRuntimeInfo.getHttpPort()));
 
-            io.github.clescot.kafka.connect.http.client.okhttp.OkHttpClient client = new io.github.clescot.kafka.connect.http.client.okhttp.OkHttpClient(config, null, new Random(), proxy, null, new JmxMeterRegistry(s -> null, Clock.SYSTEM));
+            io.github.clescot.kafka.connect.http.client.okhttp.OkHttpClient client = new io.github.clescot.kafka.connect.http.client.okhttp.OkHttpClient(config, null, new Random(), proxy, null, getCompositeMeterRegistry());
 
             HashMap<String, List<String>> headers = Maps.newHashMap();
             headers.put("Content-Type", Lists.newArrayList("text/plain"));
@@ -704,7 +717,7 @@ class OkHttpClientTest {
                 return null;
             }).when(random).nextBytes(any(byte[].class));
 
-            io.github.clescot.kafka.connect.http.client.okhttp.OkHttpClient client = new io.github.clescot.kafka.connect.http.client.okhttp.OkHttpClient(config, null, random, proxy, null, new JmxMeterRegistry(s -> null, Clock.SYSTEM));
+            io.github.clescot.kafka.connect.http.client.okhttp.OkHttpClient client = new io.github.clescot.kafka.connect.http.client.okhttp.OkHttpClient(config, null, random, proxy, null, getCompositeMeterRegistry());
 
             HashMap<String, List<String>> headers = Maps.newHashMap();
             headers.put("Content-Type", Lists.newArrayList("text/plain"));
@@ -870,7 +883,7 @@ class OkHttpClientTest {
             ImmutablePair<Predicate<URI>, Proxy> pair = new ImmutablePair<>(predicate, proxy);
             proxies.add(pair);
             URIRegexProxySelector proxySelector = new URIRegexProxySelector(proxies);
-            io.github.clescot.kafka.connect.http.client.okhttp.OkHttpClient client = new io.github.clescot.kafka.connect.http.client.okhttp.OkHttpClient(config, null, new Random(), null, proxySelector, new JmxMeterRegistry(s -> null, Clock.SYSTEM));
+            io.github.clescot.kafka.connect.http.client.okhttp.OkHttpClient client = new io.github.clescot.kafka.connect.http.client.okhttp.OkHttpClient(config, null, new Random(), null, proxySelector, getCompositeMeterRegistry());
 
             HashMap<String, List<String>> headers = Maps.newHashMap();
             headers.put("Content-Type", Lists.newArrayList("text/plain"));
@@ -932,7 +945,7 @@ class OkHttpClientTest {
 
             URIRegexProxySelector proxySelector = new URIRegexProxySelector(proxies);
 
-            io.github.clescot.kafka.connect.http.client.okhttp.OkHttpClient client = new io.github.clescot.kafka.connect.http.client.okhttp.OkHttpClient(config, null, new Random(), null, proxySelector, new JmxMeterRegistry(s -> null, Clock.SYSTEM));
+            io.github.clescot.kafka.connect.http.client.okhttp.OkHttpClient client = new io.github.clescot.kafka.connect.http.client.okhttp.OkHttpClient(config, null, new Random(), null, proxySelector, getCompositeMeterRegistry());
 
             HashMap<String, List<String>> headers = Maps.newHashMap();
             headers.put("Content-Type", Lists.newArrayList("text/plain"));
@@ -990,7 +1003,7 @@ class OkHttpClientTest {
             config.put("okhttp.connection.pool.keep.alive.duration", 1000);
 
 
-            io.github.clescot.kafka.connect.http.client.okhttp.OkHttpClient client = new io.github.clescot.kafka.connect.http.client.okhttp.OkHttpClient(config, null, new Random(), null, null, new JmxMeterRegistry(s -> null, Clock.SYSTEM));
+            io.github.clescot.kafka.connect.http.client.okhttp.OkHttpClient client = new io.github.clescot.kafka.connect.http.client.okhttp.OkHttpClient(config, null, new Random(), null, null, getCompositeMeterRegistry());
 
             String baseUrl = "http://" + getIP() + ":" + wmRuntimeInfo.getHttpPort();
             String url = baseUrl + "/ping";
@@ -1037,7 +1050,7 @@ class OkHttpClientTest {
             config.put("okhttp.connection.pool.max.idle.connections", 10);
             config.put("okhttp.connection.pool.keep.alive.duration", 1000);
 
-            io.github.clescot.kafka.connect.http.client.okhttp.OkHttpClient client = new io.github.clescot.kafka.connect.http.client.okhttp.OkHttpClient(config, null, new Random(), null, null, new JmxMeterRegistry(s -> null, Clock.SYSTEM));
+            io.github.clescot.kafka.connect.http.client.okhttp.OkHttpClient client = new io.github.clescot.kafka.connect.http.client.okhttp.OkHttpClient(config, null, new Random(), null, null, getCompositeMeterRegistry());
 
             HashMap<String, Object> config2 = Maps.newHashMap();
             config2.put("okhttp.connection.pool.scope", "static");
@@ -1045,7 +1058,7 @@ class OkHttpClientTest {
             config2.put("okhttp.connection.pool.keep.alive.duration", 1000);
 
 
-            io.github.clescot.kafka.connect.http.client.okhttp.OkHttpClient client2 = new OkHttpClient(config2, null, new Random(), null, null, new JmxMeterRegistry(s -> null, Clock.SYSTEM));
+            io.github.clescot.kafka.connect.http.client.okhttp.OkHttpClient client2 = new OkHttpClient(config2, null, new Random(), null, null, getCompositeMeterRegistry());
 
             String baseUrl = "http://" + getIP() + ":" + wmRuntimeInfo.getHttpPort();
             String url = baseUrl + "/ping";

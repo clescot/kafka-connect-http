@@ -11,8 +11,8 @@ import io.github.clescot.kafka.connect.http.client.okhttp.configuration.Authenti
 import io.github.clescot.kafka.connect.http.client.okhttp.event.AdvancedEventListenerFactory;
 import io.github.clescot.kafka.connect.http.core.HttpRequest;
 import io.github.clescot.kafka.connect.http.core.HttpResponse;
-import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.binder.system.DiskSpaceMetrics;
+import io.micrometer.core.instrument.composite.CompositeMeterRegistry;
 import kotlin.Pair;
 import okhttp3.*;
 import okhttp3.internal.http.HttpMethod;
@@ -42,20 +42,18 @@ public class OkHttpClient extends AbstractHttpClient<Request, Response> {
     public static final String FILE_CACHE_TYPE = "file";
 
 
-
-
     private final okhttp3.OkHttpClient client;
     private static final Logger LOGGER = LoggerFactory.getLogger(OkHttpClient.class);
 
     private static ConnectionPool sharedConnectionPool;
-    private final MeterRegistry meterRegistry;
+    private final CompositeMeterRegistry meterRegistry;
 
     public OkHttpClient(Map<String, Object> config,
                         ExecutorService executorService,
                         Random random,
                         Proxy proxy,
                         ProxySelector proxySelector,
-                        MeterRegistry meterRegistry) {
+                        CompositeMeterRegistry meterRegistry) {
         super(config);
         this.meterRegistry = meterRegistry;
 
@@ -69,7 +67,7 @@ public class OkHttpClient extends AbstractHttpClient<Request, Response> {
             httpClientBuilder.proxy(proxy);
         }
 
-        if(proxySelector!=null){
+        if (proxySelector != null) {
             httpClientBuilder.proxySelector(proxySelector);
         }
 
@@ -87,15 +85,15 @@ public class OkHttpClient extends AbstractHttpClient<Request, Response> {
         AuthenticationConfigurer authenticationConfigurer = new AuthenticationConfigurer(random);
         authenticationConfigurer.configure(config, httpClientBuilder);
 
-
         //interceptor
         httpClientBuilder.addNetworkInterceptor(new LoggingInterceptor());
 
         //events
-        boolean includeLegacyHostTag = (boolean) config.getOrDefault(METER_REGISTRY_TAG_INCLUDE_LEGACY_HOST,false);
-        boolean includeUrlPath = (boolean) config.getOrDefault(METER_REGISTRY_TAG_INCLUDE_URL_PATH,false);
-        httpClientBuilder.eventListenerFactory(new AdvancedEventListenerFactory(meterRegistry,includeLegacyHostTag,includeUrlPath));
-
+        boolean includeLegacyHostTag = (boolean) config.getOrDefault(METER_REGISTRY_TAG_INCLUDE_LEGACY_HOST, false);
+        boolean includeUrlPath = (boolean) config.getOrDefault(METER_REGISTRY_TAG_INCLUDE_URL_PATH, false);
+        if (!meterRegistry.getRegistries().isEmpty()) {
+            httpClientBuilder.eventListenerFactory(new AdvancedEventListenerFactory(meterRegistry, includeLegacyHostTag, includeUrlPath));
+        }
         client = httpClientBuilder.build();
 
 
@@ -173,27 +171,28 @@ public class OkHttpClient extends AbstractHttpClient<Request, Response> {
     private void configureConnectionPool(Map<String, Object> config, okhttp3.OkHttpClient.Builder httpClientBuilder) {
         String connectionPoolScope = config.getOrDefault(OKHTTP_CONNECTION_POOL_SCOPE, "instance").toString();
         ConnectionPool connectionPool = null;
-        if("static".equalsIgnoreCase(connectionPoolScope)){
-            if(getSharedConnectionPool()==null){
+        if ("static".equalsIgnoreCase(connectionPoolScope)) {
+            if (getSharedConnectionPool() == null) {
                 connectionPool = buildConnectionPool(config, connectionPool);
                 setSharedConnectionPool(connectionPool);
-            }else{
+            } else {
                 connectionPool = getSharedConnectionPool();
             }
-        }else{
-           connectionPool = buildConnectionPool(config, connectionPool);
+        } else {
+            connectionPool = buildConnectionPool(config, connectionPool);
         }
 
-        if(connectionPool!=null){
+        if (connectionPool != null) {
             httpClientBuilder.connectionPool(connectionPool);
         }
 
     }
 
-    private static void setSharedConnectionPool(ConnectionPool connectionPool){
+    private static void setSharedConnectionPool(ConnectionPool connectionPool) {
         OkHttpClient.sharedConnectionPool = connectionPool;
     }
-    private static ConnectionPool getSharedConnectionPool(){
+
+    private static ConnectionPool getSharedConnectionPool() {
         return OkHttpClient.sharedConnectionPool;
     }
 
@@ -341,9 +340,10 @@ public class OkHttpClient extends AbstractHttpClient<Request, Response> {
 
     /**
      * for tests only.
+     *
      * @return {@link okhttp3.OkHttpClient}
      */
-    protected okhttp3.OkHttpClient getInternalClient(){
+    protected okhttp3.OkHttpClient getInternalClient() {
         return client;
     }
 }

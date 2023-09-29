@@ -1,6 +1,6 @@
 package io.github.clescot.kafka.connect.http.client;
 
-import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.composite.CompositeMeterRegistry;
 
 import java.net.Proxy;
 import java.net.ProxySelector;
@@ -13,5 +13,5 @@ public interface HttpClientFactory<Req,Res> {
                               ExecutorService executorService,
                               Random random,
                               Proxy proxy,
-                              ProxySelector proxySelector, MeterRegistry meterRegistry);
+                              ProxySelector proxySelector, CompositeMeterRegistry meterRegistry);
 }

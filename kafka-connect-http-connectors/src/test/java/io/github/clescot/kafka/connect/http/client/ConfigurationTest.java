@@ -8,7 +8,10 @@ import io.github.clescot.kafka.connect.http.core.HttpRequest;
 import io.github.clescot.kafka.connect.http.core.HttpResponse;
 import io.github.clescot.kafka.connect.http.sink.HttpSinkConnectorConfig;
 import io.micrometer.core.instrument.Clock;
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.composite.CompositeMeterRegistry;
 import io.micrometer.jmx.JmxMeterRegistry;
+import org.assertj.core.util.Sets;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.DisplayName;
@@ -17,6 +20,7 @@ import org.junit.jupiter.api.Test;
 
 import java.time.OffsetDateTime;
 import java.time.ZoneId;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -33,15 +37,24 @@ class ConfigurationTest {
     private static final String DUMMY_URL = "http://www." + DUMMY_BODY + ".com";
     private static final String DUMMY_METHOD = "POST";
     private static final String DUMMY_BODY_TYPE = "STRING";
+
+    @NotNull
+    private CompositeMeterRegistry getCompositeMeterRegistry() {
+        JmxMeterRegistry jmxMeterRegistry = new JmxMeterRegistry(s -> null, Clock.SYSTEM);
+        HashSet<MeterRegistry> registries = Sets.newHashSet();
+        registries.add(jmxMeterRegistry);
+        return new CompositeMeterRegistry(Clock.SYSTEM, registries);
+    }
+
+
     @Nested
     class TestConstructor{
-
 
         @Test
         @DisplayName("test Configuration constructor with null parameters")
         public void test_constructor_with_null_parameters(){
             Assertions.assertThrows(NullPointerException.class,()->
-            new Configuration(null,null,null,new JmxMeterRegistry(s -> null, Clock.SYSTEM)));
+            new Configuration(null,null,null,getCompositeMeterRegistry()));
         }
         @Test
         @DisplayName("test Configuration constructor with url predicate")
@@ -49,7 +62,7 @@ class ConfigurationTest {
             Map<String,String> settings = Maps.newHashMap();
             settings.put("config.test.predicate.url.regex","^.*toto\\.com$");
             HttpSinkConnectorConfig httpSinkConnectorConfig = new HttpSinkConnectorConfig(settings);
-            Configuration configuration = new Configuration("test", httpSinkConnectorConfig,executorService,new JmxMeterRegistry(s -> null, Clock.SYSTEM));
+            Configuration configuration = new Configuration("test", httpSinkConnectorConfig,executorService,getCompositeMeterRegistry());
             HttpRequest httpRequest = new HttpRequest("http://toto.com","GET", HttpRequest.BodyType.STRING.name());
             assertThat(configuration.matches(httpRequest)).isTrue();
             HttpRequest httpRequest2 = new HttpRequest("http://titi.com","GET", HttpRequest.BodyType.STRING.name());
@@ -63,7 +76,7 @@ class ConfigurationTest {
             settings.put("config.test.predicate.url.regex","^.*toto\\.com$");
             settings.put("config.test.predicate.method.regex","^GET|PUT$");
             HttpSinkConnectorConfig httpSinkConnectorConfig = new HttpSinkConnectorConfig(settings);
-            Configuration configuration = new Configuration("test", httpSinkConnectorConfig,executorService,new JmxMeterRegistry(s -> null, Clock.SYSTEM));
+            Configuration configuration = new Configuration("test", httpSinkConnectorConfig,executorService,getCompositeMeterRegistry());
             HttpRequest httpRequest = new HttpRequest("http://toto.com","GET", HttpRequest.BodyType.STRING.name());
             assertThat(configuration.matches(httpRequest)).isTrue();
             HttpRequest httpRequest2 = new HttpRequest("http://titi.com","GET", HttpRequest.BodyType.STRING.name());
@@ -81,7 +94,7 @@ class ConfigurationTest {
             settings.put("config.test.predicate.url.regex","^.*toto\\.com$");
             settings.put("config.test.predicate.bodytype.regex","^STRING$");
             HttpSinkConnectorConfig httpSinkConnectorConfig = new HttpSinkConnectorConfig(settings);
-            Configuration configuration = new Configuration("test", httpSinkConnectorConfig,executorService,new JmxMeterRegistry(s -> null, Clock.SYSTEM));
+            Configuration configuration = new Configuration("test", httpSinkConnectorConfig,executorService,getCompositeMeterRegistry());
             HttpRequest httpRequest1 = new HttpRequest("http://toto.com","GET", HttpRequest.BodyType.STRING.name());
             assertThat(configuration.matches(httpRequest1)).isTrue();
             HttpRequest httpRequest2 = new HttpRequest("http://toto.com","GET", HttpRequest.BodyType.FORM.name());
@@ -96,7 +109,7 @@ class ConfigurationTest {
             settings.put("config.test.predicate.url.regex","^.*toto\\.com$");
             settings.put("config.test.predicate.header.key.regex","SUPERNOVA");
             HttpSinkConnectorConfig httpSinkConnectorConfig = new HttpSinkConnectorConfig(settings);
-            Configuration configuration = new Configuration("test", httpSinkConnectorConfig,executorService,new JmxMeterRegistry(s -> null, Clock.SYSTEM));
+            Configuration configuration = new Configuration("test", httpSinkConnectorConfig,executorService,getCompositeMeterRegistry());
             HttpRequest httpRequest1 = new HttpRequest("http://toto.com","GET", HttpRequest.BodyType.STRING.name());
             Map<String, List<String>> headers = Maps.newHashMap();
             headers.put("SUPERNOVA", List.of("stuff"));
@@ -113,7 +126,7 @@ class ConfigurationTest {
             settings.put("config.test.predicate.url.regex","^.*toto\\.com$");
             settings.put("config.test.predicate.header.key.regex","^SUPER.*$");
             HttpSinkConnectorConfig httpSinkConnectorConfig = new HttpSinkConnectorConfig(settings);
-            Configuration configuration = new Configuration("test", httpSinkConnectorConfig,executorService,new JmxMeterRegistry(s -> null, Clock.SYSTEM));
+            Configuration configuration = new Configuration("test", httpSinkConnectorConfig,executorService,getCompositeMeterRegistry());
             HttpRequest httpRequest1 = new HttpRequest("http://toto.com","GET", HttpRequest.BodyType.STRING.name());
             Map<String, List<String>> headers = Maps.newHashMap();
             headers.put("SUPERNOVA", List.of("stuff"));
@@ -132,7 +145,7 @@ class ConfigurationTest {
             settings.put("config.test.predicate.header.key.regex","SUPERNOVA");
             settings.put("config.test.predicate.header.value.regex","top");
             HttpSinkConnectorConfig httpSinkConnectorConfig = new HttpSinkConnectorConfig(settings);
-            Configuration configuration = new Configuration("test", httpSinkConnectorConfig,executorService,new JmxMeterRegistry(s -> null, Clock.SYSTEM));
+            Configuration configuration = new Configuration("test", httpSinkConnectorConfig,executorService,getCompositeMeterRegistry());
             HttpRequest httpRequest1 = new HttpRequest("http://toto.com","GET", HttpRequest.BodyType.STRING.name());
             Map<String, List<String>> headers = Maps.newHashMap();
             headers.put("SUPERNOVA", List.of("top"));
@@ -153,7 +166,7 @@ class ConfigurationTest {
             settings.put("config.test.predicate.header.key.regex","^SUPER.*$");
             settings.put("config.test.predicate.header.value.regex","^top.$");
             HttpSinkConnectorConfig httpSinkConnectorConfig = new HttpSinkConnectorConfig(settings);
-            Configuration configuration = new Configuration("test", httpSinkConnectorConfig,executorService,new JmxMeterRegistry(s -> null, Clock.SYSTEM));
+            Configuration configuration = new Configuration("test", httpSinkConnectorConfig,executorService,getCompositeMeterRegistry());
             HttpRequest httpRequest1 = new HttpRequest("http://toto.com","GET", HttpRequest.BodyType.STRING.name());
             Map<String, List<String>> headers = Maps.newHashMap();
             headers.put("SUPERNOVA", List.of("top1"));
@@ -180,10 +193,10 @@ class ConfigurationTest {
             settings.put("config.test.rate.limiter.max.executions","3");
             settings.put("config.test.rate.limiter.period.in.ms","1000");
             HttpSinkConnectorConfig httpSinkConnectorConfig = new HttpSinkConnectorConfig(settings);
-            Configuration configuration = new Configuration("test", httpSinkConnectorConfig,executorService,new JmxMeterRegistry(s -> null, Clock.SYSTEM));
+            Configuration configuration = new Configuration("test", httpSinkConnectorConfig,executorService,getCompositeMeterRegistry());
             Optional<RateLimiter<HttpExchange>> rateLimiter = configuration.getHttpClient().getRateLimiter();
             assertThat(rateLimiter.isPresent()).isTrue();
-            Configuration configuration2 = new Configuration("test", httpSinkConnectorConfig,executorService,new JmxMeterRegistry(s -> null, Clock.SYSTEM));
+            Configuration configuration2 = new Configuration("test", httpSinkConnectorConfig,executorService,getCompositeMeterRegistry());
             Optional<RateLimiter<HttpExchange>> rateLimiter2 = configuration2.getHttpClient().getRateLimiter();
             assertThat(rateLimiter2.isPresent()).isTrue();
             assertThat(rateLimiter.get()!=rateLimiter2.get()).isTrue();
@@ -200,10 +213,10 @@ class ConfigurationTest {
             settings.put("config.test.rate.limiter.period.in.ms","1000");
             settings.put("config.test.rate.limiter.scope","static");
             HttpSinkConnectorConfig httpSinkConnectorConfig = new HttpSinkConnectorConfig(settings);
-            Configuration configuration = new Configuration("test", httpSinkConnectorConfig,executorService,new JmxMeterRegistry(s -> null, Clock.SYSTEM));
+            Configuration configuration = new Configuration("test", httpSinkConnectorConfig,executorService,getCompositeMeterRegistry());
             Optional<RateLimiter<HttpExchange>> rateLimiter = configuration.getHttpClient().getRateLimiter();
             assertThat(rateLimiter.isPresent()).isTrue();
-            Configuration configuration2 = new Configuration("test", httpSinkConnectorConfig,executorService,new JmxMeterRegistry(s -> null, Clock.SYSTEM));
+            Configuration configuration2 = new Configuration("test", httpSinkConnectorConfig,executorService,getCompositeMeterRegistry());
             Optional<RateLimiter<HttpExchange>> rateLimiter2 = configuration2.getHttpClient().getRateLimiter();
             assertThat(rateLimiter2.isPresent()).isTrue();
             assertThat(rateLimiter.get()==rateLimiter2.get()).isTrue();
@@ -219,7 +232,7 @@ class ConfigurationTest {
             settings.put("config.test.rate.limiter.period.in.ms","1000");
             settings.put("config.test.rate.limiter.scope","static");
             HttpSinkConnectorConfig httpSinkConnectorConfig = new HttpSinkConnectorConfig(settings);
-            Configuration configuration = new Configuration("test", httpSinkConnectorConfig,executorService,new JmxMeterRegistry(s -> null, Clock.SYSTEM));
+            Configuration configuration = new Configuration("test", httpSinkConnectorConfig,executorService,getCompositeMeterRegistry());
             Optional<RateLimiter<HttpExchange>> rateLimiter = configuration.getHttpClient().getRateLimiter();
             assertThat(rateLimiter.isPresent()).isTrue();
             Map<String,String> settings2 = Maps.newHashMap();
@@ -230,7 +243,7 @@ class ConfigurationTest {
             settings2.put("config.test2.rate.limiter.period.in.ms","1000");
             settings2.put("config.test2.rate.limiter.scope","static");
             HttpSinkConnectorConfig httpSinkConnectorConfig2 = new HttpSinkConnectorConfig(settings2);
-            Configuration configuration2 = new Configuration("test2", httpSinkConnectorConfig2,executorService,new JmxMeterRegistry(s -> null, Clock.SYSTEM));
+            Configuration configuration2 = new Configuration("test2", httpSinkConnectorConfig2,executorService,getCompositeMeterRegistry());
             Optional<RateLimiter<HttpExchange>> rateLimiter2 = configuration2.getHttpClient().getRateLimiter();
             assertThat(rateLimiter2.isPresent()).isTrue();
             assertThat(rateLimiter.get()!=rateLimiter2.get()).isTrue();
@@ -247,7 +260,7 @@ class ConfigurationTest {
             config.put("config.dummy." + STATIC_REQUEST_HEADER_NAMES, "X-Stuff-Id,X-Super-Option");
             config.put("config.dummy." + STATIC_REQUEST_HEADER_PREFIX+"X-Stuff-Id","12345");
             config.put("config.dummy." + STATIC_REQUEST_HEADER_PREFIX+"X-Super-Option","ABC");
-            Configuration configuration = new Configuration("dummy", new HttpSinkConnectorConfig(config), executorService,new JmxMeterRegistry(s -> null, Clock.SYSTEM));
+            Configuration configuration = new Configuration("dummy", new HttpSinkConnectorConfig(config), executorService,getCompositeMeterRegistry());
             HttpRequest httpRequest = getDummyHttpRequest();
             HttpRequest enrichedHttpRequest = configuration.enrich(httpRequest);
             Map<String, List<String>> headers = enrichedHttpRequest.getHeaders();
@@ -258,7 +271,7 @@ class ConfigurationTest {
         public void test_generate_missing_request_id(){
             Map<String, String> config = Maps.newHashMap();
             config.put("config.dummy." + GENERATE_MISSING_REQUEST_ID, "true");
-            Configuration configuration = new Configuration("dummy", new HttpSinkConnectorConfig(config), executorService,new JmxMeterRegistry(s -> null, Clock.SYSTEM));
+            Configuration configuration = new Configuration("dummy", new HttpSinkConnectorConfig(config), executorService,getCompositeMeterRegistry());
             HttpRequest httpRequest = getDummyHttpRequest();
             HttpRequest enrichedHttpRequest = configuration.enrich(httpRequest);
             Map<String, List<String>> headers = enrichedHttpRequest.getHeaders();
@@ -268,7 +281,7 @@ class ConfigurationTest {
         public void test_generate_missing_correlation_id(){
             Map<String, String> config = Maps.newHashMap();
             config.put("config.dummy." + GENERATE_MISSING_CORRELATION_ID, "true");
-            Configuration configuration = new Configuration("dummy", new HttpSinkConnectorConfig(config), executorService,new JmxMeterRegistry(s -> null, Clock.SYSTEM));
+            Configuration configuration = new Configuration("dummy", new HttpSinkConnectorConfig(config), executorService,getCompositeMeterRegistry());
             HttpRequest httpRequest = getDummyHttpRequest();
             HttpRequest enrichedHttpRequest = configuration.enrich(httpRequest);
             Map<String, List<String>> headers = enrichedHttpRequest.getHeaders();
@@ -286,7 +299,7 @@ class ConfigurationTest {
 
             Map<String, String> config = Maps.newHashMap();
             config.put("config.dummy." + SUCCESS_RESPONSE_CODE_REGEX, "^2[0-9][0-9]$");
-            Configuration configuration = new Configuration("dummy", new HttpSinkConnectorConfig(config), executorService,new JmxMeterRegistry(s -> null, Clock.SYSTEM));
+            Configuration configuration = new Configuration("dummy", new HttpSinkConnectorConfig(config), executorService,getCompositeMeterRegistry());
             HttpExchange httpExchange = getDummyHttpExchange();
             boolean success = configuration.enrich(httpExchange).isSuccess();
             assertThat(success).isTrue();
@@ -296,7 +309,7 @@ class ConfigurationTest {
         public void test_is_not_success_with_200_by_configuration() {
             Map<String, String> config = Maps.newHashMap();
             config.put("config.dummy." + SUCCESS_RESPONSE_CODE_REGEX, "^1[0-9][0-9]$");
-            Configuration configuration = new Configuration("dummy", new HttpSinkConnectorConfig(config), executorService,new JmxMeterRegistry(s -> null, Clock.SYSTEM));
+            Configuration configuration = new Configuration("dummy", new HttpSinkConnectorConfig(config), executorService,getCompositeMeterRegistry());
             HttpExchange httpExchange = getDummyHttpExchange();
             boolean success = configuration.enrich(httpExchange).isSuccess();
             assertThat(success).isFalse();
@@ -310,7 +323,7 @@ class ConfigurationTest {
         public void test_retry_needed() {
             Map<String,String> config = Maps.newHashMap();
             config.put("config.dummy."+RETRY_RESPONSE_CODE_REGEX,"^5[0-9][0-9]$");
-            Configuration configuration = new Configuration("dummy",new HttpSinkConnectorConfig(config),executorService, new JmxMeterRegistry(s -> null, Clock.SYSTEM));
+            Configuration configuration = new Configuration("dummy",new HttpSinkConnectorConfig(config),executorService, getCompositeMeterRegistry());
             HttpResponse httpResponse = new HttpResponse(500, "Internal Server Error");
             boolean retryNeeded = configuration.retryNeeded(httpResponse);
             assertThat(retryNeeded).isTrue();
@@ -320,7 +333,7 @@ class ConfigurationTest {
         public void test_retry_not_needed_with_400_status_code() {
             Map<String,String> config = Maps.newHashMap();
             config.put("httpclient.dummy."+RETRY_RESPONSE_CODE_REGEX,"^5[0-9][0-9]$");
-            Configuration configuration = new Configuration("dummy",new HttpSinkConnectorConfig(config),executorService,new JmxMeterRegistry(s -> null, Clock.SYSTEM));
+            Configuration configuration = new Configuration("dummy",new HttpSinkConnectorConfig(config),executorService,getCompositeMeterRegistry());
             HttpResponse httpResponse = new HttpResponse(400, "Internal Server Error");
             boolean retryNeeded = configuration.retryNeeded(httpResponse);
             assertThat(retryNeeded).isFalse();
@@ -330,7 +343,7 @@ class ConfigurationTest {
         public void test_retry_not_needed_with_200_status_code() {
             Map<String,String> config = Maps.newHashMap();
             config.put("httpclient.dummy."+RETRY_RESPONSE_CODE_REGEX,"^5[0-9][0-9]$");
-            Configuration configuration = new Configuration("dummy",new HttpSinkConnectorConfig(config),executorService,new JmxMeterRegistry(s -> null, Clock.SYSTEM));
+            Configuration configuration = new Configuration("dummy",new HttpSinkConnectorConfig(config),executorService,getCompositeMeterRegistry());
             HttpResponse httpResponse = new HttpResponse(200, "Internal Server Error");
             boolean retryNeeded = configuration.retryNeeded(httpResponse);
             assertThat(retryNeeded).isFalse();
@@ -342,7 +355,7 @@ class ConfigurationTest {
             Map<String,String> config = Maps.newHashMap();
             config.put("config.dummy."+RETRY_RESPONSE_CODE_REGEX,"^2[0-9][0-9]$");
             config.put(CONFIG_DEFAULT_RETRY_RESPONSE_CODE_REGEX, "^[1-5][0-9][0-9]$");
-            Configuration configuration = new Configuration("dummy",new HttpSinkConnectorConfig(config),executorService,new JmxMeterRegistry(s -> null, Clock.SYSTEM));
+            Configuration configuration = new Configuration("dummy",new HttpSinkConnectorConfig(config),executorService,getCompositeMeterRegistry());
             HttpResponse httpResponse = new HttpResponse(200, "Internal Server Error");
 
             boolean retryNeeded = configuration.retryNeeded(httpResponse);

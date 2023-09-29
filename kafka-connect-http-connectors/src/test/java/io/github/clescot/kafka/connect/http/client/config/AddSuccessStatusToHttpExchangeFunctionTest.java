@@ -8,11 +8,16 @@ import io.github.clescot.kafka.connect.http.core.HttpResponse;
 import io.github.clescot.kafka.connect.http.client.Configuration;
 import io.github.clescot.kafka.connect.http.sink.HttpSinkConnectorConfig;
 import io.micrometer.core.instrument.Clock;
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.composite.CompositeMeterRegistry;
 import io.micrometer.jmx.JmxMeterRegistry;
+import org.assertj.core.util.Sets;
+import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Test;
 
 import java.time.OffsetDateTime;
 import java.time.ZoneId;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
@@ -33,17 +38,25 @@ class AddSuccessStatusToHttpExchangeFunctionTest {
 
         Map<String, String> config = Maps.newHashMap();
         config.put("config.dummy." + SUCCESS_RESPONSE_CODE_REGEX, "^2[0-9][0-9]$");
-        Configuration configuration = new Configuration("dummy", new HttpSinkConnectorConfig(config), executorService, new JmxMeterRegistry(s -> null, Clock.SYSTEM));
+        Configuration configuration = new Configuration("dummy", new HttpSinkConnectorConfig(config), executorService, getCompositeMeterRegistry());
         HttpExchange httpExchange = getDummyHttpExchange();
         boolean success = configuration.enrich(httpExchange).isSuccess();
         assertThat(success).isTrue();
+    }
+
+    @NotNull
+    private CompositeMeterRegistry getCompositeMeterRegistry() {
+        JmxMeterRegistry jmxMeterRegistry = new JmxMeterRegistry(s -> null, Clock.SYSTEM);
+        HashSet<MeterRegistry> registries = Sets.newHashSet();
+        registries.add(jmxMeterRegistry);
+        return new CompositeMeterRegistry(Clock.SYSTEM, registries);
     }
 
     @Test
     public void test_is_not_success_with_200_by_configuration() {
         Map<String, String> config = Maps.newHashMap();
         config.put("config.dummy." + SUCCESS_RESPONSE_CODE_REGEX, "^1[0-9][0-9]$");
-        Configuration configuration = new Configuration("dummy", new HttpSinkConnectorConfig(config), executorService, new JmxMeterRegistry(s -> null, Clock.SYSTEM));
+        Configuration configuration = new Configuration("dummy", new HttpSinkConnectorConfig(config), executorService, getCompositeMeterRegistry());
         HttpExchange httpExchange = getDummyHttpExchange();
         boolean success = configuration.enrich(httpExchange).isSuccess();
         assertThat(success).isFalse();

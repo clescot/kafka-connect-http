@@ -2,7 +2,7 @@ package io.github.clescot.kafka.connect.http.client.ahc;
 
 import io.github.clescot.kafka.connect.http.client.HttpClient;
 import io.github.clescot.kafka.connect.http.client.HttpClientFactory;
-import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.composite.CompositeMeterRegistry;
 import org.asynchttpclient.Request;
 import org.asynchttpclient.Response;
 import org.slf4j.Logger;
@@ -30,7 +30,7 @@ public class AHCHttpClientFactory implements HttpClientFactory<Request, Response
                                                ExecutorService executorService,
                                                Random random,
                                                Proxy proxy,
-                                               ProxySelector proxySelector, MeterRegistry meterRegistry) {
+                                               ProxySelector proxySelector, CompositeMeterRegistry meterRegistry) {
         //executorService is not used for AHC : we cannot set an executorService nor a thread pool to AHC
         return new AHCHttpClient(config);
     }

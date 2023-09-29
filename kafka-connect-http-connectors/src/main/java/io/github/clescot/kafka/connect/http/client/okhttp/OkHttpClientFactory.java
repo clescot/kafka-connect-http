@@ -2,7 +2,7 @@ package io.github.clescot.kafka.connect.http.client.okhttp;
 
 import io.github.clescot.kafka.connect.http.client.HttpClient;
 import io.github.clescot.kafka.connect.http.client.HttpClientFactory;
-import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.composite.CompositeMeterRegistry;
 import okhttp3.Request;
 import okhttp3.Response;
 
@@ -19,7 +19,7 @@ public class OkHttpClientFactory implements HttpClientFactory<Request, Response>
                                                Random random,
                                                Proxy proxy,
                                                ProxySelector proxySelector,
-                                               MeterRegistry meterRegistry) {
+                                               CompositeMeterRegistry meterRegistry) {
         return new OkHttpClient(config,executorService,random,proxy,proxySelector, meterRegistry);
     }
 

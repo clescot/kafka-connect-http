@@ -15,7 +15,7 @@ import io.github.clescot.kafka.connect.http.client.proxy.ProxySelectorFactory;
 import io.github.clescot.kafka.connect.http.core.HttpExchange;
 import io.github.clescot.kafka.connect.http.core.HttpRequest;
 import io.github.clescot.kafka.connect.http.core.HttpResponse;
-import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.composite.CompositeMeterRegistry;
 import org.apache.kafka.common.config.AbstractConfig;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -92,7 +92,7 @@ public class Configuration {
     public Configuration(String id,
                          AbstractConfig config,
                          ExecutorService executorService,
-                         MeterRegistry meterRegistry) {
+                         CompositeMeterRegistry meterRegistry) {
         this.id = id;
         Preconditions.checkNotNull(id, "id must not be null");
         Preconditions.checkNotNull(config, "httpSinkConnectorConfig must not be null");
@@ -239,7 +239,7 @@ public class Configuration {
         return this.addSuccessStatusToHttpExchangeFunction.apply(httpExchange);
     }
 
-    private <Req, Res> HttpClient<Req, Res> buildHttpClient(Map<String, Object> config, ExecutorService executorService, MeterRegistry meterRegistry) {
+    private <Req, Res> HttpClient<Req, Res> buildHttpClient(Map<String, Object> config, ExecutorService executorService, CompositeMeterRegistry meterRegistry) {
 
         Class<? extends HttpClientFactory> httpClientFactoryClass;
         String httpClientImplementation = (String) Optional.ofNullable(config.get(HTTP_CLIENT_IMPLEMENTATION)).orElse(OKHTTP_IMPLEMENTATION);
