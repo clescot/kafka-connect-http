@@ -296,7 +296,7 @@ public class OkHttpClient extends AbstractHttpClient<Request, Response> {
                 requestBody = RequestBody.create(encoded, MediaType.parse(Optional.ofNullable(firstContentType).orElse("application/octet-stream")));
             } else if (HttpRequest.BodyType.FORM.equals(httpRequest.getBodyType())) {
                 FormBody.Builder formBuilder = new FormBody.Builder();
-                Map<String, String> multiparts = null;
+                Map<String, String> multiparts = Maps.newHashMap();
                 for (Map.Entry<String, String> entry : multiparts.entrySet()) {
                     formBuilder.add(entry.getKey(), entry.getValue());
                 }
