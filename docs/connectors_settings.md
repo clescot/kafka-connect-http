@@ -64,13 +64,13 @@ Each metrics with its name listed above, is bound to some tags/dimensions :
 
 Some built-ins metrics are available :
 - executor services metrics can be activated with `meter.registry.bind.metrics.executor.service` set to `true`
-- JVM memory metrics can be activated with `meter.registry.bind.metrics.jvm.memory` set to `true`
-- JVM threads metrics can be activated with `meter.registry.bind.metrics.jvm.thread` set to `true`
-- JVM info metrics can be activated with `"meter.registry.bind.metrics.jvm.info"` set to `true`
-- JVM Garbage Collector (GC) metrics can be activated with `"meter.registry.bind.metrics.jvm.gc"` set to `true`
-- JVM classloader metrics can be activated with `"meter.registry.bind.metrics.jvm.classloader"` set to `true`
-- JVM processor metrics can be activated with `"meter.registry.bind.metrics.jvm.processor"` set to `true`
-- Logback metrics can be activated with `"meter.registry.bind.metrics.logback"` set to `true`
+- _JVM memory_ metrics can be activated with `meter.registry.bind.metrics.jvm.memory` set to `true`
+- _JVM threads_ metrics can be activated with `meter.registry.bind.metrics.jvm.thread` set to `true`
+- _JVM info_ metrics can be activated with `"meter.registry.bind.metrics.jvm.info"` set to `true`
+- _JVM Garbage Collector_ (GC) metrics can be activated with `"meter.registry.bind.metrics.jvm.gc"` set to `true`
+- _JVM classloaders_ metrics can be activated with `"meter.registry.bind.metrics.jvm.classloader"` set to `true`
+- _JVM processors_ metrics can be activated with `"meter.registry.bind.metrics.jvm.processor"` set to `true`
+- _Logback_ metrics can be activated with `"meter.registry.bind.metrics.logback"` set to `true`
 
 
 #### export metrics
