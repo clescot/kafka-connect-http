@@ -321,26 +321,26 @@ Only _okhttp_ HTTP client support this feature.
 
 #### add some HTTP metrics
 When at least one of the export is activated, a listener is added to the okhttp to expose some metrics as timers :
-- okhttp
-- okhttp.dns
-- okhttp.socket.connection
-- okhttp.pool.connection
-- okhttp.proxy.select
-- okhttp.request.headers
-- okhttp.request.body
-- okhttp.response.headers
-- okhttp.response.body
+- `okhttp`
+- `okhttp.dns`
+- `okhttp.socket.connection`
+- `okhttp.pool.connection`
+- `okhttp.proxy.select`
+- `okhttp.request.headers`
+- `okhttp.request.body`
+- `okhttp.response.headers`
+- `okhttp.response.body`
 
 Each metrics with its name listed above, is bound to some tags/dimensions :
-- configuration.id
-- host : metrics identical to target.host, and present for old systems relying on this metric. Not activated by default. can be activate with `meter.registry.tag.include.legacy.host` set to `true`. 
-- method : http method
-- outcome : response code or `UNKNOWN`
-- status : response code, `IO_ERROR`, or `CLIENT_ERROR` 
-- target.host : http remote host
-- target.port : http remote port
-- target.scheme : http scheme used to interact with remote http server
-- target.uri : will be `none`, except if you activate it with `meter.registry.tag.include.url.path` set to `true`. Beware of the high cardinality metrics issue if you've got many different paths in urls (https://last9.io/blog/how-to-manage-high-cardinality-metrics-in-prometheus/)
+- `configuration.id`
+- `host` : metrics identical to target.host, and present for old systems relying on this metric. Not activated by default. can be activate with `meter.registry.tag.include.legacy.host` set to `true`. 
+- `method` : http method
+- `outcome` : response code or `UNKNOWN`
+- `status` : response code, `IO_ERROR`, or `CLIENT_ERROR` 
+- `target.host` : http remote host
+- `target.port` : http remote port
+- `target.scheme` : http scheme used to interact with remote http server
+- `target.uri` : will be `none`, except if you activate it with `meter.registry.tag.include.url.path` set to `true`. Beware of the high cardinality metrics issue if you've got many different paths in urls (https://last9.io/blog/how-to-manage-high-cardinality-metrics-in-prometheus/)
 
 
 #### other metrics are available
