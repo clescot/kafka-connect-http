@@ -4,3 +4,5 @@
 /src/.~lock.*
 /kafka-connect-http-core/target/
 /kafka-connect-http-connectors/target/
+/kafka-connect-http-connectors/src/test/resources/clusterID/clusterID
+docs/.$http_sink_connector.drawio.bkp

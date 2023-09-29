@@ -20,7 +20,7 @@ import java.time.OffsetDateTime;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static io.github.clescot.kafka.connect.http.sink.client.ahc.AHCHttpClient.SUCCESS;
+import static io.github.clescot.kafka.connect.http.client.ahc.AHCHttpClient.SUCCESS;
 import static org.assertj.core.api.AssertionsForInterfaceTypes.assertThat;
 
 

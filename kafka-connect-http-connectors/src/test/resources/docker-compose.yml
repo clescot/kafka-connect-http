@@ -1,0 +1,304 @@
+#from https://github.com/katyagorshkova/kafka-kraft/blob/main/docker-compose.yml
+version: "3.8"
+services:
+  kafka-gen:
+    image: confluentinc/cp-kafka:7.4.1
+    hostname: kafka-gen
+    container_name: kafka-gen
+    volumes:
+      - ./scripts/create_cluster_id.sh:/tmp/create_cluster_id.sh
+      - ./clusterID:/tmp/clusterID
+    command: "bash -c '/tmp/create_cluster_id.sh'"
+
+
+  kafka1:
+    image: confluentinc/cp-kafka:7.4.1
+    hostname: kafka1
+    container_name: kafka1
+    ports:
+      - "39092:39092"
+    environment:
+      CONFLUENT_METRICS_ENABLE: 'false'
+      KAFKA_ADVERTISED_LISTENERS: BROKER://kafka1:19092,EXTERNAL://kafka1:39092
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_CONTROLLER_QUORUM_VOTERS: '1@kafka1:9093,2@kafka2:9093,3@kafka3:9093'
+      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+      KAFKA_INTER_BROKER_LISTENER_NAME: BROKER
+      KAFKA_LISTENERS: BROKER://kafka1:19092,EXTERNAL://kafka1:39092,CONTROLLER://kafka1:9093
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: CONTROLLER:PLAINTEXT,BROKER:PLAINTEXT,EXTERNAL:PLAINTEXT
+      KAFKA_LOG4J_LOGGERS: "kafka.controller=INFO,kafka.producer.async.DefaultEventHandler=INFO,state.change.logger=INFO"
+      KAFKA_LOG_DIRS: '/tmp/kraft-combined-logs'
+      KAFKA_METADATA_LOG_SEGMENT_MS: 15000
+      KAFKA_METADATA_MAX_RETENTION_MS: 1200000
+      KAFKA_METADATA_LOG_MAX_RECORD_BYTES_BETWEEN_SNAPSHOTS: 2800
+      KAFKA_NODE_ID: 1
+      KAFKA_PROCESS_ROLES: 'controller,broker'
+    volumes:
+      - kafka1-data:/var/lib/kafka/data
+      - ./clusterID:/tmp/clusterID
+    command: "bash -c 'export CLUSTER_ID=$(cat /tmp/clusterID/clusterID) && /etc/confluent/docker/run'"
+
+  kafka2:
+    image: confluentinc/cp-kafka:7.4.1
+    hostname: kafka2
+    container_name: kafka2
+    ports:
+      - "39093:39093"
+    environment:
+      CONFLUENT_METRICS_ENABLE: 'false'
+      KAFKA_ADVERTISED_LISTENERS: BROKER://kafka2:19093,EXTERNAL://kafka2:39093
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_CONTROLLER_QUORUM_VOTERS: '1@kafka1:9093,2@kafka2:9093,3@kafka3:9093'
+      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+      KAFKA_INTER_BROKER_LISTENER_NAME: BROKER
+      KAFKA_LISTENERS: BROKER://kafka2:19093,EXTERNAL://kafka2:39093,CONTROLLER://kafka2:9093
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: CONTROLLER:PLAINTEXT,BROKER:PLAINTEXT,EXTERNAL:PLAINTEXT
+      KAFKA_LOG4J_LOGGERS: "kafka.controller=INFO,kafka.producer.async.DefaultEventHandler=INFO,state.change.logger=INFO"
+      KAFKA_LOG_DIRS: '/tmp/kraft-combined-logs'
+      KAFKA_METADATA_LOG_SEGMENT_MS: 15000
+      KAFKA_METADATA_MAX_RETENTION_MS: 1200000
+      KAFKA_METADATA_LOG_MAX_RECORD_BYTES_BETWEEN_SNAPSHOTS: 2800
+      KAFKA_NODE_ID: 2
+      KAFKA_PROCESS_ROLES: 'controller,broker'
+    volumes:
+      - kafka2-data:/var/lib/kafka/data
+      - ./clusterID:/tmp/clusterID
+    command: "bash -c 'export CLUSTER_ID=$(cat /tmp/clusterID/clusterID) && /etc/confluent/docker/run'"
+
+  kafka3:
+    image: confluentinc/cp-kafka:7.4.1
+    hostname: kafka3
+    container_name: kafka3
+    ports:
+      - "39094:39094"
+    environment:
+      CONFLUENT_METRICS_ENABLE: 'false'
+      KAFKA_ADVERTISED_LISTENERS: BROKER://kafka3:19094,EXTERNAL://kafka3:39094
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_CONTROLLER_QUORUM_VOTERS: '1@kafka1:9093,2@kafka2:9093,3@kafka3:9093'
+      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+      KAFKA_INTER_BROKER_LISTENER_NAME: BROKER
+      KAFKA_LISTENERS: BROKER://kafka3:19094,EXTERNAL://kafka3:39094,CONTROLLER://kafka3:9093
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: CONTROLLER:PLAINTEXT,BROKER:PLAINTEXT,EXTERNAL:PLAINTEXT
+      KAFKA_LOG4J_LOGGERS: "kafka.controller=INFO,kafka.producer.async.DefaultEventHandler=INFO,state.change.logger=INFO"
+      KAFKA_LOG_DIRS: '/tmp/kraft-combined-logs'
+      KAFKA_METADATA_LOG_SEGMENT_MS: 15000
+      KAFKA_METADATA_MAX_RETENTION_MS: 1200000
+      KAFKA_METADATA_LOG_MAX_RECORD_BYTES_BETWEEN_SNAPSHOTS: 2800
+      KAFKA_NODE_ID: 3
+      KAFKA_PROCESS_ROLES: 'controller,broker'
+    volumes:
+      - kafka3-data:/var/lib/kafka/data
+      - ./clusterID:/tmp/clusterID
+    command: "bash -c 'export CLUSTER_ID=$(cat /tmp/clusterID/clusterID) && /etc/confluent/docker/run'"
+
+  kafka-init:
+    image: confluentinc/cp-kafka:7.4.1
+    depends_on:
+      - kafka1
+      - kafka2
+      - kafka3
+    entrypoint: [ '/bin/sh', '-c' ]
+    command: |
+      "
+      # blocks until kafka is reachable
+      kafka-topics --bootstrap-server 'kafka1:39092,kafka2:39093,kafka3:39094' --list
+      
+      echo -e 'Creating kafka topics'
+      kafka-topics --bootstrap-server 'kafka1:39092,kafka2:39093,kafka3:39094' --create --if-not-exists --topic http-request --replication-factor 3 --partitions 1
+      kafka-topics --bootstrap-server 'kafka1:39092,kafka2:39093,kafka3:39094' --create --if-not-exists --topic http-success --replication-factor 3 --partitions 1
+      kafka-topics --bootstrap-server 'kafka1:39092,kafka2:39093,kafka3:39094' --create --if-not-exists --topic http-error --replication-factor 3 --partitions 1
+      
+      echo -e 'Successfully created the following topics:'
+      kafka-topics --bootstrap-server 'kafka1:39092,kafka2:39093,kafka3:39094' --list
+      "
+
+  schema-registry:
+    image: confluentinc/cp-schema-registry:7.4.1
+    container_name: schema-registry
+    hostname: schema-registry
+    ports:
+      - "8081:8081"
+    environment:
+      SCHEMA_REGISTRY_HOST_NAME: schema-registry
+      SCHEMA_REGISTRY_KAFKASTORE_BOOTSTRAP_SERVERS: 'kafka1:39092,kafka2:39093,kafka3:39094'
+      SCHEMA_REGISTRY_LISTENERS: 'http://0.0.0.0:8081'
+    depends_on:
+      - kafka1
+      - kafka2
+      - kafka3
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:8081" ]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+  schema-registry-gitops:
+    restart: on-failure
+    image: clescot/kafka-connect-http-gitops
+    build:
+      context: ./schema-registry
+    command: "apply /opt/state1.yml"
+    environment:
+      SCHEMA_REGISTRY_GITOPS_SCHEMA_REGISTRY_URL: "http://schema-registry:8081"
+    depends_on:
+      - kafka1
+      - kafka2
+      - kafka3
+      - schema-registry
+  schema-registry-gitops-2:
+    restart: on-failure
+    image: clescot/kafka-connect-http-gitops
+    build:
+      context: ./schema-registry
+    command: "apply /opt/state2.yml"
+    environment:
+      SCHEMA_REGISTRY_GITOPS_SCHEMA_REGISTRY_URL: "http://schema-registry:8081"
+    depends_on:
+      - kafka1
+      - kafka2
+      - kafka3
+      - schema-registry
+  connect:
+    container_name: connect
+    build: .
+    ports:
+      - "8083:8083"
+      - "9101:9100"
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:8083/connectors" ]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+    environment:
+      CONNECT_BOOTSTRAP_SERVERS: 'kafka1:39092,kafka2:39093,kafka3:39094'
+      CONNECT_LISTENERS: http://0.0.0.0:8083
+      CONNECT_GROUP_ID: "connect-cluster"
+      CONNECT_PRODUCER_CLIENT_ID: "connect-worker-producer"
+      CONNECT_PRODUCER_ENABLE_IDEMPOTENCE: 'true'
+
+      CONNECT_CONFIG_STORAGE_TOPIC: connect-configs
+      CONNECT_OFFSET_STORAGE_TOPIC: connect-offsets
+      CONNECT_STATUS_STORAGE_TOPIC: connect-statuses
+
+      CONNECT_REPLICATION_FACTOR: 2
+      CONNECT_CONFIG_STORAGE_REPLICATION_FACTOR: 2
+      CONNECT_OFFSET_STORAGE_REPLICATION_FACTOR: 2
+      CONNECT_STATUS_STORAGE_REPLICATION_FACTOR: 2
+
+      CONNECT_KEY_CONVERTER: "org.apache.kafka.connect.storage.StringConverter"
+      CONNECT_VALUE_CONVERTER: "org.apache.kafka.connect.json.JsonConverter"
+
+      CONNECT_REST_ADVERTISED_HOST_NAME: "localhost"
+      CONNECT_LOG4J_ROOT_LOGLEVEL: INFO
+      CONNECT_LOG4J_LOGGERS: org.reflections=ERROR
+      KAFKA_OPTS: "-javaagent:/tmp/jmx_prometheus_javaagent.jar=9100:/tmp/kafka-connect.yml"
+    depends_on:
+      - kafka1
+      - kafka2
+      - kafka3
+      - kafka-init
+      - schema-registry
+  connect-config-sink:
+    image: curlimages/curl:8.2.1
+    command: |
+      -X POST \
+        http://connect:8083/connectors \
+        -H 'Content-Type: application/json' \
+        -d '{ "name": "my-http-sink-connector",
+          "config":
+          {
+            "connector.class":"io.github.clescot.kafka.connect.http.sink.HttpSinkConnector",
+            "tasks.max": "1",
+            "value.converter":"org.apache.kafka.connect.storage.StringConverter",
+            "topics":"http-request",
+            "publish.to.in.memory.queue":"true"
+          }
+        }'
+    depends_on:
+      connect:
+        condition: service_healthy
+        restart: true
+  connect-config-source:
+    image: curlimages/curl:8.2.1
+    command: |
+      -X POST \
+        http://connect:8083/connectors \
+        -H 'Content-Type: application/json' \
+        -d '{ "name": "my-http-source-connector",
+          "config":
+          {
+            "connector.class":"io.github.clescot.kafka.connect.http.source.HttpSourceConnector",
+            "tasks.max": "1",
+            "value.converter":"org.apache.kafka.connect.storage.StringConverter",
+            "success.topic": "http-success",
+            "error.topic": "http-error"
+          }
+        }'
+    depends_on:
+      connect:
+        condition: service_healthy
+        restart: true
+  akhq:
+    image: tchiotludo/akhq:0.24.0
+    restart: unless-stopped
+    environment:
+      AKHQ_CONFIGURATION: |
+        akhq:
+          connections:
+            docker-kafka-server:
+              properties:
+                bootstrap.servers: "kafka1:39092,kafka2:39093,kafka3:39094"
+              schema-registry:
+                url: "http://schema-registry:8081"
+              connect:
+                - name: "connect"
+                  url: "http://connect:8083"
+
+    ports:
+      - 8080:8080
+    links:
+      - kafka1
+      - kafka2
+      - kafka3
+      - schema-registry
+      - connect
+  node-exporter:
+    image: prom/node-exporter:v1.6.1
+    container_name: node-exporter
+    restart: unless-stopped
+    ports:
+      - 9100:9100
+    volumes:
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
+      - /:/rootfs:ro
+    command:
+      - '--path.procfs=/host/proc'
+      - '--path.rootfs=/rootfs'
+      - '--path.sysfs=/host/sys'
+      - '--collector.filesystem.mount-points-exclude=^/(sys|proc|dev|host|etc)($$|/)'
+    expose:
+      - 9100
+  prometheus:
+    image: prom/prometheus:v2.46.0
+    container_name: prometheus
+    restart: unless-stopped
+    ports:
+      - 9090:9090
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus_data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/etc/prometheus/console_libraries'
+      - '--web.console.templates=/etc/prometheus/consoles'
+      - '--web.enable-lifecycle'
+    expose:
+      - 9090
+
+volumes:
+  kafka1-data:
+  kafka2-data:
+  kafka3-data:
+  prometheus_data:

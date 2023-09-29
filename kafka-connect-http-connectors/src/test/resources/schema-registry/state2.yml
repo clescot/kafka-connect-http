@@ -1,0 +1,27 @@
+# sets global compatibility level (optional)
+compatibility: FULL_TRANSITIVE
+subjects:
+  # a subject that links to a file for the schema definition
+  - name: http-exchange
+    # sets compatibility level for this subject (optional)
+    compatibility: BACKWARD
+    # file paths are always relative to the given (this) YAML file
+    file: http-exchange.json
+    # AVRO is the default type and can safely be omitted (only available for Schema Registry >= 5.5)
+    type: JSON
+    # (optional) list of references for this subject
+    # please note that these must be present in the registry before they can be referenced here
+    references:
+      # name including the namespace, should be the same as the `type` being used in AVRO
+      - name: http-request
+        # subject name this schema is registered with in the registry
+        subject: http-request
+        # version of the referenced schema
+        version: 1
+      # name including the namespace, should be the same as the `type` being used in AVRO
+      - name: http-response
+        # subject name this schema is registered with in the registry
+        subject: http-response
+        # version of the referenced schema
+        version: 1
+

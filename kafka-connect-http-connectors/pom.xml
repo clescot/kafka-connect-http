@@ -76,7 +76,12 @@
         <dependency>
             <groupId>io.micrometer</groupId>
             <artifactId>micrometer-registry-jmx</artifactId>
-            <version>1.11.4</version>
+            <version>${micrometer.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>io.micrometer</groupId>
+            <artifactId>micrometer-registry-prometheus</artifactId>
+            <version>${micrometer.version}</version>
         </dependency>
 
         <dependency>
@@ -117,7 +122,11 @@
             <artifactId>commons-lang3</artifactId>
             <version>3.13.0</version>
         </dependency>
-
+        <dependency>
+            <groupId>io.prometheus</groupId>
+            <artifactId>simpleclient_httpserver</artifactId>
+            <version>0.16.0</version>
+        </dependency>
 
         <!-- test dependencies-->
         <dependency>
@@ -226,6 +235,7 @@
                 <version>0.12.0</version>
                 <executions>
                     <execution>
+                        <phase>package</phase>
                         <goals>
                             <goal>kafka-connect</goal>
                         </goals>
@@ -253,13 +263,38 @@
                 </executions>
             </plugin>
             <plugin>
+                <artifactId>maven-resources-plugin</artifactId>
+                <version>3.3.1</version>
+                <executions>
+                    <execution>
+                        <id>copy-resource-one</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>copy-resources</goal>
+                        </goals>
+
+                        <configuration>
+                            <outputDirectory>${project.build.testOutputDirectory}/components/packages</outputDirectory>
+                            <resources>
+                                <resource>
+                                    <directory>${project.build.directory}/components/packages</directory>
+                                    <includes>
+                                        <include>clescot-${project.build.finalName}.zip</include>
+                                    </includes>
+                                </resource>
+                            </resources>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
                 <groupId>org.codehaus.mojo</groupId>
                 <artifactId>build-helper-maven-plugin</artifactId>
                 <version>3.4.0</version>
                 <executions>
                     <execution>
                         <id>attach-artifacts</id>
-                        <phase>package</phase>
+                        <phase>prepare-package</phase>
                         <goals>
                             <goal>attach-artifact</goal>
                         </goals>
@@ -274,7 +309,26 @@
                     </execution>
                 </executions>
             </plugin>
-
+            <plugin>
+                <groupId>com.spotify</groupId>
+                <artifactId>dockerfile-maven-plugin</artifactId>
+                <version>1.4.13</version>
+                <executions>
+                    <execution>
+                        <phase>package</phase>
+                        <id>default</id>
+                        <goals>
+                            <goal>build</goal>
+                        </goals>
+                    </execution>
+                </executions>
+                <configuration>
+                    <contextDirectory>${project.build.testOutputDirectory}</contextDirectory>
+                    <dockerfile>${project.build.testOutputDirectory}/Dockerfile</dockerfile>
+                    <repository>clescot/kafka-connect-http</repository>
+                    <tag>${project.version}</tag>
+                </configuration>
+            </plugin>
         </plugins>
     </build>
     <profiles>
@@ -295,29 +349,9 @@
                             </execution>
                         </executions>
                         <configuration>
-                            <include>**/IT*.java</include>
-                        </configuration>
-                    </plugin>
-                    <plugin>
-                        <groupId>com.spotify</groupId>
-                        <artifactId>dockerfile-maven-plugin</artifactId>
-                        <version>1.4.13</version>
-                        <executions>
-                            <execution>
-                                <phase>pre-integration-test</phase>
-                                <id>default</id>
-                                <goals>
-                                    <goal>build</goal>
-                                </goals>
-                            </execution>
-                        </executions>
-                        <configuration>
-                            <dockerfile>src/test/resources/Dockerfile</dockerfile>
-                            <repository>clescot/kafka-connect-http</repository>
-                            <tag>${project.version}</tag>
-                            <buildArgs>
-                                <ZIP_FILE>clescot-${project.build.finalName}.zip</ZIP_FILE>
-                            </buildArgs>
+                            <includes>
+                                <include>**/IT*.java</include>
+                            </includes>
                         </configuration>
                     </plugin>
                 </plugins>

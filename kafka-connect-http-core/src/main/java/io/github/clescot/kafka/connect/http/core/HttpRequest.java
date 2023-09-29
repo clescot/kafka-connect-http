@@ -16,7 +16,7 @@ public class HttpRequest implements Serializable {
 
     public static final long serialVersionUID = 1L;
 
-    private final static Logger LOGGER = LoggerFactory.getLogger(HttpRequest.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(HttpRequest.class);
 
 
     //request
@@ -24,7 +24,7 @@ public class HttpRequest implements Serializable {
     private String url;
     @JsonProperty
     private Map<String, List<String>> headers = Maps.newHashMap();
-    @JsonProperty(required = true)
+    @JsonProperty(defaultValue = "GET")
     private String method;
     @JsonProperty
     private String bodyAsString = "";
@@ -34,7 +34,7 @@ public class HttpRequest implements Serializable {
     private String bodyAsByteArray = "";
     @JsonProperty
     private List<String> bodyAsMultipart = Lists.newArrayList();
-    @JsonProperty(required = true)
+    @JsonProperty(defaultValue = "STRING")
     private BodyType bodyType;
 
     private Map<Class,Object> tags = Maps.newHashMap();
@@ -107,7 +107,12 @@ public class HttpRequest implements Serializable {
      */
     protected HttpRequest() {
     }
-
+    public HttpRequest(String url){
+        this(url,"GET","STRING");
+    }
+    public HttpRequest(String url,String method){
+        this(url,method,"STRING");
+    }
     public HttpRequest(String url,
                        String method,
                        String bodyType) {

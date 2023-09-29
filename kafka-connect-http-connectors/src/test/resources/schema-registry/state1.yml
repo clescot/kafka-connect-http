@@ -1,0 +1,21 @@
+# sets global compatibility level (optional)
+compatibility: FULL_TRANSITIVE
+subjects:
+  # a subject that links to a file for the schema definition
+  - name: http-request
+    # sets compatibility level for this subject (optional)
+    compatibility: BACKWARD
+    # file paths are always relative to the given (this) YAML file
+    file: http-request.json
+    # AVRO is the default type and can safely be omitted (only available for Schema Registry >= 5.5)
+    type: JSON
+  # a subject that links to a file for the schema definition
+  - name: http-response
+    # sets compatibility level for this subject (optional)
+    compatibility: BACKWARD
+    # file paths are always relative to the given (this) YAML file
+    file: http-response.json
+    # AVRO is the default type and can safely be omitted (only available for Schema Registry >= 5.5)
+    type: JSON
+
+
