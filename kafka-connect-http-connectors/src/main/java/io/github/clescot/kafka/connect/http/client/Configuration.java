@@ -62,6 +62,7 @@ public class Configuration {
     public static final String HAS_BEEN_SET = " has been set.";
     public static final String SHA_1_PRNG = "SHA1PRNG";
     public static final String MUST_BE_SET_TOO = " must be set too.";
+    public static final String CONFIGURATION_ID = "configuration.id";
 
     private final Predicate<HttpRequest> mainpredicate;
 
@@ -99,6 +100,7 @@ public class Configuration {
 
         //configuration id prefix is not present in the resulting configMap
         Map<String, Object> configMap = config.originalsWithPrefix("config." + id + ".");
+        configMap.put(CONFIGURATION_ID,id);
 
         //main predicate
         this.mainpredicate = buildPredicate(configMap);

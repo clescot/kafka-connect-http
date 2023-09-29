@@ -25,7 +25,6 @@ public class AdvancedEventListenerFactory implements EventListener.Factory {
     @NotNull
     @Override
     public EventListener create(@NotNull Call call) {
-        includeLegacyHostTag = true;
         return AdvancedEventListener.builder(meterRegistry)
                 .uriMapper(includUrlPath?
                         req -> req.url().encodedPath()

@@ -3,9 +3,9 @@ package io.github.clescot.kafka.connect.http.client.okhttp;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
-import com.google.common.jimfs.Configuration;
 import com.google.common.jimfs.Jimfs;
 import io.github.clescot.kafka.connect.http.client.AbstractHttpClient;
+import io.github.clescot.kafka.connect.http.client.Configuration;
 import io.github.clescot.kafka.connect.http.client.HttpException;
 import io.github.clescot.kafka.connect.http.client.okhttp.configuration.AuthenticationConfigurer;
 import io.github.clescot.kafka.connect.http.client.okhttp.event.AdvancedEventListenerFactory;
@@ -19,6 +19,7 @@ import okhttp3.internal.http.HttpMethod;
 import okhttp3.internal.io.FileSystem;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.slf4j.MDC;
 
 import javax.net.ssl.*;
 import java.io.File;
@@ -32,6 +33,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
 
+import static io.github.clescot.kafka.connect.http.HttpTask.DEFAULT_CONFIGURATION_ID;
 import static io.github.clescot.kafka.connect.http.sink.HttpSinkConfigDefinition.*;
 
 public class OkHttpClient extends AbstractHttpClient<Request, Response> {
@@ -40,6 +42,8 @@ public class OkHttpClient extends AbstractHttpClient<Request, Response> {
     public static final String IN_MEMORY_CACHE_TYPE = "inmemory";
     public static final String DEFAULT_MAX_CACHE_ENTRIES = "10000";
     public static final String FILE_CACHE_TYPE = "file";
+    public static final String CONNECTOR_NAME = "connector.name";
+    public static final String CONNECTOR_TASK = "connector.task";
 
 
     private final okhttp3.OkHttpClient client;
@@ -92,7 +96,25 @@ public class OkHttpClient extends AbstractHttpClient<Request, Response> {
         boolean includeLegacyHostTag = (boolean) config.getOrDefault(METER_REGISTRY_TAG_INCLUDE_LEGACY_HOST, false);
         boolean includeUrlPath = (boolean) config.getOrDefault(METER_REGISTRY_TAG_INCLUDE_URL_PATH, false);
         if (!meterRegistry.getRegistries().isEmpty()) {
-            httpClientBuilder.eventListenerFactory(new AdvancedEventListenerFactory(meterRegistry, includeLegacyHostTag, includeUrlPath));
+            List<String> tags = Lists.newArrayList();
+            tags.add(Configuration.CONFIGURATION_ID);
+            tags.add(config.get(Configuration.CONFIGURATION_ID)!=null?(String)config.get(Configuration.CONFIGURATION_ID):DEFAULT_CONFIGURATION_ID);
+            String connectorName = MDC.get(CONNECTOR_NAME);
+            if(connectorName!=null) {
+                tags.add(CONNECTOR_NAME);
+                tags.add(connectorName);
+            }
+
+            String connectorTask = MDC.get(CONNECTOR_TASK);
+            if(connectorTask!=null) {
+                tags.add(CONNECTOR_TASK);
+                tags.add(connectorTask);
+            }
+
+
+            httpClientBuilder.eventListenerFactory(new AdvancedEventListenerFactory(meterRegistry, includeLegacyHostTag, includeUrlPath
+                    ,tags.toArray(new String[0])
+            ));
         }
         client = httpClientBuilder.build();
 
@@ -219,7 +241,7 @@ public class OkHttpClient extends AbstractHttpClient<Request, Response> {
             String directoryPath = config.getOrDefault(OKHTTP_CACHE_DIRECTORY_PATH, defaultDirectoryPath).toString();
 
             if (IN_MEMORY_CACHE_TYPE.equalsIgnoreCase(cacheType)) {
-                try (java.nio.file.FileSystem fs = Jimfs.newFileSystem(Configuration.unix())) {
+                try (java.nio.file.FileSystem fs = Jimfs.newFileSystem(com.google.common.jimfs.Configuration.unix())) {
                     Path jimfsDirectory = fs.getPath(directoryPath);
                     Files.createDirectory(jimfsDirectory);
                 } catch (IOException e) {
