@@ -31,6 +31,62 @@ every Kafka Connect Sink Connector need to define these required parameters :
 - *`poll.delay.registration.queue.consumer.in.ms`* : poll delay, i.e, wait time before start polling a registered consumer. default value is 2 seconds.
 - *`poll.interval.registration.queue.consumer.in.ms`* : poll interval, i.e, time between every poll for a registered consumer. default value is 5000 milliseconds.
 
+### Metrics Registry
+
+metrics registry can be configured to add some metrics, and to export them. Metrics registry is global to the JVM.
+Only _okhttp_ HTTP client support this feature.
+
+#### add some HTTP metrics
+When at least one of the export is activated, a listener is added to the okhttp to expose some metrics as timers :
+- `okhttp`
+- `okhttp.dns`
+- `okhttp.socket.connection`
+- `okhttp.pool.connection`
+- `okhttp.proxy.select`
+- `okhttp.request.headers`
+- `okhttp.request.body`
+- `okhttp.response.headers`
+- `okhttp.response.body`
+
+Each metrics with its name listed above, is bound to some tags/dimensions :
+- `configuration.id`
+- `host` : metrics identical to target.host, and present for old systems relying on this metric. Not activated by default. can be activate with `meter.registry.tag.include.legacy.host` set to `true`.
+- `method` : http method
+- `outcome` : response code or `UNKNOWN`
+- `status` : response code, `IO_ERROR`, or `CLIENT_ERROR`
+- `target.host` : http remote host
+- `target.port` : http remote port
+- `target.scheme` : http scheme used to interact with remote http server
+- `target.uri` : will be `none`, except if you activate it with `meter.registry.tag.include.url.path` set to `true`. Beware of the high cardinality metrics issue if you've got many different paths in urls (https://last9.io/blog/how-to-manage-high-cardinality-metrics-in-prometheus/)
+
+
+#### other metrics are available
+
+Some built-ins metrics are available :
+- executor services metrics can be activated with `meter.registry.bind.metrics.executor.service` set to `true`
+- JVM memory metrics can be activated with `meter.registry.bind.metrics.jvm.memory` set to `true`
+- JVM threads metrics can be activated with `meter.registry.bind.metrics.jvm.thread` set to `true`
+- JVM info metrics can be activated with `"meter.registry.bind.metrics.jvm.info"` set to `true`
+- JVM Garbage Collector (GC) metrics can be activated with `"meter.registry.bind.metrics.jvm.gc"` set to `true`
+- JVM classloader metrics can be activated with `"meter.registry.bind.metrics.jvm.classloader"` set to `true`
+- JVM processor metrics can be activated with `"meter.registry.bind.metrics.jvm.processor"` set to `true`
+- Logback metrics can be activated with `"meter.registry.bind.metrics.logback"` set to `true`
+
+
+#### export metrics
+Both exports (JMX and Prometheus) can be combined.
+
+- JMX export
+  you need to activate this export with :
+  `"meter.registry.exporter.jmx.activate": "true"`
+
+
+- prometheus export
+  you need to activate this export with :
+  `"meter.registry.exporter.prometheus.activate": "true"`
+  by default, the port open is the default prometheus one (`9090`), but you can define yours with this setting :
+  `"meter.registry.exporter.prometheus.port":"9087`
+
 #### configuration
 
 The connector ships with a `default` configuration, and we can, if needed, configure more configurations.
@@ -314,61 +370,6 @@ Kafka connect distributes tasks among workers, which are processes that execute 
 
 To avoid any issue, you must configure the same `tasks.max` parameters for the HTTP Sink and Source connectors.
 
-### Metrics Registry
-
-metrics registry can be configured to add some metrics, and to export them. Metrics registry is global to the JVM.
-Only _okhttp_ HTTP client support this feature.
-
-#### add some HTTP metrics
-When at least one of the export is activated, a listener is added to the okhttp to expose some metrics as timers :
-- `okhttp`
-- `okhttp.dns`
-- `okhttp.socket.connection`
-- `okhttp.pool.connection`
-- `okhttp.proxy.select`
-- `okhttp.request.headers`
-- `okhttp.request.body`
-- `okhttp.response.headers`
-- `okhttp.response.body`
-
-Each metrics with its name listed above, is bound to some tags/dimensions :
-- `configuration.id`
-- `host` : metrics identical to target.host, and present for old systems relying on this metric. Not activated by default. can be activate with `meter.registry.tag.include.legacy.host` set to `true`. 
-- `method` : http method
-- `outcome` : response code or `UNKNOWN`
-- `status` : response code, `IO_ERROR`, or `CLIENT_ERROR` 
-- `target.host` : http remote host
-- `target.port` : http remote port
-- `target.scheme` : http scheme used to interact with remote http server
-- `target.uri` : will be `none`, except if you activate it with `meter.registry.tag.include.url.path` set to `true`. Beware of the high cardinality metrics issue if you've got many different paths in urls (https://last9.io/blog/how-to-manage-high-cardinality-metrics-in-prometheus/)
-
-
-#### other metrics are available
-
-Some built-ins metrics are available :
-- executor services metrics can be activated with `meter.registry.bind.metrics.executor.service` set to `true`
-- JVM memory metrics can be activated with `meter.registry.bind.metrics.jvm.memory` set to `true`
-- JVM threads metrics can be activated with `meter.registry.bind.metrics.jvm.thread` set to `true`
-- JVM info metrics can be activated with `"meter.registry.bind.metrics.jvm.info"` set to `true`
-- JVM Garbage Collector (GC) metrics can be activated with `"meter.registry.bind.metrics.jvm.gc"` set to `true`
-- JVM classloader metrics can be activated with `"meter.registry.bind.metrics.jvm.classloader"` set to `true`
-- JVM processor metrics can be activated with `"meter.registry.bind.metrics.jvm.processor"` set to `true`
-- Logback metrics can be activated with `"meter.registry.bind.metrics.logback"` set to `true`
-
-
-#### export metrics
-Both exports (JMX and Prometheus) can be combined.
-
-- JMX export
-you need to activate this export with :
-`"meter.registry.exporter.jmx.activate": "true"`
-
-
-- prometheus export
-you need to activate this export with :
- `"meter.registry.exporter.prometheus.activate": "true"`
-by default, the port open is the default prometheus one (`9090`), but you can define yours with this setting :
-`"meter.registry.exporter.prometheus.port":"9087`
 ### per site parameters
 
 
