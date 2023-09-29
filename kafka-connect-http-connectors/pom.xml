@@ -274,7 +274,7 @@
                         </goals>
 
                         <configuration>
-                            <outputDirectory>${project.build.testOutputDirectory}/components/packages</outputDirectory>
+                            <outputDirectory>${project.build.outputDirectory}/components/packages</outputDirectory>
                             <resources>
                                 <resource>
                                     <directory>${project.build.directory}/components/packages</directory>
@@ -323,8 +323,8 @@
                     </execution>
                 </executions>
                 <configuration>
-                    <contextDirectory>${project.build.testOutputDirectory}</contextDirectory>
-                    <dockerfile>${project.build.testOutputDirectory}/Dockerfile</dockerfile>
+                    <contextDirectory>${project.build.outputDirectory}</contextDirectory>
+                    <dockerfile>${project.build.outputDirectory}/Dockerfile</dockerfile>
                     <repository>clescot/kafka-connect-http</repository>
                     <tag>${project.version}</tag>
                 </configuration>
