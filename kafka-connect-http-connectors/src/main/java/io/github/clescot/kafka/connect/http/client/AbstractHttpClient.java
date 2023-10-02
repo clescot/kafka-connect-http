@@ -2,6 +2,8 @@ package io.github.clescot.kafka.connect.http.client;
 
 import dev.failsafe.RateLimiter;
 import io.github.clescot.kafka.connect.http.core.HttpExchange;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nullable;
 import javax.net.ssl.KeyManagerFactory;
@@ -22,7 +24,7 @@ import java.util.concurrent.CompletableFuture;
 import static io.github.clescot.kafka.connect.http.sink.HttpSinkConfigDefinition.*;
 
 public abstract class AbstractHttpClient<Req, Res> implements HttpClient<Req, Res> {
-
+    private static final Logger LOGGER = LoggerFactory.getLogger(AbstractHttpClient.class);
     private static final String DEFAULT_SSL_PROTOCOL = "SSL";
     protected Map<String, Object> config;
     private Optional<RateLimiter<HttpExchange>> rateLimiter = Optional.empty();
