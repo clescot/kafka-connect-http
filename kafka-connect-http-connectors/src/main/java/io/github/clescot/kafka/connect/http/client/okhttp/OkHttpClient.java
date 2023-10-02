@@ -44,7 +44,9 @@ public class OkHttpClient extends AbstractHttpClient<Request, Response> {
     public static final String FILE_CACHE_TYPE = "file";
     public static final String CONNECTOR_NAME = "connector.name";
     public static final String CONNECTOR_TASK = "connector.task";
+    @java.lang.SuppressWarnings("java:S1075")
     public static final String DEFAULT_IN_MEMORY_DIRECTORY_CACHE_PATH = "/kafka-connect-http-cache";
+    @java.lang.SuppressWarnings("java:S1075")
     public static final String DEFAULT_FILE_DIRECTORY_CACHE_PATH = "/tmp/kafka-connect-http-cache";
 
 
