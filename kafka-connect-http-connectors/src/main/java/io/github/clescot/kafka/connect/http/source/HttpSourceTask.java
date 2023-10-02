@@ -23,7 +23,7 @@ public class HttpSourceTask extends SourceTask {
     private Queue<KafkaRecord> queue;
     private String queueName;
     private HttpSourceConnectorConfig sourceConfig;
-    private final static Logger LOGGER = LoggerFactory.getLogger(HttpSourceTask.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(HttpSourceTask.class);
     private static final VersionUtils VERSION_UTILS = new VersionUtils();
 
 

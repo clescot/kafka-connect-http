@@ -42,7 +42,7 @@ import static io.github.clescot.kafka.connect.http.client.config.AddMissingReque
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.when;
 
-public class AHCHttpClientTest {
+class AHCHttpClientTest {
 
     private AsyncHttpClient asyncHttpClient;
 
@@ -52,7 +52,7 @@ public class AHCHttpClientTest {
     }
 
     @Test
-    public void build_HttpExchange_test_all_null() {
+    void build_HttpExchange_test_all_null() {
         AHCHttpClient httpClient = new AHCHttpClient(asyncHttpClient);
         org.junit.jupiter.api.Assertions.assertThrows(NullPointerException.class, () ->
                 httpClient.buildHttpExchange(null,
@@ -66,7 +66,7 @@ public class AHCHttpClientTest {
 
 
     @Test
-    public void build_HttpExchange_test_message_is_null() {
+    void build_HttpExchange_test_message_is_null() {
         AHCHttpClient httpClient = new AHCHttpClient(asyncHttpClient);
         org.junit.jupiter.api.Assertions.assertThrows(NullPointerException.class, () ->
                 httpClient.buildHttpExchange(null,
@@ -78,7 +78,7 @@ public class AHCHttpClientTest {
     }
 
     @Test
-    public void build_HttpExchange_test_response_code_is_lower_than_0() {
+    void build_HttpExchange_test_response_code_is_lower_than_0() {
         AHCHttpClient httpClient = new AHCHttpClient(asyncHttpClient);
         org.junit.jupiter.api.Assertions.assertThrows(IllegalArgumentException.class, () -> httpClient.buildHttpExchange(getDummyHttpRequest(),
                 getDummyHttpResponse(-12),
@@ -90,7 +90,7 @@ public class AHCHttpClientTest {
 
 
     @Test
-    public void build_HttpExchange_test_nominal_case() {
+    void build_HttpExchange_test_nominal_case() {
         HashMap<String,
                 String> vars = Maps.newHashMap();
         AHCHttpClient httpClient = new AHCHttpClient(asyncHttpClient);
@@ -114,7 +114,7 @@ public class AHCHttpClientTest {
 
 
     @Test
-    public void call_test_nominal_case() throws ExecutionException, InterruptedException {
+    void call_test_nominal_case() throws ExecutionException, InterruptedException {
 
         //given
         AsyncHttpClient asyncHttpClient = Mockito.mock(AsyncHttpClient.class);
@@ -149,7 +149,7 @@ public class AHCHttpClientTest {
     }
 
     @Test
-    public void call_test_any_positive_int_success_code_lower_than_500() throws ExecutionException, InterruptedException {
+    void call_test_any_positive_int_success_code_lower_than_500() throws ExecutionException, InterruptedException {
         //given
         AsyncHttpClient asyncHttpClient = Mockito.mock(AsyncHttpClient.class);
         ListenableFuture<Response> listener = Mockito.mock(ListenableFuture.class);
@@ -178,7 +178,7 @@ public class AHCHttpClientTest {
 
 
     @Test
-    public void call_test_failure_server_side() throws ExecutionException, InterruptedException {
+    void call_test_failure_server_side() throws ExecutionException, InterruptedException {
         //given
         AsyncHttpClient asyncHttpClient = Mockito.mock(AsyncHttpClient.class);
         ListenableFuture<Response> listener = Mockito.mock(ListenableFuture.class);
@@ -204,7 +204,7 @@ public class AHCHttpClientTest {
     }
 
     @Test
-    public void call_test_failure_client_side() throws ExecutionException, InterruptedException {
+    void call_test_failure_client_side() throws ExecutionException, InterruptedException {
         //given
         AsyncHttpClient asyncHttpClient = Mockito.mock(AsyncHttpClient.class);
         ListenableFuture<Response> listener = Mockito.mock(ListenableFuture.class);
@@ -230,7 +230,7 @@ public class AHCHttpClientTest {
     }
 
     @Test
-    public void test_build_http_request_nominal_case() {
+    void test_build_http_request_nominal_case() {
         //given
         AsyncHttpClient asyncHttpClient = Mockito.mock(AsyncHttpClient.class);
         AHCHttpClient httpClient = new AHCHttpClient(asyncHttpClient);
@@ -265,7 +265,7 @@ public class AHCHttpClientTest {
     }
 
     @Test
-    public void test_getTrustManagerFactory_jks_nominal_case() {
+    void test_getTrustManagerFactory_jks_nominal_case() {
 
         //given
         String truststorePath = Thread.currentThread().getContextClassLoader().getResource(HttpSinkTaskTest.CLIENT_TRUSTSTORE_JKS_FILENAME).getPath();
@@ -283,7 +283,7 @@ public class AHCHttpClientTest {
     }
 
     @Test
-    public void test_getTrustManagerFactory_always_trust() {
+    void test_getTrustManagerFactory_always_trust() {
 
         //given
         Map<String, Object> config = Maps.newHashMap();
@@ -302,7 +302,7 @@ public class AHCHttpClientTest {
     }
 
     @Test
-    public void test_getTrustManagerFactory_always_trust_set_to_false() throws CertificateException {
+    void test_getTrustManagerFactory_always_trust_set_to_false() throws CertificateException {
 
         //given
         Map<String, Object> config = Maps.newHashMap();
