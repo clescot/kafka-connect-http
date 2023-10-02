@@ -44,6 +44,8 @@ public class OkHttpClient extends AbstractHttpClient<Request, Response> {
     public static final String FILE_CACHE_TYPE = "file";
     public static final String CONNECTOR_NAME = "connector.name";
     public static final String CONNECTOR_TASK = "connector.task";
+    public static final String DEFAULT_IN_MEMORY_DIRECTORY_CACHE_PATH = "/kafka-connect-http-cache";
+    public static final String DEFAULT_FILE_DIRECTORY_CACHE_PATH = "/tmp/kafka-connect-http-cache";
 
 
     private final okhttp3.OkHttpClient client;
@@ -177,6 +179,7 @@ public class OkHttpClient extends AbstractHttpClient<Request, Response> {
         Optional<KeyManagerFactory> keyManagerFactoryOption = getKeyManagerFactory();
         Optional<TrustManagerFactory> trustManagerFactoryOption = getTrustManagerFactory();
         if (keyManagerFactoryOption.isPresent() || trustManagerFactoryOption.isPresent()) {
+            //TODO SSLFactory protocol parameter
             SSLSocketFactory ssl = AbstractHttpClient.getSSLSocketFactory(keyManagerFactoryOption.orElse(null), trustManagerFactoryOption.orElse(null), "SSL");
             if (trustManagerFactoryOption.isPresent()) {
                 TrustManager[] trustManagers = trustManagerFactoryOption.get().getTrustManagers();
@@ -233,9 +236,9 @@ public class OkHttpClient extends AbstractHttpClient<Request, Response> {
             String cacheType = config.getOrDefault(OKHTTP_CACHE_TYPE, FILE_CACHE_TYPE).toString();
             String defaultDirectoryPath;
             if (IN_MEMORY_CACHE_TYPE.equalsIgnoreCase(cacheType)) {
-                defaultDirectoryPath = "/kafka-connect-http-cache";
+                defaultDirectoryPath = DEFAULT_IN_MEMORY_DIRECTORY_CACHE_PATH;
             } else {
-                defaultDirectoryPath = "/tmp/kafka-connect-http-cache";
+                defaultDirectoryPath = DEFAULT_FILE_DIRECTORY_CACHE_PATH;
             }
 
             String directoryPath = config.getOrDefault(OKHTTP_CACHE_DIRECTORY_PATH, defaultDirectoryPath).toString();

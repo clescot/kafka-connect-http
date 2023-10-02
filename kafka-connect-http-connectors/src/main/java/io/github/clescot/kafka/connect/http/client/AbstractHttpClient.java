@@ -35,10 +35,12 @@ public abstract class AbstractHttpClient<Req, Res> implements HttpClient<Req, Re
         if ((config.containsKey(CONFIG_HTTP_CLIENT_SSL_TRUSTSTORE_PATH)
                 && config.containsKey(CONFIG_HTTP_CLIENT_SSL_TRUSTSTORE_PASSWORD))||config.containsKey(CONFIG_HTTP_CLIENT_SSL_TRUSTSTORE_ALWAYS_TRUST)) {
 
-            Optional<TrustManagerFactory> trustManagerFactory = Optional.ofNullable(
+            Optional<TrustManagerFactory> trustManagerFactoryOption = Optional.ofNullable(
                     HttpClient.getTrustManagerFactory(config));
-            if (trustManagerFactory.isPresent()) {
-                return Optional.of(trustManagerFactory.get());
+            if (trustManagerFactoryOption.isPresent()) {
+                TrustManagerFactory trustManagerFactory = trustManagerFactoryOption.get();
+                LOGGER.info("using trustManagerFactory class : {}",trustManagerFactory.getClass().getName());
+                return Optional.of(trustManagerFactory);
             }
         }
         return Optional.empty();
@@ -95,6 +97,7 @@ public abstract class AbstractHttpClient<Req, Res> implements HttpClient<Req, Re
                                                 @Nullable String protocol){
         try {
             SSLContext sslContext = SSLContext.getInstance(Optional.ofNullable(protocol).orElse(DEFAULT_SSL_PROTOCOL));
+            //TODO add secureRandom seed parameter
             SecureRandom random = new SecureRandom();
             sslContext.init(keyManagerFactory!=null?keyManagerFactory.getKeyManagers():null,trustManagerFactory!=null?trustManagerFactory.getTrustManagers():null, random);
             return sslContext.getSocketFactory();
