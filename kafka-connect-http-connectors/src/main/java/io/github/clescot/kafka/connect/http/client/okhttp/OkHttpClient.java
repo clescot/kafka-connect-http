@@ -97,8 +97,8 @@ public class OkHttpClient extends AbstractHttpClient<Request, Response> {
         httpClientBuilder.addNetworkInterceptor(new LoggingInterceptor());
 
         //events
-        boolean includeLegacyHostTag = (boolean) config.getOrDefault(METER_REGISTRY_TAG_INCLUDE_LEGACY_HOST, false);
-        boolean includeUrlPath = (boolean) config.getOrDefault(METER_REGISTRY_TAG_INCLUDE_URL_PATH, false);
+        boolean includeLegacyHostTag = Boolean.parseBoolean((String) config.getOrDefault(METER_REGISTRY_TAG_INCLUDE_LEGACY_HOST, "false"));
+        boolean includeUrlPath = Boolean.parseBoolean((String) config.getOrDefault(METER_REGISTRY_TAG_INCLUDE_URL_PATH, "false"));
         if (!meterRegistry.getRegistries().isEmpty()) {
             List<String> tags = Lists.newArrayList();
             tags.add(Configuration.CONFIGURATION_ID);

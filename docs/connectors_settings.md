@@ -258,7 +258,7 @@ The predicate permits to filter some http requests, and can be composed, cumulat
     "value.converter": "io.confluent.connect.json.JsonSchemaConverter",
     "value.converter.use.optional.for.nonrequired": "true",
     "value.converter.schema.registry.url": "https://my-schema-registry-url:8081",
-    "errors.deadletterqueue.context.headers.enable": true,
+    "errors.deadletterqueue.context.headers.enable": "true",
     "errors.deadletterqueue.topic.name": "http-request-dlq-v1",
     "errors.log.enable": true,
     "errors.tolerance": "all",

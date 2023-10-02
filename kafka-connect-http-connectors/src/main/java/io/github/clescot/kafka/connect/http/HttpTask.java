@@ -77,7 +77,7 @@ public class HttpTask<T extends ConnectRecord<T>> {
         }
         bindMetrics(config, meterRegistry, executorService);
         this.defaultConfiguration = new Configuration(DEFAULT_CONFIGURATION_ID, config, executorService, meterRegistry);
-        this.publishToInMemoryQueue = Optional.ofNullable(config.getBoolean(PUBLISH_TO_IN_MEMORY_QUEUE)).orElse(false);
+        this.publishToInMemoryQueue = Boolean.parseBoolean(config.getString(PUBLISH_TO_IN_MEMORY_QUEUE));
         this.queueName = Optional.ofNullable(config.getString(ConfigConstants.QUEUE_NAME)).orElse(QueueFactory.DEFAULT_QUEUE_NAME);
         this.queue = QueueFactory.getQueue(queueName);
         this.customConfigurations = buildCustomConfigurations(config, defaultConfiguration, executorService);
@@ -245,13 +245,13 @@ public class HttpTask<T extends ConnectRecord<T>> {
 
     private CompositeMeterRegistry buildMeterRegistry(AbstractConfig config) {
         CompositeMeterRegistry compositeMeterRegistry = new CompositeMeterRegistry();
-        boolean activateJMX = config.getBoolean(METER_REGISTRY_EXPORTER_JMX_ACTIVATE);
+        boolean activateJMX = Boolean.parseBoolean(config.getString(METER_REGISTRY_EXPORTER_JMX_ACTIVATE));
         if (activateJMX) {
             JmxMeterRegistry jmxMeterRegistry = new JmxMeterRegistry(JmxConfig.DEFAULT, Clock.SYSTEM);
             jmxMeterRegistry.start();
             compositeMeterRegistry.add(jmxMeterRegistry);
         }
-        boolean activatePrometheus = config.getBoolean(METER_REGISTRY_EXPORTER_PROMETHEUS_ACTIVATE);
+        boolean activatePrometheus = Boolean.parseBoolean(config.getString(METER_REGISTRY_EXPORTER_PROMETHEUS_ACTIVATE));
         if (activatePrometheus) {
             PrometheusMeterRegistry prometheusRegistry = new PrometheusMeterRegistry(PrometheusConfig.DEFAULT);
             Integer prometheusPort = config.getInt(METER_REGISTRY_EXPORTER_PROMETHEUS_PORT);
@@ -272,37 +272,37 @@ public class HttpTask<T extends ConnectRecord<T>> {
     }
 
     private static void bindMetrics(AbstractConfig config, MeterRegistry meterRegistry, ExecutorService myExecutorService) {
-        boolean bindExecutorServiceMetrics = config.getBoolean(METER_REGISTRY_BIND_METRICS_EXECUTOR_SERVICE);
+        boolean bindExecutorServiceMetrics = Boolean.parseBoolean(config.getString(METER_REGISTRY_BIND_METRICS_EXECUTOR_SERVICE));
         if (bindExecutorServiceMetrics) {
             new ExecutorServiceMetrics(myExecutorService, "HttpSinkTask", Lists.newArrayList()).bindTo(meterRegistry);
         }
-        boolean bindJvmMemoryMetrics = config.getBoolean(METER_REGISTRY_BIND_METRICS_JVM_MEMORY);
+        boolean bindJvmMemoryMetrics = Boolean.parseBoolean(config.getString(METER_REGISTRY_BIND_METRICS_JVM_MEMORY));
         if (bindJvmMemoryMetrics) {
             new JvmMemoryMetrics().bindTo(meterRegistry);
         }
-        boolean bindJvmThreadMetrics = config.getBoolean(METER_REGISTRY_BIND_METRICS_JVM_THREAD);
+        boolean bindJvmThreadMetrics = Boolean.parseBoolean(config.getString(METER_REGISTRY_BIND_METRICS_JVM_THREAD));
         if (bindJvmThreadMetrics) {
             new JvmThreadMetrics().bindTo(meterRegistry);
         }
-        boolean bindJvmInfoMetrics = config.getBoolean(METER_REGISTRY_BIND_METRICS_JVM_INFO);
+        boolean bindJvmInfoMetrics = Boolean.parseBoolean(config.getString(METER_REGISTRY_BIND_METRICS_JVM_INFO));
         if (bindJvmInfoMetrics) {
             new JvmInfoMetrics().bindTo(meterRegistry);
         }
-        boolean bindJvmGcMetrics = config.getBoolean(METER_REGISTRY_BIND_METRICS_JVM_GC);
+        boolean bindJvmGcMetrics = Boolean.parseBoolean(config.getString(METER_REGISTRY_BIND_METRICS_JVM_GC));
         if (bindJvmGcMetrics) {
             try (JvmGcMetrics gcMetrics = new JvmGcMetrics()) {
                 gcMetrics.bindTo(meterRegistry);
             }
         }
-        boolean bindJVMClassLoaderMetrics = config.getBoolean(METER_REGISTRY_BIND_METRICS_JVM_CLASSLOADER);
+        boolean bindJVMClassLoaderMetrics = Boolean.parseBoolean(config.getString(METER_REGISTRY_BIND_METRICS_JVM_CLASSLOADER));
         if (bindJVMClassLoaderMetrics) {
             new ClassLoaderMetrics().bindTo(meterRegistry);
         }
-        boolean bindJVMProcessorMetrics = config.getBoolean(METER_REGISTRY_BIND_METRICS_JVM_PROCESSOR);
+        boolean bindJVMProcessorMetrics = Boolean.parseBoolean(config.getString(METER_REGISTRY_BIND_METRICS_JVM_PROCESSOR));
         if (bindJVMProcessorMetrics) {
             new ProcessorMetrics().bindTo(meterRegistry);
         }
-        boolean bindLogbackMetrics = config.getBoolean(METER_REGISTRY_BIND_METRICS_LOGBACK);
+        boolean bindLogbackMetrics = Boolean.parseBoolean(config.getString(METER_REGISTRY_BIND_METRICS_LOGBACK));
         if (bindLogbackMetrics) {
             try (LogbackMetrics logbackMetrics = new LogbackMetrics()) {
                 logbackMetrics.bindTo(meterRegistry);

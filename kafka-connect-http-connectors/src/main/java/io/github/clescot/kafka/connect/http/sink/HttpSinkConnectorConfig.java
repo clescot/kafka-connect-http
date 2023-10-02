@@ -52,15 +52,15 @@ public class HttpSinkConnectorConfig extends AbstractConfig {
         if (QueueFactory.queueMapIsEmpty()) {
             LOGGER.warn("no pre-existing queue exists. this HttpSourceConnector has created a '{}' one. It needs to consume a queue filled with a SinkConnector. Ignore this message if a SinkConnector will be created after this one.", queueName);
         }
-        this.publishToInMemoryQueue = Optional.ofNullable(getBoolean(PUBLISH_TO_IN_MEMORY_QUEUE)).orElse(false);
+        this.publishToInMemoryQueue = Boolean.parseBoolean(getString(PUBLISH_TO_IN_MEMORY_QUEUE));
 
         this.defaultRetries = getInt(CONFIG_DEFAULT_RETRIES);
         this.defaultRetryDelayInMs = getLong(CONFIG_DEFAULT_RETRY_DELAY_IN_MS);
         this.defaultRetryMaxDelayInMs = getLong(CONFIG_DEFAULT_RETRY_MAX_DELAY_IN_MS);
         this.defaultRetryDelayFactor = getDouble(CONFIG_DEFAULT_RETRY_DELAY_FACTOR);
         this.defaultRetryJitterInMs = getLong(CONFIG_DEFAULT_RETRY_JITTER_IN_MS);
-        this.generateMissingRequestId = getBoolean(CONFIG_GENERATE_MISSING_REQUEST_ID);
-        this.generateMissingCorrelationId = getBoolean(CONFIG_GENERATE_MISSING_CORRELATION_ID);
+        this.generateMissingRequestId = Boolean.parseBoolean(getString(CONFIG_GENERATE_MISSING_REQUEST_ID));
+        this.generateMissingCorrelationId = Boolean.parseBoolean(getString(CONFIG_GENERATE_MISSING_CORRELATION_ID));
         this.defaultRateLimiterPeriodInMs = getLong(CONFIG_DEFAULT_RATE_LIMITER_PERIOD_IN_MS);
         this.defaultRateLimiterMaxExecutions = getLong(CONFIG_DEFAULT_RATE_LIMITER_MAX_EXECUTIONS);
         this.defaultRateLimiterScope = getString(CONFIG_DEFAULT_RATE_LIMITER_SCOPE);
