@@ -3,16 +3,18 @@ package io.github.clescot.kafka.connect.http.client.okhttp;
 import com.github.tomakehurst.wiremock.client.WireMock;
 import com.github.tomakehurst.wiremock.core.Options;
 import com.github.tomakehurst.wiremock.core.WireMockConfiguration;
-import com.github.tomakehurst.wiremock.http.trafficlistener.ConsoleNotifyingWiremockNetworkTrafficListener;
 import com.github.tomakehurst.wiremock.junit5.WireMockExtension;
 import com.github.tomakehurst.wiremock.junit5.WireMockRuntimeInfo;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
+import com.google.common.io.Resources;
+import io.github.clescot.kafka.connect.http.client.DummyX509Certificate;
+import io.github.clescot.kafka.connect.http.client.HttpClient;
+import io.github.clescot.kafka.connect.http.client.proxy.URIRegexProxySelector;
 import io.github.clescot.kafka.connect.http.core.HttpExchange;
 import io.github.clescot.kafka.connect.http.core.HttpRequest;
 import io.github.clescot.kafka.connect.http.core.HttpResponse;
 import io.github.clescot.kafka.connect.http.core.queue.QueueFactory;
-import io.github.clescot.kafka.connect.http.client.proxy.URIRegexProxySelector;
 import io.micrometer.core.instrument.Clock;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.composite.CompositeMeterRegistry;
@@ -21,6 +23,7 @@ import okhttp3.*;
 import okhttp3.internal.http.RealResponseBody;
 import okio.Buffer;
 import org.apache.commons.lang3.tuple.ImmutablePair;
+import org.assertj.core.api.Assertions;
 import org.assertj.core.util.Sets;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.*;
@@ -28,13 +31,14 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.net.ssl.TrustManager;
+import javax.net.ssl.TrustManagerFactory;
+import javax.net.ssl.X509TrustManager;
 import java.io.IOException;
 import java.net.*;
 import java.nio.charset.StandardCharsets;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Random;
+import java.security.cert.X509Certificate;
+import java.util.*;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Predicate;
@@ -65,7 +69,11 @@ class OkHttpClientTest {
                 .options(
                         WireMockConfiguration.wireMockConfig()
                                 .dynamicPort()
-                                .networkTrafficListener(new ConsoleNotifyingWiremockNetworkTrafficListener())
+                                .dynamicHttpsPort()
+                                .keystorePath(Resources.getResource("test.jks").toString())
+                                .keystorePassword("password")
+                                .keystoreType("JKS")
+//                                .networkTrafficListener(new ConsoleNotifyingWiremockNetworkTrafficListener())
                                 .useChunkedTransferEncoding(Options.ChunkedEncodingPolicy.NEVER)
                 )
                 .build();
@@ -987,13 +995,79 @@ class OkHttpClientTest {
 
 
     }
+    @Nested
+    class TestSSL {
+
+        @Test
+        public void test_getTrustManagerFactory_always_trust_with_boolean_value_as_string() {
+
+            //given
+            Map<String, Object> config = Maps.newHashMap();
+            config.put(CONFIG_HTTP_CLIENT_SSL_TRUSTSTORE_ALWAYS_TRUST, "true");
+            //when
+            TrustManagerFactory trustManagerFactory = HttpClient.getTrustManagerFactory(config);
+            //then
+            assertThat(trustManagerFactory).isNotNull();
+            TrustManager[] trustManagers = trustManagerFactory.getTrustManagers();
+            assertThat(trustManagers).hasSize(1);
+            assertThat(trustManagers[0]).isInstanceOf(X509TrustManager.class);
+            X509TrustManager x509TrustManager = (X509TrustManager) trustManagers[0];
+            X509Certificate dummyCertificate = new DummyX509Certificate();
+            X509Certificate[] certs = new X509Certificate[]{dummyCertificate};
+            Assertions.assertThatCode(()->x509TrustManager.checkServerTrusted(certs,"RSA")).doesNotThrowAnyException();
+        }
+        @Test
+        public void test_okhtp_client_with_always_trust_with_boolean_value_as_string() throws ExecutionException, InterruptedException {
+
+            //given
+            String bodyResponse = "{\"result\":\"pong\"}";
+            Map<String, Object> config = Maps.newHashMap();
+            config.put(CONFIG_HTTP_CLIENT_SSL_TRUSTSTORE_ALWAYS_TRUST, "true");
+            config.put(OKHTTP_SSL_SKIP_HOSTNAME_VERIFICATION, "true");
+            WireMockRuntimeInfo wmRuntimeInfo = wmHttp.getRuntimeInfo();
+            WireMock wireMock = wmRuntimeInfo.getWireMock();
+            io.github.clescot.kafka.connect.http.client.okhttp.OkHttpClient client = new io.github.clescot.kafka.connect.http.client.okhttp.OkHttpClient(config, null, new Random(), null, null, getCompositeMeterRegistry());
+            String baseUrl = "https://" + getIP() + ":" + wmRuntimeInfo.getHttpsPort();
+            String url = baseUrl + "/ping";
+            HashMap<String, List<String>> headers = Maps.newHashMap();
+            headers.put("Content-Type", Lists.newArrayList("text/plain"));
+            headers.put("X-Correlation-ID", Lists.newArrayList("e6de70d1-f222-46e8-b755-754880687822"));
+            headers.put("X-Request-ID", Lists.newArrayList("e6de70d1-f222-46e8-b755-11111"));
+            HttpRequest httpRequest = new HttpRequest(
+                    url,
+                    "POST",
+                    "STRING"
+            );
+            httpRequest.setHeaders(headers);
+            httpRequest.setBodyAsString("stuff");
+
+
+            String scenario = "always_grant_ssl";
+            wireMock
+                    .register(WireMock.post("/ping").inScenario(scenario)
+                            .willReturn(WireMock.aResponse()
+                                    .withStatus(200)
+                                    .withStatusMessage(ACCESS_GRANTED_STATE)
+                                    .withBody(bodyResponse)
+                            )
+                    );
+
+            //when
+            HttpExchange httpExchange1 = client.call(httpRequest, new AtomicInteger(1)).get();
+            assertThat(httpExchange1.getHttpResponse().getStatusCode()).isEqualTo(200);
+            HttpExchange httpExchange2 = client.call(httpRequest, new AtomicInteger(1)).get();
+            assertThat(httpExchange2.getHttpResponse().getStatusCode()).isEqualTo(200);
+
+
+        }
+    }
 
     @Nested
     class TestConnectionPool {
         @Test
         @DisplayName("test connection pool")
         public void test_connection_pool() throws ExecutionException, InterruptedException {
-
+            //given
             String bodyResponse = "{\"result\":\"pong\"}";
             WireMockRuntimeInfo wmRuntimeInfo = wmHttp.getRuntimeInfo();
             WireMock wireMock = wmRuntimeInfo.getWireMock();
@@ -1030,9 +1104,11 @@ class OkHttpClientTest {
                             )
                     );
 
+            //when
             HttpExchange httpExchange1 = client.call(httpRequest, new AtomicInteger(1)).get();
             assertThat(httpExchange1.getHttpResponse().getStatusCode()).isEqualTo(200);
             HttpExchange httpExchange2 = client.call(httpRequest, new AtomicInteger(1)).get();
+            //then
             assertThat(httpExchange2.getHttpResponse().getStatusCode()).isEqualTo(200);
 
         }

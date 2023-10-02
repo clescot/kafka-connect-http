@@ -274,9 +274,9 @@ The predicate permits to filter some http requests, and can be composed, cumulat
     "config.default.rate.limiter.max.executions":"5",
     "config.default.retry.policy.response.code.regex":"^5[0-9][0-9]$",
     "config.default.success.response.code.regex":"^[1-2][0-9][0-9]$",
-    "httpclient.ssl.truststore.path": "/path/to/my.truststore.jks",
-    "httpclient.ssl.truststore.password": "mySecret_Pass",
-    "httpclient.ssl.truststore.type": "jks"
+    "config.default.httpclient.ssl.truststore.path": "/path/to/my.truststore.jks",
+    "config.default.httpclient.ssl.truststore.password": "mySecret_Pass",
+    "config.default.httpclient.ssl.truststore.type": "jks"
   }
 }
 ```
