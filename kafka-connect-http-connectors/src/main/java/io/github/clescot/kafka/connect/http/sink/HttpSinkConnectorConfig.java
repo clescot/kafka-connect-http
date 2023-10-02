@@ -19,7 +19,21 @@ import static io.github.clescot.kafka.connect.http.sink.HttpSinkConfigDefinition
 public class HttpSinkConnectorConfig extends AbstractConfig {
     private static final Logger LOGGER = LoggerFactory.getLogger(HttpSinkConnectorConfig.class);
 
+    private final boolean meterRegistryExporterJmxActivate;
+    private final boolean meterRegistryExporterPrometheusActivate;
+    private final int meterRegistryExporterPrometheusPort;
+    private final boolean meterRegistryBindMetricsExecutorService;
+    private final boolean meterRegistryBindMetricsJvmClassloader;
+    private final boolean meterRegistryBindMetricsJvmProcessor;
+    private final boolean meterRegistryBindMetricsJvmGc;
+    private final boolean meterRegistryBindMetricsJvmInfo;
+    private final boolean meterRegistryBindMetricsJvmMemory;
+    private final boolean meterRegistryBindMetricsJvmThread;
+    private final boolean meterRegistryBindMetricsLogback;
+    private final boolean meterRegistryTagIncludeLegacyHost;
+    private final boolean meterRegistryTagIncludeUrlPath;
 
+    private final String httpClientImplementation;
     private final String defaultSuccessResponseCodeRegex;
     private final String defaultRetryResponseCodeRegex;
     private final String queueName;
@@ -42,12 +56,41 @@ public class HttpSinkConnectorConfig extends AbstractConfig {
     private final Integer customFixedThreadpoolSize;
     private final List<String> configurationIds;
 
+
     public HttpSinkConnectorConfig(Map<?, ?> originals) {
         this(HttpSinkConfigDefinition.config(), originals);
     }
 
     public HttpSinkConnectorConfig(ConfigDef configDef, Map<?, ?> originals) {
         super(configDef, originals, LOGGER.isDebugEnabled());
+
+        //meter Registry
+        this.meterRegistryExporterJmxActivate = Boolean.parseBoolean(getString(METER_REGISTRY_EXPORTER_JMX_ACTIVATE));
+        this.meterRegistryExporterPrometheusActivate = Boolean.parseBoolean(getString(METER_REGISTRY_EXPORTER_PROMETHEUS_ACTIVATE));
+        this.meterRegistryExporterPrometheusPort = getInt(METER_REGISTRY_EXPORTER_PROMETHEUS_PORT);
+        this.meterRegistryBindMetricsExecutorService = Boolean.parseBoolean(getString(METER_REGISTRY_BIND_METRICS_EXECUTOR_SERVICE));
+        this.meterRegistryBindMetricsJvmClassloader = Boolean.parseBoolean(getString(METER_REGISTRY_BIND_METRICS_JVM_CLASSLOADER));
+        this.meterRegistryBindMetricsJvmProcessor = Boolean.parseBoolean(getString(METER_REGISTRY_BIND_METRICS_JVM_PROCESSOR));
+        this.meterRegistryBindMetricsJvmGc = Boolean.parseBoolean(getString(METER_REGISTRY_BIND_METRICS_JVM_GC));
+        this.meterRegistryBindMetricsJvmInfo = Boolean.parseBoolean(getString(METER_REGISTRY_BIND_METRICS_JVM_INFO));
+        this.meterRegistryBindMetricsJvmMemory = Boolean.parseBoolean(getString(METER_REGISTRY_BIND_METRICS_JVM_MEMORY));
+        this.meterRegistryBindMetricsJvmThread = Boolean.parseBoolean(getString(METER_REGISTRY_BIND_METRICS_JVM_THREAD));
+        this.meterRegistryBindMetricsLogback = Boolean.parseBoolean(getString(METER_REGISTRY_BIND_METRICS_LOGBACK));
+        this.meterRegistryTagIncludeLegacyHost = Boolean.parseBoolean(getString(METER_REGISTRY_TAG_INCLUDE_LEGACY_HOST));
+        this.meterRegistryTagIncludeUrlPath = Boolean.parseBoolean(getString(METER_REGISTRY_TAG_INCLUDE_URL_PATH));
+
+        this.httpClientImplementation = getString(HTTP_CLIENT_IMPLEMENTATION);
+
+
+
+
+
+
+
+
+
+
+
         this.queueName = Optional.ofNullable(getString(ConfigConstants.QUEUE_NAME)).orElse(QueueFactory.DEFAULT_QUEUE_NAME);
         if (QueueFactory.queueMapIsEmpty()) {
             LOGGER.warn("no pre-existing queue exists. this HttpSourceConnector has created a '{}' one. It needs to consume a queue filled with a SinkConnector. Ignore this message if a SinkConnector will be created after this one.", queueName);
@@ -163,6 +206,63 @@ public class HttpSinkConnectorConfig extends AbstractConfig {
     public String getDefaultRateLimiterScope() {
         return defaultRateLimiterScope;
     }
+
+    public boolean isMeterRegistryExporterJmxActivate() {
+        return meterRegistryExporterJmxActivate;
+    }
+
+    public boolean isMeterRegistryExporterPrometheusActivate() {
+        return meterRegistryExporterPrometheusActivate;
+    }
+
+    public int getMeterRegistryExporterPrometheusPort() {
+        return meterRegistryExporterPrometheusPort;
+    }
+
+    public boolean isMeterRegistryBindMetricsExecutorService() {
+        return meterRegistryBindMetricsExecutorService;
+    }
+
+    public boolean isMeterRegistryBindMetricsJvmClassloader() {
+        return meterRegistryBindMetricsJvmClassloader;
+    }
+
+    public boolean isMeterRegistryBindMetricsJvmProcessor() {
+        return meterRegistryBindMetricsJvmProcessor;
+    }
+
+    public boolean isMeterRegistryBindMetricsJvmGc() {
+        return meterRegistryBindMetricsJvmGc;
+    }
+
+    public boolean isMeterRegistryBindMetricsJvmInfo() {
+        return meterRegistryBindMetricsJvmInfo;
+    }
+
+    public boolean isMeterRegistryBindMetricsJvmMemory() {
+        return meterRegistryBindMetricsJvmMemory;
+    }
+
+    public boolean isMeterRegistryBindMetricsJvmThread() {
+        return meterRegistryBindMetricsJvmThread;
+    }
+
+    public boolean isMeterRegistryBindMetricsLogback() {
+        return meterRegistryBindMetricsLogback;
+    }
+
+    public boolean isMeterRegistryTagIncludeLegacyHost() {
+        return meterRegistryTagIncludeLegacyHost;
+    }
+
+    public boolean isMeterRegistryTagIncludeUrlPath() {
+        return meterRegistryTagIncludeUrlPath;
+    }
+
+    public String getHttpClientImplementation() {
+        return httpClientImplementation;
+    }
+
 
     @Override
     public String toString() {

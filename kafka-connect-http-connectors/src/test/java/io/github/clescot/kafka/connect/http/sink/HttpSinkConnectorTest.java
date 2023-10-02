@@ -29,6 +29,7 @@ public class HttpSinkConnectorTest {
         void test_start_with_nominal_case(){
             HttpSinkConnector httpSinkConnector = new HttpSinkConnector();
             Map<String, String> settings = Maps.newHashMap();
+            settings.put("config.default.httpclient.ssl.truststore.always.trust","true");
             Assertions.assertDoesNotThrow(()->httpSinkConnector.start(settings));
         }
 

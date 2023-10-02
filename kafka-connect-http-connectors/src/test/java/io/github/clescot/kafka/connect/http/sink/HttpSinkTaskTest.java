@@ -158,6 +158,16 @@ public class HttpSinkTaskTest {
         }
 
         @Test
+        void test_ssl_always_granted_parameter() {
+            Assertions.assertDoesNotThrow(() -> {
+                Map<String, String> settings = Maps.newHashMap();
+                settings.put(CONFIG_HTTP_CLIENT_SSL_TRUSTSTORE_ALWAYS_TRUST, "true");
+                new HttpSinkConnectorConfig(HttpSinkConfigDefinition.config(), settings);
+
+            });
+        }
+
+        @Test
         void test_start_with_static_request_headers() {
             Assertions.assertDoesNotThrow(() -> {
                 Map<String, String> settings = Maps.newHashMap();
