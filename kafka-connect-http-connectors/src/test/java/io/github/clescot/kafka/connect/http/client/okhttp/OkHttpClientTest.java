@@ -94,7 +94,7 @@ class OkHttpClientTest {
     @Nested
     class BuildRequest {
         @Test
-        public void test_build_POST_request() throws IOException {
+        void test_build_POST_request() throws IOException {
 
             //given
             io.github.clescot.kafka.connect.http.client.okhttp.OkHttpClient client = new io.github.clescot.kafka.connect.http.client.okhttp.OkHttpClient(Maps.newHashMap(), null, new Random(), null, null,getCompositeMeterRegistry());
@@ -106,7 +106,7 @@ class OkHttpClientTest {
 
             //then
             LOGGER.debug("request:{}", request);
-            assertThat(request.url().url().toString()).isEqualTo(httpRequest.getUrl());
+            assertThat(request.url().url().toString()).hasToString(httpRequest.getUrl());
             assertThat(request.method()).isEqualTo(httpRequest.getMethod());
             RequestBody body = request.body();
             final Buffer buffer = new Buffer();
@@ -116,7 +116,7 @@ class OkHttpClientTest {
 
 
         @Test
-        public void test_build_GET_request_with_body() {
+        void test_build_GET_request_with_body() {
 
             //given
             io.github.clescot.kafka.connect.http.client.okhttp.OkHttpClient client = new io.github.clescot.kafka.connect.http.client.okhttp.OkHttpClient(Maps.newHashMap(), null, new Random(), null, null, getCompositeMeterRegistry());
@@ -128,7 +128,7 @@ class OkHttpClientTest {
 
             //then
             LOGGER.debug("request:{}", request);
-            assertThat(request.url().url().toString()).isEqualTo(httpRequest.getUrl());
+            assertThat(request.url().url().toString()).hasToString(httpRequest.getUrl());
             assertThat(request.method()).isEqualTo(httpRequest.getMethod());
             assertThat(request.body()).isNull();
         }
@@ -138,7 +138,7 @@ class OkHttpClientTest {
     @Nested
     class BuildResponse {
         @Test
-        public void test_build_response() {
+        void test_build_response() {
 
             //given
             io.github.clescot.kafka.connect.http.client.okhttp.OkHttpClient client = new io.github.clescot.kafka.connect.http.client.okhttp.OkHttpClient(Maps.newHashMap(), null, new Random(), null, null, getCompositeMeterRegistry());
@@ -185,7 +185,7 @@ class OkHttpClientTest {
         void test_activated_cache_with_file_type() {
             HashMap<String, Object> config = Maps.newHashMap();
             config.put(OKHTTP_CACHE_ACTIVATE, "true");
-            new io.github.clescot.kafka.connect.http.client.okhttp.OkHttpClient(config, null, new Random(), null, null, getCompositeMeterRegistry());
+            org.junit.jupiter.api.Assertions.assertDoesNotThrow(()->new io.github.clescot.kafka.connect.http.client.okhttp.OkHttpClient(config, null, new Random(), null, null, getCompositeMeterRegistry()));
         }
 
         @Test
@@ -193,7 +193,8 @@ class OkHttpClientTest {
             HashMap<String, Object> config = Maps.newHashMap();
             config.put(OKHTTP_CACHE_ACTIVATE, "true");
             config.put(OKHTTP_CACHE_MAX_SIZE, "50000");
-            new io.github.clescot.kafka.connect.http.client.okhttp.OkHttpClient(config, null, new Random(), null, null, getCompositeMeterRegistry());
+            org.junit.jupiter.api.Assertions.assertDoesNotThrow(()->new io.github.clescot.kafka.connect.http.client.okhttp.OkHttpClient(config, null, new Random(), null, null, getCompositeMeterRegistry()));
+
         }
 
         @Test
@@ -202,7 +203,7 @@ class OkHttpClientTest {
             config.put(OKHTTP_CACHE_ACTIVATE, "true");
             config.put(OKHTTP_CACHE_MAX_SIZE, "50000");
             config.put(OKHTTP_CACHE_DIRECTORY_PATH, "/tmp/toto");
-            new io.github.clescot.kafka.connect.http.client.okhttp.OkHttpClient(config, null, new Random(), null, null, getCompositeMeterRegistry());
+            org.junit.jupiter.api.Assertions.assertDoesNotThrow(()->new io.github.clescot.kafka.connect.http.client.okhttp.OkHttpClient(config, null, new Random(), null, null, getCompositeMeterRegistry()));
         }
 
         @Test
@@ -210,20 +211,20 @@ class OkHttpClientTest {
             HashMap<String, Object> config = Maps.newHashMap();
             config.put(OKHTTP_CACHE_ACTIVATE, "true");
             config.put(OKHTTP_CACHE_TYPE, "inmemory");
-            new io.github.clescot.kafka.connect.http.client.okhttp.OkHttpClient(config, null, new Random(), null, null, getCompositeMeterRegistry());
+            org.junit.jupiter.api.Assertions.assertDoesNotThrow(()->new io.github.clescot.kafka.connect.http.client.okhttp.OkHttpClient(config, null, new Random(), null, null, getCompositeMeterRegistry()));
         }
 
         @Test
         void test_inactivated_cache() {
             HashMap<String, Object> config = Maps.newHashMap();
             config.put(OKHTTP_CACHE_ACTIVATE, "false");
-            new io.github.clescot.kafka.connect.http.client.okhttp.OkHttpClient(config, null, new Random(), null, null, getCompositeMeterRegistry());
+            org.junit.jupiter.api.Assertions.assertDoesNotThrow(()->new io.github.clescot.kafka.connect.http.client.okhttp.OkHttpClient(config, null, new Random(), null, null, getCompositeMeterRegistry()));
         }
 
         @Test
         void test_no_cache() {
             HashMap<String, Object> config = Maps.newHashMap();
-            new io.github.clescot.kafka.connect.http.client.okhttp.OkHttpClient(config, null, new Random(), null, null, getCompositeMeterRegistry());
+            org.junit.jupiter.api.Assertions.assertDoesNotThrow(()->new io.github.clescot.kafka.connect.http.client.okhttp.OkHttpClient(config, null, new Random(), null, null, getCompositeMeterRegistry()));
         }
     }
 
@@ -231,7 +232,7 @@ class OkHttpClientTest {
     class TestAuthentication {
         @Test
         @DisplayName("test Basic Authentication : two calls")
-        public void test_basic_authentication() throws ExecutionException, InterruptedException {
+        void test_basic_authentication() throws ExecutionException, InterruptedException {
 
             String username = "user1";
             String password = "password1";
@@ -999,7 +1000,7 @@ class OkHttpClientTest {
     class TestSSL {
 
         @Test
-        public void test_getTrustManagerFactory_always_trust_with_boolean_value_as_string() {
+        void test_getTrustManagerFactory_always_trust_with_boolean_value_as_string() {
 
             //given
             Map<String, Object> config = Maps.newHashMap();
@@ -1017,7 +1018,7 @@ class OkHttpClientTest {
             Assertions.assertThatCode(()->x509TrustManager.checkServerTrusted(certs,"RSA")).doesNotThrowAnyException();
         }
         @Test
-        public void test_okhtp_client_with_always_trust_with_boolean_value_as_string() throws ExecutionException, InterruptedException {
+        void test_okhtp_client_with_always_trust_with_boolean_value_as_string() throws ExecutionException, InterruptedException {
 
             //given
             String bodyResponse = "{\"result\":\"pong\"}";
@@ -1066,7 +1067,7 @@ class OkHttpClientTest {
     class TestConnectionPool {
         @Test
         @DisplayName("test connection pool")
-        public void test_connection_pool() throws ExecutionException, InterruptedException {
+        void test_connection_pool() throws ExecutionException, InterruptedException {
             //given
             String bodyResponse = "{\"result\":\"pong\"}";
             WireMockRuntimeInfo wmRuntimeInfo = wmHttp.getRuntimeInfo();
@@ -1115,7 +1116,7 @@ class OkHttpClientTest {
 
         @Test
         @DisplayName("test connection pool with static scope")
-        public void test_connection_pool_with_static_scope() throws ExecutionException, InterruptedException {
+        void test_connection_pool_with_static_scope() throws ExecutionException, InterruptedException {
 
             String bodyResponse = "{\"result\":\"pong\"}";
             WireMockRuntimeInfo wmRuntimeInfo = wmHttp.getRuntimeInfo();
