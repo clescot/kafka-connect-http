@@ -32,8 +32,8 @@ public abstract class AbstractHttpClient<Req, Res> implements HttpClient<Req, Re
     }
 
     protected Optional<TrustManagerFactory> getTrustManagerFactory() {
-        if (config.containsKey(CONFIG_HTTP_CLIENT_SSL_TRUSTSTORE_PATH)
-                && config.containsKey(CONFIG_HTTP_CLIENT_SSL_TRUSTSTORE_PASSWORD)) {
+        if ((config.containsKey(CONFIG_HTTP_CLIENT_SSL_TRUSTSTORE_PATH)
+                && config.containsKey(CONFIG_HTTP_CLIENT_SSL_TRUSTSTORE_PASSWORD))||config.containsKey(CONFIG_HTTP_CLIENT_SSL_TRUSTSTORE_ALWAYS_TRUST)) {
 
             Optional<TrustManagerFactory> trustManagerFactory = Optional.ofNullable(
                     HttpClient.getTrustManagerFactory(config));

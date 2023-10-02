@@ -93,6 +93,7 @@ public interface HttpClient<Q, S> {
                         }
                 ).exceptionally((throwable-> {
                     HttpResponse httpResponse = new HttpResponse(400,throwable.getMessage());
+                    LOGGER.error(throwable.getMessage());
                     return buildHttpExchange(httpRequest, httpResponse, stopwatch, now, attempts,FAILURE);
                 }));
 
@@ -139,7 +140,7 @@ public interface HttpClient<Q, S> {
 
     static TrustManagerFactory getTrustManagerFactory(Map<String,Object> config){
         if(config.containsKey(CONFIG_HTTP_CLIENT_SSL_TRUSTSTORE_ALWAYS_TRUST)&& Boolean.TRUE.equals(Boolean.parseBoolean(config.get(CONFIG_HTTP_CLIENT_SSL_TRUSTSTORE_ALWAYS_TRUST).toString()))){
-            LOGGER.warn("activating always trust feature : remote SSL certificates will always be granted");
+            LOGGER.warn("activating always trust any certificate feature : remote SSL certificates will always be granted");
             return new AlwaysTrustManagerFactory();
         }else {
             String trustStorePath = (String) config.get(CONFIG_HTTP_CLIENT_SSL_TRUSTSTORE_PATH);
