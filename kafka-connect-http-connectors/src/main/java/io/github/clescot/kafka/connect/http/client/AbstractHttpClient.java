@@ -2,6 +2,8 @@ package io.github.clescot.kafka.connect.http.client;
 
 import dev.failsafe.RateLimiter;
 import io.github.clescot.kafka.connect.http.core.HttpExchange;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nullable;
 import javax.net.ssl.KeyManagerFactory;
@@ -22,7 +24,7 @@ import java.util.concurrent.CompletableFuture;
 import static io.github.clescot.kafka.connect.http.sink.HttpSinkConfigDefinition.*;
 
 public abstract class AbstractHttpClient<Req, Res> implements HttpClient<Req, Res> {
-
+    private static final Logger LOGGER = LoggerFactory.getLogger(AbstractHttpClient.class);
     private static final String DEFAULT_SSL_PROTOCOL = "SSL";
     protected Map<String, Object> config;
     private Optional<RateLimiter<HttpExchange>> rateLimiter = Optional.empty();
@@ -35,10 +37,12 @@ public abstract class AbstractHttpClient<Req, Res> implements HttpClient<Req, Re
         if ((config.containsKey(CONFIG_HTTP_CLIENT_SSL_TRUSTSTORE_PATH)
                 && config.containsKey(CONFIG_HTTP_CLIENT_SSL_TRUSTSTORE_PASSWORD))||config.containsKey(CONFIG_HTTP_CLIENT_SSL_TRUSTSTORE_ALWAYS_TRUST)) {
 
-            Optional<TrustManagerFactory> trustManagerFactory = Optional.ofNullable(
+            Optional<TrustManagerFactory> trustManagerFactoryOption = Optional.ofNullable(
                     HttpClient.getTrustManagerFactory(config));
-            if (trustManagerFactory.isPresent()) {
-                return Optional.of(trustManagerFactory.get());
+            if (trustManagerFactoryOption.isPresent()) {
+                TrustManagerFactory trustManagerFactory = trustManagerFactoryOption.get();
+                LOGGER.info("using trustManagerFactory class : {}",trustManagerFactory.getClass().getName());
+                return Optional.of(trustManagerFactory);
             }
         }
         return Optional.empty();
@@ -47,16 +51,12 @@ public abstract class AbstractHttpClient<Req, Res> implements HttpClient<Req, Re
     protected Optional<KeyManagerFactory> getKeyManagerFactory() {
         if (config.containsKey(CONFIG_HTTP_CLIENT_SSL_KEYSTORE_PATH)
                 && config.containsKey(CONFIG_HTTP_CLIENT_SSL_KEYSTORE_PASSWORD)) {
-
-            Optional<KeyManagerFactory> keyManagerFactory = Optional.ofNullable(
+            return Optional.of(
                     getKeyManagerFactory(
                             config.get(CONFIG_HTTP_CLIENT_SSL_KEYSTORE_PATH).toString(),
                             config.get(CONFIG_HTTP_CLIENT_SSL_KEYSTORE_PASSWORD).toString().toCharArray(),
                             config.get(CONFIG_HTTP_CLIENT_SSL_KEYSTORE_TYPE).toString(),
                             config.get(CONFIG_HTTP_CLIENT_SSL_KEYSTORE_ALGORITHM).toString()));
-            if (keyManagerFactory.isPresent()) {
-                return Optional.of(keyManagerFactory.get());
-            }
         }
         return Optional.empty();
     }
@@ -95,6 +95,7 @@ public abstract class AbstractHttpClient<Req, Res> implements HttpClient<Req, Re
                                                 @Nullable String protocol){
         try {
             SSLContext sslContext = SSLContext.getInstance(Optional.ofNullable(protocol).orElse(DEFAULT_SSL_PROTOCOL));
+            //TODO add secureRandom seed parameter
             SecureRandom random = new SecureRandom();
             sslContext.init(keyManagerFactory!=null?keyManagerFactory.getKeyManagers():null,trustManagerFactory!=null?trustManagerFactory.getTrustManagers():null, random);
             return sslContext.getSocketFactory();

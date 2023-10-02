@@ -50,6 +50,7 @@
         <logback.version>1.4.11</logback.version>
         <maven.compiler.source>11</maven.compiler.source>
         <maven.compiler.target>11</maven.compiler.target>
+        <maven.plugin.validation>VERBOSE</maven.plugin.validation>
         <mockito.version>5.5.0</mockito.version>
         <micrometer.version>1.11.2</micrometer.version>
         <mockito.version>5.4.0</mockito.version>

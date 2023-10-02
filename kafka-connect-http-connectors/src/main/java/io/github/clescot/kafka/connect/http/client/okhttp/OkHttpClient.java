@@ -44,6 +44,10 @@ public class OkHttpClient extends AbstractHttpClient<Request, Response> {
     public static final String FILE_CACHE_TYPE = "file";
     public static final String CONNECTOR_NAME = "connector.name";
     public static final String CONNECTOR_TASK = "connector.task";
+    @java.lang.SuppressWarnings("java:S1075")
+    public static final String DEFAULT_IN_MEMORY_DIRECTORY_CACHE_PATH = "/kafka-connect-http-cache";
+    @java.lang.SuppressWarnings("java:S1075")
+    public static final String DEFAULT_FILE_DIRECTORY_CACHE_PATH = "/tmp/kafka-connect-http-cache";
 
 
     private final okhttp3.OkHttpClient client;
@@ -93,8 +97,8 @@ public class OkHttpClient extends AbstractHttpClient<Request, Response> {
         httpClientBuilder.addNetworkInterceptor(new LoggingInterceptor());
 
         //events
-        boolean includeLegacyHostTag = (boolean) config.getOrDefault(METER_REGISTRY_TAG_INCLUDE_LEGACY_HOST, false);
-        boolean includeUrlPath = (boolean) config.getOrDefault(METER_REGISTRY_TAG_INCLUDE_URL_PATH, false);
+        boolean includeLegacyHostTag = Boolean.parseBoolean((String) config.getOrDefault(METER_REGISTRY_TAG_INCLUDE_LEGACY_HOST, "false"));
+        boolean includeUrlPath = Boolean.parseBoolean((String) config.getOrDefault(METER_REGISTRY_TAG_INCLUDE_URL_PATH, "false"));
         if (!meterRegistry.getRegistries().isEmpty()) {
             List<String> tags = Lists.newArrayList();
             tags.add(Configuration.CONFIGURATION_ID);
@@ -177,6 +181,7 @@ public class OkHttpClient extends AbstractHttpClient<Request, Response> {
         Optional<KeyManagerFactory> keyManagerFactoryOption = getKeyManagerFactory();
         Optional<TrustManagerFactory> trustManagerFactoryOption = getTrustManagerFactory();
         if (keyManagerFactoryOption.isPresent() || trustManagerFactoryOption.isPresent()) {
+            //TODO SSLFactory protocol parameter
             SSLSocketFactory ssl = AbstractHttpClient.getSSLSocketFactory(keyManagerFactoryOption.orElse(null), trustManagerFactoryOption.orElse(null), "SSL");
             if (trustManagerFactoryOption.isPresent()) {
                 TrustManager[] trustManagers = trustManagerFactoryOption.get().getTrustManagers();
@@ -233,9 +238,9 @@ public class OkHttpClient extends AbstractHttpClient<Request, Response> {
             String cacheType = config.getOrDefault(OKHTTP_CACHE_TYPE, FILE_CACHE_TYPE).toString();
             String defaultDirectoryPath;
             if (IN_MEMORY_CACHE_TYPE.equalsIgnoreCase(cacheType)) {
-                defaultDirectoryPath = "/kafka-connect-http-cache";
+                defaultDirectoryPath = DEFAULT_IN_MEMORY_DIRECTORY_CACHE_PATH;
             } else {
-                defaultDirectoryPath = "/tmp/kafka-connect-http-cache";
+                defaultDirectoryPath = DEFAULT_FILE_DIRECTORY_CACHE_PATH;
             }
 
             String directoryPath = config.getOrDefault(OKHTTP_CACHE_DIRECTORY_PATH, defaultDirectoryPath).toString();

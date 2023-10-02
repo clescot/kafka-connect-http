@@ -287,24 +287,6 @@ public class AHCHttpClientTest {
 
         //given
         Map<String, Object> config = Maps.newHashMap();
-        config.put(CONFIG_HTTP_CLIENT_SSL_TRUSTSTORE_ALWAYS_TRUST, true);
-        //when
-        TrustManagerFactory trustManagerFactory = HttpClient.getTrustManagerFactory(config);
-        //then
-        assertThat(trustManagerFactory).isNotNull();
-        TrustManager[] trustManagers = trustManagerFactory.getTrustManagers();
-        assertThat(trustManagers).hasSize(1);
-        assertThat(trustManagers[0]).isInstanceOf(X509TrustManager.class);
-        X509TrustManager x509TrustManager = (X509TrustManager) trustManagers[0];
-        X509Certificate dummyCertificate = new DummyX509Certificate();
-        X509Certificate[] certs = new X509Certificate[]{dummyCertificate};
-        Assertions.assertThatCode(()->x509TrustManager.checkServerTrusted(certs,"RSA")).doesNotThrowAnyException();
-    }
-    @Test
-    public void test_getTrustManagerFactory_always_trust_with_boolean_value_as_string() {
-
-        //given
-        Map<String, Object> config = Maps.newHashMap();
         config.put(CONFIG_HTTP_CLIENT_SSL_TRUSTSTORE_ALWAYS_TRUST, "true");
         //when
         TrustManagerFactory trustManagerFactory = HttpClient.getTrustManagerFactory(config);
@@ -324,7 +306,7 @@ public class AHCHttpClientTest {
 
         //given
         Map<String, Object> config = Maps.newHashMap();
-        config.put(CONFIG_HTTP_CLIENT_SSL_TRUSTSTORE_ALWAYS_TRUST, false);
+        config.put(CONFIG_HTTP_CLIENT_SSL_TRUSTSTORE_ALWAYS_TRUST, "false");
         String truststorePath = Thread.currentThread().getContextClassLoader().getResource(HttpSinkTaskTest.CLIENT_TRUSTSTORE_JKS_FILENAME).getPath();
         config.put(CONFIG_HTTP_CLIENT_SSL_TRUSTSTORE_PATH, truststorePath);
         String password = HttpSinkTaskTest.CLIENT_TRUSTSTORE_JKS_PASSWORD;
