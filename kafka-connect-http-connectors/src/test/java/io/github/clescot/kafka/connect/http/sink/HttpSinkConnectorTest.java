@@ -15,46 +15,46 @@ public class HttpSinkConnectorTest {
 
 
         @Test
-        public void test_start_with_empty_map(){
+        void test_start_with_empty_map(){
             HttpSinkConnector httpSinkConnector = new HttpSinkConnector();
-            httpSinkConnector.start(Maps.newHashMap());
+            Assertions.assertDoesNotThrow(()->httpSinkConnector.start(Maps.newHashMap()));
         }
         @Test
-        public void test_start_with_null_map(){
+        void test_start_with_null_map(){
             HttpSinkConnector httpSinkConnector = new HttpSinkConnector();
             Assertions.assertThrows(NullPointerException.class,()->httpSinkConnector.start(null));
         }
 
         @Test
-        public void test_start_with_nominal_case(){
+        void test_start_with_nominal_case(){
             HttpSinkConnector httpSinkConnector = new HttpSinkConnector();
             Map<String, String> settings = Maps.newHashMap();
-            httpSinkConnector.start(settings);
+            Assertions.assertDoesNotThrow(()->httpSinkConnector.start(settings));
         }
 
 
         @Test
-        public void test_task_class_nominal_case(){
+        void test_task_class_nominal_case(){
             HttpSinkConnector httpSinkConnector = new HttpSinkConnector();
             Class<? extends Task> aClass = httpSinkConnector.taskClass();
             assertThat(aClass).isEqualTo(HttpSinkTask.class);
         }
 
         @Test
-        public void test_taskConfigs_nominal_case(){
+        void test_taskConfigs_nominal_case(){
             HttpSinkConnector httpSinkConnector = new HttpSinkConnector();
             Map<String, String> settings = Maps.newHashMap();
             httpSinkConnector.start(settings);
             List<Map<String, String>> maps = httpSinkConnector.taskConfigs(1);
-            assertThat(maps.size()).isEqualTo(1);
+            assertThat(maps).hasSize(1);
             assertThat(maps.get(0)).isEqualTo(settings);
         }
 
 
         @Test
-        public void test_calling_task_configs_but_not_start(){
+        void test_calling_task_configs_but_not_start(){
+            HttpSinkConnector httpSinkConnector = new HttpSinkConnector();
             Assertions.assertThrows(NullPointerException.class,()->{
-                    HttpSinkConnector httpSinkConnector = new HttpSinkConnector();
                     httpSinkConnector.taskConfigs(1);
                 }
             );
@@ -63,7 +63,7 @@ public class HttpSinkConnectorTest {
 
 
         @Test
-        public void test_2_tasks(){
+        void test_2_tasks(){
             HttpSinkConnector httpSinkConnector = new HttpSinkConnector();
             Map<String, String> settings = Maps.newHashMap();
             httpSinkConnector.start(settings);
@@ -75,11 +75,12 @@ public class HttpSinkConnectorTest {
 
 
         @Test
-        public void test_stop_nominal_case_without_ack_sender_already_initialized(){
+        void test_stop_nominal_case_without_ack_sender_already_initialized(){
             HttpSinkConnector httpSinkConnector = new HttpSinkConnector();
             Map<String, String> settings = Maps.newHashMap();
             httpSinkConnector.start(settings);
-            httpSinkConnector.stop();
+            Assertions.assertDoesNotThrow(httpSinkConnector::stop);
+
         }
 
 }
