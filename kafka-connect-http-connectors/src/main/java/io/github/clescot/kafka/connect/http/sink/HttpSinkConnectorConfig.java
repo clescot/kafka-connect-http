@@ -83,14 +83,6 @@ public class HttpSinkConnectorConfig extends AbstractConfig {
 
 
 
-
-
-
-
-
-
-
-
         this.queueName = Optional.ofNullable(getString(ConfigConstants.QUEUE_NAME)).orElse(QueueFactory.DEFAULT_QUEUE_NAME);
         if (QueueFactory.queueMapIsEmpty()) {
             LOGGER.warn("no pre-existing queue exists. this HttpSourceConnector has created a '{}' one. It needs to consume a queue filled with a SinkConnector. Ignore this message if a SinkConnector will be created after this one.", queueName);

@@ -162,7 +162,7 @@ public class HttpSinkTaskTest {
             Assertions.assertDoesNotThrow(() -> {
                 Map<String, String> settings = Maps.newHashMap();
                 settings.put(CONFIG_HTTP_CLIENT_SSL_TRUSTSTORE_ALWAYS_TRUST, "true");
-                new HttpSinkConnectorConfig(HttpSinkConfigDefinition.config(), settings);
+                httpSinkTask.start(settings);
 
             });
         }
