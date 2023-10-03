@@ -79,7 +79,7 @@ public class HttpSinkConnectorConfig extends AbstractConfig {
         this.meterRegistryTagIncludeLegacyHost = Boolean.parseBoolean(getString(METER_REGISTRY_TAG_INCLUDE_LEGACY_HOST));
         this.meterRegistryTagIncludeUrlPath = Boolean.parseBoolean(getString(METER_REGISTRY_TAG_INCLUDE_URL_PATH));
 
-        this.httpClientImplementation = getString(HTTP_CLIENT_IMPLEMENTATION);
+        this.httpClientImplementation = getString(CONFIG_HTTP_CLIENT_IMPLEMENTATION);
 
 
 

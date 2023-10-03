@@ -244,7 +244,7 @@ public class Configuration {
     private <Req, Res> HttpClient<Req, Res> buildHttpClient(Map<String, Object> config, ExecutorService executorService, CompositeMeterRegistry meterRegistry) {
 
         Class<? extends HttpClientFactory> httpClientFactoryClass;
-        String httpClientImplementation = (String) Optional.ofNullable(config.get(HTTP_CLIENT_IMPLEMENTATION)).orElse(OKHTTP_IMPLEMENTATION);
+        String httpClientImplementation = (String) Optional.ofNullable(config.get(CONFIG_HTTP_CLIENT_IMPLEMENTATION)).orElse(OKHTTP_IMPLEMENTATION);
         if (AHC_IMPLEMENTATION.equalsIgnoreCase(httpClientImplementation)) {
             httpClientFactoryClass = AHCHttpClientFactory.class;
         } else if (OKHTTP_IMPLEMENTATION.equalsIgnoreCase(httpClientImplementation)) {

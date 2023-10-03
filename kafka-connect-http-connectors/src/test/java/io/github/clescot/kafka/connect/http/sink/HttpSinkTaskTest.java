@@ -163,6 +163,7 @@ public class HttpSinkTaskTest {
                 Map<String, String> settings = Maps.newHashMap();
                 settings.put(CONFIG_HTTP_CLIENT_SSL_TRUSTSTORE_ALWAYS_TRUST, "true");
                 httpSinkTask.start(settings);
+                okhttp3.OkHttpClient internalClient = ((OkHttpClient) httpSinkTask.getHttpTask().getDefaultConfiguration().getHttpClient()).getInternalClient();
 
             });
         }
@@ -733,7 +734,7 @@ public class HttpSinkTaskTest {
 
             Map<String, String> settings = Maps.newHashMap();
             settings.put(CONFIG_DEFAULT_RATE_LIMITER_MAX_EXECUTIONS, "100");
-            settings.put(HTTP_CLIENT_IMPLEMENTATION, AHC_IMPLEMENTATION);
+            settings.put(CONFIG_HTTP_CLIENT_IMPLEMENTATION, AHC_IMPLEMENTATION);
             httpSinkTask.start(settings);
 
 
@@ -808,7 +809,7 @@ public class HttpSinkTaskTest {
 
             Map<String, String> settings = Maps.newHashMap();
             settings.put(CONFIG_DEFAULT_RATE_LIMITER_MAX_EXECUTIONS, "100");
-            settings.put(HTTP_CLIENT_IMPLEMENTATION, OKHTTP_IMPLEMENTATION);
+            settings.put(CONFIG_HTTP_CLIENT_IMPLEMENTATION, OKHTTP_IMPLEMENTATION);
             httpSinkTask.start(settings);
 
 
@@ -881,7 +882,7 @@ public class HttpSinkTaskTest {
 
             Map<String, String> settings = Maps.newHashMap();
             settings.put(CONFIG_DEFAULT_RATE_LIMITER_MAX_EXECUTIONS, "100");
-            settings.put(HTTP_CLIENT_IMPLEMENTATION, AHC_IMPLEMENTATION);
+            settings.put(CONFIG_HTTP_CLIENT_IMPLEMENTATION, AHC_IMPLEMENTATION);
             settings.put(CONFIG_HTTP_CLIENT_ASYNC_FIXED_THREAD_POOL_SIZE, "4");
 
             httpSinkTask.start(settings);
@@ -958,7 +959,7 @@ public class HttpSinkTaskTest {
 
             Map<String, String> settings = Maps.newHashMap();
             settings.put(CONFIG_DEFAULT_RATE_LIMITER_MAX_EXECUTIONS, "100");
-            settings.put(HTTP_CLIENT_IMPLEMENTATION, OKHTTP_IMPLEMENTATION);
+            settings.put(CONFIG_HTTP_CLIENT_IMPLEMENTATION, OKHTTP_IMPLEMENTATION);
             settings.put(CONFIG_HTTP_CLIENT_ASYNC_FIXED_THREAD_POOL_SIZE, ""+2);
             httpSinkTask.start(settings);
 

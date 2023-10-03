@@ -129,4 +129,5 @@ public abstract class AbstractHttpClient<Req, Res> implements HttpClient<Req, Re
         return this.rateLimiter;
     }
 
+    public abstract Object getInternalClient();
 }

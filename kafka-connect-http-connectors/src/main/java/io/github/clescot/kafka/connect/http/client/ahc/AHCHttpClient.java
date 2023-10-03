@@ -336,4 +336,8 @@ public class AHCHttpClient extends AbstractHttpClient<Request, Response> {
         return asyncClient;
     }
 
+    @Override
+    public AsyncHttpClient getInternalClient() {
+        return asyncHttpClient;
+    }
 }
