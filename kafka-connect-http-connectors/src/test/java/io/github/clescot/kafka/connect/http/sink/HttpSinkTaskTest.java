@@ -13,6 +13,7 @@ import com.google.common.collect.Maps;
 import io.github.clescot.kafka.connect.http.HttpTask;
 import io.github.clescot.kafka.connect.http.client.ahc.AHCHttpClient;
 import io.github.clescot.kafka.connect.http.client.okhttp.OkHttpClient;
+import io.github.clescot.kafka.connect.http.client.ssl.AlwaysTrustManagerFactory;
 import io.github.clescot.kafka.connect.http.core.HttpExchange;
 import io.github.clescot.kafka.connect.http.core.HttpRequest;
 import io.github.clescot.kafka.connect.http.core.HttpResponse;
@@ -41,6 +42,7 @@ import org.skyscreamer.jsonassert.comparator.CustomComparator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.net.ssl.TrustManagerFactory;
 import java.time.OffsetDateTime;
 import java.time.ZoneId;
 import java.util.*;
@@ -85,9 +87,10 @@ public class HttpSinkTaskTest {
             .build();
 
     @BeforeAll
-    public static void init(){
+    public static void init() {
         HttpTask.setThreadPoolSize(2);
     }
+
     @BeforeEach
     public void setUp() {
         QueueFactory.clearRegistrations();
@@ -102,13 +105,14 @@ public class HttpSinkTaskTest {
     }
 
     @AfterAll
-    public static void shutdown(){
+    public static void shutdown() {
 
 //        Awaitility.await()
 //                .timeout(660, SECONDS)
 //                .pollDelay(650, SECONDS)
 //                .untilAsserted(() -> Assertions.assertTrue(true));
     }
+
     @Test
     void test_start_with_queue_name() {
         Assertions.assertDoesNotThrow(() -> {
@@ -159,13 +163,11 @@ public class HttpSinkTaskTest {
 
         @Test
         void test_ssl_always_granted_parameter() {
-            Assertions.assertDoesNotThrow(() -> {
-                Map<String, String> settings = Maps.newHashMap();
-                settings.put(CONFIG_HTTP_CLIENT_SSL_TRUSTSTORE_ALWAYS_TRUST, "true");
-                httpSinkTask.start(settings);
-                okhttp3.OkHttpClient internalClient = ((OkHttpClient) httpSinkTask.getHttpTask().getDefaultConfiguration().getHttpClient()).getInternalClient();
-
-            });
+            Map<String, String> settings = Maps.newHashMap();
+            settings.put(CONFIG_HTTP_CLIENT_SSL_TRUSTSTORE_ALWAYS_TRUST, "true");
+            httpSinkTask.start(settings);
+            TrustManagerFactory trustManagerFactory = httpSinkTask.getHttpTask().getDefaultConfiguration().getHttpClient().getTrustManagerFactory();
+            assertThat(trustManagerFactory).isInstanceOf(AlwaysTrustManagerFactory.class);
         }
 
         @Test
@@ -202,7 +204,7 @@ public class HttpSinkTaskTest {
         void test_meter_registry_activate_jmx() {
             Assertions.assertDoesNotThrow(() -> {
                 HashMap<String, String> settings = Maps.newHashMap();
-                settings.put(METER_REGISTRY_EXPORTER_JMX_ACTIVATE,"true");
+                settings.put(METER_REGISTRY_EXPORTER_JMX_ACTIVATE, "true");
                 httpSinkTask.start(settings);
 
                 //given
@@ -272,7 +274,7 @@ public class HttpSinkTaskTest {
                 List<Meter> meters = meterRegistry1.getMeters();
                 assertThat(meters).isNotEmpty();
                 for (Meter meter : meters) {
-                    LOGGER.info("meter : {}",meter.getId());
+                    LOGGER.info("meter : {}", meter.getId());
                 }
             });
         }
@@ -281,8 +283,8 @@ public class HttpSinkTaskTest {
         void test_meter_registry_activate_prometheus() {
             Assertions.assertDoesNotThrow(() -> {
                 HashMap<String, String> settings = Maps.newHashMap();
-                settings.put(METER_REGISTRY_EXPORTER_PROMETHEUS_ACTIVATE,"true");
-                settings.put(METER_REGISTRY_EXPORTER_PROMETHEUS_PORT,"9090");
+                settings.put(METER_REGISTRY_EXPORTER_PROMETHEUS_ACTIVATE, "true");
+                settings.put(METER_REGISTRY_EXPORTER_PROMETHEUS_PORT, "9090");
                 httpSinkTask.start(settings);
 
                 //given
@@ -352,17 +354,18 @@ public class HttpSinkTaskTest {
                 List<Meter> meters = meterRegistry1.getMeters();
                 assertThat(meters).isNotEmpty();
                 for (Meter meter : meters) {
-                    LOGGER.info("meter : {}",meter.getId());
+                    LOGGER.info("meter : {}", meter.getId());
                 }
             });
         }
+
         @Test
         void test_meter_registry_activate_jmx_and_prometheus() {
             Assertions.assertDoesNotThrow(() -> {
                 HashMap<String, String> settings = Maps.newHashMap();
-                settings.put(METER_REGISTRY_EXPORTER_JMX_ACTIVATE,"true");
-                settings.put(METER_REGISTRY_EXPORTER_PROMETHEUS_ACTIVATE,"true");
-                settings.put(METER_REGISTRY_EXPORTER_PROMETHEUS_PORT,"9090");
+                settings.put(METER_REGISTRY_EXPORTER_JMX_ACTIVATE, "true");
+                settings.put(METER_REGISTRY_EXPORTER_PROMETHEUS_ACTIVATE, "true");
+                settings.put(METER_REGISTRY_EXPORTER_PROMETHEUS_PORT, "9090");
                 httpSinkTask.start(settings);
 
                 //given
@@ -428,13 +431,13 @@ public class HttpSinkTaskTest {
                 assertThat(registries).hasSize(2);
                 List<MeterRegistry> meterRegistryList = Arrays.asList(registries.toArray(new MeterRegistry[0]));
                 MeterRegistry meterRegistry1 = meterRegistryList.get(0);
-                assertThat(JmxMeterRegistry.class.isAssignableFrom(meterRegistry1.getClass())||PrometheusMeterRegistry.class.isAssignableFrom(meterRegistry1.getClass()));
+                assertThat(JmxMeterRegistry.class.isAssignableFrom(meterRegistry1.getClass()) || PrometheusMeterRegistry.class.isAssignableFrom(meterRegistry1.getClass()));
                 MeterRegistry meterRegistry2 = meterRegistryList.get(1);
-                assertThat(PrometheusMeterRegistry.class.isAssignableFrom(meterRegistry2.getClass())||JmxMeterRegistry.class.isAssignableFrom(meterRegistry2.getClass()));
+                assertThat(PrometheusMeterRegistry.class.isAssignableFrom(meterRegistry2.getClass()) || JmxMeterRegistry.class.isAssignableFrom(meterRegistry2.getClass()));
                 List<Meter> meters = meterRegistry1.getMeters();
                 assertThat(meters).isNotEmpty();
                 for (Meter meter : meters) {
-                    LOGGER.info("meter : {}",meter.getId());
+                    LOGGER.info("meter : {}", meter.getId());
                 }
             });
         }
@@ -443,17 +446,17 @@ public class HttpSinkTaskTest {
         void test_meter_registry_activate_jmx_and_prometheus_with_all_bindings() {
             Assertions.assertDoesNotThrow(() -> {
                 HashMap<String, String> settings = Maps.newHashMap();
-                settings.put(METER_REGISTRY_EXPORTER_JMX_ACTIVATE,"true");
-                settings.put(METER_REGISTRY_EXPORTER_PROMETHEUS_ACTIVATE,"true");
-                settings.put(METER_REGISTRY_EXPORTER_PROMETHEUS_PORT,"9090");
-                settings.put(METER_REGISTRY_BIND_METRICS_EXECUTOR_SERVICE,"true");
-                settings.put(METER_REGISTRY_BIND_METRICS_JVM_MEMORY,"true");
-                settings.put(METER_REGISTRY_BIND_METRICS_JVM_THREAD,"true");
-                settings.put(METER_REGISTRY_BIND_METRICS_JVM_INFO,"true");
-                settings.put(METER_REGISTRY_BIND_METRICS_JVM_GC,"true");
-                settings.put(METER_REGISTRY_BIND_METRICS_JVM_CLASSLOADER,"true");
-                settings.put(METER_REGISTRY_BIND_METRICS_JVM_PROCESSOR,"true");
-                settings.put(METER_REGISTRY_BIND_METRICS_LOGBACK,"true");
+                settings.put(METER_REGISTRY_EXPORTER_JMX_ACTIVATE, "true");
+                settings.put(METER_REGISTRY_EXPORTER_PROMETHEUS_ACTIVATE, "true");
+                settings.put(METER_REGISTRY_EXPORTER_PROMETHEUS_PORT, "9090");
+                settings.put(METER_REGISTRY_BIND_METRICS_EXECUTOR_SERVICE, "true");
+                settings.put(METER_REGISTRY_BIND_METRICS_JVM_MEMORY, "true");
+                settings.put(METER_REGISTRY_BIND_METRICS_JVM_THREAD, "true");
+                settings.put(METER_REGISTRY_BIND_METRICS_JVM_INFO, "true");
+                settings.put(METER_REGISTRY_BIND_METRICS_JVM_GC, "true");
+                settings.put(METER_REGISTRY_BIND_METRICS_JVM_CLASSLOADER, "true");
+                settings.put(METER_REGISTRY_BIND_METRICS_JVM_PROCESSOR, "true");
+                settings.put(METER_REGISTRY_BIND_METRICS_LOGBACK, "true");
                 httpSinkTask.start(settings);
 
                 //given
@@ -519,13 +522,13 @@ public class HttpSinkTaskTest {
                 assertThat(registries).hasSize(2);
                 List<MeterRegistry> meterRegistryList = Arrays.asList(registries.toArray(new MeterRegistry[0]));
                 MeterRegistry meterRegistry1 = meterRegistryList.get(0);
-                assertThat(JmxMeterRegistry.class.isAssignableFrom(meterRegistry1.getClass())||PrometheusMeterRegistry.class.isAssignableFrom(meterRegistry1.getClass()));
+                assertThat(JmxMeterRegistry.class.isAssignableFrom(meterRegistry1.getClass()) || PrometheusMeterRegistry.class.isAssignableFrom(meterRegistry1.getClass()));
                 MeterRegistry meterRegistry2 = meterRegistryList.get(1);
-                assertThat(PrometheusMeterRegistry.class.isAssignableFrom(meterRegistry2.getClass())||JmxMeterRegistry.class.isAssignableFrom(meterRegistry2.getClass()));
+                assertThat(PrometheusMeterRegistry.class.isAssignableFrom(meterRegistry2.getClass()) || JmxMeterRegistry.class.isAssignableFrom(meterRegistry2.getClass()));
                 List<Meter> meters = meterRegistry1.getMeters();
                 assertThat(meters).isNotEmpty();
                 for (Meter meter : meters) {
-                    LOGGER.info("meter : {}",meter.getId());
+                    LOGGER.info("meter : {}", meter.getId());
                 }
             });
         }
@@ -534,15 +537,16 @@ public class HttpSinkTaskTest {
     }
 
     @Nested
-    class Stop{
+    class Stop {
         @Test
         void test_stop_with_start_and_no_setttings() {
             httpSinkTask.start(Maps.newHashMap());
-            Assertions.assertDoesNotThrow(()->httpSinkTask.stop());
+            Assertions.assertDoesNotThrow(() -> httpSinkTask.stop());
         }
+
         @Test
         void test_stop_without_start() {
-            Assertions.assertDoesNotThrow(()->httpSinkTask.stop());
+            Assertions.assertDoesNotThrow(() -> httpSinkTask.stop());
         }
 
     }
@@ -960,7 +964,7 @@ public class HttpSinkTaskTest {
             Map<String, String> settings = Maps.newHashMap();
             settings.put(CONFIG_DEFAULT_RATE_LIMITER_MAX_EXECUTIONS, "100");
             settings.put(CONFIG_HTTP_CLIENT_IMPLEMENTATION, OKHTTP_IMPLEMENTATION);
-            settings.put(CONFIG_HTTP_CLIENT_ASYNC_FIXED_THREAD_POOL_SIZE, ""+2);
+            settings.put(CONFIG_HTTP_CLIENT_ASYNC_FIXED_THREAD_POOL_SIZE, "" + 2);
             httpSinkTask.start(settings);
 
 
@@ -1075,8 +1079,6 @@ public class HttpSinkTaskTest {
     }
 
 
-
-
     private HttpExchange getDummyHttpExchange() {
         Map<String, List<String>> requestHeaders = Maps.newHashMap();
         requestHeaders.put("X-dummy", Lists.newArrayList("blabla"));
@@ -1097,8 +1099,6 @@ public class HttpSinkTaskTest {
                 true
         );
     }
-
-
 
 
     private String getLocalHttpRequestAsStringWithPath(int port, String path) {
