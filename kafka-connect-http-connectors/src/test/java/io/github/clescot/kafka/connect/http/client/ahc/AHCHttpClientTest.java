@@ -269,10 +269,10 @@ class AHCHttpClientTest {
         String truststorePath = Thread.currentThread().getContextClassLoader().getResource(HttpSinkTaskTest.CLIENT_TRUSTSTORE_JKS_FILENAME).getPath();
         String password = HttpSinkTaskTest.CLIENT_TRUSTSTORE_JKS_PASSWORD;
         Map<String, Object> config = Maps.newHashMap();
-        config.put(CONFIG_HTTP_CLIENT_SSL_TRUSTSTORE_PATH, truststorePath);
-        config.put(CONFIG_HTTP_CLIENT_SSL_TRUSTSTORE_PASSWORD, password);
-        config.put(CONFIG_HTTP_CLIENT_SSL_TRUSTSTORE_TYPE, HttpSinkTaskTest.JKS_STORE_TYPE);
-        config.put(CONFIG_HTTP_CLIENT_SSL_TRUSTSTORE_ALGORITHM, HttpSinkTaskTest.TRUSTSTORE_PKIX_ALGORITHM);
+        config.put(HTTP_CLIENT_SSL_TRUSTSTORE_PATH, truststorePath);
+        config.put(HTTP_CLIENT_SSL_TRUSTSTORE_PASSWORD, password);
+        config.put(HTTP_CLIENT_SSL_TRUSTSTORE_TYPE, HttpSinkTaskTest.JKS_STORE_TYPE);
+        config.put(HTTP_CLIENT_SSL_TRUSTSTORE_ALGORITHM, HttpSinkTaskTest.TRUSTSTORE_PKIX_ALGORITHM);
         //when
         TrustManagerFactory trustManagerFactory = HttpClient.getTrustManagerFactory(config);
         //then
@@ -285,7 +285,7 @@ class AHCHttpClientTest {
 
         //given
         Map<String, Object> config = Maps.newHashMap();
-        config.put(CONFIG_HTTP_CLIENT_SSL_TRUSTSTORE_ALWAYS_TRUST, "true");
+        config.put(HTTP_CLIENT_SSL_TRUSTSTORE_ALWAYS_TRUST, "true");
         //when
         TrustManagerFactory trustManagerFactory = HttpClient.getTrustManagerFactory(config);
         //then
@@ -304,13 +304,13 @@ class AHCHttpClientTest {
 
         //given
         Map<String, Object> config = Maps.newHashMap();
-        config.put(CONFIG_HTTP_CLIENT_SSL_TRUSTSTORE_ALWAYS_TRUST, "false");
+        config.put(HTTP_CLIENT_SSL_TRUSTSTORE_ALWAYS_TRUST, "false");
         String truststorePath = Thread.currentThread().getContextClassLoader().getResource(HttpSinkTaskTest.CLIENT_TRUSTSTORE_JKS_FILENAME).getPath();
-        config.put(CONFIG_HTTP_CLIENT_SSL_TRUSTSTORE_PATH, truststorePath);
+        config.put(HTTP_CLIENT_SSL_TRUSTSTORE_PATH, truststorePath);
         String password = HttpSinkTaskTest.CLIENT_TRUSTSTORE_JKS_PASSWORD;
-        config.put(CONFIG_HTTP_CLIENT_SSL_TRUSTSTORE_PASSWORD, password);
-        config.put(CONFIG_HTTP_CLIENT_SSL_TRUSTSTORE_TYPE, HttpSinkTaskTest.JKS_STORE_TYPE);
-        config.put(CONFIG_HTTP_CLIENT_SSL_TRUSTSTORE_ALGORITHM, HttpSinkTaskTest.TRUSTSTORE_PKIX_ALGORITHM);
+        config.put(HTTP_CLIENT_SSL_TRUSTSTORE_PASSWORD, password);
+        config.put(HTTP_CLIENT_SSL_TRUSTSTORE_TYPE, HttpSinkTaskTest.JKS_STORE_TYPE);
+        config.put(HTTP_CLIENT_SSL_TRUSTSTORE_ALGORITHM, HttpSinkTaskTest.TRUSTSTORE_PKIX_ALGORITHM);
         //when
         TrustManagerFactory trustManagerFactory = HttpClient.getTrustManagerFactory(config);
         //then

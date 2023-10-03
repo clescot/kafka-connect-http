@@ -1004,7 +1004,7 @@ class OkHttpClientTest {
 
             //given
             Map<String, Object> config = Maps.newHashMap();
-            config.put(CONFIG_HTTP_CLIENT_SSL_TRUSTSTORE_ALWAYS_TRUST, "true");
+            config.put(HTTP_CLIENT_SSL_TRUSTSTORE_ALWAYS_TRUST, "true");
             //when
             TrustManagerFactory trustManagerFactory = HttpClient.getTrustManagerFactory(config);
             //then
@@ -1023,7 +1023,7 @@ class OkHttpClientTest {
             //given
             String bodyResponse = "{\"result\":\"pong\"}";
             Map<String, Object> config = Maps.newHashMap();
-            config.put(CONFIG_HTTP_CLIENT_SSL_TRUSTSTORE_ALWAYS_TRUST, "true");
+            config.put(HTTP_CLIENT_SSL_TRUSTSTORE_ALWAYS_TRUST, "true");
             config.put(OKHTTP_SSL_SKIP_HOSTNAME_VERIFICATION, "true");
             WireMockRuntimeInfo wmRuntimeInfo = wmHttp.getRuntimeInfo();
             WireMock wireMock = wmRuntimeInfo.getWireMock();

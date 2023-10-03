@@ -129,8 +129,8 @@ public class HttpSinkTaskTest {
             Assertions.assertDoesNotThrow(() -> {
                 Map<String, String> settings = Maps.newHashMap();
                 String truststorePath = Thread.currentThread().getContextClassLoader().getResource(CLIENT_TRUSTSTORE_JKS_FILENAME).getPath();
-                settings.put(CONFIG_HTTP_CLIENT_SSL_TRUSTSTORE_PATH, truststorePath);
-                settings.put(CONFIG_HTTP_CLIENT_SSL_TRUSTSTORE_PASSWORD, CLIENT_TRUSTSTORE_JKS_PASSWORD);
+                settings.put(HTTP_CLIENT_SSL_TRUSTSTORE_PATH, truststorePath);
+                settings.put(HTTP_CLIENT_SSL_TRUSTSTORE_PASSWORD, CLIENT_TRUSTSTORE_JKS_PASSWORD);
                 httpSinkTask.start(settings);
             });
         }
@@ -140,9 +140,9 @@ public class HttpSinkTaskTest {
             Assertions.assertDoesNotThrow(() -> {
                 Map<String, String> settings = Maps.newHashMap();
                 String truststorePath = Thread.currentThread().getContextClassLoader().getResource(CLIENT_TRUSTSTORE_JKS_FILENAME).getPath();
-                settings.put(CONFIG_HTTP_CLIENT_SSL_TRUSTSTORE_PATH, truststorePath);
-                settings.put(CONFIG_HTTP_CLIENT_SSL_TRUSTSTORE_PASSWORD, CLIENT_TRUSTSTORE_JKS_PASSWORD);
-                settings.put(CONFIG_HTTP_CLIENT_SSL_TRUSTSTORE_TYPE, JKS_STORE_TYPE);
+                settings.put(HTTP_CLIENT_SSL_TRUSTSTORE_PATH, truststorePath);
+                settings.put(HTTP_CLIENT_SSL_TRUSTSTORE_PASSWORD, CLIENT_TRUSTSTORE_JKS_PASSWORD);
+                settings.put(HTTP_CLIENT_SSL_TRUSTSTORE_TYPE, JKS_STORE_TYPE);
                 httpSinkTask.start(settings);
             });
 
