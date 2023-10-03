@@ -10,12 +10,12 @@ import java.security.KeyStoreException;
 public class AlwaysTrustManagerFactorySpi extends TrustManagerFactorySpi {
     @Override
     protected void engineInit(KeyStore ks) throws KeyStoreException {
-
+        //no init is needed as we only build AlwaysTrustManager instance
     }
 
     @Override
     protected void engineInit(ManagerFactoryParameters spec) throws InvalidAlgorithmParameterException {
-
+        //no init is needed as we only build AlwaysTrustManager instance
     }
 
     @Override

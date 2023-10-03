@@ -139,21 +139,21 @@ public interface HttpClient<Q, S> {
     }
 
     static TrustManagerFactory getTrustManagerFactory(Map<String,Object> config){
-        if(config.containsKey(CONFIG_HTTP_CLIENT_SSL_TRUSTSTORE_ALWAYS_TRUST)&& Boolean.TRUE.equals(Boolean.parseBoolean(config.get(CONFIG_HTTP_CLIENT_SSL_TRUSTSTORE_ALWAYS_TRUST).toString()))){
-            LOGGER.warn("activating always trust any certificate feature : remote SSL certificates will always be granted");
+        if(config.containsKey(HTTP_CLIENT_SSL_TRUSTSTORE_ALWAYS_TRUST)&& Boolean.TRUE.equals(Boolean.parseBoolean(config.get(HTTP_CLIENT_SSL_TRUSTSTORE_ALWAYS_TRUST).toString()))){
+            LOGGER.warn("/!\\ activating 'always trust any certificate' feature : remote SSL certificates will always be granted. Use this feature at your own risk ! ");
             return new AlwaysTrustManagerFactory();
         }else {
-            String trustStorePath = (String) config.get(CONFIG_HTTP_CLIENT_SSL_TRUSTSTORE_PATH);
+            String trustStorePath = (String) config.get(HTTP_CLIENT_SSL_TRUSTSTORE_PATH);
             Preconditions.checkNotNull(trustStorePath, CONFIG_HTTP_CLIENT_SSL_TRUSTSTORE_PATH + IS_NOT_SET);
 
-            String truststorePassword = (String) config.get(CONFIG_HTTP_CLIENT_SSL_TRUSTSTORE_PASSWORD);
+            String truststorePassword = (String) config.get(HTTP_CLIENT_SSL_TRUSTSTORE_PASSWORD);
             Preconditions.checkNotNull(truststorePassword, CONFIG_HTTP_CLIENT_SSL_TRUSTSTORE_PASSWORD + IS_NOT_SET);
 
-            String trustStoreType = (String) config.get(CONFIG_HTTP_CLIENT_SSL_TRUSTSTORE_TYPE);
+            String trustStoreType = (String) config.get(HTTP_CLIENT_SSL_TRUSTSTORE_TYPE);
             Preconditions.checkNotNull(trustStoreType, CONFIG_HTTP_CLIENT_SSL_TRUSTSTORE_TYPE + IS_NOT_SET);
 
-            String truststoreAlgorithm = (String) config.get(CONFIG_HTTP_CLIENT_SSL_TRUSTSTORE_ALGORITHM);
-            Preconditions.checkNotNull(truststoreAlgorithm, CONFIG_HTTP_CLIENT_SSL_TRUSTSTORE_ALGORITHM + IS_NOT_SET);
+            String truststoreAlgorithm = (String) config.get(HTTP_CLIENT_SSL_TRUSTSTORE_ALGORITHM);
+            Preconditions.checkNotNull(truststoreAlgorithm, HTTP_CLIENT_SSL_TRUSTSTORE_ALGORITHM + IS_NOT_SET);
 
             return getTrustManagerFactory(
                     trustStorePath,
@@ -167,4 +167,6 @@ public interface HttpClient<Q, S> {
     void setRateLimiter(RateLimiter<HttpExchange> rateLimiter);
 
     Optional<RateLimiter<HttpExchange>> getRateLimiter();
+
+    TrustManagerFactory getTrustManagerFactory();
 }

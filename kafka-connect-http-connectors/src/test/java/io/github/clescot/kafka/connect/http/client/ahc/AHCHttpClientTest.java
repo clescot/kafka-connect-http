@@ -4,10 +4,10 @@ import com.google.common.base.Stopwatch;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import io.github.clescot.kafka.connect.http.client.DummyX509Certificate;
+import io.github.clescot.kafka.connect.http.client.HttpClient;
 import io.github.clescot.kafka.connect.http.core.HttpRequest;
 import io.github.clescot.kafka.connect.http.core.HttpResponse;
 import io.github.clescot.kafka.connect.http.sink.HttpSinkTaskTest;
-import io.github.clescot.kafka.connect.http.client.HttpClient;
 import org.assertj.core.api.Assertions;
 import org.asynchttpclient.AsyncHttpClient;
 import org.asynchttpclient.ListenableFuture;
@@ -23,7 +23,6 @@ import javax.net.ssl.TrustManager;
 import javax.net.ssl.TrustManagerFactory;
 import javax.net.ssl.X509TrustManager;
 import java.io.IOException;
-import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.time.OffsetDateTime;
 import java.time.ZoneId;
@@ -34,15 +33,14 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static io.github.clescot.kafka.connect.http.sink.HttpSinkConfigDefinition.*;
-import static io.github.clescot.kafka.connect.http.sink.HttpSinkConfigDefinition.CONFIG_HTTP_CLIENT_SSL_TRUSTSTORE_ALGORITHM;
 import static io.github.clescot.kafka.connect.http.client.ahc.AHCHttpClient.SUCCESS;
 import static io.github.clescot.kafka.connect.http.client.config.AddMissingCorrelationIdHeaderToHttpRequestFunction.HEADER_X_CORRELATION_ID;
 import static io.github.clescot.kafka.connect.http.client.config.AddMissingRequestIdHeaderToHttpRequestFunction.HEADER_X_REQUEST_ID;
+import static io.github.clescot.kafka.connect.http.sink.HttpSinkConfigDefinition.*;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.when;
 
-public class AHCHttpClientTest {
+class AHCHttpClientTest {
 
     private AsyncHttpClient asyncHttpClient;
 
@@ -52,7 +50,7 @@ public class AHCHttpClientTest {
     }
 
     @Test
-    public void build_HttpExchange_test_all_null() {
+    void build_HttpExchange_test_all_null() {
         AHCHttpClient httpClient = new AHCHttpClient(asyncHttpClient);
         org.junit.jupiter.api.Assertions.assertThrows(NullPointerException.class, () ->
                 httpClient.buildHttpExchange(null,
@@ -66,7 +64,7 @@ public class AHCHttpClientTest {
 
 
     @Test
-    public void build_HttpExchange_test_message_is_null() {
+    void build_HttpExchange_test_message_is_null() {
         AHCHttpClient httpClient = new AHCHttpClient(asyncHttpClient);
         org.junit.jupiter.api.Assertions.assertThrows(NullPointerException.class, () ->
                 httpClient.buildHttpExchange(null,
@@ -78,7 +76,7 @@ public class AHCHttpClientTest {
     }
 
     @Test
-    public void build_HttpExchange_test_response_code_is_lower_than_0() {
+    void build_HttpExchange_test_response_code_is_lower_than_0() {
         AHCHttpClient httpClient = new AHCHttpClient(asyncHttpClient);
         org.junit.jupiter.api.Assertions.assertThrows(IllegalArgumentException.class, () -> httpClient.buildHttpExchange(getDummyHttpRequest(),
                 getDummyHttpResponse(-12),
@@ -90,7 +88,7 @@ public class AHCHttpClientTest {
 
 
     @Test
-    public void build_HttpExchange_test_nominal_case() {
+    void build_HttpExchange_test_nominal_case() {
         HashMap<String,
                 String> vars = Maps.newHashMap();
         AHCHttpClient httpClient = new AHCHttpClient(asyncHttpClient);
@@ -114,7 +112,7 @@ public class AHCHttpClientTest {
 
 
     @Test
-    public void call_test_nominal_case() throws ExecutionException, InterruptedException {
+    void call_test_nominal_case() throws ExecutionException, InterruptedException {
 
         //given
         AsyncHttpClient asyncHttpClient = Mockito.mock(AsyncHttpClient.class);
@@ -149,7 +147,7 @@ public class AHCHttpClientTest {
     }
 
     @Test
-    public void call_test_any_positive_int_success_code_lower_than_500() throws ExecutionException, InterruptedException {
+    void call_test_any_positive_int_success_code_lower_than_500() throws ExecutionException, InterruptedException {
         //given
         AsyncHttpClient asyncHttpClient = Mockito.mock(AsyncHttpClient.class);
         ListenableFuture<Response> listener = Mockito.mock(ListenableFuture.class);
@@ -178,7 +176,7 @@ public class AHCHttpClientTest {
 
 
     @Test
-    public void call_test_failure_server_side() throws ExecutionException, InterruptedException {
+    void call_test_failure_server_side() throws ExecutionException, InterruptedException {
         //given
         AsyncHttpClient asyncHttpClient = Mockito.mock(AsyncHttpClient.class);
         ListenableFuture<Response> listener = Mockito.mock(ListenableFuture.class);
@@ -204,7 +202,7 @@ public class AHCHttpClientTest {
     }
 
     @Test
-    public void call_test_failure_client_side() throws ExecutionException, InterruptedException {
+    void call_test_failure_client_side() throws ExecutionException, InterruptedException {
         //given
         AsyncHttpClient asyncHttpClient = Mockito.mock(AsyncHttpClient.class);
         ListenableFuture<Response> listener = Mockito.mock(ListenableFuture.class);
@@ -230,7 +228,7 @@ public class AHCHttpClientTest {
     }
 
     @Test
-    public void test_build_http_request_nominal_case() {
+    void test_build_http_request_nominal_case() {
         //given
         AsyncHttpClient asyncHttpClient = Mockito.mock(AsyncHttpClient.class);
         AHCHttpClient httpClient = new AHCHttpClient(asyncHttpClient);
@@ -265,16 +263,16 @@ public class AHCHttpClientTest {
     }
 
     @Test
-    public void test_getTrustManagerFactory_jks_nominal_case() {
+    void test_getTrustManagerFactory_jks_nominal_case() {
 
         //given
         String truststorePath = Thread.currentThread().getContextClassLoader().getResource(HttpSinkTaskTest.CLIENT_TRUSTSTORE_JKS_FILENAME).getPath();
         String password = HttpSinkTaskTest.CLIENT_TRUSTSTORE_JKS_PASSWORD;
         Map<String, Object> config = Maps.newHashMap();
-        config.put(CONFIG_HTTP_CLIENT_SSL_TRUSTSTORE_PATH, truststorePath);
-        config.put(CONFIG_HTTP_CLIENT_SSL_TRUSTSTORE_PASSWORD, password);
-        config.put(CONFIG_HTTP_CLIENT_SSL_TRUSTSTORE_TYPE, HttpSinkTaskTest.JKS_STORE_TYPE);
-        config.put(CONFIG_HTTP_CLIENT_SSL_TRUSTSTORE_ALGORITHM, HttpSinkTaskTest.TRUSTSTORE_PKIX_ALGORITHM);
+        config.put(HTTP_CLIENT_SSL_TRUSTSTORE_PATH, truststorePath);
+        config.put(HTTP_CLIENT_SSL_TRUSTSTORE_PASSWORD, password);
+        config.put(HTTP_CLIENT_SSL_TRUSTSTORE_TYPE, HttpSinkTaskTest.JKS_STORE_TYPE);
+        config.put(HTTP_CLIENT_SSL_TRUSTSTORE_ALGORITHM, HttpSinkTaskTest.TRUSTSTORE_PKIX_ALGORITHM);
         //when
         TrustManagerFactory trustManagerFactory = HttpClient.getTrustManagerFactory(config);
         //then
@@ -283,11 +281,11 @@ public class AHCHttpClientTest {
     }
 
     @Test
-    public void test_getTrustManagerFactory_always_trust() {
+    void test_getTrustManagerFactory_always_trust() {
 
         //given
         Map<String, Object> config = Maps.newHashMap();
-        config.put(CONFIG_HTTP_CLIENT_SSL_TRUSTSTORE_ALWAYS_TRUST, "true");
+        config.put(HTTP_CLIENT_SSL_TRUSTSTORE_ALWAYS_TRUST, "true");
         //when
         TrustManagerFactory trustManagerFactory = HttpClient.getTrustManagerFactory(config);
         //then
@@ -302,17 +300,17 @@ public class AHCHttpClientTest {
     }
 
     @Test
-    public void test_getTrustManagerFactory_always_trust_set_to_false() throws CertificateException {
+    void test_getTrustManagerFactory_always_trust_set_to_false() {
 
         //given
         Map<String, Object> config = Maps.newHashMap();
-        config.put(CONFIG_HTTP_CLIENT_SSL_TRUSTSTORE_ALWAYS_TRUST, "false");
+        config.put(HTTP_CLIENT_SSL_TRUSTSTORE_ALWAYS_TRUST, "false");
         String truststorePath = Thread.currentThread().getContextClassLoader().getResource(HttpSinkTaskTest.CLIENT_TRUSTSTORE_JKS_FILENAME).getPath();
-        config.put(CONFIG_HTTP_CLIENT_SSL_TRUSTSTORE_PATH, truststorePath);
+        config.put(HTTP_CLIENT_SSL_TRUSTSTORE_PATH, truststorePath);
         String password = HttpSinkTaskTest.CLIENT_TRUSTSTORE_JKS_PASSWORD;
-        config.put(CONFIG_HTTP_CLIENT_SSL_TRUSTSTORE_PASSWORD, password);
-        config.put(CONFIG_HTTP_CLIENT_SSL_TRUSTSTORE_TYPE, HttpSinkTaskTest.JKS_STORE_TYPE);
-        config.put(CONFIG_HTTP_CLIENT_SSL_TRUSTSTORE_ALGORITHM, HttpSinkTaskTest.TRUSTSTORE_PKIX_ALGORITHM);
+        config.put(HTTP_CLIENT_SSL_TRUSTSTORE_PASSWORD, password);
+        config.put(HTTP_CLIENT_SSL_TRUSTSTORE_TYPE, HttpSinkTaskTest.JKS_STORE_TYPE);
+        config.put(HTTP_CLIENT_SSL_TRUSTSTORE_ALGORITHM, HttpSinkTaskTest.TRUSTSTORE_PKIX_ALGORITHM);
         //when
         TrustManagerFactory trustManagerFactory = HttpClient.getTrustManagerFactory(config);
         //then

@@ -11,28 +11,40 @@ public class HttpSinkConfigDefinition {
     //meter registry
     public static final String METER_REGISTRY_EXPORTER_JMX_ACTIVATE = "meter.registry.exporter.jmx.activate";
     public static final String METER_REGISTRY_EXPORTER_JMX_ACTIVATE_DOC = "activate exposure of metrics via JMX";
+
     public static final String METER_REGISTRY_EXPORTER_PROMETHEUS_ACTIVATE = "meter.registry.exporter.prometheus.activate";
     public static final String METER_REGISTRY_EXPORTER_PROMETHEUS_ACTIVATE_DOC = "activate exposure of metrics via prometheus";
+
     public static final String METER_REGISTRY_EXPORTER_PROMETHEUS_PORT = "meter.registry.exporter.prometheus.port";
     public static final String METER_REGISTRY_EXPORTER_PROMETHEUS_PORT_DOC = "define the port to use for prometheus exposition.";
+
     public static final String METER_REGISTRY_BIND_METRICS_EXECUTOR_SERVICE = "meter.registry.bind.metrics.executor.service";
     public static final String METER_REGISTRY_BIND_METRICS_EXECUTOR_SERVICE_DOC = "bind executor service metrics into registry";
+
     public static final String METER_REGISTRY_BIND_METRICS_JVM_MEMORY = "meter.registry.bind.metrics.jvm.memory";
     public static final String METER_REGISTRY_BIND_METRICS_JVM_MEMORY_DOC = "bind jvm memory metrics into registry";
+
     public static final String METER_REGISTRY_BIND_METRICS_JVM_THREAD = "meter.registry.bind.metrics.jvm.thread";
     public static final String METER_REGISTRY_BIND_METRICS_JVM_THREAD_DOC = "bind jvm thread metrics into registry";
+
     public static final String METER_REGISTRY_BIND_METRICS_JVM_INFO = "meter.registry.bind.metrics.jvm.info";
     public static final String METER_REGISTRY_BIND_METRICS_JVM_INFO_DOC = "bind jvm info metrics into registry";
+
     public static final String METER_REGISTRY_BIND_METRICS_JVM_GC = "meter.registry.bind.metrics.jvm.gc";
     public static final String METER_REGISTRY_BIND_METRICS_JVM_GC_DOC = "bind jvm garbage collector (GC) metrics into registry";
+
     public static final String METER_REGISTRY_BIND_METRICS_JVM_CLASSLOADER = "meter.registry.bind.metrics.jvm.classloader";
     public static final String METER_REGISTRY_BIND_METRICS_JVM_CLASSLOADER_DOC = "bind jvm classloader metrics into registry";
+
     public static final String METER_REGISTRY_BIND_METRICS_JVM_PROCESSOR = "meter.registry.bind.metrics.jvm.processor";
     public static final String METER_REGISTRY_BIND_METRICS_JVM_PROCESSOR_DOC = "bind jvm processor metrics into registry";
+
     public static final String METER_REGISTRY_BIND_METRICS_LOGBACK = "meter.registry.bind.metrics.logback";
     public static final String METER_REGISTRY_BIND_METRICS_LOGBACK_DOC = "bind logback metrics into registry";
+
     public static final String METER_REGISTRY_TAG_INCLUDE_LEGACY_HOST = "meter.registry.tag.include.legacy.host";
     public static final String METER_REGISTRY_TAG_INCLUDE_LEGACY_HOST_DOC = "include the legacy tag 'host'. host is already present in the 'target.host' tag.";
+
     public static final String METER_REGISTRY_TAG_INCLUDE_URL_PATH = "meter.registry.tag.include.url.path";
     public static final String METER_REGISTRY_TAG_INCLUDE_URL_PATH_DOC = "include the legacy tag 'host'. host is already present in the 'target.host' tag.";
 
@@ -162,8 +174,9 @@ public class HttpSinkConfigDefinition {
     public static final String OKHTTP_PREFIX = "okhttp.";
     public static final String AHC_PREFIX = "ahc.";
 
-    public static final String HTTP_CLIENT_IMPLEMENTATION = DEFAULT_CONFIGURATION_PREFIX + HTTP_CLIENT_PREFIX + "implementation";
-    public static final String HTTP_CLIENT_IMPLEMENTATION_DOC = "define which intalled library to use : either 'ahc', a.k.a async http client, or 'okhttp'. default is 'okhttp'.";
+    public static final String HTTP_CLIENT_IMPLEMENTATION = HTTP_CLIENT_PREFIX + "implementation";
+    public static final String CONFIG_HTTP_CLIENT_IMPLEMENTATION = DEFAULT_CONFIGURATION_PREFIX + HTTP_CLIENT_IMPLEMENTATION;
+    public static final String CONFIG_HTTP_CLIENT_IMPLEMENTATION_DOC = "define which intalled library to use : either 'ahc', a.k.a async http client, or 'okhttp'. default is 'okhttp'.";
 
     public static final String OKHTTP_IMPLEMENTATION = "okhttp";
     public static final String AHC_IMPLEMENTATION = "ahc";
@@ -175,32 +188,45 @@ public class HttpSinkConfigDefinition {
 
 
     //SSL
-    public static final String CONFIG_HTTP_CLIENT_SSL_KEYSTORE_PATH =  DEFAULT_CONFIGURATION_PREFIX + HTTP_CLIENT_PREFIX +"ssl.keystore.path";
+    public static final String HTTP_CLIENT_SSL_KEYSTORE_PATH = HTTP_CLIENT_PREFIX + "ssl.keystore.path";
+    public static final String CONFIG_HTTP_CLIENT_SSL_KEYSTORE_PATH = DEFAULT_CONFIGURATION_PREFIX + HTTP_CLIENT_SSL_KEYSTORE_PATH;
     public static final String CONFIG_HTTP_CLIENT_SSL_KEYSTORE_PATH_DOC = "file path of the custom key store.";
-    public static final String CONFIG_HTTP_CLIENT_SSL_KEYSTORE_PASSWORD =  DEFAULT_CONFIGURATION_PREFIX + HTTP_CLIENT_PREFIX +"ssl.keystore.password";
+
+    public static final String HTTP_CLIENT_SSL_KEYSTORE_PASSWORD = HTTP_CLIENT_PREFIX + "ssl.keystore.password";
+    public static final String CONFIG_HTTP_CLIENT_SSL_KEYSTORE_PASSWORD = DEFAULT_CONFIGURATION_PREFIX + HTTP_CLIENT_SSL_KEYSTORE_PASSWORD;
     public static final String CONFIG_HTTP_CLIENT_SSL_KEYSTORE_PASSWORD_DOC = "password of the custom key store.";
-    public static final String CONFIG_HTTP_CLIENT_SSL_KEYSTORE_TYPE =  DEFAULT_CONFIGURATION_PREFIX + HTTP_CLIENT_PREFIX +"ssl.keystore.type";
+
+    public static final String HTTP_CLIENT_SSL_KEYSTORE_TYPE = HTTP_CLIENT_PREFIX + "ssl.keystore.type";
+    public static final String CONFIG_HTTP_CLIENT_SSL_KEYSTORE_TYPE = DEFAULT_CONFIGURATION_PREFIX + HTTP_CLIENT_SSL_KEYSTORE_TYPE;
     public static final String CONFIG_HTTP_CLIENT_SSL_KEYSTORE_TYPE_DOC = "keystore type. can be 'jks' or 'pkcs12'.";
-    public static final String CONFIG_HTTP_CLIENT_SSL_KEYSTORE_ALGORITHM =  DEFAULT_CONFIGURATION_PREFIX + HTTP_CLIENT_PREFIX +"ssl.keystore.algorithm";
+
+    public static final String HTTP_CLIENT_SSL_KEYSTORE_ALGORITHM = HTTP_CLIENT_PREFIX + "ssl.keystore.algorithm";
+    public static final String CONFIG_HTTP_CLIENT_SSL_KEYSTORE_ALGORITHM = DEFAULT_CONFIGURATION_PREFIX + HTTP_CLIENT_SSL_KEYSTORE_ALGORITHM;
     public static final String CONFIG_HTTP_CLIENT_SSL_KEYSTORE_ALGORITHM_DOC = "the standard name of the requested algorithm. See the KeyManagerFactory section in the Java Security Standard Algorithm Names Specification for information about standard algorithm names.";
 
-    public static final String CONFIG_HTTP_CLIENT_SSL_TRUSTSTORE_ALWAYS_TRUST =  DEFAULT_CONFIGURATION_PREFIX + HTTP_CLIENT_PREFIX +"ssl.truststore.always.trust";
+    public static final String HTTP_CLIENT_SSL_TRUSTSTORE_ALWAYS_TRUST = HTTP_CLIENT_PREFIX + "ssl.truststore.always.trust";
+    public static final String CONFIG_HTTP_CLIENT_SSL_TRUSTSTORE_ALWAYS_TRUST = DEFAULT_CONFIGURATION_PREFIX + HTTP_CLIENT_SSL_TRUSTSTORE_ALWAYS_TRUST;
     public static final String CONFIG_HTTP_CLIENT_SSL_TRUSTSTORE_ALWAYS_TRUST_DOC = "trust store that always trust any certificate. this option remove any security on the transport layer. be careful when you activate this option ! you will have no guarantee that you don't contact any hacked server ! ";
 
 
-    public static final String CONFIG_HTTP_CLIENT_SSL_TRUSTSTORE_PATH =  DEFAULT_CONFIGURATION_PREFIX + HTTP_CLIENT_PREFIX +"ssl.truststore.path";
+    public static final String HTTP_CLIENT_SSL_TRUSTSTORE_PATH = HTTP_CLIENT_PREFIX + "ssl.truststore.path";
+    public static final String CONFIG_HTTP_CLIENT_SSL_TRUSTSTORE_PATH = DEFAULT_CONFIGURATION_PREFIX + HTTP_CLIENT_SSL_TRUSTSTORE_PATH;
     public static final String CONFIG_HTTP_CLIENT_SSL_TRUSTSTORE_PATH_DOC = "file path of the custom trust store.";
 
-    public static final String CONFIG_HTTP_CLIENT_SSL_TRUSTSTORE_PASSWORD =  DEFAULT_CONFIGURATION_PREFIX + HTTP_CLIENT_PREFIX +"ssl.truststore.password";
+    public static final String HTTP_CLIENT_SSL_TRUSTSTORE_PASSWORD = HTTP_CLIENT_PREFIX + "ssl.truststore.password";
+    public static final String CONFIG_HTTP_CLIENT_SSL_TRUSTSTORE_PASSWORD = DEFAULT_CONFIGURATION_PREFIX + HTTP_CLIENT_SSL_TRUSTSTORE_PASSWORD;
     public static final String CONFIG_HTTP_CLIENT_SSL_TRUSTSTORE_PASSWORD_DOC = "password of the custom trusted store.";
 
-    public static final String CONFIG_HTTP_CLIENT_SSL_TRUSTSTORE_TYPE =  DEFAULT_CONFIGURATION_PREFIX + HTTP_CLIENT_PREFIX +"ssl.truststore.type";
+    public static final String HTTP_CLIENT_SSL_TRUSTSTORE_TYPE = HTTP_CLIENT_PREFIX + "ssl.truststore.type";
+    public static final String CONFIG_HTTP_CLIENT_SSL_TRUSTSTORE_TYPE = DEFAULT_CONFIGURATION_PREFIX + HTTP_CLIENT_SSL_TRUSTSTORE_TYPE;
     public static final String CONFIG_HTTP_CLIENT_SSL_TRUSTSTORE_TYPE_DOC = "truststore type. can be 'jks' or 'pkcs12'.";
 
-    public static final String CONFIG_HTTP_CLIENT_SSL_TRUSTSTORE_ALGORITHM =  DEFAULT_CONFIGURATION_PREFIX + HTTP_CLIENT_PREFIX +"ssl.truststore.algorithm";
+    public static final String HTTP_CLIENT_SSL_TRUSTSTORE_ALGORITHM = HTTP_CLIENT_PREFIX + "ssl.truststore.algorithm";
+    public static final String CONFIG_HTTP_CLIENT_SSL_TRUSTSTORE_ALGORITHM = DEFAULT_CONFIGURATION_PREFIX + HTTP_CLIENT_SSL_TRUSTSTORE_ALGORITHM;
     public static final String CONFIG_HTTP_CLIENT_SSL_TRUSTSTORE_ALGORITHM_DOC = "the standard name of the requested algorithm. See the KeyManagerFactory section in the Java Security Standard Algorithm Names Specification for information about standard algorithm names.";
 
-    public static final String CONFIG_HTTP_CLIENT_ASYNC_FIXED_THREAD_POOL_SIZE = DEFAULT_CONFIGURATION_PREFIX + HTTP_CLIENT_PREFIX +"async.fixed.thread.pool.size";
+    public static final String HTTP_CLIENT_ASYNC_FIXED_THREAD_POOL_SIZE = HTTP_CLIENT_PREFIX + "async.fixed.thread.pool.size";
+    public static final String CONFIG_HTTP_CLIENT_ASYNC_FIXED_THREAD_POOL_SIZE = DEFAULT_CONFIGURATION_PREFIX + HTTP_CLIENT_ASYNC_FIXED_THREAD_POOL_SIZE;
     public static final String CONFIG_HTTP_CLIENT_ASYNC_FIXED_THREAD_POOL_SIZE_DOC ="custom fixed thread pool size used to execute asynchronously http requests.";
 
     //authentication
@@ -391,11 +417,11 @@ public class HttpSinkConfigDefinition {
     public static ConfigDef config() {
         return new ConfigDef()
                 //meter registry
-                //exporters
+                    //exporters
                 .define(METER_REGISTRY_EXPORTER_JMX_ACTIVATE, ConfigDef.Type.STRING, FALSE, ConfigDef.Importance.LOW, METER_REGISTRY_EXPORTER_JMX_ACTIVATE_DOC)
                 .define(METER_REGISTRY_EXPORTER_PROMETHEUS_ACTIVATE, ConfigDef.Type.STRING, FALSE, ConfigDef.Importance.LOW, METER_REGISTRY_EXPORTER_PROMETHEUS_ACTIVATE_DOC)
                 .define(METER_REGISTRY_EXPORTER_PROMETHEUS_PORT, ConfigDef.Type.INT, 9090, ConfigDef.Importance.LOW, METER_REGISTRY_EXPORTER_PROMETHEUS_PORT_DOC)
-                //bind metrics
+                    //bind metrics
                 .define(METER_REGISTRY_BIND_METRICS_EXECUTOR_SERVICE, ConfigDef.Type.STRING, FALSE, ConfigDef.Importance.LOW, METER_REGISTRY_BIND_METRICS_EXECUTOR_SERVICE_DOC)
                 .define(METER_REGISTRY_BIND_METRICS_JVM_CLASSLOADER, ConfigDef.Type.STRING, FALSE, ConfigDef.Importance.LOW, METER_REGISTRY_BIND_METRICS_JVM_CLASSLOADER_DOC)
                 .define(METER_REGISTRY_BIND_METRICS_JVM_PROCESSOR, ConfigDef.Type.STRING, FALSE, ConfigDef.Importance.LOW, METER_REGISTRY_BIND_METRICS_JVM_PROCESSOR_DOC)
@@ -404,11 +430,11 @@ public class HttpSinkConfigDefinition {
                 .define(METER_REGISTRY_BIND_METRICS_JVM_MEMORY, ConfigDef.Type.STRING, FALSE, ConfigDef.Importance.LOW, METER_REGISTRY_BIND_METRICS_JVM_MEMORY_DOC)
                 .define(METER_REGISTRY_BIND_METRICS_JVM_THREAD, ConfigDef.Type.STRING, FALSE, ConfigDef.Importance.LOW, METER_REGISTRY_BIND_METRICS_JVM_THREAD_DOC)
                 .define(METER_REGISTRY_BIND_METRICS_LOGBACK, ConfigDef.Type.STRING, FALSE, ConfigDef.Importance.LOW, METER_REGISTRY_BIND_METRICS_LOGBACK_DOC)
-                //tags
+                    //tags
                 .define(METER_REGISTRY_TAG_INCLUDE_LEGACY_HOST, ConfigDef.Type.STRING, FALSE, ConfigDef.Importance.LOW, METER_REGISTRY_TAG_INCLUDE_LEGACY_HOST_DOC)
                 .define(METER_REGISTRY_TAG_INCLUDE_URL_PATH, ConfigDef.Type.STRING, FALSE, ConfigDef.Importance.LOW, METER_REGISTRY_TAG_INCLUDE_URL_PATH_DOC)
                 //http client implementation settings
-                .define(HTTP_CLIENT_IMPLEMENTATION, ConfigDef.Type.STRING, null, ConfigDef.Importance.LOW, HTTP_CLIENT_IMPLEMENTATION_DOC)
+                .define(CONFIG_HTTP_CLIENT_IMPLEMENTATION, ConfigDef.Type.STRING, null, ConfigDef.Importance.LOW, CONFIG_HTTP_CLIENT_IMPLEMENTATION_DOC)
                 .define(CONFIG_DEFAULT_HTTP_CLIENT_SECURE_RANDOM_PRNG_ALGORITHM, ConfigDef.Type.STRING, "SHA1PRNG", ConfigDef.Importance.LOW, CONFIG_DEFAULT_HTTP_CLIENT_SECURE_RANDOM_PRNG_ALGORITHM_DOC)
                 //retry settings
                 .define(CONFIG_DEFAULT_SUCCESS_RESPONSE_CODE_REGEX, ConfigDef.Type.STRING, CONFIG_DEFAULT_DEFAULT_SUCCESS_RESPONSE_CODE_REGEX, ConfigDef.Importance.LOW, CONFIG_DEFAULT_SUCCESS_RESPONSE_CODE_REGEX_DOC)

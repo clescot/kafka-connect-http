@@ -179,7 +179,9 @@ public class OkHttpClient extends AbstractHttpClient<Request, Response> {
     private void configureSSL(Map<String, Object> config, okhttp3.OkHttpClient.Builder httpClientBuilder) {
         //KeyManager/trustManager/SSLSocketFactory
         Optional<KeyManagerFactory> keyManagerFactoryOption = getKeyManagerFactory();
-        Optional<TrustManagerFactory> trustManagerFactoryOption = getTrustManagerFactory();
+        Optional<TrustManagerFactory> trustManagerFactoryOption = buildTrustManagerFactory();
+        trustManagerFactoryOption.ifPresent(managerFactory -> this.trustManagerFactory = managerFactory);
+
         if (keyManagerFactoryOption.isPresent() || trustManagerFactoryOption.isPresent()) {
             //TODO SSLFactory protocol parameter
             SSLSocketFactory ssl = AbstractHttpClient.getSSLSocketFactory(keyManagerFactoryOption.orElse(null), trustManagerFactoryOption.orElse(null), "SSL");
@@ -366,11 +368,11 @@ public class OkHttpClient extends AbstractHttpClient<Request, Response> {
     }
 
     /**
-     * for tests only.
      *
      * @return {@link okhttp3.OkHttpClient}
      */
-    protected okhttp3.OkHttpClient getInternalClient() {
+    @Override
+    public okhttp3.OkHttpClient getInternalClient() {
         return client;
     }
 }

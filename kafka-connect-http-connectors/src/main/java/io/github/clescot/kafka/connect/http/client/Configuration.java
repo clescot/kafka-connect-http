@@ -244,7 +244,7 @@ public class Configuration {
     private <Req, Res> HttpClient<Req, Res> buildHttpClient(Map<String, Object> config, ExecutorService executorService, CompositeMeterRegistry meterRegistry) {
 
         Class<? extends HttpClientFactory> httpClientFactoryClass;
-        String httpClientImplementation = (String) Optional.ofNullable(config.get(HTTP_CLIENT_IMPLEMENTATION)).orElse(OKHTTP_IMPLEMENTATION);
+        String httpClientImplementation = (String) Optional.ofNullable(config.get(CONFIG_HTTP_CLIENT_IMPLEMENTATION)).orElse(OKHTTP_IMPLEMENTATION);
         if (AHC_IMPLEMENTATION.equalsIgnoreCase(httpClientImplementation)) {
             httpClientFactoryClass = AHCHttpClientFactory.class;
         } else if (OKHTTP_IMPLEMENTATION.equalsIgnoreCase(httpClientImplementation)) {
@@ -259,7 +259,7 @@ public class Configuration {
             LOGGER.debug("using HttpClientFactory implementation: {}", httpClientFactory.getClass().getName());
         } catch (NoSuchMethodException | InstantiationException | IllegalAccessException |
                  InvocationTargetException e) {
-            throw new RuntimeException(e);
+            throw new HttpException(e);
         }
 
         //get random
@@ -365,9 +365,9 @@ public class Configuration {
 
 
     protected boolean retryNeeded(HttpResponse httpResponse) {
-        Optional<Pattern> retryResponseCodeRegex = getRetryResponseCodeRegex();
-        if (retryResponseCodeRegex.isPresent()) {
-            Pattern retryPattern = retryResponseCodeRegex.get();
+        Optional<Pattern> myRetryResponseCodeRegex = getRetryResponseCodeRegex();
+        if (myRetryResponseCodeRegex.isPresent()) {
+            Pattern retryPattern = myRetryResponseCodeRegex.get();
             Matcher matcher = retryPattern.matcher("" + httpResponse.getStatusCode());
             return matcher.matches();
         } else {

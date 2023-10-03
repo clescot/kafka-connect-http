@@ -323,6 +323,7 @@ public class AHCHttpClient extends AbstractHttpClient<Request, Response> {
             Optional<TrustManagerFactory> trustManagerFactory = Optional.ofNullable(
                     HttpClient.getTrustManagerFactory(config));
             if (trustManagerFactory.isPresent()) {
+                this.trustManagerFactory = trustManagerFactory.get();
                 SslContext nettySSLContext;
                 try {
                     nettySSLContext = SslContextBuilder.forClient().trustManager(trustManagerFactory.get()).build();
@@ -336,4 +337,8 @@ public class AHCHttpClient extends AbstractHttpClient<Request, Response> {
         return asyncClient;
     }
 
+    @Override
+    public AsyncHttpClient getInternalClient() {
+        return asyncHttpClient;
+    }
 }

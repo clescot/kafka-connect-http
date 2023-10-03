@@ -138,11 +138,11 @@ public class AdvancedEventListener extends EventListener {
         this.contextSpecificTags = contextSpecificTags;
         this.includeHostTag = includeLegacyHostTag;
 
-        List<Tag> unknownRequestTags = new ArrayList<>();
+        List<Tag> myUnknownRequestTags = new ArrayList<>();
         for (String requestTagKey : requestTagKeys) {
-            unknownRequestTags.add(Tag.of(requestTagKey, TAG_VALUE_UNKNOWN));
+            myUnknownRequestTags.add(Tag.of(requestTagKey, TAG_VALUE_UNKNOWN));
         }
-        this.unknownRequestTags = unknownRequestTags;
+        this.unknownRequestTags = myUnknownRequestTags;
     }
 
     public static AdvancedEventListener.Builder builder(MeterRegistry registry) {

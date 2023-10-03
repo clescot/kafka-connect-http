@@ -17,9 +17,7 @@ import java.util.concurrent.ExecutorService;
 public class AHCHttpClientFactory implements HttpClientFactory<Request, Response> {
 
 
-
-
-    private final static Logger LOGGER = LoggerFactory.getLogger(AHCHttpClientFactory.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(AHCHttpClientFactory.class);
 
 
 
