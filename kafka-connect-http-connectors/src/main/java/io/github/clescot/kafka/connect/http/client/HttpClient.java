@@ -93,7 +93,7 @@ public interface HttpClient<Q, S> {
                         }
                 ).exceptionally((throwable-> {
                     HttpResponse httpResponse = new HttpResponse(400,throwable.getMessage());
-                    LOGGER.error(throwable.getMessage());
+                    LOGGER.error(throwable.toString());
                     return buildHttpExchange(httpRequest, httpResponse, stopwatch, now, attempts,FAILURE);
                 }));
 

@@ -116,7 +116,7 @@ public abstract class AbstractHttpClient<Req, Res> implements HttpClient<Req, Re
             return nativeCall(request);
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
-            throw new HttpException(e.getMessage());
+            throw new HttpException(e);
         }
     }
 

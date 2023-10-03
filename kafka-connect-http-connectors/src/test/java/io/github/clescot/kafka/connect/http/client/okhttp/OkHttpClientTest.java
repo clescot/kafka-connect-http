@@ -57,6 +57,8 @@ class OkHttpClientTest {
     public static final String ACCESS_GRANTED_STATE = "access_granted";
     public static final String UNAUTHORIZED_STATE = "Unauthorized";
     public static final String PROXY_AUTHENTICATION_REQUIRED_STATE = "Proxy_Authentication_Required";
+    public static final String CONTENT_TYPE = "Content-Type";
+    public static final String APPLICATION_JSON = "application/json";
 
     private final Logger LOGGER = LoggerFactory.getLogger(OkHttpClientTest.class);
 
@@ -150,7 +152,7 @@ class OkHttpClientTest {
             Response.Builder builder = new Response.Builder();
             Headers headers = new Headers.Builder()
                     .add("key1", "value1")
-                    .add("Content-Type", "application/json")
+                    .add(CONTENT_TYPE, APPLICATION_JSON)
                     .build();
             builder.headers(headers);
             builder.request(request);
@@ -159,7 +161,7 @@ class OkHttpClientTest {
             String responseContent = "blabla";
             Buffer buffer = new Buffer();
             buffer.write(responseContent.getBytes(StandardCharsets.UTF_8));
-            ResponseBody responseBody = new RealResponseBody("application/json", responseContent.length(), buffer);
+            ResponseBody responseBody = new RealResponseBody(APPLICATION_JSON, responseContent.length(), buffer);
             builder.body(responseBody);
             builder.protocol(Protocol.HTTP_1_1);
             Response response = builder.build();
@@ -172,7 +174,7 @@ class OkHttpClientTest {
             assertThat(response.code()).isEqualTo(httpResponse.getStatusCode());
             assertThat(response.message()).isEqualTo(httpResponse.getStatusMessage());
             assertThat(response.header("key1")).isEqualTo(httpResponse.getResponseHeaders().get("key1").get(0));
-            assertThat(response.header("Content-Type")).isEqualTo(httpResponse.getResponseHeaders().get("Content-Type").get(0));
+            assertThat(response.header(CONTENT_TYPE)).isEqualTo(httpResponse.getResponseHeaders().get(CONTENT_TYPE).get(0));
 
         }
 
@@ -250,7 +252,7 @@ class OkHttpClientTest {
             String baseUrl = "http://" + getIP() + ":" + wmRuntimeInfo.getHttpPort();
             String url = baseUrl + "/ping";
             HashMap<String, List<String>> headers = Maps.newHashMap();
-            headers.put("Content-Type", Lists.newArrayList("text/plain"));
+            headers.put(CONTENT_TYPE, Lists.newArrayList("text/plain"));
             headers.put("X-Correlation-ID", Lists.newArrayList("e6de70d1-f222-46e8-b755-754880687822"));
             headers.put("X-Request-ID", Lists.newArrayList("e6de70d1-f222-46e8-b755-11111"));
             HttpRequest httpRequest = new HttpRequest(
@@ -277,7 +279,7 @@ class OkHttpClientTest {
                     .register(WireMock.post("/ping").inScenario(scenario)
                             .whenScenarioStateIs(UNAUTHORIZED_STATE)
                             .withBasicAuth(username, password)
-                            .withHeader("Content-Type", containing("text/plain"))
+                            .withHeader(CONTENT_TYPE, containing("text/plain"))
                             .withHeader("X-Correlation-ID", containing("e6de70d1-f222-46e8-b755-754880687822"))
                             .withHeader("X-Request-ID", containing("e6de70d1-f222-46e8-b755-11111"))
                             .willReturn(WireMock.aResponse()
@@ -290,7 +292,7 @@ class OkHttpClientTest {
                     .register(WireMock.post("/ping").inScenario(scenario)
                             .whenScenarioStateIs(ACCESS_GRANTED_STATE)
                             .withBasicAuth(username, password)
-                            .withHeader("Content-Type", containing("text/plain"))
+                            .withHeader(CONTENT_TYPE, containing("text/plain"))
                             .withHeader("X-Correlation-ID", containing("e6de70d1-f222-46e8-b755-754880687822"))
                             .withHeader("X-Request-ID", containing("e6de70d1-f222-46e8-b755-11111"))
                             .willReturn(WireMock.aResponse()
@@ -335,7 +337,7 @@ class OkHttpClientTest {
             String baseUrl = "http://" + getIP() + ":" + wmRuntimeInfo.getHttpPort();
             String url = baseUrl + "/ping";
             HashMap<String, List<String>> headers = Maps.newHashMap();
-            headers.put("Content-Type", Lists.newArrayList("text/plain"));
+            headers.put(CONTENT_TYPE, Lists.newArrayList("text/plain"));
             headers.put("X-Correlation-ID", Lists.newArrayList("e6de70d1-f222-46e8-b755-754880687822"));
             headers.put("X-Request-ID", Lists.newArrayList("e6de70d1-f222-46e8-b755-11111"));
             HttpRequest httpRequest = new HttpRequest(
@@ -348,7 +350,7 @@ class OkHttpClientTest {
 
             String url2 = baseUrl + "/ping2";
             HashMap<String, List<String>> headers2 = Maps.newHashMap();
-            headers2.put("Content-Type", Lists.newArrayList("text/plain"));
+            headers2.put(CONTENT_TYPE, Lists.newArrayList("text/plain"));
             headers2.put("X-Correlation-ID", Lists.newArrayList("e6de70d1-f222-46e8-b755-754880687822"));
             headers2.put("X-Request-ID", Lists.newArrayList("22222-33333-000-000-0000"));
             HttpRequest httpRequest2 = new HttpRequest(
@@ -397,7 +399,7 @@ class OkHttpClientTest {
                                             "opaque=\"5cdc029c403ebaf9f0171e9517f40e41\""
                                     )
                             )
-                            .withHeader("Content-Type", containing("text/plain"))
+                            .withHeader(CONTENT_TYPE, containing("text/plain"))
                             .withHeader("X-Correlation-ID", equalTo("e6de70d1-f222-46e8-b755-754880687822"))
                             .withHeader("X-Request-ID", equalTo("e6de70d1-f222-46e8-b755-11111"))
                             .willReturn(WireMock.aResponse()
@@ -426,7 +428,7 @@ class OkHttpClientTest {
                                             "opaque=\"5cdc029c403ebaf9f0171e9517f40e41\""
                                     )
                             )
-                            .withHeader("Content-Type", containing("text/plain"))
+                            .withHeader(CONTENT_TYPE, containing("text/plain"))
                             .withHeader("X-Correlation-ID", equalTo("e6de70d1-f222-46e8-b755-754880687822"))
                             .withHeader("X-Request-ID", equalTo("22222-33333-000-000-0000"))
                             .willReturn(WireMock.aResponse()
@@ -476,7 +478,7 @@ class OkHttpClientTest {
             io.github.clescot.kafka.connect.http.client.okhttp.OkHttpClient client = new io.github.clescot.kafka.connect.http.client.okhttp.OkHttpClient(config, null, new Random(), proxy, null, getCompositeMeterRegistry());
 
             HashMap<String, List<String>> headers = Maps.newHashMap();
-            headers.put("Content-Type", Lists.newArrayList("text/plain"));
+            headers.put(CONTENT_TYPE, Lists.newArrayList("text/plain"));
             headers.put("X-Correlation-ID", Lists.newArrayList("e6de70d1-f222-46e8-b755-754880687822"));
             headers.put("X-Request-ID", Lists.newArrayList("e6de70d1-f222-46e8-b755-11111"));
             HttpRequest httpRequest = new HttpRequest(
@@ -531,7 +533,7 @@ class OkHttpClientTest {
             io.github.clescot.kafka.connect.http.client.okhttp.OkHttpClient client = new io.github.clescot.kafka.connect.http.client.okhttp.OkHttpClient(config, null, new Random(), proxy, null, getCompositeMeterRegistry());
 
             HashMap<String, List<String>> headers = Maps.newHashMap();
-            headers.put("Content-Type", Lists.newArrayList("text/plain"));
+            headers.put(CONTENT_TYPE, Lists.newArrayList("text/plain"));
             headers.put("X-Correlation-ID", Lists.newArrayList("e6de70d1-f222-46e8-b755-754880687822"));
             headers.put("X-Request-ID", Lists.newArrayList("e6de70d1-f222-46e8-b755-11111"));
             HttpRequest httpRequest = new HttpRequest(
@@ -559,7 +561,7 @@ class OkHttpClientTest {
                     .register(WireMock.post("/ping").inScenario(scenario)
                             .whenScenarioStateIs("Proxy Authentication Required")
                             .withHeader("Proxy-Authorization", containing("Basic dXNlcjE6cGFzc3dvcmQx"))
-                            .withHeader("Content-Type", containing("text/plain"))
+                            .withHeader(CONTENT_TYPE, containing("text/plain"))
                             .withHeader("X-Correlation-ID", containing("e6de70d1-f222-46e8-b755-754880687822"))
                             .withHeader("X-Request-ID", containing("e6de70d1-f222-46e8-b755-11111"))
                             .willReturn(WireMock.aResponse()
@@ -571,7 +573,7 @@ class OkHttpClientTest {
             wireMock
                     .register(WireMock.post("/ping").inScenario(scenario)
                             .whenScenarioStateIs(ACCESS_GRANTED_STATE)
-                            .withHeader("Content-Type", containing("text/plain"))
+                            .withHeader(CONTENT_TYPE, containing("text/plain"))
                             .withHeader("X-Correlation-ID", containing("e6de70d1-f222-46e8-b755-754880687822"))
                             .withHeader("X-Request-ID", containing("e6de70d1-f222-46e8-b755-11111"))
                             .willReturn(WireMock.aResponse()
@@ -618,7 +620,7 @@ class OkHttpClientTest {
             io.github.clescot.kafka.connect.http.client.okhttp.OkHttpClient client = new io.github.clescot.kafka.connect.http.client.okhttp.OkHttpClient(config, null, new Random(), proxy, null, getCompositeMeterRegistry());
 
             HashMap<String, List<String>> headers = Maps.newHashMap();
-            headers.put("Content-Type", Lists.newArrayList("text/plain"));
+            headers.put(CONTENT_TYPE, Lists.newArrayList("text/plain"));
             headers.put("X-Correlation-ID", Lists.newArrayList("e6de70d1-f222-46e8-b755-754880687822"));
             headers.put("X-Request-ID", Lists.newArrayList("e6de70d1-f222-46e8-b755-11111"));
             HttpRequest httpRequest = new HttpRequest(
@@ -646,7 +648,7 @@ class OkHttpClientTest {
                     .register(WireMock.post("/ping").inScenario(scenario)
                             .whenScenarioStateIs("Proxy Authentication Required")
                             .withHeader("Proxy-Authorization", containing("Basic cHJveHl1c2VyMTpwcm94eXBhc3N3b3JkMQ=="))
-                            .withHeader("Content-Type", containing("text/plain"))
+                            .withHeader(CONTENT_TYPE, containing("text/plain"))
                             .withHeader("X-Correlation-ID", containing("e6de70d1-f222-46e8-b755-754880687822"))
                             .withHeader("X-Request-ID", containing("e6de70d1-f222-46e8-b755-11111"))
                             .willReturn(WireMock.aResponse()
@@ -661,7 +663,7 @@ class OkHttpClientTest {
                             .whenScenarioStateIs("Unauthorized")
                             .withHeader("Proxy-Authorization", containing("Basic cHJveHl1c2VyMTpwcm94eXBhc3N3b3JkMQ=="))
                             .withBasicAuth(username, password)
-                            .withHeader("Content-Type", containing("text/plain"))
+                            .withHeader(CONTENT_TYPE, containing("text/plain"))
                             .withHeader("X-Correlation-ID", containing("e6de70d1-f222-46e8-b755-754880687822"))
                             .withHeader("X-Request-ID", containing("e6de70d1-f222-46e8-b755-11111"))
                             .willReturn(WireMock.aResponse()
@@ -675,7 +677,7 @@ class OkHttpClientTest {
                             .whenScenarioStateIs(ACCESS_GRANTED_STATE)
                             .withHeader("Proxy-Authorization", containing("Basic cHJveHl1c2VyMTpwcm94eXBhc3N3b3JkMQ=="))
                             .withBasicAuth(username, password)
-                            .withHeader("Content-Type", containing("text/plain"))
+                            .withHeader(CONTENT_TYPE, containing("text/plain"))
                             .withHeader("X-Correlation-ID", containing("e6de70d1-f222-46e8-b755-754880687822"))
                             .withHeader("X-Request-ID", containing("e6de70d1-f222-46e8-b755-11111"))
                             .willReturn(WireMock.aResponse()
@@ -729,7 +731,7 @@ class OkHttpClientTest {
             io.github.clescot.kafka.connect.http.client.okhttp.OkHttpClient client = new io.github.clescot.kafka.connect.http.client.okhttp.OkHttpClient(config, null, random, proxy, null, getCompositeMeterRegistry());
 
             HashMap<String, List<String>> headers = Maps.newHashMap();
-            headers.put("Content-Type", Lists.newArrayList("text/plain"));
+            headers.put(CONTENT_TYPE, Lists.newArrayList("text/plain"));
             headers.put("X-Correlation-ID", Lists.newArrayList("e6de70d1-f222-46e8-b755-754880687822"));
             headers.put("X-Request-ID", Lists.newArrayList("e6de70d1-f222-46e8-b755-11111"));
             HttpRequest httpRequest = new HttpRequest(
@@ -895,7 +897,7 @@ class OkHttpClientTest {
             io.github.clescot.kafka.connect.http.client.okhttp.OkHttpClient client = new io.github.clescot.kafka.connect.http.client.okhttp.OkHttpClient(config, null, new Random(), null, proxySelector, getCompositeMeterRegistry());
 
             HashMap<String, List<String>> headers = Maps.newHashMap();
-            headers.put("Content-Type", Lists.newArrayList("text/plain"));
+            headers.put(CONTENT_TYPE, Lists.newArrayList("text/plain"));
             headers.put("X-Correlation-ID", Lists.newArrayList("e6de70d1-f222-46e8-b755-754880687822"));
             headers.put("X-Request-ID", Lists.newArrayList("e6de70d1-f222-46e8-b755-11111"));
             HttpRequest httpRequest = new HttpRequest(
@@ -957,7 +959,7 @@ class OkHttpClientTest {
             io.github.clescot.kafka.connect.http.client.okhttp.OkHttpClient client = new io.github.clescot.kafka.connect.http.client.okhttp.OkHttpClient(config, null, new Random(), null, proxySelector, getCompositeMeterRegistry());
 
             HashMap<String, List<String>> headers = Maps.newHashMap();
-            headers.put("Content-Type", Lists.newArrayList("text/plain"));
+            headers.put(CONTENT_TYPE, Lists.newArrayList("text/plain"));
             headers.put("X-Correlation-ID", Lists.newArrayList("e6de70d1-f222-46e8-b755-754880687822"));
             headers.put("X-Request-ID", Lists.newArrayList("e6de70d1-f222-46e8-b755-11111"));
             HttpRequest httpRequest = new HttpRequest(
@@ -1031,7 +1033,7 @@ class OkHttpClientTest {
             String baseUrl = "https://" + getIP() + ":" + wmRuntimeInfo.getHttpsPort();
             String url = baseUrl + "/ping";
             HashMap<String, List<String>> headers = Maps.newHashMap();
-            headers.put("Content-Type", Lists.newArrayList("text/plain"));
+            headers.put(CONTENT_TYPE, Lists.newArrayList("text/plain"));
             headers.put("X-Correlation-ID", Lists.newArrayList("e6de70d1-f222-46e8-b755-754880687822"));
             headers.put("X-Request-ID", Lists.newArrayList("e6de70d1-f222-46e8-b755-11111"));
             HttpRequest httpRequest = new HttpRequest(
@@ -1083,7 +1085,7 @@ class OkHttpClientTest {
             String baseUrl = "http://" + getIP() + ":" + wmRuntimeInfo.getHttpPort();
             String url = baseUrl + "/ping";
             HashMap<String, List<String>> headers = Maps.newHashMap();
-            headers.put("Content-Type", Lists.newArrayList("text/plain"));
+            headers.put(CONTENT_TYPE, Lists.newArrayList("text/plain"));
             headers.put("X-Correlation-ID", Lists.newArrayList("e6de70d1-f222-46e8-b755-754880687822"));
             headers.put("X-Request-ID", Lists.newArrayList("e6de70d1-f222-46e8-b755-11111"));
             HttpRequest httpRequest = new HttpRequest(
@@ -1140,7 +1142,7 @@ class OkHttpClientTest {
             String baseUrl = "http://" + getIP() + ":" + wmRuntimeInfo.getHttpPort();
             String url = baseUrl + "/ping";
             HashMap<String, List<String>> headers = Maps.newHashMap();
-            headers.put("Content-Type", Lists.newArrayList("text/plain"));
+            headers.put(CONTENT_TYPE, Lists.newArrayList("text/plain"));
             headers.put("X-Correlation-ID", Lists.newArrayList("e6de70d1-f222-46e8-b755-754880687822"));
             headers.put("X-Request-ID", Lists.newArrayList("e6de70d1-f222-46e8-b755-11111"));
             HttpRequest httpRequest = new HttpRequest(
