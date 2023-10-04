@@ -27,15 +27,15 @@ public class INetAddressInterceptor implements Interceptor {
         okHeadersBuilder.addAll(response.headers());
 
         String hostAddress = inetAddress.getHostAddress();
-        LOGGER.debug("hostAddress :{}",hostAddress);
+        LOGGER.debug("hostAddress: '{}'",hostAddress);
         okHeadersBuilder.add("X-Host-Address",hostAddress);
 
         String hostName = inetAddress.getHostName();
-        LOGGER.debug("hostName :{}",hostName);
+        LOGGER.debug("hostName:'{}'",hostName);
         okHeadersBuilder.add("X-Host-Name",hostName);
 
         String canonicalHostName = inetAddress.getCanonicalHostName();
-        LOGGER.debug("canonicalHostName :{}",canonicalHostName);
+        LOGGER.debug("canonicalHostName: '{}'",canonicalHostName);
         okHeadersBuilder.add("X-Canonical-Host-Name",canonicalHostName);
 
         Response.Builder builder = new Response.Builder(response);
