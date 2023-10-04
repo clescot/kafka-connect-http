@@ -95,10 +95,12 @@ public class OkHttpClient extends AbstractHttpClient<Request, Response> {
         AuthenticationConfigurer authenticationConfigurer = new AuthenticationConfigurer(random);
         authenticationConfigurer.configure(config, httpClientBuilder);
 
-        //interceptor
+        //interceptors
         httpClientBuilder.addNetworkInterceptor(new LoggingInterceptor());
         //TODO add flag to activate
         httpClientBuilder.addNetworkInterceptor(new INetAddressInterceptor());
+        //TODO add flag to activate
+        httpClientBuilder.addNetworkInterceptor(new SSLHandshakeInterceptor());
 
         //events
         boolean includeLegacyHostTag = Boolean.parseBoolean((String) config.getOrDefault(METER_REGISTRY_TAG_INCLUDE_LEGACY_HOST, "false"));
@@ -329,10 +331,12 @@ public class OkHttpClient extends AbstractHttpClient<Request, Response> {
         HttpResponse httpResponse;
         try {
             Protocol protocol = response.protocol();
-            LOGGER.debug("protocol: '{}'", protocol);
-            LOGGER.debug("cache-control: '{}'", response.cacheControl());
-            LOGGER.debug("handshake: '{}'", response.handshake());
-            LOGGER.debug("challenges: '{}'", response.challenges());
+            if(LOGGER.isDebugEnabled()) {
+                LOGGER.debug("protocol: '{}'", protocol);
+                LOGGER.debug("cache-control: '{}'", response.cacheControl());
+                LOGGER.debug("handshake: '{}'", response.handshake());
+                LOGGER.debug("challenges: '{}'", response.challenges());
+            }
             httpResponse = new HttpResponse(response.code(), response.message());
             if (response.body() != null) {
                 httpResponse.setResponseBody(response.body().string());

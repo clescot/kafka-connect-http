@@ -1117,6 +1117,31 @@ class OkHttpClientTest {
         }
 
         @Test
+        @DisplayName("get host address")
+        void test_yahoo() throws ExecutionException, InterruptedException {
+            //given
+            HashMap<String, Object> config = Maps.newHashMap();
+            io.github.clescot.kafka.connect.http.client.okhttp.OkHttpClient client = new io.github.clescot.kafka.connect.http.client.okhttp.OkHttpClient(config, null, new Random(), null, null, getCompositeMeterRegistry());
+
+            String baseUrl = "https://www.yahoo.com";
+            String url = baseUrl + "";
+            HashMap<String, List<String>> headers = Maps.newHashMap();
+            HttpRequest httpRequest = new HttpRequest(
+                    url,
+                    "GET",
+                    "STRING"
+            );
+            httpRequest.setHeaders(headers);
+
+
+            //when
+            HttpExchange httpExchange1 = client.call(httpRequest, new AtomicInteger(1)).get();
+            //then
+            assertThat(httpExchange1.getHttpResponse().getStatusCode()).isEqualTo(200);
+
+        }
+
+        @Test
         @DisplayName("test connection pool with static scope")
         void test_connection_pool_with_static_scope() throws ExecutionException, InterruptedException {
 
