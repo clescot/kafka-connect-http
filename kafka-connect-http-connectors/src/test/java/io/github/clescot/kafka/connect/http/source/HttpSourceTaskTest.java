@@ -19,6 +19,7 @@ import org.slf4j.LoggerFactory;
 
 import java.time.OffsetDateTime;
 import java.time.ZoneId;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Queue;
@@ -47,21 +48,22 @@ class HttpSourceTaskTest {
     }
 
     @Test
-    public void test_start_with_null_settings() {
+    void test_start_with_null_settings() {
         HttpSourceTask wsSourceTask = new HttpSourceTask();
 
         Assertions.assertThrows(NullPointerException.class, () -> wsSourceTask.start(null));
     }
 
     @Test
-    public void test_start_with_empty_settings() {
-        Assertions.assertThrows(ConfigException.class, () -> wsSourceTask.start(Maps.newHashMap()));
+    void test_start_with_empty_settings() {
+        HashMap<String, String> taskConfig = Maps.newHashMap();
+        Assertions.assertThrows(ConfigException.class, () -> wsSourceTask.start(taskConfig));
     }
 
     @Test
-    public void test_start_nominal_case() {
+    void test_start_nominal_case() {
         Map<String, String> config = getNominalConfig();
-        wsSourceTask.start(config);
+        Assertions.assertDoesNotThrow( () -> wsSourceTask.start(config));
     }
 
     @NotNull
@@ -73,7 +75,7 @@ class HttpSourceTaskTest {
     }
 
     @Test
-    public void poll() throws ExecutionException, InterruptedException {
+    void poll() throws ExecutionException, InterruptedException {
         wsSourceTask.start(getNominalConfig());
         Queue<KafkaRecord> queue = QueueFactory.getQueue();
         ExecutorService exService = Executors.newFixedThreadPool(3);
@@ -92,7 +94,7 @@ class HttpSourceTaskTest {
     }
 
     @Test
-    public void test_success() {
+    void test_success() {
         wsSourceTask.start(getNominalConfig());
         Queue<KafkaRecord> queue = QueueFactory.getQueue();
         HttpRequest httpRequest = new HttpRequest(
@@ -115,13 +117,13 @@ class HttpSourceTaskTest {
         long successfulMessagesCount = sourceRecords.stream().filter(sourceRecord -> sourceRecord.topic().equals(getNominalConfig().get(SUCCESS_TOPIC))).count();
         assertThat(successfulMessagesCount).isEqualTo(1);
         long errorMessagesCount = sourceRecords.stream().filter(sourceRecord -> sourceRecord.topic().equals(getNominalConfig().get(ERROR_TOPIC))).count();
-        assertThat(errorMessagesCount).isEqualTo(0);
+        assertThat(errorMessagesCount).isZero();
         //we have consumed all messages
         assertThat(queue).isEmpty();
     }
 
     @Test
-    public void test_error() {
+    void test_error() {
         wsSourceTask.start(getNominalConfig());
         Queue<KafkaRecord> queue = QueueFactory.getQueue();
         HttpRequest httpRequest = new HttpRequest(
@@ -142,7 +144,7 @@ class HttpSourceTaskTest {
         queue.offer(QueueProducer.toKafkaRecord(httpExchange));
         List<SourceRecord> sourceRecords = wsSourceTask.poll();
         long successfulMessagesCount = sourceRecords.stream().filter(sourceRecord -> sourceRecord.topic().equals(getNominalConfig().get(SUCCESS_TOPIC))).count();
-        assertThat(successfulMessagesCount).isEqualTo(0);
+        assertThat(successfulMessagesCount).isZero();
         long errorMessagesCount = sourceRecords.stream().filter(sourceRecord -> sourceRecord.topic().equals(getNominalConfig().get(ERROR_TOPIC))).count();
         assertThat(errorMessagesCount).isEqualTo(1);
         //we have consumed all messages

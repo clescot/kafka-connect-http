@@ -28,64 +28,64 @@ class HttpSourceConnectorTest {
     }
 
     @Test
-    public void test_start_nominal_case(){
-        Map<String,String> settings = Maps.newHashMap();
-        settings.put(SUCCESS_TOPIC,"foo");
-        settings.put(ERROR_TOPIC,"foo");
-        httpSourceConnector.start(settings);
+    void test_start_nominal_case(){
+        Map<String, String> settings = Maps.newHashMap();
+        settings.put(SUCCESS_TOPIC, "foo");
+        settings.put(ERROR_TOPIC, "foo");
+        Assertions.assertDoesNotThrow( () -> httpSourceConnector.start(settings));
     }
 
     @Test
-    public void test_start_missing_success_topic(){
+    void test_start_missing_success_topic(){
+        Map < String, String > settings = Maps.newHashMap();
+        settings.put(ERROR_TOPIC, "foo");
         Assertions.assertThrows(ConfigException.class, () ->  {
-                Map < String, String > settings = Maps.newHashMap();
-                settings.put(ERROR_TOPIC, "foo");
                 httpSourceConnector.start(settings);
         });
     }
 
     @Test
-    public void test_start_missing_errors_topic(){
+    void test_start_missing_errors_topic(){
+        Map < String, String > settings = Maps.newHashMap();
+        settings.put(SUCCESS_TOPIC, "foo");
         Assertions.assertThrows(ConfigException.class, () ->  {
-                Map < String, String > settings = Maps.newHashMap();
-                settings.put(SUCCESS_TOPIC, "foo");
                 httpSourceConnector.start(settings);
         });
     }
 
     @Test
-    public void test_start_with_queue_name(){
-            Map < String, String > settings = Maps.newHashMap();
-            settings.put(SUCCESS_TOPIC, "foo1");
-            settings.put(ERROR_TOPIC, "foo2");
-            settings.put(QUEUE_NAME, "myQueue");
-            httpSourceConnector.start(settings);
+    void test_start_with_queue_name(){
+        Map < String, String > settings = Maps.newHashMap();
+        settings.put(SUCCESS_TOPIC, "foo1");
+        settings.put(ERROR_TOPIC, "foo2");
+        settings.put(QUEUE_NAME, "myQueue");
+        Assertions.assertDoesNotThrow( () -> httpSourceConnector.start(settings));
     }
 
     @Test
-    public void test_start_with_default_queue_name(){
+    void test_start_with_default_queue_name(){
         Map < String, String > settings = Maps.newHashMap();
         settings.put(SUCCESS_TOPIC, "foo1");
         settings.put(ERROR_TOPIC, "foo2");
         settings.put(QUEUE_NAME, DEFAULT_QUEUE_NAME);
-        httpSourceConnector.start(settings);
+        Assertions.assertDoesNotThrow( () -> httpSourceConnector.start(settings));
     }
 
 
 
     @Test
-    public void test_start_empty_settings_map(){
+    void test_start_empty_settings_map(){
         Map<String,String> settings = Maps.newHashMap();
         Assertions.assertThrows(ConfigException.class, () -> httpSourceConnector.start(settings));
     }
 
     @Test
-    public void test_start_null_settings_map(){
+    void test_start_null_settings_map(){
         Assertions.assertThrows(NullPointerException.class, () -> httpSourceConnector.start(null));
     }
 
     @Test
-    public void test_task_configs_zero_task(){
+    void test_task_configs_zero_task(){
         Map<String,String> settings = Maps.newHashMap();
         settings.put(SUCCESS_TOPIC,"foo");
         settings.put(ERROR_TOPIC,"foo");
@@ -95,7 +95,7 @@ class HttpSourceConnectorTest {
     }
 
     @Test
-    public void test_task_configs_1_task(){
+    void test_task_configs_1_task(){
         Map<String,String> settings = Maps.newHashMap();
         settings.put(SUCCESS_TOPIC,"foo");
         settings.put(ERROR_TOPIC,"foo");
@@ -105,7 +105,7 @@ class HttpSourceConnectorTest {
 
     }
       @Test
-    public void test_task_configs_10_tasks(){
+      void test_task_configs_10_tasks(){
         Map<String,String> settings = Maps.newHashMap();
           settings.put(SUCCESS_TOPIC,"foo");
           settings.put(ERROR_TOPIC,"foo");
