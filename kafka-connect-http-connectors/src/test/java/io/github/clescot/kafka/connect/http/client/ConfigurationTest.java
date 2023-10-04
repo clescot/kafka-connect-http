@@ -395,7 +395,10 @@ class ConfigurationTest {
             config.put("config.dummy."+HEADER_VALUE_REGEX,".*");
             config.put("config.dummy."+STATIC_REQUEST_HEADER_NAMES,"headerName1,headerName2");
             config.put("config.dummy."+STATIC_REQUEST_HEADER_PREFIX+"headerName1","value1");
-            config.put("config.dummy."+STATIC_REQUEST_HEADER_PREFIX+"headerName2",",value2");
+            config.put("config.dummy."+STATIC_REQUEST_HEADER_PREFIX+"headerName2","value2");
+            config.put("config.dummy."+RATE_LIMITER_MAX_EXECUTIONS,"4");
+            config.put("config.dummy."+RATE_LIMITER_PERIOD_IN_MS,"1000");
+            config.put("config.dummy."+RATE_LIMITER_SCOPE,"static");
             Configuration configuration = new Configuration("dummy", new HttpSinkConnectorConfig(config), executorService, getCompositeMeterRegistry());
             String configurationAsString = configuration.toString();
             LOGGER.debug("configurationAsString:{}",configurationAsString);

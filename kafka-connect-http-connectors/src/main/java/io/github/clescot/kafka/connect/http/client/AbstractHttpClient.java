@@ -137,4 +137,31 @@ public abstract class AbstractHttpClient<Req, Res> implements HttpClient<Req, Re
     }
 
     public abstract Object getInternalClient();
+
+    @Override
+    public String toString() {
+        return this.getClass().getSimpleName()+"{" +
+                "rateLimiter=" + rateLimiterToString() +
+                ", trustManagerFactory=" + trustManagerFactory +
+                '}';
+    }
+
+    private String rateLimiterToString(){
+        StringBuilder result = new StringBuilder("{");
+
+        String rateLimiterMaxExecutions = (String) config.get(RATE_LIMITER_MAX_EXECUTIONS);
+        if(rateLimiterMaxExecutions!=null){
+            result.append("rateLimiterMaxExecutions:'").append(rateLimiterMaxExecutions).append("'");
+        }
+        String rateLimiterPeriodInMs = (String) config.get(RATE_LIMITER_PERIOD_IN_MS);
+        if(rateLimiterPeriodInMs!=null){
+            result.append(",rateLimiterPeriodInMs:'").append(rateLimiterPeriodInMs).append("'");
+        }
+        String rateLimiterScope = (String) config.get(RATE_LIMITER_SCOPE);
+        if(rateLimiterScope!=null){
+            result.append(",rateLimiterScope:'").append(rateLimiterScope).append("'");
+        }
+        result.append("}");
+        return result.toString();
+    }
 }
