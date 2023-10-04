@@ -5,6 +5,7 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import io.github.clescot.kafka.connect.http.client.DummyX509Certificate;
 import io.github.clescot.kafka.connect.http.client.HttpClient;
+import io.github.clescot.kafka.connect.http.core.HttpExchange;
 import io.github.clescot.kafka.connect.http.core.HttpRequest;
 import io.github.clescot.kafka.connect.http.core.HttpResponse;
 import io.github.clescot.kafka.connect.http.sink.HttpSinkTaskTest;
@@ -89,15 +90,15 @@ class AHCHttpClientTest {
 
     @Test
     void build_HttpExchange_test_nominal_case() {
-        HashMap<String,
-                String> vars = Maps.newHashMap();
+
         AHCHttpClient httpClient = new AHCHttpClient(asyncHttpClient);
-        httpClient.buildHttpExchange(getDummyHttpRequest(),
+        HttpExchange httpExchange = httpClient.buildHttpExchange(getDummyHttpRequest(),
                 getDummyHttpResponse(200),
                 Stopwatch.createUnstarted(),
                 OffsetDateTime.now(ZoneId.of(AHCHttpClient.UTC_ZONE_ID)),
                 new AtomicInteger(2),
                 SUCCESS);
+        assertThat(httpExchange).isNotNull();
     }
 
     private HttpResponse getDummyHttpResponse(int statusCode) {

@@ -17,6 +17,8 @@ import kotlin.Pair;
 import okhttp3.*;
 import okhttp3.internal.http.HttpMethod;
 import okhttp3.internal.io.FileSystem;
+import org.apache.commons.lang3.exception.ExceptionUtils;
+import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
@@ -355,12 +357,13 @@ public class OkHttpClient extends AbstractHttpClient<Request, Response> {
         CompletableFuture<Response> cf = new CompletableFuture<>();
         client.newCall(request).enqueue(new Callback() {
             @Override
-            public void onFailure(Call call, IOException e) {
+            public void onFailure(@NotNull Call call, @NotNull IOException e) {
+                LOGGER.error("okhttp native call error :{}", ExceptionUtils.getStackTrace(e));
                 cf.completeExceptionally(e);
             }
 
             @Override
-            public void onResponse(Call call, Response response) {
+            public void onResponse(@NotNull Call call, @NotNull Response response) {
                 cf.complete(response);
             }
         });
