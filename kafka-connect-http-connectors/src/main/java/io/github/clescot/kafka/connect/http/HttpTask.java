@@ -173,12 +173,12 @@ public class HttpTask<T extends ConnectRecord<T>> {
                                                            HttpRequest httpRequest,
                                                            AtomicInteger attempts,
                                                            Configuration configuration) {
-        if(LOGGER.isInfoEnabled()){
-            LOGGER.info("before enrichment:{}",httpRequest);
+        if(LOGGER.isTraceEnabled()){
+            LOGGER.trace("before enrichment:{}",httpRequest);
         }
         HttpRequest enrichedHttpRequest = configuration.enrich(httpRequest);
-        if(LOGGER.isInfoEnabled()){
-            LOGGER.info("after enrichment:{}",enrichedHttpRequest);
+        if(LOGGER.isTraceEnabled()){
+            LOGGER.trace("after enrichment:{}",enrichedHttpRequest);
         }
         CompletableFuture<HttpExchange> completableFuture = configuration.getHttpClient().call(enrichedHttpRequest, attempts);
         return completableFuture
