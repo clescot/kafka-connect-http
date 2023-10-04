@@ -173,7 +173,13 @@ public class HttpTask<T extends ConnectRecord<T>> {
                                                            HttpRequest httpRequest,
                                                            AtomicInteger attempts,
                                                            Configuration configuration) {
+        if(LOGGER.isDebugEnabled()){
+            LOGGER.debug("before enrichment:{}",httpRequest);
+        }
         HttpRequest enrichedHttpRequest = configuration.enrich(httpRequest);
+        if(LOGGER.isDebugEnabled()){
+            LOGGER.debug("after enrichment:{}",enrichedHttpRequest);
+        }
         CompletableFuture<HttpExchange> completableFuture = configuration.getHttpClient().call(enrichedHttpRequest, attempts);
         return completableFuture
                 .thenApply(myHttpExchange -> {

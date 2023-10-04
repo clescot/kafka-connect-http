@@ -26,4 +26,11 @@ public class AddStaticHeadersToHttpRequestFunction implements UnaryOperator<Http
     public Map<String, List<String>> getStaticHeaders() {
         return staticHeaders;
     }
+
+    @Override
+    public String toString() {
+        return "AddStaticHeadersToHttpRequestFunction{" +
+                "staticHeaders=" + staticHeaders +
+                '}';
+    }
 }
