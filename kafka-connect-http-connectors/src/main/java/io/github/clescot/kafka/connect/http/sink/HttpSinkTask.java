@@ -130,7 +130,11 @@ public class HttpSinkTask extends SinkTask {
 
     @Override
     public void stop() {
-        ExecutorService executorService = HttpTask.getExecutorService();
+        if(httpTask==null){
+            LOGGER.error("httpTask hasn't been created with the 'start' method");
+            return;
+        }
+        ExecutorService executorService = httpTask.getExecutorService();
         if (executorService != null) {
             if (!executorService.isShutdown()) {
                 executorService.shutdown();

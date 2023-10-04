@@ -86,10 +86,6 @@ public class HttpSinkTaskTest {
             )
             .build();
 
-    @BeforeAll
-    public static void init() {
-        HttpTask.setThreadPoolSize(2);
-    }
 
     @BeforeEach
     public void setUp() {
