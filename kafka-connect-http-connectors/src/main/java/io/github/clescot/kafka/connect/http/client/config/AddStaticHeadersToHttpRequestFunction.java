@@ -29,7 +29,7 @@ public class AddStaticHeadersToHttpRequestFunction implements UnaryOperator<Http
 
     @Override
     public String toString() {
-        return "AddStaticHeadersToHttpRequestFunction{" +
+        return "{" +
                 "staticHeaders=" + staticHeaders +
                 '}';
     }

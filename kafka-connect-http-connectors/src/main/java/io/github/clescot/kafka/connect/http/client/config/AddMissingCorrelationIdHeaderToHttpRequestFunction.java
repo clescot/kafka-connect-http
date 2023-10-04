@@ -39,4 +39,11 @@ public class AddMissingCorrelationIdHeaderToHttpRequestFunction implements Unary
 
         return httpRequest;
     }
+
+    @Override
+    public String toString() {
+        return "{" +
+                "generateMissingCorrelationId=" + generateMissingCorrelationId +
+                '}';
+    }
 }

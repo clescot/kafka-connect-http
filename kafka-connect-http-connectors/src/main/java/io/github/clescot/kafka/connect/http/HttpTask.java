@@ -173,12 +173,12 @@ public class HttpTask<T extends ConnectRecord<T>> {
                                                            HttpRequest httpRequest,
                                                            AtomicInteger attempts,
                                                            Configuration configuration) {
-        if(LOGGER.isDebugEnabled()){
-            LOGGER.debug("before enrichment:{}",httpRequest);
+        if(LOGGER.isInfoEnabled()){
+            LOGGER.info("before enrichment:{}",httpRequest);
         }
         HttpRequest enrichedHttpRequest = configuration.enrich(httpRequest);
-        if(LOGGER.isDebugEnabled()){
-            LOGGER.debug("after enrichment:{}",enrichedHttpRequest);
+        if(LOGGER.isInfoEnabled()){
+            LOGGER.info("after enrichment:{}",enrichedHttpRequest);
         }
         CompletableFuture<HttpExchange> completableFuture = configuration.getHttpClient().call(enrichedHttpRequest, attempts);
         return completableFuture
@@ -239,7 +239,9 @@ public class HttpTask<T extends ConnectRecord<T>> {
                 .filter(config -> config.matches(httpRequest))
                 .findFirst()
                 .orElse(defaultConfiguration);
-
+        if(LOGGER.isTraceEnabled()){
+            LOGGER.trace("configuration:{}",foundConfiguration);
+        }
         //handle Request and Response
         return callWithRetryPolicy(sinkRecord, httpRequest, foundConfiguration).thenApply(
                 myHttpExchange -> {

@@ -40,4 +40,12 @@ public class AddMissingRequestIdHeaderToHttpRequestFunction implements UnaryOper
 
         return httpRequest;
     }
+
+
+    @Override
+    public String toString() {
+        return "{" +
+                "generateMissingRequestId=" + generateMissingRequestId +
+                '}';
+    }
 }
