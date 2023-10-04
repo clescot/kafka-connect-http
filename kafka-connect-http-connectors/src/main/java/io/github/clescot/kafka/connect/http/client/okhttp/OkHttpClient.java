@@ -97,6 +97,8 @@ public class OkHttpClient extends AbstractHttpClient<Request, Response> {
 
         //interceptor
         httpClientBuilder.addNetworkInterceptor(new LoggingInterceptor());
+        //TODO add flag to activate
+        httpClientBuilder.addNetworkInterceptor(new INetAddressInterceptor());
 
         //events
         boolean includeLegacyHostTag = Boolean.parseBoolean((String) config.getOrDefault(METER_REGISTRY_TAG_INCLUDE_LEGACY_HOST, "false"));
