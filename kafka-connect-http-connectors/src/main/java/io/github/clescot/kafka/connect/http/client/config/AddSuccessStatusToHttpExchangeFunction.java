@@ -29,4 +29,11 @@ public class AddSuccessStatusToHttpExchangeFunction implements UnaryOperator<Htt
     public Pattern getSuccessResponseCodeRegex() {
         return successResponseCodeRegex;
     }
+
+    @Override
+    public String toString() {
+        return "{" +
+                "successResponseCodeRegex=" + successResponseCodeRegex +
+                '}';
+    }
 }

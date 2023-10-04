@@ -89,6 +89,7 @@ public class Configuration {
     //http client
     private HttpClient httpClient;
     public final String id;
+    private final Map<String, Object> settings;
 
     public Configuration(String id,
                          AbstractConfig config,
@@ -99,67 +100,66 @@ public class Configuration {
         Preconditions.checkNotNull(config, "httpSinkConnectorConfig must not be null");
 
         //configuration id prefix is not present in the resulting configMap
-        Map<String, Object> configMap = config.originalsWithPrefix("config." + id + ".");
-        configMap.put(CONFIGURATION_ID,id);
-
+        this.settings = config.originalsWithPrefix("config." + id + ".");
+        settings.put(CONFIGURATION_ID, id);
         //main predicate
-        this.mainpredicate = buildPredicate(configMap);
+        this.mainpredicate = buildPredicate(settings);
 
         //enrich request
         //build addStaticHeadersFunction
-        Optional<String> staticHeaderParam = Optional.ofNullable((String) configMap.get(STATIC_REQUEST_HEADER_NAMES));
+        Optional<String> staticHeaderParam = Optional.ofNullable((String) settings.get(STATIC_REQUEST_HEADER_NAMES));
         Map<String, List<String>> staticRequestHeaders = Maps.newHashMap();
         if (staticHeaderParam.isPresent()) {
             List<String> staticRequestHeaderNames = Arrays.asList(staticHeaderParam.get().split(","));
             for (String headerName : staticRequestHeaderNames) {
-                String value = (String) configMap.get(STATIC_REQUEST_HEADER_PREFIX + headerName);
+                String value = (String) settings.get(STATIC_REQUEST_HEADER_PREFIX + headerName);
                 Preconditions.checkNotNull(value, "'" + headerName + "' is not configured as a parameter.");
                 ArrayList<String> values = Lists.newArrayList(value);
                 staticRequestHeaders.put(headerName, values);
-                LOGGER.debug("static header {}:{}",headerName, values);
+                LOGGER.debug("static header {}:{}", headerName, values);
             }
         }
         this.addStaticHeadersToHttpRequestFunction = new AddStaticHeadersToHttpRequestFunction(staticRequestHeaders);
 
         //build addTrackingHeadersFunction
-        boolean generateMissingRequestId = Boolean.parseBoolean((String) configMap.get(GENERATE_MISSING_REQUEST_ID));
-        boolean generateMissingCorrelationId = Boolean.parseBoolean((String) configMap.get(GENERATE_MISSING_CORRELATION_ID));
+        boolean generateMissingRequestId = Boolean.parseBoolean((String) settings.get(GENERATE_MISSING_REQUEST_ID));
+        boolean generateMissingCorrelationId = Boolean.parseBoolean((String) settings.get(GENERATE_MISSING_CORRELATION_ID));
         this.addMissingRequestIdHeaderToHttpRequestFunction = new AddMissingRequestIdHeaderToHttpRequestFunction(generateMissingRequestId);
         this.addMissingCorrelationIdHeaderToHttpRequestFunction = new AddMissingCorrelationIdHeaderToHttpRequestFunction(generateMissingCorrelationId);
 
         //enrich exchange
         //success response code regex
         Pattern successResponseCodeRegex;
-        if (configMap.containsKey(SUCCESS_RESPONSE_CODE_REGEX)) {
-            successResponseCodeRegex = Pattern.compile((String) configMap.get(SUCCESS_RESPONSE_CODE_REGEX));
+        if (settings.containsKey(SUCCESS_RESPONSE_CODE_REGEX)) {
+            successResponseCodeRegex = Pattern.compile((String) settings.get(SUCCESS_RESPONSE_CODE_REGEX));
         } else {
             successResponseCodeRegex = defaultSuccessPattern;
         }
         this.addSuccessStatusToHttpExchangeFunction = new AddSuccessStatusToHttpExchangeFunction(successResponseCodeRegex);
 
 
-        this.httpClient = buildHttpClient(configMap, executorService, meterRegistry);
+        this.httpClient = buildHttpClient(settings, executorService, meterRegistry);
 
         //rate limiter
         Preconditions.checkNotNull(httpClient, "httpClient is null");
-        httpClient.setRateLimiter(buildRateLimiter(id, config, configMap));
+        httpClient.setRateLimiter(buildRateLimiter(id, config, settings));
 
 
         //retry policy
         //retry response code regex
-        if (configMap.containsKey(RETRY_RESPONSE_CODE_REGEX)) {
-            this.retryResponseCodeRegex = Pattern.compile((String) configMap.get(RETRY_RESPONSE_CODE_REGEX));
+        if (settings.containsKey(RETRY_RESPONSE_CODE_REGEX)) {
+            this.retryResponseCodeRegex = Pattern.compile((String) settings.get(RETRY_RESPONSE_CODE_REGEX));
         }
 
-        if (configMap.containsKey(RETRIES)) {
-            Integer retries = Integer.parseInt((String) configMap.get(RETRIES));
-            Long retryDelayInMs = Long.parseLong((String) configMap.get(RETRY_DELAY_IN_MS));
+        if (settings.containsKey(RETRIES)) {
+            Integer retries = Integer.parseInt((String) settings.get(RETRIES));
+            Long retryDelayInMs = Long.parseLong((String) settings.get(RETRY_DELAY_IN_MS));
             Preconditions.checkNotNull(retryDelayInMs, RETRIES + HAS_BEEN_SET + RETRY_DELAY_IN_MS + MUST_BE_SET_TOO);
-            Long retryMaxDelayInMs = Long.parseLong((String) configMap.get(RETRY_MAX_DELAY_IN_MS));
+            Long retryMaxDelayInMs = Long.parseLong((String) settings.get(RETRY_MAX_DELAY_IN_MS));
             Preconditions.checkNotNull(retryDelayInMs, RETRIES + HAS_BEEN_SET + RETRY_MAX_DELAY_IN_MS + MUST_BE_SET_TOO);
-            Double retryDelayFactor = Double.parseDouble((String) configMap.get(RETRY_DELAY_FACTOR));
+            Double retryDelayFactor = Double.parseDouble((String) settings.get(RETRY_DELAY_FACTOR));
             Preconditions.checkNotNull(retryDelayInMs, RETRIES + HAS_BEEN_SET + RETRY_DELAY_FACTOR + MUST_BE_SET_TOO);
-            Long retryJitterInMs = Long.parseLong((String) configMap.get(RETRY_JITTER_IN_MS));
+            Long retryJitterInMs = Long.parseLong((String) settings.get(RETRY_JITTER_IN_MS));
             Preconditions.checkNotNull(retryDelayInMs, RETRIES + HAS_BEEN_SET + RETRY_JITTER_IN_MS + MUST_BE_SET_TOO);
             this.retryPolicy = buildRetryPolicy(retries, retryDelayInMs, retryMaxDelayInMs, retryDelayFactor, retryJitterInMs);
         }
@@ -171,7 +171,7 @@ public class Configuration {
         if (configMap.containsKey(RATE_LIMITER_MAX_EXECUTIONS)) {
             long maxExecutions = Long.parseLong((String) configMap.get(RATE_LIMITER_MAX_EXECUTIONS));
             long defaultMaxExecutions = httpSinkConnectorConfig.getLong(CONFIG_DEFAULT_RATE_LIMITER_PERIOD_IN_MS);
-            long periodInMs = Long.parseLong(Optional.ofNullable((String) configMap.get(RATE_LIMITER_PERIOD_IN_MS)).orElse(defaultMaxExecutions+""));
+            long periodInMs = Long.parseLong(Optional.ofNullable((String) configMap.get(RATE_LIMITER_PERIOD_IN_MS)).orElse(defaultMaxExecutions + ""));
             if (configMap.containsKey(RATE_LIMITER_SCOPE) && STATIC_SCOPE.equalsIgnoreCase((String) configMap.get(RATE_LIMITER_SCOPE))) {
                 Optional<RateLimiter<HttpExchange>> sharedRateLimiter = Optional.ofNullable(sharedRateLimiters.get(id));
                 if (sharedRateLimiter.isPresent()) {
@@ -289,10 +289,10 @@ public class Configuration {
 
         ProxySelectorFactory proxySelectorFactory = new ProxySelectorFactory();
         ProxySelector proxySelector = null;
-        if(config.get(PROXY_SELECTOR_HTTP_CLIENT_0_HOSTNAME) != null) {
+        if (config.get(PROXY_SELECTOR_HTTP_CLIENT_0_HOSTNAME) != null) {
             proxySelector = proxySelectorFactory.build(config, random);
         }
-        return httpClientFactory.build(config, executorService, random,proxy,proxySelector, meterRegistry);
+        return httpClientFactory.build(config, executorService, random, proxy, proxySelector, meterRegistry);
     }
 
 
@@ -394,5 +394,43 @@ public class Configuration {
 
     public AddMissingRequestIdHeaderToHttpRequestFunction getAddTrackingHeadersFunction() {
         return addMissingRequestIdHeaderToHttpRequestFunction;
+    }
+
+    private String predicateToString() {
+        StringBuilder result = new StringBuilder("{");
+        String urlRegex = (String) settings.get(URL_REGEX);
+        if(urlRegex!=null) {
+            result.append("urlRegex:").append(urlRegex);
+        }
+        String methodRegex = (String) settings.get(METHOD_REGEX);
+        if(methodRegex!=null) {
+            result.append(";methodRegex:").append(methodRegex);
+        }
+        String bodytypeRegex = (String) settings.get(BODYTYPE_REGEX);
+        if(bodytypeRegex!=null) {
+            result.append(";bodytypeRegex:").append(bodytypeRegex);
+        }
+        String headerKeyRegex = (String) settings.get(HEADER_KEY_REGEX);
+        if(headerKeyRegex!=null) {
+            result.append(";headerKeyRegex:").append(headerKeyRegex);
+        }
+        result.append("}");
+        return result.toString();
+    }
+
+    @Override
+    public String toString() {
+        return "Configuration{" +
+                "mainpredicate=" + predicateToString() +
+                ", defaultSuccessPattern=" + defaultSuccessPattern +
+                ", addStaticHeadersToHttpRequestFunction=" + addStaticHeadersToHttpRequestFunction +
+                ", addMissingRequestIdHeaderToHttpRequestFunction=" + addMissingRequestIdHeaderToHttpRequestFunction +
+                ", addMissingCorrelationIdHeaderToHttpRequestFunction=" + addMissingCorrelationIdHeaderToHttpRequestFunction +
+                ", addSuccessStatusToHttpExchangeFunction=" + addSuccessStatusToHttpExchangeFunction +
+                ", retryResponseCodeRegex=" + retryResponseCodeRegex +
+                ", retryPolicy=" + retryPolicy +
+                ", httpClient=" + httpClient +
+                ", id='" + id + '\'' +
+                '}';
     }
 }
