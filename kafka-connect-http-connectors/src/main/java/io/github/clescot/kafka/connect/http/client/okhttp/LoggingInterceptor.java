@@ -3,6 +3,7 @@ package io.github.clescot.kafka.connect.http.client.okhttp;
 import okhttp3.Interceptor;
 import okhttp3.Request;
 import okhttp3.Response;
+import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -12,6 +13,7 @@ public class LoggingInterceptor implements Interceptor {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(LoggingInterceptor.class);
 
+        @NotNull
         @Override public Response intercept(Interceptor.Chain chain) throws IOException {
             Request request = chain.request();
 
