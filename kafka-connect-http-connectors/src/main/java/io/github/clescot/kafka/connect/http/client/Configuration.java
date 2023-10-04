@@ -114,7 +114,9 @@ public class Configuration {
             for (String headerName : staticRequestHeaderNames) {
                 String value = (String) configMap.get(STATIC_REQUEST_HEADER_PREFIX + headerName);
                 Preconditions.checkNotNull(value, "'" + headerName + "' is not configured as a parameter.");
-                staticRequestHeaders.put(headerName, Lists.newArrayList(value));
+                ArrayList<String> values = Lists.newArrayList(value);
+                staticRequestHeaders.put(headerName, values);
+                LOGGER.debug("static header {}:{}",headerName, values);
             }
         }
         this.addStaticHeadersToHttpRequestFunction = new AddStaticHeadersToHttpRequestFunction(staticRequestHeaders);
