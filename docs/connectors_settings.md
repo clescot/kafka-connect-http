@@ -135,7 +135,7 @@ The predicate permits to filter some http requests, and can be composed, cumulat
       - `3xx` is for redirection
       - `4xx` is for a client error
       - `5xx` is for a server error
-    - *`config.default.retries`* : if set with other default retry parameters, permit to define a default retry policy, which can be overriden in the httpRequest object. Define how many retries before an error is thrown
+    - *`config.default.retry.policy.retries`* : if set with other default retry parameters, permit to define a default retry policy, which can be overriden in the httpRequest object. Define how many retries before an error is thrown
     - *`config.default.retry.delay.in.ms`* : if set with other default retry parameters, permit to define a default retry policy, which can be overriden in the httpRequest object. Define how long wait initially before first retry
     - *`config.default.retry.max.delay.in.ms`* : if set with other default retry parameters, permit to define a default retry policy, which can be overriden in the httpRequest object. Define how long max wait before retry
     - *`config.default.retry.delay.factor`* : if set with other default retry parameters, permit to define a default retry policy, which can be overriden in the httpRequest object. Define the factor to multiply the previous delay to define the current retry delay

@@ -30,6 +30,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import static io.github.clescot.kafka.connect.http.client.Configuration.*;
 import static io.github.clescot.kafka.connect.http.sink.HttpSinkConfigDefinition.*;
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -382,6 +383,16 @@ class ConfigurationTest {
             Map<String, String> config = Maps.newHashMap();
             config.put("config.dummy." + RETRY_RESPONSE_CODE_REGEX, "^2[0-9][0-9]$");
             config.put(CONFIG_DEFAULT_RETRY_RESPONSE_CODE_REGEX, "^[1-5][0-9][0-9]$");
+            config.put("config.dummy.retry.policy.retries","3");
+            config.put("config.dummy.retry.delay.in.ms","600");
+            config.put("config.dummy.retry.max.delay.in.ms","1200");
+            config.put("config.dummy.retry.delay.factor","1.2");
+            config.put("config.dummy.retry.jitter.in.ms","200");
+            config.put("config.dummy."+URL_REGEX,".*");
+            config.put("config.dummy."+METHOD_REGEX,"GET");
+            config.put("config.dummy."+BODYTYPE_REGEX,"STRING");
+            config.put("config.dummy."+HEADER_KEY_REGEX,".*");
+            config.put("config.dummy."+HEADER_VALUE_REGEX,".*");
             Configuration configuration = new Configuration("dummy", new HttpSinkConnectorConfig(config), executorService, getCompositeMeterRegistry());
             String configurationAsString = configuration.toString();
             LOGGER.debug("configurationAsString:{}",configurationAsString);
