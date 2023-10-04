@@ -59,7 +59,7 @@ public class HttpTask<T extends ConnectRecord<T>> {
     private static final Logger LOGGER = LoggerFactory.getLogger(HttpTask.class);
     public static final String SINK_RECORD_HAS_GOT_A_NULL_VALUE = "sinkRecord has got a 'null' value";
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper().registerModule(new JavaTimeModule());
-    private static ExecutorService executorService;
+    private ExecutorService executorService;
     private final Configuration defaultConfiguration;
     private final boolean publishToInMemoryQueue;
     private final String queueName;
@@ -72,7 +72,7 @@ public class HttpTask<T extends ConnectRecord<T>> {
             HttpTask.meterRegistry = buildMeterRegistry(config);
         }
         Optional<Integer> customFixedThreadPoolSize = Optional.ofNullable(config.getInt(CONFIG_HTTP_CLIENT_ASYNC_FIXED_THREAD_POOL_SIZE));
-        if (executorService == null && customFixedThreadPoolSize.isPresent()) {
+        if (customFixedThreadPoolSize.isPresent()) {
             setThreadPoolSize(customFixedThreadPoolSize.get());
         }
         bindMetrics(config, meterRegistry, executorService);
@@ -323,7 +323,7 @@ public class HttpTask<T extends ConnectRecord<T>> {
      *
      * @param customFixedThreadPoolSize max thread pool size for the executorService.
      */
-    public static synchronized void setThreadPoolSize(Integer customFixedThreadPoolSize) {
+    public void setThreadPoolSize(Integer customFixedThreadPoolSize) {
         executorService = Executors.newFixedThreadPool(customFixedThreadPoolSize);
     }
 
@@ -335,7 +335,7 @@ public class HttpTask<T extends ConnectRecord<T>> {
         return defaultConfiguration;
     }
 
-    public static ExecutorService getExecutorService() {
+    public ExecutorService getExecutorService() {
         return executorService;
     }
 
