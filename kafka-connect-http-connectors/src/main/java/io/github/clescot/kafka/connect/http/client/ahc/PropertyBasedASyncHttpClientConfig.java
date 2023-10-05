@@ -36,7 +36,7 @@ public class PropertyBasedASyncHttpClientConfig implements AsyncHttpClientConfig
     private final Properties properties;
     private final ConcurrentHashMap<String, String> propsCache = new ConcurrentHashMap<>();
     private ThreadFactory threadFactory;
-    private ProxyServerSelector ProxyServerSelector;
+    private ProxyServerSelector proxyServerSelector;
     private SslContext sslContext;
     private Realm realm;
     private List<RequestFilter> requestFilters = Lists.newLinkedList();
@@ -144,7 +144,7 @@ public class PropertyBasedASyncHttpClientConfig implements AsyncHttpClientConfig
 
     @Override
     public ProxyServerSelector getProxyServerSelector() {
-        return ProxyServerSelector;
+        return proxyServerSelector;
     }
 
     @Override
@@ -484,7 +484,7 @@ public class PropertyBasedASyncHttpClientConfig implements AsyncHttpClientConfig
     }
 
     public void setProxyServerSelector(org.asynchttpclient.proxy.ProxyServerSelector proxyServerSelector) {
-        ProxyServerSelector = proxyServerSelector;
+        this.proxyServerSelector = proxyServerSelector;
     }
 
     public void setSslContext(SslContext sslContext) {
