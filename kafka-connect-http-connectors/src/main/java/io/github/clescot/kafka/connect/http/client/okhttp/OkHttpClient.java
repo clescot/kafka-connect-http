@@ -98,7 +98,7 @@ public class OkHttpClient extends AbstractHttpClient<Request, Response> {
         //interceptors
         httpClientBuilder.addNetworkInterceptor(new LoggingInterceptor());
         //TODO add flag to activate
-        httpClientBuilder.addNetworkInterceptor(new INetAddressInterceptor());
+        httpClientBuilder.addNetworkInterceptor(new InetAddressInterceptor());
         //TODO add flag to activate
         httpClientBuilder.addNetworkInterceptor(new SSLHandshakeInterceptor());
 

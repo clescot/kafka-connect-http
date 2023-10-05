@@ -17,7 +17,6 @@ import static org.mockito.Mockito.when;
 @ExtendWith(MockitoExtension.class)
 class LoggingInterceptorTest {
     private final Logger LOGGER = LoggerFactory.getLogger(LoggingInterceptorTest.class);
-    private AutoCloseable closeable;
     @Mock
     Interceptor.Chain chain;
     @Mock
