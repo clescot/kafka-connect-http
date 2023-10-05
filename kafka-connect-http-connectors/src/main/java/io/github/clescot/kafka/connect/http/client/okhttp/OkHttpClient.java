@@ -9,6 +9,9 @@ import io.github.clescot.kafka.connect.http.client.Configuration;
 import io.github.clescot.kafka.connect.http.client.HttpException;
 import io.github.clescot.kafka.connect.http.client.okhttp.configuration.AuthenticationConfigurer;
 import io.github.clescot.kafka.connect.http.client.okhttp.event.AdvancedEventListenerFactory;
+import io.github.clescot.kafka.connect.http.client.okhttp.interceptor.InetAddressInterceptor;
+import io.github.clescot.kafka.connect.http.client.okhttp.interceptor.LoggingInterceptor;
+import io.github.clescot.kafka.connect.http.client.okhttp.interceptor.SSLHandshakeInterceptor;
 import io.github.clescot.kafka.connect.http.core.HttpRequest;
 import io.github.clescot.kafka.connect.http.core.HttpResponse;
 import io.micrometer.core.instrument.binder.system.DiskSpaceMetrics;
@@ -82,6 +85,7 @@ public class OkHttpClient extends AbstractHttpClient<Request, Response> {
         }
 
         configureConnectionPool(config, httpClientBuilder);
+
         //protocols
         configureProtocols(config, httpClientBuilder);
         configureSSL(config, httpClientBuilder);
@@ -95,31 +99,42 @@ public class OkHttpClient extends AbstractHttpClient<Request, Response> {
         AuthenticationConfigurer authenticationConfigurer = new AuthenticationConfigurer(random);
         authenticationConfigurer.configure(config, httpClientBuilder);
 
-        //interceptor
-        httpClientBuilder.addNetworkInterceptor(new LoggingInterceptor());
+        //interceptors
+        boolean activateLoggingInterceptor = Boolean.parseBoolean((String) config.getOrDefault(CONFIG_DEFAULT_OKHTTP_INTERCEPTOR_LOGGING_ACTIVATE, TRUE));
+        if (activateLoggingInterceptor) {
+            httpClientBuilder.addNetworkInterceptor(new LoggingInterceptor());
+        }
+        boolean activateInetAddressInterceptor = Boolean.parseBoolean((String) config.getOrDefault(CONFIG_DEFAULT_OKHTTP_INTERCEPTOR_INET_ADDRESS_ACTIVATE, FALSE));
+        if (activateInetAddressInterceptor) {
+            httpClientBuilder.addNetworkInterceptor(new InetAddressInterceptor());
+        }
+        boolean activateSslHandshakeInterceptor = Boolean.parseBoolean((String) config.getOrDefault(CONFIG_DEFAULT_OKHTTP_INTERCEPTOR_SSL_HANDSHAKE_ACTIVATE, FALSE));
+        if (activateSslHandshakeInterceptor) {
+            httpClientBuilder.addNetworkInterceptor(new SSLHandshakeInterceptor());
+        }
 
         //events
-        boolean includeLegacyHostTag = Boolean.parseBoolean((String) config.getOrDefault(METER_REGISTRY_TAG_INCLUDE_LEGACY_HOST, "false"));
-        boolean includeUrlPath = Boolean.parseBoolean((String) config.getOrDefault(METER_REGISTRY_TAG_INCLUDE_URL_PATH, "false"));
+        boolean includeLegacyHostTag = Boolean.parseBoolean((String) config.getOrDefault(METER_REGISTRY_TAG_INCLUDE_LEGACY_HOST, FALSE));
+        boolean includeUrlPath = Boolean.parseBoolean((String) config.getOrDefault(METER_REGISTRY_TAG_INCLUDE_URL_PATH, FALSE));
         if (!meterRegistry.getRegistries().isEmpty()) {
             List<String> tags = Lists.newArrayList();
             tags.add(Configuration.CONFIGURATION_ID);
-            tags.add(config.get(Configuration.CONFIGURATION_ID)!=null?(String)config.get(Configuration.CONFIGURATION_ID):DEFAULT_CONFIGURATION_ID);
+            tags.add(config.get(Configuration.CONFIGURATION_ID) != null ? (String) config.get(Configuration.CONFIGURATION_ID) : DEFAULT_CONFIGURATION_ID);
             String connectorName = MDC.get(CONNECTOR_NAME);
-            if(connectorName!=null) {
+            if (connectorName != null) {
                 tags.add(CONNECTOR_NAME);
                 tags.add(connectorName);
             }
 
             String connectorTask = MDC.get(CONNECTOR_TASK);
-            if(connectorTask!=null) {
+            if (connectorTask != null) {
                 tags.add(CONNECTOR_TASK);
                 tags.add(connectorTask);
             }
 
 
             httpClientBuilder.eventListenerFactory(new AdvancedEventListenerFactory(meterRegistry, includeLegacyHostTag, includeUrlPath
-                    ,tags.toArray(new String[0])
+                    , tags.toArray(new String[0])
             ));
         }
         client = httpClientBuilder.build();
@@ -327,10 +342,12 @@ public class OkHttpClient extends AbstractHttpClient<Request, Response> {
         HttpResponse httpResponse;
         try {
             Protocol protocol = response.protocol();
-            LOGGER.debug("protocol: '{}'", protocol);
-            LOGGER.debug("cache-control: '{}'", response.cacheControl());
-            LOGGER.debug("handshake: '{}'", response.handshake());
-            LOGGER.debug("challenges: '{}'", response.challenges());
+            if (LOGGER.isDebugEnabled()) {
+                LOGGER.debug("protocol: '{}'", protocol);
+                LOGGER.debug("cache-control: '{}'", response.cacheControl());
+                LOGGER.debug("handshake: '{}'", response.handshake());
+                LOGGER.debug("challenges: '{}'", response.challenges());
+            }
             httpResponse = new HttpResponse(response.code(), response.message());
             if (response.body() != null) {
                 httpResponse.setResponseBody(response.body().string());
@@ -371,7 +388,6 @@ public class OkHttpClient extends AbstractHttpClient<Request, Response> {
     }
 
     /**
-     *
      * @return {@link okhttp3.OkHttpClient}
      */
     @Override

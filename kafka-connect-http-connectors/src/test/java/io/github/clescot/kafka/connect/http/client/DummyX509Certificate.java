@@ -8,6 +8,16 @@ import java.util.Date;
 import java.util.Set;
 
 public class DummyX509Certificate extends X509Certificate {
+
+    int version;
+    BigInteger serialNumber = BigInteger.valueOf(123456789L);
+    private X500Principal issuerDN = new X500Principal("CN=Issuer, OU=JavaSoft, O=Sun Microsystems, C=US");
+    private X500Principal subjectDN = new X500Principal("CN=Duke, OU=JavaSoft, O=Sun Microsystems, C=US");
+    private Date notBefore = new Date();
+    private Date notAfter = new Date();
+    private String sigAlgName;
+    private String sigAlgOID;
+
     @Override
     public void checkValidity() throws CertificateExpiredException, CertificateNotYetValidException {
 
@@ -20,36 +30,36 @@ public class DummyX509Certificate extends X509Certificate {
 
     @Override
     public int getVersion() {
-        return 0;
+        return version;
     }
 
     @Override
     public BigInteger getSerialNumber() {
-        return BigInteger.valueOf(123456789L);
+        return serialNumber;
     }
 
     @Override
     public Principal getIssuerDN() {
-        return new X500Principal("dummy");
+        return issuerDN;
     }
 
     @Override
     public Principal getSubjectDN() {
-        return new X500Principal("CN=Duke, OU=JavaSoft, O=Sun Microsystems, C=US");
+        return subjectDN;
     }
 
     @Override
     public Date getNotBefore() {
-        return new Date();
+        return notBefore;
     }
 
     @Override
     public Date getNotAfter() {
-        return new Date();
+        return notAfter;
     }
 
     @Override
-    public byte[] getTBSCertificate() throws CertificateEncodingException {
+    public byte[] getTBSCertificate() {
         return new byte[0];
     }
 
@@ -60,12 +70,12 @@ public class DummyX509Certificate extends X509Certificate {
 
     @Override
     public String getSigAlgName() {
-        return null;
+        return sigAlgName;
     }
 
     @Override
     public String getSigAlgOID() {
-        return null;
+        return sigAlgOID;
     }
 
     @Override
@@ -98,6 +108,38 @@ public class DummyX509Certificate extends X509Certificate {
         return new byte[0];
     }
 
+    public void setVersion(int version) {
+        this.version = version;
+    }
+
+    public void setSerialNumber(BigInteger serialNumber) {
+        this.serialNumber = serialNumber;
+    }
+
+    public void setIssuerDN(X500Principal issuerDN) {
+        this.issuerDN = issuerDN;
+    }
+
+    public void setSubjectDN(X500Principal subjectDN) {
+        this.subjectDN = subjectDN;
+    }
+
+    public void setNotBefore(Date notBefore) {
+        this.notBefore = notBefore;
+    }
+
+    public void setNotAfter(Date notAfter) {
+        this.notAfter = notAfter;
+    }
+
+    public void setSigAlgName(String sigAlgName) {
+        this.sigAlgName = sigAlgName;
+    }
+
+    public void setSigAlgOID(String sigAlgOID) {
+        this.sigAlgOID = sigAlgOID;
+    }
+
     @Override
     public void verify(PublicKey key) throws CertificateException, NoSuchAlgorithmException, InvalidKeyException, NoSuchProviderException, SignatureException {
 
@@ -106,11 +148,6 @@ public class DummyX509Certificate extends X509Certificate {
     @Override
     public void verify(PublicKey key, String sigProvider) throws CertificateException, NoSuchAlgorithmException, InvalidKeyException, NoSuchProviderException, SignatureException {
 
-    }
-
-    @Override
-    public String toString() {
-        return null;
     }
 
     @Override
@@ -136,5 +173,19 @@ public class DummyX509Certificate extends X509Certificate {
     @Override
     public byte[] getExtensionValue(String oid) {
         return new byte[0];
+    }
+
+    @Override
+    public String toString() {
+        return "DummyX509Certificate{" +
+                "version=" + version +
+                ", serialNumber=" + serialNumber +
+                ", issuerDN=" + issuerDN +
+                ", subjectDN=" + subjectDN +
+                ", notBefore=" + notBefore +
+                ", notAfter=" + notAfter +
+                ", sigAlgName='" + sigAlgName + '\'' +
+                ", sigAlgOID='" + sigAlgOID + '\'' +
+                '}';
     }
 }
