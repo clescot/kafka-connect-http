@@ -1,4 +1,4 @@
-package io.github.clescot.kafka.connect.http.client.okhttp;
+package io.github.clescot.kafka.connect.http.client.okhttp.interceptor;
 
 import com.google.common.collect.Lists;
 import okhttp3.*;
@@ -49,6 +49,7 @@ class LoggingInterceptorTest {
         Headers.Builder headersResponseBuilder = new Headers.Builder();
         headersResponseBuilder.add("Content-Type","application/json");
         when(response.headers()).thenReturn(headersResponseBuilder.build());
+
         LoggingInterceptor loggingInterceptor = new LoggingInterceptor();
         //when
         Response myResponse = loggingInterceptor.intercept(chain);

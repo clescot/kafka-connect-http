@@ -207,6 +207,17 @@ The predicate permits to filter some http requests, and can be composed, cumulat
     - *`config.default.okhttp.cache.max.size`* (default `10000` max cache entries)
     - *`config.default.okhttp.cache.directory.path`* (default `/tmp/kafka-connect-http-cache` directory path for `file` type, default `/kafka-connect-http-cache` for `inmemory` type)
     - *`config.default.okhttp.cache.type`* (default `file`, and can be set to `inmemory`)
+    - *`config.default.okhttp.interceptor.logging.activate`* (default `true`, and can be set to `false`) : trace in the output (at the debug level) Http request and response
+    - *`config.default.okhttp.interceptor.inet.address.activate`* (default `false`, and can be set to `true`) : : add in the HttpResponse some additionnal Headers : 
+      - `X-Host-Address` for the remote host address (for example, `87.248.100.215`)
+      - `X-Host-Name` for the remote host name (for example, `www.yahoo.com`)
+      - `X-Canonical-Host-Name` for the remote canonical host name (for example, `media-router-fp73.prod.media.vip.ir2.yahoo.com`)
+    - *`config.default.okhttp.interceptor.ssl.handshake.activate`* (default `false`, and can be set to `true`) : display at the debug level, informations about the SSL handshake :
+      - local principal
+      - local certificates
+      - remote principal
+      - remote certificates
+      - cipherSuite name
   - _Async Http Client (AHC)_ implementation settings
     - *`org.asynchttpclient.http.max.connections`* :  (default `3`)
     - *`org.asynchttpclient.http.rate.limit.per.second`* (default `3`)

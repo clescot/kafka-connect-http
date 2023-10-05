@@ -406,6 +406,21 @@ public class HttpSinkConfigDefinition {
     public static final String OKHTTP_FOLLOW_SSL_REDIRECT = OKHTTP_PREFIX + "follow.ssl.redirect";
     public static final String CONFIG_DEFAULT_OKHTTP_FOLLOW_SSL_REDIRECT = DEFAULT_CONFIGURATION_PREFIX + OKHTTP_FOLLOW_SSL_REDIRECT;
     public static final String CONFIG_DEFAULT_OKHTTP_FOLLOW_SSL_REDIRECT_DOC = "does the http client need to follow an SSL redirect response from the server. default to true.";
+
+    public static final String OKHTTP_INTERCEPTOR_LOGGING_ACTIVATE = OKHTTP_PREFIX + "interceptor.logging.activate";
+    public static final String CONFIG_DEFAULT_OKHTTP_INTERCEPTOR_LOGGING_ACTIVATE = DEFAULT_CONFIGURATION_PREFIX + OKHTTP_INTERCEPTOR_LOGGING_ACTIVATE;
+    public static final String CONFIG_DEFAULT_OKHTTP_INTERCEPTOR_LOGGING_ACTIVATE_DOC = "activate tracing of request and responses via an okhttp network interceptor. 'true' and 'false' are accepted values. default is true";
+
+    public static final String OKHTTP_INTERCEPTOR_INET_ADDRESS_ACTIVATE = OKHTTP_PREFIX + "interceptor.inet.address.activate";
+    public static final String CONFIG_DEFAULT_OKHTTP_INTERCEPTOR_INET_ADDRESS_ACTIVATE = DEFAULT_CONFIGURATION_PREFIX + OKHTTP_INTERCEPTOR_INET_ADDRESS_ACTIVATE;
+    public static final String CONFIG_DEFAULT_OKHTTP_INTERCEPTOR_INET_ADDRESS_ACTIVATE_DOC = "activate tracing of request and responses via an okhttp network interceptor. 'true' and 'false' are accepted values. default is true";
+
+    public static final String OKHTTP_INTERCEPTOR_SSL_HANDSHAKE_ACTIVATE = OKHTTP_PREFIX + "interceptor.ssl.handshake.activate";
+    public static final String CONFIG_DEFAULT_OKHTTP_INTERCEPTOR_SSL_HANDSHAKE_ACTIVATE = DEFAULT_CONFIGURATION_PREFIX + OKHTTP_INTERCEPTOR_SSL_HANDSHAKE_ACTIVATE;
+    public static final String CONFIG_DEFAULT_OKHTTP_INTERCEPTOR_SSL_HANDSHAKE_ACTIVATE_DOC = "activate tracing of request and responses via an okhttp network interceptor. 'true' and 'false' are accepted values. default is true";
+
+
+
     public static final String FALSE = "false";
     public static final String TRUE = "true";
 
@@ -497,6 +512,18 @@ public class HttpSinkConfigDefinition {
                 //custom configurations
                 .define(CONFIGURATION_IDS,ConfigDef.Type.LIST, Lists.newArrayList(),ConfigDef.Importance.LOW, CONFIGURATION_IDS_DOC)
 
+                //proxy
+                .define(CONFIG_DEFAULT_PROXY_HTTP_CLIENT_HOSTNAME,ConfigDef.Type.STRING, null,ConfigDef.Importance.LOW, CONFIG_DEFAULT_PROXY_HTTP_CLIENT_HOSTNAME_DOC)
+                .define(CONFIG_DEFAULT_PROXY_HTTP_CLIENT_PORT,ConfigDef.Type.STRING, null,ConfigDef.Importance.LOW, CONFIG_DEFAULT_PROXY_HTTP_CLIENT_PORT_DOC)
+                .define(CONFIG_DEFAULT_PROXY_HTTP_CLIENT_TYPE,ConfigDef.Type.STRING, null,ConfigDef.Importance.LOW, CONFIG_DEFAULT_PROXY_HTTP_CLIENT_TYPE_DOC)
+                //proxy selector
+                .define(CONFIG_DEFAULT_PROXY_SELECTOR_ALGORITHM,ConfigDef.Type.STRING, "uriregex",ConfigDef.Importance.LOW, CONFIG_DEFAULT_PROXY_SELECTOR_ALGORITHM_DOC)
+                .define(CONFIG_DEFAULT_PROXY_SELECTOR_HTTP_CLIENT_0_HOSTNAME,ConfigDef.Type.STRING, null,ConfigDef.Importance.LOW, CONFIG_DEFAULT_PROXY_SELECTOR_HTTP_CLIENT_0_HOSTNAME_DOC)
+                .define(CONFIG_DEFAULT_PROXY_SELECTOR_HTTP_CLIENT_0_PORT,ConfigDef.Type.STRING, null,ConfigDef.Importance.LOW, CONFIG_DEFAULT_PROXY_SELECTOR_HTTP_CLIENT_0_PORT_DOC)
+                .define(CONFIG_DEFAULT_PROXY_SELECTOR_HTTP_CLIENT_0_TYPE,ConfigDef.Type.STRING, null,ConfigDef.Importance.LOW, CONFIG_DEFAULT_PROXY_SELECTOR_HTTP_CLIENT_0_TYPE_DOC)
+                .define(CONFIG_DEFAULT_PROXY_SELECTOR_HTTP_CLIENT_0_URI_REGEX,ConfigDef.Type.STRING, null,ConfigDef.Importance.LOW, CONFIG_DEFAULT_PROXY_SELECTOR_HTTP_CLIENT_0_URI_REGEX_DOC)
+                .define(CONFIG_DEFAULT_PROXY_SELECTOR_HTTP_CLIENT_NON_PROXY_HOSTS_URI_REGEX,ConfigDef.Type.STRING, null,ConfigDef.Importance.LOW, CONFIG_DEFAULT_PROXY_SELECTOR_HTTP_CLIENT_NON_PROXY_HOSTS_URI_REGEX_DOC)
+
                 //'okhttp' settings
                 //cache
                 .define(CONFIG_DEFAULT_OKHTTP_CACHE_ACTIVATE,ConfigDef.Type.STRING,FALSE, ConfigDef.Importance.LOW,CONFIG_DEFAULT_OKHTTP_CACHE_ACTIVATE_DOC)
@@ -519,17 +546,11 @@ public class HttpSinkConfigDefinition {
                 //follow redirect
                 .define(CONFIG_DEFAULT_OKHTTP_FOLLOW_REDIRECT,ConfigDef.Type.STRING, TRUE,ConfigDef.Importance.LOW, CONFIG_DEFAULT_OKHTTP_FOLLOW_REDIRECT_DOC)
                 .define(CONFIG_DEFAULT_OKHTTP_FOLLOW_SSL_REDIRECT,ConfigDef.Type.STRING, TRUE,ConfigDef.Importance.LOW, CONFIG_DEFAULT_OKHTTP_FOLLOW_SSL_REDIRECT_DOC)
-                //proxy
-                .define(CONFIG_DEFAULT_PROXY_HTTP_CLIENT_HOSTNAME,ConfigDef.Type.STRING, null,ConfigDef.Importance.LOW, CONFIG_DEFAULT_PROXY_HTTP_CLIENT_HOSTNAME_DOC)
-                .define(CONFIG_DEFAULT_PROXY_HTTP_CLIENT_PORT,ConfigDef.Type.STRING, null,ConfigDef.Importance.LOW, CONFIG_DEFAULT_PROXY_HTTP_CLIENT_PORT_DOC)
-                .define(CONFIG_DEFAULT_PROXY_HTTP_CLIENT_TYPE,ConfigDef.Type.STRING, null,ConfigDef.Importance.LOW, CONFIG_DEFAULT_PROXY_HTTP_CLIENT_TYPE_DOC)
-                //proxy selector
-                .define(CONFIG_DEFAULT_PROXY_SELECTOR_ALGORITHM,ConfigDef.Type.STRING, "uriregex",ConfigDef.Importance.LOW, CONFIG_DEFAULT_PROXY_SELECTOR_ALGORITHM_DOC)
-                .define(CONFIG_DEFAULT_PROXY_SELECTOR_HTTP_CLIENT_0_HOSTNAME,ConfigDef.Type.STRING, null,ConfigDef.Importance.LOW, CONFIG_DEFAULT_PROXY_SELECTOR_HTTP_CLIENT_0_HOSTNAME_DOC)
-                .define(CONFIG_DEFAULT_PROXY_SELECTOR_HTTP_CLIENT_0_PORT,ConfigDef.Type.STRING, null,ConfigDef.Importance.LOW, CONFIG_DEFAULT_PROXY_SELECTOR_HTTP_CLIENT_0_PORT_DOC)
-                .define(CONFIG_DEFAULT_PROXY_SELECTOR_HTTP_CLIENT_0_TYPE,ConfigDef.Type.STRING, null,ConfigDef.Importance.LOW, CONFIG_DEFAULT_PROXY_SELECTOR_HTTP_CLIENT_0_TYPE_DOC)
-                .define(CONFIG_DEFAULT_PROXY_SELECTOR_HTTP_CLIENT_0_URI_REGEX,ConfigDef.Type.STRING, null,ConfigDef.Importance.LOW, CONFIG_DEFAULT_PROXY_SELECTOR_HTTP_CLIENT_0_URI_REGEX_DOC)
-                .define(CONFIG_DEFAULT_PROXY_SELECTOR_HTTP_CLIENT_NON_PROXY_HOSTS_URI_REGEX,ConfigDef.Type.STRING, null,ConfigDef.Importance.LOW, CONFIG_DEFAULT_PROXY_SELECTOR_HTTP_CLIENT_NON_PROXY_HOSTS_URI_REGEX_DOC)
+
+                //interceptors
+                .define(CONFIG_DEFAULT_OKHTTP_INTERCEPTOR_LOGGING_ACTIVATE,ConfigDef.Type.STRING, "true",ConfigDef.Importance.LOW, CONFIG_DEFAULT_OKHTTP_INTERCEPTOR_LOGGING_ACTIVATE_DOC)
+                .define(CONFIG_DEFAULT_OKHTTP_INTERCEPTOR_INET_ADDRESS_ACTIVATE,ConfigDef.Type.STRING, "false",ConfigDef.Importance.LOW, CONFIG_DEFAULT_OKHTTP_INTERCEPTOR_INET_ADDRESS_ACTIVATE_DOC)
+                .define(CONFIG_DEFAULT_OKHTTP_INTERCEPTOR_SSL_HANDSHAKE_ACTIVATE,ConfigDef.Type.STRING, "false",ConfigDef.Importance.LOW, CONFIG_DEFAULT_OKHTTP_INTERCEPTOR_SSL_HANDSHAKE_ACTIVATE_DOC)
                 ;
     }
 }

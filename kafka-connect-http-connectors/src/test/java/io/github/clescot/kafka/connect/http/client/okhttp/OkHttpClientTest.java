@@ -1121,7 +1121,9 @@ class OkHttpClientTest {
         void test_yahoo() throws ExecutionException, InterruptedException {
             //given
             HashMap<String, Object> config = Maps.newHashMap();
-            io.github.clescot.kafka.connect.http.client.okhttp.OkHttpClient client = new io.github.clescot.kafka.connect.http.client.okhttp.OkHttpClient(config, null, new Random(), null, null, getCompositeMeterRegistry());
+            config.put("config.default.okhttp.interceptor.logging.activate","false");
+            config.put("config.default.okhttp.interceptor.inet.address.activate","true");
+            OkHttpClient client = new OkHttpClient(config, null, new Random(), null, null, getCompositeMeterRegistry());
 
             String baseUrl = "https://www.yahoo.com";
             String url = baseUrl + "";

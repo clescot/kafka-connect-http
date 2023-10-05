@@ -1,4 +1,4 @@
-package io.github.clescot.kafka.connect.http.client.okhttp;
+package io.github.clescot.kafka.connect.http.client.okhttp.interceptor;
 
 import com.google.common.collect.Lists;
 import io.github.clescot.kafka.connect.http.client.DummyX509Certificate;
