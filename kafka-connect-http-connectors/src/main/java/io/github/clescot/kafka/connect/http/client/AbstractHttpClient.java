@@ -41,9 +41,9 @@ public abstract class AbstractHttpClient<Req, Res> implements HttpClient<Req, Re
             Optional<TrustManagerFactory> trustManagerFactoryOption = Optional.ofNullable(
                     HttpClient.getTrustManagerFactory(config));
             if (trustManagerFactoryOption.isPresent()) {
-                TrustManagerFactory trustManagerFactory = trustManagerFactoryOption.get();
-                LOGGER.info("using trustManagerFactory class : {}",trustManagerFactory.getClass().getName());
-                return Optional.of(trustManagerFactory);
+                TrustManagerFactory myTrustManagerFactory = trustManagerFactoryOption.get();
+                LOGGER.info("using trustManagerFactory class : {}",myTrustManagerFactory.getClass().getName());
+                return Optional.of(myTrustManagerFactory);
             }
         }
         return Optional.empty();

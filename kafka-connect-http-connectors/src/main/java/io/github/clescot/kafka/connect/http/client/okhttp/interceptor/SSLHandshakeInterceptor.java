@@ -23,10 +23,8 @@ public class SSLHandshakeInterceptor implements Interceptor {
             if (handshake != null) {
                 //cipher
                 CipherSuite cipherSuite = handshake.cipherSuite();
-                if (cipherSuite != null) {
-                    String cipherSuiteJavaName = cipherSuite.javaName();
-                    LOGGER.debug("cipherSuiteJavaName:{}", cipherSuiteJavaName);
-                }
+                String cipherSuiteJavaName = cipherSuite.javaName();
+                LOGGER.debug("cipherSuiteJavaName:{}", cipherSuiteJavaName);
                 displayLocalInformations(handshake);
                 displayRemoteInformations(handshake);
             }
