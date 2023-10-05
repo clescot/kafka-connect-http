@@ -1116,32 +1116,6 @@ class OkHttpClientTest {
 
         }
 
-        @Test
-        @DisplayName("get host address")
-        void test_yahoo() throws ExecutionException, InterruptedException {
-            //given
-            HashMap<String, Object> config = Maps.newHashMap();
-            config.put("config.default.okhttp.interceptor.logging.activate","false");
-            config.put("config.default.okhttp.interceptor.inet.address.activate","true");
-            OkHttpClient client = new OkHttpClient(config, null, new Random(), null, null, getCompositeMeterRegistry());
-
-            String baseUrl = "https://www.yahoo.com";
-            String url = baseUrl + "";
-            HashMap<String, List<String>> headers = Maps.newHashMap();
-            HttpRequest httpRequest = new HttpRequest(
-                    url,
-                    "GET",
-                    "STRING"
-            );
-            httpRequest.setHeaders(headers);
-
-
-            //when
-            HttpExchange httpExchange1 = client.call(httpRequest, new AtomicInteger(1)).get();
-            //then
-            assertThat(httpExchange1.getHttpResponse().getStatusCode()).isEqualTo(200);
-
-        }
 
         @Test
         @DisplayName("test connection pool with static scope")
