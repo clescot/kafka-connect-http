@@ -29,25 +29,26 @@ public class SSLHandshakeInterceptor implements Interceptor {
             Principal localPrincipal = handshake.localPrincipal();
             if (localPrincipal != null) {
                 String localPrincipalName = localPrincipal.getName();
-                LOGGER.debug("local principal:{}", localPrincipalName);
+                LOGGER.debug("local principal: {}", localPrincipalName);
             }
             List<Certificate> localCertificates = handshake.localCertificates();
+            LOGGER.debug("local certificates size: {}", localCertificates.size());
             for (Certificate localCertificate : localCertificates) {
-                LOGGER.debug("local certificate:{}", localCertificate);
+                LOGGER.debug("local certificate: {}", localCertificate);
             }
             //remote
             Principal peerPrincipal = handshake.peerPrincipal();
             if (peerPrincipal != null) {
                 String peerPrincipalName = peerPrincipal.getName();
-                LOGGER.debug("PEER principal:{}", peerPrincipalName);
+                LOGGER.debug("peer principal: {}", peerPrincipalName);
             }
             List<Certificate> peerCertificates = handshake.peerCertificates();
+            LOGGER.debug("peer certificates size:{}", peerCertificates.size());
             for (Certificate peerCertificate : peerCertificates) {
-                LOGGER.debug("peer certificate:{}", peerCertificate);
+                LOGGER.debug("peer certificate: {}", peerCertificate);
             }
         }
 
-        Response response = chain.proceed(request);
-        return response;
+        return chain.proceed(request);
     }
 }
