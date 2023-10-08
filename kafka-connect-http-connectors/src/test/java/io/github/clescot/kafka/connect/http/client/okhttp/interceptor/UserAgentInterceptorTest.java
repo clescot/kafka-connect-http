@@ -60,7 +60,7 @@ class UserAgentInterceptorTest {
     @Test
     void test_already_defined_user_agent() throws IOException {
         Headers.Builder headersBuilder = new Headers.Builder();
-        headersBuilder.add("User-Agent","initial");
+        headersBuilder.add("User-Agent","okhttp/4.11.0");
         Request.Builder builder = new Request.Builder();
         builder.url("https://test.com");
         builder.headers(headersBuilder.build());
