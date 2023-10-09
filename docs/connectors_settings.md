@@ -208,7 +208,7 @@ The predicate permits to filter some http requests, and can be composed, cumulat
     - *`config.default.okhttp.cache.directory.path`* (default `/tmp/kafka-connect-http-cache` directory path for `file` type, default `/kafka-connect-http-cache` for `inmemory` type)
     - *`config.default.okhttp.cache.type`* (default `file`, and can be set to `inmemory`)
     - *`config.default.okhttp.interceptor.logging.activate`* (default `true`, and can be set to `false`) : trace in the output (at the debug level) Http request and response
-    - *`config.default.okhttp.interceptor.inet.address.activate`* (default `false`, and can be set to `true`) : : add in the HttpResponse some additionnal Headers : 
+    - *`config.default.okhttp.interceptor.inet.address.activate`* (default `false`, and can be set to `true`) : : add in the HttpResponse some additional Headers : 
       - `X-Host-Address` for the remote host address (for example, `87.248.100.215`)
       - `X-Host-Name` for the remote host name (for example, `www.yahoo.com`)
       - `X-Canonical-Host-Name` for the remote canonical host name (for example, `media-router-fp73.prod.media.vip.ir2.yahoo.com`)
@@ -218,6 +218,11 @@ The predicate permits to filter some http requests, and can be composed, cumulat
       - remote principal
       - remote certificates
       - cipherSuite name
+    - *`config.default.okhttp.interceptor.useragent.overrride.with`* (default `http_client`, and can be set to `project` or `custom`) : 
+      - `http_client` will let the http client implementation set the user-agent header (okhttp/4.11.0 for okhttp).
+      - `project` will set : `Mozilla/5.0 (compatible;kafka-connect-http/<version>;https://github.com/clescot/kafka-connect-http)`, according to the [RFC 9309](https://www.rfc-editor.org/rfc/rfc9309.html#name-the-user-agent-line)
+      - `custom` will set the value bound to the `config.default.okhttp.interceptor.useragent.custom.value` parameter
+    - *`config.default.okhttp.interceptor.useragent.custom.value`*  : used if `config.default.okhttp.interceptor.useragent.overrride.with` is set to `custom` 
   - _Async Http Client (AHC)_ implementation settings
     - *`org.asynchttpclient.http.max.connections`* :  (default `3`)
     - *`org.asynchttpclient.http.rate.limit.per.second`* (default `3`)
