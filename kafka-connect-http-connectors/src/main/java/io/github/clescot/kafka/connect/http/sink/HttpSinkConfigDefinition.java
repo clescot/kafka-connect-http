@@ -421,6 +421,15 @@ public class HttpSinkConfigDefinition {
     public static final String CONFIG_DEFAULT_OKHTTP_INTERCEPTOR_SSL_HANDSHAKE_ACTIVATE_DOC = "activate tracing of request and responses via an okhttp network interceptor. 'true' and 'false' are accepted values. default is true";
 
 
+    public static final String OKHTTP_INTERCEPTOR_USER_AGENT_OVERRIDE = OKHTTP_PREFIX + "interceptor.useragent.overrride.with";
+    public static final String CONFIG_DEFAULT_OKHTTP_INTERCEPTOR_USER_AGENT_OVERRIDE = DEFAULT_CONFIGURATION_PREFIX + OKHTTP_INTERCEPTOR_USER_AGENT_OVERRIDE;
+    public static final String CONFIG_DEFAULT_OKHTTP_INTERCEPTOR_USER_AGENT_OVERRIDE_DOC = "activate user-agent header override. Accepted values are `http_client` will let the http client implementation set the user-agent header (okhttp/4.11.0 for okhttp).`project` will set : `Mozilla/5.0 (compatible;kafka-connect-http/<version>;https://github.com/clescot/kafka-connect-http)`, according to the [RFC 9309](https://www.rfc-editor.org/rfc/rfc9309.html#name-the-user-agent-line).`custom` will set the value bound to the `config.default.okhttp.interceptor.useragent.custom.value` parameter.";
+
+    public static final String OKHTTP_INTERCEPTOR_USER_AGENT_CUSTOM_VALUES = OKHTTP_PREFIX + "interceptor.useragent.custom.values";
+    public static final String CONFIG_DEFAULT_OKHTTP_INTERCEPTOR_USER_AGENT_CUSTOM_VALUES = DEFAULT_CONFIGURATION_PREFIX + OKHTTP_INTERCEPTOR_USER_AGENT_CUSTOM_VALUES;
+    public static final String CONFIG_DEFAULT_OKHTTP_INTERCEPTOR_USER_AGENT_CUSTOM_VALUES_DOC = "custom values for the user-agent header. if multiple values are provided (with `|` separator), code will pick randomly the value to use.";
+
+
 
     public static final String FALSE = "false";
     public static final String TRUE = "true";
@@ -552,6 +561,8 @@ public class HttpSinkConfigDefinition {
                 .define(CONFIG_DEFAULT_OKHTTP_INTERCEPTOR_LOGGING_ACTIVATE,ConfigDef.Type.STRING, TRUE,ConfigDef.Importance.LOW, CONFIG_DEFAULT_OKHTTP_INTERCEPTOR_LOGGING_ACTIVATE_DOC)
                 .define(CONFIG_DEFAULT_OKHTTP_INTERCEPTOR_INET_ADDRESS_ACTIVATE,ConfigDef.Type.STRING, FALSE,ConfigDef.Importance.LOW, CONFIG_DEFAULT_OKHTTP_INTERCEPTOR_INET_ADDRESS_ACTIVATE_DOC)
                 .define(CONFIG_DEFAULT_OKHTTP_INTERCEPTOR_SSL_HANDSHAKE_ACTIVATE,ConfigDef.Type.STRING, FALSE,ConfigDef.Importance.LOW, CONFIG_DEFAULT_OKHTTP_INTERCEPTOR_SSL_HANDSHAKE_ACTIVATE_DOC)
+                .define(OKHTTP_INTERCEPTOR_USER_AGENT_OVERRIDE,ConfigDef.Type.STRING, FALSE,ConfigDef.Importance.LOW, CONFIG_DEFAULT_OKHTTP_INTERCEPTOR_USER_AGENT_OVERRIDE_DOC)
+                .define(OKHTTP_INTERCEPTOR_USER_AGENT_CUSTOM_VALUES,ConfigDef.Type.STRING, null,ConfigDef.Importance.LOW, CONFIG_DEFAULT_OKHTTP_INTERCEPTOR_USER_AGENT_CUSTOM_VALUES_DOC)
                 ;
     }
 }

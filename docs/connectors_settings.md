@@ -222,7 +222,8 @@ The predicate permits to filter some http requests, and can be composed, cumulat
       - `http_client` will let the http client implementation set the user-agent header (okhttp/4.11.0 for okhttp).
       - `project` will set : `Mozilla/5.0 (compatible;kafka-connect-http/<version>;https://github.com/clescot/kafka-connect-http)`, according to the [RFC 9309](https://www.rfc-editor.org/rfc/rfc9309.html#name-the-user-agent-line)
       - `custom` will set the value bound to the `config.default.okhttp.interceptor.useragent.custom.value` parameter
-    - *`config.default.okhttp.interceptor.useragent.custom.value`*  : used if `config.default.okhttp.interceptor.useragent.overrride.with` is set to `custom` 
+    - *`config.default.okhttp.interceptor.useragent.custom.values`*  : values used if `config.default.okhttp.interceptor.useragent.overrride.with` is set 
+      to `custom`. If multiple values are provided (with `|` separator), code will pick randomly the value to use for each query. 
   - _Async Http Client (AHC)_ implementation settings
     - *`org.asynchttpclient.http.max.connections`* :  (default `3`)
     - *`org.asynchttpclient.http.rate.limit.per.second`* (default `3`)
