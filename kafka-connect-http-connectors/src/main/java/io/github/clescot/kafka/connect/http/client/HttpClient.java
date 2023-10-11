@@ -171,4 +171,6 @@ public interface HttpClient<Q, S> {
     Optional<RateLimiter<HttpExchange>> getRateLimiter();
 
     TrustManagerFactory getTrustManagerFactory();
+
+    String getEngineId();
 }

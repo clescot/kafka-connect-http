@@ -393,6 +393,11 @@ public class OkHttpClient extends AbstractHttpClient<Request, Response> {
         return cf;
     }
 
+    @Override
+    public String getEngineId() {
+        return "okhttp";
+    }
+
     /**
      * @return {@link okhttp3.OkHttpClient}
      */

@@ -375,7 +375,7 @@ class ConfigurationTest {
             HttpRequest httpRequest = getDummyHttpRequest();
             HttpRequest enrichedHttpRequest = configuration.enrich(httpRequest);
             Map<String, List<String>> headers = enrichedHttpRequest.getHeaders();
-            assertThat(headers).containsEntry("User-Agent", Lists.newArrayList("Mozilla/5.0 (compatible;kafka-connect-http/" + versionUtils.getVersion() + ";https://github.com/clescot/kafka-connect-http)"));
+            assertThat(headers).containsEntry("User-Agent", Lists.newArrayList("Mozilla/5.0 (compatible;kafka-connect-http/" + versionUtils.getVersion() + "; okhttp; https://github.com/clescot/kafka-connect-http)"));
 
         }
 

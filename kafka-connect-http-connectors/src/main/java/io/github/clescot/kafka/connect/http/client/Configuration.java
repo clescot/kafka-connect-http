@@ -108,6 +108,8 @@ public class Configuration {
 
         Random random = getRandom(settings);
 
+        this.httpClient = buildHttpClient(settings, executorService, meterRegistry, random);
+
         //enrich request
         List<Function<HttpRequest,HttpRequest>> enrichRequestFunctions = Lists.newArrayList();
         //build addStaticHeadersFunction
@@ -142,7 +144,7 @@ public class Configuration {
             LOGGER.trace("userAgentHeaderToHttpRequestFunction : 'http_client' configured. No need to activate UserAgentInterceptor");
         }else if("project".equalsIgnoreCase(activateUserAgentHeaderToHttpRequestFunction)){
             VersionUtils versionUtils = new VersionUtils();
-            String projectUserAgent = "Mozilla/5.0 (compatible;kafka-connect-http/"+ versionUtils.getVersion() +";https://github.com/clescot/kafka-connect-http)";
+            String projectUserAgent = "Mozilla/5.0 (compatible;kafka-connect-http/"+ versionUtils.getVersion() +"; "+httpClient.getEngineId()+"; https://github.com/clescot/kafka-connect-http)";
             this.addUserAgentHeaderToHttpRequestFunction = new AddUserAgentHeaderToHttpRequestFunction(Lists.newArrayList(projectUserAgent), random);
             enrichRequestFunctions.add(addUserAgentHeaderToHttpRequestFunction);
         }else if("custom".equalsIgnoreCase(activateUserAgentHeaderToHttpRequestFunction)){
@@ -168,7 +170,7 @@ public class Configuration {
 
 
 
-        this.httpClient = buildHttpClient(settings, executorService, meterRegistry, random);
+
 
         //rate limiter
         Preconditions.checkNotNull(httpClient, "httpClient is null");
