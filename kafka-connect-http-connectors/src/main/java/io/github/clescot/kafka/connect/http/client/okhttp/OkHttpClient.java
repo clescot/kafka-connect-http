@@ -100,7 +100,7 @@ public class OkHttpClient extends AbstractHttpClient<Request, Response> {
         authenticationConfigurer.configure(config, httpClientBuilder);
 
         //interceptors
-        configureInterceptors(config, random, httpClientBuilder);
+        configureInterceptors(config, httpClientBuilder);
 
         //events
         configureEvents(config, meterRegistry, httpClientBuilder);
@@ -133,7 +133,7 @@ public class OkHttpClient extends AbstractHttpClient<Request, Response> {
         }
     }
 
-    private static void configureInterceptors(Map<String, Object> config, Random random, okhttp3.OkHttpClient.Builder httpClientBuilder) {
+    private static void configureInterceptors(Map<String, Object> config,okhttp3.OkHttpClient.Builder httpClientBuilder) {
         boolean activateLoggingInterceptor = Boolean.parseBoolean((String) config.getOrDefault(CONFIG_DEFAULT_OKHTTP_INTERCEPTOR_LOGGING_ACTIVATE, TRUE));
         if (activateLoggingInterceptor) {
             httpClientBuilder.addNetworkInterceptor(new LoggingInterceptor());
