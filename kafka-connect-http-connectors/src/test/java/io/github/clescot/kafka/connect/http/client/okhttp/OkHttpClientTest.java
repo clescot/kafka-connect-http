@@ -80,6 +80,7 @@ class OkHttpClientTest {
                 )
                 .build();
     }
+
     @AfterAll
     public static void afterAll() {
 //        Awaitility.await().atMost(5, TimeUnit.MINUTES).until(()-> true!=true);
@@ -99,7 +100,7 @@ class OkHttpClientTest {
         void test_build_POST_request() throws IOException {
 
             //given
-            io.github.clescot.kafka.connect.http.client.okhttp.OkHttpClient client = new io.github.clescot.kafka.connect.http.client.okhttp.OkHttpClient(Maps.newHashMap(), null, new Random(), null, null,getCompositeMeterRegistry());
+            io.github.clescot.kafka.connect.http.client.okhttp.OkHttpClient client = new io.github.clescot.kafka.connect.http.client.okhttp.OkHttpClient(Maps.newHashMap(), null, new Random(), null, null, getCompositeMeterRegistry());
             HttpRequest httpRequest = new HttpRequest("http://dummy.com/", "POST", HttpRequest.BodyType.STRING.name());
             httpRequest.setBodyAsString("stuff");
 
@@ -187,7 +188,7 @@ class OkHttpClientTest {
         void test_activated_cache_with_file_type() {
             HashMap<String, Object> config = Maps.newHashMap();
             config.put(OKHTTP_CACHE_ACTIVATE, "true");
-            org.junit.jupiter.api.Assertions.assertDoesNotThrow(()->new io.github.clescot.kafka.connect.http.client.okhttp.OkHttpClient(config, null, new Random(), null, null, getCompositeMeterRegistry()));
+            org.junit.jupiter.api.Assertions.assertDoesNotThrow(() -> new io.github.clescot.kafka.connect.http.client.okhttp.OkHttpClient(config, null, new Random(), null, null, getCompositeMeterRegistry()));
         }
 
         @Test
@@ -195,7 +196,7 @@ class OkHttpClientTest {
             HashMap<String, Object> config = Maps.newHashMap();
             config.put(OKHTTP_CACHE_ACTIVATE, "true");
             config.put(OKHTTP_CACHE_MAX_SIZE, "50000");
-            org.junit.jupiter.api.Assertions.assertDoesNotThrow(()->new io.github.clescot.kafka.connect.http.client.okhttp.OkHttpClient(config, null, new Random(), null, null, getCompositeMeterRegistry()));
+            org.junit.jupiter.api.Assertions.assertDoesNotThrow(() -> new io.github.clescot.kafka.connect.http.client.okhttp.OkHttpClient(config, null, new Random(), null, null, getCompositeMeterRegistry()));
 
         }
 
@@ -205,7 +206,7 @@ class OkHttpClientTest {
             config.put(OKHTTP_CACHE_ACTIVATE, "true");
             config.put(OKHTTP_CACHE_MAX_SIZE, "50000");
             config.put(OKHTTP_CACHE_DIRECTORY_PATH, "/tmp/toto");
-            org.junit.jupiter.api.Assertions.assertDoesNotThrow(()->new io.github.clescot.kafka.connect.http.client.okhttp.OkHttpClient(config, null, new Random(), null, null, getCompositeMeterRegistry()));
+            org.junit.jupiter.api.Assertions.assertDoesNotThrow(() -> new io.github.clescot.kafka.connect.http.client.okhttp.OkHttpClient(config, null, new Random(), null, null, getCompositeMeterRegistry()));
         }
 
         @Test
@@ -213,21 +214,111 @@ class OkHttpClientTest {
             HashMap<String, Object> config = Maps.newHashMap();
             config.put(OKHTTP_CACHE_ACTIVATE, "true");
             config.put(OKHTTP_CACHE_TYPE, "inmemory");
-            org.junit.jupiter.api.Assertions.assertDoesNotThrow(()->new io.github.clescot.kafka.connect.http.client.okhttp.OkHttpClient(config, null, new Random(), null, null, getCompositeMeterRegistry()));
+            org.junit.jupiter.api.Assertions.assertDoesNotThrow(() -> new io.github.clescot.kafka.connect.http.client.okhttp.OkHttpClient(config, null, new Random(), null, null, getCompositeMeterRegistry()));
         }
 
         @Test
         void test_inactivated_cache() {
             HashMap<String, Object> config = Maps.newHashMap();
             config.put(OKHTTP_CACHE_ACTIVATE, "false");
-            org.junit.jupiter.api.Assertions.assertDoesNotThrow(()->new io.github.clescot.kafka.connect.http.client.okhttp.OkHttpClient(config, null, new Random(), null, null, getCompositeMeterRegistry()));
+            org.junit.jupiter.api.Assertions.assertDoesNotThrow(() -> new io.github.clescot.kafka.connect.http.client.okhttp.OkHttpClient(config, null, new Random(), null, null, getCompositeMeterRegistry()));
         }
 
         @Test
         void test_no_cache() {
             HashMap<String, Object> config = Maps.newHashMap();
-            org.junit.jupiter.api.Assertions.assertDoesNotThrow(()->new io.github.clescot.kafka.connect.http.client.okhttp.OkHttpClient(config, null, new Random(), null, null, getCompositeMeterRegistry()));
+            org.junit.jupiter.api.Assertions.assertDoesNotThrow(() -> new io.github.clescot.kafka.connect.http.client.okhttp.OkHttpClient(config, null, new Random(), null, null, getCompositeMeterRegistry()));
         }
+    }
+
+    @Nested
+    class TestNativeCall {
+        @Test
+        @DisplayName("test nominal case")
+        void test_nominal_case() throws ExecutionException, InterruptedException {
+            String bodyResponse = "{\"result\":\"pong\"}";
+            WireMockRuntimeInfo wmRuntimeInfo = wmHttp.getRuntimeInfo();
+            WireMock wireMock = wmRuntimeInfo.getWireMock();
+
+            HashMap<String, Object> config = Maps.newHashMap();
+            io.github.clescot.kafka.connect.http.client.okhttp.OkHttpClient client = new io.github.clescot.kafka.connect.http.client.okhttp.OkHttpClient(config, null, new Random(), null, null, getCompositeMeterRegistry());
+
+            String baseUrl = "http://" + getIP() + ":" + wmRuntimeInfo.getHttpPort();
+            String url = baseUrl + "/ping";
+            HashMap<String, List<String>> headers = Maps.newHashMap();
+            headers.put(CONTENT_TYPE, Lists.newArrayList("text/plain"));
+            headers.put("X-Correlation-ID", Lists.newArrayList("e6de70d1-f222-46e8-b755-754880687822"));
+            headers.put("X-Request-ID", Lists.newArrayList("e6de70d1-f222-46e8-b755-11111"));
+            headers.put("User-Agent", Lists.newArrayList("toto"));
+            HttpRequest httpRequest = new HttpRequest(
+                    url,
+                    "POST",
+                    "STRING"
+            );
+            httpRequest.setHeaders(headers);
+            httpRequest.setBodyAsString("stuff");
+
+
+            String scenario = "activating logging interceptor";
+            wireMock
+                    .register(WireMock.post("/ping").inScenario(scenario)
+                            .whenScenarioStateIs(STARTED)
+                            .willReturn(WireMock.aResponse()
+                                    .withBody(bodyResponse)
+                                    .withStatus(200)
+                                    .withStatusMessage("OK")
+                            ).willSetStateTo(ACCESS_GRANTED_STATE)
+                    );
+
+            HttpExchange httpExchange1 = client.call(httpRequest, new AtomicInteger(1)).get();
+            assertThat(httpExchange1.getHttpResponse().getStatusCode()).isEqualTo(200);
+
+
+        }
+        @Test
+        @DisplayName("test activate logging interceptor")
+        void test_activating_logging_interceptor() throws ExecutionException, InterruptedException {
+            String bodyResponse = "{\"result\":\"pong\"}";
+            WireMockRuntimeInfo wmRuntimeInfo = wmHttp.getRuntimeInfo();
+            WireMock wireMock = wmRuntimeInfo.getWireMock();
+
+            HashMap<String, Object> config = Maps.newHashMap();
+            config.put(CONFIG_DEFAULT_OKHTTP_INTERCEPTOR_LOGGING_ACTIVATE, "true");
+            io.github.clescot.kafka.connect.http.client.okhttp.OkHttpClient client = new io.github.clescot.kafka.connect.http.client.okhttp.OkHttpClient(config, null, new Random(), null, null, getCompositeMeterRegistry());
+
+            String baseUrl = "http://" + getIP() + ":" + wmRuntimeInfo.getHttpPort();
+            String url = baseUrl + "/ping";
+            HashMap<String, List<String>> headers = Maps.newHashMap();
+            headers.put(CONTENT_TYPE, Lists.newArrayList("text/plain"));
+            headers.put("X-Correlation-ID", Lists.newArrayList("e6de70d1-f222-46e8-b755-754880687822"));
+            headers.put("X-Request-ID", Lists.newArrayList("e6de70d1-f222-46e8-b755-11111"));
+            HttpRequest httpRequest = new HttpRequest(
+                    url,
+                    "POST",
+                    "STRING"
+            );
+            httpRequest.setHeaders(headers);
+            httpRequest.setBodyAsString("stuff");
+
+
+            String scenario = "activating logging interceptor";
+            wireMock
+                    .register(WireMock.post("/ping").inScenario(scenario)
+                            .whenScenarioStateIs(STARTED)
+                            .willReturn(WireMock.aResponse()
+                                    .withBody(bodyResponse)
+                                    .withStatus(200)
+                                    .withStatusMessage("OK")
+                            ).willSetStateTo(ACCESS_GRANTED_STATE)
+                    );
+
+            HttpExchange httpExchange1 = client.call(httpRequest, new AtomicInteger(1)).get();
+            assertThat(httpExchange1.getHttpResponse().getStatusCode()).isEqualTo(200);
+
+
+        }
+
+
     }
 
     @Nested
@@ -998,6 +1089,7 @@ class OkHttpClientTest {
 
 
     }
+
     @Nested
     class TestSSL {
 
@@ -1017,8 +1109,9 @@ class OkHttpClientTest {
             X509TrustManager x509TrustManager = (X509TrustManager) trustManagers[0];
             X509Certificate dummyCertificate = new DummyX509Certificate();
             X509Certificate[] certs = new X509Certificate[]{dummyCertificate};
-            Assertions.assertThatCode(()->x509TrustManager.checkServerTrusted(certs,"RSA")).doesNotThrowAnyException();
+            Assertions.assertThatCode(() -> x509TrustManager.checkServerTrusted(certs, "RSA")).doesNotThrowAnyException();
         }
+
         @Test
         void test_okhtp_client_with_always_trust_with_boolean_value_as_string() throws ExecutionException, InterruptedException {
 

@@ -100,22 +100,15 @@ public class OkHttpClient extends AbstractHttpClient<Request, Response> {
         authenticationConfigurer.configure(config, httpClientBuilder);
 
         //interceptors
-        boolean activateLoggingInterceptor = Boolean.parseBoolean((String) config.getOrDefault(CONFIG_DEFAULT_OKHTTP_INTERCEPTOR_LOGGING_ACTIVATE, TRUE));
-        if (activateLoggingInterceptor) {
-            httpClientBuilder.addNetworkInterceptor(new LoggingInterceptor());
-        }
-        boolean activateInetAddressInterceptor = Boolean.parseBoolean((String) config.getOrDefault(CONFIG_DEFAULT_OKHTTP_INTERCEPTOR_INET_ADDRESS_ACTIVATE, FALSE));
-        if (activateInetAddressInterceptor) {
-            httpClientBuilder.addNetworkInterceptor(new InetAddressInterceptor());
-        }
-        boolean activateSslHandshakeInterceptor = Boolean.parseBoolean((String) config.getOrDefault(CONFIG_DEFAULT_OKHTTP_INTERCEPTOR_SSL_HANDSHAKE_ACTIVATE, FALSE));
-        if (activateSslHandshakeInterceptor) {
-            httpClientBuilder.addNetworkInterceptor(new SSLHandshakeInterceptor());
-        }
+        configureInterceptors(config, httpClientBuilder);
 
         //events
-        boolean includeLegacyHostTag = Boolean.parseBoolean((String) config.getOrDefault(METER_REGISTRY_TAG_INCLUDE_LEGACY_HOST, FALSE));
-        boolean includeUrlPath = Boolean.parseBoolean((String) config.getOrDefault(METER_REGISTRY_TAG_INCLUDE_URL_PATH, FALSE));
+        configureEvents(config, meterRegistry, httpClientBuilder);
+        client = httpClientBuilder.build();
+
+    }
+
+    private static void configureEvents(Map<String, Object> config, CompositeMeterRegistry meterRegistry, okhttp3.OkHttpClient.Builder httpClientBuilder) {
         if (!meterRegistry.getRegistries().isEmpty()) {
             List<String> tags = Lists.newArrayList();
             tags.add(Configuration.CONFIGURATION_ID);
@@ -132,14 +125,27 @@ public class OkHttpClient extends AbstractHttpClient<Request, Response> {
                 tags.add(connectorTask);
             }
 
-
+            boolean includeLegacyHostTag = Boolean.parseBoolean((String) config.getOrDefault(METER_REGISTRY_TAG_INCLUDE_LEGACY_HOST, FALSE));
+            boolean includeUrlPath = Boolean.parseBoolean((String) config.getOrDefault(METER_REGISTRY_TAG_INCLUDE_URL_PATH, FALSE));
             httpClientBuilder.eventListenerFactory(new AdvancedEventListenerFactory(meterRegistry, includeLegacyHostTag, includeUrlPath
                     , tags.toArray(new String[0])
             ));
         }
-        client = httpClientBuilder.build();
+    }
 
-
+    private static void configureInterceptors(Map<String, Object> config,okhttp3.OkHttpClient.Builder httpClientBuilder) {
+        boolean activateLoggingInterceptor = Boolean.parseBoolean((String) config.getOrDefault(CONFIG_DEFAULT_OKHTTP_INTERCEPTOR_LOGGING_ACTIVATE, TRUE));
+        if (activateLoggingInterceptor) {
+            httpClientBuilder.addNetworkInterceptor(new LoggingInterceptor());
+        }
+        boolean activateInetAddressInterceptor = Boolean.parseBoolean((String) config.getOrDefault(CONFIG_DEFAULT_OKHTTP_INTERCEPTOR_INET_ADDRESS_ACTIVATE, FALSE));
+        if (activateInetAddressInterceptor) {
+            httpClientBuilder.addNetworkInterceptor(new InetAddressInterceptor());
+        }
+        boolean activateSslHandshakeInterceptor = Boolean.parseBoolean((String) config.getOrDefault(CONFIG_DEFAULT_OKHTTP_INTERCEPTOR_SSL_HANDSHAKE_ACTIVATE, FALSE));
+        if (activateSslHandshakeInterceptor) {
+            httpClientBuilder.addNetworkInterceptor(new SSLHandshakeInterceptor());
+        }
     }
 
     private void configureProtocols(Map<String, Object> config, okhttp3.OkHttpClient.Builder httpClientBuilder) {
@@ -385,6 +391,11 @@ public class OkHttpClient extends AbstractHttpClient<Request, Response> {
             }
         });
         return cf;
+    }
+
+    @Override
+    public String getEngineId() {
+        return "okhttp";
     }
 
     /**

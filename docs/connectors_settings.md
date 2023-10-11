@@ -123,6 +123,12 @@ The predicate permits to filter some http requests, and can be composed, cumulat
   
   - generating a missing correlationId  with the settings for the `default` configuration : ``` "config.default.enrich.request.generate.missing.correlation.id":true ```
   - generating a missing requestId with the settings for the `default` configuration : ``` "config.default.enrich.request.generate.missing.request.id":true ```
+  - *`config.default.enrich.request.useragent.override.with`* (default `http_client`, and can be set to `project` or `custom`) :
+    - `http_client` will let the http client implementation set the user-agent header (`okhttp/4.11.0` for okhttp).
+    - `project` will set : `Mozilla/5.0 (compatible;kafka-connect-http/<version>; okhttp; https://github.com/clescot/kafka-connect-http)`, according to the [RFC 9309](https://www.rfc-editor.org/rfc/rfc9309.html#name-the-user-agent-line)
+    - `custom` will set the value bound to the `config.default.okhttp.interceptor.useragent.custom.value` parameter
+  - *`config.default.enrich.request.useragent.custom.values`*  : values used if `config.default.enrich.request.useragent.override.with` is set
+    to `custom`. If multiple values are provided (with `|` separator), code will pick randomly the value to use for each query.
 - can enrich the HttpExchange with a success regex
 - owns a rate limiter
 - owns a retry policy
@@ -208,7 +214,7 @@ The predicate permits to filter some http requests, and can be composed, cumulat
     - *`config.default.okhttp.cache.directory.path`* (default `/tmp/kafka-connect-http-cache` directory path for `file` type, default `/kafka-connect-http-cache` for `inmemory` type)
     - *`config.default.okhttp.cache.type`* (default `file`, and can be set to `inmemory`)
     - *`config.default.okhttp.interceptor.logging.activate`* (default `true`, and can be set to `false`) : trace in the output (at the debug level) Http request and response
-    - *`config.default.okhttp.interceptor.inet.address.activate`* (default `false`, and can be set to `true`) : : add in the HttpResponse some additionnal Headers : 
+    - *`config.default.okhttp.interceptor.inet.address.activate`* (default `false`, and can be set to `true`) : : add in the HttpResponse some additional Headers : 
       - `X-Host-Address` for the remote host address (for example, `87.248.100.215`)
       - `X-Host-Name` for the remote host name (for example, `www.yahoo.com`)
       - `X-Canonical-Host-Name` for the remote canonical host name (for example, `media-router-fp73.prod.media.vip.ir2.yahoo.com`)

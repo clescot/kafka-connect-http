@@ -107,6 +107,10 @@ public class AHCHttpClient extends AbstractHttpClient<Request, Response> {
 
     }
 
+    @Override
+    public String getEngineId() {
+        return "AHC";
+    }
 
 
     @Override

@@ -5,18 +5,18 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import dev.failsafe.RateLimiter;
 import dev.failsafe.RetryPolicy;
+import io.github.clescot.kafka.connect.http.VersionUtils;
 import io.github.clescot.kafka.connect.http.client.ahc.AHCHttpClientFactory;
-import io.github.clescot.kafka.connect.http.client.config.AddMissingCorrelationIdHeaderToHttpRequestFunction;
-import io.github.clescot.kafka.connect.http.client.config.AddMissingRequestIdHeaderToHttpRequestFunction;
-import io.github.clescot.kafka.connect.http.client.config.AddStaticHeadersToHttpRequestFunction;
-import io.github.clescot.kafka.connect.http.client.config.AddSuccessStatusToHttpExchangeFunction;
+import io.github.clescot.kafka.connect.http.client.config.*;
 import io.github.clescot.kafka.connect.http.client.okhttp.OkHttpClientFactory;
 import io.github.clescot.kafka.connect.http.client.proxy.ProxySelectorFactory;
 import io.github.clescot.kafka.connect.http.core.HttpExchange;
 import io.github.clescot.kafka.connect.http.core.HttpRequest;
 import io.github.clescot.kafka.connect.http.core.HttpResponse;
 import io.micrometer.core.instrument.composite.CompositeMeterRegistry;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.kafka.common.config.AbstractConfig;
+import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -31,6 +31,7 @@ import java.time.Duration;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
 import java.util.concurrent.ExecutorService;
+import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -77,7 +78,7 @@ public class Configuration {
     private final AddMissingRequestIdHeaderToHttpRequestFunction addMissingRequestIdHeaderToHttpRequestFunction;
     private final AddMissingCorrelationIdHeaderToHttpRequestFunction addMissingCorrelationIdHeaderToHttpRequestFunction;
     private AddSuccessStatusToHttpExchangeFunction addSuccessStatusToHttpExchangeFunction;
-
+    private AddUserAgentHeaderToHttpRequestFunction addUserAgentHeaderToHttpRequestFunction;
     //rate limiter
     private static final Map<String, RateLimiter<HttpExchange>> sharedRateLimiters = Maps.newHashMap();
 
@@ -90,7 +91,7 @@ public class Configuration {
     private HttpClient httpClient;
     public final String id;
     private final Map<String, Object> settings;
-
+    private Function<HttpRequest, HttpRequest> enrichRequestFunction;
     public Configuration(String id,
                          AbstractConfig config,
                          ExecutorService executorService,
@@ -105,7 +106,12 @@ public class Configuration {
         //main predicate
         this.mainpredicate = buildPredicate(settings);
 
+        Random random = getRandom(settings);
+
+        this.httpClient = buildHttpClient(settings, executorService, meterRegistry, random);
+
         //enrich request
+        List<Function<HttpRequest,HttpRequest>> enrichRequestFunctions = Lists.newArrayList();
         //build addStaticHeadersFunction
         Optional<String> staticHeaderParam = Optional.ofNullable((String) settings.get(STATIC_REQUEST_HEADER_NAMES));
         Map<String, List<String>> staticRequestHeaders = Maps.newHashMap();
@@ -120,12 +126,37 @@ public class Configuration {
             }
         }
         this.addStaticHeadersToHttpRequestFunction = new AddStaticHeadersToHttpRequestFunction(staticRequestHeaders);
+        enrichRequestFunctions.add(addStaticHeadersToHttpRequestFunction);
 
-        //build addTrackingHeadersFunction
+        //AddMissingRequestIdHeaderToHttpRequestFunction
         boolean generateMissingRequestId = Boolean.parseBoolean((String) settings.get(GENERATE_MISSING_REQUEST_ID));
-        boolean generateMissingCorrelationId = Boolean.parseBoolean((String) settings.get(GENERATE_MISSING_CORRELATION_ID));
         this.addMissingRequestIdHeaderToHttpRequestFunction = new AddMissingRequestIdHeaderToHttpRequestFunction(generateMissingRequestId);
+        enrichRequestFunctions.add(addMissingRequestIdHeaderToHttpRequestFunction);
+
+        //AddMissingCorrelationIdHeaderToHttpRequestFunction
+        boolean generateMissingCorrelationId = Boolean.parseBoolean((String) settings.get(GENERATE_MISSING_CORRELATION_ID));
         this.addMissingCorrelationIdHeaderToHttpRequestFunction = new AddMissingCorrelationIdHeaderToHttpRequestFunction(generateMissingCorrelationId);
+        enrichRequestFunctions.add(addMissingCorrelationIdHeaderToHttpRequestFunction);
+
+        //activateUserAgentHeaderToHttpRequestFunction
+        String activateUserAgentHeaderToHttpRequestFunction = (String) settings.getOrDefault(USER_AGENT_OVERRIDE,"http_client");
+        if ("http_client".equalsIgnoreCase(activateUserAgentHeaderToHttpRequestFunction)) {
+            LOGGER.trace("userAgentHeaderToHttpRequestFunction : 'http_client' configured. No need to activate UserAgentInterceptor");
+        }else if("project".equalsIgnoreCase(activateUserAgentHeaderToHttpRequestFunction)){
+            VersionUtils versionUtils = new VersionUtils();
+            String projectUserAgent = "Mozilla/5.0 (compatible;kafka-connect-http/"+ versionUtils.getVersion() +"; "+httpClient.getEngineId()+"; https://github.com/clescot/kafka-connect-http)";
+            this.addUserAgentHeaderToHttpRequestFunction = new AddUserAgentHeaderToHttpRequestFunction(Lists.newArrayList(projectUserAgent), random);
+            enrichRequestFunctions.add(addUserAgentHeaderToHttpRequestFunction);
+        }else if("custom".equalsIgnoreCase(activateUserAgentHeaderToHttpRequestFunction)){
+            String userAgentValuesAsString = settings.getOrDefault(USER_AGENT_CUSTOM_VALUES, StringUtils.EMPTY).toString();
+            List<String> userAgentValues = Arrays.asList(userAgentValuesAsString.split("\\|"));
+            this.addUserAgentHeaderToHttpRequestFunction = new AddUserAgentHeaderToHttpRequestFunction(userAgentValues, random);
+            enrichRequestFunctions.add(addUserAgentHeaderToHttpRequestFunction);
+        }else{
+            LOGGER.trace("user agent interceptor : '{}' configured. No need to activate UserAgentInterceptor",activateUserAgentHeaderToHttpRequestFunction);
+        }
+
+        enrichRequestFunction = enrichRequestFunctions.stream().reduce(Function.identity(), Function::andThen);
 
         //enrich exchange
         //success response code regex
@@ -138,7 +169,8 @@ public class Configuration {
         this.addSuccessStatusToHttpExchangeFunction = new AddSuccessStatusToHttpExchangeFunction(successResponseCodeRegex);
 
 
-        this.httpClient = buildHttpClient(settings, executorService, meterRegistry);
+
+
 
         //rate limiter
         Preconditions.checkNotNull(httpClient, "httpClient is null");
@@ -232,10 +264,7 @@ public class Configuration {
     }
 
     public HttpRequest enrich(HttpRequest httpRequest) {
-        return addStaticHeadersToHttpRequestFunction
-                .andThen(addMissingRequestIdHeaderToHttpRequestFunction)
-                .andThen(addMissingCorrelationIdHeaderToHttpRequestFunction)
-                .apply(httpRequest);
+        return enrichRequestFunction.apply(httpRequest);
     }
 
 
@@ -243,7 +272,9 @@ public class Configuration {
         return this.addSuccessStatusToHttpExchangeFunction.apply(httpExchange);
     }
 
-    private <Req, Res> HttpClient<Req, Res> buildHttpClient(Map<String, Object> config, ExecutorService executorService, CompositeMeterRegistry meterRegistry) {
+    private <Req, Res> HttpClient<Req, Res> buildHttpClient(Map<String, Object> config,
+                                                            ExecutorService executorService,
+                                                            CompositeMeterRegistry meterRegistry, Random random) {
 
         Class<? extends HttpClientFactory> httpClientFactoryClass;
         String httpClientImplementation = (String) Optional.ofNullable(config.get(CONFIG_HTTP_CLIENT_IMPLEMENTATION)).orElse(OKHTTP_IMPLEMENTATION);
@@ -264,18 +295,7 @@ public class Configuration {
             throw new HttpException(e);
         }
 
-        //get random
-        Random random;
-        String rngAlgorithm = SHA_1_PRNG;
 
-        if (config.containsKey(HTTP_CLIENT_SECURE_RANDOM_PRNG_ALGORITHM)) {
-            rngAlgorithm = (String) config.get(HTTP_CLIENT_SECURE_RANDOM_PRNG_ALGORITHM);
-        }
-        try {
-            random = SecureRandom.getInstance(rngAlgorithm);
-        } catch (NoSuchAlgorithmException e) {
-            throw new HttpException(e);
-        }
         //get proxy
         Proxy proxy = null;
         if (config.containsKey(PROXY_HTTP_CLIENT_HOSTNAME)) {
@@ -293,6 +313,22 @@ public class Configuration {
             proxySelector = proxySelectorFactory.build(config, random);
         }
         return httpClientFactory.build(config, executorService, random, proxy, proxySelector, meterRegistry);
+    }
+
+    @NotNull
+    private static Random getRandom(Map<String, Object> config) {
+        Random random;
+        String rngAlgorithm = SHA_1_PRNG;
+
+        if (config.containsKey(HTTP_CLIENT_SECURE_RANDOM_PRNG_ALGORITHM)) {
+            rngAlgorithm = (String) config.get(HTTP_CLIENT_SECURE_RANDOM_PRNG_ALGORITHM);
+        }
+        try {
+            random = SecureRandom.getInstance(rngAlgorithm);
+        } catch (NoSuchAlgorithmException e) {
+            throw new HttpException(e);
+        }
+        return random;
     }
 
 
@@ -394,6 +430,10 @@ public class Configuration {
 
     public AddMissingRequestIdHeaderToHttpRequestFunction getAddTrackingHeadersFunction() {
         return addMissingRequestIdHeaderToHttpRequestFunction;
+    }
+
+    public AddUserAgentHeaderToHttpRequestFunction getAddUserAgentHeaderToHttpRequestFunction() {
+        return addUserAgentHeaderToHttpRequestFunction;
     }
 
     private String predicateToString() {

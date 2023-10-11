@@ -4,6 +4,7 @@ import io.github.clescot.kafka.connect.http.core.queue.ConfigConstants;
 import org.apache.commons.compress.utils.Lists;
 import org.apache.kafka.common.config.ConfigDef;
 
+import java.nio.charset.StandardCharsets;
 import java.util.Collections;
 
 public class HttpSinkConfigDefinition {
@@ -137,6 +138,16 @@ public class HttpSinkConfigDefinition {
     public static final String GENERATE_MISSING_REQUEST_ID = ENRICH_REQUEST+"generate.missing.request.id";
     public static final String CONFIG_GENERATE_MISSING_REQUEST_ID = DEFAULT_CONFIGURATION_PREFIX + GENERATE_MISSING_REQUEST_ID;
     public static final String CONFIG_GENERATE_MISSING_REQUEST_ID_DOC = "if not present in the HttpRequest headers, generate an UUID bound to the 'X-Request-ID' name";
+
+    public static final String USER_AGENT_OVERRIDE = ENRICH_REQUEST + "useragent.override.with";
+    public static final String CONFIG_DEFAULT_USER_AGENT_OVERRIDE = DEFAULT_CONFIGURATION_PREFIX + USER_AGENT_OVERRIDE;
+    public static final String CONFIG_DEFAULT_USER_AGENT_OVERRIDE_DOC = "activate 'User-Agent' header override. Accepted values are `http_client` will let the http client implementation set the user-agent header (okhttp/4.11.0 for okhttp).`project` will set : `Mozilla/5.0 (compatible;kafka-connect-http/<version>; okhttp; https://github.com/clescot/kafka-connect-http)`, according to the [RFC 9309](https://www.rfc-editor.org/rfc/rfc9309.html#name-the-user-agent-line).`custom` will set the value bound to the `config.default.useragent.custom.value` parameter.";
+
+    public static final String USER_AGENT_CUSTOM_VALUES = ENRICH_REQUEST + "useragent.custom.values";
+    public static final String CONFIG_DEFAULT_USER_AGENT_CUSTOM_VALUES = DEFAULT_CONFIGURATION_PREFIX + USER_AGENT_CUSTOM_VALUES;
+    public static final String CONFIG_DEFAULT_USER_AGENT_CUSTOM_VALUES_DOC = "custom values for the user-agent header. if multiple values are provided (with `|` separator), code will pick randomly the value to use.";
+
+
 
     //enrich httpExchange
     public static final String ENRICH_EXCHANGE ="enrich.exchange.";
@@ -420,7 +431,6 @@ public class HttpSinkConfigDefinition {
     public static final String CONFIG_DEFAULT_OKHTTP_INTERCEPTOR_SSL_HANDSHAKE_ACTIVATE_DOC = "activate tracing of request and responses via an okhttp network interceptor. 'true' and 'false' are accepted values. default is true";
 
 
-
     public static final String FALSE = "false";
     public static final String TRUE = "true";
 
@@ -467,6 +477,8 @@ public class HttpSinkConfigDefinition {
                 .define(CONFIG_STATIC_REQUEST_HEADER_NAMES, ConfigDef.Type.LIST,  Collections.emptyList(), ConfigDef.Importance.MEDIUM, CONFIG_STATIC_REQUEST_HEADER_NAMES_DOC)
                 .define(CONFIG_GENERATE_MISSING_CORRELATION_ID, ConfigDef.Type.STRING, FALSE, ConfigDef.Importance.MEDIUM, CONFIG_GENERATE_MISSING_CORRELATION_ID_DOC)
                 .define(CONFIG_GENERATE_MISSING_REQUEST_ID, ConfigDef.Type.STRING, FALSE, ConfigDef.Importance.MEDIUM, CONFIG_GENERATE_MISSING_REQUEST_ID_DOC)
+                .define(CONFIG_DEFAULT_USER_AGENT_OVERRIDE, ConfigDef.Type.STRING, "http_client", ConfigDef.Importance.LOW, CONFIG_DEFAULT_USER_AGENT_OVERRIDE_DOC)
+                .define(CONFIG_DEFAULT_USER_AGENT_CUSTOM_VALUES, ConfigDef.Type.STRING, null, ConfigDef.Importance.LOW, CONFIG_DEFAULT_USER_AGENT_CUSTOM_VALUES_DOC)
                 //in memory queue settings
                 .define(PUBLISH_TO_IN_MEMORY_QUEUE, ConfigDef.Type.STRING, FALSE, ConfigDef.Importance.MEDIUM, PUBLISH_TO_IN_MEMORY_QUEUE_DOC)
                 .define(ConfigConstants.QUEUE_NAME, ConfigDef.Type.STRING, null,ConfigDef.Importance.MEDIUM, ConfigConstants.QUEUE_NAME_DOC)
@@ -488,23 +500,23 @@ public class HttpSinkConfigDefinition {
                 .define(CONFIG_DEFAULT_HTTP_CLIENT_AUTHENTICATION_BASIC_ACTIVATE, ConfigDef.Type.STRING, FALSE, ConfigDef.Importance.LOW, CONFIG_DEFAULT_HTTP_CLIENT_AUTHENTICATION_BASIC_ACTIVATE_DOC)
                 .define(CONFIG_DEFAULT_HTTPCLIENT_AUTHENTICATION_BASIC_USERNAME, ConfigDef.Type.STRING, null, ConfigDef.Importance.LOW, CONFIG_DEFAULT_HTTPCLIENT_AUTHENTICATION_BASIC_USER_DOC)
                 .define(CONFIG_DEFAULT_HTTP_CLIENT_AUTHENTICATION_BASIC_PASSWORD, ConfigDef.Type.STRING, null, ConfigDef.Importance.LOW, CONFIG_DEFAULT_HTTP_CLIENT_AUTHENTICATION_BASIC_PASSWORD_DOC)
-                .define(CONFIG_DEFAULT_HTTP_CLIENT_AUTHENTICATION_BASIC_CHARSET, ConfigDef.Type.STRING, "ISO-8859-1", ConfigDef.Importance.LOW, CONFIG_DEFAULT_HTTP_CLIENT_AUTHENTICATION_BASIC_CHARSET_DOC)
+                .define(CONFIG_DEFAULT_HTTP_CLIENT_AUTHENTICATION_BASIC_CHARSET, ConfigDef.Type.STRING, StandardCharsets.ISO_8859_1.name(), ConfigDef.Importance.LOW, CONFIG_DEFAULT_HTTP_CLIENT_AUTHENTICATION_BASIC_CHARSET_DOC)
                 //digest
                 .define(CONFIG_DEFAULT_HTTP_CLIENT_AUTHENTICATION_DIGEST_ACTIVATE, ConfigDef.Type.STRING, FALSE, ConfigDef.Importance.LOW, CONFIG_DEFAULT_HTTP_CLIENT_AUTHENTICATION_DIGEST_ACTIVATE_DOC)
                 .define(CONFIG_DEFAULT_HTTPCLIENT_AUTHENTICATION_DIGEST_USERNAME, ConfigDef.Type.STRING, null, ConfigDef.Importance.LOW, CONFIG_DEFAULT_HTTPCLIENT_AUTHENTICATION_DIGEST_USER_DOC)
                 .define(CONFIG_DEFAULT_HTTP_CLIENT_AUTHENTICATION_DIGEST_PASSWORD, ConfigDef.Type.STRING, null, ConfigDef.Importance.LOW, CONFIG_DEFAULT_HTTP_CLIENT_AUTHENTICATION_DIGEST_PASSWORD_DOC)
-                .define(CONFIG_DEFAULT_HTTP_CLIENT_AUTHENTICATION_DIGEST_CHARSET, ConfigDef.Type.STRING, "US-ASCII", ConfigDef.Importance.LOW, CONFIG_DEFAULT_HTTP_CLIENT_AUTHENTICATION_DIGEST_CHARSET_DOC)
+                .define(CONFIG_DEFAULT_HTTP_CLIENT_AUTHENTICATION_DIGEST_CHARSET, ConfigDef.Type.STRING, StandardCharsets.US_ASCII.name(), ConfigDef.Importance.LOW, CONFIG_DEFAULT_HTTP_CLIENT_AUTHENTICATION_DIGEST_CHARSET_DOC)
                 //proxy authentication
                 //basic
                 .define(CONFIG_DEFAULT_HTTP_CLIENT_PROXY_AUTHENTICATION_BASIC_ACTIVATE, ConfigDef.Type.STRING, FALSE, ConfigDef.Importance.LOW, CONFIG_DEFAULT_HTTP_CLIENT_PROXY_AUTHENTICATION_BASIC_ACTIVATE_DOC)
                 .define(CONFIG_DEFAULT_HTTPCLIENT_PROXY_AUTHENTICATION_BASIC_USERNAME, ConfigDef.Type.STRING, null, ConfigDef.Importance.LOW, CONFIG_DEFAULT_HTTPCLIENT_PROXY_AUTHENTICATION_BASIC_USER_DOC)
                 .define(CONFIG_DEFAULT_HTTP_CLIENT_PROXY_AUTHENTICATION_BASIC_PASSWORD, ConfigDef.Type.STRING, null, ConfigDef.Importance.LOW, CONFIG_DEFAULT_HTTP_CLIENT_PROXY_AUTHENTICATION_BASIC_PASSWORD_DOC)
-                .define(CONFIG_DEFAULT_HTTP_CLIENT_PROXY_AUTHENTICATION_BASIC_CHARSET, ConfigDef.Type.STRING, "ISO-8859-1", ConfigDef.Importance.LOW, CONFIG_DEFAULT_HTTP_CLIENT_PROXY_AUTHENTICATION_BASIC_CHARSET_DOC)
+                .define(CONFIG_DEFAULT_HTTP_CLIENT_PROXY_AUTHENTICATION_BASIC_CHARSET, ConfigDef.Type.STRING, StandardCharsets.ISO_8859_1.name(), ConfigDef.Importance.LOW, CONFIG_DEFAULT_HTTP_CLIENT_PROXY_AUTHENTICATION_BASIC_CHARSET_DOC)
                 //digest
                 .define(CONFIG_DEFAULT_HTTP_CLIENT_PROXY_AUTHENTICATION_DIGEST_ACTIVATE, ConfigDef.Type.STRING, FALSE, ConfigDef.Importance.LOW, CONFIG_DEFAULT_HTTP_CLIENT_PROXY_AUTHENTICATION_DIGEST_ACTIVATE_DOC)
                 .define(CONFIG_DEFAULT_HTTPCLIENT_PROXY_AUTHENTICATION_DIGEST_USERNAME, ConfigDef.Type.STRING, null, ConfigDef.Importance.LOW, CONFIG_DEFAULT_HTTPCLIENT_PROXY_AUTHENTICATION_DIGEST_USER_DOC)
                 .define(CONFIG_DEFAULT_HTTP_CLIENT_PROXY_AUTHENTICATION_DIGEST_PASSWORD, ConfigDef.Type.STRING, null, ConfigDef.Importance.LOW, CONFIG_DEFAULT_HTTP_CLIENT_PROXY_AUTHENTICATION_DIGEST_PASSWORD_DOC)
-                .define(CONFIG_DEFAULT_HTTP_CLIENT_PROXY_AUTHENTICATION_DIGEST_CHARSET, ConfigDef.Type.STRING, "US-ASCII", ConfigDef.Importance.LOW, CONFIG_DEFAULT_HTTP_CLIENT_PROXY_AUTHENTICATION_DIGEST_CHARSET_DOC)
+                .define(CONFIG_DEFAULT_HTTP_CLIENT_PROXY_AUTHENTICATION_DIGEST_CHARSET, ConfigDef.Type.STRING, StandardCharsets.US_ASCII.name(), ConfigDef.Importance.LOW, CONFIG_DEFAULT_HTTP_CLIENT_PROXY_AUTHENTICATION_DIGEST_CHARSET_DOC)
 
 
                 //async settings
@@ -548,9 +560,11 @@ public class HttpSinkConfigDefinition {
                 .define(CONFIG_DEFAULT_OKHTTP_FOLLOW_SSL_REDIRECT,ConfigDef.Type.STRING, TRUE,ConfigDef.Importance.LOW, CONFIG_DEFAULT_OKHTTP_FOLLOW_SSL_REDIRECT_DOC)
 
                 //interceptors
-                .define(CONFIG_DEFAULT_OKHTTP_INTERCEPTOR_LOGGING_ACTIVATE,ConfigDef.Type.STRING, "true",ConfigDef.Importance.LOW, CONFIG_DEFAULT_OKHTTP_INTERCEPTOR_LOGGING_ACTIVATE_DOC)
-                .define(CONFIG_DEFAULT_OKHTTP_INTERCEPTOR_INET_ADDRESS_ACTIVATE,ConfigDef.Type.STRING, "false",ConfigDef.Importance.LOW, CONFIG_DEFAULT_OKHTTP_INTERCEPTOR_INET_ADDRESS_ACTIVATE_DOC)
-                .define(CONFIG_DEFAULT_OKHTTP_INTERCEPTOR_SSL_HANDSHAKE_ACTIVATE,ConfigDef.Type.STRING, "false",ConfigDef.Importance.LOW, CONFIG_DEFAULT_OKHTTP_INTERCEPTOR_SSL_HANDSHAKE_ACTIVATE_DOC)
+                .define(CONFIG_DEFAULT_OKHTTP_INTERCEPTOR_LOGGING_ACTIVATE,ConfigDef.Type.STRING, TRUE,ConfigDef.Importance.LOW, CONFIG_DEFAULT_OKHTTP_INTERCEPTOR_LOGGING_ACTIVATE_DOC)
+                .define(CONFIG_DEFAULT_OKHTTP_INTERCEPTOR_INET_ADDRESS_ACTIVATE,ConfigDef.Type.STRING, FALSE,ConfigDef.Importance.LOW, CONFIG_DEFAULT_OKHTTP_INTERCEPTOR_INET_ADDRESS_ACTIVATE_DOC)
+                .define(CONFIG_DEFAULT_OKHTTP_INTERCEPTOR_SSL_HANDSHAKE_ACTIVATE,ConfigDef.Type.STRING, FALSE,ConfigDef.Importance.LOW, CONFIG_DEFAULT_OKHTTP_INTERCEPTOR_SSL_HANDSHAKE_ACTIVATE_DOC)
+                .define(USER_AGENT_OVERRIDE,ConfigDef.Type.STRING, FALSE,ConfigDef.Importance.LOW, CONFIG_DEFAULT_USER_AGENT_OVERRIDE_DOC)
+                .define(USER_AGENT_CUSTOM_VALUES,ConfigDef.Type.STRING, null,ConfigDef.Importance.LOW, CONFIG_DEFAULT_USER_AGENT_CUSTOM_VALUES_DOC)
                 ;
     }
 }

@@ -10,9 +10,10 @@ import io.github.clescot.kafka.connect.http.core.HttpExchange;
  */
 public class HttpException extends RuntimeException {
 
-    private HttpExchange httpExchange;
+    private final HttpExchange httpExchange;
 
     public HttpException() {
+        httpExchange = null;
     }
     public HttpException(HttpExchange httpExchange, String message) {
         super(message);
@@ -20,18 +21,22 @@ public class HttpException extends RuntimeException {
     }
     public HttpException(String message) {
         super(message);
+        httpExchange = null;
     }
 
     public HttpException(String message, Throwable cause) {
         super(message, cause);
+        httpExchange = null;
     }
 
     public HttpException(Throwable cause) {
         super(cause);
+        httpExchange = null;
     }
 
     public HttpException(String message, Throwable cause, boolean enableSuppression, boolean writableStackTrace) {
         super(message, cause, enableSuppression, writableStackTrace);
+        httpExchange = null;
     }
 
     public HttpExchange getHttpExchange() {

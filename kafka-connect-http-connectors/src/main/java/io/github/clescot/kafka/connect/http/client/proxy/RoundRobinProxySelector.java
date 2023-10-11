@@ -28,6 +28,6 @@ public class RoundRobinProxySelector extends ProxySelector {
 
     @Override
     public void connectFailed(URI uri, SocketAddress sa, IOException ioe) {
-
+            //no action is needed when a connection failed
     }
 }

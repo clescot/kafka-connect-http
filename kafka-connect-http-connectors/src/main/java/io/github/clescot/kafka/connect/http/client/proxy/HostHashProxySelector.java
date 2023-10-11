@@ -27,6 +27,6 @@ public class HostHashProxySelector extends ProxySelector {
 
     @Override
     public void connectFailed(URI uri, SocketAddress sa, IOException ioe) {
-
+            //no action is needed on the hash when a connection failed
     }
 }
