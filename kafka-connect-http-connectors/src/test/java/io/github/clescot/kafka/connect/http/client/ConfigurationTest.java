@@ -3,6 +3,7 @@ package io.github.clescot.kafka.connect.http.client;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import dev.failsafe.RateLimiter;
+import io.github.clescot.kafka.connect.http.VersionUtils;
 import io.github.clescot.kafka.connect.http.core.HttpExchange;
 import io.github.clescot.kafka.connect.http.core.HttpRequest;
 import io.github.clescot.kafka.connect.http.core.HttpResponse;
@@ -26,6 +27,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -261,6 +263,7 @@ class ConfigurationTest {
     @Nested
     class TestEnrichHttpRequest {
         private ExecutorService executorService = Executors.newFixedThreadPool(2);
+        private VersionUtils versionUtils = new VersionUtils();
 
         @Test
         void test_add_static_headers() {
@@ -273,7 +276,7 @@ class ConfigurationTest {
             HttpRequest enrichedHttpRequest = configuration.enrich(httpRequest);
             Map<String, List<String>> headers = enrichedHttpRequest.getHeaders();
             assertThat(headers).containsEntry("X-Stuff-Id", Lists.newArrayList("12345"))
-            .containsEntry("X-Super-Option", Lists.newArrayList("ABC"));
+                    .containsEntry("X-Super-Option", Lists.newArrayList("ABC"));
         }
 
         @Test
@@ -297,8 +300,85 @@ class ConfigurationTest {
             HttpRequest enrichedHttpRequest = configuration.enrich(httpRequest);
             Map<String, List<String>> headers = enrichedHttpRequest.getHeaders();
             assertThat(headers).containsKey("X-Correlation-ID");
-            ;
         }
+
+        @Test
+        @DisplayName("test override User-Agent header with 'custom' value")
+        void test_activating_user_agent_interceptor_with_custom_value() throws ExecutionException, InterruptedException {
+
+            //given
+            Map<String, String> config = Maps.newHashMap();
+            config.put("config.dummy." + USER_AGENT_OVERRIDE, "custom");
+            config.put("config.dummy." + USER_AGENT_CUSTOM_VALUES, "custom_ua");
+            Configuration configuration = new Configuration("dummy", new HttpSinkConnectorConfig(config), executorService, getCompositeMeterRegistry());
+            HttpRequest httpRequest = getDummyHttpRequest();
+            HttpRequest enrichedHttpRequest = configuration.enrich(httpRequest);
+            Map<String, List<String>> headers = enrichedHttpRequest.getHeaders();
+            assertThat(headers).containsEntry("User-Agent", Lists.newArrayList("custom_ua"));
+        }
+
+        @Test
+        @DisplayName("test override User-Agent header with multiple 'custom' value")
+        void test_activating_user_agent_interceptor_with_multiple_custom_value() throws ExecutionException, InterruptedException {
+
+            //given
+            Map<String, String> config = Maps.newHashMap();
+            config.put("config.dummy." + USER_AGENT_OVERRIDE, "custom");
+            config.put("config.dummy." + USER_AGENT_CUSTOM_VALUES, "custom_1|custom_2|custom_3");
+            Configuration configuration = new Configuration("dummy", new HttpSinkConnectorConfig(config), executorService, getCompositeMeterRegistry());
+            HttpRequest httpRequest = getDummyHttpRequest();
+            HttpRequest enrichedHttpRequest = configuration.enrich(httpRequest);
+            Map<String, List<String>> headers = enrichedHttpRequest.getHeaders();
+            assertThat(headers.get("User-Agent")).isSubsetOf(Lists.newArrayList("custom_1", "custom_2", "custom_3"));
+        }
+
+        @Test
+        @DisplayName("test override User-Agent header with already 'User-Agent' defined in Http Request")
+        void test_activating_user_agent_interceptor_with_already_defined_user_agent_in_http_request() throws ExecutionException, InterruptedException {
+
+            //given
+            Map<String, String> config = Maps.newHashMap();
+            config.put("config.dummy." + USER_AGENT_OVERRIDE, "custom");
+            config.put("config.dummy." + USER_AGENT_CUSTOM_VALUES, "custom_1|custom_2|custom_3");
+            Configuration configuration = new Configuration("dummy", new HttpSinkConnectorConfig(config), executorService, getCompositeMeterRegistry());
+            HttpRequest httpRequest = getDummyHttpRequest();
+            httpRequest.getHeaders().put("User-Agent", Lists.newArrayList("already"));
+            HttpRequest enrichedHttpRequest = configuration.enrich(httpRequest);
+            Map<String, List<String>> headers = enrichedHttpRequest.getHeaders();
+            assertThat(headers.get("User-Agent").get(0)).isEqualTo("already");
+        }
+
+        @Test
+        @DisplayName("test override User-Agent header with 'http_client' settings")
+        void test_activating_user_agent_interceptor_with_http_client_scope() throws ExecutionException, InterruptedException {
+
+            //given
+            Map<String, String> config = Maps.newHashMap();
+            config.put("config.dummy." + USER_AGENT_OVERRIDE, "http_client");
+            Configuration configuration = new Configuration("dummy", new HttpSinkConnectorConfig(config), executorService, getCompositeMeterRegistry());
+            HttpRequest httpRequest = getDummyHttpRequest();
+            HttpRequest enrichedHttpRequest = configuration.enrich(httpRequest);
+            Map<String, List<String>> headers = enrichedHttpRequest.getHeaders();
+            //user-agent in this cas is set by the underlying http client implementation
+            //after the enrichment phase in the configuration
+            assertThat(headers.get("User-Agent")).isNull();
+        }
+
+        @Test
+        @DisplayName("test override User-Agent header with 'project' value")
+        void test_activating_user_agent_interceptor_with_project_value() {
+
+            //given
+            Map<String, String> config = Maps.newHashMap();
+            config.put("config.dummy." + USER_AGENT_OVERRIDE, "project");
+            Configuration configuration = new Configuration("dummy", new HttpSinkConnectorConfig(config), executorService, getCompositeMeterRegistry());
+            HttpRequest httpRequest = getDummyHttpRequest();
+            HttpRequest enrichedHttpRequest = configuration.enrich(httpRequest);
+            Map<String, List<String>> headers = enrichedHttpRequest.getHeaders();
+            assertThat(headers).containsEntry("User-Agent", Lists.newArrayList("Mozilla/5.0 (compatible;kafka-connect-http/" + versionUtils.getVersion() + ";https://github.com/clescot/kafka-connect-http)"));
+
+        }
+
     }
 
     @Nested
@@ -383,53 +463,54 @@ class ConfigurationTest {
             Map<String, String> config = Maps.newHashMap();
             config.put("config.dummy." + RETRY_RESPONSE_CODE_REGEX, "^2[0-9][0-9]$");
             config.put(CONFIG_DEFAULT_RETRY_RESPONSE_CODE_REGEX, "^[1-5][0-9][0-9]$");
-            config.put("config.dummy.retry.policy.retries","3");
-            config.put("config.dummy.retry.delay.in.ms","600");
-            config.put("config.dummy.retry.max.delay.in.ms","1200");
-            config.put("config.dummy.retry.delay.factor","1.2");
-            config.put("config.dummy.retry.jitter.in.ms","200");
-            config.put("config.dummy."+URL_REGEX,".*");
-            config.put("config.dummy."+METHOD_REGEX,"GET");
-            config.put("config.dummy."+BODYTYPE_REGEX,"STRING");
-            config.put("config.dummy."+HEADER_KEY_REGEX,".*");
-            config.put("config.dummy."+HEADER_VALUE_REGEX,".*");
-            config.put("config.dummy."+STATIC_REQUEST_HEADER_NAMES,"headerName1,headerName2");
-            config.put("config.dummy."+STATIC_REQUEST_HEADER_PREFIX+"headerName1","value1");
-            config.put("config.dummy."+STATIC_REQUEST_HEADER_PREFIX+"headerName2","value2");
-            config.put("config.dummy."+RATE_LIMITER_MAX_EXECUTIONS,"4");
-            config.put("config.dummy."+RATE_LIMITER_PERIOD_IN_MS,"1000");
-            config.put("config.dummy."+RATE_LIMITER_SCOPE,"static");
+            config.put("config.dummy.retry.policy.retries", "3");
+            config.put("config.dummy.retry.delay.in.ms", "600");
+            config.put("config.dummy.retry.max.delay.in.ms", "1200");
+            config.put("config.dummy.retry.delay.factor", "1.2");
+            config.put("config.dummy.retry.jitter.in.ms", "200");
+            config.put("config.dummy." + URL_REGEX, ".*");
+            config.put("config.dummy." + METHOD_REGEX, "GET");
+            config.put("config.dummy." + BODYTYPE_REGEX, "STRING");
+            config.put("config.dummy." + HEADER_KEY_REGEX, ".*");
+            config.put("config.dummy." + HEADER_VALUE_REGEX, ".*");
+            config.put("config.dummy." + STATIC_REQUEST_HEADER_NAMES, "headerName1,headerName2");
+            config.put("config.dummy." + STATIC_REQUEST_HEADER_PREFIX + "headerName1", "value1");
+            config.put("config.dummy." + STATIC_REQUEST_HEADER_PREFIX + "headerName2", "value2");
+            config.put("config.dummy." + RATE_LIMITER_MAX_EXECUTIONS, "4");
+            config.put("config.dummy." + RATE_LIMITER_PERIOD_IN_MS, "1000");
+            config.put("config.dummy." + RATE_LIMITER_SCOPE, "static");
             Configuration configuration = new Configuration("dummy", new HttpSinkConnectorConfig(config), executorService, getCompositeMeterRegistry());
             String configurationAsString = configuration.toString();
-            LOGGER.debug("configurationAsString:{}",configurationAsString);
+            LOGGER.debug("configurationAsString:{}", configurationAsString);
             assertThat(configurationAsString).isNotEmpty();
         }
     }
-        private HttpExchange getDummyHttpExchange() {
-            HttpRequest httpRequest = getDummyHttpRequest();
-            HttpResponse httpResponse = new HttpResponse(200, "OK");
-            httpResponse.setResponseBody("my response");
-            Map<String, List<String>> responseHeaders = Maps.newHashMap();
-            responseHeaders.put("Content-Type", Lists.newArrayList("application/json"));
-            httpResponse.setResponseHeaders(responseHeaders);
-            return new HttpExchange(
-                    httpRequest,
-                    httpResponse,
-                    245L,
-                    OffsetDateTime.now(ZoneId.of("UTC")),
-                    new AtomicInteger(1),
-                    true
-            );
-        }
 
-        @NotNull
-        private static HttpRequest getDummyHttpRequest() {
-            HttpRequest httpRequest = new HttpRequest(DUMMY_URL, DUMMY_METHOD, DUMMY_BODY_TYPE);
-            Map<String, List<String>> headers = Maps.newHashMap();
-            headers.put("Content-Type", Lists.newArrayList("application/json"));
-            httpRequest.setHeaders(headers);
-            httpRequest.setBodyAsString("stuff");
-            httpRequest.setBodyAsForm(Maps.newHashMap());
-            return httpRequest;
-        }
+    private HttpExchange getDummyHttpExchange() {
+        HttpRequest httpRequest = getDummyHttpRequest();
+        HttpResponse httpResponse = new HttpResponse(200, "OK");
+        httpResponse.setResponseBody("my response");
+        Map<String, List<String>> responseHeaders = Maps.newHashMap();
+        responseHeaders.put("Content-Type", Lists.newArrayList("application/json"));
+        httpResponse.setResponseHeaders(responseHeaders);
+        return new HttpExchange(
+                httpRequest,
+                httpResponse,
+                245L,
+                OffsetDateTime.now(ZoneId.of("UTC")),
+                new AtomicInteger(1),
+                true
+        );
     }
+
+    @NotNull
+    private static HttpRequest getDummyHttpRequest() {
+        HttpRequest httpRequest = new HttpRequest(DUMMY_URL, DUMMY_METHOD, DUMMY_BODY_TYPE);
+        Map<String, List<String>> headers = Maps.newHashMap();
+        headers.put("Content-Type", Lists.newArrayList("application/json"));
+        httpRequest.setHeaders(headers);
+        httpRequest.setBodyAsString("stuff");
+        httpRequest.setBodyAsForm(Maps.newHashMap());
+        return httpRequest;
+    }
+}

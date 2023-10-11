@@ -4,7 +4,6 @@ import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.jimfs.Jimfs;
-import io.github.clescot.kafka.connect.http.VersionUtils;
 import io.github.clescot.kafka.connect.http.client.AbstractHttpClient;
 import io.github.clescot.kafka.connect.http.client.Configuration;
 import io.github.clescot.kafka.connect.http.client.HttpException;
@@ -13,7 +12,6 @@ import io.github.clescot.kafka.connect.http.client.okhttp.event.AdvancedEventLis
 import io.github.clescot.kafka.connect.http.client.okhttp.interceptor.InetAddressInterceptor;
 import io.github.clescot.kafka.connect.http.client.okhttp.interceptor.LoggingInterceptor;
 import io.github.clescot.kafka.connect.http.client.okhttp.interceptor.SSLHandshakeInterceptor;
-import io.github.clescot.kafka.connect.http.client.okhttp.interceptor.UserAgentInterceptor;
 import io.github.clescot.kafka.connect.http.core.HttpRequest;
 import io.github.clescot.kafka.connect.http.core.HttpResponse;
 import io.micrometer.core.instrument.binder.system.DiskSpaceMetrics;
@@ -22,7 +20,6 @@ import kotlin.Pair;
 import okhttp3.*;
 import okhttp3.internal.http.HttpMethod;
 import okhttp3.internal.io.FileSystem;
-import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
@@ -109,7 +106,6 @@ public class OkHttpClient extends AbstractHttpClient<Request, Response> {
         configureEvents(config, meterRegistry, httpClientBuilder);
         client = httpClientBuilder.build();
 
-
     }
 
     private static void configureEvents(Map<String, Object> config, CompositeMeterRegistry meterRegistry, okhttp3.OkHttpClient.Builder httpClientBuilder) {
@@ -149,20 +145,6 @@ public class OkHttpClient extends AbstractHttpClient<Request, Response> {
         boolean activateSslHandshakeInterceptor = Boolean.parseBoolean((String) config.getOrDefault(CONFIG_DEFAULT_OKHTTP_INTERCEPTOR_SSL_HANDSHAKE_ACTIVATE, FALSE));
         if (activateSslHandshakeInterceptor) {
             httpClientBuilder.addNetworkInterceptor(new SSLHandshakeInterceptor());
-        }
-        String activateUserAgentInterceptor = (String) config.getOrDefault(CONFIG_DEFAULT_OKHTTP_INTERCEPTOR_USER_AGENT_OVERRIDE,"http_client");
-        if ("http_client".equalsIgnoreCase(activateUserAgentInterceptor)) {
-           LOGGER.trace("user agent interceptor : 'http_client' configured. No need to activate UserAgentInterceptor");
-        }else if("project".equalsIgnoreCase(activateUserAgentInterceptor)){
-            VersionUtils versionUtils = new VersionUtils();
-            String projectUserAgent = "Mozilla/5.0 (compatible;kafka-connect-http/"+ versionUtils.getVersion() +";https://github.com/clescot/kafka-connect-http)";
-            httpClientBuilder.addNetworkInterceptor(new UserAgentInterceptor(Lists.newArrayList(projectUserAgent), random));
-        }else if("custom".equalsIgnoreCase(activateUserAgentInterceptor)){
-            String userAgentValuesAsString = config.getOrDefault(CONFIG_DEFAULT_OKHTTP_INTERCEPTOR_USER_AGENT_CUSTOM_VALUES, StringUtils.EMPTY).toString();
-            List<String> userAgentValues = Arrays.asList(userAgentValuesAsString.split("\\|"));
-            httpClientBuilder.addNetworkInterceptor(new UserAgentInterceptor(userAgentValues, random));
-        }else{
-            LOGGER.trace("user agent interceptor : '{}' configured. No need to activate UserAgentInterceptor",activateUserAgentInterceptor);
         }
     }
 

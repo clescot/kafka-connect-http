@@ -236,8 +236,6 @@ class OkHttpClientTest {
         @Test
         @DisplayName("test nominal case")
         void test_nominal_case() throws ExecutionException, InterruptedException {
-            String username = "user1";
-            String password = "password1";
             String bodyResponse = "{\"result\":\"pong\"}";
             WireMockRuntimeInfo wmRuntimeInfo = wmHttp.getRuntimeInfo();
             WireMock wireMock = wmRuntimeInfo.getWireMock();
@@ -251,6 +249,7 @@ class OkHttpClientTest {
             headers.put(CONTENT_TYPE, Lists.newArrayList("text/plain"));
             headers.put("X-Correlation-ID", Lists.newArrayList("e6de70d1-f222-46e8-b755-754880687822"));
             headers.put("X-Request-ID", Lists.newArrayList("e6de70d1-f222-46e8-b755-11111"));
+            headers.put("User-Agent", Lists.newArrayList("toto"));
             HttpRequest httpRequest = new HttpRequest(
                     url,
                     "POST",
@@ -276,11 +275,9 @@ class OkHttpClientTest {
 
 
         }
- @Test
+        @Test
         @DisplayName("test activate logging interceptor")
         void test_activating_logging_interceptor() throws ExecutionException, InterruptedException {
-            String username = "user1";
-            String password = "password1";
             String bodyResponse = "{\"result\":\"pong\"}";
             WireMockRuntimeInfo wmRuntimeInfo = wmHttp.getRuntimeInfo();
             WireMock wireMock = wmRuntimeInfo.getWireMock();
@@ -320,6 +317,7 @@ class OkHttpClientTest {
 
 
         }
+
 
     }
 

@@ -139,6 +139,16 @@ public class HttpSinkConfigDefinition {
     public static final String CONFIG_GENERATE_MISSING_REQUEST_ID = DEFAULT_CONFIGURATION_PREFIX + GENERATE_MISSING_REQUEST_ID;
     public static final String CONFIG_GENERATE_MISSING_REQUEST_ID_DOC = "if not present in the HttpRequest headers, generate an UUID bound to the 'X-Request-ID' name";
 
+    public static final String USER_AGENT_OVERRIDE = ENRICH_REQUEST + "useragent.overrride.with";
+    public static final String CONFIG_DEFAULT_USER_AGENT_OVERRIDE = DEFAULT_CONFIGURATION_PREFIX + USER_AGENT_OVERRIDE;
+    public static final String CONFIG_DEFAULT_USER_AGENT_OVERRIDE_DOC = "activate 'User-Agent' header override. Accepted values are `http_client` will let the http client implementation set the user-agent header (okhttp/4.11.0 for okhttp).`project` will set : `Mozilla/5.0 (compatible;kafka-connect-http/<version>;https://github.com/clescot/kafka-connect-http)`, according to the [RFC 9309](https://www.rfc-editor.org/rfc/rfc9309.html#name-the-user-agent-line).`custom` will set the value bound to the `config.default.useragent.custom.value` parameter.";
+
+    public static final String USER_AGENT_CUSTOM_VALUES = ENRICH_REQUEST + "useragent.custom.values";
+    public static final String CONFIG_DEFAULT_USER_AGENT_CUSTOM_VALUES = DEFAULT_CONFIGURATION_PREFIX + USER_AGENT_CUSTOM_VALUES;
+    public static final String CONFIG_DEFAULT_USER_AGENT_CUSTOM_VALUES_DOC = "custom values for the user-agent header. if multiple values are provided (with `|` separator), code will pick randomly the value to use.";
+
+
+
     //enrich httpExchange
     public static final String ENRICH_EXCHANGE ="enrich.exchange.";
     public static final String SUCCESS_RESPONSE_CODE_REGEX = ENRICH_EXCHANGE+"success.response.code.regex";
@@ -421,16 +431,6 @@ public class HttpSinkConfigDefinition {
     public static final String CONFIG_DEFAULT_OKHTTP_INTERCEPTOR_SSL_HANDSHAKE_ACTIVATE_DOC = "activate tracing of request and responses via an okhttp network interceptor. 'true' and 'false' are accepted values. default is true";
 
 
-    public static final String OKHTTP_INTERCEPTOR_USER_AGENT_OVERRIDE = OKHTTP_PREFIX + "interceptor.useragent.overrride.with";
-    public static final String CONFIG_DEFAULT_OKHTTP_INTERCEPTOR_USER_AGENT_OVERRIDE = DEFAULT_CONFIGURATION_PREFIX + OKHTTP_INTERCEPTOR_USER_AGENT_OVERRIDE;
-    public static final String CONFIG_DEFAULT_OKHTTP_INTERCEPTOR_USER_AGENT_OVERRIDE_DOC = "activate user-agent header override. Accepted values are `http_client` will let the http client implementation set the user-agent header (okhttp/4.11.0 for okhttp).`project` will set : `Mozilla/5.0 (compatible;kafka-connect-http/<version>;https://github.com/clescot/kafka-connect-http)`, according to the [RFC 9309](https://www.rfc-editor.org/rfc/rfc9309.html#name-the-user-agent-line).`custom` will set the value bound to the `config.default.okhttp.interceptor.useragent.custom.value` parameter.";
-
-    public static final String OKHTTP_INTERCEPTOR_USER_AGENT_CUSTOM_VALUES = OKHTTP_PREFIX + "interceptor.useragent.custom.values";
-    public static final String CONFIG_DEFAULT_OKHTTP_INTERCEPTOR_USER_AGENT_CUSTOM_VALUES = DEFAULT_CONFIGURATION_PREFIX + OKHTTP_INTERCEPTOR_USER_AGENT_CUSTOM_VALUES;
-    public static final String CONFIG_DEFAULT_OKHTTP_INTERCEPTOR_USER_AGENT_CUSTOM_VALUES_DOC = "custom values for the user-agent header. if multiple values are provided (with `|` separator), code will pick randomly the value to use.";
-
-
-
     public static final String FALSE = "false";
     public static final String TRUE = "true";
 
@@ -477,6 +477,8 @@ public class HttpSinkConfigDefinition {
                 .define(CONFIG_STATIC_REQUEST_HEADER_NAMES, ConfigDef.Type.LIST,  Collections.emptyList(), ConfigDef.Importance.MEDIUM, CONFIG_STATIC_REQUEST_HEADER_NAMES_DOC)
                 .define(CONFIG_GENERATE_MISSING_CORRELATION_ID, ConfigDef.Type.STRING, FALSE, ConfigDef.Importance.MEDIUM, CONFIG_GENERATE_MISSING_CORRELATION_ID_DOC)
                 .define(CONFIG_GENERATE_MISSING_REQUEST_ID, ConfigDef.Type.STRING, FALSE, ConfigDef.Importance.MEDIUM, CONFIG_GENERATE_MISSING_REQUEST_ID_DOC)
+                .define(CONFIG_DEFAULT_USER_AGENT_OVERRIDE, ConfigDef.Type.STRING, "http_client", ConfigDef.Importance.LOW, CONFIG_DEFAULT_USER_AGENT_OVERRIDE_DOC)
+                .define(CONFIG_DEFAULT_USER_AGENT_CUSTOM_VALUES, ConfigDef.Type.STRING, null, ConfigDef.Importance.LOW, CONFIG_DEFAULT_USER_AGENT_CUSTOM_VALUES_DOC)
                 //in memory queue settings
                 .define(PUBLISH_TO_IN_MEMORY_QUEUE, ConfigDef.Type.STRING, FALSE, ConfigDef.Importance.MEDIUM, PUBLISH_TO_IN_MEMORY_QUEUE_DOC)
                 .define(ConfigConstants.QUEUE_NAME, ConfigDef.Type.STRING, null,ConfigDef.Importance.MEDIUM, ConfigConstants.QUEUE_NAME_DOC)
@@ -561,8 +563,8 @@ public class HttpSinkConfigDefinition {
                 .define(CONFIG_DEFAULT_OKHTTP_INTERCEPTOR_LOGGING_ACTIVATE,ConfigDef.Type.STRING, TRUE,ConfigDef.Importance.LOW, CONFIG_DEFAULT_OKHTTP_INTERCEPTOR_LOGGING_ACTIVATE_DOC)
                 .define(CONFIG_DEFAULT_OKHTTP_INTERCEPTOR_INET_ADDRESS_ACTIVATE,ConfigDef.Type.STRING, FALSE,ConfigDef.Importance.LOW, CONFIG_DEFAULT_OKHTTP_INTERCEPTOR_INET_ADDRESS_ACTIVATE_DOC)
                 .define(CONFIG_DEFAULT_OKHTTP_INTERCEPTOR_SSL_HANDSHAKE_ACTIVATE,ConfigDef.Type.STRING, FALSE,ConfigDef.Importance.LOW, CONFIG_DEFAULT_OKHTTP_INTERCEPTOR_SSL_HANDSHAKE_ACTIVATE_DOC)
-                .define(OKHTTP_INTERCEPTOR_USER_AGENT_OVERRIDE,ConfigDef.Type.STRING, FALSE,ConfigDef.Importance.LOW, CONFIG_DEFAULT_OKHTTP_INTERCEPTOR_USER_AGENT_OVERRIDE_DOC)
-                .define(OKHTTP_INTERCEPTOR_USER_AGENT_CUSTOM_VALUES,ConfigDef.Type.STRING, null,ConfigDef.Importance.LOW, CONFIG_DEFAULT_OKHTTP_INTERCEPTOR_USER_AGENT_CUSTOM_VALUES_DOC)
+                .define(USER_AGENT_OVERRIDE,ConfigDef.Type.STRING, FALSE,ConfigDef.Importance.LOW, CONFIG_DEFAULT_USER_AGENT_OVERRIDE_DOC)
+                .define(USER_AGENT_CUSTOM_VALUES,ConfigDef.Type.STRING, null,ConfigDef.Importance.LOW, CONFIG_DEFAULT_USER_AGENT_CUSTOM_VALUES_DOC)
                 ;
     }
 }
