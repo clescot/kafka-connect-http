@@ -139,7 +139,7 @@ public class HttpSinkConfigDefinition {
     public static final String CONFIG_GENERATE_MISSING_REQUEST_ID = DEFAULT_CONFIGURATION_PREFIX + GENERATE_MISSING_REQUEST_ID;
     public static final String CONFIG_GENERATE_MISSING_REQUEST_ID_DOC = "if not present in the HttpRequest headers, generate an UUID bound to the 'X-Request-ID' name";
 
-    public static final String USER_AGENT_OVERRIDE = ENRICH_REQUEST + "useragent.overrride.with";
+    public static final String USER_AGENT_OVERRIDE = ENRICH_REQUEST + "useragent.override.with";
     public static final String CONFIG_DEFAULT_USER_AGENT_OVERRIDE = DEFAULT_CONFIGURATION_PREFIX + USER_AGENT_OVERRIDE;
     public static final String CONFIG_DEFAULT_USER_AGENT_OVERRIDE_DOC = "activate 'User-Agent' header override. Accepted values are `http_client` will let the http client implementation set the user-agent header (okhttp/4.11.0 for okhttp).`project` will set : `Mozilla/5.0 (compatible;kafka-connect-http/<version>; okhttp; https://github.com/clescot/kafka-connect-http)`, according to the [RFC 9309](https://www.rfc-editor.org/rfc/rfc9309.html#name-the-user-agent-line).`custom` will set the value bound to the `config.default.useragent.custom.value` parameter.";
 
