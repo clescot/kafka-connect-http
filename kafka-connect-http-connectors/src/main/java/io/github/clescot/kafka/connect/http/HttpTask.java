@@ -62,24 +62,27 @@ public class HttpTask<T extends ConnectRecord<T>> {
     private ExecutorService executorService;
     private final Configuration defaultConfiguration;
     private final boolean publishToInMemoryQueue;
-    private final String queueName;
+    private String queueName;
     private Queue<KafkaRecord> queue;
     private static CompositeMeterRegistry meterRegistry;
     private final List<Configuration> customConfigurations;
 
     public HttpTask(AbstractConfig config) {
+        //build meterRegistry
         if (meterRegistry == null) {
             HttpTask.meterRegistry = buildMeterRegistry(config);
         }
+        //build executorService
         Optional<Integer> customFixedThreadPoolSize = Optional.ofNullable(config.getInt(CONFIG_HTTP_CLIENT_ASYNC_FIXED_THREAD_POOL_SIZE));
-        if (customFixedThreadPoolSize.isPresent()) {
-            setThreadPoolSize(customFixedThreadPoolSize.get());
-        }
+        customFixedThreadPoolSize.ifPresent(integer -> this.executorService = buildExecutorService(integer));
+        //bind metrics to MeterRegistry and ExecutorService
         bindMetrics(config, meterRegistry, executorService);
         this.defaultConfiguration = new Configuration(DEFAULT_CONFIGURATION_ID, config, executorService, meterRegistry);
         this.publishToInMemoryQueue = Boolean.parseBoolean(config.getString(PUBLISH_TO_IN_MEMORY_QUEUE));
-        this.queueName = Optional.ofNullable(config.getString(ConfigConstants.QUEUE_NAME)).orElse(QueueFactory.DEFAULT_QUEUE_NAME);
-        this.queue = QueueFactory.getQueue(queueName);
+        if(publishToInMemoryQueue) {
+            this.queueName = Optional.ofNullable(config.getString(ConfigConstants.QUEUE_NAME)).orElse(QueueFactory.DEFAULT_QUEUE_NAME);
+            this.queue = QueueFactory.getQueue(queueName);
+        }
         this.customConfigurations = buildCustomConfigurations(config, defaultConfiguration, executorService);
     }
 
@@ -322,9 +325,10 @@ public class HttpTask<T extends ConnectRecord<T>> {
      * define a static field from a non-static method need a static synchronized method
      *
      * @param customFixedThreadPoolSize max thread pool size for the executorService.
+     * @return executorService
      */
-    public void setThreadPoolSize(Integer customFixedThreadPoolSize) {
-        executorService = Executors.newFixedThreadPool(customFixedThreadPoolSize);
+    public ExecutorService buildExecutorService(Integer customFixedThreadPoolSize) {
+        return Executors.newFixedThreadPool(customFixedThreadPoolSize);
     }
 
     public void setQueue(Queue<KafkaRecord> queue) {
