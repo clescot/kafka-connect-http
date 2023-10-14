@@ -112,13 +112,13 @@ public class HttpTask<T extends ConnectRecord<T>> {
         return configurations;
     }
 
-    protected HttpRequest buildHttpRequest(ConnectRecord<T> sinkRecord) throws ConnectException {
-        if (sinkRecord == null || sinkRecord.value() == null) {
+    protected HttpRequest buildHttpRequest(ConnectRecord<T> connectRecord) throws ConnectException {
+        if (connectRecord == null || connectRecord.value() == null) {
             LOGGER.warn(SINK_RECORD_HAS_GOT_A_NULL_VALUE);
             throw new ConnectException(SINK_RECORD_HAS_GOT_A_NULL_VALUE);
         }
         HttpRequest httpRequest = null;
-        Object value = sinkRecord.value();
+        Object value = connectRecord.value();
         Class<?> valueClass = value.getClass();
         String stringValue = null;
 
