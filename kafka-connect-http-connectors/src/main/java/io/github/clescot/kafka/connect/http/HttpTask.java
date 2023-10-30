@@ -59,13 +59,14 @@ public class HttpTask<T extends ConnectRecord<T>> {
     private static final Logger LOGGER = LoggerFactory.getLogger(HttpTask.class);
     public static final String SINK_RECORD_HAS_GOT_A_NULL_VALUE = "sinkRecord has got a 'null' value";
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper().registerModule(new JavaTimeModule());
-    private ExecutorService executorService;
+    private final List<Configuration> customConfigurations;
     private final Configuration defaultConfiguration;
+    private ExecutorService executorService;
     private final boolean publishToInMemoryQueue;
+    private static CompositeMeterRegistry meterRegistry;
     private String queueName;
     private Queue<KafkaRecord> queue;
-    private static CompositeMeterRegistry meterRegistry;
-    private final List<Configuration> customConfigurations;
+
 
     public HttpTask(AbstractConfig config) {
         //build meterRegistry
