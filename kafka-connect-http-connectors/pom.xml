@@ -110,8 +110,22 @@
             <artifactId>kafka-json-schema-provider</artifactId>
             <version>${confluent.platform.version}</version>
         </dependency>
+        <dependency>
+            <groupId>io.confluent</groupId>
+            <artifactId>kafka-schema-serializer</artifactId>
+            <version>${confluent.platform.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>io.confluent</groupId>
+            <artifactId>kafka-json-schema-serializer</artifactId>
+            <version>${confluent.platform.version}</version>
+        </dependency>
 
-
+        <dependency>
+            <groupId>io.confluent</groupId>
+            <artifactId>kafka-streams-json-schema-serde</artifactId>
+            <version>${confluent.platform.version}</version>
+        </dependency>
         <dependency>
             <groupId>io.github.rburgst</groupId>
             <artifactId>okhttp-digest</artifactId>
@@ -198,16 +212,15 @@
             <scope>test</scope>
         </dependency>
         <dependency>
-            <groupId>io.confluent</groupId>
-            <artifactId>kafka-schema-serializer</artifactId>
-            <scope>test</scope>
-            <version>${confluent.platform.version}</version>
-        </dependency>
-        <dependency>
             <groupId>ch.qos.logback</groupId>
             <artifactId>logback-classic</artifactId>
             <scope>test</scope>
             <version>${logback.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>io.confluent</groupId>
+            <artifactId>kafka-json-schema-serializer</artifactId>
+            <scope>compile</scope>
         </dependency>
 
     </dependencies>
