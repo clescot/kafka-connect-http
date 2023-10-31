@@ -9,6 +9,30 @@ import java.util.Collections;
 
 public class HttpSinkConfigDefinition {
 
+    //producer
+    public static final String PRODUCER_PREFIX = "producer.";
+    public static final String JSON_PREFIX = "json.";
+    public static final String PRODUCER_BOOTSTRAP_SERVERS = PRODUCER_PREFIX+"bootstrap.servers";
+    public static final String PRODUCER_BOOTSTRAP_SERVERS_DOC = "low level producer bootstrap server adresse to publish";
+    public static final String PRODUCER_FORMAT = PRODUCER_PREFIX+"format";
+    public static final String PRODUCER_FORMAT_DOC = "can be 'json', or 'string'; default to 'string'.";
+    public static final String PRODUCER_SCHEMA_REGISTRY_URL = PRODUCER_PREFIX+"schema.registry.url";
+    public static final String PRODUCER_SCHEMA_REGISTRY_URL_DOC = "url and port of the schema registry.";
+    public static final String PRODUCER_SCHEMA_REGISTRY_CACHE_CAPACITY = PRODUCER_PREFIX+"schema.registry.url";
+    public static final String PRODUCER_SCHEMA_REGISTRY_CACHE_CAPACITY_DOC = "";
+    public static final String PRODUCER_SCHEMA_REGISTRY_AUTO_REGISTER = PRODUCER_PREFIX+"schema.registry.auto.register";
+    public static final String PRODUCER_SCHEMA_REGISTRY_AUTO_REGISTER_DOC = "";
+    public static final String PRODUCER_JSON_SCHEMA_SPEC_VERSION = PRODUCER_PREFIX+JSON_PREFIX+"schema.spec.version";
+    public static final String PRODUCER_JSON_SCHEMA_SPEC_VERSION_DOC = "";
+    public static final String PRODUCER_JSON_WRITE_DATES_AS_ISO_8601 = PRODUCER_PREFIX+JSON_PREFIX+"write.dates.as.iso.8601";
+    public static final String PRODUCER_JSON_WRITE_DATES_AS_ISO_8601_DOC = "";
+    public static final String PRODUCER_JSON_ONE_OF_FOR_NULLABLES = PRODUCER_PREFIX+JSON_PREFIX+"one.of.for.nullables";
+    public static final String PRODUCER_JSON_ONE_OF_FOR_NULLABLES_DOC = "";
+    public static final String PRODUCER_JSON_FAIL_INVALID_SCHEMA = PRODUCER_PREFIX+JSON_PREFIX+"fail.invalid.schema";
+    public static final String PRODUCER_JSON_FAIL_INVALID_SCHEMA_DOC = "";
+    public static final String PRODUCER_JSON_FAIL_UNKNOWN_PROPERTIES = PRODUCER_PREFIX+JSON_PREFIX+"fail.unknown.properties";
+    public static final String PRODUCER_JSON_FAIL_UNKNOWN_PROPERTIES_DOC = "";
+
     //meter registry
     public static final String METER_REGISTRY_EXPORTER_JMX_ACTIVATE = "meter.registry.exporter.jmx.activate";
     public static final String METER_REGISTRY_EXPORTER_JMX_ACTIVATE_DOC = "activate exposure of metrics via JMX";
@@ -441,6 +465,21 @@ public class HttpSinkConfigDefinition {
 
     public static ConfigDef config() {
         return new ConfigDef()
+                //producer
+                    //bootstrap servers
+                .define(PRODUCER_BOOTSTRAP_SERVERS, ConfigDef.Type.STRING,"",ConfigDef.Importance.MEDIUM,PRODUCER_BOOTSTRAP_SERVERS_DOC)
+                    //schema registry
+                .define(PRODUCER_SCHEMA_REGISTRY_URL, ConfigDef.Type.STRING,"",ConfigDef.Importance.LOW,PRODUCER_SCHEMA_REGISTRY_URL_DOC)
+                .define(PRODUCER_SCHEMA_REGISTRY_CACHE_CAPACITY, ConfigDef.Type.INT,1000,ConfigDef.Importance.LOW,PRODUCER_SCHEMA_REGISTRY_CACHE_CAPACITY_DOC)
+                .define(PRODUCER_SCHEMA_REGISTRY_AUTO_REGISTER, ConfigDef.Type.BOOLEAN,Boolean.TRUE,ConfigDef.Importance.LOW,PRODUCER_SCHEMA_REGISTRY_AUTO_REGISTER_DOC)
+                    //formats
+                .define(PRODUCER_FORMAT, ConfigDef.Type.STRING,"string",ConfigDef.Importance.LOW,PRODUCER_FORMAT_DOC)
+                    //json
+                .define(PRODUCER_JSON_SCHEMA_SPEC_VERSION, ConfigDef.Type.STRING,"draft_2019_09",ConfigDef.Importance.LOW,PRODUCER_JSON_SCHEMA_SPEC_VERSION_DOC)
+                .define(PRODUCER_JSON_WRITE_DATES_AS_ISO_8601, ConfigDef.Type.BOOLEAN,Boolean.TRUE,ConfigDef.Importance.LOW,PRODUCER_JSON_WRITE_DATES_AS_ISO_8601_DOC)
+                .define(PRODUCER_JSON_ONE_OF_FOR_NULLABLES, ConfigDef.Type.BOOLEAN,Boolean.TRUE,ConfigDef.Importance.LOW,PRODUCER_JSON_ONE_OF_FOR_NULLABLES_DOC)
+                .define(PRODUCER_JSON_FAIL_INVALID_SCHEMA, ConfigDef.Type.BOOLEAN,Boolean.TRUE,ConfigDef.Importance.LOW,PRODUCER_JSON_FAIL_INVALID_SCHEMA_DOC)
+                .define(PRODUCER_JSON_FAIL_UNKNOWN_PROPERTIES, ConfigDef.Type.BOOLEAN,Boolean.TRUE,ConfigDef.Importance.LOW,PRODUCER_JSON_FAIL_UNKNOWN_PROPERTIES_DOC)
                 //meter registry
                     //exporters
                 .define(METER_REGISTRY_EXPORTER_JMX_ACTIVATE, ConfigDef.Type.STRING, FALSE, ConfigDef.Importance.LOW, METER_REGISTRY_EXPORTER_JMX_ACTIVATE_DOC)
