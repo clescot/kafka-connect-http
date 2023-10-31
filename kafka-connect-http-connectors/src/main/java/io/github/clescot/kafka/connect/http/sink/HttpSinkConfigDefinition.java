@@ -18,7 +18,7 @@ public class HttpSinkConfigDefinition {
     public static final String PRODUCER_FORMAT_DOC = "can be 'json', or 'string'; default to 'string'.";
     public static final String PRODUCER_SCHEMA_REGISTRY_URL = PRODUCER_PREFIX+"schema.registry.url";
     public static final String PRODUCER_SCHEMA_REGISTRY_URL_DOC = "url and port of the schema registry.";
-    public static final String PRODUCER_SCHEMA_REGISTRY_CACHE_CAPACITY = PRODUCER_PREFIX+"schema.registry.url";
+    public static final String PRODUCER_SCHEMA_REGISTRY_CACHE_CAPACITY = PRODUCER_PREFIX+"schema.registry.cache.capacity";
     public static final String PRODUCER_SCHEMA_REGISTRY_CACHE_CAPACITY_DOC = "";
     public static final String PRODUCER_SCHEMA_REGISTRY_AUTO_REGISTER = PRODUCER_PREFIX+"schema.registry.auto.register";
     public static final String PRODUCER_SCHEMA_REGISTRY_AUTO_REGISTER_DOC = "";

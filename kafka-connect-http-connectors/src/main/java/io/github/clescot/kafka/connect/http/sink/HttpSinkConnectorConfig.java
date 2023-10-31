@@ -18,6 +18,7 @@ import static io.github.clescot.kafka.connect.http.sink.HttpSinkConfigDefinition
 
 public class HttpSinkConnectorConfig extends AbstractConfig {
     private static final Logger LOGGER = LoggerFactory.getLogger(HttpSinkConnectorConfig.class);
+    private final String producerFormat;
 
 
     private String producerBootstrapServers;
@@ -81,6 +82,7 @@ public class HttpSinkConnectorConfig extends AbstractConfig {
         this.producerSchemaRegistryUrl = getString(PRODUCER_SCHEMA_REGISTRY_URL);
         this.producerSchemaRegistryCacheCapacity = getInt(PRODUCER_SCHEMA_REGISTRY_CACHE_CAPACITY);
         this.producerSchemaRegistryautoRegister = getBoolean(PRODUCER_SCHEMA_REGISTRY_AUTO_REGISTER);
+        this.producerFormat = getString(PRODUCER_FORMAT);
         this.producerJsonSchemaSpecVersion = getString(PRODUCER_JSON_SCHEMA_SPEC_VERSION);
         this.producerJsonWriteDatesAs8601 = getBoolean(PRODUCER_JSON_WRITE_DATES_AS_ISO_8601);
         this.producerJsonOneOfForNullables = getBoolean(PRODUCER_JSON_ONE_OF_FOR_NULLABLES);
@@ -315,10 +317,23 @@ public class HttpSinkConnectorConfig extends AbstractConfig {
         return producerJsonFailUnknownProperties;
     }
 
+    public String getProducerFormat() {
+        return producerFormat;
+    }
+
+    public int getProducerSchemaRegistryCacheCapacity() {
+        return producerSchemaRegistryCacheCapacity;
+    }
+
+    public String getProducerJsonSchemaSpecVersion() {
+        return producerJsonSchemaSpecVersion;
+    }
+
     @Override
     public String toString() {
         return "HttpSinkConnectorConfig{" +
-                "producerBootstrapServers='" + producerBootstrapServers + '\'' +
+                "producerFormat='" + producerFormat + '\'' +
+                ", producerBootstrapServers='" + producerBootstrapServers + '\'' +
                 ", producerSchemaRegistryUrl='" + producerSchemaRegistryUrl + '\'' +
                 ", producerSchemaRegistryCacheCapacity=" + producerSchemaRegistryCacheCapacity +
                 ", producerSchemaRegistryautoRegister=" + producerSchemaRegistryautoRegister +
