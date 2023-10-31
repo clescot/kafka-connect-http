@@ -19,6 +19,17 @@ import static io.github.clescot.kafka.connect.http.sink.HttpSinkConfigDefinition
 public class HttpSinkConnectorConfig extends AbstractConfig {
     private static final Logger LOGGER = LoggerFactory.getLogger(HttpSinkConnectorConfig.class);
 
+
+    private String producerBootstrapServers;
+    private String producerSchemaRegistryUrl;
+    private int producerSchemaRegistryCacheCapacity;
+    private boolean producerSchemaRegistryautoRegister;
+    private String producerJsonSchemaSpecVersion;
+    private boolean producerJsonWriteDatesAs8601;
+    private boolean producerJsonOneOfForNullables;
+    private boolean producerJsonFailInvalidSchema;
+    private boolean producerJsonFailUnknownProperties;
+
     private final boolean meterRegistryExporterJmxActivate;
     private final boolean meterRegistryExporterPrometheusActivate;
     private final int meterRegistryExporterPrometheusPort;
@@ -63,6 +74,18 @@ public class HttpSinkConnectorConfig extends AbstractConfig {
 
     public HttpSinkConnectorConfig(ConfigDef configDef, Map<?, ?> originals) {
         super(configDef, originals, LOGGER.isDebugEnabled());
+
+
+        //producer
+        this.producerBootstrapServers = getString(PRODUCER_BOOTSTRAP_SERVERS);
+        this.producerSchemaRegistryUrl = getString(PRODUCER_SCHEMA_REGISTRY_URL);
+        this.producerSchemaRegistryCacheCapacity = getInt(PRODUCER_SCHEMA_REGISTRY_CACHE_CAPACITY);
+        this.producerSchemaRegistryautoRegister = getBoolean(PRODUCER_SCHEMA_REGISTRY_AUTO_REGISTER);
+        this.producerJsonSchemaSpecVersion = getString(PRODUCER_JSON_SCHEMA_SPEC_VERSION);
+        this.producerJsonWriteDatesAs8601 = getBoolean(PRODUCER_JSON_WRITE_DATES_AS_ISO_8601);
+        this.producerJsonOneOfForNullables = getBoolean(PRODUCER_JSON_ONE_OF_FOR_NULLABLES);
+        this.producerJsonFailInvalidSchema = getBoolean(PRODUCER_JSON_FAIL_INVALID_SCHEMA);
+        this.producerJsonFailUnknownProperties = getBoolean(PRODUCER_JSON_FAIL_UNKNOWN_PROPERTIES);
 
         //meter Registry
         this.meterRegistryExporterJmxActivate = Boolean.parseBoolean(getString(METER_REGISTRY_EXPORTER_JMX_ACTIVATE));
@@ -256,11 +279,69 @@ public class HttpSinkConnectorConfig extends AbstractConfig {
         return httpClientImplementation;
     }
 
+    public String getProducerBootstrapServers() {
+        return producerBootstrapServers;
+    }
+
+    public String getProducerSchemaRegistryUrl() {
+        return producerSchemaRegistryUrl;
+    }
+
+    public int getProducerSchemaRegistrycacheCapacity() {
+        return producerSchemaRegistryCacheCapacity;
+    }
+
+    public boolean isProducerSchemaRegistryautoRegister() {
+        return producerSchemaRegistryautoRegister;
+    }
+
+    public String isProducerJsonSchemaSpecVersion() {
+        return producerJsonSchemaSpecVersion;
+    }
+
+    public boolean isProducerJsonWriteDatesAs8601() {
+        return producerJsonWriteDatesAs8601;
+    }
+
+    public boolean isProducerJsonOneOfForNullables() {
+        return producerJsonOneOfForNullables;
+    }
+
+    public boolean isProducerJsonFailInvalidSchema() {
+        return producerJsonFailInvalidSchema;
+    }
+
+    public boolean isProducerJsonFailUnknownProperties() {
+        return producerJsonFailUnknownProperties;
+    }
 
     @Override
     public String toString() {
         return "HttpSinkConnectorConfig{" +
-                "defaultSuccessResponseCodeRegex='" + defaultSuccessResponseCodeRegex + '\'' +
+                "producerBootstrapServers='" + producerBootstrapServers + '\'' +
+                ", producerSchemaRegistryUrl='" + producerSchemaRegistryUrl + '\'' +
+                ", producerSchemaRegistryCacheCapacity=" + producerSchemaRegistryCacheCapacity +
+                ", producerSchemaRegistryautoRegister=" + producerSchemaRegistryautoRegister +
+                ", producerJsonSchemaSpecVersion='" + producerJsonSchemaSpecVersion + '\'' +
+                ", producerJsonWriteDatesAs8601=" + producerJsonWriteDatesAs8601 +
+                ", producerJsonOneOfForNullables=" + producerJsonOneOfForNullables +
+                ", producerJsonFailInvalidSchema=" + producerJsonFailInvalidSchema +
+                ", producerJsonFailUnknownProperties=" + producerJsonFailUnknownProperties +
+                ", meterRegistryExporterJmxActivate=" + meterRegistryExporterJmxActivate +
+                ", meterRegistryExporterPrometheusActivate=" + meterRegistryExporterPrometheusActivate +
+                ", meterRegistryExporterPrometheusPort=" + meterRegistryExporterPrometheusPort +
+                ", meterRegistryBindMetricsExecutorService=" + meterRegistryBindMetricsExecutorService +
+                ", meterRegistryBindMetricsJvmClassloader=" + meterRegistryBindMetricsJvmClassloader +
+                ", meterRegistryBindMetricsJvmProcessor=" + meterRegistryBindMetricsJvmProcessor +
+                ", meterRegistryBindMetricsJvmGc=" + meterRegistryBindMetricsJvmGc +
+                ", meterRegistryBindMetricsJvmInfo=" + meterRegistryBindMetricsJvmInfo +
+                ", meterRegistryBindMetricsJvmMemory=" + meterRegistryBindMetricsJvmMemory +
+                ", meterRegistryBindMetricsJvmThread=" + meterRegistryBindMetricsJvmThread +
+                ", meterRegistryBindMetricsLogback=" + meterRegistryBindMetricsLogback +
+                ", meterRegistryTagIncludeLegacyHost=" + meterRegistryTagIncludeLegacyHost +
+                ", meterRegistryTagIncludeUrlPath=" + meterRegistryTagIncludeUrlPath +
+                ", httpClientImplementation='" + httpClientImplementation + '\'' +
+                ", defaultSuccessResponseCodeRegex='" + defaultSuccessResponseCodeRegex + '\'' +
                 ", defaultRetryResponseCodeRegex='" + defaultRetryResponseCodeRegex + '\'' +
                 ", queueName='" + queueName + '\'' +
                 ", publishToInMemoryQueue=" + publishToInMemoryQueue +
@@ -270,16 +351,16 @@ public class HttpSinkConnectorConfig extends AbstractConfig {
                 ", defaultRetryDelayFactor=" + defaultRetryDelayFactor +
                 ", defaultRetryJitterInMs=" + defaultRetryJitterInMs +
                 ", defaultRateLimiterMaxExecutions=" + defaultRateLimiterMaxExecutions +
+                ", defaultRateLimiterScope='" + defaultRateLimiterScope + '\'' +
                 ", defaultRateLimiterPeriodInMs=" + defaultRateLimiterPeriodInMs +
-                ", defaultRateLimiterScope=" + defaultRateLimiterScope +
                 ", staticRequestHeaders=" + staticRequestHeaders +
                 ", generateMissingRequestId=" + generateMissingRequestId +
                 ", generateMissingCorrelationId=" + generateMissingCorrelationId +
                 ", maxWaitTimeRegistrationOfQueueConsumerInMs=" + maxWaitTimeRegistrationOfQueueConsumerInMs +
+                ", pollDelayRegistrationOfQueueConsumerInMs=" + pollDelayRegistrationOfQueueConsumerInMs +
+                ", pollIntervalRegistrationOfQueueConsumerInMs=" + pollIntervalRegistrationOfQueueConsumerInMs +
                 ", customFixedThreadpoolSize=" + customFixedThreadpoolSize +
                 ", configurationIds=" + configurationIds +
                 '}';
     }
-
-
 }
