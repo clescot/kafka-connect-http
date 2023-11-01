@@ -72,40 +72,13 @@ public class HttpSinkTask extends SinkTask {
         queueName = httpSinkConnectorConfig.getQueueName();
         httpTask = new HttpTask<>(httpSinkConnectorConfig);
 
-        //get all settings starting with 'producer.'
+        Map<String, Object> producerSettings;
 
         //low-level producer is configured (bootstrap.servers is a requirement)
         if(!Strings.isNullOrEmpty(httpSinkConnectorConfig.getProducerBootstrapServers())) {
-            Serializer<HttpExchange> serializer;
-            String format = httpSinkConnectorConfig.getProducerFormat();
-            //if format is json
-            if(JSON.equalsIgnoreCase(format)) {
-                //json schema serde config
-                String schemaRegistryUrl = httpSinkConnectorConfig.getProducerSchemaRegistryUrl();
-                int schemaRegistryCacheCapacity = httpSinkConnectorConfig.getProducerSchemaRegistrycacheCapacity();
-                SchemaRegistryClient schemaRegistryClient = new CachedSchemaRegistryClient(schemaRegistryUrl, schemaRegistryCacheCapacity);
-                boolean autoRegisterSchemas = httpSinkConnectorConfig.isProducerSchemaRegistryautoRegister();
-                String jsonSchemaSpecVersion = httpSinkConnectorConfig.isProducerJsonSchemaSpecVersion();
-                boolean writeDatesAsIso8601 = httpSinkConnectorConfig.isProducerJsonWriteDatesAs8601();
-                boolean oneOfForNullables = httpSinkConnectorConfig.isProducerJsonOneOfForNullables();
-                boolean failInvalidSchema = httpSinkConnectorConfig.isProducerJsonFailInvalidSchema();
-                boolean failUnknownProperties = httpSinkConnectorConfig.isProducerJsonFailUnknownProperties();
-                JsonSchemaSerdeConfigFactory jsonSchemaSerdeConfigFactory = new JsonSchemaSerdeConfigFactory(
-                        schemaRegistryUrl,
-                        autoRegisterSchemas,
-                        jsonSchemaSpecVersion,
-                        writeDatesAsIso8601,
-                        oneOfForNullables,
-                        failInvalidSchema,
-                        failUnknownProperties);
-                HttpExchangeSerdeFactory httpExchangeSerdeFactory = new HttpExchangeSerdeFactory(schemaRegistryClient, jsonSchemaSerdeConfigFactory);
-                serializer = httpExchangeSerdeFactory.buildValueSerde().serializer();
-            }else{
-                //serialize as simple string
-                serializer = new HttpExchangeSerializer();
-            }
-            Map<String, Object> configs = httpSinkConnectorConfig.originalsWithPrefix(PRODUCER_PREFIX);
-            this.producer = new KafkaProducer<>(configs, new StringSerializer(), serializer);
+            Serializer<HttpExchange> serializer = getHttpExchangeSerializer(httpSinkConnectorConfig);
+            producerSettings = httpSinkConnectorConfig.originalsWithPrefix(PRODUCER_PREFIX);
+            this.producer = new KafkaProducer<>(producerSettings, new StringSerializer(), serializer);
         //publish to in memory queue is configured
         }else if(httpSinkConnectorConfig.isPublishToInMemoryQueue()) {
             Preconditions.checkArgument(QueueFactory.hasAConsumer(
@@ -120,6 +93,38 @@ public class HttpSinkTask extends SinkTask {
         }
         //TODO handle errantRecordReporter publication  option
 
+    }
+
+    private Serializer<HttpExchange> getHttpExchangeSerializer(HttpSinkConnectorConfig httpSinkConnectorConfig) {
+        Serializer<HttpExchange> serializer;
+        String format = httpSinkConnectorConfig.getProducerFormat();
+        //if format is json
+        if(JSON.equalsIgnoreCase(format)) {
+            //json schema serde config
+            String schemaRegistryUrl = httpSinkConnectorConfig.getProducerSchemaRegistryUrl();
+            int schemaRegistryCacheCapacity = httpSinkConnectorConfig.getProducerSchemaRegistrycacheCapacity();
+            SchemaRegistryClient schemaRegistryClient = new CachedSchemaRegistryClient(schemaRegistryUrl, schemaRegistryCacheCapacity);
+            boolean autoRegisterSchemas = httpSinkConnectorConfig.isProducerSchemaRegistryautoRegister();
+            String jsonSchemaSpecVersion = httpSinkConnectorConfig.isProducerJsonSchemaSpecVersion();
+            boolean writeDatesAsIso8601 = httpSinkConnectorConfig.isProducerJsonWriteDatesAs8601();
+            boolean oneOfForNullables = httpSinkConnectorConfig.isProducerJsonOneOfForNullables();
+            boolean failInvalidSchema = httpSinkConnectorConfig.isProducerJsonFailInvalidSchema();
+            boolean failUnknownProperties = httpSinkConnectorConfig.isProducerJsonFailUnknownProperties();
+            JsonSchemaSerdeConfigFactory jsonSchemaSerdeConfigFactory = new JsonSchemaSerdeConfigFactory(
+                    schemaRegistryUrl,
+                    autoRegisterSchemas,
+                    jsonSchemaSpecVersion,
+                    writeDatesAsIso8601,
+                    oneOfForNullables,
+                    failInvalidSchema,
+                    failUnknownProperties);
+            HttpExchangeSerdeFactory httpExchangeSerdeFactory = new HttpExchangeSerdeFactory(schemaRegistryClient, jsonSchemaSerdeConfigFactory);
+            serializer = httpExchangeSerdeFactory.buildValueSerde().serializer();
+        }else{
+            //serialize as simple string
+            serializer = new HttpExchangeSerializer();
+        }
+        return serializer;
     }
 
 
@@ -206,6 +211,9 @@ public class HttpSinkTask extends SinkTask {
 
     protected void setQueue(Queue<KafkaRecord> queue) {
         this.httpTask.setQueue(queue);
+    }
+    protected void setProducer(Producer<String,HttpExchange> producer) {
+        this.producer = producer;
     }
 
     public Configuration getDefaultConfiguration() {
