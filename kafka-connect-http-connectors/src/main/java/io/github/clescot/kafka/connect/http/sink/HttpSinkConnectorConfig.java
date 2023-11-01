@@ -317,6 +317,8 @@ public class HttpSinkConnectorConfig extends AbstractConfig {
         return producerJsonFailUnknownProperties;
     }
 
+
+
     public String getProducerFormat() {
         return producerFormat;
     }
