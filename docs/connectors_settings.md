@@ -33,12 +33,12 @@ controlled by the  *`publishMode`* parameter : `NONE` by default. When set to an
  use the errantReporter (used to publish to a Dead Letter Queue topic when messages raise an error usually). No low level configuration is required (like in `PRODUCER` mode),
  and no topology constraint is required (like in `IN_MEMORY_QUEUE` mode),
  but reuse an error topic. 
-  - *`publishMode`* parameter : `PRODUCER` : use a low level kafka producer to publish HttpExchange in a dedicated topic. No topology constraint is required, no DLQ topic is reused, 
-    but unlike other connectors (kafka connect handle that for us and hide it), we must configure the low level connection details. All settings starting with the prefix `producer.` 
-    will be passed to the producer instance to configure it. 
-    - `producer.bootstrap.servers` : required parameter to contact the kafka cluster.
-    - `producer.topic` : name of the topic to publish httpExchange instances.
-    - other parameters can be passed to the low level kafka producer instance.
+- *`publishMode`* parameter : `PRODUCER` : use a low level kafka producer to publish HttpExchange in a dedicated topic. No topology constraint is required, no DLQ topic is reused, 
+  but unlike other connectors (kafka connect handle that for us and hide it), we must configure the low level connection details. All settings starting with the prefix `producer.` 
+  will be passed to the producer instance to configure it. 
+  - `producer.bootstrap.servers` : required parameter to contact the kafka cluster.
+  - `producer.topic` : name of the topic to publish httpExchange instances.
+  - other parameters can be passed to the low level kafka producer instance.
 ### Metrics Registry
 
 metrics registry can be configured to add some metrics, and to export them. Metrics registry is global to the JVM.
