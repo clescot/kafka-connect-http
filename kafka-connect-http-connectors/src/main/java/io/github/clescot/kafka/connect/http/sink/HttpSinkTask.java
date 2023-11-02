@@ -11,6 +11,7 @@ import io.github.clescot.kafka.connect.http.VersionUtils;
 import io.github.clescot.kafka.connect.http.client.Configuration;
 import io.github.clescot.kafka.connect.http.core.HttpExchange;
 import io.github.clescot.kafka.connect.http.core.HttpExchangeSerializer;
+import io.github.clescot.kafka.connect.http.core.queue.ConfigConstants;
 import io.github.clescot.kafka.connect.http.core.queue.KafkaRecord;
 import io.github.clescot.kafka.connect.http.core.queue.QueueFactory;
 import org.apache.kafka.common.serialization.Serializer;
@@ -22,10 +23,7 @@ import org.apache.kafka.connect.sink.SinkTask;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.Collection;
-import java.util.List;
-import java.util.Map;
-import java.util.Queue;
+import java.util.*;
 import java.util.concurrent.*;
 import java.util.stream.Collectors;
 
@@ -40,12 +38,15 @@ public class HttpSinkTask extends SinkTask {
 
     private ErrantRecordReporter errantRecordReporter;
     private HttpTask<SinkRecord> httpTask;
-    private KafkaProducer<String,HttpExchange> producer;
-
+    private final KafkaProducer<String, HttpExchange> producer;
+    private boolean publishToInMemoryQueue;
+    private String queueName;
+    private Queue<KafkaRecord> queue;
 
     public HttpSinkTask() {
         producer = new KafkaProducer<>();
     }
+
     public HttpSinkTask(boolean mock) {
         producer = new KafkaProducer<>(mock);
     }
@@ -82,12 +83,15 @@ public class HttpSinkTask extends SinkTask {
         Map<String, Object> producerSettings;
 
         //low-level producer is configured (bootstrap.servers is a requirement)
-        if(!Strings.isNullOrEmpty(httpSinkConnectorConfig.getProducerBootstrapServers())) {
+        if (!Strings.isNullOrEmpty(httpSinkConnectorConfig.getProducerBootstrapServers())) {
             Serializer<HttpExchange> serializer = getHttpExchangeSerializer(httpSinkConnectorConfig);
             producerSettings = httpSinkConnectorConfig.originalsWithPrefix(PRODUCER_PREFIX);
             producer.configure(producerSettings, new StringSerializer(), serializer);
-        //publish to in memory queue is configured
-        }else if(httpSinkConnectorConfig.isPublishToInMemoryQueue()) {
+            //publish to in memory queue is configured
+        } else if (httpSinkConnectorConfig.isPublishToInMemoryQueue()) {
+            publishToInMemoryQueue = true;
+            this.queueName = Optional.ofNullable(httpSinkConnectorConfig.getString(ConfigConstants.QUEUE_NAME)).orElse(QueueFactory.DEFAULT_QUEUE_NAME);
+            this.queue = QueueFactory.getQueue(queueName);
             String queueName = httpSinkConnectorConfig.getQueueName();
             Preconditions.checkArgument(QueueFactory.hasAConsumer(
                     queueName,
@@ -107,7 +111,7 @@ public class HttpSinkTask extends SinkTask {
         Serializer<HttpExchange> serializer;
         String format = httpSinkConnectorConfig.getProducerFormat();
         //if format is json
-        if(JSON.equalsIgnoreCase(format)) {
+        if (JSON.equalsIgnoreCase(format)) {
             //json schema serde config
             String schemaRegistryUrl = httpSinkConnectorConfig.getProducerSchemaRegistryUrl();
             int schemaRegistryCacheCapacity = httpSinkConnectorConfig.getProducerSchemaRegistrycacheCapacity();
@@ -128,7 +132,7 @@ public class HttpSinkTask extends SinkTask {
                     failUnknownProperties);
             HttpExchangeSerdeFactory httpExchangeSerdeFactory = new HttpExchangeSerdeFactory(schemaRegistryClient, jsonSchemaSerdeConfigFactory);
             serializer = httpExchangeSerdeFactory.buildValueSerde().serializer();
-        }else{
+        } else {
             //serialize as simple string
             serializer = new HttpExchangeSerializer();
         }
@@ -161,7 +165,20 @@ public class HttpSinkTask extends SinkTask {
             if (sinkRecord.value() == null) {
                 throw new ConnectException("sinkRecord Value is null :" + sinkRecord);
             }
-            return httpTask.processRecord(sinkRecord);
+            return httpTask.processRecord(sinkRecord)
+                    .thenApply(
+                            kafkaRecord -> {
+                                //publish eventually to 'in memory' queue
+                                HttpExchange httpExchange = kafkaRecord.getHttpExchange();
+                                if (this.publishToInMemoryQueue) {
+                                    LOGGER.debug("http exchange published to queue '{}':{}", queueName, httpExchange);
+                                    queue.offer(new KafkaRecord(sinkRecord.headers(), sinkRecord.keySchema(), sinkRecord.key(), httpExchange));
+                                } else {
+                                    LOGGER.debug("http exchange NOT published to queue '{}':{}", queueName, httpExchange);
+                                }
+                                return httpExchange;
+                            }
+                    );
         } catch (ConnectException connectException) {
             LOGGER.error("sink value class is '{}'", valueClass.getName());
             if (errantRecordReporter != null) {
@@ -190,11 +207,9 @@ public class HttpSinkTask extends SinkTask {
 
     }
 
-
-
     @Override
     public void stop() {
-        if(httpTask==null){
+        if (httpTask == null) {
             LOGGER.error("httpTask hasn't been created with the 'start' method");
             return;
         }
@@ -218,7 +233,7 @@ public class HttpSinkTask extends SinkTask {
     }
 
     protected void setQueue(Queue<KafkaRecord> queue) {
-        this.httpTask.setQueue(queue);
+        this.queue = queue;
     }
 
     public Configuration getDefaultConfiguration() {

@@ -14,9 +14,7 @@ import io.github.clescot.kafka.connect.http.core.HttpExchange;
 import io.github.clescot.kafka.connect.http.core.HttpRequest;
 import io.github.clescot.kafka.connect.http.core.HttpRequestAsStruct;
 import io.github.clescot.kafka.connect.http.core.HttpResponse;
-import io.github.clescot.kafka.connect.http.core.queue.ConfigConstants;
 import io.github.clescot.kafka.connect.http.core.queue.KafkaRecord;
-import io.github.clescot.kafka.connect.http.core.queue.QueueFactory;
 import io.micrometer.core.instrument.Clock;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.binder.jvm.*;
@@ -43,7 +41,6 @@ import java.time.OffsetDateTime;
 import java.time.ZoneId;
 import java.util.List;
 import java.util.Optional;
-import java.util.Queue;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.ExecutorService;
@@ -62,10 +59,7 @@ public class HttpTask<T extends ConnectRecord<T>> {
     private final List<Configuration> customConfigurations;
     private final Configuration defaultConfiguration;
     private ExecutorService executorService;
-    private final boolean publishToInMemoryQueue;
     private static CompositeMeterRegistry meterRegistry;
-    private String queueName;
-    private Queue<KafkaRecord> queue;
 
 
     public HttpTask(AbstractConfig config) {
@@ -79,11 +73,7 @@ public class HttpTask<T extends ConnectRecord<T>> {
         //bind metrics to MeterRegistry and ExecutorService
         bindMetrics(config, meterRegistry, executorService);
         this.defaultConfiguration = new Configuration(DEFAULT_CONFIGURATION_ID, config, executorService, meterRegistry);
-        this.publishToInMemoryQueue = Boolean.parseBoolean(config.getString(PUBLISH_TO_IN_MEMORY_QUEUE));
-        if(publishToInMemoryQueue) {
-            this.queueName = Optional.ofNullable(config.getString(ConfigConstants.QUEUE_NAME)).orElse(QueueFactory.DEFAULT_QUEUE_NAME);
-            this.queue = QueueFactory.getQueue(queueName);
-        }
+
         this.customConfigurations = buildCustomConfigurations(config, defaultConfiguration, executorService);
     }
 
@@ -99,7 +89,7 @@ public class HttpTask<T extends ConnectRecord<T>> {
             }
 
             //we reuse the default retry policy if not set
-            Optional<RetryPolicy<HttpExchange>> defaultRetryPolicy = defaultConfiguration.getRetryPolicy();
+            Optional<RetryPolicy<KafkaRecord>> defaultRetryPolicy = defaultConfiguration.getRetryPolicy();
             if (configuration.getRetryPolicy().isEmpty() && defaultRetryPolicy.isPresent()) {
                 configuration.setRetryPolicy(defaultRetryPolicy.get());
             }
@@ -173,7 +163,7 @@ public class HttpTask<T extends ConnectRecord<T>> {
     }
 
 
-    private CompletableFuture<HttpExchange> callAndPublish(ConnectRecord<T> sinkRecord,
+    private CompletableFuture<KafkaRecord> callAndPublish(ConnectRecord<T> sinkRecord,
                                                            HttpRequest httpRequest,
                                                            AtomicInteger attempts,
                                                            Configuration configuration) {
@@ -188,30 +178,30 @@ public class HttpTask<T extends ConnectRecord<T>> {
         return completableFuture
                 .thenApply(myHttpExchange -> {
                     HttpExchange enrichedHttpExchange = configuration.enrich(myHttpExchange);
-
-                    //publish eventually to 'in memory' queue
-                    if (this.publishToInMemoryQueue) {
-                        LOGGER.debug("http exchange published to queue '{}':{}", queueName, enrichedHttpExchange);
-                        queue.offer(new KafkaRecord(sinkRecord.headers(), sinkRecord.keySchema(), sinkRecord.key(), enrichedHttpExchange));
-                    } else {
-                        LOGGER.debug("http exchange NOT published to queue '{}':{}", queueName, enrichedHttpExchange);
-                    }
-                    return enrichedHttpExchange;
+                    return new KafkaRecord(sinkRecord.headers(), sinkRecord.keySchema(), sinkRecord.key(), enrichedHttpExchange);
+//                    //publish eventually to 'in memory' queue
+//                    if (this.publishToInMemoryQueue) {
+//                        LOGGER.debug("http exchange published to queue '{}':{}", queueName, enrichedHttpExchange);
+//                        queue.offer(new KafkaRecord(sinkRecord.headers(), sinkRecord.keySchema(), sinkRecord.key(), enrichedHttpExchange));
+//                    } else {
+//                        LOGGER.debug("http exchange NOT published to queue '{}':{}", queueName, enrichedHttpExchange);
+//                    }
+//                    return enrichedHttpExchange;
                 });
 
     }
 
-    private CompletableFuture<HttpExchange> callWithRetryPolicy(ConnectRecord<T> sinkRecord,
+    private CompletableFuture<KafkaRecord> callWithRetryPolicy(ConnectRecord<T> sinkRecord,
                                                                 HttpRequest httpRequest,
                                                                 Configuration configuration) {
-        Optional<RetryPolicy<HttpExchange>> retryPolicyForCall = configuration.getRetryPolicy();
+        Optional<RetryPolicy<KafkaRecord>> retryPolicyForCall = configuration.getRetryPolicy();
         if (httpRequest != null) {
             AtomicInteger attempts = new AtomicInteger();
             try {
                 attempts.addAndGet(HttpClient.ONE_HTTP_REQUEST);
                 if (retryPolicyForCall.isPresent()) {
-                    RetryPolicy<HttpExchange> retryPolicy = retryPolicyForCall.get();
-                    CompletableFuture<HttpExchange> httpExchangeFuture = callAndPublish(sinkRecord, httpRequest, attempts, configuration)
+                    RetryPolicy<KafkaRecord> retryPolicy = retryPolicyForCall.get();
+                    CompletableFuture<KafkaRecord> httpExchangeFuture = callAndPublish(sinkRecord, httpRequest, attempts, configuration)
                             .thenApply(configuration::handleRetry);
                     return Failsafe.with(List.of(retryPolicy)).getStageAsync(() -> httpExchangeFuture);
                 } else {
@@ -220,19 +210,20 @@ public class HttpTask<T extends ConnectRecord<T>> {
             } catch (Exception exception) {
                 LOGGER.error("Failed to call web service after {} retries with error({}). message:{} ", attempts, exception,
                         exception.getMessage());
-                return CompletableFuture.supplyAsync(() -> defaultConfiguration.getHttpClient().buildHttpExchange(
+                HttpExchange httpExchange = defaultConfiguration.getHttpClient().buildHttpExchange(
                         httpRequest,
                         new HttpResponse(HttpClient.SERVER_ERROR_STATUS_CODE, String.valueOf(exception.getMessage())),
                         Stopwatch.createUnstarted(), OffsetDateTime.now(ZoneId.of(HttpClient.UTC_ZONE_ID)),
                         attempts,
-                        HttpClient.FAILURE));
+                        HttpClient.FAILURE);
+                return CompletableFuture.supplyAsync(() -> new KafkaRecord(Lists.newArrayList(),null,null,httpExchange));
             }
         } else {
             throw new IllegalArgumentException("httpRequest is null");
         }
     }
 
-    public CompletableFuture<HttpExchange> processRecord(ConnectRecord<T> sinkRecord) {
+    public CompletableFuture<KafkaRecord> processRecord(ConnectRecord<T> sinkRecord) {
         HttpRequest httpRequest;
         //build HttpRequest
         httpRequest = buildHttpRequest(sinkRecord);
@@ -248,9 +239,9 @@ public class HttpTask<T extends ConnectRecord<T>> {
         }
         //handle Request and Response
         return callWithRetryPolicy(sinkRecord, httpRequest, foundConfiguration).thenApply(
-                myHttpExchange -> {
-                    LOGGER.debug("HTTP exchange :{}", myHttpExchange);
-                    return myHttpExchange;
+                kafkaRecord -> {
+                    LOGGER.debug("HTTP exchange :{}", kafkaRecord.getHttpExchange());
+                    return kafkaRecord;
                 }
         );
     }
@@ -330,10 +321,6 @@ public class HttpTask<T extends ConnectRecord<T>> {
      */
     public ExecutorService buildExecutorService(Integer customFixedThreadPoolSize) {
         return Executors.newFixedThreadPool(customFixedThreadPoolSize);
-    }
-
-    public void setQueue(Queue<KafkaRecord> queue) {
-        this.queue = queue;
     }
 
     public Configuration getDefaultConfiguration() {

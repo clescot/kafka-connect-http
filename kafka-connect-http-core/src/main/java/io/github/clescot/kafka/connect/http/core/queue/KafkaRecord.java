@@ -14,6 +14,9 @@ public class KafkaRecord {
     private Object key;
     private HttpExchange httpExchange;
 
+    public KafkaRecord(HttpExchange httpExchange) {
+        this.httpExchange = httpExchange;
+    }
     public KafkaRecord(Iterable<Header> headers,
                        Schema schemaKey,
                        Object key,

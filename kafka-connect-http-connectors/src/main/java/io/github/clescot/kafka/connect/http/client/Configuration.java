@@ -13,6 +13,7 @@ import io.github.clescot.kafka.connect.http.client.proxy.ProxySelectorFactory;
 import io.github.clescot.kafka.connect.http.core.HttpExchange;
 import io.github.clescot.kafka.connect.http.core.HttpRequest;
 import io.github.clescot.kafka.connect.http.core.HttpResponse;
+import io.github.clescot.kafka.connect.http.core.queue.KafkaRecord;
 import io.micrometer.core.instrument.composite.CompositeMeterRegistry;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.kafka.common.config.AbstractConfig;
@@ -85,7 +86,7 @@ public class Configuration {
 
     //retry policy
     private Pattern retryResponseCodeRegex;
-    private RetryPolicy<HttpExchange> retryPolicy;
+    private RetryPolicy<KafkaRecord> retryPolicy;
 
     //http client
     private HttpClient httpClient;
@@ -348,7 +349,7 @@ public class Configuration {
         this.retryResponseCodeRegex = retryResponseCodeRegex;
     }
 
-    public void setRetryPolicy(RetryPolicy<HttpExchange> retryPolicy) {
+    public void setRetryPolicy(RetryPolicy<KafkaRecord> retryPolicy) {
         this.retryPolicy = retryPolicy;
     }
 
@@ -360,7 +361,7 @@ public class Configuration {
     }
 
 
-    public Optional<RetryPolicy<HttpExchange>> getRetryPolicy() {
+    public Optional<RetryPolicy<KafkaRecord>> getRetryPolicy() {
         return Optional.ofNullable(retryPolicy);
     }
 
@@ -372,12 +373,12 @@ public class Configuration {
         return Optional.ofNullable(retryResponseCodeRegex);
     }
 
-    private RetryPolicy<HttpExchange> buildRetryPolicy(Integer retries,
+    private RetryPolicy<KafkaRecord> buildRetryPolicy(Integer retries,
                                                        Long retryDelayInMs,
                                                        Long retryMaxDelayInMs,
                                                        Double retryDelayFactor,
                                                        Long retryJitterInMs) {
-        return RetryPolicy.<HttpExchange>builder()
+        return RetryPolicy.<KafkaRecord>builder()
                 //we retry only if the error comes from the WS server (server-side technical error)
                 .handle(HttpException.class)
                 .withBackoff(Duration.ofMillis(retryDelayInMs), Duration.ofMillis(retryMaxDelayInMs), retryDelayFactor)
@@ -389,7 +390,8 @@ public class Configuration {
                 .build();
     }
 
-    public HttpExchange handleRetry(HttpExchange httpExchange) {
+    public KafkaRecord handleRetry(KafkaRecord kafkaRecord) {
+        HttpExchange httpExchange = kafkaRecord.getHttpExchange();
         //we don't retry success HTTP Exchange
         boolean responseCodeImpliesRetry = retryNeeded(httpExchange.getHttpResponse());
         LOGGER.debug("httpExchange success :'{}'", httpExchange.isSuccess());
@@ -398,7 +400,7 @@ public class Configuration {
                 && responseCodeImpliesRetry) {
             throw new HttpException(httpExchange, "retry needed");
         }
-        return httpExchange;
+        return kafkaRecord;
     }
 
 
