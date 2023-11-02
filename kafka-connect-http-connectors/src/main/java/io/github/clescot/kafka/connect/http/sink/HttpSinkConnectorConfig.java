@@ -19,7 +19,6 @@ import static io.github.clescot.kafka.connect.http.sink.HttpSinkConfigDefinition
 
 public class HttpSinkConnectorConfig extends AbstractConfig {
     private static final Logger LOGGER = LoggerFactory.getLogger(HttpSinkConnectorConfig.class);
-    public static final String PUBLISH_TOPIC = "publishTopic";
     private final String producerFormat;
     private final String publishTopic;
 
@@ -114,7 +113,7 @@ public class HttpSinkConnectorConfig extends AbstractConfig {
 
         this.queueName = Optional.ofNullable(getString(ConfigConstants.QUEUE_NAME)).orElse(QueueFactory.DEFAULT_QUEUE_NAME);
         this.publishMode = PublishMode.valueOf(Optional.ofNullable(getString(PUBLISH_MODE)).orElse(PublishMode.NONE.name()));
-        this.publishTopic = getString(PUBLISH_TOPIC);
+        this.publishTopic = getString(PRODUCER_TOPIC);
         if (QueueFactory.queueMapIsEmpty()&&PublishMode.IN_MEMORY_QUEUE.name().equalsIgnoreCase(publishMode.name())) {
             LOGGER.warn("no pre-existing queue exists. this HttpSourceConnector has created a '{}' one. It needs to consume a queue filled with a SinkConnector. Ignore this message if a SinkConnector will be created after this one.", queueName);
         }
