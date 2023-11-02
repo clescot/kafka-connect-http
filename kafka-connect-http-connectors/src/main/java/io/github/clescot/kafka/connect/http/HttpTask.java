@@ -163,7 +163,7 @@ public class HttpTask<T extends ConnectRecord<T>> {
     }
 
 
-    private CompletableFuture<KafkaRecord> callAndPublish(ConnectRecord<T> sinkRecord,
+    private CompletableFuture<KafkaRecord> callAndPublish(ConnectRecord<T> connectRecord,
                                                            HttpRequest httpRequest,
                                                            AtomicInteger attempts,
                                                            Configuration configuration) {
@@ -178,15 +178,7 @@ public class HttpTask<T extends ConnectRecord<T>> {
         return completableFuture
                 .thenApply(myHttpExchange -> {
                     HttpExchange enrichedHttpExchange = configuration.enrich(myHttpExchange);
-                    return new KafkaRecord(sinkRecord.headers(), sinkRecord.keySchema(), sinkRecord.key(), enrichedHttpExchange);
-//                    //publish eventually to 'in memory' queue
-//                    if (this.publishToInMemoryQueue) {
-//                        LOGGER.debug("http exchange published to queue '{}':{}", queueName, enrichedHttpExchange);
-//                        queue.offer(new KafkaRecord(sinkRecord.headers(), sinkRecord.keySchema(), sinkRecord.key(), enrichedHttpExchange));
-//                    } else {
-//                        LOGGER.debug("http exchange NOT published to queue '{}':{}", queueName, enrichedHttpExchange);
-//                    }
-//                    return enrichedHttpExchange;
+                    return new KafkaRecord(connectRecord.headers(), connectRecord.keySchema(), connectRecord.key(), enrichedHttpExchange);
                 });
 
     }
