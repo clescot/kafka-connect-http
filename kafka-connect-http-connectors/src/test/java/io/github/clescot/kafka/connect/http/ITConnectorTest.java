@@ -26,6 +26,7 @@ import io.debezium.testing.testcontainers.ConnectorConfiguration;
 import io.debezium.testing.testcontainers.DebeziumContainer;
 import io.github.clescot.kafka.connect.http.core.HttpRequest;
 import io.github.clescot.kafka.connect.http.core.queue.QueueFactory;
+import io.github.clescot.kafka.connect.http.sink.PublishMode;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.Response;
@@ -85,7 +86,7 @@ public class ITConnectorTest {
     public static final int CUSTOM_AVAILABLE_PORT = 0;
     public static final int CACHE_CAPACITY = 100;
     public static final String HTTP_REQUESTS_AS_STRING = "http-requests-string";
-    public static final boolean PUBLISH_TO_IN_MEMORY_QUEUE_OK = true;
+    public static final String PUBLISH_TO_IN_MEMORY_QUEUE_OK = PublishMode.IN_MEMORY_QUEUE.name();
     private static Network network = Network.newNetwork();
 
     public static final String JKS_STORE_TYPE = "jks";
@@ -179,7 +180,7 @@ public class ITConnectorTest {
         externalSchemaRegistryUrl = "http://" + schemaRegistryContainer.getHost() + ":"+schemaRegistryContainer.getMappedPort(8081);
     }
 
-    private static void configureSinkConnector(String connectorName, boolean publishToInMemoryQueue, String incomingTopic, String valueConverterClassName, String queueName, Map.Entry<String,String>... additionalSettings) {
+    private static void configureSinkConnector(String connectorName, String publishMode, String incomingTopic, String valueConverterClassName, String queueName, Map.Entry<String,String>... additionalSettings) {
         ConnectorConfiguration sinkConnectorMessagesAsStringConfiguration = ConnectorConfiguration.create()
                 .with("connector.class", "io.github.clescot.kafka.connect.http.sink.HttpSinkConnector")
                 .with("tasks.max", "1")
@@ -187,8 +188,8 @@ public class ITConnectorTest {
                 .with("key.converter", "org.apache.kafka.connect.storage.StringConverter")
                 .with("value.converter", valueConverterClassName)
                 .with("value.converter.use.optional.for.nonrequired", true)
-                .with(PUBLISH_TO_IN_MEMORY_QUEUE, Boolean.valueOf(publishToInMemoryQueue).toString());
-        if(publishToInMemoryQueue){
+                .with(PUBLISH_MODE, publishMode);
+        if(PublishMode.IN_MEMORY_QUEUE.name().equalsIgnoreCase(publishMode)){
             sinkConnectorMessagesAsStringConfiguration =sinkConnectorMessagesAsStringConfiguration.with("queue.name", queueName);
         }
         if(additionalSettings!=null && additionalSettings.length>0) {
@@ -227,7 +228,7 @@ public class ITConnectorTest {
     }
 
     @Test
-    public void test_sink_and_source_with_input_as_string() throws JSONException, JsonProcessingException {
+    void test_sink_and_source_with_input_as_string() throws JSONException, JsonProcessingException {
         WireMockRuntimeInfo wmRuntimeInfo = wmHttp.getRuntimeInfo();
         //register connectors
         String queueName = "test_sink_and_source_with_input_as_string";
@@ -342,7 +343,7 @@ public class ITConnectorTest {
     }
 
     @Test
-    public void test_sink_and_source_with_input_as_struct_and_schema_registry() throws JSONException {
+    void test_sink_and_source_with_input_as_struct_and_schema_registry() throws JSONException {
         WireMockRuntimeInfo httpRuntimeInfo = wmHttp.getRuntimeInfo();
         //register connectors
         String suffix = "sink_and_source_with_input_as_struct_and_schema_registry";
@@ -575,7 +576,7 @@ public class ITConnectorTest {
     }
 
     @Test
-    public void test_sink_and_source_with_input_as_struct_and_schema_registry_test_rate_limiting() throws JSONException {
+    void test_sink_and_source_with_input_as_struct_and_schema_registry_test_rate_limiting() throws JSONException {
         WireMockRuntimeInfo httpRuntimeInfo = wmHttp.getRuntimeInfo();
         //register connectors
         String suffix = "sink_and_source_with_input_as_struct_and_schema_registry_test_rate_limiting";

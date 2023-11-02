@@ -14,6 +14,7 @@ import io.github.clescot.kafka.connect.http.core.HttpExchangeSerializer;
 import io.github.clescot.kafka.connect.http.core.queue.ConfigConstants;
 import io.github.clescot.kafka.connect.http.core.queue.KafkaRecord;
 import io.github.clescot.kafka.connect.http.core.queue.QueueFactory;
+import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.common.serialization.Serializer;
 import org.apache.kafka.common.serialization.StringSerializer;
 import org.apache.kafka.connect.data.ConnectSchema;
@@ -35,16 +36,15 @@ public class HttpSinkTask extends SinkTask {
 
     private static final VersionUtils VERSION_UTILS = new VersionUtils();
     public static final String PRODUCER_PREFIX = "producer.";
-    public static final String BOOTSTRAP_SERVERS = "bootstrap.servers";
     public static final String JSON = "json";
 
     private ErrantRecordReporter errantRecordReporter;
     private HttpTask<SinkRecord> httpTask;
     private final KafkaProducer<String, HttpExchange> producer;
-    private boolean publishToInMemoryQueue;
-    private boolean publishToErrantReporter;
     private String queueName;
     private Queue<KafkaRecord> queue;
+    private PublishMode publishMode;
+    private HttpSinkConnectorConfig httpSinkConnectorConfig;
 
     public HttpSinkTask() {
         producer = new KafkaProducer<>();
@@ -64,9 +64,8 @@ public class HttpSinkTask extends SinkTask {
      */
     @Override
     public void start(Map<String, String> settings) {
-        HttpSinkConnectorConfig httpSinkConnectorConfig;
         Preconditions.checkNotNull(settings, "settings cannot be null");
-        httpSinkConnectorConfig = new HttpSinkConnectorConfig(HttpSinkConfigDefinition.config(), settings);
+        this.httpSinkConnectorConfig = new HttpSinkConnectorConfig(HttpSinkConfigDefinition.config(), settings);
 
 
         httpTask = new HttpTask<>(httpSinkConnectorConfig);
@@ -85,28 +84,40 @@ public class HttpSinkTask extends SinkTask {
 
         Map<String, Object> producerSettings;
 
-        //low-level producer is configured (bootstrap.servers is a requirement)
-        if (!Strings.isNullOrEmpty(httpSinkConnectorConfig.getProducerBootstrapServers())) {
-            Serializer<HttpExchange> serializer = getHttpExchangeSerializer(httpSinkConnectorConfig);
-            producerSettings = httpSinkConnectorConfig.originalsWithPrefix(PRODUCER_PREFIX);
-            producer.configure(producerSettings, new StringSerializer(), serializer);
-            //publish to in memory queue is configured
-        } else if (httpSinkConnectorConfig.isPublishToInMemoryQueue()) {
-            publishToInMemoryQueue = true;
-            this.queueName = Optional.ofNullable(httpSinkConnectorConfig.getString(ConfigConstants.QUEUE_NAME)).orElse(QueueFactory.DEFAULT_QUEUE_NAME);
-            this.queue = QueueFactory.getQueue(queueName);
-            String queueName = httpSinkConnectorConfig.getQueueName();
-            Preconditions.checkArgument(QueueFactory.hasAConsumer(
-                    queueName,
-                    httpSinkConnectorConfig.getMaxWaitTimeRegistrationOfQueueConsumerInMs()
-                    , httpSinkConnectorConfig.getPollDelayRegistrationOfQueueConsumerInMs(),
-                    httpSinkConnectorConfig.getPollIntervalRegistrationOfQueueConsumerInMs()
-            ), "timeout : '" + httpSinkConnectorConfig.getMaxWaitTimeRegistrationOfQueueConsumerInMs() +
-                    "'ms timeout reached :" + queueName + "' queue hasn't got any consumer, " +
-                    "i.e no Source Connector has been configured to consume records published in this in memory queue. " +
-                    "we stop the Sink Connector to prevent any OutOfMemoryError.");
+        this.publishMode = httpSinkConnectorConfig.getPublishMode();
+        LOGGER.debug("publishMode: {}", publishMode);
+
+        switch (publishMode){
+            case PRODUCER:
+                //low-level producer is configured (bootstrap.servers is a requirement)
+                Preconditions.checkArgument(!Strings.isNullOrEmpty(httpSinkConnectorConfig.getProducerBootstrapServers()));
+                Preconditions.checkArgument(!Strings.isNullOrEmpty(httpSinkConnectorConfig.getProducerTopic()));
+                Serializer<HttpExchange> serializer = getHttpExchangeSerializer(httpSinkConnectorConfig);
+                producerSettings = httpSinkConnectorConfig.originalsWithPrefix(PRODUCER_PREFIX);
+                producer.configure(producerSettings, new StringSerializer(), serializer);
+                break;
+            case IN_MEMORY_QUEUE:
+                this.queueName = Optional.ofNullable(httpSinkConnectorConfig.getString(ConfigConstants.QUEUE_NAME)).orElse(QueueFactory.DEFAULT_QUEUE_NAME);
+                this.queue = QueueFactory.getQueue(queueName);
+                this.queueName = httpSinkConnectorConfig.getQueueName();
+                Preconditions.checkArgument(QueueFactory.hasAConsumer(
+                        queueName,
+                        httpSinkConnectorConfig.getMaxWaitTimeRegistrationOfQueueConsumerInMs()
+                        , httpSinkConnectorConfig.getPollDelayRegistrationOfQueueConsumerInMs(),
+                        httpSinkConnectorConfig.getPollIntervalRegistrationOfQueueConsumerInMs()
+                ), "timeout : '" + httpSinkConnectorConfig.getMaxWaitTimeRegistrationOfQueueConsumerInMs() +
+                        "'ms timeout reached :" + queueName + "' queue hasn't got any consumer, " +
+                        "i.e no Source Connector has been configured to consume records published in this in memory queue. " +
+                        "we stop the Sink Connector to prevent any OutOfMemoryError.");
+                break;
+            case DLQ:
+                LOGGER.debug("DLQ publish mode");
+                break;
+            case NONE:
+            default:
+                LOGGER.debug("NONE publish mode");
         }
-        //TODO handle errantRecordReporter publication  option
+
 
     }
 
@@ -173,10 +184,10 @@ public class HttpSinkTask extends SinkTask {
                             kafkaRecord -> {
                                 //publish eventually to 'in memory' queue
                                 HttpExchange httpExchange = kafkaRecord.getHttpExchange();
-                                if (this.publishToInMemoryQueue) {
+                                if (PublishMode.IN_MEMORY_QUEUE.equals(this.publishMode)) {
                                     LOGGER.debug("http exchange published to queue '{}':{}", queueName, httpExchange);
                                     queue.offer(new KafkaRecord(sinkRecord.headers(), sinkRecord.keySchema(), sinkRecord.key(), httpExchange));
-                                } else if(publishToErrantReporter) {
+                                } else if (PublishMode.DLQ.equals(this.publishMode)) {
                                     SinkRecord myRecord = new SinkRecord(
                                             sinkRecord.topic(),
                                             sinkRecord.kafkaPartition(),
@@ -187,7 +198,9 @@ public class HttpSinkTask extends SinkTask {
                                             sinkRecord.kafkaOffset(),
                                             sinkRecord.timestamp(),
                                             sinkRecord.timestampType());
-                                    errantRecordReporter.report(myRecord,new FakeErrantRecordReporterException());
+                                    errantRecordReporter.report(myRecord, new FakeErrantRecordReporterException());
+                                }else if(PublishMode.PRODUCER.equals(this.publishMode)){
+                                    this.producer.send(new ProducerRecord<>(httpSinkConnectorConfig.getProducerTopic(),httpExchange));
                                 }else {
                                     LOGGER.debug("http exchange NOT published to queue '{}':{}", queueName, httpExchange);
                                 }

@@ -14,6 +14,8 @@ public class HttpSinkConfigDefinition {
     public static final String JSON_PREFIX = "json.";
     public static final String PRODUCER_BOOTSTRAP_SERVERS = PRODUCER_PREFIX+"bootstrap.servers";
     public static final String PRODUCER_BOOTSTRAP_SERVERS_DOC = "low level producer bootstrap server adresse to publish";
+    public static final String PRODUCER_TOPIC = PRODUCER_PREFIX+"topic";
+    public static final String PRODUCER_TOPIC_DOC = "producer topic";
     public static final String PRODUCER_FORMAT = PRODUCER_PREFIX+"format";
     public static final String PRODUCER_FORMAT_DOC = "can be 'json', or 'string'; default to 'string'.";
     public static final String PRODUCER_SCHEMA_REGISTRY_URL = PRODUCER_PREFIX+"schema.registry.url";
@@ -74,13 +76,13 @@ public class HttpSinkConfigDefinition {
     public static final String METER_REGISTRY_TAG_INCLUDE_URL_PATH_DOC = "include the legacy tag 'host'. host is already present in the 'target.host' tag.";
 
     //publish to in memory queue
-    public static final String PUBLISH_TO_IN_MEMORY_QUEUE = "publish.to.in.memory.queue";
-    public static final String PUBLISH_TO_IN_MEMORY_QUEUE_DOC = "when set to false, ignore HTTP responses, i.e does not publish responses in the in memory queue. No Source Connector is needed when set to false. When set to true, a Source Connector is needed to consume published Http exchanges in this in memory queue.";
+    public static final String PUBLISH_MODE = "publishMode";
+    public static final String PUBLISH_MODE_DOC = "can be either 'IN_MEMORY_QUEUE', 'NONE', 'DLQ' or 'PRODUCER'. When set to 'NONE', ignore HTTP responses, i.e does not publish responses in the in memory queue ; no Source Connector is needed when set to 'none'. When set to 'IN_MEMORY_QUEUE', a Source Connector is needed to consume published Http exchanges in this in memory queue. when set to 'PRODUCER' a low level producer will be used to publish response to another topic. when set to 'DLQ', the errantReporter used to publish bad message in a Dead letter queue will be used.";
 
     private static final long DEFAULT_WAIT_TIME_REGISTRATION_QUEUE_CONSUMER_IN_MS = 60000L;
     public static final String WAIT_TIME_REGISTRATION_QUEUE_CONSUMER_IN_MS = "wait.time.registration.queue.consumer.in.ms";
     public static final String WAIT_TIME_REGISTRATION_QUEUE_CONSUMER_IN_MS_DOC = "wait time defined with the '"+ WAIT_TIME_REGISTRATION_QUEUE_CONSUMER_IN_MS +"' parameter, for a queue consumer (Source Connector) registration. " +
-            "We wait if the "+PUBLISH_TO_IN_MEMORY_QUEUE+" parameter is set to 'true', to avoid to publish to the queue without any consumer (OutOfMemoryError possible). default value is "+DEFAULT_WAIT_TIME_REGISTRATION_QUEUE_CONSUMER_IN_MS;
+            "We wait if the "+PUBLISH_MODE+" parameter is set to 'inMemoryQueue', to avoid to publish to the queue without any consumer (OutOfMemoryError possible). default value is "+DEFAULT_WAIT_TIME_REGISTRATION_QUEUE_CONSUMER_IN_MS;
 
     private static final int DEFAULT_POLL_DELAY_REGISTRATION_QUEUE_CONSUMER_IN_MS = 2000;
     public static final String POLL_DELAY_REGISTRATION_QUEUE_CONSUMER_IN_MS = "poll.delay.registration.queue.consumer.in.ms";
@@ -468,6 +470,7 @@ public class HttpSinkConfigDefinition {
                 //producer
                     //bootstrap servers
                 .define(PRODUCER_BOOTSTRAP_SERVERS, ConfigDef.Type.STRING,"",ConfigDef.Importance.MEDIUM,PRODUCER_BOOTSTRAP_SERVERS_DOC)
+                .define(PRODUCER_TOPIC, ConfigDef.Type.STRING,"",ConfigDef.Importance.MEDIUM,PRODUCER_TOPIC_DOC)
                     //schema registry
                 .define(PRODUCER_SCHEMA_REGISTRY_URL, ConfigDef.Type.STRING,"",ConfigDef.Importance.LOW,PRODUCER_SCHEMA_REGISTRY_URL_DOC)
                 .define(PRODUCER_SCHEMA_REGISTRY_CACHE_CAPACITY, ConfigDef.Type.INT,1000,ConfigDef.Importance.LOW,PRODUCER_SCHEMA_REGISTRY_CACHE_CAPACITY_DOC)
@@ -519,7 +522,7 @@ public class HttpSinkConfigDefinition {
                 .define(CONFIG_DEFAULT_USER_AGENT_OVERRIDE, ConfigDef.Type.STRING, "http_client", ConfigDef.Importance.LOW, CONFIG_DEFAULT_USER_AGENT_OVERRIDE_DOC)
                 .define(CONFIG_DEFAULT_USER_AGENT_CUSTOM_VALUES, ConfigDef.Type.STRING, null, ConfigDef.Importance.LOW, CONFIG_DEFAULT_USER_AGENT_CUSTOM_VALUES_DOC)
                 //in memory queue settings
-                .define(PUBLISH_TO_IN_MEMORY_QUEUE, ConfigDef.Type.STRING, FALSE, ConfigDef.Importance.MEDIUM, PUBLISH_TO_IN_MEMORY_QUEUE_DOC)
+                .define(PUBLISH_MODE, ConfigDef.Type.STRING, PublishMode.NONE.name(), ConfigDef.Importance.MEDIUM, PUBLISH_MODE_DOC)
                 .define(ConfigConstants.QUEUE_NAME, ConfigDef.Type.STRING, null,ConfigDef.Importance.MEDIUM, ConfigConstants.QUEUE_NAME_DOC)
                 .define(WAIT_TIME_REGISTRATION_QUEUE_CONSUMER_IN_MS, ConfigDef.Type.LONG, DEFAULT_WAIT_TIME_REGISTRATION_QUEUE_CONSUMER_IN_MS, ConfigDef.Importance.LOW, WAIT_TIME_REGISTRATION_QUEUE_CONSUMER_IN_MS_DOC)
                 .define(POLL_DELAY_REGISTRATION_QUEUE_CONSUMER_IN_MS, ConfigDef.Type.INT, DEFAULT_POLL_DELAY_REGISTRATION_QUEUE_CONSUMER_IN_MS, ConfigDef.Importance.LOW, POLL_DELAY_REGISTRATION_QUEUE_CONSUMER_IN_MS_DOC)

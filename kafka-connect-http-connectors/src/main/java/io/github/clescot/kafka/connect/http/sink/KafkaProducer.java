@@ -20,7 +20,6 @@ public class KafkaProducer<K,V> implements Producer<K,V> {
 
     private Producer<K, V> producer;
     private final boolean mock;
-    private Map<String, Object> producerSettings;
 
     public KafkaProducer(boolean mock) {
         this.mock = mock;
@@ -29,7 +28,6 @@ public class KafkaProducer<K,V> implements Producer<K,V> {
         this.mock = false;
     }
     public void configure(Map<String, Object> producerSettings,Serializer<K> keySerializer,Serializer<V> valueSerializer){
-        this.producerSettings = producerSettings;
         if(mock){
             producer = new MockProducer<>();
         }else{
@@ -68,13 +66,13 @@ public class KafkaProducer<K,V> implements Producer<K,V> {
     }
 
     @Override
-    public Future<RecordMetadata> send(ProducerRecord<K, V> record) {
-        return producer.send(record);
+    public Future<RecordMetadata> send(ProducerRecord<K, V> myRecord) {
+        return producer.send(myRecord);
     }
 
     @Override
-    public Future<RecordMetadata> send(ProducerRecord<K, V> record, Callback callback) {
-        return producer.send(record,callback);
+    public Future<RecordMetadata> send(ProducerRecord<K, V> myRecord, Callback callback) {
+        return producer.send(myRecord,callback);
     }
 
     @Override

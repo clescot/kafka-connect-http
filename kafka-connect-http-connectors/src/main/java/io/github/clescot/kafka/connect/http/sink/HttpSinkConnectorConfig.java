@@ -12,16 +12,20 @@ import org.slf4j.LoggerFactory;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 
 import static io.github.clescot.kafka.connect.http.sink.HttpSinkConfigDefinition.*;
 
 public class HttpSinkConnectorConfig extends AbstractConfig {
     private static final Logger LOGGER = LoggerFactory.getLogger(HttpSinkConnectorConfig.class);
+    public static final String PUBLISH_TOPIC = "publishTopic";
     private final String producerFormat;
+    private final String publishTopic;
 
 
     private String producerBootstrapServers;
+    private String producerTopic;
     private String producerSchemaRegistryUrl;
     private int producerSchemaRegistryCacheCapacity;
     private boolean producerSchemaRegistryautoRegister;
@@ -49,7 +53,7 @@ public class HttpSinkConnectorConfig extends AbstractConfig {
     private final String defaultSuccessResponseCodeRegex;
     private final String defaultRetryResponseCodeRegex;
     private final String queueName;
-    private final boolean publishToInMemoryQueue;
+    private final PublishMode publishMode;
     private final Integer defaultRetries;
     private final Long defaultRetryDelayInMs;
     private final Long defaultRetryMaxDelayInMs;
@@ -109,8 +113,9 @@ public class HttpSinkConnectorConfig extends AbstractConfig {
 
 
         this.queueName = Optional.ofNullable(getString(ConfigConstants.QUEUE_NAME)).orElse(QueueFactory.DEFAULT_QUEUE_NAME);
-        this.publishToInMemoryQueue = Boolean.parseBoolean(getString(PUBLISH_TO_IN_MEMORY_QUEUE));
-        if (QueueFactory.queueMapIsEmpty()&&publishToInMemoryQueue) {
+        this.publishMode = PublishMode.valueOf(Optional.ofNullable(getString(PUBLISH_MODE)).orElse(PublishMode.NONE.name()));
+        this.publishTopic = getString(PUBLISH_TOPIC);
+        if (QueueFactory.queueMapIsEmpty()&&PublishMode.IN_MEMORY_QUEUE.name().equalsIgnoreCase(publishMode.name())) {
             LOGGER.warn("no pre-existing queue exists. this HttpSourceConnector has created a '{}' one. It needs to consume a queue filled with a SinkConnector. Ignore this message if a SinkConnector will be created after this one.", queueName);
         }
 
@@ -147,9 +152,6 @@ public class HttpSinkConnectorConfig extends AbstractConfig {
         return queueName;
     }
 
-    public boolean isPublishToInMemoryQueue() {
-        return publishToInMemoryQueue;
-    }
 
     public Map<String, List<String>> getStaticRequestHeaders() {
         return Maps.newHashMap(staticRequestHeaders);
@@ -212,6 +214,13 @@ public class HttpSinkConnectorConfig extends AbstractConfig {
         return pollIntervalRegistrationOfQueueConsumerInMs;
     }
 
+    public PublishMode getPublishMode() {
+        return publishMode;
+    }
+
+    public String getProducerTopic() {
+        return producerTopic;
+    }
 
     public Integer getCustomFixedThreadpoolSize() {
         return customFixedThreadpoolSize;
@@ -317,7 +326,9 @@ public class HttpSinkConnectorConfig extends AbstractConfig {
         return producerJsonFailUnknownProperties;
     }
 
-
+    public String getPublishTopic() {
+        return publishTopic;
+    }
 
     public String getProducerFormat() {
         return producerFormat;
@@ -361,7 +372,8 @@ public class HttpSinkConnectorConfig extends AbstractConfig {
                 ", defaultSuccessResponseCodeRegex='" + defaultSuccessResponseCodeRegex + '\'' +
                 ", defaultRetryResponseCodeRegex='" + defaultRetryResponseCodeRegex + '\'' +
                 ", queueName='" + queueName + '\'' +
-                ", publishToInMemoryQueue=" + publishToInMemoryQueue +
+                ", publishMode=" + publishMode +
+                ", publishTopic=" + publishTopic +
                 ", defaultRetries=" + defaultRetries +
                 ", defaultRetryDelayInMs=" + defaultRetryDelayInMs +
                 ", defaultRetryMaxDelayInMs=" + defaultRetryMaxDelayInMs +
@@ -379,5 +391,19 @@ public class HttpSinkConnectorConfig extends AbstractConfig {
                 ", customFixedThreadpoolSize=" + customFixedThreadpoolSize +
                 ", configurationIds=" + configurationIds +
                 '}';
+    }
+
+    @Override
+    public boolean equals(Object object) {
+        if (this == object) return true;
+        if (!(object instanceof HttpSinkConnectorConfig)) return false;
+        if (!super.equals(object)) return false;
+        HttpSinkConnectorConfig that = (HttpSinkConnectorConfig) object;
+        return producerSchemaRegistryCacheCapacity == that.producerSchemaRegistryCacheCapacity && producerSchemaRegistryautoRegister == that.producerSchemaRegistryautoRegister && producerJsonWriteDatesAs8601 == that.producerJsonWriteDatesAs8601 && producerJsonOneOfForNullables == that.producerJsonOneOfForNullables && producerJsonFailInvalidSchema == that.producerJsonFailInvalidSchema && producerJsonFailUnknownProperties == that.producerJsonFailUnknownProperties && meterRegistryExporterJmxActivate == that.meterRegistryExporterJmxActivate && meterRegistryExporterPrometheusActivate == that.meterRegistryExporterPrometheusActivate && meterRegistryExporterPrometheusPort == that.meterRegistryExporterPrometheusPort && meterRegistryBindMetricsExecutorService == that.meterRegistryBindMetricsExecutorService && meterRegistryBindMetricsJvmClassloader == that.meterRegistryBindMetricsJvmClassloader && meterRegistryBindMetricsJvmProcessor == that.meterRegistryBindMetricsJvmProcessor && meterRegistryBindMetricsJvmGc == that.meterRegistryBindMetricsJvmGc && meterRegistryBindMetricsJvmInfo == that.meterRegistryBindMetricsJvmInfo && meterRegistryBindMetricsJvmMemory == that.meterRegistryBindMetricsJvmMemory && meterRegistryBindMetricsJvmThread == that.meterRegistryBindMetricsJvmThread && meterRegistryBindMetricsLogback == that.meterRegistryBindMetricsLogback && meterRegistryTagIncludeLegacyHost == that.meterRegistryTagIncludeLegacyHost && meterRegistryTagIncludeUrlPath == that.meterRegistryTagIncludeUrlPath && generateMissingRequestId == that.generateMissingRequestId && generateMissingCorrelationId == that.generateMissingCorrelationId && maxWaitTimeRegistrationOfQueueConsumerInMs == that.maxWaitTimeRegistrationOfQueueConsumerInMs && pollDelayRegistrationOfQueueConsumerInMs == that.pollDelayRegistrationOfQueueConsumerInMs && pollIntervalRegistrationOfQueueConsumerInMs == that.pollIntervalRegistrationOfQueueConsumerInMs && Objects.equals(producerFormat, that.producerFormat) && Objects.equals(publishTopic, that.publishTopic) && Objects.equals(producerBootstrapServers, that.producerBootstrapServers) && Objects.equals(producerTopic, that.producerTopic) && Objects.equals(producerSchemaRegistryUrl, that.producerSchemaRegistryUrl) && Objects.equals(producerJsonSchemaSpecVersion, that.producerJsonSchemaSpecVersion) && Objects.equals(httpClientImplementation, that.httpClientImplementation) && Objects.equals(defaultSuccessResponseCodeRegex, that.defaultSuccessResponseCodeRegex) && Objects.equals(defaultRetryResponseCodeRegex, that.defaultRetryResponseCodeRegex) && Objects.equals(queueName, that.queueName) && publishMode == that.publishMode && Objects.equals(defaultRetries, that.defaultRetries) && Objects.equals(defaultRetryDelayInMs, that.defaultRetryDelayInMs) && Objects.equals(defaultRetryMaxDelayInMs, that.defaultRetryMaxDelayInMs) && Objects.equals(defaultRetryDelayFactor, that.defaultRetryDelayFactor) && Objects.equals(defaultRetryJitterInMs, that.defaultRetryJitterInMs) && Objects.equals(defaultRateLimiterMaxExecutions, that.defaultRateLimiterMaxExecutions) && Objects.equals(defaultRateLimiterScope, that.defaultRateLimiterScope) && Objects.equals(defaultRateLimiterPeriodInMs, that.defaultRateLimiterPeriodInMs) && Objects.equals(staticRequestHeaders, that.staticRequestHeaders) && Objects.equals(customFixedThreadpoolSize, that.customFixedThreadpoolSize) && Objects.equals(configurationIds, that.configurationIds);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(super.hashCode(), producerFormat, publishTopic, producerBootstrapServers, producerTopic, producerSchemaRegistryUrl, producerSchemaRegistryCacheCapacity, producerSchemaRegistryautoRegister, producerJsonSchemaSpecVersion, producerJsonWriteDatesAs8601, producerJsonOneOfForNullables, producerJsonFailInvalidSchema, producerJsonFailUnknownProperties, meterRegistryExporterJmxActivate, meterRegistryExporterPrometheusActivate, meterRegistryExporterPrometheusPort, meterRegistryBindMetricsExecutorService, meterRegistryBindMetricsJvmClassloader, meterRegistryBindMetricsJvmProcessor, meterRegistryBindMetricsJvmGc, meterRegistryBindMetricsJvmInfo, meterRegistryBindMetricsJvmMemory, meterRegistryBindMetricsJvmThread, meterRegistryBindMetricsLogback, meterRegistryTagIncludeLegacyHost, meterRegistryTagIncludeUrlPath, httpClientImplementation, defaultSuccessResponseCodeRegex, defaultRetryResponseCodeRegex, queueName, publishMode, defaultRetries, defaultRetryDelayInMs, defaultRetryMaxDelayInMs, defaultRetryDelayFactor, defaultRetryJitterInMs, defaultRateLimiterMaxExecutions, defaultRateLimiterScope, defaultRateLimiterPeriodInMs, staticRequestHeaders, generateMissingRequestId, generateMissingCorrelationId, maxWaitTimeRegistrationOfQueueConsumerInMs, pollDelayRegistrationOfQueueConsumerInMs, pollIntervalRegistrationOfQueueConsumerInMs, customFixedThreadpoolSize, configurationIds);
     }
 }
