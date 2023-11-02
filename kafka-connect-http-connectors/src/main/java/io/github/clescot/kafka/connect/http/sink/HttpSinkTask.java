@@ -16,6 +16,8 @@ import io.github.clescot.kafka.connect.http.core.queue.KafkaRecord;
 import io.github.clescot.kafka.connect.http.core.queue.QueueFactory;
 import org.apache.kafka.common.serialization.Serializer;
 import org.apache.kafka.common.serialization.StringSerializer;
+import org.apache.kafka.connect.data.ConnectSchema;
+import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.errors.ConnectException;
 import org.apache.kafka.connect.sink.ErrantRecordReporter;
 import org.apache.kafka.connect.sink.SinkRecord;
@@ -40,6 +42,7 @@ public class HttpSinkTask extends SinkTask {
     private HttpTask<SinkRecord> httpTask;
     private final KafkaProducer<String, HttpExchange> producer;
     private boolean publishToInMemoryQueue;
+    private boolean publishToErrantReporter;
     private String queueName;
     private Queue<KafkaRecord> queue;
 
@@ -173,7 +176,19 @@ public class HttpSinkTask extends SinkTask {
                                 if (this.publishToInMemoryQueue) {
                                     LOGGER.debug("http exchange published to queue '{}':{}", queueName, httpExchange);
                                     queue.offer(new KafkaRecord(sinkRecord.headers(), sinkRecord.keySchema(), sinkRecord.key(), httpExchange));
-                                } else {
+                                } else if(publishToErrantReporter) {
+                                    SinkRecord myRecord = new SinkRecord(
+                                            sinkRecord.topic(),
+                                            sinkRecord.kafkaPartition(),
+                                            sinkRecord.keySchema(),
+                                            sinkRecord.key(),
+                                            new ConnectSchema(Schema.Type.STRUCT),
+                                            httpExchange,
+                                            sinkRecord.kafkaOffset(),
+                                            sinkRecord.timestamp(),
+                                            sinkRecord.timestampType());
+                                    errantRecordReporter.report(myRecord,new FakeErrantRecordReporterException());
+                                }else {
                                     LOGGER.debug("http exchange NOT published to queue '{}':{}", queueName, httpExchange);
                                 }
                                 return httpExchange;
