@@ -13,8 +13,6 @@ import io.github.clescot.kafka.connect.http.core.HttpExchange;
 import io.github.clescot.kafka.connect.http.core.HttpExchangeSerializer;
 import io.github.clescot.kafka.connect.http.core.queue.KafkaRecord;
 import io.github.clescot.kafka.connect.http.core.queue.QueueFactory;
-import org.apache.kafka.clients.producer.KafkaProducer;
-import org.apache.kafka.clients.producer.Producer;
 import org.apache.kafka.common.serialization.Serializer;
 import org.apache.kafka.common.serialization.StringSerializer;
 import org.apache.kafka.connect.errors.ConnectException;
@@ -42,7 +40,15 @@ public class HttpSinkTask extends SinkTask {
 
     private ErrantRecordReporter errantRecordReporter;
     private HttpTask<SinkRecord> httpTask;
-    private Producer<String,HttpExchange> producer;
+    private KafkaProducer<String,HttpExchange> producer;
+
+
+    public HttpSinkTask() {
+        producer = new KafkaProducer<>();
+    }
+    public HttpSinkTask(boolean mock) {
+        producer = new KafkaProducer<>(mock);
+    }
 
     @Override
     public String version() {
@@ -55,8 +61,13 @@ public class HttpSinkTask extends SinkTask {
     @Override
     public void start(Map<String, String> settings) {
         HttpSinkConnectorConfig httpSinkConnectorConfig;
-        String queueName;
         Preconditions.checkNotNull(settings, "settings cannot be null");
+        httpSinkConnectorConfig = new HttpSinkConnectorConfig(HttpSinkConfigDefinition.config(), settings);
+
+
+        httpTask = new HttpTask<>(httpSinkConnectorConfig);
+
+
         try {
             errantRecordReporter = context.errantRecordReporter();
             if (errantRecordReporter == null) {
@@ -67,10 +78,6 @@ public class HttpSinkTask extends SinkTask {
             errantRecordReporter = null;
         }
 
-        httpSinkConnectorConfig = new HttpSinkConnectorConfig(HttpSinkConfigDefinition.config(), settings);
-
-        queueName = httpSinkConnectorConfig.getQueueName();
-        httpTask = new HttpTask<>(httpSinkConnectorConfig);
 
         Map<String, Object> producerSettings;
 
@@ -78,9 +85,10 @@ public class HttpSinkTask extends SinkTask {
         if(!Strings.isNullOrEmpty(httpSinkConnectorConfig.getProducerBootstrapServers())) {
             Serializer<HttpExchange> serializer = getHttpExchangeSerializer(httpSinkConnectorConfig);
             producerSettings = httpSinkConnectorConfig.originalsWithPrefix(PRODUCER_PREFIX);
-            this.producer = new KafkaProducer<>(producerSettings, new StringSerializer(), serializer);
+            producer.configure(producerSettings, new StringSerializer(), serializer);
         //publish to in memory queue is configured
         }else if(httpSinkConnectorConfig.isPublishToInMemoryQueue()) {
+            String queueName = httpSinkConnectorConfig.getQueueName();
             Preconditions.checkArgument(QueueFactory.hasAConsumer(
                     queueName,
                     httpSinkConnectorConfig.getMaxWaitTimeRegistrationOfQueueConsumerInMs()
@@ -211,9 +219,6 @@ public class HttpSinkTask extends SinkTask {
 
     protected void setQueue(Queue<KafkaRecord> queue) {
         this.httpTask.setQueue(queue);
-    }
-    protected void setProducer(Producer<String,HttpExchange> producer) {
-        this.producer = producer;
     }
 
     public Configuration getDefaultConfiguration() {
