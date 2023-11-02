@@ -133,7 +133,7 @@ public class HttpSinkTask extends SinkTask {
             HttpExchangeSerdeFactory httpExchangeSerdeFactory = new HttpExchangeSerdeFactory(schemaRegistryClient, jsonSchemaSerdeConfigFactory);
             serializer = httpExchangeSerdeFactory.buildValueSerde().serializer();
         } else {
-            //serialize as simple string
+            //serialize as a simple string
             serializer = new HttpExchangeSerializer();
         }
         return serializer;
