@@ -181,7 +181,12 @@ public class ITConnectorTest {
         externalSchemaRegistryUrl = "http://" + schemaRegistryContainer.getHost() + ":"+schemaRegistryContainer.getMappedPort(8081);
     }
 
-    private static void configureSinkConnector(String connectorName, String publishMode, String incomingTopic, String valueConverterClassName, String queueName, Map.Entry<String,String>... additionalSettings) {
+    private static void configureSinkConnector(String connectorName,
+                                               String publishMode,
+                                               String incomingTopic,
+                                               String valueConverterClassName,
+                                               String queueName,
+                                               Map.Entry<String,String>... additionalSettings) {
         ConnectorConfiguration sinkConnectorMessagesAsStringConfiguration = ConnectorConfiguration.create()
                 .with("connector.class", "io.github.clescot.kafka.connect.http.sink.HttpSinkConnector")
                 .with("tasks.max", "1")
@@ -189,6 +194,8 @@ public class ITConnectorTest {
                 .with("key.converter", "org.apache.kafka.connect.storage.StringConverter")
                 .with("value.converter", valueConverterClassName)
                 .with("value.converter.use.optional.for.nonrequired", true)
+                .with("producer.bootstrap.servers", kafkaContainer.getBootstrapServers())
+                .with("producer.topic", kafkaContainer.getBootstrapServers())
                 .with(PUBLISH_MODE, publishMode);
         if(PublishMode.IN_MEMORY_QUEUE.name().equalsIgnoreCase(publishMode)){
             sinkConnectorMessagesAsStringConfiguration =sinkConnectorMessagesAsStringConfiguration.with("queue.name", queueName);
@@ -248,6 +255,121 @@ public class ITConnectorTest {
         configureSourceConnector("http-source-connector-test_sink_and_source_with_input_as_string", queueName, successTopic, errorTopic);
         configureSinkConnector("http-sink-connector-test_sink_and_source_with_input_as_string",
                 PublishMode.IN_MEMORY_QUEUE.name(),
+                HTTP_REQUESTS_AS_STRING,
+                "org.apache.kafka.connect.storage.StringConverter", "test_sink_and_source_with_input_as_string",
+                new AbstractMap.SimpleImmutableEntry<>(CONFIG_GENERATE_MISSING_REQUEST_ID,"true"),
+                new AbstractMap.SimpleImmutableEntry<>(CONFIG_GENERATE_MISSING_CORRELATION_ID,"true")
+        );
+        List<String> registeredConnectors = connectContainer.getRegisteredConnectors();
+        String joinedRegisteredConnectors = Joiner.on(",").join(registeredConnectors);
+        LOGGER.info("registered connectors :{}", joinedRegisteredConnectors);
+
+        //define the http Mock Server interaction
+        WireMock wireMock = wmRuntimeInfo.getWireMock();
+        String bodyResponse = "{\"result\":\"pong\"}";
+        String escapedJsonResponse = StringEscapeUtils.escapeJson(bodyResponse);
+        wireMock
+                .register(WireMock.post("/ping")
+                        .willReturn(WireMock.aResponse()
+                        .withHeader("Content-Type","application/json")
+                        .withBody(bodyResponse)
+                        .withStatus(200)
+                        .withStatusMessage("OK")
+                        )
+                );
+
+        //forge messages which will command http requests
+        KafkaProducer<String, String> producer = getStringProducer(kafkaContainer);
+
+        String baseUrl = "http://" + getIP() + ":" + wmRuntimeInfo.getHttpPort();
+        String url = baseUrl + "/ping";
+        LOGGER.info("url:{}", url);
+        HashMap<String, List<String>> headers = Maps.newHashMap();
+        headers.put("X-Correlation-ID",Lists.newArrayList("e6de70d1-f222-46e8-b755-754880687822"));
+        headers.put("X-Request-ID",Lists.newArrayList("e6de70d1-f222-46e8-b755-11111"));
+        HttpRequest httpRequest = new HttpRequest(
+                url,
+                "POST",
+                "STRING"
+                );
+        httpRequest.setHeaders(headers);
+        httpRequest.setBodyAsString("stuff");
+        Collection<Header> kafkaHeaders = Lists.newArrayList();
+        String httpRequestAsJSON = MAPPER.writeValueAsString(httpRequest);
+        ProducerRecord<String, String> record = new ProducerRecord<>(HTTP_REQUESTS_AS_STRING, null, System.currentTimeMillis(), null, httpRequestAsJSON, kafkaHeaders);
+        producer.send(record);
+        producer.flush();
+
+        //verify http responses
+        KafkaConsumer<String,? extends Object> consumer = getConsumer(kafkaContainer,externalSchemaRegistryUrl);
+
+        consumer.subscribe(Lists.newArrayList(successTopic, errorTopic));
+        List<ConsumerRecord<String, ? extends Object>> consumerRecords = drain(consumer, 1, 30);
+        Assertions.assertThat(consumerRecords).hasSize(1);
+        ConsumerRecord<String, ? extends Object> consumerRecord = consumerRecords.get(0);
+        Assertions.assertThat(consumerRecord.key()).isNull();
+        String jsonAsString = consumerRecord.value().toString();
+        String expectedJSON = "{\n" +
+                "  \"durationInMillis\": 0,\n" +
+                "  \"moment\": \"2022-11-10T17:19:42.740852Z\",\n" +
+                "  \"attempts\": 1,\n" +
+                "  \"httpRequest\": {\n" +
+                "    \"headers\": {\n" +
+                "      \"X-Correlation-ID\": [\n" +
+                "        \"e6de70d1-f222-46e8-b755-754880687822\"\n" +
+                "      ],\n" +
+                "      \"X-Request-ID\": [\n" +
+                "        \"e6de70d1-f222-46e8-b755-11111\"\n" +
+                "      ]\n" +
+                "    },\n" +
+                "    \"url\": \""+baseUrl+"/ping\",\n" +
+                "    \"method\": \"POST\",\n" +
+                "    \"bodyType\": \"STRING\",\n" +
+                "    \"bodyAsString\": \"stuff\",\n" +
+                "    \"bodyAsForm\": {},\n" +
+                "    \"bodyAsByteArray\": \"\",\n" +
+                "    \"bodyAsMultipart\": []\n" +
+                "  },\n" +
+                "  \"httpResponse\": {" +
+                "   \"statusCode\":200,\n" +
+                "  \"statusMessage\": \"OK\",\n" +
+                "  \"responseHeaders\": {},\n" +
+                "  \"responseBody\": \""+escapedJsonResponse+"\"\n" +
+                "}"+
+                "}";
+        JSONAssert.assertEquals(expectedJSON, jsonAsString,
+                new CustomComparator(JSONCompareMode.LENIENT,
+                        new Customization("moment", (o1, o2) -> true),
+                        new Customization("correlationId", (o1, o2) -> true),
+                        new Customization("durationInMillis", (o1, o2) -> true),
+                        new Customization("requestHeaders.X-Correlation-ID", (o1, o2) -> true),
+                        new Customization("requestHeaders.X-Request-ID", (o1, o2) -> true),
+                        new Customization("requestId", (o1, o2) -> true),
+                        new Customization("responseHeaders.Matched-Stub-Id", (o1, o2) -> true)
+                ));
+        Assertions.assertThat(consumerRecord.headers().toArray()).isEmpty();
+    }
+
+ @Test
+    void test_sink_in_producer_mode_with_input_as_string() throws JSONException, JsonProcessingException {
+        WireMockRuntimeInfo wmRuntimeInfo = wmHttp.getRuntimeInfo();
+        //register connectors
+        String queueName = "test_sink_and_source_with_input_as_string";
+        String successTopic = "success-test_sink_and_source_with_input_as_string";
+        String errorTopic = "error-test_sink_and_source_with_input_as_string";
+        OkHttpClient okHttpClient = new OkHttpClient.Builder().build();
+        Request.Builder builder = new Request.Builder();
+        Request request = builder.url(connectContainer.getTarget()+"/connector-plugins")
+                        .build();
+        Awaitility.await().pollInterval(Duration.of(5,ChronoUnit.SECONDS)).atMost(Duration.of(2, ChronoUnit.MINUTES)).until(()-> {
+            Response response = okHttpClient.newCall(request).execute();
+            String content = response.body().string();
+            System.out.println(content);
+            return content.contains("HttpSinkConnector");
+        });
+//        configureSourceConnector("http-source-connector-test_sink_and_source_with_input_as_string", queueName, successTopic, errorTopic);
+        configureSinkConnector("http-sink-connector-test_sink_and_source_with_input_as_string",
+                PublishMode.PRODUCER.name(),
                 HTTP_REQUESTS_AS_STRING,
                 "org.apache.kafka.connect.storage.StringConverter", "test_sink_and_source_with_input_as_string",
                 new AbstractMap.SimpleImmutableEntry<>(CONFIG_GENERATE_MISSING_REQUEST_ID,"true"),

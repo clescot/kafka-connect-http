@@ -20,8 +20,8 @@ every Kafka Connect Sink Connector need to define these required parameters :
 - ....
 
 #### publish mode
-controlled by the  *`publishMode`* parameter : `NONE` by default. When set to another value (`IN_MEMORY_QUEUE`,`DLQ`,`PRODUCER`), publish HTTP interactions (request and responses)
-- *`publishMode`* parameter : `IN_MEMORY_QUEUE` publish into the _in memory_ queue, with a topoligy constraint : the source connector which consumes the in memory queue, must be present on the same kafka connect instance.
+controlled by the  *`publish.mode`* parameter : `NONE` by default. When set to another value (`IN_MEMORY_QUEUE`,`DLQ`,`PRODUCER`), publish HTTP interactions (request and responses)
+- *`publish.mode`* parameter : `IN_MEMORY_QUEUE` publish into the _in memory_ queue, with a topoligy constraint : the source connector which consumes the in memory queue, must be present on the same kafka connect instance.
   - *`queue.name`* : if not set, `default` queue name is used, if the `publish.to.in.memory.queue` is set to `true`.
     You can define multiple in memory queues, to permit to publish to different topics, different HTTP interactions. If
     you set this parameter to a value different than `default`, you need to configure an HTTP source Connector listening
@@ -29,11 +29,11 @@ controlled by the  *`publishMode`* parameter : `NONE` by default. When set to an
   - *`wait.time.registration.queue.consumer.in.ms`* : wait time for a queue consumer (Source Connector) registration. default value is 60 seconds.
   - *`poll.delay.registration.queue.consumer.in.ms`* : poll delay, i.e, wait time before start polling a registered consumer. default value is 2 seconds.
   - *`poll.interval.registration.queue.consumer.in.ms`* : poll interval, i.e, time between every poll for a registered consumer. default value is 5000 milliseconds.
-- *`publishMode`* parameter : `DLQ` 
+- *`publish.mode`* parameter : `DLQ` 
  use the errantReporter (used to publish to a Dead Letter Queue topic when messages raise an error usually). No low level configuration is required (like in `PRODUCER` mode),
  and no topology constraint is required (like in `IN_MEMORY_QUEUE` mode),
  but reuse an error topic. 
-- *`publishMode`* parameter : `PRODUCER` : use a low level kafka producer to publish HttpExchange in a dedicated topic. No topology constraint is required, no DLQ topic is reused, 
+- *`publish.mode`* parameter : `PRODUCER` : use a low level kafka producer to publish HttpExchange in a dedicated topic. No topology constraint is required, no DLQ topic is reused, 
   but unlike other connectors (kafka connect handle that for us and hide it), we must configure the low level connection details. All settings starting with the prefix `producer.` 
   will be passed to the producer instance to configure it. 
   - `producer.bootstrap.servers` : required parameter to contact the kafka cluster.
