@@ -90,8 +90,8 @@ public class HttpSinkTask extends SinkTask {
         switch (publishMode){
             case PRODUCER:
                 //low-level producer is configured (bootstrap.servers is a requirement)
-                Preconditions.checkArgument(!Strings.isNullOrEmpty(httpSinkConnectorConfig.getProducerBootstrapServers()));
-                Preconditions.checkArgument(!Strings.isNullOrEmpty(httpSinkConnectorConfig.getProducerTopic()));
+                Preconditions.checkArgument(!Strings.isNullOrEmpty(httpSinkConnectorConfig.getProducerBootstrapServers()),"producer.bootstrap.servers is not set.\n"+httpSinkConnectorConfig.toString());
+                Preconditions.checkArgument(!Strings.isNullOrEmpty(httpSinkConnectorConfig.getProducerTopic()),"producer.topic is not set.\n"+httpSinkConnectorConfig.toString());
                 Serializer<HttpExchange> serializer = getHttpExchangeSerializer(httpSinkConnectorConfig);
                 producerSettings = httpSinkConnectorConfig.originalsWithPrefix(PRODUCER_PREFIX);
                 producer.configure(producerSettings, new StringSerializer(), serializer);
