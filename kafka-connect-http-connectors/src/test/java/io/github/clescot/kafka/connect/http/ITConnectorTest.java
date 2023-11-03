@@ -194,11 +194,13 @@ public class ITConnectorTest {
                 .with("key.converter", "org.apache.kafka.connect.storage.StringConverter")
                 .with("value.converter", valueConverterClassName)
                 .with("value.converter.use.optional.for.nonrequired", true)
-                .with("producer.bootstrap.servers", kafkaContainer.getBootstrapServers())
-                .with("producer.topic", kafkaContainer.getBootstrapServers())
                 .with(PUBLISH_MODE, publishMode);
         if(PublishMode.IN_MEMORY_QUEUE.name().equalsIgnoreCase(publishMode)){
             sinkConnectorMessagesAsStringConfiguration =sinkConnectorMessagesAsStringConfiguration.with("queue.name", queueName);
+        }else if(PublishMode.PRODUCER.name().equalsIgnoreCase(publishMode)){
+            sinkConnectorMessagesAsStringConfiguration =sinkConnectorMessagesAsStringConfiguration
+                    .with("producer.bootstrap.servers", kafkaContainer.getBootstrapServers())
+                    .with("producer.topic", queueName);
         }
         if(additionalSettings!=null && additionalSettings.length>0) {
             for (Map.Entry<String, String> additionalSetting : additionalSettings) {
@@ -371,7 +373,7 @@ public class ITConnectorTest {
         configureSinkConnector("http-sink-connector-test_sink_and_source_with_input_as_string",
                 PublishMode.PRODUCER.name(),
                 HTTP_REQUESTS_AS_STRING,
-                "org.apache.kafka.connect.storage.StringConverter", "test_sink_and_source_with_input_as_string",
+                "org.apache.kafka.connect.storage.StringConverter", successTopic,
                 new AbstractMap.SimpleImmutableEntry<>(CONFIG_GENERATE_MISSING_REQUEST_ID,"true"),
                 new AbstractMap.SimpleImmutableEntry<>(CONFIG_GENERATE_MISSING_CORRELATION_ID,"true")
         );
