@@ -185,9 +185,10 @@ public class HttpSinkTask extends SinkTask {
                                 //publish eventually to 'in memory' queue
                                 HttpExchange httpExchange = kafkaRecord.getHttpExchange();
                                 if (PublishMode.IN_MEMORY_QUEUE.equals(this.publishMode)) {
-                                    LOGGER.debug("http exchange published to queue '{}':{}", queueName, httpExchange);
+                                    LOGGER.debug("publish.mode : 'IN_MEMORY_QUEUE': http exchange published to queue '{}':{}", queueName, httpExchange);
                                     queue.offer(new KafkaRecord(sinkRecord.headers(), sinkRecord.keySchema(), sinkRecord.key(), httpExchange));
                                 } else if (PublishMode.DLQ.equals(this.publishMode)) {
+                                    LOGGER.debug("publish.mode : 'DLQ' : HttpExchange published to DLQ");
                                     SinkRecord myRecord = new SinkRecord(
                                             sinkRecord.topic(),
                                             sinkRecord.kafkaPartition(),
@@ -200,9 +201,10 @@ public class HttpSinkTask extends SinkTask {
                                             sinkRecord.timestampType());
                                     errantRecordReporter.report(myRecord, new FakeErrantRecordReporterException());
                                 }else if(PublishMode.PRODUCER.equals(this.publishMode)){
+                                    LOGGER.debug("publish.mode : 'PRODUCER' : HttpExchange published to topic : {}",httpSinkConnectorConfig.getProducerTopic());
                                     this.producer.send(new ProducerRecord<>(httpSinkConnectorConfig.getProducerTopic(),httpExchange));
                                 }else {
-                                    LOGGER.debug("http exchange NOT published to queue '{}':{}", queueName, httpExchange);
+                                    LOGGER.debug("publish.mode : 'NONE' http exchange NOT published :{}",httpExchange);
                                 }
                                 return httpExchange;
                             }

@@ -134,7 +134,7 @@ public class ITConnectorTest {
             .withEnv("CONNECT_LOG4J_ROOT_LOGLEVEL", "ERROR")
             .withEnv("CONNECT_LOG4J_LOGGERS", "" +
                     "org.apache.kafka.connect=ERROR," +
-                    "com.github.clescot=DEBUG," +
+                    "io.github.clescot=DEBUG," +
                     "org.apache.kafka.connect.runtime.distributed=ERROR," +
                     "org.apache.kafka.connect.runtime.isolation=ERROR," +
                     "org.reflections=ERROR," +
@@ -354,12 +354,14 @@ public class ITConnectorTest {
 
  @Test
     void test_sink_in_producer_mode_with_input_as_string() throws JSONException, JsonProcessingException {
-        WireMockRuntimeInfo wmRuntimeInfo = wmHttp.getRuntimeInfo();
-        //register connectors
-        String queueName = "test_sink_and_source_with_input_as_string";
-        String successTopic = "success-test_sink_and_source_with_input_as_string";
-        String errorTopic = "error-test_sink_and_source_with_input_as_string";
-        OkHttpClient okHttpClient = new OkHttpClient.Builder().build();
+     WireMockRuntimeInfo wmRuntimeInfo = wmHttp.getRuntimeInfo();
+     String incomingTopic = HTTP_REQUESTS_AS_STRING;
+
+     String successTopic = "success-test_sink_and_source_with_input_as_string";
+     String errorTopic = "error-test_sink_and_source_with_input_as_string";
+
+     //register connectors
+     OkHttpClient okHttpClient = new OkHttpClient.Builder().build();
         Request.Builder builder = new Request.Builder();
         Request request = builder.url(connectContainer.getTarget()+"/connector-plugins")
                         .build();
@@ -369,10 +371,10 @@ public class ITConnectorTest {
             System.out.println(content);
             return content.contains("HttpSinkConnector");
         });
-//        configureSourceConnector("http-source-connector-test_sink_and_source_with_input_as_string", queueName, successTopic, errorTopic);
-        configureSinkConnector("http-sink-connector-test_sink_and_source_with_input_as_string",
+
+     configureSinkConnector("http-sink-connector-test_sink_and_source_with_input_as_string",
                 PublishMode.PRODUCER.name(),
-                HTTP_REQUESTS_AS_STRING,
+             incomingTopic,
                 "org.apache.kafka.connect.storage.StringConverter", successTopic,
                 new AbstractMap.SimpleImmutableEntry<>(CONFIG_GENERATE_MISSING_REQUEST_ID,"true"),
                 new AbstractMap.SimpleImmutableEntry<>(CONFIG_GENERATE_MISSING_CORRELATION_ID,"true")
@@ -413,7 +415,7 @@ public class ITConnectorTest {
         httpRequest.setBodyAsString("stuff");
         Collection<Header> kafkaHeaders = Lists.newArrayList();
         String httpRequestAsJSON = MAPPER.writeValueAsString(httpRequest);
-        ProducerRecord<String, String> record = new ProducerRecord<>(HTTP_REQUESTS_AS_STRING, null, System.currentTimeMillis(), null, httpRequestAsJSON, kafkaHeaders);
+        ProducerRecord<String, String> record = new ProducerRecord<>(incomingTopic, null, System.currentTimeMillis(), null, httpRequestAsJSON, kafkaHeaders);
         producer.send(record);
         producer.flush();
 
