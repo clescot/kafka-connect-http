@@ -82,7 +82,7 @@ public class ITConnectorTest {
 
     private final static Logger LOGGER = LoggerFactory.getLogger(ITConnectorTest.class);
     private final static Slf4jLogConsumer logConsumer = new Slf4jLogConsumer(LOGGER).withSeparateOutputStreams();
-    public static final String CONFLUENT_VERSION = "7.4.1";
+    public static final String CONFLUENT_VERSION = "7.5.1";
     public static final int CUSTOM_AVAILABLE_PORT = 0;
     public static final int CACHE_CAPACITY = 100;
     public static final String HTTP_REQUESTS_AS_STRING = "http-requests-string";
@@ -121,6 +121,7 @@ public class ITConnectorTest {
             .withExtraHost(FAKE_SSL_DOMAIN_NAME,getIP())
             .withEnv("CONNECT_BOOTSTRAP_SERVERS", kafkaContainer.getNetworkAliases().get(0) + ":9092")
             .withEnv("CONNECT_GROUP_ID", "test")
+            .withEnv("CONNECT_MEMBER_ID", "test")
             .withEnv("CONNECT_CONFIG_STORAGE_TOPIC", "test_config")
             .withEnv("CONNECT_CONFIG_STORAGE_REPLICATION_FACTOR", "1")
             .withEnv("CONNECT_OFFSET_STORAGE_TOPIC", "test_offset")
@@ -246,7 +247,7 @@ public class ITConnectorTest {
         });
         configureSourceConnector("http-source-connector-test_sink_and_source_with_input_as_string", queueName, successTopic, errorTopic);
         configureSinkConnector("http-sink-connector-test_sink_and_source_with_input_as_string",
-                PUBLISH_TO_IN_MEMORY_QUEUE_OK,
+                PublishMode.IN_MEMORY_QUEUE.name(),
                 HTTP_REQUESTS_AS_STRING,
                 "org.apache.kafka.connect.storage.StringConverter", "test_sink_and_source_with_input_as_string",
                 new AbstractMap.SimpleImmutableEntry<>(CONFIG_GENERATE_MISSING_REQUEST_ID,"true"),
