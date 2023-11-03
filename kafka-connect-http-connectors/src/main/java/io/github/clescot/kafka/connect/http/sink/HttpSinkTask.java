@@ -165,7 +165,13 @@ public class HttpSinkTask extends SinkTask {
 
         //we submit futures to the pool
         List<CompletableFuture<HttpExchange>> completableFutures = records.stream().map(this::process).collect(Collectors.toList());
+        LOGGER.debug("22222");
         List<HttpExchange> httpExchanges = completableFutures.stream().map(CompletableFuture::join).collect(Collectors.toList());
+        LOGGER.debug("33333");
+        if(PublishMode.PRODUCER.equals(publishMode)) {
+            this.producer.flush();
+        }
+        LOGGER.debug("44444");
         LOGGER.debug("HttpExchanges created :'{}'", httpExchanges.size());
 
     }
@@ -201,10 +207,16 @@ public class HttpSinkTask extends SinkTask {
                                             sinkRecord.timestampType());
                                     errantRecordReporter.report(myRecord, new FakeErrantRecordReporterException());
                                 }else if(PublishMode.PRODUCER.equals(this.publishMode)){
-                                    LOGGER.debug("publish.mode : 'PRODUCER' : HttpExchange published to topic : {}",httpSinkConnectorConfig.getProducerTopic());
-                                    this.producer.send(new ProducerRecord<>(httpSinkConnectorConfig.getProducerTopic(),httpExchange));
+                                    LOGGER.debug("publish.mode : 'PRODUCER' : HttpExchange published to topic : '{}'",httpSinkConnectorConfig.getProducerTopic());
+                                    try {
+                                        this.producer.send(new ProducerRecord<>(httpSinkConnectorConfig.getProducerTopic(),httpExchange)).get();
+                                        LOGGER.debug("record sent");
+                                    } catch (InterruptedException | ExecutionException e) {
+                                        LOGGER.error(e.getMessage());
+                                        throw new RuntimeException(e);
+                                    }
                                 }else {
-                                    LOGGER.debug("publish.mode : 'NONE' http exchange NOT published :{}",httpExchange);
+                                    LOGGER.debug("publish.mode : 'NONE' http exchange NOT published :'{}'",httpExchange);
                                 }
                                 return httpExchange;
                             }

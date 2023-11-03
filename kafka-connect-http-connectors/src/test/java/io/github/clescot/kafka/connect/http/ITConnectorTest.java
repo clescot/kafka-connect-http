@@ -185,7 +185,7 @@ public class ITConnectorTest {
                                                String publishMode,
                                                String incomingTopic,
                                                String valueConverterClassName,
-                                               String queueName,
+                                               String queueNameOrProducerTopic,
                                                Map.Entry<String,String>... additionalSettings) {
         ConnectorConfiguration sinkConnectorMessagesAsStringConfiguration = ConnectorConfiguration.create()
                 .with("connector.class", "io.github.clescot.kafka.connect.http.sink.HttpSinkConnector")
@@ -196,11 +196,12 @@ public class ITConnectorTest {
                 .with("value.converter.use.optional.for.nonrequired", true)
                 .with(PUBLISH_MODE, publishMode);
         if(PublishMode.IN_MEMORY_QUEUE.name().equalsIgnoreCase(publishMode)){
-            sinkConnectorMessagesAsStringConfiguration =sinkConnectorMessagesAsStringConfiguration.with("queue.name", queueName);
+            sinkConnectorMessagesAsStringConfiguration =sinkConnectorMessagesAsStringConfiguration.with("queue.name", queueNameOrProducerTopic);
         }else if(PublishMode.PRODUCER.name().equalsIgnoreCase(publishMode)){
             sinkConnectorMessagesAsStringConfiguration =sinkConnectorMessagesAsStringConfiguration
                     .with("producer.bootstrap.servers", kafkaContainer.getBootstrapServers())
-                    .with("producer.topic", queueName);
+                    .with("producer.schema.registry.url", internalSchemaRegistryUrl)
+                    .with("producer.topic", queueNameOrProducerTopic);
         }
         if(additionalSettings!=null && additionalSettings.length>0) {
             for (Map.Entry<String, String> additionalSetting : additionalSettings) {
