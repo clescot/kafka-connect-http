@@ -83,7 +83,6 @@ public class ITConnectorTest {
     private final static Logger LOGGER = LoggerFactory.getLogger(ITConnectorTest.class);
     private final static Slf4jLogConsumer logConsumer = new Slf4jLogConsumer(LOGGER).withSeparateOutputStreams();
     public static final String CONFLUENT_VERSION = "7.5.1";
-    public static final int CUSTOM_AVAILABLE_PORT = 0;
     public static final int CACHE_CAPACITY = 100;
     public static final String HTTP_REQUESTS_AS_STRING = "http-requests-string";
     public static final String PUBLISH_TO_IN_MEMORY_QUEUE_OK = PublishMode.IN_MEMORY_QUEUE.name();
@@ -99,26 +98,25 @@ public class ITConnectorTest {
     public static KafkaContainer kafkaContainer = new KafkaContainer(DockerImageName.parse("confluentinc/cp-kafka:" + CONFLUENT_VERSION))
             .withKraft()
             .withNetwork(network)
-            .withEnv("KAFKA_PROCESS_ROLES","broker,controller")
-            .withLogConsumer(new Slf4jLogConsumer(LOGGER).withPrefix("kafka-broker"));
+            .withEnv("KAFKA_PROCESS_ROLES", "broker,controller")
+            .withLogConsumer(new Slf4jLogConsumer(LOGGER).withSeparateOutputStreams().withPrefix("kafka-broker"));
     @Container
-    private static final SchemaRegistryContainer schemaRegistryContainer = new SchemaRegistryContainer("confluentinc/cp-schema-registry:"+CONFLUENT_VERSION)
+    private static final SchemaRegistryContainer schemaRegistryContainer = new SchemaRegistryContainer("confluentinc/cp-schema-registry:" + CONFLUENT_VERSION)
             .withNetwork(network)
             .withKafka(kafkaContainer)
-            .withLogConsumer(new Slf4jLogConsumer(LOGGER).withPrefix("schema-registry"))
+            .withLogConsumer(new Slf4jLogConsumer(LOGGER).withSeparateOutputStreams().withPrefix("schema-registry"))
             .dependsOn(kafkaContainer)
             .withStartupTimeout(Duration.ofSeconds(90));
     private static final String FAKE_SSL_DOMAIN_NAME = "it.mycorp.com";
 
 
-
     @Container
-    public static DebeziumContainer connectContainer = new DebeziumContainer("clescot/kafka-connect-http:"+VERSION_UTILS.getVersion())
+    public static DebeziumContainer connectContainer = new DebeziumContainer("clescot/kafka-connect-http:" + VERSION_UTILS.getVersion())
             .withFileSystemBind("target/http-connector", "/usr/local/share/kafka/plugins")
             .withLogConsumer(new Slf4jLogConsumer(LOGGER))
             .withNetwork(network)
             .withKafka(kafkaContainer)
-            .withExtraHost(FAKE_SSL_DOMAIN_NAME,getIP())
+            .withExtraHost(FAKE_SSL_DOMAIN_NAME, getIP())
             .withEnv("CONNECT_BOOTSTRAP_SERVERS", kafkaContainer.getNetworkAliases().get(0) + ":9092")
             .withEnv("CONNECT_GROUP_ID", "test")
             .withEnv("CONNECT_MEMBER_ID", "test")
@@ -139,9 +137,9 @@ public class ITConnectorTest {
                     "org.apache.kafka.connect.runtime.isolation=ERROR," +
                     "org.reflections=ERROR," +
                     "org.apache.kafka.clients=ERROR")
-            .withCopyFileToContainer(MountableFile.forClasspathResource(CLIENT_TRUSTSTORE_JKS_FILENAME),"/opt/"+ CLIENT_TRUSTSTORE_JKS_FILENAME)
+            .withCopyFileToContainer(MountableFile.forClasspathResource(CLIENT_TRUSTSTORE_JKS_FILENAME), "/opt/" + CLIENT_TRUSTSTORE_JKS_FILENAME)
             .withExposedPorts(8083)
-            .withLogConsumer(new Slf4jLogConsumer(LOGGER).withPrefix("kafka-connect"))
+            .withLogConsumer(new Slf4jLogConsumer(LOGGER).withSeparateOutputStreams().withPrefix("kafka-connect"))
             .dependsOn(kafkaContainer, schemaRegistryContainer)
             .waitingFor(Wait.forHttp("/connector-plugins/"));
 
@@ -154,7 +152,7 @@ public class ITConnectorTest {
     static WireMockExtension wmHttp = WireMockExtension.newInstance()
             .options(
                     WireMockConfiguration.wireMockConfig()
-                    .dynamicPort()
+                            .dynamicPort()
             )
             .build();
 
@@ -162,11 +160,11 @@ public class ITConnectorTest {
     static WireMockExtension wmHttps = WireMockExtension.newInstance()
             .options(
                     WireMockConfiguration.wireMockConfig()
-                    .keystorePath("src/test/resources/"+ CLIENT_TRUSTSTORE_JKS_FILENAME)
-                    .keystorePassword(CLIENT_TRUSTSTORE_JKS_PASSWORD)
-                    .keystoreType("JKS")
-                    .keyManagerPassword(CLIENT_TRUSTSTORE_JKS_PASSWORD)
-                    .dynamicHttpsPort()
+                            .keystorePath("src/test/resources/" + CLIENT_TRUSTSTORE_JKS_FILENAME)
+                            .keystorePassword(CLIENT_TRUSTSTORE_JKS_PASSWORD)
+                            .keystoreType("JKS")
+                            .keyManagerPassword(CLIENT_TRUSTSTORE_JKS_PASSWORD)
+                            .dynamicHttpsPort()
             )
             .build();
 
@@ -178,7 +176,10 @@ public class ITConnectorTest {
         //start containers
         Startables.deepStart(Stream.of(kafkaContainer, schemaRegistryContainer, connectContainer)).join();
         internalSchemaRegistryUrl = "http://" + schemaRegistryContainer.getNetworkAliases().get(0) + ":8081";
-        externalSchemaRegistryUrl = "http://" + schemaRegistryContainer.getHost() + ":"+schemaRegistryContainer.getMappedPort(8081);
+        externalSchemaRegistryUrl = "http://" + schemaRegistryContainer.getHost() + ":" + schemaRegistryContainer.getMappedPort(8081);
+
+
+        kafkaContainer.followOutput(logConsumer);
     }
 
     private static void configureSinkConnector(String connectorName,
@@ -186,7 +187,7 @@ public class ITConnectorTest {
                                                String incomingTopic,
                                                String valueConverterClassName,
                                                String queueNameOrProducerTopic,
-                                               Map.Entry<String,String>... additionalSettings) {
+                                               Map.Entry<String, String>... additionalSettings) {
         ConnectorConfiguration sinkConnectorMessagesAsStringConfiguration = ConnectorConfiguration.create()
                 .with("connector.class", "io.github.clescot.kafka.connect.http.sink.HttpSinkConnector")
                 .with("tasks.max", "1")
@@ -195,15 +196,15 @@ public class ITConnectorTest {
                 .with("value.converter", valueConverterClassName)
                 .with("value.converter.use.optional.for.nonrequired", true)
                 .with(PUBLISH_MODE, publishMode);
-        if(PublishMode.IN_MEMORY_QUEUE.name().equalsIgnoreCase(publishMode)){
-            sinkConnectorMessagesAsStringConfiguration =sinkConnectorMessagesAsStringConfiguration.with("queue.name", queueNameOrProducerTopic);
-        }else if(PublishMode.PRODUCER.name().equalsIgnoreCase(publishMode)){
-            sinkConnectorMessagesAsStringConfiguration =sinkConnectorMessagesAsStringConfiguration
+        if (PublishMode.IN_MEMORY_QUEUE.name().equalsIgnoreCase(publishMode)) {
+            sinkConnectorMessagesAsStringConfiguration = sinkConnectorMessagesAsStringConfiguration.with("queue.name", queueNameOrProducerTopic);
+        } else if (PublishMode.PRODUCER.name().equalsIgnoreCase(publishMode)) {
+            sinkConnectorMessagesAsStringConfiguration = sinkConnectorMessagesAsStringConfiguration
                     .with("producer.bootstrap.servers", kafkaContainer.getBootstrapServers())
                     .with("producer.schema.registry.url", internalSchemaRegistryUrl)
                     .with("producer.topic", queueNameOrProducerTopic);
         }
-        if(additionalSettings!=null && additionalSettings.length>0) {
+        if (additionalSettings != null && additionalSettings.length > 0) {
             for (Map.Entry<String, String> additionalSetting : additionalSettings) {
                 sinkConnectorMessagesAsStringConfiguration = sinkConnectorMessagesAsStringConfiguration.with(additionalSetting.getKey(), additionalSetting.getValue());
             }
@@ -222,8 +223,7 @@ public class ITConnectorTest {
                 .with("key.converter", "org.apache.kafka.connect.storage.StringConverter")
                 .with("value.converter", "io.confluent.connect.json.JsonSchemaConverter")
                 .with("value.converter.schema.registry.url", internalSchemaRegistryUrl)
-                .with("queue.name", queueName)
-                ;
+                .with("queue.name", queueName);
 
         connectContainer.registerConnector(connectorName, sourceConnectorConfiguration);
         connectContainer.ensureConnectorTaskState(connectorName, 0, Connector.State.RUNNING);
@@ -245,23 +245,14 @@ public class ITConnectorTest {
         String queueName = "test_sink_and_source_with_input_as_string";
         String successTopic = "success-test_sink_and_source_with_input_as_string";
         String errorTopic = "error-test_sink_and_source_with_input_as_string";
-        OkHttpClient okHttpClient = new OkHttpClient.Builder().build();
-        Request.Builder builder = new Request.Builder();
-        Request request = builder.url(connectContainer.getTarget()+"/connector-plugins")
-                        .build();
-        Awaitility.await().pollInterval(Duration.of(5,ChronoUnit.SECONDS)).atMost(Duration.of(2, ChronoUnit.MINUTES)).until(()-> {
-            Response response = okHttpClient.newCall(request).execute();
-            String content = response.body().string();
-            System.out.println(content);
-            return content.contains("HttpSinkConnector");
-        });
+        checkConnectorPluginIsInstalled();
         configureSourceConnector("http-source-connector-test_sink_and_source_with_input_as_string", queueName, successTopic, errorTopic);
         configureSinkConnector("http-sink-connector-test_sink_and_source_with_input_as_string",
                 PublishMode.IN_MEMORY_QUEUE.name(),
                 HTTP_REQUESTS_AS_STRING,
                 "org.apache.kafka.connect.storage.StringConverter", "test_sink_and_source_with_input_as_string",
-                new AbstractMap.SimpleImmutableEntry<>(CONFIG_GENERATE_MISSING_REQUEST_ID,"true"),
-                new AbstractMap.SimpleImmutableEntry<>(CONFIG_GENERATE_MISSING_CORRELATION_ID,"true")
+                new AbstractMap.SimpleImmutableEntry<>(CONFIG_GENERATE_MISSING_REQUEST_ID, "true"),
+                new AbstractMap.SimpleImmutableEntry<>(CONFIG_GENERATE_MISSING_CORRELATION_ID, "true")
         );
         List<String> registeredConnectors = connectContainer.getRegisteredConnectors();
         String joinedRegisteredConnectors = Joiner.on(",").join(registeredConnectors);
@@ -274,10 +265,10 @@ public class ITConnectorTest {
         wireMock
                 .register(WireMock.post("/ping")
                         .willReturn(WireMock.aResponse()
-                        .withHeader("Content-Type","application/json")
-                        .withBody(bodyResponse)
-                        .withStatus(200)
-                        .withStatusMessage("OK")
+                                .withHeader("Content-Type", "application/json")
+                                .withBody(bodyResponse)
+                                .withStatus(200)
+                                .withStatusMessage("OK")
                         )
                 );
 
@@ -288,13 +279,13 @@ public class ITConnectorTest {
         String url = baseUrl + "/ping";
         LOGGER.info("url:{}", url);
         HashMap<String, List<String>> headers = Maps.newHashMap();
-        headers.put("X-Correlation-ID",Lists.newArrayList("e6de70d1-f222-46e8-b755-754880687822"));
-        headers.put("X-Request-ID",Lists.newArrayList("e6de70d1-f222-46e8-b755-11111"));
+        headers.put("X-Correlation-ID", Lists.newArrayList("e6de70d1-f222-46e8-b755-754880687822"));
+        headers.put("X-Request-ID", Lists.newArrayList("e6de70d1-f222-46e8-b755-11111"));
         HttpRequest httpRequest = new HttpRequest(
                 url,
                 "POST",
                 "STRING"
-                );
+        );
         httpRequest.setHeaders(headers);
         httpRequest.setBodyAsString("stuff");
         Collection<Header> kafkaHeaders = Lists.newArrayList();
@@ -304,7 +295,7 @@ public class ITConnectorTest {
         producer.flush();
 
         //verify http responses
-        KafkaConsumer<String,? extends Object> consumer = getConsumer(kafkaContainer,externalSchemaRegistryUrl);
+        KafkaConsumer<String, ? extends Object> consumer = getConsumer(kafkaContainer, externalSchemaRegistryUrl);
 
         consumer.subscribe(Lists.newArrayList(successTopic, errorTopic));
         List<ConsumerRecord<String, ? extends Object>> consumerRecords = drain(consumer, 1, 30);
@@ -325,7 +316,7 @@ public class ITConnectorTest {
                 "        \"e6de70d1-f222-46e8-b755-11111\"\n" +
                 "      ]\n" +
                 "    },\n" +
-                "    \"url\": \""+baseUrl+"/ping\",\n" +
+                "    \"url\": \"" + baseUrl + "/ping\",\n" +
                 "    \"method\": \"POST\",\n" +
                 "    \"bodyType\": \"STRING\",\n" +
                 "    \"bodyAsString\": \"stuff\",\n" +
@@ -337,125 +328,8 @@ public class ITConnectorTest {
                 "   \"statusCode\":200,\n" +
                 "  \"statusMessage\": \"OK\",\n" +
                 "  \"responseHeaders\": {},\n" +
-                "  \"responseBody\": \""+escapedJsonResponse+"\"\n" +
-                "}"+
-                "}";
-        JSONAssert.assertEquals(expectedJSON, jsonAsString,
-                new CustomComparator(JSONCompareMode.LENIENT,
-                        new Customization("moment", (o1, o2) -> true),
-                        new Customization("correlationId", (o1, o2) -> true),
-                        new Customization("durationInMillis", (o1, o2) -> true),
-                        new Customization("requestHeaders.X-Correlation-ID", (o1, o2) -> true),
-                        new Customization("requestHeaders.X-Request-ID", (o1, o2) -> true),
-                        new Customization("requestId", (o1, o2) -> true),
-                        new Customization("responseHeaders.Matched-Stub-Id", (o1, o2) -> true)
-                ));
-        Assertions.assertThat(consumerRecord.headers().toArray()).isEmpty();
-    }
-
- @Test
-    void test_sink_in_producer_mode_with_input_as_string() throws JSONException, JsonProcessingException {
-     WireMockRuntimeInfo wmRuntimeInfo = wmHttp.getRuntimeInfo();
-     String incomingTopic = HTTP_REQUESTS_AS_STRING;
-
-     String successTopic = "success-test_sink_and_source_with_input_as_string";
-     String errorTopic = "error-test_sink_and_source_with_input_as_string";
-
-     //register connectors
-     OkHttpClient okHttpClient = new OkHttpClient.Builder().build();
-        Request.Builder builder = new Request.Builder();
-        Request request = builder.url(connectContainer.getTarget()+"/connector-plugins")
-                        .build();
-        Awaitility.await().pollInterval(Duration.of(5,ChronoUnit.SECONDS)).atMost(Duration.of(2, ChronoUnit.MINUTES)).until(()-> {
-            Response response = okHttpClient.newCall(request).execute();
-            String content = response.body().string();
-            System.out.println(content);
-            return content.contains("HttpSinkConnector");
-        });
-
-     configureSinkConnector("http-sink-connector-test_sink_and_source_with_input_as_string",
-                PublishMode.PRODUCER.name(),
-             incomingTopic,
-                "org.apache.kafka.connect.storage.StringConverter", successTopic,
-                new AbstractMap.SimpleImmutableEntry<>(CONFIG_GENERATE_MISSING_REQUEST_ID,"true"),
-                new AbstractMap.SimpleImmutableEntry<>(CONFIG_GENERATE_MISSING_CORRELATION_ID,"true")
-        );
-        List<String> registeredConnectors = connectContainer.getRegisteredConnectors();
-        String joinedRegisteredConnectors = Joiner.on(",").join(registeredConnectors);
-        LOGGER.info("registered connectors :{}", joinedRegisteredConnectors);
-
-        //define the http Mock Server interaction
-        WireMock wireMock = wmRuntimeInfo.getWireMock();
-        String bodyResponse = "{\"result\":\"pong\"}";
-        String escapedJsonResponse = StringEscapeUtils.escapeJson(bodyResponse);
-        wireMock
-                .register(WireMock.post("/ping")
-                        .willReturn(WireMock.aResponse()
-                        .withHeader("Content-Type","application/json")
-                        .withBody(bodyResponse)
-                        .withStatus(200)
-                        .withStatusMessage("OK")
-                        )
-                );
-
-        //forge messages which will command http requests
-        KafkaProducer<String, String> producer = getStringProducer(kafkaContainer);
-
-        String baseUrl = "http://" + getIP() + ":" + wmRuntimeInfo.getHttpPort();
-        String url = baseUrl + "/ping";
-        LOGGER.info("url:{}", url);
-        HashMap<String, List<String>> headers = Maps.newHashMap();
-        headers.put("X-Correlation-ID",Lists.newArrayList("e6de70d1-f222-46e8-b755-754880687822"));
-        headers.put("X-Request-ID",Lists.newArrayList("e6de70d1-f222-46e8-b755-11111"));
-        HttpRequest httpRequest = new HttpRequest(
-                url,
-                "POST",
-                "STRING"
-                );
-        httpRequest.setHeaders(headers);
-        httpRequest.setBodyAsString("stuff");
-        Collection<Header> kafkaHeaders = Lists.newArrayList();
-        String httpRequestAsJSON = MAPPER.writeValueAsString(httpRequest);
-        ProducerRecord<String, String> record = new ProducerRecord<>(incomingTopic, null, System.currentTimeMillis(), null, httpRequestAsJSON, kafkaHeaders);
-        producer.send(record);
-        producer.flush();
-
-        //verify http responses
-        KafkaConsumer<String,? extends Object> consumer = getConsumer(kafkaContainer,externalSchemaRegistryUrl);
-
-        consumer.subscribe(Lists.newArrayList(successTopic, errorTopic));
-        List<ConsumerRecord<String, ? extends Object>> consumerRecords = drain(consumer, 1, 30);
-        Assertions.assertThat(consumerRecords).hasSize(1);
-        ConsumerRecord<String, ? extends Object> consumerRecord = consumerRecords.get(0);
-        Assertions.assertThat(consumerRecord.key()).isNull();
-        String jsonAsString = consumerRecord.value().toString();
-        String expectedJSON = "{\n" +
-                "  \"durationInMillis\": 0,\n" +
-                "  \"moment\": \"2022-11-10T17:19:42.740852Z\",\n" +
-                "  \"attempts\": 1,\n" +
-                "  \"httpRequest\": {\n" +
-                "    \"headers\": {\n" +
-                "      \"X-Correlation-ID\": [\n" +
-                "        \"e6de70d1-f222-46e8-b755-754880687822\"\n" +
-                "      ],\n" +
-                "      \"X-Request-ID\": [\n" +
-                "        \"e6de70d1-f222-46e8-b755-11111\"\n" +
-                "      ]\n" +
-                "    },\n" +
-                "    \"url\": \""+baseUrl+"/ping\",\n" +
-                "    \"method\": \"POST\",\n" +
-                "    \"bodyType\": \"STRING\",\n" +
-                "    \"bodyAsString\": \"stuff\",\n" +
-                "    \"bodyAsForm\": {},\n" +
-                "    \"bodyAsByteArray\": \"\",\n" +
-                "    \"bodyAsMultipart\": []\n" +
-                "  },\n" +
-                "  \"httpResponse\": {" +
-                "   \"statusCode\":200,\n" +
-                "  \"statusMessage\": \"OK\",\n" +
-                "  \"responseHeaders\": {},\n" +
-                "  \"responseBody\": \""+escapedJsonResponse+"\"\n" +
-                "}"+
+                "  \"responseBody\": \"" + escapedJsonResponse + "\"\n" +
+                "}" +
                 "}";
         JSONAssert.assertEquals(expectedJSON, jsonAsString,
                 new CustomComparator(JSONCompareMode.LENIENT,
@@ -471,11 +345,133 @@ public class ITConnectorTest {
     }
 
     @Test
+    void test_sink_in_producer_mode_with_input_as_string() throws JSONException, JsonProcessingException {
+        int test = 3;
+
+        WireMockRuntimeInfo wmRuntimeInfo = wmHttp.getRuntimeInfo();
+        String incomingTopic = HTTP_REQUESTS_AS_STRING;
+
+        String successTopic = "success-test_sink_and_source_with_input_as_string";
+        String errorTopic = "error-test_sink_and_source_with_input_as_string";
+
+        //register connectors
+        checkConnectorPluginIsInstalled();
+
+        configureSinkConnector("http-sink-connector-test_sink_and_source_with_input_as_string",
+                PublishMode.PRODUCER.name(),
+                incomingTopic,
+                "org.apache.kafka.connect.storage.StringConverter", successTopic,
+                new AbstractMap.SimpleImmutableEntry<>(CONFIG_GENERATE_MISSING_REQUEST_ID, "true"),
+                new AbstractMap.SimpleImmutableEntry<>(CONFIG_GENERATE_MISSING_CORRELATION_ID, "true")
+        );
+        List<String> registeredConnectors = connectContainer.getRegisteredConnectors();
+        String joinedRegisteredConnectors = Joiner.on(",").join(registeredConnectors);
+        LOGGER.info("registered connectors :{}", joinedRegisteredConnectors);
+
+        //define the http Mock Server interaction
+        WireMock wireMock = wmRuntimeInfo.getWireMock();
+        String bodyResponse = "{\"result\":\"pong\"}";
+        String escapedJsonResponse = StringEscapeUtils.escapeJson(bodyResponse);
+        wireMock
+                .register(WireMock.post("/ping")
+                        .willReturn(WireMock.aResponse()
+                                .withHeader("Content-Type", "application/json")
+                                .withBody(bodyResponse)
+                                .withStatus(200)
+                                .withStatusMessage("OK")
+                        )
+                );
+        //forge messages which will command http requests
+        KafkaProducer<String, String> producer = getStringProducer(kafkaContainer);
+
+        String baseUrl = "http://" + getIP() + ":" + wmRuntimeInfo.getHttpPort();
+        String url = baseUrl + "/ping";
+        LOGGER.info("url:{}", url);
+        HashMap<String, List<String>> headers = Maps.newHashMap();
+        headers.put("X-Correlation-ID", Lists.newArrayList("e6de70d1-f222-46e8-b755-754880687822"));
+        headers.put("X-Request-ID", Lists.newArrayList("e6de70d1-f222-46e8-b755-11111"));
+        HttpRequest httpRequest = new HttpRequest(
+                url,
+                "POST",
+                "STRING"
+        );
+        httpRequest.setHeaders(headers);
+        httpRequest.setBodyAsString("stuff");
+        Collection<Header> kafkaHeaders = Lists.newArrayList();
+        String httpRequestAsJSON = MAPPER.writeValueAsString(httpRequest);
+        ProducerRecord<String, String> record = new ProducerRecord<>(incomingTopic, null, System.currentTimeMillis(), null, httpRequestAsJSON, kafkaHeaders);
+        producer.send(record);
+        producer.flush();
+
+        //verify http responses
+        KafkaConsumer<String, ? extends Object> consumer = getConsumer(kafkaContainer, externalSchemaRegistryUrl);
+
+        consumer.subscribe(Lists.newArrayList(successTopic, errorTopic));
+        List<ConsumerRecord<String, ? extends Object>> consumerRecords = drain(consumer, 1, 120);
+        Assertions.assertThat(consumerRecords).hasSize(1);
+        ConsumerRecord<String, ? extends Object> consumerRecord = consumerRecords.get(0);
+        Assertions.assertThat(consumerRecord.key()).isNull();
+        String jsonAsString = consumerRecord.value().toString();
+        String expectedJSON = "{\n" +
+                "  \"durationInMillis\": 0,\n" +
+                "  \"moment\": \"2022-11-10T17:19:42.740852Z\",\n" +
+                "  \"attempts\": 1,\n" +
+                "  \"httpRequest\": {\n" +
+                "    \"headers\": {\n" +
+                "      \"X-Correlation-ID\": [\n" +
+                "        \"e6de70d1-f222-46e8-b755-754880687822\"\n" +
+                "      ],\n" +
+                "      \"X-Request-ID\": [\n" +
+                "        \"e6de70d1-f222-46e8-b755-11111\"\n" +
+                "      ]\n" +
+                "    },\n" +
+                "    \"url\": \"" + baseUrl + "/ping\",\n" +
+                "    \"method\": \"POST\",\n" +
+                "    \"bodyType\": \"STRING\",\n" +
+                "    \"bodyAsString\": \"stuff\",\n" +
+                "    \"bodyAsForm\": {},\n" +
+                "    \"bodyAsByteArray\": \"\",\n" +
+                "    \"bodyAsMultipart\": []\n" +
+                "  },\n" +
+                "  \"httpResponse\": {" +
+                "   \"statusCode\":200,\n" +
+                "  \"statusMessage\": \"OK\",\n" +
+                "  \"responseHeaders\": {},\n" +
+                "  \"responseBody\": \"" + escapedJsonResponse + "\"\n" +
+                "}" +
+                "}";
+        JSONAssert.assertEquals(expectedJSON, jsonAsString,
+                new CustomComparator(JSONCompareMode.LENIENT,
+                        new Customization("moment", (o1, o2) -> true),
+                        new Customization("correlationId", (o1, o2) -> true),
+                        new Customization("durationInMillis", (o1, o2) -> true),
+                        new Customization("requestHeaders.X-Correlation-ID", (o1, o2) -> true),
+                        new Customization("requestHeaders.X-Request-ID", (o1, o2) -> true),
+                        new Customization("requestId", (o1, o2) -> true),
+                        new Customization("responseHeaders.Matched-Stub-Id", (o1, o2) -> true)
+                ));
+        Assertions.assertThat(consumerRecord.headers().toArray()).isEmpty();
+    }
+
+    private static void checkConnectorPluginIsInstalled() {
+        OkHttpClient okHttpClient = new OkHttpClient.Builder().build();
+        Request.Builder builder = new Request.Builder();
+        Request request = builder.url(connectContainer.getTarget() + "/connector-plugins")
+                .build();
+        Awaitility.await().pollInterval(Duration.of(5, ChronoUnit.SECONDS)).atMost(Duration.of(2, ChronoUnit.MINUTES)).until(() -> {
+            Response response = okHttpClient.newCall(request).execute();
+            String content = response.body().string();
+            System.out.println(content);
+            return content.contains("HttpSinkConnector");
+        });
+    }
+
+    @Test
     void test_sink_and_source_with_input_as_struct_and_schema_registry() throws JSONException {
         WireMockRuntimeInfo httpRuntimeInfo = wmHttp.getRuntimeInfo();
         //register connectors
         String suffix = "sink_and_source_with_input_as_struct_and_schema_registry";
-        String incomingTopic="incoming-"+suffix;
+        String incomingTopic = "incoming-" + suffix;
         String successTopic = "success-" + suffix;
         String errorTopic = "error-" + suffix;
         configureSourceConnector("http-source-connector-test_" + suffix, "test_" + suffix, successTopic, errorTopic);
@@ -483,9 +479,9 @@ public class ITConnectorTest {
                 PUBLISH_TO_IN_MEMORY_QUEUE_OK,
                 incomingTopic,
                 "io.confluent.connect.json.JsonSchemaConverter", "test_" + suffix,
-                new AbstractMap.SimpleImmutableEntry<>("value.converter.schema.registry.url",internalSchemaRegistryUrl),
-                new AbstractMap.SimpleImmutableEntry<>(CONFIG_GENERATE_MISSING_REQUEST_ID,"true"),
-                new AbstractMap.SimpleImmutableEntry<>(CONFIG_GENERATE_MISSING_CORRELATION_ID,"true")
+                new AbstractMap.SimpleImmutableEntry<>("value.converter.schema.registry.url", internalSchemaRegistryUrl),
+                new AbstractMap.SimpleImmutableEntry<>(CONFIG_GENERATE_MISSING_REQUEST_ID, "true"),
+                new AbstractMap.SimpleImmutableEntry<>(CONFIG_GENERATE_MISSING_CORRELATION_ID, "true")
         );
         List<String> registeredConnectors = connectContainer.getRegisteredConnectors();
         String joinedRegisteredConnectors = Joiner.on(",").join(registeredConnectors);
@@ -502,7 +498,7 @@ public class ITConnectorTest {
         wireMock
                 .register(WireMock.post("/ping")
                         .willReturn(WireMock.aResponse()
-                                .withHeader("Content-Type","application/json")
+                                .withHeader("Content-Type", "application/json")
                                 .withBody(bodyResponse)
                                 .withStatus(statusCode)
                                 .withStatusMessage(statusMessage)
@@ -516,8 +512,8 @@ public class ITConnectorTest {
         String url = baseUrl + "/ping";
         LOGGER.info("url:{}", url);
         HashMap<String, List<String>> headers = Maps.newHashMap();
-        headers.put("X-Correlation-ID",Lists.newArrayList("e6de70d1-f222-46e8-b755-754880687822"));
-        headers.put("X-Request-ID",Lists.newArrayList("e6de70d1-f222-46e8-b755-11111"));
+        headers.put("X-Correlation-ID", Lists.newArrayList("e6de70d1-f222-46e8-b755-754880687822"));
+        headers.put("X-Request-ID", Lists.newArrayList("e6de70d1-f222-46e8-b755-11111"));
         HttpRequest httpRequest = new HttpRequest(
                 url,
                 "POST",
@@ -531,7 +527,7 @@ public class ITConnectorTest {
         producer.flush();
 
         //verify http responses
-        KafkaConsumer<String,? extends Object> consumer = getConsumer(kafkaContainer,externalSchemaRegistryUrl);
+        KafkaConsumer<String, ? extends Object> consumer = getConsumer(kafkaContainer, externalSchemaRegistryUrl);
 
         consumer.subscribe(Lists.newArrayList(successTopic, errorTopic));
         List<ConsumerRecord<String, ? extends Object>> consumerRecords = drain(consumer, 1, 120);
@@ -540,7 +536,7 @@ public class ITConnectorTest {
         Assertions.assertThat(consumerRecord.topic()).isEqualTo(successTopic);
         Assertions.assertThat(consumerRecord.key()).isNull();
         String jsonAsString = consumerRecord.value().toString();
-        LOGGER.info("json response  :{}",jsonAsString);
+        LOGGER.info("json response  :{}", jsonAsString);
         String expectedJSON = "{\n" +
                 "  \"durationInMillis\": 0,\n" +
                 "  \"moment\": \"2022-11-10T17:19:42.740852Z\",\n" +
@@ -554,7 +550,7 @@ public class ITConnectorTest {
                 "        \"e6de70d1-f222-46e8-b755-11111\"\n" +
                 "      ]\n" +
                 "    },\n" +
-                "    \"url\": \""+baseUrl+"/ping\",\n" +
+                "    \"url\": \"" + baseUrl + "/ping\",\n" +
                 "    \"method\": \"POST\",\n" +
                 "    \"bodyType\": \"STRING\",\n" +
                 "    \"bodyAsString\": \"stuff\",\n" +
@@ -564,12 +560,12 @@ public class ITConnectorTest {
                 "  },\n" +
                 "  \"httpResponse\": {\n" +
                 "   \"statusCode\":200,\n" +
-                "  \"statusMessage\": \""+statusMessage+"\",\n" +
+                "  \"statusMessage\": \"" + statusMessage + "\",\n" +
                 "  \"responseHeaders\": {" +
                 "\"Content-Type\":[\"application/json\"]" +
                 "},\n" +
-                "  \"responseBody\": \""+escapedJsonResponse+"\"\n" +
-                "}"+
+                "  \"responseBody\": \"" + escapedJsonResponse + "\"\n" +
+                "}" +
                 "}";
         JSONAssert.assertEquals(expectedJSON, jsonAsString,
                 new CustomComparator(JSONCompareMode.LENIENT,
@@ -585,12 +581,12 @@ public class ITConnectorTest {
 
     }
 
-//    @Test
+    //    @Test
     public void test_retry_policy() throws JSONException {
         WireMockRuntimeInfo httpRuntimeInfo = wmHttp.getRuntimeInfo();
         //register connectors
         String suffix = "retry_policy";
-        String incomingTopic="incoming-"+suffix;
+        String incomingTopic = "incoming-" + suffix;
         String successTopic = "success-" + suffix;
         String errorTopic = "error-" + suffix;
         configureSourceConnector("http-source-connector-test_" + suffix, "test_" + suffix, successTopic, errorTopic);
@@ -598,14 +594,14 @@ public class ITConnectorTest {
                 PUBLISH_TO_IN_MEMORY_QUEUE_OK,
                 incomingTopic,
                 "io.confluent.connect.json.JsonSchemaConverter", "test_" + suffix,
-                new AbstractMap.SimpleImmutableEntry<>("value.converter.schema.registry.url",internalSchemaRegistryUrl),
-                new AbstractMap.SimpleImmutableEntry<>(CONFIG_GENERATE_MISSING_REQUEST_ID,"true"),
-                new AbstractMap.SimpleImmutableEntry<>(CONFIG_GENERATE_MISSING_CORRELATION_ID,"true"),
-                new AbstractMap.SimpleImmutableEntry<>(CONFIG_DEFAULT_RETRIES,"3"),
-                new AbstractMap.SimpleImmutableEntry<>(CONFIG_DEFAULT_RETRY_DELAY_IN_MS,"1000"),
-                new AbstractMap.SimpleImmutableEntry<>(CONFIG_DEFAULT_RETRY_MAX_DELAY_IN_MS,"100000"),
-                new AbstractMap.SimpleImmutableEntry<>(CONFIG_DEFAULT_RETRY_DELAY_FACTOR,"1.5"),
-                new AbstractMap.SimpleImmutableEntry<>(CONFIG_DEFAULT_RETRY_JITTER_IN_MS,"500")
+                new AbstractMap.SimpleImmutableEntry<>("value.converter.schema.registry.url", internalSchemaRegistryUrl),
+                new AbstractMap.SimpleImmutableEntry<>(CONFIG_GENERATE_MISSING_REQUEST_ID, "true"),
+                new AbstractMap.SimpleImmutableEntry<>(CONFIG_GENERATE_MISSING_CORRELATION_ID, "true"),
+                new AbstractMap.SimpleImmutableEntry<>(CONFIG_DEFAULT_RETRIES, "3"),
+                new AbstractMap.SimpleImmutableEntry<>(CONFIG_DEFAULT_RETRY_DELAY_IN_MS, "1000"),
+                new AbstractMap.SimpleImmutableEntry<>(CONFIG_DEFAULT_RETRY_MAX_DELAY_IN_MS, "100000"),
+                new AbstractMap.SimpleImmutableEntry<>(CONFIG_DEFAULT_RETRY_DELAY_FACTOR, "1.5"),
+                new AbstractMap.SimpleImmutableEntry<>(CONFIG_DEFAULT_RETRY_JITTER_IN_MS, "500")
         );
         List<String> registeredConnectors = connectContainer.getRegisteredConnectors();
         String joinedRegisteredConnectors = Joiner.on(",").join(registeredConnectors);
@@ -626,8 +622,8 @@ public class ITConnectorTest {
                         .inScenario("retry-policy")
                         .whenScenarioStateIs(Scenario.STARTED)
                         .willReturn(WireMock.aResponse()
-                                .withHeader("Content-Type","application/json")
-                                .withHeader("X-Try","1")
+                                .withHeader("Content-Type", "application/json")
+                                .withHeader("X-Try", "1")
                                 .withBody(bodyResponse)
                                 .withStatus(serverErrorStatusCode)
                                 .withStatusMessage(errorStatusMessage)
@@ -639,8 +635,8 @@ public class ITConnectorTest {
                         .inScenario("retry-policy")
                         .whenScenarioStateIs("2nd step")
                         .willReturn(WireMock.aResponse()
-                                .withHeader("Content-Type","application/json")
-                                .withHeader("X-Try","2")
+                                .withHeader("Content-Type", "application/json")
+                                .withHeader("X-Try", "2")
                                 .withBody(bodyResponse)
                                 .withStatus(serverErrorStatusCode)
                                 .withStatusMessage(errorStatusMessage)
@@ -652,8 +648,8 @@ public class ITConnectorTest {
                         .inScenario("retry-policy")
                         .whenScenarioStateIs("3rd step")
                         .willReturn(WireMock.aResponse()
-                                .withHeader("Content-Type","application/json")
-                                .withHeader("X-Try","3")
+                                .withHeader("Content-Type", "application/json")
+                                .withHeader("X-Try", "3")
                                 .withBody(bodyResponse)
                                 .withStatus(successStatusCode)
                                 .withStatusMessage(successStatusMessage)
@@ -666,8 +662,8 @@ public class ITConnectorTest {
         String url = baseUrl + "/ping";
         LOGGER.info("url:{}", url);
         HashMap<String, List<String>> headers = Maps.newHashMap();
-        headers.put("X-Correlation-ID",Lists.newArrayList("e6de70d1-f222-46e8-b755-754880687822"));
-        headers.put("X-Request-ID",Lists.newArrayList("e6de70d1-f222-46e8-b755-11111"));
+        headers.put("X-Correlation-ID", Lists.newArrayList("e6de70d1-f222-46e8-b755-754880687822"));
+        headers.put("X-Request-ID", Lists.newArrayList("e6de70d1-f222-46e8-b755-11111"));
         HttpRequest httpRequest = new HttpRequest(
                 url,
                 "POST",
@@ -681,20 +677,20 @@ public class ITConnectorTest {
         producer.flush();
 
         //verify http responses
-        KafkaConsumer<String,? extends Object> consumer = getConsumer(kafkaContainer,externalSchemaRegistryUrl);
+        KafkaConsumer<String, ? extends Object> consumer = getConsumer(kafkaContainer, externalSchemaRegistryUrl);
 
         consumer.subscribe(Lists.newArrayList(successTopic, errorTopic));
         int messageCount = 3;
         List<ConsumerRecord<String, ? extends Object>> consumerRecords = drain(consumer, messageCount, 120);
         Assertions.assertThat(consumerRecords).hasSize(3);
-        int messageInErrorTopic=0;
-        int messageInSuccessTopic=0;
+        int messageInErrorTopic = 0;
+        int messageInSuccessTopic = 0;
         for (int i = 0; i < messageCount; i++) {
             ConsumerRecord<String, ? extends Object> consumerRecord = consumerRecords.get(i);
-            if(errorTopic.equals(consumerRecord.topic())) {
+            if (errorTopic.equals(consumerRecord.topic())) {
                 messageInErrorTopic++;
                 checkMessage(errorTopic, escapedJsonResponse, serverErrorStatusCode, errorStatusMessage, baseUrl, consumerRecord);
-            }else{
+            } else {
                 messageInSuccessTopic++;
                 checkMessage(successTopic, escapedJsonResponse, successStatusCode, successStatusMessage, baseUrl, consumerRecord);
             }
@@ -708,7 +704,7 @@ public class ITConnectorTest {
         WireMockRuntimeInfo httpRuntimeInfo = wmHttp.getRuntimeInfo();
         //register connectors
         String suffix = "sink_and_source_with_input_as_struct_and_schema_registry_test_rate_limiting";
-        String incomingTopic= "incoming-" + suffix;
+        String incomingTopic = "incoming-" + suffix;
         String successTopic = "success-" + suffix;
         String errorTopic = "error-" + suffix;
         String queueName = "test_" + suffix;
@@ -719,11 +715,11 @@ public class ITConnectorTest {
                 PUBLISH_TO_IN_MEMORY_QUEUE_OK,
                 incomingTopic,
                 "io.confluent.connect.json.JsonSchemaConverter", "test_" + suffix,
-                new AbstractMap.SimpleImmutableEntry<>("value.converter.schema.registry.url",internalSchemaRegistryUrl),
-                new AbstractMap.SimpleImmutableEntry<>(CONFIG_GENERATE_MISSING_REQUEST_ID,"true"),
-                new AbstractMap.SimpleImmutableEntry<>(CONFIG_GENERATE_MISSING_CORRELATION_ID,"true"),
-                new AbstractMap.SimpleImmutableEntry<>(CONFIG_DEFAULT_RATE_LIMITER_PERIOD_IN_MS,"1000"),
-                new AbstractMap.SimpleImmutableEntry<>(CONFIG_DEFAULT_RATE_LIMITER_MAX_EXECUTIONS, maxExecutionsPerSecond+"")
+                new AbstractMap.SimpleImmutableEntry<>("value.converter.schema.registry.url", internalSchemaRegistryUrl),
+                new AbstractMap.SimpleImmutableEntry<>(CONFIG_GENERATE_MISSING_REQUEST_ID, "true"),
+                new AbstractMap.SimpleImmutableEntry<>(CONFIG_GENERATE_MISSING_CORRELATION_ID, "true"),
+                new AbstractMap.SimpleImmutableEntry<>(CONFIG_DEFAULT_RATE_LIMITER_PERIOD_IN_MS, "1000"),
+                new AbstractMap.SimpleImmutableEntry<>(CONFIG_DEFAULT_RATE_LIMITER_MAX_EXECUTIONS, maxExecutionsPerSecond + "")
         );
         List<String> registeredConnectors = connectContainer.getRegisteredConnectors();
         String joinedRegisteredConnectors = Joiner.on(",").join(registeredConnectors);
@@ -740,7 +736,7 @@ public class ITConnectorTest {
         wireMock
                 .register(WireMock.post("/ping")
                         .willReturn(WireMock.aResponse()
-                                .withHeader("Content-Type","application/json")
+                                .withHeader("Content-Type", "application/json")
                                 .withBody(bodyResponse)
                                 .withStatus(statusCode)
                                 .withStatusMessage(statusMessage)
@@ -754,8 +750,8 @@ public class ITConnectorTest {
         String url = baseUrl + "/ping";
         LOGGER.info("url:{}", url);
         HashMap<String, List<String>> headers = Maps.newHashMap();
-        headers.put("X-Correlation-ID",Lists.newArrayList("e6de70d1-f222-46e8-b755-754880687822"));
-        headers.put("X-Request-ID",Lists.newArrayList("e6de70d1-f222-46e8-b755-11111"));
+        headers.put("X-Correlation-ID", Lists.newArrayList("e6de70d1-f222-46e8-b755-754880687822"));
+        headers.put("X-Request-ID", Lists.newArrayList("e6de70d1-f222-46e8-b755-11111"));
         HttpRequest httpRequest = new HttpRequest(
                 url,
                 "POST",
@@ -773,36 +769,37 @@ public class ITConnectorTest {
         producer.flush();
 
         //verify http responses
-        KafkaConsumer<String,? extends Object> consumer = getConsumer(kafkaContainer,externalSchemaRegistryUrl);
+        KafkaConsumer<String, ? extends Object> consumer = getConsumer(kafkaContainer, externalSchemaRegistryUrl);
 
         consumer.subscribe(Lists.newArrayList(successTopic, errorTopic));
         List<ConsumerRecord<String, ? extends Object>> consumerRecords = drain(consumer, messageCount, 40);
         Assertions.assertThat(consumerRecords).hasSize(messageCount);
 
-        int checkedMessages=0;
+        int checkedMessages = 0;
         for (int i = 0; i < messageCount; i++) {
             ConsumerRecord<String, ? extends Object> consumerRecord = consumerRecords.get(i);
-            checkMessage(successTopic,escapedJsonResponse, 200, statusMessage, baseUrl, consumerRecord);
+            checkMessage(successTopic, escapedJsonResponse, 200, statusMessage, baseUrl, consumerRecord);
             checkedMessages++;
         }
         stopwatch.stop();
 
         int minExecutionTimeInSeconds = messageCount / (maxExecutionsPerSecond);
-        LOGGER.info("min execution time  '{}' seconds",minExecutionTimeInSeconds);
+        LOGGER.info("min execution time  '{}' seconds", minExecutionTimeInSeconds);
         long elapsedTimeInSeconds = stopwatch.elapsed(SECONDS);
-        LOGGER.info("elapsed time '{}' seconds",elapsedTimeInSeconds);
+        LOGGER.info("elapsed time '{}' seconds", elapsedTimeInSeconds);
         //we add one to avoid rounding issues
-        Assertions.assertThat(elapsedTimeInSeconds+1).isGreaterThan(minExecutionTimeInSeconds);
+        Assertions.assertThat(elapsedTimeInSeconds + 1).isGreaterThan(minExecutionTimeInSeconds);
 
     }
-//    @Test
+
+    //    @Test
     public void test_custom_truststore() throws JSONException {
 
 
         WireMockRuntimeInfo httpsRuntimeInfo = wmHttps.getRuntimeInfo();
         //register connectors
         String suffix = "custom_truststore";
-        String incomingTopic = "incoming-"+suffix;
+        String incomingTopic = "incoming-" + suffix;
         String successTopic = "success-" + suffix;
         String errorTopic = "error-" + suffix;
         String queueName = "test_" + suffix;
@@ -811,12 +808,12 @@ public class ITConnectorTest {
                 PUBLISH_TO_IN_MEMORY_QUEUE_OK,
                 incomingTopic,
                 "io.confluent.connect.json.JsonSchemaConverter", "test_" + suffix,
-                new AbstractMap.SimpleImmutableEntry<>("value.converter.schema.registry.url",internalSchemaRegistryUrl),
-                new AbstractMap.SimpleImmutableEntry<>(CONFIG_GENERATE_MISSING_REQUEST_ID,"true"),
-                new AbstractMap.SimpleImmutableEntry<>(CONFIG_GENERATE_MISSING_CORRELATION_ID,"true"),
-                new AbstractMap.SimpleImmutableEntry<>(CONFIG_DEFAULT_OKHTTP_SSL_SKIP_HOSTNAME_VERIFICATION,"true"),
+                new AbstractMap.SimpleImmutableEntry<>("value.converter.schema.registry.url", internalSchemaRegistryUrl),
+                new AbstractMap.SimpleImmutableEntry<>(CONFIG_GENERATE_MISSING_REQUEST_ID, "true"),
+                new AbstractMap.SimpleImmutableEntry<>(CONFIG_GENERATE_MISSING_CORRELATION_ID, "true"),
+                new AbstractMap.SimpleImmutableEntry<>(CONFIG_DEFAULT_OKHTTP_SSL_SKIP_HOSTNAME_VERIFICATION, "true"),
                 new AbstractMap.SimpleImmutableEntry<>(CONFIG_DEFAULT_OKHTTP_PROTOCOLS, "HTTP_1_1"),
-                new AbstractMap.SimpleImmutableEntry<>(CONFIG_HTTP_CLIENT_SSL_TRUSTSTORE_PATH,"/opt/"+ CLIENT_TRUSTSTORE_JKS_FILENAME),
+                new AbstractMap.SimpleImmutableEntry<>(CONFIG_HTTP_CLIENT_SSL_TRUSTSTORE_PATH, "/opt/" + CLIENT_TRUSTSTORE_JKS_FILENAME),
                 new AbstractMap.SimpleImmutableEntry<>(CONFIG_HTTP_CLIENT_SSL_TRUSTSTORE_PASSWORD, CLIENT_TRUSTSTORE_JKS_PASSWORD),
                 new AbstractMap.SimpleImmutableEntry<>(CONFIG_HTTP_CLIENT_SSL_TRUSTSTORE_TYPE, JKS_STORE_TYPE),
                 new AbstractMap.SimpleImmutableEntry<>(CONFIG_HTTP_CLIENT_SSL_TRUSTSTORE_ALGORITHM, TRUSTSTORE_PKIX_ALGORITHM)
@@ -836,7 +833,7 @@ public class ITConnectorTest {
         wireMock
                 .register(WireMock.post("/ping")
                         .willReturn(WireMock.aResponse()
-                                .withHeader("Content-Type","application/json")
+                                .withHeader("Content-Type", "application/json")
                                 .withBody(bodyResponse)
                                 .withStatus(statusCode)
                                 .withStatusMessage(statusMessage)
@@ -850,8 +847,8 @@ public class ITConnectorTest {
         String url = baseUrl + "/ping";
         LOGGER.info("url:{}", url);
         HashMap<String, List<String>> headers = Maps.newHashMap();
-        headers.put("X-Correlation-ID",Lists.newArrayList("e6de70d1-f222-46e8-b755-754880687822"));
-        headers.put("X-Request-ID",Lists.newArrayList("e6de70d1-f222-46e8-b755-11111"));
+        headers.put("X-Correlation-ID", Lists.newArrayList("e6de70d1-f222-46e8-b755-754880687822"));
+        headers.put("X-Request-ID", Lists.newArrayList("e6de70d1-f222-46e8-b755-11111"));
         HttpRequest httpRequest = new HttpRequest(
                 url,
                 "POST",
@@ -865,7 +862,7 @@ public class ITConnectorTest {
         producer.flush();
 
         //verify http responses
-        KafkaConsumer<String,? extends Object> consumer = getConsumer(kafkaContainer,externalSchemaRegistryUrl);
+        KafkaConsumer<String, ? extends Object> consumer = getConsumer(kafkaContainer, externalSchemaRegistryUrl);
 
         consumer.subscribe(Lists.newArrayList(successTopic, errorTopic));
         List<ConsumerRecord<String, ? extends Object>> consumerRecords = drain(consumer, 1, 120);
@@ -874,7 +871,7 @@ public class ITConnectorTest {
         Assertions.assertThat(consumerRecord.topic()).isEqualTo(successTopic);
         Assertions.assertThat(consumerRecord.key()).isNull();
         String jsonAsString = consumerRecord.value().toString();
-        LOGGER.info("json response  :{}",jsonAsString);
+        LOGGER.info("json response  :{}", jsonAsString);
         String expectedJSON = "{\n" +
                 "  \"durationInMillis\": 0,\n" +
                 "  \"moment\": \"2022-11-10T17:19:42.740852Z\",\n" +
@@ -888,7 +885,7 @@ public class ITConnectorTest {
                 "        \"e6de70d1-f222-46e8-b755-11111\"\n" +
                 "      ]\n" +
                 "    },\n" +
-                "    \"url\": \""+baseUrl+"/ping\",\n" +
+                "    \"url\": \"" + baseUrl + "/ping\",\n" +
                 "    \"method\": \"POST\",\n" +
                 "    \"bodyType\": \"STRING\",\n" +
                 "    \"bodyAsString\": \"stuff\",\n" +
@@ -898,12 +895,12 @@ public class ITConnectorTest {
                 "  },\n" +
                 "  \"httpResponse\": {\n" +
                 "   \"statusCode\":200,\n" +
-                "  \"statusMessage\": \""+statusMessage+"\",\n" +
+                "  \"statusMessage\": \"" + statusMessage + "\",\n" +
                 "  \"responseHeaders\": {" +
                 "\"Content-Type\":[\"application/json\"]" +
                 "},\n" +
-                "  \"responseBody\": \""+escapedJsonResponse+"\"\n" +
-                "}"+
+                "  \"responseBody\": \"" + escapedJsonResponse + "\"\n" +
+                "}" +
                 "}";
         JSONAssert.assertEquals(expectedJSON, jsonAsString,
                 new CustomComparator(JSONCompareMode.LENIENT,
@@ -918,53 +915,53 @@ public class ITConnectorTest {
         Assertions.assertThat(consumerRecord.headers().toArray()).isEmpty();
     }
 
-    private static void checkMessage(String topicName,String escapedJsonResponse, int statusCode, String statusMessage, String baseUrl, ConsumerRecord<String, ?> consumerRecord) throws JSONException {
-            Assertions.assertThat(consumerRecord.topic()).isEqualTo(topicName);
-            Assertions.assertThat(consumerRecord.key()).isNull();
-            String jsonAsString = consumerRecord.value().toString();
-            LOGGER.info("json response  :{}", jsonAsString);
-            String expectedJSON = "{\n" +
-                    "  \"durationInMillis\": 0,\n" +
-                    "  \"moment\": \"2022-11-10T17:19:42.740852Z\",\n" +
-                    "  \"attempts\": 1,\n" +
-                    "  \"httpRequest\": {\n" +
-                    "    \"headers\": {\n" +
-                    "      \"X-Correlation-ID\": [\n" +
-                    "        \"e6de70d1-f222-46e8-b755-754880687822\"\n" +
-                    "      ],\n" +
-                    "      \"X-Request-ID\": [\n" +
-                    "        \"e6de70d1-f222-46e8-b755-11111\"\n" +
-                    "      ]\n" +
-                    "    },\n" +
-                    "    \"url\": \"" + baseUrl + "/ping\",\n" +
-                    "    \"method\": \"POST\",\n" +
-                    "    \"bodyType\": \"STRING\",\n" +
-                    "    \"bodyAsString\": \"stuff\",\n" +
-                    "    \"bodyAsForm\": {},\n" +
-                    "    \"bodyAsByteArray\": \"\",\n" +
-                    "    \"bodyAsMultipart\": []\n" +
-                    "  },\n" +
-                    "  \"httpResponse\": {\n" +
-                    "   \"statusCode\":" + statusCode + ",\n" +
-                    "  \"statusMessage\": \"" + statusMessage + "\",\n" +
-                    "  \"responseHeaders\": {" +
-                    "\"Content-Type\":[\"application/json\"]" +
-                    "},\n" +
-                    "  \"responseBody\": \"" + escapedJsonResponse + "\"\n" +
-                    "}" +
-                    "}";
-            JSONAssert.assertEquals(expectedJSON, jsonAsString,
-                    new CustomComparator(JSONCompareMode.LENIENT,
-                            new Customization("moment", (o1, o2) -> true),
-                            new Customization("correlationId", (o1, o2) -> true),
-                            new Customization("durationInMillis", (o1, o2) -> true),
-                            new Customization("requestHeaders.X-Correlation-ID", (o1, o2) -> true),
-                            new Customization("requestHeaders.X-Request-ID", (o1, o2) -> true),
-                            new Customization("requestHeaders.X-Try", (o1, o2) -> true),
-                            new Customization("requestId", (o1, o2) -> true),
-                            new Customization("responseHeaders.Matched-Stub-Id", (o1, o2) -> true)
-                    ));
-            Assertions.assertThat(consumerRecord.headers().toArray()).isEmpty();
+    private static void checkMessage(String topicName, String escapedJsonResponse, int statusCode, String statusMessage, String baseUrl, ConsumerRecord<String, ?> consumerRecord) throws JSONException {
+        Assertions.assertThat(consumerRecord.topic()).isEqualTo(topicName);
+        Assertions.assertThat(consumerRecord.key()).isNull();
+        String jsonAsString = consumerRecord.value().toString();
+        LOGGER.info("json response  :{}", jsonAsString);
+        String expectedJSON = "{\n" +
+                "  \"durationInMillis\": 0,\n" +
+                "  \"moment\": \"2022-11-10T17:19:42.740852Z\",\n" +
+                "  \"attempts\": 1,\n" +
+                "  \"httpRequest\": {\n" +
+                "    \"headers\": {\n" +
+                "      \"X-Correlation-ID\": [\n" +
+                "        \"e6de70d1-f222-46e8-b755-754880687822\"\n" +
+                "      ],\n" +
+                "      \"X-Request-ID\": [\n" +
+                "        \"e6de70d1-f222-46e8-b755-11111\"\n" +
+                "      ]\n" +
+                "    },\n" +
+                "    \"url\": \"" + baseUrl + "/ping\",\n" +
+                "    \"method\": \"POST\",\n" +
+                "    \"bodyType\": \"STRING\",\n" +
+                "    \"bodyAsString\": \"stuff\",\n" +
+                "    \"bodyAsForm\": {},\n" +
+                "    \"bodyAsByteArray\": \"\",\n" +
+                "    \"bodyAsMultipart\": []\n" +
+                "  },\n" +
+                "  \"httpResponse\": {\n" +
+                "   \"statusCode\":" + statusCode + ",\n" +
+                "  \"statusMessage\": \"" + statusMessage + "\",\n" +
+                "  \"responseHeaders\": {" +
+                "\"Content-Type\":[\"application/json\"]" +
+                "},\n" +
+                "  \"responseBody\": \"" + escapedJsonResponse + "\"\n" +
+                "}" +
+                "}";
+        JSONAssert.assertEquals(expectedJSON, jsonAsString,
+                new CustomComparator(JSONCompareMode.LENIENT,
+                        new Customization("moment", (o1, o2) -> true),
+                        new Customization("correlationId", (o1, o2) -> true),
+                        new Customization("durationInMillis", (o1, o2) -> true),
+                        new Customization("requestHeaders.X-Correlation-ID", (o1, o2) -> true),
+                        new Customization("requestHeaders.X-Request-ID", (o1, o2) -> true),
+                        new Customization("requestHeaders.X-Try", (o1, o2) -> true),
+                        new Customization("requestId", (o1, o2) -> true),
+                        new Customization("responseHeaders.Matched-Stub-Id", (o1, o2) -> true)
+                ));
+        Assertions.assertThat(consumerRecord.headers().toArray()).isEmpty();
     }
 
 
@@ -982,16 +979,16 @@ public class ITConnectorTest {
 
     private <T> KafkaProducer<String, T> getStructAsJSONProducer() {
         Properties props = new Properties();
-        props.put(BOOTSTRAP_SERVERS_CONFIG,kafkaContainer.getBootstrapServers());
-        props.put(AbstractKafkaSchemaSerDeConfig.SCHEMA_REGISTRY_URL_CONFIG,externalSchemaRegistryUrl);
-        props.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG,StringSerializer.class.getName());
-        props.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG,KafkaJsonSchemaSerializer.class.getName());
-        props.put(AbstractKafkaSchemaSerDeConfig.AUTO_REGISTER_SCHEMAS,"true");
+        props.put(BOOTSTRAP_SERVERS_CONFIG, kafkaContainer.getBootstrapServers());
+        props.put(AbstractKafkaSchemaSerDeConfig.SCHEMA_REGISTRY_URL_CONFIG, externalSchemaRegistryUrl);
+        props.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class.getName());
+        props.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, KafkaJsonSchemaSerializer.class.getName());
+        props.put(AbstractKafkaSchemaSerDeConfig.AUTO_REGISTER_SCHEMAS, "true");
         props.put(KafkaJsonSchemaSerializerConfig.SCHEMA_SPEC_VERSION, SpecificationVersion.DRAFT_2019_09.toString());
-        props.put(KafkaJsonSchemaSerializerConfig.ONEOF_FOR_NULLABLES,"false");
-        props.put(KafkaJsonSchemaSerializerConfig.FAIL_UNKNOWN_PROPERTIES,"true");
-        props.put(KafkaJsonSchemaSerializerConfig.FAIL_INVALID_SCHEMA,"true");
-        props.put(KafkaJsonSchemaSerializerConfig.WRITE_DATES_AS_ISO8601,"true");
+        props.put(KafkaJsonSchemaSerializerConfig.ONEOF_FOR_NULLABLES, "false");
+        props.put(KafkaJsonSchemaSerializerConfig.FAIL_UNKNOWN_PROPERTIES, "true");
+        props.put(KafkaJsonSchemaSerializerConfig.FAIL_INVALID_SCHEMA, "true");
+        props.put(KafkaJsonSchemaSerializerConfig.WRITE_DATES_AS_ISO8601, "true");
         return new KafkaProducer<>(props);
     }
 
@@ -1000,12 +997,12 @@ public class ITConnectorTest {
             String schemaRegistryUrl) {
 
         SchemaRegistryClient schemaRegistryClient = new CachedSchemaRegistryClient(
-                                                        schemaRegistryUrl,
-                                                        CACHE_CAPACITY,
-                                                        Lists.newArrayList(
-                                                                new JsonSchemaProvider(),
-                                                                new AvroSchemaProvider()),
-                                                        Maps.newHashMap());
+                schemaRegistryUrl,
+                CACHE_CAPACITY,
+                Lists.newArrayList(
+                        new JsonSchemaProvider(),
+                        new AvroSchemaProvider()),
+                Maps.newHashMap());
         Deserializer<String> jsonSchemaDeserializer = new KafkaJsonSchemaDeserializer<>(schemaRegistryClient);
 
 
@@ -1022,12 +1019,15 @@ public class ITConnectorTest {
     }
 
     private List<ConsumerRecord<String, ? extends Object>> drain(KafkaConsumer<String, ? extends Object> consumer,
-                                                                    int expectedRecordCount, int timeoutInSeconds) {
+                                                                 int expectedRecordCount, int timeoutInSeconds) {
         List<ConsumerRecord<String, ? extends Object>> allRecords = new ArrayList<>();
         Unreliables.retryUntilTrue(timeoutInSeconds, SECONDS, () -> {
             consumer.poll(Duration.ofMillis(50))
                     .iterator()
-                    .forEachRemaining(allRecords::add);
+                    .forEachRemaining(record -> {
+                        LOGGER.info("record received :{}", record);
+                        allRecords.add(record);
+                    });
             return allRecords.size() == expectedRecordCount;
         });
 
@@ -1036,7 +1036,7 @@ public class ITConnectorTest {
 
 
     private static String getIP() {
-        try(DatagramSocket datagramSocket = new DatagramSocket()) {
+        try (DatagramSocket datagramSocket = new DatagramSocket()) {
             datagramSocket.connect(InetAddress.getByName("8.8.8.8"), 12345);
             return datagramSocket.getLocalAddress().getHostAddress();
         } catch (IOException e) {
