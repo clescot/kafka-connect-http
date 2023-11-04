@@ -31,6 +31,9 @@ import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.Response;
 import org.apache.commons.text.StringEscapeUtils;
+import org.apache.kafka.clients.admin.AdminClient;
+import org.apache.kafka.clients.admin.CreateTopicsResult;
+import org.apache.kafka.clients.admin.NewTopic;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
@@ -54,6 +57,7 @@ import org.skyscreamer.jsonassert.JSONCompareMode;
 import org.skyscreamer.jsonassert.comparator.CustomComparator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.KafkaContainer;
 import org.testcontainers.containers.Network;
 import org.testcontainers.containers.output.Slf4jLogConsumer;
@@ -71,6 +75,8 @@ import java.net.InetAddress;
 import java.time.Duration;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
+import java.util.concurrent.ExecutionException;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static io.github.clescot.kafka.connect.http.sink.HttpSinkConfigDefinition.*;
@@ -98,8 +104,17 @@ public class ITConnectorTest {
     public static KafkaContainer kafkaContainer = new KafkaContainer(DockerImageName.parse("confluentinc/cp-kafka:" + CONFLUENT_VERSION))
             .withKraft()
             .withNetwork(network)
+            .withNetworkAliases("kafka")
             .withEnv("KAFKA_PROCESS_ROLES", "broker,controller")
-            .withLogConsumer(new Slf4jLogConsumer(LOGGER).withSeparateOutputStreams().withPrefix("kafka-broker"));
+            .withLogConsumer(new Slf4jLogConsumer(LOGGER).withSeparateOutputStreams().withPrefix("kafka-broker"))
+            .waitingFor(Wait.forListeningPorts(9092));
+
+    @Container
+    public static GenericContainer<?> kcat = new GenericContainer<>("confluentinc/cp-kcat:"+CONFLUENT_VERSION)
+            .withNetwork(network)
+            .withCommand("-b", "kafka:9092","-t","success-test_sink_and_source_with_input_as_string","-C")
+            .withLogConsumer(new Slf4jLogConsumer(LOGGER).withSeparateOutputStreams().withPrefix("kcat"))
+            .dependsOn(kafkaContainer);
     @Container
     private static final SchemaRegistryContainer schemaRegistryContainer = new SchemaRegistryContainer("confluentinc/cp-schema-registry:" + CONFLUENT_VERSION)
             .withNetwork(network)
@@ -131,6 +146,7 @@ public class ITConnectorTest {
             .withEnv("CONNECT_REST_ADVERTISED_HOST_NAME", "pop-os.localdomain")
             .withEnv("CONNECT_LOG4J_ROOT_LOGLEVEL", "ERROR")
             .withEnv("CONNECT_LOG4J_LOGGERS", "" +
+                    "org.glassfish=ERROR," +
                     "org.apache.kafka.connect=ERROR," +
                     "io.github.clescot=DEBUG," +
                     "org.apache.kafka.connect.runtime.distributed=ERROR," +
@@ -175,11 +191,28 @@ public class ITConnectorTest {
 
         //start containers
         Startables.deepStart(Stream.of(kafkaContainer, schemaRegistryContainer, connectContainer)).join();
+        kcat.start();
         internalSchemaRegistryUrl = "http://" + schemaRegistryContainer.getNetworkAliases().get(0) + ":8081";
         externalSchemaRegistryUrl = "http://" + schemaRegistryContainer.getHost() + ":" + schemaRegistryContainer.getMappedPort(8081);
 
 
         kafkaContainer.followOutput(logConsumer);
+    }
+
+    private static void createTopics(String bootstrapServers, String... topics) {
+        var newTopics =
+                Arrays.stream(topics)
+                        .map(topic -> new NewTopic(topic, 1, (short) 1))
+                        .collect(Collectors.toList());
+        try (var admin = AdminClient.create(Map.of(BOOTSTRAP_SERVERS_CONFIG, bootstrapServers))) {
+            CreateTopicsResult createTopicsResult = admin.createTopics(newTopics);
+            createTopicsResult.all().get();
+            admin.listTopics().names().thenApply(
+                    set-> set.stream().peek(topic-> LOGGER.info("topic:'{}' is present",topic))
+            ).get();
+        } catch (ExecutionException | InterruptedException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     private static void configureSinkConnector(String connectorName,
@@ -200,7 +233,8 @@ public class ITConnectorTest {
             sinkConnectorMessagesAsStringConfiguration = sinkConnectorMessagesAsStringConfiguration.with("queue.name", queueNameOrProducerTopic);
         } else if (PublishMode.PRODUCER.name().equalsIgnoreCase(publishMode)) {
             sinkConnectorMessagesAsStringConfiguration = sinkConnectorMessagesAsStringConfiguration
-                    .with("producer.bootstrap.servers", kafkaContainer.getBootstrapServers())
+                    .with("producer.bootstrap.servers", "kafka:9092")
+//                    .with("producer.bootstrap.servers", kafkaContainer.getBootstrapServers())
                     .with("producer.schema.registry.url", internalSchemaRegistryUrl)
                     .with("producer.topic", queueNameOrProducerTopic);
         }
@@ -240,6 +274,7 @@ public class ITConnectorTest {
 
     @Test
     void test_sink_and_source_with_input_as_string() throws JSONException, JsonProcessingException {
+
         WireMockRuntimeInfo wmRuntimeInfo = wmHttp.getRuntimeInfo();
         //register connectors
         String queueName = "test_sink_and_source_with_input_as_string";
@@ -353,6 +388,7 @@ public class ITConnectorTest {
 
         String successTopic = "success-test_sink_and_source_with_input_as_string";
         String errorTopic = "error-test_sink_and_source_with_input_as_string";
+        createTopics(kafkaContainer.getBootstrapServers(),incomingTopic,successTopic,errorTopic);
 
         //register connectors
         checkConnectorPluginIsInstalled();

@@ -15,6 +15,9 @@ import io.github.clescot.kafka.connect.http.core.queue.ConfigConstants;
 import io.github.clescot.kafka.connect.http.core.queue.KafkaRecord;
 import io.github.clescot.kafka.connect.http.core.queue.QueueFactory;
 import org.apache.kafka.clients.producer.ProducerRecord;
+import org.apache.kafka.clients.producer.RecordMetadata;
+import org.apache.kafka.common.KafkaException;
+import org.apache.kafka.common.PartitionInfo;
 import org.apache.kafka.common.serialization.Serializer;
 import org.apache.kafka.common.serialization.StringSerializer;
 import org.apache.kafka.connect.data.ConnectSchema;
@@ -45,12 +48,18 @@ public class HttpSinkTask extends SinkTask {
     private Queue<KafkaRecord> queue;
     private PublishMode publishMode;
     private HttpSinkConnectorConfig httpSinkConnectorConfig;
+    private Map<String, Object> producerSettings;
 
     public HttpSinkTask() {
         producer = new KafkaProducer<>();
     }
 
-    public HttpSinkTask(boolean mock) {
+    /**
+     * for tests only.
+     *
+     * @param mock true mock the underlying producer, false not.
+     */
+    protected HttpSinkTask(boolean mock) {
         producer = new KafkaProducer<>(mock);
     }
 
@@ -67,9 +76,7 @@ public class HttpSinkTask extends SinkTask {
         Preconditions.checkNotNull(settings, "settings cannot be null");
         this.httpSinkConnectorConfig = new HttpSinkConnectorConfig(HttpSinkConfigDefinition.config(), settings);
 
-
         httpTask = new HttpTask<>(httpSinkConnectorConfig);
-
 
         try {
             errantRecordReporter = context.errantRecordReporter();
@@ -82,19 +89,38 @@ public class HttpSinkTask extends SinkTask {
         }
 
 
-        Map<String, Object> producerSettings;
-
         this.publishMode = httpSinkConnectorConfig.getPublishMode();
         LOGGER.debug("publishMode: {}", publishMode);
 
-        switch (publishMode){
+        switch (publishMode) {
             case PRODUCER:
                 //low-level producer is configured (bootstrap.servers is a requirement)
-                Preconditions.checkArgument(!Strings.isNullOrEmpty(httpSinkConnectorConfig.getProducerBootstrapServers()),"producer.bootstrap.servers is not set.\n"+httpSinkConnectorConfig.toString());
-                Preconditions.checkArgument(!Strings.isNullOrEmpty(httpSinkConnectorConfig.getProducerTopic()),"producer.topic is not set.\n"+httpSinkConnectorConfig.toString());
+                Preconditions.checkArgument(!Strings.isNullOrEmpty(httpSinkConnectorConfig.getProducerBootstrapServers()), "producer.bootstrap.servers is not set.\n" + httpSinkConnectorConfig.toString());
+                Preconditions.checkArgument(!Strings.isNullOrEmpty(httpSinkConnectorConfig.getProducerTopic()), "producer.topic is not set.\n" + httpSinkConnectorConfig.toString());
                 Serializer<HttpExchange> serializer = getHttpExchangeSerializer(httpSinkConnectorConfig);
                 producerSettings = httpSinkConnectorConfig.originalsWithPrefix(PRODUCER_PREFIX);
                 producer.configure(producerSettings, new StringSerializer(), serializer);
+
+                //connectivity check for producer
+                LOGGER.info("test connectivity to kafka cluster for producer with address :'{}' for topic:'{}'", httpSinkConnectorConfig.getProducerBootstrapServers(), httpSinkConnectorConfig.getProducerTopic());
+                List<PartitionInfo> partitionInfos;
+                try {
+                    partitionInfos = producer.partitionsFor(httpSinkConnectorConfig.getProducerTopic());
+                } catch (KafkaException e) {
+                    LOGGER.error("connectivity error.\nproducer settings :");
+                    for (Map.Entry<String, Object> entry : producerSettings.entrySet()) {
+                        LOGGER.error("   '{}':'{}'", entry.getKey(), entry.getValue());
+                    }
+                    LOGGER.error("connectivity error :{}", e.getMessage());
+                    throw e;
+                }
+                if (partitionInfos.isEmpty()) {
+                    LOGGER.error("connectivity error");
+                    throw new IllegalStateException("no partitionInfo can be get. connectivity error.");
+                } else {
+                    LOGGER.error("connectivity OK");
+                }
+
                 break;
             case IN_MEMORY_QUEUE:
                 this.queueName = Optional.ofNullable(httpSinkConnectorConfig.getString(ConfigConstants.QUEUE_NAME)).orElse(QueueFactory.DEFAULT_QUEUE_NAME);
@@ -156,22 +182,15 @@ public class HttpSinkTask extends SinkTask {
 
     @Override
     public void put(Collection<SinkRecord> records) {
-
         Preconditions.checkNotNull(records, "records collection to be processed is null");
         if (records.isEmpty()) {
+            LOGGER.debug("no records");
             return;
         }
         Preconditions.checkNotNull(httpTask, "httpTask is null. 'start' method must be called once before put");
-
         //we submit futures to the pool
         List<CompletableFuture<HttpExchange>> completableFutures = records.stream().map(this::process).collect(Collectors.toList());
-        LOGGER.debug("22222");
         List<HttpExchange> httpExchanges = completableFutures.stream().map(CompletableFuture::join).collect(Collectors.toList());
-        LOGGER.debug("33333");
-        if(PublishMode.PRODUCER.equals(publishMode)) {
-            this.producer.flush();
-        }
-        LOGGER.debug("44444");
         LOGGER.debug("HttpExchanges created :'{}'", httpExchanges.size());
 
     }
@@ -206,17 +225,21 @@ public class HttpSinkTask extends SinkTask {
                                             sinkRecord.timestamp(),
                                             sinkRecord.timestampType());
                                     errantRecordReporter.report(myRecord, new FakeErrantRecordReporterException());
-                                }else if(PublishMode.PRODUCER.equals(this.publishMode)){
-                                    LOGGER.debug("publish.mode : 'PRODUCER' : HttpExchange published to topic : '{}'",httpSinkConnectorConfig.getProducerTopic());
+                                } else if (PublishMode.PRODUCER.equals(this.publishMode)) {
+
+                                    LOGGER.debug("publish.mode : 'PRODUCER' : HttpExchange will be published at topic : '{}'", httpSinkConnectorConfig.getProducerTopic());
                                     try {
-                                        this.producer.send(new ProducerRecord<>(httpSinkConnectorConfig.getProducerTopic(),httpExchange)).get();
-                                        LOGGER.debug("record sent");
-                                    } catch (InterruptedException | ExecutionException e) {
+                                        ProducerRecord<String, HttpExchange> myRecord = new ProducerRecord<>(httpSinkConnectorConfig.getProducerTopic(), httpExchange);
+                                        LOGGER.trace("before send to {}", httpSinkConnectorConfig.getProducerTopic());
+                                        RecordMetadata recordMetadata = this.producer.send(myRecord).get(3, TimeUnit.SECONDS);
+                                        LOGGER.debug("♥♥ record sent ♥♥");
+                                    } catch (InterruptedException | ExecutionException | TimeoutException e) {
+                                        LOGGER.debug("/!\\ ☠☠ record NOT sent ☠☠");
                                         LOGGER.error(e.getMessage());
                                         throw new RuntimeException(e);
                                     }
-                                }else {
-                                    LOGGER.debug("publish.mode : 'NONE' http exchange NOT published :'{}'",httpExchange);
+                                } else {
+                                    LOGGER.debug("publish.mode : 'NONE' http exchange NOT published :'{}'", httpExchange);
                                 }
                                 return httpExchange;
                             }
