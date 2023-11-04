@@ -102,24 +102,7 @@ public class HttpSinkTask extends SinkTask {
                 producer.configure(producerSettings, new StringSerializer(), serializer);
 
                 //connectivity check for producer
-                LOGGER.info("test connectivity to kafka cluster for producer with address :'{}' for topic:'{}'", httpSinkConnectorConfig.getProducerBootstrapServers(), httpSinkConnectorConfig.getProducerTopic());
-                List<PartitionInfo> partitionInfos;
-                try {
-                    partitionInfos = producer.partitionsFor(httpSinkConnectorConfig.getProducerTopic());
-                } catch (KafkaException e) {
-                    LOGGER.error("connectivity error.\nproducer settings :");
-                    for (Map.Entry<String, Object> entry : producerSettings.entrySet()) {
-                        LOGGER.error("   '{}':'{}'", entry.getKey(), entry.getValue());
-                    }
-                    LOGGER.error("connectivity error :{}", e.getMessage());
-                    throw e;
-                }
-                if (partitionInfos.isEmpty()) {
-                    LOGGER.error("connectivity error");
-                    throw new IllegalStateException("no partitionInfo can be get. connectivity error.");
-                } else {
-                    LOGGER.error("connectivity OK");
-                }
+                checkKafkaConnectivity();
 
                 break;
             case IN_MEMORY_QUEUE:
@@ -147,9 +130,31 @@ public class HttpSinkTask extends SinkTask {
 
     }
 
+    private void checkKafkaConnectivity() {
+        LOGGER.info("test connectivity to kafka cluster for producer with address :'{}' for topic:'{}'", httpSinkConnectorConfig.getProducerBootstrapServers(), httpSinkConnectorConfig.getProducerTopic());
+        List<PartitionInfo> partitionInfos;
+        try {
+            partitionInfos = producer.partitionsFor(httpSinkConnectorConfig.getProducerTopic());
+        } catch (KafkaException e) {
+            LOGGER.error("connectivity error.\nproducer settings :");
+            for (Map.Entry<String, Object> entry : producerSettings.entrySet()) {
+                LOGGER.error("   '{}':'{}'", entry.getKey(), entry.getValue());
+            }
+            LOGGER.error("connectivity error :{}", e.getMessage());
+            throw e;
+        }
+        if (partitionInfos.isEmpty()) {
+            LOGGER.error("connectivity error");
+            throw new IllegalStateException("no partitionInfo can be get. connectivity error.");
+        } else {
+            LOGGER.error("connectivity OK");
+        }
+    }
+
     private Serializer<HttpExchange> getHttpExchangeSerializer(HttpSinkConnectorConfig httpSinkConnectorConfig) {
         Serializer<HttpExchange> serializer;
         String format = httpSinkConnectorConfig.getProducerFormat();
+        LOGGER.info("producer format:'{}'",format);
         //if format is json
         if (JSON.equalsIgnoreCase(format)) {
             //json schema serde config
@@ -170,6 +175,12 @@ public class HttpSinkTask extends SinkTask {
                     oneOfForNullables,
                     failInvalidSchema,
                     failUnknownProperties);
+            LOGGER.info("producer jsonSchemaSerdeConfigFactory: 'autoRegisterSchemas':'{}'",autoRegisterSchemas);
+            LOGGER.info("producer jsonSchemaSerdeConfigFactory: 'jsonSchemaSpecVersion':'{}'",jsonSchemaSpecVersion);
+            LOGGER.info("producer jsonSchemaSerdeConfigFactory: 'writeDatesAsIso8601':'{}'",writeDatesAsIso8601);
+            LOGGER.info("producer jsonSchemaSerdeConfigFactory: 'oneOfForNullables':'{}'",oneOfForNullables);
+            LOGGER.info("producer jsonSchemaSerdeConfigFactory: 'failInvalidSchema':'{}'",failInvalidSchema);
+            LOGGER.info("producer jsonSchemaSerdeConfigFactory: 'failUnknownProperties':'{}'",failUnknownProperties);
             HttpExchangeSerdeFactory httpExchangeSerdeFactory = new HttpExchangeSerdeFactory(schemaRegistryClient, jsonSchemaSerdeConfigFactory);
             serializer = httpExchangeSerdeFactory.buildValueSerde().serializer();
         } else {
@@ -232,7 +243,7 @@ public class HttpSinkTask extends SinkTask {
                                         ProducerRecord<String, HttpExchange> myRecord = new ProducerRecord<>(httpSinkConnectorConfig.getProducerTopic(), httpExchange);
                                         LOGGER.trace("before send to {}", httpSinkConnectorConfig.getProducerTopic());
                                         RecordMetadata recordMetadata = this.producer.send(myRecord).get(3, TimeUnit.SECONDS);
-                                        LOGGER.debug("♥♥ record sent ♥♥");
+                                        LOGGER.debug("✉✉ record sent ✉✉");
                                     } catch (InterruptedException | ExecutionException | TimeoutException e) {
                                         LOGGER.debug("/!\\ ☠☠ record NOT sent ☠☠");
                                         LOGGER.error(e.getMessage());
