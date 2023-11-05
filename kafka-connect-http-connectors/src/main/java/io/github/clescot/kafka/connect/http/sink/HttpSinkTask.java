@@ -15,7 +15,6 @@ import io.github.clescot.kafka.connect.http.core.queue.ConfigConstants;
 import io.github.clescot.kafka.connect.http.core.queue.KafkaRecord;
 import io.github.clescot.kafka.connect.http.core.queue.QueueFactory;
 import org.apache.kafka.clients.producer.ProducerRecord;
-import org.apache.kafka.clients.producer.RecordMetadata;
 import org.apache.kafka.common.KafkaException;
 import org.apache.kafka.common.PartitionInfo;
 import org.apache.kafka.common.serialization.Serializer;
@@ -147,7 +146,7 @@ public class HttpSinkTask extends SinkTask {
             LOGGER.error("connectivity error");
             throw new IllegalStateException("no partitionInfo can be get. connectivity error.");
         } else {
-            LOGGER.error("connectivity OK");
+            LOGGER.info("connectivity OK");
         }
     }
 
@@ -242,12 +241,12 @@ public class HttpSinkTask extends SinkTask {
                                     try {
                                         ProducerRecord<String, HttpExchange> myRecord = new ProducerRecord<>(httpSinkConnectorConfig.getProducerTopic(), httpExchange);
                                         LOGGER.trace("before send to {}", httpSinkConnectorConfig.getProducerTopic());
-                                        RecordMetadata recordMetadata = this.producer.send(myRecord).get(3, TimeUnit.SECONDS);
+                                        this.producer.send(myRecord).get(3, TimeUnit.SECONDS);
                                         LOGGER.debug("✉✉ record sent ✉✉");
                                     } catch (InterruptedException | ExecutionException | TimeoutException e) {
                                         LOGGER.debug("/!\\ ☠☠ record NOT sent ☠☠");
                                         LOGGER.error(e.getMessage());
-                                        throw new RuntimeException(e);
+                                        throw new ConnectException(e);
                                     }
                                 } else {
                                     LOGGER.debug("publish.mode : 'NONE' http exchange NOT published :'{}'", httpExchange);

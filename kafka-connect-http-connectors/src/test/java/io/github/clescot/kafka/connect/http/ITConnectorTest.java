@@ -24,6 +24,8 @@ import io.confluent.kafka.serializers.json.KafkaJsonSchemaSerializerConfig;
 import io.debezium.testing.testcontainers.Connector;
 import io.debezium.testing.testcontainers.ConnectorConfiguration;
 import io.debezium.testing.testcontainers.DebeziumContainer;
+import io.github.clescot.kafka.connect.http.core.HttpExchange;
+import io.github.clescot.kafka.connect.http.core.HttpExchangeDeserializer;
 import io.github.clescot.kafka.connect.http.core.HttpRequest;
 import io.github.clescot.kafka.connect.http.core.queue.QueueFactory;
 import io.github.clescot.kafka.connect.http.sink.PublishMode;
@@ -234,7 +236,6 @@ public class ITConnectorTest {
         } else if (PublishMode.PRODUCER.name().equalsIgnoreCase(publishMode)) {
             sinkConnectorMessagesAsStringConfiguration = sinkConnectorMessagesAsStringConfiguration
                     .with("producer.bootstrap.servers", "kafka:9092")
-//                    .with("producer.bootstrap.servers", kafkaContainer.getBootstrapServers())
                     .with("producer.schema.registry.url", internalSchemaRegistryUrl)
                     .with("producer.topic", queueNameOrProducerTopic);
         }
@@ -330,7 +331,7 @@ public class ITConnectorTest {
         producer.flush();
 
         //verify http responses
-        KafkaConsumer<String, ? extends Object> consumer = getConsumer(kafkaContainer, externalSchemaRegistryUrl);
+        KafkaConsumer<String, ? extends Object> consumer = getConsumer(kafkaContainer, externalSchemaRegistryUrl,"json");
 
         consumer.subscribe(Lists.newArrayList(successTopic, errorTopic));
         List<ConsumerRecord<String, ? extends Object>> consumerRecords = drain(consumer, 1, 30);
@@ -380,8 +381,7 @@ public class ITConnectorTest {
     }
 
     @Test
-    void test_sink_in_producer_mode_with_input_as_string() throws JSONException, JsonProcessingException {
-        int test = 3;
+    void test_sink_in_producer_mode_with_input_as_string_and_producer_output_as_string() throws JSONException, JsonProcessingException {
 
         WireMockRuntimeInfo wmRuntimeInfo = wmHttp.getRuntimeInfo();
         String incomingTopic = HTTP_REQUESTS_AS_STRING;
@@ -393,12 +393,14 @@ public class ITConnectorTest {
         //register connectors
         checkConnectorPluginIsInstalled();
 
+        String producerOutputFormat = "string";
         configureSinkConnector("http-sink-connector-test_sink_and_source_with_input_as_string",
                 PublishMode.PRODUCER.name(),
                 incomingTopic,
                 "org.apache.kafka.connect.storage.StringConverter", successTopic,
                 new AbstractMap.SimpleImmutableEntry<>(CONFIG_GENERATE_MISSING_REQUEST_ID, "true"),
-                new AbstractMap.SimpleImmutableEntry<>(CONFIG_GENERATE_MISSING_CORRELATION_ID, "true")
+                new AbstractMap.SimpleImmutableEntry<>(CONFIG_GENERATE_MISSING_CORRELATION_ID, "true"),
+                new AbstractMap.SimpleImmutableEntry<>("producer.format", producerOutputFormat)
         );
         List<String> registeredConnectors = connectContainer.getRegisteredConnectors();
         String joinedRegisteredConnectors = Joiner.on(",").join(registeredConnectors);
@@ -440,7 +442,7 @@ public class ITConnectorTest {
         producer.flush();
 
         //verify http responses
-        KafkaConsumer<String, ? extends Object> consumer = getConsumer(kafkaContainer, externalSchemaRegistryUrl);
+        KafkaConsumer<String, ? extends Object> consumer = getConsumer(kafkaContainer, externalSchemaRegistryUrl,"string");
 
         consumer.subscribe(Lists.newArrayList(successTopic, errorTopic));
         List<ConsumerRecord<String, ? extends Object>> consumerRecords = drain(consumer, 1, 120);
@@ -563,7 +565,7 @@ public class ITConnectorTest {
         producer.flush();
 
         //verify http responses
-        KafkaConsumer<String, ? extends Object> consumer = getConsumer(kafkaContainer, externalSchemaRegistryUrl);
+        KafkaConsumer<String, ? extends Object> consumer = getConsumer(kafkaContainer, externalSchemaRegistryUrl,"json");
 
         consumer.subscribe(Lists.newArrayList(successTopic, errorTopic));
         List<ConsumerRecord<String, ? extends Object>> consumerRecords = drain(consumer, 1, 120);
@@ -713,7 +715,7 @@ public class ITConnectorTest {
         producer.flush();
 
         //verify http responses
-        KafkaConsumer<String, ? extends Object> consumer = getConsumer(kafkaContainer, externalSchemaRegistryUrl);
+        KafkaConsumer<String, ? extends Object> consumer = getConsumer(kafkaContainer, externalSchemaRegistryUrl,"json");
 
         consumer.subscribe(Lists.newArrayList(successTopic, errorTopic));
         int messageCount = 3;
@@ -805,7 +807,7 @@ public class ITConnectorTest {
         producer.flush();
 
         //verify http responses
-        KafkaConsumer<String, ? extends Object> consumer = getConsumer(kafkaContainer, externalSchemaRegistryUrl);
+        KafkaConsumer<String, ? extends Object> consumer = getConsumer(kafkaContainer, externalSchemaRegistryUrl,"json");
 
         consumer.subscribe(Lists.newArrayList(successTopic, errorTopic));
         List<ConsumerRecord<String, ? extends Object>> consumerRecords = drain(consumer, messageCount, 40);
@@ -898,7 +900,7 @@ public class ITConnectorTest {
         producer.flush();
 
         //verify http responses
-        KafkaConsumer<String, ? extends Object> consumer = getConsumer(kafkaContainer, externalSchemaRegistryUrl);
+        KafkaConsumer<String, HttpExchange> consumer = getConsumer(kafkaContainer, externalSchemaRegistryUrl,"json");
 
         consumer.subscribe(Lists.newArrayList(successTopic, errorTopic));
         List<ConsumerRecord<String, ? extends Object>> consumerRecords = drain(consumer, 1, 120);
@@ -1028,9 +1030,9 @@ public class ITConnectorTest {
         return new KafkaProducer<>(props);
     }
 
-    private KafkaConsumer<String, ? extends Object> getConsumer(
+    private KafkaConsumer<String, HttpExchange> getConsumer(
             KafkaContainer kafkaContainer,
-            String schemaRegistryUrl) {
+            String schemaRegistryUrl,String format) {
 
         SchemaRegistryClient schemaRegistryClient = new CachedSchemaRegistryClient(
                 schemaRegistryUrl,
@@ -1039,7 +1041,16 @@ public class ITConnectorTest {
                         new JsonSchemaProvider(),
                         new AvroSchemaProvider()),
                 Maps.newHashMap());
-        Deserializer<String> jsonSchemaDeserializer = new KafkaJsonSchemaDeserializer<>(schemaRegistryClient);
+        Deserializer<HttpExchange> deserializer;
+        switch(format) {
+            case "json":
+                deserializer = new KafkaJsonSchemaDeserializer<>(schemaRegistryClient);
+                break;
+            case "string":
+            default:
+                deserializer = new HttpExchangeDeserializer();
+                break;
+        }
 
 
         return new KafkaConsumer<>(
@@ -1051,7 +1062,7 @@ public class ITConnectorTest {
                         ConsumerConfig.AUTO_OFFSET_RESET_CONFIG,
                         "earliest"),
                 new StringDeserializer(),
-                jsonSchemaDeserializer);
+                deserializer);
     }
 
     private List<ConsumerRecord<String, ? extends Object>> drain(KafkaConsumer<String, ? extends Object> consumer,
