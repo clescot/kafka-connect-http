@@ -26,6 +26,7 @@ import io.debezium.testing.testcontainers.ConnectorConfiguration;
 import io.debezium.testing.testcontainers.DebeziumContainer;
 import io.github.clescot.kafka.connect.http.core.HttpExchange;
 import io.github.clescot.kafka.connect.http.core.HttpExchangeDeserializer;
+import io.github.clescot.kafka.connect.http.core.HttpExchangeSerializer;
 import io.github.clescot.kafka.connect.http.core.HttpRequest;
 import io.github.clescot.kafka.connect.http.core.queue.QueueFactory;
 import io.github.clescot.kafka.connect.http.sink.PublishMode;
@@ -59,7 +60,6 @@ import org.skyscreamer.jsonassert.JSONCompareMode;
 import org.skyscreamer.jsonassert.comparator.CustomComparator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.KafkaContainer;
 import org.testcontainers.containers.Network;
 import org.testcontainers.containers.output.Slf4jLogConsumer;
@@ -74,6 +74,7 @@ import org.testcontainers.utility.MountableFile;
 import java.io.IOException;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
+import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
@@ -111,12 +112,7 @@ public class ITConnectorTest {
             .withLogConsumer(new Slf4jLogConsumer(LOGGER).withSeparateOutputStreams().withPrefix("kafka-broker"))
             .waitingFor(Wait.forListeningPorts(9092));
 
-    @Container
-    public static GenericContainer<?> kcat = new GenericContainer<>("confluentinc/cp-kcat:"+CONFLUENT_VERSION)
-            .withNetwork(network)
-            .withCommand("-b", "kafka:9092","-t","success-test_sink_and_source_with_input_as_string","-C")
-            .withLogConsumer(new Slf4jLogConsumer(LOGGER).withSeparateOutputStreams().withPrefix("kcat"))
-            .dependsOn(kafkaContainer);
+
     @Container
     private static final SchemaRegistryContainer schemaRegistryContainer = new SchemaRegistryContainer("confluentinc/cp-schema-registry:" + CONFLUENT_VERSION)
             .withNetwork(network)
@@ -190,10 +186,8 @@ public class ITConnectorTest {
     public static void startContainers() throws IOException {
         hostName = InetAddress.getLocalHost().getHostName();
 
-
         //start containers
         Startables.deepStart(Stream.of(kafkaContainer, schemaRegistryContainer, connectContainer)).join();
-        kcat.start();
         internalSchemaRegistryUrl = "http://" + schemaRegistryContainer.getNetworkAliases().get(0) + ":8081";
         externalSchemaRegistryUrl = "http://" + schemaRegistryContainer.getHost() + ":" + schemaRegistryContainer.getMappedPort(8081);
 
@@ -331,10 +325,10 @@ public class ITConnectorTest {
         producer.flush();
 
         //verify http responses
-        KafkaConsumer<String, ? extends Object> consumer = getConsumer(kafkaContainer, externalSchemaRegistryUrl,"json");
+        KafkaConsumer<String, HttpExchange> consumer = getConsumer(kafkaContainer, externalSchemaRegistryUrl,"json");
 
         consumer.subscribe(Lists.newArrayList(successTopic, errorTopic));
-        List<ConsumerRecord<String, ? extends Object>> consumerRecords = drain(consumer, 1, 30);
+        List<ConsumerRecord<String, HttpExchange>> consumerRecords = drain(consumer, 1, 30);
         Assertions.assertThat(consumerRecords).hasSize(1);
         ConsumerRecord<String, ? extends Object> consumerRecord = consumerRecords.get(0);
         Assertions.assertThat(consumerRecord.key()).isNull();
@@ -384,11 +378,11 @@ public class ITConnectorTest {
     void test_sink_in_producer_mode_with_input_as_string_and_producer_output_as_string() throws JSONException, JsonProcessingException {
 
         WireMockRuntimeInfo wmRuntimeInfo = wmHttp.getRuntimeInfo();
-        String incomingTopic = HTTP_REQUESTS_AS_STRING;
+        String incomingTopic = "http-requests-string-for-producer-output-as-string";
 
-        String successTopic = "success-test_sink_and_source_with_input_as_string";
-        String errorTopic = "error-test_sink_and_source_with_input_as_string";
-        createTopics(kafkaContainer.getBootstrapServers(),incomingTopic,successTopic,errorTopic);
+        String successTopic = "success-test_sink_and_source_with_input_as_string_and_producer_output_as_string";
+        String errorTopic = "error-test_sink_and_source_with_input_as_string_and_producer_output_as_string";
+//        createTopics(kafkaContainer.getBootstrapServers(),incomingTopic,successTopic,errorTopic);
 
         //register connectors
         checkConnectorPluginIsInstalled();
@@ -442,14 +436,14 @@ public class ITConnectorTest {
         producer.flush();
 
         //verify http responses
-        KafkaConsumer<String, ? extends Object> consumer = getConsumer(kafkaContainer, externalSchemaRegistryUrl,"string");
+        KafkaConsumer<String, HttpExchange> consumer = getConsumer(kafkaContainer, externalSchemaRegistryUrl,"string");
 
         consumer.subscribe(Lists.newArrayList(successTopic, errorTopic));
-        List<ConsumerRecord<String, ? extends Object>> consumerRecords = drain(consumer, 1, 120);
+        List<ConsumerRecord<String, HttpExchange>> consumerRecords = drain(consumer, 1, 120);
         Assertions.assertThat(consumerRecords).hasSize(1);
-        ConsumerRecord<String, ? extends Object> consumerRecord = consumerRecords.get(0);
+        ConsumerRecord<String, HttpExchange> consumerRecord = consumerRecords.get(0);
         Assertions.assertThat(consumerRecord.key()).isNull();
-        String jsonAsString = consumerRecord.value().toString();
+        HttpExchange httpExchange = consumerRecord.value();
         String expectedJSON = "{\n" +
                 "  \"durationInMillis\": 0,\n" +
                 "  \"moment\": \"2022-11-10T17:19:42.740852Z\",\n" +
@@ -478,7 +472,9 @@ public class ITConnectorTest {
                 "  \"responseBody\": \"" + escapedJsonResponse + "\"\n" +
                 "}" +
                 "}";
-        JSONAssert.assertEquals(expectedJSON, jsonAsString,
+        HttpExchangeSerializer httpExchangeSerializer = new HttpExchangeSerializer();
+        String httpExchangeAsString = new String(httpExchangeSerializer.serialize("dummy", httpExchange), StandardCharsets.UTF_8);
+        JSONAssert.assertEquals(expectedJSON, httpExchangeAsString,
                 new CustomComparator(JSONCompareMode.LENIENT,
                         new Customization("moment", (o1, o2) -> true),
                         new Customization("correlationId", (o1, o2) -> true),
@@ -565,10 +561,10 @@ public class ITConnectorTest {
         producer.flush();
 
         //verify http responses
-        KafkaConsumer<String, ? extends Object> consumer = getConsumer(kafkaContainer, externalSchemaRegistryUrl,"json");
+        KafkaConsumer<String, HttpExchange> consumer = getConsumer(kafkaContainer, externalSchemaRegistryUrl,"json");
 
         consumer.subscribe(Lists.newArrayList(successTopic, errorTopic));
-        List<ConsumerRecord<String, ? extends Object>> consumerRecords = drain(consumer, 1, 120);
+        List<ConsumerRecord<String, HttpExchange>> consumerRecords = drain(consumer, 1, 120);
         Assertions.assertThat(consumerRecords).hasSize(1);
         ConsumerRecord<String, ? extends Object> consumerRecord = consumerRecords.get(0);
         Assertions.assertThat(consumerRecord.topic()).isEqualTo(successTopic);
@@ -715,11 +711,11 @@ public class ITConnectorTest {
         producer.flush();
 
         //verify http responses
-        KafkaConsumer<String, ? extends Object> consumer = getConsumer(kafkaContainer, externalSchemaRegistryUrl,"json");
+        KafkaConsumer<String, HttpExchange> consumer = getConsumer(kafkaContainer, externalSchemaRegistryUrl,"json");
 
         consumer.subscribe(Lists.newArrayList(successTopic, errorTopic));
         int messageCount = 3;
-        List<ConsumerRecord<String, ? extends Object>> consumerRecords = drain(consumer, messageCount, 120);
+        List<ConsumerRecord<String, HttpExchange>> consumerRecords = drain(consumer, messageCount, 120);
         Assertions.assertThat(consumerRecords).hasSize(3);
         int messageInErrorTopic = 0;
         int messageInSuccessTopic = 0;
@@ -807,10 +803,10 @@ public class ITConnectorTest {
         producer.flush();
 
         //verify http responses
-        KafkaConsumer<String, ? extends Object> consumer = getConsumer(kafkaContainer, externalSchemaRegistryUrl,"json");
+        KafkaConsumer<String, HttpExchange> consumer = getConsumer(kafkaContainer, externalSchemaRegistryUrl,"json");
 
         consumer.subscribe(Lists.newArrayList(successTopic, errorTopic));
-        List<ConsumerRecord<String, ? extends Object>> consumerRecords = drain(consumer, messageCount, 40);
+        List<ConsumerRecord<String, HttpExchange>> consumerRecords = drain(consumer, messageCount, 40);
         Assertions.assertThat(consumerRecords).hasSize(messageCount);
 
         int checkedMessages = 0;
@@ -903,7 +899,7 @@ public class ITConnectorTest {
         KafkaConsumer<String, HttpExchange> consumer = getConsumer(kafkaContainer, externalSchemaRegistryUrl,"json");
 
         consumer.subscribe(Lists.newArrayList(successTopic, errorTopic));
-        List<ConsumerRecord<String, ? extends Object>> consumerRecords = drain(consumer, 1, 120);
+        List<ConsumerRecord<String, HttpExchange>> consumerRecords = drain(consumer, 1, 120);
         Assertions.assertThat(consumerRecords).hasSize(1);
         ConsumerRecord<String, ? extends Object> consumerRecord = consumerRecords.get(0);
         Assertions.assertThat(consumerRecord.topic()).isEqualTo(successTopic);
@@ -1065,9 +1061,9 @@ public class ITConnectorTest {
                 deserializer);
     }
 
-    private List<ConsumerRecord<String, ? extends Object>> drain(KafkaConsumer<String, ? extends Object> consumer,
+    private List<ConsumerRecord<String, HttpExchange>> drain(KafkaConsumer<String, HttpExchange> consumer,
                                                                  int expectedRecordCount, int timeoutInSeconds) {
-        List<ConsumerRecord<String, ? extends Object>> allRecords = new ArrayList<>();
+        List<ConsumerRecord<String, HttpExchange>> allRecords = new ArrayList<>();
         Unreliables.retryUntilTrue(timeoutInSeconds, SECONDS, () -> {
             consumer.poll(Duration.ofMillis(50))
                     .iterator()
