@@ -2,11 +2,12 @@ package io.github.clescot.kafka.connect.http.sink;
 
 import com.google.common.base.Preconditions;
 import com.google.common.base.Strings;
+import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
 import io.confluent.kafka.schemaregistry.client.CachedSchemaRegistryClient;
 import io.confluent.kafka.schemaregistry.client.SchemaRegistryClient;
 import io.github.clescot.kafka.connect.http.HttpExchangeSerdeFactory;
 import io.github.clescot.kafka.connect.http.HttpTask;
-import io.github.clescot.kafka.connect.http.JsonSchemaSerdeConfigFactory;
 import io.github.clescot.kafka.connect.http.VersionUtils;
 import io.github.clescot.kafka.connect.http.client.Configuration;
 import io.github.clescot.kafka.connect.http.core.HttpExchange;
@@ -32,10 +33,17 @@ import java.util.*;
 import java.util.concurrent.*;
 import java.util.stream.Collectors;
 
+import static io.confluent.kafka.serializers.AbstractKafkaSchemaSerDeConfig.AUTO_REGISTER_SCHEMAS;
+import static io.confluent.kafka.serializers.AbstractKafkaSchemaSerDeConfig.SCHEMA_REGISTRY_URL_CONFIG;
+import static io.confluent.kafka.serializers.KafkaJsonSerializerConfig.WRITE_DATES_AS_ISO8601;
+import static io.confluent.kafka.serializers.json.KafkaJsonSchemaDeserializerConfig.FAIL_INVALID_SCHEMA;
+import static io.confluent.kafka.serializers.json.KafkaJsonSchemaDeserializerConfig.FAIL_UNKNOWN_PROPERTIES;
+import static io.confluent.kafka.serializers.json.KafkaJsonSchemaSerializerConfig.ONEOF_FOR_NULLABLES;
+
 
 public class HttpSinkTask extends SinkTask {
     private static final Logger LOGGER = LoggerFactory.getLogger(HttpSinkTask.class);
-
+    private static final List<String> JSON_SCHEMA_VERSIONS = Lists.newArrayList("draft_4","draft_6","draft_7","draft_2019_09");
     private static final VersionUtils VERSION_UTILS = new VersionUtils();
     public static final String PRODUCER_PREFIX = "producer.";
     public static final String JSON = "json";
@@ -157,30 +165,44 @@ public class HttpSinkTask extends SinkTask {
         //if format is json
         if (JSON.equalsIgnoreCase(format)) {
             //json schema serde config
+            Map<String, Object> serdeConfig = Maps.newHashMap();
+
             String schemaRegistryUrl = httpSinkConnectorConfig.getProducerSchemaRegistryUrl();
+            serdeConfig.put(SCHEMA_REGISTRY_URL_CONFIG, schemaRegistryUrl);
+
             int schemaRegistryCacheCapacity = httpSinkConnectorConfig.getProducerSchemaRegistrycacheCapacity();
             SchemaRegistryClient schemaRegistryClient = new CachedSchemaRegistryClient(schemaRegistryUrl, schemaRegistryCacheCapacity);
+
             boolean autoRegisterSchemas = httpSinkConnectorConfig.isProducerSchemaRegistryautoRegister();
-            String jsonSchemaSpecVersion = httpSinkConnectorConfig.isProducerJsonSchemaSpecVersion();
-            boolean writeDatesAsIso8601 = httpSinkConnectorConfig.isProducerJsonWriteDatesAs8601();
-            boolean oneOfForNullables = httpSinkConnectorConfig.isProducerJsonOneOfForNullables();
-            boolean failInvalidSchema = httpSinkConnectorConfig.isProducerJsonFailInvalidSchema();
-            boolean failUnknownProperties = httpSinkConnectorConfig.isProducerJsonFailUnknownProperties();
-            JsonSchemaSerdeConfigFactory jsonSchemaSerdeConfigFactory = new JsonSchemaSerdeConfigFactory(
-                    schemaRegistryUrl,
-                    autoRegisterSchemas,
-                    jsonSchemaSpecVersion,
-                    writeDatesAsIso8601,
-                    oneOfForNullables,
-                    failInvalidSchema,
-                    failUnknownProperties);
+            serdeConfig.put(AUTO_REGISTER_SCHEMAS, autoRegisterSchemas);
             LOGGER.info("producer jsonSchemaSerdeConfigFactory: 'autoRegisterSchemas':'{}'",autoRegisterSchemas);
+
+            String jsonSchemaSpecVersion = httpSinkConnectorConfig.isProducerJsonSchemaSpecVersion();
+            Preconditions.checkNotNull(jsonSchemaSpecVersion);
+            Preconditions.checkArgument(!jsonSchemaSpecVersion.isEmpty(),"'jsonSchemaSpecVersion' must not be an empty string");
+            Preconditions.checkArgument(JSON_SCHEMA_VERSIONS.contains(jsonSchemaSpecVersion.toLowerCase()),"jsonSchemaSpecVersion supported values are 'draft_4','draft_6','draft_7','draft_2019_09' but not '"+jsonSchemaSpecVersion+"'");
             LOGGER.info("producer jsonSchemaSerdeConfigFactory: 'jsonSchemaSpecVersion':'{}'",jsonSchemaSpecVersion);
+
+            boolean writeDatesAsIso8601 = httpSinkConnectorConfig.isProducerJsonWriteDatesAs8601();
+            serdeConfig.put(WRITE_DATES_AS_ISO8601, writeDatesAsIso8601);
             LOGGER.info("producer jsonSchemaSerdeConfigFactory: 'writeDatesAsIso8601':'{}'",writeDatesAsIso8601);
+
+            boolean oneOfForNullables = httpSinkConnectorConfig.isProducerJsonOneOfForNullables();
+            serdeConfig.put(ONEOF_FOR_NULLABLES, oneOfForNullables);
             LOGGER.info("producer jsonSchemaSerdeConfigFactory: 'oneOfForNullables':'{}'",oneOfForNullables);
+
+            boolean failInvalidSchema = httpSinkConnectorConfig.isProducerJsonFailInvalidSchema();
+            serdeConfig.put(FAIL_INVALID_SCHEMA, failInvalidSchema);
             LOGGER.info("producer jsonSchemaSerdeConfigFactory: 'failInvalidSchema':'{}'",failInvalidSchema);
+
+            boolean failUnknownProperties = httpSinkConnectorConfig.isProducerJsonFailUnknownProperties();
+            serdeConfig.put(FAIL_UNKNOWN_PROPERTIES, failUnknownProperties);
             LOGGER.info("producer jsonSchemaSerdeConfigFactory: 'failUnknownProperties':'{}'",failUnknownProperties);
-            HttpExchangeSerdeFactory httpExchangeSerdeFactory = new HttpExchangeSerdeFactory(schemaRegistryClient, jsonSchemaSerdeConfigFactory);
+
+            serdeConfig.put("key.subject.name.strategy",httpSinkConnectorConfig.getProducerKeySubjectNameStrategy());
+            serdeConfig.put("value.subject.name.strategy",httpSinkConnectorConfig.getProducerValueSubjectNameStrategy());
+
+            HttpExchangeSerdeFactory httpExchangeSerdeFactory = new HttpExchangeSerdeFactory(schemaRegistryClient, serdeConfig);
             serializer = httpExchangeSerdeFactory.buildValueSerde().serializer();
         } else {
             //serialize as a simple string
