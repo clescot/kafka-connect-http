@@ -51,6 +51,7 @@
             <groupId>io.confluent</groupId>
             <artifactId>kafka-schema-registry-client</artifactId>
             <version>${confluent.platform.version}</version>
+            <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>dev.failsafe</groupId>
@@ -119,12 +120,19 @@
             <groupId>io.confluent</groupId>
             <artifactId>kafka-json-schema-serializer</artifactId>
             <version>${confluent.platform.version}</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>com.fasterxml.jackson</groupId>
+                    <artifactId>jacks</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
 
         <dependency>
             <groupId>io.confluent</groupId>
             <artifactId>kafka-streams-json-schema-serde</artifactId>
             <version>${confluent.platform.version}</version>
+            <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>io.github.rburgst</groupId>
@@ -215,6 +223,12 @@
             <groupId>io.confluent</groupId>
             <artifactId>kafka-json-schema-serializer</artifactId>
             <scope>compile</scope>
+            <exclusions>
+                <exclusion>
+                    <groupId>com.fasterxml.jackson.core</groupId>
+                    <artifactId>jackson-databind</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
 
     </dependencies>
