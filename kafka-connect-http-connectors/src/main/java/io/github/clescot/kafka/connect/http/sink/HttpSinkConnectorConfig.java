@@ -32,6 +32,8 @@ public class HttpSinkConnectorConfig extends AbstractConfig {
     private boolean producerJsonOneOfForNullables;
     private boolean producerJsonFailInvalidSchema;
     private boolean producerJsonFailUnknownProperties;
+    private String producerKeySubjectNameStrategy;
+    private String producerValueSubjectNameStrategy;
 
     private final boolean meterRegistryExporterJmxActivate;
     private final boolean meterRegistryExporterPrometheusActivate;
@@ -90,6 +92,8 @@ public class HttpSinkConnectorConfig extends AbstractConfig {
         this.producerJsonOneOfForNullables = getBoolean(PRODUCER_JSON_ONE_OF_FOR_NULLABLES);
         this.producerJsonFailInvalidSchema = getBoolean(PRODUCER_JSON_FAIL_INVALID_SCHEMA);
         this.producerJsonFailUnknownProperties = getBoolean(PRODUCER_JSON_FAIL_UNKNOWN_PROPERTIES);
+        this.producerKeySubjectNameStrategy = getString(PRODUCER_KEY_SUBJECT_NAME_STRATEGY);
+        this.producerValueSubjectNameStrategy = getString(PRODUCER_VALUE_SUBJECT_NAME_STRATEGY);
 
         //meter Registry
         this.meterRegistryExporterJmxActivate = Boolean.parseBoolean(getString(METER_REGISTRY_EXPORTER_JMX_ACTIVATE));
@@ -334,6 +338,15 @@ public class HttpSinkConnectorConfig extends AbstractConfig {
 
     public String getProducerJsonSchemaSpecVersion() {
         return producerJsonSchemaSpecVersion;
+    }
+
+
+    public String getProducerKeySubjectNameStrategy() {
+        return producerKeySubjectNameStrategy;
+    }
+
+    public String getProducerValueSubjectNameStrategy() {
+        return producerValueSubjectNameStrategy;
     }
 
     @Override

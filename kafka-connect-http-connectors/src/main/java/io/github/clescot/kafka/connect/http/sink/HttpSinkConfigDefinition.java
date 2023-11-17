@@ -34,6 +34,10 @@ public class HttpSinkConfigDefinition {
     public static final String PRODUCER_JSON_FAIL_INVALID_SCHEMA_DOC = "";
     public static final String PRODUCER_JSON_FAIL_UNKNOWN_PROPERTIES = PRODUCER_PREFIX+JSON_PREFIX+"fail.unknown.properties";
     public static final String PRODUCER_JSON_FAIL_UNKNOWN_PROPERTIES_DOC = "";
+    public static final String PRODUCER_KEY_SUBJECT_NAME_STRATEGY = PRODUCER_PREFIX+JSON_PREFIX+"key.subject.name.strategy";
+    public static final String PRODUCER_KEY_SUBJECT_NAME_STRATEGY_DOC = "";
+    public static final String PRODUCER_VALUE_SUBJECT_NAME_STRATEGY = PRODUCER_PREFIX+JSON_PREFIX+"value.subject.name.strategy";
+    public static final String PRODUCER_VALUE_SUBJECT_NAME_STRATEGY_DOC = "";
 
     //meter registry
     public static final String METER_REGISTRY_EXPORTER_JMX_ACTIVATE = "meter.registry.exporter.jmx.activate";
@@ -471,6 +475,8 @@ public class HttpSinkConfigDefinition {
                     //bootstrap servers
                 .define(PRODUCER_BOOTSTRAP_SERVERS, ConfigDef.Type.STRING,"",ConfigDef.Importance.MEDIUM,PRODUCER_BOOTSTRAP_SERVERS_DOC)
                 .define(PRODUCER_TOPIC, ConfigDef.Type.STRING,"",ConfigDef.Importance.MEDIUM,PRODUCER_TOPIC_DOC)
+                .define(PRODUCER_KEY_SUBJECT_NAME_STRATEGY, ConfigDef.Type.STRING,"io.confluent.kafka.serializers.subject.TopicRecordNameStrategy",ConfigDef.Importance.MEDIUM,PRODUCER_KEY_SUBJECT_NAME_STRATEGY_DOC)
+                .define(PRODUCER_VALUE_SUBJECT_NAME_STRATEGY, ConfigDef.Type.STRING,"io.confluent.kafka.serializers.subject.TopicRecordNameStrategy",ConfigDef.Importance.MEDIUM,PRODUCER_VALUE_SUBJECT_NAME_STRATEGY_DOC)
                     //schema registry
                 .define(PRODUCER_SCHEMA_REGISTRY_URL, ConfigDef.Type.STRING,"",ConfigDef.Importance.LOW,PRODUCER_SCHEMA_REGISTRY_URL_DOC)
                 .define(PRODUCER_SCHEMA_REGISTRY_CACHE_CAPACITY, ConfigDef.Type.INT,1000,ConfigDef.Importance.LOW,PRODUCER_SCHEMA_REGISTRY_CACHE_CAPACITY_DOC)
