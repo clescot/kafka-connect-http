@@ -113,17 +113,16 @@
         </dependency>
         <dependency>
             <groupId>io.confluent</groupId>
-            <artifactId>kafka-schema-serializer</artifactId>
-            <version>${confluent.platform.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>io.confluent</groupId>
             <artifactId>kafka-json-schema-serializer</artifactId>
             <version>${confluent.platform.version}</version>
             <exclusions>
                 <exclusion>
                     <groupId>com.fasterxml.jackson</groupId>
                     <artifactId>jacks</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>com.fasterxml.jackson.core</groupId>
+                    <artifactId>jackson-databind</artifactId>
                 </exclusion>
             </exclusions>
         </dependency>
@@ -224,15 +223,10 @@
             <version>${logback.version}</version>
         </dependency>
         <dependency>
-            <groupId>io.confluent</groupId>
-            <artifactId>kafka-json-schema-serializer</artifactId>
-            <scope>compile</scope>
-            <exclusions>
-                <exclusion>
-                    <groupId>com.fasterxml.jackson.core</groupId>
-                    <artifactId>jackson-databind</artifactId>
-                </exclusion>
-            </exclusions>
+            <groupId>com.github.terma</groupId>
+            <artifactId>javaniotcpproxy</artifactId>
+            <version>1.5</version>
+            <scope>test</scope>
         </dependency>
 
     </dependencies>
