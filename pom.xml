@@ -5,7 +5,7 @@
     <description>a set of Kafka Connect connectors (Sink and Source), to interact with HTTP servers, linked via an in memory queue.</description>
     <groupId>io.github.clescot</groupId>
     <artifactId>kafka-connect-http</artifactId>
-    <version>0.7.54-SNAPSHOT</version>
+    <version>0.7.64-SNAPSHOT</version>
     <url>https://github.com/clescot/kafka-connect-http</url>
     <licenses>
         <license>
@@ -39,26 +39,26 @@
         <async.http.client.version>2.12.3</async.http.client.version>
         <commons-text.version>1.11.0</commons-text.version>
         <connect-json.version>3.6.0</connect-json.version>
-        <debezium.version>2.4.0.Final</debezium.version>
+        <debezium.version>2.4.1.Final</debezium.version>
         <kafka.version>3.6.0</kafka.version>
-        <confluent.platform.version>7.5.1</confluent.platform.version>
+        <confluent.platform.version>7.5.2</confluent.platform.version>
         <failsafe.version>3.3.2</failsafe.version>
         <guava.version>32.1.3-jre</guava.version>
-        <jackson.version>2.15.3</jackson.version>
+        <jackson.version>2.16.0</jackson.version>
         <json.assert.version>1.5.1</json.assert.version>
-        <junit.version>5.10.0</junit.version>
+        <junit.version>5.10.1</junit.version>
         <logback.version>1.4.11</logback.version>
         <maven.compiler.source>11</maven.compiler.source>
         <maven.compiler.target>11</maven.compiler.target>
         <maven.plugin.validation>VERBOSE</maven.plugin.validation>
         <mockito.version>5.7.0</mockito.version>
-        <micrometer.version>1.11.5</micrometer.version>
+        <micrometer.version>1.12.0</micrometer.version>
         <okhttp.version>4.12.0</okhttp.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <project.scm.id>github</project.scm.id>
         <slf4j.version>2.0.9</slf4j.version>
-        <testcontainers.version>1.19.1</testcontainers.version>
+        <testcontainers.version>1.19.2</testcontainers.version>
         <skipIT>false</skipIT>
         <wiremock.version>2.35.1</wiremock.version>
     </properties>
@@ -301,7 +301,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-javadoc-plugin</artifactId>
-                <version>3.6.0</version>
+                <version>3.6.2</version>
                 <executions>
                     <execution>
                         <id>attach-javadoc</id>
@@ -325,7 +325,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
-                <version>3.2.1</version>
+                <version>3.2.2</version>
                 <dependencies>
                     <dependency>
                         <groupId>me.fabriciorby</groupId>
