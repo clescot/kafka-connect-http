@@ -91,7 +91,7 @@ public class ITConnectorTest {
 
     private final static Logger LOGGER = LoggerFactory.getLogger(ITConnectorTest.class);
     private final static Slf4jLogConsumer logConsumer = new Slf4jLogConsumer(LOGGER).withSeparateOutputStreams();
-    public static final String CONFLUENT_VERSION = "7.5.1";
+    public static final String CONFLUENT_VERSION = "7.5.2";
     public static final int CACHE_CAPACITY = 100;
     public static final String HTTP_REQUESTS_AS_STRING = "http-requests-string";
     public static final String PUBLISH_TO_IN_MEMORY_QUEUE_OK = PublishMode.IN_MEMORY_QUEUE.name();
@@ -152,6 +152,14 @@ public class ITConnectorTest {
                     "org.apache.kafka.connect.runtime.isolation=ERROR," +
                     "org.reflections=ERROR," +
                     "org.apache.kafka.clients=ERROR")
+            .withEnv("KAFKA_DEBUG","true")
+//            .withEnv("KAFKA_HEAP_OPTS","")
+//            .withEnv("KAFKA_JVM_PERFORMANCE_OPTS","")
+//            .withEnv("KAFKA_GC_LOG_OPTS","")
+//            .withEnv("KAFKA_LOG4J_OPTS","")
+//            .withEnv(" KAFKA_JMX_OPTS","")
+//            .withEnv("DEFAULT_JAVA_DEBUG_OPTS","-agentlib:jdwp=transport=dt_socket,server=y,suspend=${DEBUG_SUSPEND_FLAG:-n},address=$JAVA_DEBUG_PORT")
+            .withEnv("DEBUG_SUSPEND_FLAG","y")
             .withCopyFileToContainer(MountableFile.forClasspathResource(CLIENT_TRUSTSTORE_JKS_FILENAME), "/opt/" + CLIENT_TRUSTSTORE_JKS_FILENAME)
             .withExposedPorts(8083)
             .withLogConsumer(new Slf4jLogConsumer(LOGGER).withSeparateOutputStreams().withPrefix("kafka-connect"))

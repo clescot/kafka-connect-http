@@ -2,7 +2,7 @@
 version: "3.8"
 services:
   kafka-gen:
-    image: confluentinc/cp-kafka:7.5.1
+    image: confluentinc/cp-kafka:7.5.2
     hostname: kafka-gen
     container_name: kafka-gen
     volumes:
@@ -12,7 +12,7 @@ services:
 
 
   kafka1:
-    image: confluentinc/cp-kafka:7.5.1
+    image: confluentinc/cp-kafka:7.5.2
     hostname: kafka1
     container_name: kafka1
     ports:
@@ -39,7 +39,7 @@ services:
     command: "bash -c 'export CLUSTER_ID=$(cat /tmp/clusterID/clusterID) && /etc/confluent/docker/run'"
 
   kafka2:
-    image: confluentinc/cp-kafka:7.5.1
+    image: confluentinc/cp-kafka:7.5.2
     hostname: kafka2
     container_name: kafka2
     ports:
@@ -66,7 +66,7 @@ services:
     command: "bash -c 'export CLUSTER_ID=$(cat /tmp/clusterID/clusterID) && /etc/confluent/docker/run'"
 
   kafka3:
-    image: confluentinc/cp-kafka:7.5.1
+    image: confluentinc/cp-kafka:7.5.2
     hostname: kafka3
     container_name: kafka3
     ports:
@@ -93,7 +93,7 @@ services:
     command: "bash -c 'export CLUSTER_ID=$(cat /tmp/clusterID/clusterID) && /etc/confluent/docker/run'"
 
   kafka-init:
-    image: confluentinc/cp-kafka:7.5.1
+    image: confluentinc/cp-kafka:7.5.2
     depends_on:
       - kafka1
       - kafka2
@@ -114,7 +114,7 @@ services:
       "
 
   schema-registry:
-    image: confluentinc/cp-schema-registry:7.5.1
+    image: confluentinc/cp-schema-registry:7.5.2
     container_name: schema-registry
     hostname: schema-registry
     ports:
