@@ -110,7 +110,8 @@ public class ITConnectorTest {
             .withNetworkAliases("kafka")
             .withEnv("KAFKA_PROCESS_ROLES", "broker,controller")
             .withLogConsumer(new Slf4jLogConsumer(LOGGER).withSeparateOutputStreams().withPrefix("kafka-broker"))
-            .waitingFor(Wait.forListeningPorts(9092));
+//            .waitingFor(Wait.forListeningPorts(9092))
+            ;
 
 
     @Container
