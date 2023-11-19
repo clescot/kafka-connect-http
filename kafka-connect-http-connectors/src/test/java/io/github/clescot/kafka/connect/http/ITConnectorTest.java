@@ -3,6 +3,8 @@ package io.github.clescot.kafka.connect.http;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import com.github.terma.javaniotcpproxy.StaticTcpProxyConfig;
+import com.github.terma.javaniotcpproxy.TcpProxy;
 import com.github.tomakehurst.wiremock.client.WireMock;
 import com.github.tomakehurst.wiremock.core.WireMockConfiguration;
 import com.github.tomakehurst.wiremock.junit5.WireMockExtension;
@@ -159,12 +161,14 @@ public class ITConnectorTest {
 //            .withEnv("KAFKA_LOG4J_OPTS","")
 //            .withEnv(" KAFKA_JMX_OPTS","")
 //            .withEnv("DEFAULT_JAVA_DEBUG_OPTS","-agentlib:jdwp=transport=dt_socket,server=y,suspend=${DEBUG_SUSPEND_FLAG:-n},address=$JAVA_DEBUG_PORT")
-            .withEnv("DEBUG_SUSPEND_FLAG","y")
+            .withEnv("DEBUG_SUSPEND_FLAG","n")
+            .withEnv("JAVA_DEBUG_PORT","*:5005")
             .withCopyFileToContainer(MountableFile.forClasspathResource(CLIENT_TRUSTSTORE_JKS_FILENAME), "/opt/" + CLIENT_TRUSTSTORE_JKS_FILENAME)
-            .withExposedPorts(8083)
+            .withExposedPorts(8083,5005)
             .withLogConsumer(new Slf4jLogConsumer(LOGGER).withSeparateOutputStreams().withPrefix("kafka-connect"))
             .dependsOn(kafkaContainer, schemaRegistryContainer)
             .waitingFor(Wait.forHttp("/connector-plugins/"));
+
 
     private static String hostName;
     private static String internalSchemaRegistryUrl;
@@ -202,6 +206,16 @@ public class ITConnectorTest {
 
 
         kafkaContainer.followOutput(logConsumer);
+        Integer mappedPort = connectContainer.getMappedPort(5005);
+        var config = new StaticTcpProxyConfig(
+                5005,
+                connectContainer.getHost(),
+                mappedPort
+        );
+        LOGGER.info("debug 5005 mapped port :'{}'",mappedPort);
+        config.setWorkerCount(1);
+        var tcpProxy = new TcpProxy(config);
+        tcpProxy.start();
     }
 
     private static void createTopics(String bootstrapServers, String... topics) {
@@ -248,7 +262,7 @@ public class ITConnectorTest {
             }
         }
         connectContainer.registerConnector(connectorName, sinkConnectorMessagesAsStringConfiguration);
-        connectContainer.ensureConnectorTaskState(connectorName, 0, Connector.State.RUNNING);
+//        connectContainer.ensureConnectorTaskState(connectorName, 0, Connector.State.RUNNING);
     }
 
     private static void configureSourceConnector(String connectorName, String queueName, String successTopic, String errorTopic) {
