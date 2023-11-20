@@ -463,14 +463,14 @@ public class ITConnectorTest {
         producer.flush();
 
         //verify http responses
-        KafkaConsumer<String, HttpExchange> consumer = getConsumer(kafkaContainer, externalSchemaRegistryUrl,producerOutputFormat);
+        KafkaConsumer<String, String> consumer = getConsumer(kafkaContainer, externalSchemaRegistryUrl,producerOutputFormat);
 
         consumer.subscribe(Lists.newArrayList(successTopic, errorTopic));
-        List<ConsumerRecord<String, HttpExchange>> consumerRecords = drain(consumer, 1, 120);
+        List<ConsumerRecord<String, String>> consumerRecords = drain(consumer, 1, 120);
         Assertions.assertThat(consumerRecords).hasSize(1);
-        ConsumerRecord<String, HttpExchange> consumerRecord = consumerRecords.get(0);
+        ConsumerRecord<String, String> consumerRecord = consumerRecords.get(0);
         Assertions.assertThat(consumerRecord.key()).isNull();
-        HttpExchange httpExchange = consumerRecord.value();
+        String httpExchangeAsString = consumerRecord.value();
         String expectedJSON = "{\n" +
                 "  \"durationInMillis\": 0,\n" +
                 "  \"moment\": \"2022-11-10T17:19:42.740852Z\",\n" +
@@ -499,8 +499,6 @@ public class ITConnectorTest {
                 "  \"responseBody\": \"" + escapedJsonResponse + "\"\n" +
                 "}" +
                 "}";
-        HttpExchangeSerializer httpExchangeSerializer = new HttpExchangeSerializer();
-        String httpExchangeAsString = new String(httpExchangeSerializer.serialize("dummy", httpExchange), StandardCharsets.UTF_8);
         JSONAssert.assertEquals(expectedJSON, httpExchangeAsString,
                 new CustomComparator(JSONCompareMode.LENIENT,
                         new Customization("moment", (o1, o2) -> true),
