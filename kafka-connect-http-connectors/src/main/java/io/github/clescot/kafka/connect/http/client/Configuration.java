@@ -384,9 +384,9 @@ public class Configuration {
                 .withBackoff(Duration.ofMillis(retryDelayInMs), Duration.ofMillis(retryMaxDelayInMs), retryDelayFactor)
                 .withJitter(Duration.ofMillis(retryJitterInMs))
                 .withMaxRetries(retries)
-                .onRetry(listener -> LOGGER.warn("Retry ws call result:{}, failure:{}", listener.getLastResult(), listener.getLastException()))
-                .onFailure(listener -> LOGGER.warn("ws call failed ! result:{},exception:{}", listener.getResult(), listener.getException()))
-                .onAbort(listener -> LOGGER.warn("ws call aborted ! result:{},exception:{}", listener.getResult(), listener.getException()))
+                .onRetry(listener -> LOGGER.warn("Retry  call result:{}, failure:{}", listener.getLastResult(), listener.getLastException()))
+                .onFailure(listener -> LOGGER.warn("call failed ! result:{},exception:{}", listener.getResult(), listener.getException()))
+                .onAbort(listener -> LOGGER.warn("call aborted ! result:{},exception:{}", listener.getResult(), listener.getException()))
                 .build();
     }
 
