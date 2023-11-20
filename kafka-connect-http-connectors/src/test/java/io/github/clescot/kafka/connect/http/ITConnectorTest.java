@@ -51,6 +51,7 @@ import org.apache.kafka.common.serialization.StringDeserializer;
 import org.apache.kafka.common.serialization.StringSerializer;
 import org.assertj.core.api.Assertions;
 import org.checkerframework.checker.nullness.qual.Nullable;
+import org.jetbrains.annotations.NotNull;
 import org.json.JSONException;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
@@ -357,7 +358,7 @@ public class ITConnectorTest {
         consumer.subscribe(Lists.newArrayList(successTopic, errorTopic));
         List<ConsumerRecord<String, HttpExchange>> consumerRecords = drain(consumer, 1, 30);
         Assertions.assertThat(consumerRecords).hasSize(1);
-        ConsumerRecord<String, ? extends Object> consumerRecord = consumerRecords.get(0);
+        ConsumerRecord<String, HttpExchange> consumerRecord = consumerRecords.get(0);
         Assertions.assertThat(consumerRecord.key()).isNull();
         String expectedJSON = "{\n" +
                 "  \"durationInMillis\": 0,\n" +
@@ -387,8 +388,8 @@ public class ITConnectorTest {
                 "  \"responseBody\": \"" + escapedJsonResponse + "\"\n" +
                 "}" +
                 "}";
-        HttpExchangeSerializer httpExchangeSerializer = new HttpExchangeSerializer();
-        String httpExchangeAsString = new String(httpExchangeSerializer.serialize("dummy", (HttpExchange) consumerRecord.value()), StandardCharsets.UTF_8);
+
+        String httpExchangeAsString = serializeHttpExchange(consumerRecord);
         JSONAssert.assertEquals(expectedJSON, httpExchangeAsString,
                 new CustomComparator(JSONCompareMode.LENIENT,
                         new Customization("moment", (o1, o2) -> true),
@@ -400,6 +401,12 @@ public class ITConnectorTest {
                         new Customization("responseHeaders.Matched-Stub-Id", (o1, o2) -> true)
                 ));
         Assertions.assertThat(consumerRecord.headers().toArray()).isEmpty();
+    }
+
+    @NotNull
+    private static String serializeHttpExchange(ConsumerRecord<String, HttpExchange> consumerRecord) {
+        HttpExchangeSerializer httpExchangeSerializer = new HttpExchangeSerializer();
+        return new String(httpExchangeSerializer.serialize("dummy", consumerRecord.value()), StandardCharsets.UTF_8);
     }
 
 
@@ -706,10 +713,10 @@ public class ITConnectorTest {
         consumer.subscribe(Lists.newArrayList(successTopic, errorTopic));
         List<ConsumerRecord<String, HttpExchange>> consumerRecords = drain(consumer, 1, 120);
         Assertions.assertThat(consumerRecords).hasSize(1);
-        ConsumerRecord<String, ? extends Object> consumerRecord = consumerRecords.get(0);
+        ConsumerRecord<String, HttpExchange> consumerRecord = consumerRecords.get(0);
         Assertions.assertThat(consumerRecord.topic()).isEqualTo(successTopic);
         Assertions.assertThat(consumerRecord.key()).isNull();
-        String jsonAsString = consumerRecord.value().toString();
+        String jsonAsString = serializeHttpExchange(consumerRecord);
         LOGGER.info("json response  :{}", jsonAsString);
         String expectedJSON = "{\n" +
                 "  \"durationInMillis\": 0,\n" +
@@ -860,7 +867,7 @@ public class ITConnectorTest {
         int messageInErrorTopic = 0;
         int messageInSuccessTopic = 0;
         for (int i = 0; i < messageCount; i++) {
-            ConsumerRecord<String, ? extends Object> consumerRecord = consumerRecords.get(i);
+            ConsumerRecord<String, HttpExchange> consumerRecord = consumerRecords.get(i);
             if (errorTopic.equals(consumerRecord.topic())) {
                 messageInErrorTopic++;
                 checkMessage(errorTopic, escapedJsonResponse, serverErrorStatusCode, errorStatusMessage, baseUrl, consumerRecord);
@@ -951,7 +958,7 @@ public class ITConnectorTest {
 
         int checkedMessages = 0;
         for (int i = 0; i < messageCount; i++) {
-            ConsumerRecord<String, ? extends Object> consumerRecord = consumerRecords.get(i);
+            ConsumerRecord<String, HttpExchange> consumerRecord = consumerRecords.get(i);
             checkMessage(successTopic, escapedJsonResponse, 200, statusMessage, baseUrl, consumerRecord);
             checkedMessages++;
         }
@@ -1089,10 +1096,10 @@ public class ITConnectorTest {
         Assertions.assertThat(consumerRecord.headers().toArray()).isEmpty();
     }
 
-    private static void checkMessage(String topicName, String escapedJsonResponse, int statusCode, String statusMessage, String baseUrl, ConsumerRecord<String, ?> consumerRecord) throws JSONException {
+    private static void checkMessage(String topicName, String escapedJsonResponse, int statusCode, String statusMessage, String baseUrl, ConsumerRecord<String, HttpExchange> consumerRecord) throws JSONException {
         Assertions.assertThat(consumerRecord.topic()).isEqualTo(topicName);
         Assertions.assertThat(consumerRecord.key()).isNull();
-        String jsonAsString = consumerRecord.value().toString();
+        String jsonAsString = serializeHttpExchange(consumerRecord);
         LOGGER.info("json response  :{}", jsonAsString);
         String expectedJSON = "{\n" +
                 "  \"durationInMillis\": 0,\n" +
