@@ -359,7 +359,6 @@ public class ITConnectorTest {
         Assertions.assertThat(consumerRecords).hasSize(1);
         ConsumerRecord<String, ? extends Object> consumerRecord = consumerRecords.get(0);
         Assertions.assertThat(consumerRecord.key()).isNull();
-        String jsonAsString = consumerRecord.value().toString();
         String expectedJSON = "{\n" +
                 "  \"durationInMillis\": 0,\n" +
                 "  \"moment\": \"2022-11-10T17:19:42.740852Z\",\n" +
@@ -388,7 +387,9 @@ public class ITConnectorTest {
                 "  \"responseBody\": \"" + escapedJsonResponse + "\"\n" +
                 "}" +
                 "}";
-        JSONAssert.assertEquals(expectedJSON, jsonAsString,
+        HttpExchangeSerializer httpExchangeSerializer = new HttpExchangeSerializer();
+        String httpExchangeAsString = new String(httpExchangeSerializer.serialize("dummy", (HttpExchange) consumerRecord.value()), StandardCharsets.UTF_8);
+        JSONAssert.assertEquals(expectedJSON, httpExchangeAsString,
                 new CustomComparator(JSONCompareMode.LENIENT,
                         new Customization("moment", (o1, o2) -> true),
                         new Customization("correlationId", (o1, o2) -> true),
