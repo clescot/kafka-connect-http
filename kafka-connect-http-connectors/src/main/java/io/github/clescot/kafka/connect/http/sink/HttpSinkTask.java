@@ -4,8 +4,11 @@ import com.google.common.base.Preconditions;
 import com.google.common.base.Strings;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
+import io.confluent.kafka.schemaregistry.SchemaProvider;
 import io.confluent.kafka.schemaregistry.client.CachedSchemaRegistryClient;
 import io.confluent.kafka.schemaregistry.client.SchemaRegistryClient;
+import io.confluent.kafka.schemaregistry.client.rest.RestService;
+import io.confluent.kafka.schemaregistry.json.JsonSchemaProvider;
 import io.confluent.kafka.serializers.json.KafkaJsonSchemaSerializerConfig;
 import io.github.clescot.kafka.connect.http.HttpExchangeSerdeFactory;
 import io.github.clescot.kafka.connect.http.HttpTask;
@@ -172,7 +175,19 @@ public class HttpSinkTask extends SinkTask {
             serdeConfig.put(SCHEMA_REGISTRY_URL_CONFIG, schemaRegistryUrl);
 
             int schemaRegistryCacheCapacity = httpSinkConnectorConfig.getProducerSchemaRegistrycacheCapacity();
-            SchemaRegistryClient schemaRegistryClient = new CachedSchemaRegistryClient(schemaRegistryUrl, schemaRegistryCacheCapacity);
+            List<SchemaProvider> schemaProviders = Lists.newArrayList();
+            schemaProviders.add(new JsonSchemaProvider());
+            Map<String,?> config = Maps.newHashMap();
+            //"missing.id.cache.ttl.sec"
+            //"missing.version.cache.ttl.sec"
+            //"missing.schema.cache.ttl.sec"
+            //"missing.cache.size"
+            //"bearer.auth.cache.expiry.buffer.seconds"
+            //"bearer.auth.scope.claim.name"
+            //"bearer.auth.sub.claim.name"
+            Map<String,String> httpHeaders = Maps.newHashMap();
+            RestService restService = new RestService(schemaRegistryUrl);
+            SchemaRegistryClient schemaRegistryClient = new CachedSchemaRegistryClient(restService, schemaRegistryCacheCapacity,schemaProviders,config,httpHeaders);
 
             boolean autoRegisterSchemas = httpSinkConnectorConfig.isProducerSchemaRegistryautoRegister();
             serdeConfig.put(AUTO_REGISTER_SCHEMAS, autoRegisterSchemas);
