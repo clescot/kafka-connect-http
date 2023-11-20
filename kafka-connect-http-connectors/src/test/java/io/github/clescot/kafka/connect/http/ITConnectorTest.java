@@ -1210,9 +1210,9 @@ public class ITConnectorTest {
                 deserializer);
     }
 
-    private List<ConsumerRecord<String, HttpExchange>> drain(KafkaConsumer<String, HttpExchange> consumer,
+    private <T> List<ConsumerRecord<String, T>> drain(KafkaConsumer<String, T> consumer,
                                                                  int expectedRecordCount, int timeoutInSeconds) {
-        List<ConsumerRecord<String, HttpExchange>> allRecords = new ArrayList<>();
+        List<ConsumerRecord<String, T>> allRecords = new ArrayList<>();
         Unreliables.retryUntilTrue(timeoutInSeconds, SECONDS, () -> {
             consumer.poll(Duration.ofMillis(50))
                     .iterator()
