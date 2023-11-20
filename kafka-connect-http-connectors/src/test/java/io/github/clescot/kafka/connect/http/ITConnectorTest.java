@@ -27,7 +27,6 @@ import io.debezium.testing.testcontainers.Connector;
 import io.debezium.testing.testcontainers.ConnectorConfiguration;
 import io.debezium.testing.testcontainers.DebeziumContainer;
 import io.github.clescot.kafka.connect.http.core.HttpExchange;
-import io.github.clescot.kafka.connect.http.core.HttpExchangeDeserializer;
 import io.github.clescot.kafka.connect.http.core.HttpExchangeSerializer;
 import io.github.clescot.kafka.connect.http.core.HttpRequest;
 import io.github.clescot.kafka.connect.http.core.queue.QueueFactory;
@@ -47,9 +46,11 @@ import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.common.header.Header;
 import org.apache.kafka.common.serialization.Deserializer;
+import org.apache.kafka.common.serialization.Serdes;
 import org.apache.kafka.common.serialization.StringDeserializer;
 import org.apache.kafka.common.serialization.StringSerializer;
 import org.assertj.core.api.Assertions;
+import org.checkerframework.checker.nullness.qual.Nullable;
 import org.json.JSONException;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
@@ -84,6 +85,9 @@ import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import static io.confluent.kafka.serializers.json.KafkaJsonSchemaDeserializerConfig.JSON_KEY_TYPE;
+import static io.confluent.kafka.serializers.json.KafkaJsonSchemaDeserializerConfig.JSON_VALUE_TYPE;
+import static io.confluent.kafka.serializers.json.KafkaJsonSchemaSerializerConfig.*;
 import static io.github.clescot.kafka.connect.http.sink.HttpSinkConfigDefinition.*;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.apache.kafka.clients.producer.ProducerConfig.BOOTSTRAP_SERVERS_CONFIG;
@@ -154,7 +158,7 @@ public class ITConnectorTest {
                     "org.apache.kafka.connect.runtime.isolation=ERROR," +
                     "org.reflections=ERROR," +
                     "org.apache.kafka.clients=ERROR")
-            .withEnv("KAFKA_DEBUG","true")
+//            .withEnv("KAFKA_DEBUG","true")
 //            .withEnv("KAFKA_HEAP_OPTS","")
 //            .withEnv("KAFKA_JVM_PERFORMANCE_OPTS","")
 //            .withEnv("KAFKA_GC_LOG_OPTS","")
@@ -396,6 +400,7 @@ public class ITConnectorTest {
                 ));
         Assertions.assertThat(consumerRecord.headers().toArray()).isEmpty();
     }
+
 
     @Test
     void test_sink_in_producer_mode_with_input_as_string_and_producer_output_as_string() throws JSONException, JsonProcessingException {
@@ -1156,13 +1161,13 @@ public class ITConnectorTest {
         props.put(AbstractKafkaSchemaSerDeConfig.AUTO_REGISTER_SCHEMAS, "true");
         props.put(KafkaJsonSchemaSerializerConfig.SCHEMA_SPEC_VERSION, SpecificationVersion.DRAFT_2019_09.toString());
         props.put(KafkaJsonSchemaSerializerConfig.ONEOF_FOR_NULLABLES, "false");
-        props.put(KafkaJsonSchemaSerializerConfig.FAIL_UNKNOWN_PROPERTIES, "true");
-        props.put(KafkaJsonSchemaSerializerConfig.FAIL_INVALID_SCHEMA, "true");
-        props.put(KafkaJsonSchemaSerializerConfig.WRITE_DATES_AS_ISO8601, "true");
+        props.put(FAIL_UNKNOWN_PROPERTIES, "true");
+        props.put(FAIL_INVALID_SCHEMA, "true");
+        props.put(WRITE_DATES_AS_ISO8601, "true");
         return new KafkaProducer<>(props);
     }
 
-    private KafkaConsumer<String, HttpExchange> getConsumer(
+    private <T> KafkaConsumer<String, T> getConsumer(
             KafkaContainer kafkaContainer,
             String schemaRegistryUrl,String format) {
 
@@ -1173,14 +1178,22 @@ public class ITConnectorTest {
                         new JsonSchemaProvider(),
                         new AvroSchemaProvider()),
                 Maps.newHashMap());
-        Deserializer<HttpExchange> deserializer;
+        Deserializer deserializer;
         switch(format) {
             case "json":
-                deserializer = new KafkaJsonSchemaDeserializer<>(schemaRegistryClient);
+                HashMap<String, @Nullable Object> props = Maps.newHashMap();
+                props.put("schema.registry.url",schemaRegistryUrl);
+                props.put(JSON_KEY_TYPE,String.class);
+                props.put(JSON_VALUE_TYPE,HttpExchange.class);
+                props.put(FAIL_INVALID_SCHEMA,true);
+                props.put(FAIL_UNKNOWN_PROPERTIES,true);
+                props.put(WRITE_DATES_AS_ISO8601,true);
+                props.put(SCHEMA_SPEC_VERSION,"draft_2019_09");
+                deserializer = new KafkaJsonSchemaDeserializer<>(schemaRegistryClient, props, HttpExchange.class);
                 break;
             case "string":
             default:
-                deserializer = new HttpExchangeDeserializer();
+                deserializer = Serdes.String().deserializer();
                 break;
         }
 
