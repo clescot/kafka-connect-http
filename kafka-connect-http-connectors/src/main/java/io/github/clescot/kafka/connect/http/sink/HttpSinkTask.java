@@ -6,6 +6,7 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import io.confluent.kafka.schemaregistry.client.CachedSchemaRegistryClient;
 import io.confluent.kafka.schemaregistry.client.SchemaRegistryClient;
+import io.confluent.kafka.serializers.json.KafkaJsonSchemaSerializerConfig;
 import io.github.clescot.kafka.connect.http.HttpExchangeSerdeFactory;
 import io.github.clescot.kafka.connect.http.HttpTask;
 import io.github.clescot.kafka.connect.http.VersionUtils;
@@ -181,6 +182,7 @@ public class HttpSinkTask extends SinkTask {
             Preconditions.checkNotNull(jsonSchemaSpecVersion);
             Preconditions.checkArgument(!jsonSchemaSpecVersion.isEmpty(),"'jsonSchemaSpecVersion' must not be an empty string");
             Preconditions.checkArgument(JSON_SCHEMA_VERSIONS.contains(jsonSchemaSpecVersion.toLowerCase()),"jsonSchemaSpecVersion supported values are 'draft_4','draft_6','draft_7','draft_2019_09' but not '"+jsonSchemaSpecVersion+"'");
+            serdeConfig.put(KafkaJsonSchemaSerializerConfig.SCHEMA_SPEC_VERSION, jsonSchemaSpecVersion);
             LOGGER.info("producer jsonSchemaSerdeConfigFactory: 'jsonSchemaSpecVersion':'{}'",jsonSchemaSpecVersion);
 
             boolean writeDatesAsIso8601 = httpSinkConnectorConfig.isProducerJsonWriteDatesAs8601();
