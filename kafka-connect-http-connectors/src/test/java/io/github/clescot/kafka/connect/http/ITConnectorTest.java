@@ -762,7 +762,7 @@ public class ITConnectorTest {
 
     }
 
-    //    @Test
+    @Test
     public void test_retry_policy() throws JSONException {
         WireMockRuntimeInfo httpRuntimeInfo = wmHttp.getRuntimeInfo();
         //register connectors
@@ -973,7 +973,7 @@ public class ITConnectorTest {
 
     }
 
-    //    @Test
+    @Test
     public void test_custom_truststore() throws JSONException {
 
 
@@ -1048,10 +1048,10 @@ public class ITConnectorTest {
         consumer.subscribe(Lists.newArrayList(successTopic, errorTopic));
         List<ConsumerRecord<String, HttpExchange>> consumerRecords = drain(consumer, 1, 120);
         Assertions.assertThat(consumerRecords).hasSize(1);
-        ConsumerRecord<String, ? extends Object> consumerRecord = consumerRecords.get(0);
+        ConsumerRecord<String, HttpExchange> consumerRecord = consumerRecords.get(0);
         Assertions.assertThat(consumerRecord.topic()).isEqualTo(successTopic);
         Assertions.assertThat(consumerRecord.key()).isNull();
-        String jsonAsString = consumerRecord.value().toString();
+        String jsonAsString = serializeHttpExchange(consumerRecord);
         LOGGER.info("json response  :{}", jsonAsString);
         String expectedJSON = "{\n" +
                 "  \"durationInMillis\": 0,\n" +
@@ -1100,7 +1100,7 @@ public class ITConnectorTest {
         Assertions.assertThat(consumerRecord.topic()).isEqualTo(topicName);
         Assertions.assertThat(consumerRecord.key()).isNull();
         String jsonAsString = serializeHttpExchange(consumerRecord);
-        LOGGER.info("json response  :{}", jsonAsString);
+        LOGGER.info("topic:'{}' json response  :{}",topicName, jsonAsString);
         String expectedJSON = "{\n" +
                 "  \"durationInMillis\": 0,\n" +
                 "  \"moment\": \"2022-11-10T17:19:42.740852Z\",\n" +
