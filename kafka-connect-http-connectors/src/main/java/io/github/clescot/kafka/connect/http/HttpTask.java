@@ -77,7 +77,7 @@ public class HttpTask<T extends ConnectRecord<T>> {
         this.customConfigurations = buildCustomConfigurations(config, defaultConfiguration, executorService);
     }
 
-    private List<Configuration> buildCustomConfigurations(AbstractConfig config,
+        private List<Configuration> buildCustomConfigurations(AbstractConfig config,
                                                           Configuration defaultConfiguration,
                                                           ExecutorService executorService) {
         CopyOnWriteArrayList<Configuration> configurations = Lists.newCopyOnWriteArrayList();
