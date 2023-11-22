@@ -104,7 +104,7 @@ public class HttpSinkConfigDefinition {
     public static final String DEFAULT_CONFIGURATION_PREFIX = "config.default.";
 
     //retry policy
-    public static final String DEFAULT_RETRY_POLICY_PREFIX = "retry.policy.";
+    public static final String RETRY_POLICY_PREFIX = "retry.policy.";
 
     //default values
     private static final int DEFAULT_RETRIES_VALUE = 1;
@@ -114,24 +114,24 @@ public class HttpSinkConfigDefinition {
     public static final long DEFAULT_RETRY_JITTER_IN_MS_VALUE = 500;
 
 
-    public static final String RETRIES = DEFAULT_RETRY_POLICY_PREFIX+"retries";
-    public static final String CONFIG_DEFAULT_RETRIES = DEFAULT_CONFIGURATION_PREFIX + DEFAULT_RETRY_POLICY_PREFIX+ RETRIES;
+    public static final String RETRIES = RETRY_POLICY_PREFIX +"retries";
+    public static final String CONFIG_DEFAULT_RETRIES = DEFAULT_CONFIGURATION_PREFIX +  RETRIES;
     public static final String CONFIG_DEFAULT_RETRIES_DOC = "if set with other default retry parameters, permit to define a default retry policy, which can be overriden in the httpRequest object. Define how many retries before an error is thrown";
 
-    public static final String RETRY_DELAY_IN_MS = "retry.delay.in.ms";
-    public static final String CONFIG_DEFAULT_RETRY_DELAY_IN_MS = DEFAULT_CONFIGURATION_PREFIX + DEFAULT_RETRY_POLICY_PREFIX + RETRY_DELAY_IN_MS;
+    public static final String RETRY_DELAY_IN_MS = RETRY_POLICY_PREFIX +"retry.delay.in.ms";
+    public static final String CONFIG_DEFAULT_RETRY_DELAY_IN_MS = DEFAULT_CONFIGURATION_PREFIX + RETRY_DELAY_IN_MS;
     public static final String CONFIG_DEFAULT_RETRY_DELAY_IN_MS_DOC = "if set with other default retry parameters, permit to define a default retry policy, which can be overriden in the httpRequest object. Define how long wait initially before first retry";
 
-    public static final String RETRY_MAX_DELAY_IN_MS = "retry.max.delay.in.ms";
-    public static final String CONFIG_DEFAULT_RETRY_MAX_DELAY_IN_MS = DEFAULT_CONFIGURATION_PREFIX + DEFAULT_RETRY_POLICY_PREFIX+RETRY_MAX_DELAY_IN_MS;
+    public static final String RETRY_MAX_DELAY_IN_MS = RETRY_POLICY_PREFIX + "retry.max.delay.in.ms";
+    public static final String CONFIG_DEFAULT_RETRY_MAX_DELAY_IN_MS = DEFAULT_CONFIGURATION_PREFIX + RETRY_MAX_DELAY_IN_MS;
     public static final String CONFIG_DEFAULT_RETRY_MAX_DELAY_IN_MS_DOC = "if set with other default retry parameters, permit to define a default retry policy, which can be overriden in the httpRequest object. Define how long max wait before retry";
 
-    public static final String RETRY_DELAY_FACTOR = "retry.delay.factor";
-    public static final String CONFIG_DEFAULT_RETRY_DELAY_FACTOR = DEFAULT_CONFIGURATION_PREFIX + DEFAULT_RETRY_POLICY_PREFIX+RETRY_DELAY_FACTOR;
+    public static final String RETRY_DELAY_FACTOR = RETRY_POLICY_PREFIX + "retry.delay.factor";
+    public static final String CONFIG_DEFAULT_RETRY_DELAY_FACTOR = DEFAULT_CONFIGURATION_PREFIX + RETRY_DELAY_FACTOR;
     public static final String CONFIG_DEFAULT_RETRY_DELAY_FACTOR_DOC = "if set with other default retry parameters, permit to define a default retry policy, which can be overriden in the httpRequest object. Define the factor to multiply the previous delay to define the current retry delay";
 
-    public static final String RETRY_JITTER_IN_MS = "retry.jitter.in.ms";
-    public static final String CONFIG_DEFAULT_RETRY_JITTER_IN_MS = DEFAULT_CONFIGURATION_PREFIX + DEFAULT_RETRY_POLICY_PREFIX+RETRY_JITTER_IN_MS;
+    public static final String RETRY_JITTER_IN_MS = RETRY_POLICY_PREFIX + "retry.jitter.in.ms";
+    public static final String CONFIG_DEFAULT_RETRY_JITTER_IN_MS = DEFAULT_CONFIGURATION_PREFIX + RETRY_JITTER_IN_MS;
     public static final String CONFIG_DEFAULT_RETRY_JITTER_IN_MS_DOC = "if set with other default retry parameters, permit to define a default retry policy, which can be overriden in the httpRequest object. " +
             "Define max entropy to add, to prevent many retry policies instances with the same parameters, to flood servers at the same time";
 
@@ -203,7 +203,7 @@ public class HttpSinkConfigDefinition {
     public static final String DEFAULT_DEFAULT_RETRY_RESPONSE_CODE_REGEX = "^5[0-9][0-9]$";
 
     public static final String CONFIG_DEFAULT_DEFAULT_SUCCESS_RESPONSE_CODE_REGEX = "^[1-2][0-9][0-9]$";
-    public static final String RETRY_RESPONSE_CODE_REGEX = DEFAULT_RETRY_POLICY_PREFIX+"response.code.regex";
+    public static final String RETRY_RESPONSE_CODE_REGEX = RETRY_POLICY_PREFIX +"response.code.regex";
     public static final String CONFIG_DEFAULT_RETRY_RESPONSE_CODE_REGEX = DEFAULT_CONFIGURATION_PREFIX + RETRY_RESPONSE_CODE_REGEX;
     public static final String DEFAULT_RETRY_RESPONSE_CODE_REGEX_DOC = "regex which define if a retry need to be triggered, based on the response status code. default is '"+ CONFIG_DEFAULT_DEFAULT_SUCCESS_RESPONSE_CODE_REGEX +"'";
 
