@@ -762,7 +762,7 @@ public class ITConnectorTest {
     }
 
     @Test
-    public void test_retry_policy() throws JSONException {
+    void test_retry_policy() throws JSONException {
         WireMockRuntimeInfo httpRuntimeInfo = wmHttp.getRuntimeInfo();
         //register connectors
         String suffix = "retry_policy";
@@ -861,22 +861,24 @@ public class ITConnectorTest {
         KafkaConsumer<String, HttpExchange> consumer = getConsumer(kafkaContainer, externalSchemaRegistryUrl,"json");
 
         consumer.subscribe(Lists.newArrayList(successTopic, errorTopic));
-        int messageCount = 3;
+        LOGGER.info("subscribing to successTopic:'{}' and errorTopic:'{}'",successTopic,errorTopic);
+
+        int messageCount = 1;
         List<ConsumerRecord<String, HttpExchange>> consumerRecords = drain(consumer, messageCount, 120);
-        Assertions.assertThat(consumerRecords).hasSize(3);
+        Assertions.assertThat(consumerRecords).hasSize(1);
         int messageInErrorTopic = 0;
         int messageInSuccessTopic = 0;
         for (int i = 0; i < messageCount; i++) {
             ConsumerRecord<String, HttpExchange> consumerRecord = consumerRecords.get(i);
             if (errorTopic.equals(consumerRecord.topic())) {
                 messageInErrorTopic++;
-                checkMessage(errorTopic, escapedJsonResponse, serverErrorStatusCode, errorStatusMessage, baseUrl, consumerRecord);
+                checkMessage(errorTopic, escapedJsonResponse, serverErrorStatusCode, errorStatusMessage, baseUrl, consumerRecord,1);
             } else {
                 messageInSuccessTopic++;
-                checkMessage(successTopic, escapedJsonResponse, successStatusCode, successStatusMessage, baseUrl, consumerRecord);
+                checkMessage(successTopic, escapedJsonResponse, successStatusCode, successStatusMessage, baseUrl, consumerRecord,3);
             }
         }
-        Assertions.assertThat(messageInErrorTopic).isEqualTo(2);
+        Assertions.assertThat(messageInErrorTopic).isZero();
         Assertions.assertThat(messageInSuccessTopic).isEqualTo(1);
     }
 
@@ -959,7 +961,7 @@ public class ITConnectorTest {
         int checkedMessages = 0;
         for (int i = 0; i < messageCount; i++) {
             ConsumerRecord<String, HttpExchange> consumerRecord = consumerRecords.get(i);
-            checkMessage(successTopic, escapedJsonResponse, 200, statusMessage, baseUrl, consumerRecord);
+            checkMessage(successTopic, escapedJsonResponse, 200, statusMessage, baseUrl, consumerRecord,1);
             checkedMessages++;
         }
         stopwatch.stop();
@@ -974,7 +976,7 @@ public class ITConnectorTest {
     }
 
     @Test
-    public void test_custom_truststore() throws JSONException {
+    void test_custom_truststore() throws JSONException {
 
 
         WireMockRuntimeInfo httpsRuntimeInfo = wmHttps.getRuntimeInfo();
@@ -1096,7 +1098,7 @@ public class ITConnectorTest {
         Assertions.assertThat(consumerRecord.headers().toArray()).isEmpty();
     }
 
-    private static void checkMessage(String topicName, String escapedJsonResponse, int statusCode, String statusMessage, String baseUrl, ConsumerRecord<String, HttpExchange> consumerRecord) throws JSONException {
+    private static void checkMessage(String topicName, String escapedJsonResponse, int statusCode, String statusMessage, String baseUrl, ConsumerRecord<String, HttpExchange> consumerRecord,int attempts) throws JSONException {
         Assertions.assertThat(consumerRecord.topic()).isEqualTo(topicName);
         Assertions.assertThat(consumerRecord.key()).isNull();
         String jsonAsString = serializeHttpExchange(consumerRecord);
@@ -1104,7 +1106,7 @@ public class ITConnectorTest {
         String expectedJSON = "{\n" +
                 "  \"durationInMillis\": 0,\n" +
                 "  \"moment\": \"2022-11-10T17:19:42.740852Z\",\n" +
-                "  \"attempts\": 1,\n" +
+                "  \"attempts\": "+attempts+",\n" +
                 "  \"httpRequest\": {\n" +
                 "    \"headers\": {\n" +
                 "      \"X-Correlation-ID\": [\n" +
