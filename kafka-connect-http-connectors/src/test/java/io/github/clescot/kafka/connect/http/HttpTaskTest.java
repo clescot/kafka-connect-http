@@ -1,5 +1,11 @@
 package io.github.clescot.kafka.connect.http;
 
+import com.github.tomakehurst.wiremock.client.WireMock;
+import com.github.tomakehurst.wiremock.core.Options;
+import com.github.tomakehurst.wiremock.core.WireMockConfiguration;
+import com.github.tomakehurst.wiremock.http.trafficlistener.ConsoleNotifyingWiremockNetworkTrafficListener;
+import com.github.tomakehurst.wiremock.junit5.WireMockExtension;
+import com.github.tomakehurst.wiremock.junit5.WireMockRuntimeInfo;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import io.confluent.connect.json.JsonSchemaConverter;
@@ -26,8 +32,11 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.RegisterExtension;
 
 import java.io.IOException;
+import java.net.DatagramSocket;
+import java.net.InetAddress;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -35,6 +44,7 @@ import java.util.Optional;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
+import static com.github.tomakehurst.wiremock.stubbing.Scenario.STARTED;
 import static io.confluent.kafka.serializers.json.KafkaJsonSchemaDeserializerConfig.JSON_VALUE_TYPE;
 import static io.github.clescot.kafka.connect.http.core.HttpRequestAsStruct.SCHEMA;
 import static io.github.clescot.kafka.connect.http.sink.HttpSinkConfigDefinition.CONFIG_HTTP_CLIENT_ASYNC_FIXED_THREAD_POOL_SIZE;
@@ -46,6 +56,23 @@ class HttpTaskTest {
     private static final String DUMMY_METHOD = "POST";
     private static final String DUMMY_BODY_TYPE = "STRING";
     private static final ExecutorService executorService = Executors.newFixedThreadPool(2);
+    public static final String AUTHORIZED_STATE = "Authorized";
+    public static final String UNAUTHORIZED_STATE = "Unauthorized";
+    @RegisterExtension
+    static WireMockExtension wmHttp;
+
+    static {
+
+        wmHttp = WireMockExtension.newInstance()
+                .options(
+                        WireMockConfiguration.wireMockConfig()
+                                .dynamicPort()
+                                .networkTrafficListener(new ConsoleNotifyingWiremockNetworkTrafficListener())
+                                .useChunkedTransferEncoding(Options.ChunkedEncodingPolicy.NEVER)
+                )
+                .build();
+    }
+
     @Nested
     class BuildHttpRequest {
 
@@ -92,7 +119,7 @@ class HttpTaskTest {
         void test_buildHttpRequest_http_request_as_json_schema() throws IOException {
             //given
             List<Header> headers = Lists.newArrayList();
-            HttpRequest dummyHttpRequest = getDummyHttpRequest();
+            HttpRequest dummyHttpRequest = getDummyHttpRequest(DUMMY_URL);
             String topic = "myTopic";
             SchemaRegistryClient schemaRegistryClient = getSchemaRegistryClient();
             registerSchema(schemaRegistryClient, topic, 1, 1, HttpRequest.SCHEMA_AS_STRING);
@@ -120,7 +147,7 @@ class HttpTaskTest {
         void test_buildHttpRequest_http_request_as_struct() {
             //given
             List<Header> headers = Lists.newArrayList();
-            SinkRecord sinkRecord = new SinkRecord("myTopic", 0, Schema.STRING_SCHEMA, "key", Schema.STRING_SCHEMA, getDummyHttpRequestAsStruct(), -1, System.currentTimeMillis(), TimestampType.CREATE_TIME, headers);
+            SinkRecord sinkRecord = new SinkRecord("myTopic", 0, Schema.STRING_SCHEMA, "key", Schema.STRING_SCHEMA, getDummyHttpRequestAsStruct(DUMMY_URL), -1, System.currentTimeMillis(), TimestampType.CREATE_TIME, headers);
             //when
             HttpRequest httpRequest = httpTask.buildHttpRequest(sinkRecord);
             //then
@@ -133,9 +160,48 @@ class HttpTaskTest {
 
     }
 
+
+    @Nested
+    class callWithRetryPolicy {
+        private HttpTask<SinkRecord> httpTask;
+
+        @BeforeEach
+        public void setUp(){
+            Map<String,Object> configs = Maps.newHashMap();
+            configs.put(CONFIG_HTTP_CLIENT_ASYNC_FIXED_THREAD_POOL_SIZE,2);
+            AbstractConfig config = new HttpSinkConnectorConfig(configs);
+            httpTask = new HttpTask<>(config);
+        }
+
+        @Test
+        void test_successful_request_at_first_time() {
+
+            //given
+            SinkRecord sinkRecord = new SinkRecord("myTopic", 0, Schema.STRING_SCHEMA, "key", Schema.STRING_SCHEMA, getDummyHttpRequestAsStruct(DUMMY_URL), -1, System.currentTimeMillis(), TimestampType.CREATE_TIME, Lists.newArrayList());
+            String scenario = "test_successful_request_at_first_time";
+            WireMockRuntimeInfo wmRuntimeInfo = wmHttp.getRuntimeInfo();
+            WireMock wireMock = wmRuntimeInfo.getWireMock();
+            wireMock
+                    .register(WireMock.post("/ping").inScenario(scenario)
+                            .whenScenarioStateIs(STARTED)
+                            .willReturn(WireMock.aResponse()
+                                    .withStatus(200)
+                                    .withStatusMessage("OK")
+                                    .withBody("")
+                            ).willSetStateTo(AUTHORIZED_STATE)
+                    );
+            //when
+//            CompletableFuture<KafkaRecord> response = httpTask.callWithRetryPolicy(sinkRecord,);
+
+            //then
+
+        }
+
+    }
+
     @NotNull
-    private static HttpRequest getDummyHttpRequest() {
-        HttpRequest httpRequest = new HttpRequest(DUMMY_URL, DUMMY_METHOD, DUMMY_BODY_TYPE);
+    private static HttpRequest getDummyHttpRequest(String url) {
+        HttpRequest httpRequest = new HttpRequest(url, DUMMY_METHOD, DUMMY_BODY_TYPE);
         Map<String, List<String>> headers = Maps.newHashMap();
         headers.put("Content-Type", Lists.newArrayList("application/json"));
         httpRequest.setHeaders(headers);
@@ -155,8 +221,8 @@ class HttpTaskTest {
         return jsonSchemaConverter;
     }
 
-    private Struct getDummyHttpRequestAsStruct() {
-        HttpRequest httpRequest = getDummyHttpRequest();
+    private Struct getDummyHttpRequestAsStruct(String url) {
+        HttpRequest httpRequest = getDummyHttpRequest(url);
         HttpRequestAsStruct httpRequestAsStruct = new HttpRequestAsStruct(httpRequest);
         return httpRequestAsStruct.toStruct();
     }
@@ -192,5 +258,14 @@ class HttpTaskTest {
                 "  \"bodyAsMultipart\": [],\n" +
                 "  \"bodyType\": \"" + DUMMY_BODY_TYPE + "\"\n" +
                 "}";
+    }
+
+    private String getIP() {
+        try (DatagramSocket datagramSocket = new DatagramSocket()) {
+            datagramSocket.connect(InetAddress.getByName("8.8.8.8"), 12345);
+            return datagramSocket.getLocalAddress().getHostAddress();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 }

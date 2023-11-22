@@ -9,7 +9,10 @@ import dev.failsafe.Failsafe;
 import dev.failsafe.RetryPolicy;
 import io.github.clescot.kafka.connect.http.client.Configuration;
 import io.github.clescot.kafka.connect.http.client.HttpClient;
+import io.github.clescot.kafka.connect.http.client.HttpClientFactory;
 import io.github.clescot.kafka.connect.http.client.HttpException;
+import io.github.clescot.kafka.connect.http.client.ahc.AHCHttpClientFactory;
+import io.github.clescot.kafka.connect.http.client.okhttp.OkHttpClientFactory;
 import io.github.clescot.kafka.connect.http.core.HttpExchange;
 import io.github.clescot.kafka.connect.http.core.HttpRequest;
 import io.github.clescot.kafka.connect.http.core.HttpRequestAsStruct;
@@ -39,6 +42,7 @@ import java.nio.charset.StandardCharsets;
 import java.time.OffsetDateTime;
 import java.time.ZoneId;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -72,18 +76,35 @@ public class HttpTask<T extends ConnectRecord<T>> {
         //bind metrics to MeterRegistry and ExecutorService
         bindMetrics(config, meterRegistry, executorService);
 
-        this.defaultConfiguration = new Configuration(DEFAULT_CONFIGURATION_ID, config, executorService, meterRegistry);
 
-        this.customConfigurations = buildCustomConfigurations(config, defaultConfiguration, executorService);
+
+
+        Map<String, Object> defaultConfigurationSettings = config.originalsWithPrefix("config." + DEFAULT_CONFIGURATION_ID + ".");
+        String httpClientImplementation = (String) Optional.ofNullable(defaultConfigurationSettings.get(CONFIG_HTTP_CLIENT_IMPLEMENTATION)).orElse(OKHTTP_IMPLEMENTATION);
+        HttpClientFactory httpClientFactory;
+        if (AHC_IMPLEMENTATION.equalsIgnoreCase(httpClientImplementation)) {
+            httpClientFactory = new AHCHttpClientFactory();
+        } else if (OKHTTP_IMPLEMENTATION.equalsIgnoreCase(httpClientImplementation)) {
+            httpClientFactory = new OkHttpClientFactory();
+        } else {
+            LOGGER.error("unknown HttpClient implementation : must be either 'ahc' or 'okhttp', but is '{}'", httpClientImplementation);
+            throw new IllegalArgumentException("unknown HttpClient implementation : must be either 'ahc' or 'okhttp', but is '" + httpClientImplementation + "'");
+        }
+
+
+        this.defaultConfiguration = new Configuration(DEFAULT_CONFIGURATION_ID,httpClientFactory, config, executorService, meterRegistry);
+
+        this.customConfigurations = buildCustomConfigurations(httpClientFactory,config, defaultConfiguration, executorService);
     }
 
-        private List<Configuration> buildCustomConfigurations(AbstractConfig config,
-                                                          Configuration defaultConfiguration,
-                                                          ExecutorService executorService) {
+        private List<Configuration> buildCustomConfigurations(HttpClientFactory httpClientFactory,
+                                                              AbstractConfig config,
+                                                              Configuration defaultConfiguration,
+                                                              ExecutorService executorService) {
         CopyOnWriteArrayList<Configuration> configurations = Lists.newCopyOnWriteArrayList();
 
         for (String configId : Optional.ofNullable(config.getList(CONFIGURATION_IDS)).orElse(Lists.newArrayList())) {
-            Configuration configuration = new Configuration(configId, config, executorService, meterRegistry);
+            Configuration configuration = new Configuration(configId,httpClientFactory, config, executorService, meterRegistry);
             if (configuration.getHttpClient() == null) {
                 configuration.setHttpClient(defaultConfiguration.getHttpClient());
             }

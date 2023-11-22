@@ -6,10 +6,7 @@ import com.google.common.collect.Maps;
 import dev.failsafe.RateLimiter;
 import dev.failsafe.RetryPolicy;
 import io.github.clescot.kafka.connect.http.VersionUtils;
-import io.github.clescot.kafka.connect.http.client.ahc.AHCHttpClientFactory;
 import io.github.clescot.kafka.connect.http.client.config.*;
-import io.github.clescot.kafka.connect.http.client.okhttp.OkHttpClientFactory;
-import io.github.clescot.kafka.connect.http.client.proxy.ProxySelectorFactory;
 import io.github.clescot.kafka.connect.http.core.HttpExchange;
 import io.github.clescot.kafka.connect.http.core.HttpRequest;
 import io.github.clescot.kafka.connect.http.core.HttpResponse;
@@ -20,11 +17,6 @@ import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.lang.reflect.InvocationTargetException;
-import java.net.InetSocketAddress;
-import java.net.Proxy;
-import java.net.ProxySelector;
-import java.net.SocketAddress;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.time.Duration;
@@ -49,7 +41,7 @@ import static io.github.clescot.kafka.connect.http.sink.HttpSinkConfigDefinition
  * </ul>
  * Each configuration owns an Http Client instance.
  */
-public class Configuration<Req,Res> {
+public class Configuration<REQ,RES> {
     private static final Logger LOGGER = LoggerFactory.getLogger(Configuration.class);
 
 
@@ -64,6 +56,9 @@ public class Configuration<Req,Res> {
     public static final String SHA_1_PRNG = "SHA1PRNG";
     public static final String MUST_BE_SET_TOO = " must be set too.";
     public static final String CONFIGURATION_ID = "configuration.id";
+    public static final String USER_AGENT_HTTP_CLIENT_DEFAULT_MODE = "http_client";
+    public static final String USER_AGENT_PROJECT_MODE = "project";
+    public static final String USER_AGENT_CUSTOM_MODE = "custom";
 
     private final Predicate<HttpRequest> mainpredicate;
 
@@ -88,11 +83,12 @@ public class Configuration<Req,Res> {
     private RetryPolicy<HttpExchange> retryPolicy;
 
     //http client
-    private HttpClient httpClient;
+    private HttpClient<REQ,RES> httpClient;
     public final String id;
     private final Map<String, Object> settings;
     private final Function<HttpRequest, HttpRequest> enrichRequestFunction;
     public Configuration(String id,
+                         HttpClientFactory<REQ,RES> httpClientFactory,
                          AbstractConfig config,
                          ExecutorService executorService,
                          CompositeMeterRegistry meterRegistry) {
@@ -108,16 +104,7 @@ public class Configuration<Req,Res> {
 
         Random random = getRandom(settings);
 
-        String httpClientImplementation = (String) Optional.ofNullable(settings.get(CONFIG_HTTP_CLIENT_IMPLEMENTATION)).orElse(OKHTTP_IMPLEMENTATION);
-        if (AHC_IMPLEMENTATION.equalsIgnoreCase(httpClientImplementation)) {
-            this.httpClient =this.buildHttpClient(AHCHttpClientFactory.class,settings, executorService, meterRegistry, random);
-        } else if (OKHTTP_IMPLEMENTATION.equalsIgnoreCase(httpClientImplementation)) {
-            this.httpClient = this.buildHttpClient(OkHttpClientFactory.class,settings, executorService, meterRegistry, random);
-        } else {
-            LOGGER.error("unknown HttpClient implementation : must be either 'ahc' or 'okhttp', but is '{}'", httpClientImplementation);
-            throw new IllegalArgumentException("unknown HttpClient implementation : must be either 'ahc' or 'okhttp', but is '" + httpClientImplementation + "'");
-        }
-
+        this.httpClient = httpClientFactory.buildHttpClient(settings, executorService, meterRegistry, random);
 
         //enrich request
         List<Function<HttpRequest,HttpRequest>> enrichRequestFunctions = Lists.newArrayList();
@@ -148,15 +135,15 @@ public class Configuration<Req,Res> {
         enrichRequestFunctions.add(addMissingCorrelationIdHeaderToHttpRequestFunction);
 
         //activateUserAgentHeaderToHttpRequestFunction
-        String activateUserAgentHeaderToHttpRequestFunction = (String) settings.getOrDefault(USER_AGENT_OVERRIDE,"http_client");
-        if ("http_client".equalsIgnoreCase(activateUserAgentHeaderToHttpRequestFunction)) {
+        String activateUserAgentHeaderToHttpRequestFunction = (String) settings.getOrDefault(USER_AGENT_OVERRIDE, USER_AGENT_HTTP_CLIENT_DEFAULT_MODE);
+        if (USER_AGENT_HTTP_CLIENT_DEFAULT_MODE.equalsIgnoreCase(activateUserAgentHeaderToHttpRequestFunction)) {
             LOGGER.trace("userAgentHeaderToHttpRequestFunction : 'http_client' configured. No need to activate UserAgentInterceptor");
-        }else if("project".equalsIgnoreCase(activateUserAgentHeaderToHttpRequestFunction)){
+        }else if(USER_AGENT_PROJECT_MODE.equalsIgnoreCase(activateUserAgentHeaderToHttpRequestFunction)){
             VersionUtils versionUtils = new VersionUtils();
             String projectUserAgent = "Mozilla/5.0 (compatible;kafka-connect-http/"+ versionUtils.getVersion() +"; "+httpClient.getEngineId()+"; https://github.com/clescot/kafka-connect-http)";
             this.addUserAgentHeaderToHttpRequestFunction = new AddUserAgentHeaderToHttpRequestFunction(Lists.newArrayList(projectUserAgent), random);
             enrichRequestFunctions.add(addUserAgentHeaderToHttpRequestFunction);
-        }else if("custom".equalsIgnoreCase(activateUserAgentHeaderToHttpRequestFunction)){
+        }else if(USER_AGENT_CUSTOM_MODE.equalsIgnoreCase(activateUserAgentHeaderToHttpRequestFunction)){
             String userAgentValuesAsString = settings.getOrDefault(USER_AGENT_CUSTOM_VALUES, StringUtils.EMPTY).toString();
             List<String> userAgentValues = Arrays.asList(userAgentValuesAsString.split("\\|"));
             this.addUserAgentHeaderToHttpRequestFunction = new AddUserAgentHeaderToHttpRequestFunction(userAgentValues, random);
@@ -281,38 +268,7 @@ public class Configuration<Req,Res> {
         return this.addSuccessStatusToHttpExchangeFunction.apply(httpExchange);
     }
 
-    private <Req, Res> HttpClient<Req, Res> buildHttpClient(Class<? extends HttpClientFactory<Req, Res>> httpClientFactoryClass,Map<String, Object> config,
-                                                            ExecutorService executorService,
-                                                            CompositeMeterRegistry meterRegistry, Random random) {
 
-        HttpClientFactory<Req, Res> httpClientFactory;
-        try {
-            httpClientFactory = httpClientFactoryClass.getDeclaredConstructor().newInstance();
-            LOGGER.debug("using HttpClientFactory implementation: {}", httpClientFactory.getClass().getName());
-        } catch (NoSuchMethodException | InstantiationException | IllegalAccessException |
-                 InvocationTargetException e) {
-            throw new HttpException(e);
-        }
-
-
-        //get proxy
-        Proxy proxy = null;
-        if (config.containsKey(PROXY_HTTP_CLIENT_HOSTNAME)) {
-            String proxyHostName = (String) config.get(PROXY_HTTP_CLIENT_HOSTNAME);
-            int proxyPort = (Integer) config.get(PROXY_HTTP_CLIENT_PORT);
-            SocketAddress socketAddress = new InetSocketAddress(proxyHostName, proxyPort);
-            String proxyTypeLabel = (String) Optional.ofNullable(config.get(PROXY_HTTP_CLIENT_TYPE)).orElse("HTTP");
-            Proxy.Type proxyType = Proxy.Type.valueOf(proxyTypeLabel);
-            proxy = new Proxy(proxyType, socketAddress);
-        }
-
-        ProxySelectorFactory proxySelectorFactory = new ProxySelectorFactory();
-        ProxySelector proxySelector = null;
-        if (config.get(PROXY_SELECTOR_HTTP_CLIENT_0_HOSTNAME) != null) {
-            proxySelector = proxySelectorFactory.build(config, random);
-        }
-        return httpClientFactory.build(config, executorService, random, proxy, proxySelector, meterRegistry);
-    }
 
     @NotNull
     private static Random getRandom(Map<String, Object> config) {
@@ -331,11 +287,11 @@ public class Configuration<Req,Res> {
     }
 
 
-    public HttpClient getHttpClient() {
+    public HttpClient<REQ,RES> getHttpClient() {
         return httpClient;
     }
 
-    public void setHttpClient(HttpClient httpClient) {
+    public void setHttpClient(HttpClient<REQ,RES> httpClient) {
         this.httpClient = httpClient;
     }
 
@@ -382,9 +338,9 @@ public class Configuration<Req,Res> {
                 .withBackoff(Duration.ofMillis(retryDelayInMs), Duration.ofMillis(retryMaxDelayInMs), retryDelayFactor)
                 .withJitter(Duration.ofMillis(retryJitterInMs))
                 .withMaxRetries(retries)
-                .onRetry(listener -> LOGGER.warn("Retry  call result:{}, failure:{}", listener.getLastResult(), listener.getLastException()))
-                .onFailure(listener -> LOGGER.warn("call failed ! result:{},exception:{}", listener.getResult(), listener.getException()))
-                .onAbort(listener -> LOGGER.warn("call aborted ! result:{},exception:{}", listener.getResult(), listener.getException()))
+                .onRetry(listener -> LOGGER.warn("Retry  call result:'{}', failure:'{}'", listener.getLastResult(), listener.getLastException()))
+                .onFailure(listener -> LOGGER.warn("call failed ! result:'{}',exception:'{}'", listener.getResult(), listener.getException()))
+                .onAbort(listener -> LOGGER.warn("call aborted ! result:'{}',exception:'{}'", listener.getResult(), listener.getException()))
                 .build();
     }
 
