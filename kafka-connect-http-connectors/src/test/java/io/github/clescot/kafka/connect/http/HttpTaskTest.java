@@ -51,6 +51,7 @@ import java.util.*;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.github.tomakehurst.wiremock.stubbing.Scenario.STARTED;
 import static io.confluent.kafka.serializers.json.KafkaJsonSchemaDeserializerConfig.JSON_VALUE_TYPE;
@@ -65,7 +66,7 @@ class HttpTaskTest {
     private static final String DUMMY_BODY_TYPE = "STRING";
     private static final ExecutorService executorService = Executors.newFixedThreadPool(2);
     public static final String AUTHORIZED_STATE = "Authorized";
-    public static final String UNAUTHORIZED_STATE = "Unauthorized";
+    public static final String INTERNAL_SERVER_ERROR_STATE = "InternalServerError";
     @RegisterExtension
     static WireMockExtension wmHttp;
 
@@ -176,7 +177,6 @@ class HttpTaskTest {
         @BeforeEach
         public void setUp(){
             Map<String,Object> configs = Maps.newHashMap();
-            configs.put(CONFIG_HTTP_CLIENT_ASYNC_FIXED_THREAD_POOL_SIZE,2);
             AbstractConfig config = new HttpSinkConnectorConfig(configs);
             httpTask = new HttpTask<>(config);
         }
@@ -202,10 +202,46 @@ class HttpTaskTest {
             Map<String, String> settings = Maps.newHashMap();
             HttpSinkConnectorConfig httpSinkConnectorConfig = new HttpSinkConnectorConfig(settings);
             Configuration<Request, Response> configuration = new Configuration<>("dummy",new OkHttpClientFactory(), httpSinkConnectorConfig, executorService, getCompositeMeterRegistry());
-            HttpExchange response = httpTask.callWithRetryPolicy(httpRequest,configuration).get();
+            HttpExchange httpExchange = httpTask.callWithRetryPolicy(httpRequest,configuration).get();
 
             //then
-            assertThat(response.isSuccess()).isTrue();
+            assertThat(httpExchange.isSuccess()).isTrue();
+        }
+        @Test
+        void test_successful_request_at_second_time() throws ExecutionException, InterruptedException {
+
+            //given
+            String scenario = "test_successful_request_at_first_time";
+            WireMockRuntimeInfo wmRuntimeInfo = wmHttp.getRuntimeInfo();
+            WireMock wireMock = wmRuntimeInfo.getWireMock();
+            wireMock
+                    .register(WireMock.post("/ping").inScenario(scenario)
+                            .whenScenarioStateIs(STARTED)
+                            .willReturn(WireMock.aResponse()
+                                    .withStatus(500)
+                                    .withStatusMessage("Internal Server Error")
+                            ).willSetStateTo(INTERNAL_SERVER_ERROR_STATE)
+                    );
+            wireMock
+                    .register(WireMock.post("/ping").inScenario(scenario)
+                            .whenScenarioStateIs(INTERNAL_SERVER_ERROR_STATE)
+                            .willReturn(WireMock.aResponse()
+                                    .withStatus(200)
+                                    .withStatusMessage("OK")
+                            ).willSetStateTo(AUTHORIZED_STATE)
+                    );
+            //when
+            HttpRequest httpRequest = getDummyHttpRequest(wmHttp.url("/ping"));
+            Map<String, String> settings = Maps.newHashMap();
+            settings.put("config.dummy.retry.policy.retries","5");
+            HttpSinkConnectorConfig httpSinkConnectorConfig = new HttpSinkConnectorConfig(settings);
+            Configuration<Request, Response> configuration = new Configuration<>("dummy",new OkHttpClientFactory(), httpSinkConnectorConfig, executorService, getCompositeMeterRegistry());
+            HttpExchange httpExchange = httpTask.callWithRetryPolicy(httpRequest,configuration).get();
+
+            //then
+            AtomicInteger attempts = httpExchange.getAttempts();
+            assertThat(attempts.get()).isEqualTo(2);
+            assertThat(httpExchange.isSuccess()).isTrue();
         }
 
     }

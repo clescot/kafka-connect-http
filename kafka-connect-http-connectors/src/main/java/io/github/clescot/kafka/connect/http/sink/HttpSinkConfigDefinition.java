@@ -108,10 +108,10 @@ public class HttpSinkConfigDefinition {
 
     //default values
     private static final int DEFAULT_RETRIES_VALUE = 1;
-    private static final long DEFAULT_RETRY_DELAY_IN_MS_VALUE = 2000L;
-    private static final long DEFAULT_RETRY_MAX_DELAY_IN_MS_VALUE = 20000L;
-    private static final double DEFAULT_RETRY_DELAY_FACTOR_VALUE = 1.5d;
-    private static final long DEFAULT_RETRY_JITTER_IN_MS_VALUE = 500;
+    public static final long DEFAULT_RETRY_DELAY_IN_MS_VALUE = 2000L;
+    public static final long DEFAULT_RETRY_MAX_DELAY_IN_MS_VALUE = 20000L;
+    public static final double DEFAULT_RETRY_DELAY_FACTOR_VALUE = 1.5d;
+    public static final long DEFAULT_RETRY_JITTER_IN_MS_VALUE = 500;
 
 
     public static final String RETRIES = DEFAULT_RETRY_POLICY_PREFIX+"retries";
