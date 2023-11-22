@@ -131,6 +131,7 @@ public class HttpSinkTask extends SinkTask {
                         "we stop the Sink Connector to prevent any OutOfMemoryError.");
                 break;
             case DLQ:
+                //TODO DLQ publish mode
                 LOGGER.debug("DLQ publish mode");
                 break;
             case NONE:
@@ -178,13 +179,13 @@ public class HttpSinkTask extends SinkTask {
             List<SchemaProvider> schemaProviders = Lists.newArrayList();
             schemaProviders.add(new JsonSchemaProvider());
             Map<String,?> config = Maps.newHashMap();
-            //"missing.id.cache.ttl.sec"
-            //"missing.version.cache.ttl.sec"
-            //"missing.schema.cache.ttl.sec"
-            //"missing.cache.size"
-            //"bearer.auth.cache.expiry.buffer.seconds"
-            //"bearer.auth.scope.claim.name"
-            //"bearer.auth.sub.claim.name"
+            //TODO "missing.id.cache.ttl.sec"
+            //TODO "missing.version.cache.ttl.sec"
+            //TODO "missing.schema.cache.ttl.sec"
+            //TODO "missing.cache.size"
+            //TODO "bearer.auth.cache.expiry.buffer.seconds"
+            //TODO "bearer.auth.scope.claim.name"
+            //TODO "bearer.auth.sub.claim.name"
             Map<String,String> httpHeaders = Maps.newHashMap();
             RestService restService = new RestService(schemaRegistryUrl);
             SchemaRegistryClient schemaRegistryClient = new CachedSchemaRegistryClient(restService, schemaRegistryCacheCapacity,schemaProviders,config,httpHeaders);
