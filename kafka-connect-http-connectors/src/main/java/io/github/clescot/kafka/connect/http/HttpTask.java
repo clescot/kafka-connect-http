@@ -33,6 +33,8 @@ import org.apache.kafka.connect.connector.ConnectRecord;
 import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.data.Struct;
 import org.apache.kafka.connect.errors.ConnectException;
+import org.asynchttpclient.Request;
+import org.asynchttpclient.Response;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -81,20 +83,23 @@ public class HttpTask<T extends ConnectRecord<T>> {
 
         Map<String, Object> defaultConfigurationSettings = config.originalsWithPrefix("config." + DEFAULT_CONFIGURATION_ID + ".");
         String httpClientImplementation = (String) Optional.ofNullable(defaultConfigurationSettings.get(CONFIG_HTTP_CLIENT_IMPLEMENTATION)).orElse(OKHTTP_IMPLEMENTATION);
-        HttpClientFactory httpClientFactory;
         if (AHC_IMPLEMENTATION.equalsIgnoreCase(httpClientImplementation)) {
-            httpClientFactory = new AHCHttpClientFactory();
+            AHCHttpClientFactory<Request, Response> factory = new AHCHttpClientFactory<>();
+            this.defaultConfiguration = new Configuration<>(DEFAULT_CONFIGURATION_ID, factory, config, executorService, meterRegistry);
+            this.customConfigurations = buildCustomConfigurations(factory,config, defaultConfiguration, executorService);
         } else if (OKHTTP_IMPLEMENTATION.equalsIgnoreCase(httpClientImplementation)) {
-            httpClientFactory = new OkHttpClientFactory();
+            OkHttpClientFactory<okhttp3.Request, okhttp3.Response> factory = new OkHttpClientFactory<>();
+            this.defaultConfiguration = new Configuration<>(DEFAULT_CONFIGURATION_ID, factory, config, executorService, meterRegistry);
+            this.customConfigurations = buildCustomConfigurations(factory,config, defaultConfiguration, executorService);
         } else {
             LOGGER.error("unknown HttpClient implementation : must be either 'ahc' or 'okhttp', but is '{}'", httpClientImplementation);
             throw new IllegalArgumentException("unknown HttpClient implementation : must be either 'ahc' or 'okhttp', but is '" + httpClientImplementation + "'");
         }
 
 
-        this.defaultConfiguration = new Configuration(DEFAULT_CONFIGURATION_ID,httpClientFactory, config, executorService, meterRegistry);
 
-        this.customConfigurations = buildCustomConfigurations(httpClientFactory,config, defaultConfiguration, executorService);
+
+
     }
 
         private List<Configuration> buildCustomConfigurations(HttpClientFactory httpClientFactory,
