@@ -255,9 +255,8 @@ public class HttpSinkTask extends SinkTask {
             }
             return httpTask.processRecord(sinkRecord)
                     .thenApply(
-                            kafkaRecord -> {
+                            httpExchange -> {
                                 //publish eventually to 'in memory' queue
-                                HttpExchange httpExchange = kafkaRecord.getHttpExchange();
                                 if (PublishMode.IN_MEMORY_QUEUE.equals(this.publishMode)) {
                                     LOGGER.debug("publish.mode : 'IN_MEMORY_QUEUE': http exchange published to queue '{}':{}", queueName, httpExchange);
                                     queue.offer(new KafkaRecord(sinkRecord.headers(), sinkRecord.keySchema(), sinkRecord.key(), httpExchange));

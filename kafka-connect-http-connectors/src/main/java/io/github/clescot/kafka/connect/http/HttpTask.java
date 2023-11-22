@@ -14,7 +14,6 @@ import io.github.clescot.kafka.connect.http.core.HttpExchange;
 import io.github.clescot.kafka.connect.http.core.HttpRequest;
 import io.github.clescot.kafka.connect.http.core.HttpRequestAsStruct;
 import io.github.clescot.kafka.connect.http.core.HttpResponse;
-import io.github.clescot.kafka.connect.http.core.queue.KafkaRecord;
 import io.micrometer.core.instrument.Clock;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.binder.jvm.*;
@@ -89,7 +88,7 @@ public class HttpTask<T extends ConnectRecord<T>> {
             }
 
             //we reuse the default retry policy if not set
-            Optional<RetryPolicy<KafkaRecord>> defaultRetryPolicy = defaultConfiguration.getRetryPolicy();
+            Optional<RetryPolicy<HttpExchange>> defaultRetryPolicy = defaultConfiguration.getRetryPolicy();
             if (configuration.getRetryPolicy().isEmpty() && defaultRetryPolicy.isPresent()) {
                 configuration.setRetryPolicy(defaultRetryPolicy.get());
             }
@@ -162,9 +161,15 @@ public class HttpTask<T extends ConnectRecord<T>> {
         return httpRequest;
     }
 
-
-    private CompletableFuture<KafkaRecord> callAndPublish(ConnectRecord<T> connectRecord,
-                                                           HttpRequest httpRequest,
+    /**
+     *  - enrich request
+     *  - execute the request
+     * @param httpRequest
+     * @param attempts
+     * @param configuration
+     * @return
+     */
+    private CompletableFuture<HttpExchange> callAndPublish(HttpRequest httpRequest,
                                                            AtomicInteger attempts,
                                                            Configuration configuration) {
         if(LOGGER.isTraceEnabled()){
@@ -176,28 +181,28 @@ public class HttpTask<T extends ConnectRecord<T>> {
         }
         CompletableFuture<HttpExchange> completableFuture = configuration.getHttpClient().call(enrichedHttpRequest, attempts);
         return completableFuture
-                .thenApply(myHttpExchange -> {
-                    HttpExchange enrichedHttpExchange = configuration.enrich(myHttpExchange);
-                    return new KafkaRecord(connectRecord.headers(), connectRecord.keySchema(), connectRecord.key(), enrichedHttpExchange);
-                });
+                .thenApply(configuration::enrich);
 
     }
 
-    private CompletableFuture<KafkaRecord> callWithRetryPolicy(ConnectRecord<T> sinkRecord,
-                                                                HttpRequest httpRequest,
+    protected CompletableFuture<HttpExchange> callWithRetryPolicy(HttpRequest httpRequest,
                                                                 Configuration configuration) {
-        Optional<RetryPolicy<KafkaRecord>> retryPolicyForCall = configuration.getRetryPolicy();
+        Optional<RetryPolicy<HttpExchange>> retryPolicyForCall = configuration.getRetryPolicy();
         if (httpRequest != null) {
             AtomicInteger attempts = new AtomicInteger();
             try {
                 attempts.addAndGet(HttpClient.ONE_HTTP_REQUEST);
                 if (retryPolicyForCall.isPresent()) {
-                    RetryPolicy<KafkaRecord> retryPolicy = retryPolicyForCall.get();
-                    CompletableFuture<KafkaRecord> httpExchangeFuture = callAndPublish(sinkRecord, httpRequest, attempts, configuration)
+                    RetryPolicy<HttpExchange> retryPolicy = retryPolicyForCall.get();
+                    CompletableFuture<HttpExchange> httpExchangeFuture = callAndPublish(httpRequest, attempts, configuration)
                             .thenApply(configuration::handleRetry);
-                    return Failsafe.with(List.of(retryPolicy)).getStageAsync(() -> httpExchangeFuture);
+                    return Failsafe.with(List.of(retryPolicy)).getStageAsync(() -> httpExchangeFuture).whenComplete((httpExchange, ex) -> {
+                        if (ex != null) {
+                            LOGGER.error("Exception occurred :'{}' with initial httpExchange: '{}'",ex.getMessage(),httpExchange);
+                        }
+                    });
                 } else {
-                    return callAndPublish(sinkRecord, httpRequest, attempts, configuration);
+                    return callAndPublish(httpRequest, attempts, configuration);
                 }
             } catch (Exception exception) {
                 LOGGER.error("Failed to call web service after {} retries with error({}). message:{} ", attempts, exception,
@@ -208,14 +213,14 @@ public class HttpTask<T extends ConnectRecord<T>> {
                         Stopwatch.createUnstarted(), OffsetDateTime.now(ZoneId.of(HttpClient.UTC_ZONE_ID)),
                         attempts,
                         HttpClient.FAILURE);
-                return CompletableFuture.supplyAsync(() -> new KafkaRecord(Lists.newArrayList(),null,null,httpExchange));
+                return CompletableFuture.supplyAsync(() -> httpExchange);
             }
         } else {
             throw new IllegalArgumentException("httpRequest is null");
         }
     }
 
-    public CompletableFuture<KafkaRecord> processRecord(ConnectRecord<T> sinkRecord) {
+    public CompletableFuture<HttpExchange> processRecord(ConnectRecord<T> sinkRecord) {
         HttpRequest httpRequest;
         //build HttpRequest
         httpRequest = buildHttpRequest(sinkRecord);
@@ -230,10 +235,10 @@ public class HttpTask<T extends ConnectRecord<T>> {
             LOGGER.trace("configuration:{}",foundConfiguration);
         }
         //handle Request and Response
-        return callWithRetryPolicy(sinkRecord, httpRequest, foundConfiguration).thenApply(
-                kafkaRecord -> {
-                    LOGGER.debug("HTTP exchange :{}", kafkaRecord.getHttpExchange());
-                    return kafkaRecord;
+        return callWithRetryPolicy(httpRequest, foundConfiguration).thenApply(
+                httpExchange -> {
+                    LOGGER.debug("HTTP exchange :{}", httpExchange);
+                    return httpExchange;
                 }
         );
     }
