@@ -12,7 +12,7 @@ import java.util.Map;
 import java.util.Random;
 import java.util.concurrent.ExecutorService;
 
-public class OkHttpClientFactory<REQ,RES> implements HttpClientFactory<Request, Response> {
+public class OkHttpClientFactory implements HttpClientFactory<Request, Response> {
     @Override
     public HttpClient<Request, Response> build(Map<String, Object> config,
                                                ExecutorService executorService,

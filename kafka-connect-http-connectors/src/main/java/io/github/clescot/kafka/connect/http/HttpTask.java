@@ -33,8 +33,6 @@ import org.apache.kafka.connect.connector.ConnectRecord;
 import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.data.Struct;
 import org.apache.kafka.connect.errors.ConnectException;
-import org.asynchttpclient.Request;
-import org.asynchttpclient.Response;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -84,11 +82,11 @@ public class HttpTask<T extends ConnectRecord<T>> {
         Map<String, Object> defaultConfigurationSettings = config.originalsWithPrefix("config." + DEFAULT_CONFIGURATION_ID + ".");
         String httpClientImplementation = (String) Optional.ofNullable(defaultConfigurationSettings.get(CONFIG_HTTP_CLIENT_IMPLEMENTATION)).orElse(OKHTTP_IMPLEMENTATION);
         if (AHC_IMPLEMENTATION.equalsIgnoreCase(httpClientImplementation)) {
-            AHCHttpClientFactory<Request, Response> factory = new AHCHttpClientFactory<>();
+            AHCHttpClientFactory factory = new AHCHttpClientFactory();
             this.defaultConfiguration = new Configuration<>(DEFAULT_CONFIGURATION_ID, factory, config, executorService, meterRegistry);
             this.customConfigurations = buildCustomConfigurations(factory,config, defaultConfiguration, executorService);
         } else if (OKHTTP_IMPLEMENTATION.equalsIgnoreCase(httpClientImplementation)) {
-            OkHttpClientFactory<okhttp3.Request, okhttp3.Response> factory = new OkHttpClientFactory<>();
+            OkHttpClientFactory factory = new OkHttpClientFactory();
             this.defaultConfiguration = new Configuration<>(DEFAULT_CONFIGURATION_ID, factory, config, executorService, meterRegistry);
             this.customConfigurations = buildCustomConfigurations(factory,config, defaultConfiguration, executorService);
         } else {

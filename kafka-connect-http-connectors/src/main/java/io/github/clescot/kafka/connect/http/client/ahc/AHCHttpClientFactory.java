@@ -14,7 +14,7 @@ import java.util.Map;
 import java.util.Random;
 import java.util.concurrent.ExecutorService;
 
-public class AHCHttpClientFactory<REQ, RES> implements HttpClientFactory<Request, Response> {
+public class AHCHttpClientFactory implements HttpClientFactory<Request, Response> {
 
 
     private static final Logger LOGGER = LoggerFactory.getLogger(AHCHttpClientFactory.class);

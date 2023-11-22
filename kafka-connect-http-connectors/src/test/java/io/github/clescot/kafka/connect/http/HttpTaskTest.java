@@ -16,9 +16,18 @@ import io.confluent.kafka.schemaregistry.client.SchemaRegistryClient;
 import io.confluent.kafka.schemaregistry.client.rest.exceptions.RestClientException;
 import io.confluent.kafka.schemaregistry.json.JsonSchema;
 import io.confluent.kafka.schemaregistry.json.JsonSchemaProvider;
+import io.github.clescot.kafka.connect.http.client.Configuration;
+import io.github.clescot.kafka.connect.http.client.okhttp.OkHttpClientFactory;
+import io.github.clescot.kafka.connect.http.core.HttpExchange;
 import io.github.clescot.kafka.connect.http.core.HttpRequest;
 import io.github.clescot.kafka.connect.http.core.HttpRequestAsStruct;
 import io.github.clescot.kafka.connect.http.sink.HttpSinkConnectorConfig;
+import io.micrometer.core.instrument.Clock;
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.composite.CompositeMeterRegistry;
+import io.micrometer.jmx.JmxMeterRegistry;
+import okhttp3.Request;
+import okhttp3.Response;
 import org.apache.kafka.common.config.AbstractConfig;
 import org.apache.kafka.common.record.TimestampType;
 import org.apache.kafka.connect.data.Schema;
@@ -27,6 +36,7 @@ import org.apache.kafka.connect.data.Struct;
 import org.apache.kafka.connect.errors.ConnectException;
 import org.apache.kafka.connect.header.Header;
 import org.apache.kafka.connect.sink.SinkRecord;
+import org.assertj.core.util.Sets;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
@@ -37,10 +47,8 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 import java.io.IOException;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -174,10 +182,9 @@ class HttpTaskTest {
         }
 
         @Test
-        void test_successful_request_at_first_time() {
+        void test_successful_request_at_first_time() throws ExecutionException, InterruptedException {
 
             //given
-            SinkRecord sinkRecord = new SinkRecord("myTopic", 0, Schema.STRING_SCHEMA, "key", Schema.STRING_SCHEMA, getDummyHttpRequestAsStruct(DUMMY_URL), -1, System.currentTimeMillis(), TimestampType.CREATE_TIME, Lists.newArrayList());
             String scenario = "test_successful_request_at_first_time";
             WireMockRuntimeInfo wmRuntimeInfo = wmHttp.getRuntimeInfo();
             WireMock wireMock = wmRuntimeInfo.getWireMock();
@@ -191,10 +198,14 @@ class HttpTaskTest {
                             ).willSetStateTo(AUTHORIZED_STATE)
                     );
             //when
-//            CompletableFuture<KafkaRecord> response = httpTask.callWithRetryPolicy(sinkRecord,);
+            HttpRequest httpRequest = getDummyHttpRequest(wmHttp.url("/ping"));
+            Map<String, String> settings = Maps.newHashMap();
+            HttpSinkConnectorConfig httpSinkConnectorConfig = new HttpSinkConnectorConfig(settings);
+            Configuration<Request, Response> configuration = new Configuration<>("dummy",new OkHttpClientFactory(), httpSinkConnectorConfig, executorService, getCompositeMeterRegistry());
+            HttpExchange response = httpTask.callWithRetryPolicy(httpRequest,configuration).get();
 
             //then
-
+            assertThat(response.isSuccess()).isTrue();
         }
 
     }
@@ -245,6 +256,13 @@ class HttpTaskTest {
         SchemaProvider provider = new JsonSchemaProvider();
         SchemaRegistryClient mockSchemaRegistryClient = new MockSchemaRegistryClient(Collections.singletonList(provider));
         return mockSchemaRegistryClient;
+    }
+
+    private static CompositeMeterRegistry getCompositeMeterRegistry() {
+        JmxMeterRegistry jmxMeterRegistry = new JmxMeterRegistry(s -> null, Clock.SYSTEM);
+        HashSet<MeterRegistry> registries = Sets.newHashSet();
+        registries.add(jmxMeterRegistry);
+        return new CompositeMeterRegistry(Clock.SYSTEM, registries);
     }
 
     private String getDummyHttpRequestAsString() {
