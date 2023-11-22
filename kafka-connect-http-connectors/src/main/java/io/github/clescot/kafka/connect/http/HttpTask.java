@@ -71,6 +71,7 @@ public class HttpTask<T extends ConnectRecord<T>> {
         customFixedThreadPoolSize.ifPresent(integer -> this.executorService = buildExecutorService(integer));
         //bind metrics to MeterRegistry and ExecutorService
         bindMetrics(config, meterRegistry, executorService);
+
         this.defaultConfiguration = new Configuration(DEFAULT_CONFIGURATION_ID, config, executorService, meterRegistry);
 
         this.customConfigurations = buildCustomConfigurations(config, defaultConfiguration, executorService);
@@ -181,7 +182,7 @@ public class HttpTask<T extends ConnectRecord<T>> {
         }
         CompletableFuture<HttpExchange> completableFuture = configuration.getHttpClient().call(enrichedHttpRequest, attempts);
         return completableFuture
-                .thenApply(configuration::enrich);
+                .thenApply(configuration::enrichHttpExchange);
 
     }
 

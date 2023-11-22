@@ -40,7 +40,7 @@ class AddSuccessStatusToHttpExchangeFunctionTest {
         config.put("config.dummy." + SUCCESS_RESPONSE_CODE_REGEX, "^2[0-9][0-9]$");
         Configuration configuration = new Configuration("dummy", new HttpSinkConnectorConfig(config), executorService, getCompositeMeterRegistry());
         HttpExchange httpExchange = getDummyHttpExchange();
-        boolean success = configuration.enrich(httpExchange).isSuccess();
+        boolean success = configuration.enrichHttpExchange(httpExchange).isSuccess();
         assertThat(success).isTrue();
     }
 
@@ -58,7 +58,7 @@ class AddSuccessStatusToHttpExchangeFunctionTest {
         config.put("config.dummy." + SUCCESS_RESPONSE_CODE_REGEX, "^1[0-9][0-9]$");
         Configuration configuration = new Configuration("dummy", new HttpSinkConnectorConfig(config), executorService, getCompositeMeterRegistry());
         HttpExchange httpExchange = getDummyHttpExchange();
-        boolean success = configuration.enrich(httpExchange).isSuccess();
+        boolean success = configuration.enrichHttpExchange(httpExchange).isSuccess();
         assertThat(success).isFalse();
     }
 

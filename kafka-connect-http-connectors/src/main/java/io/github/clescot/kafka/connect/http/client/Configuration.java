@@ -49,7 +49,7 @@ import static io.github.clescot.kafka.connect.http.sink.HttpSinkConfigDefinition
  * </ul>
  * Each configuration owns an Http Client instance.
  */
-public class Configuration {
+public class Configuration<Req,Res> {
     private static final Logger LOGGER = LoggerFactory.getLogger(Configuration.class);
 
 
@@ -91,7 +91,7 @@ public class Configuration {
     private HttpClient httpClient;
     public final String id;
     private final Map<String, Object> settings;
-    private Function<HttpRequest, HttpRequest> enrichRequestFunction;
+    private final Function<HttpRequest, HttpRequest> enrichRequestFunction;
     public Configuration(String id,
                          AbstractConfig config,
                          ExecutorService executorService,
@@ -108,7 +108,16 @@ public class Configuration {
 
         Random random = getRandom(settings);
 
-        this.httpClient = buildHttpClient(settings, executorService, meterRegistry, random);
+        String httpClientImplementation = (String) Optional.ofNullable(settings.get(CONFIG_HTTP_CLIENT_IMPLEMENTATION)).orElse(OKHTTP_IMPLEMENTATION);
+        if (AHC_IMPLEMENTATION.equalsIgnoreCase(httpClientImplementation)) {
+            this.httpClient =this.buildHttpClient(AHCHttpClientFactory.class,settings, executorService, meterRegistry, random);
+        } else if (OKHTTP_IMPLEMENTATION.equalsIgnoreCase(httpClientImplementation)) {
+            this.httpClient = this.buildHttpClient(OkHttpClientFactory.class,settings, executorService, meterRegistry, random);
+        } else {
+            LOGGER.error("unknown HttpClient implementation : must be either 'ahc' or 'okhttp', but is '{}'", httpClientImplementation);
+            throw new IllegalArgumentException("unknown HttpClient implementation : must be either 'ahc' or 'okhttp', but is '" + httpClientImplementation + "'");
+        }
+
 
         //enrich request
         List<Function<HttpRequest,HttpRequest>> enrichRequestFunctions = Lists.newArrayList();
@@ -268,24 +277,14 @@ public class Configuration {
     }
 
 
-    public HttpExchange enrich(HttpExchange httpExchange) {
+    public HttpExchange enrichHttpExchange(HttpExchange httpExchange) {
         return this.addSuccessStatusToHttpExchangeFunction.apply(httpExchange);
     }
 
-    private <Req, Res> HttpClient<Req, Res> buildHttpClient(Map<String, Object> config,
+    private <Req, Res> HttpClient<Req, Res> buildHttpClient(Class<? extends HttpClientFactory<Req, Res>> httpClientFactoryClass,Map<String, Object> config,
                                                             ExecutorService executorService,
                                                             CompositeMeterRegistry meterRegistry, Random random) {
 
-        Class<? extends HttpClientFactory> httpClientFactoryClass;
-        String httpClientImplementation = (String) Optional.ofNullable(config.get(CONFIG_HTTP_CLIENT_IMPLEMENTATION)).orElse(OKHTTP_IMPLEMENTATION);
-        if (AHC_IMPLEMENTATION.equalsIgnoreCase(httpClientImplementation)) {
-            httpClientFactoryClass = AHCHttpClientFactory.class;
-        } else if (OKHTTP_IMPLEMENTATION.equalsIgnoreCase(httpClientImplementation)) {
-            httpClientFactoryClass = OkHttpClientFactory.class;
-        } else {
-            LOGGER.error("unknown HttpClient implementation : must be either 'ahc' or 'okhttp', but is '{}'", httpClientImplementation);
-            throw new IllegalArgumentException("unknown HttpClient implementation : must be either 'ahc' or 'okhttp', but is '" + httpClientImplementation + "'");
-        }
         HttpClientFactory<Req, Res> httpClientFactory;
         try {
             httpClientFactory = httpClientFactoryClass.getDeclaredConstructor().newInstance();
