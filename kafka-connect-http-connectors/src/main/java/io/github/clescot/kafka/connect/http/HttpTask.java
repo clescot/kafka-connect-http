@@ -77,9 +77,6 @@ public class HttpTask<T extends ConnectRecord<T>> {
         //bind metrics to MeterRegistry and ExecutorService
         bindMetrics(config, meterRegistry, executorService);
 
-
-
-
         Map<String, Object> defaultConfigurationSettings = config.originalsWithPrefix("config." + DEFAULT_CONFIGURATION_ID + ".");
         String httpClientImplementation = (String) Optional.ofNullable(defaultConfigurationSettings.get(CONFIG_HTTP_CLIENT_IMPLEMENTATION)).orElse(OKHTTP_IMPLEMENTATION);
         if (AHC_IMPLEMENTATION.equalsIgnoreCase(httpClientImplementation)) {
@@ -94,10 +91,6 @@ public class HttpTask<T extends ConnectRecord<T>> {
             LOGGER.error("unknown HttpClient implementation : must be either 'ahc' or 'okhttp', but is '{}'", httpClientImplementation);
             throw new IllegalArgumentException("unknown HttpClient implementation : must be either 'ahc' or 'okhttp', but is '" + httpClientImplementation + "'");
         }
-
-
-
-
 
     }
 
@@ -228,12 +221,7 @@ public class HttpTask<T extends ConnectRecord<T>> {
                     }
                     return failsafeExecutor
                             .getStageAsync(() -> callAndPublish(httpRequest, attempts, configuration)
-                                    .thenApply(configuration::handleRetry))
-                            .whenComplete((httpExchange, ex) -> {
-                                if (ex != null) {
-                                    LOGGER.error("Exception occurred :'{}' with initial httpExchange: '{}'",ex.getMessage(),httpExchange);
-                                }
-                            });
+                            .thenApply(configuration::handleRetry));
                 } else {
                     return callAndPublish(httpRequest, attempts, configuration);
                 }

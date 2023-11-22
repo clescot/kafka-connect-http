@@ -117,7 +117,6 @@ public class ITConnectorTest {
             .withNetworkAliases("kafka")
             .withEnv("KAFKA_PROCESS_ROLES", "broker,controller")
             .withLogConsumer(new Slf4jLogConsumer(LOGGER).withSeparateOutputStreams().withPrefix("kafka-broker"))
-//            .waitingFor(Wait.forListeningPorts(9092))
             ;
 
 
@@ -782,7 +781,8 @@ public class ITConnectorTest {
                 new AbstractMap.SimpleImmutableEntry<>(CONFIG_DEFAULT_RETRY_DELAY_IN_MS, "1000"),
                 new AbstractMap.SimpleImmutableEntry<>(CONFIG_DEFAULT_RETRY_MAX_DELAY_IN_MS, "100000"),
                 new AbstractMap.SimpleImmutableEntry<>(CONFIG_DEFAULT_RETRY_DELAY_FACTOR, "1.5"),
-                new AbstractMap.SimpleImmutableEntry<>(CONFIG_DEFAULT_RETRY_JITTER_IN_MS, "500")
+                new AbstractMap.SimpleImmutableEntry<>(CONFIG_DEFAULT_RETRY_JITTER_IN_MS, "500"),
+                new AbstractMap.SimpleImmutableEntry<>(CONFIG_DEFAULT_RETRY_RESPONSE_CODE_REGEX, DEFAULT_DEFAULT_RETRY_RESPONSE_CODE_REGEX)
         );
         List<String> registeredConnectors = connectContainer.getRegisteredConnectors();
         String joinedRegisteredConnectors = Joiner.on(",").join(registeredConnectors);
