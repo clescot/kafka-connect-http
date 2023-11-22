@@ -338,7 +338,9 @@ public class Configuration<R,S> {
                 .withBackoff(Duration.ofMillis(retryDelayInMs), Duration.ofMillis(retryMaxDelayInMs), retryDelayFactor)
                 .withJitter(Duration.ofMillis(retryJitterInMs))
                 .withMaxRetries(retries)
-                .onRetry(listener -> LOGGER.warn("Retry  call result:'{}', failure:'{}'", listener.getLastResult(), listener.getLastException()))
+                .onAbort(listener -> LOGGER.warn("Retry  aborted after '{}' attempts:'{}',result:'{}', failure:'{}'", listener.getAttemptCount(), listener.getResult(), listener.getException()))
+                .onRetriesExceeded(listener -> LOGGER.warn("Retries exceeded  attempts:'{}', elapsed attempt time:'{}', call result:'{}', failure:'{}'",listener.getAttemptCount(),listener.getElapsedAttemptTime(), listener.getResult(), listener.getException()))
+                .onRetry(listener -> LOGGER.trace("Retry  call result:'{}', failure:'{}'", listener.getLastResult(), listener.getLastException()))
                 .onFailure(listener -> LOGGER.warn("call failed ! result:'{}',exception:'{}'", listener.getResult(), listener.getException()))
                 .onAbort(listener -> LOGGER.warn("call aborted ! result:'{}',exception:'{}'", listener.getResult(), listener.getException()))
                 .build();

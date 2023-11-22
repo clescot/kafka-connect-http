@@ -6,6 +6,7 @@ import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.google.common.base.Stopwatch;
 import com.google.common.collect.Lists;
 import dev.failsafe.Failsafe;
+import dev.failsafe.FailsafeExecutor;
 import dev.failsafe.RetryPolicy;
 import io.github.clescot.kafka.connect.http.client.Configuration;
 import io.github.clescot.kafka.connect.http.client.HttpClient;
@@ -197,6 +198,7 @@ public class HttpTask<T extends ConnectRecord<T>> {
     private CompletableFuture<HttpExchange> callAndPublish(HttpRequest httpRequest,
                                                            AtomicInteger attempts,
                                                            Configuration configuration) {
+        attempts.addAndGet(HttpClient.ONE_HTTP_REQUEST);
         if(LOGGER.isTraceEnabled()){
             LOGGER.trace("before enrichment:{}",httpRequest);
         }
@@ -216,16 +218,22 @@ public class HttpTask<T extends ConnectRecord<T>> {
         if (httpRequest != null) {
             AtomicInteger attempts = new AtomicInteger();
             try {
-                attempts.addAndGet(HttpClient.ONE_HTTP_REQUEST);
+
                 if (retryPolicyForCall.isPresent()) {
                     RetryPolicy<HttpExchange> retryPolicy = retryPolicyForCall.get();
-                    CompletableFuture<HttpExchange> httpExchangeFuture = callAndPublish(httpRequest, attempts, configuration)
-                            .thenApply(configuration::handleRetry);
-                    return Failsafe.with(List.of(retryPolicy)).getStageAsync(() -> httpExchangeFuture).whenComplete((httpExchange, ex) -> {
-                        if (ex != null) {
-                            LOGGER.error("Exception occurred :'{}' with initial httpExchange: '{}'",ex.getMessage(),httpExchange);
-                        }
-                    });
+                    FailsafeExecutor<HttpExchange> failsafeExecutor = Failsafe
+                            .with(List.of(retryPolicy));
+                    if(executorService!=null){
+                        failsafeExecutor = failsafeExecutor.with(executorService);
+                    }
+                    return failsafeExecutor
+                            .getStageAsync(() -> callAndPublish(httpRequest, attempts, configuration)
+                                    .thenApply(configuration::handleRetry))
+                            .whenComplete((httpExchange, ex) -> {
+                                if (ex != null) {
+                                    LOGGER.error("Exception occurred :'{}' with initial httpExchange: '{}'",ex.getMessage(),httpExchange);
+                                }
+                            });
                 } else {
                     return callAndPublish(httpRequest, attempts, configuration);
                 }

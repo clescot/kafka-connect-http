@@ -56,7 +56,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import static com.github.tomakehurst.wiremock.stubbing.Scenario.STARTED;
 import static io.confluent.kafka.serializers.json.KafkaJsonSchemaDeserializerConfig.JSON_VALUE_TYPE;
 import static io.github.clescot.kafka.connect.http.core.HttpRequestAsStruct.SCHEMA;
-import static io.github.clescot.kafka.connect.http.sink.HttpSinkConfigDefinition.CONFIG_HTTP_CLIENT_ASYNC_FIXED_THREAD_POOL_SIZE;
+import static io.github.clescot.kafka.connect.http.sink.HttpSinkConfigDefinition.*;
 import static org.assertj.core.api.Assertions.assertThat;
 
 class HttpTaskTest {
@@ -211,7 +211,7 @@ class HttpTaskTest {
         void test_successful_request_at_second_time() throws ExecutionException, InterruptedException {
 
             //given
-            String scenario = "test_successful_request_at_first_time";
+            String scenario = "test_successful_request_at_second_time";
             WireMockRuntimeInfo wmRuntimeInfo = wmHttp.getRuntimeInfo();
             WireMock wireMock = wmRuntimeInfo.getWireMock();
             wireMock
@@ -233,7 +233,8 @@ class HttpTaskTest {
             //when
             HttpRequest httpRequest = getDummyHttpRequest(wmHttp.url("/ping"));
             Map<String, String> settings = Maps.newHashMap();
-            settings.put("config.dummy.retry.policy.retries","5");
+            settings.put("config.dummy.retry.policy.retries","2");
+            settings.put("config.dummy.retry.policy.response.code.regex",DEFAULT_DEFAULT_RETRY_RESPONSE_CODE_REGEX);
             HttpSinkConnectorConfig httpSinkConnectorConfig = new HttpSinkConnectorConfig(settings);
             Configuration<Request, Response> configuration = new Configuration<>("dummy",new OkHttpClientFactory(), httpSinkConnectorConfig, executorService, getCompositeMeterRegistry());
             HttpExchange httpExchange = httpTask.callWithRetryPolicy(httpRequest,configuration).get();
