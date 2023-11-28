@@ -47,7 +47,7 @@
         <jackson.version>2.16.0</jackson.version>
         <json.assert.version>1.5.1</json.assert.version>
         <junit.version>5.10.1</junit.version>
-        <logback.version>1.4.11</logback.version>
+        <logback.version>1.4.12</logback.version>
         <maven.compiler.source>11</maven.compiler.source>
         <maven.compiler.target>11</maven.compiler.target>
         <maven.plugin.validation>VERBOSE</maven.plugin.validation>
@@ -85,7 +85,7 @@
             <dependency>
                 <groupId>ch.qos.logback</groupId>
                 <artifactId>logback-classic</artifactId>
-                <version>1.4.11</version>
+                <version>1.4.12</version>
             </dependency>
 
             <dependency>
