@@ -40,7 +40,7 @@ Kafka Connect connectors are "one way connectors", but the main problem with HTT
 
 You can solve the 'publish' challenge in 4 different modes (each one has got some drawbacks) :
 
- - the `NONE` mode
+### the `NONE` mode
     - advantages :
       - simplicity !
       - you configure only one connector
@@ -52,7 +52,7 @@ You can solve the 'publish' challenge in 4 different modes (each one has got som
 
 !['NONE' Publish mode Architecture](architecture_NONE.png)
 
- - the `DLQ` mode
+### the `DLQ` mode
    - advantages :
      - you configure only one connector
      - you have no locality restrictions
@@ -63,7 +63,7 @@ You can solve the 'publish' challenge in 4 different modes (each one has got som
 
 !['Dead Letter Queue' Publish mode Architecture](architecture_DLQ.png)
 
-- the `PRODUCER` mode
+### the `PRODUCER` mode
   - advantages :
     - you configure only one connector
     - you have no locality restrictions
@@ -76,7 +76,7 @@ You can solve the 'publish' challenge in 4 different modes (each one has got som
 
 !['Producer Publish' mode Architecture](architecture_low_level_producer.png)
 
-- the `IN_MEMORY_QUEUE` mode 
+### the `IN_MEMORY_QUEUE` mode 
 
   We use multiple connectors, with a shared channel different from Kafka. We provide :
 
