@@ -32,7 +32,7 @@ controlled by the  *`publish.mode`* parameter : `NONE` by default. When set to a
 - *`publish.mode`* parameter : `DLQ` 
  use the errantReporter (used to publish to a Dead Letter Queue topic when messages raise an error usually). No low level configuration is required (like in `PRODUCER` mode),
  and no topology constraint is required (like in `IN_MEMORY_QUEUE` mode),
- but reuse an error topic.Note that if you activate error headers (), you will have an exception class set to `FakeErrantRecordReporterException`,
+ but reuse an error topic.Note that if you activate error headers (`errors.deadletterqueue.context.headers.enable = true`), you will have an exception class set to `FakeErrantRecordReporterException`,
   and an exception message set to `dlq.mode`. It can be useful to use a kakfa streams instance to consume this 'error' topic,
   and forward real errors to a final error topic, and real http responses to another one.
  real error messages and http responses .  
