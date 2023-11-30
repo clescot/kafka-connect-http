@@ -38,13 +38,13 @@ controlled by the  *`publish.mode`* parameter : `NONE` by default. When set to a
   will be passed to the producer instance to configure it. 
   - `producer.bootstrap.servers` : required parameter to contact the kafka cluster.
   - `producer.topic` : name of the topic to publish httpExchange instances.
-  - `producer.missing.id.cache.ttl.sec` : parameter configuration of the CachedSchemaRegistryClient
-  - `producer.missing.version.cache.ttl.sec` : parameter configuration of the CachedSchemaRegistryClient
-  - `producer.missing.schema.cache.ttl.sec` : parameter configuration of the CachedSchemaRegistryClient
-  - `producer.missing.schema.cache.size` : parameter configuration of the CachedSchemaRegistryClient
-  - `producer.bearer.auth.cache.expiry.buffer.seconds` : parameter configuration of the CachedSchemaRegistryClient
-  - `producer.bearer.auth.scope.claim.name` : parameter configuration of the CachedSchemaRegistryClient
-  - `producer.bearer.auth.sub.claim.name` : parameter configuration of the CachedSchemaRegistryClient
+  - `producer.missing.id.cache.ttl.sec` : parameter configuration of the _CachedSchemaRegistryClient_
+  - `producer.missing.version.cache.ttl.sec` : parameter configuration of the _CachedSchemaRegistryClient_
+  - `producer.missing.schema.cache.ttl.sec` : parameter configuration of the _CachedSchemaRegistryClient_
+  - `producer.missing.schema.cache.size` : parameter configuration of the _CachedSchemaRegistryClient_
+  - `producer.bearer.auth.cache.expiry.buffer.seconds` : parameter configuration of the _CachedSchemaRegistryClient_
+  - `producer.bearer.auth.scope.claim.name` : parameter configuration of the _CachedSchemaRegistryClient_
+  - `producer.bearer.auth.sub.claim.name` : parameter configuration of the _CachedSchemaRegistryClient_
   - other parameters can be passed to the low level kafka producer instance.
 ### Metrics Registry
 
