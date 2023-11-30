@@ -293,7 +293,7 @@ public class HttpSinkTask extends SinkTask {
                                             sinkRecord.kafkaOffset(),
                                             sinkRecord.timestamp(),
                                             sinkRecord.timestampType());
-                                    errantRecordReporter.report(myRecord, new FakeErrantRecordReporterException());
+                                    errantRecordReporter.report(myRecord, new FakeErrantRecordReporterException("dlq.mode"));
                                 } else if (PublishMode.PRODUCER.equals(this.publishMode)) {
 
                                     LOGGER.debug("publish.mode : 'PRODUCER' : HttpExchange will be published at topic : '{}'", httpSinkConnectorConfig.getProducerTopic());

@@ -32,7 +32,10 @@ controlled by the  *`publish.mode`* parameter : `NONE` by default. When set to a
 - *`publish.mode`* parameter : `DLQ` 
  use the errantReporter (used to publish to a Dead Letter Queue topic when messages raise an error usually). No low level configuration is required (like in `PRODUCER` mode),
  and no topology constraint is required (like in `IN_MEMORY_QUEUE` mode),
- but reuse an error topic. 
+ but reuse an error topic.Note that if you activate error headers (), you will have an exception class set to `FakeErrantRecordReporterException`,
+  and an exception message set to `dlq.mode`. It can be useful to use a kakfa streams instance to consume this 'error' topic,
+  and forward real errors to a final error topic, and real http responses to another one.
+ real error messages and http responses .  
 - *`publish.mode`* parameter : `PRODUCER` : use a low level kafka producer to publish HttpExchange in a dedicated topic. No topology constraint is required, no DLQ topic is reused, 
   but unlike other connectors (kafka connect handle that for us and hide it), we must configure the low level connection details. All settings starting with the prefix `producer.` 
   will be passed to the producer instance to configure it. 
