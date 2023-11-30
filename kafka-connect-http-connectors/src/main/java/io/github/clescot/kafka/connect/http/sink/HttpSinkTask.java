@@ -138,7 +138,6 @@ public class HttpSinkTask extends SinkTask {
                         "we stop the Sink Connector to prevent any OutOfMemoryError.");
                 break;
             case DLQ:
-                //TODO DLQ publish mode
                 LOGGER.debug("DLQ publish mode");
                 break;
             case NONE:
