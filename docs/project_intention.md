@@ -103,20 +103,21 @@ You can solve the 'publish' challenge in 4 different modes (each one has got som
       - to deploy no more instances than the partition number :
         Each instance will have at least, one sink and source partition to handle.
 
-!['In Memory Queue' Publish mode Architecture](architecture_in_memory_queue.png)
 
-## Does the `IN_MEMORY_QUEUE` mode cancel the distributed nature of Kafka Connect ?
 
-No, you can distribute http queries between multiple Kafka Connect instances. The local nature is only for
-the correlation between HTTP query and HTTP responses.
+  - Does the `IN_MEMORY_QUEUE` mode cancel the distributed nature of Kafka Connect ?
 
-## Does `IN_MEMORY_QUEUE` mode with its unbounded in memory queue implies an *OutOfMemoryError* risk ?
+    No, you can distribute http queries between multiple Kafka Connect instances. The local nature is only for
+    the correlation between HTTP query and HTTP responses.
 
-As both ends of the in memory queue, implies a Kafka communication, the *OutOfMemory* risk seems mitigated
-by the same source of problem on both sides (kafka communication problem).
-We also check that all queues registered has got their consumer (Source Connector instance).
-Note that a queue has got only one consumer, opposite to the Topic concept, which support multiple consumers.
-The only one queue consumer, is the configured Source Connector.
+  - Does `IN_MEMORY_QUEUE` mode with its unbounded in memory queue implies an *OutOfMemoryError* risk ?
 
+    As both ends of the in memory queue, implies a Kafka communication, the *OutOfMemory* risk seems mitigated
+    by the same source of problem on both sides (kafka communication problem).
+    We also check that all queues registered has got their consumer (Source Connector instance).
+    Note that a queue has got only one consumer, opposite to the Topic concept, which support multiple consumers.
+    The only one queue consumer, is the configured Source Connector.
+
+  !['In Memory Queue' Publish mode Architecture](architecture_in_memory_queue.png)
 
 
