@@ -51,6 +51,13 @@ public class HttpSinkTask extends SinkTask {
     private static final VersionUtils VERSION_UTILS = new VersionUtils();
     public static final String PRODUCER_PREFIX = "producer.";
     public static final String JSON = "json";
+    public static final String BEARER_AUTH_SUB_CLAIM_NAME = "bearer.auth.sub.claim.name";
+    public static final String BEARER_AUTH_SCOPE_CLAIM_NAME = "bearer.auth.scope.claim.name";
+    public static final String BEARER_AUTH_CACHE_EXPIRY_BUFFER_SECONDS = "bearer.auth.cache.expiry.buffer.seconds";
+    public static final String MISSING_CACHE_SIZE = "missing.cache.size";
+    public static final String MISSING_SCHEMA_CACHE_TTL_SEC = "missing.schema.cache.ttl.sec";
+    public static final String MISSING_VERSION_CACHE_TTL_SEC = "missing.version.cache.ttl.sec";
+    public static final String MISSING_ID_CACHE_TTL_SEC = "missing.id.cache.ttl.sec";
 
     private ErrantRecordReporter errantRecordReporter;
     private HttpTask<SinkRecord> httpTask;
@@ -180,25 +187,25 @@ public class HttpSinkTask extends SinkTask {
             schemaProviders.add(new JsonSchemaProvider());
             Map<String,Object> config = Maps.newHashMap();
             if(httpSinkConnectorConfig.getMissingIdCacheTTLSec()!=null){
-                config.put("missing.id.cache.ttl.sec",httpSinkConnectorConfig.getMissingIdCacheTTLSec());
+                config.put(MISSING_ID_CACHE_TTL_SEC,httpSinkConnectorConfig.getMissingIdCacheTTLSec());
             }
             if(httpSinkConnectorConfig.getMissingVersionCacheTTLSec()!=null){
-                config.put("missing.version.cache.ttl.sec",httpSinkConnectorConfig.getMissingVersionCacheTTLSec());
+                config.put(MISSING_VERSION_CACHE_TTL_SEC,httpSinkConnectorConfig.getMissingVersionCacheTTLSec());
             }
             if(httpSinkConnectorConfig.getMissingSchemaCacheTTLSec()!=null){
-                config.put("missing.schema.cache.ttl.sec",httpSinkConnectorConfig.getMissingVersionCacheTTLSec());
+                config.put(MISSING_SCHEMA_CACHE_TTL_SEC,httpSinkConnectorConfig.getMissingVersionCacheTTLSec());
             }
             if(httpSinkConnectorConfig.getMissingCacheSize()!=null){
-                config.put("missing.cache.size",httpSinkConnectorConfig.getMissingCacheSize());
+                config.put(MISSING_CACHE_SIZE,httpSinkConnectorConfig.getMissingCacheSize());
             }
             if(httpSinkConnectorConfig.getMissingCacheSize()!=null){
-                config.put("bearer.auth.cache.expiry.buffer.seconds",httpSinkConnectorConfig.getBearerAuthCacheExpiryBufferSeconds());
+                config.put(BEARER_AUTH_CACHE_EXPIRY_BUFFER_SECONDS,httpSinkConnectorConfig.getBearerAuthCacheExpiryBufferSeconds());
             }
             if(httpSinkConnectorConfig.getBearerAuthScopeClaimName()!=null){
-                config.put("bearer.auth.scope.claim.name",httpSinkConnectorConfig.getBearerAuthScopeClaimName());
+                config.put(BEARER_AUTH_SCOPE_CLAIM_NAME,httpSinkConnectorConfig.getBearerAuthScopeClaimName());
             }
             if(httpSinkConnectorConfig.getBearerAuthSubClaimName()!=null){
-                config.put("bearer.auth.sub.claim.name",httpSinkConnectorConfig.getBearerAuthSubClaimName());
+                config.put(BEARER_AUTH_SUB_CLAIM_NAME,httpSinkConnectorConfig.getBearerAuthSubClaimName());
             }
             Map<String,String> httpHeaders = Maps.newHashMap();
             RestService restService = new RestService(schemaRegistryUrl);
