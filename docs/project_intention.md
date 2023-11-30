@@ -49,7 +49,9 @@ You can solve the 'publish' challenge in 4 different modes (each one has got som
       - you don't mix different informations in the same topic
     - drawbacks :
       - you ignore the HTTP responses
-      
+
+!['NONE' Publish mode Architecture](architecture_NONE.png)
+
  - the `DLQ` mode
    - advantages :
      - you configure only one connector
@@ -58,7 +60,9 @@ You can solve the 'publish' challenge in 4 different modes (each one has got som
      - you get the HTTP responses
    - drawbacks :
      - you mix in the same error topic, the HTTP responses with some potential real errors (of this connector).
-     
+
+!['Dead Letter Queue' Publish mode Architecture](architecture_DLQ.png)
+
 - the `PRODUCER` mode
   - advantages :
     - you configure only one connector
@@ -69,6 +73,9 @@ You can solve the 'publish' challenge in 4 different modes (each one has got som
     - your configuration is more complex : you duplicate some connection configuration, which can be challenging in some cases :
       - at the _kafka connect cluster_ level
       - at the _connector_ level
+
+!['Producer Publish' mode Architecture](architecture_low_level_producer.png)
+
 - the `IN_MEMORY_QUEUE` mode 
 
   We use multiple connectors, with a shared channel different from Kafka. We provide :
@@ -95,6 +102,8 @@ You can solve the 'publish' challenge in 4 different modes (each one has got som
       - set the same partition number for topics used by HTTP sink and source connectors,
       - to deploy no more instances than the partition number :
         Each instance will have at least, one sink and source partition to handle.
+
+!['In Memory Queue' Publish mode Architecture](architecture_in_memory_queue.png)
 
 ## Does the `IN_MEMORY_QUEUE` mode cancel the distributed nature of Kafka Connect ?
 
