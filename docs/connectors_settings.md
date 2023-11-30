@@ -102,7 +102,7 @@ Both exports (JMX and Prometheus) can be combined.
   by default, the port open is the default prometheus one (`9090`), but you can define yours with this setting :
   `"meter.registry.exporter.prometheus.port":"9087`
 
-### configuration
+### Configuration
 
 The connector ships with a `default` configuration, and we can, if needed, configure more configurations.
 A configuration is identified with a unique `id`.
@@ -356,15 +356,17 @@ curl -X PUT -H "Content-Type: application/json" --data @source.json http://my-ka
 
 ### Http Sink and Source Connectors
 
-#### are linked
+> :warning: Below are some characteristics only applicable when the publish mode is set to `IN_MEMORY_QUEUE`.
 
-HTTP Sink connector can be used without the HTTP Source connector, if the `publish.to.in.memory.queue` parameter is set to `false`, and only this connector is configured.
+#### are linked 
+
+HTTP Sink connector can be used without the HTTP Source connector, if the `publish` mode is not set to `IN_MEMORY_QUEUE`.
 
 HTTP Source Connector cannot be used without the HTTP Sink connector.
 
 #### instantiated in the same location
 
-When Http Sink and Source connectors are configured, they must be **instantiated in the same place**, to exchange data through the in memory queue.
+When Http Sink and Source connectors are configured together, they must be **instantiated in the same place**, to exchange data through the in memory queue.
 The above configuration permits to fullfill these needs.
 
 #### in the same classloader

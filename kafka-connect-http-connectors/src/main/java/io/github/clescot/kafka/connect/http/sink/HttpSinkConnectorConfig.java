@@ -422,7 +422,7 @@ public class HttpSinkConnectorConfig extends AbstractConfig {
                 ", defaultRetryResponseCodeRegex='" + defaultRetryResponseCodeRegex + '\'' +
                 ", queueName='" + queueName + '\'' +
                 ", publishMode=" + publishMode +
-                ", producer.topic=" + producerTopic +
+                ", producerTopic=" + producerTopic +
                 ", defaultRetries=" + defaultRetries +
                 ", defaultRetryDelayInMs=" + defaultRetryDelayInMs +
                 ", defaultRetryMaxDelayInMs=" + defaultRetryMaxDelayInMs +
