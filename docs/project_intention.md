@@ -38,7 +38,7 @@ Kafka Connect connectors are "one way connectors", but the main problem with HTT
 
 ## How do we solve the problem ? How does it work?
 
-You can solve the 'publish' challenge in 4 different modes (each one has got some drawbacks) :
+You can solve the 'publish' challenge in 4 different modes (each one has got some advantages and drawbacks) :
 
 ### the `NONE` mode
     - advantages :
