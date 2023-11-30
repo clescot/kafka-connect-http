@@ -40,5 +40,5 @@ after the section dedicated to put in place the HTTP Sink and Source connectors:
 12. a decision is made against the HttpExchange status build in the previous stage
 13. if the HttpExchange status is a success, the HttpExchange is serialized into the in memory queue
 14. if the HttpExchange status is not a success, an evaluation is done to know if the error is retryable (based on the `config.<idconfig>.retry.policy.response.code.regex`)
-15. if the error is not retryable, or the retry attempts limit is reched, the failing HttpExchange is serialized into the in memory queue.
+15. if the error is not retryable, or the retry attempts limit is reached, the failing HttpExchange is serialized into the in memory queue.
 16. if the error is retryable, another HTTP call is done.
