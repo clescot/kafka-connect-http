@@ -1,6 +1,6 @@
 # Architecture
 
-![Architecture](architecture.png)
+![Architecture](architecture_in_memory_queue.png)
 
 This big picture permits to highlight (with numbers in the picture) some key points in the architecture, which will be explained with details
 after the section dedicated to put in place the HTTP Sink and Source connectors:
