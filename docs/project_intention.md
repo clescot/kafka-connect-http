@@ -105,12 +105,12 @@ You can solve the 'publish' challenge in 4 different modes (each one has got som
 
 
 
-  - Does the `IN_MEMORY_QUEUE` mode cancel the distributed nature of Kafka Connect ?
+  - _Does the `IN_MEMORY_QUEUE` mode cancel the distributed nature of Kafka Connect ?_
 
     No, you can distribute http queries between multiple Kafka Connect instances. The local nature is only for
     the correlation between HTTP query and HTTP responses.
 
-  - Does `IN_MEMORY_QUEUE` mode with its unbounded in memory queue implies an *OutOfMemoryError* risk ?
+  - _Does `IN_MEMORY_QUEUE` mode with its unbounded in memory queue implies an *OutOfMemoryError* risk ?_
 
     As both ends of the in memory queue, implies a Kafka communication, the *OutOfMemory* risk seems mitigated
     by the same source of problem on both sides (kafka communication problem).
