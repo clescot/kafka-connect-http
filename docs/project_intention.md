@@ -57,7 +57,7 @@ You can solve the 'publish' challenge in 4 different modes (each one has got som
      - your configuration is easy
      - you get the HTTP responses
    - drawbacks :
-     - you mix in the same error topic, the HTTP responses with some potential real errors.
+     - you mix in the same error topic, the HTTP responses with some potential real errors (of this connector).
      
 - the `PRODUCER` mode
   - advantages :
