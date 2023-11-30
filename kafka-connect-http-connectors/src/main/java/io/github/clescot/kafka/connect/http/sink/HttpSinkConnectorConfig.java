@@ -21,19 +21,27 @@ public class HttpSinkConnectorConfig extends AbstractConfig {
     private static final Logger LOGGER = LoggerFactory.getLogger(HttpSinkConnectorConfig.class);
     private final String producerFormat;
 
+    //publish mode set to 'producer'
+    private final String producerBootstrapServers;
+    private final String producerTopic;
+    private final String producerSchemaRegistryUrl;
+    private final int producerSchemaRegistryCacheCapacity;
+    private final boolean producerSchemaRegistryautoRegister;
+    private final String producerJsonSchemaSpecVersion;
+    private final boolean producerJsonWriteDatesAs8601;
+    private final boolean producerJsonOneOfForNullables;
+    private final boolean producerJsonFailInvalidSchema;
+    private final boolean producerJsonFailUnknownProperties;
+    private final String producerKeySubjectNameStrategy;
+    private final String producerValueSubjectNameStrategy;
+    private final Integer missingIdCacheTTLSec;
+    private final Integer missingVersionCacheTTLSec;
+    private final Integer missingSchemaCacheTTLSec;
+    private final Integer missingCacheSize;
+    private final Integer bearerAuthCacheExpiryBufferSeconds;
+    private final String bearerAuthScopeClaimName;
+    private final String bearerAuthSubClaimName;
 
-    private String producerBootstrapServers;
-    private String producerTopic;
-    private String producerSchemaRegistryUrl;
-    private int producerSchemaRegistryCacheCapacity;
-    private boolean producerSchemaRegistryautoRegister;
-    private String producerJsonSchemaSpecVersion;
-    private boolean producerJsonWriteDatesAs8601;
-    private boolean producerJsonOneOfForNullables;
-    private boolean producerJsonFailInvalidSchema;
-    private boolean producerJsonFailUnknownProperties;
-    private String producerKeySubjectNameStrategy;
-    private String producerValueSubjectNameStrategy;
 
     private final boolean meterRegistryExporterJmxActivate;
     private final boolean meterRegistryExporterPrometheusActivate;
@@ -94,6 +102,13 @@ public class HttpSinkConnectorConfig extends AbstractConfig {
         this.producerJsonFailUnknownProperties = getBoolean(PRODUCER_JSON_FAIL_UNKNOWN_PROPERTIES);
         this.producerKeySubjectNameStrategy = getString(PRODUCER_KEY_SUBJECT_NAME_STRATEGY);
         this.producerValueSubjectNameStrategy = getString(PRODUCER_VALUE_SUBJECT_NAME_STRATEGY);
+        this.missingIdCacheTTLSec = getInt(PRODUCER_MISSING_ID_CACHE_TTL_SEC);
+        this.missingVersionCacheTTLSec = getInt(PRODUCER_MISSING_VERSION_CACHE_TTL_SEC);
+        this.missingSchemaCacheTTLSec = getInt(PRODUCER_MISSING_SCHEMA_CACHE_TTL_SEC);
+        this.missingCacheSize = getInt(PRODUCER_MISSING_CACHE_SIZE);
+        this.bearerAuthCacheExpiryBufferSeconds = getInt(PRODUCER_BEARER_AUTH_CACHE_EXPIRY_BUFFER_SECONDS);
+        this.bearerAuthScopeClaimName = getString(PRODUCER_BEARER_AUTH_SCOPE_CLAIM_NAME);
+        this.bearerAuthSubClaimName = getString(PRODUCER_BEARER_AUTH_SUB_CLAIM_NAME);
 
         //meter Registry
         this.meterRegistryExporterJmxActivate = Boolean.parseBoolean(getString(METER_REGISTRY_EXPORTER_JMX_ACTIVATE));
@@ -154,6 +169,33 @@ public class HttpSinkConnectorConfig extends AbstractConfig {
         return queueName;
     }
 
+    public Integer getMissingIdCacheTTLSec() {
+        return missingIdCacheTTLSec;
+    }
+
+    public Integer getMissingVersionCacheTTLSec() {
+        return missingVersionCacheTTLSec;
+    }
+
+    public Integer getMissingSchemaCacheTTLSec() {
+        return missingSchemaCacheTTLSec;
+    }
+
+    public Integer getMissingCacheSize() {
+        return missingCacheSize;
+    }
+
+    public Integer getBearerAuthCacheExpiryBufferSeconds() {
+        return bearerAuthCacheExpiryBufferSeconds;
+    }
+
+    public String getBearerAuthScopeClaimName() {
+        return bearerAuthScopeClaimName;
+    }
+
+    public String getBearerAuthSubClaimName() {
+        return bearerAuthSubClaimName;
+    }
 
     public Map<String, List<String>> getStaticRequestHeaders() {
         return Maps.newHashMap(staticRequestHeaders);

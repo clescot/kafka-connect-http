@@ -178,14 +178,28 @@ public class HttpSinkTask extends SinkTask {
             int schemaRegistryCacheCapacity = httpSinkConnectorConfig.getProducerSchemaRegistrycacheCapacity();
             List<SchemaProvider> schemaProviders = Lists.newArrayList();
             schemaProviders.add(new JsonSchemaProvider());
-            Map<String,?> config = Maps.newHashMap();
-            //TODO "missing.id.cache.ttl.sec"
-            //TODO "missing.version.cache.ttl.sec"
-            //TODO "missing.schema.cache.ttl.sec"
-            //TODO "missing.cache.size"
-            //TODO "bearer.auth.cache.expiry.buffer.seconds"
-            //TODO "bearer.auth.scope.claim.name"
-            //TODO "bearer.auth.sub.claim.name"
+            Map<String,Object> config = Maps.newHashMap();
+            if(httpSinkConnectorConfig.getMissingIdCacheTTLSec()!=null){
+                config.put("missing.id.cache.ttl.sec",httpSinkConnectorConfig.getMissingIdCacheTTLSec());
+            }
+            if(httpSinkConnectorConfig.getMissingVersionCacheTTLSec()!=null){
+                config.put("missing.version.cache.ttl.sec",httpSinkConnectorConfig.getMissingVersionCacheTTLSec());
+            }
+            if(httpSinkConnectorConfig.getMissingSchemaCacheTTLSec()!=null){
+                config.put("missing.schema.cache.ttl.sec",httpSinkConnectorConfig.getMissingVersionCacheTTLSec());
+            }
+            if(httpSinkConnectorConfig.getMissingCacheSize()!=null){
+                config.put("missing.cache.size",httpSinkConnectorConfig.getMissingCacheSize());
+            }
+            if(httpSinkConnectorConfig.getMissingCacheSize()!=null){
+                config.put("bearer.auth.cache.expiry.buffer.seconds",httpSinkConnectorConfig.getBearerAuthCacheExpiryBufferSeconds());
+            }
+            if(httpSinkConnectorConfig.getBearerAuthScopeClaimName()!=null){
+                config.put("bearer.auth.scope.claim.name",httpSinkConnectorConfig.getBearerAuthScopeClaimName());
+            }
+            if(httpSinkConnectorConfig.getBearerAuthSubClaimName()!=null){
+                config.put("bearer.auth.sub.claim.name",httpSinkConnectorConfig.getBearerAuthSubClaimName());
+            }
             Map<String,String> httpHeaders = Maps.newHashMap();
             RestService restService = new RestService(schemaRegistryUrl);
             SchemaRegistryClient schemaRegistryClient = new CachedSchemaRegistryClient(restService, schemaRegistryCacheCapacity,schemaProviders,config,httpHeaders);

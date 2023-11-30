@@ -38,6 +38,20 @@ public class HttpSinkConfigDefinition {
     public static final String PRODUCER_KEY_SUBJECT_NAME_STRATEGY_DOC = "";
     public static final String PRODUCER_VALUE_SUBJECT_NAME_STRATEGY = PRODUCER_PREFIX+JSON_PREFIX+"value.subject.name.strategy";
     public static final String PRODUCER_VALUE_SUBJECT_NAME_STRATEGY_DOC = "";
+    public static final String PRODUCER_MISSING_ID_CACHE_TTL_SEC = PRODUCER_PREFIX+"missing.id.cache.ttl.sec";
+    public static final String PRODUCER_MISSING_ID_CACHE_TTL_SEC_DOC = "";
+    public static final String PRODUCER_MISSING_VERSION_CACHE_TTL_SEC = PRODUCER_PREFIX+"missing.version.cache.ttl.sec";
+    public static final String PRODUCER_MISSING_VERSION_CACHE_TTL_SEC_DOC = "";
+    public static final String PRODUCER_MISSING_SCHEMA_CACHE_TTL_SEC = PRODUCER_PREFIX+"missing.schema.cache.ttl.sec";
+    public static final String PRODUCER_MISSING_SCHEMA_CACHE_TTL_SEC_DOC = "";
+    public static final String PRODUCER_MISSING_CACHE_SIZE = PRODUCER_PREFIX+"missing.cache.size";
+    public static final String PRODUCER_MISSING_CACHE_SIZE_DOC = "";
+    public static final String PRODUCER_BEARER_AUTH_CACHE_EXPIRY_BUFFER_SECONDS = PRODUCER_PREFIX+"bearer.auth.cache.expiry.buffer.seconds";
+    public static final String PRODUCER_BEARER_AUTH_CACHE_EXPIRY_BUFFER_SECONDS_DOC = "";
+    public static final String PRODUCER_BEARER_AUTH_SCOPE_CLAIM_NAME = PRODUCER_PREFIX+"bearer.auth.scope.claim.name";
+    public static final String PRODUCER_BEARER_AUTH_SCOPE_CLAIM_NAME_DOC = "";
+    public static final String PRODUCER_BEARER_AUTH_SUB_CLAIM_NAME = PRODUCER_PREFIX+"bearer.auth.sub.claim.name";
+    public static final String PRODUCER_BEARER_AUTH_SUB_CLAIM_NAME_DOC = "";
 
     //meter registry
     public static final String METER_REGISTRY_EXPORTER_JMX_ACTIVATE = "meter.registry.exporter.jmx.activate";
@@ -477,6 +491,13 @@ public class HttpSinkConfigDefinition {
                 .define(PRODUCER_TOPIC, ConfigDef.Type.STRING,"",ConfigDef.Importance.MEDIUM,PRODUCER_TOPIC_DOC)
                 .define(PRODUCER_KEY_SUBJECT_NAME_STRATEGY, ConfigDef.Type.STRING,"io.confluent.kafka.serializers.subject.TopicRecordNameStrategy",ConfigDef.Importance.MEDIUM,PRODUCER_KEY_SUBJECT_NAME_STRATEGY_DOC)
                 .define(PRODUCER_VALUE_SUBJECT_NAME_STRATEGY, ConfigDef.Type.STRING,"io.confluent.kafka.serializers.subject.TopicRecordNameStrategy",ConfigDef.Importance.MEDIUM,PRODUCER_VALUE_SUBJECT_NAME_STRATEGY_DOC)
+                .define(PRODUCER_MISSING_ID_CACHE_TTL_SEC, ConfigDef.Type.INT,null,ConfigDef.Importance.LOW,PRODUCER_MISSING_ID_CACHE_TTL_SEC_DOC)
+                .define(PRODUCER_MISSING_VERSION_CACHE_TTL_SEC, ConfigDef.Type.INT,null,ConfigDef.Importance.LOW,PRODUCER_MISSING_VERSION_CACHE_TTL_SEC_DOC)
+                .define(PRODUCER_MISSING_SCHEMA_CACHE_TTL_SEC, ConfigDef.Type.INT,null,ConfigDef.Importance.LOW,PRODUCER_MISSING_SCHEMA_CACHE_TTL_SEC_DOC)
+                .define(PRODUCER_MISSING_CACHE_SIZE, ConfigDef.Type.INT,null,ConfigDef.Importance.LOW,PRODUCER_MISSING_CACHE_SIZE_DOC)
+                .define(PRODUCER_BEARER_AUTH_CACHE_EXPIRY_BUFFER_SECONDS, ConfigDef.Type.INT,null,ConfigDef.Importance.LOW,PRODUCER_BEARER_AUTH_CACHE_EXPIRY_BUFFER_SECONDS_DOC)
+                .define(PRODUCER_BEARER_AUTH_SCOPE_CLAIM_NAME, ConfigDef.Type.STRING,null,ConfigDef.Importance.LOW,PRODUCER_BEARER_AUTH_SCOPE_CLAIM_NAME_DOC)
+                .define(PRODUCER_BEARER_AUTH_SUB_CLAIM_NAME, ConfigDef.Type.STRING,null,ConfigDef.Importance.LOW,PRODUCER_BEARER_AUTH_SUB_CLAIM_NAME_DOC)
                     //schema registry
                 .define(PRODUCER_SCHEMA_REGISTRY_URL, ConfigDef.Type.STRING,"",ConfigDef.Importance.LOW,PRODUCER_SCHEMA_REGISTRY_URL_DOC)
                 .define(PRODUCER_SCHEMA_REGISTRY_CACHE_CAPACITY, ConfigDef.Type.INT,1000,ConfigDef.Importance.LOW,PRODUCER_SCHEMA_REGISTRY_CACHE_CAPACITY_DOC)
