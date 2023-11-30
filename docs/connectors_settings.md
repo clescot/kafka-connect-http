@@ -102,7 +102,7 @@ Both exports (JMX and Prometheus) can be combined.
   by default, the port open is the default prometheus one (`9090`), but you can define yours with this setting :
   `"meter.registry.exporter.prometheus.port":"9087`
 
-#### configuration
+### configuration
 
 The connector ships with a `default` configuration, and we can, if needed, configure more configurations.
 A configuration is identified with a unique `id`.
@@ -117,7 +117,7 @@ Note that the `default` configuration is always created, and must not be referen
 For example, the `test4` configuration will have all its settings starting with the `config.test4` prefix,
 following by other prefixes listed above. 
 
-##### predicate
+#### predicate
 A configuration apply to some http requests based on a predicate  : all http requests not managed by a configuration are catch by the `default` configuration)
 All the settings of the predicate, are starting with the `config.<configurationId>.predicate`.
 The predicate permits to filter some http requests, and can be composed, cumulatively, with : 
@@ -251,7 +251,7 @@ The predicate permits to filter some http requests, and can be composed, cumulat
     - *`org.asynchttpclient.byte.buffer.allocator`* (default `io.netty.buffer.PooledByteBufAllocator`)
   
 
-#### Configuration example
+### Configuration example
 
 - `sink.json` example :
 ```json 
