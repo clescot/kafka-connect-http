@@ -260,6 +260,7 @@ public class ITConnectorTest {
                     .with("producer.schema.registry.url", internalSchemaRegistryUrl)
                     .with("producer.topic", queueNameOrProducerTopic);
         }
+
         if (additionalSettings != null && additionalSettings.length > 0) {
             for (Map.Entry<String, String> additionalSetting : additionalSettings) {
                 sinkConnectorMessagesAsStringConfiguration = sinkConnectorMessagesAsStringConfiguration.with(additionalSetting.getKey(), additionalSetting.getValue());

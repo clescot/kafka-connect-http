@@ -1,5 +1,7 @@
 package io.github.clescot.kafka.connect.http.sink;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.google.common.base.Preconditions;
 import com.google.common.base.Strings;
 import com.google.common.collect.Lists;
@@ -24,8 +26,6 @@ import org.apache.kafka.common.KafkaException;
 import org.apache.kafka.common.PartitionInfo;
 import org.apache.kafka.common.serialization.Serializer;
 import org.apache.kafka.common.serialization.StringSerializer;
-import org.apache.kafka.connect.data.ConnectSchema;
-import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.errors.ConnectException;
 import org.apache.kafka.connect.sink.ErrantRecordReporter;
 import org.apache.kafka.connect.sink.SinkRecord;
@@ -67,6 +67,7 @@ public class HttpSinkTask extends SinkTask {
     private PublishMode publishMode;
     private HttpSinkConnectorConfig httpSinkConnectorConfig;
     private Map<String, Object> producerSettings;
+    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper().registerModule(new JavaTimeModule());
 
     public HttpSinkTask() {
         producer = new KafkaProducer<>();
@@ -136,9 +137,6 @@ public class HttpSinkTask extends SinkTask {
                         "'ms timeout reached :" + queueName + "' queue hasn't got any consumer, " +
                         "i.e no Source Connector has been configured to consume records published in this in memory queue. " +
                         "we stop the Sink Connector to prevent any OutOfMemoryError.");
-                break;
-            case DLQ:
-                LOGGER.debug("DLQ publish mode");
                 break;
             case NONE:
             default:
@@ -281,19 +279,6 @@ public class HttpSinkTask extends SinkTask {
                                 if (PublishMode.IN_MEMORY_QUEUE.equals(this.publishMode)) {
                                     LOGGER.debug("publish.mode : 'IN_MEMORY_QUEUE': http exchange published to queue '{}':{}", queueName, httpExchange);
                                     queue.offer(new KafkaRecord(sinkRecord.headers(), sinkRecord.keySchema(), sinkRecord.key(), httpExchange));
-                                } else if (PublishMode.DLQ.equals(this.publishMode)) {
-                                    LOGGER.debug("publish.mode : 'DLQ' : HttpExchange published to DLQ");
-                                    SinkRecord myRecord = new SinkRecord(
-                                            sinkRecord.topic(),
-                                            sinkRecord.kafkaPartition(),
-                                            sinkRecord.keySchema(),
-                                            sinkRecord.key(),
-                                            new ConnectSchema(Schema.Type.STRUCT),
-                                            httpExchange,
-                                            sinkRecord.kafkaOffset(),
-                                            sinkRecord.timestamp(),
-                                            sinkRecord.timestampType());
-                                    errantRecordReporter.report(myRecord, new FakeErrantRecordReporterException("dlq.mode"));
                                 } else if (PublishMode.PRODUCER.equals(this.publishMode)) {
 
                                     LOGGER.debug("publish.mode : 'PRODUCER' : HttpExchange will be published at topic : '{}'", httpSinkConnectorConfig.getProducerTopic());

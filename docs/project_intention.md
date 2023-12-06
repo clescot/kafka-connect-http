@@ -52,23 +52,11 @@ You can solve the 'publish' challenge in 4 different modes (each one has got som
 
 !['NONE' Publish mode Architecture](architecture_NONE.png)
 
-### the `DLQ` mode
-   - advantages :
-     - you configure only one connector
-     - you have no locality restrictions
-     - your configuration is easy
-     - you get the HTTP responses
-   - drawbacks :
-     - you mix in the same error topic, the HTTP responses with some potential real errors (of this connector).
-
-!['Dead Letter Queue' Publish mode Architecture](architecture_DLQ.png)
-
 ### the `PRODUCER` mode
   - advantages :
     - you configure only one connector
     - you have no locality restrictions
     - you get the HTTP responses
-    - you don't mix different informations in the same topic
   - drawbacks :
     - your configuration is more complex : you duplicate some connection configuration, which can be challenging in some cases :
       - at the _kafka connect cluster_ level
@@ -93,8 +81,7 @@ You can solve the 'publish' challenge in 4 different modes (each one has got som
 
   - advantages :
     - you get the HTTP responses
-    - your configuration is easy (configuration of two connectors, but both high-level configurations)  
-    - you don't mix different informations in the same topic
+    - your configuration is easy (configuration of two connectors, but both high-level configurations)
   - drawbacks :
     - The only one constraint when you want to get the Http response (i.e using the Sink AND the Source connectors), is to
       **colocate** in the same Kafka Connect instances both connectors.
