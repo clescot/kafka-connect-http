@@ -1,7 +1,5 @@
 package io.github.clescot.kafka.connect.http.sink;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.google.common.base.Preconditions;
 import com.google.common.base.Strings;
 import com.google.common.collect.Lists;
@@ -58,6 +56,7 @@ public class HttpSinkTask extends SinkTask {
     public static final String MISSING_SCHEMA_CACHE_TTL_SEC = "missing.schema.cache.ttl.sec";
     public static final String MISSING_VERSION_CACHE_TTL_SEC = "missing.version.cache.ttl.sec";
     public static final String MISSING_ID_CACHE_TTL_SEC = "missing.id.cache.ttl.sec";
+    public static final String RECORD_NOT_SENT = "/!\\ ☠☠ record NOT sent ☠☠";
 
     private ErrantRecordReporter errantRecordReporter;
     private HttpTask<SinkRecord> httpTask;
@@ -67,7 +66,6 @@ public class HttpSinkTask extends SinkTask {
     private PublishMode publishMode;
     private HttpSinkConnectorConfig httpSinkConnectorConfig;
     private Map<String, Object> producerSettings;
-    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper().registerModule(new JavaTimeModule());
 
     public HttpSinkTask() {
         producer = new KafkaProducer<>();
@@ -288,9 +286,10 @@ public class HttpSinkTask extends SinkTask {
                                         this.producer.send(myRecord).get(3, TimeUnit.SECONDS);
                                         LOGGER.debug("✉✉ record sent ✉✉");
                                     } catch (InterruptedException | ExecutionException | TimeoutException e) {
-                                        LOGGER.debug("/!\\ ☠☠ record NOT sent ☠☠");
-                                        LOGGER.error(e.getMessage());
-                                        throw new ConnectException(e);
+                                        LOGGER.debug(RECORD_NOT_SENT);
+                                        LOGGER.error(e.getMessage(),e);
+                                        Thread.currentThread().interrupt();
+                                        throw new ConnectException(RECORD_NOT_SENT,e);
                                     }
                                 } else {
                                     LOGGER.debug("publish.mode : 'NONE' http exchange NOT published :'{}'", httpExchange);
