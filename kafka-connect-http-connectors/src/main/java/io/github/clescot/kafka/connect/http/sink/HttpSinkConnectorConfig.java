@@ -374,10 +374,6 @@ public class HttpSinkConnectorConfig extends AbstractConfig {
         return producerFormat;
     }
 
-    public int getProducerSchemaRegistryCacheCapacity() {
-        return producerSchemaRegistryCacheCapacity;
-    }
-
     public String getProducerJsonSchemaSpecVersion() {
         return producerJsonSchemaSpecVersion;
     }
