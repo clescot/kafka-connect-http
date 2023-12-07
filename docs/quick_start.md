@@ -40,7 +40,7 @@ Multiple configurations are available :
     "producer.bootstrap.servers": "kafka:9092",
     "producer.schema.registry.url": "https://myschemaregistry.com:8081",
     "producer.success.topic": "http-success",
-    "producer.errors.topic": "http-errors"
+    "producer.error.topic": "http-error"
     }
 }
 ```
@@ -61,7 +61,7 @@ Multiple configurations are available :
     "producer.bootstrap.servers": "kafka:9092",
     "producer.schema.registry.url": "https://myschemaregistry.com:8081",
     "producer.success.topic": "http-success",
-    "producer.errors.topic": "http-errors"
+    "producer.error.topic": "http-error"
     }
 }
 ```
@@ -98,7 +98,7 @@ depending on the HTTP result.
     "connector.class":"io.github.clescot.kafka.connect.http.source.HttpSourceConnector",
     "tasks.max": "1",
     "success.topic": "http-success",
-    "error.topic": "http-errors"
+    "error.topic": "http-error"
     }
 }
 ```

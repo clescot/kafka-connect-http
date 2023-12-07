@@ -259,7 +259,7 @@ public class ITConnectorTest {
                     .with("producer.bootstrap.servers", "kafka:9092")
                     .with("producer.schema.registry.url", internalSchemaRegistryUrl)
                     .with("producer.success.topic", queueNameOrProducerTopic)
-                    .with("producer.errors.topic", "http-errors")
+                    .with("producer.error.topic", "http-error")
             ;
         }
 

@@ -24,7 +24,7 @@ public class HttpSinkConnectorConfig extends AbstractConfig {
     //publish mode set to 'producer'
     private final String producerBootstrapServers;
     private final String producerSuccessTopic;
-    private final String producerErrorsTopic;
+    private final String producerErrorTopic;
     private final String producerSchemaRegistryUrl;
     private final int producerSchemaRegistryCacheCapacity;
     private final boolean producerSchemaRegistryautoRegister;
@@ -133,7 +133,7 @@ public class HttpSinkConnectorConfig extends AbstractConfig {
         this.queueName = Optional.ofNullable(getString(ConfigConstants.QUEUE_NAME)).orElse(QueueFactory.DEFAULT_QUEUE_NAME);
         this.publishMode = PublishMode.valueOf(Optional.ofNullable(getString(PUBLISH_MODE)).orElse(PublishMode.NONE.name()));
         this.producerSuccessTopic = getString(PRODUCER_SUCCESS_TOPIC);
-        this.producerErrorsTopic = getString(PRODUCER_ERRORS_TOPIC);
+        this.producerErrorTopic = getString(PRODUCER_ERROR_TOPIC);
         if (QueueFactory.queueMapIsEmpty()&&PublishMode.IN_MEMORY_QUEUE.name().equalsIgnoreCase(publishMode.name())) {
             LOGGER.warn("no pre-existing queue exists. this HttpSourceConnector has created a '{}' one. It needs to consume a queue filled with a SinkConnector. Ignore this message if a SinkConnector will be created after this one.", queueName);
         }
@@ -344,8 +344,8 @@ public class HttpSinkConnectorConfig extends AbstractConfig {
         return producerSchemaRegistryUrl;
     }
 
-    public String getProducerErrorsTopic() {
-        return producerErrorsTopic;
+    public String getProducerErrorTopic() {
+        return producerErrorTopic;
     }
 
     public int getProducerSchemaRegistryCacheCapacity() {
@@ -399,7 +399,7 @@ public class HttpSinkConnectorConfig extends AbstractConfig {
                 "producerFormat='" + producerFormat + '\'' +
                 ", producerBootstrapServers='" + producerBootstrapServers + '\'' +
                 ", producerSuccessTopic='" + producerSuccessTopic + '\'' +
-                ", producerErrorTopic='" + producerErrorsTopic + '\'' +
+                ", producerErrorTopic='" + producerErrorTopic + '\'' +
                 ", producerSchemaRegistryUrl='" + producerSchemaRegistryUrl + '\'' +
                 ", producerSchemaRegistryCacheCapacity=" + producerSchemaRegistryCacheCapacity +
                 ", producerSchemaRegistryautoRegister=" + producerSchemaRegistryautoRegister +

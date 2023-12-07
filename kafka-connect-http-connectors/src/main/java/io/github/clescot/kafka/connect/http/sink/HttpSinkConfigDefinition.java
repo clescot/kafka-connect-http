@@ -15,7 +15,7 @@ public class HttpSinkConfigDefinition {
     public static final String PRODUCER_BOOTSTRAP_SERVERS = PRODUCER_PREFIX+"bootstrap.servers";
     public static final String PRODUCER_BOOTSTRAP_SERVERS_DOC = "low level producer bootstrap server adresse to publish";
     public static final String PRODUCER_SUCCESS_TOPIC = PRODUCER_PREFIX+"success.topic";
-    public static final String PRODUCER_ERRORS_TOPIC = PRODUCER_PREFIX+"errors.topic";
+    public static final String PRODUCER_ERROR_TOPIC = PRODUCER_PREFIX+"error.topic";
     public static final String PRODUCER_TOPIC_DOC = "producer topic";
     public static final String PRODUCER_FORMAT = PRODUCER_PREFIX+"format";
     public static final String PRODUCER_FORMAT_DOC = "can be 'json', or 'string'; default to 'string'.";
@@ -490,7 +490,7 @@ public class HttpSinkConfigDefinition {
                     //bootstrap servers
                 .define(PRODUCER_BOOTSTRAP_SERVERS, ConfigDef.Type.STRING,"",ConfigDef.Importance.MEDIUM,PRODUCER_BOOTSTRAP_SERVERS_DOC)
                 .define(PRODUCER_SUCCESS_TOPIC, ConfigDef.Type.STRING,"http-success",ConfigDef.Importance.MEDIUM,PRODUCER_TOPIC_DOC)
-                .define(PRODUCER_ERRORS_TOPIC, ConfigDef.Type.STRING,"http-errors",ConfigDef.Importance.MEDIUM,PRODUCER_TOPIC_DOC)
+                .define(PRODUCER_ERROR_TOPIC, ConfigDef.Type.STRING,"http-errors",ConfigDef.Importance.MEDIUM,PRODUCER_TOPIC_DOC)
                 .define(PRODUCER_KEY_SUBJECT_NAME_STRATEGY, ConfigDef.Type.STRING,"io.confluent.kafka.serializers.subject.TopicRecordNameStrategy",ConfigDef.Importance.MEDIUM,PRODUCER_KEY_SUBJECT_NAME_STRATEGY_DOC)
                 .define(PRODUCER_VALUE_SUBJECT_NAME_STRATEGY, ConfigDef.Type.STRING,"io.confluent.kafka.serializers.subject.TopicRecordNameStrategy",ConfigDef.Importance.MEDIUM,PRODUCER_VALUE_SUBJECT_NAME_STRATEGY_DOC)
                 .define(PRODUCER_MISSING_ID_CACHE_TTL_SEC, ConfigDef.Type.INT,null,ConfigDef.Importance.LOW,PRODUCER_MISSING_ID_CACHE_TTL_SEC_DOC)

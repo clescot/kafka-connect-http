@@ -114,7 +114,7 @@ public class HttpSinkTask extends SinkTask {
                 //low-level producer is configured (bootstrap.servers is a requirement)
                 Preconditions.checkArgument(!Strings.isNullOrEmpty(httpSinkConnectorConfig.getProducerBootstrapServers()), "producer.bootstrap.servers is not set.\n" + httpSinkConnectorConfig.toString());
                 Preconditions.checkArgument(!Strings.isNullOrEmpty(httpSinkConnectorConfig.getProducerSuccessTopic()), "producer.success.topic is not set.\n" + httpSinkConnectorConfig.toString());
-                Preconditions.checkArgument(!Strings.isNullOrEmpty(httpSinkConnectorConfig.getProducerErrorsTopic()), "producer.errors.topic is not set.\n" + httpSinkConnectorConfig.toString());
+                Preconditions.checkArgument(!Strings.isNullOrEmpty(httpSinkConnectorConfig.getProducerErrorTopic()), "producer.error.topic is not set.\n" + httpSinkConnectorConfig.toString());
                 Serializer<HttpExchange> serializer = getHttpExchangeSerializer(httpSinkConnectorConfig);
                 producerSettings = httpSinkConnectorConfig.originalsWithPrefix(PRODUCER_PREFIX);
                 producer.configure(producerSettings, new StringSerializer(), serializer);
@@ -281,9 +281,9 @@ public class HttpSinkTask extends SinkTask {
                                 } else if (PublishMode.PRODUCER.equals(this.publishMode)) {
 
                                     LOGGER.debug("publish.mode : 'PRODUCER' : HttpExchange success will be published at topic : '{}'", httpSinkConnectorConfig.getProducerSuccessTopic());
-                                    LOGGER.debug("publish.mode : 'PRODUCER' : HttpExchange error will be published at topic : '{}'", httpSinkConnectorConfig.getProducerErrorsTopic());
+                                    LOGGER.debug("publish.mode : 'PRODUCER' : HttpExchange error will be published at topic : '{}'", httpSinkConnectorConfig.getProducerErrorTopic());
                                     try {
-                                        String targetTopic = httpExchange.isSuccess()?httpSinkConnectorConfig.getProducerSuccessTopic():httpSinkConnectorConfig.getProducerErrorsTopic();
+                                        String targetTopic = httpExchange.isSuccess()?httpSinkConnectorConfig.getProducerSuccessTopic():httpSinkConnectorConfig.getProducerErrorTopic();
                                         ProducerRecord<String, HttpExchange> myRecord = new ProducerRecord<>(targetTopic, httpExchange);
                                         LOGGER.trace("before send to {}", targetTopic);
                                         this.producer.send(myRecord).get(3, TimeUnit.SECONDS);
