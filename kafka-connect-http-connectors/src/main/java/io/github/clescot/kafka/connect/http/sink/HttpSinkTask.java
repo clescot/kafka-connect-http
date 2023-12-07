@@ -113,7 +113,8 @@ public class HttpSinkTask extends SinkTask {
             case PRODUCER:
                 //low-level producer is configured (bootstrap.servers is a requirement)
                 Preconditions.checkArgument(!Strings.isNullOrEmpty(httpSinkConnectorConfig.getProducerBootstrapServers()), "producer.bootstrap.servers is not set.\n" + httpSinkConnectorConfig.toString());
-                Preconditions.checkArgument(!Strings.isNullOrEmpty(httpSinkConnectorConfig.getProducerTopic()), "producer.topic is not set.\n" + httpSinkConnectorConfig.toString());
+                Preconditions.checkArgument(!Strings.isNullOrEmpty(httpSinkConnectorConfig.getProducerSuccessTopic()), "producer.success.topic is not set.\n" + httpSinkConnectorConfig.toString());
+                Preconditions.checkArgument(!Strings.isNullOrEmpty(httpSinkConnectorConfig.getProducerErrorsTopic()), "producer.errors.topic is not set.\n" + httpSinkConnectorConfig.toString());
                 Serializer<HttpExchange> serializer = getHttpExchangeSerializer(httpSinkConnectorConfig);
                 producerSettings = httpSinkConnectorConfig.originalsWithPrefix(PRODUCER_PREFIX);
                 producer.configure(producerSettings, new StringSerializer(), serializer);
@@ -145,10 +146,10 @@ public class HttpSinkTask extends SinkTask {
     }
 
     private void checkKafkaConnectivity() {
-        LOGGER.info("test connectivity to kafka cluster for producer with address :'{}' for topic:'{}'", httpSinkConnectorConfig.getProducerBootstrapServers(), httpSinkConnectorConfig.getProducerTopic());
+        LOGGER.info("test connectivity to kafka cluster for producer with address :'{}' for topic:'{}'", httpSinkConnectorConfig.getProducerBootstrapServers(), httpSinkConnectorConfig.getProducerSuccessTopic());
         List<PartitionInfo> partitionInfos;
         try {
-            partitionInfos = producer.partitionsFor(httpSinkConnectorConfig.getProducerTopic());
+            partitionInfos = producer.partitionsFor(httpSinkConnectorConfig.getProducerSuccessTopic());
         } catch (KafkaException e) {
             LOGGER.error("connectivity error.\nproducer settings :");
             for (Map.Entry<String, Object> entry : producerSettings.entrySet()) {
@@ -177,7 +178,7 @@ public class HttpSinkTask extends SinkTask {
             String schemaRegistryUrl = httpSinkConnectorConfig.getProducerSchemaRegistryUrl();
             serdeConfig.put(SCHEMA_REGISTRY_URL_CONFIG, schemaRegistryUrl);
 
-            int schemaRegistryCacheCapacity = httpSinkConnectorConfig.getProducerSchemaRegistrycacheCapacity();
+            int schemaRegistryCacheCapacity = httpSinkConnectorConfig.getProducerSchemaRegistryCacheCapacity();
             List<SchemaProvider> schemaProviders = Lists.newArrayList();
             schemaProviders.add(new JsonSchemaProvider());
             Map<String,Object> config = Maps.newHashMap();
@@ -279,10 +280,12 @@ public class HttpSinkTask extends SinkTask {
                                     queue.offer(new KafkaRecord(sinkRecord.headers(), sinkRecord.keySchema(), sinkRecord.key(), httpExchange));
                                 } else if (PublishMode.PRODUCER.equals(this.publishMode)) {
 
-                                    LOGGER.debug("publish.mode : 'PRODUCER' : HttpExchange will be published at topic : '{}'", httpSinkConnectorConfig.getProducerTopic());
+                                    LOGGER.debug("publish.mode : 'PRODUCER' : HttpExchange success will be published at topic : '{}'", httpSinkConnectorConfig.getProducerSuccessTopic());
+                                    LOGGER.debug("publish.mode : 'PRODUCER' : HttpExchange error will be published at topic : '{}'", httpSinkConnectorConfig.getProducerErrorsTopic());
                                     try {
-                                        ProducerRecord<String, HttpExchange> myRecord = new ProducerRecord<>(httpSinkConnectorConfig.getProducerTopic(), httpExchange);
-                                        LOGGER.trace("before send to {}", httpSinkConnectorConfig.getProducerTopic());
+                                        String targetTopic = httpExchange.isSuccess()?httpSinkConnectorConfig.getProducerSuccessTopic():httpSinkConnectorConfig.getProducerErrorsTopic();
+                                        ProducerRecord<String, HttpExchange> myRecord = new ProducerRecord<>(targetTopic, httpExchange);
+                                        LOGGER.trace("before send to {}", targetTopic);
                                         this.producer.send(myRecord).get(3, TimeUnit.SECONDS);
                                         LOGGER.debug("✉✉ record sent ✉✉");
                                     } catch (InterruptedException | ExecutionException | TimeoutException e) {

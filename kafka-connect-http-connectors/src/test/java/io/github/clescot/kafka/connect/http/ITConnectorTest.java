@@ -258,7 +258,9 @@ public class ITConnectorTest {
             sinkConnectorMessagesAsStringConfiguration = sinkConnectorMessagesAsStringConfiguration
                     .with("producer.bootstrap.servers", "kafka:9092")
                     .with("producer.schema.registry.url", internalSchemaRegistryUrl)
-                    .with("producer.topic", queueNameOrProducerTopic);
+                    .with("producer.success.topic", queueNameOrProducerTopic)
+                    .with("producer.errors.topic", "http-errors")
+            ;
         }
 
         if (additionalSettings != null && additionalSettings.length > 0) {

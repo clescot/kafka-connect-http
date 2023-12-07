@@ -21,6 +21,8 @@ This configuration does NOT publish HTTP results to an in memory queue.
 
 ## Configuration to call web sites and publish results
 
+Multiple configurations are available : 
+
 ### Sink connector + direct low level producer with string output
 
 ```json 
