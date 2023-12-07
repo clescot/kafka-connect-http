@@ -16,16 +16,16 @@ import java.util.concurrent.ExecutorService;
 
 import static io.github.clescot.kafka.connect.http.sink.HttpSinkConfigDefinition.*;
 
-public interface HttpClientFactory<REQ,RES> {
+public interface HttpClientFactory<R,S> {
 
     Logger LOGGER = LoggerFactory.getLogger(HttpClientFactory.class);
-    HttpClient<REQ,RES> build(Map<String, Object> config,
+    HttpClient<R,S> build(Map<String, Object> config,
                               ExecutorService executorService,
                               Random random,
                               Proxy proxy,
                               ProxySelector proxySelector, CompositeMeterRegistry meterRegistry);
 
-    default HttpClient<REQ, RES> buildHttpClient(Map<String, Object> config,
+    default HttpClient<R,S> buildHttpClient(Map<String, Object> config,
                                                   ExecutorService executorService,
                                                   CompositeMeterRegistry meterRegistry, Random random) {
 
