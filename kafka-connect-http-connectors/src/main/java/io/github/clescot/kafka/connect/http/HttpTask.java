@@ -6,17 +6,18 @@ import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.google.common.base.Stopwatch;
 import com.google.common.collect.Lists;
 import dev.failsafe.Failsafe;
+import dev.failsafe.FailsafeExecutor;
 import dev.failsafe.RetryPolicy;
 import io.github.clescot.kafka.connect.http.client.Configuration;
 import io.github.clescot.kafka.connect.http.client.HttpClient;
+import io.github.clescot.kafka.connect.http.client.HttpClientFactory;
 import io.github.clescot.kafka.connect.http.client.HttpException;
+import io.github.clescot.kafka.connect.http.client.ahc.AHCHttpClientFactory;
+import io.github.clescot.kafka.connect.http.client.okhttp.OkHttpClientFactory;
 import io.github.clescot.kafka.connect.http.core.HttpExchange;
 import io.github.clescot.kafka.connect.http.core.HttpRequest;
 import io.github.clescot.kafka.connect.http.core.HttpRequestAsStruct;
 import io.github.clescot.kafka.connect.http.core.HttpResponse;
-import io.github.clescot.kafka.connect.http.core.queue.ConfigConstants;
-import io.github.clescot.kafka.connect.http.core.queue.KafkaRecord;
-import io.github.clescot.kafka.connect.http.core.queue.QueueFactory;
 import io.micrometer.core.instrument.Clock;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.binder.jvm.*;
@@ -42,8 +43,8 @@ import java.nio.charset.StandardCharsets;
 import java.time.OffsetDateTime;
 import java.time.ZoneId;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
-import java.util.Queue;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.ExecutorService;
@@ -59,37 +60,48 @@ public class HttpTask<T extends ConnectRecord<T>> {
     private static final Logger LOGGER = LoggerFactory.getLogger(HttpTask.class);
     public static final String SINK_RECORD_HAS_GOT_A_NULL_VALUE = "sinkRecord has got a 'null' value";
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper().registerModule(new JavaTimeModule());
-    private ExecutorService executorService;
-    private final Configuration defaultConfiguration;
-    private final boolean publishToInMemoryQueue;
-    private final String queueName;
-    private Queue<KafkaRecord> queue;
-    private static CompositeMeterRegistry meterRegistry;
     private final List<Configuration> customConfigurations;
+    private final Configuration defaultConfiguration;
+    private ExecutorService executorService;
+    private static CompositeMeterRegistry meterRegistry;
+
 
     public HttpTask(AbstractConfig config) {
+        //build meterRegistry
         if (meterRegistry == null) {
             HttpTask.meterRegistry = buildMeterRegistry(config);
         }
+        //build executorService
         Optional<Integer> customFixedThreadPoolSize = Optional.ofNullable(config.getInt(CONFIG_HTTP_CLIENT_ASYNC_FIXED_THREAD_POOL_SIZE));
-        if (customFixedThreadPoolSize.isPresent()) {
-            setThreadPoolSize(customFixedThreadPoolSize.get());
-        }
+        customFixedThreadPoolSize.ifPresent(integer -> this.executorService = buildExecutorService(integer));
+        //bind metrics to MeterRegistry and ExecutorService
         bindMetrics(config, meterRegistry, executorService);
-        this.defaultConfiguration = new Configuration(DEFAULT_CONFIGURATION_ID, config, executorService, meterRegistry);
-        this.publishToInMemoryQueue = Boolean.parseBoolean(config.getString(PUBLISH_TO_IN_MEMORY_QUEUE));
-        this.queueName = Optional.ofNullable(config.getString(ConfigConstants.QUEUE_NAME)).orElse(QueueFactory.DEFAULT_QUEUE_NAME);
-        this.queue = QueueFactory.getQueue(queueName);
-        this.customConfigurations = buildCustomConfigurations(config, defaultConfiguration, executorService);
+
+        Map<String, Object> defaultConfigurationSettings = config.originalsWithPrefix("config." + DEFAULT_CONFIGURATION_ID + ".");
+        String httpClientImplementation = (String) Optional.ofNullable(defaultConfigurationSettings.get(CONFIG_HTTP_CLIENT_IMPLEMENTATION)).orElse(OKHTTP_IMPLEMENTATION);
+        if (AHC_IMPLEMENTATION.equalsIgnoreCase(httpClientImplementation)) {
+            AHCHttpClientFactory factory = new AHCHttpClientFactory();
+            this.defaultConfiguration = new Configuration<>(DEFAULT_CONFIGURATION_ID, factory, config, executorService, meterRegistry);
+            this.customConfigurations = buildCustomConfigurations(factory,config, defaultConfiguration, executorService);
+        } else if (OKHTTP_IMPLEMENTATION.equalsIgnoreCase(httpClientImplementation)) {
+            OkHttpClientFactory factory = new OkHttpClientFactory();
+            this.defaultConfiguration = new Configuration<>(DEFAULT_CONFIGURATION_ID, factory, config, executorService, meterRegistry);
+            this.customConfigurations = buildCustomConfigurations(factory,config, defaultConfiguration, executorService);
+        } else {
+            LOGGER.error("unknown HttpClient implementation : must be either 'ahc' or 'okhttp', but is '{}'", httpClientImplementation);
+            throw new IllegalArgumentException("unknown HttpClient implementation : must be either 'ahc' or 'okhttp', but is '" + httpClientImplementation + "'");
+        }
+
     }
 
-    private List<Configuration> buildCustomConfigurations(AbstractConfig config,
-                                                          Configuration defaultConfiguration,
-                                                          ExecutorService executorService) {
+        private List<Configuration> buildCustomConfigurations(HttpClientFactory httpClientFactory,
+                                                              AbstractConfig config,
+                                                              Configuration defaultConfiguration,
+                                                              ExecutorService executorService) {
         CopyOnWriteArrayList<Configuration> configurations = Lists.newCopyOnWriteArrayList();
 
         for (String configId : Optional.ofNullable(config.getList(CONFIGURATION_IDS)).orElse(Lists.newArrayList())) {
-            Configuration configuration = new Configuration(configId, config, executorService, meterRegistry);
+            Configuration configuration = new Configuration(configId,httpClientFactory, config, executorService, meterRegistry);
             if (configuration.getHttpClient() == null) {
                 configuration.setHttpClient(defaultConfiguration.getHttpClient());
             }
@@ -112,13 +124,13 @@ public class HttpTask<T extends ConnectRecord<T>> {
         return configurations;
     }
 
-    protected HttpRequest buildHttpRequest(ConnectRecord<T> sinkRecord) throws ConnectException {
-        if (sinkRecord == null || sinkRecord.value() == null) {
+    protected HttpRequest buildHttpRequest(ConnectRecord<T> connectRecord) throws ConnectException {
+        if (connectRecord == null || connectRecord.value() == null) {
             LOGGER.warn(SINK_RECORD_HAS_GOT_A_NULL_VALUE);
             throw new ConnectException(SINK_RECORD_HAS_GOT_A_NULL_VALUE);
         }
         HttpRequest httpRequest = null;
-        Object value = sinkRecord.value();
+        Object value = connectRecord.value();
         Class<?> valueClass = value.getClass();
         String stringValue = null;
 
@@ -168,11 +180,18 @@ public class HttpTask<T extends ConnectRecord<T>> {
         return httpRequest;
     }
 
-
-    private CompletableFuture<HttpExchange> callAndPublish(ConnectRecord<T> sinkRecord,
-                                                           HttpRequest httpRequest,
+    /**
+     *  - enrich request
+     *  - execute the request
+     * @param httpRequest
+     * @param attempts
+     * @param configuration
+     * @return
+     */
+    private CompletableFuture<HttpExchange> callAndPublish(HttpRequest httpRequest,
                                                            AtomicInteger attempts,
                                                            Configuration configuration) {
+        attempts.addAndGet(HttpClient.ONE_HTTP_REQUEST);
         if(LOGGER.isTraceEnabled()){
             LOGGER.trace("before enrichment:{}",httpRequest);
         }
@@ -182,46 +201,40 @@ public class HttpTask<T extends ConnectRecord<T>> {
         }
         CompletableFuture<HttpExchange> completableFuture = configuration.getHttpClient().call(enrichedHttpRequest, attempts);
         return completableFuture
-                .thenApply(myHttpExchange -> {
-                    HttpExchange enrichedHttpExchange = configuration.enrich(myHttpExchange);
-
-                    //publish eventually to 'in memory' queue
-                    if (this.publishToInMemoryQueue) {
-                        LOGGER.debug("http exchange published to queue '{}':{}", queueName, enrichedHttpExchange);
-                        queue.offer(new KafkaRecord(sinkRecord.headers(), sinkRecord.keySchema(), sinkRecord.key(), enrichedHttpExchange));
-                    } else {
-                        LOGGER.debug("http exchange NOT published to queue '{}':{}", queueName, enrichedHttpExchange);
-                    }
-                    return enrichedHttpExchange;
-                });
+                .thenApply(configuration::enrichHttpExchange);
 
     }
 
-    private CompletableFuture<HttpExchange> callWithRetryPolicy(ConnectRecord<T> sinkRecord,
-                                                                HttpRequest httpRequest,
+    protected CompletableFuture<HttpExchange> callWithRetryPolicy(HttpRequest httpRequest,
                                                                 Configuration configuration) {
         Optional<RetryPolicy<HttpExchange>> retryPolicyForCall = configuration.getRetryPolicy();
         if (httpRequest != null) {
             AtomicInteger attempts = new AtomicInteger();
             try {
-                attempts.addAndGet(HttpClient.ONE_HTTP_REQUEST);
+
                 if (retryPolicyForCall.isPresent()) {
                     RetryPolicy<HttpExchange> retryPolicy = retryPolicyForCall.get();
-                    CompletableFuture<HttpExchange> httpExchangeFuture = callAndPublish(sinkRecord, httpRequest, attempts, configuration)
-                            .thenApply(configuration::handleRetry);
-                    return Failsafe.with(List.of(retryPolicy)).getStageAsync(() -> httpExchangeFuture);
+                    FailsafeExecutor<HttpExchange> failsafeExecutor = Failsafe
+                            .with(List.of(retryPolicy));
+                    if(executorService!=null){
+                        failsafeExecutor = failsafeExecutor.with(executorService);
+                    }
+                    return failsafeExecutor
+                            .getStageAsync(() -> callAndPublish(httpRequest, attempts, configuration)
+                            .thenApply(configuration::handleRetry));
                 } else {
-                    return callAndPublish(sinkRecord, httpRequest, attempts, configuration);
+                    return callAndPublish(httpRequest, attempts, configuration);
                 }
             } catch (Exception exception) {
                 LOGGER.error("Failed to call web service after {} retries with error({}). message:{} ", attempts, exception,
                         exception.getMessage());
-                return CompletableFuture.supplyAsync(() -> defaultConfiguration.getHttpClient().buildHttpExchange(
+                HttpExchange httpExchange = defaultConfiguration.getHttpClient().buildHttpExchange(
                         httpRequest,
                         new HttpResponse(HttpClient.SERVER_ERROR_STATUS_CODE, String.valueOf(exception.getMessage())),
                         Stopwatch.createUnstarted(), OffsetDateTime.now(ZoneId.of(HttpClient.UTC_ZONE_ID)),
                         attempts,
-                        HttpClient.FAILURE));
+                        HttpClient.FAILURE);
+                return CompletableFuture.supplyAsync(() -> httpExchange);
             }
         } else {
             throw new IllegalArgumentException("httpRequest is null");
@@ -243,10 +256,10 @@ public class HttpTask<T extends ConnectRecord<T>> {
             LOGGER.trace("configuration:{}",foundConfiguration);
         }
         //handle Request and Response
-        return callWithRetryPolicy(sinkRecord, httpRequest, foundConfiguration).thenApply(
-                myHttpExchange -> {
-                    LOGGER.debug("HTTP exchange :{}", myHttpExchange);
-                    return myHttpExchange;
+        return callWithRetryPolicy(httpRequest, foundConfiguration).thenApply(
+                httpExchange -> {
+                    LOGGER.debug("HTTP exchange :{}", httpExchange);
+                    return httpExchange;
                 }
         );
     }
@@ -322,13 +335,10 @@ public class HttpTask<T extends ConnectRecord<T>> {
      * define a static field from a non-static method need a static synchronized method
      *
      * @param customFixedThreadPoolSize max thread pool size for the executorService.
+     * @return executorService
      */
-    public void setThreadPoolSize(Integer customFixedThreadPoolSize) {
-        executorService = Executors.newFixedThreadPool(customFixedThreadPoolSize);
-    }
-
-    public void setQueue(Queue<KafkaRecord> queue) {
-        this.queue = queue;
+    public ExecutorService buildExecutorService(Integer customFixedThreadPoolSize) {
+        return Executors.newFixedThreadPool(customFixedThreadPoolSize);
     }
 
     public Configuration getDefaultConfiguration() {

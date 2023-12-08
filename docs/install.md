@@ -22,6 +22,8 @@ For example, `clescot-kafka-connect-http-connectors-0.6.2.zip`.
   `RUN confluent-hub install /tmp/kafka-connect-http.zip --no-prompt`
 - you're done ! 
 
+[An example of Dockerfile automating this  process is present in the git repository](../kafka-connect-http-connectors/src/main/resources/Dockerfile)
+
 # check the connector installation
 
 - you can check the installation, when you run your container, by listing the connectors installed via [the plugin REST API](https://docs.confluent.io/platform/current/connect/references/restapi.html#connector-plugins) :

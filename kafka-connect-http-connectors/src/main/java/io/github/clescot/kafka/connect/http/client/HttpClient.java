@@ -83,7 +83,6 @@ public interface HttpClient<Q, S> {
         OffsetDateTime now = OffsetDateTime.now(ZoneId.of(UTC_ZONE_ID));
         response = call(request);
         Preconditions.checkNotNull(response, "response is null");
-        LOGGER.info("native response: {}", response);
         return response.thenApply(this::buildResponse)
                 .thenApply(myResponse -> {
                             stopwatch.stop();

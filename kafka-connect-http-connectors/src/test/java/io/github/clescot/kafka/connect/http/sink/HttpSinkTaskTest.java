@@ -669,7 +669,7 @@ public class HttpSinkTaskTest {
         void test_put_with_publish_to_in_memory_queue_without_consumer() {
             //given
             Map<String, String> settings = Maps.newHashMap();
-            settings.put(PUBLISH_TO_IN_MEMORY_QUEUE, "true");
+            settings.put(PUBLISH_MODE, PublishMode.IN_MEMORY_QUEUE.name());
             settings.put(ConfigConstants.QUEUE_NAME, "test");
             settings.put(WAIT_TIME_REGISTRATION_QUEUE_CONSUMER_IN_MS, "200");
             //when
@@ -683,7 +683,7 @@ public class HttpSinkTaskTest {
         @Test
         void test_put_with_publish_in_memory_set_to_false() {
             Map<String, String> settings = Maps.newHashMap();
-            settings.put(PUBLISH_TO_IN_MEMORY_QUEUE, "false");
+            settings.put(PUBLISH_MODE, PublishMode.NONE.name());
             httpSinkTask.start(settings);
             AHCHttpClient httpClient = Mockito.mock(AHCHttpClient.class);
             HttpExchange dummyHttpExchange = getDummyHttpExchange();
@@ -705,7 +705,7 @@ public class HttpSinkTaskTest {
 
             //given
             Map<String, String> settings = Maps.newHashMap();
-            settings.put(PUBLISH_TO_IN_MEMORY_QUEUE, "true");
+            settings.put(PUBLISH_MODE, PublishMode.IN_MEMORY_QUEUE.name());
             QueueFactory.registerConsumerForQueue(QueueFactory.DEFAULT_QUEUE_NAME);
             httpSinkTask.start(settings);
             AHCHttpClient httpClient = Mockito.mock(AHCHttpClient.class);

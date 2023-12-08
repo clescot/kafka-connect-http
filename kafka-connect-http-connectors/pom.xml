@@ -51,6 +51,7 @@
             <groupId>io.confluent</groupId>
             <artifactId>kafka-schema-registry-client</artifactId>
             <version>${confluent.platform.version}</version>
+            <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>dev.failsafe</groupId>
@@ -110,8 +111,24 @@
             <artifactId>kafka-json-schema-provider</artifactId>
             <version>${confluent.platform.version}</version>
         </dependency>
+        <dependency>
+            <groupId>io.confluent</groupId>
+            <artifactId>kafka-json-schema-serializer</artifactId>
+            <version>${confluent.platform.version}</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>com.fasterxml.jackson</groupId>
+                    <artifactId>jacks</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
 
-
+        <dependency>
+            <groupId>io.confluent</groupId>
+            <artifactId>kafka-streams-json-schema-serde</artifactId>
+            <version>${confluent.platform.version}</version>
+            <scope>provided</scope>
+        </dependency>
         <dependency>
             <groupId>io.github.rburgst</groupId>
             <artifactId>okhttp-digest</artifactId>
@@ -131,6 +148,23 @@
             <groupId>com.fasterxml.jackson.core</groupId>
             <artifactId>jackson-annotations</artifactId>
             <version>${jackson.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>io.confluent</groupId>
+            <artifactId>kafka-json-schema-serializer</artifactId>
+            <scope>provided</scope>
+            <exclusions>
+                <exclusion>
+                    <groupId>com.fasterxml.jackson.core</groupId>
+                    <artifactId>jackson-databind</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+        <dependency>
+            <groupId>io.confluent</groupId>
+            <artifactId>kafka-json-schema-provider</artifactId>
+            <scope>provided</scope>
+            <version>${confluent.platform.version}</version>
         </dependency>
         <!-- test dependencies-->
         <dependency>
@@ -169,12 +203,6 @@
             <artifactId>jsonassert</artifactId>
             <scope>test</scope>
         </dependency>
-        <dependency>
-            <groupId>io.confluent</groupId>
-            <artifactId>kafka-json-schema-serializer</artifactId>
-            <scope>test</scope>
-            <version>${confluent.platform.version}</version>
-        </dependency>
 
         <dependency>
             <groupId>io.debezium</groupId>
@@ -202,17 +230,18 @@
             <scope>test</scope>
         </dependency>
         <dependency>
-            <groupId>io.confluent</groupId>
-            <artifactId>kafka-schema-serializer</artifactId>
-            <scope>test</scope>
-            <version>${confluent.platform.version}</version>
-        </dependency>
-        <dependency>
             <groupId>ch.qos.logback</groupId>
             <artifactId>logback-classic</artifactId>
             <scope>test</scope>
             <version>${logback.version}</version>
         </dependency>
+        <dependency>
+            <groupId>com.github.terma</groupId>
+            <artifactId>javaniotcpproxy</artifactId>
+            <version>1.5</version>
+            <scope>test</scope>
+        </dependency>
+
 
     </dependencies>
     <build>

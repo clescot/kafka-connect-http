@@ -18,6 +18,7 @@ public class ProxySelectorFactory {
     public static final String RANDOM_ALGORITHM = "random";
     public static final String WEIGHTEDRANDOM_ALGORITHM = "weightedrandom";
     public static final String HOSTHASH_ALGORITHM = "hosthash";
+    public static final String HOSTNAME = "hostname";
 
     public ProxySelector build(Map<String, Object> config, Random random){
         Preconditions.checkNotNull(config,"config map is null");
@@ -69,9 +70,9 @@ public class ProxySelectorFactory {
         NavigableMap<Integer, Proxy> proxies = new TreeMap<>();
         int proxyIndex = 0;
 
-        while (config.get(PROXYSELECTOR_PREFIX + HTTP_CLIENT_PREFIX + proxyIndex + "." + "hostname") != null) {
+        while (config.get(PROXYSELECTOR_PREFIX + HTTP_CLIENT_PREFIX + proxyIndex + "." + HOSTNAME) != null) {
             //build proxy
-            String proxyHostName = (String) config.get(PROXYSELECTOR_PREFIX + HTTP_CLIENT_PREFIX + proxyIndex + "." + "hostname");
+            String proxyHostName = (String) config.get(PROXYSELECTOR_PREFIX + HTTP_CLIENT_PREFIX + proxyIndex + "." + HOSTNAME);
             int proxyPort = (Integer) config.get(PROXYSELECTOR_PREFIX + HTTP_CLIENT_PREFIX + proxyIndex + "." + "port");
             SocketAddress socketAddress = new InetSocketAddress(proxyHostName, proxyPort);
             String proxyTypeLabel = (String) Optional.ofNullable(config.get(PROXYSELECTOR_PREFIX + HTTP_CLIENT_PREFIX + proxyIndex + "." + "type")).orElse("HTTP");
@@ -107,9 +108,9 @@ public class ProxySelectorFactory {
         List<Proxy> proxies = Lists.newArrayList();
         int proxyIndex = 0;
 
-        while (config.get(PROXYSELECTOR_PREFIX + HTTP_CLIENT_PREFIX + proxyIndex + "." + "hostname") != null) {
+        while (config.get(PROXYSELECTOR_PREFIX + HTTP_CLIENT_PREFIX + proxyIndex + "." + HOSTNAME) != null) {
             //build proxy
-            String proxyHostName = (String) config.get(PROXYSELECTOR_PREFIX + HTTP_CLIENT_PREFIX + proxyIndex + "." + "hostname");
+            String proxyHostName = (String) config.get(PROXYSELECTOR_PREFIX + HTTP_CLIENT_PREFIX + proxyIndex + "." + HOSTNAME);
             int proxyPort = (Integer) config.get(PROXYSELECTOR_PREFIX + HTTP_CLIENT_PREFIX + proxyIndex + "." + "port");
             SocketAddress socketAddress = new InetSocketAddress(proxyHostName, proxyPort);
             String proxyTypeLabel = (String) Optional.ofNullable(config.get(PROXYSELECTOR_PREFIX + HTTP_CLIENT_PREFIX + proxyIndex + "." + "type")).orElse("HTTP");
@@ -127,14 +128,14 @@ public class ProxySelectorFactory {
         List<ImmutablePair<Predicate<URI>, Proxy>> proxies = Lists.newArrayList();
         int proxyIndex = 0;
 
-        while (config.get(PROXYSELECTOR_PREFIX + HTTP_CLIENT_PREFIX + proxyIndex + "." + "hostname") != null) {
+        while (config.get(PROXYSELECTOR_PREFIX + HTTP_CLIENT_PREFIX + proxyIndex + "." + HOSTNAME) != null) {
             //build URI predicate
             String uriPredicate = (String) config.get(PROXYSELECTOR_PREFIX + HTTP_CLIENT_PREFIX + proxyIndex + "." + "uri.regex");
             Preconditions.checkNotNull(uriPredicate, "'" + PROXYSELECTOR_PREFIX + HTTP_CLIENT_PREFIX + proxyIndex + "." + "uri.regex" + "' must be set");
             Pattern uriPattern = Pattern.compile(uriPredicate);
             Predicate<URI> predicate = uri -> uriPattern.matcher(uri.toString()).matches();
             //build proxy
-            String proxyHostName = (String) config.get(PROXYSELECTOR_PREFIX + HTTP_CLIENT_PREFIX + proxyIndex + "." + "hostname");
+            String proxyHostName = (String) config.get(PROXYSELECTOR_PREFIX + HTTP_CLIENT_PREFIX + proxyIndex + "." + HOSTNAME);
             int proxyPort = (Integer) config.get(PROXYSELECTOR_PREFIX + HTTP_CLIENT_PREFIX + proxyIndex + "." + "port");
             SocketAddress socketAddress = new InetSocketAddress(proxyHostName, proxyPort);
             String proxyTypeLabel = (String) Optional.ofNullable(config.get(PROXYSELECTOR_PREFIX + HTTP_CLIENT_PREFIX + proxyIndex + "." + "type")).orElse("HTTP");

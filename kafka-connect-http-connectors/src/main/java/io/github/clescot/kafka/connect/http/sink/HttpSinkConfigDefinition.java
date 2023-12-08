@@ -9,6 +9,51 @@ import java.util.Collections;
 
 public class HttpSinkConfigDefinition {
 
+    //producer
+    public static final String PRODUCER_PREFIX = "producer.";
+    public static final String JSON_PREFIX = "json.";
+    public static final String PRODUCER_BOOTSTRAP_SERVERS = PRODUCER_PREFIX+"bootstrap.servers";
+    public static final String PRODUCER_BOOTSTRAP_SERVERS_DOC = "low level producer bootstrap server adresse to publish";
+    public static final String PRODUCER_SUCCESS_TOPIC = PRODUCER_PREFIX+"success.topic";
+    public static final String PRODUCER_ERROR_TOPIC = PRODUCER_PREFIX+"error.topic";
+    public static final String PRODUCER_TOPIC_DOC = "producer topic";
+    public static final String PRODUCER_FORMAT = PRODUCER_PREFIX+"format";
+    public static final String PRODUCER_FORMAT_DOC = "can be 'json', or 'string'; default to 'string'.";
+    public static final String PRODUCER_SCHEMA_REGISTRY_URL = PRODUCER_PREFIX+"schema.registry.url";
+    public static final String PRODUCER_SCHEMA_REGISTRY_URL_DOC = "url and port of the schema registry.";
+    public static final String PRODUCER_SCHEMA_REGISTRY_CACHE_CAPACITY = PRODUCER_PREFIX+"schema.registry.cache.capacity";
+    public static final String PRODUCER_SCHEMA_REGISTRY_CACHE_CAPACITY_DOC = "";
+    public static final String PRODUCER_SCHEMA_REGISTRY_AUTO_REGISTER = PRODUCER_PREFIX+"schema.registry.auto.register";
+    public static final String PRODUCER_SCHEMA_REGISTRY_AUTO_REGISTER_DOC = "";
+    public static final String PRODUCER_JSON_SCHEMA_SPEC_VERSION = PRODUCER_PREFIX+JSON_PREFIX+"schema.spec.version";
+    public static final String PRODUCER_JSON_SCHEMA_SPEC_VERSION_DOC = "";
+    public static final String PRODUCER_JSON_WRITE_DATES_AS_ISO_8601 = PRODUCER_PREFIX+JSON_PREFIX+"write.dates.as.iso.8601";
+    public static final String PRODUCER_JSON_WRITE_DATES_AS_ISO_8601_DOC = "";
+    public static final String PRODUCER_JSON_ONE_OF_FOR_NULLABLES = PRODUCER_PREFIX+JSON_PREFIX+"one.of.for.nullables";
+    public static final String PRODUCER_JSON_ONE_OF_FOR_NULLABLES_DOC = "";
+    public static final String PRODUCER_JSON_FAIL_INVALID_SCHEMA = PRODUCER_PREFIX+JSON_PREFIX+"fail.invalid.schema";
+    public static final String PRODUCER_JSON_FAIL_INVALID_SCHEMA_DOC = "";
+    public static final String PRODUCER_JSON_FAIL_UNKNOWN_PROPERTIES = PRODUCER_PREFIX+JSON_PREFIX+"fail.unknown.properties";
+    public static final String PRODUCER_JSON_FAIL_UNKNOWN_PROPERTIES_DOC = "";
+    public static final String PRODUCER_KEY_SUBJECT_NAME_STRATEGY = PRODUCER_PREFIX+JSON_PREFIX+"key.subject.name.strategy";
+    public static final String PRODUCER_KEY_SUBJECT_NAME_STRATEGY_DOC = "";
+    public static final String PRODUCER_VALUE_SUBJECT_NAME_STRATEGY = PRODUCER_PREFIX+JSON_PREFIX+"value.subject.name.strategy";
+    public static final String PRODUCER_VALUE_SUBJECT_NAME_STRATEGY_DOC = "";
+    public static final String PRODUCER_MISSING_ID_CACHE_TTL_SEC = PRODUCER_PREFIX+"missing.id.cache.ttl.sec";
+    public static final String PRODUCER_MISSING_ID_CACHE_TTL_SEC_DOC = "";
+    public static final String PRODUCER_MISSING_VERSION_CACHE_TTL_SEC = PRODUCER_PREFIX+"missing.version.cache.ttl.sec";
+    public static final String PRODUCER_MISSING_VERSION_CACHE_TTL_SEC_DOC = "";
+    public static final String PRODUCER_MISSING_SCHEMA_CACHE_TTL_SEC = PRODUCER_PREFIX+"missing.schema.cache.ttl.sec";
+    public static final String PRODUCER_MISSING_SCHEMA_CACHE_TTL_SEC_DOC = "";
+    public static final String PRODUCER_MISSING_CACHE_SIZE = PRODUCER_PREFIX+"missing.cache.size";
+    public static final String PRODUCER_MISSING_CACHE_SIZE_DOC = "";
+    public static final String PRODUCER_BEARER_AUTH_CACHE_EXPIRY_BUFFER_SECONDS = PRODUCER_PREFIX+"bearer.auth.cache.expiry.buffer.seconds";
+    public static final String PRODUCER_BEARER_AUTH_CACHE_EXPIRY_BUFFER_SECONDS_DOC = "";
+    public static final String PRODUCER_BEARER_AUTH_SCOPE_CLAIM_NAME = PRODUCER_PREFIX+"bearer.auth.scope.claim.name";
+    public static final String PRODUCER_BEARER_AUTH_SCOPE_CLAIM_NAME_DOC = "";
+    public static final String PRODUCER_BEARER_AUTH_SUB_CLAIM_NAME = PRODUCER_PREFIX+"bearer.auth.sub.claim.name";
+    public static final String PRODUCER_BEARER_AUTH_SUB_CLAIM_NAME_DOC = "";
+
     //meter registry
     public static final String METER_REGISTRY_EXPORTER_JMX_ACTIVATE = "meter.registry.exporter.jmx.activate";
     public static final String METER_REGISTRY_EXPORTER_JMX_ACTIVATE_DOC = "activate exposure of metrics via JMX";
@@ -50,13 +95,13 @@ public class HttpSinkConfigDefinition {
     public static final String METER_REGISTRY_TAG_INCLUDE_URL_PATH_DOC = "include the legacy tag 'host'. host is already present in the 'target.host' tag.";
 
     //publish to in memory queue
-    public static final String PUBLISH_TO_IN_MEMORY_QUEUE = "publish.to.in.memory.queue";
-    public static final String PUBLISH_TO_IN_MEMORY_QUEUE_DOC = "when set to false, ignore HTTP responses, i.e does not publish responses in the in memory queue. No Source Connector is needed when set to false. When set to true, a Source Connector is needed to consume published Http exchanges in this in memory queue.";
+    public static final String PUBLISH_MODE = "publish.mode";
+    public static final String PUBLISH_MODE_DOC = "can be either 'IN_MEMORY_QUEUE', 'NONE', 'DLQ' or 'PRODUCER'. When set to 'NONE', ignore HTTP responses, i.e does not publish responses in the in memory queue ; no Source Connector is needed when set to 'none'. When set to 'IN_MEMORY_QUEUE', a Source Connector is needed to consume published Http exchanges in this in memory queue. when set to 'PRODUCER' a low level producer will be used to publish response to another topic. when set to 'DLQ', the errantReporter used to publish bad message in a Dead letter queue will be used.";
 
     private static final long DEFAULT_WAIT_TIME_REGISTRATION_QUEUE_CONSUMER_IN_MS = 60000L;
     public static final String WAIT_TIME_REGISTRATION_QUEUE_CONSUMER_IN_MS = "wait.time.registration.queue.consumer.in.ms";
     public static final String WAIT_TIME_REGISTRATION_QUEUE_CONSUMER_IN_MS_DOC = "wait time defined with the '"+ WAIT_TIME_REGISTRATION_QUEUE_CONSUMER_IN_MS +"' parameter, for a queue consumer (Source Connector) registration. " +
-            "We wait if the "+PUBLISH_TO_IN_MEMORY_QUEUE+" parameter is set to 'true', to avoid to publish to the queue without any consumer (OutOfMemoryError possible). default value is "+DEFAULT_WAIT_TIME_REGISTRATION_QUEUE_CONSUMER_IN_MS;
+            "We wait if the "+PUBLISH_MODE+" parameter is set to 'inMemoryQueue', to avoid to publish to the queue without any consumer (OutOfMemoryError possible). default value is "+DEFAULT_WAIT_TIME_REGISTRATION_QUEUE_CONSUMER_IN_MS;
 
     private static final int DEFAULT_POLL_DELAY_REGISTRATION_QUEUE_CONSUMER_IN_MS = 2000;
     public static final String POLL_DELAY_REGISTRATION_QUEUE_CONSUMER_IN_MS = "poll.delay.registration.queue.consumer.in.ms";
@@ -74,34 +119,34 @@ public class HttpSinkConfigDefinition {
     public static final String DEFAULT_CONFIGURATION_PREFIX = "config.default.";
 
     //retry policy
-    public static final String DEFAULT_RETRY_POLICY_PREFIX = "retry.policy.";
+    public static final String RETRY_POLICY_PREFIX = "retry.policy.";
 
     //default values
     private static final int DEFAULT_RETRIES_VALUE = 1;
-    private static final long DEFAULT_RETRY_DELAY_IN_MS_VALUE = 2000L;
-    private static final long DEFAULT_RETRY_MAX_DELAY_IN_MS_VALUE = 20000L;
-    private static final double DEFAULT_RETRY_DELAY_FACTOR_VALUE = 1.5d;
-    private static final long DEFAULT_RETRY_JITTER_IN_MS_VALUE = 500;
+    public static final long DEFAULT_RETRY_DELAY_IN_MS_VALUE = 2000L;
+    public static final long DEFAULT_RETRY_MAX_DELAY_IN_MS_VALUE = 20000L;
+    public static final double DEFAULT_RETRY_DELAY_FACTOR_VALUE = 1.5d;
+    public static final long DEFAULT_RETRY_JITTER_IN_MS_VALUE = 500;
 
 
-    public static final String RETRIES = DEFAULT_RETRY_POLICY_PREFIX+"retries";
-    public static final String CONFIG_DEFAULT_RETRIES = DEFAULT_CONFIGURATION_PREFIX + DEFAULT_RETRY_POLICY_PREFIX+ RETRIES;
+    public static final String RETRIES = RETRY_POLICY_PREFIX +"retries";
+    public static final String CONFIG_DEFAULT_RETRIES = DEFAULT_CONFIGURATION_PREFIX +  RETRIES;
     public static final String CONFIG_DEFAULT_RETRIES_DOC = "if set with other default retry parameters, permit to define a default retry policy, which can be overriden in the httpRequest object. Define how many retries before an error is thrown";
 
-    public static final String RETRY_DELAY_IN_MS = "retry.delay.in.ms";
-    public static final String CONFIG_DEFAULT_RETRY_DELAY_IN_MS = DEFAULT_CONFIGURATION_PREFIX + DEFAULT_RETRY_POLICY_PREFIX + RETRY_DELAY_IN_MS;
+    public static final String RETRY_DELAY_IN_MS = RETRY_POLICY_PREFIX +"retry.delay.in.ms";
+    public static final String CONFIG_DEFAULT_RETRY_DELAY_IN_MS = DEFAULT_CONFIGURATION_PREFIX + RETRY_DELAY_IN_MS;
     public static final String CONFIG_DEFAULT_RETRY_DELAY_IN_MS_DOC = "if set with other default retry parameters, permit to define a default retry policy, which can be overriden in the httpRequest object. Define how long wait initially before first retry";
 
-    public static final String RETRY_MAX_DELAY_IN_MS = "retry.max.delay.in.ms";
-    public static final String CONFIG_DEFAULT_RETRY_MAX_DELAY_IN_MS = DEFAULT_CONFIGURATION_PREFIX + DEFAULT_RETRY_POLICY_PREFIX+RETRY_MAX_DELAY_IN_MS;
+    public static final String RETRY_MAX_DELAY_IN_MS = RETRY_POLICY_PREFIX + "retry.max.delay.in.ms";
+    public static final String CONFIG_DEFAULT_RETRY_MAX_DELAY_IN_MS = DEFAULT_CONFIGURATION_PREFIX + RETRY_MAX_DELAY_IN_MS;
     public static final String CONFIG_DEFAULT_RETRY_MAX_DELAY_IN_MS_DOC = "if set with other default retry parameters, permit to define a default retry policy, which can be overriden in the httpRequest object. Define how long max wait before retry";
 
-    public static final String RETRY_DELAY_FACTOR = "retry.delay.factor";
-    public static final String CONFIG_DEFAULT_RETRY_DELAY_FACTOR = DEFAULT_CONFIGURATION_PREFIX + DEFAULT_RETRY_POLICY_PREFIX+RETRY_DELAY_FACTOR;
+    public static final String RETRY_DELAY_FACTOR = RETRY_POLICY_PREFIX + "retry.delay.factor";
+    public static final String CONFIG_DEFAULT_RETRY_DELAY_FACTOR = DEFAULT_CONFIGURATION_PREFIX + RETRY_DELAY_FACTOR;
     public static final String CONFIG_DEFAULT_RETRY_DELAY_FACTOR_DOC = "if set with other default retry parameters, permit to define a default retry policy, which can be overriden in the httpRequest object. Define the factor to multiply the previous delay to define the current retry delay";
 
-    public static final String RETRY_JITTER_IN_MS = "retry.jitter.in.ms";
-    public static final String CONFIG_DEFAULT_RETRY_JITTER_IN_MS = DEFAULT_CONFIGURATION_PREFIX + DEFAULT_RETRY_POLICY_PREFIX+RETRY_JITTER_IN_MS;
+    public static final String RETRY_JITTER_IN_MS = RETRY_POLICY_PREFIX + "retry.jitter.in.ms";
+    public static final String CONFIG_DEFAULT_RETRY_JITTER_IN_MS = DEFAULT_CONFIGURATION_PREFIX + RETRY_JITTER_IN_MS;
     public static final String CONFIG_DEFAULT_RETRY_JITTER_IN_MS_DOC = "if set with other default retry parameters, permit to define a default retry policy, which can be overriden in the httpRequest object. " +
             "Define max entropy to add, to prevent many retry policies instances with the same parameters, to flood servers at the same time";
 
@@ -170,10 +215,10 @@ public class HttpSinkConfigDefinition {
      *  * a technical error occurs from the WS server : the status code returned from the ws server does not match the regexp AND is equals or higher than 500 : retries are done
      */
 
-    private static final String DEFAULT_DEFAULT_RETRY_RESPONSE_CODE_REGEX = "^5[0-9][0-9]$";
+    public static final String DEFAULT_DEFAULT_RETRY_RESPONSE_CODE_REGEX = "^5[0-9][0-9]$";
 
     public static final String CONFIG_DEFAULT_DEFAULT_SUCCESS_RESPONSE_CODE_REGEX = "^[1-2][0-9][0-9]$";
-    public static final String RETRY_RESPONSE_CODE_REGEX = DEFAULT_RETRY_POLICY_PREFIX+"response.code.regex";
+    public static final String RETRY_RESPONSE_CODE_REGEX = RETRY_POLICY_PREFIX +"response.code.regex";
     public static final String CONFIG_DEFAULT_RETRY_RESPONSE_CODE_REGEX = DEFAULT_CONFIGURATION_PREFIX + RETRY_RESPONSE_CODE_REGEX;
     public static final String DEFAULT_RETRY_RESPONSE_CODE_REGEX_DOC = "regex which define if a retry need to be triggered, based on the response status code. default is '"+ CONFIG_DEFAULT_DEFAULT_SUCCESS_RESPONSE_CODE_REGEX +"'";
 
@@ -441,6 +486,32 @@ public class HttpSinkConfigDefinition {
 
     public static ConfigDef config() {
         return new ConfigDef()
+                //producer
+                    //bootstrap servers
+                .define(PRODUCER_BOOTSTRAP_SERVERS, ConfigDef.Type.STRING,"",ConfigDef.Importance.MEDIUM,PRODUCER_BOOTSTRAP_SERVERS_DOC)
+                .define(PRODUCER_SUCCESS_TOPIC, ConfigDef.Type.STRING,"http-success",ConfigDef.Importance.MEDIUM,PRODUCER_TOPIC_DOC)
+                .define(PRODUCER_ERROR_TOPIC, ConfigDef.Type.STRING,"http-errors",ConfigDef.Importance.MEDIUM,PRODUCER_TOPIC_DOC)
+                .define(PRODUCER_KEY_SUBJECT_NAME_STRATEGY, ConfigDef.Type.STRING,"io.confluent.kafka.serializers.subject.TopicRecordNameStrategy",ConfigDef.Importance.MEDIUM,PRODUCER_KEY_SUBJECT_NAME_STRATEGY_DOC)
+                .define(PRODUCER_VALUE_SUBJECT_NAME_STRATEGY, ConfigDef.Type.STRING,"io.confluent.kafka.serializers.subject.TopicRecordNameStrategy",ConfigDef.Importance.MEDIUM,PRODUCER_VALUE_SUBJECT_NAME_STRATEGY_DOC)
+                .define(PRODUCER_MISSING_ID_CACHE_TTL_SEC, ConfigDef.Type.INT,null,ConfigDef.Importance.LOW,PRODUCER_MISSING_ID_CACHE_TTL_SEC_DOC)
+                .define(PRODUCER_MISSING_VERSION_CACHE_TTL_SEC, ConfigDef.Type.INT,null,ConfigDef.Importance.LOW,PRODUCER_MISSING_VERSION_CACHE_TTL_SEC_DOC)
+                .define(PRODUCER_MISSING_SCHEMA_CACHE_TTL_SEC, ConfigDef.Type.INT,null,ConfigDef.Importance.LOW,PRODUCER_MISSING_SCHEMA_CACHE_TTL_SEC_DOC)
+                .define(PRODUCER_MISSING_CACHE_SIZE, ConfigDef.Type.INT,null,ConfigDef.Importance.LOW,PRODUCER_MISSING_CACHE_SIZE_DOC)
+                .define(PRODUCER_BEARER_AUTH_CACHE_EXPIRY_BUFFER_SECONDS, ConfigDef.Type.INT,null,ConfigDef.Importance.LOW,PRODUCER_BEARER_AUTH_CACHE_EXPIRY_BUFFER_SECONDS_DOC)
+                .define(PRODUCER_BEARER_AUTH_SCOPE_CLAIM_NAME, ConfigDef.Type.STRING,null,ConfigDef.Importance.LOW,PRODUCER_BEARER_AUTH_SCOPE_CLAIM_NAME_DOC)
+                .define(PRODUCER_BEARER_AUTH_SUB_CLAIM_NAME, ConfigDef.Type.STRING,null,ConfigDef.Importance.LOW,PRODUCER_BEARER_AUTH_SUB_CLAIM_NAME_DOC)
+                    //schema registry
+                .define(PRODUCER_SCHEMA_REGISTRY_URL, ConfigDef.Type.STRING,"",ConfigDef.Importance.LOW,PRODUCER_SCHEMA_REGISTRY_URL_DOC)
+                .define(PRODUCER_SCHEMA_REGISTRY_CACHE_CAPACITY, ConfigDef.Type.INT,1000,ConfigDef.Importance.LOW,PRODUCER_SCHEMA_REGISTRY_CACHE_CAPACITY_DOC)
+                .define(PRODUCER_SCHEMA_REGISTRY_AUTO_REGISTER, ConfigDef.Type.BOOLEAN,Boolean.TRUE,ConfigDef.Importance.LOW,PRODUCER_SCHEMA_REGISTRY_AUTO_REGISTER_DOC)
+                    //formats
+                .define(PRODUCER_FORMAT, ConfigDef.Type.STRING,"string",ConfigDef.Importance.LOW,PRODUCER_FORMAT_DOC)
+                    //json
+                .define(PRODUCER_JSON_SCHEMA_SPEC_VERSION, ConfigDef.Type.STRING,"draft_2019_09",ConfigDef.Importance.LOW,PRODUCER_JSON_SCHEMA_SPEC_VERSION_DOC)
+                .define(PRODUCER_JSON_WRITE_DATES_AS_ISO_8601, ConfigDef.Type.BOOLEAN,Boolean.TRUE,ConfigDef.Importance.LOW,PRODUCER_JSON_WRITE_DATES_AS_ISO_8601_DOC)
+                .define(PRODUCER_JSON_ONE_OF_FOR_NULLABLES, ConfigDef.Type.BOOLEAN,Boolean.TRUE,ConfigDef.Importance.LOW,PRODUCER_JSON_ONE_OF_FOR_NULLABLES_DOC)
+                .define(PRODUCER_JSON_FAIL_INVALID_SCHEMA, ConfigDef.Type.BOOLEAN,Boolean.TRUE,ConfigDef.Importance.LOW,PRODUCER_JSON_FAIL_INVALID_SCHEMA_DOC)
+                .define(PRODUCER_JSON_FAIL_UNKNOWN_PROPERTIES, ConfigDef.Type.BOOLEAN,Boolean.TRUE,ConfigDef.Importance.LOW,PRODUCER_JSON_FAIL_UNKNOWN_PROPERTIES_DOC)
                 //meter registry
                     //exporters
                 .define(METER_REGISTRY_EXPORTER_JMX_ACTIVATE, ConfigDef.Type.STRING, FALSE, ConfigDef.Importance.LOW, METER_REGISTRY_EXPORTER_JMX_ACTIVATE_DOC)
@@ -480,7 +551,7 @@ public class HttpSinkConfigDefinition {
                 .define(CONFIG_DEFAULT_USER_AGENT_OVERRIDE, ConfigDef.Type.STRING, "http_client", ConfigDef.Importance.LOW, CONFIG_DEFAULT_USER_AGENT_OVERRIDE_DOC)
                 .define(CONFIG_DEFAULT_USER_AGENT_CUSTOM_VALUES, ConfigDef.Type.STRING, null, ConfigDef.Importance.LOW, CONFIG_DEFAULT_USER_AGENT_CUSTOM_VALUES_DOC)
                 //in memory queue settings
-                .define(PUBLISH_TO_IN_MEMORY_QUEUE, ConfigDef.Type.STRING, FALSE, ConfigDef.Importance.MEDIUM, PUBLISH_TO_IN_MEMORY_QUEUE_DOC)
+                .define(PUBLISH_MODE, ConfigDef.Type.STRING, PublishMode.NONE.name(), ConfigDef.Importance.MEDIUM, PUBLISH_MODE_DOC)
                 .define(ConfigConstants.QUEUE_NAME, ConfigDef.Type.STRING, null,ConfigDef.Importance.MEDIUM, ConfigConstants.QUEUE_NAME_DOC)
                 .define(WAIT_TIME_REGISTRATION_QUEUE_CONSUMER_IN_MS, ConfigDef.Type.LONG, DEFAULT_WAIT_TIME_REGISTRATION_QUEUE_CONSUMER_IN_MS, ConfigDef.Importance.LOW, WAIT_TIME_REGISTRATION_QUEUE_CONSUMER_IN_MS_DOC)
                 .define(POLL_DELAY_REGISTRATION_QUEUE_CONSUMER_IN_MS, ConfigDef.Type.INT, DEFAULT_POLL_DELAY_REGISTRATION_QUEUE_CONSUMER_IN_MS, ConfigDef.Importance.LOW, POLL_DELAY_REGISTRATION_QUEUE_CONSUMER_IN_MS_DOC)

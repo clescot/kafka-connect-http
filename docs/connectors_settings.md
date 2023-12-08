@@ -19,18 +19,29 @@ every Kafka Connect Sink Connector need to define these required parameters :
 - *`value.converter`*
 - ....
 
-#### publish into the _in memory_ queue : 
-
-- *`publish.to.in.memory.queue`* : `false` by default. When set to `true`, publish HTTP interactions (request and responses)
-  are published into the in memory queue.
-- *`queue.name`* : if not set, `default` queue name is used, if the `publish.to.in.memory.queue` is set to `true`.
-  You can define multiple in memory queues, to permit to publish to different topics, different HTTP interactions. If
-  you set this parameter to a value different than `default`, you need to configure an HTTP source Connector listening
-  on the same queue name to avoid some OutOfMemoryErrors.
-- *`wait.time.registration.queue.consumer.in.ms`* : wait time for a queue consumer (Source Connector) registration. default value is 60 seconds.
-- *`poll.delay.registration.queue.consumer.in.ms`* : poll delay, i.e, wait time before start polling a registered consumer. default value is 2 seconds.
-- *`poll.interval.registration.queue.consumer.in.ms`* : poll interval, i.e, time between every poll for a registered consumer. default value is 5000 milliseconds.
-
+#### publish mode
+controlled by the  *`publish.mode`* parameter : `NONE` by default. When set to another value (`IN_MEMORY_QUEUE`,`PRODUCER`), publish HTTP interactions (request and responses)
+- *`publish.mode`* parameter : `IN_MEMORY_QUEUE` publish into the _in memory_ queue, with a topoligy constraint : the source connector which consumes the in memory queue, must be present on the same kafka connect instance.
+  - *`queue.name`* : if not set, `default` queue name is used, if the `publish.to.in.memory.queue` is set to `true`.
+    You can define multiple in memory queues, to permit to publish to different topics, different HTTP interactions. If
+    you set this parameter to a value different than `default`, you need to configure an HTTP source Connector listening
+    on the same queue name to avoid some OutOfMemoryErrors.
+  - *`wait.time.registration.queue.consumer.in.ms`* : wait time for a queue consumer (Source Connector) registration. default value is 60 seconds.
+  - *`poll.delay.registration.queue.consumer.in.ms`* : poll delay, i.e, wait time before start polling a registered consumer. default value is 2 seconds.
+  - *`poll.interval.registration.queue.consumer.in.ms`* : poll interval, i.e, time between every poll for a registered consumer. default value is 5000 milliseconds.
+- *`publish.mode`* parameter : `PRODUCER` : use a low level kafka producer to publish HttpExchange in a dedicated topic. No topology constraint is required, 
+  but unlike other connectors (kafka connect handle that for us and hide it), we must configure the low level connection details. All settings starting with the prefix `producer.` 
+  will be passed to the producer instance to configure it. 
+  - `producer.bootstrap.servers` : required parameter to contact the kafka cluster.
+  - `producer.topic` : name of the topic to publish httpExchange instances.
+  - `producer.missing.id.cache.ttl.sec` : parameter configuration of the _CachedSchemaRegistryClient_
+  - `producer.missing.version.cache.ttl.sec` : parameter configuration of the _CachedSchemaRegistryClient_
+  - `producer.missing.schema.cache.ttl.sec` : parameter configuration of the _CachedSchemaRegistryClient_
+  - `producer.missing.schema.cache.size` : parameter configuration of the _CachedSchemaRegistryClient_
+  - `producer.bearer.auth.cache.expiry.buffer.seconds` : parameter configuration of the _CachedSchemaRegistryClient_
+  - `producer.bearer.auth.scope.claim.name` : parameter configuration of the _CachedSchemaRegistryClient_
+  - `producer.bearer.auth.sub.claim.name` : parameter configuration of the _CachedSchemaRegistryClient_
+  - other parameters can be passed to the low level kafka producer instance.
 ### Metrics Registry
 
 metrics registry can be configured to add some metrics, and to export them. Metrics registry is global to the JVM.
@@ -87,7 +98,7 @@ Both exports (JMX and Prometheus) can be combined.
   by default, the port open is the default prometheus one (`9090`), but you can define yours with this setting :
   `"meter.registry.exporter.prometheus.port":"9087`
 
-#### configuration
+### Configuration
 
 The connector ships with a `default` configuration, and we can, if needed, configure more configurations.
 A configuration is identified with a unique `id`.
@@ -102,7 +113,7 @@ Note that the `default` configuration is always created, and must not be referen
 For example, the `test4` configuration will have all its settings starting with the `config.test4` prefix,
 following by other prefixes listed above. 
 
-##### predicate
+#### predicate
 A configuration apply to some http requests based on a predicate  : all http requests not managed by a configuration are catch by the `default` configuration)
 All the settings of the predicate, are starting with the `config.<configurationId>.predicate`.
 The predicate permits to filter some http requests, and can be composed, cumulatively, with : 
@@ -236,7 +247,7 @@ The predicate permits to filter some http requests, and can be composed, cumulat
     - *`org.asynchttpclient.byte.buffer.allocator`* (default `io.netty.buffer.PooledByteBufAllocator`)
   
 
-#### Configuration example
+### Configuration example
 
 - `sink.json` example :
 ```json 
@@ -341,15 +352,17 @@ curl -X PUT -H "Content-Type: application/json" --data @source.json http://my-ka
 
 ### Http Sink and Source Connectors
 
-#### are linked
+> :warning: Below are some characteristics only applicable when the publish mode is set to `IN_MEMORY_QUEUE`.
 
-HTTP Sink connector can be used without the HTTP Source connector, if the `publish.to.in.memory.queue` parameter is set to `false`, and only this connector is configured.
+#### are linked 
+
+HTTP Sink connector can be used without the HTTP Source connector, if the `publish` mode is not set to `IN_MEMORY_QUEUE`.
 
 HTTP Source Connector cannot be used without the HTTP Sink connector.
 
 #### instantiated in the same location
 
-When Http Sink and Source connectors are configured, they must be **instantiated in the same place**, to exchange data through the in memory queue.
+When Http Sink and Source connectors are configured together, they must be **instantiated in the same place**, to exchange data through the in memory queue.
 The above configuration permits to fullfill these needs.
 
 #### in the same classloader

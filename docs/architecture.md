@@ -1,27 +1,3 @@
-# Architecture
-
-![Architecture](architecture.png)
-
-This big picture permits to highlight (with numbers in the picture) some key points in the architecture, which will be explained with details
-after the section dedicated to put in place the HTTP Sink and Source connectors:
-
-1. format of the [incoming kafka message](docs/incoming_message_format.md) (HTTP intention)
-2. The `HTTP Sink connector` **listen** to these topics (can be a list of topics, or a regex, via *`topics`* or *`topics.regex`* settings)
-3. The `HTTP Sink connector` **transform** the incoming message into an HTTP call and get the answer from the HTTP server.
-   Behaviour of the HTTP client shipped with the `HTTP Sink Connector` can be tuned, including the _retry policy_. At this stage,
-   the `HTTP Sink connector`, according to the HTTP exchange details, decides if the HTTP exchange is a _success_ or a _failure_.
-   Incoming message can be a JSON serialized as a _String_, or a _structured message_ (json schema, avro, protobuf) linked with a schema stored in a schema registry.
-4. Optionally (`publish.to.in.memory.queue` set to `true` in the HTTP Sink Connector configuration), the HTTP exchange
-   is published into a `default` _in memory queue_ (or a defined queue with the `queue.name` parameter in the HTTP Sink  
-   Connector configuration). A check is done to prevent publication to a 'in memory' queue without consumer (Source Connector),  
-   i.e preventing an OutofMemory Error. The HTTP Sink Connector will fail at the first message consumption in this situation.
-5. If configured in the Sink Configuration, an `HTTP Source Connector` is needed to consume the published
-   HTTP exchange (with all the details of the interaction).
-6. According to the HTTP Exchange status (_success_ or _failure_), the `HTTP Source connector` serialize the exchange as a kafka message and save
-   it in the `http.success` topic, or the `http.error` topic.
-7. the HTTP exchange is saved as a `Struct`, and can be serialized as a JSON Schema or another format via converters, and the help of a Schema registry.
-   It also can be serialized as a String. 
-
 # Http Sink Connector detailed Architecture
 
 ![Http Sink Connector organization](http_sink_connector.png)
@@ -40,5 +16,5 @@ after the section dedicated to put in place the HTTP Sink and Source connectors:
 12. a decision is made against the HttpExchange status build in the previous stage
 13. if the HttpExchange status is a success, the HttpExchange is serialized into the in memory queue
 14. if the HttpExchange status is not a success, an evaluation is done to know if the error is retryable (based on the `config.<idconfig>.retry.policy.response.code.regex`)
-15. if the error is not retryable, or the retry attempts limit is reched, the failing HttpExchange is serialized into the in memory queue.
+15. if the error is not retryable, or the retry attempts limit is reached, the failing HttpExchange is serialized into the in memory queue.
 16. if the error is retryable, another HTTP call is done.
