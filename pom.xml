@@ -52,7 +52,7 @@
         <maven.compiler.target>11</maven.compiler.target>
         <maven.plugin.validation>VERBOSE</maven.plugin.validation>
         <mockito.version>5.8.0</mockito.version>
-        <micrometer.version>1.12.0</micrometer.version>
+        <micrometer.version>1.12.1</micrometer.version>
         <okhttp.version>4.12.0</okhttp.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
