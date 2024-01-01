@@ -106,22 +106,7 @@
             <version>${confluent.platform.version}</version>
         </dependency>
 
-        <dependency>
-            <groupId>io.confluent</groupId>
-            <artifactId>kafka-json-schema-provider</artifactId>
-            <version>${confluent.platform.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>io.confluent</groupId>
-            <artifactId>kafka-json-schema-serializer</artifactId>
-            <version>${confluent.platform.version}</version>
-            <exclusions>
-                <exclusion>
-                    <groupId>com.fasterxml.jackson</groupId>
-                    <artifactId>jacks</artifactId>
-                </exclusion>
-            </exclusions>
-        </dependency>
+
 
         <dependency>
             <groupId>io.confluent</groupId>
