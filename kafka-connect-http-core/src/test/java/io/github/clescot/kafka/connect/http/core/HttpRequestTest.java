@@ -46,7 +46,7 @@ class HttpRequestTest {
     private static final String DUMMY_TOPIC = "myTopic";
 
     @Test
-    public void test_serialization() throws JsonProcessingException, JSONException {
+    void test_serialization() throws JsonProcessingException, JSONException {
         ObjectMapper objectMapper = new ObjectMapper();
         objectMapper.registerModule(new JavaTimeModule());
         HttpRequest httpRequest = new HttpRequest(
@@ -75,7 +75,7 @@ class HttpRequestTest {
         JSONAssert.assertEquals(expectedHttpRequest, serializedHttpRequest,true);
     }
     @Test
-    public void test_deserialization() throws JsonProcessingException {
+    void test_deserialization() throws JsonProcessingException {
         ObjectMapper objectMapper = new ObjectMapper();
         objectMapper.registerModule(new JavaTimeModule());
         HttpRequest expectedHttpRequest = new HttpRequest(
@@ -104,7 +104,7 @@ class HttpRequestTest {
     }
 
     @Test
-    public void test_serialize_and_deserialize_http_request_with_low_level_serializer() throws IOException {
+    void test_serialize_and_deserialize_http_request_with_low_level_serializer() throws IOException {
         //given
 
         //build httpRequest
@@ -156,7 +156,7 @@ class HttpRequestTest {
     }
 
     @Test
-    public void test_serialize_http_request_with_serializer_and_deserialize_with_high_level_converter() throws IOException {
+    void test_serialize_http_request_with_serializer_and_deserialize_with_high_level_converter() throws IOException {
         //given
 
         //build httpRequest
@@ -216,14 +216,14 @@ class HttpRequestTest {
 
 
     @Test
-    public void test_with_empty_struct(){
+    void test_with_empty_struct(){
         //given
         Struct struct = new Struct(HttpRequestAsStruct.SCHEMA);
         //when
         Assertions.assertThrows(NullPointerException.class,()->HttpRequestAsStruct.Builder.anHttpRequest().withStruct(struct).build());
     }
     @Test
-    public void test_with_struct_only_url(){
+    void test_with_struct_only_url(){
         //given
         Struct struct = new Struct(HttpRequestAsStruct.SCHEMA);
         struct.put("url","http://stuff.com");
@@ -231,7 +231,7 @@ class HttpRequestTest {
         Assertions.assertThrows(NullPointerException.class,()->HttpRequestAsStruct.Builder.anHttpRequest().withStruct(struct).build());
     }
     @Test
-    public void test_with_struct_only_url_and_method(){
+    void test_with_struct_only_url_and_method(){
         //given
         Struct struct = new Struct(HttpRequestAsStruct.SCHEMA);
         struct.put("url","http://stuff.com");
@@ -240,7 +240,7 @@ class HttpRequestTest {
         Assertions.assertThrows(NullPointerException.class,()->HttpRequestAsStruct.Builder.anHttpRequest().withStruct(struct).build());
     }
     @Test
-    public void test_with_struct_nominal_case(){
+    void test_with_struct_nominal_case(){
         //given
         Struct struct = new Struct(HttpRequestAsStruct.SCHEMA);
         String dummyUrl = "http://stuff.com";
@@ -256,28 +256,28 @@ class HttpRequestTest {
         assertThat(httpRequest).isNotNull();
         assertThat(httpRequest.getUrl()).isEqualTo(dummyUrl);
         assertThat(httpRequest.getMethod()).isEqualTo(dummyMethod);
-        assertThat(httpRequest.getBodyType().toString()).isEqualTo(dummyBodyType);
-        assertThat(httpRequest.getBodyAsString().toString()).isEqualTo(DUMMY_BODY_AS_STRING);
+        assertThat(httpRequest.getBodyType()).hasToString(dummyBodyType);
+        assertThat(httpRequest.getBodyAsString()).hasToString(DUMMY_BODY_AS_STRING);
     }
 
 
     @Test
-    public void validate_schema_with_JsonSchemaProvider(){
+    void validate_schema_with_JsonSchemaProvider(){
         JsonSchemaProvider jsonSchemaProvider = new JsonSchemaProvider();
         Optional<ParsedSchema> parsedSchema = jsonSchemaProvider.parseSchema(HttpRequest.SCHEMA_AS_STRING, Lists.newArrayList());
-        assertThat(parsedSchema.isPresent()).isTrue();
-        parsedSchema.get().validate();
+        assertThat(parsedSchema).isPresent();
+        parsedSchema.get().validate(true);
     }
 
     @Test
-    public void validate_schema_with_AvroJsonSchemaProvider(){
+    void validate_schema_with_AvroJsonSchemaProvider(){
         AvroSchemaProvider avroSchemaProviderSchemaProvider = new AvroSchemaProvider();
         Optional<ParsedSchema> parsedSchema = avroSchemaProviderSchemaProvider.parseSchema(HttpRequest.SCHEMA_AS_STRING, Lists.newArrayList());
-        assertThat(parsedSchema.isPresent()).isFalse();
+        assertThat(parsedSchema).isNotPresent();
     }
 
     @Test
-    public void get_http_request_jsonschema(){
+    void get_http_request_jsonschema(){
         JsonSchemaConfig jsonSchemaConfig = getConfig(false, false);
         jsonSchemaConfig = jsonSchemaConfig.withJsonSchemaDraft(JsonSchemaDraft.DRAFT_2019_09);
         ObjectMapper objectMapper = new JsonMapper();
