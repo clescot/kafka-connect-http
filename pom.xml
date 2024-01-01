@@ -205,12 +205,6 @@
                 <scope>test</scope>
             </dependency>
             <dependency>
-                <groupId>io.confluent</groupId>
-                <artifactId>kafka-json-schema-provider</artifactId>
-                <version>${confluent.platform.version}</version>
-                <scope>test</scope>
-            </dependency>
-            <dependency>
                 <groupId>io.debezium</groupId>
                 <artifactId>debezium-testing-testcontainers</artifactId>
                 <version>${debezium.version}</version>
@@ -339,6 +333,8 @@
                         <disable>true</disable>
                     </consoleOutputReporter>
                     <statelessTestsetInfoReporter implementation="org.apache.maven.plugin.surefire.extensions.junit5.JUnit5StatelessTestsetInfoTreeReporter" />
+                    <!-- Activate the use of TCP to transmit events to the plugin -->
+                    <forkNode implementation="org.apache.maven.plugin.surefire.extensions.SurefireForkNodeFactory"/>
                     <excludes>
                         <exclude>**/IT*.java</exclude>
                     </excludes>
