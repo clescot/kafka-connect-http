@@ -10,6 +10,9 @@ import java.security.Principal;
 import java.security.cert.Certificate;
 import java.util.List;
 
+/**
+ * Inteceptor which logs SSL Handshake for debug purpose.
+ */
 public class SSLHandshakeInterceptor implements Interceptor {
     private static final Logger LOGGER = LoggerFactory.getLogger(SSLHandshakeInterceptor.class);
 
