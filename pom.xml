@@ -5,7 +5,7 @@
     <description>a set of Kafka Connect connectors (Sink and Source), to interact with HTTP servers, linked via an in memory queue.</description>
     <groupId>io.github.clescot</groupId>
     <artifactId>kafka-connect-http</artifactId>
-    <version>0.7.88-SNAPSHOT</version>
+    <version>0.7.94-SNAPSHOT</version>
     <url>https://github.com/clescot/kafka-connect-http</url>
     <licenses>
         <license>
@@ -34,7 +34,7 @@
         <url>https://github.com/clescot/kafka-connect-http/issues</url>
     </issueManagement>
     <properties>
-        <assertj.version>3.25.0</assertj.version>
+        <assertj.version>3.25.1</assertj.version>
         <awaitility.version>4.2.0</awaitility.version>
         <async.http.client.version>2.12.3</async.http.client.version>
         <commons-text.version>1.11.0</commons-text.version>
@@ -51,14 +51,14 @@
         <maven.compiler.source>11</maven.compiler.source>
         <maven.compiler.target>11</maven.compiler.target>
         <maven.plugin.validation>VERBOSE</maven.plugin.validation>
-        <mockito.version>5.8.0</mockito.version>
-        <micrometer.version>1.12.1</micrometer.version>
+        <mockito.version>5.9.0</mockito.version>
+        <micrometer.version>1.12.2</micrometer.version>
         <okhttp.version>4.12.0</okhttp.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <project.scm.id>github</project.scm.id>
         <scribe.version>8.3.3</scribe.version>
-        <slf4j.version>2.0.10</slf4j.version>
+        <slf4j.version>2.0.11</slf4j.version>
         <testcontainers.version>1.19.3</testcontainers.version>
         <skipIT>false</skipIT>
         <wiremock.version>2.35.1</wiremock.version>
@@ -320,7 +320,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
-                <version>3.2.3</version>
+                <version>3.2.5</version>
                 <dependencies>
                     <dependency>
                         <groupId>me.fabriciorby</groupId>
