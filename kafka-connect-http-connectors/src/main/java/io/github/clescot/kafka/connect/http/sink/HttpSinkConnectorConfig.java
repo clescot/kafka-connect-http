@@ -129,8 +129,6 @@ public class HttpSinkConnectorConfig extends AbstractConfig {
 
         this.httpClientImplementation = getString(CONFIG_HTTP_CLIENT_IMPLEMENTATION);
 
-
-
         this.queueName = Optional.ofNullable(getString(ConfigConstants.QUEUE_NAME)).orElse(QueueFactory.DEFAULT_QUEUE_NAME);
         this.publishMode = PublishMode.valueOf(Optional.ofNullable(getString(PUBLISH_MODE)).orElse(PublishMode.NONE.name()));
         this.producerSuccessTopic = getString(PRODUCER_SUCCESS_TOPIC);
@@ -154,7 +152,7 @@ public class HttpSinkConnectorConfig extends AbstractConfig {
         this.pollIntervalRegistrationOfQueueConsumerInMs = getInt(POLL_INTERVAL_REGISTRATION_QUEUE_CONSUMER_IN_MS);
         Optional<List<String>> staticRequestHeaderNames = Optional.ofNullable(getList(CONFIG_STATIC_REQUEST_HEADER_NAMES));
         List<String> additionalHeaderNamesList = staticRequestHeaderNames.orElse(Lists.newArrayList());
-        String originalStrings = Joiner.on(",\n").join(originalsStrings().entrySet());
+        String originalStrings = Joiner.on(",\n").join(originals().entrySet());
         for (String headerName : additionalHeaderNamesList) {
             String key = DEFAULT_CONFIGURATION_PREFIX + STATIC_REQUEST_HEADER_PREFIX + headerName;
             String value = (String) originals().get(key);
