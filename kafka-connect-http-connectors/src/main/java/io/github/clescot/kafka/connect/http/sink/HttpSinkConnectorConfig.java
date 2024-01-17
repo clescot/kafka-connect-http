@@ -155,8 +155,9 @@ public class HttpSinkConnectorConfig extends AbstractConfig {
         Optional<List<String>> staticRequestHeaderNames = Optional.ofNullable(getList(CONFIG_STATIC_REQUEST_HEADER_NAMES));
         List<String> additionalHeaderNamesList = staticRequestHeaderNames.orElse(Lists.newArrayList());
         for (String headerName : additionalHeaderNamesList) {
-            String value = (String) originals().get(DEFAULT_CONFIGURATION_PREFIX+STATIC_REQUEST_HEADER_PREFIX+headerName);
-            Preconditions.checkNotNull(value, "'" + headerName + "' is not configured as a parameter.");
+            String key = DEFAULT_CONFIGURATION_PREFIX + STATIC_REQUEST_HEADER_PREFIX + headerName;
+            String value = (String) originals().get(key);
+            Preconditions.checkNotNull(value, "'" + key + "' is not configured as a parameter.");
             staticRequestHeaders.put(headerName, Lists.newArrayList(value));
         }
         this.defaultSuccessResponseCodeRegex = getString(CONFIG_DEFAULT_SUCCESS_RESPONSE_CODE_REGEX);
