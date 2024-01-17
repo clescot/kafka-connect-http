@@ -9,6 +9,10 @@ import java.io.IOException;
 import java.net.InetAddress;
 import java.net.Socket;
 
+/**
+ * Interceptor which add host address ('X-Host-Address'), 'host name' ('X-Host-Name') and
+ * 'canonical host name' ('X-Canonical-Host-Name') of the server as Headers responses.
+ */
 public class InetAddressInterceptor implements Interceptor {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(InetAddressInterceptor.class);

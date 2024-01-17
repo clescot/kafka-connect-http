@@ -151,6 +151,16 @@
             <scope>provided</scope>
             <version>${confluent.platform.version}</version>
         </dependency>
+        <dependency>
+            <groupId>com.github.scribejava</groupId>
+            <artifactId>scribejava-httpclient-okhttp</artifactId>
+            <version>${scribe.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.github.scribejava</groupId>
+            <artifactId>scribejava-httpclient-ahc</artifactId>
+            <version>${scribe.version}</version>
+        </dependency>
         <!-- test dependencies-->
         <dependency>
             <groupId>org.apache.kafka</groupId>
@@ -226,6 +236,13 @@
             <version>1.6</version>
             <scope>test</scope>
         </dependency>
+        <dependency>
+            <groupId>com.github.dasniko</groupId>
+            <artifactId>testcontainers-keycloak</artifactId>
+            <version>3.2.0</version>
+            <scope>test</scope>
+        </dependency>
+
 
 
     </dependencies>

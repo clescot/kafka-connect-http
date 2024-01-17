@@ -9,6 +9,9 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 
+/**
+ * Interceptor which logs requests and responses, and the timing of the exchange.
+ */
 public class LoggingInterceptor implements Interceptor {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(LoggingInterceptor.class);

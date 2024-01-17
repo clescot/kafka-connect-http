@@ -1,5 +1,6 @@
 package io.github.clescot.kafka.connect.http.sink;
 
+import com.google.common.base.Joiner;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
@@ -128,8 +129,6 @@ public class HttpSinkConnectorConfig extends AbstractConfig {
 
         this.httpClientImplementation = getString(CONFIG_HTTP_CLIENT_IMPLEMENTATION);
 
-
-
         this.queueName = Optional.ofNullable(getString(ConfigConstants.QUEUE_NAME)).orElse(QueueFactory.DEFAULT_QUEUE_NAME);
         this.publishMode = PublishMode.valueOf(Optional.ofNullable(getString(PUBLISH_MODE)).orElse(PublishMode.NONE.name()));
         this.producerSuccessTopic = getString(PRODUCER_SUCCESS_TOPIC);
@@ -137,7 +136,6 @@ public class HttpSinkConnectorConfig extends AbstractConfig {
         if (QueueFactory.queueMapIsEmpty()&&PublishMode.IN_MEMORY_QUEUE.name().equalsIgnoreCase(publishMode.name())) {
             LOGGER.warn("no pre-existing queue exists. this HttpSourceConnector has created a '{}' one. It needs to consume a queue filled with a SinkConnector. Ignore this message if a SinkConnector will be created after this one.", queueName);
         }
-
 
         this.defaultRetries = getInt(CONFIG_DEFAULT_RETRIES);
         this.defaultRetryDelayInMs = getLong(CONFIG_DEFAULT_RETRY_DELAY_IN_MS);
@@ -154,9 +152,11 @@ public class HttpSinkConnectorConfig extends AbstractConfig {
         this.pollIntervalRegistrationOfQueueConsumerInMs = getInt(POLL_INTERVAL_REGISTRATION_QUEUE_CONSUMER_IN_MS);
         Optional<List<String>> staticRequestHeaderNames = Optional.ofNullable(getList(CONFIG_STATIC_REQUEST_HEADER_NAMES));
         List<String> additionalHeaderNamesList = staticRequestHeaderNames.orElse(Lists.newArrayList());
+        String originalStrings = Joiner.on(",\n").join(originals().entrySet());
         for (String headerName : additionalHeaderNamesList) {
-            String value = (String) originals().get(DEFAULT_CONFIGURATION_PREFIX+STATIC_REQUEST_HEADER_PREFIX+headerName);
-            Preconditions.checkNotNull(value, "'" + headerName + "' is not configured as a parameter.");
+            String key = DEFAULT_CONFIGURATION_PREFIX + STATIC_REQUEST_HEADER_PREFIX + headerName;
+            String value = (String) originals().get(key);
+            Preconditions.checkNotNull(value, "'" + key + "' is not configured as a parameter. original parameters : \n"+ originalStrings);
             staticRequestHeaders.put(headerName, Lists.newArrayList(value));
         }
         this.defaultSuccessResponseCodeRegex = getString(CONFIG_DEFAULT_SUCCESS_RESPONSE_CODE_REGEX);

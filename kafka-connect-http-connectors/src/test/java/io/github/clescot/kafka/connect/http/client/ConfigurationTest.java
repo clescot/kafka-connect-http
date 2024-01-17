@@ -189,6 +189,28 @@ class ConfigurationTest {
             httpRequest2.setHeaders(headers2);
             assertThat(configuration.matches(httpRequest2)).isFalse();
         }
+
+        @Test
+        @DisplayName("test constructor with valid custom static headers")
+        void test_constructor_with_valid_custom_static_headers() {
+            Map<String, String> settings = Maps.newHashMap();
+            String staticHeaderName = "toto";
+            settings.put("config.default.enrich.request.static.header.names", staticHeaderName);
+            String staticHeaderValue = "111-222-333";
+            settings.put("config.default.enrich.request.static.header.toto", staticHeaderValue);
+            HttpSinkConnectorConfig httpSinkConnectorConfig = new HttpSinkConnectorConfig(settings);
+            assertThat(httpSinkConnectorConfig.getStaticRequestHeaders()).containsEntry(staticHeaderName,List.of(staticHeaderValue));
+        }
+        @Test
+        @DisplayName("test constructor with invalid custom static headers")
+        void test_constructor_with_invalid_custom_static_headers() {
+            Map<String, String> settings = Maps.newHashMap();
+            String staticHeaderName = "toto";
+            settings.put("config.default.enrich.request.static.header.names", staticHeaderName);
+            String staticHeaderValue = "111-222-333";
+            settings.put("config.default.enrich.request.static.header.toto2", staticHeaderValue);
+            Assertions.assertThrows(NullPointerException.class,()->new HttpSinkConnectorConfig(settings));
+        }
     }
 
     @Nested
