@@ -189,6 +189,15 @@ class ConfigurationTest {
             httpRequest2.setHeaders(headers2);
             assertThat(configuration.matches(httpRequest2)).isFalse();
         }
+
+        @Test
+        @DisplayName("test constructor with custom static headers")
+        void test_constructor_with_custom_static_headers() {
+            Map<String, String> settings = Maps.newHashMap();
+            settings.put("config.default.enrich.request.static.header.names", "toto");
+            settings.put("config.default.enrich.request.static.header.toto", "111-222-333");
+            Assertions.assertDoesNotThrow(()->new HttpSinkConnectorConfig(settings));
+        }
     }
 
     @Nested
