@@ -21,7 +21,7 @@ every Kafka Connect Sink Connector need to define these required parameters :
 
 #### publish mode
 controlled by the  *`publish.mode`* parameter : `NONE` by default. When set to another value (`IN_MEMORY_QUEUE`,`PRODUCER`), publish HTTP interactions (request and responses)
-- *`publish.mode`* parameter : `IN_MEMORY_QUEUE` publish into the _in memory_ queue, with a topoligy constraint : the source connector which consumes the in memory queue, must be present on the same kafka connect instance.
+- *`publish.mode`* parameter : `IN_MEMORY_QUEUE` publish into the _in memory_ queue, with a topology constraint : the source connector which consumes the in memory queue, must be present on the same kafka connect instance.
   - *`queue.name`* : if not set, `default` queue name is used, if the `publish.to.in.memory.queue` is set to `true`.
     You can define multiple in memory queues, to permit to publish to different topics, different HTTP interactions. If
     you set this parameter to a value different than `default`, you need to configure an HTTP source Connector listening
