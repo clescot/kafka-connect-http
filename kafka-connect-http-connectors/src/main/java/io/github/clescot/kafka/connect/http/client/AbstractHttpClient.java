@@ -1,5 +1,6 @@
 package io.github.clescot.kafka.connect.http.client;
 
+import com.google.common.base.Preconditions;
 import dev.failsafe.RateLimiter;
 import io.github.clescot.kafka.connect.http.core.HttpExchange;
 import org.slf4j.Logger;
@@ -34,6 +35,7 @@ public abstract class AbstractHttpClient<Req, Res> implements HttpClient<Req, Re
     protected AbstractHttpClient(Map<String, Object> config) {
         this.config = config;
         configurationId = (String) config.get(CONFIGURATION_ID);
+        Preconditions.checkNotNull(configurationId,"configuration must have an id");
     }
 
     protected Optional<TrustManagerFactory> buildTrustManagerFactory() {

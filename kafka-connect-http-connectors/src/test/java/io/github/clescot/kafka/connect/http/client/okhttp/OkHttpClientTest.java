@@ -47,6 +47,7 @@ import java.util.regex.Pattern;
 import static com.github.tomakehurst.wiremock.client.WireMock.containing;
 import static com.github.tomakehurst.wiremock.client.WireMock.equalTo;
 import static com.github.tomakehurst.wiremock.stubbing.Scenario.STARTED;
+import static io.github.clescot.kafka.connect.http.client.Configuration.CONFIGURATION_ID;
 import static io.github.clescot.kafka.connect.http.sink.HttpSinkConfigDefinition.*;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
@@ -100,7 +101,9 @@ class OkHttpClientTest {
         void test_build_POST_request() throws IOException {
 
             //given
-            io.github.clescot.kafka.connect.http.client.okhttp.OkHttpClient client = new io.github.clescot.kafka.connect.http.client.okhttp.OkHttpClient(Maps.newHashMap(), null, new Random(), null, null, getCompositeMeterRegistry());
+            HashMap<String, Object> config = Maps.newHashMap();
+            config.put(CONFIGURATION_ID,"default");
+            io.github.clescot.kafka.connect.http.client.okhttp.OkHttpClient client = new io.github.clescot.kafka.connect.http.client.okhttp.OkHttpClient(config, null, new Random(), null, null, getCompositeMeterRegistry());
             HttpRequest httpRequest = new HttpRequest("http://dummy.com/", "POST", HttpRequest.BodyType.STRING.name());
             httpRequest.setBodyAsString("stuff");
 
@@ -122,7 +125,9 @@ class OkHttpClientTest {
         void test_build_GET_request_with_body() {
 
             //given
-            io.github.clescot.kafka.connect.http.client.okhttp.OkHttpClient client = new io.github.clescot.kafka.connect.http.client.okhttp.OkHttpClient(Maps.newHashMap(), null, new Random(), null, null, getCompositeMeterRegistry());
+            HashMap<String, Object> config = Maps.newHashMap();
+            config.put(CONFIGURATION_ID,"default");
+            io.github.clescot.kafka.connect.http.client.okhttp.OkHttpClient client = new io.github.clescot.kafka.connect.http.client.okhttp.OkHttpClient(config, null, new Random(), null, null, getCompositeMeterRegistry());
             HttpRequest httpRequest = new HttpRequest("http://dummy.com/", "GET", HttpRequest.BodyType.STRING.name());
             httpRequest.setBodyAsString("stuff");
 
@@ -144,7 +149,9 @@ class OkHttpClientTest {
         void test_build_response() {
 
             //given
-            io.github.clescot.kafka.connect.http.client.okhttp.OkHttpClient client = new io.github.clescot.kafka.connect.http.client.okhttp.OkHttpClient(Maps.newHashMap(), null, new Random(), null, null, getCompositeMeterRegistry());
+            HashMap<String, Object> config = Maps.newHashMap();
+            config.put(CONFIGURATION_ID,"default");
+            io.github.clescot.kafka.connect.http.client.okhttp.OkHttpClient client = new io.github.clescot.kafka.connect.http.client.okhttp.OkHttpClient(config, null, new Random(), null, null, getCompositeMeterRegistry());
 
             HttpRequest httpRequest = new HttpRequest("http://dummy.com/", "POST", HttpRequest.BodyType.STRING.name());
             httpRequest.setBodyAsString("stuff");
@@ -187,6 +194,7 @@ class OkHttpClientTest {
         @Test
         void test_activated_cache_with_file_type() {
             HashMap<String, Object> config = Maps.newHashMap();
+            config.put(CONFIGURATION_ID,"default");
             config.put(OKHTTP_CACHE_ACTIVATE, "true");
             org.junit.jupiter.api.Assertions.assertDoesNotThrow(() -> new io.github.clescot.kafka.connect.http.client.okhttp.OkHttpClient(config, null, new Random(), null, null, getCompositeMeterRegistry()));
         }
@@ -194,6 +202,7 @@ class OkHttpClientTest {
         @Test
         void test_activated_cache_with_file_type_and_max_entries() {
             HashMap<String, Object> config = Maps.newHashMap();
+            config.put(CONFIGURATION_ID,"default");
             config.put(OKHTTP_CACHE_ACTIVATE, "true");
             config.put(OKHTTP_CACHE_MAX_SIZE, "50000");
             org.junit.jupiter.api.Assertions.assertDoesNotThrow(() -> new io.github.clescot.kafka.connect.http.client.okhttp.OkHttpClient(config, null, new Random(), null, null, getCompositeMeterRegistry()));
@@ -203,6 +212,7 @@ class OkHttpClientTest {
         @Test
         void test_activated_cache_with_file_type_and_max_entries_and_location() {
             HashMap<String, Object> config = Maps.newHashMap();
+            config.put(CONFIGURATION_ID,"default");
             config.put(OKHTTP_CACHE_ACTIVATE, "true");
             config.put(OKHTTP_CACHE_MAX_SIZE, "50000");
             config.put(OKHTTP_CACHE_DIRECTORY_PATH, "/tmp/toto");
@@ -212,6 +222,7 @@ class OkHttpClientTest {
         @Test
         void test_activated_cache_with_inmemory_type() {
             HashMap<String, Object> config = Maps.newHashMap();
+            config.put(CONFIGURATION_ID,"default");
             config.put(OKHTTP_CACHE_ACTIVATE, "true");
             config.put(OKHTTP_CACHE_TYPE, "inmemory");
             org.junit.jupiter.api.Assertions.assertDoesNotThrow(() -> new io.github.clescot.kafka.connect.http.client.okhttp.OkHttpClient(config, null, new Random(), null, null, getCompositeMeterRegistry()));
@@ -220,6 +231,7 @@ class OkHttpClientTest {
         @Test
         void test_inactivated_cache() {
             HashMap<String, Object> config = Maps.newHashMap();
+            config.put(CONFIGURATION_ID,"default");
             config.put(OKHTTP_CACHE_ACTIVATE, "false");
             org.junit.jupiter.api.Assertions.assertDoesNotThrow(() -> new io.github.clescot.kafka.connect.http.client.okhttp.OkHttpClient(config, null, new Random(), null, null, getCompositeMeterRegistry()));
         }
@@ -227,8 +239,59 @@ class OkHttpClientTest {
         @Test
         void test_no_cache() {
             HashMap<String, Object> config = Maps.newHashMap();
+            config.put(CONFIGURATION_ID,"default");
             org.junit.jupiter.api.Assertions.assertDoesNotThrow(() -> new io.github.clescot.kafka.connect.http.client.okhttp.OkHttpClient(config, null, new Random(), null, null, getCompositeMeterRegistry()));
         }
+    }
+
+    @Nested
+    class TestRateLimiter {
+        @Test
+        @DisplayName("test rate limiter nominal case")
+        void test_nominal_case() throws ExecutionException, InterruptedException {
+            String scenario = "activating logging interceptor";
+            WireMockRuntimeInfo wmRuntimeInfo = wmHttp.getRuntimeInfo();
+            WireMock wireMock = wmRuntimeInfo.getWireMock();
+            String bodyResponse = "{\"result\":\"pong\"}";
+            wireMock.register(WireMock.post("/ping").inScenario(scenario)
+                            .whenScenarioStateIs(STARTED)
+                            .willReturn(WireMock.aResponse()
+                                    .withBody(bodyResponse)
+                                    .withStatus(200)
+                                    .withStatusMessage("OK")
+                            ).willSetStateTo(ACCESS_GRANTED_STATE)
+            );
+
+
+            HashMap<String, Object> config = Maps.newHashMap();
+            config.put(CONFIGURATION_ID,"default");
+            io.github.clescot.kafka.connect.http.client.okhttp.OkHttpClient client = new io.github.clescot.kafka.connect.http.client.okhttp.OkHttpClient(config, null, new Random(), null, null, getCompositeMeterRegistry());
+
+            HttpRequest httpRequest = getHttpRequest(wmRuntimeInfo);
+
+            HttpExchange httpExchange1 = client.call(httpRequest, new AtomicInteger(1)).get();
+            assertThat(httpExchange1.getHttpResponse().getStatusCode()).isEqualTo(200);
+        }
+
+        @NotNull
+        private HttpRequest getHttpRequest(WireMockRuntimeInfo wmRuntimeInfo) {
+            String baseUrl = "http://" + getIP() + ":" + wmRuntimeInfo.getHttpPort();
+            String url = baseUrl + "/ping";
+            HashMap<String, List<String>> headers = Maps.newHashMap();
+            headers.put(CONTENT_TYPE, Lists.newArrayList("text/plain"));
+            headers.put("X-Correlation-ID", Lists.newArrayList("e6de70d1-f222-46e8-b755-754880687822"));
+            headers.put("X-Request-ID", Lists.newArrayList("e6de70d1-f222-46e8-b755-11111"));
+            headers.put("User-Agent", Lists.newArrayList("toto"));
+            HttpRequest httpRequest = new HttpRequest(
+                    url,
+                    "POST",
+                    "STRING"
+            );
+            httpRequest.setHeaders(headers);
+            httpRequest.setBodyAsString("stuff");
+            return httpRequest;
+        }
+
     }
 
     @Nested
@@ -241,6 +304,7 @@ class OkHttpClientTest {
             WireMock wireMock = wmRuntimeInfo.getWireMock();
 
             HashMap<String, Object> config = Maps.newHashMap();
+            config.put(CONFIGURATION_ID,"default");
             io.github.clescot.kafka.connect.http.client.okhttp.OkHttpClient client = new io.github.clescot.kafka.connect.http.client.okhttp.OkHttpClient(config, null, new Random(), null, null, getCompositeMeterRegistry());
 
             String baseUrl = "http://" + getIP() + ":" + wmRuntimeInfo.getHttpPort();
@@ -272,9 +336,8 @@ class OkHttpClientTest {
 
             HttpExchange httpExchange1 = client.call(httpRequest, new AtomicInteger(1)).get();
             assertThat(httpExchange1.getHttpResponse().getStatusCode()).isEqualTo(200);
-
-
         }
+
         @Test
         @DisplayName("test activate logging interceptor")
         void test_activating_logging_interceptor() throws ExecutionException, InterruptedException {
@@ -283,6 +346,7 @@ class OkHttpClientTest {
             WireMock wireMock = wmRuntimeInfo.getWireMock();
 
             HashMap<String, Object> config = Maps.newHashMap();
+            config.put(CONFIGURATION_ID,"default");
             config.put(CONFIG_DEFAULT_OKHTTP_INTERCEPTOR_LOGGING_ACTIVATE, "true");
             io.github.clescot.kafka.connect.http.client.okhttp.OkHttpClient client = new io.github.clescot.kafka.connect.http.client.okhttp.OkHttpClient(config, null, new Random(), null, null, getCompositeMeterRegistry());
 
@@ -334,6 +398,7 @@ class OkHttpClientTest {
             WireMock wireMock = wmRuntimeInfo.getWireMock();
 
             HashMap<String, Object> config = Maps.newHashMap();
+            config.put(CONFIGURATION_ID,"default");
             config.put("httpclient.authentication.basic.activate", true);
             config.put("httpclient.authentication.basic.username", username);
             config.put("httpclient.authentication.basic.password", password);
@@ -411,6 +476,7 @@ class OkHttpClientTest {
             WireMock wireMock = wmRuntimeInfo.getWireMock();
 
             HashMap<String, Object> config = Maps.newHashMap();
+            config.put(CONFIGURATION_ID,"default");
             config.put("httpclient.authentication.digest.activate", true);
             config.put("httpclient.authentication.digest.username", username);
             config.put("httpclient.authentication.digest.password", password);
@@ -563,6 +629,7 @@ class OkHttpClientTest {
             String url = baseUrl + "/ping";
 
             HashMap<String, Object> config = Maps.newHashMap();
+            config.put(CONFIGURATION_ID,"default");
             Proxy proxy = new Proxy(Proxy.Type.HTTP, new InetSocketAddress(getIP(), wmRuntimeInfo.getHttpPort()));
 
 
@@ -614,6 +681,7 @@ class OkHttpClientTest {
             String url = baseUrl + "/ping";
 
             HashMap<String, Object> config = Maps.newHashMap();
+            config.put(CONFIGURATION_ID,"default");
             config.put(HTTP_CLIENT_PROXY_AUTHENTICATION_BASIC_ACTIVATE, true);
             String username = "user1";
             config.put(HTTP_CLIENT_PROXY_AUTHENTICATION_BASIC_USERNAME, username);
@@ -694,7 +762,7 @@ class OkHttpClientTest {
             String url = baseUrl + "/ping";
 
             HashMap<String, Object> config = Maps.newHashMap();
-
+            config.put(CONFIGURATION_ID,"default");
             config.put(HTTP_CLIENT_PROXY_AUTHENTICATION_BASIC_ACTIVATE, true);
             String proxyUsername = "proxyuser1";
             config.put(HTTP_CLIENT_PROXY_AUTHENTICATION_BASIC_USERNAME, proxyUsername);
@@ -797,7 +865,7 @@ class OkHttpClientTest {
             String url = baseUrl + "/ping";
 
             HashMap<String, Object> config = Maps.newHashMap();
-
+            config.put(CONFIGURATION_ID,"default");
             config.put(HTTP_CLIENT_PROXY_AUTHENTICATION_DIGEST_ACTIVATE, true);
             String proxyUsername = "proxyuser1";
             config.put(HTTP_CLIENT_PROXY_AUTHENTICATION_DIGEST_USERNAME, proxyUsername);
@@ -977,6 +1045,7 @@ class OkHttpClientTest {
             String url = baseUrl + "/ping";
 
             HashMap<String, Object> config = Maps.newHashMap();
+            config.put(CONFIGURATION_ID,"default");
 
             List<ImmutablePair<Predicate<URI>, Proxy>> proxies = Lists.newArrayList();
             Pattern uriPattern = Pattern.compile(".*");
@@ -1029,6 +1098,7 @@ class OkHttpClientTest {
             String url = baseUrl + "/ping";
 
             HashMap<String, Object> config = Maps.newHashMap();
+            config.put(CONFIGURATION_ID,"default");
 
 
             List<ImmutablePair<Predicate<URI>, Proxy>> proxies = Lists.newArrayList();
@@ -1118,6 +1188,7 @@ class OkHttpClientTest {
             //given
             String bodyResponse = "{\"result\":\"pong\"}";
             Map<String, Object> config = Maps.newHashMap();
+            config.put(CONFIGURATION_ID,"default");
             config.put(HTTP_CLIENT_SSL_TRUSTSTORE_ALWAYS_TRUST, "true");
             config.put(OKHTTP_SSL_SKIP_HOSTNAME_VERIFICATION, "true");
             WireMockRuntimeInfo wmRuntimeInfo = wmHttp.getRuntimeInfo();
@@ -1169,6 +1240,7 @@ class OkHttpClientTest {
             WireMock wireMock = wmRuntimeInfo.getWireMock();
 
             HashMap<String, Object> config = Maps.newHashMap();
+            config.put(CONFIGURATION_ID,"default");
             config.put("okhttp.connection.pool.max.idle.connections", 10);
             config.put("okhttp.connection.pool.keep.alive.duration", 1000);
 
@@ -1219,6 +1291,7 @@ class OkHttpClientTest {
             WireMock wireMock = wmRuntimeInfo.getWireMock();
 
             HashMap<String, Object> config = Maps.newHashMap();
+            config.put(CONFIGURATION_ID,"default");
             config.put("okhttp.connection.pool.scope", "static");
             config.put("okhttp.connection.pool.max.idle.connections", 10);
             config.put("okhttp.connection.pool.keep.alive.duration", 1000);
@@ -1226,6 +1299,7 @@ class OkHttpClientTest {
             io.github.clescot.kafka.connect.http.client.okhttp.OkHttpClient client = new io.github.clescot.kafka.connect.http.client.okhttp.OkHttpClient(config, null, new Random(), null, null, getCompositeMeterRegistry());
 
             HashMap<String, Object> config2 = Maps.newHashMap();
+            config2.put(CONFIGURATION_ID,"default");
             config2.put("okhttp.connection.pool.scope", "static");
             config2.put("okhttp.connection.pool.max.idle.connections", 10);
             config2.put("okhttp.connection.pool.keep.alive.duration", 1000);
