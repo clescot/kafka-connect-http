@@ -1,5 +1,6 @@
 package io.github.clescot.kafka.connect.http.client;
 
+import com.google.common.base.Joiner;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
@@ -190,6 +191,8 @@ public class Configuration<R,S> {
             Long retryJitterInMs = Long.parseLong((String) Optional.ofNullable(settings.get(RETRY_JITTER_IN_MS)).orElse(""+DEFAULT_RETRY_JITTER_IN_MS_VALUE));
             Preconditions.checkNotNull(retryDelayInMs, RETRIES + HAS_BEEN_SET + RETRY_JITTER_IN_MS + MUST_BE_SET_TOO);
             this.retryPolicy = buildRetryPolicy(retries, retryDelayInMs, retryMaxDelayInMs, retryDelayFactor, retryJitterInMs);
+        }else{
+            LOGGER.trace("configuration '{}' :retry policy is not configured",this.getId());
         }
 
     }
@@ -198,19 +201,27 @@ public class Configuration<R,S> {
         RateLimiter<HttpExchange> rateLimiter = null;
         if (configMap.containsKey(RATE_LIMITER_MAX_EXECUTIONS)) {
             long maxExecutions = Long.parseLong((String) configMap.get(RATE_LIMITER_MAX_EXECUTIONS));
+            LOGGER.trace("configuration '{}' : maxExecutions :{}",getId(),maxExecutions);
             long defaultMaxExecutions = httpSinkConnectorConfig.getLong(CONFIG_DEFAULT_RATE_LIMITER_PERIOD_IN_MS);
+            LOGGER.trace("configuration '{}' : defaultMaxExecutions :{}",getId(),defaultMaxExecutions);
             long periodInMs = Long.parseLong(Optional.ofNullable((String) configMap.get(RATE_LIMITER_PERIOD_IN_MS)).orElse(defaultMaxExecutions + ""));
+            LOGGER.trace("configuration '{}' : periodInMs :{}",getId(),periodInMs);
             if (configMap.containsKey(RATE_LIMITER_SCOPE) && STATIC_SCOPE.equalsIgnoreCase((String) configMap.get(RATE_LIMITER_SCOPE))) {
+                LOGGER.trace("configuration '{}' : rateLimiter scope is 'static'",getId());
                 Optional<RateLimiter<HttpExchange>> sharedRateLimiter = Optional.ofNullable(sharedRateLimiters.get(id));
                 if (sharedRateLimiter.isPresent()) {
                     rateLimiter = sharedRateLimiter.get();
                 } else {
-                    RateLimiter<HttpExchange> myRateLimiter = RateLimiter.<HttpExchange>smoothBuilder(maxExecutions, Duration.of(periodInMs, ChronoUnit.MILLIS)).build();
-                    registerRateLimiter(id, myRateLimiter);
-                    rateLimiter = myRateLimiter;
+                    rateLimiter = RateLimiter.<HttpExchange>smoothBuilder(maxExecutions, Duration.of(periodInMs, ChronoUnit.MILLIS)).build();
+                    registerRateLimiter(id, rateLimiter);
                 }
             } else {
                 rateLimiter = RateLimiter.<HttpExchange>smoothBuilder(maxExecutions, Duration.of(periodInMs, ChronoUnit.MILLIS)).build();
+            }
+        }else{
+            if(LOGGER.isTraceEnabled()) {
+                LOGGER.trace("configuration '{}' : rate limiter is not configured", this.getId());
+                LOGGER.trace(Joiner.on(",\n").withKeyValueSeparator("=").join(configMap.entrySet()));
             }
         }
         return rateLimiter;
