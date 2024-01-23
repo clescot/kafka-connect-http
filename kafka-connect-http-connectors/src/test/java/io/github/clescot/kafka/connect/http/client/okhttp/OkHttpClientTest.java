@@ -5,6 +5,7 @@ import com.github.tomakehurst.wiremock.core.Options;
 import com.github.tomakehurst.wiremock.core.WireMockConfiguration;
 import com.github.tomakehurst.wiremock.junit5.WireMockExtension;
 import com.github.tomakehurst.wiremock.junit5.WireMockRuntimeInfo;
+import com.google.common.base.Stopwatch;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.io.Resources;
@@ -40,6 +41,7 @@ import java.nio.charset.StandardCharsets;
 import java.security.cert.X509Certificate;
 import java.util.*;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Predicate;
 import java.util.regex.Pattern;
@@ -249,6 +251,10 @@ class OkHttpClientTest {
         @Test
         @DisplayName("test rate limiter nominal case")
         void test_nominal_case() throws ExecutionException, InterruptedException {
+
+
+            //given
+            //scenario
             String scenario = "activating logging interceptor";
             WireMockRuntimeInfo wmRuntimeInfo = wmHttp.getRuntimeInfo();
             WireMock wireMock = wmRuntimeInfo.getWireMock();
@@ -259,18 +265,34 @@ class OkHttpClientTest {
                                     .withBody(bodyResponse)
                                     .withStatus(200)
                                     .withStatusMessage("OK")
-                            ).willSetStateTo(ACCESS_GRANTED_STATE)
+                            )
             );
 
 
+            //build http client
             HashMap<String, Object> config = Maps.newHashMap();
             config.put(CONFIGURATION_ID,"default");
-            io.github.clescot.kafka.connect.http.client.okhttp.OkHttpClient client = new io.github.clescot.kafka.connect.http.client.okhttp.OkHttpClient(config, null, new Random(), null, null, getCompositeMeterRegistry());
+            config.put("config.default.rate.limiter.max.executions","1");
+
+            io.github.clescot.kafka.connect.http.client.okhttp.OkHttpClient client = new OkHttpClient(
+                    config,
+                    null,
+                    new Random(),
+                    null,
+                    null,
+                    getCompositeMeterRegistry()
+            );
 
             HttpRequest httpRequest = getHttpRequest(wmRuntimeInfo);
-
-            HttpExchange httpExchange1 = client.call(httpRequest, new AtomicInteger(1)).get();
-            assertThat(httpExchange1.getHttpResponse().getStatusCode()).isEqualTo(200);
+            Stopwatch stopwatch = Stopwatch.createStarted();
+            //call web service
+            for (int i = 0; i < 3; i++) {
+                HttpExchange httpExchange1 = client.call(httpRequest, new AtomicInteger(1)).get();
+                assertThat(httpExchange1.getHttpResponse().getStatusCode()).isEqualTo(200);
+            }
+            stopwatch.stop();
+            long elapsedMillis = stopwatch.elapsed(TimeUnit.MILLISECONDS);
+            assertThat(elapsedMillis).isGreaterThan(2995);
         }
 
         @NotNull

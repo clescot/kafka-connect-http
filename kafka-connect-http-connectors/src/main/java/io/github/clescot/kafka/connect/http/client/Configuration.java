@@ -1,11 +1,8 @@
 package io.github.clescot.kafka.connect.http.client;
 
-import com.google.common.base.Joiner;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
-import dev.failsafe.RateLimiter;
-import dev.failsafe.RateLimiterConfig;
 import dev.failsafe.RetryPolicy;
 import io.github.clescot.kafka.connect.http.VersionUtils;
 import io.github.clescot.kafka.connect.http.client.config.*;
@@ -22,7 +19,6 @@ import org.slf4j.LoggerFactory;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.time.Duration;
-import java.time.temporal.ChronoUnit;
 import java.util.*;
 import java.util.concurrent.ExecutorService;
 import java.util.function.Function;
@@ -76,9 +72,6 @@ public class Configuration<R,S> {
     private final AddMissingCorrelationIdHeaderToHttpRequestFunction addMissingCorrelationIdHeaderToHttpRequestFunction;
     private AddSuccessStatusToHttpExchangeFunction addSuccessStatusToHttpExchangeFunction;
     private AddUserAgentHeaderToHttpRequestFunction addUserAgentHeaderToHttpRequestFunction;
-    //rate limiter
-    private static final Map<String, RateLimiter<HttpExchange>> sharedRateLimiters = Maps.newHashMap();
-
 
     //retry policy
     private Pattern retryResponseCodeRegex;
@@ -167,14 +160,6 @@ public class Configuration<R,S> {
         this.addSuccessStatusToHttpExchangeFunction = new AddSuccessStatusToHttpExchangeFunction(successResponseCodeRegex);
 
 
-
-
-
-        //rate limiter
-        Preconditions.checkNotNull(httpClient, "httpClient is null");
-        httpClient.setRateLimiter(buildRateLimiter(id, config, settings));
-
-
         //retry policy
         //retry response code regex
         if (settings.containsKey(RETRY_RESPONSE_CODE_REGEX)) {
@@ -198,38 +183,7 @@ public class Configuration<R,S> {
 
     }
 
-    private RateLimiter<HttpExchange> buildRateLimiter(String id, AbstractConfig httpSinkConnectorConfig, Map<String, Object> configMap) {
-        RateLimiter<HttpExchange> rateLimiter = null;
-        if (configMap.containsKey(RATE_LIMITER_MAX_EXECUTIONS)) {
-            long maxExecutions = Long.parseLong((String) configMap.get(RATE_LIMITER_MAX_EXECUTIONS));
-            LOGGER.trace("configuration '{}' : maxExecutions :{}",getId(),maxExecutions);
-            long defaultRateLimiterPeriod = httpSinkConnectorConfig.getLong(CONFIG_DEFAULT_RATE_LIMITER_PERIOD_IN_MS);
-            LOGGER.trace("configuration '{}' : defaultRateLimiterPeriod :{}",getId(),defaultRateLimiterPeriod);
-            long periodInMs = Long.parseLong(Optional.ofNullable((String) configMap.get(RATE_LIMITER_PERIOD_IN_MS)).orElse(defaultRateLimiterPeriod + ""));
-            LOGGER.trace("configuration '{}' : periodInMs :{}",getId(),periodInMs);
-            if (configMap.containsKey(RATE_LIMITER_SCOPE) && STATIC_SCOPE.equalsIgnoreCase((String) configMap.get(RATE_LIMITER_SCOPE))) {
-                LOGGER.trace("configuration '{}' : rateLimiter scope is 'static'",getId());
-                Optional<RateLimiter<HttpExchange>> sharedRateLimiter = Optional.ofNullable(sharedRateLimiters.get(id));
-                if (sharedRateLimiter.isPresent()) {
-                    rateLimiter = sharedRateLimiter.get();
-                    LOGGER.trace("configuration '{}' : rate limiter is already shared",getId());
-                } else {
-                    rateLimiter = RateLimiter.<HttpExchange>smoothBuilder(maxExecutions, Duration.of(periodInMs, ChronoUnit.MILLIS)).build();
-                    registerRateLimiter(id, rateLimiter);
-                }
-            } else {
-                rateLimiter = RateLimiter.<HttpExchange>smoothBuilder(maxExecutions, Duration.of(periodInMs, ChronoUnit.MILLIS)).build();
-            }
-            RateLimiterConfig<HttpExchange> config = rateLimiter.getConfig();
-            LOGGER.trace("configuration '{}' rate limiter configured : 'maxRate:{},maxPermits{},period:{},maxWaitTime:{}'",getId(),config.getMaxRate(),config.getMaxPermits(),config.getPeriod(),config.getMaxWaitTime());
-        }else{
-            if(LOGGER.isTraceEnabled()) {
-                LOGGER.trace("configuration '{}' : rate limiter is not configured", this.getId());
-                LOGGER.trace(Joiner.on(",\n").withKeyValueSeparator("=").join(configMap.entrySet()));
-            }
-        }
-        return rateLimiter;
-    }
+
 
     private Predicate<HttpRequest> buildPredicate(Map<String, Object> configMap) {
         Predicate<HttpRequest> predicate = httpRequest -> true;
@@ -331,12 +285,7 @@ public class Configuration<R,S> {
         this.retryPolicy = retryPolicy;
     }
 
-    public static void registerRateLimiter(String configurationId, RateLimiter<HttpExchange> rateLimiter) {
-        Preconditions.checkNotNull(configurationId, "we cannot register a rateLimiter for a 'null' configurationId");
-        Preconditions.checkNotNull(rateLimiter, "we cannot register a 'null' rate limiter for the configurationId " + configurationId);
-        LOGGER.info("registration of a shared rateLimiter for the configurationId '{}'", configurationId);
-        sharedRateLimiters.put(configurationId, rateLimiter);
-    }
+
 
 
     public Optional<RetryPolicy<HttpExchange>> getRetryPolicy() {
