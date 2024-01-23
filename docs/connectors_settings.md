@@ -177,11 +177,11 @@ The predicate permits to filter some http requests, and can be composed, cumulat
       - *`config.default.httpclient.authentication.basic.password`* : password used to authenticate against the `basic` challenge (_required_)
       - *`config.default.httpclient.authentication.basic.charset`* : character set used by the http client to encode `basic` credentials (_optional_ `ISO_8859_1` if not set)
     - `digest` authentication settings
+       note that the random generator configured in the configuration is used by the digest algorithm. 
       - *`config.default.httpclient.authentication.digest.activate`* : activate `digest` authentication response with credentials, for web sites matching this configuration (_required_)
       - *`config.default.httpclient.authentication.digest.username`* : username used to authenticate against the `digest` challenge (_required_)
       - *`config.default.httpclient.authentication.digest.password`* : password used to authenticate against the `digest` challenge (_required_)
-      - *`config.default.httpclient.authentication.digest.charset`* : character set used by the http client to encode `digest` credentials (_optional_ `US-ASCII` if not set) 
-      - *`config.default.httpclient.authentication.digest.secure.random.prng.algorithm`* : pseudo random number generation algorithm name according to the [java supported random algorithm names](https://docs.oracle.com/en/java/javase/11/docs/specs/security/standard-names.html#securerandom-number-generation-algorithms) default to `SHA1PRNG`. 
+      - *`config.default.httpclient.authentication.digest.charset`* : character set used by the http client to encode `digest` credentials (_optional_ `US-ASCII` if not set)
   - http client SSL parameters
     - *`config.default.httpclient.ssl.keystore.path`* : file path of the custom key store.
     - *`config.default.httpclient.ssl.keystore.password`* : password of the custom key store.
@@ -208,6 +208,9 @@ The predicate permits to filter some http requests, and can be composed, cumulat
     - *`httpclient.async.fixed.thread.pool.size`* : custom fixed thread pool size used to execute asynchronously http requests.
   - http client implementation settings (prefixed by `config.<config_id>` )
     - *`httpclient.implementation`* : define which installed library to use : either `ahc`, a.k.a async http client, or `okhttp`. default is `okhttp`.  
+    - *`config.default.httpclient.secure.random.activate`* : use a secure random generator if set to `true`. 
+    - *`config.default.httpclient.secure.random.prng.algorithm`* : algorithm to use when the secure random is activated. default to `SHA1PRNG`. 
+    - *`config.default.httpclient.unsecure.random.seed`* : seed to use when the secure random is NOT activated (default pseudo random generator is used). 
   - _okhttp_ (default) HTTP client implementation settings
     - *`config.default.okhttp.connection.pool.scope`*  : scope of the connection pool. can be either 'instance' (i.e a connection pool per configuration in the connector instance),  or 'static' (a connection pool shared with all connectors instances in the same Java Virtual Machine).
     - *`config.default.okhttp.connection.pool.max.idle.connections`* : amount of connections to keep idle, to avoid the connection creation time when needed. Default is 0 (no connection pool).

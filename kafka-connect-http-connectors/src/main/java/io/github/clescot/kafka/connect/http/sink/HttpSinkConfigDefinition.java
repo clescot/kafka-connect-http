@@ -540,6 +540,7 @@ public class HttpSinkConfigDefinition {
                 .define(METER_REGISTRY_TAG_INCLUDE_URL_PATH, ConfigDef.Type.STRING, FALSE, ConfigDef.Importance.LOW, METER_REGISTRY_TAG_INCLUDE_URL_PATH_DOC)
                 //http client implementation settings
                 .define(CONFIG_HTTP_CLIENT_IMPLEMENTATION, ConfigDef.Type.STRING, null, ConfigDef.Importance.LOW, CONFIG_HTTP_CLIENT_IMPLEMENTATION_DOC)
+                //random
                 .define(CONFIG_DEFAULT_HTTP_CLIENT_SECURE_RANDOM_ACTIVATE, ConfigDef.Type.BOOLEAN, Boolean.FALSE, ConfigDef.Importance.LOW, CONFIG_DEFAULT_HTTP_CLIENT_SECURE_RANDOM_ACTIVATE_DOC)
                 .define(CONFIG_DEFAULT_HTTP_CLIENT_SECURE_RANDOM_PRNG_ALGORITHM, ConfigDef.Type.STRING, "SHA1PRNG", ConfigDef.Importance.LOW, CONFIG_DEFAULT_HTTP_CLIENT_SECURE_RANDOM_PRNG_ALGORITHM_DOC)
                 .define(CONFIG_DEFAULT_HTTP_CLIENT_UNSECURE_RANDOM_SEED, ConfigDef.Type.LONG, null, ConfigDef.Importance.LOW, CONFIG_DEFAULT_HTTP_CLIENT_UNSECURE_RANDOM_SEED_DOC)
