@@ -95,11 +95,10 @@ public abstract class AbstractHttpClient<Req, Res> implements HttpClient<Req, Re
 
     protected static SSLSocketFactory getSSLSocketFactory(@Nullable KeyManagerFactory keyManagerFactory,
                                                           @Nullable TrustManagerFactory trustManagerFactory,
-                                                @Nullable String protocol){
+                                                          @Nullable String protocol,
+                                                          SecureRandom random){
         try {
             SSLContext sslContext = SSLContext.getInstance(Optional.ofNullable(protocol).orElse(DEFAULT_SSL_PROTOCOL));
-            //TODO add secureRandom seed parameter
-            SecureRandom random = new SecureRandom();
             sslContext.init(keyManagerFactory!=null?keyManagerFactory.getKeyManagers():null,trustManagerFactory!=null?trustManagerFactory.getTrustManagers():null, random);
             return sslContext.getSocketFactory();
         } catch (NoSuchAlgorithmException | KeyManagementException e) {
