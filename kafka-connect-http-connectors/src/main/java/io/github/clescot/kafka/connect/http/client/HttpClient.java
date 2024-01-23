@@ -79,7 +79,7 @@ public interface HttpClient<Q, S> {
         CompletableFuture<S> response;
         LOGGER.info("httpRequest: {}", httpRequest);
         Q request = buildRequest(httpRequest);
-        LOGGER.info("native request: {}", request);
+        LOGGER.debug("native request: {}", request);
         OffsetDateTime now = OffsetDateTime.now(ZoneId.of(UTC_ZONE_ID));
         response = call(request);
         Preconditions.checkNotNull(response, "response is null");
@@ -89,8 +89,10 @@ public interface HttpClient<Q, S> {
                             if(LOGGER.isTraceEnabled()) {
                                 LOGGER.trace("httpResponse: {}", myResponse);
                             }
-                            LOGGER.info("duration: {}ms", stopwatch.elapsed(TimeUnit.MILLISECONDS));
-                            return buildHttpExchange(httpRequest, myResponse, stopwatch, now, attempts, myResponse.getStatusCode() < 400 ? SUCCESS : FAILURE);
+                    Integer responseStatusCode = myResponse.getStatusCode();
+                    String responseStatusMessage = myResponse.getStatusMessage();
+                    LOGGER.info("response : {} '{}' ({} ms)",responseStatusCode,responseStatusMessage,stopwatch.elapsed(TimeUnit.MILLISECONDS));
+                    return buildHttpExchange(httpRequest, myResponse, stopwatch, now, attempts, responseStatusCode < 400 ? SUCCESS : FAILURE);
                         }
                 ).exceptionally((throwable-> {
                     HttpResponse httpResponse = new HttpResponse(400,throwable.getMessage());

@@ -21,6 +21,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 
+import static io.github.clescot.kafka.connect.http.client.Configuration.CONFIGURATION_ID;
 import static io.github.clescot.kafka.connect.http.sink.HttpSinkConfigDefinition.*;
 
 public abstract class AbstractHttpClient<Req, Res> implements HttpClient<Req, Res> {
@@ -29,9 +30,10 @@ public abstract class AbstractHttpClient<Req, Res> implements HttpClient<Req, Re
     protected Map<String, Object> config;
     private Optional<RateLimiter<HttpExchange>> rateLimiter = Optional.empty();
     protected TrustManagerFactory trustManagerFactory;
-
+    protected  String configurationId;
     protected AbstractHttpClient(Map<String, Object> config) {
         this.config = config;
+        configurationId = (String) config.get(CONFIGURATION_ID);
     }
 
     protected Optional<TrustManagerFactory> buildTrustManagerFactory() {
@@ -93,11 +95,10 @@ public abstract class AbstractHttpClient<Req, Res> implements HttpClient<Req, Re
 
     protected static SSLSocketFactory getSSLSocketFactory(@Nullable KeyManagerFactory keyManagerFactory,
                                                           @Nullable TrustManagerFactory trustManagerFactory,
-                                                @Nullable String protocol){
+                                                          @Nullable String protocol,
+                                                          SecureRandom random){
         try {
             SSLContext sslContext = SSLContext.getInstance(Optional.ofNullable(protocol).orElse(DEFAULT_SSL_PROTOCOL));
-            //TODO add secureRandom seed parameter
-            SecureRandom random = new SecureRandom();
             sslContext.init(keyManagerFactory!=null?keyManagerFactory.getKeyManagers():null,trustManagerFactory!=null?trustManagerFactory.getTrustManagers():null, random);
             return sslContext.getSocketFactory();
         } catch (NoSuchAlgorithmException | KeyManagementException e) {
@@ -111,7 +112,9 @@ public abstract class AbstractHttpClient<Req, Res> implements HttpClient<Req, Re
             Optional<RateLimiter<HttpExchange>> limiter = getRateLimiter();
             if (limiter.isPresent()) {
                 limiter.get().acquirePermits(HttpClient.ONE_HTTP_REQUEST);
-                LOGGER.debug("permits acquired request:'{}'", request);
+                LOGGER.trace("permits acquired request:'{}'", request);
+            }else{
+                LOGGER.trace("no rate limiter is configured");
             }
             return nativeCall(request);
         } catch (InterruptedException e) {
