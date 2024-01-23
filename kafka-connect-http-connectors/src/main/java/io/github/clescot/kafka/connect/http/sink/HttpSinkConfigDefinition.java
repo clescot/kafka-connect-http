@@ -96,7 +96,7 @@ public class HttpSinkConfigDefinition {
 
     //publish to in memory queue
     public static final String PUBLISH_MODE = "publish.mode";
-    public static final String PUBLISH_MODE_DOC = "can be either 'IN_MEMORY_QUEUE', 'NONE', 'DLQ' or 'PRODUCER'. When set to 'NONE', ignore HTTP responses, i.e does not publish responses in the in memory queue ; no Source Connector is needed when set to 'none'. When set to 'IN_MEMORY_QUEUE', a Source Connector is needed to consume published Http exchanges in this in memory queue. when set to 'PRODUCER' a low level producer will be used to publish response to another topic. when set to 'DLQ', the errantReporter used to publish bad message in a Dead letter queue will be used.";
+    public static final String PUBLISH_MODE_DOC = "can be either 'IN_MEMORY_QUEUE', 'NONE', or 'PRODUCER'. When set to 'NONE', ignore HTTP responses, i.e does not publish responses in the in memory queue ; no Source Connector is needed when set to 'none'. When set to 'IN_MEMORY_QUEUE', a Source Connector is needed to consume published Http exchanges in this in memory queue. when set to 'PRODUCER' a low level producer will be used to publish response to another topic. when set to 'DLQ', the errantReporter used to publish bad message in a Dead letter queue will be used.";
 
     private static final long DEFAULT_WAIT_TIME_REGISTRATION_QUEUE_CONSUMER_IN_MS = 60000L;
     public static final String WAIT_TIME_REGISTRATION_QUEUE_CONSUMER_IN_MS = "wait.time.registration.queue.consumer.in.ms";
