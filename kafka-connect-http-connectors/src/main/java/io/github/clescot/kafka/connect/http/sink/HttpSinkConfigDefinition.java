@@ -237,10 +237,19 @@ public class HttpSinkConfigDefinition {
     public static final String OKHTTP_IMPLEMENTATION = "okhttp";
     public static final String AHC_IMPLEMENTATION = "ahc";
 
+    //random
+    public static final String HTTP_CLIENT_SECURE_RANDOM_ACTIVATE = HTTP_CLIENT_PREFIX + "secure.random.activate";
+    public static final String CONFIG_DEFAULT_HTTP_CLIENT_SECURE_RANDOM_ACTIVATE = DEFAULT_CONFIGURATION_PREFIX + HTTP_CLIENT_SECURE_RANDOM_ACTIVATE;
+    public static final String CONFIG_DEFAULT_HTTP_CLIENT_SECURE_RANDOM_ACTIVATE_DOC = "if 'true', use a secure random instead of a pseudo random number generator.";
+
 
     public static final String HTTP_CLIENT_SECURE_RANDOM_PRNG_ALGORITHM = HTTP_CLIENT_PREFIX + "secure.random.prng.algorithm";
     public static final String CONFIG_DEFAULT_HTTP_CLIENT_SECURE_RANDOM_PRNG_ALGORITHM = DEFAULT_CONFIGURATION_PREFIX + HTTP_CLIENT_SECURE_RANDOM_PRNG_ALGORITHM;
-    public static final String CONFIG_DEFAULT_HTTP_CLIENT_SECURE_RANDOM_PRNG_ALGORITHM_DOC = "name of the Random Number Generator (RNG) algorithm used to get a Secure Random instance. cf https://docs.oracle.com/en/java/javase/11/docs/specs/security/standard-names.html#securerandom-number-generation-algorithms";
+    public static final String CONFIG_DEFAULT_HTTP_CLIENT_SECURE_RANDOM_PRNG_ALGORITHM_DOC = "name of the Random Number Generator (RNG) algorithm used to get a Secure Random instance. if not set, 'SHA1PRNG' algorithm is used when the secure random generator is activated. cf https://docs.oracle.com/en/java/javase/11/docs/specs/security/standard-names.html#securerandom-number-generation-algorithms";
+
+    public static final String HTTP_CLIENT_UNSECURE_RANDOM_SEED = HTTP_CLIENT_PREFIX + "unsecure.random.seed";
+    public static final String CONFIG_DEFAULT_HTTP_CLIENT_UNSECURE_RANDOM_SEED = DEFAULT_CONFIGURATION_PREFIX + HTTP_CLIENT_UNSECURE_RANDOM_SEED;
+    public static final String CONFIG_DEFAULT_HTTP_CLIENT_UNSECURE_RANDOM_SEED_DOC = "seed used to build the unsecure random generator.";
 
 
     //SSL
@@ -531,7 +540,9 @@ public class HttpSinkConfigDefinition {
                 .define(METER_REGISTRY_TAG_INCLUDE_URL_PATH, ConfigDef.Type.STRING, FALSE, ConfigDef.Importance.LOW, METER_REGISTRY_TAG_INCLUDE_URL_PATH_DOC)
                 //http client implementation settings
                 .define(CONFIG_HTTP_CLIENT_IMPLEMENTATION, ConfigDef.Type.STRING, null, ConfigDef.Importance.LOW, CONFIG_HTTP_CLIENT_IMPLEMENTATION_DOC)
+                .define(CONFIG_DEFAULT_HTTP_CLIENT_SECURE_RANDOM_ACTIVATE, ConfigDef.Type.BOOLEAN, Boolean.FALSE, ConfigDef.Importance.LOW, CONFIG_DEFAULT_HTTP_CLIENT_SECURE_RANDOM_ACTIVATE_DOC)
                 .define(CONFIG_DEFAULT_HTTP_CLIENT_SECURE_RANDOM_PRNG_ALGORITHM, ConfigDef.Type.STRING, "SHA1PRNG", ConfigDef.Importance.LOW, CONFIG_DEFAULT_HTTP_CLIENT_SECURE_RANDOM_PRNG_ALGORITHM_DOC)
+                .define(CONFIG_DEFAULT_HTTP_CLIENT_UNSECURE_RANDOM_SEED, ConfigDef.Type.LONG, null, ConfigDef.Importance.LOW, CONFIG_DEFAULT_HTTP_CLIENT_UNSECURE_RANDOM_SEED_DOC)
                 //retry settings
                 .define(CONFIG_DEFAULT_SUCCESS_RESPONSE_CODE_REGEX, ConfigDef.Type.STRING, CONFIG_DEFAULT_DEFAULT_SUCCESS_RESPONSE_CODE_REGEX, ConfigDef.Importance.LOW, CONFIG_DEFAULT_SUCCESS_RESPONSE_CODE_REGEX_DOC)
                 .define(CONFIG_DEFAULT_RETRY_RESPONSE_CODE_REGEX, ConfigDef.Type.STRING, DEFAULT_DEFAULT_RETRY_RESPONSE_CODE_REGEX, ConfigDef.Importance.LOW, DEFAULT_RETRY_RESPONSE_CODE_REGEX_DOC)

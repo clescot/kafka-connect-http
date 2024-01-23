@@ -269,17 +269,26 @@ public class Configuration<R,S> {
     }
 
 
-
+    @java.lang.SuppressWarnings("java:S2119")
     @NotNull
-    private static Random getRandom(Map<String, Object> config) {
+    private Random getRandom(Map<String, Object> config) {
         Random random;
-        String rngAlgorithm = SHA_1_PRNG;
 
-        if (config.containsKey(HTTP_CLIENT_SECURE_RANDOM_PRNG_ALGORITHM)) {
-            rngAlgorithm = (String) config.get(HTTP_CLIENT_SECURE_RANDOM_PRNG_ALGORITHM);
-        }
         try {
+        if(config.containsKey(HTTP_CLIENT_SECURE_RANDOM_ACTIVATE)&&(boolean)config.get(HTTP_CLIENT_SECURE_RANDOM_ACTIVATE)){
+            String rngAlgorithm = SHA_1_PRNG;
+            if (config.containsKey(HTTP_CLIENT_SECURE_RANDOM_PRNG_ALGORITHM)) {
+                rngAlgorithm = (String) config.get(HTTP_CLIENT_SECURE_RANDOM_PRNG_ALGORITHM);
+            }
             random = SecureRandom.getInstance(rngAlgorithm);
+        }else {
+            if(config.containsKey(HTTP_CLIENT_UNSECURE_RANDOM_SEED)){
+                long seed = (long) config.get(HTTP_CLIENT_UNSECURE_RANDOM_SEED);
+                random = new Random(seed);
+            }else {
+                random = new Random();
+            }
+        }
         } catch (NoSuchAlgorithmException e) {
             throw new HttpException(e);
         }
