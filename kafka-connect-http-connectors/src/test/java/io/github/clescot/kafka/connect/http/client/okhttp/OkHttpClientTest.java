@@ -296,7 +296,7 @@ class OkHttpClientTest {
             long elapsedMillis = stopwatch.elapsed(TimeUnit.MILLISECONDS);
             assertThat(elapsedMillis).isGreaterThan(7895);
             for (HttpExchange exchange : exchanges) {
-                LOGGER.info("httpExchange overall time '{}' ms",exchange.getDurationInMillis());
+                LOGGER.info("httpExchange direct time '{}' ms",exchange.getDurationInMillis());
             }
         }
 
