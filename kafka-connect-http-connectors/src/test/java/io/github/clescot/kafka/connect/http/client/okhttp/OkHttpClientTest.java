@@ -298,7 +298,9 @@ class OkHttpClientTest {
             for (HttpExchange exchange : exchanges) {
                 LOGGER.info("httpExchange direct time '{}' ms",exchange.getDurationInMillis());
             }
-        } @Test
+        }
+
+        @Test
         @DisplayName("test without rate limiter")
         void test_without_rate_limiter() throws ExecutionException, InterruptedException {
 
@@ -345,6 +347,133 @@ class OkHttpClientTest {
             stopwatch.stop();
             long elapsedMillis = stopwatch.elapsed(TimeUnit.MILLISECONDS);
             assertThat(elapsedMillis).isLessThan(3000);
+            for (HttpExchange exchange : exchanges) {
+                LOGGER.info("httpExchange direct time '{}' ms",exchange.getDurationInMillis());
+            }
+        }
+
+        @Test
+        @DisplayName("test with shared rate limiter")
+        void test_with_shared_rate_limiter() throws ExecutionException, InterruptedException {
+
+
+            //given
+            //scenario
+            String scenario = "activating logging interceptor";
+            WireMockRuntimeInfo wmRuntimeInfo = wmHttp.getRuntimeInfo();
+            WireMock wireMock = wmRuntimeInfo.getWireMock();
+            String bodyResponse = "{\"result\":\"pong\"}";
+            wireMock.register(WireMock.post("/ping").inScenario(scenario)
+                    .whenScenarioStateIs(STARTED)
+                    .willReturn(WireMock.aResponse()
+                            .withBody(bodyResponse)
+                            .withStatus(200)
+                            .withStatusMessage("OK")
+                    )
+            );
+
+
+            //build http client
+            HashMap<String, Object> config = Maps.newHashMap();
+            config.put(CONFIGURATION_ID,"default");
+            config.put("rate.limiter.max.executions","1");
+            config.put("rate.limiter.scope","static");
+
+            io.github.clescot.kafka.connect.http.client.okhttp.OkHttpClient client1 = new OkHttpClient(
+                    config,
+                    null,
+                    new Random(),
+                    null,
+                    null,
+                    getCompositeMeterRegistry()
+            );
+            io.github.clescot.kafka.connect.http.client.okhttp.OkHttpClient client2 = new OkHttpClient(
+                    config,
+                    null,
+                    new Random(),
+                    null,
+                    null,
+                    getCompositeMeterRegistry()
+            );
+
+            HttpRequest httpRequest = getHttpRequest(wmRuntimeInfo);
+            Stopwatch stopwatch = Stopwatch.createStarted();
+            List<HttpExchange> exchanges = Lists.newArrayList();
+            //call web service
+            for (int i = 0; i < 5; i++) {
+                HttpExchange httpExchange1 = client1.call(httpRequest, new AtomicInteger(1)).get();
+                assertThat(httpExchange1.getHttpResponse().getStatusCode()).isEqualTo(200);
+                exchanges.add(httpExchange1);
+                HttpExchange httpExchange2 = client2.call(httpRequest, new AtomicInteger(1)).get();
+                assertThat(httpExchange2.getHttpResponse().getStatusCode()).isEqualTo(200);
+                exchanges.add(httpExchange2);
+            }
+            stopwatch.stop();
+            long elapsedMillis = stopwatch.elapsed(TimeUnit.MILLISECONDS);
+            assertThat(elapsedMillis).isGreaterThan(7895);
+            for (HttpExchange exchange : exchanges) {
+                LOGGER.info("httpExchange direct time '{}' ms",exchange.getDurationInMillis());
+            }
+        }
+
+        @Test
+        @DisplayName("test with multiple clients without shared rate limiter")
+        void test_with_multiple_client_without_shared_rate_limiter() throws ExecutionException, InterruptedException {
+
+
+            //given
+            //scenario
+            String scenario = "activating logging interceptor";
+            WireMockRuntimeInfo wmRuntimeInfo = wmHttp.getRuntimeInfo();
+            WireMock wireMock = wmRuntimeInfo.getWireMock();
+            String bodyResponse = "{\"result\":\"pong\"}";
+            wireMock.register(WireMock.post("/ping").inScenario(scenario)
+                    .whenScenarioStateIs(STARTED)
+                    .willReturn(WireMock.aResponse()
+                            .withBody(bodyResponse)
+                            .withStatus(200)
+                            .withStatusMessage("OK")
+                    )
+            );
+
+
+            //build http client
+            HashMap<String, Object> config = Maps.newHashMap();
+            config.put(CONFIGURATION_ID,"default");
+            config.put("rate.limiter.max.executions","1");
+
+            io.github.clescot.kafka.connect.http.client.okhttp.OkHttpClient client1 = new OkHttpClient(
+                    config,
+                    null,
+                    new Random(),
+                    null,
+                    null,
+                    getCompositeMeterRegistry()
+            );
+            io.github.clescot.kafka.connect.http.client.okhttp.OkHttpClient client2 = new OkHttpClient(
+                    config,
+                    null,
+                    new Random(),
+                    null,
+                    null,
+                    getCompositeMeterRegistry()
+            );
+
+            HttpRequest httpRequest = getHttpRequest(wmRuntimeInfo);
+            Stopwatch stopwatch = Stopwatch.createStarted();
+            List<HttpExchange> exchanges = Lists.newArrayList();
+            //call web service
+            for (int i = 0; i < 5; i++) {
+                HttpExchange httpExchange1 = client1.call(httpRequest, new AtomicInteger(1)).get();
+                assertThat(httpExchange1.getHttpResponse().getStatusCode()).isEqualTo(200);
+                exchanges.add(httpExchange1);
+                HttpExchange httpExchange2 = client2.call(httpRequest, new AtomicInteger(1)).get();
+                assertThat(httpExchange2.getHttpResponse().getStatusCode()).isEqualTo(200);
+                exchanges.add(httpExchange2);
+            }
+            stopwatch.stop();
+            long elapsedMillis = stopwatch.elapsed(TimeUnit.MILLISECONDS);
+            assertThat(elapsedMillis).isLessThan(7895);
             for (HttpExchange exchange : exchanges) {
                 LOGGER.info("httpExchange direct time '{}' ms",exchange.getDurationInMillis());
             }
