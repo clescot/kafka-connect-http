@@ -352,9 +352,9 @@ public class OkHttpClient extends AbstractHttpClient<Request, Response> {
         HttpResponse httpResponse;
         try {
             Protocol protocol = response.protocol();
-            if (LOGGER.isDebugEnabled()) {
-                LOGGER.debug("native response :'{}'",response);
-                LOGGER.debug("protocol: '{}',cache-control: '{}',handshake: '{}',challenges: '{}'", protocol,response.cacheControl(),response.handshake(),response.challenges());
+            if (LOGGER.isTraceEnabled()) {
+                LOGGER.trace("native response :'{}'",response);
+                LOGGER.trace("protocol: '{}',cache-control: '{}',handshake: '{}',challenges: '{}'", protocol,response.cacheControl(),response.handshake(),response.challenges());
             }
             httpResponse = new HttpResponse(response.code(), response.message());
             if (response.body() != null) {

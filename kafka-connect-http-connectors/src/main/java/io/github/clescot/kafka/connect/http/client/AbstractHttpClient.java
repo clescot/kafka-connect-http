@@ -1,6 +1,10 @@
 package io.github.clescot.kafka.connect.http.client;
 
+import com.google.common.base.Joiner;
+import com.google.common.base.Preconditions;
+import com.google.common.collect.Maps;
 import dev.failsafe.RateLimiter;
+import dev.failsafe.RateLimiterConfig;
 import io.github.clescot.kafka.connect.http.core.HttpExchange;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -17,23 +21,32 @@ import java.io.InputStream;
 import java.nio.file.Path;
 import java.security.*;
 import java.security.cert.CertificateException;
+import java.time.Duration;
+import java.time.temporal.ChronoUnit;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 
 import static io.github.clescot.kafka.connect.http.client.Configuration.CONFIGURATION_ID;
+import static io.github.clescot.kafka.connect.http.client.Configuration.STATIC_SCOPE;
 import static io.github.clescot.kafka.connect.http.sink.HttpSinkConfigDefinition.*;
 
-public abstract class AbstractHttpClient<Req, Res> implements HttpClient<Req, Res> {
+public abstract class AbstractHttpClient<R,S> implements HttpClient<R,S> {
     private static final Logger LOGGER = LoggerFactory.getLogger(AbstractHttpClient.class);
     private static final String DEFAULT_SSL_PROTOCOL = "SSL";
     protected Map<String, Object> config;
     private Optional<RateLimiter<HttpExchange>> rateLimiter = Optional.empty();
     protected TrustManagerFactory trustManagerFactory;
     protected  String configurationId;
+
+    //rate limiter
+    private static final Map<String, RateLimiter<HttpExchange>> sharedRateLimiters = Maps.newHashMap();
+
     protected AbstractHttpClient(Map<String, Object> config) {
         this.config = config;
         configurationId = (String) config.get(CONFIGURATION_ID);
+        Preconditions.checkNotNull(configurationId,"configuration must have an id");
+        setRateLimiter(buildRateLimiter(config));
     }
 
     protected Optional<TrustManagerFactory> buildTrustManagerFactory() {
@@ -107,7 +120,7 @@ public abstract class AbstractHttpClient<Req, Res> implements HttpClient<Req, Re
     }
 
     @Override
-    public CompletableFuture<Res> call(Req request){
+    public CompletableFuture<S> call(R request){
         try {
             Optional<RateLimiter<HttpExchange>> limiter = getRateLimiter();
             if (limiter.isPresent()) {
@@ -166,5 +179,44 @@ public abstract class AbstractHttpClient<Req, Res> implements HttpClient<Req, Re
         }
         result.append("}");
         return result.toString();
+    }
+
+    private RateLimiter<HttpExchange> buildRateLimiter(Map<String, Object> configMap) {
+        RateLimiter<HttpExchange> myRateLimiter = null;
+        if (configMap.containsKey(RATE_LIMITER_MAX_EXECUTIONS)) {
+            long maxExecutions = Long.parseLong((String) configMap.get(RATE_LIMITER_MAX_EXECUTIONS));
+            LOGGER.trace("configuration '{}' : maxExecutions :{}",configurationId,maxExecutions);
+            long periodInMs = Long.parseLong(Optional.ofNullable((String) configMap.get(RATE_LIMITER_PERIOD_IN_MS)).orElse(1000 + ""));
+            LOGGER.trace("configuration '{}' : periodInMs :{}",configurationId,periodInMs);
+            if (configMap.containsKey(RATE_LIMITER_SCOPE) && STATIC_SCOPE.equalsIgnoreCase((String) configMap.get(RATE_LIMITER_SCOPE))) {
+                LOGGER.trace("configuration '{}' : rateLimiter scope is 'static'",configurationId);
+                Optional<RateLimiter<HttpExchange>> sharedRateLimiter = Optional.ofNullable(sharedRateLimiters.get(configurationId));
+                if (sharedRateLimiter.isPresent()) {
+                    myRateLimiter = sharedRateLimiter.get();
+                    LOGGER.trace("configuration '{}' : rate limiter is already shared",configurationId);
+                } else {
+                    myRateLimiter = RateLimiter.<HttpExchange>smoothBuilder(maxExecutions, Duration.of(periodInMs, ChronoUnit.MILLIS)).build();
+                    registerRateLimiter(configurationId, myRateLimiter);
+                }
+            } else {
+                myRateLimiter = RateLimiter.<HttpExchange>smoothBuilder(maxExecutions, Duration.of(periodInMs, ChronoUnit.MILLIS)).build();
+            }
+            RateLimiterConfig<HttpExchange> rateLimiterConfig = myRateLimiter.getConfig();
+            LOGGER.trace("configuration '{}' rate limiter configured : 'maxRate:{},maxPermits{},period:{},maxWaitTime:{}'",configurationId,rateLimiterConfig.getMaxRate(),rateLimiterConfig.getMaxPermits(),rateLimiterConfig.getPeriod(),rateLimiterConfig.getMaxWaitTime());
+        }else{
+            if(LOGGER.isTraceEnabled()) {
+                LOGGER.trace("configuration '{}' : rate limiter is not configured", configurationId);
+                LOGGER.trace(Joiner.on(",\n").withKeyValueSeparator("=").join(configMap.entrySet()));
+            }
+        }
+        return myRateLimiter;
+    }
+
+
+    public static void registerRateLimiter(String configurationId, RateLimiter<HttpExchange> rateLimiter) {
+        Preconditions.checkNotNull(configurationId, "we cannot register a rateLimiter for a 'null' configurationId");
+        Preconditions.checkNotNull(rateLimiter, "we cannot register a 'null' rate limiter for the configurationId " + configurationId);
+        LOGGER.info("registration of a shared rateLimiter for the configurationId '{}'", configurationId);
+        sharedRateLimiters.put(configurationId, rateLimiter);
     }
 }

@@ -3,11 +3,11 @@ package io.github.clescot.kafka.connect.http.client.ahc;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
+import io.github.clescot.kafka.connect.http.client.AbstractHttpClient;
 import io.github.clescot.kafka.connect.http.client.HttpClient;
+import io.github.clescot.kafka.connect.http.client.HttpException;
 import io.github.clescot.kafka.connect.http.core.HttpRequest;
 import io.github.clescot.kafka.connect.http.core.HttpResponse;
-import io.github.clescot.kafka.connect.http.client.AbstractHttpClient;
-import io.github.clescot.kafka.connect.http.client.HttpException;
 import io.netty.buffer.ByteBufAllocator;
 import io.netty.buffer.PooledByteBufAllocator;
 import io.netty.handler.ssl.SslContext;
@@ -88,8 +88,8 @@ public class AHCHttpClient extends AbstractHttpClient<Request, Response> {
         this.asyncHttpClient = getAsyncHttpClient(config);
     }
     //for tests only
-    protected AHCHttpClient(AsyncHttpClient asyncHttpClient) {
-        super(Maps.newHashMap());
+    protected AHCHttpClient(AsyncHttpClient asyncHttpClient,Map<String, Object> config) {
+        super(config);
         this.asyncHttpClient =asyncHttpClient;
     }
 

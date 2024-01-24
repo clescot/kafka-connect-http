@@ -19,6 +19,7 @@ import static io.github.clescot.kafka.connect.http.sink.HttpSinkConfigDefinition
 public interface HttpClientFactory<R,S> {
 
     Logger LOGGER = LoggerFactory.getLogger(HttpClientFactory.class);
+
     HttpClient<R,S> build(Map<String, Object> config,
                               ExecutorService executorService,
                               Random random,
@@ -47,6 +48,7 @@ public interface HttpClientFactory<R,S> {
         }
         return build(config, executorService, random, proxy, proxySelector, meterRegistry);
     }
+
 
 
 
