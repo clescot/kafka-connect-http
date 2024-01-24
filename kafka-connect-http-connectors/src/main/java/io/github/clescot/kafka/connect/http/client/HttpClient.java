@@ -107,7 +107,7 @@ public interface HttpClient<Q, S> {
                     long overallElapsedTime = rateLimitedStopWatch.elapsed(TimeUnit.MILLISECONDS);
                     long waitingTime = overallElapsedTime - directElaspedTime;
                     LOGGER.info("{} {} : {} '{}' (direct : '{}' ms, waiting time :'{}'ms overall : '{}' ms)",httpRequest.getMethod(),httpRequest.getUrl(),responseStatusCode,responseStatusMessage, directElaspedTime,waitingTime,overallElapsedTime);
-                    return buildHttpExchange(httpRequest, myResponse, rateLimitedStopWatch, now, attempts, responseStatusCode < 400 ? SUCCESS : FAILURE);
+                    return buildHttpExchange(httpRequest, myResponse, directStopWatch, now, attempts, responseStatusCode < 400 ? SUCCESS : FAILURE);
                         }
                 ).exceptionally((throwable-> {
                     HttpResponse httpResponse = new HttpResponse(400,throwable.getMessage());
