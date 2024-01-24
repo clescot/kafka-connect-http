@@ -29,8 +29,13 @@ public class LoggingInterceptor implements Interceptor {
 
             long t2 = System.nanoTime();
             if(LOGGER.isDebugEnabled()) {
+                //elapsed time : local code execution + network time + remote server-side time
+                //does not contains the waiting time from the rateLimiter
+                //the rate limiting mechanism is present before this execution
+                //so the code has already wait if needed
+                double elapsedTime = (t2 - t1) / 1e6d;
                 LOGGER.debug(String.format("Received response for %s in %.1fms%n%s %s%n%s",
-                        response.request().url(), (t2 - t1) / 1e6d, response.code(), response.message(), response.headers()));
+                        response.request().url(), elapsedTime, response.code(), response.message(), response.headers()));
             }
             return response;
         }
