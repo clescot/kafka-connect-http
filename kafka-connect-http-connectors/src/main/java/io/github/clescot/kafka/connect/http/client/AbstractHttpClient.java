@@ -31,7 +31,7 @@ import static io.github.clescot.kafka.connect.http.client.Configuration.CONFIGUR
 import static io.github.clescot.kafka.connect.http.client.Configuration.STATIC_SCOPE;
 import static io.github.clescot.kafka.connect.http.sink.HttpSinkConfigDefinition.*;
 
-public abstract class AbstractHttpClient<REQ, RES> implements HttpClient<REQ, RES> {
+public abstract class AbstractHttpClient<R,S> implements HttpClient<R,S> {
     private static final Logger LOGGER = LoggerFactory.getLogger(AbstractHttpClient.class);
     private static final String DEFAULT_SSL_PROTOCOL = "SSL";
     protected Map<String, Object> config;
@@ -120,7 +120,7 @@ public abstract class AbstractHttpClient<REQ, RES> implements HttpClient<REQ, RE
     }
 
     @Override
-    public CompletableFuture<RES> call(REQ request){
+    public CompletableFuture<S> call(R request){
         try {
             Optional<RateLimiter<HttpExchange>> limiter = getRateLimiter();
             if (limiter.isPresent()) {
