@@ -21,8 +21,8 @@ public class LoggingInterceptor implements Interceptor {
             Request request = chain.request();
 
             long t1 = System.nanoTime();
-            if(LOGGER.isDebugEnabled()) {
-                LOGGER.debug(String.format("Sending request %s on %s%n%s",
+            if(LOGGER.isTraceEnabled()) {
+                LOGGER.trace(String.format("Sending request %s on %s%n%s",
                         request.url(), chain.connection(), request.headers()));
             }
             Response response = chain.proceed(request);
@@ -34,8 +34,8 @@ public class LoggingInterceptor implements Interceptor {
                 //the rate limiting mechanism is present before this execution
                 //so the code has already wait if needed
                 double elapsedTime = (t2 - t1) / 1e6d;
-                LOGGER.debug(String.format("Received response for %s in %.1fms%n%s %s%n%s",
-                        response.request().url(), elapsedTime, response.code(), response.message(), response.headers()));
+                LOGGER.debug(String.format("Received response for %s on %s%n%s in %.1fms%n%s %s%n%s",
+                        response.request().url(), chain.connection(), request.headers(),elapsedTime, response.code(), response.message(), response.headers()));
             }
             return response;
         }

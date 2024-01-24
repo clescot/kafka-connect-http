@@ -285,14 +285,19 @@ class OkHttpClientTest {
 
             HttpRequest httpRequest = getHttpRequest(wmRuntimeInfo);
             Stopwatch stopwatch = Stopwatch.createStarted();
+            List<HttpExchange> exchanges = Lists.newArrayList();
             //call web service
-            for (int i = 0; i < 5; i++) {
+            for (int i = 0; i < 10; i++) {
                 HttpExchange httpExchange1 = client.call(httpRequest, new AtomicInteger(1)).get();
                 assertThat(httpExchange1.getHttpResponse().getStatusCode()).isEqualTo(200);
+                exchanges.add(httpExchange1);
             }
             stopwatch.stop();
             long elapsedMillis = stopwatch.elapsed(TimeUnit.MILLISECONDS);
-            assertThat(elapsedMillis).isGreaterThan(2995);
+            assertThat(elapsedMillis).isGreaterThan(7895);
+            for (HttpExchange exchange : exchanges) {
+                LOGGER.info("httpExchange overall time '{}' ms",exchange.getDurationInMillis());
+            }
         }
 
         @NotNull
