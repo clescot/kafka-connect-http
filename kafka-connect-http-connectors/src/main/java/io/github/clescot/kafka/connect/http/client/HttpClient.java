@@ -91,7 +91,9 @@ public interface HttpClient<Q, S> {
                             }
                     Integer responseStatusCode = myResponse.getStatusCode();
                     String responseStatusMessage = myResponse.getStatusMessage();
-                    LOGGER.info("response : {} '{}' ({} ms)",responseStatusCode,responseStatusMessage,stopwatch.elapsed(TimeUnit.MILLISECONDS));
+                    //elapsed time contains rate limiting waiting time + + local code execution time + network time + remote server-side execution time
+                    long elapsed = stopwatch.elapsed(TimeUnit.MILLISECONDS);
+                    LOGGER.info("response : {} '{}' ({} ms)",responseStatusCode,responseStatusMessage, elapsed);
                     return buildHttpExchange(httpRequest, myResponse, stopwatch, now, attempts, responseStatusCode < 400 ? SUCCESS : FAILURE);
                         }
                 ).exceptionally((throwable-> {

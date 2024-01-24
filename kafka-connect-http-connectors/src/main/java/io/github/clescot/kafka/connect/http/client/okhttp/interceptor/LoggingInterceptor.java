@@ -29,7 +29,7 @@ public class LoggingInterceptor implements Interceptor {
 
             long t2 = System.nanoTime();
             if(LOGGER.isDebugEnabled()) {
-                //elapsed time : local code execution + network time + remote server-side time
+                //elapsed time : local code execution + network time + remote server-side execution time
                 //does not contains the waiting time from the rateLimiter
                 //the rate limiting mechanism is present before this execution
                 //so the code has already wait if needed
