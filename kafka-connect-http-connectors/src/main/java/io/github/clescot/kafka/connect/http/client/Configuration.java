@@ -107,7 +107,7 @@ public class Configuration<R,S> {
         Optional<String> staticHeaderParam = Optional.ofNullable((String) settings.get(STATIC_REQUEST_HEADER_NAMES));
         Map<String, List<String>> staticRequestHeaders = Maps.newHashMap();
         if (staticHeaderParam.isPresent()) {
-            List<String> staticRequestHeaderNames = Arrays.asList(staticHeaderParam.get().split(","));
+            String[] staticRequestHeaderNames = staticHeaderParam.get().split(",");
             for (String headerName : staticRequestHeaderNames) {
                 String value = (String) settings.get(STATIC_REQUEST_HEADER_PREFIX + headerName);
                 Preconditions.checkNotNull(value, "'" + headerName + "' is not configured as a parameter.");
@@ -305,14 +305,15 @@ public class Configuration<R,S> {
                                                        Long retryMaxDelayInMs,
                                                        Double retryDelayFactor,
                                                        Long retryJitterInMs) {
+        //noinspection LoggingPlaceholderCountMatchesArgumentCount
         return RetryPolicy.<HttpExchange>builder()
                 //we retry only if the error comes from the WS server (server-side technical error)
                 .handle(HttpException.class)
                 .withBackoff(Duration.ofMillis(retryDelayInMs), Duration.ofMillis(retryMaxDelayInMs), retryDelayFactor)
                 .withJitter(Duration.ofMillis(retryJitterInMs))
                 .withMaxRetries(retries)
-                .onAbort(listener -> LOGGER.warn("Retry  aborted after '{}' attempts:'{}',result:'{}', failure:'{}'", listener.getAttemptCount(), listener.getResult(), listener.getException()))
-                .onRetriesExceeded(listener -> LOGGER.warn("Retries exceeded  attempts:'{}', elapsed attempt time:'{}', call result:'{}', failure:'{}'",listener.getAttemptCount(),listener.getElapsedAttemptTime(), listener.getResult(), listener.getException()))
+                .onAbort(listener -> LOGGER.warn("Retry  aborted after elapsed attempt time:'{}' attempts:'{}',result:'{}', failure:'{}'", listener.getElapsedAttemptTime(), listener.getAttemptCount(), listener.getResult(), listener.getException()))
+                .onRetriesExceeded(listener -> LOGGER.warn("Retries exceeded  elapsed attempt time:'{}', attempts:'{}', call result:'{}', failure:'{}'",listener.getElapsedAttemptTime(), listener.getAttemptCount(),listener.getResult(), listener.getException()))
                 .onRetry(listener -> LOGGER.trace("Retry  call result:'{}', failure:'{}'", listener.getLastResult(), listener.getLastException()))
                 .onFailure(listener -> LOGGER.warn("call failed ! result:'{}',exception:'{}'", listener.getResult(), listener.getException()))
                 .onAbort(listener -> LOGGER.warn("call aborted ! result:'{}',exception:'{}'", listener.getResult(), listener.getException()))

@@ -272,7 +272,7 @@ class OkHttpClientTest {
             //build http client
             HashMap<String, Object> config = Maps.newHashMap();
             config.put(CONFIGURATION_ID,"default");
-            config.put("config.default.rate.limiter.max.executions","1");
+            config.put("rate.limiter.max.executions","1");
 
             io.github.clescot.kafka.connect.http.client.okhttp.OkHttpClient client = new OkHttpClient(
                     config,
@@ -286,7 +286,7 @@ class OkHttpClientTest {
             HttpRequest httpRequest = getHttpRequest(wmRuntimeInfo);
             Stopwatch stopwatch = Stopwatch.createStarted();
             //call web service
-            for (int i = 0; i < 3; i++) {
+            for (int i = 0; i < 5; i++) {
                 HttpExchange httpExchange1 = client.call(httpRequest, new AtomicInteger(1)).get();
                 assertThat(httpExchange1.getHttpResponse().getStatusCode()).isEqualTo(200);
             }
