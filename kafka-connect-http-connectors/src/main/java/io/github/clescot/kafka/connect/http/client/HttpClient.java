@@ -77,7 +77,7 @@ public interface HttpClient<Q, S> {
 
         Stopwatch rateLimitedStopWatch = Stopwatch.createStarted();
         CompletableFuture<S> response;
-        LOGGER.info("httpRequest: {}", httpRequest);
+        LOGGER.debug("httpRequest: {}", httpRequest);
         Q request = buildRequest(httpRequest);
         LOGGER.debug("native request: {}", request);
         OffsetDateTime now = OffsetDateTime.now(ZoneId.of(UTC_ZONE_ID));
@@ -102,9 +102,11 @@ public interface HttpClient<Q, S> {
                             }
                     Integer responseStatusCode = myResponse.getStatusCode();
                     String responseStatusMessage = myResponse.getStatusMessage();
+                    long directElaspedTime = directStopWatch.elapsed(TimeUnit.MILLISECONDS);
                     //elapsed time contains rate limiting waiting time + + local code execution time + network time + remote server-side execution time
-                    long elapsed = rateLimitedStopWatch.elapsed(TimeUnit.MILLISECONDS);
-                    LOGGER.info("response : {} '{}' ({} ms)",responseStatusCode,responseStatusMessage, elapsed);
+                    long overallElapsedTime = rateLimitedStopWatch.elapsed(TimeUnit.MILLISECONDS);
+                    long waitingTime = overallElapsedTime - directElaspedTime;
+                    LOGGER.info("{} {} : {} '{}' (direct : '{}' ms, waiting time :'{}'ms overall : '{}' ms)",httpRequest.getMethod(),httpRequest.getUrl(),responseStatusCode,responseStatusMessage, directElaspedTime,waitingTime,overallElapsedTime);
                     return buildHttpExchange(httpRequest, myResponse, rateLimitedStopWatch, now, attempts, responseStatusCode < 400 ? SUCCESS : FAILURE);
                         }
                 ).exceptionally((throwable-> {
