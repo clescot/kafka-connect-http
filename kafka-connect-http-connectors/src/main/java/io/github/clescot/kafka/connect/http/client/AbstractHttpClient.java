@@ -31,7 +31,7 @@ import static io.github.clescot.kafka.connect.http.client.Configuration.CONFIGUR
 import static io.github.clescot.kafka.connect.http.client.Configuration.STATIC_SCOPE;
 import static io.github.clescot.kafka.connect.http.sink.HttpSinkConfigDefinition.*;
 
-public abstract class AbstractHttpClient<Req, Res> implements HttpClient<Req, Res> {
+public abstract class AbstractHttpClient<REQ, RES> implements HttpClient<REQ, RES> {
     private static final Logger LOGGER = LoggerFactory.getLogger(AbstractHttpClient.class);
     private static final String DEFAULT_SSL_PROTOCOL = "SSL";
     protected Map<String, Object> config;
@@ -40,7 +40,7 @@ public abstract class AbstractHttpClient<Req, Res> implements HttpClient<Req, Re
     protected  String configurationId;
 
     //rate limiter
-    private final static Map<String, RateLimiter<HttpExchange>> sharedRateLimiters = Maps.newHashMap();
+    private static final Map<String, RateLimiter<HttpExchange>> sharedRateLimiters = Maps.newHashMap();
 
     protected AbstractHttpClient(Map<String, Object> config) {
         this.config = config;
@@ -120,7 +120,7 @@ public abstract class AbstractHttpClient<Req, Res> implements HttpClient<Req, Re
     }
 
     @Override
-    public CompletableFuture<Res> call(Req request){
+    public CompletableFuture<RES> call(REQ request){
         try {
             Optional<RateLimiter<HttpExchange>> limiter = getRateLimiter();
             if (limiter.isPresent()) {
@@ -182,8 +182,7 @@ public abstract class AbstractHttpClient<Req, Res> implements HttpClient<Req, Re
     }
 
     private RateLimiter<HttpExchange> buildRateLimiter(Map<String, Object> configMap) {
-        String configurationId = (String) configMap.get(CONFIGURATION_ID);
-        RateLimiter<HttpExchange> rateLimiter = null;
+        RateLimiter<HttpExchange> myRateLimiter = null;
         if (configMap.containsKey(RATE_LIMITER_MAX_EXECUTIONS)) {
             long maxExecutions = Long.parseLong((String) configMap.get(RATE_LIMITER_MAX_EXECUTIONS));
             LOGGER.trace("configuration '{}' : maxExecutions :{}",configurationId,maxExecutions);
@@ -193,24 +192,24 @@ public abstract class AbstractHttpClient<Req, Res> implements HttpClient<Req, Re
                 LOGGER.trace("configuration '{}' : rateLimiter scope is 'static'",configurationId);
                 Optional<RateLimiter<HttpExchange>> sharedRateLimiter = Optional.ofNullable(sharedRateLimiters.get(configurationId));
                 if (sharedRateLimiter.isPresent()) {
-                    rateLimiter = sharedRateLimiter.get();
+                    myRateLimiter = sharedRateLimiter.get();
                     LOGGER.trace("configuration '{}' : rate limiter is already shared",configurationId);
                 } else {
-                    rateLimiter = RateLimiter.<HttpExchange>smoothBuilder(maxExecutions, Duration.of(periodInMs, ChronoUnit.MILLIS)).build();
-                    registerRateLimiter(configurationId, rateLimiter);
+                    myRateLimiter = RateLimiter.<HttpExchange>smoothBuilder(maxExecutions, Duration.of(periodInMs, ChronoUnit.MILLIS)).build();
+                    registerRateLimiter(configurationId, myRateLimiter);
                 }
             } else {
-                rateLimiter = RateLimiter.<HttpExchange>smoothBuilder(maxExecutions, Duration.of(periodInMs, ChronoUnit.MILLIS)).build();
+                myRateLimiter = RateLimiter.<HttpExchange>smoothBuilder(maxExecutions, Duration.of(periodInMs, ChronoUnit.MILLIS)).build();
             }
-            RateLimiterConfig<HttpExchange> config = rateLimiter.getConfig();
-            LOGGER.trace("configuration '{}' rate limiter configured : 'maxRate:{},maxPermits{},period:{},maxWaitTime:{}'",configurationId,config.getMaxRate(),config.getMaxPermits(),config.getPeriod(),config.getMaxWaitTime());
+            RateLimiterConfig<HttpExchange> rateLimiterConfig = myRateLimiter.getConfig();
+            LOGGER.trace("configuration '{}' rate limiter configured : 'maxRate:{},maxPermits{},period:{},maxWaitTime:{}'",configurationId,rateLimiterConfig.getMaxRate(),rateLimiterConfig.getMaxPermits(),rateLimiterConfig.getPeriod(),rateLimiterConfig.getMaxWaitTime());
         }else{
             if(LOGGER.isTraceEnabled()) {
                 LOGGER.trace("configuration '{}' : rate limiter is not configured", configurationId);
                 LOGGER.trace(Joiner.on(",\n").withKeyValueSeparator("=").join(configMap.entrySet()));
             }
         }
-        return rateLimiter;
+        return myRateLimiter;
     }
 
 
