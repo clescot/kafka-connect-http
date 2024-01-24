@@ -33,6 +33,7 @@ import java.net.Proxy;
 import java.net.ProxySelector;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.security.SecureRandom;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
@@ -88,7 +89,7 @@ public class OkHttpClient extends AbstractHttpClient<Request, Response> {
 
         //protocols
         configureProtocols(config, httpClientBuilder);
-        configureSSL(config, httpClientBuilder);
+        configureSSL(config, httpClientBuilder,SecureRandom.class.isAssignableFrom(random.getClass())?(SecureRandom) random:null);
 
         configureConnection(config, httpClientBuilder);
 
@@ -199,15 +200,18 @@ public class OkHttpClient extends AbstractHttpClient<Request, Response> {
     }
 
     @SuppressWarnings("java:S5527")
-    private void configureSSL(Map<String, Object> config, okhttp3.OkHttpClient.Builder httpClientBuilder) {
+    private void configureSSL(Map<String, Object> config, okhttp3.OkHttpClient.Builder httpClientBuilder, SecureRandom random) {
         //KeyManager/trustManager/SSLSocketFactory
         Optional<KeyManagerFactory> keyManagerFactoryOption = getKeyManagerFactory();
         Optional<TrustManagerFactory> trustManagerFactoryOption = buildTrustManagerFactory();
         trustManagerFactoryOption.ifPresent(managerFactory -> this.trustManagerFactory = managerFactory);
 
         if (keyManagerFactoryOption.isPresent() || trustManagerFactoryOption.isPresent()) {
+            if(random==null){
+                random = new SecureRandom();
+            }
             //TODO SSLFactory protocol parameter
-            SSLSocketFactory ssl = AbstractHttpClient.getSSLSocketFactory(keyManagerFactoryOption.orElse(null), trustManagerFactoryOption.orElse(null), "SSL");
+            SSLSocketFactory ssl = AbstractHttpClient.getSSLSocketFactory(keyManagerFactoryOption.orElse(null), trustManagerFactoryOption.orElse(null), "SSL",random);
             if (trustManagerFactoryOption.isPresent()) {
                 TrustManager[] trustManagers = trustManagerFactoryOption.get().getTrustManagers();
                 if (trustManagers.length > 0) {
@@ -348,9 +352,9 @@ public class OkHttpClient extends AbstractHttpClient<Request, Response> {
         HttpResponse httpResponse;
         try {
             Protocol protocol = response.protocol();
-            if (LOGGER.isDebugEnabled()) {
-                LOGGER.debug("native response :'{}'",response);
-                LOGGER.debug("protocol: '{}',cache-control: '{}',handshake: '{}',challenges: '{}'", protocol,response.cacheControl(),response.handshake(),response.challenges());
+            if (LOGGER.isTraceEnabled()) {
+                LOGGER.trace("native response :'{}'",response);
+                LOGGER.trace("protocol: '{}',cache-control: '{}',handshake: '{}',challenges: '{}'", protocol,response.cacheControl(),response.handshake(),response.challenges());
             }
             httpResponse = new HttpResponse(response.code(), response.message());
             if (response.body() != null) {

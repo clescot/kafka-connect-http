@@ -3,7 +3,6 @@ package io.github.clescot.kafka.connect.http.client;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
-import dev.failsafe.RateLimiter;
 import dev.failsafe.RetryPolicy;
 import io.github.clescot.kafka.connect.http.VersionUtils;
 import io.github.clescot.kafka.connect.http.client.config.*;
@@ -20,7 +19,6 @@ import org.slf4j.LoggerFactory;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.time.Duration;
-import java.time.temporal.ChronoUnit;
 import java.util.*;
 import java.util.concurrent.ExecutorService;
 import java.util.function.Function;
@@ -74,9 +72,6 @@ public class Configuration<R,S> {
     private final AddMissingCorrelationIdHeaderToHttpRequestFunction addMissingCorrelationIdHeaderToHttpRequestFunction;
     private AddSuccessStatusToHttpExchangeFunction addSuccessStatusToHttpExchangeFunction;
     private AddUserAgentHeaderToHttpRequestFunction addUserAgentHeaderToHttpRequestFunction;
-    //rate limiter
-    private static final Map<String, RateLimiter<HttpExchange>> sharedRateLimiters = Maps.newHashMap();
-
 
     //retry policy
     private Pattern retryResponseCodeRegex;
@@ -112,7 +107,7 @@ public class Configuration<R,S> {
         Optional<String> staticHeaderParam = Optional.ofNullable((String) settings.get(STATIC_REQUEST_HEADER_NAMES));
         Map<String, List<String>> staticRequestHeaders = Maps.newHashMap();
         if (staticHeaderParam.isPresent()) {
-            List<String> staticRequestHeaderNames = Arrays.asList(staticHeaderParam.get().split(","));
+            String[] staticRequestHeaderNames = staticHeaderParam.get().split(",");
             for (String headerName : staticRequestHeaderNames) {
                 String value = (String) settings.get(STATIC_REQUEST_HEADER_PREFIX + headerName);
                 Preconditions.checkNotNull(value, "'" + headerName + "' is not configured as a parameter.");
@@ -165,14 +160,6 @@ public class Configuration<R,S> {
         this.addSuccessStatusToHttpExchangeFunction = new AddSuccessStatusToHttpExchangeFunction(successResponseCodeRegex);
 
 
-
-
-
-        //rate limiter
-        Preconditions.checkNotNull(httpClient, "httpClient is null");
-        httpClient.setRateLimiter(buildRateLimiter(id, config, settings));
-
-
         //retry policy
         //retry response code regex
         if (settings.containsKey(RETRY_RESPONSE_CODE_REGEX)) {
@@ -190,31 +177,13 @@ public class Configuration<R,S> {
             Long retryJitterInMs = Long.parseLong((String) Optional.ofNullable(settings.get(RETRY_JITTER_IN_MS)).orElse(""+DEFAULT_RETRY_JITTER_IN_MS_VALUE));
             Preconditions.checkNotNull(retryDelayInMs, RETRIES + HAS_BEEN_SET + RETRY_JITTER_IN_MS + MUST_BE_SET_TOO);
             this.retryPolicy = buildRetryPolicy(retries, retryDelayInMs, retryMaxDelayInMs, retryDelayFactor, retryJitterInMs);
+        }else{
+            LOGGER.trace("configuration '{}' :retry policy is not configured",this.getId());
         }
 
     }
 
-    private RateLimiter<HttpExchange> buildRateLimiter(String id, AbstractConfig httpSinkConnectorConfig, Map<String, Object> configMap) {
-        RateLimiter<HttpExchange> rateLimiter = null;
-        if (configMap.containsKey(RATE_LIMITER_MAX_EXECUTIONS)) {
-            long maxExecutions = Long.parseLong((String) configMap.get(RATE_LIMITER_MAX_EXECUTIONS));
-            long defaultMaxExecutions = httpSinkConnectorConfig.getLong(CONFIG_DEFAULT_RATE_LIMITER_PERIOD_IN_MS);
-            long periodInMs = Long.parseLong(Optional.ofNullable((String) configMap.get(RATE_LIMITER_PERIOD_IN_MS)).orElse(defaultMaxExecutions + ""));
-            if (configMap.containsKey(RATE_LIMITER_SCOPE) && STATIC_SCOPE.equalsIgnoreCase((String) configMap.get(RATE_LIMITER_SCOPE))) {
-                Optional<RateLimiter<HttpExchange>> sharedRateLimiter = Optional.ofNullable(sharedRateLimiters.get(id));
-                if (sharedRateLimiter.isPresent()) {
-                    rateLimiter = sharedRateLimiter.get();
-                } else {
-                    RateLimiter<HttpExchange> myRateLimiter = RateLimiter.<HttpExchange>smoothBuilder(maxExecutions, Duration.of(periodInMs, ChronoUnit.MILLIS)).build();
-                    registerRateLimiter(id, myRateLimiter);
-                    rateLimiter = myRateLimiter;
-                }
-            } else {
-                rateLimiter = RateLimiter.<HttpExchange>smoothBuilder(maxExecutions, Duration.of(periodInMs, ChronoUnit.MILLIS)).build();
-            }
-        }
-        return rateLimiter;
-    }
+
 
     private Predicate<HttpRequest> buildPredicate(Map<String, Object> configMap) {
         Predicate<HttpRequest> predicate = httpRequest -> true;
@@ -269,17 +238,26 @@ public class Configuration<R,S> {
     }
 
 
-
+    @java.lang.SuppressWarnings("java:S2119")
     @NotNull
-    private static Random getRandom(Map<String, Object> config) {
+    private Random getRandom(Map<String, Object> config) {
         Random random;
-        String rngAlgorithm = SHA_1_PRNG;
 
-        if (config.containsKey(HTTP_CLIENT_SECURE_RANDOM_PRNG_ALGORITHM)) {
-            rngAlgorithm = (String) config.get(HTTP_CLIENT_SECURE_RANDOM_PRNG_ALGORITHM);
-        }
         try {
+        if(config.containsKey(HTTP_CLIENT_SECURE_RANDOM_ACTIVATE)&&(boolean)config.get(HTTP_CLIENT_SECURE_RANDOM_ACTIVATE)){
+            String rngAlgorithm = SHA_1_PRNG;
+            if (config.containsKey(HTTP_CLIENT_SECURE_RANDOM_PRNG_ALGORITHM)) {
+                rngAlgorithm = (String) config.get(HTTP_CLIENT_SECURE_RANDOM_PRNG_ALGORITHM);
+            }
             random = SecureRandom.getInstance(rngAlgorithm);
+        }else {
+            if(config.containsKey(HTTP_CLIENT_UNSECURE_RANDOM_SEED)){
+                long seed = (long) config.get(HTTP_CLIENT_UNSECURE_RANDOM_SEED);
+                random = new Random(seed);
+            }else {
+                random = new Random();
+            }
+        }
         } catch (NoSuchAlgorithmException e) {
             throw new HttpException(e);
         }
@@ -307,12 +285,7 @@ public class Configuration<R,S> {
         this.retryPolicy = retryPolicy;
     }
 
-    public static void registerRateLimiter(String configurationId, RateLimiter<HttpExchange> rateLimiter) {
-        Preconditions.checkNotNull(configurationId, "we cannot register a rateLimiter for a 'null' configurationId");
-        Preconditions.checkNotNull(rateLimiter, "we cannot register a 'null' rate limiter for the configurationId " + configurationId);
-        LOGGER.info("registration of a shared rateLimiter for the configurationId '{}'", configurationId);
-        sharedRateLimiters.put(configurationId, rateLimiter);
-    }
+
 
 
     public Optional<RetryPolicy<HttpExchange>> getRetryPolicy() {
@@ -332,14 +305,15 @@ public class Configuration<R,S> {
                                                        Long retryMaxDelayInMs,
                                                        Double retryDelayFactor,
                                                        Long retryJitterInMs) {
+        //noinspection LoggingPlaceholderCountMatchesArgumentCount
         return RetryPolicy.<HttpExchange>builder()
                 //we retry only if the error comes from the WS server (server-side technical error)
                 .handle(HttpException.class)
                 .withBackoff(Duration.ofMillis(retryDelayInMs), Duration.ofMillis(retryMaxDelayInMs), retryDelayFactor)
                 .withJitter(Duration.ofMillis(retryJitterInMs))
                 .withMaxRetries(retries)
-                .onAbort(listener -> LOGGER.warn("Retry  aborted after '{}' attempts:'{}',result:'{}', failure:'{}'", listener.getAttemptCount(), listener.getResult(), listener.getException()))
-                .onRetriesExceeded(listener -> LOGGER.warn("Retries exceeded  attempts:'{}', elapsed attempt time:'{}', call result:'{}', failure:'{}'",listener.getAttemptCount(),listener.getElapsedAttemptTime(), listener.getResult(), listener.getException()))
+                .onAbort(listener -> LOGGER.warn("Retry  aborted after elapsed attempt time:'{}' attempts:'{}',result:'{}', failure:'{}'", listener.getElapsedAttemptTime(), listener.getAttemptCount(), listener.getResult(), listener.getException()))
+                .onRetriesExceeded(listener -> LOGGER.warn("Retries exceeded  elapsed attempt time:'{}', attempts:'{}', call result:'{}', failure:'{}'",listener.getElapsedAttemptTime(), listener.getAttemptCount(),listener.getResult(), listener.getException()))
                 .onRetry(listener -> LOGGER.trace("Retry  call result:'{}', failure:'{}'", listener.getLastResult(), listener.getLastException()))
                 .onFailure(listener -> LOGGER.warn("call failed ! result:'{}',exception:'{}'", listener.getResult(), listener.getException()))
                 .onAbort(listener -> LOGGER.warn("call aborted ! result:'{}',exception:'{}'", listener.getResult(), listener.getException()))

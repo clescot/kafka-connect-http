@@ -34,6 +34,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import static io.github.clescot.kafka.connect.http.client.Configuration.CONFIGURATION_ID;
 import static io.github.clescot.kafka.connect.http.client.ahc.AHCHttpClient.SUCCESS;
 import static io.github.clescot.kafka.connect.http.client.config.AddMissingCorrelationIdHeaderToHttpRequestFunction.HEADER_X_CORRELATION_ID;
 import static io.github.clescot.kafka.connect.http.client.config.AddMissingRequestIdHeaderToHttpRequestFunction.HEADER_X_REQUEST_ID;
@@ -52,7 +53,9 @@ class AHCHttpClientTest {
 
     @Test
     void build_HttpExchange_test_all_null() {
-        AHCHttpClient httpClient = new AHCHttpClient(asyncHttpClient);
+        Map<String, Object> config = Maps.newHashMap();
+        config.put(CONFIGURATION_ID,"default");
+        AHCHttpClient httpClient = new AHCHttpClient(asyncHttpClient,config);
         org.junit.jupiter.api.Assertions.assertThrows(NullPointerException.class, () ->
                 httpClient.buildHttpExchange(null,
                         null,
@@ -66,7 +69,9 @@ class AHCHttpClientTest {
 
     @Test
     void build_HttpExchange_test_message_is_null() {
-        AHCHttpClient httpClient = new AHCHttpClient(asyncHttpClient);
+        Map<String, Object> config = Maps.newHashMap();
+        config.put(CONFIGURATION_ID,"default");
+        AHCHttpClient httpClient = new AHCHttpClient(asyncHttpClient,config);
         org.junit.jupiter.api.Assertions.assertThrows(NullPointerException.class, () ->
                 httpClient.buildHttpExchange(null,
                         getDummyHttpResponse(200),
@@ -78,7 +83,9 @@ class AHCHttpClientTest {
 
     @Test
     void build_HttpExchange_test_response_code_is_lower_than_0() {
-        AHCHttpClient httpClient = new AHCHttpClient(asyncHttpClient);
+        Map<String, Object> config = Maps.newHashMap();
+        config.put(CONFIGURATION_ID,"default");
+        AHCHttpClient httpClient = new AHCHttpClient(asyncHttpClient,config);
         org.junit.jupiter.api.Assertions.assertThrows(IllegalArgumentException.class, () -> httpClient.buildHttpExchange(getDummyHttpRequest(),
                 getDummyHttpResponse(-12),
                 Stopwatch.createUnstarted(),
@@ -91,7 +98,9 @@ class AHCHttpClientTest {
     @Test
     void build_HttpExchange_test_nominal_case() {
 
-        AHCHttpClient httpClient = new AHCHttpClient(asyncHttpClient);
+        Map<String, Object> config = Maps.newHashMap();
+        config.put(CONFIGURATION_ID,"default");
+        AHCHttpClient httpClient = new AHCHttpClient(asyncHttpClient,config);
         HttpExchange httpExchange = httpClient.buildHttpExchange(getDummyHttpRequest(),
                 getDummyHttpResponse(200),
                 Stopwatch.createUnstarted(),
@@ -132,7 +141,9 @@ class AHCHttpClientTest {
         Mockito.when(listenerObject.get()).thenReturn(response);
         Mockito.when(asyncHttpClient.executeRequest(ArgumentMatchers.any(Request.class))).thenReturn(listener);
         Mockito.when(asyncHttpClient.executeRequest(ArgumentMatchers.any(Request.class), ArgumentMatchers.any())).thenReturn(listenerObject);
-        AHCHttpClient httpClient = new AHCHttpClient(asyncHttpClient);
+        Map<String, Object> config = Maps.newHashMap();
+        config.put(CONFIGURATION_ID,"default");
+        AHCHttpClient httpClient = new AHCHttpClient(asyncHttpClient,config);
 
         //when
         httpClient.call(getDummyHttpRequest(), new AtomicInteger(2))
@@ -165,7 +176,9 @@ class AHCHttpClientTest {
         when(asyncHttpClient.executeRequest(ArgumentMatchers.any(Request.class))).thenReturn(listener);
         when(asyncHttpClient.executeRequest(ArgumentMatchers.any(Request.class), ArgumentMatchers.any())).thenReturn(listenerObject);
         when(listenerObject.toCompletableFuture()).thenReturn(CompletableFuture.supplyAsync(() -> response));
-        AHCHttpClient httpClient = new AHCHttpClient(asyncHttpClient);
+        Map<String, Object> config = Maps.newHashMap();
+        config.put(CONFIGURATION_ID,"default");
+        AHCHttpClient httpClient = new AHCHttpClient(asyncHttpClient,config);
         //when
         httpClient.call(getDummyHttpRequest(), new AtomicInteger(2))
                 .thenAccept(exchange -> {
@@ -192,7 +205,9 @@ class AHCHttpClientTest {
         when(asyncHttpClient.executeRequest(ArgumentMatchers.any(Request.class), ArgumentMatchers.any())).thenReturn(listenerObject);
         when(listener.toCompletableFuture()).thenReturn(CompletableFuture.supplyAsync(() -> response));
         when(listenerObject.toCompletableFuture()).thenReturn(CompletableFuture.supplyAsync(() -> response));
-        AHCHttpClient httpClient = new AHCHttpClient(asyncHttpClient);
+        Map<String, Object> config = Maps.newHashMap();
+        config.put(CONFIGURATION_ID,"default");
+        AHCHttpClient httpClient = new AHCHttpClient(asyncHttpClient,config);
 
         //when
         httpClient.call(getDummyHttpRequest(), new AtomicInteger(2)).thenAccept(
@@ -221,7 +236,9 @@ class AHCHttpClientTest {
         when(asyncHttpClient.executeRequest(ArgumentMatchers.any(Request.class))).thenReturn(listener);
         when(asyncHttpClient.executeRequest(ArgumentMatchers.any(Request.class), ArgumentMatchers.any())).thenReturn(listenerObject);
         when(listenerObject.toCompletableFuture()).thenReturn(CompletableFuture.supplyAsync(() -> response));
-        AHCHttpClient httpClient = new AHCHttpClient(asyncHttpClient);
+        Map<String, Object> config = Maps.newHashMap();
+        config.put(CONFIGURATION_ID,"default");
+        AHCHttpClient httpClient = new AHCHttpClient(asyncHttpClient,config);
         //when
         httpClient.call(getDummyHttpRequest(), new AtomicInteger(2))
                 .thenAccept(httpExchange -> assertThat(httpExchange).isNotNull())
@@ -232,7 +249,9 @@ class AHCHttpClientTest {
     void test_build_http_request_nominal_case() {
         //given
         AsyncHttpClient asyncHttpClient = Mockito.mock(AsyncHttpClient.class);
-        AHCHttpClient httpClient = new AHCHttpClient(asyncHttpClient);
+        Map<String, Object> config = Maps.newHashMap();
+        config.put(CONFIGURATION_ID,"default");
+        AHCHttpClient httpClient = new AHCHttpClient(asyncHttpClient,config);
 
         //when
         HttpRequest httpRequest = getDummyHttpRequest();
