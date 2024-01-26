@@ -79,7 +79,7 @@ public class HttpSinkConnectorTest {
             Map<String, String> settings = Maps.newHashMap();
             httpSinkConnector.start(settings);
             List<Map<String, String>> maps = httpSinkConnector.taskConfigs(2);
-            assertThat(maps.size()).isEqualTo(2);
+            assertThat(maps).hasSize(2);
             assertThat(maps.get(0)).isEqualTo(settings);
             assertThat(maps.get(1)).isEqualTo(settings);
         }
@@ -93,7 +93,7 @@ public class HttpSinkConnectorTest {
             settings.put("config.default.enrich.request.static.header.header2","value2");
             httpSinkConnector.start(settings);
             List<Map<String, String>> maps = httpSinkConnector.taskConfigs(2);
-            assertThat(maps.size()).isEqualTo(2);
+            assertThat(maps).hasSize(2);
             assertThat(maps.get(0)).isEqualTo(settings);
             assertThat(maps.get(1)).isEqualTo(settings);
         }
@@ -122,16 +122,52 @@ public class HttpSinkConnectorTest {
             assertThat(configDef).isNotNull();
         }
         @Test
-        void test_with_custom_static_headers(){
+        void test_with_default_configuration_and_custom_static_headers(){
+
+            //given
             HttpSinkConnector httpSinkConnector = new HttpSinkConnector();
             Map<String, String> settings = Maps.newHashMap();
             settings.put("config.default.enrich.request.static.header.names","header1,header2");
             settings.put("config.default.enrich.request.static.header.header1","value1");
             settings.put("config.default.enrich.request.static.header.header2","value2");
             httpSinkConnector.start(settings);
+
+            //when
             ConfigDef configDef = httpSinkConnector.config();
+
+            //then
             assertThat(configDef).isNotNull();
             assertThat(configDef.configKeys()).containsKey("config.default.enrich.request.static.header.header1");
+        }
+        @Test
+        void test_with_multiple_configurations_and_custom_static_headers(){
+
+            //given
+            HttpSinkConnector httpSinkConnector = new HttpSinkConnector();
+            Map<String, String> settings = Maps.newHashMap();
+            settings.put("config.ids","config1,config2");
+            settings.put("config.default.enrich.request.static.header.names","header1,header2");
+            settings.put("config.default.enrich.request.static.header.header1","value1");
+            settings.put("config.default.enrich.request.static.header.header2","value2");
+            settings.put("config.config1.enrich.request.static.header.names","header3,header4");
+            settings.put("config.config1.enrich.request.static.header.header1","value1");
+            settings.put("config.config1.enrich.request.static.header.header2","value2");
+            settings.put("config.config2.enrich.request.static.header.names","header5,header6");
+            settings.put("config.config2.enrich.request.static.header.header1","value1");
+            settings.put("config.config2.enrich.request.static.header.header2","value2");
+            httpSinkConnector.start(settings);
+
+            //when
+            ConfigDef configDef = httpSinkConnector.config();
+
+            //then
+            assertThat(configDef).isNotNull();
+            assertThat(configDef.configKeys()).containsKey("config.default.enrich.request.static.header.header1");
+            assertThat(configDef.configKeys()).containsKey("config.default.enrich.request.static.header.header2");
+            assertThat(configDef.configKeys()).containsKey("config.config1.enrich.request.static.header.header3");
+            assertThat(configDef.configKeys()).containsKey("config.config1.enrich.request.static.header.header4");
+            assertThat(configDef.configKeys()).containsKey("config.config2.enrich.request.static.header.header5");
+            assertThat(configDef.configKeys()).containsKey("config.config2.enrich.request.static.header.header6");
         }
     }
 }
