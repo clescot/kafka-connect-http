@@ -82,12 +82,11 @@ public class HttpSinkConnectorConfig extends AbstractConfig {
     private final Integer customFixedThreadpoolSize;
     private final List<String> configurationIds;
 
-
-    public HttpSinkConnectorConfig(Map<?, ?> originals) {
-        this(HttpSinkConfigDefinition.config(), originals);
+    public HttpSinkConnectorConfig(Map<String,String> originals) {
+        this(new HttpSinkConfigDefinition(originals).config(), originals);
     }
 
-    public HttpSinkConnectorConfig(ConfigDef configDef, Map<?, ?> originals) {
+    public HttpSinkConnectorConfig(ConfigDef configDef, Map<String,String> originals) {
         super(configDef, originals, LOGGER.isDebugEnabled());
 
 

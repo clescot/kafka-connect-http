@@ -89,8 +89,8 @@ class HttpTaskTest {
 
         @BeforeEach
         public void setUp(){
-            Map<String,Object> configs = Maps.newHashMap();
-            configs.put(CONFIG_HTTP_CLIENT_ASYNC_FIXED_THREAD_POOL_SIZE,2);
+            Map<String,String> configs = Maps.newHashMap();
+            configs.put(CONFIG_HTTP_CLIENT_ASYNC_FIXED_THREAD_POOL_SIZE,"2");
             AbstractConfig config = new HttpSinkConnectorConfig(configs);
             httpTask = new HttpTask<>(config);
         }
@@ -176,7 +176,7 @@ class HttpTaskTest {
 
         @BeforeEach
         public void setUp(){
-            Map<String,Object> configs = Maps.newHashMap();
+            Map<String,String> configs = Maps.newHashMap();
             AbstractConfig config = new HttpSinkConnectorConfig(configs);
             httpTask = new HttpTask<>(config);
         }

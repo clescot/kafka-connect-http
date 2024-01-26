@@ -106,7 +106,7 @@ public interface HttpClient<Q, S> {
                     //elapsed time contains rate limiting waiting time + + local code execution time + network time + remote server-side execution time
                     long overallElapsedTime = rateLimitedStopWatch.elapsed(TimeUnit.MILLISECONDS);
                     long waitingTime = overallElapsedTime - directElaspedTime;
-                    LOGGER.info("{} {} : {} '{}' (direct : '{}' ms, waiting time :'{}'ms overall : '{}' ms)",httpRequest.getMethod(),httpRequest.getUrl(),responseStatusCode,responseStatusMessage, directElaspedTime,waitingTime,overallElapsedTime);
+                    LOGGER.info("[{}] {} {} : {} '{}' (direct : '{}' ms, waiting time :'{}'ms overall : '{}' ms)",Thread.currentThread().getId(),httpRequest.getMethod(),httpRequest.getUrl(),responseStatusCode,responseStatusMessage, directElaspedTime,waitingTime,overallElapsedTime);
                     return buildHttpExchange(httpRequest, myResponse, directStopWatch, now, attempts, responseStatusCode < 400 ? SUCCESS : FAILURE);
                         }
                 ).exceptionally((throwable-> {

@@ -15,8 +15,11 @@ public class HttpSinkConnector extends SinkConnector {
 
     private HttpSinkConnectorConfig httpSinkConnectorConfig;
     private static final VersionUtils VERSION_UTILS = new VersionUtils();
+    private Map<String, String> settings;
+
     @Override
     public void start(Map<String, String> settings) {
+        this.settings = settings;
         Preconditions.checkNotNull(settings);
         this.httpSinkConnectorConfig = new HttpSinkConnectorConfig(config(),settings);
     }
@@ -41,7 +44,8 @@ public class HttpSinkConnector extends SinkConnector {
 
     @Override
     public ConfigDef config() {
-        return HttpSinkConfigDefinition.config();
+        HttpSinkConfigDefinition httpSinkConfigDefinition = new HttpSinkConfigDefinition(settings);
+        return httpSinkConfigDefinition.config();
     }
 
     @Override
