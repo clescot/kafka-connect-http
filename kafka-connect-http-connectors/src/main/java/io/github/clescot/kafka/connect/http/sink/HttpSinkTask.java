@@ -91,7 +91,8 @@ public class HttpSinkTask extends SinkTask {
     @Override
     public void start(Map<String, String> settings) {
         Preconditions.checkNotNull(settings, "settings cannot be null");
-        this.httpSinkConnectorConfig = new HttpSinkConnectorConfig(HttpSinkConfigDefinition.config(), settings);
+        HttpSinkConfigDefinition httpSinkConfigDefinition = new HttpSinkConfigDefinition(settings);
+        this.httpSinkConnectorConfig = new HttpSinkConnectorConfig(httpSinkConfigDefinition.config(), settings);
 
         httpTask = new HttpTask<>(httpSinkConnectorConfig);
 

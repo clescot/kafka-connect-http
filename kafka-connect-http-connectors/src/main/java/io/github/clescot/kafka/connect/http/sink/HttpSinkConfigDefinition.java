@@ -6,6 +6,7 @@ import org.apache.kafka.common.config.ConfigDef;
 
 import java.nio.charset.StandardCharsets;
 import java.util.Collections;
+import java.util.Map;
 
 public class HttpSinkConfigDefinition {
 
@@ -487,13 +488,14 @@ public class HttpSinkConfigDefinition {
 
     public static final String FALSE = "false";
     public static final String TRUE = "true";
+    private final Map<String, String> settings;
 
-
-    private HttpSinkConfigDefinition() {
-        //Class with only static methods
+    public HttpSinkConfigDefinition(Map<String, String> settings) {
+        this.settings = settings;
     }
 
-    public static ConfigDef config() {
+
+    public ConfigDef config() {
         return new ConfigDef()
                 //producer
                     //bootstrap servers
@@ -538,6 +540,19 @@ public class HttpSinkConfigDefinition {
                     //tags
                 .define(METER_REGISTRY_TAG_INCLUDE_LEGACY_HOST, ConfigDef.Type.STRING, FALSE, ConfigDef.Importance.LOW, METER_REGISTRY_TAG_INCLUDE_LEGACY_HOST_DOC)
                 .define(METER_REGISTRY_TAG_INCLUDE_URL_PATH, ConfigDef.Type.STRING, FALSE, ConfigDef.Importance.LOW, METER_REGISTRY_TAG_INCLUDE_URL_PATH_DOC)
+                //in memory queue settings
+                .define(PUBLISH_MODE, ConfigDef.Type.STRING, PublishMode.NONE.name(), ConfigDef.Importance.MEDIUM, PUBLISH_MODE_DOC)
+                .define(ConfigConstants.QUEUE_NAME, ConfigDef.Type.STRING, null,ConfigDef.Importance.MEDIUM, ConfigConstants.QUEUE_NAME_DOC)
+                .define(WAIT_TIME_REGISTRATION_QUEUE_CONSUMER_IN_MS, ConfigDef.Type.LONG, DEFAULT_WAIT_TIME_REGISTRATION_QUEUE_CONSUMER_IN_MS, ConfigDef.Importance.LOW, WAIT_TIME_REGISTRATION_QUEUE_CONSUMER_IN_MS_DOC)
+                .define(POLL_DELAY_REGISTRATION_QUEUE_CONSUMER_IN_MS, ConfigDef.Type.INT, DEFAULT_POLL_DELAY_REGISTRATION_QUEUE_CONSUMER_IN_MS, ConfigDef.Importance.LOW, POLL_DELAY_REGISTRATION_QUEUE_CONSUMER_IN_MS_DOC)
+                .define(POLL_INTERVAL_REGISTRATION_QUEUE_CONSUMER_IN_MS, ConfigDef.Type.INT, DEFAULT_POLL_INTERVAL_REGISTRATION_QUEUE_CONSUMER_IN_MS, ConfigDef.Importance.LOW, POLL_INTERVAL_REGISTRATION_QUEUE_CONSUMER_IN_MS_DOC)
+
+                .define(USER_AGENT_OVERRIDE,ConfigDef.Type.STRING, FALSE,ConfigDef.Importance.LOW, CONFIG_DEFAULT_USER_AGENT_OVERRIDE_DOC)
+                .define(USER_AGENT_CUSTOM_VALUES,ConfigDef.Type.STRING, null,ConfigDef.Importance.LOW, CONFIG_DEFAULT_USER_AGENT_CUSTOM_VALUES_DOC)
+
+                //custom configurations
+                .define(CONFIGURATION_IDS,ConfigDef.Type.LIST, Lists.newArrayList(),ConfigDef.Importance.LOW, CONFIGURATION_IDS_DOC)
+
                 //http client implementation settings
                 .define(CONFIG_HTTP_CLIENT_IMPLEMENTATION, ConfigDef.Type.STRING, null, ConfigDef.Importance.LOW, CONFIG_HTTP_CLIENT_IMPLEMENTATION_DOC)
                 //random
@@ -562,12 +577,7 @@ public class HttpSinkConfigDefinition {
                 .define(CONFIG_GENERATE_MISSING_REQUEST_ID, ConfigDef.Type.STRING, FALSE, ConfigDef.Importance.MEDIUM, CONFIG_GENERATE_MISSING_REQUEST_ID_DOC)
                 .define(CONFIG_DEFAULT_USER_AGENT_OVERRIDE, ConfigDef.Type.STRING, "http_client", ConfigDef.Importance.LOW, CONFIG_DEFAULT_USER_AGENT_OVERRIDE_DOC)
                 .define(CONFIG_DEFAULT_USER_AGENT_CUSTOM_VALUES, ConfigDef.Type.STRING, null, ConfigDef.Importance.LOW, CONFIG_DEFAULT_USER_AGENT_CUSTOM_VALUES_DOC)
-                //in memory queue settings
-                .define(PUBLISH_MODE, ConfigDef.Type.STRING, PublishMode.NONE.name(), ConfigDef.Importance.MEDIUM, PUBLISH_MODE_DOC)
-                .define(ConfigConstants.QUEUE_NAME, ConfigDef.Type.STRING, null,ConfigDef.Importance.MEDIUM, ConfigConstants.QUEUE_NAME_DOC)
-                .define(WAIT_TIME_REGISTRATION_QUEUE_CONSUMER_IN_MS, ConfigDef.Type.LONG, DEFAULT_WAIT_TIME_REGISTRATION_QUEUE_CONSUMER_IN_MS, ConfigDef.Importance.LOW, WAIT_TIME_REGISTRATION_QUEUE_CONSUMER_IN_MS_DOC)
-                .define(POLL_DELAY_REGISTRATION_QUEUE_CONSUMER_IN_MS, ConfigDef.Type.INT, DEFAULT_POLL_DELAY_REGISTRATION_QUEUE_CONSUMER_IN_MS, ConfigDef.Importance.LOW, POLL_DELAY_REGISTRATION_QUEUE_CONSUMER_IN_MS_DOC)
-                .define(POLL_INTERVAL_REGISTRATION_QUEUE_CONSUMER_IN_MS, ConfigDef.Type.INT, DEFAULT_POLL_INTERVAL_REGISTRATION_QUEUE_CONSUMER_IN_MS, ConfigDef.Importance.LOW, POLL_INTERVAL_REGISTRATION_QUEUE_CONSUMER_IN_MS_DOC)
+
                 //SSL settings
                 .define(CONFIG_HTTP_CLIENT_SSL_KEYSTORE_PATH, ConfigDef.Type.STRING, null, ConfigDef.Importance.LOW, CONFIG_HTTP_CLIENT_SSL_KEYSTORE_PATH_DOC)
                 .define(CONFIG_HTTP_CLIENT_SSL_KEYSTORE_PASSWORD, ConfigDef.Type.STRING, null, ConfigDef.Importance.LOW, CONFIG_HTTP_CLIENT_SSL_KEYSTORE_PASSWORD_DOC)
@@ -604,8 +614,7 @@ public class HttpSinkConfigDefinition {
 
                 //async settings
                 .define(CONFIG_HTTP_CLIENT_ASYNC_FIXED_THREAD_POOL_SIZE, ConfigDef.Type.INT, null, ConfigDef.Importance.MEDIUM, CONFIG_HTTP_CLIENT_ASYNC_FIXED_THREAD_POOL_SIZE_DOC)
-                //custom configurations
-                .define(CONFIGURATION_IDS,ConfigDef.Type.LIST, Lists.newArrayList(),ConfigDef.Importance.LOW, CONFIGURATION_IDS_DOC)
+
 
                 //proxy
                 .define(CONFIG_DEFAULT_PROXY_HTTP_CLIENT_HOSTNAME,ConfigDef.Type.STRING, null,ConfigDef.Importance.LOW, CONFIG_DEFAULT_PROXY_HTTP_CLIENT_HOSTNAME_DOC)
@@ -646,8 +655,6 @@ public class HttpSinkConfigDefinition {
                 .define(CONFIG_DEFAULT_OKHTTP_INTERCEPTOR_LOGGING_ACTIVATE,ConfigDef.Type.STRING, TRUE,ConfigDef.Importance.LOW, CONFIG_DEFAULT_OKHTTP_INTERCEPTOR_LOGGING_ACTIVATE_DOC)
                 .define(CONFIG_DEFAULT_OKHTTP_INTERCEPTOR_INET_ADDRESS_ACTIVATE,ConfigDef.Type.STRING, FALSE,ConfigDef.Importance.LOW, CONFIG_DEFAULT_OKHTTP_INTERCEPTOR_INET_ADDRESS_ACTIVATE_DOC)
                 .define(CONFIG_DEFAULT_OKHTTP_INTERCEPTOR_SSL_HANDSHAKE_ACTIVATE,ConfigDef.Type.STRING, FALSE,ConfigDef.Importance.LOW, CONFIG_DEFAULT_OKHTTP_INTERCEPTOR_SSL_HANDSHAKE_ACTIVATE_DOC)
-                .define(USER_AGENT_OVERRIDE,ConfigDef.Type.STRING, FALSE,ConfigDef.Importance.LOW, CONFIG_DEFAULT_USER_AGENT_OVERRIDE_DOC)
-                .define(USER_AGENT_CUSTOM_VALUES,ConfigDef.Type.STRING, null,ConfigDef.Importance.LOW, CONFIG_DEFAULT_USER_AGENT_CUSTOM_VALUES_DOC)
                 ;
     }
 }
