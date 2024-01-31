@@ -90,7 +90,7 @@ class HttpTaskTest {
         @BeforeEach
         public void setUp(){
             Map<String,String> configs = Maps.newHashMap();
-            configs.put(CONFIG_HTTP_CLIENT_ASYNC_FIXED_THREAD_POOL_SIZE,"2");
+            configs.put(HTTP_CLIENT_ASYNC_FIXED_THREAD_POOL_SIZE,"2");
             AbstractConfig config = new HttpSinkConnectorConfig(configs);
             httpTask = new HttpTask<>(config);
         }
