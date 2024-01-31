@@ -223,12 +223,16 @@ public class HttpSinkConfigDefinition {
     public static final String DEFAULT_RETRY_RESPONSE_CODE_REGEX_DOC = "regex which define if a retry need to be triggered, based on the response status code. default is '" + CONFIG_DEFAULT_DEFAULT_SUCCESS_RESPONSE_CODE_REGEX + "'";
 
 
+
     //http client prefix
     public static final String HTTP_CLIENT_PREFIX = "httpclient.";
     public static final String PROXY_PREFIX = "proxy.";
     public static final String PROXYSELECTOR_PREFIX = "proxyselector.";
     public static final String OKHTTP_PREFIX = "okhttp.";
     public static final String AHC_PREFIX = "ahc.";
+
+    public static final String HTTP_CLIENT_ASYNC_FIXED_THREAD_POOL_SIZE = HTTP_CLIENT_PREFIX + "async.fixed.thread.pool.size";
+    public static final String HTTP_CLIENT_ASYNC_FIXED_THREAD_POOL_SIZE_DOC = "custom fixed thread pool size used to execute asynchronously http requests.";
 
     public static final String HTTP_CLIENT_IMPLEMENTATION = HTTP_CLIENT_PREFIX + "implementation";
     public static final String CONFIG_HTTP_CLIENT_IMPLEMENTATION = DEFAULT_CONFIGURATION_PREFIX + HTTP_CLIENT_IMPLEMENTATION;
@@ -289,10 +293,6 @@ public class HttpSinkConfigDefinition {
     public static final String HTTP_CLIENT_SSL_TRUSTSTORE_ALGORITHM = HTTP_CLIENT_PREFIX + "ssl.truststore.algorithm";
     public static final String CONFIG_HTTP_CLIENT_SSL_TRUSTSTORE_ALGORITHM = DEFAULT_CONFIGURATION_PREFIX + HTTP_CLIENT_SSL_TRUSTSTORE_ALGORITHM;
     public static final String CONFIG_HTTP_CLIENT_SSL_TRUSTSTORE_ALGORITHM_DOC = "the standard name of the requested algorithm. See the KeyManagerFactory section in the Java Security Standard Algorithm Names Specification for information about standard algorithm names.";
-
-    public static final String HTTP_CLIENT_ASYNC_FIXED_THREAD_POOL_SIZE = HTTP_CLIENT_PREFIX + "async.fixed.thread.pool.size";
-    public static final String CONFIG_HTTP_CLIENT_ASYNC_FIXED_THREAD_POOL_SIZE = DEFAULT_CONFIGURATION_PREFIX + HTTP_CLIENT_ASYNC_FIXED_THREAD_POOL_SIZE;
-    public static final String CONFIG_HTTP_CLIENT_ASYNC_FIXED_THREAD_POOL_SIZE_DOC = "custom fixed thread pool size used to execute asynchronously http requests.";
 
     //authentication
     public static final String HTTP_CLIENT_AUTHENTICATION_BASIC_ACTIVATE = HTTP_CLIENT_PREFIX + "authentication.basic.activate";
@@ -549,6 +549,8 @@ public class HttpSinkConfigDefinition {
                 .define(USER_AGENT_OVERRIDE, ConfigDef.Type.STRING, FALSE, ConfigDef.Importance.LOW, CONFIG_DEFAULT_USER_AGENT_OVERRIDE_DOC)
                 .define(USER_AGENT_CUSTOM_VALUES, ConfigDef.Type.STRING, null, ConfigDef.Importance.LOW, CONFIG_DEFAULT_USER_AGENT_CUSTOM_VALUES_DOC)
 
+                //async settings
+                .define(HTTP_CLIENT_ASYNC_FIXED_THREAD_POOL_SIZE, ConfigDef.Type.INT, null, ConfigDef.Importance.MEDIUM, HTTP_CLIENT_ASYNC_FIXED_THREAD_POOL_SIZE_DOC)
                 //custom configurations
                 .define(CONFIGURATION_IDS, ConfigDef.Type.LIST, Lists.newArrayList(), ConfigDef.Importance.LOW, CONFIGURATION_IDS_DOC);
 
@@ -626,8 +628,7 @@ public class HttpSinkConfigDefinition {
                 .define(prefix + HTTP_CLIENT_PROXY_AUTHENTICATION_DIGEST_CHARSET, ConfigDef.Type.STRING, StandardCharsets.US_ASCII.name(), ConfigDef.Importance.LOW, CONFIG_DEFAULT_HTTP_CLIENT_PROXY_AUTHENTICATION_DIGEST_CHARSET_DOC)
 
 
-                //async settings
-                .define(prefix + HTTP_CLIENT_ASYNC_FIXED_THREAD_POOL_SIZE, ConfigDef.Type.INT, null, ConfigDef.Importance.MEDIUM, CONFIG_HTTP_CLIENT_ASYNC_FIXED_THREAD_POOL_SIZE_DOC)
+
 
 
                 //proxy

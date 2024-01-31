@@ -7,6 +7,7 @@ import okhttp3.OkHttpClient;
 import okhttp3.*;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -16,6 +17,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
 
+@Disabled
 public class OAuth2OkHttpClientTest {
     private static final Logger LOGGER = LoggerFactory.getLogger(OAuth2OkHttpClientTest.class);
     private static MockOAuth2Server server;

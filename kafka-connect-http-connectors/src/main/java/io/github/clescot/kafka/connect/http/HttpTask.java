@@ -72,7 +72,7 @@ public class HttpTask<T extends ConnectRecord<T>> {
             HttpTask.meterRegistry = buildMeterRegistry(config);
         }
         //build executorService
-        Optional<Integer> customFixedThreadPoolSize = Optional.ofNullable(config.getInt(CONFIG_HTTP_CLIENT_ASYNC_FIXED_THREAD_POOL_SIZE));
+        Optional<Integer> customFixedThreadPoolSize = Optional.ofNullable(config.getInt(HTTP_CLIENT_ASYNC_FIXED_THREAD_POOL_SIZE));
         customFixedThreadPoolSize.ifPresent(integer -> this.executorService = buildExecutorService(integer));
         //bind metrics to MeterRegistry and ExecutorService
         bindMetrics(config, meterRegistry, executorService);
