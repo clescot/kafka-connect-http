@@ -1,6 +1,7 @@
 package io.github.clescot.kafka.connect.http.sink;
 
 import com.google.common.base.Preconditions;
+import com.google.common.collect.Maps;
 import io.github.clescot.kafka.connect.http.VersionUtils;
 import org.apache.kafka.common.config.ConfigDef;
 import org.apache.kafka.connect.connector.Task;
@@ -9,6 +10,7 @@ import org.apache.kafka.connect.sink.SinkConnector;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 
 public class HttpSinkConnector extends SinkConnector {
@@ -44,7 +46,7 @@ public class HttpSinkConnector extends SinkConnector {
 
     @Override
     public ConfigDef config() {
-        HttpSinkConfigDefinition httpSinkConfigDefinition = new HttpSinkConfigDefinition(settings);
+        HttpSinkConfigDefinition httpSinkConfigDefinition = new HttpSinkConfigDefinition(Optional.ofNullable(settings).orElse(Maps.newHashMap()));
         return httpSinkConfigDefinition.config();
     }
 

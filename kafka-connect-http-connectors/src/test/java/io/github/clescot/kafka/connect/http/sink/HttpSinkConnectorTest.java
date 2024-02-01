@@ -121,6 +121,13 @@ public class HttpSinkConnectorTest {
             ConfigDef configDef = httpSinkConnector.config();
             assertThat(configDef).isNotNull();
         }
+
+        @Test
+        void test_config_without_start(){
+            HttpSinkConnector httpSinkConnector = new HttpSinkConnector();
+            ConfigDef configDef = httpSinkConnector.config();
+            assertThat(configDef).isNotNull();
+        }
         @Test
         void test_with_default_configuration_and_custom_static_headers(){
 
