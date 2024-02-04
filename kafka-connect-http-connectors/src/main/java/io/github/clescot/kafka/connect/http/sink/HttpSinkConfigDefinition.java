@@ -1,8 +1,8 @@
 package io.github.clescot.kafka.connect.http.sink;
 
+import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import io.github.clescot.kafka.connect.http.core.queue.ConfigConstants;
-import org.apache.commons.compress.utils.Lists;
 import org.apache.kafka.common.config.ConfigDef;
 
 import java.nio.charset.StandardCharsets;
