@@ -60,7 +60,7 @@
         <project.scm.id>github</project.scm.id>
         <scribe.version>8.3.3</scribe.version>
         <slf4j.version>2.0.11</slf4j.version>
-        <testcontainers.version>1.19.4</testcontainers.version>
+        <testcontainers.version>1.19.5</testcontainers.version>
         <skipIT>false</skipIT>
         <wiremock.version>2.35.1</wiremock.version>
     </properties>
