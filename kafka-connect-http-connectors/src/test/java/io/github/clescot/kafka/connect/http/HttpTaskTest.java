@@ -291,8 +291,7 @@ class HttpTaskTest {
     @NotNull
     private static SchemaRegistryClient getSchemaRegistryClient() {
         SchemaProvider provider = new JsonSchemaProvider();
-        SchemaRegistryClient mockSchemaRegistryClient = new MockSchemaRegistryClient(Collections.singletonList(provider));
-        return mockSchemaRegistryClient;
+        return new MockSchemaRegistryClient(Collections.singletonList(provider));
     }
 
     private static CompositeMeterRegistry getCompositeMeterRegistry() {
