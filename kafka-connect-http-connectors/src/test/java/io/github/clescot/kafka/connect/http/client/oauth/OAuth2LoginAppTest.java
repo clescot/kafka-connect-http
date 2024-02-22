@@ -1,5 +1,6 @@
 package io.github.clescot.kafka.connect.http.client.oauth;
 
+import com.google.common.base.Joiner;
 import io.netty.handler.codec.http.cookie.Cookie;
 import no.nav.security.mock.oauth2.MockOAuth2Server;
 import no.nav.security.mock.oauth2.token.DefaultOAuth2TokenCallback;
@@ -17,6 +18,7 @@ import reactor.netty.http.client.HttpClient;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import static io.github.clescot.kafka.connect.http.client.oauth.MockOAuth2ServerInitializer.MOCK_OAUTH_2_SERVER_BASE_URL;
 import static io.github.clescot.kafka.connect.http.client.oauth.OAuth2LoginAppTest.PROVIDER_ID;
@@ -77,6 +79,16 @@ public class OAuth2LoginAppTest {
         return new ReactorClientHttpConnector(
                 HttpClient
                         .create()
+                        .doOnRequest((req,conn)-> {
+                            System.out.println("---> request:"+req.resourceUrl());
+                            System.out.println("request headers:\n"+Joiner.on("\n").join(
+                                    req.requestHeaders()
+                                            .entries()
+                                            .stream()
+                                            .map((e)-> "- "+e.getKey()+"="+e.getValue()).collect(Collectors.toSet())));
+                            System.out.println("headers end");
+                        })
+                        .doOnResponse((res,conn)-> System.out.println("<--- response:"+res))
                         .followRedirect((req, resp) -> {
                                     for (var entry : resp.cookies().entrySet()) {
                                         var cookie = entry.getValue().stream().findFirst().orElse(null);
@@ -84,6 +96,9 @@ public class OAuth2LoginAppTest {
                                             cookieManager.put(entry.getKey().toString(), cookie);
                                         }
                                     }
+                                    System.out.println(resp.status());
+                                    System.out.println("<--- redirect response headers:");
+                                    System.out.println(Joiner.on("\n- ").join(resp.responseHeaders()));
                                     return resp.responseHeaders().contains("Location");
                                 },
                                 req -> {
