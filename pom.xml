@@ -5,7 +5,7 @@
     <description>a set of Kafka Connect connectors (Sink and Source), to interact with HTTP servers, linked via an in memory queue.</description>
     <groupId>io.github.clescot</groupId>
     <artifactId>kafka-connect-http</artifactId>
-    <version>0.7.104-SNAPSHOT</version>
+    <version>0.7.112-SNAPSHOT</version>
     <url>https://github.com/clescot/kafka-connect-http</url>
     <licenses>
         <license>
@@ -34,35 +34,35 @@
         <url>https://github.com/clescot/kafka-connect-http/issues</url>
     </issueManagement>
     <properties>
-        <assertj.version>3.25.2</assertj.version>
+        <assertj.version>3.25.3</assertj.version>
         <awaitility.version>4.2.0</awaitility.version>
         <async.http.client.version>2.12.3</async.http.client.version>
         <commons-text.version>1.11.0</commons-text.version>
         <connect-json.version>3.6.1</connect-json.version>
         <debezium.version>2.5.1.Final</debezium.version>
         <kafka.version>3.6.1</kafka.version>
-        <confluent.platform.version>7.5.3</confluent.platform.version>
+        <confluent.platform.version>7.6.0</confluent.platform.version>
         <failsafe.version>3.3.2</failsafe.version>
         <guava.version>33.0.0-jre</guava.version>
         <jackson.version>2.16.1</jackson.version>
         <json.assert.version>1.5.1</json.assert.version>
-        <junit.version>5.10.1</junit.version>
-        <logback.version>1.4.14</logback.version>
+        <junit.version>5.10.2</junit.version>
+        <logback.version>1.5.0</logback.version>
         <maven.compiler.source>11</maven.compiler.source>
         <maven.compiler.target>11</maven.compiler.target>
         <maven.plugin.validation>VERBOSE</maven.plugin.validation>
         <mock-oauth2-server.version>0.5.10</mock-oauth2-server.version>
         <mockito.version>5.10.0</mockito.version>
-        <micrometer.version>1.12.2</micrometer.version>
+        <micrometer.version>1.12.3</micrometer.version>
         <okhttp.version>4.12.0</okhttp.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <project.scm.id>github</project.scm.id>
         <scribe.version>8.3.3</scribe.version>
-        <slf4j.version>2.0.11</slf4j.version>
-        <testcontainers.version>1.19.4</testcontainers.version>
+        <slf4j.version>2.0.12</slf4j.version>
+        <testcontainers.version>1.19.5</testcontainers.version>
         <skipIT>false</skipIT>
-        <wiremock.version>2.35.1</wiremock.version>
+        <wiremock.version>2.35.2</wiremock.version>
     </properties>
     <modules>
         <module>kafka-connect-http-core</module>
@@ -87,7 +87,7 @@
             <dependency>
                 <groupId>ch.qos.logback</groupId>
                 <artifactId>logback-classic</artifactId>
-                <version>1.4.14</version>
+                <version>1.5.0</version>
             </dependency>
 
             <dependency>
