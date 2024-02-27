@@ -21,7 +21,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 import static io.github.clescot.kafka.connect.http.client.oauth.MockOAuth2ServerInitializer.MOCK_OAUTH_2_SERVER_BASE_URL;
-import static io.github.clescot.kafka.connect.http.client.oauth.OAuth2LoginAppTest.PROVIDER_ID;
+import static io.github.clescot.kafka.connect.http.client.oauth.OAuth2AuthorizationCodeLoginAppTest.PROVIDER_ID;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 @ExtendWith(SpringExtension.class)
@@ -30,18 +30,18 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
         classes = OAuth2LoginApp.class,
         //these can be set in application yaml if you desire
         properties = {
-                OAuth2LoginAppTest.REGISTRATION + PROVIDER_ID + ".client-id=testclient",
-                OAuth2LoginAppTest.REGISTRATION + PROVIDER_ID + ".client-secret=testsecret",
-                OAuth2LoginAppTest.REGISTRATION + PROVIDER_ID + ".authorization-grant-type=authorization_code",
-                OAuth2LoginAppTest.REGISTRATION + PROVIDER_ID + ".redirect-uri={baseUrl}/login/oauth2/code/{registrationId}",
-                OAuth2LoginAppTest.REGISTRATION + PROVIDER_ID + ".scope=openid",
-                OAuth2LoginAppTest.PROVIDER + PROVIDER_ID + ".authorization-uri=${" + MOCK_OAUTH_2_SERVER_BASE_URL + "}/issuer1/authorize",
-                OAuth2LoginAppTest.PROVIDER + PROVIDER_ID + ".token-uri=${" + MOCK_OAUTH_2_SERVER_BASE_URL + "}/issuer1/token",
-                OAuth2LoginAppTest.PROVIDER + PROVIDER_ID + ".jwk-set-uri=${" + MOCK_OAUTH_2_SERVER_BASE_URL + "}/issuer1/jwks"
+                OAuth2ClientCredentialsLoginAppTest.REGISTRATION + PROVIDER_ID + ".client-id=testclient",
+                OAuth2ClientCredentialsLoginAppTest.REGISTRATION + PROVIDER_ID + ".client-secret=testsecret",
+                OAuth2ClientCredentialsLoginAppTest.REGISTRATION + PROVIDER_ID + ".authorization-grant-type=client_credentials",
+                OAuth2ClientCredentialsLoginAppTest.REGISTRATION + PROVIDER_ID + ".redirect-uri={baseUrl}/login/oauth2/code/{registrationId}",
+                OAuth2ClientCredentialsLoginAppTest.REGISTRATION + PROVIDER_ID + ".scope=openid",
+                OAuth2ClientCredentialsLoginAppTest.PROVIDER + PROVIDER_ID + ".authorization-uri=${" + MOCK_OAUTH_2_SERVER_BASE_URL + "}/issuer1/authorize",
+                OAuth2ClientCredentialsLoginAppTest.PROVIDER + PROVIDER_ID + ".token-uri=${" + MOCK_OAUTH_2_SERVER_BASE_URL + "}/issuer1/token",
+                OAuth2ClientCredentialsLoginAppTest.PROVIDER + PROVIDER_ID + ".jwk-set-uri=${" + MOCK_OAUTH_2_SERVER_BASE_URL + "}/issuer1/jwks"
         }
 )
 @ContextConfiguration(initializers = {MockOAuth2ServerInitializer.class})
-public class OAuth2LoginAppTest {
+public class OAuth2ClientCredentialsLoginAppTest {
     public static final String CLIENT = "spring.security.oauth2.client";
     public static final String PROVIDER = CLIENT + ".provider.";
     public static final String REGISTRATION = CLIENT + ".registration.";
