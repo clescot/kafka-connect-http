@@ -54,6 +54,7 @@ parameters to sign JWT :
 application is a web app, and acting on behalf of the user. application get an access and a refresh token.
 => impersonation
 
+grant type : authorization_code
 
 OIDC endpoints : 
 - https://..../.well-known/openid-configuration : list all the endpoints
