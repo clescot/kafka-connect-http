@@ -44,7 +44,7 @@
         <confluent.platform.version>7.6.0</confluent.platform.version>
         <failsafe.version>3.3.2</failsafe.version>
         <guava.version>33.0.0-jre</guava.version>
-        <jackson.version>2.16.2</jackson.version>
+        <jackson.version>2.17.0</jackson.version>
         <json.assert.version>1.5.1</json.assert.version>
         <junit.version>5.10.2</junit.version>
         <logback.version>1.5.3</logback.version>
