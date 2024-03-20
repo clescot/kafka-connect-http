@@ -1,6 +1,7 @@
 package io.github.clescot.kafka.connect.http.client.oauth;
 
 import no.nav.security.mock.oauth2.MockOAuth2Server;
+import no.nav.security.mock.oauth2.OAuth2Config;
 import org.springframework.boot.test.util.TestPropertyValues;
 import org.springframework.context.ApplicationContextInitializer;
 import org.springframework.context.ConfigurableApplicationContext;
@@ -26,7 +27,8 @@ public class MockOAuth2ServerInitializer implements ApplicationContextInitialize
 
     private MockOAuth2Server registerMockOAuth2Server(ConfigurableApplicationContext applicationContext) {
 
-        var server = new MockOAuth2Server();
+        var oauth2Config = new OAuth2Config(false);
+        var server = new MockOAuth2Server(oauth2Config);
         server.start();
         ((GenericApplicationContext) applicationContext).registerBean(MockOAuth2Server.class, () -> server);
         return server;
