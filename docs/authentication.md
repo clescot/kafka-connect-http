@@ -59,3 +59,12 @@ grant type : authorization_code
 OIDC endpoints : 
 - https://..../.well-known/openid-configuration : list all the endpoints
 - authorization endpoints permits to authenticate and grant access =>redirect to the token endpoint to get it : described in authorization_endpoint
+
+-> GET http://localhost:46819/api/ping
+<- 302 Location=/oauth2/authorization/myprovider
+-> GET http://localhost:46819/oauth2/authorization/myprovider
+<- 302 Location=http://localhost:37379/issuer1/authorize?response_type=code&client_id=testclient&scope=openid&state=OTasPXZ_XergVymc-WunzzS0mms1SG_OtiC6AcAPxqQ%3D&redirect_uri=http://localhost:46819/login/oauth2/code/myprovider&nonce=zO_tJNZ_KFKt52WefXDk7pC1ON1THYlw1V1krhrv1W8
+-> GET http://localhost:37379/issuer1/authorize?response_type=code&client_id=testclient&scope=openid&state=OTasPXZ_XergVymc-WunzzS0mms1SG_OtiC6AcAPxqQ%3D&redirect_uri=http://localhost:46819/login/oauth2/code/myprovider&nonce=zO_tJNZ_KFKt52WefXDk7pC1ON1THYlw1V1krhrv1W8
+<- 302 Location=http://localhost:46819/login/oauth2/code/myprovider?code=EOItRR_bWv3QvaSpgh22JyeiyIm48rBTli4WoWh9hPc&state=OTasPXZ_XergVymc-WunzzS0mms1SG_OtiC6AcAPxqQ%3D
+-> GET http://localhost:46819/login/oauth2/code/myprovider?code=EOItRR_bWv3QvaSpgh22JyeiyIm48rBTli4WoWh9hPc&state=OTasPXZ_XergVymc-WunzzS0mms1SG_OtiC6AcAPxqQ%3D
+<- 302 Found Location=/api/ping
