@@ -12,13 +12,13 @@ import com.nimbusds.oauth2.sdk.token.AccessToken;
 import com.nimbusds.oauth2.sdk.token.RefreshToken;
 import com.nimbusds.oauth2.sdk.token.Tokens;
 import com.nimbusds.openid.connect.sdk.op.OIDCProviderMetadata;
-import io.github.clescot.kafka.connect.http.client.okhttp.interceptor.LoggingInterceptor;
 import io.netty.handler.codec.http.cookie.Cookie;
 import no.nav.security.mock.oauth2.MockOAuth2Server;
 import no.nav.security.mock.oauth2.token.DefaultOAuth2TokenCallback;
 import okhttp3.Request;
-import okhttp3.*;
 import okhttp3.Response;
+import okhttp3.*;
+import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.skyscreamer.jsonassert.JSONAssert;
@@ -107,10 +107,11 @@ public class OAuth2ClientCredentialsFlowLoginAppTest {
     @Test
     public void oidc_login_with_okhttp() throws IOException, ParseException {
 
-        //get oidc provider metadata
-        String wellKnownurl = mockOAuth2Server.wellKnownUrl(ISSUER_ID).toString();
+        //configure mock oauth2 server
         mockOAuth2Server.enqueueCallback(new DefaultOAuth2TokenCallback("issuer1", "foo"));
 
+        //get oidc provider metadata
+        String wellKnownurl = mockOAuth2Server.wellKnownUrl(ISSUER_ID).toString();
         URL providerConfigurationURL = new URL(wellKnownurl);
         InputStream stream = providerConfigurationURL.openStream();
         // Read all data from URL
@@ -119,12 +120,11 @@ public class OAuth2ClientCredentialsFlowLoginAppTest {
             providerInfo = s.useDelimiter("\\A").hasNext() ? s.next() : "";
         }
         OIDCProviderMetadata providerMetadata = OIDCProviderMetadata.parse(providerInfo);
-        System.out.println(providerMetadata);
         // The token endpoint
         URI tokenEndpointUri = providerMetadata.getTokenEndpointURI();
         String tokenEndpoint = tokenEndpointUri.toString();
-        String issuer = tokenEndpoint.substring(0,tokenEndpoint.length()-"/token".length());
-        System.out.println("issuer:"+issuer);
+        String issuer = tokenEndpoint.substring(0, tokenEndpoint.length() - "/token".length());
+
         //get access token with client credential flow
 
         // Construct the client credentials grant
@@ -136,27 +136,18 @@ public class OAuth2ClientCredentialsFlowLoginAppTest {
         ClientAuthentication clientAuth = new ClientSecretBasic(clientID, clientSecret);
 
         // The request scope for the token (may be optional)
-        Scope scope = new Scope(OPENID,"refresh_token");
+        Scope scope = new Scope(OPENID, "refresh_token");
 //        Scope scope = new Scope("read", "write");
 
 
-
         // Make the token request
-        TokenRequest request = new TokenRequest(tokenEndpointUri, clientAuth, clientGrant, scope);
-
-        TokenResponse response = TokenResponse.parse(request.toHTTPRequest().send());
-
-        if (! response.indicatesSuccess()) {
-            // We got an error response...
-            TokenErrorResponse errorResponse = response.toErrorResponse();
-            System.err.println("error: "+errorResponse.toString());
-        }
-
-        AccessTokenResponse successResponse = response.toSuccessResponse();
-
-        Tokens tokens = successResponse.getTokens();
-        // Get the access token
+        Tokens tokens = getTokens(tokenEndpointUri, clientAuth, clientGrant, scope);
         AccessToken accessToken = tokens.getAccessToken();
+
+        //no refresh token is issued for client credentials flow
+        //cf RFC6749 section 4.4.3 https://www.rfc-editor.org/rfc/rfc6749#section-4.4.3
+
+        // Get the access token as JSON string
         String accessTokenJSONString = accessToken.toJSONString();
         System.out.println(accessTokenJSONString);
         assertThat(accessToken.getScope().toString()).isEqualTo("openid refresh_token");
@@ -174,9 +165,9 @@ public class OAuth2ClientCredentialsFlowLoginAppTest {
                 "  \"kid\": \"default\",\n" +
                 "  \"typ\": \"JWT\",\n" +
                 "  \"alg\": \"RS256\"\n" +
-                "}",header,true);
+                "}", header, true);
         String payload = new String(decoder.decode(chunks[1]));
-        System.out.println("payload:"+payload);
+//        System.out.println("payload:"+payload);
         /*payload fields
           sub : Subject
           nbf : Not Before
@@ -193,52 +184,86 @@ public class OAuth2ClientCredentialsFlowLoginAppTest {
         JsonNode sub = payloadJsonNode.get("sub");
         assertThat(sub.asText()).isEqualTo("testclient");
         long currentTimeMillis = System.currentTimeMillis();
-        assertThat(Long.parseLong(payloadJsonNode.get("nbf").toPrettyString())*1000).isLessThanOrEqualTo(currentTimeMillis);
+        assertThat(Long.parseLong(payloadJsonNode.get("nbf").toPrettyString()) * 1000).isLessThanOrEqualTo(currentTimeMillis);
         assertThat(payloadJsonNode.get("azp").asText()).isEqualTo("testclient");
         assertThat(payloadJsonNode.get("iss").asText()).isEqualTo(issuer);
-        assertThat(Long.parseLong(payloadJsonNode.get("exp").toPrettyString())*1000).isGreaterThanOrEqualTo(currentTimeMillis);
-        assertThat(Long.parseLong(payloadJsonNode.get("iat").toPrettyString())*1000).isLessThanOrEqualTo(currentTimeMillis);
+        assertThat(Long.parseLong(payloadJsonNode.get("exp").toPrettyString()) * 1000).isGreaterThanOrEqualTo(currentTimeMillis);
+        assertThat(Long.parseLong(payloadJsonNode.get("iat").toPrettyString()) * 1000).isLessThanOrEqualTo(currentTimeMillis);
         assertThat(payloadJsonNode.get("tid").asText()).isEqualTo(ISSUER_ID);
         String jti = payloadJsonNode.get("jti").asText();
 
 
-
-
         // Get the refresh token
         RefreshToken refreshToken = tokens.getRefreshToken();
-//        assertThat(refreshToken).isNotNull();
+
         OkHttpClient okHttpClient = new OkHttpClient.Builder()
                 .followRedirects(true)
                 .followSslRedirects(true)
-                .addNetworkInterceptor(new LoggingInterceptor())
+                .addNetworkInterceptor(new Interceptor() {
+                    @NotNull
+                    @Override
+                    public Response intercept(@NotNull Chain chain) throws IOException {
+                        Request request = chain.request();
+
+                        long t1 = System.nanoTime();
+                        String log = String.format("Sending request %s on %s%n%s", request.url(), chain.connection(), request.headers());
+                        System.out.println(log);
+
+                        Response response = chain.proceed(request);
+
+                        long t2 = System.nanoTime();
+                        double elapsedTime = (t2 - t1) / 1e6d;
+                        String log2 = String.format("Received response for %s on %s%n%s in %.1fms%n%s %s%n%s",
+                                response.request().url(), chain.connection(), request.headers(), elapsedTime, response.code(), response.message(), response.headers());
+                        System.out.println(log2);
+                        return response;
+                    }
+                })
                 .build();
 
-        HttpUrl okHttpUrl = HttpUrl.parse("http://localhost:" + localPort+"/api/ping");
+        HttpUrl okHttpUrl = HttpUrl.parse("http://localhost:" + localPort + "/api/ping");
         okhttp3.Request request1 = new Request.Builder()
                 .url(okHttpUrl)
-                .header("Accept","text/html")
-                .header("Authorization",bearerToken)
-                .method("GET",null).build();
+                .header("Accept", "text/html")
+                .header("Authorization", bearerToken)
+                .method("GET", null).build();
         Response response1 = okHttpClient.newCall(request1).execute();
         assertThat(response1).isNotNull();
         String bodyString = response1.body().string();
         assertThat(bodyString).isEqualTo("");
     }
 
+    private static Tokens getTokens(URI tokenEndpointUri, ClientAuthentication clientAuth, AuthorizationGrant clientGrant, Scope scope) throws ParseException, IOException {
+        TokenRequest request = new TokenRequest(tokenEndpointUri, clientAuth, clientGrant, scope);
+
+        TokenResponse response = TokenResponse.parse(request.toHTTPRequest().send());
+
+        if (!response.indicatesSuccess()) {
+            // We got an error response...
+            TokenErrorResponse errorResponse = response.toErrorResponse();
+            System.err.println("error: " + errorResponse.toString());
+        }
+
+        AccessTokenResponse successResponse = response.toSuccessResponse();
+
+        Tokens tokens = successResponse.getTokens();
+        return tokens;
+    }
+
     private ClientHttpConnector followRedirectsWithCookies(Map<String, Cookie> cookieManager) {
         return new ReactorClientHttpConnector(
                 HttpClient
                         .create()
-                        .doOnRequest((req,conn)-> {
-                            System.out.println("---> request:"+req.resourceUrl());
-                            System.out.println("request headers:\n"+Joiner.on("\n").join(
+                        .doOnRequest((req, conn) -> {
+                            System.out.println("---> request:" + req.resourceUrl());
+                            System.out.println("request headers:\n" + Joiner.on("\n").join(
                                     req.requestHeaders()
                                             .entries()
                                             .stream()
-                                            .map((e)-> "- "+e.getKey()+"="+e.getValue()).collect(Collectors.toSet())));
+                                            .map((e) -> "- " + e.getKey() + "=" + e.getValue()).collect(Collectors.toSet())));
                             System.out.println("headers end");
                         })
-                        .doOnResponse((res,conn)-> System.out.println("<--- response:"+res))
+                        .doOnResponse((res, conn) -> System.out.println("<--- response:" + res))
                         .followRedirect((req, resp) -> {
                                     for (var entry : resp.cookies().entrySet()) {
                                         var cookie = entry.getValue().stream().findFirst().orElse(null);

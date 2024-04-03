@@ -6,10 +6,8 @@ import com.nimbusds.oauth2.sdk.auth.ClientAuthentication;
 import com.nimbusds.oauth2.sdk.auth.ClientSecretBasic;
 import com.nimbusds.oauth2.sdk.auth.Secret;
 import com.nimbusds.oauth2.sdk.id.ClientID;
-import com.nimbusds.oauth2.sdk.token.AccessToken;
-import com.nimbusds.oauth2.sdk.token.AccessTokenType;
-import com.nimbusds.oauth2.sdk.token.RefreshToken;
-import com.nimbusds.oauth2.sdk.token.Tokens;
+import com.nimbusds.oauth2.sdk.rar.AuthorizationDetail;
+import com.nimbusds.oauth2.sdk.token.*;
 import com.nimbusds.openid.connect.sdk.op.OIDCProviderMetadata;
 import io.github.clescot.kafka.connect.http.client.okhttp.interceptor.LoggingInterceptor;
 import io.netty.handler.codec.http.cookie.Cookie;
@@ -34,6 +32,7 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
@@ -75,7 +74,7 @@ public class OAuth2AuthorizationCodeFlowLoginAppTest {
 
     @Test
     public void oidcUserFooShouldBeLoggedIn() {
-        System.out.println("local port is "+localPort);
+        System.out.println("local port is " + localPort);
         Map<String, Cookie> cookieManager = new HashMap<>();
         WebClient webClient = WebClient.builder()
                 .clientConnector(followRedirectsWithCookies(cookieManager))
@@ -102,21 +101,26 @@ public class OAuth2AuthorizationCodeFlowLoginAppTest {
         //get oidc provider metadata
         String wellKnownurl = mockOAuth2Server.wellKnownUrl("default").toString();
         mockOAuth2Server.enqueueCallback(new DefaultOAuth2TokenCallback("issuer1", "foo"));
+
         OkHttpClient okHttpClient = new OkHttpClient.Builder()
                 .followRedirects(true)
                 .addNetworkInterceptor(new LoggingInterceptor())
                 .build();
 
 
-
         URL providerConfigurationURL = new URL(wellKnownurl);
         InputStream stream = providerConfigurationURL.openStream();
         // Read all data from URL
-        String providerInfo = null;
+        String providerInfo;
         try (java.util.Scanner s = new java.util.Scanner(stream)) {
             providerInfo = s.useDelimiter("\\A").hasNext() ? s.next() : "";
         }
         OIDCProviderMetadata providerMetadata = OIDCProviderMetadata.parse(providerInfo);
+        // The token endpoint
+        URI tokenEndpointUri = providerMetadata.getTokenEndpointURI();
+        String tokenEndpoint = tokenEndpointUri.toString();
+        String issuer = tokenEndpoint.substring(0, tokenEndpoint.length() - "/token".length());
+        System.out.println("issuer="+issuer);
         System.out.println(providerMetadata);
 
         //get access token with client credential flow
@@ -134,14 +138,13 @@ public class OAuth2AuthorizationCodeFlowLoginAppTest {
 //        Scope scope = new Scope("read", "write");
 
         // The token endpoint
-        URI tokenEndpoint = providerMetadata.getTokenEndpointURI();
 
         // Make the token request
-        TokenRequest request = new TokenRequest(tokenEndpoint, clientAuth, clientGrant, scope);
+        TokenRequest request = new TokenRequest(tokenEndpointUri, clientAuth, clientGrant, scope);
 
         TokenResponse response = TokenResponse.parse(request.toHTTPRequest().send());
 
-        if (! response.indicatesSuccess()) {
+        if (!response.indicatesSuccess()) {
             // We got an error response...
             TokenErrorResponse errorResponse = response.toErrorResponse();
             System.out.println(errorResponse.toJSONObject());
@@ -153,16 +156,22 @@ public class OAuth2AuthorizationCodeFlowLoginAppTest {
         Tokens tokens = successResponse.getTokens();
         AccessToken accessToken = tokens.getAccessToken();
         AccessTokenType type = accessToken.getType();
-        accessToken.getIssuedTokenType();
-        accessToken.getAuthorizationDetails();
-
+        System.out.println("access token type:" + type.toString());
+        TokenTypeURI issuedTokenType = accessToken.getIssuedTokenType();
+        System.out.println("access token issuedTokenType:" + issuedTokenType);
+        List<AuthorizationDetail> authorizationDetails = accessToken.getAuthorizationDetails();
+        if(authorizationDetails!=null) {
+            System.out.println("access token authorizationDetails:" + Joiner.on(",").join(authorizationDetails));
+        }
         Scope scope1 = accessToken.getScope();
+        System.out.println("access token scope:" + scope1);
         long lifetime = accessToken.getLifetime();
-        System.out.println(accessToken.toJSONString());
+        System.out.println("access token lifetime:" + lifetime);
+        System.out.println("access token toString" + accessToken.toJSONString());
         Map<String, Object> customParameters = accessToken.getCustomParameters();
-        String accessTokenJSONString = accessToken.toJSONString();
+        System.out.println("access token customParameters" + Joiner.on(",").join(customParameters.entrySet()));
         RefreshToken refreshToken = tokens.getRefreshToken();
-        System.out.println(refreshToken.toJSONString());
+        System.out.println(refreshToken);
 
 
     }
@@ -171,17 +180,19 @@ public class OAuth2AuthorizationCodeFlowLoginAppTest {
         return new ReactorClientHttpConnector(
                 HttpClient
                         .create()
-                        .doOnRequest((req,conn)-> {
-                            System.out.println("---> request: "+req.method()+" "+req.resourceUrl());
-                            System.out.println("request headers:\n"+Joiner.on("\n").join(
+                        .doOnRequest((req, conn) -> {
+                            System.out.println("---> request: " + req.method() + " " + req.resourceUrl());
+                            System.out.println("request headers:\n" + Joiner.on("\n").join(
                                     req.requestHeaders()
                                             .entries()
                                             .stream()
-                                            .map((e)-> "- "+e.getKey()+"="+e.getValue()).collect(Collectors.toSet())));
+                                            .map((e) -> "- " + e.getKey() + "=" + e.getValue()).collect(Collectors.toSet())));
                             System.out.println("headers end");
                         })
-                        .doOnResponse((res,conn)-> System.out.println("<--- response:"+res))
+                        .doOnResponse((res, conn) -> System.out.println("<--- response:" + res))
                         .followRedirect((req, resp) -> {
+                                    List<Map.Entry<String, String>> requestHeaders = req.requestHeaders().entries();
+                                    List<Map.Entry<String, String>> responseHeaders = resp.responseHeaders().entries();
                                     for (var entry : resp.cookies().entrySet()) {
                                         var cookie = entry.getValue().stream().findFirst().orElse(null);
                                         if (cookie != null && cookie.value() != null && !cookie.value().isBlank()) {
