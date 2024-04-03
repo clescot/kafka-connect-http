@@ -39,7 +39,7 @@
         <async.http.client.version>2.12.3</async.http.client.version>
         <commons-text.version>1.11.0</commons-text.version>
         <connect-json.version>3.7.0</connect-json.version>
-        <debezium.version>2.5.4.Final</debezium.version>
+        <debezium.version>2.6.0.Final</debezium.version>
         <kafka.version>3.6.1</kafka.version>
         <confluent.platform.version>7.6.0</confluent.platform.version>
         <failsafe.version>3.3.2</failsafe.version>
