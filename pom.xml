@@ -37,7 +37,7 @@
         <assertj.version>3.25.3</assertj.version>
         <awaitility.version>4.2.1</awaitility.version>
         <async.http.client.version>2.12.3</async.http.client.version>
-        <commons-text.version>1.11.0</commons-text.version>
+        <commons-text.version>1.12.0</commons-text.version>
         <connect-json.version>3.7.0</connect-json.version>
         <debezium.version>2.6.1.Final</debezium.version>
         <kafka.version>3.6.1</kafka.version>
