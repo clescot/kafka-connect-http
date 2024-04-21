@@ -27,6 +27,11 @@ public class DigestAuthenticationConfigurer implements AuthenticationConfigurer{
     }
 
     @Override
+    public boolean needCache() {
+        return true;
+    }
+
+    @Override
     public Authenticator configureAuthenticator(Map<String, Object> config) {
         //Digest Authentication
         DigestAuthenticator digestAuthenticator = null;

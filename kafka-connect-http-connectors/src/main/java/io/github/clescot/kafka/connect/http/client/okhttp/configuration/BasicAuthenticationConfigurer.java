@@ -18,6 +18,11 @@ public class BasicAuthenticationConfigurer implements AuthenticationConfigurer{
     }
 
     @Override
+    public boolean needCache() {
+        return true;
+    }
+
+    @Override
     public Authenticator configureAuthenticator(Map<String, Object> config) {
         //Basic authentication
         BasicAuthenticator basicAuthenticator = null;

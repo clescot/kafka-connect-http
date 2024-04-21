@@ -9,5 +9,7 @@ public interface AuthenticationConfigurer {
 
     String authenticationScheme();
 
+    boolean needCache();
+
     Authenticator configureAuthenticator(Map<String, Object> config);
 }

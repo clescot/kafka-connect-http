@@ -7,7 +7,10 @@ import com.google.common.jimfs.Jimfs;
 import io.github.clescot.kafka.connect.http.client.AbstractHttpClient;
 import io.github.clescot.kafka.connect.http.client.Configuration;
 import io.github.clescot.kafka.connect.http.client.HttpException;
+import io.github.clescot.kafka.connect.http.client.okhttp.configuration.AuthenticationConfigurer;
 import io.github.clescot.kafka.connect.http.client.okhttp.configuration.AuthenticationsConfigurer;
+import io.github.clescot.kafka.connect.http.client.okhttp.configuration.BasicAuthenticationConfigurer;
+import io.github.clescot.kafka.connect.http.client.okhttp.configuration.DigestAuthenticationConfigurer;
 import io.github.clescot.kafka.connect.http.client.okhttp.event.AdvancedEventListenerFactory;
 import io.github.clescot.kafka.connect.http.client.okhttp.interceptor.InetAddressInterceptor;
 import io.github.clescot.kafka.connect.http.client.okhttp.interceptor.LoggingInterceptor;
@@ -97,7 +100,10 @@ public class OkHttpClient extends AbstractHttpClient<Request, Response> {
         configureCache(config, httpClientBuilder);
 
         //authentication
-        AuthenticationsConfigurer authenticationsConfigurer = new AuthenticationsConfigurer(random);
+        AuthenticationConfigurer basicAuthenticationConfigurer = new BasicAuthenticationConfigurer();
+        AuthenticationConfigurer digestAuthenticationConfigurer = new DigestAuthenticationConfigurer(random);
+        List<AuthenticationConfigurer> authenticatorConfigurers = Lists.newArrayList(basicAuthenticationConfigurer,digestAuthenticationConfigurer);
+        AuthenticationsConfigurer authenticationsConfigurer = new AuthenticationsConfigurer(authenticatorConfigurers);
         authenticationsConfigurer.configure(config, httpClientBuilder);
 
         //interceptors

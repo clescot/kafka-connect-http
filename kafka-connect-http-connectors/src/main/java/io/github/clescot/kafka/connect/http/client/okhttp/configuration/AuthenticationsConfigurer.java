@@ -3,11 +3,11 @@ package io.github.clescot.kafka.connect.http.client.okhttp.configuration;
 import com.burgstaller.okhttp.*;
 import com.burgstaller.okhttp.digest.CachingAuthenticator;
 import io.github.clescot.kafka.connect.http.client.okhttp.OkHttpClient;
-import okhttp3.Authenticator;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.List;
 import java.util.Map;
-import java.util.Random;
+import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
@@ -17,10 +17,10 @@ import static io.github.clescot.kafka.connect.http.sink.HttpSinkConfigDefinition
  * configure authentication settings for {@link OkHttpClient}.
  */
 public class AuthenticationsConfigurer {
-    private final Random random;
+    private final List<AuthenticationConfigurer> authenticationConfigurers;
 
-    public AuthenticationsConfigurer(Random random) {
-        this.random = random;
+    public AuthenticationsConfigurer(List<AuthenticationConfigurer> authenticationConfigurers) {
+        this.authenticationConfigurers = authenticationConfigurers;
     }
 
     public void configure(Map<String, Object> config, okhttp3.OkHttpClient.Builder httpClientBuilder) {
@@ -57,23 +57,15 @@ public class AuthenticationsConfigurer {
         // note that all auth schemes should be registered as lowercase!
         DispatchingAuthenticator.Builder authenticatorBuilder = new DispatchingAuthenticator.Builder();
 
-        //basic
-        AuthenticationConfigurer basicAuthenticationConfigurer = new BasicAuthenticationConfigurer();
-        Authenticator basicAuthenticator = basicAuthenticationConfigurer.configureAuthenticator(config);
-        if (basicAuthenticator != null) {
-            authenticatorBuilder = authenticatorBuilder.with(basicAuthenticationConfigurer.authenticationScheme(), basicAuthenticator);
-        }
 
-        //digest
-        AuthenticationConfigurer authenticationConfigurer = new DigestAuthenticationConfigurer(this.random);
-        Authenticator digestAuthenticator = authenticationConfigurer.configureAuthenticator(config);
-        if (digestAuthenticator != null) {
-            authenticatorBuilder = authenticatorBuilder.with(authenticationConfigurer.authenticationScheme(), digestAuthenticator);
+        for (AuthenticationConfigurer configurer : authenticationConfigurers) {
+            authenticatorBuilder = authenticatorBuilder.with(configurer.authenticationScheme(), configurer.configureAuthenticator(config));
         }
 
         //cache
         CachingAuthenticatorDecorator authenticator = null;
-        if (basicAuthenticator != null || digestAuthenticator != null) {
+        Optional<Boolean> needCache = authenticationConfigurers.stream().map(configurer -> configurer.needCache()).findFirst();
+        if (needCache.isPresent()&&needCache.get()) {
             authenticator = new CachingAuthenticatorDecorator(authenticatorBuilder.build(), authCache, proxy);
         }
         return authenticator;
