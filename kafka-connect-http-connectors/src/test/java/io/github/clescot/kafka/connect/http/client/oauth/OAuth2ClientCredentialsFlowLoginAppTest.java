@@ -1,117 +1,85 @@
 package io.github.clescot.kafka.connect.http.client.oauth;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.common.base.Joiner;
 import com.nimbusds.oauth2.sdk.*;
 import com.nimbusds.oauth2.sdk.auth.ClientAuthentication;
 import com.nimbusds.oauth2.sdk.auth.ClientSecretBasic;
 import com.nimbusds.oauth2.sdk.auth.Secret;
+import com.nimbusds.oauth2.sdk.http.HTTPResponse;
 import com.nimbusds.oauth2.sdk.id.ClientID;
 import com.nimbusds.oauth2.sdk.token.AccessToken;
-import com.nimbusds.oauth2.sdk.token.RefreshToken;
 import com.nimbusds.oauth2.sdk.token.Tokens;
 import com.nimbusds.openid.connect.sdk.op.OIDCProviderMetadata;
-import io.netty.handler.codec.http.cookie.Cookie;
-import no.nav.security.mock.oauth2.MockOAuth2Server;
-import no.nav.security.mock.oauth2.token.DefaultOAuth2TokenCallback;
+import io.github.clescot.kafka.connect.http.client.okhttp.OkHttpHTTPRequestSender;
 import okhttp3.Request;
 import okhttp3.Response;
 import okhttp3.*;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
 import org.skyscreamer.jsonassert.JSONAssert;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.web.server.LocalServerPort;
-import org.springframework.http.client.reactive.ClientHttpConnector;
-import org.springframework.http.client.reactive.ReactorClientHttpConnector;
-import org.springframework.test.context.ContextConfiguration;
-import org.springframework.test.context.junit.jupiter.SpringExtension;
-import org.springframework.web.reactive.function.client.WebClient;
-import reactor.netty.http.client.HttpClient;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
 import java.net.URL;
-import java.util.Base64;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.stream.Collectors;
+import java.util.List;
 
-import static io.github.clescot.kafka.connect.http.client.oauth.MockOAuth2ServerInitializer.MOCK_OAUTH_2_SERVER_BASE_URL;
-import static io.github.clescot.kafka.connect.http.client.oauth.OAuth2AuthorizationCodeFlowLoginAppTest.PROVIDER_ID;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * machine to machine scenario.
  */
-@ExtendWith(SpringExtension.class)
-@SpringBootTest(
-        webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
-        classes = OAuth2LoginApp.class,
-        //these can be set in application yaml if you desire
-        properties = {
-                OAuth2ClientCredentialsFlowLoginAppTest.REGISTRATION + PROVIDER_ID + ".client-id=testclient",
-                OAuth2ClientCredentialsFlowLoginAppTest.REGISTRATION + PROVIDER_ID + ".client-secret=testsecret",
-                OAuth2ClientCredentialsFlowLoginAppTest.REGISTRATION + PROVIDER_ID + ".authorization-grant-type=client_credentials",
-                OAuth2ClientCredentialsFlowLoginAppTest.REGISTRATION + PROVIDER_ID + ".redirect-uri={baseUrl}/login/oauth2/code/{registrationId}",
-                OAuth2ClientCredentialsFlowLoginAppTest.REGISTRATION + PROVIDER_ID + ".scope=openid",
-                OAuth2ClientCredentialsFlowLoginAppTest.PROVIDER + PROVIDER_ID + ".authorization-uri=${" + MOCK_OAUTH_2_SERVER_BASE_URL + "}/issuer1/authorize",
-                OAuth2ClientCredentialsFlowLoginAppTest.PROVIDER + PROVIDER_ID + ".token-uri=${" + MOCK_OAUTH_2_SERVER_BASE_URL + "}/issuer1/token",
-                OAuth2ClientCredentialsFlowLoginAppTest.PROVIDER + PROVIDER_ID + ".jwk-set-uri=${" + MOCK_OAUTH_2_SERVER_BASE_URL + "}/issuer1/jwks"
-        }
-)
+//@ExtendWith(SpringExtension.class)
+//@SpringBootTest(
+//        webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
+//        classes = OAuth2LoginApp.class,
+//        //these can be set in application yaml if you desire
+//        properties = {
+//                OAuth2ClientCredentialsFlowLoginAppTest.REGISTRATION + PROVIDER_ID + ".client-id=testclient",
+//                OAuth2ClientCredentialsFlowLoginAppTest.REGISTRATION + PROVIDER_ID + ".client-secret=testsecret",
+//                OAuth2ClientCredentialsFlowLoginAppTest.REGISTRATION + PROVIDER_ID + ".authorization-grant-type=client_credentials",
+//                OAuth2ClientCredentialsFlowLoginAppTest.REGISTRATION + PROVIDER_ID + ".redirect-uri={baseUrl}/login/oauth2/code/{registrationId}",
+//                OAuth2ClientCredentialsFlowLoginAppTest.REGISTRATION + PROVIDER_ID + ".scope=openid",
+//                OAuth2ClientCredentialsFlowLoginAppTest.PROVIDER + PROVIDER_ID + ".authorization-uri=${" + MOCK_OAUTH_2_SERVER_BASE_URL + "}/issuer1/authorize",
+//                OAuth2ClientCredentialsFlowLoginAppTest.PROVIDER + PROVIDER_ID + ".token-uri=${" + MOCK_OAUTH_2_SERVER_BASE_URL + "}/issuer1/token",
+//                OAuth2ClientCredentialsFlowLoginAppTest.PROVIDER + PROVIDER_ID + ".jwk-set-uri=${" + MOCK_OAUTH_2_SERVER_BASE_URL + "}/issuer1/jwks"
+//        }
+//)
 //client-authentication-method: client_secret_jwt client_secret_basic client_secret_post private_key_jwt none
-@ContextConfiguration(initializers = {MockOAuth2ServerInitializer.class})
+//@ContextConfiguration(initializers = {MockOAuth2ServerInitializer.class})
 public class OAuth2ClientCredentialsFlowLoginAppTest {
-    public static final String CLIENT = "spring.security.oauth2.client";
-    public static final String PROVIDER = CLIENT + ".provider.";
-    public static final String REGISTRATION = CLIENT + ".registration.";
-    public static final String PROVIDER_ID = "myprovider";
+//    public static final String CLIENT = "spring.security.oauth2.client";
+//    public static final String PROVIDER = CLIENT + ".provider.";
+//    public static final String REGISTRATION = CLIENT + ".registration.";
+//    public static final String PROVIDER_ID = "myprovider";
     public static final String OPENID = "openid";
-    public static final String ISSUER_ID = "default";
 
-    @LocalServerPort
-    private int localPort;
+    private static final  Interceptor interceptor = new Interceptor() {
+        @NotNull
+        @Override
+        public Response intercept(@NotNull Chain chain) throws IOException {
+            Request request = chain.request();
 
-    @Autowired
-    private MockOAuth2Server mockOAuth2Server;
+            long t1 = System.nanoTime();
+            String log = String.format("Sending request %s on %s%n%s", request.url(), chain.connection(), request.headers());
+            System.out.println(log);
 
-    @Test
-    public void oidcUserFooShouldBeLoggedIn() {
-        Map<String, Cookie> cookieManager = new HashMap<>();
-        WebClient webClient = WebClient.builder()
-                .clientConnector(followRedirectsWithCookies(cookieManager))
-                .build();
+            Response response = chain.proceed(request);
 
-        mockOAuth2Server.enqueueCallback(new DefaultOAuth2TokenCallback("issuer1", "foo"));
-
-        String response = webClient
-                .mutate()
-                .baseUrl("http://localhost:" + localPort)
-                .build()
-                .get()
-                .uri("/api/ping")
-                .header("Accept", "text/html")
-                .retrieve()
-                .bodyToMono(String.class).block();
-
-        assertEquals("hello foo", response);
-    }
-
+            long t2 = System.nanoTime();
+            double elapsedTime = (t2 - t1) / 1e6d;
+            String log2 = String.format("Received response for %s on %s%n%s in %.1fms%n%s %s%n%s",
+                    response.request().url(), chain.connection(), request.headers(), elapsedTime, response.code(), response.message(), response.headers());
+            System.out.println(log2);
+            return response;
+        }
+    };
 
     @Test
-    public void oidc_login_with_okhttp() throws IOException, ParseException {
+    public void test_spotify() throws IOException, ParseException {
 
-        //configure mock oauth2 server
-        mockOAuth2Server.enqueueCallback(new DefaultOAuth2TokenCallback("issuer1", "foo"));
 
         //get oidc provider metadata
-        String wellKnownurl = mockOAuth2Server.wellKnownUrl(ISSUER_ID).toString();
+        String wellKnownurl = "https://accounts.spotify.com/.well-known/openid-configuration";
         URL providerConfigurationURL = new URL(wellKnownurl);
         InputStream stream = providerConfigurationURL.openStream();
         // Read all data from URL
@@ -131,157 +99,143 @@ public class OAuth2ClientCredentialsFlowLoginAppTest {
         AuthorizationGrant clientGrant = new ClientCredentialsGrant();
 
         // The credentials to authenticate the client at the token endpoint
-        ClientID clientID = new ClientID("testclient");
-        Secret clientSecret = new Secret("testsecret");
+        ClientID clientID = new ClientID("");
+        Secret clientSecret = new Secret("");
         ClientAuthentication clientAuth = new ClientSecretBasic(clientID, clientSecret);
-
+        Scope scopes = providerMetadata.getScopes();
+        List<String> scopesList = scopes.toStringList();
         // The request scope for the token (may be optional)
-        Scope scope = new Scope(OPENID, "refresh_token");
+        assertThat(scopesList).contains(OPENID);
+//        Scope scope = new Scope(OPENID,"email","profile");
+        Scope scope = null;
 //        Scope scope = new Scope("read", "write");
 
 
         // Make the token request
         Tokens tokens = getTokens(tokenEndpointUri, clientAuth, clientGrant, scope);
-        AccessToken accessToken = tokens.getAccessToken();
+        if(tokens!=null) {
+            AccessToken accessToken = tokens.getAccessToken();
 
-        //no refresh token is issued for client credentials flow
-        //cf RFC6749 section 4.4.3 https://www.rfc-editor.org/rfc/rfc6749#section-4.4.3
+            //no refresh token is issued for client credentials flow
+            //cf RFC6749 section 4.4.3 https://www.rfc-editor.org/rfc/rfc6749#section-4.4.3
 
-        // Get the access token as JSON string
-        String accessTokenJSONString = accessToken.toJSONString();
-        System.out.println(accessTokenJSONString);
-        assertThat(accessToken.getScope().toString()).isEqualTo("openid refresh_token");
-        assertThat(accessToken.getLifetime()).isEqualTo(3599L);
-        String bearerToken = accessToken.toAuthorizationHeader();
-        String[] chunks = bearerToken.split("Bearer ")[1].split("\\.");
-        Base64.Decoder decoder = Base64.getUrlDecoder();
-        String header = new String(decoder.decode(chunks[0]));
-        //header fields
-        //typ : token type
-        //alg : signing algorithm
-        //kid: key id (id of the key used to sign the token)
-        JSONAssert.assertEquals("jwt header is wrong", "" +
-                "{\n" +
-                "  \"kid\": \"default\",\n" +
-                "  \"typ\": \"JWT\",\n" +
-                "  \"alg\": \"RS256\"\n" +
-                "}", header, true);
-        String payload = new String(decoder.decode(chunks[1]));
-//        System.out.println("payload:"+payload);
-        /*payload fields
-          sub : Subject
-          nbf : Not Before
-          azp : Authorized Parties
-          iss : principal that issued the JWT
-          exp : expiration time
-          iat : issued at time
-          jti : JWT ID
-          tid : tenant identifier
-
-         */
-        ObjectMapper objectMapper = new ObjectMapper();
-        JsonNode payloadJsonNode = objectMapper.readTree(payload);
-        JsonNode sub = payloadJsonNode.get("sub");
-        assertThat(sub.asText()).isEqualTo("testclient");
-        long currentTimeMillis = System.currentTimeMillis();
-        assertThat(Long.parseLong(payloadJsonNode.get("nbf").toPrettyString()) * 1000).isLessThanOrEqualTo(currentTimeMillis);
-        assertThat(payloadJsonNode.get("azp").asText()).isEqualTo("testclient");
-        assertThat(payloadJsonNode.get("iss").asText()).isEqualTo(issuer);
-        assertThat(Long.parseLong(payloadJsonNode.get("exp").toPrettyString()) * 1000).isGreaterThanOrEqualTo(currentTimeMillis);
-        assertThat(Long.parseLong(payloadJsonNode.get("iat").toPrettyString()) * 1000).isLessThanOrEqualTo(currentTimeMillis);
-        assertThat(payloadJsonNode.get("tid").asText()).isEqualTo(ISSUER_ID);
-        String jti = payloadJsonNode.get("jti").asText();
+            // Get the access token as JSON string
+            String accessTokenJSONString = accessToken.toJSONString();
+            System.out.println(accessTokenJSONString);
+            String bearerToken = accessToken.toAuthorizationHeader();
 
 
-        // Get the refresh token
-        RefreshToken refreshToken = tokens.getRefreshToken();
 
-        OkHttpClient okHttpClient = new OkHttpClient.Builder()
-                .followRedirects(true)
-                .followSslRedirects(true)
-                .addNetworkInterceptor(new Interceptor() {
-                    @NotNull
-                    @Override
-                    public Response intercept(@NotNull Chain chain) throws IOException {
-                        Request request = chain.request();
+            OkHttpClient okHttpClient = new OkHttpClient.Builder()
+                    .followRedirects(true)
+                    .followSslRedirects(true)
+                    .addNetworkInterceptor(interceptor)
+                    .build();
 
-                        long t1 = System.nanoTime();
-                        String log = String.format("Sending request %s on %s%n%s", request.url(), chain.connection(), request.headers());
-                        System.out.println(log);
-
-                        Response response = chain.proceed(request);
-
-                        long t2 = System.nanoTime();
-                        double elapsedTime = (t2 - t1) / 1e6d;
-                        String log2 = String.format("Received response for %s on %s%n%s in %.1fms%n%s %s%n%s",
-                                response.request().url(), chain.connection(), request.headers(), elapsedTime, response.code(), response.message(), response.headers());
-                        System.out.println(log2);
-                        return response;
-                    }
-                })
-                .build();
-
-        HttpUrl okHttpUrl = HttpUrl.parse("http://localhost:" + localPort + "/api/ping");
-        okhttp3.Request request1 = new Request.Builder()
-                .url(okHttpUrl)
-                .header("Accept", "text/html")
-                .header("Authorization", bearerToken)
-                .method("GET", null).build();
-        Response response1 = okHttpClient.newCall(request1).execute();
-        assertThat(response1).isNotNull();
-        String bodyString = response1.body().string();
-        assertThat(bodyString).isEqualTo("");
+            HttpUrl okHttpUrl = HttpUrl.parse("https://api.spotify.com/v1/tracks/2TpxZ7JUBn3uw46aR7qd6V");
+//            HttpUrl okHttpUrl = HttpUrl.parse("http://localhost:" + localPort + "/api/ping");
+            okhttp3.Request request1 = new Request.Builder()
+                    .url(okHttpUrl)
+                    .header("Accept", "text/html")
+                    .header("Authorization", bearerToken)
+                    .method("GET", null).build();
+            Response response1 = okHttpClient.newCall(request1).execute();
+            assertThat(response1).isNotNull();
+            String bodyString = response1.body().string();
+            String expected = "{\n" +
+                    "  \"album\" : {\n" +
+                    "    \"album_type\" : \"album\",\n" +
+                    "    \"artists\" : [ {\n" +
+                    "      \"external_urls\" : {\n" +
+                    "        \"spotify\" : \"https://open.spotify.com/artist/08td7MxkoHQkXnWAYD8d6Q\"\n" +
+                    "      },\n" +
+                    "      \"href\" : \"https://api.spotify.com/v1/artists/08td7MxkoHQkXnWAYD8d6Q\",\n" +
+                    "      \"id\" : \"08td7MxkoHQkXnWAYD8d6Q\",\n" +
+                    "      \"name\" : \"Tania Bowra\",\n" +
+                    "      \"type\" : \"artist\",\n" +
+                    "      \"uri\" : \"spotify:artist:08td7MxkoHQkXnWAYD8d6Q\"\n" +
+                    "    } ],\n" +
+                    "    \"available_markets\" : [ \"AR\", \"AU\", \"AT\", \"BE\", \"BO\", \"BR\", \"BG\", \"CA\", \"CL\", \"CO\", \"CR\", \"CY\", \"CZ\", \"DK\", \"DO\", \"DE\", \"EC\", \"EE\", \"SV\", \"FI\", \"FR\", \"GR\", \"GT\", \"HN\", \"HK\", \"HU\", \"IS\", \"IE\", \"IT\", \"LV\", \"LT\", \"LU\", \"MY\", \"MT\", \"MX\", \"NL\", \"NZ\", \"NI\", \"NO\", \"PA\", \"PY\", \"PE\", \"PH\", \"PL\", \"PT\", \"SG\", \"SK\", \"ES\", \"SE\", \"CH\", \"TW\", \"TR\", \"UY\", \"US\", \"GB\", \"AD\", \"LI\", \"MC\", \"ID\", \"JP\", \"TH\", \"VN\", \"RO\", \"IL\", \"ZA\", \"SA\", \"AE\", \"BH\", \"QA\", \"OM\", \"KW\", \"EG\", \"MA\", \"DZ\", \"TN\", \"LB\", \"JO\", \"PS\", \"IN\", \"BY\", \"KZ\", \"MD\", \"UA\", \"AL\", \"BA\", \"HR\", \"ME\", \"MK\", \"RS\", \"SI\", \"KR\", \"BD\", \"PK\", \"LK\", \"GH\", \"KE\", \"NG\", \"TZ\", \"UG\", \"AG\", \"AM\", \"BS\", \"BB\", \"BZ\", \"BT\", \"BW\", \"BF\", \"CV\", \"CW\", \"DM\", \"FJ\", \"GM\", \"GE\", \"GD\", \"GW\", \"GY\", \"HT\", \"JM\", \"KI\", \"LS\", \"LR\", \"MW\", \"MV\", \"ML\", \"MH\", \"FM\", \"NA\", \"NR\", \"NE\", \"PW\", \"PG\", \"PR\", \"WS\", \"SM\", \"ST\", \"SN\", \"SC\", \"SL\", \"SB\", \"KN\", \"LC\", \"VC\", \"SR\", \"TL\", \"TO\", \"TT\", \"TV\", \"VU\", \"AZ\", \"BN\", \"BI\", \"KH\", \"CM\", \"TD\", \"KM\", \"GQ\", \"SZ\", \"GA\", \"GN\", \"KG\", \"LA\", \"MO\", \"MR\", \"MN\", \"NP\", \"RW\", \"TG\", \"UZ\", \"ZW\", \"BJ\", \"MG\", \"MU\", \"MZ\", \"AO\", \"CI\", \"DJ\", \"ZM\", \"CD\", \"CG\", \"IQ\", \"LY\", \"TJ\", \"VE\", \"ET\", \"XK\" ],\n" +
+                    "    \"external_urls\" : {\n" +
+                    "      \"spotify\" : \"https://open.spotify.com/album/6akEvsycLGftJxYudPjmqK\"\n" +
+                    "    },\n" +
+                    "    \"href\" : \"https://api.spotify.com/v1/albums/6akEvsycLGftJxYudPjmqK\",\n" +
+                    "    \"id\" : \"6akEvsycLGftJxYudPjmqK\",\n" +
+                    "    \"images\" : [ {\n" +
+                    "      \"height\" : 640,\n" +
+                    "      \"url\" : \"https://i.scdn.co/image/ab67616d0000b2731ae2bdc1378da1b440e1f610\",\n" +
+                    "      \"width\" : 640\n" +
+                    "    }, {\n" +
+                    "      \"height\" : 300,\n" +
+                    "      \"url\" : \"https://i.scdn.co/image/ab67616d00001e021ae2bdc1378da1b440e1f610\",\n" +
+                    "      \"width\" : 300\n" +
+                    "    }, {\n" +
+                    "      \"height\" : 64,\n" +
+                    "      \"url\" : \"https://i.scdn.co/image/ab67616d000048511ae2bdc1378da1b440e1f610\",\n" +
+                    "      \"width\" : 64\n" +
+                    "    } ],\n" +
+                    "    \"name\" : \"Place In The Sun\",\n" +
+                    "    \"release_date\" : \"2004-02-02\",\n" +
+                    "    \"release_date_precision\" : \"day\",\n" +
+                    "    \"total_tracks\" : 11,\n" +
+                    "    \"type\" : \"album\",\n" +
+                    "    \"uri\" : \"spotify:album:6akEvsycLGftJxYudPjmqK\"\n" +
+                    "  },\n" +
+                    "  \"artists\" : [ {\n" +
+                    "    \"external_urls\" : {\n" +
+                    "      \"spotify\" : \"https://open.spotify.com/artist/08td7MxkoHQkXnWAYD8d6Q\"\n" +
+                    "    },\n" +
+                    "    \"href\" : \"https://api.spotify.com/v1/artists/08td7MxkoHQkXnWAYD8d6Q\",\n" +
+                    "    \"id\" : \"08td7MxkoHQkXnWAYD8d6Q\",\n" +
+                    "    \"name\" : \"Tania Bowra\",\n" +
+                    "    \"type\" : \"artist\",\n" +
+                    "    \"uri\" : \"spotify:artist:08td7MxkoHQkXnWAYD8d6Q\"\n" +
+                    "  } ],\n" +
+                    "  \"available_markets\" : [ \"AR\", \"AU\", \"AT\", \"BE\", \"BO\", \"BR\", \"BG\", \"CA\", \"CL\", \"CO\", \"CR\", \"CY\", \"CZ\", \"DK\", \"DO\", \"DE\", \"EC\", \"EE\", \"SV\", \"FI\", \"FR\", \"GR\", \"GT\", \"HN\", \"HK\", \"HU\", \"IS\", \"IE\", \"IT\", \"LV\", \"LT\", \"LU\", \"MY\", \"MT\", \"MX\", \"NL\", \"NZ\", \"NI\", \"NO\", \"PA\", \"PY\", \"PE\", \"PH\", \"PL\", \"PT\", \"SG\", \"SK\", \"ES\", \"SE\", \"CH\", \"TW\", \"TR\", \"UY\", \"US\", \"GB\", \"AD\", \"LI\", \"MC\", \"ID\", \"JP\", \"TH\", \"VN\", \"RO\", \"IL\", \"ZA\", \"SA\", \"AE\", \"BH\", \"QA\", \"OM\", \"KW\", \"EG\", \"MA\", \"DZ\", \"TN\", \"LB\", \"JO\", \"PS\", \"IN\", \"BY\", \"KZ\", \"MD\", \"UA\", \"AL\", \"BA\", \"HR\", \"ME\", \"MK\", \"RS\", \"SI\", \"KR\", \"BD\", \"PK\", \"LK\", \"GH\", \"KE\", \"NG\", \"TZ\", \"UG\", \"AG\", \"AM\", \"BS\", \"BB\", \"BZ\", \"BT\", \"BW\", \"BF\", \"CV\", \"CW\", \"DM\", \"FJ\", \"GM\", \"GE\", \"GD\", \"GW\", \"GY\", \"HT\", \"JM\", \"KI\", \"LS\", \"LR\", \"MW\", \"MV\", \"ML\", \"MH\", \"FM\", \"NA\", \"NR\", \"NE\", \"PW\", \"PG\", \"PR\", \"WS\", \"SM\", \"ST\", \"SN\", \"SC\", \"SL\", \"SB\", \"KN\", \"LC\", \"VC\", \"SR\", \"TL\", \"TO\", \"TT\", \"TV\", \"VU\", \"AZ\", \"BN\", \"BI\", \"KH\", \"CM\", \"TD\", \"KM\", \"GQ\", \"SZ\", \"GA\", \"GN\", \"KG\", \"LA\", \"MO\", \"MR\", \"MN\", \"NP\", \"RW\", \"TG\", \"UZ\", \"ZW\", \"BJ\", \"MG\", \"MU\", \"MZ\", \"AO\", \"CI\", \"DJ\", \"ZM\", \"CD\", \"CG\", \"IQ\", \"LY\", \"TJ\", \"VE\", \"ET\", \"XK\" ],\n" +
+                    "  \"disc_number\" : 1,\n" +
+                    "  \"duration_ms\" : 276773,\n" +
+                    "  \"explicit\" : false,\n" +
+                    "  \"external_ids\" : {\n" +
+                    "    \"isrc\" : \"AUCR10410001\"\n" +
+                    "  },\n" +
+                    "  \"external_urls\" : {\n" +
+                    "    \"spotify\" : \"https://open.spotify.com/track/2TpxZ7JUBn3uw46aR7qd6V\"\n" +
+                    "  },\n" +
+                    "  \"href\" : \"https://api.spotify.com/v1/tracks/2TpxZ7JUBn3uw46aR7qd6V\",\n" +
+                    "  \"id\" : \"2TpxZ7JUBn3uw46aR7qd6V\",\n" +
+                    "  \"is_local\" : false,\n" +
+                    "  \"name\" : \"All I Want\",\n" +
+                    "  \"popularity\" : 2,\n" +
+                    "  \"preview_url\" : \"https://p.scdn.co/mp3-preview/2cc385470731bc540a08caef5eab31dec7b036a6?cid=44d54a4d05344d97877d163209905f8b\",\n" +
+                    "  \"track_number\" : 1,\n" +
+                    "  \"type\" : \"track\",\n" +
+                    "  \"uri\" : \"spotify:track:2TpxZ7JUBn3uw46aR7qd6V\"\n" +
+                    "}";
+            JSONAssert.assertEquals(expected,bodyString,true);
+        }else{
+            System.err.println("an error has been thrown");
+        }
     }
 
-    private static Tokens getTokens(URI tokenEndpointUri, ClientAuthentication clientAuth, AuthorizationGrant clientGrant, Scope scope) throws ParseException, IOException {
-        TokenRequest request = new TokenRequest(tokenEndpointUri, clientAuth, clientGrant, scope);
+    private Tokens getTokens(URI tokenEndpointUri, ClientAuthentication clientAuth, AuthorizationGrant clientGrant, Scope scope) throws ParseException, IOException {
+        OkHttpClient.Builder builder = new OkHttpClient.Builder();
+        builder.addNetworkInterceptor(interceptor);
+        OkHttpClient okHttpClient = builder.build();
+        TokenRequest tokenRequest = new TokenRequest(tokenEndpointUri, clientAuth, clientGrant, scope);
+        HTTPResponse httpResponse = tokenRequest.toHTTPRequest().send(new OkHttpHTTPRequestSender(okHttpClient));
 
-        TokenResponse response = TokenResponse.parse(request.toHTTPRequest().send());
-
+        TokenResponse response = TokenResponse.parse(httpResponse);
+        Tokens tokens = null;
         if (!response.indicatesSuccess()) {
             // We got an error response...
             TokenErrorResponse errorResponse = response.toErrorResponse();
-            System.err.println("error: " + errorResponse.toString());
+            System.err.println("error: " + errorResponse.toJSONObject());
+        } else {
+            AccessTokenResponse successResponse = response.toSuccessResponse();
+            tokens = successResponse.getTokens();
         }
-
-        AccessTokenResponse successResponse = response.toSuccessResponse();
-
-        Tokens tokens = successResponse.getTokens();
         return tokens;
     }
 
-    private ClientHttpConnector followRedirectsWithCookies(Map<String, Cookie> cookieManager) {
-        return new ReactorClientHttpConnector(
-                HttpClient
-                        .create()
-                        .doOnRequest((req, conn) -> {
-                            System.out.println("---> request:" + req.resourceUrl());
-                            System.out.println("request headers:\n" + Joiner.on("\n").join(
-                                    req.requestHeaders()
-                                            .entries()
-                                            .stream()
-                                            .map((e) -> "- " + e.getKey() + "=" + e.getValue()).collect(Collectors.toSet())));
-                            System.out.println("headers end");
-                        })
-                        .doOnResponse((res, conn) -> System.out.println("<--- response:" + res))
-                        .followRedirect((req, resp) -> {
-                                    for (var entry : resp.cookies().entrySet()) {
-                                        var cookie = entry.getValue().stream().findFirst().orElse(null);
-                                        if (cookie != null && cookie.value() != null && !cookie.value().isBlank()) {
-                                            cookieManager.put(entry.getKey().toString(), cookie);
-                                        }
-                                    }
-                                    System.out.println(resp.status());
-                                    System.out.println("<--- redirect response headers:");
-                                    System.out.println(Joiner.on("\n- ").join(resp.responseHeaders()));
-                                    return resp.responseHeaders().contains("Location");
-                                },
-                                req -> {
-                                    for (var cookie : cookieManager.entrySet()) {
-                                        req.header("Cookie", cookie.getKey() + "=" + cookie.getValue().value());
-                                    }
-                                }
-                        )
-        );
-    }
+
 }

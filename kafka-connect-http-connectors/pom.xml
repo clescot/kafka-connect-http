@@ -8,9 +8,7 @@
     </parent>
     <artifactId>kafka-connect-http-connectors</artifactId>
     <packaging>jar</packaging>
-    <properties>
-        <spring.boot.version>2.7.5</spring.boot.version>
-    </properties>
+
     <dependencies>
 
         <dependency>
@@ -221,12 +219,12 @@
             <artifactId>commons-text</artifactId>
             <scope>test</scope>
         </dependency>
-<!--        <dependency>-->
-<!--            <groupId>ch.qos.logback</groupId>-->
-<!--            <artifactId>logback-classic</artifactId>-->
-<!--            <scope>test</scope>-->
-<!--            <version>${logback.version}</version>-->
-<!--        </dependency>-->
+        <dependency>
+            <groupId>ch.qos.logback</groupId>
+            <artifactId>logback-classic</artifactId>
+            <scope>test</scope>
+            <version>${logback.version}</version>
+        </dependency>
         <dependency>
             <groupId>com.github.terma</groupId>
             <artifactId>javaniotcpproxy</artifactId>
@@ -237,66 +235,6 @@
             <groupId>no.nav.security</groupId>
             <artifactId>mock-oauth2-server</artifactId>
             <version>${mock-oauth2-server.version}</version>
-            <scope>test</scope>
-            <exclusions>
-                <exclusion>
-                    <groupId>ch.qos.logback</groupId>
-                    <artifactId>logback-classic</artifactId>
-                </exclusion>
-            </exclusions>
-        </dependency>
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-webflux</artifactId>
-            <version>${spring.boot.version}</version>
-            <scope>test</scope>
-            <exclusions>
-                <exclusion>
-                    <groupId>ch.qos.logback</groupId>
-                    <artifactId>logback-classic</artifactId>
-                </exclusion>
-            </exclusions>
-        </dependency>
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-oauth2-resource-server</artifactId>
-            <version>${spring.boot.version}</version>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-oauth2-client</artifactId>
-            <version>${spring.boot.version}</version>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-test</artifactId>
-            <version>${spring.boot.version}</version>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-test</artifactId>
-            <version>${spring.boot.version}</version>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.slf4j</groupId>
-            <artifactId>slf4j-log4j12</artifactId>
-            <version>1.7.25</version>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>io.projectreactor</groupId>
-            <artifactId>reactor-test</artifactId>
-            <version>3.4.24</version>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>io.netty</groupId>
-            <artifactId>netty-all</artifactId>
-            <version>4.1.94.Final</version>
             <scope>test</scope>
         </dependency>
 

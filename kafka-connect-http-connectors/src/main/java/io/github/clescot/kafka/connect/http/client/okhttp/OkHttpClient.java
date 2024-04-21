@@ -7,7 +7,7 @@ import com.google.common.jimfs.Jimfs;
 import io.github.clescot.kafka.connect.http.client.AbstractHttpClient;
 import io.github.clescot.kafka.connect.http.client.Configuration;
 import io.github.clescot.kafka.connect.http.client.HttpException;
-import io.github.clescot.kafka.connect.http.client.okhttp.configuration.AuthenticationConfigurer;
+import io.github.clescot.kafka.connect.http.client.okhttp.configuration.AuthenticationsConfigurer;
 import io.github.clescot.kafka.connect.http.client.okhttp.event.AdvancedEventListenerFactory;
 import io.github.clescot.kafka.connect.http.client.okhttp.interceptor.InetAddressInterceptor;
 import io.github.clescot.kafka.connect.http.client.okhttp.interceptor.LoggingInterceptor;
@@ -97,8 +97,8 @@ public class OkHttpClient extends AbstractHttpClient<Request, Response> {
         configureCache(config, httpClientBuilder);
 
         //authentication
-        AuthenticationConfigurer authenticationConfigurer = new AuthenticationConfigurer(random);
-        authenticationConfigurer.configure(config, httpClientBuilder);
+        AuthenticationsConfigurer authenticationsConfigurer = new AuthenticationsConfigurer(random);
+        authenticationsConfigurer.configure(config, httpClientBuilder);
 
         //interceptors
         configureInterceptors(config, httpClientBuilder);

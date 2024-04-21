@@ -68,3 +68,6 @@ OIDC endpoints :
 <- 302 Location=http://localhost:46819/login/oauth2/code/myprovider?code=EOItRR_bWv3QvaSpgh22JyeiyIm48rBTli4WoWh9hPc&state=OTasPXZ_XergVymc-WunzzS0mms1SG_OtiC6AcAPxqQ%3D
 -> GET http://localhost:46819/login/oauth2/code/myprovider?code=EOItRR_bWv3QvaSpgh22JyeiyIm48rBTli4WoWh9hPc&state=OTasPXZ_XergVymc-WunzzS0mms1SG_OtiC6AcAPxqQ%3D
 <- 302 Found Location=/api/ping
+
+
+token expiration => 401
