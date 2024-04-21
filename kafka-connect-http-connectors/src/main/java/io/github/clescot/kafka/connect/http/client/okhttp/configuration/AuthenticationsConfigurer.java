@@ -1,28 +1,22 @@
 package io.github.clescot.kafka.connect.http.client.okhttp.configuration;
 
 import com.burgstaller.okhttp.*;
-import com.burgstaller.okhttp.basic.BasicAuthenticator;
 import com.burgstaller.okhttp.digest.CachingAuthenticator;
-import com.burgstaller.okhttp.digest.DigestAuthenticator;
-import com.google.common.base.Preconditions;
 import io.github.clescot.kafka.connect.http.client.okhttp.OkHttpClient;
 import okhttp3.Authenticator;
 import org.jetbrains.annotations.Nullable;
 
-import java.nio.charset.Charset;
 import java.util.Map;
 import java.util.Random;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
-import static io.github.clescot.kafka.connect.http.sink.HttpSinkConfigDefinition.*;
+import static io.github.clescot.kafka.connect.http.sink.HttpSinkConfigDefinition.PROXY_PREFIX;
 
 /**
  * configure authentication settings for {@link OkHttpClient}.
  */
 public class AuthenticationsConfigurer {
-    public static final String US_ASCII = "US-ASCII";
-    public static final String ISO_8859_1 = "ISO-8859-1";
     private final Random random;
 
     public AuthenticationsConfigurer(Random random) {
@@ -84,51 +78,6 @@ public class AuthenticationsConfigurer {
         }
         return authenticator;
 
-    }
-
-    @Nullable
-    private DigestAuthenticator configureDigestAuthenticator(Map<String, Object> config) {
-        //Digest Authentication
-        DigestAuthenticator digestAuthenticator = null;
-        if (config.containsKey(HTTP_CLIENT_AUTHENTICATION_DIGEST_ACTIVATE) && Boolean.TRUE.equals(config.get(HTTP_CLIENT_AUTHENTICATION_DIGEST_ACTIVATE))) {
-            String username = (String) config.get(HTTP_CLIENT_AUTHENTICATION_DIGEST_USERNAME);
-            Preconditions.checkNotNull(username,"'"+HTTP_CLIENT_AUTHENTICATION_DIGEST_USERNAME+"' is null");
-            String password = (String) config.get(HTTP_CLIENT_AUTHENTICATION_DIGEST_PASSWORD);
-            Preconditions.checkNotNull(password,"'"+HTTP_CLIENT_AUTHENTICATION_DIGEST_PASSWORD+"' is null");
-            com.burgstaller.okhttp.digest.Credentials credentials = new com.burgstaller.okhttp.digest.Credentials(username, password);
-            //digest charset
-            String digestCredentialCharset = US_ASCII;
-            if (config.containsKey(HTTP_CLIENT_AUTHENTICATION_DIGEST_CHARSET)) {
-                digestCredentialCharset = String.valueOf(config.get(HTTP_CLIENT_AUTHENTICATION_DIGEST_CHARSET));
-            }
-            Charset digestCharset = Charset.forName(digestCredentialCharset);
-
-
-            digestAuthenticator = new DigestAuthenticator(credentials, digestCharset, random);
-
-        }
-        return digestAuthenticator;
-    }
-
-    @Nullable
-    private BasicAuthenticator configureBasicAuthentication(Map<String, Object> config) {
-            //Basic authentication
-            BasicAuthenticator basicAuthenticator = null;
-            if (config.containsKey(HTTP_CLIENT_AUTHENTICATION_BASIC_ACTIVATE) && Boolean.TRUE.equals(config.get(HTTP_CLIENT_AUTHENTICATION_BASIC_ACTIVATE))) {
-                String username = (String) config.get(HTTP_CLIENT_AUTHENTICATION_BASIC_USERNAME);
-                String password = (String) config.get(HTTP_CLIENT_AUTHENTICATION_BASIC_PASSWORD);
-                com.burgstaller.okhttp.digest.Credentials credentials = new com.burgstaller.okhttp.digest.Credentials(username, password);
-
-
-                //basic charset
-                String basicCredentialCharset = ISO_8859_1;
-                if (config.containsKey(HTTP_CLIENT_AUTHENTICATION_BASIC_CHARSET)) {
-                    basicCredentialCharset = String.valueOf(config.get(HTTP_CLIENT_AUTHENTICATION_BASIC_CHARSET));
-                }
-                Charset basicCharset = Charset.forName(basicCredentialCharset);
-                basicAuthenticator = new BasicAuthenticator(credentials, basicCharset);
-            }
-            return basicAuthenticator;
     }
 
 }
