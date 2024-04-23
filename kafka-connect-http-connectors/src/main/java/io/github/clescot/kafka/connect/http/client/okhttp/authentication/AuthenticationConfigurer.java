@@ -1,4 +1,4 @@
-package io.github.clescot.kafka.connect.http.client.okhttp.configuration;
+package io.github.clescot.kafka.connect.http.client.okhttp.authentication;
 
 import okhttp3.Authenticator;
 

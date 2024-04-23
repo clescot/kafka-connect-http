@@ -1,4 +1,4 @@
-package io.github.clescot.kafka.connect.http.client.okhttp.configuration;
+package io.github.clescot.kafka.connect.http.client.okhttp.authentication;
 
 import com.burgstaller.okhttp.*;
 import com.burgstaller.okhttp.digest.CachingAuthenticator;
