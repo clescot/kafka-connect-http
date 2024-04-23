@@ -17,6 +17,7 @@ public class OAuth2ClientCredentialsFlowConfigurer implements AuthenticationConf
 
     @Override
     public Authenticator configureAuthenticator(Map<String, Object> config) {
+
         return null;
     }
 }
