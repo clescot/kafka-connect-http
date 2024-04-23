@@ -3,6 +3,7 @@ package io.github.clescot.kafka.connect.http.client.okhttp.configuration;
 import com.burgstaller.okhttp.*;
 import com.burgstaller.okhttp.digest.CachingAuthenticator;
 import io.github.clescot.kafka.connect.http.client.okhttp.OkHttpClient;
+import okhttp3.Authenticator;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
@@ -27,7 +28,7 @@ public class AuthenticationsConfigurer {
         final Map<String, CachingAuthenticator> authCache = new ConcurrentHashMap<>();
 
         //authentication
-        CachingAuthenticatorDecorator authenticator = getCachingAuthenticatorDecorator(config, authCache, false);
+        Authenticator authenticator = getAuthenticatorDecorator(config, authCache, false);
         if (authenticator != null) {
             httpClientBuilder.authenticator(authenticator);
         }
@@ -36,7 +37,7 @@ public class AuthenticationsConfigurer {
         Map<String, Object> proxyConfig = config.entrySet().stream()
                 .filter(entry -> entry.getKey().startsWith(PROXY_PREFIX))
                 .map(entry -> Map.entry(entry.getKey().substring(PROXY_PREFIX.length()), entry.getValue())).collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
-        CachingAuthenticatorDecorator proxyAuthenticator = getCachingAuthenticatorDecorator(proxyConfig, authCache, true);
+        Authenticator proxyAuthenticator = getAuthenticatorDecorator(proxyConfig, authCache, true);
         if (proxyAuthenticator != null) {
             httpClientBuilder.proxyAuthenticator(proxyAuthenticator);
         }
@@ -52,21 +53,23 @@ public class AuthenticationsConfigurer {
     }
 
     @Nullable
-    private CachingAuthenticatorDecorator getCachingAuthenticatorDecorator(Map<String, Object> config, Map<String, CachingAuthenticator> authCache, boolean proxy) {
+    private Authenticator getAuthenticatorDecorator(Map<String, Object> config, Map<String, CachingAuthenticator> authCache, boolean proxy) {
 
         // note that all auth schemes should be registered as lowercase!
         DispatchingAuthenticator.Builder authenticatorBuilder = new DispatchingAuthenticator.Builder();
-
 
         for (AuthenticationConfigurer configurer : authenticationConfigurers) {
             authenticatorBuilder = authenticatorBuilder.with(configurer.authenticationScheme(), configurer.configureAuthenticator(config));
         }
 
         //cache
-        CachingAuthenticatorDecorator authenticator = null;
-        Optional<Boolean> needCache = authenticationConfigurers.stream().map(configurer -> configurer.needCache()).findFirst();
-        if (needCache.isPresent()&&needCache.get()) {
-            authenticator = new CachingAuthenticatorDecorator(authenticatorBuilder.build(), authCache, proxy);
+        Authenticator authenticator;
+        Optional<Boolean> needCache = authenticationConfigurers.stream().map(AuthenticationConfigurer::needCache).findFirst();
+        DispatchingAuthenticator dispatchingAuthenticator = authenticatorBuilder.build();
+        if (needCache.isPresent()&&Boolean.TRUE.equals(needCache.get())) {
+            authenticator = new CachingAuthenticatorDecorator(dispatchingAuthenticator, authCache, proxy);
+        }else {
+            authenticator = dispatchingAuthenticator;
         }
         return authenticator;
 
