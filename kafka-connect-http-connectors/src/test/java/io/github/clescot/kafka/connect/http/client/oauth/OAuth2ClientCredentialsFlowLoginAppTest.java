@@ -1,5 +1,11 @@
 package io.github.clescot.kafka.connect.http.client.oauth;
 
+import com.github.tomakehurst.wiremock.client.WireMock;
+import com.github.tomakehurst.wiremock.core.Options;
+import com.github.tomakehurst.wiremock.core.WireMockConfiguration;
+import com.github.tomakehurst.wiremock.http.trafficlistener.ConsoleNotifyingWiremockNetworkTrafficListener;
+import com.github.tomakehurst.wiremock.junit5.WireMockExtension;
+import com.github.tomakehurst.wiremock.junit5.WireMockRuntimeInfo;
 import com.nimbusds.oauth2.sdk.*;
 import com.nimbusds.oauth2.sdk.auth.ClientAuthentication;
 import com.nimbusds.oauth2.sdk.auth.ClientSecretBasic;
@@ -10,81 +16,129 @@ import com.nimbusds.oauth2.sdk.token.AccessToken;
 import com.nimbusds.oauth2.sdk.token.Tokens;
 import com.nimbusds.openid.connect.sdk.op.OIDCProviderMetadata;
 import io.github.clescot.kafka.connect.http.client.okhttp.OkHttpHTTPRequestSender;
+import okhttp3.HttpUrl;
+import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.Response;
-import okhttp3.*;
-import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.RegisterExtension;
 import org.skyscreamer.jsonassert.JSONAssert;
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.net.URI;
-import java.net.URL;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.List;
 
+import static com.github.tomakehurst.wiremock.client.WireMock.containing;
+import static com.github.tomakehurst.wiremock.stubbing.Scenario.STARTED;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
  * machine to machine scenario.
  */
-//@ExtendWith(SpringExtension.class)
-//@SpringBootTest(
-//        webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
-//        classes = OAuth2LoginApp.class,
-//        //these can be set in application yaml if you desire
-//        properties = {
-//                OAuth2ClientCredentialsFlowLoginAppTest.REGISTRATION + PROVIDER_ID + ".client-id=testclient",
-//                OAuth2ClientCredentialsFlowLoginAppTest.REGISTRATION + PROVIDER_ID + ".client-secret=testsecret",
-//                OAuth2ClientCredentialsFlowLoginAppTest.REGISTRATION + PROVIDER_ID + ".authorization-grant-type=client_credentials",
-//                OAuth2ClientCredentialsFlowLoginAppTest.REGISTRATION + PROVIDER_ID + ".redirect-uri={baseUrl}/login/oauth2/code/{registrationId}",
-//                OAuth2ClientCredentialsFlowLoginAppTest.REGISTRATION + PROVIDER_ID + ".scope=openid",
-//                OAuth2ClientCredentialsFlowLoginAppTest.PROVIDER + PROVIDER_ID + ".authorization-uri=${" + MOCK_OAUTH_2_SERVER_BASE_URL + "}/issuer1/authorize",
-//                OAuth2ClientCredentialsFlowLoginAppTest.PROVIDER + PROVIDER_ID + ".token-uri=${" + MOCK_OAUTH_2_SERVER_BASE_URL + "}/issuer1/token",
-//                OAuth2ClientCredentialsFlowLoginAppTest.PROVIDER + PROVIDER_ID + ".jwk-set-uri=${" + MOCK_OAUTH_2_SERVER_BASE_URL + "}/issuer1/jwks"
-//        }
-//)
-//client-authentication-method: client_secret_jwt client_secret_basic client_secret_post private_key_jwt none
-//@ContextConfiguration(initializers = {MockOAuth2ServerInitializer.class})
+
 public class OAuth2ClientCredentialsFlowLoginAppTest {
-//    public static final String CLIENT = "spring.security.oauth2.client";
-//    public static final String PROVIDER = CLIENT + ".provider.";
-//    public static final String REGISTRATION = CLIENT + ".registration.";
-//    public static final String PROVIDER_ID = "myprovider";
-    public static final String OPENID = "openid";
+    @RegisterExtension
+    static WireMockExtension wmHttp;
 
-    private static final  Interceptor interceptor = new Interceptor() {
-        @NotNull
-        @Override
-        public Response intercept(@NotNull Chain chain) throws IOException {
-            Request request = chain.request();
+    public static final String WELL_KNOWN_OK = "WellKnownOk";
+    public static final String TOKEN_OK = "TokenOk";
+    public static final String SONG_OK = "SongOk";
 
-            long t1 = System.nanoTime();
-            String log = String.format("Sending request %s on %s%n%s", request.url(), chain.connection(), request.headers());
-            System.out.println(log);
+    static {
 
-            Response response = chain.proceed(request);
+        wmHttp = WireMockExtension.newInstance()
+                .options(
+                        WireMockConfiguration.wireMockConfig()
+                                .dynamicPort()
+                                .networkTrafficListener(new ConsoleNotifyingWiremockNetworkTrafficListener())
+                                .useChunkedTransferEncoding(Options.ChunkedEncodingPolicy.NEVER)
+                )
+                .build();
+    }
 
-            long t2 = System.nanoTime();
-            double elapsedTime = (t2 - t1) / 1e6d;
-            String log2 = String.format("Received response for %s on %s%n%s in %.1fms%n%s %s%n%s",
-                    response.request().url(), chain.connection(), request.headers(), elapsedTime, response.code(), response.message(), response.headers());
-            System.out.println(log2);
-            return response;
-        }
-    };
+
+
 
     @Test
     public void test_spotify() throws IOException, ParseException {
 
+        String scenario = "test_successful_request_at_first_time";
+        WireMockRuntimeInfo wmRuntimeInfo = wmHttp.getRuntimeInfo();
+        WireMock wireMock = wmRuntimeInfo.getWireMock();
+        Path path = Paths.get("src/test/resources/oauth2/wellknownUrlContent.json");
+        String httpBaseUrl = wmRuntimeInfo.getHttpBaseUrl();
+        String content = Files.readString(path);
+        String wellKnownUrlContent = content.replaceAll("baseUrl",httpBaseUrl);
 
+        wireMock
+                .register(WireMock.get("/.well-known/openid-configuration").inScenario(scenario)
+                        .whenScenarioStateIs(STARTED)
+                        .willReturn(WireMock.aResponse()
+                                .withStatus(200)
+                                .withStatusMessage("OK")
+                                .withBody(wellKnownUrlContent)
+                        ).willSetStateTo(WELL_KNOWN_OK)
+                );
+
+
+
+        Path tokenPath = Paths.get("src/test/resources/oauth2/token.json");
+        String tokenContent = Files.readString(tokenPath);
+        wireMock
+                .register(
+                            WireMock.post("/api/token")
+                                    .withHeader("Content-Type",containing("application/x-www-form-urlencoded; charset=UTF-8"))
+                                    .withHeader("Authorization",containing("NDRkMzRhNGQwNTM0NGM5NzgzN2Q0NjMyMDc4MDVmOGI6M2ZjMDU3NjcyMDU0NGFjMjkzYTNhNTMwNGU2YzBmYTg="))
+                        .inScenario(scenario)
+                        .whenScenarioStateIs(WELL_KNOWN_OK)
+                        .willReturn(WireMock.aResponse()
+                                .withStatus(200)
+                                .withStatusMessage("OK")
+                                .withBody(tokenContent)
+                        ).willSetStateTo(TOKEN_OK)
+                );
+
+
+        Path songPath = Paths.get("src/test/resources/oauth2/song.json");
+        String songContent = Files.readString(songPath);
+        wireMock
+                .register(
+                        WireMock.get("/v1/tracks/2TpxZ7JUBn3uw46aR7qd6V")
+                                .withHeader("Authorization",containing("Bearer BQDzs98uhifaGayk8H9tCTRozufhFmgV_HKMCnnDdMTdz1FcOo3sdj8OZJ_azo96LRdLI9_1uJOCXxbGZme11KCb6ZxTuCt8B5FxEeECb1kO_-UDuf8"))
+                                .inScenario(scenario)
+                                .whenScenarioStateIs(TOKEN_OK)
+                                .willReturn(WireMock.aResponse()
+                                        .withStatus(200)
+                                        .withStatusMessage("OK")
+                                        .withBody(songContent)
+                                ).willSetStateTo(SONG_OK)
+                );
+
+
+
+        OkHttpClient okHttpClient = new OkHttpClient.Builder()
+                .followRedirects(true)
+                .followSslRedirects(true)
+                .build();
+        Request.Builder builder = new Request.Builder();
         //get oidc provider metadata
-        String wellKnownurl = "https://accounts.spotify.com/.well-known/openid-configuration";
-        URL providerConfigurationURL = new URL(wellKnownurl);
-        InputStream stream = providerConfigurationURL.openStream();
+
+        String wellKnownUrl = httpBaseUrl +"/.well-known/openid-configuration";
+        Response wellKnownResponse;
+        Request request = builder
+                .url(wellKnownUrl)
+                .get()
+                .addHeader("Content-Type","application/json; charset=utf-8")
+                .build();
         // Read all data from URL
         String providerInfo;
-        try (java.util.Scanner s = new java.util.Scanner(stream)) {
+        wellKnownResponse = okHttpClient.newCall(request).execute();
+
+        String wellKnownResponseBody = wellKnownResponse.body().string();
+        try (java.util.Scanner s = new java.util.Scanner(wellKnownResponseBody)) {
             providerInfo = s.useDelimiter("\\A").hasNext() ? s.next() : "";
         }
         OIDCProviderMetadata providerMetadata = OIDCProviderMetadata.parse(providerInfo);
@@ -99,16 +153,14 @@ public class OAuth2ClientCredentialsFlowLoginAppTest {
         AuthorizationGrant clientGrant = new ClientCredentialsGrant();
 
         // The credentials to authenticate the client at the token endpoint
-        ClientID clientID = new ClientID("");
-        Secret clientSecret = new Secret("");
+        ClientID clientID = new ClientID("44d34a4d05344c97837d463207805f8b");
+        Secret clientSecret = new Secret("3fc0576720544ac293a3a5304e6c0fa8");
         ClientAuthentication clientAuth = new ClientSecretBasic(clientID, clientSecret);
         Scope scopes = providerMetadata.getScopes();
         List<String> scopesList = scopes.toStringList();
         // The request scope for the token (may be optional)
-        assertThat(scopesList).contains(OPENID);
-//        Scope scope = new Scope(OPENID,"email","profile");
+        assertThat(scopesList).contains("openid");
         Scope scope = null;
-//        Scope scope = new Scope("read", "write");
 
 
         // Make the token request
@@ -126,14 +178,9 @@ public class OAuth2ClientCredentialsFlowLoginAppTest {
 
 
 
-            OkHttpClient okHttpClient = new OkHttpClient.Builder()
-                    .followRedirects(true)
-                    .followSslRedirects(true)
-                    .addNetworkInterceptor(interceptor)
-                    .build();
 
-            HttpUrl okHttpUrl = HttpUrl.parse("https://api.spotify.com/v1/tracks/2TpxZ7JUBn3uw46aR7qd6V");
-//            HttpUrl okHttpUrl = HttpUrl.parse("http://localhost:" + localPort + "/api/ping");
+
+            HttpUrl okHttpUrl = HttpUrl.parse(httpBaseUrl+"/v1/tracks/2TpxZ7JUBn3uw46aR7qd6V");
             okhttp3.Request request1 = new Request.Builder()
                     .url(okHttpUrl)
                     .header("Accept", "text/html")
@@ -213,13 +260,12 @@ public class OAuth2ClientCredentialsFlowLoginAppTest {
                     "}";
             JSONAssert.assertEquals(expected,bodyString,true);
         }else{
-            System.err.println("an error has been thrown");
+            System.err.println("no token has been generated");
         }
     }
 
     private Tokens getTokens(URI tokenEndpointUri, ClientAuthentication clientAuth, AuthorizationGrant clientGrant, Scope scope) throws ParseException, IOException {
         OkHttpClient.Builder builder = new OkHttpClient.Builder();
-        builder.addNetworkInterceptor(interceptor);
         OkHttpClient okHttpClient = builder.build();
         TokenRequest tokenRequest = new TokenRequest(tokenEndpointUri, clientAuth, clientGrant, scope);
         HTTPResponse httpResponse = tokenRequest.toHTTPRequest().send(new OkHttpHTTPRequestSender(okHttpClient));

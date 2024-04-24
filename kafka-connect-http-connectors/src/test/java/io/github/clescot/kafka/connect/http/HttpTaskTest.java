@@ -125,7 +125,7 @@ class HttpTaskTest {
         }
 
         @Test
-        void test_buildHttpRequest_http_request_as_json_schema() throws IOException {
+        void test_buildHttpRequest_http_request_as_json_schema() {
             //given
             List<Header> headers = Lists.newArrayList();
             HttpRequest dummyHttpRequest = getDummyHttpRequest(DUMMY_URL);

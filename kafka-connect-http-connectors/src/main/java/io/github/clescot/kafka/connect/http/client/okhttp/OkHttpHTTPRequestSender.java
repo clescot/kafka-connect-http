@@ -14,6 +14,7 @@ import okhttp3.*;
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -78,7 +79,7 @@ public class OkHttpHTTPRequestSender implements HTTPRequestSender {
         HTTPResponse httpResponse = new HTTPResponse(response.code());
         httpResponse.setStatusMessage(response.message());
         try {
-        httpResponse.setContentType(response.header(CONTENT_TYPE));
+        httpResponse.setContentType(Optional.ofNullable(response.header(CONTENT_TYPE)).orElse("application/json; charset=utf-8"));
         response.headers().forEach(pair->httpResponse.setHeader(pair.getFirst(),pair.getSecond()));
 
             httpResponse.setBody(response.body().string());
