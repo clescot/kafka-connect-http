@@ -79,7 +79,7 @@ public class OkHttpHTTPRequestSender implements HTTPRequestSender {
         HTTPResponse httpResponse = new HTTPResponse(response.code());
         httpResponse.setStatusMessage(response.message());
         try {
-        httpResponse.setContentType(Optional.ofNullable(response.header(CONTENT_TYPE)).orElse("application/json; charset=utf-8"));
+        httpResponse.setContentType(Optional.ofNullable(response.header(CONTENT_TYPE)).orElse("application/json"));
         response.headers().forEach(pair->httpResponse.setHeader(pair.getFirst(),pair.getSecond()));
 
             httpResponse.setBody(response.body().string());
