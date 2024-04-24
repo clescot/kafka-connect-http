@@ -3,7 +3,6 @@ package io.github.clescot.kafka.connect.http.client.oauth;
 import com.github.tomakehurst.wiremock.client.WireMock;
 import com.github.tomakehurst.wiremock.core.Options;
 import com.github.tomakehurst.wiremock.core.WireMockConfiguration;
-import com.github.tomakehurst.wiremock.http.trafficlistener.ConsoleNotifyingWiremockNetworkTrafficListener;
 import com.github.tomakehurst.wiremock.junit5.WireMockExtension;
 import com.github.tomakehurst.wiremock.junit5.WireMockRuntimeInfo;
 import com.nimbusds.oauth2.sdk.*;
@@ -53,7 +52,6 @@ public class OAuth2ClientCredentialsFlowLoginAppTest {
                 .options(
                         WireMockConfiguration.wireMockConfig()
                                 .dynamicPort()
-                                .networkTrafficListener(new ConsoleNotifyingWiremockNetworkTrafficListener())
                                 .useChunkedTransferEncoding(Options.ChunkedEncodingPolicy.NEVER)
                 )
                 .build();
@@ -131,7 +129,7 @@ public class OAuth2ClientCredentialsFlowLoginAppTest {
         Request request = builder
                 .url(wellKnownUrl)
                 .get()
-                .addHeader("Content-Type","application/json; charset=utf-8")
+                .addHeader("Content-Type","application/json")
                 .build();
         // Read all data from URL
         String providerInfo;
@@ -173,12 +171,7 @@ public class OAuth2ClientCredentialsFlowLoginAppTest {
 
             // Get the access token as JSON string
             String accessTokenJSONString = accessToken.toJSONString();
-            System.out.println(accessTokenJSONString);
             String bearerToken = accessToken.toAuthorizationHeader();
-
-
-
-
 
             HttpUrl okHttpUrl = HttpUrl.parse(httpBaseUrl+"/v1/tracks/2TpxZ7JUBn3uw46aR7qd6V");
             okhttp3.Request request1 = new Request.Builder()
@@ -189,76 +182,8 @@ public class OAuth2ClientCredentialsFlowLoginAppTest {
             Response response1 = okHttpClient.newCall(request1).execute();
             assertThat(response1).isNotNull();
             String bodyString = response1.body().string();
-            String expected = "{\n" +
-                    "  \"album\" : {\n" +
-                    "    \"album_type\" : \"album\",\n" +
-                    "    \"artists\" : [ {\n" +
-                    "      \"external_urls\" : {\n" +
-                    "        \"spotify\" : \"https://open.spotify.com/artist/08td7MxkoHQkXnWAYD8d6Q\"\n" +
-                    "      },\n" +
-                    "      \"href\" : \"https://api.spotify.com/v1/artists/08td7MxkoHQkXnWAYD8d6Q\",\n" +
-                    "      \"id\" : \"08td7MxkoHQkXnWAYD8d6Q\",\n" +
-                    "      \"name\" : \"Tania Bowra\",\n" +
-                    "      \"type\" : \"artist\",\n" +
-                    "      \"uri\" : \"spotify:artist:08td7MxkoHQkXnWAYD8d6Q\"\n" +
-                    "    } ],\n" +
-                    "    \"available_markets\" : [ \"AR\", \"AU\", \"AT\", \"BE\", \"BO\", \"BR\", \"BG\", \"CA\", \"CL\", \"CO\", \"CR\", \"CY\", \"CZ\", \"DK\", \"DO\", \"DE\", \"EC\", \"EE\", \"SV\", \"FI\", \"FR\", \"GR\", \"GT\", \"HN\", \"HK\", \"HU\", \"IS\", \"IE\", \"IT\", \"LV\", \"LT\", \"LU\", \"MY\", \"MT\", \"MX\", \"NL\", \"NZ\", \"NI\", \"NO\", \"PA\", \"PY\", \"PE\", \"PH\", \"PL\", \"PT\", \"SG\", \"SK\", \"ES\", \"SE\", \"CH\", \"TW\", \"TR\", \"UY\", \"US\", \"GB\", \"AD\", \"LI\", \"MC\", \"ID\", \"JP\", \"TH\", \"VN\", \"RO\", \"IL\", \"ZA\", \"SA\", \"AE\", \"BH\", \"QA\", \"OM\", \"KW\", \"EG\", \"MA\", \"DZ\", \"TN\", \"LB\", \"JO\", \"PS\", \"IN\", \"BY\", \"KZ\", \"MD\", \"UA\", \"AL\", \"BA\", \"HR\", \"ME\", \"MK\", \"RS\", \"SI\", \"KR\", \"BD\", \"PK\", \"LK\", \"GH\", \"KE\", \"NG\", \"TZ\", \"UG\", \"AG\", \"AM\", \"BS\", \"BB\", \"BZ\", \"BT\", \"BW\", \"BF\", \"CV\", \"CW\", \"DM\", \"FJ\", \"GM\", \"GE\", \"GD\", \"GW\", \"GY\", \"HT\", \"JM\", \"KI\", \"LS\", \"LR\", \"MW\", \"MV\", \"ML\", \"MH\", \"FM\", \"NA\", \"NR\", \"NE\", \"PW\", \"PG\", \"PR\", \"WS\", \"SM\", \"ST\", \"SN\", \"SC\", \"SL\", \"SB\", \"KN\", \"LC\", \"VC\", \"SR\", \"TL\", \"TO\", \"TT\", \"TV\", \"VU\", \"AZ\", \"BN\", \"BI\", \"KH\", \"CM\", \"TD\", \"KM\", \"GQ\", \"SZ\", \"GA\", \"GN\", \"KG\", \"LA\", \"MO\", \"MR\", \"MN\", \"NP\", \"RW\", \"TG\", \"UZ\", \"ZW\", \"BJ\", \"MG\", \"MU\", \"MZ\", \"AO\", \"CI\", \"DJ\", \"ZM\", \"CD\", \"CG\", \"IQ\", \"LY\", \"TJ\", \"VE\", \"ET\", \"XK\" ],\n" +
-                    "    \"external_urls\" : {\n" +
-                    "      \"spotify\" : \"https://open.spotify.com/album/6akEvsycLGftJxYudPjmqK\"\n" +
-                    "    },\n" +
-                    "    \"href\" : \"https://api.spotify.com/v1/albums/6akEvsycLGftJxYudPjmqK\",\n" +
-                    "    \"id\" : \"6akEvsycLGftJxYudPjmqK\",\n" +
-                    "    \"images\" : [ {\n" +
-                    "      \"height\" : 640,\n" +
-                    "      \"url\" : \"https://i.scdn.co/image/ab67616d0000b2731ae2bdc1378da1b440e1f610\",\n" +
-                    "      \"width\" : 640\n" +
-                    "    }, {\n" +
-                    "      \"height\" : 300,\n" +
-                    "      \"url\" : \"https://i.scdn.co/image/ab67616d00001e021ae2bdc1378da1b440e1f610\",\n" +
-                    "      \"width\" : 300\n" +
-                    "    }, {\n" +
-                    "      \"height\" : 64,\n" +
-                    "      \"url\" : \"https://i.scdn.co/image/ab67616d000048511ae2bdc1378da1b440e1f610\",\n" +
-                    "      \"width\" : 64\n" +
-                    "    } ],\n" +
-                    "    \"name\" : \"Place In The Sun\",\n" +
-                    "    \"release_date\" : \"2004-02-02\",\n" +
-                    "    \"release_date_precision\" : \"day\",\n" +
-                    "    \"total_tracks\" : 11,\n" +
-                    "    \"type\" : \"album\",\n" +
-                    "    \"uri\" : \"spotify:album:6akEvsycLGftJxYudPjmqK\"\n" +
-                    "  },\n" +
-                    "  \"artists\" : [ {\n" +
-                    "    \"external_urls\" : {\n" +
-                    "      \"spotify\" : \"https://open.spotify.com/artist/08td7MxkoHQkXnWAYD8d6Q\"\n" +
-                    "    },\n" +
-                    "    \"href\" : \"https://api.spotify.com/v1/artists/08td7MxkoHQkXnWAYD8d6Q\",\n" +
-                    "    \"id\" : \"08td7MxkoHQkXnWAYD8d6Q\",\n" +
-                    "    \"name\" : \"Tania Bowra\",\n" +
-                    "    \"type\" : \"artist\",\n" +
-                    "    \"uri\" : \"spotify:artist:08td7MxkoHQkXnWAYD8d6Q\"\n" +
-                    "  } ],\n" +
-                    "  \"available_markets\" : [ \"AR\", \"AU\", \"AT\", \"BE\", \"BO\", \"BR\", \"BG\", \"CA\", \"CL\", \"CO\", \"CR\", \"CY\", \"CZ\", \"DK\", \"DO\", \"DE\", \"EC\", \"EE\", \"SV\", \"FI\", \"FR\", \"GR\", \"GT\", \"HN\", \"HK\", \"HU\", \"IS\", \"IE\", \"IT\", \"LV\", \"LT\", \"LU\", \"MY\", \"MT\", \"MX\", \"NL\", \"NZ\", \"NI\", \"NO\", \"PA\", \"PY\", \"PE\", \"PH\", \"PL\", \"PT\", \"SG\", \"SK\", \"ES\", \"SE\", \"CH\", \"TW\", \"TR\", \"UY\", \"US\", \"GB\", \"AD\", \"LI\", \"MC\", \"ID\", \"JP\", \"TH\", \"VN\", \"RO\", \"IL\", \"ZA\", \"SA\", \"AE\", \"BH\", \"QA\", \"OM\", \"KW\", \"EG\", \"MA\", \"DZ\", \"TN\", \"LB\", \"JO\", \"PS\", \"IN\", \"BY\", \"KZ\", \"MD\", \"UA\", \"AL\", \"BA\", \"HR\", \"ME\", \"MK\", \"RS\", \"SI\", \"KR\", \"BD\", \"PK\", \"LK\", \"GH\", \"KE\", \"NG\", \"TZ\", \"UG\", \"AG\", \"AM\", \"BS\", \"BB\", \"BZ\", \"BT\", \"BW\", \"BF\", \"CV\", \"CW\", \"DM\", \"FJ\", \"GM\", \"GE\", \"GD\", \"GW\", \"GY\", \"HT\", \"JM\", \"KI\", \"LS\", \"LR\", \"MW\", \"MV\", \"ML\", \"MH\", \"FM\", \"NA\", \"NR\", \"NE\", \"PW\", \"PG\", \"PR\", \"WS\", \"SM\", \"ST\", \"SN\", \"SC\", \"SL\", \"SB\", \"KN\", \"LC\", \"VC\", \"SR\", \"TL\", \"TO\", \"TT\", \"TV\", \"VU\", \"AZ\", \"BN\", \"BI\", \"KH\", \"CM\", \"TD\", \"KM\", \"GQ\", \"SZ\", \"GA\", \"GN\", \"KG\", \"LA\", \"MO\", \"MR\", \"MN\", \"NP\", \"RW\", \"TG\", \"UZ\", \"ZW\", \"BJ\", \"MG\", \"MU\", \"MZ\", \"AO\", \"CI\", \"DJ\", \"ZM\", \"CD\", \"CG\", \"IQ\", \"LY\", \"TJ\", \"VE\", \"ET\", \"XK\" ],\n" +
-                    "  \"disc_number\" : 1,\n" +
-                    "  \"duration_ms\" : 276773,\n" +
-                    "  \"explicit\" : false,\n" +
-                    "  \"external_ids\" : {\n" +
-                    "    \"isrc\" : \"AUCR10410001\"\n" +
-                    "  },\n" +
-                    "  \"external_urls\" : {\n" +
-                    "    \"spotify\" : \"https://open.spotify.com/track/2TpxZ7JUBn3uw46aR7qd6V\"\n" +
-                    "  },\n" +
-                    "  \"href\" : \"https://api.spotify.com/v1/tracks/2TpxZ7JUBn3uw46aR7qd6V\",\n" +
-                    "  \"id\" : \"2TpxZ7JUBn3uw46aR7qd6V\",\n" +
-                    "  \"is_local\" : false,\n" +
-                    "  \"name\" : \"All I Want\",\n" +
-                    "  \"popularity\" : 2,\n" +
-                    "  \"preview_url\" : \"https://p.scdn.co/mp3-preview/2cc385470731bc540a08caef5eab31dec7b036a6?cid=44d54a4d05344d97877d163209905f8b\",\n" +
-                    "  \"track_number\" : 1,\n" +
-                    "  \"type\" : \"track\",\n" +
-                    "  \"uri\" : \"spotify:track:2TpxZ7JUBn3uw46aR7qd6V\"\n" +
-                    "}";
-            JSONAssert.assertEquals(expected,bodyString,true);
+
+            JSONAssert.assertEquals(songContent,bodyString,true);
         }else{
             System.err.println("no token has been generated");
         }
