@@ -1,6 +1,7 @@
 package io.github.clescot.kafka.connect.http.client.okhttp.authentication;
 
 import com.burgstaller.okhttp.basic.BasicAuthenticator;
+import com.google.common.base.Preconditions;
 import okhttp3.Authenticator;
 
 import java.nio.charset.Charset;
@@ -24,6 +25,7 @@ public class BasicAuthenticationConfigurer implements AuthenticationConfigurer{
 
     @Override
     public Authenticator configureAuthenticator(Map<String, Object> config) {
+        Preconditions.checkNotNull(config,"config map is null");
         //Basic authentication
         BasicAuthenticator basicAuthenticator = null;
         if (config.containsKey(HTTP_CLIENT_AUTHENTICATION_BASIC_ACTIVATE) && Boolean.TRUE.equals(config.get(HTTP_CLIENT_AUTHENTICATION_BASIC_ACTIVATE))) {
