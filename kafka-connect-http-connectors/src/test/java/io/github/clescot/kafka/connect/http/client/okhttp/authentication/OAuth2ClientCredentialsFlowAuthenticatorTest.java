@@ -26,6 +26,7 @@ class OAuth2ClientCredentialsFlowAuthenticatorTest {
     public static final String CLIENT_ID = "44d34a4d05344c97837d463207805f8b";
     public static final String CLIENT_SECRET = "3fc0576720544ac293a3a5304e6c0fa8";
     public static final String WELL_KNOWN_OPENID_CONFIGURATION = "/.well-known/openid-configuration";
+    public static final String BAD_WELL_KNOWN_OPENID_CONFIGURATION = "/bad/.well-known/openid-configuration";
     public static final String SONG_PATH = "/v1/tracks/2TpxZ7JUBn3uw46aR7qd6V";
     @RegisterExtension
     static WireMockExtension wmHttp;
@@ -42,7 +43,9 @@ class OAuth2ClientCredentialsFlowAuthenticatorTest {
     }
 
     public static final String WELL_KNOWN_OK = "WellKnownOk";
+    public static final String WELL_KNOWN_KO = "WellKnownKo";
     public static final String TOKEN_OK = "TokenOk";
+    public static final String TOKEN_KO = "TokenKo";
     public static final String SONG_OK = "SongOk";
     private String httpBaseUrl;
 
@@ -66,6 +69,18 @@ class OAuth2ClientCredentialsFlowAuthenticatorTest {
                         ).willSetStateTo(WELL_KNOWN_OK)
                 );
 
+
+
+        wireMock
+                .register(WireMock.get(BAD_WELL_KNOWN_OPENID_CONFIGURATION).inScenario(scenario)
+                        .whenScenarioStateIs(STARTED)
+                        .willReturn(WireMock.aResponse()
+                                .withStatus(200)
+                                .withStatusMessage("OK")
+                                .withBody("dummt content")
+                        ).willSetStateTo(WELL_KNOWN_KO)
+                );
+
         Path tokenPath = Paths.get("src/test/resources/oauth2/token.json");
         String tokenContent = Files.readString(tokenPath);
         wireMock
@@ -80,6 +95,20 @@ class OAuth2ClientCredentialsFlowAuthenticatorTest {
                                         .withStatusMessage("OK")
                                         .withBody(tokenContent)
                                 ).willSetStateTo(TOKEN_OK)
+                );
+
+        wireMock
+                .register(
+                        WireMock.post("/bad/api/token")
+                                .withHeader("Content-Type",containing("application/x-www-form-urlencoded; charset=UTF-8"))
+                                .withHeader("Authorization",containing("NDRkMzRhNGQwNTM0NGM5NzgzN2Q0NjMyMDc4MDVmOGI6M2ZjMDU3NjcyMDU0NGFjMjkzYTNhNTMwNGU2YzBmYTg="))
+                                .inScenario(scenario)
+                                .whenScenarioStateIs(WELL_KNOWN_OK)
+                                .willReturn(WireMock.aResponse()
+                                        .withStatus(200)
+                                        .withStatusMessage("OK")
+                                        .withBody("bad content")
+                                ).willSetStateTo(TOKEN_KO)
                 );
 
 
@@ -164,6 +193,12 @@ class OAuth2ClientCredentialsFlowAuthenticatorTest {
         Request authenticatedRequest = authenticator.authenticate(route, response);
         String authorizationHeader = authenticatedRequest.headers().get("Authorization");
         assertThat(authorizationHeader).isEqualTo("Bearer BQDzs98uhifaGayk8H9tCTRozufhFmgV_HKMCnnDdMTdz1FcOo3sdj8OZJ_azo96LRdLI9_1uJOCXxbGZme11KCb6ZxTuCt8B5FxEeECb1kO_-UDuf8");
+    }
+
+    @Test
+    void test_authenticate_with_bad_wll_known_content() {
+        Assertions.assertThrows(RuntimeException.class,()->new OAuth2ClientCredentialsFlowAuthenticator(
+                new OkHttpClient(), httpBaseUrl + BAD_WELL_KNOWN_OPENID_CONFIGURATION, CLIENT_ID, CLIENT_SECRET));
     }
 
 }
