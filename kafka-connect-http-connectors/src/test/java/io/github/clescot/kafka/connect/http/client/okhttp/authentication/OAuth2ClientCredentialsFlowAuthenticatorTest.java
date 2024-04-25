@@ -28,7 +28,9 @@ class OAuth2ClientCredentialsFlowAuthenticatorTest {
     public static final String WELL_KNOWN_OPENID_CONFIGURATION = "/.well-known/openid-configuration";
     public static final String BAD_WELL_KNOWN_OPENID_CONFIGURATION = "/bad/.well-known/openid-configuration";
     public static final String BAD_TOKEN_WELL_KNOWN_OPENID_CONFIGURATION = "/bad/token/.well-known/openid-configuration";
+    public static final String BAD_RESPONSE_TOKEN_WELL_KNOWN_OPENID_CONFIGURATION = "/bad/response/token/.well-known/openid-configuration";
     public static final String SONG_PATH = "/v1/tracks/2TpxZ7JUBn3uw46aR7qd6V";
+
     @RegisterExtension
     static WireMockExtension wmHttp;
 
@@ -46,6 +48,7 @@ class OAuth2ClientCredentialsFlowAuthenticatorTest {
     public static final String WELL_KNOWN_OK = "WellKnownOk";
     public static final String WELL_KNOWN_KO = "WellKnownKo";
     public static final String WELL_KNOWN_BAD_TOKEN = "WellKnownBadToken";
+    private static final String WELL_KNOWN_BAD_RESPONSE_TOKEN = "WellKnownBadResponseToken";
     public static final String TOKEN_OK = "TokenOk";
     public static final String TOKEN_KO = "TokenKo";
     public static final String SONG_OK = "SongOk";
@@ -100,6 +103,36 @@ class OAuth2ClientCredentialsFlowAuthenticatorTest {
                                 .withBody(wellKnownUrlContentWithBadTokenUri)
                         ).willSetStateTo(WELL_KNOWN_BAD_TOKEN)
                 );
+
+        Path pathWithBadResponseToken = Paths.get("src/test/resources/oauth2/badResponseFromTOkenApiWellknownUrlContent.json");
+        String contentWithBadResponseTokenUri = Files.readString(pathWithBadResponseToken);
+        String wellKnownUrlContentWithBadResponseTokenUri = contentWithBadResponseTokenUri.replaceAll("baseUrl", httpBaseUrl);
+
+        //well known content pointing to a bad api response token url
+        wireMock
+                .register(WireMock.get(BAD_RESPONSE_TOKEN_WELL_KNOWN_OPENID_CONFIGURATION)
+                        .inScenario(scenario)
+                        .whenScenarioStateIs(STARTED)
+                        .willReturn(WireMock.aResponse()
+                                .withStatus(200)
+                                .withStatusMessage("OK")
+                                .withBody(wellKnownUrlContentWithBadResponseTokenUri)
+                        ).willSetStateTo(WELL_KNOWN_BAD_RESPONSE_TOKEN)
+                );
+
+        wireMock
+                .register(
+                        WireMock.post("/bad/response/api/token")
+                                .withHeader("Content-Type",containing("application/x-www-form-urlencoded; charset=UTF-8"))
+                                .withHeader("Authorization",containing("Basic NDRkMzRhNGQwNTM0NGM5NzgzN2Q0NjMyMDc4MDVmOGI6M2ZjMDU3NjcyMDU0NGFjMjkzYTNhNTMwNGU2YzBmYTg="))
+                                .inScenario(scenario)
+                                .whenScenarioStateIs(WELL_KNOWN_BAD_RESPONSE_TOKEN)
+                                .willReturn(WireMock.aResponse()
+                                        .withStatus(400)
+                                        .withStatusMessage("Bad Query")
+                                ).willSetStateTo(TOKEN_KO)
+                );
+
 
         Path tokenPath = Paths.get("src/test/resources/oauth2/token.json");
         String tokenContent = Files.readString(tokenPath);
@@ -225,6 +258,20 @@ class OAuth2ClientCredentialsFlowAuthenticatorTest {
     void test_authenticate_with_bad_token_in_well_known_content() throws IOException {
         Authenticator authenticator = new OAuth2ClientCredentialsFlowAuthenticator(
                 new OkHttpClient(), httpBaseUrl + BAD_TOKEN_WELL_KNOWN_OPENID_CONFIGURATION, CLIENT_ID, CLIENT_SECRET);
+
+        Route route = mock(Route.class);
+        Request request = new Request.Builder().url(httpBaseUrl+SONG_PATH).get().build();
+        Response.Builder builder = new Response.Builder();
+        builder.setRequest$okhttp(request);
+        Response response = builder.code(200).protocol(Protocol.HTTP_1_1).message("OK").build();
+
+        Request authenticatedRequest = authenticator.authenticate(route, response);
+        assertThat(authenticatedRequest.header("Authorization")).isNull();
+    }
+    @Test
+    void test_authenticate_with_bad_response_token_in_well_known_content() throws IOException {
+        Authenticator authenticator = new OAuth2ClientCredentialsFlowAuthenticator(
+                new OkHttpClient(), httpBaseUrl + BAD_RESPONSE_TOKEN_WELL_KNOWN_OPENID_CONFIGURATION, CLIENT_ID, CLIENT_SECRET);
 
         Route route = mock(Route.class);
         Request request = new Request.Builder().url(httpBaseUrl+SONG_PATH).get().build();
