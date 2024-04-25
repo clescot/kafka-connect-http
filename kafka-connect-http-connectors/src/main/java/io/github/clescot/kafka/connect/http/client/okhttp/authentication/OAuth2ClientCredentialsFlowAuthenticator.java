@@ -2,6 +2,7 @@ package io.github.clescot.kafka.connect.http.client.okhttp.authentication;
 
 import com.burgstaller.okhttp.digest.CachingAuthenticator;
 import com.google.common.base.Joiner;
+import com.google.common.base.Preconditions;
 import com.google.common.collect.Sets;
 import com.nimbusds.oauth2.sdk.*;
 import com.nimbusds.oauth2.sdk.auth.ClientAuthentication;
@@ -42,6 +43,10 @@ public class OAuth2ClientCredentialsFlowAuthenticator implements CachingAuthenti
                                                     String clientId,
                                                     String clientSecret,
                                                     @javax.annotation.Nullable String... scopes) {
+        Preconditions.checkNotNull(okHttpClient,"okHttpClient is null");
+        Preconditions.checkNotNull(wellKnownUrl,"wellKnownUrl is null");
+        Preconditions.checkNotNull(clientId,"clientId is null");
+        Preconditions.checkNotNull(clientSecret,"clientSecret is null");
         ClientID clientID = new ClientID(clientId);
         Secret secret = new Secret(clientSecret);
         clientAuth = new ClientSecretBasic(clientID, secret);
