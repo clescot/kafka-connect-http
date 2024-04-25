@@ -100,7 +100,11 @@ public class OkHttpClient extends AbstractHttpClient<Request, Response> {
         AuthenticationConfigurer basicAuthenticationConfigurer = new BasicAuthenticationConfigurer();
         AuthenticationConfigurer digestAuthenticationConfigurer = new DigestAuthenticationConfigurer(random);
         AuthenticationConfigurer oAuth2ClientCredentialsFlowConfigurer = new OAuth2ClientCredentialsFlowConfigurer(this.getInternalClient());
-        List<AuthenticationConfigurer> authenticatorConfigurers = Lists.newArrayList(basicAuthenticationConfigurer,digestAuthenticationConfigurer,oAuth2ClientCredentialsFlowConfigurer);
+        List<AuthenticationConfigurer> authenticatorConfigurers = Lists.newArrayList(
+                basicAuthenticationConfigurer,
+                digestAuthenticationConfigurer,
+                oAuth2ClientCredentialsFlowConfigurer
+        );
         AuthenticationsConfigurer authenticationsConfigurer = new AuthenticationsConfigurer(authenticatorConfigurers);
         authenticationsConfigurer.configure(config, httpClientBuilder);
 

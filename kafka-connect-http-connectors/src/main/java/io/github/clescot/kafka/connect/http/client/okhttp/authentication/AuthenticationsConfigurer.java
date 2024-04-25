@@ -2,6 +2,7 @@ package io.github.clescot.kafka.connect.http.client.okhttp.authentication;
 
 import com.burgstaller.okhttp.*;
 import com.burgstaller.okhttp.digest.CachingAuthenticator;
+import com.google.common.base.Preconditions;
 import io.github.clescot.kafka.connect.http.client.okhttp.OkHttpClient;
 import okhttp3.Authenticator;
 import org.jetbrains.annotations.Nullable;
@@ -21,6 +22,8 @@ public class AuthenticationsConfigurer {
     private final List<AuthenticationConfigurer> authenticationConfigurers;
 
     public AuthenticationsConfigurer(List<AuthenticationConfigurer> authenticationConfigurers) {
+        Preconditions.checkNotNull(authenticationConfigurers,"authenticationConfigurers is null");
+        Preconditions.checkArgument(!authenticationConfigurers.isEmpty(),"authenticationConfigurers is empty");
         this.authenticationConfigurers = authenticationConfigurers;
     }
 
