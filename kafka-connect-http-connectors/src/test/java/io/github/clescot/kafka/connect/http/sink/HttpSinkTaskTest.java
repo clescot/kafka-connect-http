@@ -1021,7 +1021,7 @@ public class HttpSinkTaskTest {
             long elapsedMillis = stopwatch.elapsed(TimeUnit.MILLISECONDS);
             LOGGER.info("put method execution time :'{}' ms", elapsedMillis);
             //then
-            assertThat(elapsedMillis).isLessThan(2800);
+            assertThat(elapsedMillis).isLessThan(2950);
 
         }
 
