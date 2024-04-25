@@ -283,4 +283,21 @@ class OAuth2ClientCredentialsFlowAuthenticatorTest {
         assertThat(authenticatedRequest.header("Authorization")).isNull();
     }
 
+    @Test
+    void test_authenticate_with_state_nominal_case() throws IOException {
+        OAuth2ClientCredentialsFlowAuthenticator authenticator = new OAuth2ClientCredentialsFlowAuthenticator(
+                new OkHttpClient(), httpBaseUrl + WELL_KNOWN_OPENID_CONFIGURATION, CLIENT_ID, CLIENT_SECRET);
+        Route route = mock(Route.class);
+        Request request = new Request.Builder().url(httpBaseUrl+SONG_PATH).get().build();
+        Response.Builder builder = new Response.Builder();
+        builder.setRequest$okhttp(request);
+        Response response = builder.code(200).protocol(Protocol.HTTP_1_1).message("OK").build();
+        Request authenticatedRequest = authenticator.authenticate(route, response);
+        String authorizationHeader = authenticatedRequest.headers().get("Authorization");
+        assertThat(authorizationHeader).isEqualTo("Bearer BQDzs98uhifaGayk8H9tCTRozufhFmgV_HKMCnnDdMTdz1FcOo3sdj8OZJ_azo96LRdLI9_1uJOCXxbGZme11KCb6ZxTuCt8B5FxEeECb1kO_-UDuf8");
+        Request authenticatedRequest2 = authenticator.authenticateWithState(route, response.request());
+        String authorizationHeader2 = authenticatedRequest2.headers().get("Authorization");
+        assertThat(authorizationHeader2).isEqualTo(authorizationHeader);
+    }
+
 }
