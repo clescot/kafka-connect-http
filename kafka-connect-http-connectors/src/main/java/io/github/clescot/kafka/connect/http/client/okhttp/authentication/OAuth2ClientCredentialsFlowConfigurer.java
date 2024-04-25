@@ -32,9 +32,19 @@ public class OAuth2ClientCredentialsFlowConfigurer implements AuthenticationConf
         Authenticator authenticator = null;
         Preconditions.checkNotNull(config,"config map is null");
         if (config.containsKey(HTTP_CLIENT_AUTHENTICATION_OAUTH2_CLIENT_CREDENTIALS_FLOW_ACTIVATE) && Boolean.TRUE.equals(config.get(HTTP_CLIENT_AUTHENTICATION_OAUTH2_CLIENT_CREDENTIALS_FLOW_ACTIVATE))){
-            String wellKnownUrl = config.get(HTTP_CLIENT_AUTHENTICATION_OAUTH2_CLIENT_CREDENTIALS_FLOW_WELL_KNOWN_URL).toString();
-            String clientId =config.get(HTTP_CLIENT_AUTHENTICATION_OAUTH2_CLIENT_CREDENTIALS_FLOW_CLIENT_ID).toString();
-            String clientSecret = config.get(HTTP_CLIENT_AUTHENTICATION_OAUTH2_CLIENT_CREDENTIALS_FLOW_CLIENT_SECRET).toString();
+
+            Object wellKnownObject = config.get(HTTP_CLIENT_AUTHENTICATION_OAUTH2_CLIENT_CREDENTIALS_FLOW_WELL_KNOWN_URL);
+            Preconditions.checkNotNull(wellKnownObject,HTTP_CLIENT_AUTHENTICATION_OAUTH2_CLIENT_CREDENTIALS_FLOW_WELL_KNOWN_URL+" is null");
+            String wellKnownUrl = wellKnownObject.toString();
+
+            Object clientIdObject = config.get(HTTP_CLIENT_AUTHENTICATION_OAUTH2_CLIENT_CREDENTIALS_FLOW_CLIENT_ID);
+            Preconditions.checkNotNull(clientIdObject,HTTP_CLIENT_AUTHENTICATION_OAUTH2_CLIENT_CREDENTIALS_FLOW_CLIENT_ID+" is null");
+            String clientId = clientIdObject.toString();
+
+            Object clientSecretObject = config.get(HTTP_CLIENT_AUTHENTICATION_OAUTH2_CLIENT_CREDENTIALS_FLOW_CLIENT_SECRET);
+            Preconditions.checkNotNull(clientSecretObject,HTTP_CLIENT_AUTHENTICATION_OAUTH2_CLIENT_CREDENTIALS_FLOW_CLIENT_SECRET+" is null");
+            String clientSecret = clientSecretObject.toString();
+
             Object configuredScopes = config.get(HTTP_CLIENT_AUTHENTICATION_OAUTH2_CLIENT_CREDENTIALS_FLOW_SCOPES);
             String[] scopes = null;
             if(configuredScopes!=null) {
