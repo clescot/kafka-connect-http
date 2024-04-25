@@ -127,8 +127,8 @@ public class OAuth2ClientCredentialsFlowAuthenticator implements CachingAuthenti
                     .build();
         } else {
             LOGGER.error("no token has been issued");
+            throw new RuntimeException("no token has been issued");
         }
-        return request;
     }
 
     private Tokens getTokens(URI tokenEndpointUri, ClientAuthentication clientAuth, AuthorizationGrant clientGrant, Scope scope) throws ParseException, IOException {
