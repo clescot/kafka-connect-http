@@ -80,4 +80,19 @@ class DigestAuthenticationConfigurerTest {
         Assertions.assertThrows(NullPointerException.class,()->authenticationConfigurer.configureAuthenticator(config));
     }
 
+    @Test
+    void test_configure_with_null_map(){
+        AuthenticationConfigurer authenticationConfigurer = new DigestAuthenticationConfigurer(new Random());
+        Assertions.assertThrows(NullPointerException.class,()->authenticationConfigurer.configureAuthenticator(null));
+    }
+
+    @Test
+    void test_configure_with_empty_map(){
+        AuthenticationConfigurer authenticationConfigurer = new DigestAuthenticationConfigurer(new Random());
+        Map<String,Object> config = Maps.newHashMap();
+        Authenticator authenticator = authenticationConfigurer.configureAuthenticator(config);
+        assertThat(authenticator).isNull();
+    }
+
+
 }

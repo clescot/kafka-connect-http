@@ -8,6 +8,7 @@ import com.github.tomakehurst.wiremock.junit5.WireMockRuntimeInfo;
 import com.google.common.collect.Maps;
 import okhttp3.Authenticator;
 import okhttp3.OkHttpClient;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
@@ -86,5 +87,60 @@ class OAuth2ClientCredentialsFlowConfigurerTest {
         assertThat(authenticator)
                 .isNotNull()
                 .isInstanceOf(OAuth2ClientCredentialsFlowAuthenticator.class);
+    }
+
+    @Test
+    void test_configure_with_scopes(){
+        AuthenticationConfigurer authenticationConfigurer = new OAuth2ClientCredentialsFlowConfigurer(new OkHttpClient());
+        Map<String,Object> config = Maps.newHashMap();
+        config.put(HTTP_CLIENT_AUTHENTICATION_OAUTH2_CLIENT_CREDENTIALS_FLOW_ACTIVATE,Boolean.TRUE);
+        config.put(HTTP_CLIENT_AUTHENTICATION_OAUTH2_CLIENT_CREDENTIALS_FLOW_WELL_KNOWN_URL,httpBaseUrl+"/.well-known/openid-configuration");
+        config.put(HTTP_CLIENT_AUTHENTICATION_OAUTH2_CLIENT_CREDENTIALS_FLOW_CLIENT_ID,"1234");
+        config.put(HTTP_CLIENT_AUTHENTICATION_OAUTH2_CLIENT_CREDENTIALS_FLOW_CLIENT_SECRET,"secret!1234");
+        config.put(HTTP_CLIENT_AUTHENTICATION_OAUTH2_CLIENT_CREDENTIALS_FLOW_SCOPES,"openid,profile,email");
+        Authenticator authenticator = authenticationConfigurer.configureAuthenticator(config);
+        assertThat(authenticator)
+                .isNotNull()
+                .isInstanceOf(OAuth2ClientCredentialsFlowAuthenticator.class);
+    }
+
+    @Test
+    void test_configure_with_some_scopes(){
+        AuthenticationConfigurer authenticationConfigurer = new OAuth2ClientCredentialsFlowConfigurer(new OkHttpClient());
+        Map<String,Object> config = Maps.newHashMap();
+        config.put(HTTP_CLIENT_AUTHENTICATION_OAUTH2_CLIENT_CREDENTIALS_FLOW_ACTIVATE,Boolean.TRUE);
+        config.put(HTTP_CLIENT_AUTHENTICATION_OAUTH2_CLIENT_CREDENTIALS_FLOW_WELL_KNOWN_URL,httpBaseUrl+"/.well-known/openid-configuration");
+        config.put(HTTP_CLIENT_AUTHENTICATION_OAUTH2_CLIENT_CREDENTIALS_FLOW_CLIENT_ID,"1234");
+        config.put(HTTP_CLIENT_AUTHENTICATION_OAUTH2_CLIENT_CREDENTIALS_FLOW_CLIENT_SECRET,"secret!1234");
+        config.put(HTTP_CLIENT_AUTHENTICATION_OAUTH2_CLIENT_CREDENTIALS_FLOW_SCOPES,"openid,email");
+        Authenticator authenticator = authenticationConfigurer.configureAuthenticator(config);
+        assertThat(authenticator)
+                .isNotNull()
+                .isInstanceOf(OAuth2ClientCredentialsFlowAuthenticator.class);
+    }
+
+    @Test
+    void test_configure_with_one_unknown_scope(){
+        AuthenticationConfigurer authenticationConfigurer = new OAuth2ClientCredentialsFlowConfigurer(new OkHttpClient());
+        Map<String,Object> config = Maps.newHashMap();
+        config.put(HTTP_CLIENT_AUTHENTICATION_OAUTH2_CLIENT_CREDENTIALS_FLOW_ACTIVATE,Boolean.TRUE);
+        config.put(HTTP_CLIENT_AUTHENTICATION_OAUTH2_CLIENT_CREDENTIALS_FLOW_WELL_KNOWN_URL,httpBaseUrl+"/.well-known/openid-configuration");
+        config.put(HTTP_CLIENT_AUTHENTICATION_OAUTH2_CLIENT_CREDENTIALS_FLOW_CLIENT_ID,"1234");
+        config.put(HTTP_CLIENT_AUTHENTICATION_OAUTH2_CLIENT_CREDENTIALS_FLOW_CLIENT_SECRET,"secret!1234");
+        config.put(HTTP_CLIENT_AUTHENTICATION_OAUTH2_CLIENT_CREDENTIALS_FLOW_SCOPES,"openid,test");
+        Assertions.assertThrows(IllegalArgumentException.class,()->authenticationConfigurer.configureAuthenticator(config));
+    }
+    @Test
+    void test_configure_with_empty_map(){
+        AuthenticationConfigurer authenticationConfigurer = new OAuth2ClientCredentialsFlowConfigurer(new OkHttpClient());
+        Map<String,Object> config = Maps.newHashMap();
+        Authenticator authenticator = authenticationConfigurer.configureAuthenticator(config);
+        assertThat(authenticator)
+                .isNull();
+    }
+    @Test
+    void test_configure_with_null_map(){
+        AuthenticationConfigurer authenticationConfigurer = new OAuth2ClientCredentialsFlowConfigurer(new OkHttpClient());
+        Assertions.assertThrows(NullPointerException.class,()->authenticationConfigurer.configureAuthenticator(null));
     }
 }

@@ -1,5 +1,6 @@
 package io.github.clescot.kafka.connect.http.client.okhttp.authentication;
 
+import com.google.common.base.Preconditions;
 import okhttp3.Authenticator;
 import okhttp3.OkHttpClient;
 
@@ -29,6 +30,7 @@ public class OAuth2ClientCredentialsFlowConfigurer implements AuthenticationConf
     @Override
     public Authenticator configureAuthenticator(Map<String, Object> config) {
         Authenticator authenticator = null;
+        Preconditions.checkNotNull(config,"config map is null");
         if (config.containsKey(HTTP_CLIENT_AUTHENTICATION_OAUTH2_CLIENT_CREDENTIALS_FLOW_ACTIVATE) && Boolean.TRUE.equals(config.get(HTTP_CLIENT_AUTHENTICATION_OAUTH2_CLIENT_CREDENTIALS_FLOW_ACTIVATE))){
             String wellKnownUrl = config.get(HTTP_CLIENT_AUTHENTICATION_OAUTH2_CLIENT_CREDENTIALS_FLOW_WELL_KNOWN_URL).toString();
             String clientId =config.get(HTTP_CLIENT_AUTHENTICATION_OAUTH2_CLIENT_CREDENTIALS_FLOW_CLIENT_ID).toString();
