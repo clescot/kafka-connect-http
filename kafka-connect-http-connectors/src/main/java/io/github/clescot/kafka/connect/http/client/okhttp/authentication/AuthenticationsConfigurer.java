@@ -56,7 +56,7 @@ public class AuthenticationsConfigurer {
     }
 
     @Nullable
-    private Authenticator getAuthenticatorDecorator(Map<String, Object> config, Map<String, CachingAuthenticator> authCache, boolean proxy) {
+    protected Authenticator getAuthenticatorDecorator(Map<String, Object> config, Map<String, CachingAuthenticator> authCache, boolean proxy) {
 
         // note that all auth schemes should be registered as lowercase!
         DispatchingAuthenticator.Builder authenticatorBuilder = new DispatchingAuthenticator.Builder();
