@@ -4,8 +4,10 @@ package io.github.clescot.kafka.connect.http.client.okhttp.event;
 import io.micrometer.common.lang.NonNullApi;
 import io.micrometer.common.lang.NonNullFields;
 import io.micrometer.common.lang.Nullable;
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.Tag;
+import io.micrometer.core.instrument.Tags;
 import io.micrometer.core.instrument.Timer;
-import io.micrometer.core.instrument.*;
 import io.micrometer.core.instrument.binder.http.Outcome;
 import okhttp3.EventListener;
 import okhttp3.*;
@@ -266,7 +268,7 @@ public class AdvancedEventListener extends EventListener {
     @Override
     public void cacheConditionalHit(@NotNull Call call, @NotNull Response cachedResponse) {
         CallState myCallState = new CallState(0L, call.request());
-        Counter.builder("okhttp.cache.conditionalhits")
+        io.micrometer.core.instrument.Counter.builder("okhttp.cache.conditionalhits")
                 .tags(getTags(myCallState))
                 .description("counter of cache conditional hits")
                 .register(registry)
@@ -276,7 +278,7 @@ public class AdvancedEventListener extends EventListener {
     @Override
     public void cacheHit(@NotNull Call call, @NotNull Response response) {
         CallState myCallState = new CallState(0L, call.request());
-        Counter.builder("okhttp.cache.hits")
+        io.micrometer.core.instrument.Counter.builder("okhttp.cache.hits")
                 .tags(getTags(myCallState))
                 .description("counter of cache hits")
                 .register(registry)
@@ -286,7 +288,7 @@ public class AdvancedEventListener extends EventListener {
     @Override
     public void cacheMiss(@NotNull Call call) {
         CallState myCallState = new CallState(0L, call.request());
-        Counter.builder("okhttp.cache.misses")
+        io.micrometer.core.instrument.Counter.builder("okhttp.cache.misses")
                 .tags(getTags(myCallState))
                 .description("counter of cache misses")
                 .register(registry)
