@@ -30,7 +30,9 @@ public class BasicAuthenticationConfigurer implements AuthenticationConfigurer{
         BasicAuthenticator basicAuthenticator = null;
         if (config.containsKey(HTTP_CLIENT_AUTHENTICATION_BASIC_ACTIVATE) && Boolean.TRUE.equals(config.get(HTTP_CLIENT_AUTHENTICATION_BASIC_ACTIVATE))) {
             String username = (String) config.get(HTTP_CLIENT_AUTHENTICATION_BASIC_USERNAME);
+            Preconditions.checkNotNull(username,HTTP_CLIENT_AUTHENTICATION_BASIC_USERNAME+" must be set");
             String password = (String) config.get(HTTP_CLIENT_AUTHENTICATION_BASIC_PASSWORD);
+            Preconditions.checkNotNull(password,HTTP_CLIENT_AUTHENTICATION_BASIC_PASSWORD+" must be set");
             com.burgstaller.okhttp.digest.Credentials credentials = new com.burgstaller.okhttp.digest.Credentials(username, password);
 
 
