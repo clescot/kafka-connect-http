@@ -95,7 +95,7 @@ public class OAuth2ClientCredentialsFlowAuthenticator implements CachingAuthenti
             }
         } catch (IOException | ParseException e) {
             LOGGER.error("error in parsing wellKnown Url content:'{}'",wellKnownResponseBody);
-            throw new RuntimeException(e);
+            throw new IllegalStateException(e);
         }
     }
 
@@ -109,7 +109,8 @@ public class OAuth2ClientCredentialsFlowAuthenticator implements CachingAuthenti
         try {
             tokens = getTokens(tokenEndpointUri, clientAuth, clientGrant, scope);
         } catch (ParseException e) {
-            throw new RuntimeException(e);
+            LOGGER.error("tokencontent cannot be parsed");
+            return request;
         }
         if (tokens != null) {
             AccessToken accessToken = tokens.getAccessToken();
@@ -127,7 +128,7 @@ public class OAuth2ClientCredentialsFlowAuthenticator implements CachingAuthenti
                     .build();
         } else {
             LOGGER.error("no token has been issued");
-            throw new RuntimeException("no token has been issued");
+           return request;
         }
     }
 

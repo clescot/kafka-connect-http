@@ -61,6 +61,7 @@ class OAuth2ClientCredentialsFlowAuthenticatorTest {
         String content = Files.readString(path);
         String wellKnownUrlContent = content.replaceAll("baseUrl", httpBaseUrl);
 
+        //good well known content
         wireMock
                 .register(WireMock.get(WELL_KNOWN_OPENID_CONFIGURATION).inScenario(scenario)
                         .whenScenarioStateIs(STARTED)
@@ -72,7 +73,7 @@ class OAuth2ClientCredentialsFlowAuthenticatorTest {
                 );
 
 
-
+        //dummy well knwon content
         wireMock
                 .register(WireMock.get(BAD_WELL_KNOWN_OPENID_CONFIGURATION).inScenario(scenario)
                         .whenScenarioStateIs(STARTED)
@@ -83,13 +84,15 @@ class OAuth2ClientCredentialsFlowAuthenticatorTest {
                         ).willSetStateTo(WELL_KNOWN_KO)
                 );
 
-        Path pathWithBadToken = Paths.get("src/test/resources/oauth2/wellknownUrlContent.json");
+        Path pathWithBadToken = Paths.get("src/test/resources/oauth2/badWellknownUrlContent.json");
         String contentWithBadTokenUri = Files.readString(pathWithBadToken);
         String wellKnownUrlContentWithBadTokenUri = contentWithBadTokenUri.replaceAll("baseUrl", httpBaseUrl);
 
 
+        //well known content pointing to a bad api token url
         wireMock
-                .register(WireMock.get(BAD_TOKEN_WELL_KNOWN_OPENID_CONFIGURATION).inScenario(scenario)
+                .register(WireMock.get(BAD_TOKEN_WELL_KNOWN_OPENID_CONFIGURATION)
+                        .inScenario(scenario)
                         .whenScenarioStateIs(STARTED)
                         .willReturn(WireMock.aResponse()
                                 .withStatus(200)
@@ -104,7 +107,7 @@ class OAuth2ClientCredentialsFlowAuthenticatorTest {
                 .register(
                         WireMock.post("/api/token")
                                 .withHeader("Content-Type",containing("application/x-www-form-urlencoded; charset=UTF-8"))
-                                .withHeader("Authorization",containing("NDRkMzRhNGQwNTM0NGM5NzgzN2Q0NjMyMDc4MDVmOGI6M2ZjMDU3NjcyMDU0NGFjMjkzYTNhNTMwNGU2YzBmYTg="))
+                                .withHeader("Authorization",containing("Basic NDRkMzRhNGQwNTM0NGM5NzgzN2Q0NjMyMDc4MDVmOGI6M2ZjMDU3NjcyMDU0NGFjMjkzYTNhNTMwNGU2YzBmYTg="))
                                 .inScenario(scenario)
                                 .whenScenarioStateIs(WELL_KNOWN_OK)
                                 .willReturn(WireMock.aResponse()
@@ -118,9 +121,9 @@ class OAuth2ClientCredentialsFlowAuthenticatorTest {
                 .register(
                         WireMock.post("/bad/api/token")
                                 .withHeader("Content-Type",containing("application/x-www-form-urlencoded; charset=UTF-8"))
-                                .withHeader("Authorization",containing("NDRkMzRhNGQwNTM0NGM5NzgzN2Q0NjMyMDc4MDVmOGI6M2ZjMDU3NjcyMDU0NGFjMjkzYTNhNTMwNGU2YzBmYTg="))
+                                .withHeader("Authorization",containing("Basic NDRkMzRhNGQwNTM0NGM5NzgzN2Q0NjMyMDc4MDVmOGI6M2ZjMDU3NjcyMDU0NGFjMjkzYTNhNTMwNGU2YzBmYTg="))
                                 .inScenario(scenario)
-                                .whenScenarioStateIs(WELL_KNOWN_OK)
+                                .whenScenarioStateIs(WELL_KNOWN_BAD_TOKEN)
                                 .willReturn(WireMock.aResponse()
                                         .withStatus(200)
                                         .withStatusMessage("OK")
@@ -219,7 +222,7 @@ class OAuth2ClientCredentialsFlowAuthenticatorTest {
     }
 
     @Test
-    void test_authenticate_with_bad_token_in_well_known_content() {
+    void test_authenticate_with_bad_token_in_well_known_content() throws IOException {
         Authenticator authenticator = new OAuth2ClientCredentialsFlowAuthenticator(
                 new OkHttpClient(), httpBaseUrl + BAD_TOKEN_WELL_KNOWN_OPENID_CONFIGURATION, CLIENT_ID, CLIENT_SECRET);
 
@@ -229,7 +232,8 @@ class OAuth2ClientCredentialsFlowAuthenticatorTest {
         builder.setRequest$okhttp(request);
         Response response = builder.code(200).protocol(Protocol.HTTP_1_1).message("OK").build();
 
-        Assertions.assertThrows(RuntimeException.class,()-> authenticator.authenticate(route, response));
+        Request authenticatedRequest = authenticator.authenticate(route, response);
+        assertThat(authenticatedRequest.header("Authorization")).isNull();
     }
 
 }
