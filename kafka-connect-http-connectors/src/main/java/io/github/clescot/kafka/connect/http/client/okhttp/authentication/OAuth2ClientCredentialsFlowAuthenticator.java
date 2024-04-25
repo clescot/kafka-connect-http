@@ -1,5 +1,6 @@
 package io.github.clescot.kafka.connect.http.client.okhttp.authentication;
 
+import com.burgstaller.okhttp.digest.CachingAuthenticator;
 import com.google.common.base.Joiner;
 import com.google.common.collect.Sets;
 import com.nimbusds.oauth2.sdk.*;
@@ -12,9 +13,10 @@ import com.nimbusds.oauth2.sdk.token.AccessToken;
 import com.nimbusds.oauth2.sdk.token.Tokens;
 import com.nimbusds.openid.connect.sdk.op.OIDCProviderMetadata;
 import io.github.clescot.kafka.connect.http.client.okhttp.OkHttpHTTPRequestSender;
+import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.Response;
-import okhttp3.*;
+import okhttp3.Route;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
@@ -25,23 +27,21 @@ import java.net.URI;
 import java.util.Arrays;
 import java.util.Set;
 
-public class OAuth2ClientCredentialsFlowAuthenticator implements Authenticator {
+public class OAuth2ClientCredentialsFlowAuthenticator implements CachingAuthenticator {
 
-    private final OkHttpClient okHttpClient;
     private final ClientAuthentication clientAuth;
     private final URI tokenEndpointUri;
     private Scope scope;
     private AuthorizationGrant clientGrant = new ClientCredentialsGrant();
 
     private static final Logger LOGGER = LoggerFactory.getLogger(OAuth2ClientCredentialsFlowAuthenticator.class);
-
+    private String bearerToken;
 
     public OAuth2ClientCredentialsFlowAuthenticator(OkHttpClient okHttpClient,
                                                     String wellKnownUrl,
                                                     String clientId,
                                                     String clientSecret,
                                                     @javax.annotation.Nullable String... scopes) {
-        this.okHttpClient = okHttpClient;
         ClientID clientID = new ClientID(clientId);
         Secret secret = new Secret(clientSecret);
         clientAuth = new ClientSecretBasic(clientID, secret);
@@ -82,7 +82,9 @@ public class OAuth2ClientCredentialsFlowAuthenticator implements Authenticator {
                 Set<String> configuredScopes = Sets.newHashSet(Arrays.asList(scopes));
                 boolean configuredScopesAreValid = scopesFromWellKnownUrlList.containsAll(configuredScopes);
                 if (!configuredScopesAreValid) {
-                    throw new IllegalArgumentException("configured Scopes:'" + Joiner.on(",").join(configuredScopes) + "' are not all present in the scopes from the well known url ('" + Joiner.on(",").join(scopesFromWellKnownUrlList) + "')");
+                    throw new IllegalArgumentException("configured Scopes:'"
+                    + Joiner.on(",").join(configuredScopes) + "' are not all present in the scopes from the well known url ('"
+                    + Joiner.on(",").join(scopesFromWellKnownUrlList) + "')");
                 }
             }
         } catch (IOException | ParseException e) {
@@ -111,7 +113,7 @@ public class OAuth2ClientCredentialsFlowAuthenticator implements Authenticator {
             // Get the access token as JSON string
             String accessTokenJSONString = accessToken.toJSONString();
             LOGGER.debug(accessTokenJSONString);
-            String bearerToken = accessToken.toAuthorizationHeader();
+            bearerToken = accessToken.toAuthorizationHeader();
 
             return request.newBuilder()
                     .header("Authorization", bearerToken)
@@ -122,32 +124,8 @@ public class OAuth2ClientCredentialsFlowAuthenticator implements Authenticator {
         return request;
     }
 
-
-    private static final Interceptor interceptor = new Interceptor() {
-        @NotNull
-        @Override
-        public Response intercept(@NotNull Chain chain) throws IOException {
-            Request request = chain.request();
-
-            long t1 = System.nanoTime();
-            String log = String.format("Sending request %s on %s%n%s", request.url(), chain.connection(), request.headers());
-            System.out.println(log);
-
-            Response response = chain.proceed(request);
-
-            long t2 = System.nanoTime();
-            double elapsedTime = (t2 - t1) / 1e6d;
-            String log2 = String.format("Received response for %s on %s%n%s in %.1fms%n%s %s%n%s",
-                    response.request().url(), chain.connection(), request.headers(), elapsedTime, response.code(), response.message(), response.headers());
-            System.out.println(log2);
-            return response;
-        }
-    };
-
-
     private Tokens getTokens(URI tokenEndpointUri, ClientAuthentication clientAuth, AuthorizationGrant clientGrant, Scope scope) throws ParseException, IOException {
         OkHttpClient.Builder builder = new OkHttpClient.Builder();
-        builder.addNetworkInterceptor(interceptor);
         OkHttpClient okHttpClient = builder.build();
         TokenRequest tokenRequest = new TokenRequest(tokenEndpointUri, clientAuth, clientGrant, scope);
         HTTPResponse httpResponse = tokenRequest.toHTTPRequest().send(new OkHttpHTTPRequestSender(okHttpClient));
@@ -157,11 +135,18 @@ public class OAuth2ClientCredentialsFlowAuthenticator implements Authenticator {
         if (!response.indicatesSuccess()) {
             // We got an error response...
             TokenErrorResponse errorResponse = response.toErrorResponse();
-            System.err.println("error: " + errorResponse.toJSONObject());
+            LOGGER.error("error:'{}'",errorResponse.toJSONObject());
         } else {
             AccessTokenResponse successResponse = response.toSuccessResponse();
             tokens = successResponse.getTokens();
         }
         return tokens;
+    }
+
+    @Override
+    public Request authenticateWithState(Route route, Request request) throws IOException {
+        return request.newBuilder()
+                .header("Authorization", bearerToken)
+                .build();
     }
 }
