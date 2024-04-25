@@ -34,8 +34,9 @@ class BasicAuthenticationConfigurerTest {
         config.put(HTTP_CLIENT_AUTHENTICATION_BASIC_USERNAME,"myUser");
         config.put(HTTP_CLIENT_AUTHENTICATION_BASIC_PASSWORD,"myPassword");
         Authenticator authenticator = authenticationConfigurer.configureAuthenticator(config);
-        assertThat(authenticator).isNotNull();
-        assertThat(authenticator).isInstanceOf(BasicAuthenticator.class);
+        assertThat(authenticator)
+                .isNotNull()
+                .isInstanceOf(BasicAuthenticator.class);
     }
 
     @Test
@@ -47,8 +48,9 @@ class BasicAuthenticationConfigurerTest {
         config.put(HTTP_CLIENT_AUTHENTICATION_BASIC_PASSWORD,"myPassword");
         config.put(HTTP_CLIENT_AUTHENTICATION_BASIC_CHARSET,"UTF-8");
         Authenticator authenticator = authenticationConfigurer.configureAuthenticator(config);
-        assertThat(authenticator).isNotNull();
-        assertThat(authenticator).isInstanceOf(BasicAuthenticator.class);
+        assertThat(authenticator)
+                .isNotNull()
+                .isInstanceOf(BasicAuthenticator.class);
     }
 
     @Test
