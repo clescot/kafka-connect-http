@@ -26,6 +26,7 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.net.URI;
 import java.util.Arrays;
+import java.util.Scanner;
 import java.util.Set;
 
 public class OAuth2ClientCredentialsFlowAuthenticator implements CachingAuthenticator {
@@ -57,14 +58,14 @@ public class OAuth2ClientCredentialsFlowAuthenticator implements CachingAuthenti
         Request.Builder builder = new Request.Builder();
         Request request = builder.url(wellKnownUrl).get().build();
         Response wellKnownResponse;
+        String wellKnownResponseBody = null;
         try {
             wellKnownResponse = okHttpClient.newCall(request).execute();
-
-            String wellKnownResponseBody = wellKnownResponse.body().string();
+            wellKnownResponseBody = wellKnownResponse.body().string();
 
             // Read all data from URL
             String providerInfo;
-            try (java.util.Scanner s = new java.util.Scanner(wellKnownResponseBody)) {
+            try (Scanner s = new Scanner(wellKnownResponseBody)) {
                 providerInfo = s.useDelimiter("\\A").hasNext() ? s.next() : "";
             }
 
@@ -93,6 +94,7 @@ public class OAuth2ClientCredentialsFlowAuthenticator implements CachingAuthenti
                 }
             }
         } catch (IOException | ParseException e) {
+            LOGGER.error("error in parsing wellKnown Url content:'{}'",wellKnownResponseBody);
             throw new RuntimeException(e);
         }
     }
@@ -149,7 +151,7 @@ public class OAuth2ClientCredentialsFlowAuthenticator implements CachingAuthenti
     }
 
     @Override
-    public Request authenticateWithState(Route route, Request request) throws IOException {
+    public Request authenticateWithState(Route route, Request request) {
         return request.newBuilder()
                 .header("Authorization", bearerToken)
                 .build();
