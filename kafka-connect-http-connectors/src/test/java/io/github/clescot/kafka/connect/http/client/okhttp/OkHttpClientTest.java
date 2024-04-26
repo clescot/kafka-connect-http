@@ -38,6 +38,9 @@ import javax.net.ssl.X509TrustManager;
 import java.io.IOException;
 import java.net.*;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.security.cert.X509Certificate;
 import java.util.*;
 import java.util.concurrent.ExecutionException;
@@ -686,15 +689,7 @@ class OkHttpClientTest {
             config.put("httpclient.authentication.digest.activate", true);
             config.put("httpclient.authentication.digest.username", username);
             config.put("httpclient.authentication.digest.password", password);
-            Random random = mock(Random.class);
-            byte[] randomBytes = {0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07};
-            doAnswer(invocation -> {
-                Object[] args = invocation.getArguments();
-                byte[] rnd = (byte[]) args[0];
-                System.arraycopy(randomBytes, 0, rnd, 0, randomBytes.length);
-                return null;
-            })
-                    .when(random).nextBytes(any(byte[].class));
+            Random random = getFixedRandom();
             io.github.clescot.kafka.connect.http.client.okhttp.OkHttpClient client = new io.github.clescot.kafka.connect.http.client.okhttp.OkHttpClient(config, null, random, null, null, getCompositeMeterRegistry());
 
             String baseUrl = "http://" + getIP() + ":" + wmRuntimeInfo.getHttpPort();
@@ -808,6 +803,128 @@ class OkHttpClientTest {
             HttpExchange httpExchange2 = client.call(httpRequest2, new AtomicInteger(1)).get();
             assertThat(httpExchange2.getHttpResponse().getStatusCode()).isEqualTo(200);
 
+        }
+
+        @Test
+        void test_oauth2_client_credentials_flow_authentication_with_client_secret_basic() throws ExecutionException, InterruptedException, IOException {
+            String scenario = "Oauth2 Client Credentials flow Authentication with client_secret_basic";
+            String wellKnownOpenidConfiguration = "/.well-known/openid-configuration";
+            String wellKnownOk = "WellKnownOk";
+            String tokenOk = "TokenOk";
+            String clientId = "44d34a4d05344c97837d463207805f8b";
+            String clientSecret = "3fc0576720544ac293a3a5304e6c0fa8";
+            String bodyResponse = "{\"result\":\"pong\"}";
+            WireMockRuntimeInfo wmRuntimeInfo = wmHttp.getRuntimeInfo();
+            WireMock wireMock = wmRuntimeInfo.getWireMock();
+            String httpBaseUrl = wmRuntimeInfo.getHttpBaseUrl();
+            String wellKnownUrl = httpBaseUrl +"/.well-known/openid-configuration";
+
+            HashMap<String, Object> config = Maps.newHashMap();
+            config.put(CONFIGURATION_ID,"default");
+            config.put(HTTP_CLIENT_AUTHENTICATION_OAUTH2_CLIENT_CREDENTIALS_FLOW_ACTIVATE, true);
+            config.put(HTTP_CLIENT_AUTHENTICATION_OAUTH2_CLIENT_CREDENTIALS_FLOW_WELL_KNOWN_URL, wellKnownUrl);
+            config.put(HTTP_CLIENT_AUTHENTICATION_OAUTH2_CLIENT_CREDENTIALS_FLOW_CLIENT_ID, clientId);
+            config.put(HTTP_CLIENT_AUTHENTICATION_OAUTH2_CLIENT_CREDENTIALS_FLOW_CLIENT_SECRET, clientSecret);
+
+
+
+
+            String url = httpBaseUrl + "/v1/tracks/2TpxZ7JUBn3uw46aR7qd6V";
+            HashMap<String, List<String>> headers = Maps.newHashMap();
+            headers.put(CONTENT_TYPE, Lists.newArrayList("text/plain"));
+            headers.put("X-Correlation-ID", Lists.newArrayList("e6de70d1-f222-46e8-b755-754880687822"));
+            headers.put("X-Request-ID", Lists.newArrayList("e6de70d1-f222-46e8-b755-11111"));
+            HttpRequest httpRequest = new HttpRequest(
+                    url,
+                    "GET",
+                    "STRING"
+            );
+            httpRequest.setHeaders(headers);
+
+            Path path = Paths.get("src/test/resources/oauth2/wellknownUrlContent.json");
+            httpBaseUrl = wmRuntimeInfo.getHttpBaseUrl();
+            String content = Files.readString(path);
+            String wellKnownUrlContent = content.replaceAll("baseUrl", httpBaseUrl);
+
+            //good well known content
+            wireMock
+                    .register(WireMock.get(wellKnownOpenidConfiguration).inScenario(scenario)
+                            .whenScenarioStateIs(STARTED)
+                            .willReturn(WireMock.aResponse()
+                                    .withStatus(200)
+                                    .withStatusMessage("OK")
+                                    .withBody(wellKnownUrlContent)
+                            ).willSetStateTo(wellKnownOk)
+                    );
+
+            Path tokenPath = Paths.get("src/test/resources/oauth2/token.json");
+            String tokenContent = Files.readString(tokenPath);
+            wireMock
+                    .register(
+                            WireMock.post("/api/token")
+                                    .withHeader("Content-Type",containing("application/x-www-form-urlencoded; charset=UTF-8"))
+                                    .withHeader("Authorization",containing("Basic NDRkMzRhNGQwNTM0NGM5NzgzN2Q0NjMyMDc4MDVmOGI6M2ZjMDU3NjcyMDU0NGFjMjkzYTNhNTMwNGU2YzBmYTg="))
+                                    .inScenario(scenario)
+                                    .whenScenarioStateIs(UNAUTHORIZED_STATE)
+                                    .willReturn(WireMock.aResponse()
+                                            .withStatus(200)
+                                            .withStatusMessage("OK")
+                                            .withBody(tokenContent)
+                                    ).willSetStateTo(tokenOk)
+                    );
+
+
+            wireMock
+                    .register(WireMock.get("/v1/tracks/2TpxZ7JUBn3uw46aR7qd6V")
+                            .withName("1")
+                            .inScenario(scenario)
+                            .whenScenarioStateIs(wellKnownOk)
+                            .willReturn(WireMock.aResponse()
+                                    .withHeader("Date", "Wed, 21 Oct 2022 05:21:23 GMT")
+                                    .withHeader("WWW-Authenticate",
+                                            "Bearer")
+                                    .withStatus(401)
+                                    .withStatusMessage("Unauthorized")
+                            ).willSetStateTo(UNAUTHORIZED_STATE)
+                    );
+
+            wireMock
+                    .register(WireMock.get("/v1/tracks/2TpxZ7JUBn3uw46aR7qd6V")
+                            .withName("2")
+                            .inScenario(scenario)
+                            .whenScenarioStateIs(tokenOk)
+                            .withHeader("Authorization",
+                                    equalTo("Bearer BQDzs98uhifaGayk8H9tCTRozufhFmgV_HKMCnnDdMTdz1FcOo3sdj8OZJ_azo96LRdLI9_1uJOCXxbGZme11KCb6ZxTuCt8B5FxEeECb1kO_-UDuf8")
+                            )
+                            .withHeader("X-Correlation-ID", equalTo("e6de70d1-f222-46e8-b755-754880687822"))
+                            .withHeader("X-Request-ID", equalTo("e6de70d1-f222-46e8-b755-11111"))
+                            .willReturn(WireMock.aResponse()
+                                    .withBody(bodyResponse)
+                                    .withStatus(200)
+                                    .withStatusMessage("OK")
+                            ).willSetStateTo(ACCESS_GRANTED_STATE)
+                    );
+
+
+            Random random = getFixedRandom();
+            OkHttpClient client = new OkHttpClient(config, null, random, null, null, getCompositeMeterRegistry());
+
+            HttpExchange httpExchange1 = client.call(httpRequest, new AtomicInteger(1)).get();
+            assertThat(httpExchange1.getHttpResponse().getStatusCode()).isEqualTo(200);
+
+        }
+
+        private Random getFixedRandom() {
+            Random random = mock(Random.class);
+            byte[] randomBytes = {0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07};
+
+            doAnswer(invocation -> {
+                Object[] args = invocation.getArguments();
+                byte[] rnd = (byte[]) args[0];
+                System.arraycopy(randomBytes, 0, rnd, 0, randomBytes.length);
+                return null;
+            }).when(random).nextBytes(any(byte[].class));
+            return random;
         }
     }
 

@@ -14,6 +14,7 @@ public class OAuth2ClientCredentialsFlowConfigurer implements AuthenticationConf
     private final OkHttpClient okHttpClient;
 
     public OAuth2ClientCredentialsFlowConfigurer(OkHttpClient okHttpClient) {
+        Preconditions.checkNotNull(okHttpClient,"okHttp is null");
         this.okHttpClient = okHttpClient;
     }
 

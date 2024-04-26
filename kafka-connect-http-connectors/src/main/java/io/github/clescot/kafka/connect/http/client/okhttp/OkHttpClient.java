@@ -96,10 +96,16 @@ public class OkHttpClient extends AbstractHttpClient<Request, Response> {
         //cache
         configureCache(config, httpClientBuilder);
 
+        //interceptors
+        configureInterceptors(config, httpClientBuilder);
+
+        //events
+        configureEvents(config, meterRegistry, httpClientBuilder);
+
         //authentication
         AuthenticationConfigurer basicAuthenticationConfigurer = new BasicAuthenticationConfigurer();
         AuthenticationConfigurer digestAuthenticationConfigurer = new DigestAuthenticationConfigurer(random);
-        AuthenticationConfigurer oAuth2ClientCredentialsFlowConfigurer = new OAuth2ClientCredentialsFlowConfigurer(this.getInternalClient());
+        AuthenticationConfigurer oAuth2ClientCredentialsFlowConfigurer = new OAuth2ClientCredentialsFlowConfigurer(httpClientBuilder.build());
         List<AuthenticationConfigurer> authenticatorConfigurers = Lists.newArrayList(
                 basicAuthenticationConfigurer,
                 digestAuthenticationConfigurer,
@@ -108,11 +114,7 @@ public class OkHttpClient extends AbstractHttpClient<Request, Response> {
         AuthenticationsConfigurer authenticationsConfigurer = new AuthenticationsConfigurer(authenticatorConfigurers);
         authenticationsConfigurer.configure(config, httpClientBuilder);
 
-        //interceptors
-        configureInterceptors(config, httpClientBuilder);
 
-        //events
-        configureEvents(config, meterRegistry, httpClientBuilder);
         client = httpClientBuilder.build();
 
     }

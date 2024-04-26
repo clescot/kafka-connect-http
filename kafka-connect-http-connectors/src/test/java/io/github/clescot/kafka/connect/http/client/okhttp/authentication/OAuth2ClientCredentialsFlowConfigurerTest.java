@@ -63,6 +63,13 @@ class OAuth2ClientCredentialsFlowConfigurerTest {
 
 
     }
+
+
+    @Test
+    void test_constructor_with_null_ok_http_client(){
+        Assertions.assertThrows(NullPointerException.class,()->new OAuth2ClientCredentialsFlowConfigurer(null));
+    }
+
     @Test
     void test_authentication_scheme(){
         AuthenticationConfigurer authenticationConfigurer = new OAuth2ClientCredentialsFlowConfigurer(new OkHttpClient());
