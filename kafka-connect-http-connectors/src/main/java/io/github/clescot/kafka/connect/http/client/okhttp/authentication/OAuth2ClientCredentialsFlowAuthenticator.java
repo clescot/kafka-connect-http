@@ -6,6 +6,7 @@ import com.google.common.base.Preconditions;
 import com.google.common.collect.Sets;
 import com.nimbusds.oauth2.sdk.*;
 import com.nimbusds.oauth2.sdk.auth.ClientAuthentication;
+import com.nimbusds.oauth2.sdk.auth.ClientAuthenticationMethod;
 import com.nimbusds.oauth2.sdk.auth.ClientSecretBasic;
 import com.nimbusds.oauth2.sdk.auth.Secret;
 import com.nimbusds.oauth2.sdk.http.HTTPResponse;
@@ -26,8 +27,11 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.net.URI;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Scanner;
 import java.util.Set;
+
+import static com.nimbusds.oauth2.sdk.auth.ClientAuthenticationMethod.CLIENT_SECRET_BASIC;
 
 public class OAuth2ClientCredentialsFlowAuthenticator implements CachingAuthenticator {
 
@@ -72,6 +76,11 @@ public class OAuth2ClientCredentialsFlowAuthenticator implements CachingAuthenti
             OIDCProviderMetadata providerMetadata;
             providerMetadata = OIDCProviderMetadata.parse(providerInfo);
 
+            List<ClientAuthenticationMethod> tokenEndpointAuthMethods = providerMetadata.getTokenEndpointAuthMethods();
+
+            if(!tokenEndpointAuthMethods.contains(CLIENT_SECRET_BASIC)){
+                throw new IllegalStateException("Oauth2 provider does not support 'client_secret_basic' authentication to get the token");
+            }
             // The token endpoint
             tokenEndpointUri = providerMetadata.getTokenEndpointURI();
             String tokenEndpoint = tokenEndpointUri.toString();

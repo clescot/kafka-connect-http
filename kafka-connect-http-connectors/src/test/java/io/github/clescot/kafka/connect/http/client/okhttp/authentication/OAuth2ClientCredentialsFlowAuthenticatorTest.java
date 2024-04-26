@@ -28,6 +28,7 @@ class OAuth2ClientCredentialsFlowAuthenticatorTest {
     public static final String WELL_KNOWN_OPENID_CONFIGURATION = "/.well-known/openid-configuration";
     public static final String BAD_WELL_KNOWN_OPENID_CONFIGURATION = "/bad/.well-known/openid-configuration";
     public static final String BAD_TOKEN_WELL_KNOWN_OPENID_CONFIGURATION = "/bad/token/.well-known/openid-configuration";
+    public static final String BAD_AUTH_TOKEN_WELL_KNOWN_OPENID_CONFIGURATION = "/bad/auth/token/.well-known/openid-configuration";
     public static final String BAD_RESPONSE_TOKEN_WELL_KNOWN_OPENID_CONFIGURATION = "/bad/response/token/.well-known/openid-configuration";
     public static final String SONG_PATH = "/v1/tracks/2TpxZ7JUBn3uw46aR7qd6V";
 
@@ -48,6 +49,7 @@ class OAuth2ClientCredentialsFlowAuthenticatorTest {
     public static final String WELL_KNOWN_OK = "WellKnownOk";
     public static final String WELL_KNOWN_KO = "WellKnownKo";
     public static final String WELL_KNOWN_BAD_TOKEN = "WellKnownBadToken";
+    public static final String WELL_KNOWN_BAD_AUTH_TOKEN = "WellKnownBadAuthToken";
     private static final String WELL_KNOWN_BAD_RESPONSE_TOKEN = "WellKnownBadResponseToken";
     public static final String TOKEN_OK = "TokenOk";
     public static final String TOKEN_KO = "TokenKo";
@@ -102,6 +104,24 @@ class OAuth2ClientCredentialsFlowAuthenticatorTest {
                                 .withStatusMessage("OK")
                                 .withBody(wellKnownUrlContentWithBadTokenUri)
                         ).willSetStateTo(WELL_KNOWN_BAD_TOKEN)
+                );
+
+
+        Path pathWithBadAuthToken = Paths.get("src/test/resources/oauth2/wellknownUrlContentWithoutBasicAuthentication.json");
+        String contentWithBadAuthTokenUri = Files.readString(pathWithBadAuthToken);
+        String wellKnownUrlContentWithBadAuthTokenUri = contentWithBadAuthTokenUri.replaceAll("baseUrl", httpBaseUrl);
+
+
+        //well known content pointing to a bad api token url
+        wireMock
+                .register(WireMock.get(BAD_AUTH_TOKEN_WELL_KNOWN_OPENID_CONFIGURATION)
+                        .inScenario(scenario)
+                        .whenScenarioStateIs(STARTED)
+                        .willReturn(WireMock.aResponse()
+                                .withStatus(200)
+                                .withStatusMessage("OK")
+                                .withBody(wellKnownUrlContentWithBadAuthTokenUri)
+                        ).willSetStateTo(WELL_KNOWN_BAD_AUTH_TOKEN)
                 );
 
         Path pathWithBadResponseToken = Paths.get("src/test/resources/oauth2/badResponseFromTOkenApiWellknownUrlContent.json");
@@ -233,6 +253,12 @@ class OAuth2ClientCredentialsFlowAuthenticatorTest {
     void test_constructor_nominal_case_with_unknown_scopes() {
         Assertions.assertThrows(IllegalArgumentException.class, () -> new OAuth2ClientCredentialsFlowAuthenticator(
                 new OkHttpClient(), httpBaseUrl + WELL_KNOWN_OPENID_CONFIGURATION, CLIENT_ID, CLIENT_SECRET, "opensid", "emaissssl"));
+    }
+
+    @Test
+    void test_constructor_without_basic_auth() {
+        Assertions.assertThrows(IllegalStateException.class, () -> new OAuth2ClientCredentialsFlowAuthenticator(
+                new OkHttpClient(), httpBaseUrl + BAD_AUTH_TOKEN_WELL_KNOWN_OPENID_CONFIGURATION, CLIENT_ID, CLIENT_SECRET));
     }
     @Test
     void test_authenticate_nominal_case() throws IOException {
