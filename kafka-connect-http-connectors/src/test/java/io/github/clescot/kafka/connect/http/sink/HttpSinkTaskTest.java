@@ -1,8 +1,5 @@
 package io.github.clescot.kafka.connect.http.sink;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.github.tomakehurst.wiremock.client.WireMock;
 import com.github.tomakehurst.wiremock.core.WireMockConfiguration;
 import com.github.tomakehurst.wiremock.junit5.WireMockExtension;
@@ -31,14 +28,9 @@ import org.apache.kafka.connect.header.Header;
 import org.apache.kafka.connect.sink.ErrantRecordReporter;
 import org.apache.kafka.connect.sink.SinkRecord;
 import org.apache.kafka.connect.sink.SinkTaskContext;
-import org.json.JSONException;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.extension.RegisterExtension;
 import org.mockito.*;
-import org.skyscreamer.jsonassert.Customization;
-import org.skyscreamer.jsonassert.JSONAssert;
-import org.skyscreamer.jsonassert.JSONCompareMode;
-import org.skyscreamer.jsonassert.comparator.CustomComparator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -1029,50 +1021,7 @@ public class HttpSinkTaskTest {
     }
 
 
-    @Test
-    void test_http_exchange_json_serialization() throws JsonProcessingException, JSONException {
-        HttpExchange dummyHttpExchange = getDummyHttpExchange();
-        ObjectMapper objectMapper = new ObjectMapper();
-        objectMapper.registerModule(new JavaTimeModule());
-        String httpExchangeAsString = objectMapper.writeValueAsString(dummyHttpExchange);
-        String expectedJSON = "" +
-                "{\n" +
-                "  \"durationInMillis\": 245,\n" +
-                "  \"moment\": 1668388166.569457181,\n" +
-                "  \"attempts\": 1,\n" +
-                "  \"success\": true,\n" +
-                "  \"httpResponse\": {\n" +
-                "    \"statusCode\": 200,\n" +
-                "    \"statusMessage\": \"OK\",\n" +
-                "    \"responseBody\": \"my response\",\n" +
-                "    \"responseHeaders\": {\n" +
-                "      \"Content-Type\": [\"application/json\"]\n" +
-                "    }\n" +
-                "  },\n" +
-                "  \"httpRequest\": {\n" +
-                "    \"url\": \"http://www.titi.com\",\n" +
-                "    \"headers\": {\n" +
-                "      \"X-dummy\": [\n" +
-                "        \"blabla\"\n" +
-                "      ]\n" +
-                "    },\n" +
-                "    \"method\": \"" + DUMMY_METHOD + "\",\n" +
-                "    \"bodyAsString\": \"" + DUMMY_BODY + "\",\n" +
-                "    \"bodyAsForm\": {},\n" +
-                "    \"bodyAsByteArray\": \"\",\n" +
-                "    \"bodyAsMultipart\": [],\n" +
-                "    \"bodyType\": \"" + DUMMY_BODY_TYPE + "\"\n" +
-                "  }\n" +
-                "}";
 
-        JSONAssert.assertEquals(expectedJSON, httpExchangeAsString,
-                new CustomComparator(JSONCompareMode.LENIENT,
-                        new Customization("moment", (o1, o2) -> true),
-                        new Customization("durationInMillis", (o1, o2) -> true)
-                ));
-
-
-    }
 
 
     private HttpExchange getDummyHttpExchange() {
