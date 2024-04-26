@@ -101,17 +101,20 @@ public class HttpSinkTaskTest {
 //                .untilAsserted(() -> Assertions.assertTrue(true));
     }
 
-    @Test
-    void test_start_with_queue_name() {
-        Assertions.assertDoesNotThrow(() -> {
-            Map<String, String> settings = Maps.newHashMap();
-            settings.put(ConfigConstants.QUEUE_NAME, "dummyQueueName");
-            httpSinkTask.start(settings);
-        });
-    }
+
 
     @Nested
     class Start {
+
+        @Test
+        void test_start_with_queue_name() {
+            Assertions.assertDoesNotThrow(() -> {
+                Map<String, String> settings = Maps.newHashMap();
+                settings.put(ConfigConstants.QUEUE_NAME, "dummyQueueName");
+                httpSinkTask.start(settings);
+            });
+        }
+
         @Test
         void test_start_with_custom_trust_store_path_and_password() {
             Assertions.assertDoesNotThrow(() -> {
@@ -718,6 +721,12 @@ public class HttpSinkTaskTest {
             verify(queue, times(1)).offer(any(KafkaRecord.class));
         }
 
+
+    }
+
+
+    @Nested
+    class PutWithLatencies {
         @Test
         @DisplayName("test with multiple http requests with slow responses with AHC implementation, expected ok")
         void test_put_with_latencies_and_ahc_implementation() {
@@ -1022,8 +1031,6 @@ public class HttpSinkTaskTest {
 
 
 
-
-
     private HttpExchange getDummyHttpExchange() {
         Map<String, List<String>> requestHeaders = Maps.newHashMap();
         requestHeaders.put("X-dummy", Lists.newArrayList("blabla"));
@@ -1072,6 +1079,7 @@ public class HttpSinkTaskTest {
                 "  \"bodyType\": \"" + DUMMY_BODY_TYPE + "\"\n" +
                 "}";
     }
+
 
 
 }
