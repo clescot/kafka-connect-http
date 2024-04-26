@@ -9,6 +9,7 @@ import com.github.tomakehurst.wiremock.junit5.WireMockRuntimeInfo;
 import okhttp3.*;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
@@ -201,129 +202,137 @@ class OAuth2ClientCredentialsFlowAuthenticatorTest {
                 );
     }
 
-    @Test
-    void test_constructor_with_null_args() {
-        Assertions.assertThrows(NullPointerException.class, () -> new OAuth2ClientCredentialsFlowAuthenticator(
-                null, null, null, null));
+    @Nested
+    class Constructor {
+        @Test
+        void test_constructor_with_null_args() {
+            Assertions.assertThrows(NullPointerException.class, () -> new OAuth2ClientCredentialsFlowAuthenticator(
+                    null, null, null, null));
+        }
+
+        @Test
+        void test_constructor_with_missing_ok_http_client() {
+            Assertions.assertThrows(NullPointerException.class, () -> new OAuth2ClientCredentialsFlowAuthenticator(
+                    null, httpBaseUrl + WELL_KNOWN_OPENID_CONFIGURATION, CLIENT_ID, CLIENT_SECRET));
+        }
+
+        @Test
+        void test_constructor_with_missing_well_known_url() {
+            Assertions.assertThrows(NullPointerException.class, () -> new OAuth2ClientCredentialsFlowAuthenticator(
+                    new OkHttpClient(), null, CLIENT_ID, CLIENT_SECRET));
+        }
+
+        @Test
+        void test_constructor_with_missing_well_client_id() {
+            Assertions.assertThrows(NullPointerException.class, () -> new OAuth2ClientCredentialsFlowAuthenticator(
+                    new OkHttpClient(), httpBaseUrl + WELL_KNOWN_OPENID_CONFIGURATION, null, CLIENT_SECRET));
+        }
+
+        @Test
+        void test_constructor_with_missing_well_client_secret() {
+            Assertions.assertThrows(NullPointerException.class, () -> new OAuth2ClientCredentialsFlowAuthenticator(
+                    new OkHttpClient(), httpBaseUrl + WELL_KNOWN_OPENID_CONFIGURATION, CLIENT_ID, null));
+        }
+
+        @Test
+        void test_constructor_nominal_case() {
+            OAuth2ClientCredentialsFlowAuthenticator authenticator = new OAuth2ClientCredentialsFlowAuthenticator(
+                    new OkHttpClient(), httpBaseUrl + WELL_KNOWN_OPENID_CONFIGURATION, CLIENT_ID, CLIENT_SECRET);
+            assertThat(authenticator)
+                    .isNotNull()
+                    .isInstanceOf(OAuth2ClientCredentialsFlowAuthenticator.class);
+        }
+
+        @Test
+        void test_constructor_nominal_case_with_known_scopes() {
+            OAuth2ClientCredentialsFlowAuthenticator authenticator = new OAuth2ClientCredentialsFlowAuthenticator(
+                    new OkHttpClient(), httpBaseUrl + WELL_KNOWN_OPENID_CONFIGURATION, CLIENT_ID, CLIENT_SECRET, "openid", "email");
+            assertThat(authenticator)
+                    .isNotNull()
+                    .isInstanceOf(OAuth2ClientCredentialsFlowAuthenticator.class);
+        }
+
+        @Test
+        void test_constructor_nominal_case_with_unknown_scopes() {
+            Assertions.assertThrows(IllegalArgumentException.class, () -> new OAuth2ClientCredentialsFlowAuthenticator(
+                    new OkHttpClient(), httpBaseUrl + WELL_KNOWN_OPENID_CONFIGURATION, CLIENT_ID, CLIENT_SECRET, "opensid", "emaissssl"));
+        }
+
+        @Test
+        void test_constructor_without_basic_auth() {
+            Assertions.assertThrows(IllegalStateException.class, () -> new OAuth2ClientCredentialsFlowAuthenticator(
+                    new OkHttpClient(), httpBaseUrl + BAD_AUTH_TOKEN_WELL_KNOWN_OPENID_CONFIGURATION, CLIENT_ID, CLIENT_SECRET));
+        }
     }
 
-    @Test
-    void test_constructor_with_missing_ok_http_client() {
-        Assertions.assertThrows(NullPointerException.class, () -> new OAuth2ClientCredentialsFlowAuthenticator(
-                null, httpBaseUrl + WELL_KNOWN_OPENID_CONFIGURATION, CLIENT_ID, CLIENT_SECRET));
-    }
+    @Nested
+    class Authenticate{
+        @Test
+        void test_authenticate_nominal_case() throws IOException {
+            Authenticator authenticator = new OAuth2ClientCredentialsFlowAuthenticator(
+                    new OkHttpClient(), httpBaseUrl + WELL_KNOWN_OPENID_CONFIGURATION, CLIENT_ID, CLIENT_SECRET);
+            Route route = mock(Route.class);
+            Request request = new Request.Builder().url(httpBaseUrl+SONG_PATH).get().build();
+            Response.Builder builder = new Response.Builder();
+            builder.setRequest$okhttp(request);
+            Response response = builder.code(200).protocol(Protocol.HTTP_1_1).message("OK").build();
+            Request authenticatedRequest = authenticator.authenticate(route, response);
+            String authorizationHeader = authenticatedRequest.headers().get("Authorization");
+            assertThat(authorizationHeader).isEqualTo("Bearer BQDzs98uhifaGayk8H9tCTRozufhFmgV_HKMCnnDdMTdz1FcOo3sdj8OZJ_azo96LRdLI9_1uJOCXxbGZme11KCb6ZxTuCt8B5FxEeECb1kO_-UDuf8");
+        }
 
-    @Test
-    void test_constructor_with_missing_well_known_url() {
-        Assertions.assertThrows(NullPointerException.class, () -> new OAuth2ClientCredentialsFlowAuthenticator(
-                new OkHttpClient(), null, CLIENT_ID, CLIENT_SECRET));
-    }
+        @Test
+        void test_authenticate_with_bad_well_known_content() {
+            Assertions.assertThrows(RuntimeException.class,()->new OAuth2ClientCredentialsFlowAuthenticator(
+                    new OkHttpClient(), httpBaseUrl + BAD_WELL_KNOWN_OPENID_CONFIGURATION, CLIENT_ID, CLIENT_SECRET));
+        }
 
-    @Test
-    void test_constructor_with_missing_well_client_id() {
-        Assertions.assertThrows(NullPointerException.class, () -> new OAuth2ClientCredentialsFlowAuthenticator(
-                new OkHttpClient(), httpBaseUrl + WELL_KNOWN_OPENID_CONFIGURATION, null, CLIENT_SECRET));
-    }
+        @Test
+        void test_authenticate_with_bad_token_in_well_known_content() throws IOException {
+            Authenticator authenticator = new OAuth2ClientCredentialsFlowAuthenticator(
+                    new OkHttpClient(), httpBaseUrl + BAD_TOKEN_WELL_KNOWN_OPENID_CONFIGURATION, CLIENT_ID, CLIENT_SECRET);
 
-    @Test
-    void test_constructor_with_missing_well_client_secret() {
-        Assertions.assertThrows(NullPointerException.class, () -> new OAuth2ClientCredentialsFlowAuthenticator(
-                new OkHttpClient(), httpBaseUrl + WELL_KNOWN_OPENID_CONFIGURATION, CLIENT_ID, null));
-    }
+            Route route = mock(Route.class);
+            Request request = new Request.Builder().url(httpBaseUrl+SONG_PATH).get().build();
+            Response.Builder builder = new Response.Builder();
+            builder.setRequest$okhttp(request);
+            Response response = builder.code(200).protocol(Protocol.HTTP_1_1).message("OK").build();
 
-    @Test
-    void test_constructor_nominal_case() {
-        OAuth2ClientCredentialsFlowAuthenticator authenticator = new OAuth2ClientCredentialsFlowAuthenticator(
-                new OkHttpClient(), httpBaseUrl + WELL_KNOWN_OPENID_CONFIGURATION, CLIENT_ID, CLIENT_SECRET);
-        assertThat(authenticator)
-                .isNotNull()
-                .isInstanceOf(OAuth2ClientCredentialsFlowAuthenticator.class);
-    }
+            Request authenticatedRequest = authenticator.authenticate(route, response);
+            assertThat(authenticatedRequest.header("Authorization")).isNull();
+        }
+        @Test
+        void test_authenticate_with_bad_response_token_in_well_known_content() throws IOException {
+            Authenticator authenticator = new OAuth2ClientCredentialsFlowAuthenticator(
+                    new OkHttpClient(), httpBaseUrl + BAD_RESPONSE_TOKEN_WELL_KNOWN_OPENID_CONFIGURATION, CLIENT_ID, CLIENT_SECRET);
 
-    @Test
-    void test_constructor_nominal_case_with_known_scopes() {
-        OAuth2ClientCredentialsFlowAuthenticator authenticator = new OAuth2ClientCredentialsFlowAuthenticator(
-                new OkHttpClient(), httpBaseUrl + WELL_KNOWN_OPENID_CONFIGURATION, CLIENT_ID, CLIENT_SECRET, "openid", "email");
-        assertThat(authenticator)
-                .isNotNull()
-                .isInstanceOf(OAuth2ClientCredentialsFlowAuthenticator.class);
-    }
+            Route route = mock(Route.class);
+            Request request = new Request.Builder().url(httpBaseUrl+SONG_PATH).get().build();
+            Response.Builder builder = new Response.Builder();
+            builder.setRequest$okhttp(request);
+            Response response = builder.code(200).protocol(Protocol.HTTP_1_1).message("OK").build();
 
-    @Test
-    void test_constructor_nominal_case_with_unknown_scopes() {
-        Assertions.assertThrows(IllegalArgumentException.class, () -> new OAuth2ClientCredentialsFlowAuthenticator(
-                new OkHttpClient(), httpBaseUrl + WELL_KNOWN_OPENID_CONFIGURATION, CLIENT_ID, CLIENT_SECRET, "opensid", "emaissssl"));
-    }
+            Request authenticatedRequest = authenticator.authenticate(route, response);
+            assertThat(authenticatedRequest.header("Authorization")).isNull();
+        }
 
-    @Test
-    void test_constructor_without_basic_auth() {
-        Assertions.assertThrows(IllegalStateException.class, () -> new OAuth2ClientCredentialsFlowAuthenticator(
-                new OkHttpClient(), httpBaseUrl + BAD_AUTH_TOKEN_WELL_KNOWN_OPENID_CONFIGURATION, CLIENT_ID, CLIENT_SECRET));
-    }
-    @Test
-    void test_authenticate_nominal_case() throws IOException {
-        Authenticator authenticator = new OAuth2ClientCredentialsFlowAuthenticator(
-                new OkHttpClient(), httpBaseUrl + WELL_KNOWN_OPENID_CONFIGURATION, CLIENT_ID, CLIENT_SECRET);
-        Route route = mock(Route.class);
-        Request request = new Request.Builder().url(httpBaseUrl+SONG_PATH).get().build();
-        Response.Builder builder = new Response.Builder();
-        builder.setRequest$okhttp(request);
-        Response response = builder.code(200).protocol(Protocol.HTTP_1_1).message("OK").build();
-        Request authenticatedRequest = authenticator.authenticate(route, response);
-        String authorizationHeader = authenticatedRequest.headers().get("Authorization");
-        assertThat(authorizationHeader).isEqualTo("Bearer BQDzs98uhifaGayk8H9tCTRozufhFmgV_HKMCnnDdMTdz1FcOo3sdj8OZJ_azo96LRdLI9_1uJOCXxbGZme11KCb6ZxTuCt8B5FxEeECb1kO_-UDuf8");
-    }
+        @Test
+        void test_authenticate_with_state_nominal_case() throws IOException {
+            OAuth2ClientCredentialsFlowAuthenticator authenticator = new OAuth2ClientCredentialsFlowAuthenticator(
+                    new OkHttpClient(), httpBaseUrl + WELL_KNOWN_OPENID_CONFIGURATION, CLIENT_ID, CLIENT_SECRET);
+            Route route = mock(Route.class);
+            Request request = new Request.Builder().url(httpBaseUrl+SONG_PATH).get().build();
+            Response.Builder builder = new Response.Builder();
+            builder.setRequest$okhttp(request);
+            Response response = builder.code(200).protocol(Protocol.HTTP_1_1).message("OK").build();
+            Request authenticatedRequest = authenticator.authenticate(route, response);
+            String authorizationHeader = authenticatedRequest.headers().get("Authorization");
+            assertThat(authorizationHeader).isEqualTo("Bearer BQDzs98uhifaGayk8H9tCTRozufhFmgV_HKMCnnDdMTdz1FcOo3sdj8OZJ_azo96LRdLI9_1uJOCXxbGZme11KCb6ZxTuCt8B5FxEeECb1kO_-UDuf8");
+            Request authenticatedRequest2 = authenticator.authenticateWithState(route, response.request());
+            String authorizationHeader2 = authenticatedRequest2.headers().get("Authorization");
+            assertThat(authorizationHeader2).isEqualTo(authorizationHeader);
+        }
 
-    @Test
-    void test_authenticate_with_bad_well_known_content() {
-        Assertions.assertThrows(RuntimeException.class,()->new OAuth2ClientCredentialsFlowAuthenticator(
-                new OkHttpClient(), httpBaseUrl + BAD_WELL_KNOWN_OPENID_CONFIGURATION, CLIENT_ID, CLIENT_SECRET));
-    }
-
-    @Test
-    void test_authenticate_with_bad_token_in_well_known_content() throws IOException {
-        Authenticator authenticator = new OAuth2ClientCredentialsFlowAuthenticator(
-                new OkHttpClient(), httpBaseUrl + BAD_TOKEN_WELL_KNOWN_OPENID_CONFIGURATION, CLIENT_ID, CLIENT_SECRET);
-
-        Route route = mock(Route.class);
-        Request request = new Request.Builder().url(httpBaseUrl+SONG_PATH).get().build();
-        Response.Builder builder = new Response.Builder();
-        builder.setRequest$okhttp(request);
-        Response response = builder.code(200).protocol(Protocol.HTTP_1_1).message("OK").build();
-
-        Request authenticatedRequest = authenticator.authenticate(route, response);
-        assertThat(authenticatedRequest.header("Authorization")).isNull();
-    }
-    @Test
-    void test_authenticate_with_bad_response_token_in_well_known_content() throws IOException {
-        Authenticator authenticator = new OAuth2ClientCredentialsFlowAuthenticator(
-                new OkHttpClient(), httpBaseUrl + BAD_RESPONSE_TOKEN_WELL_KNOWN_OPENID_CONFIGURATION, CLIENT_ID, CLIENT_SECRET);
-
-        Route route = mock(Route.class);
-        Request request = new Request.Builder().url(httpBaseUrl+SONG_PATH).get().build();
-        Response.Builder builder = new Response.Builder();
-        builder.setRequest$okhttp(request);
-        Response response = builder.code(200).protocol(Protocol.HTTP_1_1).message("OK").build();
-
-        Request authenticatedRequest = authenticator.authenticate(route, response);
-        assertThat(authenticatedRequest.header("Authorization")).isNull();
-    }
-
-    @Test
-    void test_authenticate_with_state_nominal_case() throws IOException {
-        OAuth2ClientCredentialsFlowAuthenticator authenticator = new OAuth2ClientCredentialsFlowAuthenticator(
-                new OkHttpClient(), httpBaseUrl + WELL_KNOWN_OPENID_CONFIGURATION, CLIENT_ID, CLIENT_SECRET);
-        Route route = mock(Route.class);
-        Request request = new Request.Builder().url(httpBaseUrl+SONG_PATH).get().build();
-        Response.Builder builder = new Response.Builder();
-        builder.setRequest$okhttp(request);
-        Response response = builder.code(200).protocol(Protocol.HTTP_1_1).message("OK").build();
-        Request authenticatedRequest = authenticator.authenticate(route, response);
-        String authorizationHeader = authenticatedRequest.headers().get("Authorization");
-        assertThat(authorizationHeader).isEqualTo("Bearer BQDzs98uhifaGayk8H9tCTRozufhFmgV_HKMCnnDdMTdz1FcOo3sdj8OZJ_azo96LRdLI9_1uJOCXxbGZme11KCb6ZxTuCt8B5FxEeECb1kO_-UDuf8");
-        Request authenticatedRequest2 = authenticator.authenticateWithState(route, response.request());
-        String authorizationHeader2 = authenticatedRequest2.headers().get("Authorization");
-        assertThat(authorizationHeader2).isEqualTo(authorizationHeader);
     }
 
 }
