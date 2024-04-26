@@ -4,6 +4,7 @@ import com.github.tomakehurst.wiremock.client.WireMock;
 import com.github.tomakehurst.wiremock.core.WireMockConfiguration;
 import com.github.tomakehurst.wiremock.junit5.WireMockExtension;
 import com.github.tomakehurst.wiremock.junit5.WireMockRuntimeInfo;
+import com.google.common.base.Preconditions;
 import com.google.common.base.Stopwatch;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
@@ -35,6 +36,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.net.ssl.TrustManagerFactory;
+import java.net.URL;
 import java.time.OffsetDateTime;
 import java.time.ZoneId;
 import java.util.*;
@@ -115,51 +117,6 @@ public class HttpSinkTaskTest {
             });
         }
 
-        @Test
-        void test_start_with_custom_trust_store_path_and_password() {
-            Assertions.assertDoesNotThrow(() -> {
-                Map<String, String> settings = Maps.newHashMap();
-                String truststorePath = Thread.currentThread().getContextClassLoader().getResource(CLIENT_TRUSTSTORE_JKS_FILENAME).getPath();
-                settings.put(HTTP_CLIENT_SSL_TRUSTSTORE_PATH, truststorePath);
-                settings.put(HTTP_CLIENT_SSL_TRUSTSTORE_PASSWORD, CLIENT_TRUSTSTORE_JKS_PASSWORD);
-                httpSinkTask.start(settings);
-            });
-        }
-
-        @Test
-        void test_start_with_custom_trust_store_path_password_and_type() {
-            Assertions.assertDoesNotThrow(() -> {
-                Map<String, String> settings = Maps.newHashMap();
-                String truststorePath = Thread.currentThread().getContextClassLoader().getResource(CLIENT_TRUSTSTORE_JKS_FILENAME).getPath();
-                settings.put(HTTP_CLIENT_SSL_TRUSTSTORE_PATH, truststorePath);
-                settings.put(HTTP_CLIENT_SSL_TRUSTSTORE_PASSWORD, CLIENT_TRUSTSTORE_JKS_PASSWORD);
-                settings.put(HTTP_CLIENT_SSL_TRUSTSTORE_TYPE, JKS_STORE_TYPE);
-                httpSinkTask.start(settings);
-            });
-
-        }
-
-        @Test
-        void test_start_with_custom_trust_store_path_password_type_and_algorithm() {
-            Assertions.assertDoesNotThrow(() -> {
-                Map<String, String> settings = Maps.newHashMap();
-                String truststorePath = Thread.currentThread().getContextClassLoader().getResource(CLIENT_TRUSTSTORE_JKS_FILENAME).getPath();
-                settings.put(CONFIG_HTTP_CLIENT_SSL_TRUSTSTORE_PATH, truststorePath);
-                settings.put(CONFIG_HTTP_CLIENT_SSL_TRUSTSTORE_PASSWORD, CLIENT_TRUSTSTORE_JKS_PASSWORD);
-                settings.put(CONFIG_HTTP_CLIENT_SSL_TRUSTSTORE_TYPE, JKS_STORE_TYPE);
-                settings.put(CONFIG_HTTP_CLIENT_SSL_TRUSTSTORE_ALGORITHM, TRUSTSTORE_PKIX_ALGORITHM);
-                httpSinkTask.start(settings);
-            });
-        }
-
-        @Test
-        void test_ssl_always_granted_parameter() {
-            Map<String, String> settings = Maps.newHashMap();
-            settings.put(CONFIG_HTTP_CLIENT_SSL_TRUSTSTORE_ALWAYS_TRUST, "true");
-            httpSinkTask.start(settings);
-            TrustManagerFactory trustManagerFactory = httpSinkTask.getHttpTask().getDefaultConfiguration().getHttpClient().getTrustManagerFactory();
-            assertThat(trustManagerFactory).isInstanceOf(AlwaysTrustManagerFactory.class);
-        }
 
         @Test
         void test_start_with_static_request_headers() {
@@ -527,7 +484,65 @@ public class HttpSinkTaskTest {
 
     }
 
+
+
     @Nested
+    class StartWithSsl {
+        @Test
+        void test_start_with_custom_trust_store_path_and_password() {
+            Assertions.assertDoesNotThrow(() -> {
+                Map<String, String> settings = Maps.newHashMap();
+                URL resource = Thread.currentThread().getContextClassLoader().getResource(CLIENT_TRUSTSTORE_JKS_FILENAME);
+                Preconditions.checkNotNull(resource);
+                String truststorePath = resource.getPath();
+                settings.put(HTTP_CLIENT_SSL_TRUSTSTORE_PATH, truststorePath);
+                settings.put(HTTP_CLIENT_SSL_TRUSTSTORE_PASSWORD, CLIENT_TRUSTSTORE_JKS_PASSWORD);
+                httpSinkTask.start(settings);
+            });
+        }
+
+        @Test
+        void test_start_with_custom_trust_store_path_password_and_type() {
+            Assertions.assertDoesNotThrow(() -> {
+                Map<String, String> settings = Maps.newHashMap();
+                URL resource = Thread.currentThread().getContextClassLoader().getResource(CLIENT_TRUSTSTORE_JKS_FILENAME);
+                Preconditions.checkNotNull(resource);
+                String truststorePath = resource.getPath();
+                settings.put(HTTP_CLIENT_SSL_TRUSTSTORE_PATH, truststorePath);
+                settings.put(HTTP_CLIENT_SSL_TRUSTSTORE_PASSWORD, CLIENT_TRUSTSTORE_JKS_PASSWORD);
+                settings.put(HTTP_CLIENT_SSL_TRUSTSTORE_TYPE, JKS_STORE_TYPE);
+                httpSinkTask.start(settings);
+            });
+
+        }
+
+        @Test
+        void test_start_with_custom_trust_store_path_password_type_and_algorithm() {
+            Assertions.assertDoesNotThrow(() -> {
+                Map<String, String> settings = Maps.newHashMap();
+                URL resource = Thread.currentThread().getContextClassLoader().getResource(CLIENT_TRUSTSTORE_JKS_FILENAME);
+                Preconditions.checkNotNull(resource);
+                String truststorePath = resource.getPath();
+                settings.put(CONFIG_HTTP_CLIENT_SSL_TRUSTSTORE_PATH, truststorePath);
+                settings.put(CONFIG_HTTP_CLIENT_SSL_TRUSTSTORE_PASSWORD, CLIENT_TRUSTSTORE_JKS_PASSWORD);
+                settings.put(CONFIG_HTTP_CLIENT_SSL_TRUSTSTORE_TYPE, JKS_STORE_TYPE);
+                settings.put(CONFIG_HTTP_CLIENT_SSL_TRUSTSTORE_ALGORITHM, TRUSTSTORE_PKIX_ALGORITHM);
+                httpSinkTask.start(settings);
+            });
+        }
+
+        @Test
+        void test_ssl_always_granted_parameter() {
+            Map<String, String> settings = Maps.newHashMap();
+            settings.put(CONFIG_HTTP_CLIENT_SSL_TRUSTSTORE_ALWAYS_TRUST, "true");
+            httpSinkTask.start(settings);
+            TrustManagerFactory trustManagerFactory = httpSinkTask.getHttpTask().getDefaultConfiguration().getHttpClient().getTrustManagerFactory();
+            assertThat(trustManagerFactory).isInstanceOf(AlwaysTrustManagerFactory.class);
+        }
+
+    }
+
+        @Nested
     class Stop {
         @Test
         void test_stop_with_start_and_no_setttings() {
