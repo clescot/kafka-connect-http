@@ -36,7 +36,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.net.ssl.TrustManagerFactory;
+import java.io.IOException;
 import java.net.URL;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.time.OffsetDateTime;
 import java.time.ZoneId;
 import java.util.*;
@@ -44,6 +48,8 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import static com.github.tomakehurst.wiremock.client.WireMock.*;
+import static com.github.tomakehurst.wiremock.stubbing.Scenario.STARTED;
 import static io.github.clescot.kafka.connect.http.sink.HttpSinkConfigDefinition.*;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.*;
@@ -425,15 +431,15 @@ public class HttpSinkTaskTest {
                 List<SinkRecord> records = Lists.newArrayList();
                 List<Header> headers = Lists.newArrayList();
                 SinkRecord sinkRecord1 = new SinkRecord("myTopic", 0, Schema.STRING_SCHEMA, "key", Schema.STRING_SCHEMA,
-                        getLocalHttpRequestAsStringWithPath(wmRuntimeInfo.getHttpPort(), "/path1"),
+                        getLocalHttpRequestAsStringWithPath(wmRuntimeInfo.getHttpPort(), "/path1","POST"),
                         -1, System.currentTimeMillis(), TimestampType.CREATE_TIME, headers);
                 records.add(sinkRecord1);
                 SinkRecord sinkRecord2 = new SinkRecord("myTopic", 0, Schema.STRING_SCHEMA, "key", Schema.STRING_SCHEMA,
-                        getLocalHttpRequestAsStringWithPath(wmRuntimeInfo.getHttpPort(), "/path2"),
+                        getLocalHttpRequestAsStringWithPath(wmRuntimeInfo.getHttpPort(), "/path2","POST"),
                         -1, System.currentTimeMillis(), TimestampType.CREATE_TIME, headers);
                 records.add(sinkRecord2);
                 SinkRecord sinkRecord3 = new SinkRecord("myTopic", 0, Schema.STRING_SCHEMA, "key", Schema.STRING_SCHEMA,
-                        getLocalHttpRequestAsStringWithPath(wmRuntimeInfo.getHttpPort(), "/path3"),
+                        getLocalHttpRequestAsStringWithPath(wmRuntimeInfo.getHttpPort(), "/path3","POST"),
                         -1, System.currentTimeMillis(), TimestampType.CREATE_TIME, headers);
                 records.add(sinkRecord3);
 
@@ -505,15 +511,15 @@ public class HttpSinkTaskTest {
                 List<SinkRecord> records = Lists.newArrayList();
                 List<Header> headers = Lists.newArrayList();
                 SinkRecord sinkRecord1 = new SinkRecord("myTopic", 0, Schema.STRING_SCHEMA, "key", Schema.STRING_SCHEMA,
-                        getLocalHttpRequestAsStringWithPath(wmRuntimeInfo.getHttpPort(), "/path1"),
+                        getLocalHttpRequestAsStringWithPath(wmRuntimeInfo.getHttpPort(), "/path1","POST"),
                         -1, System.currentTimeMillis(), TimestampType.CREATE_TIME, headers);
                 records.add(sinkRecord1);
                 SinkRecord sinkRecord2 = new SinkRecord("myTopic", 0, Schema.STRING_SCHEMA, "key", Schema.STRING_SCHEMA,
-                        getLocalHttpRequestAsStringWithPath(wmRuntimeInfo.getHttpPort(), "/path2"),
+                        getLocalHttpRequestAsStringWithPath(wmRuntimeInfo.getHttpPort(), "/path2","POST"),
                         -1, System.currentTimeMillis(), TimestampType.CREATE_TIME, headers);
                 records.add(sinkRecord2);
                 SinkRecord sinkRecord3 = new SinkRecord("myTopic", 0, Schema.STRING_SCHEMA, "key", Schema.STRING_SCHEMA,
-                        getLocalHttpRequestAsStringWithPath(wmRuntimeInfo.getHttpPort(), "/path3"),
+                        getLocalHttpRequestAsStringWithPath(wmRuntimeInfo.getHttpPort(), "/path3","POST"),
                         -1, System.currentTimeMillis(), TimestampType.CREATE_TIME, headers);
                 records.add(sinkRecord3);
 
@@ -586,15 +592,15 @@ public class HttpSinkTaskTest {
                 List<SinkRecord> records = Lists.newArrayList();
                 List<Header> headers = Lists.newArrayList();
                 SinkRecord sinkRecord1 = new SinkRecord("myTopic", 0, Schema.STRING_SCHEMA, "key", Schema.STRING_SCHEMA,
-                        getLocalHttpRequestAsStringWithPath(wmRuntimeInfo.getHttpPort(), "/path1"),
+                        getLocalHttpRequestAsStringWithPath(wmRuntimeInfo.getHttpPort(), "/path1","POST"),
                         -1, System.currentTimeMillis(), TimestampType.CREATE_TIME, headers);
                 records.add(sinkRecord1);
                 SinkRecord sinkRecord2 = new SinkRecord("myTopic", 0, Schema.STRING_SCHEMA, "key", Schema.STRING_SCHEMA,
-                        getLocalHttpRequestAsStringWithPath(wmRuntimeInfo.getHttpPort(), "/path2"),
+                        getLocalHttpRequestAsStringWithPath(wmRuntimeInfo.getHttpPort(), "/path2","POST"),
                         -1, System.currentTimeMillis(), TimestampType.CREATE_TIME, headers);
                 records.add(sinkRecord2);
                 SinkRecord sinkRecord3 = new SinkRecord("myTopic", 0, Schema.STRING_SCHEMA, "key", Schema.STRING_SCHEMA,
-                        getLocalHttpRequestAsStringWithPath(wmRuntimeInfo.getHttpPort(), "/path3"),
+                        getLocalHttpRequestAsStringWithPath(wmRuntimeInfo.getHttpPort(), "/path3","POST"),
                         -1, System.currentTimeMillis(), TimestampType.CREATE_TIME, headers);
                 records.add(sinkRecord3);
 
@@ -677,15 +683,15 @@ public class HttpSinkTaskTest {
                 List<SinkRecord> records = Lists.newArrayList();
                 List<Header> headers = Lists.newArrayList();
                 SinkRecord sinkRecord1 = new SinkRecord("myTopic", 0, Schema.STRING_SCHEMA, "key", Schema.STRING_SCHEMA,
-                        getLocalHttpRequestAsStringWithPath(wmRuntimeInfo.getHttpPort(), "/path1"),
+                        getLocalHttpRequestAsStringWithPath(wmRuntimeInfo.getHttpPort(), "/path1","POST"),
                         -1, System.currentTimeMillis(), TimestampType.CREATE_TIME, headers);
                 records.add(sinkRecord1);
                 SinkRecord sinkRecord2 = new SinkRecord("myTopic", 0, Schema.STRING_SCHEMA, "key", Schema.STRING_SCHEMA,
-                        getLocalHttpRequestAsStringWithPath(wmRuntimeInfo.getHttpPort(), "/path2"),
+                        getLocalHttpRequestAsStringWithPath(wmRuntimeInfo.getHttpPort(), "/path2","POST"),
                         -1, System.currentTimeMillis(), TimestampType.CREATE_TIME, headers);
                 records.add(sinkRecord2);
                 SinkRecord sinkRecord3 = new SinkRecord("myTopic", 0, Schema.STRING_SCHEMA, "key", Schema.STRING_SCHEMA,
-                        getLocalHttpRequestAsStringWithPath(wmRuntimeInfo.getHttpPort(), "/path3"),
+                        getLocalHttpRequestAsStringWithPath(wmRuntimeInfo.getHttpPort(), "/path3","POST"),
                         -1, System.currentTimeMillis(), TimestampType.CREATE_TIME, headers);
                 records.add(sinkRecord3);
 
@@ -761,15 +767,15 @@ public class HttpSinkTaskTest {
             List<SinkRecord> records = Lists.newArrayList();
             List<Header> headers = Lists.newArrayList();
             SinkRecord sinkRecord1 = new SinkRecord("myTopic", 0, Schema.STRING_SCHEMA, "key", Schema.STRING_SCHEMA,
-                    getLocalHttpRequestAsStringWithPath(wmRuntimeInfo.getHttpPort(), "/path1"),
+                    getLocalHttpRequestAsStringWithPath(wmRuntimeInfo.getHttpPort(), "/path1","POST"),
                     -1, System.currentTimeMillis(), TimestampType.CREATE_TIME, headers);
             records.add(sinkRecord1);
             SinkRecord sinkRecord2 = new SinkRecord("myTopic", 0, Schema.STRING_SCHEMA, "key", Schema.STRING_SCHEMA,
-                    getLocalHttpRequestAsStringWithPath(wmRuntimeInfo.getHttpPort(), "/path2"),
+                    getLocalHttpRequestAsStringWithPath(wmRuntimeInfo.getHttpPort(), "/path2","POST"),
                     -1, System.currentTimeMillis(), TimestampType.CREATE_TIME, headers);
             records.add(sinkRecord2);
             SinkRecord sinkRecord3 = new SinkRecord("myTopic", 0, Schema.STRING_SCHEMA, "key", Schema.STRING_SCHEMA,
-                    getLocalHttpRequestAsStringWithPath(wmRuntimeInfo.getHttpPort(), "/path3"),
+                    getLocalHttpRequestAsStringWithPath(wmRuntimeInfo.getHttpPort(), "/path3","POST"),
                     -1, System.currentTimeMillis(), TimestampType.CREATE_TIME, headers);
             records.add(sinkRecord3);
 
@@ -836,15 +842,15 @@ public class HttpSinkTaskTest {
             List<SinkRecord> records = Lists.newArrayList();
             List<Header> headers = Lists.newArrayList();
             SinkRecord sinkRecord1 = new SinkRecord("myTopic", 0, Schema.STRING_SCHEMA, "key", Schema.STRING_SCHEMA,
-                    getLocalHttpRequestAsStringWithPath(wmRuntimeInfo.getHttpPort(), "/path1"),
+                    getLocalHttpRequestAsStringWithPath(wmRuntimeInfo.getHttpPort(), "/path1","POST"),
                     -1, System.currentTimeMillis(), TimestampType.CREATE_TIME, headers);
             records.add(sinkRecord1);
             SinkRecord sinkRecord2 = new SinkRecord("myTopic", 0, Schema.STRING_SCHEMA, "key", Schema.STRING_SCHEMA,
-                    getLocalHttpRequestAsStringWithPath(wmRuntimeInfo.getHttpPort(), "/path2"),
+                    getLocalHttpRequestAsStringWithPath(wmRuntimeInfo.getHttpPort(), "/path2","POST"),
                     -1, System.currentTimeMillis(), TimestampType.CREATE_TIME, headers);
             records.add(sinkRecord2);
             SinkRecord sinkRecord3 = new SinkRecord("myTopic", 0, Schema.STRING_SCHEMA, "key", Schema.STRING_SCHEMA,
-                    getLocalHttpRequestAsStringWithPath(wmRuntimeInfo.getHttpPort(), "/path3"),
+                    getLocalHttpRequestAsStringWithPath(wmRuntimeInfo.getHttpPort(), "/path3","POST"),
                     -1, System.currentTimeMillis(), TimestampType.CREATE_TIME, headers);
             records.add(sinkRecord3);
 
@@ -911,15 +917,15 @@ public class HttpSinkTaskTest {
             List<SinkRecord> records = Lists.newArrayList();
             List<Header> headers = Lists.newArrayList();
             SinkRecord sinkRecord1 = new SinkRecord("myTopic", 0, Schema.STRING_SCHEMA, "key", Schema.STRING_SCHEMA,
-                    getLocalHttpRequestAsStringWithPath(wmRuntimeInfo.getHttpPort(), "/path1"),
+                    getLocalHttpRequestAsStringWithPath(wmRuntimeInfo.getHttpPort(), "/path1","POST"),
                     -1, System.currentTimeMillis(), TimestampType.CREATE_TIME, headers);
             records.add(sinkRecord1);
             SinkRecord sinkRecord2 = new SinkRecord("myTopic", 0, Schema.STRING_SCHEMA, "key", Schema.STRING_SCHEMA,
-                    getLocalHttpRequestAsStringWithPath(wmRuntimeInfo.getHttpPort(), "/path2"),
+                    getLocalHttpRequestAsStringWithPath(wmRuntimeInfo.getHttpPort(), "/path2","POST"),
                     -1, System.currentTimeMillis(), TimestampType.CREATE_TIME, headers);
             records.add(sinkRecord2);
             SinkRecord sinkRecord3 = new SinkRecord("myTopic", 0, Schema.STRING_SCHEMA, "key", Schema.STRING_SCHEMA,
-                    getLocalHttpRequestAsStringWithPath(wmRuntimeInfo.getHttpPort(), "/path3"),
+                    getLocalHttpRequestAsStringWithPath(wmRuntimeInfo.getHttpPort(), "/path3","POST"),
                     -1, System.currentTimeMillis(), TimestampType.CREATE_TIME, headers);
             records.add(sinkRecord3);
 
@@ -987,15 +993,15 @@ public class HttpSinkTaskTest {
             List<SinkRecord> records = Lists.newArrayList();
             List<Header> headers = Lists.newArrayList();
             SinkRecord sinkRecord1 = new SinkRecord("myTopic", 0, Schema.STRING_SCHEMA, "key", Schema.STRING_SCHEMA,
-                    getLocalHttpRequestAsStringWithPath(wmRuntimeInfo.getHttpPort(), "/path1"),
+                    getLocalHttpRequestAsStringWithPath(wmRuntimeInfo.getHttpPort(), "/path1","POST"),
                     -1, System.currentTimeMillis(), TimestampType.CREATE_TIME, headers);
             records.add(sinkRecord1);
             SinkRecord sinkRecord2 = new SinkRecord("myTopic", 0, Schema.STRING_SCHEMA, "key", Schema.STRING_SCHEMA,
-                    getLocalHttpRequestAsStringWithPath(wmRuntimeInfo.getHttpPort(), "/path2"),
+                    getLocalHttpRequestAsStringWithPath(wmRuntimeInfo.getHttpPort(), "/path2","POST"),
                     -1, System.currentTimeMillis(), TimestampType.CREATE_TIME, headers);
             records.add(sinkRecord2);
             SinkRecord sinkRecord3 = new SinkRecord("myTopic", 0, Schema.STRING_SCHEMA, "key", Schema.STRING_SCHEMA,
-                    getLocalHttpRequestAsStringWithPath(wmRuntimeInfo.getHttpPort(), "/path3"),
+                    getLocalHttpRequestAsStringWithPath(wmRuntimeInfo.getHttpPort(), "/path3","POST"),
                     -1, System.currentTimeMillis(), TimestampType.CREATE_TIME, headers);
             records.add(sinkRecord3);
 
@@ -1047,6 +1053,100 @@ public class HttpSinkTaskTest {
 
     }
 
+    @Nested
+    class PutWithAuthentication{
+
+        @Test
+        void test_oauth2_authentication_client_credentials_flow_with_basic_auth_to_get_token() throws IOException {
+            //given
+            final String WELL_KNOWN_OPENID_CONFIGURATION = "/.well-known/openid-configuration";
+            final String WELL_KNOWN_OK = "WellKnownOk";
+            final String TOKEN_OK = "TokenOk";
+            final String SONG_OK = "SongOk";
+            final String SONG_PATH="/v1/tracks/2TpxZ7JUBn3uw46aR7qd6V";
+            WireMockRuntimeInfo wmRuntimeInfo = wmHttp.getRuntimeInfo();
+            String httpBaseUrl = wmRuntimeInfo.getHttpBaseUrl();
+            Map<String, String> settings = Maps.newHashMap();
+            settings.put(CONFIG_DEFAULT_HTTP_CLIENT_AUTHENTICATION_OAUTH2_CLIENT_CREDENTIALS_FLOW_ACTIVATE, "true");
+            settings.put(CONFIG_DEFAULT_HTTP_CLIENT_AUTHENTICATION_OAUTH2_CLIENT_CREDENTIALS_FLOW_WELL_KNOWN_URL, httpBaseUrl+"/.well-known/openid-configuration");
+            settings.put(CONFIG_DEFAULT_HTTP_CLIENT_AUTHENTICATION_OAUTH2_CLIENT_CREDENTIALS_FLOW_CLIENT_ID, "44d34a4d05344c97837d463207805f8b");
+            settings.put(CONFIG_DEFAULT_HTTP_CLIENT_AUTHENTICATION_OAUTH2_CLIENT_CREDENTIALS_FLOW_CLIENT_SECRET, "3fc0576720544ac293a3a5304e6c0fa8");
+
+
+
+            //init sinkRecord
+            List<SinkRecord> records = Lists.newArrayList();
+            List<Header> headers = Lists.newArrayList();
+            SinkRecord sinkRecord1 = new SinkRecord("myTopic", 0, Schema.STRING_SCHEMA, "key", Schema.STRING_SCHEMA,
+                    getLocalHttpRequestAsStringWithPath(wmRuntimeInfo.getHttpPort(), SONG_PATH,"GET"),
+                    -1, System.currentTimeMillis(), TimestampType.CREATE_TIME, headers);
+            records.add(sinkRecord1);
+            SinkRecord sinkRecord2 = new SinkRecord("myTopic", 0, Schema.STRING_SCHEMA, "key", Schema.STRING_SCHEMA,
+                    getLocalHttpRequestAsStringWithPath(wmRuntimeInfo.getHttpPort(), SONG_PATH,"GET"),
+                    -1, System.currentTimeMillis(), TimestampType.CREATE_TIME, headers);
+            records.add(sinkRecord2);
+            SinkRecord sinkRecord3 = new SinkRecord("myTopic", 0, Schema.STRING_SCHEMA, "key", Schema.STRING_SCHEMA,
+                    getLocalHttpRequestAsStringWithPath(wmRuntimeInfo.getHttpPort(), SONG_PATH,"GET"),
+                    -1, System.currentTimeMillis(), TimestampType.CREATE_TIME, headers);
+            records.add(sinkRecord3);
+
+            //define the http Mock Server interaction
+            WireMock wireMock = wmRuntimeInfo.getWireMock();
+            Path path = Paths.get("src/test/resources/oauth2/wellknownUrlContent.json");
+            httpBaseUrl = wmRuntimeInfo.getHttpBaseUrl();
+            String content = Files.readString(path);
+            String wellKnownUrlContent = content.replaceAll("baseUrl", httpBaseUrl);
+            String scenario="Oauth2 Client Credentials flow with basic auth";
+            //good well known content
+            wireMock
+                    .register(WireMock.get(WELL_KNOWN_OPENID_CONFIGURATION).inScenario(scenario)
+                            .whenScenarioStateIs(STARTED)
+                            .willReturn(WireMock.aResponse()
+                                    .withStatus(200)
+                                    .withStatusMessage("OK")
+                                    .withBody(wellKnownUrlContent)
+                            ).willSetStateTo(WELL_KNOWN_OK)
+                    );
+            Path tokenPath = Paths.get("src/test/resources/oauth2/token.json");
+            String tokenContent = Files.readString(tokenPath);
+
+            wireMock
+                    .register(
+                            WireMock.post("/api/token")
+                                    .withHeader("Content-Type",containing("application/x-www-form-urlencoded; charset=UTF-8"))
+                                    .withHeader("Authorization",containing("Basic NDRkMzRhNGQwNTM0NGM5NzgzN2Q0NjMyMDc4MDVmOGI6M2ZjMDU3NjcyMDU0NGFjMjkzYTNhNTMwNGU2YzBmYTg="))
+                                    .inScenario(scenario)
+                                    .whenScenarioStateIs(WELL_KNOWN_OK)
+                                    .willReturn(WireMock.aResponse()
+                                            .withStatus(200)
+                                            .withStatusMessage("OK")
+                                            .withBody(tokenContent)
+                                    ).willSetStateTo(TOKEN_OK)
+                    );
+
+            Path songPath = Paths.get("src/test/resources/oauth2/song.json");
+            String songContent = Files.readString(songPath);
+            wireMock
+                    .register(
+                            WireMock.get(SONG_PATH)
+                                    .withHeader("Authorization",containing("Bearer BQDzs98uhifaGayk8H9tCTRozufhFmgV_HKMCnnDdMTdz1FcOo3sdj8OZJ_azo96LRdLI9_1uJOCXxbGZme11KCb6ZxTuCt8B5FxEeECb1kO_-UDuf8"))
+                                    .inScenario(scenario)
+//                                    .whenScenarioStateIs(TOKEN_OK)
+                                    .willReturn(WireMock.aResponse()
+                                            .withStatus(200)
+                                            .withStatusMessage("OK")
+                                            .withBody(songContent)
+                                    ).willSetStateTo(SONG_OK)
+                    );
+            //when
+            httpSinkTask.start(settings);
+            httpSinkTask.put(records);
+            //then
+//            verify(3, getRequestedFor(urlEqualTo(SONG_PATH)));
+
+        }
+
+    }
 
 
     private HttpExchange getDummyHttpExchange() {
@@ -1071,11 +1171,11 @@ public class HttpSinkTaskTest {
     }
 
 
-    private String getLocalHttpRequestAsStringWithPath(int port, String path) {
+    private String getLocalHttpRequestAsStringWithPath(int port, String path,String method) {
         return "{\n" +
                 "  \"url\": \"" + "http://localhost:" + port + path + "\",\n" +
                 "  \"headers\": {},\n" +
-                "  \"method\": \"POST\",\n" +
+                "  \"method\": \""+method+"\",\n" +
                 "  \"bodyAsString\": \"" + DUMMY_BODY + "\",\n" +
                 "  \"bodyAsByteArray\": [],\n" +
                 "  \"bodyAsForm\": {},\n" +

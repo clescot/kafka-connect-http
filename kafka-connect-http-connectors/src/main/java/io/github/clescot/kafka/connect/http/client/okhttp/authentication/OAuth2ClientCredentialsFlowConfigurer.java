@@ -8,13 +8,13 @@ import java.util.Map;
 
 import static io.github.clescot.kafka.connect.http.sink.HttpSinkConfigDefinition.*;
 
-public class OAuth2ClientCredentialsFlowConfigurer implements AuthenticationConfigurer{
+public class OAuth2ClientCredentialsFlowConfigurer implements AuthenticationConfigurer {
 
 
     private final OkHttpClient okHttpClient;
 
     public OAuth2ClientCredentialsFlowConfigurer(OkHttpClient okHttpClient) {
-        Preconditions.checkNotNull(okHttpClient,"okHttp is null");
+        Preconditions.checkNotNull(okHttpClient, "okHttp is null");
         this.okHttpClient = okHttpClient;
     }
 
@@ -31,27 +31,29 @@ public class OAuth2ClientCredentialsFlowConfigurer implements AuthenticationConf
     @Override
     public Authenticator configureAuthenticator(Map<String, Object> config) {
         Authenticator authenticator = null;
-        Preconditions.checkNotNull(config,"config map is null");
-        if (config.containsKey(HTTP_CLIENT_AUTHENTICATION_OAUTH2_CLIENT_CREDENTIALS_FLOW_ACTIVATE) && Boolean.TRUE.equals(config.get(HTTP_CLIENT_AUTHENTICATION_OAUTH2_CLIENT_CREDENTIALS_FLOW_ACTIVATE))){
+        Preconditions.checkNotNull(config, "config map is null");
+        if (config.containsKey(HTTP_CLIENT_AUTHENTICATION_OAUTH2_CLIENT_CREDENTIALS_FLOW_ACTIVATE)
+                && config.get(HTTP_CLIENT_AUTHENTICATION_OAUTH2_CLIENT_CREDENTIALS_FLOW_ACTIVATE) != null
+                && Boolean.TRUE.equals(Boolean.parseBoolean(config.get(HTTP_CLIENT_AUTHENTICATION_OAUTH2_CLIENT_CREDENTIALS_FLOW_ACTIVATE).toString()))) {
 
             Object wellKnownObject = config.get(HTTP_CLIENT_AUTHENTICATION_OAUTH2_CLIENT_CREDENTIALS_FLOW_WELL_KNOWN_URL);
-            Preconditions.checkNotNull(wellKnownObject,HTTP_CLIENT_AUTHENTICATION_OAUTH2_CLIENT_CREDENTIALS_FLOW_WELL_KNOWN_URL+" is null");
+            Preconditions.checkNotNull(wellKnownObject, HTTP_CLIENT_AUTHENTICATION_OAUTH2_CLIENT_CREDENTIALS_FLOW_WELL_KNOWN_URL + " is null");
             String wellKnownUrl = wellKnownObject.toString();
 
             Object clientIdObject = config.get(HTTP_CLIENT_AUTHENTICATION_OAUTH2_CLIENT_CREDENTIALS_FLOW_CLIENT_ID);
-            Preconditions.checkNotNull(clientIdObject,HTTP_CLIENT_AUTHENTICATION_OAUTH2_CLIENT_CREDENTIALS_FLOW_CLIENT_ID+" is null");
+            Preconditions.checkNotNull(clientIdObject, HTTP_CLIENT_AUTHENTICATION_OAUTH2_CLIENT_CREDENTIALS_FLOW_CLIENT_ID + " is null");
             String clientId = clientIdObject.toString();
 
             Object clientSecretObject = config.get(HTTP_CLIENT_AUTHENTICATION_OAUTH2_CLIENT_CREDENTIALS_FLOW_CLIENT_SECRET);
-            Preconditions.checkNotNull(clientSecretObject,HTTP_CLIENT_AUTHENTICATION_OAUTH2_CLIENT_CREDENTIALS_FLOW_CLIENT_SECRET+" is null");
+            Preconditions.checkNotNull(clientSecretObject, HTTP_CLIENT_AUTHENTICATION_OAUTH2_CLIENT_CREDENTIALS_FLOW_CLIENT_SECRET + " is null");
             String clientSecret = clientSecretObject.toString();
 
             Object configuredScopes = config.get(HTTP_CLIENT_AUTHENTICATION_OAUTH2_CLIENT_CREDENTIALS_FLOW_SCOPES);
             String[] scopes = null;
-            if(configuredScopes!=null) {
+            if (configuredScopes != null) {
                 scopes = configuredScopes.toString().split(",");
             }
-            authenticator = new OAuth2ClientCredentialsFlowAuthenticator(okHttpClient,wellKnownUrl,clientId,clientSecret,scopes);
+            authenticator = new OAuth2ClientCredentialsFlowAuthenticator(okHttpClient, wellKnownUrl, clientId, clientSecret, scopes);
         }
         return authenticator;
     }
