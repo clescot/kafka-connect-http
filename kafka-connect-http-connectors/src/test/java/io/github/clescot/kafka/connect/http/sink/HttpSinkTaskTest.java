@@ -1061,6 +1061,7 @@ public class HttpSinkTaskTest {
             //given
             final String WELL_KNOWN_OPENID_CONFIGURATION = "/.well-known/openid-configuration";
             final String WELL_KNOWN_OK = "WellKnownOk";
+            final String UNAUTHORIZED = "Unauthorized";
             final String TOKEN_OK = "TokenOk";
             final String SONG_OK = "SongOk";
             final String SONG_PATH="/v1/tracks/2TpxZ7JUBn3uw46aR7qd6V";
@@ -1099,7 +1100,8 @@ public class HttpSinkTaskTest {
             String scenario="Oauth2 Client Credentials flow with basic auth";
             //good well known content
             wireMock
-                    .register(WireMock.get(WELL_KNOWN_OPENID_CONFIGURATION).inScenario(scenario)
+                    .register(WireMock.get(WELL_KNOWN_OPENID_CONFIGURATION)
+                            .inScenario(scenario)
                             .whenScenarioStateIs(STARTED)
                             .willReturn(WireMock.aResponse()
                                     .withStatus(200)
@@ -1113,10 +1115,10 @@ public class HttpSinkTaskTest {
             wireMock
                     .register(
                             WireMock.post("/api/token")
+                                    .inScenario(scenario)
                                     .withHeader("Content-Type",containing("application/x-www-form-urlencoded; charset=UTF-8"))
                                     .withHeader("Authorization",containing("Basic NDRkMzRhNGQwNTM0NGM5NzgzN2Q0NjMyMDc4MDVmOGI6M2ZjMDU3NjcyMDU0NGFjMjkzYTNhNTMwNGU2YzBmYTg="))
-                                    .inScenario(scenario)
-                                    .whenScenarioStateIs(WELL_KNOWN_OK)
+                                    .whenScenarioStateIs(UNAUTHORIZED)
                                     .willReturn(WireMock.aResponse()
                                             .withStatus(200)
                                             .withStatusMessage("OK")
@@ -1129,14 +1131,38 @@ public class HttpSinkTaskTest {
             wireMock
                     .register(
                             WireMock.get(SONG_PATH)
-                                    .withHeader("Authorization",containing("Bearer BQDzs98uhifaGayk8H9tCTRozufhFmgV_HKMCnnDdMTdz1FcOo3sdj8OZJ_azo96LRdLI9_1uJOCXxbGZme11KCb6ZxTuCt8B5FxEeECb1kO_-UDuf8"))
                                     .inScenario(scenario)
-//                                    .whenScenarioStateIs(TOKEN_OK)
+                                    .withHeader("Authorization",containing("Bearer BQDzs98uhifaGayk8H9tCTRozufhFmgV_HKMCnnDdMTdz1FcOo3sdj8OZJ_azo96LRdLI9_1uJOCXxbGZme11KCb6ZxTuCt8B5FxEeECb1kO_-UDuf8"))
+                                    .whenScenarioStateIs(TOKEN_OK)
                                     .willReturn(WireMock.aResponse()
                                             .withStatus(200)
                                             .withStatusMessage("OK")
                                             .withBody(songContent)
                                     ).willSetStateTo(SONG_OK)
+                    );
+            wireMock
+                    .register(
+                            WireMock.get(SONG_PATH)
+                                    .inScenario(scenario)
+                                    .withHeader("Authorization",containing("Bearer BQDzs98uhifaGayk8H9tCTRozufhFmgV_HKMCnnDdMTdz1FcOo3sdj8OZJ_azo96LRdLI9_1uJOCXxbGZme11KCb6ZxTuCt8B5FxEeECb1kO_-UDuf8"))
+                                    .whenScenarioStateIs(SONG_OK)
+                                    .willReturn(WireMock.aResponse()
+                                            .withStatus(200)
+                                            .withStatusMessage("OK")
+                                            .withBody(songContent)
+                                    ).willSetStateTo(SONG_OK)
+                    );
+            wireMock
+                    .register(
+                            WireMock.get(SONG_PATH)
+                                    .inScenario(scenario)
+                                    .whenScenarioStateIs(WELL_KNOWN_OK)
+                                    .willReturn(WireMock.aResponse()
+                                            .withStatus(401)
+                                            .withStatusMessage("Unauthorized") //401 + 'WWW-Authenticate' trigger challenge
+                                            .withHeader("WWW-Authenticate","Bearer")
+                                            .withBody(songContent)
+                                    ).willSetStateTo(UNAUTHORIZED)
                     );
             //when
             httpSinkTask.start(settings);
