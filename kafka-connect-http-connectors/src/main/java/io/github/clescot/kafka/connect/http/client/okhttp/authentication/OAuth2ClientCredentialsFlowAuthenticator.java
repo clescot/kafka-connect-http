@@ -37,6 +37,7 @@ public class OAuth2ClientCredentialsFlowAuthenticator implements CachingAuthenti
 
     private final ClientAuthentication clientAuth;
     private final URI tokenEndpointUri;
+    private final OkHttpClient okHttpClient;
     private Scope scope;
     private AuthorizationGrant clientGrant = new ClientCredentialsGrant();
 
@@ -48,6 +49,7 @@ public class OAuth2ClientCredentialsFlowAuthenticator implements CachingAuthenti
                                                     String clientId,
                                                     String clientSecret,
                                                     @javax.annotation.Nullable String... scopes) {
+        this.okHttpClient = okHttpClient;
         Preconditions.checkNotNull(okHttpClient,"okHttpClient is null");
         Preconditions.checkNotNull(wellKnownUrl,"wellKnownUrl is null");
         Preconditions.checkNotNull(clientId,"clientId is null");
@@ -142,8 +144,6 @@ public class OAuth2ClientCredentialsFlowAuthenticator implements CachingAuthenti
     }
 
     private Tokens getTokens(URI tokenEndpointUri, ClientAuthentication clientAuth, AuthorizationGrant clientGrant, Scope scope) throws ParseException, IOException {
-        OkHttpClient.Builder builder = new OkHttpClient.Builder();
-        OkHttpClient okHttpClient = builder.build();
         TokenRequest tokenRequest = new TokenRequest(tokenEndpointUri, clientAuth, clientGrant, scope);
         HTTPResponse httpResponse = tokenRequest.toHTTPRequest().send(new OkHttpHTTPRequestSender(okHttpClient));
 
