@@ -1164,6 +1164,18 @@ public class HttpSinkTaskTest {
                                             .withBody(songContent)
                                     ).willSetStateTo(UNAUTHORIZED)
                     );
+            wireMock
+                    .register(
+                            WireMock.get(SONG_PATH)
+                                    .inScenario(scenario)
+                                    .whenScenarioStateIs(UNAUTHORIZED)
+                                    .willReturn(WireMock.aResponse()
+                                            .withStatus(401)
+                                            .withStatusMessage("Unauthorized") //401 + 'WWW-Authenticate' trigger challenge
+                                            .withHeader("WWW-Authenticate","Bearer")
+                                            .withBody(songContent)
+                                    ).willSetStateTo(UNAUTHORIZED)
+                    );
             //when
             httpSinkTask.start(settings);
             httpSinkTask.put(records);
