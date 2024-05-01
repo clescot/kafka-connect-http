@@ -22,8 +22,8 @@ public class AuthenticationsConfigurer {
     private final List<AuthenticationConfigurer> authenticationConfigurers;
 
     public AuthenticationsConfigurer(List<AuthenticationConfigurer> authenticationConfigurers) {
-        Preconditions.checkNotNull(authenticationConfigurers,"authenticationConfigurers is null");
-        Preconditions.checkArgument(!authenticationConfigurers.isEmpty(),"authenticationConfigurers is empty");
+        Preconditions.checkNotNull(authenticationConfigurers, "authenticationConfigurers is null");
+        Preconditions.checkArgument(!authenticationConfigurers.isEmpty(), "authenticationConfigurers is empty");
         this.authenticationConfigurers = authenticationConfigurers;
     }
 
@@ -34,24 +34,23 @@ public class AuthenticationsConfigurer {
         Authenticator authenticator = getAuthenticatorDecorator(config, authCache, false);
         if (authenticator != null) {
             httpClientBuilder.authenticator(authenticator);
+            httpClientBuilder.addInterceptor(new AuthenticationCacheInterceptor(authCache, new DefaultRequestCacheKeyProvider()));
         }
 
         //proxy authentication
         Map<String, Object> proxyConfig = config.entrySet().stream()
                 .filter(entry -> entry.getKey().startsWith(PROXY_PREFIX))
-                .map(entry -> Map.entry(entry.getKey().substring(PROXY_PREFIX.length()), entry.getValue())).collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
-        Authenticator proxyAuthenticator = getAuthenticatorDecorator(proxyConfig, authCache, true);
-        if (proxyAuthenticator != null) {
-            httpClientBuilder.proxyAuthenticator(proxyAuthenticator);
+                .map(entry -> Map.entry(entry.getKey().substring(PROXY_PREFIX.length()), entry.getValue()))
+                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+        if (!proxyConfig.isEmpty()) {
+            Authenticator proxyAuthenticator = getAuthenticatorDecorator(proxyConfig, authCache, true);
+            if (proxyAuthenticator != null) {
+                httpClientBuilder.proxyAuthenticator(proxyAuthenticator);
+                //authentication cache
+                httpClientBuilder.addNetworkInterceptor(new AuthenticationCacheInterceptor(authCache, new DefaultProxyCacheKeyProvider()));
+            }
         }
 
-        //authentication cache
-        if (proxyAuthenticator != null) {
-            httpClientBuilder.addNetworkInterceptor(new AuthenticationCacheInterceptor(authCache, new DefaultProxyCacheKeyProvider()));
-        }
-        if (authenticator != null) {
-            httpClientBuilder.addInterceptor(new AuthenticationCacheInterceptor(authCache, new DefaultRequestCacheKeyProvider()));
-        }
 
     }
 
@@ -69,9 +68,9 @@ public class AuthenticationsConfigurer {
         Authenticator authenticator;
         Optional<Boolean> needCache = authenticationConfigurers.stream().map(AuthenticationConfigurer::needCache).findFirst();
         DispatchingAuthenticator dispatchingAuthenticator = authenticatorBuilder.build();
-        if (needCache.isPresent()&&Boolean.TRUE.equals(needCache.get())) {
+        if (needCache.isPresent() && Boolean.TRUE.equals(needCache.get())) {
             authenticator = new CachingAuthenticatorDecorator(dispatchingAuthenticator, authCache, proxy);
-        }else {
+        } else {
             authenticator = dispatchingAuthenticator;
         }
         return authenticator;
