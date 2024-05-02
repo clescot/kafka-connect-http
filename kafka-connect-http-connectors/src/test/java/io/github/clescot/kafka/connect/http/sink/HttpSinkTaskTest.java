@@ -1318,6 +1318,7 @@ public class HttpSinkTaskTest {
                                     .willReturn(WireMock.aResponse()
                                             .withStatus(401)
                                             .withStatusMessage(UNAUTHORIZED)
+                                            .withHeader("WWW-Authenticate","Bearer")
                                     ).willSetStateTo(SONG_KO)
                     );
             wireMock
