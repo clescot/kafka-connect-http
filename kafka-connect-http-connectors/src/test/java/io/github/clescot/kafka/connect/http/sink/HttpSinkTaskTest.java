@@ -1,5 +1,6 @@
 package io.github.clescot.kafka.connect.http.sink;
 
+import com.github.tomakehurst.wiremock.admin.model.ListStubMappingsResult;
 import com.github.tomakehurst.wiremock.client.WireMock;
 import com.github.tomakehurst.wiremock.core.WireMockConfiguration;
 import com.github.tomakehurst.wiremock.junit5.WireMockExtension;
@@ -64,6 +65,7 @@ public class HttpSinkTaskTest {
     public static final String CLIENT_TRUSTSTORE_JKS_PASSWORD = "Secret123!";
     public static final String JKS_STORE_TYPE = "jks";
     public static final String TRUSTSTORE_PKIX_ALGORITHM = "PKIX";
+    public static final String BEARER_TOKEN = "Bearer BQDzs98uhifaGayk8H9tCTRozufhFmgV_HKMCnnDdMTdz1FcOo3sdj8OZJ_azo96LRdLI9_1uJOCXxbGZme11KCb6ZxTuCt8B5FxEeECb1kO_-UDuf8";
 
 
     @Mock
@@ -1072,6 +1074,7 @@ public class HttpSinkTaskTest {
             settings.put(CONFIG_DEFAULT_HTTP_CLIENT_AUTHENTICATION_OAUTH2_CLIENT_CREDENTIALS_FLOW_WELL_KNOWN_URL, httpBaseUrl+"/.well-known/openid-configuration");
             settings.put(CONFIG_DEFAULT_HTTP_CLIENT_AUTHENTICATION_OAUTH2_CLIENT_CREDENTIALS_FLOW_CLIENT_ID, "44d34a4d05344c97837d463207805f8b");
             settings.put(CONFIG_DEFAULT_HTTP_CLIENT_AUTHENTICATION_OAUTH2_CLIENT_CREDENTIALS_FLOW_CLIENT_SECRET, "3fc0576720544ac293a3a5304e6c0fa8");
+            settings.put(HTTP_CLIENT_ASYNC_FIXED_THREAD_POOL_SIZE, "1");
 
 
 
@@ -1097,7 +1100,7 @@ public class HttpSinkTaskTest {
             httpBaseUrl = wmRuntimeInfo.getHttpBaseUrl();
             String content = Files.readString(path);
             String wellKnownUrlContent = content.replaceAll("baseUrl", httpBaseUrl);
-            String scenario="Oauth2 Client Credentials flow with basic auth";
+            String scenario="test_oauth2_authentication_client_credentials_flow_with_basic_auth_to_get_token";
             //good well known content
             wireMock
                     .register(WireMock.get(WELL_KNOWN_OPENID_CONFIGURATION)
@@ -1132,7 +1135,7 @@ public class HttpSinkTaskTest {
                     .register(
                             WireMock.get(SONG_PATH)
                                     .inScenario(scenario)
-                                    .withHeader("Authorization",containing("Bearer BQDzs98uhifaGayk8H9tCTRozufhFmgV_HKMCnnDdMTdz1FcOo3sdj8OZJ_azo96LRdLI9_1uJOCXxbGZme11KCb6ZxTuCt8B5FxEeECb1kO_-UDuf8"))
+                                    .withHeader("Authorization",containing(BEARER_TOKEN))
                                     .whenScenarioStateIs(TOKEN_OK)
                                     .willReturn(WireMock.aResponse()
                                             .withStatus(200)
@@ -1144,7 +1147,7 @@ public class HttpSinkTaskTest {
                     .register(
                             WireMock.get(SONG_PATH)
                                     .inScenario(scenario)
-                                    .withHeader("Authorization",containing("Bearer BQDzs98uhifaGayk8H9tCTRozufhFmgV_HKMCnnDdMTdz1FcOo3sdj8OZJ_azo96LRdLI9_1uJOCXxbGZme11KCb6ZxTuCt8B5FxEeECb1kO_-UDuf8"))
+                                    .withHeader("Authorization",containing(BEARER_TOKEN))
                                     .whenScenarioStateIs(SONG_OK)
                                     .willReturn(WireMock.aResponse()
                                             .withStatus(200)
@@ -1176,11 +1179,13 @@ public class HttpSinkTaskTest {
                                             .withBody(songContent)
                                     ).willSetStateTo(UNAUTHORIZED)
                     );
+
+            ListStubMappingsResult listStubMappingsResult = wireMock.allStubMappings();
             //when
             httpSinkTask.start(settings);
             httpSinkTask.put(records);
             //then
-//            verify(3, getRequestedFor(urlEqualTo(SONG_PATH)));
+            wireMock.verifyThat(3, getRequestedFor(urlEqualTo(SONG_PATH)).withHeader("Authorization",equalTo(BEARER_TOKEN)));
 
         }
 
