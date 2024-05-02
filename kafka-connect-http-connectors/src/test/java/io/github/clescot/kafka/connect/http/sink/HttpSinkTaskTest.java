@@ -1363,6 +1363,7 @@ public class HttpSinkTaskTest {
             httpSinkTask.put(records);
             //then
             wireMock.verifyThat(3, getRequestedFor(urlEqualTo(SONG_PATH)).withHeader("Authorization",equalTo(BEARER_TOKEN)));
+            wireMock.verifyThat(1, getRequestedFor(urlEqualTo(SONG_PATH)).withHeader("Authorization",equalTo(BEARER_TOKEN_2)));
 
         }
 
