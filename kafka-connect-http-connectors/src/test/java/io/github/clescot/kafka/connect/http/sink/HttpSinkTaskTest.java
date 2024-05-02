@@ -1,6 +1,5 @@
 package io.github.clescot.kafka.connect.http.sink;
 
-import com.github.tomakehurst.wiremock.admin.model.ListStubMappingsResult;
 import com.github.tomakehurst.wiremock.client.WireMock;
 import com.github.tomakehurst.wiremock.core.WireMockConfiguration;
 import com.github.tomakehurst.wiremock.junit5.WireMockExtension;
@@ -53,6 +52,8 @@ import static com.github.tomakehurst.wiremock.client.WireMock.*;
 import static com.github.tomakehurst.wiremock.stubbing.Scenario.STARTED;
 import static io.github.clescot.kafka.connect.http.sink.HttpSinkConfigDefinition.*;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.*;
 
 public class HttpSinkTaskTest {
@@ -66,6 +67,8 @@ public class HttpSinkTaskTest {
     public static final String JKS_STORE_TYPE = "jks";
     public static final String TRUSTSTORE_PKIX_ALGORITHM = "PKIX";
     public static final String BEARER_TOKEN = "Bearer BQDzs98uhifaGayk8H9tCTRozufhFmgV_HKMCnnDdMTdz1FcOo3sdj8OZJ_azo96LRdLI9_1uJOCXxbGZme11KCb6ZxTuCt8B5FxEeECb1kO_-UDuf8";
+    public static final String BEARER_TOKEN_2 = "Bearer BQDzs98uhifaGayk8H9tCTRozufhFmgV_AAAAAAAAdz1FcOo3sdj8OZJ_BBBBBBBBBBB_1uJOCXxbGZme11KCb6ZxTuCt8B5FxEeECb1kO_-UDuf8";
+    public static final String OK = "OK";
 
 
     @Mock
@@ -454,7 +457,7 @@ public class HttpSinkTaskTest {
                                         .withHeader("Content-Type", "application/json")
                                         .withBody(bodyResponse)
                                         .withStatus(200)
-                                        .withStatusMessage("OK")
+                                        .withStatusMessage(OK)
                                         .withFixedDelay(1000)
                                 )
                         );
@@ -464,7 +467,7 @@ public class HttpSinkTaskTest {
                                         .withHeader("Content-Type", "application/json")
                                         .withBody(bodyResponse)
                                         .withStatus(200)
-                                        .withStatusMessage("OK")
+                                        .withStatusMessage(OK)
                                         .withFixedDelay(1000)
                                 )
                         );
@@ -474,7 +477,7 @@ public class HttpSinkTaskTest {
                                         .withHeader("Content-Type", "application/json")
                                         .withBody(bodyResponse)
                                         .withStatus(200)
-                                        .withStatusMessage("OK")
+                                        .withStatusMessage(OK)
                                         .withFixedDelay(1000)
                                 )
                         );
@@ -534,7 +537,7 @@ public class HttpSinkTaskTest {
                                         .withHeader("Content-Type", "application/json")
                                         .withBody(bodyResponse)
                                         .withStatus(200)
-                                        .withStatusMessage("OK")
+                                        .withStatusMessage(OK)
                                         .withFixedDelay(1000)
                                 )
                         );
@@ -544,7 +547,7 @@ public class HttpSinkTaskTest {
                                         .withHeader("Content-Type", "application/json")
                                         .withBody(bodyResponse)
                                         .withStatus(200)
-                                        .withStatusMessage("OK")
+                                        .withStatusMessage(OK)
                                         .withFixedDelay(1000)
                                 )
                         );
@@ -554,7 +557,7 @@ public class HttpSinkTaskTest {
                                         .withHeader("Content-Type", "application/json")
                                         .withBody(bodyResponse)
                                         .withStatus(200)
-                                        .withStatusMessage("OK")
+                                        .withStatusMessage(OK)
                                         .withFixedDelay(1000)
                                 )
                         );
@@ -615,7 +618,7 @@ public class HttpSinkTaskTest {
                                         .withHeader("Content-Type", "application/json")
                                         .withBody(bodyResponse)
                                         .withStatus(200)
-                                        .withStatusMessage("OK")
+                                        .withStatusMessage(OK)
                                         .withFixedDelay(1000)
                                 )
                         );
@@ -625,7 +628,7 @@ public class HttpSinkTaskTest {
                                         .withHeader("Content-Type", "application/json")
                                         .withBody(bodyResponse)
                                         .withStatus(200)
-                                        .withStatusMessage("OK")
+                                        .withStatusMessage(OK)
                                         .withFixedDelay(1000)
                                 )
                         );
@@ -635,7 +638,7 @@ public class HttpSinkTaskTest {
                                         .withHeader("Content-Type", "application/json")
                                         .withBody(bodyResponse)
                                         .withStatus(200)
-                                        .withStatusMessage("OK")
+                                        .withStatusMessage(OK)
                                         .withFixedDelay(1000)
                                 )
                         );
@@ -706,7 +709,7 @@ public class HttpSinkTaskTest {
                                         .withHeader("Content-Type", "application/json")
                                         .withBody(bodyResponse)
                                         .withStatus(200)
-                                        .withStatusMessage("OK")
+                                        .withStatusMessage(OK)
                                         .withFixedDelay(1000)
                                 )
                         );
@@ -716,7 +719,7 @@ public class HttpSinkTaskTest {
                                         .withHeader("Content-Type", "application/json")
                                         .withBody(bodyResponse)
                                         .withStatus(200)
-                                        .withStatusMessage("OK")
+                                        .withStatusMessage(OK)
                                         .withFixedDelay(1000)
                                 )
                         );
@@ -726,7 +729,7 @@ public class HttpSinkTaskTest {
                                         .withHeader("Content-Type", "application/json")
                                         .withBody(bodyResponse)
                                         .withStatus(200)
-                                        .withStatusMessage("OK")
+                                        .withStatusMessage(OK)
                                         .withFixedDelay(1000)
                                 )
                         );
@@ -790,7 +793,7 @@ public class HttpSinkTaskTest {
                                     .withHeader("Content-Type", "application/json")
                                     .withBody(bodyResponse)
                                     .withStatus(200)
-                                    .withStatusMessage("OK")
+                                    .withStatusMessage(OK)
                                     .withFixedDelay(1000)
                             )
                     );
@@ -800,7 +803,7 @@ public class HttpSinkTaskTest {
                                     .withHeader("Content-Type", "application/json")
                                     .withBody(bodyResponse)
                                     .withStatus(200)
-                                    .withStatusMessage("OK")
+                                    .withStatusMessage(OK)
                                     .withFixedDelay(1000)
                             )
                     );
@@ -810,7 +813,7 @@ public class HttpSinkTaskTest {
                                     .withHeader("Content-Type", "application/json")
                                     .withBody(bodyResponse)
                                     .withStatus(200)
-                                    .withStatusMessage("OK")
+                                    .withStatusMessage(OK)
                                     .withFixedDelay(1000)
                             )
                     );
@@ -865,7 +868,7 @@ public class HttpSinkTaskTest {
                                     .withHeader("Content-Type", "application/json")
                                     .withBody(bodyResponse)
                                     .withStatus(200)
-                                    .withStatusMessage("OK")
+                                    .withStatusMessage(OK)
                                     .withFixedDelay(1000)
                             )
                     );
@@ -875,7 +878,7 @@ public class HttpSinkTaskTest {
                                     .withHeader("Content-Type", "application/json")
                                     .withBody(bodyResponse)
                                     .withStatus(200)
-                                    .withStatusMessage("OK")
+                                    .withStatusMessage(OK)
                                     .withFixedDelay(1000)
                             )
                     );
@@ -885,7 +888,7 @@ public class HttpSinkTaskTest {
                                     .withHeader("Content-Type", "application/json")
                                     .withBody(bodyResponse)
                                     .withStatus(200)
-                                    .withStatusMessage("OK")
+                                    .withStatusMessage(OK)
                                     .withFixedDelay(1000)
                             )
                     );
@@ -940,7 +943,7 @@ public class HttpSinkTaskTest {
                                     .withHeader("Content-Type", "application/json")
                                     .withBody(bodyResponse)
                                     .withStatus(200)
-                                    .withStatusMessage("OK")
+                                    .withStatusMessage(OK)
                                     .withFixedDelay(1000)
                             )
                     );
@@ -950,7 +953,7 @@ public class HttpSinkTaskTest {
                                     .withHeader("Content-Type", "application/json")
                                     .withBody(bodyResponse)
                                     .withStatus(200)
-                                    .withStatusMessage("OK")
+                                    .withStatusMessage(OK)
                                     .withFixedDelay(1000)
                             )
                     );
@@ -960,7 +963,7 @@ public class HttpSinkTaskTest {
                                     .withHeader("Content-Type", "application/json")
                                     .withBody(bodyResponse)
                                     .withStatus(200)
-                                    .withStatusMessage("OK")
+                                    .withStatusMessage(OK)
                                     .withFixedDelay(1000)
                             )
                     );
@@ -1016,7 +1019,7 @@ public class HttpSinkTaskTest {
                                     .withHeader("Content-Type", "application/json")
                                     .withBody(bodyResponse)
                                     .withStatus(200)
-                                    .withStatusMessage("OK")
+                                    .withStatusMessage(OK)
                                     .withFixedDelay(1000)
                             )
                     );
@@ -1026,7 +1029,7 @@ public class HttpSinkTaskTest {
                                     .withHeader("Content-Type", "application/json")
                                     .withBody(bodyResponse)
                                     .withStatus(200)
-                                    .withStatusMessage("OK")
+                                    .withStatusMessage(OK)
                                     .withFixedDelay(1000)
                             )
                     );
@@ -1036,7 +1039,7 @@ public class HttpSinkTaskTest {
                                     .withHeader("Content-Type", "application/json")
                                     .withBody(bodyResponse)
                                     .withStatus(200)
-                                    .withStatusMessage("OK")
+                                    .withStatusMessage(OK)
                                     .withFixedDelay(1000)
                             )
                     );
@@ -1108,7 +1111,7 @@ public class HttpSinkTaskTest {
                             .whenScenarioStateIs(STARTED)
                             .willReturn(WireMock.aResponse()
                                     .withStatus(200)
-                                    .withStatusMessage("OK")
+                                    .withStatusMessage(OK)
                                     .withBody(wellKnownUrlContent)
                             ).willSetStateTo(WELL_KNOWN_OK)
                     );
@@ -1124,7 +1127,7 @@ public class HttpSinkTaskTest {
                                     .whenScenarioStateIs(UNAUTHORIZED)
                                     .willReturn(WireMock.aResponse()
                                             .withStatus(200)
-                                            .withStatusMessage("OK")
+                                            .withStatusMessage(OK)
                                             .withBody(tokenContent)
                                     ).willSetStateTo(TOKEN_OK)
                     );
@@ -1139,7 +1142,7 @@ public class HttpSinkTaskTest {
                                     .whenScenarioStateIs(TOKEN_OK)
                                     .willReturn(WireMock.aResponse()
                                             .withStatus(200)
-                                            .withStatusMessage("OK")
+                                            .withStatusMessage(OK)
                                             .withBody(songContent)
                                     ).willSetStateTo(SONG_OK)
                     );
@@ -1151,7 +1154,7 @@ public class HttpSinkTaskTest {
                                     .whenScenarioStateIs(SONG_OK)
                                     .willReturn(WireMock.aResponse()
                                             .withStatus(200)
-                                            .withStatusMessage("OK")
+                                            .withStatusMessage(OK)
                                             .withBody(songContent)
                                     ).willSetStateTo(SONG_OK)
                     );
@@ -1180,7 +1183,180 @@ public class HttpSinkTaskTest {
                                     ).willSetStateTo(UNAUTHORIZED)
                     );
 
-            ListStubMappingsResult listStubMappingsResult = wireMock.allStubMappings();
+            //when
+            httpSinkTask.start(settings);
+            httpSinkTask.put(records);
+            //then
+            wireMock.verifyThat(3, getRequestedFor(urlEqualTo(SONG_PATH)).withHeader("Authorization",equalTo(BEARER_TOKEN)));
+
+        }
+
+        @Test
+        void test_oauth2_authentication_client_credentials_flow_with_basic_auth_to_get_token_and_expiration() throws IOException {
+            //given
+            final String WELL_KNOWN_OPENID_CONFIGURATION = "/.well-known/openid-configuration";
+            final String WELL_KNOWN_OK = "WellKnownOk";
+            final String UNAUTHORIZED = "Unauthorized";
+            final String TOKEN_OK = "TokenOk";
+            final String TOKEN_OK2 = "TokenOk2";
+            final String SONG_OK = "SongOk";
+            final String SONG_OK_2 = "SongOk2";
+            final String SONG_KO = "SongKo";
+            final String SONG_OK_3 = "SongOk3";
+            final String SONG_PATH="/v1/tracks/2TpxZ7JUBn3uw46aR7qd6V";
+            WireMockRuntimeInfo wmRuntimeInfo = wmHttp.getRuntimeInfo();
+            String httpBaseUrl = wmRuntimeInfo.getHttpBaseUrl();
+            Map<String, String> settings = Maps.newHashMap();
+            settings.put(CONFIG_DEFAULT_HTTP_CLIENT_AUTHENTICATION_OAUTH2_CLIENT_CREDENTIALS_FLOW_ACTIVATE, "true");
+            settings.put(CONFIG_DEFAULT_HTTP_CLIENT_AUTHENTICATION_OAUTH2_CLIENT_CREDENTIALS_FLOW_WELL_KNOWN_URL, httpBaseUrl+"/.well-known/openid-configuration");
+            settings.put(CONFIG_DEFAULT_HTTP_CLIENT_AUTHENTICATION_OAUTH2_CLIENT_CREDENTIALS_FLOW_CLIENT_ID, "44d34a4d05344c97837d463207805f8b");
+            settings.put(CONFIG_DEFAULT_HTTP_CLIENT_AUTHENTICATION_OAUTH2_CLIENT_CREDENTIALS_FLOW_CLIENT_SECRET, "3fc0576720544ac293a3a5304e6c0fa8");
+            settings.put(HTTP_CLIENT_ASYNC_FIXED_THREAD_POOL_SIZE, "1");
+
+
+
+            //init sinkRecord
+            List<SinkRecord> records = Lists.newArrayList();
+            List<Header> headers = Lists.newArrayList();
+            SinkRecord sinkRecord1 = new SinkRecord("myTopic", 0, Schema.STRING_SCHEMA, "key", Schema.STRING_SCHEMA,
+                    getLocalHttpRequestAsStringWithPath(wmRuntimeInfo.getHttpPort(), SONG_PATH,"GET", null),
+                    -1, System.currentTimeMillis(), TimestampType.CREATE_TIME, headers);
+            records.add(sinkRecord1);
+            SinkRecord sinkRecord2 = new SinkRecord("myTopic", 0, Schema.STRING_SCHEMA, "key", Schema.STRING_SCHEMA,
+                    getLocalHttpRequestAsStringWithPath(wmRuntimeInfo.getHttpPort(), SONG_PATH,"GET", null),
+                    -1, System.currentTimeMillis(), TimestampType.CREATE_TIME, headers);
+            records.add(sinkRecord2);
+            SinkRecord sinkRecord3 = new SinkRecord("myTopic", 0, Schema.STRING_SCHEMA, "key", Schema.STRING_SCHEMA,
+                    getLocalHttpRequestAsStringWithPath(wmRuntimeInfo.getHttpPort(), SONG_PATH,"GET", null),
+                    -1, System.currentTimeMillis(), TimestampType.CREATE_TIME, headers);
+            records.add(sinkRecord3);
+
+            //define the http Mock Server interaction
+            WireMock wireMock = wmRuntimeInfo.getWireMock();
+            Path path = Paths.get("src/test/resources/oauth2/wellknownUrlContent.json");
+            httpBaseUrl = wmRuntimeInfo.getHttpBaseUrl();
+            String content = Files.readString(path);
+            String wellKnownUrlContent = content.replaceAll("baseUrl", httpBaseUrl);
+            String scenario="test_oauth2_authentication_client_credentials_flow_with_basic_auth_to_get_token";
+            //good well known content
+            wireMock
+                    .register(WireMock.get(WELL_KNOWN_OPENID_CONFIGURATION)
+                            .inScenario(scenario)
+                            .whenScenarioStateIs(STARTED)
+                            .willReturn(WireMock.aResponse()
+                                    .withStatus(200)
+                                    .withStatusMessage(OK)
+                                    .withBody(wellKnownUrlContent)
+                            ).willSetStateTo(WELL_KNOWN_OK)
+                    );
+            Path tokenPath = Paths.get("src/test/resources/oauth2/token.json");
+            String tokenContent = Files.readString(tokenPath);
+
+            wireMock
+                    .register(
+                            WireMock.post("/api/token")
+                                    .inScenario(scenario)
+                                    .withHeader("Content-Type",containing("application/x-www-form-urlencoded; charset=UTF-8"))
+                                    .withHeader("Authorization",containing("Basic NDRkMzRhNGQwNTM0NGM5NzgzN2Q0NjMyMDc4MDVmOGI6M2ZjMDU3NjcyMDU0NGFjMjkzYTNhNTMwNGU2YzBmYTg="))
+                                    .whenScenarioStateIs(UNAUTHORIZED)
+                                    .willReturn(WireMock.aResponse()
+                                            .withStatus(200)
+                                            .withStatusMessage(OK)
+                                            .withBody(tokenContent)
+                                    ).willSetStateTo(TOKEN_OK)
+                    );
+
+            Path tokenPath2 = Paths.get("src/test/resources/oauth2/token2.json");
+            String tokenContent2 = Files.readString(tokenPath2);
+
+            wireMock
+                    .register(
+                            WireMock.post("/api/token")
+                                    .inScenario(scenario)
+                                    .withHeader("Content-Type",containing("application/x-www-form-urlencoded; charset=UTF-8"))
+                                    .withHeader("Authorization",containing("Basic NDRkMzRhNGQwNTM0NGM5NzgzN2Q0NjMyMDc4MDVmOGI6M2ZjMDU3NjcyMDU0NGFjMjkzYTNhNTMwNGU2YzBmYTg="))
+                                    .whenScenarioStateIs(SONG_KO)
+                                    .willReturn(WireMock.aResponse()
+                                            .withStatus(200)
+                                            .withStatusMessage(OK)
+                                            .withBody(tokenContent2)
+                                    ).willSetStateTo(TOKEN_OK2)
+                    );
+
+            Path songPath = Paths.get("src/test/resources/oauth2/song.json");
+            String songContent = Files.readString(songPath);
+            wireMock
+                    .register(
+                            WireMock.get(SONG_PATH)
+                                    .inScenario(scenario)
+                                    .withHeader("Authorization",containing(BEARER_TOKEN))
+                                    .whenScenarioStateIs(TOKEN_OK)
+                                    .willReturn(WireMock.aResponse()
+                                            .withStatus(200)
+                                            .withStatusMessage(OK)
+                                            .withBody(songContent)
+                                    ).willSetStateTo(SONG_OK)
+                    );
+            wireMock
+                    .register(
+                            WireMock.get(SONG_PATH)
+                                    .inScenario(scenario)
+                                    .withHeader("Authorization",containing(BEARER_TOKEN))
+                                    .whenScenarioStateIs(SONG_OK)
+                                    .willReturn(WireMock.aResponse()
+                                            .withStatus(200)
+                                            .withStatusMessage(OK)
+                                            .withBody(songContent)
+                                    ).willSetStateTo(SONG_OK_2)
+                    );
+            wireMock
+                    .register(
+                            WireMock.get(SONG_PATH)
+                                    .inScenario(scenario)
+                                    .withHeader("Authorization",containing(BEARER_TOKEN))
+                                    .whenScenarioStateIs(SONG_OK_2)
+                                    .willReturn(WireMock.aResponse()
+                                            .withStatus(401)
+                                            .withStatusMessage(UNAUTHORIZED)
+                                    ).willSetStateTo(SONG_KO)
+                    );
+            wireMock
+                    .register(
+                            WireMock.get(SONG_PATH)
+                                    .inScenario(scenario)
+                                    .withHeader("Authorization",containing(BEARER_TOKEN_2))
+                                    .whenScenarioStateIs(TOKEN_OK2)
+                                    .willReturn(WireMock.aResponse()
+                                            .withStatus(200)
+                                            .withStatusMessage(OK)
+                                            .withBody(songContent)
+                                    ).willSetStateTo(SONG_OK_3)
+                    );
+            wireMock
+                    .register(
+                            WireMock.get(SONG_PATH)
+                                    .inScenario(scenario)
+                                    .whenScenarioStateIs(WELL_KNOWN_OK)
+                                    .willReturn(WireMock.aResponse()
+                                            .withStatus(401)
+                                            .withStatusMessage("Unauthorized") //401 + 'WWW-Authenticate' trigger challenge
+                                            .withHeader("WWW-Authenticate","Bearer")
+                                            .withBody(songContent)
+                                    ).willSetStateTo(UNAUTHORIZED)
+                    );
+            wireMock
+                    .register(
+                            WireMock.get(SONG_PATH)
+                                    .inScenario(scenario)
+                                    .whenScenarioStateIs(UNAUTHORIZED)
+                                    .willReturn(WireMock.aResponse()
+                                            .withStatus(401)
+                                            .withStatusMessage("Unauthorized") //401 + 'WWW-Authenticate' trigger challenge
+                                            .withHeader("WWW-Authenticate","Bearer")
+                                            .withBody(songContent)
+                                    ).willSetStateTo(UNAUTHORIZED)
+                    );
+
             //when
             httpSinkTask.start(settings);
             httpSinkTask.put(records);
@@ -1198,7 +1374,7 @@ public class HttpSinkTaskTest {
         HttpRequest httpRequest = new HttpRequest("http://www.titi.com", DUMMY_METHOD, DUMMY_BODY_TYPE);
         httpRequest.setHeaders(requestHeaders);
         httpRequest.setBodyAsString("stuff");
-        HttpResponse httpResponse = new HttpResponse(200, "OK");
+        HttpResponse httpResponse = new HttpResponse(200, OK);
         httpResponse.setResponseBody("my response");
         Map<String, List<String>> responseHeaders = Maps.newHashMap();
         responseHeaders.put("Content-Type", Lists.newArrayList("application/json"));
