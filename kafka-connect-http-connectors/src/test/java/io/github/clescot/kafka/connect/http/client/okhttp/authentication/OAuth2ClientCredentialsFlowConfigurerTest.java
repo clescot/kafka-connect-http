@@ -90,6 +90,7 @@ class OAuth2ClientCredentialsFlowConfigurerTest {
         config.put(HTTP_CLIENT_AUTHENTICATION_OAUTH2_CLIENT_CREDENTIALS_FLOW_WELL_KNOWN_URL,httpBaseUrl+"/.well-known/openid-configuration");
         config.put(HTTP_CLIENT_AUTHENTICATION_OAUTH2_CLIENT_CREDENTIALS_FLOW_CLIENT_ID,"1234");
         config.put(HTTP_CLIENT_AUTHENTICATION_OAUTH2_CLIENT_CREDENTIALS_FLOW_CLIENT_SECRET,"secret!1234");
+        config.put(HTTP_CLIENT_AUTHENTICATION_OAUTH2_CLIENT_CREDENTIALS_FLOW_CLIENT_AUTHENTICATION_METHOD,"client_secret_basic");
         Authenticator authenticator = authenticationConfigurer.configureAuthenticator(config);
         assertThat(authenticator)
                 .isNotNull()
@@ -105,6 +106,7 @@ class OAuth2ClientCredentialsFlowConfigurerTest {
         config.put(HTTP_CLIENT_AUTHENTICATION_OAUTH2_CLIENT_CREDENTIALS_FLOW_CLIENT_ID,"1234");
         config.put(HTTP_CLIENT_AUTHENTICATION_OAUTH2_CLIENT_CREDENTIALS_FLOW_CLIENT_SECRET,"secret!1234");
         config.put(HTTP_CLIENT_AUTHENTICATION_OAUTH2_CLIENT_CREDENTIALS_FLOW_SCOPES,"openid,profile,email");
+        config.put(HTTP_CLIENT_AUTHENTICATION_OAUTH2_CLIENT_CREDENTIALS_FLOW_CLIENT_AUTHENTICATION_METHOD,"client_secret_basic");
         Authenticator authenticator = authenticationConfigurer.configureAuthenticator(config);
         assertThat(authenticator)
                 .isNotNull()
@@ -120,6 +122,7 @@ class OAuth2ClientCredentialsFlowConfigurerTest {
         config.put(HTTP_CLIENT_AUTHENTICATION_OAUTH2_CLIENT_CREDENTIALS_FLOW_CLIENT_ID,"1234");
         config.put(HTTP_CLIENT_AUTHENTICATION_OAUTH2_CLIENT_CREDENTIALS_FLOW_CLIENT_SECRET,"secret!1234");
         config.put(HTTP_CLIENT_AUTHENTICATION_OAUTH2_CLIENT_CREDENTIALS_FLOW_SCOPES,"openid,email");
+        config.put(HTTP_CLIENT_AUTHENTICATION_OAUTH2_CLIENT_CREDENTIALS_FLOW_CLIENT_AUTHENTICATION_METHOD,"client_secret_basic");
         Authenticator authenticator = authenticationConfigurer.configureAuthenticator(config);
         assertThat(authenticator)
                 .isNotNull()
@@ -135,6 +138,7 @@ class OAuth2ClientCredentialsFlowConfigurerTest {
         config.put(HTTP_CLIENT_AUTHENTICATION_OAUTH2_CLIENT_CREDENTIALS_FLOW_CLIENT_ID,"1234");
         config.put(HTTP_CLIENT_AUTHENTICATION_OAUTH2_CLIENT_CREDENTIALS_FLOW_CLIENT_SECRET,"secret!1234");
         config.put(HTTP_CLIENT_AUTHENTICATION_OAUTH2_CLIENT_CREDENTIALS_FLOW_SCOPES,"openid,test");
+        config.put(HTTP_CLIENT_AUTHENTICATION_OAUTH2_CLIENT_CREDENTIALS_FLOW_CLIENT_AUTHENTICATION_METHOD,"client_secret_basic");
         Assertions.assertThrows(IllegalArgumentException.class,()->authenticationConfigurer.configureAuthenticator(config));
     }
 
@@ -145,6 +149,7 @@ class OAuth2ClientCredentialsFlowConfigurerTest {
         config.put(HTTP_CLIENT_AUTHENTICATION_OAUTH2_CLIENT_CREDENTIALS_FLOW_ACTIVATE,Boolean.TRUE);
         config.put(HTTP_CLIENT_AUTHENTICATION_OAUTH2_CLIENT_CREDENTIALS_FLOW_CLIENT_ID,"1234");
         config.put(HTTP_CLIENT_AUTHENTICATION_OAUTH2_CLIENT_CREDENTIALS_FLOW_CLIENT_SECRET,"secret!1234");
+        config.put(HTTP_CLIENT_AUTHENTICATION_OAUTH2_CLIENT_CREDENTIALS_FLOW_CLIENT_AUTHENTICATION_METHOD,"client_secret_basic");
         Assertions.assertThrows(NullPointerException.class,()->authenticationConfigurer.configureAuthenticator(config));
     }
 
@@ -155,6 +160,7 @@ class OAuth2ClientCredentialsFlowConfigurerTest {
         config.put(HTTP_CLIENT_AUTHENTICATION_OAUTH2_CLIENT_CREDENTIALS_FLOW_ACTIVATE,Boolean.TRUE);
         config.put(HTTP_CLIENT_AUTHENTICATION_OAUTH2_CLIENT_CREDENTIALS_FLOW_WELL_KNOWN_URL,httpBaseUrl+"/.well-known/openid-configuration");
         config.put(HTTP_CLIENT_AUTHENTICATION_OAUTH2_CLIENT_CREDENTIALS_FLOW_CLIENT_SECRET,"secret!1234");
+        config.put(HTTP_CLIENT_AUTHENTICATION_OAUTH2_CLIENT_CREDENTIALS_FLOW_CLIENT_AUTHENTICATION_METHOD,"client_secret_basic");
         Assertions.assertThrows(NullPointerException.class,()->authenticationConfigurer.configureAuthenticator(config));
     }
 
@@ -165,6 +171,7 @@ class OAuth2ClientCredentialsFlowConfigurerTest {
         config.put(HTTP_CLIENT_AUTHENTICATION_OAUTH2_CLIENT_CREDENTIALS_FLOW_ACTIVATE,Boolean.TRUE);
         config.put(HTTP_CLIENT_AUTHENTICATION_OAUTH2_CLIENT_CREDENTIALS_FLOW_WELL_KNOWN_URL,httpBaseUrl+"/.well-known/openid-configuration");
         config.put(HTTP_CLIENT_AUTHENTICATION_OAUTH2_CLIENT_CREDENTIALS_FLOW_CLIENT_ID,"1234");
+        config.put(HTTP_CLIENT_AUTHENTICATION_OAUTH2_CLIENT_CREDENTIALS_FLOW_CLIENT_AUTHENTICATION_METHOD,"client_secret_basic");
         Assertions.assertThrows(NullPointerException.class,()->authenticationConfigurer.configureAuthenticator(config));
     }
 

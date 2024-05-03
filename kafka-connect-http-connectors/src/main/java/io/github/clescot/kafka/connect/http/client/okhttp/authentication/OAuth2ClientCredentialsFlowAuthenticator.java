@@ -7,10 +7,7 @@ import com.google.common.collect.Sets;
 import com.nimbusds.oauth2.sdk.*;
 import com.nimbusds.oauth2.sdk.auth.ClientAuthentication;
 import com.nimbusds.oauth2.sdk.auth.ClientAuthenticationMethod;
-import com.nimbusds.oauth2.sdk.auth.ClientSecretBasic;
-import com.nimbusds.oauth2.sdk.auth.Secret;
 import com.nimbusds.oauth2.sdk.http.HTTPResponse;
-import com.nimbusds.oauth2.sdk.id.ClientID;
 import com.nimbusds.oauth2.sdk.token.AccessToken;
 import com.nimbusds.oauth2.sdk.token.Tokens;
 import com.nimbusds.openid.connect.sdk.op.OIDCProviderMetadata;
@@ -31,8 +28,6 @@ import java.util.List;
 import java.util.Scanner;
 import java.util.Set;
 
-import static com.nimbusds.oauth2.sdk.auth.ClientAuthenticationMethod.CLIENT_SECRET_BASIC;
-
 public class OAuth2ClientCredentialsFlowAuthenticator implements CachingAuthenticator {
 
     private final ClientAuthentication clientAuth;
@@ -46,54 +41,13 @@ public class OAuth2ClientCredentialsFlowAuthenticator implements CachingAuthenti
 
     public OAuth2ClientCredentialsFlowAuthenticator(OkHttpClient okHttpClient,
                                                     String wellKnownUrl,
-                                                    String clientId,
-                                                    String clientSecret,
+                                                    ClientAuthentication clientAuth,
                                                     @javax.annotation.Nullable String... scopes) {
         this.okHttpClient = okHttpClient;
+        this.clientAuth = clientAuth;
         Preconditions.checkNotNull(okHttpClient,"okHttpClient is null");
         Preconditions.checkNotNull(wellKnownUrl,"wellKnownUrl is null");
-        Preconditions.checkNotNull(clientId,"clientId is null");
-        Preconditions.checkNotNull(clientSecret,"clientSecret is null");
 
-//        Client Authentication Methods
-//
-//        Depending on the authorization server configuration, client applications can use one of the following authentication methods:
-//
-//        1- Client secret based authentication:
-//
-//        * client_secret_basic
-//
-//        * client_secret_post
-//
-//        * client_secret_jwt
-//
-//        2- JSON Web Token based authentication:
-//
-//        * private_key_jwt
-//
-//        3- Mutual Transport Layer Security (mTLS) based authentication:
-//
-//        * tls_auth
-//
-//        * self_signed_tls_client_auth
-//
-//        4- none authentication that elevates the use of Proof Key for Code Exchange (PKCE)
-
-
-
-        //Basic Authentication
-        ClientID clientID = new ClientID(clientId);
-        Secret secret = new Secret(clientSecret);
-        clientAuth = new ClientSecretBasic(clientID, secret);
-
-        //Form Authentication
-        //clientAuth = new ClientSecretPost(clientID,secret);
-
-        //JWT token authentication
-        //clientAuth = new ClientSecretJWT();
-        //clientAuth = new PKITLSClientAuthentication();
-        //clientAuth = new PrivateKeyJWT();
-        //clientAuth = new SelfSignedTLSClientAuthentication();
         if (scopes != null && scopes.length > 0) {
             scope = new Scope(scopes);
         }
@@ -117,8 +71,8 @@ public class OAuth2ClientCredentialsFlowAuthenticator implements CachingAuthenti
 
             List<ClientAuthenticationMethod> tokenEndpointAuthMethods = providerMetadata.getTokenEndpointAuthMethods();
 
-            if(!tokenEndpointAuthMethods.contains(CLIENT_SECRET_BASIC)){
-                throw new IllegalStateException("Oauth2 provider does not support 'client_secret_basic' authentication to get the token");
+            if(!tokenEndpointAuthMethods.contains(clientAuth.getMethod())){
+                throw new IllegalStateException("Oauth2 provider does not support '"+clientAuth.getMethod().getValue()+"' authentication to get the token");
             }
             // The token endpoint
             tokenEndpointUri = providerMetadata.getTokenEndpointURI();
@@ -145,6 +99,7 @@ public class OAuth2ClientCredentialsFlowAuthenticator implements CachingAuthenti
             LOGGER.error("error in parsing wellKnown Url content:'{}'",wellKnownResponseBody);
             throw new IllegalStateException(e);
         }
+
     }
 
     @Nullable

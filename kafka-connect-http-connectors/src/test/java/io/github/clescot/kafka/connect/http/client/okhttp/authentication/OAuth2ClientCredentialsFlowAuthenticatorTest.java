@@ -6,7 +6,12 @@ import com.github.tomakehurst.wiremock.core.Options;
 import com.github.tomakehurst.wiremock.core.WireMockConfiguration;
 import com.github.tomakehurst.wiremock.junit5.WireMockExtension;
 import com.github.tomakehurst.wiremock.junit5.WireMockRuntimeInfo;
+import com.nimbusds.oauth2.sdk.auth.ClientAuthentication;
+import com.nimbusds.oauth2.sdk.auth.ClientSecretBasic;
+import com.nimbusds.oauth2.sdk.auth.Secret;
+import com.nimbusds.oauth2.sdk.id.ClientID;
 import okhttp3.*;
+import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
@@ -213,31 +218,27 @@ class OAuth2ClientCredentialsFlowAuthenticatorTest {
         @Test
         void test_constructor_with_missing_ok_http_client() {
             Assertions.assertThrows(NullPointerException.class, () -> new OAuth2ClientCredentialsFlowAuthenticator(
-                    null, httpBaseUrl + WELL_KNOWN_OPENID_CONFIGURATION, CLIENT_ID, CLIENT_SECRET));
+                    null, httpBaseUrl + WELL_KNOWN_OPENID_CONFIGURATION, getBasicClientAuthentication()));
         }
 
         @Test
         void test_constructor_with_missing_well_known_url() {
             Assertions.assertThrows(NullPointerException.class, () -> new OAuth2ClientCredentialsFlowAuthenticator(
-                    new OkHttpClient(), null, CLIENT_ID, CLIENT_SECRET));
+                    new OkHttpClient(), null, getBasicClientAuthentication()));
         }
 
         @Test
-        void test_constructor_with_missing_well_client_id() {
+        void test_constructor_with_missing_well_client_authentication() {
             Assertions.assertThrows(NullPointerException.class, () -> new OAuth2ClientCredentialsFlowAuthenticator(
-                    new OkHttpClient(), httpBaseUrl + WELL_KNOWN_OPENID_CONFIGURATION, null, CLIENT_SECRET));
+                    new OkHttpClient(), httpBaseUrl + WELL_KNOWN_OPENID_CONFIGURATION, null));
         }
 
-        @Test
-        void test_constructor_with_missing_well_client_secret() {
-            Assertions.assertThrows(NullPointerException.class, () -> new OAuth2ClientCredentialsFlowAuthenticator(
-                    new OkHttpClient(), httpBaseUrl + WELL_KNOWN_OPENID_CONFIGURATION, CLIENT_ID, null));
-        }
+
 
         @Test
         void test_constructor_nominal_case() {
             OAuth2ClientCredentialsFlowAuthenticator authenticator = new OAuth2ClientCredentialsFlowAuthenticator(
-                    new OkHttpClient(), httpBaseUrl + WELL_KNOWN_OPENID_CONFIGURATION, CLIENT_ID, CLIENT_SECRET);
+                    new OkHttpClient(), httpBaseUrl + WELL_KNOWN_OPENID_CONFIGURATION, getBasicClientAuthentication());
             assertThat(authenticator)
                     .isNotNull()
                     .isInstanceOf(OAuth2ClientCredentialsFlowAuthenticator.class);
@@ -246,7 +247,7 @@ class OAuth2ClientCredentialsFlowAuthenticatorTest {
         @Test
         void test_constructor_nominal_case_with_known_scopes() {
             OAuth2ClientCredentialsFlowAuthenticator authenticator = new OAuth2ClientCredentialsFlowAuthenticator(
-                    new OkHttpClient(), httpBaseUrl + WELL_KNOWN_OPENID_CONFIGURATION, CLIENT_ID, CLIENT_SECRET, "openid", "email");
+                    new OkHttpClient(), httpBaseUrl + WELL_KNOWN_OPENID_CONFIGURATION, getBasicClientAuthentication(), "openid", "email");
             assertThat(authenticator)
                     .isNotNull()
                     .isInstanceOf(OAuth2ClientCredentialsFlowAuthenticator.class);
@@ -255,13 +256,13 @@ class OAuth2ClientCredentialsFlowAuthenticatorTest {
         @Test
         void test_constructor_nominal_case_with_unknown_scopes() {
             Assertions.assertThrows(IllegalArgumentException.class, () -> new OAuth2ClientCredentialsFlowAuthenticator(
-                    new OkHttpClient(), httpBaseUrl + WELL_KNOWN_OPENID_CONFIGURATION, CLIENT_ID, CLIENT_SECRET, "opensid", "emaissssl"));
+                    new OkHttpClient(), httpBaseUrl + WELL_KNOWN_OPENID_CONFIGURATION, getBasicClientAuthentication(), "opensid", "emaissssl"));
         }
 
         @Test
         void test_constructor_without_basic_auth() {
             Assertions.assertThrows(IllegalStateException.class, () -> new OAuth2ClientCredentialsFlowAuthenticator(
-                    new OkHttpClient(), httpBaseUrl + BAD_AUTH_TOKEN_WELL_KNOWN_OPENID_CONFIGURATION, CLIENT_ID, CLIENT_SECRET));
+                    new OkHttpClient(), httpBaseUrl + BAD_AUTH_TOKEN_WELL_KNOWN_OPENID_CONFIGURATION, getBasicClientAuthentication()));
         }
     }
 
@@ -269,8 +270,10 @@ class OAuth2ClientCredentialsFlowAuthenticatorTest {
     class Authenticate{
         @Test
         void test_authenticate_nominal_case() throws IOException {
+            //Basic Authentication
+            ClientAuthentication clientAuth = getBasicClientAuthentication();
             Authenticator authenticator = new OAuth2ClientCredentialsFlowAuthenticator(
-                    new OkHttpClient(), httpBaseUrl + WELL_KNOWN_OPENID_CONFIGURATION, CLIENT_ID, CLIENT_SECRET);
+                    new OkHttpClient(), httpBaseUrl + WELL_KNOWN_OPENID_CONFIGURATION, clientAuth);
             Route route = mock(Route.class);
             Request request = new Request.Builder().url(httpBaseUrl+SONG_PATH).get().build();
             Response.Builder builder = new Response.Builder();
@@ -284,13 +287,13 @@ class OAuth2ClientCredentialsFlowAuthenticatorTest {
         @Test
         void test_authenticate_with_bad_well_known_content() {
             Assertions.assertThrows(RuntimeException.class,()->new OAuth2ClientCredentialsFlowAuthenticator(
-                    new OkHttpClient(), httpBaseUrl + BAD_WELL_KNOWN_OPENID_CONFIGURATION, CLIENT_ID, CLIENT_SECRET));
+                    new OkHttpClient(), httpBaseUrl + BAD_WELL_KNOWN_OPENID_CONFIGURATION, getBasicClientAuthentication()));
         }
 
         @Test
         void test_authenticate_with_bad_token_in_well_known_content() throws IOException {
             Authenticator authenticator = new OAuth2ClientCredentialsFlowAuthenticator(
-                    new OkHttpClient(), httpBaseUrl + BAD_TOKEN_WELL_KNOWN_OPENID_CONFIGURATION, CLIENT_ID, CLIENT_SECRET);
+                    new OkHttpClient(), httpBaseUrl + BAD_TOKEN_WELL_KNOWN_OPENID_CONFIGURATION, getBasicClientAuthentication());
 
             Route route = mock(Route.class);
             Request request = new Request.Builder().url(httpBaseUrl+SONG_PATH).get().build();
@@ -304,7 +307,7 @@ class OAuth2ClientCredentialsFlowAuthenticatorTest {
         @Test
         void test_authenticate_with_bad_response_token_in_well_known_content() throws IOException {
             Authenticator authenticator = new OAuth2ClientCredentialsFlowAuthenticator(
-                    new OkHttpClient(), httpBaseUrl + BAD_RESPONSE_TOKEN_WELL_KNOWN_OPENID_CONFIGURATION, CLIENT_ID, CLIENT_SECRET);
+                    new OkHttpClient(), httpBaseUrl + BAD_RESPONSE_TOKEN_WELL_KNOWN_OPENID_CONFIGURATION, getBasicClientAuthentication());
 
             Route route = mock(Route.class);
             Request request = new Request.Builder().url(httpBaseUrl+SONG_PATH).get().build();
@@ -319,7 +322,7 @@ class OAuth2ClientCredentialsFlowAuthenticatorTest {
         @Test
         void test_authenticate_with_state_nominal_case() throws IOException {
             OAuth2ClientCredentialsFlowAuthenticator authenticator = new OAuth2ClientCredentialsFlowAuthenticator(
-                    new OkHttpClient(), httpBaseUrl + WELL_KNOWN_OPENID_CONFIGURATION, CLIENT_ID, CLIENT_SECRET);
+                    new OkHttpClient(), httpBaseUrl + WELL_KNOWN_OPENID_CONFIGURATION,getBasicClientAuthentication());
             Route route = mock(Route.class);
             Request request = new Request.Builder().url(httpBaseUrl+SONG_PATH).get().build();
             Response.Builder builder = new Response.Builder();
@@ -333,6 +336,13 @@ class OAuth2ClientCredentialsFlowAuthenticatorTest {
             assertThat(authorizationHeader2).isEqualTo(authorizationHeader);
         }
 
+    }
+
+    private static @NotNull ClientAuthentication getBasicClientAuthentication() {
+        ClientID clientID = new ClientID(CLIENT_ID);
+        Secret secret = new Secret(CLIENT_SECRET);
+        ClientAuthentication clientAuth = new ClientSecretBasic(clientID, secret);
+        return clientAuth;
     }
 
 }
