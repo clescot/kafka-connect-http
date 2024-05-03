@@ -4,10 +4,13 @@ import com.burgstaller.okhttp.digest.CachingAuthenticator;
 import com.google.common.base.Joiner;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Sets;
+import com.nimbusds.jose.JOSEException;
+import com.nimbusds.jose.JWSAlgorithm;
 import com.nimbusds.oauth2.sdk.*;
-import com.nimbusds.oauth2.sdk.auth.ClientAuthentication;
-import com.nimbusds.oauth2.sdk.auth.ClientAuthenticationMethod;
+import com.nimbusds.oauth2.sdk.auth.*;
 import com.nimbusds.oauth2.sdk.http.HTTPResponse;
+import com.nimbusds.oauth2.sdk.id.ClientID;
+import com.nimbusds.oauth2.sdk.id.Issuer;
 import com.nimbusds.oauth2.sdk.token.AccessToken;
 import com.nimbusds.oauth2.sdk.token.Tokens;
 import com.nimbusds.openid.connect.sdk.op.OIDCProviderMetadata;
@@ -23,14 +26,13 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.net.URI;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Scanner;
-import java.util.Set;
+import java.util.*;
+
+import static io.github.clescot.kafka.connect.http.sink.HttpSinkConfigDefinition.*;
 
 public class OAuth2ClientCredentialsFlowAuthenticator implements CachingAuthenticator {
 
-    private final ClientAuthentication clientAuth;
+    private ClientAuthentication clientAuth;
     private final URI tokenEndpointUri;
     private final OkHttpClient okHttpClient;
     private Scope scope;
@@ -41,12 +43,11 @@ public class OAuth2ClientCredentialsFlowAuthenticator implements CachingAuthenti
 
     public OAuth2ClientCredentialsFlowAuthenticator(OkHttpClient okHttpClient,
                                                     String wellKnownUrl,
-                                                    ClientAuthentication clientAuth,
+                                                    Map<String, Object> config,
                                                     @javax.annotation.Nullable String... scopes) {
         this.okHttpClient = okHttpClient;
-        this.clientAuth = clientAuth;
-        Preconditions.checkNotNull(okHttpClient,"okHttpClient is null");
-        Preconditions.checkNotNull(wellKnownUrl,"wellKnownUrl is null");
+        Preconditions.checkNotNull(okHttpClient, "okHttpClient is null");
+        Preconditions.checkNotNull(wellKnownUrl, "wellKnownUrl is null");
 
         if (scopes != null && scopes.length > 0) {
             scope = new Scope(scopes);
@@ -71,13 +72,17 @@ public class OAuth2ClientCredentialsFlowAuthenticator implements CachingAuthenti
 
             List<ClientAuthenticationMethod> tokenEndpointAuthMethods = providerMetadata.getTokenEndpointAuthMethods();
 
-            if(!tokenEndpointAuthMethods.contains(clientAuth.getMethod())){
-                throw new IllegalStateException("Oauth2 provider does not support '"+clientAuth.getMethod().getValue()+"' authentication to get the token");
+            if (!tokenEndpointAuthMethods.contains(clientAuth.getMethod())) {
+                throw new IllegalStateException("Oauth2 provider does not support '" + clientAuth.getMethod().getValue() + "' authentication to get the token");
             }
             // The token endpoint
             tokenEndpointUri = providerMetadata.getTokenEndpointURI();
             String tokenEndpoint = tokenEndpointUri.toString();
             String issuer = tokenEndpoint.substring(0, tokenEndpoint.length() - "/token".length());
+
+
+            clientAuth = buildClientAuthentication(config,tokenEndpointUri);
+
 
             //get access token with client credential flow
 
@@ -91,16 +96,90 @@ public class OAuth2ClientCredentialsFlowAuthenticator implements CachingAuthenti
                 boolean configuredScopesAreValid = scopesFromWellKnownUrlList.containsAll(configuredScopes);
                 if (!configuredScopesAreValid) {
                     throw new IllegalArgumentException("configured Scopes:'"
-                    + Joiner.on(",").join(configuredScopes) + "' are not all present in the scopes from the well known url ('"
-                    + Joiner.on(",").join(scopesFromWellKnownUrlList) + "')");
+                            + Joiner.on(",").join(configuredScopes) + "' are not all present in the scopes from the well known url ('"
+                            + Joiner.on(",").join(scopesFromWellKnownUrlList) + "')");
                 }
             }
         } catch (IOException | ParseException e) {
-            LOGGER.error("error in parsing wellKnown Url content:'{}'",wellKnownResponseBody);
+            LOGGER.error("error in parsing wellKnown Url content:'{}'", wellKnownResponseBody);
             throw new IllegalStateException(e);
         }
 
     }
+
+
+    private ClientAuthentication buildClientAuthentication(Map<String, Object> config, URI tokenEndpointUri) {
+
+        Object clientAuthenticationmethod = config.get(HTTP_CLIENT_AUTHENTICATION_OAUTH2_CLIENT_CREDENTIALS_FLOW_CLIENT_AUTHENTICATION_METHOD);
+        Preconditions.checkNotNull(clientAuthenticationmethod, HTTP_CLIENT_AUTHENTICATION_OAUTH2_CLIENT_CREDENTIALS_FLOW_CLIENT_AUTHENTICATION_METHOD + " parameter is required");
+        ClientAuthenticationMethod clientAuthenticationMethod = ClientAuthenticationMethod.parse(clientAuthenticationmethod.toString());
+        String clientAuthenticationMethodValue = clientAuthenticationMethod.getValue();
+        LOGGER.debug("clientAuthenticationMethod:'{}'", clientAuthenticationMethodValue);
+        ClientAuthentication clientAuth;
+        switch (clientAuthenticationMethodValue) {
+            case "client_secret_basic": {
+                ClientID clientID = new ClientID(getClientId(config));
+                Secret secret = new Secret(getClientSecret(config));
+                clientAuth = new ClientSecretBasic(clientID, secret);
+                break;
+            }
+            case "client_secret_post": {
+                ClientID clientID = new ClientID(getClientId(config));
+                Secret secret = new Secret(getClientSecret(config));
+                clientAuth = new ClientSecretPost(clientID, secret);
+                break;
+            }
+            case "client_secret_jwt": {
+                ClientID clientID = new ClientID(getClientId(config));
+
+                Object issuerObject = config.get(HTTP_CLIENT_AUTHENTICATION_OAUTH2_CLIENT_CREDENTIALS_FLOW_CLIENT_ISSUER);
+                String issuerAsString;
+                Issuer issuer;
+                if (issuerObject != null && !issuerObject.toString().isEmpty()) {
+                    issuerAsString = issuerObject.toString();
+                    issuer = new Issuer(issuerAsString);
+                } else {
+                    issuer = new Issuer(clientID);
+                }
+
+                Secret secret = new Secret(getClientSecret(config));
+
+                try {
+                    Object jwsAlgorithmObject = config.get(HTTP_CLIENT_AUTHENTICATION_OAUTH2_CLIENT_CREDENTIALS_FLOW_CLIENT_JWS_ALGORITHM);
+                    Preconditions.checkNotNull(jwsAlgorithmObject, HTTP_CLIENT_AUTHENTICATION_OAUTH2_CLIENT_CREDENTIALS_FLOW_CLIENT_JWS_ALGORITHM + " is null");
+                    String jwsAlgorithmName = jwsAlgorithmObject.toString();
+                    JWSAlgorithm jwsAlgorithm = new JWSAlgorithm(jwsAlgorithmName);
+
+                    clientAuth = new ClientSecretJWT(issuer, clientID, tokenEndpointUri, jwsAlgorithm, secret);
+                } catch (JOSEException e) {
+                    throw new RuntimeException(e);
+                }
+            }
+            case "none":
+            case "private_key_jwt":  //clientAuth = new PrivateKeyJWT();
+            case "tls_client_auth": //clientAuth = new PKITLSClientAuthentication();
+            case "self_signed_tls_client_auth"://clientAuth = new SelfSignedTLSClientAuthentication();
+            case "request_object": // ??
+            default:
+                throw new IllegalArgumentException(clientAuthenticationMethodValue + " not supported");
+        }
+
+
+        return clientAuth;
+    }
+
+    private String getClientId(Map<String, Object> config) {
+        Object clientIdObject = config.get(HTTP_CLIENT_AUTHENTICATION_OAUTH2_CLIENT_CREDENTIALS_FLOW_CLIENT_ID);
+        Preconditions.checkNotNull(clientIdObject, HTTP_CLIENT_AUTHENTICATION_OAUTH2_CLIENT_CREDENTIALS_FLOW_CLIENT_ID + " is null");
+        return clientIdObject.toString();
+    }
+
+    private String getClientSecret(Map<String, Object> config) {
+        Object clientSecretObject = config.get(HTTP_CLIENT_AUTHENTICATION_OAUTH2_CLIENT_CREDENTIALS_FLOW_CLIENT_SECRET);
+        Preconditions.checkNotNull(clientSecretObject, HTTP_CLIENT_AUTHENTICATION_OAUTH2_CLIENT_CREDENTIALS_FLOW_CLIENT_SECRET + " is null");
+        return clientSecretObject.toString();
+    }
+
 
     @Nullable
     @Override
@@ -131,7 +210,7 @@ public class OAuth2ClientCredentialsFlowAuthenticator implements CachingAuthenti
                     .build();
         } else {
             LOGGER.error("no token has been issued");
-           return request;
+            return request;
         }
     }
 
@@ -144,7 +223,7 @@ public class OAuth2ClientCredentialsFlowAuthenticator implements CachingAuthenti
         if (!response.indicatesSuccess()) {
             // We got an error response...
             TokenErrorResponse errorResponse = response.toErrorResponse();
-            LOGGER.error("error:'{}'",errorResponse.toJSONObject());
+            LOGGER.error("error:'{}'", errorResponse.toJSONObject());
         } else {
             AccessTokenResponse successResponse = response.toSuccessResponse();
             tokens = successResponse.getTokens();
