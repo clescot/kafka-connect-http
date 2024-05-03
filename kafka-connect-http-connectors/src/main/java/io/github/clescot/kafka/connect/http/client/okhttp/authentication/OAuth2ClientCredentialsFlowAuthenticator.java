@@ -71,17 +71,18 @@ public class OAuth2ClientCredentialsFlowAuthenticator implements CachingAuthenti
             providerMetadata = OIDCProviderMetadata.parse(providerInfo);
 
             List<ClientAuthenticationMethod> tokenEndpointAuthMethods = providerMetadata.getTokenEndpointAuthMethods();
+            tokenEndpointUri = providerMetadata.getTokenEndpointURI();
+            clientAuth = buildClientAuthentication(config,tokenEndpointUri);
 
             if (!tokenEndpointAuthMethods.contains(clientAuth.getMethod())) {
                 throw new IllegalStateException("Oauth2 provider does not support '" + clientAuth.getMethod().getValue() + "' authentication to get the token");
             }
             // The token endpoint
-            tokenEndpointUri = providerMetadata.getTokenEndpointURI();
+
             String tokenEndpoint = tokenEndpointUri.toString();
             String issuer = tokenEndpoint.substring(0, tokenEndpoint.length() - "/token".length());
 
 
-            clientAuth = buildClientAuthentication(config,tokenEndpointUri);
 
 
             //get access token with client credential flow
