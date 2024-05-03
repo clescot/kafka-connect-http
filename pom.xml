@@ -43,7 +43,7 @@
         <kafka.version>3.6.1</kafka.version>
         <confluent.platform.version>7.6.1</confluent.platform.version>
         <failsafe.version>3.3.2</failsafe.version>
-        <guava.version>33.1.0-jre</guava.version>
+        <guava.version>33.2.0-jre</guava.version>
         <jackson.version>2.17.0</jackson.version>
         <json.assert.version>1.5.1</json.assert.version>
         <junit.version>5.10.2</junit.version>
