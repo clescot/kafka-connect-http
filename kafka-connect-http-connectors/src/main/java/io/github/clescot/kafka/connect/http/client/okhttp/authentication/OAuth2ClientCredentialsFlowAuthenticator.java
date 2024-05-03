@@ -39,7 +39,7 @@ public class OAuth2ClientCredentialsFlowAuthenticator implements CachingAuthenti
     private final URI tokenEndpointUri;
     private final OkHttpClient okHttpClient;
     private Scope scope;
-    private AuthorizationGrant clientGrant = new ClientCredentialsGrant();
+    private static final AuthorizationGrant CLIENT_CREDENTIALS_GRANT = new ClientCredentialsGrant();
 
     private static final Logger LOGGER = LoggerFactory.getLogger(OAuth2ClientCredentialsFlowAuthenticator.class);
     private String bearerToken;
@@ -54,9 +54,46 @@ public class OAuth2ClientCredentialsFlowAuthenticator implements CachingAuthenti
         Preconditions.checkNotNull(wellKnownUrl,"wellKnownUrl is null");
         Preconditions.checkNotNull(clientId,"clientId is null");
         Preconditions.checkNotNull(clientSecret,"clientSecret is null");
+
+//        Client Authentication Methods
+//
+//        Depending on the authorization server configuration, client applications can use one of the following authentication methods:
+//
+//        1- Client secret based authentication:
+//
+//        * client_secret_basic
+//
+//        * client_secret_post
+//
+//        * client_secret_jwt
+//
+//        2- JSON Web Token based authentication:
+//
+//        * private_key_jwt
+//
+//        3- Mutual Transport Layer Security (mTLS) based authentication:
+//
+//        * tls_auth
+//
+//        * self_signed_tls_client_auth
+//
+//        4- none authentication that elevates the use of Proof Key for Code Exchange (PKCE)
+
+
+
+        //Basic Authentication
         ClientID clientID = new ClientID(clientId);
         Secret secret = new Secret(clientSecret);
         clientAuth = new ClientSecretBasic(clientID, secret);
+
+        //Form Authentication
+        //clientAuth = new ClientSecretPost(clientID,secret);
+
+        //JWT token authentication
+        //clientAuth = new ClientSecretJWT();
+        //clientAuth = new PKITLSClientAuthentication();
+        //clientAuth = new PrivateKeyJWT();
+        //clientAuth = new SelfSignedTLSClientAuthentication();
         if (scopes != null && scopes.length > 0) {
             scope = new Scope(scopes);
         }
@@ -118,7 +155,7 @@ public class OAuth2ClientCredentialsFlowAuthenticator implements CachingAuthenti
         // Make the token request
         Tokens tokens;
         try {
-            tokens = getTokens(tokenEndpointUri, clientAuth, clientGrant, scope);
+            tokens = getTokens(tokenEndpointUri, clientAuth, CLIENT_CREDENTIALS_GRANT, scope);
         } catch (ParseException e) {
             LOGGER.error("tokencontent cannot be parsed");
             return request;
