@@ -295,8 +295,9 @@ class OAuth2ClientCredentialsFlowAuthenticatorTest {
             config.put(HTTP_CLIENT_AUTHENTICATION_OAUTH2_CLIENT_CREDENTIALS_FLOW_CLIENT_ID,CLIENT_ID);
             config.put(HTTP_CLIENT_AUTHENTICATION_OAUTH2_CLIENT_CREDENTIALS_FLOW_CLIENT_SECRET,CLIENT_SECRET);
             config.put(HTTP_CLIENT_AUTHENTICATION_OAUTH2_CLIENT_CREDENTIALS_FLOW_CLIENT_AUTHENTICATION_METHOD,"dummy");
+            String wellKnownUrl = httpBaseUrl + BAD_AUTH_TOKEN_WELL_KNOWN_OPENID_CONFIGURATION;
             Assertions.assertThrows(IllegalArgumentException.class, () -> new OAuth2ClientCredentialsFlowAuthenticator(
-                    new OkHttpClient(), httpBaseUrl + BAD_AUTH_TOKEN_WELL_KNOWN_OPENID_CONFIGURATION, config));
+                    new OkHttpClient(), wellKnownUrl, config));
         }
     }
 
