@@ -22,8 +22,7 @@ import java.util.Map;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.containing;
 import static com.github.tomakehurst.wiremock.stubbing.Scenario.STARTED;
-import static io.github.clescot.kafka.connect.http.sink.HttpSinkConfigDefinition.HTTP_CLIENT_AUTHENTICATION_OAUTH2_CLIENT_CREDENTIALS_FLOW_CLIENT_ID;
-import static io.github.clescot.kafka.connect.http.sink.HttpSinkConfigDefinition.HTTP_CLIENT_AUTHENTICATION_OAUTH2_CLIENT_CREDENTIALS_FLOW_CLIENT_SECRET;
+import static io.github.clescot.kafka.connect.http.sink.HttpSinkConfigDefinition.*;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 
@@ -324,6 +323,7 @@ class OAuth2ClientCredentialsFlowAuthenticatorTest {
             Map<String,Object> config = Maps.newHashMap();
             config.put(HTTP_CLIENT_AUTHENTICATION_OAUTH2_CLIENT_CREDENTIALS_FLOW_CLIENT_ID,CLIENT_ID);
             config.put(HTTP_CLIENT_AUTHENTICATION_OAUTH2_CLIENT_CREDENTIALS_FLOW_CLIENT_SECRET,CLIENT_SECRET);
+            config.put(HTTP_CLIENT_AUTHENTICATION_OAUTH2_CLIENT_CREDENTIALS_FLOW_CLIENT_AUTHENTICATION_METHOD,"client_secret_basic");
             Authenticator authenticator = new OAuth2ClientCredentialsFlowAuthenticator(
                     new OkHttpClient(), httpBaseUrl + BAD_TOKEN_WELL_KNOWN_OPENID_CONFIGURATION, config);
 
@@ -341,6 +341,7 @@ class OAuth2ClientCredentialsFlowAuthenticatorTest {
             Map<String,Object> config = Maps.newHashMap();
             config.put(HTTP_CLIENT_AUTHENTICATION_OAUTH2_CLIENT_CREDENTIALS_FLOW_CLIENT_ID,CLIENT_ID);
             config.put(HTTP_CLIENT_AUTHENTICATION_OAUTH2_CLIENT_CREDENTIALS_FLOW_CLIENT_SECRET,CLIENT_SECRET);
+            config.put(HTTP_CLIENT_AUTHENTICATION_OAUTH2_CLIENT_CREDENTIALS_FLOW_CLIENT_AUTHENTICATION_METHOD,"client_secret_post");
             Authenticator authenticator = new OAuth2ClientCredentialsFlowAuthenticator(
                     new OkHttpClient(), httpBaseUrl + BAD_RESPONSE_TOKEN_WELL_KNOWN_OPENID_CONFIGURATION,config);
 
@@ -359,6 +360,7 @@ class OAuth2ClientCredentialsFlowAuthenticatorTest {
             Map<String,Object> config = Maps.newHashMap();
             config.put(HTTP_CLIENT_AUTHENTICATION_OAUTH2_CLIENT_CREDENTIALS_FLOW_CLIENT_ID,CLIENT_ID);
             config.put(HTTP_CLIENT_AUTHENTICATION_OAUTH2_CLIENT_CREDENTIALS_FLOW_CLIENT_SECRET,CLIENT_SECRET);
+            config.put(HTTP_CLIENT_AUTHENTICATION_OAUTH2_CLIENT_CREDENTIALS_FLOW_CLIENT_AUTHENTICATION_METHOD,"client_secret_basic");
             OAuth2ClientCredentialsFlowAuthenticator authenticator = new OAuth2ClientCredentialsFlowAuthenticator(
                     new OkHttpClient(), httpBaseUrl + WELL_KNOWN_OPENID_CONFIGURATION, config);
             Route route = mock(Route.class);

@@ -344,7 +344,7 @@ public class HttpSinkConfigDefinition {
 
     public static final String HTTP_CLIENT_AUTHENTICATION_OAUTH2_CLIENT_CREDENTIALS_FLOW_CLIENT_AUTHENTICATION_METHOD = HTTP_CLIENT_PREFIX + "authentication.oauth2.client.credentials.flow.client.authentication.method";
     public static final String CONFIG_DEFAULT_HTTP_CLIENT_AUTHENTICATION_OAUTH2_CLIENT_CREDENTIALS_FLOW_CLIENT_AUTHENTICATION_METHOD = DEFAULT_CONFIGURATION_PREFIX + HTTP_CLIENT_AUTHENTICATION_OAUTH2_CLIENT_CREDENTIALS_FLOW_CLIENT_AUTHENTICATION_METHOD;
-    public static final String CONFIG_DEFAULT_HTTP_CLIENT_AUTHENTICATION_OAUTH2_CLIENT_CREDENTIALS_FLOW_CLIENT_AUTHENTICATION_METHOD_DOC = "OAuth2 Client authentication method. either 'client_secret_basic' or 'client_secret_post' are supported";
+    public static final String CONFIG_DEFAULT_HTTP_CLIENT_AUTHENTICATION_OAUTH2_CLIENT_CREDENTIALS_FLOW_CLIENT_AUTHENTICATION_METHOD_DOC = "OAuth2 Client authentication method. either 'client_secret_basic', 'client_secret_post', or 'client_secret_jwt' are supported. default value is 'client_secret_basic'.";
 
     public static final String HTTP_CLIENT_AUTHENTICATION_OAUTH2_CLIENT_CREDENTIALS_FLOW_CLIENT_ID = HTTP_CLIENT_PREFIX + "authentication.oauth2.client.credentials.flow.client.id";
     public static final String CONFIG_DEFAULT_HTTP_CLIENT_AUTHENTICATION_OAUTH2_CLIENT_CREDENTIALS_FLOW_CLIENT_ID = DEFAULT_CONFIGURATION_PREFIX + HTTP_CLIENT_AUTHENTICATION_OAUTH2_CLIENT_CREDENTIALS_FLOW_CLIENT_ID;
