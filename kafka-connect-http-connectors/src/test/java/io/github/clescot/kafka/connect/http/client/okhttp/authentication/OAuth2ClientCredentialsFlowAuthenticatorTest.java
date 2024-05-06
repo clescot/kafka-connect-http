@@ -288,6 +288,16 @@ class OAuth2ClientCredentialsFlowAuthenticatorTest {
             Assertions.assertThrows(IllegalStateException.class, () -> new OAuth2ClientCredentialsFlowAuthenticator(
                     new OkHttpClient(), httpBaseUrl + BAD_AUTH_TOKEN_WELL_KNOWN_OPENID_CONFIGURATION, config));
         }
+
+        @Test
+        void test_constructor_with_unknown_client_authentication() {
+            Map<String,Object> config = Maps.newHashMap();
+            config.put(HTTP_CLIENT_AUTHENTICATION_OAUTH2_CLIENT_CREDENTIALS_FLOW_CLIENT_ID,CLIENT_ID);
+            config.put(HTTP_CLIENT_AUTHENTICATION_OAUTH2_CLIENT_CREDENTIALS_FLOW_CLIENT_SECRET,CLIENT_SECRET);
+            config.put(HTTP_CLIENT_AUTHENTICATION_OAUTH2_CLIENT_CREDENTIALS_FLOW_CLIENT_AUTHENTICATION_METHOD,"dummy");
+            Assertions.assertThrows(IllegalArgumentException.class, () -> new OAuth2ClientCredentialsFlowAuthenticator(
+                    new OkHttpClient(), httpBaseUrl + BAD_AUTH_TOKEN_WELL_KNOWN_OPENID_CONFIGURATION, config));
+        }
     }
 
     @Nested

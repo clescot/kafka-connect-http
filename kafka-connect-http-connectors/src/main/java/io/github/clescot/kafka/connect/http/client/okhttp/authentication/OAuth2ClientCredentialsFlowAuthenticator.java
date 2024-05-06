@@ -112,7 +112,6 @@ public class OAuth2ClientCredentialsFlowAuthenticator implements CachingAuthenti
     private ClientAuthentication buildClientAuthentication(Map<String, Object> config, URI tokenEndpointUri) {
 
         Object clientAuthenticationmethod = Optional.ofNullable(config.get(HTTP_CLIENT_AUTHENTICATION_OAUTH2_CLIENT_CREDENTIALS_FLOW_CLIENT_AUTHENTICATION_METHOD)).orElse("client_secret_basic");
-        Preconditions.checkNotNull(clientAuthenticationmethod, HTTP_CLIENT_AUTHENTICATION_OAUTH2_CLIENT_CREDENTIALS_FLOW_CLIENT_AUTHENTICATION_METHOD + " parameter is required");
         ClientAuthenticationMethod clientAuthenticationMethod = ClientAuthenticationMethod.parse(clientAuthenticationmethod.toString());
         String clientAuthenticationMethodValue = clientAuthenticationMethod.getValue();
         LOGGER.debug("clientAuthenticationMethod:'{}'", clientAuthenticationMethodValue);
