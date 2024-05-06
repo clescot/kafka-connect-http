@@ -210,7 +210,7 @@ class OAuth2ClientCredentialsFlowAuthenticatorTest {
         @Test
         void test_constructor_with_null_args() {
             Assertions.assertThrows(NullPointerException.class, () -> new OAuth2ClientCredentialsFlowAuthenticator(
-                    null, null, null, null));
+                    null, null, null));
         }
 
         @Test
