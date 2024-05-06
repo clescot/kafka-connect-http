@@ -157,10 +157,10 @@ public class OAuth2ClientCredentialsFlowAuthenticator implements CachingAuthenti
                 }
             }
             case "none":
-            case "private_key_jwt":  //clientAuth = new PrivateKeyJWT();
-            case "tls_client_auth": //clientAuth = new PKITLSClientAuthentication();
-            case "self_signed_tls_client_auth"://clientAuth = new SelfSignedTLSClientAuthentication();
-            case "request_object": // ??
+            case "private_key_jwt":  //TODO clientAuth = new PrivateKeyJWT();
+            case "tls_client_auth": //TODO clientAuth = new PKITLSClientAuthentication();
+            case "self_signed_tls_client_auth"://TODO clientAuth = new SelfSignedTLSClientAuthentication();
+            case "request_object": // TODO ??
             default:
                 throw new IllegalArgumentException(clientAuthenticationMethodValue + " not supported");
         }
