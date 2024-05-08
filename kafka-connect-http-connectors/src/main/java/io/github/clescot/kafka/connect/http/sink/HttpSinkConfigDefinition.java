@@ -365,7 +365,7 @@ public class HttpSinkConfigDefinition {
 
     public static final String HTTP_CLIENT_AUTHENTICATION_OAUTH2_CLIENT_CREDENTIALS_FLOW_SCOPES = HTTP_CLIENT_PREFIX + "authentication.oauth2.client.credentials.flow.scopes";
     public static final String CONFIG_DEFAULT_HTTP_CLIENT_AUTHENTICATION_OAUTH2_CLIENT_CREDENTIALS_FLOW_SCOPES = DEFAULT_CONFIGURATION_PREFIX + HTTP_CLIENT_AUTHENTICATION_OAUTH2_CLIENT_CREDENTIALS_FLOW_SCOPES;
-    public static final String CONFIG_DEFAULT_HTTP_CLIENT_AUTHENTICATION_OAUTH2_CLIENT_CREDENTIALS_FLOW_SCOPES_DOC = "optional scope";
+    public static final String CONFIG_DEFAULT_HTTP_CLIENT_AUTHENTICATION_OAUTH2_CLIENT_CREDENTIALS_FLOW_SCOPES_DOC = "optional scopes, splitted with a comma separator.";
 
 
     //proxy authentication

@@ -182,6 +182,16 @@ The predicate permits to filter some http requests, and can be composed, cumulat
       - *`config.default.httpclient.authentication.digest.username`* : username used to authenticate against the `digest` challenge (_required_)
       - *`config.default.httpclient.authentication.digest.password`* : password used to authenticate against the `digest` challenge (_required_)
       - *`config.default.httpclient.authentication.digest.charset`* : character set used by the http client to encode `digest` credentials (_optional_ `US-ASCII` if not set)
+    - `OAuth2 client credential flow` authentication settings
+      - *`config.default.httpclient.authentication.oauth2.client.credentials.flow.activate`* : activate the OAuth2 Client Credentials flow authentication, suited for Machine-To-Machine applications (M2M).
+      - *`config.default.httpclient.authentication.oauth2.client.credentials.flow.well.known.url`* : OAuth2 URL of the provider's Well-Known Configuration Endpoint.
+      - *`config.default.httpclient.authentication.oauth2.client.credentials.flow.client.authentication.method`* : OAuth2 Client authentication method. either 'client_secret_basic', 'client_secret_post', or 'client_secret_jwt' are supported. default value is 'client_secret_basic'.
+      - *`config.default.httpclient.authentication.oauth2.client.credentials.flow.client.id`* : Client id : used in 'client_secret_basic', 'client_secret_post', or 'client_secret_jwt' authentication methods.
+      - *`config.default.httpclient.authentication.oauth2.client.credentials.flow.client.secret`* : Client secret : used in 'client_secret_basic', 'client_secret_post', or 'client_secret_jwt' authentication methods.
+      - *`config.default.httpclient.authentication.oauth2.client.credentials.flow.client.issuer`* : Client issuer for JWT token.
+      - *`config.default.httpclient.authentication.oauth2.client.credentials.flow.client.jws.algorithm`* : JWS Algorithm for JWT token. default is 'HS256'.
+      - *`config.default.httpclient.authentication.oauth2.client.credentials.flow.scopes`* : optional scopes, splitted with a comma separator : can be used in  'client_secret_basic', 'client_secret_post', or 'client_secret_jwt' authentication methods.
+      - 
   - http client SSL parameters
     - *`config.default.httpclient.ssl.keystore.path`* : file path of the custom key store.
     - *`config.default.httpclient.ssl.keystore.password`* : password of the custom key store.
