@@ -185,6 +185,18 @@ class OAuth2ClientCredentialsFlowAuthenticatorTest {
                                         .withStatusMessage("OK")
                                         .withBody(tokenContent)
                                 ).willSetStateTo(TOKEN_OK)
+                );        wireMock
+                .register(
+                        WireMock.post("/api/token")
+                                .withHeader("Content-Type",containing("application/x-www-form-urlencoded; charset=UTF-8"))
+                                .inScenario(scenario)
+                                .withRequestBody(matching("^client_assertion_type=urn%3Aietf%3Aparams%3Aoauth%3Aclient-assertion-type%3Ajwt-bearer&client_assertion=.*&grant_type=client_credentials"))
+                                .whenScenarioStateIs(WELL_KNOWN_OK)
+                                .willReturn(WireMock.aResponse()
+                                        .withStatus(200)
+                                        .withStatusMessage("OK")
+                                        .withBody(tokenContent)
+                                ).willSetStateTo(TOKEN_OK)
                 );
 
         wireMock
@@ -356,6 +368,27 @@ class OAuth2ClientCredentialsFlowAuthenticatorTest {
             config.put(HTTP_CLIENT_AUTHENTICATION_OAUTH2_CLIENT_CREDENTIALS_FLOW_CLIENT_ID,CLIENT_ID);
             config.put(HTTP_CLIENT_AUTHENTICATION_OAUTH2_CLIENT_CREDENTIALS_FLOW_CLIENT_SECRET,CLIENT_SECRET);
             config.put(HTTP_CLIENT_AUTHENTICATION_OAUTH2_CLIENT_CREDENTIALS_FLOW_CLIENT_AUTHENTICATION_METHOD,"client_secret_post");
+
+            Authenticator authenticator = new OAuth2ClientCredentialsFlowAuthenticator(
+                    new OkHttpClient(), httpBaseUrl + WELL_KNOWN_OPENID_CONFIGURATION, config);
+            Route route = mock(Route.class);
+            Request request = new Request.Builder().url(httpBaseUrl+SONG_PATH).get().build();
+            Response.Builder builder = new Response.Builder();
+            builder.setRequest$okhttp(request);
+            Response response = builder.code(200).protocol(Protocol.HTTP_1_1).message("OK").build();
+            Request authenticatedRequest = authenticator.authenticate(route, response);
+            String authorizationHeader = authenticatedRequest.headers().get("Authorization");
+            assertThat(authorizationHeader).isEqualTo("Bearer BQDzs98uhifaGayk8H9tCTRozufhFmgV_HKMCnnDdMTdz1FcOo3sdj8OZJ_azo96LRdLI9_1uJOCXxbGZme11KCb6ZxTuCt8B5FxEeECb1kO_-UDuf8");
+        }
+
+
+        @Test
+        void test_authenticate_nominal_case_with_client_secret_jwt_client_authentication() throws IOException {
+            Map<String,Object> config = Maps.newHashMap();
+            config.put(HTTP_CLIENT_AUTHENTICATION_OAUTH2_CLIENT_CREDENTIALS_FLOW_CLIENT_ID,CLIENT_ID);
+            config.put(HTTP_CLIENT_AUTHENTICATION_OAUTH2_CLIENT_CREDENTIALS_FLOW_CLIENT_SECRET,CLIENT_SECRET);
+            config.put(HTTP_CLIENT_AUTHENTICATION_OAUTH2_CLIENT_CREDENTIALS_FLOW_CLIENT_AUTHENTICATION_METHOD,"client_secret_jwt");
+            config.put(HTTP_CLIENT_AUTHENTICATION_OAUTH2_CLIENT_CREDENTIALS_FLOW_CLIENT_JWS_ALGORITHM,"HS256");
 
             Authenticator authenticator = new OAuth2ClientCredentialsFlowAuthenticator(
                     new OkHttpClient(), httpBaseUrl + WELL_KNOWN_OPENID_CONFIGURATION, config);

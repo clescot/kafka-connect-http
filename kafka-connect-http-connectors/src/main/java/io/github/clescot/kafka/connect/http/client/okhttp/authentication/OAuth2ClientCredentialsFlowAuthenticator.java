@@ -145,8 +145,7 @@ public class OAuth2ClientCredentialsFlowAuthenticator implements CachingAuthenti
                 Secret secret = new Secret(getClientSecret(config));
 
                 try {
-                    Object jwsAlgorithmObject = config.get(HTTP_CLIENT_AUTHENTICATION_OAUTH2_CLIENT_CREDENTIALS_FLOW_CLIENT_JWS_ALGORITHM);
-                    Preconditions.checkNotNull(jwsAlgorithmObject, HTTP_CLIENT_AUTHENTICATION_OAUTH2_CLIENT_CREDENTIALS_FLOW_CLIENT_JWS_ALGORITHM + " is null");
+                    Object jwsAlgorithmObject = Optional.ofNullable(config.get(HTTP_CLIENT_AUTHENTICATION_OAUTH2_CLIENT_CREDENTIALS_FLOW_CLIENT_JWS_ALGORITHM)).orElse("HS256");
                     String jwsAlgorithmName = jwsAlgorithmObject.toString();
                     JWSAlgorithm jwsAlgorithm = new JWSAlgorithm(jwsAlgorithmName);
 
@@ -154,6 +153,7 @@ public class OAuth2ClientCredentialsFlowAuthenticator implements CachingAuthenti
                 } catch (JOSEException e) {
                     throw new RuntimeException(e);
                 }
+                break;
             }
             case "none":
             case "private_key_jwt":  //TODO clientAuth = new PrivateKeyJWT();
