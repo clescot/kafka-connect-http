@@ -5,7 +5,7 @@
     <description>a set of Kafka Connect connectors (Sink and Source), to interact with HTTP servers, linked via an in memory queue.</description>
     <groupId>io.github.clescot</groupId>
     <artifactId>kafka-connect-http</artifactId>
-    <version>0.7.128-SNAPSHOT</version>
+    <version>0.7.152-SNAPSHOT</version>
     <url>https://github.com/clescot/kafka-connect-http</url>
     <licenses>
         <license>
@@ -37,29 +37,28 @@
         <assertj.version>3.25.3</assertj.version>
         <awaitility.version>4.2.1</awaitility.version>
         <async.http.client.version>2.12.3</async.http.client.version>
-        <commons-text.version>1.11.0</commons-text.version>
+        <commons-text.version>1.12.0</commons-text.version>
         <connect-json.version>3.7.0</connect-json.version>
-        <debezium.version>2.5.3.Final</debezium.version>
+        <debezium.version>2.6.1.Final</debezium.version>
         <kafka.version>3.7.0</kafka.version>
-        <confluent.platform.version>7.6.0</confluent.platform.version>
+        <confluent.platform.version>7.6.1</confluent.platform.version>
         <failsafe.version>3.3.2</failsafe.version>
-        <guava.version>33.1.0-jre</guava.version>
-        <jackson.version>2.17.0</jackson.version>
+        <guava.version>33.2.0-jre</guava.version>
+        <jackson.version>2.17.1</jackson.version>
         <json.assert.version>1.5.1</json.assert.version>
         <junit.version>5.10.2</junit.version>
-        <logback.version>1.5.3</logback.version>
+        <logback.version>1.5.6</logback.version>
         <maven.compiler.source>11</maven.compiler.source>
         <maven.compiler.target>11</maven.compiler.target>
         <maven.plugin.validation>VERBOSE</maven.plugin.validation>
         <mock-oauth2-server.version>0.5.10</mock-oauth2-server.version>
         <mockito.version>5.11.0</mockito.version>
-        <micrometer.version>1.12.4</micrometer.version>
+        <micrometer.version>1.12.5</micrometer.version>
         <okhttp.version>4.12.0</okhttp.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <project.scm.id>github</project.scm.id>
-        <scribe.version>8.3.3</scribe.version>
-        <slf4j.version>2.0.12</slf4j.version>
+        <slf4j.version>2.0.13</slf4j.version>
         <testcontainers.version>1.19.7</testcontainers.version>
         <skipIT>false</skipIT>
         <wiremock.version>2.35.2</wiremock.version>
@@ -87,7 +86,7 @@
             <dependency>
                 <groupId>ch.qos.logback</groupId>
                 <artifactId>logback-classic</artifactId>
-                <version>1.5.3</version>
+                <version>1.5.6</version>
             </dependency>
 
             <dependency>
@@ -259,7 +258,7 @@
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-jar-plugin</artifactId>
-                    <version>3.3.0</version>
+                    <version>3.4.1</version>
                 </plugin>
             </plugins>
         </pluginManagement>
@@ -284,7 +283,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-source-plugin</artifactId>
-                <version>3.3.0</version>
+                <version>3.3.1</version>
                 <executions>
                     <execution>
                         <id>attach-sources</id>
@@ -313,7 +312,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-deploy-plugin</artifactId>
-                <version>3.1.1</version>
+                <version>3.1.2</version>
                 <configuration>
 
                 </configuration>
@@ -354,7 +353,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-jar-plugin</artifactId>
-                <version>3.3.0</version>
+                <version>3.4.1</version>
                 <configuration>
                     <archive>
                         <manifest>
@@ -367,7 +366,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-gpg-plugin</artifactId>
-                <version>3.2.1</version>
+                <version>3.2.4</version>
                 <executions>
                     <execution>
                         <id>sign-artifacts</id>
@@ -450,7 +449,7 @@
                     <plugin>
                         <groupId>org.jacoco</groupId>
                         <artifactId>jacoco-maven-plugin</artifactId>
-                        <version>0.8.11</version>
+                        <version>0.8.12</version>
                         <executions>
                             <execution>
                                 <goals>
