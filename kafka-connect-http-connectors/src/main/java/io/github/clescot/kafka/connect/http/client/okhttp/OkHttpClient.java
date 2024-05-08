@@ -207,6 +207,11 @@ public class OkHttpClient extends AbstractHttpClient<Request, Response> {
             httpClientBuilder.followSslRedirects((Boolean) config.get(OKHTTP_FOLLOW_SSL_REDIRECT));
         }
 
+        //retry on connection failure
+        if (config.containsKey(OKHTTP_RETRY_ON_CONNECTION_FAILURE)) {
+            httpClientBuilder.retryOnConnectionFailure((Boolean) config.get(OKHTTP_RETRY_ON_CONNECTION_FAILURE));
+        }
+
     }
 
     @SuppressWarnings("java:S5527")
