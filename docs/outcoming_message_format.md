@@ -27,4 +27,4 @@ public class HTTPExchange {
 
 ### JSON Schema format
 
-[JSON Schema Format](../src/test/resources/http-exchange.json)
+[JSON Schema Format](../kafka-connect-http-core/src/main/resources/schemas/json/versions/1/http-exchange.json)

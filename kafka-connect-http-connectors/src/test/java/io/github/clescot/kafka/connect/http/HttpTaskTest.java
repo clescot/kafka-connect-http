@@ -125,7 +125,7 @@ class HttpTaskTest {
         }
 
         @Test
-        void test_buildHttpRequest_http_request_as_json_schema() throws IOException {
+        void test_buildHttpRequest_http_request_as_json_schema() {
             //given
             List<Header> headers = Lists.newArrayList();
             HttpRequest dummyHttpRequest = getDummyHttpRequest(DUMMY_URL);
@@ -291,8 +291,7 @@ class HttpTaskTest {
     @NotNull
     private static SchemaRegistryClient getSchemaRegistryClient() {
         SchemaProvider provider = new JsonSchemaProvider();
-        SchemaRegistryClient mockSchemaRegistryClient = new MockSchemaRegistryClient(Collections.singletonList(provider));
-        return mockSchemaRegistryClient;
+        return new MockSchemaRegistryClient(Collections.singletonList(provider));
     }
 
     private static CompositeMeterRegistry getCompositeMeterRegistry() {
