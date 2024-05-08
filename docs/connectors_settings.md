@@ -233,6 +233,7 @@ The predicate permits to filter some http requests, and can be composed, cumulat
     - *`config.default.okhttp.write.timeout`* : Sets the default write timeout in milliseconds for new connections. A value of 0 means no timeout, otherwise values must be between 1 and Integer.MAX_VALUE.
     - *`config.default.okhttp.follow.redirect`* : does the http client need to follow a redirect response from the server. default to true.
     - *`config.default.okhttp.follow.ssl.redirect`* : does the http client need to follow an SSL redirect response from the server. default to true.
+    - *`config.default.okhttp.retry.on.connection.failure`* : does the http client need to retry to establish a connection on failure. default to true.
     - *`config.default.okhttp.cache.activate`* (`true` to activate, `false` by default)
     - *`config.default.okhttp.cache.max.size`* (default `10000` max cache entries)
     - *`config.default.okhttp.cache.directory.path`* (default `/tmp/kafka-connect-http-cache` directory path for `file` type, default `/kafka-connect-http-cache` for `inmemory` type)

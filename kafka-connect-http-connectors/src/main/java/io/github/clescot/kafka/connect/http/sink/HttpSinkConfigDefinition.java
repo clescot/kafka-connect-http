@@ -486,6 +486,10 @@ public class HttpSinkConfigDefinition {
     public static final String CONFIG_DEFAULT_OKHTTP_SSL_SKIP_HOSTNAME_VERIFICATION = DEFAULT_CONFIGURATION_PREFIX + OKHTTP_SSL_SKIP_HOSTNAME_VERIFICATION;
     public static final String CONFIG_DEFAULT_OKHTTP_SSL_SKIP_HOSTNAME_VERIFICATION_DOC = "if set to 'true', skip hostname verification. Not set by default.";
 
+    public static final String OKHTTP_RETRY_ON_CONNECTION_FAILURE = OKHTTP_PREFIX + "retry.on.connection.failure";
+    public static final String CONFIG_DEFAULT_OKHTTP_RETRY_ON_CONNECTION_FAILURE = DEFAULT_CONFIGURATION_PREFIX + OKHTTP_RETRY_ON_CONNECTION_FAILURE;
+    public static final String CONFIG_DEFAULT_OKHTTP_RETRY_ON_CONNECTION_FAILURE_DOC = "if set to 'false', will not retry connection on connection failure. default is true";
+
 
     //protocols to use, in order of preference,divided by a comma.supported protocols in okhttp: HTTP_1_1,HTTP_2,H2_PRIOR_KNOWLEDGE,QUIC
     public static final String OKHTTP_PROTOCOLS = OKHTTP_PREFIX + "protocols";
@@ -706,6 +710,7 @@ public class HttpSinkConfigDefinition {
                 .define(prefix + OKHTTP_WRITE_TIMEOUT, ConfigDef.Type.INT, 0, ConfigDef.Importance.LOW, CONFIG_DEFAULT_OKHTTP_WRITE_TIMEOUT_DOC)
                 .define(prefix + OKHTTP_PROTOCOLS, ConfigDef.Type.STRING, null, ConfigDef.Importance.LOW, CONFIG_DEFAULT_OKHTTP_PROTOCOLS_DOC)
                 .define(prefix + OKHTTP_SSL_SKIP_HOSTNAME_VERIFICATION, ConfigDef.Type.STRING, FALSE, ConfigDef.Importance.LOW, CONFIG_DEFAULT_OKHTTP_SSL_SKIP_HOSTNAME_VERIFICATION_DOC)
+                .define(prefix + OKHTTP_RETRY_ON_CONNECTION_FAILURE, ConfigDef.Type.BOOLEAN, TRUE, ConfigDef.Importance.LOW, CONFIG_DEFAULT_OKHTTP_RETRY_ON_CONNECTION_FAILURE_DOC)
                 //connection pool
                 .define(prefix + OKHTTP_CONNECTION_POOL_SCOPE, ConfigDef.Type.INT, 0, ConfigDef.Importance.LOW, CONFIG_DEFAULT_OKHTTP_CONNECTION_POOL_SCOPE_DOC)
                 .define(prefix + OKHTTP_CONNECTION_POOL_MAX_IDLE_CONNECTIONS, ConfigDef.Type.INT, 0, ConfigDef.Importance.MEDIUM, CONFIG_DEFAULT_OKHTTP_CONNECTION_POOL_MAX_IDLE_CONNECTIONS_DOC)
