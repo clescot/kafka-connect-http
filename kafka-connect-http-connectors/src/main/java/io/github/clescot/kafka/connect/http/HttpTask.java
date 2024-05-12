@@ -161,6 +161,7 @@ public class HttpTask<T extends ConnectRecord<T>> {
             LOGGER.warn("value is an instance of the class '{}' not handled by the WsSinkTask", valueClass.getName());
             throw new ConnectException("value is an instance of the class " + valueClass.getName() + " not handled by the WsSinkTask");
         }
+        //valueClass is not a Struct, but a String/byte[]
         if (httpRequest == null) {
             LOGGER.debug("stringValue :{}", stringValue);
             httpRequest = parseHttpRequestAsJsonString(stringValue);
