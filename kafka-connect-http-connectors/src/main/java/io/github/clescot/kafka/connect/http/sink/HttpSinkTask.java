@@ -286,7 +286,7 @@ public class HttpSinkTask extends SinkTask {
             HttpRequest httpRequest;
             //build HttpRequest
             httpRequest = buildHttpRequest(sinkRecord);
-            return httpTask.processRecord(httpRequest)
+            return httpTask.processHttpRequest(httpRequest)
                     .thenApply(
                             httpExchange -> {
                                 //publish eventually to 'in memory' queue

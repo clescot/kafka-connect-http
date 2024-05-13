@@ -1,7 +1,5 @@
 package io.github.clescot.kafka.connect.http;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.google.common.base.Stopwatch;
 import com.google.common.collect.Lists;
 import dev.failsafe.Failsafe;
@@ -183,7 +181,7 @@ public class HttpTask<T extends ConnectRecord<T>> {
         }
     }
 
-    public CompletableFuture<HttpExchange> processRecord(HttpRequest httpRequest) {
+    public CompletableFuture<HttpExchange> processHttpRequest(HttpRequest httpRequest) {
 
 
         //is there a matching configuration against the request ?
