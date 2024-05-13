@@ -1,6 +1,5 @@
 package io.github.clescot.kafka.connect.http;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.google.common.base.Stopwatch;
@@ -16,7 +15,6 @@ import io.github.clescot.kafka.connect.http.client.ahc.AHCHttpClientFactory;
 import io.github.clescot.kafka.connect.http.client.okhttp.OkHttpClientFactory;
 import io.github.clescot.kafka.connect.http.core.HttpExchange;
 import io.github.clescot.kafka.connect.http.core.HttpRequest;
-import io.github.clescot.kafka.connect.http.core.HttpRequestAsStruct;
 import io.github.clescot.kafka.connect.http.core.HttpResponse;
 import io.micrometer.core.instrument.Clock;
 import io.micrometer.core.instrument.MeterRegistry;
@@ -31,15 +29,11 @@ import io.micrometer.prometheus.PrometheusMeterRegistry;
 import io.prometheus.client.exporter.HTTPServer;
 import org.apache.kafka.common.config.AbstractConfig;
 import org.apache.kafka.connect.connector.ConnectRecord;
-import org.apache.kafka.connect.data.Schema;
-import org.apache.kafka.connect.data.Struct;
-import org.apache.kafka.connect.errors.ConnectException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
-import java.nio.charset.StandardCharsets;
 import java.time.OffsetDateTime;
 import java.time.ZoneId;
 import java.util.List;
@@ -58,8 +52,8 @@ public class HttpTask<T extends ConnectRecord<T>> {
 
     public static final String DEFAULT_CONFIGURATION_ID = "default";
     private static final Logger LOGGER = LoggerFactory.getLogger(HttpTask.class);
-    public static final String SINK_RECORD_HAS_GOT_A_NULL_VALUE = "sinkRecord has got a 'null' value";
-    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper().registerModule(new JavaTimeModule());
+
+
     private final List<Configuration> customConfigurations;
     private final Configuration defaultConfiguration;
     private ExecutorService executorService;
@@ -124,62 +118,9 @@ public class HttpTask<T extends ConnectRecord<T>> {
         return configurations;
     }
 
-    protected HttpRequest buildHttpRequest(ConnectRecord<T> connectRecord) throws ConnectException {
-        if (connectRecord == null || connectRecord.value() == null) {
-            LOGGER.warn(SINK_RECORD_HAS_GOT_A_NULL_VALUE);
-            throw new ConnectException(SINK_RECORD_HAS_GOT_A_NULL_VALUE);
-        }
-        HttpRequest httpRequest = null;
-        Object value = connectRecord.value();
-        Class<?> valueClass = value.getClass();
-        String stringValue = null;
 
-        if (Struct.class.isAssignableFrom(valueClass)) {
-            Struct valueAsStruct = (Struct) value;
-            LOGGER.debug("Struct is {}", valueAsStruct);
-            valueAsStruct.validate();
-            Schema schema = valueAsStruct.schema();
-            String schemaTypeName = schema.type().getName();
-            LOGGER.debug("schema type name referenced in Struct is '{}'", schemaTypeName);
-            Integer version = schema.version();
-            LOGGER.debug("schema version referenced in Struct is '{}'", version);
 
-            httpRequest = HttpRequestAsStruct
-                    .Builder
-                    .anHttpRequest()
-                    .withStruct(valueAsStruct)
-                    .build();
-            LOGGER.debug("httpRequest : {}", httpRequest);
-        } else if (byte[].class.isAssignableFrom(valueClass)) {
-            //we assume the value is a byte array
-            stringValue = new String((byte[]) value, StandardCharsets.UTF_8);
-            LOGGER.debug("byte[] is {}", stringValue);
-        } else if (String.class.isAssignableFrom(valueClass)) {
-            stringValue = (String) value;
-            LOGGER.debug("String is {}", stringValue);
-        } else {
-            LOGGER.warn("value is an instance of the class '{}' not handled by the WsSinkTask", valueClass.getName());
-            throw new ConnectException("value is an instance of the class " + valueClass.getName() + " not handled by the WsSinkTask");
-        }
-        //valueClass is not a Struct, but a String/byte[]
-        if (httpRequest == null) {
-            LOGGER.debug("stringValue :{}", stringValue);
-            httpRequest = parseHttpRequestAsJsonString(stringValue);
-            LOGGER.debug("successful httpRequest parsing :{}", httpRequest);
-        }
 
-        return httpRequest;
-    }
-
-    private HttpRequest parseHttpRequestAsJsonString(String value) throws ConnectException {
-        HttpRequest httpRequest;
-        try {
-            httpRequest = OBJECT_MAPPER.readValue(value, HttpRequest.class);
-        } catch (JsonProcessingException e) {
-            throw new ConnectException(e);
-        }
-        return httpRequest;
-    }
 
     /**
      *  - enrich request
@@ -242,10 +183,8 @@ public class HttpTask<T extends ConnectRecord<T>> {
         }
     }
 
-    public CompletableFuture<HttpExchange> processRecord(ConnectRecord<T> sinkRecord) {
-        HttpRequest httpRequest;
-        //build HttpRequest
-        httpRequest = buildHttpRequest(sinkRecord);
+    public CompletableFuture<HttpExchange> processRecord(HttpRequest httpRequest) {
+
 
         //is there a matching configuration against the request ?
         Configuration foundConfiguration = customConfigurations

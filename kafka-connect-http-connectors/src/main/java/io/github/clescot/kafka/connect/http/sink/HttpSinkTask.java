@@ -1,5 +1,8 @@
 package io.github.clescot.kafka.connect.http.sink;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.google.common.base.Preconditions;
 import com.google.common.base.Strings;
 import com.google.common.collect.Lists;
@@ -16,6 +19,8 @@ import io.github.clescot.kafka.connect.http.VersionUtils;
 import io.github.clescot.kafka.connect.http.client.Configuration;
 import io.github.clescot.kafka.connect.http.core.HttpExchange;
 import io.github.clescot.kafka.connect.http.core.HttpExchangeSerializer;
+import io.github.clescot.kafka.connect.http.core.HttpRequest;
+import io.github.clescot.kafka.connect.http.core.HttpRequestAsStruct;
 import io.github.clescot.kafka.connect.http.core.queue.ConfigConstants;
 import io.github.clescot.kafka.connect.http.core.queue.KafkaRecord;
 import io.github.clescot.kafka.connect.http.core.queue.QueueFactory;
@@ -24,6 +29,9 @@ import org.apache.kafka.common.KafkaException;
 import org.apache.kafka.common.PartitionInfo;
 import org.apache.kafka.common.serialization.Serializer;
 import org.apache.kafka.common.serialization.StringSerializer;
+import org.apache.kafka.connect.connector.ConnectRecord;
+import org.apache.kafka.connect.data.Schema;
+import org.apache.kafka.connect.data.Struct;
 import org.apache.kafka.connect.errors.ConnectException;
 import org.apache.kafka.connect.sink.ErrantRecordReporter;
 import org.apache.kafka.connect.sink.SinkRecord;
@@ -31,6 +39,7 @@ import org.apache.kafka.connect.sink.SinkTask;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.stream.Collectors;
@@ -45,6 +54,8 @@ import static io.confluent.kafka.serializers.json.KafkaJsonSchemaSerializerConfi
 
 public class HttpSinkTask extends SinkTask {
     private static final Logger LOGGER = LoggerFactory.getLogger(HttpSinkTask.class);
+    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper().registerModule(new JavaTimeModule());
+    public static final String SINK_RECORD_HAS_GOT_A_NULL_VALUE = "sinkRecord has got a 'null' value";
     private static final List<String> JSON_SCHEMA_VERSIONS = Lists.newArrayList("draft_4","draft_6","draft_7","draft_2019_09");
     private static final VersionUtils VERSION_UTILS = new VersionUtils();
     public static final String PRODUCER_PREFIX = "producer.";
@@ -272,7 +283,10 @@ public class HttpSinkTask extends SinkTask {
             if (sinkRecord.value() == null) {
                 throw new ConnectException("sinkRecord Value is null :" + sinkRecord);
             }
-            return httpTask.processRecord(sinkRecord)
+            HttpRequest httpRequest;
+            //build HttpRequest
+            httpRequest = buildHttpRequest(sinkRecord);
+            return httpTask.processRecord(httpRequest)
                     .thenApply(
                             httpExchange -> {
                                 //publish eventually to 'in memory' queue
@@ -327,6 +341,64 @@ public class HttpSinkTask extends SinkTask {
             }
         }
 
+    }
+
+    protected HttpRequest buildHttpRequest(ConnectRecord connectRecord) throws ConnectException {
+        if (connectRecord == null || connectRecord.value() == null) {
+            LOGGER.warn(SINK_RECORD_HAS_GOT_A_NULL_VALUE);
+            throw new ConnectException(SINK_RECORD_HAS_GOT_A_NULL_VALUE);
+        }
+        HttpRequest httpRequest = null;
+        Object value = connectRecord.value();
+        Class<?> valueClass = value.getClass();
+        String stringValue = null;
+
+        if (Struct.class.isAssignableFrom(valueClass)) {
+            Struct valueAsStruct = (Struct) value;
+            LOGGER.debug("Struct is {}", valueAsStruct);
+            valueAsStruct.validate();
+            Schema schema = valueAsStruct.schema();
+            String schemaTypeName = schema.type().getName();
+            LOGGER.debug("schema type name referenced in Struct is '{}'", schemaTypeName);
+            Integer version = schema.version();
+            LOGGER.debug("schema version referenced in Struct is '{}'", version);
+
+            httpRequest = HttpRequestAsStruct
+                    .Builder
+                    .anHttpRequest()
+                    .withStruct(valueAsStruct)
+                    .build();
+            LOGGER.debug("httpRequest : {}", httpRequest);
+        } else if (byte[].class.isAssignableFrom(valueClass)) {
+            //we assume the value is a byte array
+            stringValue = new String((byte[]) value, StandardCharsets.UTF_8);
+            LOGGER.debug("byte[] is {}", stringValue);
+        } else if (String.class.isAssignableFrom(valueClass)) {
+            stringValue = (String) value;
+            LOGGER.debug("String is {}", stringValue);
+        } else {
+            LOGGER.warn("value is an instance of the class '{}' not handled by the WsSinkTask", valueClass.getName());
+            throw new ConnectException("value is an instance of the class " + valueClass.getName() + " not handled by the WsSinkTask");
+        }
+        //valueClass is not a Struct, but a String/byte[]
+        if (httpRequest == null) {
+            LOGGER.debug("stringValue :{}", stringValue);
+            httpRequest = parseHttpRequestAsJsonString(stringValue);
+            LOGGER.debug("successful httpRequest parsing :{}", httpRequest);
+        }
+
+        return httpRequest;
+    }
+
+
+    private HttpRequest parseHttpRequestAsJsonString(String value) throws ConnectException {
+        HttpRequest httpRequest;
+        try {
+            httpRequest = OBJECT_MAPPER.readValue(value, HttpRequest.class);
+        } catch (JsonProcessingException e) {
+            throw new ConnectException(e);
+        }
+        return httpRequest;
     }
 
     @Override
