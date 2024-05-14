@@ -28,6 +28,8 @@ public class HttpSinkConnector extends SinkConnector {
 
     @Override
     public Class<? extends Task> taskClass() {
+        //TODO add generic in HttpSinkTask from the SinkConnector
+        //each HttpSinkTask subclass will own the generic
         return HttpSinkTask.class;
     }
 
