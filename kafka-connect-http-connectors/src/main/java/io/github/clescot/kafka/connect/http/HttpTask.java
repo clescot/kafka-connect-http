@@ -25,6 +25,8 @@ import io.micrometer.jmx.JmxMeterRegistry;
 import io.micrometer.prometheus.PrometheusConfig;
 import io.micrometer.prometheus.PrometheusMeterRegistry;
 import io.prometheus.client.exporter.HTTPServer;
+import okhttp3.Request;
+import okhttp3.Response;
 import org.apache.kafka.common.config.AbstractConfig;
 import org.apache.kafka.connect.connector.ConnectRecord;
 import org.slf4j.Logger;
@@ -72,11 +74,11 @@ public class HttpTask<T extends ConnectRecord<T>> {
         Map<String, Object> defaultConfigurationSettings = config.originalsWithPrefix("config." + DEFAULT_CONFIGURATION_ID + ".");
         String httpClientImplementation = (String) Optional.ofNullable(defaultConfigurationSettings.get(CONFIG_HTTP_CLIENT_IMPLEMENTATION)).orElse(OKHTTP_IMPLEMENTATION);
         if (AHC_IMPLEMENTATION.equalsIgnoreCase(httpClientImplementation)) {
-            AHCHttpClientFactory factory = new AHCHttpClientFactory();
+            HttpClientFactory<org.asynchttpclient.Request,org.asynchttpclient.Response> factory = new AHCHttpClientFactory();
             this.defaultConfiguration = new Configuration<>(DEFAULT_CONFIGURATION_ID, factory, config, executorService, meterRegistry);
             this.customConfigurations = buildCustomConfigurations(factory,config, defaultConfiguration, executorService);
         } else if (OKHTTP_IMPLEMENTATION.equalsIgnoreCase(httpClientImplementation)) {
-            OkHttpClientFactory factory = new OkHttpClientFactory();
+            HttpClientFactory<Request, Response> factory = new OkHttpClientFactory();
             this.defaultConfiguration = new Configuration<>(DEFAULT_CONFIGURATION_ID, factory, config, executorService, meterRegistry);
             this.customConfigurations = buildCustomConfigurations(factory,config, defaultConfiguration, executorService);
         } else {
@@ -86,14 +88,14 @@ public class HttpTask<T extends ConnectRecord<T>> {
 
     }
 
-        private List<Configuration> buildCustomConfigurations(HttpClientFactory httpClientFactory,
+        private <R,S> List<Configuration<R,S>> buildCustomConfigurations(HttpClientFactory<R,S> httpClientFactory,
                                                               AbstractConfig config,
-                                                              Configuration defaultConfiguration,
+                                                              Configuration<R,S> defaultConfiguration,
                                                               ExecutorService executorService) {
-        CopyOnWriteArrayList<Configuration> configurations = Lists.newCopyOnWriteArrayList();
+        CopyOnWriteArrayList<Configuration<R,S>> configurations = Lists.newCopyOnWriteArrayList();
 
         for (String configId : Optional.ofNullable(config.getList(CONFIGURATION_IDS)).orElse(Lists.newArrayList())) {
-            Configuration configuration = new Configuration(configId,httpClientFactory, config, executorService, meterRegistry);
+            Configuration<R,S> configuration = new Configuration<>(configId,httpClientFactory, config, executorService, meterRegistry);
             if (configuration.getHttpClient() == null) {
                 configuration.setHttpClient(defaultConfiguration.getHttpClient());
             }
