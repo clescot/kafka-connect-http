@@ -7,6 +7,7 @@ import com.google.common.base.Preconditions;
 import com.google.common.base.Strings;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
+import dev.failsafe.RetryPolicy;
 import io.confluent.kafka.schemaregistry.SchemaProvider;
 import io.confluent.kafka.schemaregistry.client.CachedSchemaRegistryClient;
 import io.confluent.kafka.schemaregistry.client.SchemaRegistryClient;
@@ -17,6 +18,8 @@ import io.github.clescot.kafka.connect.http.HttpExchangeSerdeFactory;
 import io.github.clescot.kafka.connect.http.HttpTask;
 import io.github.clescot.kafka.connect.http.VersionUtils;
 import io.github.clescot.kafka.connect.http.client.Configuration;
+import io.github.clescot.kafka.connect.http.client.HttpClientFactory;
+import io.github.clescot.kafka.connect.http.client.HttpException;
 import io.github.clescot.kafka.connect.http.core.HttpExchange;
 import io.github.clescot.kafka.connect.http.core.HttpExchangeSerializer;
 import io.github.clescot.kafka.connect.http.core.HttpRequest;
@@ -24,9 +27,17 @@ import io.github.clescot.kafka.connect.http.core.HttpRequestAsStruct;
 import io.github.clescot.kafka.connect.http.core.queue.ConfigConstants;
 import io.github.clescot.kafka.connect.http.core.queue.KafkaRecord;
 import io.github.clescot.kafka.connect.http.core.queue.QueueFactory;
+import io.micrometer.core.instrument.Clock;
+import io.micrometer.core.instrument.composite.CompositeMeterRegistry;
+import io.micrometer.jmx.JmxConfig;
+import io.micrometer.jmx.JmxMeterRegistry;
+import io.micrometer.prometheus.PrometheusConfig;
+import io.micrometer.prometheus.PrometheusMeterRegistry;
+import io.prometheus.client.exporter.HTTPServer;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.common.KafkaException;
 import org.apache.kafka.common.PartitionInfo;
+import org.apache.kafka.common.config.AbstractConfig;
 import org.apache.kafka.common.serialization.Serializer;
 import org.apache.kafka.common.serialization.StringSerializer;
 import org.apache.kafka.connect.connector.ConnectRecord;
@@ -39,9 +50,12 @@ import org.apache.kafka.connect.sink.SinkTask;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.IOException;
+import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.concurrent.*;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import static io.confluent.kafka.serializers.AbstractKafkaSchemaSerDeConfig.AUTO_REGISTER_SCHEMAS;
@@ -50,9 +64,11 @@ import static io.confluent.kafka.serializers.KafkaJsonSerializerConfig.WRITE_DAT
 import static io.confluent.kafka.serializers.json.KafkaJsonSchemaDeserializerConfig.FAIL_INVALID_SCHEMA;
 import static io.confluent.kafka.serializers.json.KafkaJsonSchemaDeserializerConfig.FAIL_UNKNOWN_PROPERTIES;
 import static io.confluent.kafka.serializers.json.KafkaJsonSchemaSerializerConfig.ONEOF_FOR_NULLABLES;
+import static io.github.clescot.kafka.connect.http.sink.HttpSinkConfigDefinition.*;
+import static io.github.clescot.kafka.connect.http.sink.HttpSinkConfigDefinition.METER_REGISTRY_EXPORTER_PROMETHEUS_PORT;
 
 
-public class HttpSinkTask extends SinkTask {
+public abstract class HttpSinkTask<R,S> extends SinkTask {
     private static final Logger LOGGER = LoggerFactory.getLogger(HttpSinkTask.class);
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper().registerModule(new JavaTimeModule());
     public static final String SINK_RECORD_HAS_GOT_A_NULL_VALUE = "sinkRecord has got a 'null' value";
@@ -68,17 +84,24 @@ public class HttpSinkTask extends SinkTask {
     public static final String MISSING_VERSION_CACHE_TTL_SEC = "missing.version.cache.ttl.sec";
     public static final String MISSING_ID_CACHE_TTL_SEC = "missing.id.cache.ttl.sec";
     public static final String RECORD_NOT_SENT = "/!\\ ☠☠ record NOT sent ☠☠";
+    private Configuration<R, S> defaultConfiguration;
+    private List<Configuration<R, S>> customConfigurations;
+    public static final String DEFAULT_CONFIGURATION_ID = "default";
+    private final HttpClientFactory<R, S> httpClientFactory;
 
     private ErrantRecordReporter errantRecordReporter;
-    private HttpTask<SinkRecord> httpTask;
+    private HttpTask<SinkRecord,R,S> httpTask;
     private final KafkaProducer<String, HttpExchange> producer;
     private String queueName;
     private Queue<KafkaRecord> queue;
     private PublishMode publishMode;
     private HttpSinkConnectorConfig httpSinkConnectorConfig;
     private Map<String, Object> producerSettings;
+    private static CompositeMeterRegistry meterRegistry;
+    private ExecutorService executorService;
 
-    public HttpSinkTask() {
+    public HttpSinkTask(HttpClientFactory<R,S> httpClientFactory) {
+        this.httpClientFactory = httpClientFactory;
         producer = new KafkaProducer<>();
     }
 
@@ -87,7 +110,8 @@ public class HttpSinkTask extends SinkTask {
      *
      * @param mock true mock the underlying producer, false not.
      */
-    protected HttpSinkTask(boolean mock) {
+    protected HttpSinkTask(HttpClientFactory<R,S> httpClientFactory,boolean mock) {
+        this.httpClientFactory = httpClientFactory;
         producer = new KafkaProducer<>(mock);
     }
 
@@ -95,6 +119,39 @@ public class HttpSinkTask extends SinkTask {
     public String version() {
         return VERSION_UTILS.getVersion();
     }
+
+    private <R,S> List<Configuration<R,S>> buildCustomConfigurations(HttpClientFactory<R,S> httpClientFactory,
+                                                                     AbstractConfig config,
+                                                                     Configuration<R,S> defaultConfiguration,
+                                                                     ExecutorService executorService) {
+        CopyOnWriteArrayList<Configuration<R,S>> configurations = Lists.newCopyOnWriteArrayList();
+
+        for (String configId : Optional.ofNullable(config.getList(CONFIGURATION_IDS)).orElse(Lists.newArrayList())) {
+            Configuration<R,S> configuration = new Configuration<>(configId,httpClientFactory, config, executorService, meterRegistry);
+            if (configuration.getHttpClient() == null) {
+                configuration.setHttpClient(defaultConfiguration.getHttpClient());
+            }
+
+            //we reuse the default retry policy if not set
+            Optional<RetryPolicy<HttpExchange>> defaultRetryPolicy = defaultConfiguration.getRetryPolicy();
+            if (configuration.getRetryPolicy().isEmpty() && defaultRetryPolicy.isPresent()) {
+                configuration.setRetryPolicy(defaultRetryPolicy.get());
+            }
+            //we reuse the default success response code regex if not set
+            configuration.setSuccessResponseCodeRegex(defaultConfiguration.getSuccessResponseCodeRegex());
+
+            Optional<Pattern> defaultRetryResponseCodeRegex = defaultConfiguration.getRetryResponseCodeRegex();
+            if (configuration.getRetryResponseCodeRegex().isEmpty() && defaultRetryResponseCodeRegex.isPresent()) {
+                configuration.setRetryResponseCodeRegex(defaultRetryResponseCodeRegex.get());
+            }
+
+            configurations.add(configuration);
+        }
+        return configurations;
+    }
+
+
+
 
     /**
      * @param settings configure the connector
@@ -105,7 +162,18 @@ public class HttpSinkTask extends SinkTask {
         HttpSinkConfigDefinition httpSinkConfigDefinition = new HttpSinkConfigDefinition(settings);
         this.httpSinkConnectorConfig = new HttpSinkConnectorConfig(httpSinkConfigDefinition.config(), settings);
 
-        httpTask = new HttpTask<>(httpSinkConnectorConfig);
+        //build executorService
+        Optional<Integer> customFixedThreadPoolSize = Optional.ofNullable(httpSinkConnectorConfig.getInt(HTTP_CLIENT_ASYNC_FIXED_THREAD_POOL_SIZE));
+        customFixedThreadPoolSize.ifPresent(integer -> this.executorService = buildExecutorService(integer));
+
+        //build meterRegistry
+        if (HttpSinkTask.meterRegistry == null) {
+            HttpSinkTask.meterRegistry = buildMeterRegistry(httpSinkConnectorConfig);
+        }
+
+        this.defaultConfiguration = new Configuration<>(DEFAULT_CONFIGURATION_ID, httpClientFactory, httpSinkConnectorConfig, executorService, meterRegistry);
+        customConfigurations = buildCustomConfigurations(httpClientFactory,httpSinkConnectorConfig,defaultConfiguration,executorService);
+        httpTask = new HttpTask<>(httpSinkConnectorConfig,defaultConfiguration,customConfigurations,meterRegistry,executorService);
 
         try {
             errantRecordReporter = context.errantRecordReporter();
@@ -155,6 +223,44 @@ public class HttpSinkTask extends SinkTask {
         }
 
 
+    }
+
+    /**
+     * define a static field from a non-static method need a static synchronized method
+     *
+     * @param customFixedThreadPoolSize max thread pool size for the executorService.
+     * @return executorService
+     */
+    public ExecutorService buildExecutorService(Integer customFixedThreadPoolSize) {
+        return Executors.newFixedThreadPool(customFixedThreadPoolSize);
+    }
+
+    private CompositeMeterRegistry buildMeterRegistry(AbstractConfig config) {
+        CompositeMeterRegistry compositeMeterRegistry = new CompositeMeterRegistry();
+        boolean activateJMX = Boolean.parseBoolean(config.getString(METER_REGISTRY_EXPORTER_JMX_ACTIVATE));
+        if (activateJMX) {
+            JmxMeterRegistry jmxMeterRegistry = new JmxMeterRegistry(JmxConfig.DEFAULT, Clock.SYSTEM);
+            jmxMeterRegistry.start();
+            compositeMeterRegistry.add(jmxMeterRegistry);
+        }
+        boolean activatePrometheus = Boolean.parseBoolean(config.getString(METER_REGISTRY_EXPORTER_PROMETHEUS_ACTIVATE));
+        if (activatePrometheus) {
+            PrometheusMeterRegistry prometheusRegistry = new PrometheusMeterRegistry(PrometheusConfig.DEFAULT);
+            Integer prometheusPort = config.getInt(METER_REGISTRY_EXPORTER_PROMETHEUS_PORT);
+            // you can set the daemon flag to false if you want the server to block
+            HTTPServer httpServer = null;
+            try {
+                httpServer = new HTTPServer(new InetSocketAddress(prometheusPort != null ? prometheusPort : 9090), prometheusRegistry.getPrometheusRegistry(), true);
+            } catch (IOException e) {
+                throw new HttpException(e);
+            } finally {
+                if (httpServer != null) {
+                    httpServer.close();
+                }
+            }
+            compositeMeterRegistry.add(prometheusRegistry);
+        }
+        return compositeMeterRegistry;
     }
 
     private void checkKafkaConnectivity() {
@@ -430,11 +536,12 @@ public class HttpSinkTask extends SinkTask {
         this.queue = queue;
     }
 
-    public Configuration getDefaultConfiguration() {
+    public Configuration<R,S> getDefaultConfiguration() {
+        Preconditions.checkNotNull(httpTask,"httpTask has not been initialized in the start method");
         return httpTask.getDefaultConfiguration();
     }
 
-    public HttpTask<SinkRecord> getHttpTask() {
+    public HttpTask<SinkRecord,R,S> getHttpTask() {
         return httpTask;
     }
 }

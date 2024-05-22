@@ -16,6 +16,7 @@ import io.github.clescot.kafka.connect.http.sink.HttpSinkConnectorConfig;
 import io.micrometer.core.instrument.Clock;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.composite.CompositeMeterRegistry;
+import io.micrometer.jmx.JmxConfig;
 import io.micrometer.jmx.JmxMeterRegistry;
 import okhttp3.Request;
 import okhttp3.Response;
@@ -67,13 +68,19 @@ class HttpTaskTest {
 
     @Nested
     class callWithRetryPolicy {
-        private HttpTask<SinkRecord> httpTask;
+        private HttpTask<SinkRecord,Request,Response> httpTask;
 
         @BeforeEach
         public void setUp(){
             Map<String,String> configs = Maps.newHashMap();
             AbstractConfig config = new HttpSinkConnectorConfig(configs);
-            httpTask = new HttpTask<>(config);
+
+            CompositeMeterRegistry compositeMeterRegistry = new CompositeMeterRegistry();
+            JmxMeterRegistry jmxMeterRegistry = new JmxMeterRegistry(JmxConfig.DEFAULT, Clock.SYSTEM);
+            jmxMeterRegistry.start();
+            compositeMeterRegistry.add(jmxMeterRegistry);
+            Configuration<Request, Response> test = new Configuration<>("test", new OkHttpClientFactory(), config, null, compositeMeterRegistry);
+            httpTask = new HttpTask<>(config, test,Lists.newArrayList(),compositeMeterRegistry,null);
         }
 
         @Test

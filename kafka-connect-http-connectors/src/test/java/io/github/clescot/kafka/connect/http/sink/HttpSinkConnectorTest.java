@@ -7,6 +7,7 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -43,8 +44,10 @@ public class HttpSinkConnectorTest {
         @Test
         void test_task_class_nominal_case() {
             HttpSinkConnector httpSinkConnector = new HttpSinkConnector();
+            HashMap<String, String> settings = Maps.newHashMap();
+            httpSinkConnector.start(settings);
             Class<? extends Task> aClass = httpSinkConnector.taskClass();
-            assertThat(aClass).isEqualTo(HttpSinkTask.class);
+            assertThat(aClass).isEqualTo(OkHttpSinkTask.class);
         }
 
     }

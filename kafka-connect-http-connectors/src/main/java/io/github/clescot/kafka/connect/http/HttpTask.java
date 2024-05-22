@@ -7,115 +7,55 @@ import dev.failsafe.FailsafeExecutor;
 import dev.failsafe.RetryPolicy;
 import io.github.clescot.kafka.connect.http.client.Configuration;
 import io.github.clescot.kafka.connect.http.client.HttpClient;
-import io.github.clescot.kafka.connect.http.client.HttpClientFactory;
-import io.github.clescot.kafka.connect.http.client.HttpException;
-import io.github.clescot.kafka.connect.http.client.ahc.AHCHttpClientFactory;
-import io.github.clescot.kafka.connect.http.client.okhttp.OkHttpClientFactory;
 import io.github.clescot.kafka.connect.http.core.HttpExchange;
 import io.github.clescot.kafka.connect.http.core.HttpRequest;
 import io.github.clescot.kafka.connect.http.core.HttpResponse;
-import io.micrometer.core.instrument.Clock;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.binder.jvm.*;
 import io.micrometer.core.instrument.binder.logging.LogbackMetrics;
 import io.micrometer.core.instrument.binder.system.ProcessorMetrics;
 import io.micrometer.core.instrument.composite.CompositeMeterRegistry;
-import io.micrometer.jmx.JmxConfig;
-import io.micrometer.jmx.JmxMeterRegistry;
-import io.micrometer.prometheus.PrometheusConfig;
-import io.micrometer.prometheus.PrometheusMeterRegistry;
-import io.prometheus.client.exporter.HTTPServer;
-import okhttp3.Request;
-import okhttp3.Response;
 import org.apache.kafka.common.config.AbstractConfig;
 import org.apache.kafka.connect.connector.ConnectRecord;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
-import java.net.InetSocketAddress;
 import java.time.OffsetDateTime;
 import java.time.ZoneId;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.regex.Pattern;
 
 import static io.github.clescot.kafka.connect.http.sink.HttpSinkConfigDefinition.*;
 
-public class HttpTask<T extends ConnectRecord<T>> {
+public class HttpTask<T extends ConnectRecord<T>,R,S> {
 
-    public static final String DEFAULT_CONFIGURATION_ID = "default";
+
     private static final Logger LOGGER = LoggerFactory.getLogger(HttpTask.class);
 
 
-    private final List<Configuration> customConfigurations;
-    private final Configuration defaultConfiguration;
+    private List<Configuration<R,S>> customConfigurations;
+    private Configuration<R,S> defaultConfiguration;
     private ExecutorService executorService;
     private static CompositeMeterRegistry meterRegistry;
 
 
-    public HttpTask(AbstractConfig config) {
-        //build meterRegistry
-        if (meterRegistry == null) {
-            HttpTask.meterRegistry = buildMeterRegistry(config);
+    public HttpTask(AbstractConfig config,
+                    Configuration<R,S> defaultConfiguration,
+                    List<Configuration<R,S>> customConfigurations,
+                    CompositeMeterRegistry meterRegistry,
+                    ExecutorService executorService) {
+
+        this.executorService = executorService;
+        if(HttpTask.meterRegistry==null) {
+            HttpTask.meterRegistry = meterRegistry;
         }
-        //build executorService
-        Optional<Integer> customFixedThreadPoolSize = Optional.ofNullable(config.getInt(HTTP_CLIENT_ASYNC_FIXED_THREAD_POOL_SIZE));
-        customFixedThreadPoolSize.ifPresent(integer -> this.executorService = buildExecutorService(integer));
         //bind metrics to MeterRegistry and ExecutorService
         bindMetrics(config, meterRegistry, executorService);
-
-        Map<String, Object> defaultConfigurationSettings = config.originalsWithPrefix("config." + DEFAULT_CONFIGURATION_ID + ".");
-        String httpClientImplementation = (String) Optional.ofNullable(defaultConfigurationSettings.get(CONFIG_HTTP_CLIENT_IMPLEMENTATION)).orElse(OKHTTP_IMPLEMENTATION);
-        if (AHC_IMPLEMENTATION.equalsIgnoreCase(httpClientImplementation)) {
-            HttpClientFactory<org.asynchttpclient.Request,org.asynchttpclient.Response> factory = new AHCHttpClientFactory();
-            this.defaultConfiguration = new Configuration<>(DEFAULT_CONFIGURATION_ID, factory, config, executorService, meterRegistry);
-            this.customConfigurations = buildCustomConfigurations(factory,config, defaultConfiguration, executorService);
-        } else if (OKHTTP_IMPLEMENTATION.equalsIgnoreCase(httpClientImplementation)) {
-            HttpClientFactory<Request, Response> factory = new OkHttpClientFactory();
-            this.defaultConfiguration = new Configuration<>(DEFAULT_CONFIGURATION_ID, factory, config, executorService, meterRegistry);
-            this.customConfigurations = buildCustomConfigurations(factory,config, defaultConfiguration, executorService);
-        } else {
-            LOGGER.error("unknown HttpClient implementation : must be either 'ahc' or 'okhttp', but is '{}'", httpClientImplementation);
-            throw new IllegalArgumentException("unknown HttpClient implementation : must be either 'ahc' or 'okhttp', but is '" + httpClientImplementation + "'");
-        }
-
-    }
-
-        private <R,S> List<Configuration<R,S>> buildCustomConfigurations(HttpClientFactory<R,S> httpClientFactory,
-                                                              AbstractConfig config,
-                                                              Configuration<R,S> defaultConfiguration,
-                                                              ExecutorService executorService) {
-        CopyOnWriteArrayList<Configuration<R,S>> configurations = Lists.newCopyOnWriteArrayList();
-
-        for (String configId : Optional.ofNullable(config.getList(CONFIGURATION_IDS)).orElse(Lists.newArrayList())) {
-            Configuration<R,S> configuration = new Configuration<>(configId,httpClientFactory, config, executorService, meterRegistry);
-            if (configuration.getHttpClient() == null) {
-                configuration.setHttpClient(defaultConfiguration.getHttpClient());
-            }
-
-            //we reuse the default retry policy if not set
-            Optional<RetryPolicy<HttpExchange>> defaultRetryPolicy = defaultConfiguration.getRetryPolicy();
-            if (configuration.getRetryPolicy().isEmpty() && defaultRetryPolicy.isPresent()) {
-                configuration.setRetryPolicy(defaultRetryPolicy.get());
-            }
-            //we reuse the default success response code regex if not set
-            configuration.setSuccessResponseCodeRegex(defaultConfiguration.getSuccessResponseCodeRegex());
-
-            Optional<Pattern> defaultRetryResponseCodeRegex = defaultConfiguration.getRetryResponseCodeRegex();
-            if (configuration.getRetryResponseCodeRegex().isEmpty() && defaultRetryResponseCodeRegex.isPresent()) {
-                configuration.setRetryResponseCodeRegex(defaultRetryResponseCodeRegex.get());
-            }
-
-            configurations.add(configuration);
-        }
-        return configurations;
+        this.defaultConfiguration = defaultConfiguration;
+        this.customConfigurations = customConfigurations;
     }
 
 
@@ -132,7 +72,7 @@ public class HttpTask<T extends ConnectRecord<T>> {
      */
     private CompletableFuture<HttpExchange> callAndPublish(HttpRequest httpRequest,
                                                            AtomicInteger attempts,
-                                                           Configuration configuration) {
+                                                           Configuration<R,S> configuration) {
         attempts.addAndGet(HttpClient.ONE_HTTP_REQUEST);
         if(LOGGER.isTraceEnabled()){
             LOGGER.trace("before enrichment:{}",httpRequest);
@@ -148,7 +88,7 @@ public class HttpTask<T extends ConnectRecord<T>> {
     }
 
     protected CompletableFuture<HttpExchange> callWithRetryPolicy(HttpRequest httpRequest,
-                                                                Configuration configuration) {
+                                                                Configuration<R,S> configuration) {
         Optional<RetryPolicy<HttpExchange>> retryPolicyForCall = configuration.getRetryPolicy();
         if (httpRequest != null) {
             AtomicInteger attempts = new AtomicInteger();
@@ -204,33 +144,7 @@ public class HttpTask<T extends ConnectRecord<T>> {
         );
     }
 
-    private CompositeMeterRegistry buildMeterRegistry(AbstractConfig config) {
-        CompositeMeterRegistry compositeMeterRegistry = new CompositeMeterRegistry();
-        boolean activateJMX = Boolean.parseBoolean(config.getString(METER_REGISTRY_EXPORTER_JMX_ACTIVATE));
-        if (activateJMX) {
-            JmxMeterRegistry jmxMeterRegistry = new JmxMeterRegistry(JmxConfig.DEFAULT, Clock.SYSTEM);
-            jmxMeterRegistry.start();
-            compositeMeterRegistry.add(jmxMeterRegistry);
-        }
-        boolean activatePrometheus = Boolean.parseBoolean(config.getString(METER_REGISTRY_EXPORTER_PROMETHEUS_ACTIVATE));
-        if (activatePrometheus) {
-            PrometheusMeterRegistry prometheusRegistry = new PrometheusMeterRegistry(PrometheusConfig.DEFAULT);
-            Integer prometheusPort = config.getInt(METER_REGISTRY_EXPORTER_PROMETHEUS_PORT);
-            // you can set the daemon flag to false if you want the server to block
-            HTTPServer httpServer = null;
-            try {
-                httpServer = new HTTPServer(new InetSocketAddress(prometheusPort != null ? prometheusPort : 9090), prometheusRegistry.getPrometheusRegistry(), true);
-            } catch (IOException e) {
-                throw new HttpException(e);
-            } finally {
-                if (httpServer != null) {
-                    httpServer.close();
-                }
-            }
-            compositeMeterRegistry.add(prometheusRegistry);
-        }
-        return compositeMeterRegistry;
-    }
+
 
     private static void bindMetrics(AbstractConfig config, MeterRegistry meterRegistry, ExecutorService myExecutorService) {
         boolean bindExecutorServiceMetrics = Boolean.parseBoolean(config.getString(METER_REGISTRY_BIND_METRICS_EXECUTOR_SERVICE));
@@ -271,17 +185,9 @@ public class HttpTask<T extends ConnectRecord<T>> {
         }
     }
 
-    /**
-     * define a static field from a non-static method need a static synchronized method
-     *
-     * @param customFixedThreadPoolSize max thread pool size for the executorService.
-     * @return executorService
-     */
-    public ExecutorService buildExecutorService(Integer customFixedThreadPoolSize) {
-        return Executors.newFixedThreadPool(customFixedThreadPoolSize);
-    }
 
-    public Configuration getDefaultConfiguration() {
+
+    public Configuration<R,S> getDefaultConfiguration() {
         return defaultConfiguration;
     }
 
