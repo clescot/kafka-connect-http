@@ -57,6 +57,7 @@ import java.util.*;
 import java.util.concurrent.*;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static io.confluent.kafka.serializers.AbstractKafkaSchemaSerDeConfig.AUTO_REGISTER_SCHEMAS;
 import static io.confluent.kafka.serializers.AbstractKafkaSchemaSerDeConfig.SCHEMA_REGISTRY_URL_CONFIG;
@@ -370,7 +371,19 @@ public abstract class HttpSinkTask<R, S> extends SinkTask {
         }
         Preconditions.checkNotNull(httpTask, "httpTask is null. 'start' method must be called once before put");
         //we submit futures to the pool
-        List<CompletableFuture<HttpExchange>> completableFutures = records.stream().map(this::process).collect(Collectors.toList());
+        Stream<SinkRecord> stream = records.stream();
+
+        /*
+        boolean split;
+        if(split){
+            stream = stream.flatMap(sinkRecord-> stream of sinkRecord)
+            TODO https://github.com/clescot/kafka-connect-http/issues/453 :
+             introduce a split value function
+         */
+
+        //TODO regroup messages into one https://github.com/clescot/kafka-connect-http/issues/336
+
+        List<CompletableFuture<HttpExchange>> completableFutures = stream.map(this::process).collect(Collectors.toList());
         List<HttpExchange> httpExchanges = completableFutures.stream().map(CompletableFuture::join).collect(Collectors.toList());
         LOGGER.debug("HttpExchanges created :'{}'", httpExchanges.size());
 
