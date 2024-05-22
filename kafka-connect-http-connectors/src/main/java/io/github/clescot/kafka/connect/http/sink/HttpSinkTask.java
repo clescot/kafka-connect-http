@@ -400,6 +400,7 @@ public abstract class HttpSinkTask<R, S> extends SinkTask {
             }
             HttpRequest httpRequest;
             //build HttpRequest
+            //TODO mapper by configuration https://github.com/clescot/kafka-connect-http/issues/452
             httpRequest = buildHttpRequest(sinkRecord);
             return httpTask.processHttpRequest(httpRequest)
                     .thenApply(
