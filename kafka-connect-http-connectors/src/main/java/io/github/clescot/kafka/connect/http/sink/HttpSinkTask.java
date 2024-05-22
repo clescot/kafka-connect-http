@@ -68,11 +68,11 @@ import static io.github.clescot.kafka.connect.http.sink.HttpSinkConfigDefinition
 import static io.github.clescot.kafka.connect.http.sink.HttpSinkConfigDefinition.METER_REGISTRY_EXPORTER_PROMETHEUS_PORT;
 
 
-public abstract class HttpSinkTask<R,S> extends SinkTask {
+public abstract class HttpSinkTask<R, S> extends SinkTask {
     private static final Logger LOGGER = LoggerFactory.getLogger(HttpSinkTask.class);
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper().registerModule(new JavaTimeModule());
     public static final String SINK_RECORD_HAS_GOT_A_NULL_VALUE = "sinkRecord has got a 'null' value";
-    private static final List<String> JSON_SCHEMA_VERSIONS = Lists.newArrayList("draft_4","draft_6","draft_7","draft_2019_09");
+    private static final List<String> JSON_SCHEMA_VERSIONS = Lists.newArrayList("draft_4", "draft_6", "draft_7", "draft_2019_09");
     private static final VersionUtils VERSION_UTILS = new VersionUtils();
     public static final String PRODUCER_PREFIX = "producer.";
     public static final String JSON = "json";
@@ -90,7 +90,7 @@ public abstract class HttpSinkTask<R,S> extends SinkTask {
     private final HttpClientFactory<R, S> httpClientFactory;
 
     private ErrantRecordReporter errantRecordReporter;
-    private HttpTask<SinkRecord,R,S> httpTask;
+    private HttpTask<SinkRecord, R, S> httpTask;
     private final KafkaProducer<String, HttpExchange> producer;
     private String queueName;
     private Queue<KafkaRecord> queue;
@@ -100,7 +100,7 @@ public abstract class HttpSinkTask<R,S> extends SinkTask {
     private static CompositeMeterRegistry meterRegistry;
     private ExecutorService executorService;
 
-    public HttpSinkTask(HttpClientFactory<R,S> httpClientFactory) {
+    public HttpSinkTask(HttpClientFactory<R, S> httpClientFactory) {
         this.httpClientFactory = httpClientFactory;
         producer = new KafkaProducer<>();
     }
@@ -110,7 +110,7 @@ public abstract class HttpSinkTask<R,S> extends SinkTask {
      *
      * @param mock true mock the underlying producer, false not.
      */
-    protected HttpSinkTask(HttpClientFactory<R,S> httpClientFactory,boolean mock) {
+    protected HttpSinkTask(HttpClientFactory<R, S> httpClientFactory, boolean mock) {
         this.httpClientFactory = httpClientFactory;
         producer = new KafkaProducer<>(mock);
     }
@@ -120,14 +120,14 @@ public abstract class HttpSinkTask<R,S> extends SinkTask {
         return VERSION_UTILS.getVersion();
     }
 
-    private <R,S> List<Configuration<R,S>> buildCustomConfigurations(HttpClientFactory<R,S> httpClientFactory,
-                                                                     AbstractConfig config,
-                                                                     Configuration<R,S> defaultConfiguration,
-                                                                     ExecutorService executorService) {
-        CopyOnWriteArrayList<Configuration<R,S>> configurations = Lists.newCopyOnWriteArrayList();
+    private <R, S> List<Configuration<R, S>> buildCustomConfigurations(HttpClientFactory<R, S> httpClientFactory,
+                                                                       AbstractConfig config,
+                                                                       Configuration<R, S> defaultConfiguration,
+                                                                       ExecutorService executorService) {
+        CopyOnWriteArrayList<Configuration<R, S>> configurations = Lists.newCopyOnWriteArrayList();
 
         for (String configId : Optional.ofNullable(config.getList(CONFIGURATION_IDS)).orElse(Lists.newArrayList())) {
-            Configuration<R,S> configuration = new Configuration<>(configId,httpClientFactory, config, executorService, meterRegistry);
+            Configuration<R, S> configuration = new Configuration<>(configId, httpClientFactory, config, executorService, meterRegistry);
             if (configuration.getHttpClient() == null) {
                 configuration.setHttpClient(defaultConfiguration.getHttpClient());
             }
@@ -151,8 +151,6 @@ public abstract class HttpSinkTask<R,S> extends SinkTask {
     }
 
 
-
-
     /**
      * @param settings configure the connector
      */
@@ -167,13 +165,11 @@ public abstract class HttpSinkTask<R,S> extends SinkTask {
         customFixedThreadPoolSize.ifPresent(integer -> this.executorService = buildExecutorService(integer));
 
         //build meterRegistry
-        if (HttpSinkTask.meterRegistry == null) {
-            HttpSinkTask.meterRegistry = buildMeterRegistry(httpSinkConnectorConfig);
-        }
+        HttpSinkTask.meterRegistry = buildMeterRegistry(httpSinkConnectorConfig);
 
         this.defaultConfiguration = new Configuration<>(DEFAULT_CONFIGURATION_ID, httpClientFactory, httpSinkConnectorConfig, executorService, meterRegistry);
-        customConfigurations = buildCustomConfigurations(httpClientFactory,httpSinkConnectorConfig,defaultConfiguration,executorService);
-        httpTask = new HttpTask<>(httpSinkConnectorConfig,defaultConfiguration,customConfigurations,meterRegistry,executorService);
+        customConfigurations = buildCustomConfigurations(httpClientFactory, httpSinkConnectorConfig, defaultConfiguration, executorService);
+        httpTask = new HttpTask<>(httpSinkConnectorConfig, defaultConfiguration, customConfigurations, meterRegistry, executorService);
 
         try {
             errantRecordReporter = context.errantRecordReporter();
@@ -287,7 +283,7 @@ public abstract class HttpSinkTask<R,S> extends SinkTask {
     private Serializer<HttpExchange> getHttpExchangeSerializer(HttpSinkConnectorConfig httpSinkConnectorConfig) {
         Serializer<HttpExchange> serializer;
         String format = httpSinkConnectorConfig.getProducerFormat();
-        LOGGER.info("producer format:'{}'",format);
+        LOGGER.info("producer format:'{}'", format);
         //if format is json
         if (JSON.equalsIgnoreCase(format)) {
             //json schema serde config
@@ -299,61 +295,61 @@ public abstract class HttpSinkTask<R,S> extends SinkTask {
             int schemaRegistryCacheCapacity = httpSinkConnectorConfig.getProducerSchemaRegistryCacheCapacity();
             List<SchemaProvider> schemaProviders = Lists.newArrayList();
             schemaProviders.add(new JsonSchemaProvider());
-            Map<String,Object> config = Maps.newHashMap();
-            if(httpSinkConnectorConfig.getMissingIdCacheTTLSec()!=null){
-                config.put(MISSING_ID_CACHE_TTL_SEC,httpSinkConnectorConfig.getMissingIdCacheTTLSec());
+            Map<String, Object> config = Maps.newHashMap();
+            if (httpSinkConnectorConfig.getMissingIdCacheTTLSec() != null) {
+                config.put(MISSING_ID_CACHE_TTL_SEC, httpSinkConnectorConfig.getMissingIdCacheTTLSec());
             }
-            if(httpSinkConnectorConfig.getMissingVersionCacheTTLSec()!=null){
-                config.put(MISSING_VERSION_CACHE_TTL_SEC,httpSinkConnectorConfig.getMissingVersionCacheTTLSec());
+            if (httpSinkConnectorConfig.getMissingVersionCacheTTLSec() != null) {
+                config.put(MISSING_VERSION_CACHE_TTL_SEC, httpSinkConnectorConfig.getMissingVersionCacheTTLSec());
             }
-            if(httpSinkConnectorConfig.getMissingSchemaCacheTTLSec()!=null){
-                config.put(MISSING_SCHEMA_CACHE_TTL_SEC,httpSinkConnectorConfig.getMissingVersionCacheTTLSec());
+            if (httpSinkConnectorConfig.getMissingSchemaCacheTTLSec() != null) {
+                config.put(MISSING_SCHEMA_CACHE_TTL_SEC, httpSinkConnectorConfig.getMissingVersionCacheTTLSec());
             }
-            if(httpSinkConnectorConfig.getMissingCacheSize()!=null){
-                config.put(MISSING_CACHE_SIZE,httpSinkConnectorConfig.getMissingCacheSize());
+            if (httpSinkConnectorConfig.getMissingCacheSize() != null) {
+                config.put(MISSING_CACHE_SIZE, httpSinkConnectorConfig.getMissingCacheSize());
             }
-            if(httpSinkConnectorConfig.getMissingCacheSize()!=null){
-                config.put(BEARER_AUTH_CACHE_EXPIRY_BUFFER_SECONDS,httpSinkConnectorConfig.getBearerAuthCacheExpiryBufferSeconds());
+            if (httpSinkConnectorConfig.getMissingCacheSize() != null) {
+                config.put(BEARER_AUTH_CACHE_EXPIRY_BUFFER_SECONDS, httpSinkConnectorConfig.getBearerAuthCacheExpiryBufferSeconds());
             }
-            if(httpSinkConnectorConfig.getBearerAuthScopeClaimName()!=null){
-                config.put(BEARER_AUTH_SCOPE_CLAIM_NAME,httpSinkConnectorConfig.getBearerAuthScopeClaimName());
+            if (httpSinkConnectorConfig.getBearerAuthScopeClaimName() != null) {
+                config.put(BEARER_AUTH_SCOPE_CLAIM_NAME, httpSinkConnectorConfig.getBearerAuthScopeClaimName());
             }
-            if(httpSinkConnectorConfig.getBearerAuthSubClaimName()!=null){
-                config.put(BEARER_AUTH_SUB_CLAIM_NAME,httpSinkConnectorConfig.getBearerAuthSubClaimName());
+            if (httpSinkConnectorConfig.getBearerAuthSubClaimName() != null) {
+                config.put(BEARER_AUTH_SUB_CLAIM_NAME, httpSinkConnectorConfig.getBearerAuthSubClaimName());
             }
-            Map<String,String> httpHeaders = Maps.newHashMap();
+            Map<String, String> httpHeaders = Maps.newHashMap();
             RestService restService = new RestService(schemaRegistryUrl);
-            SchemaRegistryClient schemaRegistryClient = new CachedSchemaRegistryClient(restService, schemaRegistryCacheCapacity,schemaProviders,config,httpHeaders);
+            SchemaRegistryClient schemaRegistryClient = new CachedSchemaRegistryClient(restService, schemaRegistryCacheCapacity, schemaProviders, config, httpHeaders);
 
             boolean autoRegisterSchemas = httpSinkConnectorConfig.isProducerSchemaRegistryautoRegister();
             serdeConfig.put(AUTO_REGISTER_SCHEMAS, autoRegisterSchemas);
-            LOGGER.info("producer jsonSchemaSerdeConfigFactory: 'autoRegisterSchemas':'{}'",autoRegisterSchemas);
+            LOGGER.info("producer jsonSchemaSerdeConfigFactory: 'autoRegisterSchemas':'{}'", autoRegisterSchemas);
 
             String jsonSchemaSpecVersion = httpSinkConnectorConfig.isProducerJsonSchemaSpecVersion();
             Preconditions.checkNotNull(jsonSchemaSpecVersion);
-            Preconditions.checkArgument(!jsonSchemaSpecVersion.isEmpty(),"'jsonSchemaSpecVersion' must not be an empty string");
-            Preconditions.checkArgument(JSON_SCHEMA_VERSIONS.contains(jsonSchemaSpecVersion.toLowerCase()),"jsonSchemaSpecVersion supported values are 'draft_4','draft_6','draft_7','draft_2019_09' but not '"+jsonSchemaSpecVersion+"'");
+            Preconditions.checkArgument(!jsonSchemaSpecVersion.isEmpty(), "'jsonSchemaSpecVersion' must not be an empty string");
+            Preconditions.checkArgument(JSON_SCHEMA_VERSIONS.contains(jsonSchemaSpecVersion.toLowerCase()), "jsonSchemaSpecVersion supported values are 'draft_4','draft_6','draft_7','draft_2019_09' but not '" + jsonSchemaSpecVersion + "'");
             serdeConfig.put(KafkaJsonSchemaSerializerConfig.SCHEMA_SPEC_VERSION, jsonSchemaSpecVersion);
-            LOGGER.info("producer jsonSchemaSerdeConfigFactory: 'jsonSchemaSpecVersion':'{}'",jsonSchemaSpecVersion);
+            LOGGER.info("producer jsonSchemaSerdeConfigFactory: 'jsonSchemaSpecVersion':'{}'", jsonSchemaSpecVersion);
 
             boolean writeDatesAsIso8601 = httpSinkConnectorConfig.isProducerJsonWriteDatesAs8601();
             serdeConfig.put(WRITE_DATES_AS_ISO8601, writeDatesAsIso8601);
-            LOGGER.info("producer jsonSchemaSerdeConfigFactory: 'writeDatesAsIso8601':'{}'",writeDatesAsIso8601);
+            LOGGER.info("producer jsonSchemaSerdeConfigFactory: 'writeDatesAsIso8601':'{}'", writeDatesAsIso8601);
 
             boolean oneOfForNullables = httpSinkConnectorConfig.isProducerJsonOneOfForNullables();
             serdeConfig.put(ONEOF_FOR_NULLABLES, oneOfForNullables);
-            LOGGER.info("producer jsonSchemaSerdeConfigFactory: 'oneOfForNullables':'{}'",oneOfForNullables);
+            LOGGER.info("producer jsonSchemaSerdeConfigFactory: 'oneOfForNullables':'{}'", oneOfForNullables);
 
             boolean failInvalidSchema = httpSinkConnectorConfig.isProducerJsonFailInvalidSchema();
             serdeConfig.put(FAIL_INVALID_SCHEMA, failInvalidSchema);
-            LOGGER.info("producer jsonSchemaSerdeConfigFactory: 'failInvalidSchema':'{}'",failInvalidSchema);
+            LOGGER.info("producer jsonSchemaSerdeConfigFactory: 'failInvalidSchema':'{}'", failInvalidSchema);
 
             boolean failUnknownProperties = httpSinkConnectorConfig.isProducerJsonFailUnknownProperties();
             serdeConfig.put(FAIL_UNKNOWN_PROPERTIES, failUnknownProperties);
-            LOGGER.info("producer jsonSchemaSerdeConfigFactory: 'failUnknownProperties':'{}'",failUnknownProperties);
+            LOGGER.info("producer jsonSchemaSerdeConfigFactory: 'failUnknownProperties':'{}'", failUnknownProperties);
 
-            serdeConfig.put("key.subject.name.strategy",httpSinkConnectorConfig.getProducerKeySubjectNameStrategy());
-            serdeConfig.put("value.subject.name.strategy",httpSinkConnectorConfig.getProducerValueSubjectNameStrategy());
+            serdeConfig.put("key.subject.name.strategy", httpSinkConnectorConfig.getProducerKeySubjectNameStrategy());
+            serdeConfig.put("value.subject.name.strategy", httpSinkConnectorConfig.getProducerValueSubjectNameStrategy());
 
             HttpExchangeSerdeFactory httpExchangeSerdeFactory = new HttpExchangeSerdeFactory(schemaRegistryClient, serdeConfig);
             serializer = httpExchangeSerdeFactory.buildValueSerde().serializer();
@@ -404,16 +400,16 @@ public abstract class HttpSinkTask<R,S> extends SinkTask {
                                     LOGGER.debug("publish.mode : 'PRODUCER' : HttpExchange success will be published at topic : '{}'", httpSinkConnectorConfig.getProducerSuccessTopic());
                                     LOGGER.debug("publish.mode : 'PRODUCER' : HttpExchange error will be published at topic : '{}'", httpSinkConnectorConfig.getProducerErrorTopic());
                                     try {
-                                        String targetTopic = httpExchange.isSuccess()?httpSinkConnectorConfig.getProducerSuccessTopic():httpSinkConnectorConfig.getProducerErrorTopic();
+                                        String targetTopic = httpExchange.isSuccess() ? httpSinkConnectorConfig.getProducerSuccessTopic() : httpSinkConnectorConfig.getProducerErrorTopic();
                                         ProducerRecord<String, HttpExchange> myRecord = new ProducerRecord<>(targetTopic, httpExchange);
                                         LOGGER.trace("before send to {}", targetTopic);
                                         this.producer.send(myRecord).get(3, TimeUnit.SECONDS);
                                         LOGGER.debug("✉✉ record sent ✉✉");
                                     } catch (InterruptedException | ExecutionException | TimeoutException e) {
                                         LOGGER.debug(RECORD_NOT_SENT);
-                                        LOGGER.error(e.getMessage(),e);
+                                        LOGGER.error(e.getMessage(), e);
                                         Thread.currentThread().interrupt();
-                                        throw new ConnectException(RECORD_NOT_SENT,e);
+                                        throw new ConnectException(RECORD_NOT_SENT, e);
                                     }
                                 } else {
                                     LOGGER.debug("publish.mode : 'NONE' http exchange NOT published :'{}'", httpExchange);
@@ -536,12 +532,12 @@ public abstract class HttpSinkTask<R,S> extends SinkTask {
         this.queue = queue;
     }
 
-    public Configuration<R,S> getDefaultConfiguration() {
-        Preconditions.checkNotNull(httpTask,"httpTask has not been initialized in the start method");
+    public Configuration<R, S> getDefaultConfiguration() {
+        Preconditions.checkNotNull(httpTask, "httpTask has not been initialized in the start method");
         return httpTask.getDefaultConfiguration();
     }
 
-    public HttpTask<SinkRecord,R,S> getHttpTask() {
+    public HttpTask<SinkRecord, R, S> getHttpTask() {
         return httpTask;
     }
 }

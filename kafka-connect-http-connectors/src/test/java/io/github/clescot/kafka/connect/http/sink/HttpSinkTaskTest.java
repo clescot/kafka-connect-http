@@ -585,7 +585,7 @@ public class HttpSinkTaskTest {
                 okHttpSinkTask.put(records);
 
 
-                CompositeMeterRegistry meterRegistry = okHttpSinkTask.getHttpTask().getMeterRegistry();
+                CompositeMeterRegistry meterRegistry = HttpTask.getMeterRegistry();
                 Set<MeterRegistry> registries = meterRegistry.getRegistries();
                 assertThat(registries).hasSize(1);
                 List<MeterRegistry> meterRegistryList = Arrays.asList(registries.toArray(new MeterRegistry[0]));

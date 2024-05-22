@@ -196,10 +196,10 @@ public class HttpTask<T extends ConnectRecord<T>,R,S> {
     }
 
     public static CompositeMeterRegistry getMeterRegistry() {
-        return meterRegistry;
+        return HttpTask.meterRegistry;
     }
 
     public static void removeCompositeMeterRegistry(){
-        meterRegistry = null;
+        HttpTask.meterRegistry = null;
     }
 }
