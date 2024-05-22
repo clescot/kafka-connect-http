@@ -36,9 +36,9 @@ public class HttpTask<T extends ConnectRecord<T>,R,S> {
     private static final Logger LOGGER = LoggerFactory.getLogger(HttpTask.class);
 
 
-    private List<Configuration<R,S>> customConfigurations;
-    private Configuration<R,S> defaultConfiguration;
-    private ExecutorService executorService;
+    private final List<Configuration<R,S>> customConfigurations;
+    private final Configuration<R,S> defaultConfiguration;
+    private final ExecutorService executorService;
     private static CompositeMeterRegistry meterRegistry;
 
 
