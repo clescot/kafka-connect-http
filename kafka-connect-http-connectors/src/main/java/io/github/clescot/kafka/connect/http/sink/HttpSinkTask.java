@@ -120,7 +120,7 @@ public abstract class HttpSinkTask<R, S> extends SinkTask {
         return VERSION_UTILS.getVersion();
     }
 
-    private <R, S> List<Configuration<R, S>> buildCustomConfigurations(HttpClientFactory<R, S> httpClientFactory,
+    private List<Configuration<R, S>> buildCustomConfigurations(HttpClientFactory<R, S> httpClientFactory,
                                                                        AbstractConfig config,
                                                                        Configuration<R, S> defaultConfiguration,
                                                                        ExecutorService executorService) {
