@@ -1,8 +1,5 @@
 package io.github.clescot.kafka.connect.http.sink;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.google.common.base.Preconditions;
 import com.google.common.base.Strings;
 import com.google.common.collect.Lists;
@@ -23,7 +20,6 @@ import io.github.clescot.kafka.connect.http.client.HttpException;
 import io.github.clescot.kafka.connect.http.core.HttpExchange;
 import io.github.clescot.kafka.connect.http.core.HttpExchangeSerializer;
 import io.github.clescot.kafka.connect.http.core.HttpRequest;
-import io.github.clescot.kafka.connect.http.core.HttpRequestAsStruct;
 import io.github.clescot.kafka.connect.http.core.queue.ConfigConstants;
 import io.github.clescot.kafka.connect.http.core.queue.KafkaRecord;
 import io.github.clescot.kafka.connect.http.core.queue.QueueFactory;
@@ -40,9 +36,6 @@ import org.apache.kafka.common.PartitionInfo;
 import org.apache.kafka.common.config.AbstractConfig;
 import org.apache.kafka.common.serialization.Serializer;
 import org.apache.kafka.common.serialization.StringSerializer;
-import org.apache.kafka.connect.connector.ConnectRecord;
-import org.apache.kafka.connect.data.Schema;
-import org.apache.kafka.connect.data.Struct;
 import org.apache.kafka.connect.errors.ConnectException;
 import org.apache.kafka.connect.sink.ErrantRecordReporter;
 import org.apache.kafka.connect.sink.SinkRecord;
@@ -52,7 +45,6 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
-import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.regex.Pattern;
@@ -66,12 +58,10 @@ import static io.confluent.kafka.serializers.json.KafkaJsonSchemaDeserializerCon
 import static io.confluent.kafka.serializers.json.KafkaJsonSchemaDeserializerConfig.FAIL_UNKNOWN_PROPERTIES;
 import static io.confluent.kafka.serializers.json.KafkaJsonSchemaSerializerConfig.ONEOF_FOR_NULLABLES;
 import static io.github.clescot.kafka.connect.http.sink.HttpSinkConfigDefinition.*;
-import static io.github.clescot.kafka.connect.http.sink.HttpSinkConfigDefinition.METER_REGISTRY_EXPORTER_PROMETHEUS_PORT;
 
 
 public abstract class HttpSinkTask<R, S> extends SinkTask {
     private static final Logger LOGGER = LoggerFactory.getLogger(HttpSinkTask.class);
-    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper().registerModule(new JavaTimeModule());
     public static final String SINK_RECORD_HAS_GOT_A_NULL_VALUE = "sinkRecord has got a 'null' value";
     private static final List<String> JSON_SCHEMA_VERSIONS = Lists.newArrayList("draft_4", "draft_6", "draft_7", "draft_2019_09");
     private static final VersionUtils VERSION_UTILS = new VersionUtils();
@@ -100,10 +90,12 @@ public abstract class HttpSinkTask<R, S> extends SinkTask {
     private Map<String, Object> producerSettings;
     private static CompositeMeterRegistry meterRegistry;
     private ExecutorService executorService;
+    private HttpRequestMapper httpRequestMapper;
 
     public HttpSinkTask(HttpClientFactory<R, S> httpClientFactory) {
         this.httpClientFactory = httpClientFactory;
         producer = new KafkaProducer<>();
+        httpRequestMapper = new SimpleHttpRequestMapper();
     }
 
     /**
@@ -401,7 +393,8 @@ public abstract class HttpSinkTask<R, S> extends SinkTask {
             HttpRequest httpRequest;
             //build HttpRequest
             //TODO mapper by configuration https://github.com/clescot/kafka-connect-http/issues/452
-            httpRequest = buildHttpRequest(sinkRecord);
+            //TODO select among mapper the related one (test the one which match the record)
+            httpRequest = httpRequestMapper.map(sinkRecord);
             return httpTask.processHttpRequest(httpRequest)
                     .thenApply(
                             httpExchange -> {
@@ -457,64 +450,6 @@ public abstract class HttpSinkTask<R, S> extends SinkTask {
             }
         }
 
-    }
-
-    protected HttpRequest buildHttpRequest(ConnectRecord connectRecord) throws ConnectException {
-        if (connectRecord == null || connectRecord.value() == null) {
-            LOGGER.warn(SINK_RECORD_HAS_GOT_A_NULL_VALUE);
-            throw new ConnectException(SINK_RECORD_HAS_GOT_A_NULL_VALUE);
-        }
-        HttpRequest httpRequest = null;
-        Object value = connectRecord.value();
-        Class<?> valueClass = value.getClass();
-        String stringValue = null;
-
-        if (Struct.class.isAssignableFrom(valueClass)) {
-            Struct valueAsStruct = (Struct) value;
-            LOGGER.debug("Struct is {}", valueAsStruct);
-            valueAsStruct.validate();
-            Schema schema = valueAsStruct.schema();
-            String schemaTypeName = schema.type().getName();
-            LOGGER.debug("schema type name referenced in Struct is '{}'", schemaTypeName);
-            Integer version = schema.version();
-            LOGGER.debug("schema version referenced in Struct is '{}'", version);
-
-            httpRequest = HttpRequestAsStruct
-                    .Builder
-                    .anHttpRequest()
-                    .withStruct(valueAsStruct)
-                    .build();
-            LOGGER.debug("httpRequest : {}", httpRequest);
-        } else if (byte[].class.isAssignableFrom(valueClass)) {
-            //we assume the value is a byte array
-            stringValue = new String((byte[]) value, StandardCharsets.UTF_8);
-            LOGGER.debug("byte[] is {}", stringValue);
-        } else if (String.class.isAssignableFrom(valueClass)) {
-            stringValue = (String) value;
-            LOGGER.debug("String is {}", stringValue);
-        } else {
-            LOGGER.warn("value is an instance of the class '{}' not handled by the WsSinkTask", valueClass.getName());
-            throw new ConnectException("value is an instance of the class " + valueClass.getName() + " not handled by the WsSinkTask");
-        }
-        //valueClass is not a Struct, but a String/byte[]
-        if (httpRequest == null) {
-            LOGGER.debug("stringValue :{}", stringValue);
-            httpRequest = parseHttpRequestAsJsonString(stringValue);
-            LOGGER.debug("successful httpRequest parsing :{}", httpRequest);
-        }
-
-        return httpRequest;
-    }
-
-
-    private HttpRequest parseHttpRequestAsJsonString(String value) throws ConnectException {
-        HttpRequest httpRequest;
-        try {
-            httpRequest = OBJECT_MAPPER.readValue(value, HttpRequest.class);
-        } catch (JsonProcessingException e) {
-            throw new ConnectException(e);
-        }
-        return httpRequest;
     }
 
     @Override
