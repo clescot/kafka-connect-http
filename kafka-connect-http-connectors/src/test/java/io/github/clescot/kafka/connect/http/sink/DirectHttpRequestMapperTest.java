@@ -3,6 +3,7 @@ package io.github.clescot.kafka.connect.http.sink;
 
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
+import freemarker.template.Configuration;
 import io.confluent.connect.json.JsonSchemaConverter;
 import io.confluent.kafka.schemaregistry.ParsedSchema;
 import io.confluent.kafka.schemaregistry.SchemaProvider;
@@ -38,16 +39,17 @@ import static io.confluent.kafka.serializers.json.KafkaJsonSchemaDeserializerCon
 import static io.github.clescot.kafka.connect.http.core.HttpRequestAsStruct.SCHEMA;
 import static org.assertj.core.api.Assertions.assertThat;
 
-class SimpleHttpRequestMapperTest {
+class DirectHttpRequestMapperTest {
 
     private static final String DUMMY_BODY = "stuff";
     private static final String DUMMY_URL = "http://www." + DUMMY_BODY + ".com";
     private static final String DUMMY_METHOD = "POST";
     private static final String DUMMY_BODY_TYPE = "STRING";
-    private SimpleHttpRequestMapper httpRequestMapper;
+    private DirectHttpRequestMapper httpRequestMapper;
     @BeforeEach
-    public void setup(){
-        httpRequestMapper = new SimpleHttpRequestMapper();
+    public void setup() {
+
+        httpRequestMapper = new DirectHttpRequestMapper(new Configuration(Configuration.VERSION_2_3_32),"true");
     }
     @Nested
     class TestMap {
