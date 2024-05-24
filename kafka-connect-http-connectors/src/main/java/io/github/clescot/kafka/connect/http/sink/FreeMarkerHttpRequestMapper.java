@@ -69,7 +69,9 @@ public class FreeMarkerHttpRequestMapper implements HttpRequestMapper {
                 return Optional.empty();
             }
             StringWriter stringWriter = new StringWriter();
-            template.get().process(sinkRecord, stringWriter);
+            Map<String,Object> root = Maps.newHashMap();
+            root.put("sinkRecord",sinkRecord);
+            template.get().process(root, stringWriter);
             return Optional.of(stringWriter.toString());
         } catch (TemplateException | IOException e) {
             throw new ConnectException(e);
