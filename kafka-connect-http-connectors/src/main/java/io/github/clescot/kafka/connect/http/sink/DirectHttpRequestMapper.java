@@ -34,7 +34,7 @@ public class DirectHttpRequestMapper implements HttpRequestMapper{
         try {
             this.selectorTemplate = new Template("matches",sourceCode, configuration);
         } catch (IOException e) {
-            throw new RuntimeException(e);
+            throw new ConnectException(e);
         }
     }
 
@@ -48,7 +48,7 @@ public class DirectHttpRequestMapper implements HttpRequestMapper{
             selectorTemplate.process(root, stringWriter);
             result = Boolean.parseBoolean(stringWriter.toString());
         } catch (TemplateException | IOException e) {
-            throw new RuntimeException(e);
+            throw new ConnectException(e);
         }
         return result;
     }

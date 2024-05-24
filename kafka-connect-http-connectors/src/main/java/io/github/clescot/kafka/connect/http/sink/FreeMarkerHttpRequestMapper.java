@@ -6,6 +6,7 @@ import freemarker.template.Configuration;
 import freemarker.template.Template;
 import freemarker.template.TemplateException;
 import io.github.clescot.kafka.connect.http.core.HttpRequest;
+import org.apache.kafka.connect.errors.ConnectException;
 import org.apache.kafka.connect.sink.SinkRecord;
 
 import java.io.IOException;
@@ -71,7 +72,7 @@ public class FreeMarkerHttpRequestMapper implements HttpRequestMapper {
             template.get().process(sinkRecord, stringWriter);
             return Optional.of(stringWriter.toString());
         } catch (TemplateException | IOException e) {
-            throw new RuntimeException(e);
+            throw new ConnectException(e);
         }
     }
 }
