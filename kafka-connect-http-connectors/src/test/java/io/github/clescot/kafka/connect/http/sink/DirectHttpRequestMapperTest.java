@@ -49,7 +49,7 @@ class DirectHttpRequestMapperTest {
     @BeforeEach
     public void setup() {
 
-        httpRequestMapper = new DirectHttpRequestMapper(new Configuration(Configuration.VERSION_2_3_32),"true");
+        httpRequestMapper = new DirectHttpRequestMapper(new Configuration(Configuration.VERSION_2_3_32));
     }
     @Nested
     class TestMap {

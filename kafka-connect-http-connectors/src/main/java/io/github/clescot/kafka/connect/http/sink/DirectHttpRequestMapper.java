@@ -30,9 +30,9 @@ public class DirectHttpRequestMapper implements HttpRequestMapper{
     public static final String SINK_RECORD_HAS_GOT_A_NULL_VALUE = "sinkRecord has got a 'null' value";
     private final Template selectorTemplate;
 
-    public DirectHttpRequestMapper(Configuration configuration,String sourceCode) {
+    public DirectHttpRequestMapper(Configuration configuration) {
         try {
-            this.selectorTemplate = new Template("matches",sourceCode, configuration);
+            this.selectorTemplate = new Template("matches","true", configuration);
         } catch (IOException e) {
             throw new ConnectException(e);
         }

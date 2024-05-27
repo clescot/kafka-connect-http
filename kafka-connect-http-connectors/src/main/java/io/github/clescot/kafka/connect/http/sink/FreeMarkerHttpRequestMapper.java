@@ -19,12 +19,13 @@ import java.util.stream.Collectors;
 
 public class FreeMarkerHttpRequestMapper implements HttpRequestMapper {
 
+    public static final String SELECTOR_TEMPLATE_NAME = "selector";
     private Configuration configuration;
     public FreeMarkerHttpRequestMapper(Configuration configuration,String selectorTemplateContent,Map<String, String> templates) {
 
        this.configuration = configuration;
         StringTemplateLoader templateLoader = new StringTemplateLoader();
-        templateLoader.putTemplate("selector",selectorTemplateContent);
+        templateLoader.putTemplate(SELECTOR_TEMPLATE_NAME,selectorTemplateContent);
         for (Map.Entry<String, String> entry : templates.entrySet()) {
             templateLoader.putTemplate(entry.getKey(), entry.getValue());
         }
@@ -33,7 +34,7 @@ public class FreeMarkerHttpRequestMapper implements HttpRequestMapper {
 
     @Override
     public boolean matches(SinkRecord sinkRecord) {
-        return getResolvedTemplate(sinkRecord, "selector").map(Boolean::parseBoolean).orElse(false);
+        return getResolvedTemplate(sinkRecord, SELECTOR_TEMPLATE_NAME).map(Boolean::parseBoolean).orElse(false);
     }
 
     @Override
