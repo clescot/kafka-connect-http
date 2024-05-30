@@ -158,7 +158,7 @@ public abstract class HttpSinkTask<R, S> extends SinkTask {
         //shared freemarker configuration
         freemarker.template.Configuration configuration = new freemarker.template.Configuration(freemarker.template.Configuration.VERSION_2_3_32);
         configuration.setEncoding(Locale.getDefault(), StandardCharsets.UTF_8.name());
-        this.defaultHttpRequestMapper = new DirectHttpRequestMapper(configuration);
+        this.defaultHttpRequestMapper = new DirectHttpRequestMapper(configuration, "true");
         //TODO build mappers
         this.httpRequestMappers = Lists.newArrayList();
         //build executorService
