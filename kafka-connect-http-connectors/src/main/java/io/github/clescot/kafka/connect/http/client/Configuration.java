@@ -238,7 +238,7 @@ public class Configuration<R,S> {
     }
 
 
-    @java.lang.SuppressWarnings("java:S2119")
+    @java.lang.SuppressWarnings({"java:S2119","java:S2245"})
     @NotNull
     private Random getRandom(Map<String, Object> config) {
         Random random;
