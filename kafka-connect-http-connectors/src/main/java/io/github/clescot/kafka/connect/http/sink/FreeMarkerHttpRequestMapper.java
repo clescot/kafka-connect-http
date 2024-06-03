@@ -9,6 +9,8 @@ import freemarker.template.TemplateException;
 import io.github.clescot.kafka.connect.http.core.HttpRequest;
 import org.apache.kafka.connect.errors.ConnectException;
 import org.apache.kafka.connect.sink.SinkRecord;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.io.StringWriter;
@@ -19,7 +21,7 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 
 public class FreeMarkerHttpRequestMapper implements HttpRequestMapper {
-
+    private static final Logger LOGGER = LoggerFactory.getLogger(FreeMarkerHttpRequestMapper.class);
     public static final String SELECTOR_TEMPLATE_NAME = "selector";
     private Configuration configuration;
 
@@ -38,12 +40,20 @@ public class FreeMarkerHttpRequestMapper implements HttpRequestMapper {
 
     @Override
     public boolean matches(SinkRecord sinkRecord) {
-        return getResolvedTemplate(sinkRecord, SELECTOR_TEMPLATE_NAME).map(Boolean::parseBoolean).orElse(false);
+        Preconditions.checkNotNull(sinkRecord);
+        Optional<String> resolvedTemplate = getResolvedTemplate(sinkRecord, SELECTOR_TEMPLATE_NAME);
+        try {
+            LOGGER.debug("'selector' template: '{}'",configuration.getTemplate(SELECTOR_TEMPLATE_NAME));
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+        LOGGER.debug("resolved 'selector' template: {}",resolvedTemplate.orElse("template not found"));
+        return resolvedTemplate.map(Boolean::parseBoolean).orElse(false);
     }
 
     @Override
     public HttpRequest map(SinkRecord sinkRecord) {
-
+        Preconditions.checkNotNull(sinkRecord,"sinkRecord must not be null");
         String url = getResolvedTemplate(sinkRecord, "url").orElseThrow(() -> new IllegalArgumentException("url cannot ne resolved"));
         Optional<String> optionalHeaders = getResolvedTemplate(sinkRecord, "url");
         Map<String, List<String>> headers = optionalHeaders.isPresent() ?
@@ -73,10 +83,11 @@ public class FreeMarkerHttpRequestMapper implements HttpRequestMapper {
             if (template.isEmpty()) {
                 return Optional.empty();
             }
-            StringWriter stringWriter = new StringWriter();
             Map<String, Object> root = Maps.newHashMap();
             root.put("sinkRecord", sinkRecord);
-            template.get().process(root, stringWriter);
+            StringWriter stringWriter = new StringWriter();
+            Template myTemplate = template.get();
+            myTemplate.process(root, stringWriter);
             return Optional.of(stringWriter.toString());
         } catch (TemplateException | IOException e) {
             throw new ConnectException(e);
