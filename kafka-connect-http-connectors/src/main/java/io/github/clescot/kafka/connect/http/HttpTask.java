@@ -277,7 +277,7 @@ public class HttpTask<T extends ConnectRecord<T>> {
             PrometheusMeterRegistry prometheusMeterRegistry = new PrometheusMeterRegistry(PrometheusConfig.DEFAULT);
             Integer prometheusPort = config.getInt(METER_REGISTRY_EXPORTER_PROMETHEUS_PORT);
             // you can set the daemon flag to false if you want the server to block
-            HTTPServer httpServer = null;
+
             try {
                 int port = prometheusPort != null ? prometheusPort : 9090;
                 PrometheusRegistry prometheusRegistry = prometheusMeterRegistry.getPrometheusRegistry();
@@ -287,10 +287,6 @@ public class HttpTask<T extends ConnectRecord<T>> {
                         .buildAndStart();
             } catch (IOException e) {
                 throw new HttpException(e);
-            } finally {
-                if (httpServer != null) {
-                    httpServer.close();
-                }
             }
             compositeMeterRegistry.add(prometheusMeterRegistry);
         }
