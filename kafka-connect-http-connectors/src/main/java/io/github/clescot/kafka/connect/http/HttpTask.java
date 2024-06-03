@@ -26,9 +26,10 @@ import io.micrometer.core.instrument.binder.system.ProcessorMetrics;
 import io.micrometer.core.instrument.composite.CompositeMeterRegistry;
 import io.micrometer.jmx.JmxConfig;
 import io.micrometer.jmx.JmxMeterRegistry;
-import io.micrometer.prometheus.PrometheusConfig;
-import io.micrometer.prometheus.PrometheusMeterRegistry;
-import io.prometheus.client.exporter.HTTPServer;
+import io.micrometer.prometheusmetrics.PrometheusConfig;
+import io.micrometer.prometheusmetrics.PrometheusMeterRegistry;
+import io.prometheus.metrics.exporter.httpserver.HTTPServer;
+import io.prometheus.metrics.model.registry.PrometheusRegistry;
 import org.apache.kafka.common.config.AbstractConfig;
 import org.apache.kafka.connect.connector.ConnectRecord;
 import org.apache.kafka.connect.data.Schema;
@@ -38,7 +39,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
-import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
 import java.time.OffsetDateTime;
 import java.time.ZoneId;
@@ -274,12 +274,17 @@ public class HttpTask<T extends ConnectRecord<T>> {
         }
         boolean activatePrometheus = Boolean.parseBoolean(config.getString(METER_REGISTRY_EXPORTER_PROMETHEUS_ACTIVATE));
         if (activatePrometheus) {
-            PrometheusMeterRegistry prometheusRegistry = new PrometheusMeterRegistry(PrometheusConfig.DEFAULT);
+            PrometheusMeterRegistry prometheusMeterRegistry = new PrometheusMeterRegistry(PrometheusConfig.DEFAULT);
             Integer prometheusPort = config.getInt(METER_REGISTRY_EXPORTER_PROMETHEUS_PORT);
             // you can set the daemon flag to false if you want the server to block
             HTTPServer httpServer = null;
             try {
-                httpServer = new HTTPServer(new InetSocketAddress(prometheusPort != null ? prometheusPort : 9090), prometheusRegistry.getPrometheusRegistry(), true);
+                int port = prometheusPort != null ? prometheusPort : 9090;
+                PrometheusRegistry prometheusRegistry = prometheusMeterRegistry.getPrometheusRegistry();
+                HTTPServer.builder()
+                        .port(port)
+                        .registry(prometheusRegistry)
+                        .buildAndStart();
             } catch (IOException e) {
                 throw new HttpException(e);
             } finally {
@@ -287,7 +292,7 @@ public class HttpTask<T extends ConnectRecord<T>> {
                     httpServer.close();
                 }
             }
-            compositeMeterRegistry.add(prometheusRegistry);
+            compositeMeterRegistry.add(prometheusMeterRegistry);
         }
         return compositeMeterRegistry;
     }
