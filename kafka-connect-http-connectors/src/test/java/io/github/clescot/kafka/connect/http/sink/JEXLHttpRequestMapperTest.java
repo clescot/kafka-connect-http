@@ -1,0 +1,92 @@
+package io.github.clescot.kafka.connect.http.sink;
+
+import com.google.common.collect.Lists;
+import org.apache.kafka.common.record.TimestampType;
+import org.apache.kafka.connect.data.Schema;
+import org.apache.kafka.connect.header.Header;
+import org.apache.kafka.connect.sink.SinkRecord;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Nested;
+import org.junit.jupiter.api.Test;
+
+import java.util.List;
+
+import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
+
+class JEXLHttpRequestMapperTest {
+
+    @Nested
+    class Constructor {
+
+
+        @Test
+        void test_empty_expression() {
+            Assertions.assertThrows(IllegalArgumentException.class,()->new JEXLHttpRequestMapper("","",null,null));
+        }
+        @Test
+        void test_null_expression() {
+            Assertions.assertThrows(IllegalArgumentException.class,()->new JEXLHttpRequestMapper(null,"'http://url.com'",null,null));
+        }
+
+        @Test
+        void test_valid_expression() {
+            Assertions.assertDoesNotThrow(()->new JEXLHttpRequestMapper("sinkRecord.topic()=='myTopic'","'http://url.com'",null,null));
+        }
+    }
+
+
+    @Nested
+    class Matches {
+
+        private static final String DUMMY_BODY = "stuff";
+        private static final String DUMMY_URL = "http://www." + DUMMY_BODY + ".com";
+        private static final String DUMMY_METHOD = "POST";
+        private static final String DUMMY_BODY_TYPE = "STRING";
+        private SinkRecord sinkRecord;
+        @BeforeEach
+        public void setup() {
+            List<Header> headers = Lists.newArrayList();
+            sinkRecord = new SinkRecord("myTopic",
+                    0,
+                    Schema.STRING_SCHEMA,
+                    "key",
+                    Schema.STRING_SCHEMA,
+                    getDummyHttpRequestAsString(),
+                    -1,
+                    System.currentTimeMillis(),
+                    TimestampType.CREATE_TIME,
+                    headers
+            );
+
+        }
+
+        @Test
+        void test_nominal() {
+            JEXLHttpRequestMapper httpRequestMapper = new JEXLHttpRequestMapper("sinkRecord.topic()=='myTopic'","'http://url.com'",null,null);
+            boolean matches = httpRequestMapper.matches(sinkRecord);
+            assertThat(matches).isTrue();
+        }
+
+        @Test
+        void test_invalid_expression() {
+            JEXLHttpRequestMapper httpRequestMapper = new JEXLHttpRequestMapper("toto.topic()=='myTopic'","'http://url.com'",null,null);
+            boolean matches = httpRequestMapper.matches(sinkRecord);
+            assertThat(matches).isFalse();
+        }
+
+        private String getDummyHttpRequestAsString() {
+            return "{\n" +
+                    "  \"url\": \"" + DUMMY_URL + "\",\n" +
+                    "  \"headers\": {},\n" +
+                    "  \"method\": \"" + DUMMY_METHOD + "\",\n" +
+                    "  \"bodyAsString\": \"" + DUMMY_BODY + "\",\n" +
+                    "  \"bodyAsByteArray\": [],\n" +
+                    "  \"bodyAsForm\": {},\n" +
+                    "  \"bodyAsMultipart\": [],\n" +
+                    "  \"bodyType\": \"" + DUMMY_BODY_TYPE + "\"\n" +
+                    "}";
+        }
+    }
+
+}

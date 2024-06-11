@@ -23,14 +23,15 @@ import java.util.stream.Collectors;
 public class FreeMarkerHttpRequestMapper implements HttpRequestMapper {
     private static final Logger LOGGER = LoggerFactory.getLogger(FreeMarkerHttpRequestMapper.class);
     public static final String SELECTOR_TEMPLATE_NAME = "selector";
+    public static final String MATCHES = "MATCHES";
     private Configuration configuration;
+    private StringTemplateLoader templateLoader = new StringTemplateLoader();
 
     public FreeMarkerHttpRequestMapper(Configuration configuration, String selectorTemplateContent, Map<String, String> templates) {
         Preconditions.checkNotNull(configuration, "configuration is required for templates");
         Preconditions.checkNotNull(templates, "templates map is required for templates");
         Preconditions.checkArgument(!templates.isEmpty(),"at least one template in the map is required for templates");
         this.configuration = configuration;
-        StringTemplateLoader templateLoader = new StringTemplateLoader();
         templateLoader.putTemplate(SELECTOR_TEMPLATE_NAME, selectorTemplateContent);
         for (Map.Entry<String, String> entry : templates.entrySet()) {
             templateLoader.putTemplate(entry.getKey(), entry.getValue());
@@ -42,13 +43,19 @@ public class FreeMarkerHttpRequestMapper implements HttpRequestMapper {
     public boolean matches(SinkRecord sinkRecord) {
         Preconditions.checkNotNull(sinkRecord);
         Optional<String> resolvedTemplate = getResolvedTemplate(sinkRecord, SELECTOR_TEMPLATE_NAME);
+        LOGGER.debug("resolved 'selector' template: {}",resolvedTemplate.orElse("template not found"));
+        String expression = resolvedTemplate.orElse("false");
+        templateLoader.putTemplate(MATCHES, expression);
+        StringWriter stringWriter = new StringWriter();
         try {
-            LOGGER.debug("'selector' template: '{}'",configuration.getTemplate(SELECTOR_TEMPLATE_NAME));
-        } catch (IOException e) {
+            Template template = configuration.getTemplate(MATCHES);
+            template.process(Maps.newHashMap(), stringWriter);
+        } catch (TemplateException | IOException e) {
             throw new RuntimeException(e);
         }
-        LOGGER.debug("resolved 'selector' template: {}",resolvedTemplate.orElse("template not found"));
-        return resolvedTemplate.map(Boolean::parseBoolean).orElse(false);
+
+        String string = stringWriter.toString();
+        return Boolean.parseBoolean(string);
     }
 
     @Override
@@ -88,7 +95,8 @@ public class FreeMarkerHttpRequestMapper implements HttpRequestMapper {
             StringWriter stringWriter = new StringWriter();
             Template myTemplate = template.get();
             myTemplate.process(root, stringWriter);
-            return Optional.of(stringWriter.toString());
+            String result = stringWriter.toString();
+            return Optional.of(result);
         } catch (TemplateException | IOException e) {
             throw new ConnectException(e);
         }
