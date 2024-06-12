@@ -31,7 +31,7 @@ class JEXLHttpRequestMapperTest {
         }
         @Test
         void test_null_expression() {
-            Assertions.assertThrows(IllegalArgumentException.class,()->new JEXLHttpRequestMapper(null,"'http://url.com'",null,null));
+            Assertions.assertThrows(NullPointerException.class,()->new JEXLHttpRequestMapper(null,"'http://url.com'",null,null));
         }
 
         @Test
