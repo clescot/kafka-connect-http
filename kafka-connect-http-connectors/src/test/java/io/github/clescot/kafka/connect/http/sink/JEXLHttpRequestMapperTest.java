@@ -46,16 +46,16 @@ class JEXLHttpRequestMapperTest {
 
         @Test
         void test_empty_expression() {
-            Assertions.assertThrows(IllegalArgumentException.class,()->new JEXLHttpRequestMapper(jexlEngine,"","",null,null));
+            Assertions.assertThrows(IllegalArgumentException.class,()->new JEXLHttpRequestMapper(jexlEngine,"","",null,null,null));
         }
         @Test
         void test_null_expression() {
-            Assertions.assertThrows(IllegalArgumentException.class,()->new JEXLHttpRequestMapper(jexlEngine,null,"'http://url.com'",null,null));
+            Assertions.assertThrows(IllegalArgumentException.class,()->new JEXLHttpRequestMapper(jexlEngine,null,"'http://url.com'",null,null,null));
         }
 
         @Test
         void test_valid_expression_with_url_as_constant() {
-            Assertions.assertDoesNotThrow(()->new JEXLHttpRequestMapper(jexlEngine,"sinkRecord.topic()=='myTopic'","'http://url.com'",null,null));
+            Assertions.assertDoesNotThrow(()->new JEXLHttpRequestMapper(jexlEngine,"sinkRecord.topic()=='myTopic'","'http://url.com'",null,null,null));
         }
 
     }
@@ -85,14 +85,14 @@ class JEXLHttpRequestMapperTest {
 
         @Test
         void test_nominal() {
-            JEXLHttpRequestMapper httpRequestMapper = new JEXLHttpRequestMapper(jexlEngine,"sinkRecord.topic()=='myTopic'","'http://url.com'",null,null);
+            JEXLHttpRequestMapper httpRequestMapper = new JEXLHttpRequestMapper(jexlEngine,"sinkRecord.topic()=='myTopic'","'http://url.com'",null,null,null);
             boolean matches = httpRequestMapper.matches(sinkRecord);
             assertThat(matches).isTrue();
         }
 
         @Test
         void test_invalid_expression() {
-            JEXLHttpRequestMapper httpRequestMapper = new JEXLHttpRequestMapper(jexlEngine,"toto.topic()=='myTopic'","'http://url.com'",null,null);
+            JEXLHttpRequestMapper httpRequestMapper = new JEXLHttpRequestMapper(jexlEngine,"toto.topic()=='myTopic'","'http://url.com'",null,null,null);
             boolean matches = httpRequestMapper.matches(sinkRecord);
             assertThat(matches).isFalse();
         }
@@ -126,7 +126,7 @@ class JEXLHttpRequestMapperTest {
         }
         @Test
         void test_url_as_constant(){
-            JEXLHttpRequestMapper httpRequestMapper = new JEXLHttpRequestMapper(jexlEngine,"sinkRecord.topic()=='myTopic'","'http://url.com'",null,null);
+            JEXLHttpRequestMapper httpRequestMapper = new JEXLHttpRequestMapper(jexlEngine,"sinkRecord.topic()=='myTopic'","'http://url.com'",null,null,null);
             boolean matches = httpRequestMapper.matches(sinkRecord);
             assertThat(matches).isTrue();
             HttpRequest httpRequest = httpRequestMapper.map(sinkRecord);
@@ -136,13 +136,32 @@ class JEXLHttpRequestMapperTest {
         }
         @Test
         void test_url_as_variable(){
-            JEXLHttpRequestMapper httpRequestMapper = new JEXLHttpRequestMapper(jexlEngine,"sinkRecord.topic()=='myTopic'","sinkRecord.value()",null,null);
+            JEXLHttpRequestMapper httpRequestMapper = new JEXLHttpRequestMapper(jexlEngine,"sinkRecord.topic()=='myTopic'","sinkRecord.value()",null,null,null);
             boolean matches = httpRequestMapper.matches(sinkRecord);
             assertThat(matches).isTrue();
             HttpRequest httpRequest = httpRequestMapper.map(sinkRecord);
             assertThat(httpRequest.getUrl()).isEqualTo("http://test.com");
             assertThat(httpRequest.getMethod()).isEqualTo("GET");
             assertThat(httpRequest.getBodyType()).isEqualTo(HttpRequest.BodyType.STRING);
+        }
+        @Test
+        void test_with_all_variables(){
+            JEXLHttpRequestMapper httpRequestMapper = new JEXLHttpRequestMapper(
+                    jexlEngine,
+                    "sinkRecord.topic()=='myTopic'",
+                    "sinkRecord.value()",
+                    "'GET'",
+                    "'"+ HttpRequest.BodyType.STRING +"'",
+                    "{'test1':['value1','value2',...]}"
+            );
+            boolean matches = httpRequestMapper.matches(sinkRecord);
+            assertThat(matches).isTrue();
+            HttpRequest httpRequest = httpRequestMapper.map(sinkRecord);
+            assertThat(httpRequest.getUrl()).isEqualTo("http://test.com");
+            assertThat(httpRequest.getMethod()).isEqualTo("GET");
+            assertThat(httpRequest.getBodyType()).isEqualTo(HttpRequest.BodyType.STRING);
+            java.util.Map<String, List<String>> httpRequestHeaders = httpRequest.getHeaders();
+            assertThat(httpRequestHeaders.get("test1")).isEqualTo(Lists.newArrayList("value1","value2"));
         }
 
     }
