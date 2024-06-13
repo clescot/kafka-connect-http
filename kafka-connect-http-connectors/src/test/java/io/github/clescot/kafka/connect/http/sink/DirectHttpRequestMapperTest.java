@@ -3,7 +3,6 @@ package io.github.clescot.kafka.connect.http.sink;
 
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
-import freemarker.template.Configuration;
 import io.confluent.connect.json.JsonSchemaConverter;
 import io.confluent.kafka.schemaregistry.ParsedSchema;
 import io.confluent.kafka.schemaregistry.SchemaProvider;
@@ -14,7 +13,12 @@ import io.confluent.kafka.schemaregistry.json.JsonSchema;
 import io.confluent.kafka.schemaregistry.json.JsonSchemaProvider;
 import io.github.clescot.kafka.connect.http.core.HttpRequest;
 import io.github.clescot.kafka.connect.http.core.HttpRequestAsStruct;
+import org.apache.commons.jexl3.JexlBuilder;
+import org.apache.commons.jexl3.JexlEngine;
+import org.apache.commons.jexl3.JexlFeatures;
+import org.apache.commons.jexl3.introspection.JexlPermissions;
 import org.apache.kafka.common.record.TimestampType;
+import org.apache.kafka.connect.connector.ConnectRecord;
 import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.data.SchemaAndValue;
 import org.apache.kafka.connect.data.Struct;
@@ -48,8 +52,15 @@ class DirectHttpRequestMapperTest {
     private DirectHttpRequestMapper httpRequestMapper;
     @BeforeEach
     public void setup() {
-
-        httpRequestMapper = new DirectHttpRequestMapper(new Configuration(Configuration.VERSION_2_3_32), "true");
+// Restricted permissions to a safe set but with URI allowed
+        JexlPermissions permissions = new JexlPermissions.ClassPermissions(SinkRecord.class, ConnectRecord.class,HttpRequest.class);
+        // Create the engine
+        JexlFeatures features = new JexlFeatures()
+                .loops(false)
+                .sideEffectGlobal(false)
+                .sideEffect(false);
+        JexlEngine jexlEngine = new JexlBuilder().features(features).permissions(permissions).create();
+        httpRequestMapper = new DirectHttpRequestMapper(jexlEngine, "true");
     }
     @Nested
     class TestMap {

@@ -3,12 +3,12 @@ package io.github.clescot.kafka.connect.http.sink;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
-import com.google.common.collect.Maps;
-import freemarker.template.Configuration;
-import freemarker.template.Template;
-import freemarker.template.TemplateException;
 import io.github.clescot.kafka.connect.http.core.HttpRequest;
 import io.github.clescot.kafka.connect.http.core.HttpRequestAsStruct;
+import org.apache.commons.jexl3.JexlContext;
+import org.apache.commons.jexl3.JexlEngine;
+import org.apache.commons.jexl3.JexlExpression;
+import org.apache.commons.jexl3.MapContext;
 import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.data.Struct;
 import org.apache.kafka.connect.errors.ConnectException;
@@ -16,10 +16,7 @@ import org.apache.kafka.connect.sink.SinkRecord;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
-import java.io.StringWriter;
 import java.nio.charset.StandardCharsets;
-import java.util.Map;
 
 /**
  * Map a sinkRecord already prepared to be parsed directly as an {@link HttpRequest}.
@@ -28,29 +25,17 @@ public class DirectHttpRequestMapper implements HttpRequestMapper{
     private static final Logger LOGGER = LoggerFactory.getLogger(DirectHttpRequestMapper.class);
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper().registerModule(new JavaTimeModule());
     public static final String SINK_RECORD_HAS_GOT_A_NULL_VALUE = "sinkRecord has got a 'null' value";
-    private final Template selectorTemplate;
-
-    public DirectHttpRequestMapper(Configuration configuration, String code) {
-        try {
-            this.selectorTemplate = new Template("matches", code, configuration);
-        } catch (IOException e) {
-            throw new ConnectException(e);
-        }
+    private JexlExpression expression;
+    public DirectHttpRequestMapper(JexlEngine jexlEngine,String matchingExpression) {
+         expression = jexlEngine.createExpression(matchingExpression);
     }
 
     @Override
     public boolean matches(SinkRecord sinkRecord) {
-        StringWriter stringWriter = new StringWriter();
-        boolean result;
-        try {
-            Map<String,Object> root = Maps.newHashMap();
-            root.put("sinkRecord",sinkRecord);
-            selectorTemplate.process(root, stringWriter);
-            result = Boolean.parseBoolean(stringWriter.toString());
-        } catch (TemplateException | IOException e) {
-            throw new ConnectException(e);
-        }
-        return result;
+        // populate the context
+        JexlContext context = new MapContext();
+        context.set("sinkRecord", sinkRecord);
+        return (boolean) expression.evaluate(context);
     }
 
     @Override
