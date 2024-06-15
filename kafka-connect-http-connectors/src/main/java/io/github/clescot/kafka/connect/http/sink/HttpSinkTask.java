@@ -167,6 +167,7 @@ public abstract class HttpSinkTask<R, S> extends SinkTask {
                 .sideEffectGlobal(false)
                 .sideEffect(false);
         JexlEngine jexlEngine = new JexlBuilder().features(features).permissions(permissions).create();
+        //TODO default mapper is direct or JexlHttpRequestMapper ?
         this.defaultHttpRequestMapper = new DirectHttpRequestMapper(jexlEngine,"true");
         //TODO build mappers
         this.httpRequestMappers = Lists.newArrayList();
