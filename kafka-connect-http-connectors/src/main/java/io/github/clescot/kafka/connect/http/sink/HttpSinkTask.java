@@ -169,7 +169,14 @@ public abstract class HttpSinkTask<R, S> extends SinkTask {
         JexlEngine jexlEngine = new JexlBuilder().features(features).permissions(permissions).create();
         //TODO default mapper is direct or JexlHttpRequestMapper ?
         this.defaultHttpRequestMapper = new DirectHttpRequestMapper(jexlEngine,"true");
-        //TODO build mappers
+//        this.defaultHttpRequestMapper = new JEXLHttpRequestMapper(
+//                jexlEngine,
+//                "true",
+//                "urlExpression",
+//                "methodExpression",
+//                "bodyTypeExpression",
+//                "headersExpression");
+        //TODO build mappers (either direct or jexl)
         this.httpRequestMappers = Lists.newArrayList();
         //build executorService
         Optional<Integer> customFixedThreadPoolSize = Optional.ofNullable(httpSinkConnectorConfig.getInt(HTTP_CLIENT_ASYNC_FIXED_THREAD_POOL_SIZE));
@@ -225,7 +232,6 @@ public abstract class HttpSinkTask<R, S> extends SinkTask {
                 "'ms timeout reached :" + queueName + "' queue hasn't got any consumer, " +
                 "i.e no Source Connector has been configured to consume records published in this in memory queue. " +
                 "we stop the Sink Connector to prevent any OutOfMemoryError.");
-        return;
     }
 
     private void configureProducerPublishMode() {
