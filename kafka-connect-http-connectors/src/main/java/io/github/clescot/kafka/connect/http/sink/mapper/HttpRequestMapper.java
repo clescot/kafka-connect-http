@@ -7,15 +7,15 @@ public interface HttpRequestMapper {
 
     /**
      * does this instance can be used to map this sinkRecord to an HttpRequest.
-     * @param sinkRecord
-     * @return
+     * @param sinkRecord message to map
+     * @return true or false
      */
     boolean matches(SinkRecord sinkRecord);
 
     /**
      *  map this sinkRecord to an HttpRequest.
-     * @param sinkRecord
-     * @return
+     * @param sinkRecord message to map
+     * @return built {{@link HttpRequest}
      */
     HttpRequest map(SinkRecord sinkRecord);
 }
