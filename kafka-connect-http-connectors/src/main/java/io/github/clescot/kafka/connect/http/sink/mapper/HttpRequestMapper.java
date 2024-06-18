@@ -1,4 +1,4 @@
-package io.github.clescot.kafka.connect.http.sink;
+package io.github.clescot.kafka.connect.http.sink.mapper;
 
 import io.github.clescot.kafka.connect.http.core.HttpRequest;
 import org.apache.kafka.connect.sink.SinkRecord;

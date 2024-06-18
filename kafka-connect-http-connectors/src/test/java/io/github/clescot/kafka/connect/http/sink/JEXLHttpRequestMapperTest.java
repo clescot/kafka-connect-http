@@ -2,6 +2,7 @@ package io.github.clescot.kafka.connect.http.sink;
 
 import com.google.common.collect.Lists;
 import io.github.clescot.kafka.connect.http.core.HttpRequest;
+import io.github.clescot.kafka.connect.http.sink.mapper.JEXLHttpRequestMapper;
 import org.apache.commons.jexl3.JexlBuilder;
 import org.apache.commons.jexl3.JexlEngine;
 import org.apache.commons.jexl3.JexlFeatures;
@@ -46,16 +47,16 @@ class JEXLHttpRequestMapperTest {
 
         @Test
         void test_empty_expression() {
-            Assertions.assertThrows(IllegalArgumentException.class,()->new JEXLHttpRequestMapper(jexlEngine,"","",null,null,null));
+            Assertions.assertThrows(IllegalArgumentException.class,()->new JEXLHttpRequestMapper(jexlEngine,"","",null,null,null,null));
         }
         @Test
         void test_null_expression() {
-            Assertions.assertThrows(NullPointerException.class,()->new JEXLHttpRequestMapper(jexlEngine,null,"'http://url.com'",null,null,null));
+            Assertions.assertThrows(NullPointerException.class,()->new JEXLHttpRequestMapper(jexlEngine,null,"'http://url.com'",null,null,null,null));
         }
 
         @Test
         void test_valid_expression_with_url_as_constant() {
-            Assertions.assertDoesNotThrow(()->new JEXLHttpRequestMapper(jexlEngine,"sinkRecord.topic()=='myTopic'","'http://url.com'",null,null,null));
+            Assertions.assertDoesNotThrow(()->new JEXLHttpRequestMapper(jexlEngine,"sinkRecord.topic()=='myTopic'","'http://url.com'",null,null,null,null));
         }
 
     }
@@ -85,14 +86,14 @@ class JEXLHttpRequestMapperTest {
 
         @Test
         void test_nominal() {
-            JEXLHttpRequestMapper httpRequestMapper = new JEXLHttpRequestMapper(jexlEngine,"sinkRecord.topic()=='myTopic'","'http://url.com'",null,null,null);
+            JEXLHttpRequestMapper httpRequestMapper = new JEXLHttpRequestMapper(jexlEngine,"sinkRecord.topic()=='myTopic'","'http://url.com'",null,null,null,null);
             boolean matches = httpRequestMapper.matches(sinkRecord);
             assertThat(matches).isTrue();
         }
 
         @Test
         void test_invalid_expression() {
-            JEXLHttpRequestMapper httpRequestMapper = new JEXLHttpRequestMapper(jexlEngine,"toto.topic()=='myTopic'","'http://url.com'",null,null,null);
+            JEXLHttpRequestMapper httpRequestMapper = new JEXLHttpRequestMapper(jexlEngine,"toto.topic()=='myTopic'","'http://url.com'",null,null,null,null);
             boolean matches = httpRequestMapper.matches(sinkRecord);
             assertThat(matches).isFalse();
         }
@@ -126,7 +127,7 @@ class JEXLHttpRequestMapperTest {
         }
         @Test
         void test_url_as_constant(){
-            JEXLHttpRequestMapper httpRequestMapper = new JEXLHttpRequestMapper(jexlEngine,"sinkRecord.topic()=='myTopic'","'http://url.com'",null,null,null);
+            JEXLHttpRequestMapper httpRequestMapper = new JEXLHttpRequestMapper(jexlEngine,"sinkRecord.topic()=='myTopic'","'http://url.com'",null,null,null,null);
             boolean matches = httpRequestMapper.matches(sinkRecord);
             assertThat(matches).isTrue();
             HttpRequest httpRequest = httpRequestMapper.map(sinkRecord);
@@ -136,7 +137,7 @@ class JEXLHttpRequestMapperTest {
         }
         @Test
         void test_url_as_variable(){
-            JEXLHttpRequestMapper httpRequestMapper = new JEXLHttpRequestMapper(jexlEngine,"sinkRecord.topic()=='myTopic'","sinkRecord.value()",null,null,null);
+            JEXLHttpRequestMapper httpRequestMapper = new JEXLHttpRequestMapper(jexlEngine,"sinkRecord.topic()=='myTopic'","sinkRecord.value()",null,null,null,null);
             boolean matches = httpRequestMapper.matches(sinkRecord);
             assertThat(matches).isTrue();
             HttpRequest httpRequest = httpRequestMapper.map(sinkRecord);
@@ -152,6 +153,7 @@ class JEXLHttpRequestMapperTest {
                     "sinkRecord.value()",
                     "'GET'",
                     "'"+ HttpRequest.BodyType.STRING +"'",
+                    "content",
                     "{'test1':['value1','value2',...]}"
             );
             boolean matches = httpRequestMapper.matches(sinkRecord);

@@ -3,6 +3,7 @@ package io.github.clescot.kafka.connect.http.sink;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import io.github.clescot.kafka.connect.http.core.queue.ConfigConstants;
+import io.github.clescot.kafka.connect.http.sink.mapper.MapperMode;
 import org.apache.kafka.common.config.ConfigDef;
 
 import java.nio.charset.StandardCharsets;
@@ -112,6 +113,14 @@ public class HttpSinkConfigDefinition {
     public static final String POLL_INTERVAL_REGISTRATION_QUEUE_CONSUMER_IN_MS = "poll.interval.registration.queue.consumer.in.ms";
     public static final String POLL_INTERVAL_REGISTRATION_QUEUE_CONSUMER_IN_MS_DOC = "poll interval, i.e, time between every poll for a registered consumer defined with the '" + POLL_INTERVAL_REGISTRATION_QUEUE_CONSUMER_IN_MS + "' parameter, " +
             "for a queue consumer (Source Connector) registration.if not set, default value is " + DEFAULT_POLL_INTERVAL_REGISTRATION_QUEUE_CONSUMER_IN_MS;
+
+    //mapper
+    public static final String HTTP_REQUEST_MAPPER_IDS = "http.request.mapper.ids";
+    public static final String HTTP_REQUEST_MAPPER_IDS_DOC = "custom configurations id list. 'default' http request mapper is already registered.";
+
+    public static final String DEFAULT_REQUEST_MAPPER_PREFIX = "request.mapper.default.";
+    public static final String REQUEST_MAPPER_DEFAULT_MODE = DEFAULT_REQUEST_MAPPER_PREFIX + "mode";
+    public static final String REQUEST_MAPPER_DEFAULT_MODE_DOC = "either 'direct' or 'jexl'. default is 'direct'.";
 
     //configuration
     public static final String CONFIGURATION_IDS = "config.ids";
@@ -596,7 +605,11 @@ public class HttpSinkConfigDefinition {
                 //async settings
                 .define(HTTP_CLIENT_ASYNC_FIXED_THREAD_POOL_SIZE, ConfigDef.Type.INT, null, ConfigDef.Importance.MEDIUM, HTTP_CLIENT_ASYNC_FIXED_THREAD_POOL_SIZE_DOC)
                 //custom configurations
-                .define(CONFIGURATION_IDS, ConfigDef.Type.LIST, Lists.newArrayList(), ConfigDef.Importance.LOW, CONFIGURATION_IDS_DOC);
+                .define(CONFIGURATION_IDS, ConfigDef.Type.LIST, Lists.newArrayList(), ConfigDef.Importance.LOW, CONFIGURATION_IDS_DOC)
+                //default request mapper
+                .define(REQUEST_MAPPER_DEFAULT_MODE,ConfigDef.Type.STRING, MapperMode.DIRECT.name(),ConfigDef.Importance.MEDIUM,REQUEST_MAPPER_DEFAULT_MODE_DOC)
+                //custom request mappers
+                .define(HTTP_REQUEST_MAPPER_IDS, ConfigDef.Type.LIST, Lists.newArrayList(), ConfigDef.Importance.LOW, HTTP_REQUEST_MAPPER_IDS_DOC);
 
 
         String configurationIds = settings.get(CONFIGURATION_IDS);

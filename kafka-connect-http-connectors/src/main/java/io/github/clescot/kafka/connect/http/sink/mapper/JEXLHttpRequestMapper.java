@@ -1,4 +1,4 @@
-package io.github.clescot.kafka.connect.http.sink;
+package io.github.clescot.kafka.connect.http.sink.mapper;
 
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Maps;
@@ -26,6 +26,8 @@ public class JEXLHttpRequestMapper implements HttpRequestMapper {
     private JexlExpression jexlUrlExpression;
     private final Optional<JexlExpression> jexlMethodExpression;
     private final Optional<JexlExpression> jexlBodyTypeExpression;
+    @Nullable
+    private final Optional<JexlExpression> bodyExpression;
     private final Optional<JexlExpression> jexlHeadersExpression;
 
 
@@ -34,6 +36,7 @@ public class JEXLHttpRequestMapper implements HttpRequestMapper {
                                  @NotNull String urlExpression,
                                  @Nullable String methodExpression,
                                  @Nullable String bodyTypeExpression,
+                                 @Nullable String bodyExpression,
                                  @Nullable String headersExpression
                                  ) {
         Preconditions.checkNotNull(matchingExpression);
@@ -42,6 +45,7 @@ public class JEXLHttpRequestMapper implements HttpRequestMapper {
         jexlUrlExpression = jexlEngine.createExpression(urlExpression);
         jexlMethodExpression = methodExpression!=null?Optional.of(jexlEngine.createExpression(methodExpression)):Optional.empty();
         jexlBodyTypeExpression = bodyTypeExpression!=null?Optional.of(jexlEngine.createExpression(bodyTypeExpression)):Optional.empty();
+        this.bodyExpression = bodyExpression!=null?Optional.of(jexlEngine.createExpression(bodyExpression)):Optional.empty();
         jexlHeadersExpression = headersExpression!=null?Optional.of(jexlEngine.createExpression(headersExpression)):Optional.empty();
     }
 

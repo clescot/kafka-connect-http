@@ -23,6 +23,10 @@ import io.github.clescot.kafka.connect.http.core.HttpRequest;
 import io.github.clescot.kafka.connect.http.core.queue.ConfigConstants;
 import io.github.clescot.kafka.connect.http.core.queue.KafkaRecord;
 import io.github.clescot.kafka.connect.http.core.queue.QueueFactory;
+import io.github.clescot.kafka.connect.http.sink.mapper.DirectHttpRequestMapper;
+import io.github.clescot.kafka.connect.http.sink.mapper.HttpRequestMapper;
+import io.github.clescot.kafka.connect.http.sink.mapper.JEXLHttpRequestMapper;
+import io.github.clescot.kafka.connect.http.sink.mapper.MapperMode;
 import io.micrometer.core.instrument.Clock;
 import io.micrometer.core.instrument.composite.CompositeMeterRegistry;
 import io.micrometer.jmx.JmxConfig;
@@ -82,11 +86,13 @@ public abstract class HttpSinkTask<R, S> extends SinkTask {
     public static final String MISSING_VERSION_CACHE_TTL_SEC = "missing.version.cache.ttl.sec";
     public static final String MISSING_ID_CACHE_TTL_SEC = "missing.id.cache.ttl.sec";
     public static final String RECORD_NOT_SENT = "/!\\ ☠☠ record NOT sent ☠☠";
+    public static final String JEXL_ALWAYS_MATCHES = "true";
     private Configuration<R, S> defaultConfiguration;
     private List<Configuration<R, S>> customConfigurations;
     private HttpRequestMapper defaultHttpRequestMapper;
     private List<HttpRequestMapper> httpRequestMappers;
     public static final String DEFAULT_CONFIGURATION_ID = "default";
+    public static final String DEFAULT_MAPPER_ID = "default";
     private final HttpClientFactory<R, S> httpClientFactory;
 
     private ErrantRecordReporter errantRecordReporter;
@@ -167,17 +173,8 @@ public abstract class HttpSinkTask<R, S> extends SinkTask {
                 .sideEffectGlobal(false)
                 .sideEffect(false);
         JexlEngine jexlEngine = new JexlBuilder().features(features).permissions(permissions).create();
-        //TODO default mapper is direct or JexlHttpRequestMapper ?
-        this.defaultHttpRequestMapper = new DirectHttpRequestMapper(jexlEngine,"true");
-//        this.defaultHttpRequestMapper = new JEXLHttpRequestMapper(
-//                jexlEngine,
-//                "true",
-//                "urlExpression",
-//                "methodExpression",
-//                "bodyTypeExpression",
-//                "headersExpression");
-        //TODO build mappers (either direct or jexl)
-        this.httpRequestMappers = Lists.newArrayList();
+
+
         //build executorService
         Optional<Integer> customFixedThreadPoolSize = Optional.ofNullable(httpSinkConnectorConfig.getInt(HTTP_CLIENT_ASYNC_FIXED_THREAD_POOL_SIZE));
         customFixedThreadPoolSize.ifPresent(integer -> this.executorService = buildExecutorService(integer));
@@ -185,6 +182,32 @@ public abstract class HttpSinkTask<R, S> extends SinkTask {
         //build meterRegistry
         HttpSinkTask.meterRegistry = buildMeterRegistry(httpSinkConnectorConfig);
 
+        //build httpRequestMappers
+        this.httpRequestMappers = Lists.newArrayList();
+        MapperMode defaultRequestMapperMode = httpSinkConnectorConfig.getDefaultRequestMapperMode();
+        switch(defaultRequestMapperMode){
+            case JEXL:{
+                String urlExpression = "";
+                String methodExpression="";
+                String bodyTypeExpression="";
+                String bodyExpression="";
+                String headersExpression="";
+                this.defaultHttpRequestMapper = new JEXLHttpRequestMapper(jexlEngine,
+                        JEXL_ALWAYS_MATCHES,
+                        urlExpression,
+                        methodExpression,
+                        bodyTypeExpression,
+                        bodyExpression,
+                        headersExpression
+                        );
+                break;
+            }
+            case DIRECT:
+            default:{
+                this.defaultHttpRequestMapper = new DirectHttpRequestMapper(jexlEngine, JEXL_ALWAYS_MATCHES);
+                break;
+            }
+        }
         this.defaultConfiguration = new Configuration<>(DEFAULT_CONFIGURATION_ID, httpClientFactory, httpSinkConnectorConfig, executorService, meterRegistry);
         customConfigurations = buildCustomConfigurations(httpClientFactory, httpSinkConnectorConfig, defaultConfiguration, executorService);
         httpTask = new HttpTask<>(httpSinkConnectorConfig, defaultConfiguration, customConfigurations, meterRegistry, executorService);
