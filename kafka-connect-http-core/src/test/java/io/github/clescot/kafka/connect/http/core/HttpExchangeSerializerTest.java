@@ -22,7 +22,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 class HttpExchangeSerializerTest {
     private static final String DUMMY_BODY = "stuff";
-    private static final String DUMMY_METHOD = "POST";
+    private static final HttpRequest.Method DUMMY_METHOD = HttpRequest.Method.POST;
     private static final String DUMMY_BODY_TYPE = "STRING";
 
     @Test

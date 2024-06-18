@@ -343,7 +343,7 @@ public class ITConnectorTest {
         headers.put("X-Request-ID", Lists.newArrayList("e6de70d1-f222-46e8-b755-11111"));
         HttpRequest httpRequest = new HttpRequest(
                 url,
-                "POST",
+                HttpRequest.Method.POST,
                 "STRING"
         );
         httpRequest.setHeaders(headers);
@@ -461,7 +461,7 @@ public class ITConnectorTest {
         headers.put("X-Request-ID", Lists.newArrayList("e6de70d1-f222-46e8-b755-11111"));
         HttpRequest httpRequest = new HttpRequest(
                 url,
-                "POST",
+                HttpRequest.Method.POST,
                 "STRING"
         );
         httpRequest.setHeaders(headers);
@@ -573,7 +573,7 @@ public class ITConnectorTest {
         headers.put("X-Request-ID", Lists.newArrayList("e6de70d1-f222-46e8-b755-11111"));
         HttpRequest httpRequest = new HttpRequest(
                 url,
-                "POST",
+                HttpRequest.Method.POST,
                 "STRING"
         );
         httpRequest.setHeaders(headers);
@@ -699,7 +699,7 @@ public class ITConnectorTest {
         headers.put("X-Request-ID", Lists.newArrayList("e6de70d1-f222-46e8-b755-11111"));
         HttpRequest httpRequest = new HttpRequest(
                 url,
-                "POST",
+                HttpRequest.Method.POST,
                 "STRING"
         );
         httpRequest.setHeaders(headers);
@@ -850,7 +850,7 @@ public class ITConnectorTest {
         headers.put("X-Request-ID", Lists.newArrayList("e6de70d1-f222-46e8-b755-11111"));
         HttpRequest httpRequest = new HttpRequest(
                 url,
-                "POST",
+                HttpRequest.Method.POST,
                 "STRING"
         );
         httpRequest.setHeaders(headers);
@@ -940,7 +940,7 @@ public class ITConnectorTest {
         headers.put("X-Request-ID", Lists.newArrayList("e6de70d1-f222-46e8-b755-11111"));
         HttpRequest httpRequest = new HttpRequest(
                 url,
-                "POST",
+                HttpRequest.Method.POST,
                 "STRING"
         );
         httpRequest.setHeaders(headers);
@@ -1037,7 +1037,7 @@ public class ITConnectorTest {
         headers.put("X-Request-ID", Lists.newArrayList("e6de70d1-f222-46e8-b755-11111"));
         HttpRequest httpRequest = new HttpRequest(
                 url,
-                "POST",
+                HttpRequest.Method.POST,
                 "STRING"
         );
         httpRequest.setHeaders(headers);

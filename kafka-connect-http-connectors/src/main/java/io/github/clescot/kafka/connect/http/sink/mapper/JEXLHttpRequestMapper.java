@@ -63,7 +63,7 @@ public class JEXLHttpRequestMapper implements HttpRequestMapper {
         context.set(SINK_RECORD, sinkRecord);
 
         String url = (String) jexlUrlExpression.evaluate(context);
-        String method = jexlMethodExpression.isPresent()?(String) jexlMethodExpression.get().evaluate(context):"GET";
+        HttpRequest.Method method = jexlMethodExpression.isPresent()?HttpRequest.Method.valueOf((String) jexlMethodExpression.get().evaluate(context)):HttpRequest.Method.GET;
         String bodyType = jexlBodyTypeExpression.isPresent()? HttpRequest.BodyType.valueOf((String)jexlBodyTypeExpression.get().evaluate(context)).name(): HttpRequest.BodyType.STRING.name();
         HttpRequest httpRequest = new HttpRequest(url,method,bodyType);
         Map<String, List<String>> headers = jexlHeadersExpression.isPresent()? (Map<String, List<String>>)jexlHeadersExpression.get().evaluate(context): Maps.newHashMap();

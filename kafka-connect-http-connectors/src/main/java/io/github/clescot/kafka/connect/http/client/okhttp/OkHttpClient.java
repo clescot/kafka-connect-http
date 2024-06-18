@@ -335,7 +335,7 @@ public class OkHttpClient extends AbstractHttpClient<Request, Response> {
             firstContentType = contentType.get(0);
         }
         RequestBody requestBody = null;
-        String method = httpRequest.getMethod();
+        String method = httpRequest.getMethod().name();
         if (HttpMethod.permitsRequestBody(method)) {
             if (HttpRequest.BodyType.STRING.equals(httpRequest.getBodyType())) {
                 //use the contentType set in HttpRequest. if not set, use application/json

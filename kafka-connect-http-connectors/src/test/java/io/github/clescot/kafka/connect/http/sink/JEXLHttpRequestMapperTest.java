@@ -132,7 +132,7 @@ class JEXLHttpRequestMapperTest {
             assertThat(matches).isTrue();
             HttpRequest httpRequest = httpRequestMapper.map(sinkRecord);
             assertThat(httpRequest.getUrl()).isEqualTo("http://url.com");
-            assertThat(httpRequest.getMethod()).isEqualTo("GET");
+            assertThat(httpRequest.getMethod()).isEqualTo(HttpRequest.Method.GET);
             assertThat(httpRequest.getBodyType()).isEqualTo(HttpRequest.BodyType.STRING);
         }
         @Test
@@ -142,7 +142,7 @@ class JEXLHttpRequestMapperTest {
             assertThat(matches).isTrue();
             HttpRequest httpRequest = httpRequestMapper.map(sinkRecord);
             assertThat(httpRequest.getUrl()).isEqualTo("http://test.com");
-            assertThat(httpRequest.getMethod()).isEqualTo("GET");
+            assertThat(httpRequest.getMethod().name()).isEqualTo("GET");
             assertThat(httpRequest.getBodyType()).isEqualTo(HttpRequest.BodyType.STRING);
         }
         @Test
@@ -160,7 +160,7 @@ class JEXLHttpRequestMapperTest {
             assertThat(matches).isTrue();
             HttpRequest httpRequest = httpRequestMapper.map(sinkRecord);
             assertThat(httpRequest.getUrl()).isEqualTo("http://test.com");
-            assertThat(httpRequest.getMethod()).isEqualTo("GET");
+            assertThat(httpRequest.getMethod()).isEqualTo(HttpRequest.Method.GET);
             assertThat(httpRequest.getBodyType()).isEqualTo(HttpRequest.BodyType.STRING);
             java.util.Map<String, List<String>> httpRequestHeaders = httpRequest.getHeaders();
             assertThat(httpRequestHeaders.get("test1")).isEqualTo(Lists.newArrayList("value1","value2"));

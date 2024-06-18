@@ -60,7 +60,7 @@ public class HttpSinkTaskTest {
     private static final Logger LOGGER = LoggerFactory.getLogger(HttpSinkTaskTest.class);
     private static final String DUMMY_BODY = "stuff";
     private static final String DUMMY_URL = "http://www." + DUMMY_BODY + ".com";
-    private static final String DUMMY_METHOD = "POST";
+    private static final HttpRequest.Method DUMMY_METHOD = HttpRequest.Method.POST;
     private static final String DUMMY_BODY_TYPE = "STRING";
     public static final String CLIENT_TRUSTSTORE_JKS_FILENAME = "client_truststore.jks";
     public static final String CLIENT_TRUSTSTORE_JKS_PASSWORD = "Secret123!";
