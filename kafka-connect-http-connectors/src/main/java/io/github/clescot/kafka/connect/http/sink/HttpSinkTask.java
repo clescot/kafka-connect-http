@@ -73,7 +73,6 @@ import static io.github.clescot.kafka.connect.http.sink.HttpSinkConfigDefinition
 
 public abstract class HttpSinkTask<R, S> extends SinkTask {
     private static final Logger LOGGER = LoggerFactory.getLogger(HttpSinkTask.class);
-    public static final String SINK_RECORD_HAS_GOT_A_NULL_VALUE = "sinkRecord has got a 'null' value";
     private static final List<String> JSON_SCHEMA_VERSIONS = Lists.newArrayList("draft_4", "draft_6", "draft_7", "draft_2019_09");
     private static final VersionUtils VERSION_UTILS = new VersionUtils();
     public static final String PRODUCER_PREFIX = "producer.";
@@ -187,18 +186,13 @@ public abstract class HttpSinkTask<R, S> extends SinkTask {
         MapperMode defaultRequestMapperMode = httpSinkConnectorConfig.getDefaultRequestMapperMode();
         switch(defaultRequestMapperMode){
             case JEXL:{
-                String urlExpression = "";
-                String methodExpression="";
-                String bodyTypeExpression="";
-                String bodyExpression="";
-                String headersExpression="";
                 this.defaultHttpRequestMapper = new JEXLHttpRequestMapper(jexlEngine,
                         JEXL_ALWAYS_MATCHES,
-                        urlExpression,
-                        methodExpression,
-                        bodyTypeExpression,
-                        bodyExpression,
-                        headersExpression
+                        httpSinkConnectorConfig.getDefaultUrlExpression(),
+                        httpSinkConnectorConfig.getDefaultMethodExpression(),
+                        httpSinkConnectorConfig.getDefaultBodyTypeExpression(),
+                        httpSinkConnectorConfig.getDefaultBodyExpression(),
+                        httpSinkConnectorConfig.getDefaultHeadersExpression()
                         );
                 break;
             }

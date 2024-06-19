@@ -122,6 +122,21 @@ public class HttpSinkConfigDefinition {
     public static final String REQUEST_MAPPER_DEFAULT_MODE = DEFAULT_REQUEST_MAPPER_PREFIX + "mode";
     public static final String REQUEST_MAPPER_DEFAULT_MODE_DOC = "either 'direct' or 'jexl'. default is 'direct'.";
 
+    public static final String REQUEST_MAPPER_DEFAULT_URL_EXPRESSION = DEFAULT_REQUEST_MAPPER_PREFIX + "url";
+    public static final String REQUEST_MAPPER_DEFAULT_URL_EXPRESSION_DOC = "a valid JEXL url expression to feed from the message the HttpRequest url field";
+
+    public static final String REQUEST_MAPPER_DEFAULT_METHOD_EXPRESSION = DEFAULT_REQUEST_MAPPER_PREFIX + "method";
+    public static final String REQUEST_MAPPER_DEFAULT_METHOD_EXPRESSION_DOC = "a valid JEXL method expression to feed from the message the HttpRequest method field";
+
+    public static final String REQUEST_MAPPER_DEFAULT_BODYTYPE_EXPRESSION = DEFAULT_REQUEST_MAPPER_PREFIX + "bodytype";
+    public static final String REQUEST_MAPPER_DEFAULT_BODYTYPE_EXPRESSION_DOC = "a valid JEXL method expression to feed from the message the HttpRequest bodyType field";
+
+    public static final String REQUEST_MAPPER_DEFAULT_BODY_EXPRESSION = DEFAULT_REQUEST_MAPPER_PREFIX + "body";
+    public static final String REQUEST_MAPPER_DEFAULT_BODY_EXPRESSION_DOC = "a valid JEXL method expression to feed from the message the HttpRequest body field";
+
+    public static final String REQUEST_MAPPER_DEFAULT_HEADERS_EXPRESSION = DEFAULT_REQUEST_MAPPER_PREFIX + "headers";
+    public static final String REQUEST_MAPPER_DEFAULT_HEADERS_EXPRESSION_DOC = "a valid JEXL method expression to feed from the message the HttpRequest headers field";
+
     //configuration
     public static final String CONFIGURATION_IDS = "config.ids";
     public static final String CONFIGURATION_IDS_DOC = "custom configurations id list. 'default' configuration is already registered.";
@@ -608,6 +623,11 @@ public class HttpSinkConfigDefinition {
                 .define(CONFIGURATION_IDS, ConfigDef.Type.LIST, Lists.newArrayList(), ConfigDef.Importance.LOW, CONFIGURATION_IDS_DOC)
                 //default request mapper
                 .define(REQUEST_MAPPER_DEFAULT_MODE,ConfigDef.Type.STRING, MapperMode.DIRECT.name(),ConfigDef.Importance.MEDIUM,REQUEST_MAPPER_DEFAULT_MODE_DOC)
+                .define(REQUEST_MAPPER_DEFAULT_URL_EXPRESSION,ConfigDef.Type.STRING, null,ConfigDef.Importance.HIGH,REQUEST_MAPPER_DEFAULT_URL_EXPRESSION_DOC)
+                .define(REQUEST_MAPPER_DEFAULT_METHOD_EXPRESSION,ConfigDef.Type.STRING, null,ConfigDef.Importance.MEDIUM,REQUEST_MAPPER_DEFAULT_METHOD_EXPRESSION_DOC)
+                .define(REQUEST_MAPPER_DEFAULT_BODYTYPE_EXPRESSION,ConfigDef.Type.STRING, null,ConfigDef.Importance.LOW,REQUEST_MAPPER_DEFAULT_BODYTYPE_EXPRESSION_DOC)
+                .define(REQUEST_MAPPER_DEFAULT_BODY_EXPRESSION,ConfigDef.Type.STRING, null,ConfigDef.Importance.MEDIUM,REQUEST_MAPPER_DEFAULT_BODY_EXPRESSION_DOC)
+                .define(REQUEST_MAPPER_DEFAULT_HEADERS_EXPRESSION,ConfigDef.Type.STRING, null,ConfigDef.Importance.MEDIUM,REQUEST_MAPPER_DEFAULT_HEADERS_EXPRESSION_DOC)
                 //custom request mappers
                 .define(HTTP_REQUEST_MAPPER_IDS, ConfigDef.Type.LIST, Lists.newArrayList(), ConfigDef.Importance.LOW, HTTP_REQUEST_MAPPER_IDS_DOC);
 

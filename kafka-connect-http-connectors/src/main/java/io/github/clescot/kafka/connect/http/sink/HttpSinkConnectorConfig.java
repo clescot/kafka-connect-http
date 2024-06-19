@@ -84,6 +84,11 @@ public class HttpSinkConnectorConfig extends AbstractConfig {
     private final List<String> configurationIds;
     private final List<String> httpRequestMapperIds;
     private final MapperMode defaultRequestMapperMode;
+    private final String defaultUrlExpression;
+    private final String defaultMethodExpression;
+    private final String defaultBodyTypeExpression;
+    private final String defaultBodyExpression;
+    private final String defaultHeadersExpression;
 
     public HttpSinkConnectorConfig(Map<String,String> originals) {
         this(new HttpSinkConfigDefinition(originals).config(), originals);
@@ -167,8 +172,34 @@ public class HttpSinkConnectorConfig extends AbstractConfig {
         this.customFixedThreadpoolSize = getInt(HTTP_CLIENT_ASYNC_FIXED_THREAD_POOL_SIZE);
         this.configurationIds = Optional.ofNullable(getList(CONFIGURATION_IDS)).orElse(Lists.newArrayList());
         this.defaultRequestMapperMode = Optional.of(MapperMode.valueOf(getString(REQUEST_MAPPER_DEFAULT_MODE))).orElse(MapperMode.DIRECT);
+        this.defaultUrlExpression = getString(REQUEST_MAPPER_DEFAULT_URL_EXPRESSION);
+        this.defaultMethodExpression = getString(REQUEST_MAPPER_DEFAULT_METHOD_EXPRESSION);
+        this.defaultBodyTypeExpression = getString(REQUEST_MAPPER_DEFAULT_BODYTYPE_EXPRESSION);
+        this.defaultBodyExpression = getString(REQUEST_MAPPER_DEFAULT_BODY_EXPRESSION);
+        this.defaultHeadersExpression = getString(REQUEST_MAPPER_DEFAULT_HEADERS_EXPRESSION);
         this.httpRequestMapperIds = Optional.ofNullable(getList(HTTP_REQUEST_MAPPER_IDS)).orElse(Lists.newArrayList());
 
+    }
+
+
+    public String getDefaultBodyExpression() {
+        return defaultBodyExpression;
+    }
+
+    public String getDefaultBodyTypeExpression() {
+        return defaultBodyTypeExpression;
+    }
+
+    public String getDefaultHeadersExpression() {
+        return defaultHeadersExpression;
+    }
+
+    public String getDefaultMethodExpression() {
+        return defaultMethodExpression;
+    }
+
+    public String getDefaultUrlExpression() {
+        return defaultUrlExpression;
     }
 
     public MapperMode getDefaultRequestMapperMode() {
