@@ -51,12 +51,21 @@ class JEXLHttpRequestMapperTest {
         }
         @Test
         void test_null_expression() {
-            Assertions.assertThrows(NullPointerException.class,()->new JEXLHttpRequestMapper(jexlEngine,null,"'http://url.com'",null,null,null,null));
+            Assertions.assertThrows(IllegalArgumentException.class,()->new JEXLHttpRequestMapper(jexlEngine,null,"'http://url.com'",null,null,null,null));
         }
 
         @Test
         void test_valid_expression_with_url_as_constant() {
             Assertions.assertDoesNotThrow(()->new JEXLHttpRequestMapper(jexlEngine,"sinkRecord.topic()=='myTopic'","'http://url.com'",null,null,null,null));
+        }
+
+        @Test
+        void test_valid_expression_with_url_from_sink_record() {
+            JEXLHttpRequestMapper jexlHttpRequestMapper = new JEXLHttpRequestMapper(jexlEngine, "sinkRecord.topic()=='myTopic'", "sinkRecord.value()", null, null, null, null);
+            String url = "http://test.com";
+            SinkRecord record = new SinkRecord("test",0,Schema.STRING_SCHEMA,"123",Schema.STRING_SCHEMA, url,0);
+            HttpRequest httpRequest = jexlHttpRequestMapper.map(record);
+            assertThat(httpRequest.getUrl()).isEqualTo(url);
         }
 
     }
