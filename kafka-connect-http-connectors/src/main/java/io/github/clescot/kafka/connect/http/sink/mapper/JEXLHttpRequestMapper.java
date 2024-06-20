@@ -27,7 +27,7 @@ public class JEXLHttpRequestMapper implements HttpRequestMapper {
     private final Optional<JexlExpression> jexlMethodExpression;
     private final Optional<JexlExpression> jexlBodyTypeExpression;
     @Nullable
-    private final Optional<JexlExpression> bodyExpression;
+    private final Optional<JexlExpression> jexlBodyExpression;
     private final Optional<JexlExpression> jexlHeadersExpression;
 
 
@@ -45,7 +45,7 @@ public class JEXLHttpRequestMapper implements HttpRequestMapper {
         jexlUrlExpression = jexlEngine.createExpression(urlExpression);
         jexlMethodExpression = methodExpression!=null?Optional.of(jexlEngine.createExpression(methodExpression)):Optional.empty();
         jexlBodyTypeExpression = bodyTypeExpression!=null?Optional.of(jexlEngine.createExpression(bodyTypeExpression)):Optional.empty();
-        this.bodyExpression = bodyExpression!=null?Optional.of(jexlEngine.createExpression(bodyExpression)):Optional.empty();
+        jexlBodyExpression = bodyExpression!=null?Optional.of(jexlEngine.createExpression(bodyExpression)):Optional.empty();
         jexlHeadersExpression = headersExpression!=null?Optional.of(jexlEngine.createExpression(headersExpression)):Optional.empty();
     }
 
@@ -64,8 +64,16 @@ public class JEXLHttpRequestMapper implements HttpRequestMapper {
 
         String url = (String) jexlUrlExpression.evaluate(context);
         HttpRequest.Method method = jexlMethodExpression.map(jexlExpression -> HttpRequest.Method.valueOf((String) jexlExpression.evaluate(context))).orElse(HttpRequest.Method.GET);
-        String bodyType = jexlBodyTypeExpression.map(jexlExpression -> HttpRequest.BodyType.valueOf((String) jexlExpression.evaluate(context)).name()).orElseGet(HttpRequest.BodyType.STRING::name);
-        HttpRequest httpRequest = new HttpRequest(url,method,bodyType);
+        String bodyTypeAsString = jexlBodyTypeExpression.map(jexlExpression -> (String) jexlExpression.evaluate(context)).orElseGet(HttpRequest.BodyType.STRING::name);
+        HttpRequest.BodyType bodyType = HttpRequest.BodyType.valueOf(bodyTypeAsString);
+        String content = jexlBodyExpression.isPresent()?jexlBodyExpression.map(jexlExpression -> (String) jexlExpression.evaluate(context)).orElse(null):null;
+        HttpRequest httpRequest = new HttpRequest(url,method,bodyType.name());
+        switch (bodyType){
+            case STRING:
+            default:{
+                httpRequest.setBodyAsString(content);
+            }
+        }
         Map<String, List<String>> headers = jexlHeadersExpression.isPresent()? (Map<String, List<String>>)jexlHeadersExpression.get().evaluate(context): Maps.newHashMap();
         httpRequest.setHeaders(headers);
         return httpRequest;
