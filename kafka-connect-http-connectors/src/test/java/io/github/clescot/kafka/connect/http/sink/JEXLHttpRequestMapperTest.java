@@ -61,30 +61,16 @@ class JEXLHttpRequestMapperTest {
 
         @Test
         void test_valid_expression_with_url_from_sink_record() {
-            JEXLHttpRequestMapper jexlHttpRequestMapper = new JEXLHttpRequestMapper(jexlEngine, "sinkRecord.topic()=='myTopic'", "sinkRecord.value()", null, null, null, null);
-            String url = "http://test.com";
-            SinkRecord sinkRecord = new SinkRecord("test",0,Schema.STRING_SCHEMA,"123",Schema.STRING_SCHEMA, url,0);
-            HttpRequest httpRequest = jexlHttpRequestMapper.map(sinkRecord);
-            assertThat(httpRequest.getUrl()).isEqualTo(url);
+            Assertions.assertDoesNotThrow(()->new JEXLHttpRequestMapper(jexlEngine, "sinkRecord.topic()=='myTopic'", "sinkRecord.value()", null, null, null, null));
+
         }
         @Test
         void test_valid_expression_with_url_and_method_from_sink_record() {
-            JEXLHttpRequestMapper jexlHttpRequestMapper = new JEXLHttpRequestMapper(jexlEngine, "sinkRecord.topic()=='myTopic'", "sinkRecord.value()", "'POST'", null, null, null);
-            String url = "http://test.com";
-            SinkRecord sinkRecord = new SinkRecord("test",0,Schema.STRING_SCHEMA,"123",Schema.STRING_SCHEMA, url,0);
-            HttpRequest httpRequest = jexlHttpRequestMapper.map(sinkRecord);
-            assertThat(httpRequest.getUrl()).isEqualTo(url);
-            assertThat(httpRequest.getMethod()).isEqualTo(HttpRequest.Method.POST);
+            Assertions.assertDoesNotThrow(()->new JEXLHttpRequestMapper(jexlEngine, "sinkRecord.topic()=='myTopic'", "sinkRecord.value()", "'POST'", null, null, null));
         }
         @Test
         void test_valid_expression_with_url_method_and_body_from_sink_record() {
-            JEXLHttpRequestMapper jexlHttpRequestMapper = new JEXLHttpRequestMapper(jexlEngine, "sinkRecord.topic()=='myTopic'", "sinkRecord.value().split(\"#\")[0]", "'POST'", null, "sinkRecord.value().split(\"#\")[1]", null);
-            String value = "http://test.com#mybodycontent";
-            SinkRecord sinkRecord = new SinkRecord("test",0,Schema.STRING_SCHEMA,"123",Schema.STRING_SCHEMA, value,0);
-            HttpRequest httpRequest = jexlHttpRequestMapper.map(sinkRecord);
-            assertThat(httpRequest.getUrl()).isEqualTo("http://test.com");
-            assertThat(httpRequest.getMethod()).isEqualTo(HttpRequest.Method.POST);
-            assertThat(httpRequest.getBodyAsString()).isEqualTo("mybodycontent");
+            Assertions.assertDoesNotThrow(()->new JEXLHttpRequestMapper(jexlEngine, "sinkRecord.topic()=='myTopic'", "sinkRecord.value().split(\"#\")[0]", "'POST'", null, "sinkRecord.value().split(\"#\")[1]", null));
         }
 
     }
@@ -192,6 +178,35 @@ class JEXLHttpRequestMapperTest {
             assertThat(httpRequest.getBodyType()).isEqualTo(HttpRequest.BodyType.STRING);
             java.util.Map<String, List<String>> httpRequestHeaders = httpRequest.getHeaders();
             assertThat(httpRequestHeaders.get("test1")).isEqualTo(Lists.newArrayList("value1","value2"));
+        }
+
+
+        @Test
+        void test_valid_expression_with_url_from_sink_record() {
+            JEXLHttpRequestMapper jexlHttpRequestMapper = new JEXLHttpRequestMapper(jexlEngine, "sinkRecord.topic()=='myTopic'", "sinkRecord.value()", null, null, null, null);
+            String url = "http://test.com";
+            SinkRecord sinkRecord = new SinkRecord("test",0,Schema.STRING_SCHEMA,"123",Schema.STRING_SCHEMA, url,0);
+            HttpRequest httpRequest = jexlHttpRequestMapper.map(sinkRecord);
+            assertThat(httpRequest.getUrl()).isEqualTo(url);
+        }
+        @Test
+        void test_valid_expression_with_url_and_method_from_sink_record() {
+            JEXLHttpRequestMapper jexlHttpRequestMapper = new JEXLHttpRequestMapper(jexlEngine, "sinkRecord.topic()=='myTopic'", "sinkRecord.value()", "'POST'", null, null, null);
+            String url = "http://test.com";
+            SinkRecord sinkRecord = new SinkRecord("test",0,Schema.STRING_SCHEMA,"123",Schema.STRING_SCHEMA, url,0);
+            HttpRequest httpRequest = jexlHttpRequestMapper.map(sinkRecord);
+            assertThat(httpRequest.getUrl()).isEqualTo(url);
+            assertThat(httpRequest.getMethod()).isEqualTo(HttpRequest.Method.POST);
+        }
+        @Test
+        void test_valid_expression_with_url_method_and_body_from_sink_record() {
+            JEXLHttpRequestMapper jexlHttpRequestMapper = new JEXLHttpRequestMapper(jexlEngine, "sinkRecord.topic()=='myTopic'", "sinkRecord.value().split(\"#\")[0]", "'POST'", null, "sinkRecord.value().split(\"#\")[1]", null);
+            String value = "http://test.com#mybodycontent";
+            SinkRecord sinkRecord = new SinkRecord("test",0,Schema.STRING_SCHEMA,"123",Schema.STRING_SCHEMA, value,0);
+            HttpRequest httpRequest = jexlHttpRequestMapper.map(sinkRecord);
+            assertThat(httpRequest.getUrl()).isEqualTo("http://test.com");
+            assertThat(httpRequest.getMethod()).isEqualTo(HttpRequest.Method.POST);
+            assertThat(httpRequest.getBodyAsString()).isEqualTo("mybodycontent");
         }
 
     }
