@@ -193,8 +193,8 @@ class JEXLHttpRequestMapperTest {
         void test_valid_expression_with_url_and_method_from_sink_record() {
             JEXLHttpRequestMapper jexlHttpRequestMapper = new JEXLHttpRequestMapper(jexlEngine, "sinkRecord.topic()=='myTopic'", "sinkRecord.value()", "'POST'", null, null, null);
             String url = "http://test.com";
-            SinkRecord sinkRecord = new SinkRecord("test",0,Schema.STRING_SCHEMA,"123",Schema.STRING_SCHEMA, url,0);
-            HttpRequest httpRequest = jexlHttpRequestMapper.map(sinkRecord);
+            SinkRecord mySinkRecord = new SinkRecord("test",0,Schema.STRING_SCHEMA,"123",Schema.STRING_SCHEMA, url,0);
+            HttpRequest httpRequest = jexlHttpRequestMapper.map(mySinkRecord);
             assertThat(httpRequest.getUrl()).isEqualTo(url);
             assertThat(httpRequest.getMethod()).isEqualTo(HttpRequest.Method.POST);
         }
@@ -202,10 +202,30 @@ class JEXLHttpRequestMapperTest {
         void test_valid_expression_with_url_method_and_body_from_sink_record() {
             JEXLHttpRequestMapper jexlHttpRequestMapper = new JEXLHttpRequestMapper(jexlEngine, "sinkRecord.topic()=='myTopic'", "sinkRecord.value().split(\"#\")[0]", "'POST'", null, "sinkRecord.value().split(\"#\")[1]", null);
             String value = "http://test.com#mybodycontent";
-            SinkRecord sinkRecord = new SinkRecord("test",0,Schema.STRING_SCHEMA,"123",Schema.STRING_SCHEMA, value,0);
-            HttpRequest httpRequest = jexlHttpRequestMapper.map(sinkRecord);
+            SinkRecord mySinkRecord = new SinkRecord("test",0,Schema.STRING_SCHEMA,"123",Schema.STRING_SCHEMA, value,0);
+            HttpRequest httpRequest = jexlHttpRequestMapper.map(mySinkRecord);
             assertThat(httpRequest.getUrl()).isEqualTo("http://test.com");
             assertThat(httpRequest.getMethod()).isEqualTo(HttpRequest.Method.POST);
+            assertThat(httpRequest.getBodyAsString()).isEqualTo("mybodycontent");
+        }
+
+        @Test
+        void test_valid_expression_with_all_resolved_variables_from_sink_record() {
+            String value = "http://test.com#PUT#STRING#mybodycontent#key1-value1/key2-value2";
+            JEXLHttpRequestMapper jexlHttpRequestMapper = new JEXLHttpRequestMapper(
+                    jexlEngine,
+                    "sinkRecord.topic()=='myTopic'",
+                    "sinkRecord.value().split(\"#\")[0]",
+                    "sinkRecord.value().split(\"#\")[1]",
+                    "sinkRecord.value().split(\"#\")[2]",
+                    "sinkRecord.value().split(\"#\")[3]",
+                    "{'test1':['value1','value2',...]}"
+            );
+            SinkRecord mySinkRecord = new SinkRecord("test",0,Schema.STRING_SCHEMA,"123",Schema.STRING_SCHEMA, value,0);
+            HttpRequest httpRequest = jexlHttpRequestMapper.map(mySinkRecord);
+            assertThat(httpRequest.getUrl()).isEqualTo("http://test.com");
+            assertThat(httpRequest.getMethod()).isEqualTo(HttpRequest.Method.PUT);
+            assertThat(httpRequest.getBodyType()).isEqualTo(HttpRequest.BodyType.STRING);
             assertThat(httpRequest.getBodyAsString()).isEqualTo("mybodycontent");
         }
 
