@@ -155,6 +155,36 @@ public abstract class HttpSinkTask<R, S> extends SinkTask {
         return configurations;
     }
 
+    private List<HttpRequestMapper> buildCustomHttpRequestMappers(AbstractConfig config,JexlEngine jexlEngine){
+        List<HttpRequestMapper> requestMappers = Lists.newArrayList();
+        for (String httpRequestMapperId : Optional.ofNullable(config.getList(HTTP_REQUEST_MAPPER_IDS)).orElse(Lists.newArrayList())) {
+            HttpRequestMapper httpRequestMapper;
+            String prefix = "request.mapper." + httpRequestMapperId;
+            String modeKey = prefix + ".mode";
+            MapperMode mapperMode= MapperMode.valueOf(httpSinkConnectorConfig.getString(modeKey));
+            switch(mapperMode){
+                case JEXL:{
+                    httpRequestMapper = new JEXLHttpRequestMapper(jexlEngine,
+                            JEXL_ALWAYS_MATCHES,
+                            config.getString(prefix+".url"),
+                            config.getString(prefix+".method"),
+                            config.getString(prefix+".bodytype"),
+                            config.getString(prefix+".body"),
+                            config.getString(prefix+".headers")
+                    );
+                    break;
+                }
+                case DIRECT:
+                default:{
+                    httpRequestMapper = new DirectHttpRequestMapper(jexlEngine, config.getString(prefix+".matcher"));
+                    break;
+                }
+            }
+            requestMappers.add(httpRequestMapper);
+        }
+        return requestMappers;
+    }
+
 
     /**
      * @param settings configure the connector
@@ -164,14 +194,7 @@ public abstract class HttpSinkTask<R, S> extends SinkTask {
         Preconditions.checkNotNull(settings, "settings cannot be null");
         HttpSinkConfigDefinition httpSinkConfigDefinition = new HttpSinkConfigDefinition(settings);
         this.httpSinkConnectorConfig = new HttpSinkConnectorConfig(httpSinkConfigDefinition.config(), settings);
-        // Restricted permissions to a safe set but with URI allowed
-        JexlPermissions permissions = new JexlPermissions.ClassPermissions(SinkRecord.class, ConnectRecord.class,HttpRequest.class);
-        // Create the engine
-        JexlFeatures features = new JexlFeatures()
-                .loops(false)
-                .sideEffectGlobal(false)
-                .sideEffect(false);
-        JexlEngine jexlEngine = new JexlBuilder().features(features).permissions(permissions).create();
+
 
 
         //build executorService
@@ -182,7 +205,15 @@ public abstract class HttpSinkTask<R, S> extends SinkTask {
         HttpSinkTask.meterRegistry = buildMeterRegistry(httpSinkConnectorConfig);
 
         //build httpRequestMappers
-        this.httpRequestMappers = Lists.newArrayList();
+        // Restricted permissions to a safe set but with URI allowed
+        JexlPermissions permissions = new JexlPermissions.ClassPermissions(SinkRecord.class, ConnectRecord.class,HttpRequest.class);
+        // Create the engine
+        JexlFeatures features = new JexlFeatures()
+                .loops(false)
+                .sideEffectGlobal(false)
+                .sideEffect(false);
+        JexlEngine jexlEngine = new JexlBuilder().features(features).permissions(permissions).create();
+
         MapperMode defaultRequestMapperMode = httpSinkConnectorConfig.getDefaultRequestMapperMode();
         switch(defaultRequestMapperMode){
             case JEXL:{
@@ -202,6 +233,9 @@ public abstract class HttpSinkTask<R, S> extends SinkTask {
                 break;
             }
         }
+        this.httpRequestMappers = buildCustomHttpRequestMappers(httpSinkConnectorConfig,jexlEngine);
+
+
         this.defaultConfiguration = new Configuration<>(DEFAULT_CONFIGURATION_ID, httpClientFactory, httpSinkConnectorConfig, executorService, meterRegistry);
         customConfigurations = buildCustomConfigurations(httpClientFactory, httpSinkConnectorConfig, defaultConfiguration, executorService);
         httpTask = new HttpTask<>(httpSinkConnectorConfig, defaultConfiguration, customConfigurations, meterRegistry, executorService);
