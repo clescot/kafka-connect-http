@@ -4,6 +4,7 @@ import com.google.common.base.Joiner;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
+import io.github.clescot.kafka.connect.http.core.HttpRequest;
 import io.github.clescot.kafka.connect.http.core.queue.ConfigConstants;
 import io.github.clescot.kafka.connect.http.core.queue.QueueFactory;
 import io.github.clescot.kafka.connect.http.sink.mapper.MapperMode;
@@ -174,7 +175,7 @@ public class HttpSinkConnectorConfig extends AbstractConfig {
         this.defaultRequestMapperMode = Optional.of(MapperMode.valueOf(getString(REQUEST_MAPPER_DEFAULT_MODE))).orElse(MapperMode.DIRECT);
         this.defaultUrlExpression = getString(REQUEST_MAPPER_DEFAULT_URL_EXPRESSION);
         this.defaultMethodExpression = getString(REQUEST_MAPPER_DEFAULT_METHOD_EXPRESSION);
-        this.defaultBodyTypeExpression = getString(REQUEST_MAPPER_DEFAULT_BODYTYPE_EXPRESSION);
+        this.defaultBodyTypeExpression = Optional.ofNullable(getString(REQUEST_MAPPER_DEFAULT_BODYTYPE_EXPRESSION)).orElse(HttpRequest.BodyType.STRING.toString());
         this.defaultBodyExpression = getString(REQUEST_MAPPER_DEFAULT_BODY_EXPRESSION);
         this.defaultHeadersExpression = getString(REQUEST_MAPPER_DEFAULT_HEADERS_EXPRESSION);
         this.httpRequestMapperIds = Optional.ofNullable(getList(HTTP_REQUEST_MAPPER_IDS)).orElse(Lists.newArrayList());

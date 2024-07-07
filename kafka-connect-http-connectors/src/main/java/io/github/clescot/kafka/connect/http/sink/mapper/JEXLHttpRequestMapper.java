@@ -77,4 +77,29 @@ public class JEXLHttpRequestMapper implements HttpRequestMapper {
         httpRequest.setHeaders(headers);
         return httpRequest;
     }
+
+    @Nullable
+    public Optional<JexlExpression> getJexlBodyExpression() {
+        return jexlBodyExpression;
+    }
+
+    public Optional<JexlExpression> getJexlBodyTypeExpression() {
+        return jexlBodyTypeExpression;
+    }
+
+    public Optional<JexlExpression> getJexlHeadersExpression() {
+        return jexlHeadersExpression;
+    }
+
+    public JexlExpression getJexlMatchingExpression() {
+        return jexlMatchingExpression;
+    }
+
+    public Optional<JexlExpression> getJexlMethodExpression() {
+        return jexlMethodExpression;
+    }
+
+    public JexlExpression getJexlUrlExpression() {
+        return jexlUrlExpression;
+    }
 }

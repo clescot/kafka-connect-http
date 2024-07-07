@@ -96,4 +96,8 @@ public class DirectHttpRequestMapper implements HttpRequestMapper {
         }
         return httpRequest;
     }
+
+    public JexlExpression getExpression() {
+        return expression;
+    }
 }

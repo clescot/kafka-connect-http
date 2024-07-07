@@ -160,8 +160,9 @@ public abstract class HttpSinkTask<R, S> extends SinkTask {
         for (String httpRequestMapperId : Optional.ofNullable(config.getList(HTTP_REQUEST_MAPPER_IDS)).orElse(Lists.newArrayList())) {
             HttpRequestMapper httpRequestMapper;
             String prefix = "request.mapper." + httpRequestMapperId;
-            String modeKey = prefix + ".mode";
-            MapperMode mapperMode= MapperMode.valueOf(httpSinkConnectorConfig.getString(modeKey));
+            Map<String, Object> settings = config.originalsWithPrefix(prefix);
+            String modeKey = ".mode";
+            MapperMode mapperMode= MapperMode.valueOf(Optional.ofNullable(settings.get(modeKey)).orElse(MapperMode.DIRECT.name()).toString());
             switch(mapperMode){
                 case JEXL:{
                     httpRequestMapper = new JEXLHttpRequestMapper(jexlEngine,
@@ -176,7 +177,7 @@ public abstract class HttpSinkTask<R, S> extends SinkTask {
                 }
                 case DIRECT:
                 default:{
-                    httpRequestMapper = new DirectHttpRequestMapper(jexlEngine, config.getString(prefix+".matcher"));
+                    httpRequestMapper = new DirectHttpRequestMapper(jexlEngine, (String) settings.get(".matcher"));
                     break;
                 }
             }
@@ -217,6 +218,7 @@ public abstract class HttpSinkTask<R, S> extends SinkTask {
         MapperMode defaultRequestMapperMode = httpSinkConnectorConfig.getDefaultRequestMapperMode();
         switch(defaultRequestMapperMode){
             case JEXL:{
+                Preconditions.checkNotNull(httpSinkConnectorConfig.getDefaultUrlExpression(),"'"+REQUEST_MAPPER_DEFAULT_URL_EXPRESSION+"' need to be set");
                 this.defaultHttpRequestMapper = new JEXLHttpRequestMapper(jexlEngine,
                         JEXL_ALWAYS_MATCHES,
                         httpSinkConnectorConfig.getDefaultUrlExpression(),
@@ -577,5 +579,10 @@ public abstract class HttpSinkTask<R, S> extends SinkTask {
 
     public HttpTask<SinkRecord, R, S> getHttpTask() {
         return httpTask;
+    }
+
+
+    protected HttpRequestMapper getDefaultHttpRequestMapper() {
+        return defaultHttpRequestMapper;
     }
 }

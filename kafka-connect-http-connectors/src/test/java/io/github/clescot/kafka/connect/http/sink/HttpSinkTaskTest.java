@@ -18,6 +18,9 @@ import io.github.clescot.kafka.connect.http.core.HttpResponse;
 import io.github.clescot.kafka.connect.http.core.queue.ConfigConstants;
 import io.github.clescot.kafka.connect.http.core.queue.KafkaRecord;
 import io.github.clescot.kafka.connect.http.core.queue.QueueFactory;
+import io.github.clescot.kafka.connect.http.sink.mapper.DirectHttpRequestMapper;
+import io.github.clescot.kafka.connect.http.sink.mapper.JEXLHttpRequestMapper;
+import io.github.clescot.kafka.connect.http.sink.mapper.MapperMode;
 import io.micrometer.core.instrument.Meter;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.composite.CompositeMeterRegistry;
@@ -51,6 +54,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import static com.github.tomakehurst.wiremock.client.WireMock.*;
 import static com.github.tomakehurst.wiremock.stubbing.Scenario.STARTED;
 import static io.github.clescot.kafka.connect.http.sink.HttpSinkConfigDefinition.*;
+import static io.github.clescot.kafka.connect.http.sink.HttpSinkTask.JEXL_ALWAYS_MATCHES;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.verify;
@@ -167,6 +171,70 @@ public class HttpSinkTaskTest {
 
 
 
+    }
+
+    @Nested
+    class StartWithHttpRequestMapper {
+        @Test
+        void test_start_without_settings_default_httprequestmapper_is_direct() {
+            Assertions.assertDoesNotThrow(() -> {
+                HashMap<String, String> settings = Maps.newHashMap();
+                okHttpSinkTask.start(settings);
+                assertThat(okHttpSinkTask.getDefaultHttpRequestMapper()).isInstanceOf(DirectHttpRequestMapper.class);
+            });
+        }
+        @Test
+        void test_start_with_settings_httprequestmapper_is_direct() {
+            Assertions.assertDoesNotThrow(() -> {
+                HashMap<String, String> settings = Maps.newHashMap();
+                settings.put(REQUEST_MAPPER_DEFAULT_MODE, MapperMode.DIRECT.name());
+                okHttpSinkTask.start(settings);
+                assertThat(okHttpSinkTask.getDefaultHttpRequestMapper()).isInstanceOf(DirectHttpRequestMapper.class);
+                DirectHttpRequestMapper httpRequestMapper = (DirectHttpRequestMapper) okHttpSinkTask.getDefaultHttpRequestMapper();
+                assertThat(httpRequestMapper.getExpression().getSourceText()).isEqualTo(JEXL_ALWAYS_MATCHES);
+            });
+        }
+
+        @Test
+        void test_start_with_settings_httprequestmapper_is_jexl() {
+            Assertions.assertDoesNotThrow(() -> {
+                HashMap<String, String> settings = Maps.newHashMap();
+                settings.put(REQUEST_MAPPER_DEFAULT_MODE, MapperMode.JEXL.name());
+                settings.put(REQUEST_MAPPER_DEFAULT_URL_EXPRESSION, "sinkRecord.value()");
+                settings.put(REQUEST_MAPPER_DEFAULT_METHOD_EXPRESSION, "'GET'");
+                okHttpSinkTask.start(settings);
+                assertThat(okHttpSinkTask.getDefaultHttpRequestMapper()).isInstanceOf(JEXLHttpRequestMapper.class);
+                JEXLHttpRequestMapper httpRequestMapper = (JEXLHttpRequestMapper) okHttpSinkTask.getDefaultHttpRequestMapper();
+                assertThat(httpRequestMapper.getJexlMatchingExpression().getSourceText()).isEqualTo("true");
+                assertThat(httpRequestMapper.getJexlUrlExpression().getSourceText()).isEqualTo("sinkRecord.value()");
+                assertThat(httpRequestMapper.getJexlMethodExpression().get().getSourceText()).isEqualTo("'GET'");
+                assertThat(httpRequestMapper.getJexlBodyExpression()).isEmpty();
+                assertThat(httpRequestMapper.getJexlBodyTypeExpression().get().getSourceText()).isEqualTo("STRING");
+                assertThat(httpRequestMapper.getJexlBodyExpression()).isEmpty();
+                assertThat(httpRequestMapper.getJexlHeadersExpression()).isEmpty();
+            });
+        }
+        @Test
+        void test_start_with_more_settings_httprequestmapper_is_jexl() {
+            Assertions.assertDoesNotThrow(() -> {
+                HashMap<String, String> settings = Maps.newHashMap();
+                settings.put(REQUEST_MAPPER_DEFAULT_MODE, MapperMode.JEXL.name());
+                settings.put(REQUEST_MAPPER_DEFAULT_URL_EXPRESSION, "sinkRecord.value()");
+                settings.put(REQUEST_MAPPER_DEFAULT_METHOD_EXPRESSION, "'GET'");
+                settings.put(REQUEST_MAPPER_DEFAULT_BODY_EXPRESSION, "'my request body'");
+                settings.put(REQUEST_MAPPER_DEFAULT_BODYTYPE_EXPRESSION, "'STRING'");
+                settings.put(REQUEST_MAPPER_DEFAULT_HEADERS_EXPRESSION, "{'test1':['value1','value2',...]}");
+                okHttpSinkTask.start(settings);
+                assertThat(okHttpSinkTask.getDefaultHttpRequestMapper()).isInstanceOf(JEXLHttpRequestMapper.class);
+                JEXLHttpRequestMapper httpRequestMapper = (JEXLHttpRequestMapper) okHttpSinkTask.getDefaultHttpRequestMapper();
+                assertThat(httpRequestMapper.getJexlMatchingExpression().getSourceText()).isEqualTo("true");
+                assertThat(httpRequestMapper.getJexlUrlExpression().getSourceText()).isEqualTo("sinkRecord.value()");
+                assertThat(httpRequestMapper.getJexlMethodExpression().get().getSourceText()).isEqualTo("'GET'");
+                assertThat(httpRequestMapper.getJexlBodyExpression().get().getSourceText()).isEqualTo("'my request body'");
+                assertThat(httpRequestMapper.getJexlBodyTypeExpression().get().getSourceText()).isEqualTo("'STRING'");
+                assertThat(httpRequestMapper.getJexlHeadersExpression().get().getSourceText()).isEqualTo("{'test1':['value1','value2',...]}");
+            });
+        }
     }
 
 
@@ -422,6 +490,88 @@ public class HttpSinkTaskTest {
         }
 
 
+    }
+
+    @Nested
+    class PutWithHttpRequestMapper{
+        @Test
+        void test_with_multiple_direct_http_request_mappers() {
+            Assertions.assertDoesNotThrow(() -> {
+                HashMap<String, String> settings = Maps.newHashMap();
+                settings.put(REQUEST_MAPPER_DEFAULT_MODE, MapperMode.DIRECT.name());
+                settings.put(HTTP_REQUEST_MAPPER_IDS, "myid1,myid2");
+                settings.put("request.mapper.myid1.mode", MapperMode.DIRECT.name());
+                settings.put("request.mapper.myid1.matcher", "sinkRecord.topic()=='myTopic'");
+                settings.put("request.mapper.myid2.mode", MapperMode.DIRECT.name());
+                settings.put("request.mapper.myid2.matcher", "sinkRecord.topic()=='myTopic2'");
+
+
+                okHttpSinkTask.start(settings);
+
+                //given
+                WireMockRuntimeInfo wmRuntimeInfo = wmHttp.getRuntimeInfo();
+
+
+                //init sinkRecord
+                List<SinkRecord> records = Lists.newArrayList();
+                List<Header> headers = Lists.newArrayList();
+                SinkRecord sinkRecord1 = new SinkRecord("myTopic", 0, Schema.STRING_SCHEMA, "key", Schema.STRING_SCHEMA,
+                        getLocalHttpRequestAsStringWithPath(wmRuntimeInfo.getHttpPort(), "/path1","POST", DUMMY_BODY),
+                        -1, System.currentTimeMillis(), TimestampType.CREATE_TIME, headers);
+                records.add(sinkRecord1);
+                SinkRecord sinkRecord2 = new SinkRecord("myTopic", 0, Schema.STRING_SCHEMA, "key", Schema.STRING_SCHEMA,
+                        getLocalHttpRequestAsStringWithPath(wmRuntimeInfo.getHttpPort(), "/path2","POST", DUMMY_BODY),
+                        -1, System.currentTimeMillis(), TimestampType.CREATE_TIME, headers);
+                records.add(sinkRecord2);
+                SinkRecord sinkRecord3 = new SinkRecord("myTopic", 0, Schema.STRING_SCHEMA, "key", Schema.STRING_SCHEMA,
+                        getLocalHttpRequestAsStringWithPath(wmRuntimeInfo.getHttpPort(), "/path3","POST", DUMMY_BODY),
+                        -1, System.currentTimeMillis(), TimestampType.CREATE_TIME, headers);
+                records.add(sinkRecord3);
+
+                //define the http Mock Server interaction
+                WireMock wireMock = wmRuntimeInfo.getWireMock();
+                String bodyResponse = "{\"result\":\"pong\"}";
+                wireMock
+                        .register(WireMock.post("/path1")
+                                .willReturn(WireMock.aResponse()
+                                        .withHeader("Content-Type", "application/json")
+                                        .withBody(bodyResponse)
+                                        .withStatus(200)
+                                        .withStatusMessage(OK)
+                                        .withFixedDelay(1000)
+                                )
+                        );
+                wireMock
+                        .register(WireMock.post("/path2")
+                                .willReturn(WireMock.aResponse()
+                                        .withHeader("Content-Type", "application/json")
+                                        .withBody(bodyResponse)
+                                        .withStatus(200)
+                                        .withStatusMessage(OK)
+                                        .withFixedDelay(1000)
+                                )
+                        );
+                wireMock
+                        .register(WireMock.post("/path3")
+                                .willReturn(WireMock.aResponse()
+                                        .withHeader("Content-Type", "application/json")
+                                        .withBody(bodyResponse)
+                                        .withStatus(200)
+                                        .withStatusMessage(OK)
+                                        .withFixedDelay(1000)
+                                )
+                        );
+                //when
+
+                okHttpSinkTask.put(records);
+                wireMock.verifyThat(postRequestedFor(urlEqualTo("/path1")));
+                wireMock.verifyThat(postRequestedFor(urlEqualTo("/path2")));
+                wireMock.verifyThat(postRequestedFor(urlEqualTo("/path3")));
+
+
+            });
+
+        }
     }
 
     @Nested
