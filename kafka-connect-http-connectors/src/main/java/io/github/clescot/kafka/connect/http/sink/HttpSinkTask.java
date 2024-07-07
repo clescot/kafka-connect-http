@@ -166,12 +166,12 @@ public abstract class HttpSinkTask<R, S> extends SinkTask {
             switch(mapperMode){
                 case JEXL:{
                     httpRequestMapper = new JEXLHttpRequestMapper(jexlEngine,
-                            JEXL_ALWAYS_MATCHES,
-                            config.getString(prefix+".url"),
-                            config.getString(prefix+".method"),
-                            config.getString(prefix+".bodytype"),
-                            config.getString(prefix+".body"),
-                            config.getString(prefix+".headers")
+                            (String) settings.get(".matcher"),
+                            (String) settings.get(".url"),
+                            (String) settings.get(".method"),
+                            (String) settings.get(".bodytype"),
+                            (String) settings.get(".body"),
+                            (String) settings.get(".headers")
                     );
                     break;
                 }
