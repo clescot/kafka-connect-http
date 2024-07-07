@@ -18,10 +18,7 @@ public class JEXLHttpRequestMapper implements HttpRequestMapper {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(JEXLHttpRequestMapper.class);
     public static final String SINK_RECORD = "sinkRecord";
-    private JexlFeatures features = new JexlFeatures()
-            .loops(false)
-            .sideEffectGlobal(false)
-            .sideEffect(false);
+
     private JexlExpression jexlMatchingExpression;
     private JexlExpression jexlUrlExpression;
     private final Optional<JexlExpression> jexlMethodExpression;
