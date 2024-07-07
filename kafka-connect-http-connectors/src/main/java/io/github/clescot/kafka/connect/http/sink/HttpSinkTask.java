@@ -159,7 +159,7 @@ public abstract class HttpSinkTask<R, S> extends SinkTask {
         List<HttpRequestMapper> requestMappers = Lists.newArrayList();
         for (String httpRequestMapperId : Optional.ofNullable(config.getList(HTTP_REQUEST_MAPPER_IDS)).orElse(Lists.newArrayList())) {
             HttpRequestMapper httpRequestMapper;
-            String prefix = "request.mapper." + httpRequestMapperId;
+            String prefix = "http.request.mapper." + httpRequestMapperId;
             Map<String, Object> settings = config.originalsWithPrefix(prefix);
             String modeKey = ".mode";
             MapperMode mapperMode= MapperMode.valueOf(Optional.ofNullable(settings.get(modeKey)).orElse(MapperMode.DIRECT.name()).toString());

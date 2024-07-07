@@ -118,7 +118,7 @@ public class HttpSinkConfigDefinition {
     public static final String HTTP_REQUEST_MAPPER_IDS = "http.request.mapper.ids";
     public static final String HTTP_REQUEST_MAPPER_IDS_DOC = "custom configurations id list. 'default' http request mapper is already registered.";
 
-    public static final String DEFAULT_REQUEST_MAPPER_PREFIX = "request.mapper.default.";
+    public static final String DEFAULT_REQUEST_MAPPER_PREFIX = "http.request.mapper.default.";
     public static final String REQUEST_MAPPER_DEFAULT_MODE = DEFAULT_REQUEST_MAPPER_PREFIX + "mode";
     public static final String REQUEST_MAPPER_DEFAULT_MODE_DOC = "either 'direct' or 'jexl'. default is 'direct'.";
 

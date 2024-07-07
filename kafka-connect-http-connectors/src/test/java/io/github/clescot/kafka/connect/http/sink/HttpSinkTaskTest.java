@@ -497,10 +497,10 @@ public class HttpSinkTaskTest {
                 HashMap<String, String> settings = Maps.newHashMap();
                 settings.put(REQUEST_MAPPER_DEFAULT_MODE, MapperMode.DIRECT.name());
                 settings.put(HTTP_REQUEST_MAPPER_IDS, "myid1,myid2");
-                settings.put("request.mapper.myid1.mode", MapperMode.DIRECT.name());
-                settings.put("request.mapper.myid1.matcher", "sinkRecord.topic()=='myTopic'");
-                settings.put("request.mapper.myid2.mode", MapperMode.DIRECT.name());
-                settings.put("request.mapper.myid2.matcher", "sinkRecord.topic()=='myTopic2'");
+                settings.put("http.request.mapper.myid1.mode", MapperMode.DIRECT.name());
+                settings.put("http.request.mapper.myid1.matcher", "sinkRecord.topic()=='myTopic'");
+                settings.put("http.request.mapper.myid2.mode", MapperMode.DIRECT.name());
+                settings.put("http.request.mapper.myid2.matcher", "sinkRecord.topic()=='myTopic2'");
 
 
                 okHttpSinkTask.start(settings);
@@ -576,15 +576,15 @@ public class HttpSinkTaskTest {
                 HashMap<String, String> settings = Maps.newHashMap();
                 settings.put(REQUEST_MAPPER_DEFAULT_MODE, MapperMode.DIRECT.name());
                 settings.put(HTTP_REQUEST_MAPPER_IDS, "myid1,myid2");
-                settings.put("request.mapper.myid1.mode", MapperMode.JEXL.name());
-                settings.put("request.mapper.myid1.matcher", "sinkRecord.topic()=='myTopic'");
-                settings.put("request.mapper.myid1.url", "sinkRecord.value().split(\"#\")[0]");
-                settings.put("request.mapper.myid1.method", "sinkRecord.value().split(\"#\")[1]");
-                settings.put("request.mapper.myid1.bodytype", "'STRING'");
-                settings.put("request.mapper.myid1.body", "sinkRecord.value().split(\"#\")[2]");
-                settings.put("request.mapper.myid1.headers", "{'test1':['value1','value2',...]}");
-                settings.put("request.mapper.myid2.mode", MapperMode.DIRECT.name());
-                settings.put("request.mapper.myid2.matcher", "sinkRecord.topic()=='myTopic2'");
+                settings.put("http.request.mapper.myid1.mode", MapperMode.JEXL.name());
+                settings.put("http.request.mapper.myid1.matcher", "sinkRecord.topic()=='myTopic'");
+                settings.put("http.request.mapper.myid1.url", "sinkRecord.value().split(\"#\")[0]");
+                settings.put("http.request.mapper.myid1.method", "sinkRecord.value().split(\"#\")[1]");
+                settings.put("http.request.mapper.myid1.bodytype", "'STRING'");
+                settings.put("http.request.mapper.myid1.body", "sinkRecord.value().split(\"#\")[2]");
+                settings.put("http.request.mapper.myid1.headers", "{'test1':['value1','value2',...]}");
+                settings.put("http.request.mapper.myid2.mode", MapperMode.DIRECT.name());
+                settings.put("http.request.mapper.myid2.matcher", "sinkRecord.topic()=='myTopic2'");
 
 
                 okHttpSinkTask.start(settings);
