@@ -111,14 +111,14 @@ by the variable `sinkRecord`.
 #### type of HttpRequestMapper
 
 
-- `DIRECT` HttpRequestMapper
+##### `DIRECT` HttpRequestMapper
   This HttpRequestMapper implementation implies that it parses a direct serialization of an HttpRequest object.
   It requires a 'JEXL' matching expression to evaluates if it matches a message.
 
 example :
 - `http.request.mapper.myid1.matcher:'sinkRecord.topic()=='myTopic''`
 
-- `JEXL` HttpRequestMapper
+##### `JEXL` HttpRequestMapper
   This HttpRequestMapper implementation implies that we need to build an HttpRequest object with some parts of the message.
 If the body of the kafka message from the topic `test` consumed is in the format :
 `url#method#body` (`http://mywebsite.com/path1#POST#body1`), we can configure the JEXL mapper :
