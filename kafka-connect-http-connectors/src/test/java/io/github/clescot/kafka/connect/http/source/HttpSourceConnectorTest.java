@@ -2,6 +2,7 @@ package io.github.clescot.kafka.connect.http.source;
 
 import com.google.common.collect.Maps;
 import org.apache.kafka.common.config.ConfigException;
+import org.assertj.core.api.InstanceOfAssertFactories;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -91,7 +92,7 @@ class HttpSourceConnectorTest {
         settings.put(ERROR_TOPIC,"foo");
         httpSourceConnector.start(settings);
         List<Map<String, String>> maps = httpSourceConnector.taskConfigs(0);
-        assertThat(maps).asList().isEmpty();
+        assertThat(maps).asInstanceOf(InstanceOfAssertFactories.LIST).isEmpty();
     }
 
     @Test
@@ -101,7 +102,7 @@ class HttpSourceConnectorTest {
         settings.put(ERROR_TOPIC,"foo");
         httpSourceConnector.start(settings);
         List<Map<String, String>> maps = httpSourceConnector.taskConfigs(1);
-        assertThat(maps).asList().hasSize(1);
+        assertThat(maps).asInstanceOf(InstanceOfAssertFactories.LIST).hasSize(1);
 
     }
       @Test
@@ -111,7 +112,7 @@ class HttpSourceConnectorTest {
           settings.put(ERROR_TOPIC,"foo");
         httpSourceConnector.start(settings);
           List<Map<String, String>> maps = httpSourceConnector.taskConfigs(10);
-          assertThat(maps).asList().hasSize(10);
+          assertThat(maps).asInstanceOf(InstanceOfAssertFactories.LIST).hasSize(10);
       }
 
 

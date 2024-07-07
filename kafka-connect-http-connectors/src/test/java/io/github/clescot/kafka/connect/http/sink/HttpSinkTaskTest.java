@@ -25,7 +25,7 @@ import io.micrometer.core.instrument.Meter;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.composite.CompositeMeterRegistry;
 import io.micrometer.jmx.JmxMeterRegistry;
-import io.micrometer.prometheus.PrometheusMeterRegistry;
+import io.micrometer.prometheusmetrics.PrometheusMeterRegistry;
 import org.apache.kafka.common.record.TimestampType;
 import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.header.Header;
@@ -740,11 +740,12 @@ public class HttpSinkTaskTest {
 
         @Test
         void test_meter_registry_activate_prometheus() {
+            int availablePort = getRandomPort();
             Assertions.assertDoesNotThrow(() -> {
                 HashMap<String, String> settings = Maps.newHashMap();
                 settings.put(METER_REGISTRY_EXPORTER_PROMETHEUS_ACTIVATE, "true");
-                settings.put(METER_REGISTRY_EXPORTER_PROMETHEUS_PORT, "9090");
-                okHttpSinkTask.start(settings);
+                settings.put(METER_REGISTRY_EXPORTER_PROMETHEUS_PORT, availablePort +"");
+                httpSinkTask.start(settings);
 
                 //given
                 WireMockRuntimeInfo wmRuntimeInfo = wmHttp.getRuntimeInfo();
@@ -903,11 +904,12 @@ public class HttpSinkTaskTest {
 
         @Test
         void test_meter_registry_activate_jmx_and_prometheus_with_all_bindings() {
+            int availablePort = getRandomPort();
             Assertions.assertDoesNotThrow(() -> {
                 HashMap<String, String> settings = Maps.newHashMap();
                 settings.put(METER_REGISTRY_EXPORTER_JMX_ACTIVATE, "true");
                 settings.put(METER_REGISTRY_EXPORTER_PROMETHEUS_ACTIVATE, "true");
-                settings.put(METER_REGISTRY_EXPORTER_PROMETHEUS_PORT, "9090");
+                settings.put(METER_REGISTRY_EXPORTER_PROMETHEUS_PORT, ""+ availablePort);
                 settings.put(METER_REGISTRY_BIND_METRICS_EXECUTOR_SERVICE, "true");
                 settings.put(METER_REGISTRY_BIND_METRICS_JVM_MEMORY, "true");
                 settings.put(METER_REGISTRY_BIND_METRICS_JVM_THREAD, "true");
@@ -1656,5 +1658,11 @@ public class HttpSinkTaskTest {
                 "}";
     }
 
+    private int getRandomPort(){
+            Random random = new Random();
+            int low=49152;
+            int high=65535;
+            return random.nextInt(high-low)+low;
+    }
 
 }
