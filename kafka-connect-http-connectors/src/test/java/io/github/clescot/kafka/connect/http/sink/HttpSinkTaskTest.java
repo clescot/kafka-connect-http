@@ -745,7 +745,7 @@ public class HttpSinkTaskTest {
                 HashMap<String, String> settings = Maps.newHashMap();
                 settings.put(METER_REGISTRY_EXPORTER_PROMETHEUS_ACTIVATE, "true");
                 settings.put(METER_REGISTRY_EXPORTER_PROMETHEUS_PORT, availablePort +"");
-                httpSinkTask.start(settings);
+                okHttpSinkTask.start(settings);
 
                 //given
                 WireMockRuntimeInfo wmRuntimeInfo = wmHttp.getRuntimeInfo();
