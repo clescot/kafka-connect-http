@@ -44,7 +44,7 @@ class ConfigurationTest {
     private final ExecutorService executorService = Executors.newFixedThreadPool(2);
     private static final String DUMMY_BODY = "stuff";
     private static final String DUMMY_URL = "http://www." + DUMMY_BODY + ".com";
-    private static final String DUMMY_METHOD = "POST";
+    private static final HttpRequest.Method DUMMY_METHOD = HttpRequest.Method.POST;
     private static final String DUMMY_BODY_TYPE = "STRING";
 
     @NotNull
@@ -74,9 +74,9 @@ class ConfigurationTest {
             settings.put("config.test.predicate.url.regex", "^.*toto\\.com$");
             HttpSinkConnectorConfig httpSinkConnectorConfig = new HttpSinkConnectorConfig(settings);
             Configuration<Request, Response> configuration = new Configuration<>("test", new OkHttpClientFactory(),httpSinkConnectorConfig, executorService, getCompositeMeterRegistry());
-            HttpRequest httpRequest = new HttpRequest("http://toto.com", "GET", HttpRequest.BodyType.STRING.name());
+            HttpRequest httpRequest = new HttpRequest("http://toto.com", HttpRequest.Method.GET, HttpRequest.BodyType.STRING.name());
             assertThat(configuration.matches(httpRequest)).isTrue();
-            HttpRequest httpRequest2 = new HttpRequest("http://titi.com", "GET", HttpRequest.BodyType.STRING.name());
+            HttpRequest httpRequest2 = new HttpRequest("http://titi.com", HttpRequest.Method.GET, HttpRequest.BodyType.STRING.name());
             assertThat(configuration.matches(httpRequest2)).isFalse();
         }
 
@@ -88,13 +88,13 @@ class ConfigurationTest {
             settings.put("config.test.predicate.method.regex", "^GET|PUT$");
             HttpSinkConnectorConfig httpSinkConnectorConfig = new HttpSinkConnectorConfig(settings);
             Configuration<Request, Response> configuration = new Configuration<>("test",new OkHttpClientFactory(), httpSinkConnectorConfig, executorService, getCompositeMeterRegistry());
-            HttpRequest httpRequest = new HttpRequest("http://toto.com", "GET", HttpRequest.BodyType.STRING.name());
+            HttpRequest httpRequest = new HttpRequest("http://toto.com", HttpRequest.Method.GET, HttpRequest.BodyType.STRING.name());
             assertThat(configuration.matches(httpRequest)).isTrue();
-            HttpRequest httpRequest2 = new HttpRequest("http://titi.com", "GET", HttpRequest.BodyType.STRING.name());
+            HttpRequest httpRequest2 = new HttpRequest("http://titi.com", HttpRequest.Method.GET, HttpRequest.BodyType.STRING.name());
             assertThat(configuration.matches(httpRequest2)).isFalse();
-            HttpRequest httpRequest3 = new HttpRequest("http://toto.com", "POST", HttpRequest.BodyType.STRING.name());
+            HttpRequest httpRequest3 = new HttpRequest("http://toto.com", HttpRequest.Method.POST, HttpRequest.BodyType.STRING.name());
             assertThat(configuration.matches(httpRequest3)).isFalse();
-            HttpRequest httpRequest4 = new HttpRequest("http://toto.com", "PUT", HttpRequest.BodyType.STRING.name());
+            HttpRequest httpRequest4 = new HttpRequest("http://toto.com", HttpRequest.Method.PUT, HttpRequest.BodyType.STRING.name());
             assertThat(configuration.matches(httpRequest4)).isTrue();
         }
 
@@ -106,9 +106,9 @@ class ConfigurationTest {
             settings.put("config.test.predicate.bodytype.regex", "^STRING$");
             HttpSinkConnectorConfig httpSinkConnectorConfig = new HttpSinkConnectorConfig(settings);
             Configuration<Request, Response> configuration = new Configuration<>("test", new OkHttpClientFactory(),httpSinkConnectorConfig, executorService, getCompositeMeterRegistry());
-            HttpRequest httpRequest1 = new HttpRequest("http://toto.com", "GET", HttpRequest.BodyType.STRING.name());
+            HttpRequest httpRequest1 = new HttpRequest("http://toto.com", HttpRequest.Method.GET, HttpRequest.BodyType.STRING.name());
             assertThat(configuration.matches(httpRequest1)).isTrue();
-            HttpRequest httpRequest2 = new HttpRequest("http://toto.com", "GET", HttpRequest.BodyType.FORM.name());
+            HttpRequest httpRequest2 = new HttpRequest("http://toto.com", HttpRequest.Method.GET, HttpRequest.BodyType.FORM.name());
             assertThat(configuration.matches(httpRequest2)).isFalse();
 
         }
@@ -121,12 +121,12 @@ class ConfigurationTest {
             settings.put("config.test.predicate.header.key.regex", "SUPERNOVA");
             HttpSinkConnectorConfig httpSinkConnectorConfig = new HttpSinkConnectorConfig(settings);
             Configuration<Request, Response> configuration = new Configuration<>("test",new OkHttpClientFactory(), httpSinkConnectorConfig, executorService, getCompositeMeterRegistry());
-            HttpRequest httpRequest1 = new HttpRequest("http://toto.com", "GET", HttpRequest.BodyType.STRING.name());
+            HttpRequest httpRequest1 = new HttpRequest("http://toto.com", HttpRequest.Method.GET, HttpRequest.BodyType.STRING.name());
             Map<String, List<String>> headers = Maps.newHashMap();
             headers.put("SUPERNOVA", List.of("stuff"));
             httpRequest1.setHeaders(headers);
             assertThat(configuration.matches(httpRequest1)).isTrue();
-            HttpRequest httpRequest2 = new HttpRequest("http://toto.com", "GET", HttpRequest.BodyType.FORM.name());
+            HttpRequest httpRequest2 = new HttpRequest("http://toto.com", HttpRequest.Method.GET, HttpRequest.BodyType.FORM.name());
             assertThat(configuration.matches(httpRequest2)).isFalse();
         }
 
@@ -138,12 +138,12 @@ class ConfigurationTest {
             settings.put("config.test.predicate.header.key.regex", "^SUPER.*$");
             HttpSinkConnectorConfig httpSinkConnectorConfig = new HttpSinkConnectorConfig(settings);
             Configuration<Request, Response> configuration = new Configuration<>("test",new OkHttpClientFactory(), httpSinkConnectorConfig, executorService, getCompositeMeterRegistry());
-            HttpRequest httpRequest1 = new HttpRequest("http://toto.com", "GET", HttpRequest.BodyType.STRING.name());
+            HttpRequest httpRequest1 = new HttpRequest("http://toto.com", HttpRequest.Method.GET, HttpRequest.BodyType.STRING.name());
             Map<String, List<String>> headers = Maps.newHashMap();
             headers.put("SUPERNOVA", List.of("stuff"));
             httpRequest1.setHeaders(headers);
             assertThat(configuration.matches(httpRequest1)).isTrue();
-            HttpRequest httpRequest2 = new HttpRequest("http://toto.com", "GET", HttpRequest.BodyType.FORM.name());
+            HttpRequest httpRequest2 = new HttpRequest("http://toto.com", HttpRequest.Method.GET, HttpRequest.BodyType.FORM.name());
             assertThat(configuration.matches(httpRequest2)).isFalse();
         }
 
@@ -157,12 +157,12 @@ class ConfigurationTest {
             settings.put("config.test.predicate.header.value.regex", "top");
             HttpSinkConnectorConfig httpSinkConnectorConfig = new HttpSinkConnectorConfig(settings);
             Configuration<Request, Response> configuration = new Configuration<>("test",new OkHttpClientFactory(), httpSinkConnectorConfig, executorService, getCompositeMeterRegistry());
-            HttpRequest httpRequest1 = new HttpRequest("http://toto.com", "GET", HttpRequest.BodyType.STRING.name());
+            HttpRequest httpRequest1 = new HttpRequest("http://toto.com", HttpRequest.Method.GET, HttpRequest.BodyType.STRING.name());
             Map<String, List<String>> headers = Maps.newHashMap();
             headers.put("SUPERNOVA", List.of("top"));
             httpRequest1.setHeaders(headers);
             assertThat(configuration.matches(httpRequest1)).isTrue();
-            HttpRequest httpRequest2 = new HttpRequest("http://toto.com", "GET", HttpRequest.BodyType.STRING.name());
+            HttpRequest httpRequest2 = new HttpRequest("http://toto.com", HttpRequest.Method.GET, HttpRequest.BodyType.STRING.name());
             Map<String, List<String>> headers2 = Maps.newHashMap();
             headers2.put("SUPERNOVA", List.of("tip"));
             httpRequest2.setHeaders(headers2);
@@ -178,12 +178,12 @@ class ConfigurationTest {
             settings.put("config.test.predicate.header.value.regex", "^top.$");
             HttpSinkConnectorConfig httpSinkConnectorConfig = new HttpSinkConnectorConfig(settings);
             Configuration<Request, Response> configuration = new Configuration<>("test",new OkHttpClientFactory(), httpSinkConnectorConfig, executorService, getCompositeMeterRegistry());
-            HttpRequest httpRequest1 = new HttpRequest("http://toto.com", "GET", HttpRequest.BodyType.STRING.name());
+            HttpRequest httpRequest1 = new HttpRequest("http://toto.com", HttpRequest.Method.GET, HttpRequest.BodyType.STRING.name());
             Map<String, List<String>> headers = Maps.newHashMap();
             headers.put("SUPERNOVA", List.of("top1"));
             httpRequest1.setHeaders(headers);
             assertThat(configuration.matches(httpRequest1)).isTrue();
-            HttpRequest httpRequest2 = new HttpRequest("http://toto.com", "GET", HttpRequest.BodyType.STRING.name());
+            HttpRequest httpRequest2 = new HttpRequest("http://toto.com", HttpRequest.Method.GET, HttpRequest.BodyType.STRING.name());
             Map<String, List<String>> headers2 = Maps.newHashMap();
             headers2.put("SUPERNOVA", List.of("tip"));
             httpRequest2.setHeaders(headers2);

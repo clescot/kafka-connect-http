@@ -195,7 +195,7 @@ public class Configuration<R,S> {
         if (configMap.containsKey(METHOD_REGEX)) {
             String methodRegex = (String) configMap.get(METHOD_REGEX);
             Pattern methodPattern = Pattern.compile(methodRegex);
-            predicate = predicate.and(httpRequest -> methodPattern.matcher(httpRequest.getMethod()).matches());
+            predicate = predicate.and(httpRequest -> methodPattern.matcher(httpRequest.getMethod().name()).matches());
         }
         if (configMap.containsKey(BODYTYPE_REGEX)) {
             String bodytypeRegex = (String) configMap.get(BODYTYPE_REGEX);
@@ -238,7 +238,7 @@ public class Configuration<R,S> {
     }
 
 
-    @java.lang.SuppressWarnings("java:S2119")
+    @java.lang.SuppressWarnings({"java:S2119","java:S2245"})
     @NotNull
     private Random getRandom(Map<String, Object> config) {
         Random random;

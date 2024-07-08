@@ -259,7 +259,7 @@ class AHCHttpClientTest {
 
         //then
         assertThat(request.getUrl()).isEqualTo(httpRequest.getUrl());
-        assertThat(request.getMethod()).isEqualTo(httpRequest.getMethod());
+        assertThat(request.getMethod()).isEqualTo(httpRequest.getMethod().name());
     }
 
 
@@ -273,7 +273,7 @@ class AHCHttpClientTest {
         headers.put("X-Stuff", Lists.newArrayList("dummy stuff"));
         HttpRequest httpRequest = new HttpRequest(
                 "http://localhost:8089",
-                "GET",
+                HttpRequest.Method.GET,
                 "STRING");
         httpRequest.setHeaders(headers);
         httpRequest.setBodyAsString(body);

@@ -6,7 +6,7 @@ Minimal configuration to interact with HTTP servers.
 
 ### Sink Connector configuration
 
-This configuration does NOT publish HTTP results to an in memory queue.
+This configuration does NOT publish HTTP results (neither with a low level producer, nor to an in memory queue).
 
 ```json 
 {

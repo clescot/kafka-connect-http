@@ -99,7 +99,7 @@ class HttpSourceTaskTest {
         Queue<KafkaRecord> queue = QueueFactory.getQueue();
         HttpRequest httpRequest = new HttpRequest(
                 "http://www.dummy.com",
-                "GET",
+                HttpRequest.Method.GET,
                 "STRING"
         );
         httpRequest.setBodyAsString("stuff");
@@ -128,7 +128,7 @@ class HttpSourceTaskTest {
         Queue<KafkaRecord> queue = QueueFactory.getQueue();
         HttpRequest httpRequest = new HttpRequest(
                 "http://www.dummy.com",
-                "GET",
+                HttpRequest.Method.GET,
                 "STRING"
         );
         httpRequest.setBodyAsString("stuff");

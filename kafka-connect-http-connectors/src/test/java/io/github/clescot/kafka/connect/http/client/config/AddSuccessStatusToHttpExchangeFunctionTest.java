@@ -29,7 +29,7 @@ import static io.github.clescot.kafka.connect.http.sink.HttpSinkConfigDefinition
 import static org.assertj.core.api.Assertions.assertThat;
 
 class AddSuccessStatusToHttpExchangeFunctionTest {
-    private static final String DUMMY_METHOD = "POST";
+    private static final HttpRequest.Method DUMMY_METHOD = HttpRequest.Method.POST;
     private static final String DUMMY_BODY_TYPE = "STRING";
 
     private ExecutorService executorService = Executors.newFixedThreadPool(2);

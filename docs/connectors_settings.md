@@ -98,6 +98,68 @@ Both exports (JMX and Prometheus) can be combined.
   by default, the port open is the default prometheus one (`9090`), but you can define yours with this setting :
   `"meter.registry.exporter.prometheus.port":"9087`
 
+### HttpRequestMapper
+
+#### general
+
+An HttpRequestMapper permits to map a message to an `HttpRequest` object.
+There are 2 HttpRequestMapper modes available : `DIRECT` or `JEXL`.
+
+A Matcher setting, common to the `DIRECT` and the `JEXL` mappers, is a JEXL expression, related to the message identified
+by the variable `sinkRecord`.
+
+#### type of HttpRequestMapper
+
+
+##### `DIRECT` HttpRequestMapper
+  This HttpRequestMapper implementation implies that it parses a direct serialization of an HttpRequest object.
+  It requires a 'JEXL' matching expression to evaluates if it matches a message.
+
+example :
+- `http.request.mapper.myid1.matcher:'sinkRecord.topic()=='myTopic''`
+
+##### `JEXL` HttpRequestMapper
+  This HttpRequestMapper implementation implies that we need to build an HttpRequest object with some parts of the message.
+If the body of the kafka message from the topic `test` consumed is in the format :
+`url#method#body` (`http://mywebsite.com/path1#POST#body1`), we can configure the JEXL mapper :
+
+- `http.request.mapper.default.mode: 'JEXL'`
+- `http.request.mapper.default.url: 'sinkRecord.value().split("#")[0]'`
+- `http.request.mapper.default.method: 'sinkRecord.value().split("#")[1]'`
+- `http.request.mapper.default.body: 'sinkRecord.value().split("#")[2]'`
+
+JEXL HttpRequestMapper `bodytype` is by default `STRING` (the only option supported now).
+JEXL HttpRequestMapper headers ca be added as a constant with this setting (for a multi-valued :`value1` and `value2`, `test1` key):
+
+`http.request.mapper.default.headers:"{'test1':['value1','value2',...]}"`
+
+#### default HttpRequestMapper
+
+The connector ships with a `default` HttpRequestMapper, which maps all messages by default 
+(with a default catch-all message matcher on all topics), and we can, if needed, 
+configure more HttpRequestMappers (with some specific message matchers).
+
+The default mode is configured with `http.request.mapper.default.mode` set to `DIRECT` or `JEXL`.
+If not configured, the default mode is 'DIRECT'.
+
+It is useful to use a catch-all HttpRequestMapper to avoid to not process some messages. So, we don't recommand to change
+the matcher of the default mapper (by default, the setting `http.request.mapper.default.matcher` is configured with the
+JEXL `true` expression and used if no other mapper matches the message).
+
+
+#### additional HttpRequestMappers
+
+Additional HttpRequestMapper instances are configured with for each one a unique id set with `http.request.mapper.ids` 
+(a list divided by a comma).
+example : 
+`http.request.mapper.ids: 'myid1,myid2'`
+ 
+
+You can specify the topic of a DIRECT matcher mapping the `myTopic` messages with :
+- `http.request.mapper.myid1.mode:'DIRECT'`
+- `http.request.mapper.myid1.matcher:'sinkRecord.topic()=='myTopic''` 
+ 
+
 ### Configuration
 
 The connector ships with a `default` configuration, and we can, if needed, configure more configurations.

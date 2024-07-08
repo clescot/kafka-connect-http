@@ -4,8 +4,10 @@ import com.google.common.base.Joiner;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
+import io.github.clescot.kafka.connect.http.core.HttpRequest;
 import io.github.clescot.kafka.connect.http.core.queue.ConfigConstants;
 import io.github.clescot.kafka.connect.http.core.queue.QueueFactory;
+import io.github.clescot.kafka.connect.http.sink.mapper.MapperMode;
 import org.apache.kafka.common.config.AbstractConfig;
 import org.apache.kafka.common.config.ConfigDef;
 import org.slf4j.Logger;
@@ -81,6 +83,13 @@ public class HttpSinkConnectorConfig extends AbstractConfig {
     private final int pollIntervalRegistrationOfQueueConsumerInMs;
     private final Integer customFixedThreadpoolSize;
     private final List<String> configurationIds;
+    private final List<String> httpRequestMapperIds;
+    private final MapperMode defaultRequestMapperMode;
+    private final String defaultUrlExpression;
+    private final String defaultMethodExpression;
+    private final String defaultBodyTypeExpression;
+    private final String defaultBodyExpression;
+    private final String defaultHeadersExpression;
 
     public HttpSinkConnectorConfig(Map<String,String> originals) {
         this(new HttpSinkConfigDefinition(originals).config(), originals);
@@ -162,8 +171,40 @@ public class HttpSinkConnectorConfig extends AbstractConfig {
         this.defaultRetryResponseCodeRegex = getString(CONFIG_DEFAULT_RETRY_RESPONSE_CODE_REGEX);
 
         this.customFixedThreadpoolSize = getInt(HTTP_CLIENT_ASYNC_FIXED_THREAD_POOL_SIZE);
-        configurationIds = Optional.ofNullable(getList(CONFIGURATION_IDS)).orElse(Lists.newArrayList());
+        this.configurationIds = Optional.ofNullable(getList(CONFIGURATION_IDS)).orElse(Lists.newArrayList());
+        this.defaultRequestMapperMode = Optional.of(MapperMode.valueOf(getString(REQUEST_MAPPER_DEFAULT_MODE))).orElse(MapperMode.DIRECT);
+        this.defaultUrlExpression = getString(REQUEST_MAPPER_DEFAULT_URL_EXPRESSION);
+        this.defaultMethodExpression = getString(REQUEST_MAPPER_DEFAULT_METHOD_EXPRESSION);
+        this.defaultBodyTypeExpression = Optional.ofNullable(getString(REQUEST_MAPPER_DEFAULT_BODYTYPE_EXPRESSION)).orElse(HttpRequest.BodyType.STRING.toString());
+        this.defaultBodyExpression = getString(REQUEST_MAPPER_DEFAULT_BODY_EXPRESSION);
+        this.defaultHeadersExpression = getString(REQUEST_MAPPER_DEFAULT_HEADERS_EXPRESSION);
+        this.httpRequestMapperIds = Optional.ofNullable(getList(HTTP_REQUEST_MAPPER_IDS)).orElse(Lists.newArrayList());
 
+    }
+
+
+    public String getDefaultBodyExpression() {
+        return defaultBodyExpression;
+    }
+
+    public String getDefaultBodyTypeExpression() {
+        return defaultBodyTypeExpression;
+    }
+
+    public String getDefaultHeadersExpression() {
+        return defaultHeadersExpression;
+    }
+
+    public String getDefaultMethodExpression() {
+        return defaultMethodExpression;
+    }
+
+    public String getDefaultUrlExpression() {
+        return defaultUrlExpression;
+    }
+
+    public MapperMode getDefaultRequestMapperMode() {
+        return defaultRequestMapperMode;
     }
 
     public String getQueueName() {
@@ -392,10 +433,15 @@ public class HttpSinkConnectorConfig extends AbstractConfig {
         return producerValueSubjectNameStrategy;
     }
 
+    public List<String> getHttpRequestMapperIds() {
+        return httpRequestMapperIds;
+    }
+
     @Override
     public String toString() {
         return "HttpSinkConnectorConfig{" +
-                "producerFormat='" + producerFormat + '\'' +
+                "bearerAuthCacheExpiryBufferSeconds=" + bearerAuthCacheExpiryBufferSeconds +
+                ", producerFormat='" + producerFormat + '\'' +
                 ", producerBootstrapServers='" + producerBootstrapServers + '\'' +
                 ", producerSuccessTopic='" + producerSuccessTopic + '\'' +
                 ", producerErrorTopic='" + producerErrorTopic + '\'' +
@@ -413,7 +459,6 @@ public class HttpSinkConnectorConfig extends AbstractConfig {
                 ", missingVersionCacheTTLSec=" + missingVersionCacheTTLSec +
                 ", missingSchemaCacheTTLSec=" + missingSchemaCacheTTLSec +
                 ", missingCacheSize=" + missingCacheSize +
-                ", bearerAuthCacheExpiryBufferSeconds=" + bearerAuthCacheExpiryBufferSeconds +
                 ", bearerAuthScopeClaimName='" + bearerAuthScopeClaimName + '\'' +
                 ", bearerAuthSubClaimName='" + bearerAuthSubClaimName + '\'' +
                 ", meterRegistryExporterJmxActivate=" + meterRegistryExporterJmxActivate +
@@ -450,6 +495,7 @@ public class HttpSinkConnectorConfig extends AbstractConfig {
                 ", pollIntervalRegistrationOfQueueConsumerInMs=" + pollIntervalRegistrationOfQueueConsumerInMs +
                 ", customFixedThreadpoolSize=" + customFixedThreadpoolSize +
                 ", configurationIds=" + configurationIds +
+                ", mapperIds=" + httpRequestMapperIds +
                 '}';
     }
 

@@ -120,7 +120,7 @@ public class AHCHttpClient extends AbstractHttpClient<Request, Response> {
         Preconditions.checkNotNull(httpRequest.getBodyAsString(), "'body' is required but null");
         String url = httpRequest.getUrl();
         Preconditions.checkNotNull(url, "'url' is required but null");
-        String method = httpRequest.getMethod();
+        HttpRequest.Method method = httpRequest.getMethod();
         Preconditions.checkNotNull(method, "'method' is required but null");
 
         //extract http headers
@@ -129,7 +129,7 @@ public class AHCHttpClient extends AbstractHttpClient<Request, Response> {
         RequestBuilder requestBuilder = new RequestBuilder()
                 .setUrl(url)
                 .setHeaders(httpHeaders)
-                .setMethod(method)
+                .setMethod(method.name())
                 .setBody(httpRequest.getBodyAsString());
 
         //extract proxy headers

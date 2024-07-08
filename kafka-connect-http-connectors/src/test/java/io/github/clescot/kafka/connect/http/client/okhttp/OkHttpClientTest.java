@@ -109,7 +109,7 @@ class OkHttpClientTest {
             HashMap<String, Object> config = Maps.newHashMap();
             config.put(CONFIGURATION_ID,"default");
             io.github.clescot.kafka.connect.http.client.okhttp.OkHttpClient client = new io.github.clescot.kafka.connect.http.client.okhttp.OkHttpClient(config, null, new Random(), null, null, getCompositeMeterRegistry());
-            HttpRequest httpRequest = new HttpRequest("http://dummy.com/", "POST", HttpRequest.BodyType.STRING.name());
+            HttpRequest httpRequest = new HttpRequest("http://dummy.com/", HttpRequest.Method.POST, HttpRequest.BodyType.STRING.name());
             httpRequest.setBodyAsString("stuff");
 
             //given
@@ -118,7 +118,7 @@ class OkHttpClientTest {
             //then
             LOGGER.debug("request:{}", request);
             assertThat(request.url().url().toString()).hasToString(httpRequest.getUrl());
-            assertThat(request.method()).isEqualTo(httpRequest.getMethod());
+            assertThat(request.method()).isEqualTo(httpRequest.getMethod().name());
             RequestBody body = request.body();
             final Buffer buffer = new Buffer();
             body.writeTo(buffer);
@@ -134,7 +134,7 @@ class OkHttpClientTest {
             HashMap<String, Object> config = Maps.newHashMap();
             config.put(CONFIGURATION_ID,"default");
             io.github.clescot.kafka.connect.http.client.okhttp.OkHttpClient client = new io.github.clescot.kafka.connect.http.client.okhttp.OkHttpClient(config, null, new Random(), null, null, getCompositeMeterRegistry());
-            HttpRequest httpRequest = new HttpRequest("http://dummy.com/", "GET", HttpRequest.BodyType.STRING.name());
+            HttpRequest httpRequest = new HttpRequest("http://dummy.com/", HttpRequest.Method.GET, HttpRequest.BodyType.STRING.name());
             httpRequest.setBodyAsString("stuff");
 
             //when
@@ -143,7 +143,7 @@ class OkHttpClientTest {
             //then
             LOGGER.debug("request:{}", request);
             assertThat(request.url().url().toString()).hasToString(httpRequest.getUrl());
-            assertThat(request.method()).isEqualTo(httpRequest.getMethod());
+            assertThat(request.method()).isEqualTo(httpRequest.getMethod().name());
             assertThat(request.body()).isNull();
         }
 
@@ -159,7 +159,7 @@ class OkHttpClientTest {
             config.put(CONFIGURATION_ID,"default");
             io.github.clescot.kafka.connect.http.client.okhttp.OkHttpClient client = new io.github.clescot.kafka.connect.http.client.okhttp.OkHttpClient(config, null, new Random(), null, null, getCompositeMeterRegistry());
 
-            HttpRequest httpRequest = new HttpRequest("http://dummy.com/", "POST", HttpRequest.BodyType.STRING.name());
+            HttpRequest httpRequest = new HttpRequest("http://dummy.com/", HttpRequest.Method.POST, HttpRequest.BodyType.STRING.name());
             httpRequest.setBodyAsString("stuff");
             Request request = client.buildRequest(httpRequest);
 
@@ -494,7 +494,7 @@ class OkHttpClientTest {
             headers.put("User-Agent", Lists.newArrayList("toto"));
             HttpRequest httpRequest = new HttpRequest(
                     url,
-                    "POST",
+                    HttpRequest.Method.POST,
                     "STRING"
             );
             httpRequest.setHeaders(headers);
@@ -526,7 +526,7 @@ class OkHttpClientTest {
             headers.put("User-Agent", Lists.newArrayList("toto"));
             HttpRequest httpRequest = new HttpRequest(
                     url,
-                    "POST",
+                    HttpRequest.Method.POST,
                     "STRING"
             );
             httpRequest.setHeaders(headers);
@@ -568,7 +568,7 @@ class OkHttpClientTest {
             headers.put("X-Request-ID", Lists.newArrayList("e6de70d1-f222-46e8-b755-11111"));
             HttpRequest httpRequest = new HttpRequest(
                     url,
-                    "POST",
+                    HttpRequest.Method.POST,
                     "STRING"
             );
             httpRequest.setHeaders(headers);
@@ -623,7 +623,7 @@ class OkHttpClientTest {
             headers.put("X-Request-ID", Lists.newArrayList("e6de70d1-f222-46e8-b755-11111"));
             HttpRequest httpRequest = new HttpRequest(
                     url,
-                    "POST",
+                    HttpRequest.Method.POST,
                     "STRING"
             );
             httpRequest.setHeaders(headers);
@@ -701,7 +701,7 @@ class OkHttpClientTest {
             headers.put("X-Request-ID", Lists.newArrayList("e6de70d1-f222-46e8-b755-11111"));
             HttpRequest httpRequest = new HttpRequest(
                     url,
-                    "POST",
+                    HttpRequest.Method.POST,
                     "STRING"
             );
             httpRequest.setHeaders(headers);
@@ -714,7 +714,7 @@ class OkHttpClientTest {
             headers2.put("X-Request-ID", Lists.newArrayList("22222-33333-000-000-0000"));
             HttpRequest httpRequest2 = new HttpRequest(
                     url2,
-                    "POST",
+                    HttpRequest.Method.POST,
                     "STRING"
             );
             httpRequest2.setHeaders(headers2);
@@ -837,7 +837,7 @@ class OkHttpClientTest {
             headers.put("X-Request-ID", Lists.newArrayList("e6de70d1-f222-46e8-b755-11111"));
             HttpRequest httpRequest = new HttpRequest(
                     url,
-                    "GET",
+                    HttpRequest.Method.GET,
                     "STRING"
             );
             httpRequest.setHeaders(headers);
@@ -965,7 +965,7 @@ class OkHttpClientTest {
             headers.put("X-Request-ID", Lists.newArrayList("e6de70d1-f222-46e8-b755-11111"));
             HttpRequest httpRequest = new HttpRequest(
                     url,
-                    "POST",
+                    HttpRequest.Method.POST,
                     "STRING"
             );
             httpRequest.setHeaders(headers);
@@ -1021,7 +1021,7 @@ class OkHttpClientTest {
             headers.put("X-Request-ID", Lists.newArrayList("e6de70d1-f222-46e8-b755-11111"));
             HttpRequest httpRequest = new HttpRequest(
                     url,
-                    "POST",
+                    HttpRequest.Method.POST,
                     "STRING"
             );
             httpRequest.setHeaders(headers);
@@ -1108,7 +1108,7 @@ class OkHttpClientTest {
             headers.put("X-Request-ID", Lists.newArrayList("e6de70d1-f222-46e8-b755-11111"));
             HttpRequest httpRequest = new HttpRequest(
                     url,
-                    "POST",
+                    HttpRequest.Method.POST,
                     "STRING"
             );
             httpRequest.setHeaders(headers);
@@ -1219,7 +1219,7 @@ class OkHttpClientTest {
             headers.put("X-Request-ID", Lists.newArrayList("e6de70d1-f222-46e8-b755-11111"));
             HttpRequest httpRequest = new HttpRequest(
                     url,
-                    "GET",
+                    HttpRequest.Method.GET,
                     "STRING"
             );
             httpRequest.setHeaders(headers);
@@ -1386,7 +1386,7 @@ class OkHttpClientTest {
             headers.put("X-Request-ID", Lists.newArrayList("e6de70d1-f222-46e8-b755-11111"));
             HttpRequest httpRequest = new HttpRequest(
                     url,
-                    "POST",
+                    HttpRequest.Method.POST,
                     "STRING"
             );
             httpRequest.setHeaders(headers);
@@ -1449,7 +1449,7 @@ class OkHttpClientTest {
             headers.put("X-Request-ID", Lists.newArrayList("e6de70d1-f222-46e8-b755-11111"));
             HttpRequest httpRequest = new HttpRequest(
                     url,
-                    "POST",
+                    HttpRequest.Method.POST,
                     "STRING"
             );
             httpRequest.setHeaders(headers);
@@ -1526,7 +1526,7 @@ class OkHttpClientTest {
             headers.put("X-Request-ID", Lists.newArrayList("e6de70d1-f222-46e8-b755-11111"));
             HttpRequest httpRequest = new HttpRequest(
                     url,
-                    "POST",
+                    HttpRequest.Method.POST,
                     "STRING"
             );
             httpRequest.setHeaders(headers);
@@ -1579,7 +1579,7 @@ class OkHttpClientTest {
             headers.put("X-Request-ID", Lists.newArrayList("e6de70d1-f222-46e8-b755-11111"));
             HttpRequest httpRequest = new HttpRequest(
                     url,
-                    "POST",
+                    HttpRequest.Method.POST,
                     "STRING"
             );
             httpRequest.setHeaders(headers);
@@ -1639,7 +1639,7 @@ class OkHttpClientTest {
             headers.put("X-Request-ID", Lists.newArrayList("e6de70d1-f222-46e8-b755-11111"));
             HttpRequest httpRequest = new HttpRequest(
                     url,
-                    "POST",
+                    HttpRequest.Method.POST,
                     "STRING"
             );
             httpRequest.setHeaders(headers);

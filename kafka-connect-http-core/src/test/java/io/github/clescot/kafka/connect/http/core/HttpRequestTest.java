@@ -51,7 +51,7 @@ class HttpRequestTest {
         objectMapper.registerModule(new JavaTimeModule());
         HttpRequest httpRequest = new HttpRequest(
                 "http://www.stuff.com",
-                "GET",
+                HttpRequest.Method.GET,
                 "STRING"
         );
         httpRequest.setBodyAsString(DUMMY_BODY_AS_STRING);
@@ -80,7 +80,7 @@ class HttpRequestTest {
         objectMapper.registerModule(new JavaTimeModule());
         HttpRequest expectedHttpRequest = new HttpRequest(
                 "http://www.stuff.com",
-                "GET",
+                HttpRequest.Method.GET,
                 "STRING"
         );
         expectedHttpRequest.setBodyAsString(DUMMY_BODY_AS_STRING);
@@ -110,7 +110,7 @@ class HttpRequestTest {
         //build httpRequest
         HttpRequest httpRequest = new HttpRequest(
                 "http://www.stuff.com",
-                "GET",
+                HttpRequest.Method.GET,
                 "STRING"
         );
         httpRequest.setBodyAsString(DUMMY_BODY_AS_STRING);
@@ -162,7 +162,7 @@ class HttpRequestTest {
         //build httpRequest
         HttpRequest httpRequest = new HttpRequest(
                 "http://www.stuff.com",
-                "GET",
+                HttpRequest.Method.GET,
                 "STRING"
         );
         httpRequest.setBodyAsString(DUMMY_BODY_AS_STRING);
@@ -245,8 +245,8 @@ class HttpRequestTest {
         Struct struct = new Struct(HttpRequestAsStruct.SCHEMA);
         String dummyUrl = "http://stuff.com";
         struct.put("url", dummyUrl);
-        String dummyMethod = "GET";
-        struct.put("method", dummyMethod);
+        HttpRequest.Method dummyMethod = HttpRequest.Method.GET;
+        struct.put("method", dummyMethod.name());
         String dummyBodyType = "STRING";
         struct.put("bodyType", dummyBodyType);
         struct.put("bodyAsString", DUMMY_BODY_AS_STRING);

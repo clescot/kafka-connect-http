@@ -53,7 +53,7 @@ public class HttpRequestAsStruct {
         return new Struct(SCHEMA)
                 .put(URL, httpRequest.getUrl())
                 .put(HEADERS, httpRequest.getHeaders())
-                .put(METHOD, httpRequest.getMethod())
+                .put(METHOD, httpRequest.getMethod().name())
                 .put(BODY_TYPE, httpRequest.getBodyType().name())
                 .put(BODY_AS_STRING,httpRequest.getBodyAsString())
                 .put(BODY_AS_FORM, httpRequest.getBodyAsForm())
@@ -65,7 +65,7 @@ public class HttpRequestAsStruct {
 
         private Struct struct;
         private String url;
-        private String method;
+        private HttpRequest.Method method;
         private String bodyType;
         private String stringBody;
         private Map<String,String> formBody = Maps.newHashMap();
@@ -92,7 +92,7 @@ public class HttpRequestAsStruct {
                 this.headers = headers;
             }
 
-            this.method = struct.getString(METHOD);
+            this.method = HttpRequest.Method.valueOf(struct.getString(METHOD).toUpperCase());
             Preconditions.checkNotNull(method, "'method' is required");
 
             this.bodyType = struct.getString(BODY_TYPE);

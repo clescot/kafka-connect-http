@@ -25,7 +25,7 @@ public class HttpRequest implements Serializable {
     @JsonProperty
     private Map<String, List<String>> headers = Maps.newHashMap();
     @JsonProperty(defaultValue = "GET")
-    private String method;
+    private HttpRequest.Method method;
     @JsonProperty
     private String bodyAsString = "";
     @JsonProperty
@@ -108,13 +108,13 @@ public class HttpRequest implements Serializable {
     protected HttpRequest() {
     }
     public HttpRequest(String url){
-        this(url,"GET","STRING");
+        this(url,HttpRequest.Method.GET,"STRING");
     }
-    public HttpRequest(String url,String method){
+    public HttpRequest(String url,HttpRequest.Method method){
         this(url,method,"STRING");
     }
     public HttpRequest(String url,
-                       String method,
+                       HttpRequest.Method method,
                        String bodyType) {
         Preconditions.checkNotNull(url, "url is required");
         Preconditions.checkNotNull(bodyType, "bodyType is required");
@@ -146,7 +146,7 @@ public class HttpRequest implements Serializable {
         return url;
     }
 
-    public String getMethod() {
+    public HttpRequest.Method getMethod() {
         return method;
     }
 
@@ -248,5 +248,16 @@ public class HttpRequest implements Serializable {
         }
     }
 
+    public enum Method {
+        CONNECT,
+        DELETE,
+        GET,
+        HEAD,
+        PATCH,
+        POST,
+        PUT,
+        OPTIONS,
+        TRACE
+    }
 
 }

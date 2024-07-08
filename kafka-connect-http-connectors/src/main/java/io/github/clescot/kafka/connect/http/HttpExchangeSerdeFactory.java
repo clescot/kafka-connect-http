@@ -24,7 +24,7 @@ public class HttpExchangeSerdeFactory {
 
     public Serde<HttpExchange> buildValueSerde(){
         final KafkaJsonSchemaSerde<HttpExchange> jsonSchemaSerde = new KafkaJsonSchemaSerde<>(schemaRegistryClient,HttpExchange.class);
-        serdeConfig.entrySet().forEach(entry-> LOGGER.info("{}:{}",entry.getKey(),entry.getValue()));
+        serdeConfig.forEach((key, value) -> LOGGER.info("{}:{}", key, value));
         jsonSchemaSerde.configure(serdeConfig, false);
         return jsonSchemaSerde;
     }

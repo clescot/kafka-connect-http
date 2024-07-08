@@ -39,8 +39,8 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
 
-import static io.github.clescot.kafka.connect.http.HttpTask.DEFAULT_CONFIGURATION_ID;
 import static io.github.clescot.kafka.connect.http.sink.HttpSinkConfigDefinition.*;
+import static io.github.clescot.kafka.connect.http.sink.HttpSinkTask.DEFAULT_CONFIGURATION_ID;
 
 public class OkHttpClient extends AbstractHttpClient<Request, Response> {
     private static final String PROTOCOL_SEPARATOR = ",";
@@ -335,7 +335,7 @@ public class OkHttpClient extends AbstractHttpClient<Request, Response> {
             firstContentType = contentType.get(0);
         }
         RequestBody requestBody = null;
-        String method = httpRequest.getMethod();
+        String method = httpRequest.getMethod().name();
         if (HttpMethod.permitsRequestBody(method)) {
             if (HttpRequest.BodyType.STRING.equals(httpRequest.getBodyType())) {
                 //use the contentType set in HttpRequest. if not set, use application/json

@@ -41,7 +41,7 @@ public class OkHttpHTTPRequestSender implements HTTPRequestSender {
                 .build();
     }
     private HttpRequest toRequest(ReadOnlyHTTPRequest httpRequest){
-        HttpRequest request = new HttpRequest(httpRequest.getURL().toString(),httpRequest.getMethod().name());
+        HttpRequest request = new HttpRequest(httpRequest.getURL().toString(),HttpRequest.Method.valueOf(httpRequest.getMethod().name()));
         request.setHeaders(httpRequest.getHeaderMap());
         return request;
     }
