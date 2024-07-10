@@ -21,7 +21,7 @@ import java.nio.charset.StandardCharsets;
 /**
  * Map a sinkRecord already prepared to be parsed directly as an {@link HttpRequest}.
  */
-public class DirectHttpRequestMapper implements HttpRequestMapper {
+public class DirectHttpRequestMapper extends AbstractHttpRequestMapper {
     private static final Logger LOGGER = LoggerFactory.getLogger(DirectHttpRequestMapper.class);
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper().registerModule(new JavaTimeModule());
     public static final String SINK_RECORD_HAS_GOT_A_NULL_VALUE = "sinkRecord has got a 'null' value";

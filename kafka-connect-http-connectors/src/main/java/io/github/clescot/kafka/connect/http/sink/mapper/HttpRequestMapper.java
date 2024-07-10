@@ -3,6 +3,8 @@ package io.github.clescot.kafka.connect.http.sink.mapper;
 import io.github.clescot.kafka.connect.http.core.HttpRequest;
 import org.apache.kafka.connect.sink.SinkRecord;
 
+import java.util.regex.Pattern;
+
 public interface HttpRequestMapper {
 
     /**
@@ -18,4 +20,12 @@ public interface HttpRequestMapper {
      * @return built {{@link HttpRequest}
      */
     HttpRequest map(SinkRecord sinkRecord);
+
+    void setSplitLimit(int splitLimit);
+
+    void setSplitPattern(String splitPattern);
+
+    int getSplitLimit();
+
+    Pattern getSplitPattern();
 }

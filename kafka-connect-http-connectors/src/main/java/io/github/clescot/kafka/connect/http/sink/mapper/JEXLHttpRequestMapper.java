@@ -14,7 +14,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
-public class JEXLHttpRequestMapper implements HttpRequestMapper {
+public class JEXLHttpRequestMapper extends AbstractHttpRequestMapper {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(JEXLHttpRequestMapper.class);
     public static final String SINK_RECORD = "sinkRecord";
