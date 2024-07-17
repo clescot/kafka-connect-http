@@ -172,12 +172,12 @@ public class HttpSinkConnectorConfig extends AbstractConfig {
 
         this.customFixedThreadpoolSize = getInt(HTTP_CLIENT_ASYNC_FIXED_THREAD_POOL_SIZE);
         this.configurationIds = Optional.ofNullable(getList(CONFIGURATION_IDS)).orElse(Lists.newArrayList());
-        this.defaultRequestMapperMode = Optional.of(MapperMode.valueOf(getString(REQUEST_MAPPER_DEFAULT_MODE))).orElse(MapperMode.DIRECT);
-        this.defaultUrlExpression = getString(REQUEST_MAPPER_DEFAULT_URL_EXPRESSION);
-        this.defaultMethodExpression = getString(REQUEST_MAPPER_DEFAULT_METHOD_EXPRESSION);
-        this.defaultBodyTypeExpression = Optional.ofNullable(getString(REQUEST_MAPPER_DEFAULT_BODYTYPE_EXPRESSION)).orElse(HttpRequest.BodyType.STRING.toString());
-        this.defaultBodyExpression = getString(REQUEST_MAPPER_DEFAULT_BODY_EXPRESSION);
-        this.defaultHeadersExpression = getString(REQUEST_MAPPER_DEFAULT_HEADERS_EXPRESSION);
+        this.defaultRequestMapperMode = Optional.of(MapperMode.valueOf(getString(DEFAULT_REQUEST_MAPPER_PREFIX+REQUEST_MAPPER_DEFAULT_MODE))).orElse(MapperMode.DIRECT);
+        this.defaultUrlExpression = getString(DEFAULT_REQUEST_MAPPER_PREFIX+REQUEST_MAPPER_DEFAULT_URL_EXPRESSION);
+        this.defaultMethodExpression = getString(DEFAULT_REQUEST_MAPPER_PREFIX+REQUEST_MAPPER_DEFAULT_METHOD_EXPRESSION);
+        this.defaultBodyTypeExpression = Optional.ofNullable(getString(DEFAULT_REQUEST_MAPPER_PREFIX+REQUEST_MAPPER_DEFAULT_BODYTYPE_EXPRESSION)).orElse(HttpRequest.BodyType.STRING.toString());
+        this.defaultBodyExpression = getString(DEFAULT_REQUEST_MAPPER_PREFIX+REQUEST_MAPPER_DEFAULT_BODY_EXPRESSION);
+        this.defaultHeadersExpression = getString(DEFAULT_REQUEST_MAPPER_PREFIX+REQUEST_MAPPER_DEFAULT_HEADERS_EXPRESSION);
         this.httpRequestMapperIds = Optional.ofNullable(getList(HTTP_REQUEST_MAPPER_IDS)).orElse(Lists.newArrayList());
 
     }

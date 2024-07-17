@@ -206,6 +206,7 @@ public abstract class HttpSinkTask<R, S> extends SinkTask {
         HttpSinkTask.meterRegistry = buildMeterRegistry(httpSinkConnectorConfig);
 
         //build httpRequestMappers
+
         // Restricted permissions to a safe set but with URI allowed
         JexlPermissions permissions = new JexlPermissions.ClassPermissions(SinkRecord.class, ConnectRecord.class, HttpRequest.class);
         // Create the engine
@@ -237,9 +238,10 @@ public abstract class HttpSinkTask<R, S> extends SinkTask {
         }
         this.httpRequestMappers = buildCustomHttpRequestMappers(httpSinkConnectorConfig, jexlEngine);
 
-
+        //configurations
         this.defaultConfiguration = new Configuration<>(DEFAULT_CONFIGURATION_ID, httpClientFactory, httpSinkConnectorConfig, executorService, meterRegistry);
         customConfigurations = buildCustomConfigurations(httpClientFactory, httpSinkConnectorConfig, defaultConfiguration, executorService);
+
         httpTask = new HttpTask<>(httpSinkConnectorConfig, defaultConfiguration, customConfigurations, meterRegistry, executorService);
 
         try {
@@ -470,6 +472,7 @@ public abstract class HttpSinkTask<R, S> extends SinkTask {
                 throw new ConnectException("sinkRecord Value is null :" + sinkRecord);
             }
 
+            //httpRequestMapper
             HttpRequestMapper httpRequestMapper = httpRequestMappers.stream()
                     .filter(mapper -> mapper.matches(sinkRecord))
                     .findFirst()
@@ -478,6 +481,8 @@ public abstract class HttpSinkTask<R, S> extends SinkTask {
             //build HttpRequest
             HttpRequest httpRequest = httpRequestMapper.map(sinkRecord);
             List<HttpRequest> httpRequests = Lists.newArrayList();
+
+            //splitter
             if (HttpRequest.BodyType.STRING.equals(httpRequest.getBodyType())
                     &&httpRequestMapper.getSplitPattern()!=null) {
                 String bodyAsString = httpRequest.getBodyAsString();
@@ -489,6 +494,7 @@ public abstract class HttpSinkTask<R, S> extends SinkTask {
                         })
                         .collect(Collectors.toList()));
             } else {
+                //no splitter
                 httpRequests.add(httpRequest);
             }
             //we don't simulate some sub-sinkRecord, to preserve the integrity of the commit notion

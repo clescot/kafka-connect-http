@@ -196,9 +196,9 @@ public class HttpSinkTaskTest {
         void test_start_with_settings_httprequestmapper_is_jexl() {
             Assertions.assertDoesNotThrow(() -> {
                 HashMap<String, String> settings = Maps.newHashMap();
-                settings.put(REQUEST_MAPPER_DEFAULT_MODE, MapperMode.JEXL.name());
-                settings.put(REQUEST_MAPPER_DEFAULT_URL_EXPRESSION, "sinkRecord.value()");
-                settings.put(REQUEST_MAPPER_DEFAULT_METHOD_EXPRESSION, "'GET'");
+                settings.put(DEFAULT_REQUEST_MAPPER_PREFIX+REQUEST_MAPPER_DEFAULT_MODE, MapperMode.JEXL.name());
+                settings.put(DEFAULT_REQUEST_MAPPER_PREFIX+REQUEST_MAPPER_DEFAULT_URL_EXPRESSION, "sinkRecord.value()");
+                settings.put(DEFAULT_REQUEST_MAPPER_PREFIX+REQUEST_MAPPER_DEFAULT_METHOD_EXPRESSION, "'GET'");
                 okHttpSinkTask.start(settings);
                 assertThat(okHttpSinkTask.getDefaultHttpRequestMapper()).isInstanceOf(JEXLHttpRequestMapper.class);
                 JEXLHttpRequestMapper httpRequestMapper = (JEXLHttpRequestMapper) okHttpSinkTask.getDefaultHttpRequestMapper();
@@ -216,12 +216,12 @@ public class HttpSinkTaskTest {
         void test_start_with_more_settings_httprequestmapper_is_jexl() {
             Assertions.assertDoesNotThrow(() -> {
                 HashMap<String, String> settings = Maps.newHashMap();
-                settings.put(REQUEST_MAPPER_DEFAULT_MODE, MapperMode.JEXL.name());
-                settings.put(REQUEST_MAPPER_DEFAULT_URL_EXPRESSION, "sinkRecord.value()");
-                settings.put(REQUEST_MAPPER_DEFAULT_METHOD_EXPRESSION, "'GET'");
-                settings.put(REQUEST_MAPPER_DEFAULT_BODY_EXPRESSION, "'my request body'");
-                settings.put(REQUEST_MAPPER_DEFAULT_BODYTYPE_EXPRESSION, "'STRING'");
-                settings.put(REQUEST_MAPPER_DEFAULT_HEADERS_EXPRESSION, "{'test1':['value1','value2',...]}");
+                settings.put(DEFAULT_REQUEST_MAPPER_PREFIX+REQUEST_MAPPER_DEFAULT_MODE, MapperMode.JEXL.name());
+                settings.put(DEFAULT_REQUEST_MAPPER_PREFIX+REQUEST_MAPPER_DEFAULT_URL_EXPRESSION, "sinkRecord.value()");
+                settings.put(DEFAULT_REQUEST_MAPPER_PREFIX+REQUEST_MAPPER_DEFAULT_METHOD_EXPRESSION, "'GET'");
+                settings.put(DEFAULT_REQUEST_MAPPER_PREFIX+REQUEST_MAPPER_DEFAULT_BODY_EXPRESSION, "'my request body'");
+                settings.put(DEFAULT_REQUEST_MAPPER_PREFIX+REQUEST_MAPPER_DEFAULT_BODYTYPE_EXPRESSION, "'STRING'");
+                settings.put(DEFAULT_REQUEST_MAPPER_PREFIX+REQUEST_MAPPER_DEFAULT_HEADERS_EXPRESSION, "{'test1':['value1','value2',...]}");
                 okHttpSinkTask.start(settings);
                 assertThat(okHttpSinkTask.getDefaultHttpRequestMapper()).isInstanceOf(JEXLHttpRequestMapper.class);
                 JEXLHttpRequestMapper httpRequestMapper = (JEXLHttpRequestMapper) okHttpSinkTask.getDefaultHttpRequestMapper();
