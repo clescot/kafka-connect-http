@@ -299,7 +299,7 @@ public abstract class HttpSinkTask<R, S> extends SinkTask {
         producer.configure(producerSettings, new StringSerializer(), serializer);
 
         //connectivity check for producer
-        checkKafkaConnectivity();
+        checkKafkaConnectivity(httpSinkConnectorConfig,producer);
     }
 
     /**
@@ -341,14 +341,14 @@ public abstract class HttpSinkTask<R, S> extends SinkTask {
         return compositeMeterRegistry;
     }
 
-    private void checkKafkaConnectivity() {
-        LOGGER.info("test connectivity to kafka cluster for producer with address :'{}' for topic:'{}'", httpSinkConnectorConfig.getProducerBootstrapServers(), httpSinkConnectorConfig.getProducerSuccessTopic());
+    private void checkKafkaConnectivity(HttpSinkConnectorConfig sinkConnectorConfig, KafkaProducer<String, HttpExchange> producer) {
+        LOGGER.info("test connectivity to kafka cluster for producer with address :'{}' for topic:'{}'", sinkConnectorConfig.getProducerBootstrapServers(), sinkConnectorConfig.getProducerSuccessTopic());
         List<PartitionInfo> partitionInfos;
         try {
-            partitionInfos = producer.partitionsFor(httpSinkConnectorConfig.getProducerSuccessTopic());
+            partitionInfos = producer.partitionsFor(sinkConnectorConfig.getProducerSuccessTopic());
         } catch (KafkaException e) {
             LOGGER.error("connectivity error.\nproducer settings :");
-            for (Map.Entry<String, Object> entry : producerSettings.entrySet()) {
+            for (Map.Entry<String, Object> entry : sinkConnectorConfig.originalsWithPrefix(PRODUCER_PREFIX).entrySet()) {
                 LOGGER.error("   '{}':'{}'", entry.getKey(), entry.getValue());
             }
             LOGGER.error("connectivity error :{}", e.getMessage());
