@@ -53,7 +53,7 @@ class DirectHttpRequestMapperTest {
     private DirectHttpRequestMapper httpRequestMapper;
     @BeforeEach
     public void setup() {
-// Restricted permissions to a safe set but with URI allowed
+        // Restricted permissions to a safe set but with URI allowed
         JexlPermissions permissions = new JexlPermissions.ClassPermissions(SinkRecord.class, ConnectRecord.class,HttpRequest.class);
         // Create the engine
         JexlFeatures features = new JexlFeatures()
