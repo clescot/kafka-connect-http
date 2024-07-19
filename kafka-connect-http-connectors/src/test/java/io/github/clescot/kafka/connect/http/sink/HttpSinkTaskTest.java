@@ -825,6 +825,171 @@ public class HttpSinkTaskTest {
 
         }
 
+        @Test
+        void test_default_http_request_mapper_with_split_pattern(){
+            Assertions.assertDoesNotThrow(() -> {
+                HashMap<String, String> settings = Maps.newHashMap();
+                settings.put(REQUEST_MAPPER_DEFAULT_MODE, MapperMode.DIRECT.name());
+                settings.put("http.request.mapper.default.mode", MapperMode.JEXL.name());
+                settings.put("http.request.mapper.default.url", "sinkRecord.value().split(\"#\")[0]");
+                settings.put("http.request.mapper.default.method", "sinkRecord.value().split(\"#\")[1]");
+                settings.put("http.request.mapper.default.bodytype", "'STRING'");
+                settings.put("http.request.mapper.default.body", "sinkRecord.value().split(\"#\")[2]");
+                settings.put("http.request.mapper.default.headers", "{'test1':['value1','value2',...]}");
+                settings.put("http.request.mapper.default.split.pattern", "\\|");
+
+
+                okHttpSinkTask.start(settings);
+
+                //given
+                WireMockRuntimeInfo wmRuntimeInfo = wmHttp.getRuntimeInfo();
+
+
+                //init sinkRecord
+                List<SinkRecord> records = Lists.newArrayList();
+                List<Header> headers = Lists.newArrayList();
+                SinkRecord sinkRecord1 = new SinkRecord("myTopic", 0, Schema.STRING_SCHEMA, "key", Schema.STRING_SCHEMA,
+                        "http://localhost:"+wmRuntimeInfo.getHttpPort()+ "/path1"+"#"+"POST"+"#"+"body_1.1|body_1.2|body_1.3",
+                        -1, System.currentTimeMillis(), TimestampType.CREATE_TIME, headers);
+                records.add(sinkRecord1);
+                SinkRecord sinkRecord2 = new SinkRecord("myTopic", 0, Schema.STRING_SCHEMA, "key", Schema.STRING_SCHEMA,
+                        "http://localhost:"+wmRuntimeInfo.getHttpPort()+ "/path2"+"#"+"POST"+"#"+"body2",
+                        -1, System.currentTimeMillis(), TimestampType.CREATE_TIME, headers);
+                records.add(sinkRecord2);
+                SinkRecord sinkRecord3 = new SinkRecord("myTopic", 0, Schema.STRING_SCHEMA, "key", Schema.STRING_SCHEMA,
+                        "http://localhost:"+wmRuntimeInfo.getHttpPort()+ "/path3"+"#"+"POST"+"#"+"body3",
+                        -1, System.currentTimeMillis(), TimestampType.CREATE_TIME, headers);
+                records.add(sinkRecord3);
+
+                //define the http Mock Server interaction
+                WireMock wireMock = wmRuntimeInfo.getWireMock();
+                String bodyResponse = "{\"result\":\"pong\"}";
+                wireMock
+                        .register(WireMock.post("/path1")
+                                .willReturn(WireMock.aResponse()
+                                        .withHeader("Content-Type", "application/json")
+                                        .withBody(bodyResponse)
+                                        .withStatus(200)
+                                        .withStatusMessage(OK)
+                                        .withFixedDelay(1000)
+                                )
+                        );
+                wireMock
+                        .register(WireMock.post("/path2")
+                                .willReturn(WireMock.aResponse()
+                                        .withHeader("Content-Type", "application/json")
+                                        .withBody(bodyResponse)
+                                        .withStatus(200)
+                                        .withStatusMessage(OK)
+                                        .withFixedDelay(1000)
+                                )
+                        );
+                wireMock
+                        .register(WireMock.post("/path3")
+                                .willReturn(WireMock.aResponse()
+                                        .withHeader("Content-Type", "application/json")
+                                        .withBody(bodyResponse)
+                                        .withStatus(200)
+                                        .withStatusMessage(OK)
+                                        .withFixedDelay(1000)
+                                )
+                        );
+                //when
+
+                okHttpSinkTask.put(records);
+                wireMock.verifyThat(3,postRequestedFor(urlEqualTo("/path1")));
+                wireMock.verifyThat(postRequestedFor(urlEqualTo("/path2")));
+                wireMock.verifyThat(postRequestedFor(urlEqualTo("/path3")));
+
+
+            });
+
+        }
+
+
+
+        @Test
+        void test_default_http_request_mapper_with_split_pattern_and_limit(){
+            Assertions.assertDoesNotThrow(() -> {
+                HashMap<String, String> settings = Maps.newHashMap();
+                settings.put(REQUEST_MAPPER_DEFAULT_MODE, MapperMode.DIRECT.name());
+                settings.put("http.request.mapper.default.mode", MapperMode.JEXL.name());
+                settings.put("http.request.mapper.default.url", "sinkRecord.value().split(\"#\")[0]");
+                settings.put("http.request.mapper.default.method", "sinkRecord.value().split(\"#\")[1]");
+                settings.put("http.request.mapper.default.bodytype", "'STRING'");
+                settings.put("http.request.mapper.default.body", "sinkRecord.value().split(\"#\")[2]");
+                settings.put("http.request.mapper.default.headers", "{'test1':['value1','value2',...]}");
+                settings.put("http.request.mapper.default.split.pattern", "\\|");
+                settings.put("http.request.mapper.default.split.limit", "2");
+
+
+                okHttpSinkTask.start(settings);
+
+                //given
+                WireMockRuntimeInfo wmRuntimeInfo = wmHttp.getRuntimeInfo();
+
+
+                //init sinkRecord
+                List<SinkRecord> records = Lists.newArrayList();
+                List<Header> headers = Lists.newArrayList();
+                SinkRecord sinkRecord1 = new SinkRecord("myTopic", 0, Schema.STRING_SCHEMA, "key", Schema.STRING_SCHEMA,
+                        "http://localhost:"+wmRuntimeInfo.getHttpPort()+ "/path1"+"#"+"POST"+"#"+"body_1.1|body_1.2|body_1.3",
+                        -1, System.currentTimeMillis(), TimestampType.CREATE_TIME, headers);
+                records.add(sinkRecord1);
+                SinkRecord sinkRecord2 = new SinkRecord("myTopic", 0, Schema.STRING_SCHEMA, "key", Schema.STRING_SCHEMA,
+                        "http://localhost:"+wmRuntimeInfo.getHttpPort()+ "/path2"+"#"+"POST"+"#"+"body2",
+                        -1, System.currentTimeMillis(), TimestampType.CREATE_TIME, headers);
+                records.add(sinkRecord2);
+                SinkRecord sinkRecord3 = new SinkRecord("myTopic", 0, Schema.STRING_SCHEMA, "key", Schema.STRING_SCHEMA,
+                        "http://localhost:"+wmRuntimeInfo.getHttpPort()+ "/path3"+"#"+"POST"+"#"+"body3",
+                        -1, System.currentTimeMillis(), TimestampType.CREATE_TIME, headers);
+                records.add(sinkRecord3);
+
+                //define the http Mock Server interaction
+                WireMock wireMock = wmRuntimeInfo.getWireMock();
+                String bodyResponse = "{\"result\":\"pong\"}";
+                wireMock
+                        .register(WireMock.post("/path1")
+                                .willReturn(WireMock.aResponse()
+                                        .withHeader("Content-Type", "application/json")
+                                        .withBody(bodyResponse)
+                                        .withStatus(200)
+                                        .withStatusMessage(OK)
+                                        .withFixedDelay(1000)
+                                )
+                        );
+                wireMock
+                        .register(WireMock.post("/path2")
+                                .willReturn(WireMock.aResponse()
+                                        .withHeader("Content-Type", "application/json")
+                                        .withBody(bodyResponse)
+                                        .withStatus(200)
+                                        .withStatusMessage(OK)
+                                        .withFixedDelay(1000)
+                                )
+                        );
+                wireMock
+                        .register(WireMock.post("/path3")
+                                .willReturn(WireMock.aResponse()
+                                        .withHeader("Content-Type", "application/json")
+                                        .withBody(bodyResponse)
+                                        .withStatus(200)
+                                        .withStatusMessage(OK)
+                                        .withFixedDelay(1000)
+                                )
+                        );
+                //when
+
+                okHttpSinkTask.put(records);
+                wireMock.verifyThat(2,postRequestedFor(urlEqualTo("/path1")));
+                wireMock.verifyThat(postRequestedFor(urlEqualTo("/path2")));
+                wireMock.verifyThat(postRequestedFor(urlEqualTo("/path3")));
+
+
+            });
+
+        }
+
     }
 
 
