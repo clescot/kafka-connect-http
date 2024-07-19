@@ -178,9 +178,22 @@ public abstract class HttpSinkTask<R, S> extends SinkTask {
                 }
                 case DIRECT:
                 default: {
-                    httpRequestMapper = new DirectHttpRequestMapper(jexlEngine, (String) settings.get(".matcher"));
+                    httpRequestMapper = new DirectHttpRequestMapper(
+                            jexlEngine,
+                            (String) settings.get(".matcher")
+                    );
                     break;
                 }
+            }
+            String splitPattern = (String) settings.get(".split.pattern");
+            if (splitPattern != null) {
+                httpRequestMapper.setSplitPattern(splitPattern);
+            }
+
+            String limitAsString = (String) settings.get(".split.limit");
+            if (limitAsString != null) {
+                int splitLimit = Integer.parseInt(limitAsString);
+                httpRequestMapper.setSplitLimit(splitLimit);
             }
             requestMappers.add(httpRequestMapper);
         }
@@ -235,6 +248,15 @@ public abstract class HttpSinkTask<R, S> extends SinkTask {
                 this.defaultHttpRequestMapper = new DirectHttpRequestMapper(jexlEngine, JEXL_ALWAYS_MATCHES);
                 break;
             }
+        }
+        String splitPattern = httpSinkConnectorConfig.getDefaultSplitPattern();
+        if (splitPattern != null) {
+            this.defaultHttpRequestMapper.setSplitPattern(splitPattern);
+        }
+
+        Integer splitLimit = httpSinkConnectorConfig.getDefaultSplitLimit();
+        if (splitLimit != null) {
+            this.defaultHttpRequestMapper.setSplitLimit(splitLimit);
         }
         this.httpRequestMappers = buildCustomHttpRequestMappers(httpSinkConnectorConfig, jexlEngine);
 
@@ -299,7 +321,7 @@ public abstract class HttpSinkTask<R, S> extends SinkTask {
         producer.configure(producerSettings, new StringSerializer(), serializer);
 
         //connectivity check for producer
-        checkKafkaConnectivity(httpSinkConnectorConfig,producer);
+        checkKafkaConnectivity(httpSinkConnectorConfig, producer);
     }
 
     /**
@@ -484,7 +506,7 @@ public abstract class HttpSinkTask<R, S> extends SinkTask {
 
             //splitter
             if (HttpRequest.BodyType.STRING.equals(httpRequest.getBodyType())
-                    &&httpRequestMapper.getSplitPattern()!=null) {
+                    && httpRequestMapper.getSplitPattern() != null) {
                 String bodyAsString = httpRequest.getBodyAsString();
                 httpRequests.addAll(Lists.newArrayList(httpRequestMapper.getSplitPattern().split(bodyAsString, httpRequestMapper.getSplitLimit())).stream()
                         .map(part -> {
