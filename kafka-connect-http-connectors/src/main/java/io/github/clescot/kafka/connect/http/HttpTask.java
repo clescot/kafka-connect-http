@@ -7,28 +7,19 @@ import dev.failsafe.FailsafeExecutor;
 import dev.failsafe.RetryPolicy;
 import io.github.clescot.kafka.connect.http.client.Configuration;
 import io.github.clescot.kafka.connect.http.client.HttpClient;
-import io.github.clescot.kafka.connect.http.client.HttpException;
 import io.github.clescot.kafka.connect.http.core.HttpExchange;
 import io.github.clescot.kafka.connect.http.core.HttpRequest;
 import io.github.clescot.kafka.connect.http.core.HttpResponse;
-import io.micrometer.core.instrument.Clock;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.binder.jvm.*;
 import io.micrometer.core.instrument.binder.logging.LogbackMetrics;
 import io.micrometer.core.instrument.binder.system.ProcessorMetrics;
 import io.micrometer.core.instrument.composite.CompositeMeterRegistry;
-import io.micrometer.jmx.JmxConfig;
-import io.micrometer.jmx.JmxMeterRegistry;
-import io.micrometer.prometheusmetrics.PrometheusConfig;
-import io.micrometer.prometheusmetrics.PrometheusMeterRegistry;
-import io.prometheus.metrics.exporter.httpserver.HTTPServer;
-import io.prometheus.metrics.model.registry.PrometheusRegistry;
 import org.apache.kafka.common.config.AbstractConfig;
 import org.apache.kafka.connect.connector.ConnectRecord;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
 import java.time.OffsetDateTime;
 import java.time.ZoneId;
 import java.util.List;
@@ -151,35 +142,6 @@ public class HttpTask<T extends ConnectRecord<T>,R,S> {
                     return httpExchange;
                 }
         );
-    }
-
-    private CompositeMeterRegistry buildMeterRegistry(AbstractConfig config) {
-        CompositeMeterRegistry compositeMeterRegistry = new CompositeMeterRegistry();
-        boolean activateJMX = Boolean.parseBoolean(config.getString(METER_REGISTRY_EXPORTER_JMX_ACTIVATE));
-        if (activateJMX) {
-            JmxMeterRegistry jmxMeterRegistry = new JmxMeterRegistry(JmxConfig.DEFAULT, Clock.SYSTEM);
-            jmxMeterRegistry.start();
-            compositeMeterRegistry.add(jmxMeterRegistry);
-        }
-        boolean activatePrometheus = Boolean.parseBoolean(config.getString(METER_REGISTRY_EXPORTER_PROMETHEUS_ACTIVATE));
-        if (activatePrometheus) {
-            PrometheusMeterRegistry prometheusMeterRegistry = new PrometheusMeterRegistry(PrometheusConfig.DEFAULT);
-            Integer prometheusPort = config.getInt(METER_REGISTRY_EXPORTER_PROMETHEUS_PORT);
-            // you can set the daemon flag to false if you want the server to block
-
-            try {
-                int port = prometheusPort != null ? prometheusPort : 9090;
-                PrometheusRegistry prometheusRegistry = prometheusMeterRegistry.getPrometheusRegistry();
-                HTTPServer.builder()
-                        .port(port)
-                        .registry(prometheusRegistry)
-                        .buildAndStart();
-            } catch (IOException e) {
-                throw new HttpException(e);
-            }
-            compositeMeterRegistry.add(prometheusMeterRegistry);
-        }
-        return compositeMeterRegistry;
     }
 
     private static void bindMetrics(AbstractConfig config, MeterRegistry meterRegistry, ExecutorService myExecutorService) {
