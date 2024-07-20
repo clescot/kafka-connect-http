@@ -119,23 +119,29 @@ public class HttpSinkConfigDefinition {
     public static final String HTTP_REQUEST_MAPPER_IDS_DOC = "custom configurations id list. 'default' http request mapper is already registered.";
 
     public static final String DEFAULT_REQUEST_MAPPER_PREFIX = "http.request.mapper.default.";
-    public static final String REQUEST_MAPPER_DEFAULT_MODE = DEFAULT_REQUEST_MAPPER_PREFIX + "mode";
+    public static final String REQUEST_MAPPER_DEFAULT_MODE = "mode";
     public static final String REQUEST_MAPPER_DEFAULT_MODE_DOC = "either 'direct' or 'jexl'. default is 'direct'.";
 
-    public static final String REQUEST_MAPPER_DEFAULT_URL_EXPRESSION = DEFAULT_REQUEST_MAPPER_PREFIX + "url";
+    public static final String REQUEST_MAPPER_DEFAULT_URL_EXPRESSION =  "url";
     public static final String REQUEST_MAPPER_DEFAULT_URL_EXPRESSION_DOC = "a valid JEXL url expression to feed from the message the HttpRequest url field";
 
-    public static final String REQUEST_MAPPER_DEFAULT_METHOD_EXPRESSION = DEFAULT_REQUEST_MAPPER_PREFIX + "method";
+    public static final String REQUEST_MAPPER_DEFAULT_METHOD_EXPRESSION = "method";
     public static final String REQUEST_MAPPER_DEFAULT_METHOD_EXPRESSION_DOC = "a valid JEXL method expression to feed from the message the HttpRequest method field";
 
-    public static final String REQUEST_MAPPER_DEFAULT_BODYTYPE_EXPRESSION = DEFAULT_REQUEST_MAPPER_PREFIX + "bodytype";
+    public static final String REQUEST_MAPPER_DEFAULT_BODYTYPE_EXPRESSION = "bodytype";
     public static final String REQUEST_MAPPER_DEFAULT_BODYTYPE_EXPRESSION_DOC = "a valid JEXL method expression to feed from the message the HttpRequest bodyType field";
 
-    public static final String REQUEST_MAPPER_DEFAULT_BODY_EXPRESSION = DEFAULT_REQUEST_MAPPER_PREFIX + "body";
+    public static final String REQUEST_MAPPER_DEFAULT_BODY_EXPRESSION =  "body";
     public static final String REQUEST_MAPPER_DEFAULT_BODY_EXPRESSION_DOC = "a valid JEXL method expression to feed from the message the HttpRequest body field";
 
-    public static final String REQUEST_MAPPER_DEFAULT_HEADERS_EXPRESSION = DEFAULT_REQUEST_MAPPER_PREFIX + "headers";
+    public static final String REQUEST_MAPPER_DEFAULT_HEADERS_EXPRESSION =  "headers";
     public static final String REQUEST_MAPPER_DEFAULT_HEADERS_EXPRESSION_DOC = "a valid JEXL method expression to feed from the message the HttpRequest headers field";
+
+    public static final String REQUEST_MAPPER_DEFAULT_SPLIT_PATTERN =  "split.pattern";
+    public static final String REQUEST_MAPPER_DEFAULT_SPLIT_PATTERN_DOC = "a valid Regex Pattern (https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/regex/Pattern.html) to split the string body from message into multiple bodies (one per resulting HttpRequest)";
+
+    public static final String REQUEST_MAPPER_DEFAULT_SPLIT_LIMIT =  "split.limit";
+    public static final String REQUEST_MAPPER_DEFAULT_SPLIT_LIMIT_DOC = "the number of times the pattern is applied, according to the split function from the java.util.regex.Pattern class (https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/regex/Pattern.html). can be positive, zero, or negative.";
 
     //configuration
     public static final String CONFIGURATION_IDS = "config.ids";
@@ -621,17 +627,11 @@ public class HttpSinkConfigDefinition {
                 .define(HTTP_CLIENT_ASYNC_FIXED_THREAD_POOL_SIZE, ConfigDef.Type.INT, null, ConfigDef.Importance.MEDIUM, HTTP_CLIENT_ASYNC_FIXED_THREAD_POOL_SIZE_DOC)
                 //custom configurations
                 .define(CONFIGURATION_IDS, ConfigDef.Type.LIST, Lists.newArrayList(), ConfigDef.Importance.LOW, CONFIGURATION_IDS_DOC)
-                //default request mapper
-                .define(REQUEST_MAPPER_DEFAULT_MODE,ConfigDef.Type.STRING, MapperMode.DIRECT.name(),ConfigDef.Importance.MEDIUM,REQUEST_MAPPER_DEFAULT_MODE_DOC)
-                .define(REQUEST_MAPPER_DEFAULT_URL_EXPRESSION,ConfigDef.Type.STRING, null,ConfigDef.Importance.HIGH,REQUEST_MAPPER_DEFAULT_URL_EXPRESSION_DOC)
-                .define(REQUEST_MAPPER_DEFAULT_METHOD_EXPRESSION,ConfigDef.Type.STRING, null,ConfigDef.Importance.MEDIUM,REQUEST_MAPPER_DEFAULT_METHOD_EXPRESSION_DOC)
-                .define(REQUEST_MAPPER_DEFAULT_BODYTYPE_EXPRESSION,ConfigDef.Type.STRING, null,ConfigDef.Importance.LOW,REQUEST_MAPPER_DEFAULT_BODYTYPE_EXPRESSION_DOC)
-                .define(REQUEST_MAPPER_DEFAULT_BODY_EXPRESSION,ConfigDef.Type.STRING, null,ConfigDef.Importance.MEDIUM,REQUEST_MAPPER_DEFAULT_BODY_EXPRESSION_DOC)
-                .define(REQUEST_MAPPER_DEFAULT_HEADERS_EXPRESSION,ConfigDef.Type.STRING, null,ConfigDef.Importance.MEDIUM,REQUEST_MAPPER_DEFAULT_HEADERS_EXPRESSION_DOC)
+
                 //custom request mappers
                 .define(HTTP_REQUEST_MAPPER_IDS, ConfigDef.Type.LIST, Lists.newArrayList(), ConfigDef.Importance.LOW, HTTP_REQUEST_MAPPER_IDS_DOC);
 
-
+        //custom configurations
         String configurationIds = settings.get(CONFIGURATION_IDS);
         Set<String> configs = Sets.newHashSet();
         if (configurationIds != null) {
@@ -639,12 +639,37 @@ public class HttpSinkConfigDefinition {
         }
         configs.add("default");
         for (String configurationName : configs) {
-            configDef = append(configDef, configurationName);
+            configDef = appendConfigurationConfigDef(configDef, configurationName);
+        }
+
+        //custom httpRequestmappers
+        String httpRequestMapperIds = settings.get(HTTP_REQUEST_MAPPER_IDS);
+        Set<String> mappers = Sets.newHashSet();
+        if(httpRequestMapperIds!=null){
+            mappers.addAll(Arrays.asList(httpRequestMapperIds.split(",")));
+        }
+        mappers.add("default");
+        for (String httpRequestmapperName : mappers) {
+            configDef = appendHttpRequestMapperConfigDef(configDef, httpRequestmapperName);
         }
         return configDef;
     }
 
-    private ConfigDef append(ConfigDef configDef, String configurationName) {
+    private ConfigDef appendHttpRequestMapperConfigDef(ConfigDef configDef, String httpRequestMapperName) {
+        String prefix = "http.request.mapper." + httpRequestMapperName + ".";
+        return configDef
+            .define(prefix + REQUEST_MAPPER_DEFAULT_MODE,ConfigDef.Type.STRING, MapperMode.DIRECT.name(),ConfigDef.Importance.MEDIUM,REQUEST_MAPPER_DEFAULT_MODE_DOC)
+            .define(prefix + REQUEST_MAPPER_DEFAULT_URL_EXPRESSION,ConfigDef.Type.STRING, null,ConfigDef.Importance.HIGH,REQUEST_MAPPER_DEFAULT_URL_EXPRESSION_DOC)
+            .define(prefix + REQUEST_MAPPER_DEFAULT_METHOD_EXPRESSION,ConfigDef.Type.STRING, null,ConfigDef.Importance.MEDIUM,REQUEST_MAPPER_DEFAULT_METHOD_EXPRESSION_DOC)
+            .define(prefix + REQUEST_MAPPER_DEFAULT_BODYTYPE_EXPRESSION,ConfigDef.Type.STRING, null,ConfigDef.Importance.LOW,REQUEST_MAPPER_DEFAULT_BODYTYPE_EXPRESSION_DOC)
+            .define(prefix + REQUEST_MAPPER_DEFAULT_BODY_EXPRESSION,ConfigDef.Type.STRING, null,ConfigDef.Importance.MEDIUM,REQUEST_MAPPER_DEFAULT_BODY_EXPRESSION_DOC)
+            .define(prefix + REQUEST_MAPPER_DEFAULT_HEADERS_EXPRESSION,ConfigDef.Type.STRING, null,ConfigDef.Importance.MEDIUM,REQUEST_MAPPER_DEFAULT_HEADERS_EXPRESSION_DOC)
+            .define(prefix + REQUEST_MAPPER_DEFAULT_SPLIT_PATTERN,ConfigDef.Type.STRING, null,ConfigDef.Importance.MEDIUM,REQUEST_MAPPER_DEFAULT_SPLIT_PATTERN_DOC)
+            .define(prefix + REQUEST_MAPPER_DEFAULT_SPLIT_LIMIT,ConfigDef.Type.INT, 0,ConfigDef.Importance.MEDIUM,REQUEST_MAPPER_DEFAULT_SPLIT_LIMIT_DOC);
+    }
+
+
+    private ConfigDef appendConfigurationConfigDef(ConfigDef configDef, String configurationName) {
         String prefix = "config." + configurationName + ".";
         ConfigDef configDef1 = configDef//http client implementation settings
                 .define(prefix + HTTP_CLIENT_IMPLEMENTATION, ConfigDef.Type.STRING, null, ConfigDef.Importance.LOW, CONFIG_HTTP_CLIENT_IMPLEMENTATION_DOC)

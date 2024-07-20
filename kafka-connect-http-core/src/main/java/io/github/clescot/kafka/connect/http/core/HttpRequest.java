@@ -123,6 +123,17 @@ public class HttpRequest implements Serializable {
         this.bodyType = BodyType.valueOf(bodyType);
     }
 
+    public HttpRequest(HttpRequest original){
+            this(original.getUrl(),original.getMethod(),original.getBodyType().name());
+            this.setHeaders(Maps.newHashMap(original.getHeaders()));
+            switch(original.getBodyType()){
+                case STRING:this.setBodyAsString(original.getBodyAsString());break;
+                case MULTIPART:this.setBodyAsMultipart(Lists.newArrayList(original.getBodyAsMultipart()));break;
+                case FORM:this.setBodyAsForm(Maps.newHashMap(original.getBodyAsForm()));break;
+                case BYTE_ARRAY:this.setBodyAsByteArray(original.getBodyAsByteArray());
+            }
+    }
+
     private List<String> convertMultipart(List<byte[]> bodyAsMultipart) {
         List<String> results = Lists.newArrayList();
         for (byte[] bytes : bodyAsMultipart) {
