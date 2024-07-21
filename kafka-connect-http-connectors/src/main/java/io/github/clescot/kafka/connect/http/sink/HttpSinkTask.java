@@ -466,6 +466,7 @@ public abstract class HttpSinkTask<R, S> extends SinkTask {
 
 
     @Override
+    @SuppressWarnings("java:S3864")
     public void put(Collection<SinkRecord> records) {
         Preconditions.checkNotNull(records, "records collection to be processed is null");
         if (records.isEmpty()) {
