@@ -503,31 +503,7 @@ public abstract class HttpSinkTask<R, S> extends SinkTask {
 
         try {
             //httpRequestMapper
-            HttpRequestMapper httpRequestMapper = httpRequestMappers.stream()
-                    .filter(mapper -> mapper.matches(sinkRecord))
-                    .findFirst()
-                    .orElse(defaultHttpRequestMapper);
-
-            //build HttpRequest
-            HttpRequest httpRequest = httpRequestMapper.map(sinkRecord);
-            List<HttpRequest> httpRequests = Lists.newArrayList();
-
-            //splitter
-            if (HttpRequest.BodyType.STRING.equals(httpRequest.getBodyType())
-                    && httpRequestMapper.getSplitPattern() != null) {
-                String bodyAsString = httpRequest.getBodyAsString();
-                httpRequests.addAll(Lists.newArrayList(httpRequestMapper.getSplitPattern().split(bodyAsString, httpRequestMapper.getSplitLimit())).stream()
-                        .map(part -> {
-                            HttpRequest partRequest = new HttpRequest(httpRequest);
-                            partRequest.setBodyAsString(part);
-                            return partRequest;
-                        })
-                        .collect(Collectors.toList()));
-            } else {
-                //no splitter
-                httpRequests.add(httpRequest);
-            }
-            //we don't simulate some sub-sinkRecord, to preserve the integrity of the commit notion
+            List<HttpRequest> httpRequests = toHttpRequests(sinkRecord);
 
             return httpRequests
                     .stream()
@@ -561,6 +537,35 @@ public abstract class HttpSinkTask<R, S> extends SinkTask {
             }
         }
 
+    }
+
+    private @NotNull List<HttpRequest> toHttpRequests(SinkRecord sinkRecord) {
+        HttpRequestMapper httpRequestMapper = httpRequestMappers.stream()
+                .filter(mapper -> mapper.matches(sinkRecord))
+                .findFirst()
+                .orElse(defaultHttpRequestMapper);
+
+        //build HttpRequest
+        HttpRequest httpRequest = httpRequestMapper.map(sinkRecord);
+        List<HttpRequest> httpRequests = Lists.newArrayList();
+
+        //splitter
+        if (HttpRequest.BodyType.STRING.equals(httpRequest.getBodyType())
+                && httpRequestMapper.getSplitPattern() != null) {
+            String bodyAsString = httpRequest.getBodyAsString();
+            httpRequests.addAll(Lists.newArrayList(httpRequestMapper.getSplitPattern().split(bodyAsString, httpRequestMapper.getSplitLimit())).stream()
+                    .map(part -> {
+                        HttpRequest partRequest = new HttpRequest(httpRequest);
+                        partRequest.setBodyAsString(part);
+                        return partRequest;
+                    })
+                    .collect(Collectors.toList()));
+        } else {
+            //no splitter
+            httpRequests.add(httpRequest);
+        }
+        //we don't simulate some sub-sinkRecord, to preserve the integrity of the commit notion
+        return httpRequests;
     }
 
     private @NotNull Function<HttpExchange, HttpExchange> publish(SinkRecord sinkRecord) {
