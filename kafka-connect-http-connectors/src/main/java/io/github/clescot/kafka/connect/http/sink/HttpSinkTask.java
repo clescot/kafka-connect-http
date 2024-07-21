@@ -478,22 +478,29 @@ public abstract class HttpSinkTask<R, S> extends SinkTask {
 
         //TODO regroup messages into one https://github.com/clescot/kafka-connect-http/issues/336
         //List<SinkRecord>-> SinkRecord
-        List<CompletableFuture<HttpExchange>> completableFutures = stream.map(this::process).collect(Collectors.toList()).stream().flatMap(list -> list.stream()).collect(Collectors.toList());
+        List<CompletableFuture<HttpExchange>> completableFutures = stream
+                .peek(this::debugConnectRecord)
+                .filter(sinkRecord -> sinkRecord.value()!=null)
+                .map(this::process)
+                .collect(Collectors.toList())
+                .stream()
+                .flatMap(Collection::stream)
+                .collect(Collectors.toList());
         List<HttpExchange> httpExchanges = completableFutures.stream().map(CompletableFuture::join).collect(Collectors.toList());
         LOGGER.debug("HttpExchanges created :'{}'", httpExchanges.size());
 
     }
 
-    private List<CompletableFuture<HttpExchange>> process(SinkRecord sinkRecord) {
-        Object value = sinkRecord.value();
+    private void debugConnectRecord(ConnectRecord record){
+        Object value = record.value();
         Class<?> valueClass = value.getClass();
         LOGGER.debug("valueClass is '{}'", valueClass.getName());
-        LOGGER.debug("value Schema from SinkRecord is '{}'", sinkRecord.valueSchema());
-        try {
-            if (sinkRecord.value() == null) {
-                throw new ConnectException("sinkRecord Value is null :" + sinkRecord);
-            }
+        LOGGER.debug("value Schema from SinkRecord is '{}'", record.valueSchema());
+    }
 
+    private List<CompletableFuture<HttpExchange>> process(SinkRecord sinkRecord) {
+
+        try {
             //httpRequestMapper
             HttpRequestMapper httpRequestMapper = httpRequestMappers.stream()
                     .filter(mapper -> mapper.matches(sinkRecord))
@@ -529,7 +536,6 @@ public abstract class HttpSinkTask<R, S> extends SinkTask {
                     .collect(Collectors.toList());
 
         } catch (ConnectException connectException) {
-            LOGGER.error("sink value class is '{}'", valueClass.getName());
             if (errantRecordReporter != null) {
                 errantRecordReporter.report(sinkRecord, connectException);
             } else {
