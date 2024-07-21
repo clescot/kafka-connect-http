@@ -30,26 +30,32 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import static io.github.clescot.kafka.connect.http.sink.HttpSinkConfigDefinition.*;
 
-public class HttpTask<T extends ConnectRecord<T>,R,S> {
+/**
+ *
+ * @param <T> either a SinkRecord (for a SinkTask) or a SourceRecord (for a SourceTask)
+ * @param <R> native HttpRequest
+ * @param <S> native HttpResponse
+ */
+public class HttpTask<T extends ConnectRecord<T>, R, S> {
 
 
     private static final Logger LOGGER = LoggerFactory.getLogger(HttpTask.class);
 
 
-    private final List<Configuration<R,S>> customConfigurations;
-    private final Configuration<R,S> defaultConfiguration;
+    private final List<Configuration<R, S>> customConfigurations;
+    private final Configuration<R, S> defaultConfiguration;
     private final ExecutorService executorService;
     private static CompositeMeterRegistry meterRegistry;
 
 
     public HttpTask(AbstractConfig config,
-                    Configuration<R,S> defaultConfiguration,
-                    List<Configuration<R,S>> customConfigurations,
+                    Configuration<R, S> defaultConfiguration,
+                    List<Configuration<R, S>> customConfigurations,
                     CompositeMeterRegistry meterRegistry,
                     ExecutorService executorService) {
 
         this.executorService = executorService;
-        if(HttpTask.meterRegistry==null) {
+        if (HttpTask.meterRegistry == null) {
             HttpTask.meterRegistry = meterRegistry;
         }
         //bind metrics to MeterRegistry and ExecutorService
@@ -59,27 +65,24 @@ public class HttpTask<T extends ConnectRecord<T>,R,S> {
     }
 
 
-
-
-
     /**
      *  - enrich request
      *  - execute the request
-     * @param httpRequest
-     * @param attempts
-     * @param configuration
-     * @return
+     * @param httpRequest HttpRequest to call
+     * @param attempts current attempts before the call.
+     * @param configuration Configuration of the underlying HttpClient.
+     * @return CompletableFuture of the HttpExchange (describing the request and response).
      */
     private CompletableFuture<HttpExchange> callAndPublish(HttpRequest httpRequest,
                                                            AtomicInteger attempts,
-                                                           Configuration<R,S> configuration) {
+                                                           Configuration<R, S> configuration) {
         attempts.addAndGet(HttpClient.ONE_HTTP_REQUEST);
-        if(LOGGER.isTraceEnabled()){
-            LOGGER.trace("before enrichment:{}",httpRequest);
+        if (LOGGER.isTraceEnabled()) {
+            LOGGER.trace("before enrichment:{}", httpRequest);
         }
         HttpRequest enrichedHttpRequest = configuration.enrich(httpRequest);
-        if(LOGGER.isTraceEnabled()){
-            LOGGER.trace("after enrichment:{}",enrichedHttpRequest);
+        if (LOGGER.isTraceEnabled()) {
+            LOGGER.trace("after enrichment:{}", enrichedHttpRequest);
         }
         CompletableFuture<HttpExchange> completableFuture = configuration.getHttpClient().call(enrichedHttpRequest, attempts);
         return completableFuture
@@ -88,7 +91,7 @@ public class HttpTask<T extends ConnectRecord<T>,R,S> {
     }
 
     protected CompletableFuture<HttpExchange> callWithRetryPolicy(HttpRequest httpRequest,
-                                                                Configuration<R,S> configuration) {
+                                                                  Configuration<R, S> configuration) {
         Optional<RetryPolicy<HttpExchange>> retryPolicyForCall = configuration.getRetryPolicy();
         if (httpRequest != null) {
             AtomicInteger attempts = new AtomicInteger();
@@ -98,12 +101,12 @@ public class HttpTask<T extends ConnectRecord<T>,R,S> {
                     RetryPolicy<HttpExchange> retryPolicy = retryPolicyForCall.get();
                     FailsafeExecutor<HttpExchange> failsafeExecutor = Failsafe
                             .with(List.of(retryPolicy));
-                    if(executorService!=null){
+                    if (executorService != null) {
                         failsafeExecutor = failsafeExecutor.with(executorService);
                     }
                     return failsafeExecutor
                             .getStageAsync(() -> callAndPublish(httpRequest, attempts, configuration)
-                            .thenApply(configuration::handleRetry));
+                                    .thenApply(configuration::handleRetry));
                 } else {
                     return callAndPublish(httpRequest, attempts, configuration);
                 }
@@ -127,21 +130,22 @@ public class HttpTask<T extends ConnectRecord<T>,R,S> {
 
 
         //is there a matching configuration against the request ?
-        Configuration foundConfiguration = customConfigurations
+        Configuration<R,S> foundConfiguration = customConfigurations
                 .stream()
                 .filter(config -> config.matches(httpRequest))
                 .findFirst()
                 .orElse(defaultConfiguration);
-        if(LOGGER.isTraceEnabled()){
-            LOGGER.trace("configuration:{}",foundConfiguration);
+        if (LOGGER.isTraceEnabled()) {
+            LOGGER.trace("configuration:{}", foundConfiguration);
         }
         //handle Request and Response
-        return callWithRetryPolicy(httpRequest, foundConfiguration).thenApply(
-                httpExchange -> {
-                    LOGGER.debug("HTTP exchange :{}", httpExchange);
-                    return httpExchange;
-                }
-        );
+        return callWithRetryPolicy(httpRequest, foundConfiguration)
+                .thenApply(
+                        httpExchange -> {
+                            LOGGER.debug("HTTP exchange :{}", httpExchange);
+                            return httpExchange;
+                        }
+                );
     }
 
     private static void bindMetrics(AbstractConfig config, MeterRegistry meterRegistry, ExecutorService myExecutorService) {
@@ -184,8 +188,7 @@ public class HttpTask<T extends ConnectRecord<T>,R,S> {
     }
 
 
-
-    public Configuration<R,S> getDefaultConfiguration() {
+    public Configuration<R, S> getDefaultConfiguration() {
         return defaultConfiguration;
     }
 
@@ -197,7 +200,7 @@ public class HttpTask<T extends ConnectRecord<T>,R,S> {
         return HttpTask.meterRegistry;
     }
 
-    public static void removeCompositeMeterRegistry(){
+    public static void removeCompositeMeterRegistry() {
         HttpTask.meterRegistry = null;
     }
 }
