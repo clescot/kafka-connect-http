@@ -32,7 +32,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import static io.github.clescot.kafka.connect.http.sink.HttpSinkConfigDefinition.*;
 
 /**
- *
+ * execute the HTTP call.
  * @param <Q> native HttpRequest
  * @param <S> native HttpResponse
  */
