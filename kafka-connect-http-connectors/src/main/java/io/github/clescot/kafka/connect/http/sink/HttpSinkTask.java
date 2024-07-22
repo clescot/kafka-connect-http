@@ -622,7 +622,6 @@ public abstract class HttpSinkTask<R, S> extends SinkTask {
             LOGGER.error("httpTask hasn't been created with the 'start' method");
             return;
         }
-        ExecutorService executorService = httpTask.getExecutorService();
         if (executorService != null) {
             if (!executorService.isShutdown()) {
                 executorService.shutdown();
