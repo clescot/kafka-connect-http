@@ -506,6 +506,9 @@ public abstract class HttpSinkTask<R, S> extends SinkTask {
             List<HttpRequest> httpRequests = toHttpRequests(sinkRecord);
 
             //TODO regroup messages into one https://github.com/clescot/kafka-connect-http/issues/336
+            //predicate on HtpRequest for reducer ?
+            //max messages ?
+            //max body length ?
             //List<SinkRecord>-> SinkRecord
 
             return httpRequests
