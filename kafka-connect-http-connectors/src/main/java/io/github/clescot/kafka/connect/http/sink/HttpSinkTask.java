@@ -505,6 +505,9 @@ public abstract class HttpSinkTask<R, S> extends SinkTask {
             //httpRequestMapper
             List<HttpRequest> httpRequests = toHttpRequests(sinkRecord);
 
+            //TODO regroup messages into one https://github.com/clescot/kafka-connect-http/issues/336
+            //List<SinkRecord>-> SinkRecord
+
             return httpRequests
                     .stream()
                     .map(currentRequest -> httpTask
