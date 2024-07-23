@@ -20,7 +20,9 @@ import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.time.Duration;
 import java.util.*;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.regex.Matcher;
@@ -185,6 +187,28 @@ public class Configuration<R,S> {
 
     }
 
+    /**
+     *  - enrich request
+     *  - execute the request
+     * @param httpRequest HttpRequest to call
+     * @param attempts current attempts before the call.
+     * @return CompletableFuture of the HttpExchange (describing the request and response).
+     */
+    public CompletableFuture<HttpExchange> callAndEnrich(HttpRequest httpRequest,
+                                                          AtomicInteger attempts) {
+        attempts.addAndGet(HttpClient.ONE_HTTP_REQUEST);
+        if (LOGGER.isTraceEnabled()) {
+            LOGGER.trace("before enrichment:{}", httpRequest);
+        }
+        HttpRequest enrichedHttpRequest = enrich(httpRequest);
+        if (LOGGER.isTraceEnabled()) {
+            LOGGER.trace("after enrichment:{}", enrichedHttpRequest);
+        }
+        CompletableFuture<HttpExchange> completableFuture = getHttpClient().call(enrichedHttpRequest, attempts);
+        return completableFuture
+                .thenApply(this::enrichHttpExchange);
+
+    }
 
 
     private Predicate<HttpRequest> buildPredicate(Map<String, Object> configMap) {

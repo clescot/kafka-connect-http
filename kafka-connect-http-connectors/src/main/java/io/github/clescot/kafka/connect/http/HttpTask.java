@@ -65,30 +65,7 @@ public class HttpTask<T extends ConnectRecord<T>, R, S> {
     }
 
 
-    /**
-     *  - enrich request
-     *  - execute the request
-     * @param httpRequest HttpRequest to call
-     * @param attempts current attempts before the call.
-     * @param configuration Configuration of the underlying HttpClient.
-     * @return CompletableFuture of the HttpExchange (describing the request and response).
-     */
-    private CompletableFuture<HttpExchange> callAndPublish(HttpRequest httpRequest,
-                                                           AtomicInteger attempts,
-                                                           Configuration<R, S> configuration) {
-        attempts.addAndGet(HttpClient.ONE_HTTP_REQUEST);
-        if (LOGGER.isTraceEnabled()) {
-            LOGGER.trace("before enrichment:{}", httpRequest);
-        }
-        HttpRequest enrichedHttpRequest = configuration.enrich(httpRequest);
-        if (LOGGER.isTraceEnabled()) {
-            LOGGER.trace("after enrichment:{}", enrichedHttpRequest);
-        }
-        CompletableFuture<HttpExchange> completableFuture = configuration.getHttpClient().call(enrichedHttpRequest, attempts);
-        return completableFuture
-                .thenApply(configuration::enrichHttpExchange);
 
-    }
 
     protected CompletableFuture<HttpExchange> callWithRetryPolicy(HttpRequest httpRequest,
                                                                   Configuration<R, S> configuration) {
@@ -105,10 +82,10 @@ public class HttpTask<T extends ConnectRecord<T>, R, S> {
                         failsafeExecutor = failsafeExecutor.with(executorService);
                     }
                     return failsafeExecutor
-                            .getStageAsync(() -> callAndPublish(httpRequest, attempts, configuration)
+                            .getStageAsync(() -> configuration.callAndEnrich(httpRequest, attempts)
                                     .thenApply(configuration::handleRetry));
                 } else {
-                    return callAndPublish(httpRequest, attempts, configuration);
+                    return configuration.callAndEnrich(httpRequest, attempts);
                 }
             } catch (Exception exception) {
                 LOGGER.error("Failed to call web service after {} retries with error({}). message:{} ", attempts, exception,
