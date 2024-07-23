@@ -235,7 +235,7 @@ public class Configuration<R,S> {
      * @param attempts current attempts before the call.
      * @return CompletableFuture of the HttpExchange (describing the request and response).
      */
-    public CompletableFuture<HttpExchange> callAndEnrich(HttpRequest httpRequest,
+    private CompletableFuture<HttpExchange> callAndEnrich(HttpRequest httpRequest,
                                                           AtomicInteger attempts) {
         attempts.addAndGet(HttpClient.ONE_HTTP_REQUEST);
         if (LOGGER.isTraceEnabled()) {
@@ -295,12 +295,12 @@ public class Configuration<R,S> {
         return predicate;
     }
 
-    public HttpRequest enrich(HttpRequest httpRequest) {
+    protected HttpRequest enrich(HttpRequest httpRequest) {
         return enrichRequestFunction.apply(httpRequest);
     }
 
 
-    public HttpExchange enrichHttpExchange(HttpExchange httpExchange) {
+    protected HttpExchange enrichHttpExchange(HttpExchange httpExchange) {
         return this.addSuccessStatusToHttpExchangeFunction.apply(httpExchange);
     }
 
@@ -387,7 +387,7 @@ public class Configuration<R,S> {
                 .build();
     }
 
-    public HttpExchange handleRetry(HttpExchange httpExchange) {
+    private HttpExchange handleRetry(HttpExchange httpExchange) {
         //we don't retry success HTTP Exchange
         boolean responseCodeImpliesRetry = retryNeeded(httpExchange.getHttpResponse());
         LOGGER.debug("httpExchange success :'{}'", httpExchange.isSuccess());
