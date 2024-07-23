@@ -55,9 +55,8 @@ class AHCHttpClientTest {
     void build_HttpExchange_test_all_null() {
         Map<String, Object> config = Maps.newHashMap();
         config.put(CONFIGURATION_ID,"default");
-        AHCHttpClient httpClient = new AHCHttpClient(asyncHttpClient,config);
         org.junit.jupiter.api.Assertions.assertThrows(NullPointerException.class, () ->
-                httpClient.buildHttpExchange(null,
+                HttpClient.buildHttpExchange(null,
                         null,
                         Stopwatch.createUnstarted(),
                         OffsetDateTime.now(ZoneId.of(AHCHttpClient.UTC_ZONE_ID)),
@@ -71,9 +70,8 @@ class AHCHttpClientTest {
     void build_HttpExchange_test_message_is_null() {
         Map<String, Object> config = Maps.newHashMap();
         config.put(CONFIGURATION_ID,"default");
-        AHCHttpClient httpClient = new AHCHttpClient(asyncHttpClient,config);
         org.junit.jupiter.api.Assertions.assertThrows(NullPointerException.class, () ->
-                httpClient.buildHttpExchange(null,
+                HttpClient.buildHttpExchange(null,
                         getDummyHttpResponse(200),
                         Stopwatch.createUnstarted(),
                         OffsetDateTime.now(ZoneId.of(AHCHttpClient.UTC_ZONE_ID)),
@@ -85,8 +83,7 @@ class AHCHttpClientTest {
     void build_HttpExchange_test_response_code_is_lower_than_0() {
         Map<String, Object> config = Maps.newHashMap();
         config.put(CONFIGURATION_ID,"default");
-        AHCHttpClient httpClient = new AHCHttpClient(asyncHttpClient,config);
-        org.junit.jupiter.api.Assertions.assertThrows(IllegalArgumentException.class, () -> httpClient.buildHttpExchange(getDummyHttpRequest(),
+        org.junit.jupiter.api.Assertions.assertThrows(IllegalArgumentException.class, () -> HttpClient.buildHttpExchange(getDummyHttpRequest(),
                 getDummyHttpResponse(-12),
                 Stopwatch.createUnstarted(),
                 OffsetDateTime.now(ZoneId.of(AHCHttpClient.UTC_ZONE_ID)),
@@ -100,8 +97,7 @@ class AHCHttpClientTest {
 
         Map<String, Object> config = Maps.newHashMap();
         config.put(CONFIGURATION_ID,"default");
-        AHCHttpClient httpClient = new AHCHttpClient(asyncHttpClient,config);
-        HttpExchange httpExchange = httpClient.buildHttpExchange(getDummyHttpRequest(),
+        HttpExchange httpExchange = HttpClient.buildHttpExchange(getDummyHttpRequest(),
                 getDummyHttpResponse(200),
                 Stopwatch.createUnstarted(),
                 OffsetDateTime.now(ZoneId.of(AHCHttpClient.UTC_ZONE_ID)),

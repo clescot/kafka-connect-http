@@ -46,7 +46,7 @@ public interface HttpClient<Q, S> {
     String IS_NOT_SET = " is not set";
 
 
-    default HttpExchange buildHttpExchange(HttpRequest httpRequest,
+    static HttpExchange buildHttpExchange(HttpRequest httpRequest,
                                            HttpResponse httpResponse,
                                            Stopwatch stopwatch,
                                            OffsetDateTime now,
