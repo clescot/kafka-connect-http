@@ -1,15 +1,9 @@
 package io.github.clescot.kafka.connect.http;
 
-import com.google.common.base.Stopwatch;
 import com.google.common.collect.Lists;
-import dev.failsafe.Failsafe;
-import dev.failsafe.FailsafeExecutor;
-import dev.failsafe.RetryPolicy;
 import io.github.clescot.kafka.connect.http.client.Configuration;
-import io.github.clescot.kafka.connect.http.client.HttpClient;
 import io.github.clescot.kafka.connect.http.core.HttpExchange;
 import io.github.clescot.kafka.connect.http.core.HttpRequest;
-import io.github.clescot.kafka.connect.http.core.HttpResponse;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.binder.jvm.*;
 import io.micrometer.core.instrument.binder.logging.LogbackMetrics;
@@ -20,13 +14,9 @@ import org.apache.kafka.connect.connector.ConnectRecord;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.time.OffsetDateTime;
-import java.time.ZoneId;
 import java.util.List;
-import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.atomic.AtomicInteger;
 
 import static io.github.clescot.kafka.connect.http.sink.HttpSinkConfigDefinition.*;
 
@@ -64,52 +54,13 @@ public class HttpTask<T extends ConnectRecord<T>, R, S> {
         this.customConfigurations = customConfigurations;
     }
 
-
-
-
-    protected CompletableFuture<HttpExchange> callWithRetryPolicy(HttpRequest httpRequest,
-                                                                  Configuration<R, S> configuration) {
-        Optional<RetryPolicy<HttpExchange>> retryPolicyForCall = configuration.getRetryPolicy();
-        if (httpRequest != null) {
-            AtomicInteger attempts = new AtomicInteger();
-            try {
-
-                if (retryPolicyForCall.isPresent()) {
-                    RetryPolicy<HttpExchange> retryPolicy = retryPolicyForCall.get();
-                    FailsafeExecutor<HttpExchange> failsafeExecutor = Failsafe
-                            .with(List.of(retryPolicy));
-                    if (executorService != null) {
-                        failsafeExecutor = failsafeExecutor.with(executorService);
-                    }
-                    return failsafeExecutor
-                            .getStageAsync(() -> configuration.callAndEnrich(httpRequest, attempts)
-                                    .thenApply(configuration::handleRetry));
-                } else {
-                    return configuration.callAndEnrich(httpRequest, attempts);
-                }
-            } catch (Exception exception) {
-                LOGGER.error("Failed to call web service after {} retries with error({}). message:{} ", attempts, exception,
-                        exception.getMessage());
-                HttpExchange httpExchange = HttpClient.buildHttpExchange(
-                        httpRequest,
-                        new HttpResponse(HttpClient.SERVER_ERROR_STATUS_CODE, String.valueOf(exception.getMessage())),
-                        Stopwatch.createUnstarted(), OffsetDateTime.now(ZoneId.of(HttpClient.UTC_ZONE_ID)),
-                        attempts,
-                        HttpClient.FAILURE);
-                return CompletableFuture.supplyAsync(() -> httpExchange);
-            }
-        } else {
-            throw new IllegalArgumentException("httpRequest is null");
-        }
-    }
-
     public CompletableFuture<HttpExchange> processHttpRequest(HttpRequest httpRequest) {
         Configuration<R, S> foundConfiguration = getConfiguration(httpRequest);
         if (LOGGER.isTraceEnabled()) {
             LOGGER.trace("configuration:{}", foundConfiguration);
         }
         //handle Request and Response
-        return callWithRetryPolicy(httpRequest, foundConfiguration)
+        return foundConfiguration.callWithRetryPolicy(httpRequest,executorService)
                 .thenApply(
                         httpExchange -> {
                             LOGGER.debug("HTTP exchange :{}", httpExchange);

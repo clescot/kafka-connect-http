@@ -1,8 +1,11 @@
 package io.github.clescot.kafka.connect.http.client;
 
 import com.google.common.base.Preconditions;
+import com.google.common.base.Stopwatch;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
+import dev.failsafe.Failsafe;
+import dev.failsafe.FailsafeExecutor;
 import dev.failsafe.RetryPolicy;
 import io.github.clescot.kafka.connect.http.VersionUtils;
 import io.github.clescot.kafka.connect.http.client.config.*;
@@ -19,6 +22,8 @@ import org.slf4j.LoggerFactory;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.time.Duration;
+import java.time.OffsetDateTime;
+import java.time.ZoneId;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
@@ -185,6 +190,42 @@ public class Configuration<R,S> {
             LOGGER.trace("configuration '{}' :retry policy is not configured",this.getId());
         }
 
+    }
+
+    public CompletableFuture<HttpExchange> callWithRetryPolicy(HttpRequest httpRequest,
+                                                                  ExecutorService executorService) {
+        Optional<RetryPolicy<HttpExchange>> retryPolicyForCall = getRetryPolicy();
+        if (httpRequest != null) {
+            AtomicInteger attempts = new AtomicInteger();
+            try {
+
+                if (retryPolicyForCall.isPresent()) {
+                    RetryPolicy<HttpExchange> retryPolicy = retryPolicyForCall.get();
+                    FailsafeExecutor<HttpExchange> failsafeExecutor = Failsafe
+                            .with(List.of(retryPolicy));
+                    if (executorService != null) {
+                        failsafeExecutor = failsafeExecutor.with(executorService);
+                    }
+                    return failsafeExecutor
+                            .getStageAsync(() -> callAndEnrich(httpRequest, attempts)
+                                    .thenApply(this::handleRetry));
+                } else {
+                    return callAndEnrich(httpRequest, attempts);
+                }
+            } catch (Exception exception) {
+                LOGGER.error("Failed to call web service after {} retries with error({}). message:{} ", attempts, exception,
+                        exception.getMessage());
+                HttpExchange httpExchange = HttpClient.buildHttpExchange(
+                        httpRequest,
+                        new HttpResponse(HttpClient.SERVER_ERROR_STATUS_CODE, String.valueOf(exception.getMessage())),
+                        Stopwatch.createUnstarted(), OffsetDateTime.now(ZoneId.of(HttpClient.UTC_ZONE_ID)),
+                        attempts,
+                        HttpClient.FAILURE);
+                return CompletableFuture.supplyAsync(() -> httpExchange);
+            }
+        } else {
+            throw new IllegalArgumentException("httpRequest is null");
+        }
     }
 
     /**
