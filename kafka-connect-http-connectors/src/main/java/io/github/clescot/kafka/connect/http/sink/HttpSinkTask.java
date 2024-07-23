@@ -492,11 +492,11 @@ public abstract class HttpSinkTask<R, S> extends SinkTask {
 
     }
 
-    private void debugConnectRecord(ConnectRecord record){
-        Object value = record.value();
+    private void debugConnectRecord(SinkRecord sinkRecord){
+        Object value = sinkRecord.value();
         Class<?> valueClass = value.getClass();
         LOGGER.debug("valueClass is '{}'", valueClass.getName());
-        LOGGER.debug("value Schema from SinkRecord is '{}'", record.valueSchema());
+        LOGGER.debug("value Schema from SinkRecord is '{}'", sinkRecord.valueSchema());
     }
 
     private List<CompletableFuture<HttpExchange>> process(SinkRecord sinkRecord) {
