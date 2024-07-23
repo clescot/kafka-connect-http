@@ -127,14 +127,7 @@ public class HttpTask<T extends ConnectRecord<T>, R, S> {
     }
 
     public CompletableFuture<HttpExchange> processHttpRequest(HttpRequest httpRequest) {
-
-
-        //is there a matching configuration against the request ?
-        Configuration<R,S> foundConfiguration = customConfigurations
-                .stream()
-                .filter(config -> config.matches(httpRequest))
-                .findFirst()
-                .orElse(defaultConfiguration);
+        Configuration<R, S> foundConfiguration = getConfiguration(httpRequest);
         if (LOGGER.isTraceEnabled()) {
             LOGGER.trace("configuration:{}", foundConfiguration);
         }
@@ -146,6 +139,15 @@ public class HttpTask<T extends ConnectRecord<T>, R, S> {
                             return httpExchange;
                         }
                 );
+    }
+
+    private Configuration<R, S> getConfiguration(HttpRequest httpRequest) {
+        //is there a matching configuration against the request ?
+        return customConfigurations
+                .stream()
+                .filter(config -> config.matches(httpRequest))
+                .findFirst()
+                .orElse(defaultConfiguration);
     }
 
     private static void bindMetrics(AbstractConfig config, MeterRegistry meterRegistry, ExecutorService myExecutorService) {
