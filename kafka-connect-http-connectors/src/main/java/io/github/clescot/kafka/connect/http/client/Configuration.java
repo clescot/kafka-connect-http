@@ -200,9 +200,9 @@ public class Configuration<R,S> {
             try {
 
                 if (retryPolicyForCall.isPresent()) {
-                    RetryPolicy<HttpExchange> retryPolicy = retryPolicyForCall.get();
+                    RetryPolicy<HttpExchange> myRetryPolicy = retryPolicyForCall.get();
                     FailsafeExecutor<HttpExchange> failsafeExecutor = Failsafe
-                            .with(List.of(retryPolicy));
+                            .with(List.of(myRetryPolicy));
                     if (executorService != null) {
                         failsafeExecutor = failsafeExecutor.with(executorService);
                     }

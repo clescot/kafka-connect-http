@@ -54,6 +54,11 @@ public class HttpTask<T extends ConnectRecord<T>, R, S> {
         this.customConfigurations = customConfigurations;
     }
 
+    /**
+     * get the Configuration matching the HttpRequest, and do the Http call with a retry policy.
+     * @param httpRequest
+     * @return
+     */
     public CompletableFuture<HttpExchange> processHttpRequest(HttpRequest httpRequest) {
         Configuration<R, S> foundConfiguration = getConfiguration(httpRequest);
         if (LOGGER.isTraceEnabled()) {
