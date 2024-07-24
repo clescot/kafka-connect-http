@@ -93,7 +93,6 @@ public abstract class HttpSinkTask<R, S> extends SinkTask {
     private HttpRequestMapper defaultHttpRequestMapper;
     private List<HttpRequestMapper> httpRequestMappers;
     public static final String DEFAULT_CONFIGURATION_ID = "default";
-    public static final String DEFAULT_MAPPER_ID = "default";
     private final HttpClientFactory<R, S> httpClientFactory;
 
     private ErrantRecordReporter errantRecordReporter;
@@ -230,35 +229,7 @@ public abstract class HttpSinkTask<R, S> extends SinkTask {
                 .sideEffect(false);
         JexlEngine jexlEngine = new JexlBuilder().features(features).permissions(permissions).create();
 
-        MapperMode defaultRequestMapperMode = httpSinkConnectorConfig.getDefaultRequestMapperMode();
-        switch (defaultRequestMapperMode) {
-            case JEXL: {
-                Preconditions.checkNotNull(httpSinkConnectorConfig.getDefaultUrlExpression(), "'" + REQUEST_MAPPER_DEFAULT_URL_EXPRESSION + "' need to be set");
-                this.defaultHttpRequestMapper = new JEXLHttpRequestMapper(jexlEngine,
-                        JEXL_ALWAYS_MATCHES,
-                        httpSinkConnectorConfig.getDefaultUrlExpression(),
-                        httpSinkConnectorConfig.getDefaultMethodExpression(),
-                        httpSinkConnectorConfig.getDefaultBodyTypeExpression(),
-                        httpSinkConnectorConfig.getDefaultBodyExpression(),
-                        httpSinkConnectorConfig.getDefaultHeadersExpression()
-                );
-                break;
-            }
-            case DIRECT:
-            default: {
-                this.defaultHttpRequestMapper = new DirectHttpRequestMapper(jexlEngine, JEXL_ALWAYS_MATCHES);
-                break;
-            }
-        }
-        String splitPattern = httpSinkConnectorConfig.getDefaultSplitPattern();
-        if (splitPattern != null) {
-            this.defaultHttpRequestMapper.setSplitPattern(splitPattern);
-        }
-
-        Integer splitLimit = httpSinkConnectorConfig.getDefaultSplitLimit();
-        if (splitLimit != null) {
-            this.defaultHttpRequestMapper.setSplitLimit(splitLimit);
-        }
+        this.defaultHttpRequestMapper = buildDefaultHttpRequestMapper(httpSinkConnectorConfig,jexlEngine);
         this.httpRequestMappers = buildCustomHttpRequestMappers(httpSinkConnectorConfig, jexlEngine);
 
         //configurations
@@ -295,6 +266,40 @@ public abstract class HttpSinkTask<R, S> extends SinkTask {
         }
 
 
+    }
+
+    private HttpRequestMapper buildDefaultHttpRequestMapper(HttpSinkConnectorConfig connectorConfig, JexlEngine jexlEngine){
+        HttpRequestMapper httpRequestMapper;
+        MapperMode defaultRequestMapperMode = connectorConfig.getDefaultRequestMapperMode();
+        switch (defaultRequestMapperMode) {
+            case JEXL: {
+                Preconditions.checkNotNull(connectorConfig.getDefaultUrlExpression(), "'" + REQUEST_MAPPER_DEFAULT_URL_EXPRESSION + "' need to be set");
+                httpRequestMapper = new JEXLHttpRequestMapper(jexlEngine,
+                        JEXL_ALWAYS_MATCHES,
+                        connectorConfig.getDefaultUrlExpression(),
+                        connectorConfig.getDefaultMethodExpression(),
+                        connectorConfig.getDefaultBodyTypeExpression(),
+                        connectorConfig.getDefaultBodyExpression(),
+                        connectorConfig.getDefaultHeadersExpression()
+                );
+                break;
+            }
+            case DIRECT:
+            default: {
+                httpRequestMapper = new DirectHttpRequestMapper(jexlEngine, JEXL_ALWAYS_MATCHES);
+                break;
+            }
+        }
+        String splitPattern = connectorConfig.getDefaultSplitPattern();
+        if (splitPattern != null) {
+            httpRequestMapper.setSplitPattern(splitPattern);
+        }
+
+        Integer splitLimit = connectorConfig.getDefaultSplitLimit();
+        if (splitLimit != null) {
+            httpRequestMapper.setSplitLimit(splitLimit);
+        }
+        return httpRequestMapper;
     }
 
     private void configureInMemoryQueue() {
@@ -489,6 +494,8 @@ public abstract class HttpSinkTask<R, S> extends SinkTask {
                 .map(this::toHttpRequests)
                 .flatMap(List::stream)
                 .collect(Collectors.toList());
+
+
         //List<SinkRecord>-> SinkRecord
         List<CompletableFuture<HttpExchange>> completableFutures = requests.stream()
                 .map(this::call)
