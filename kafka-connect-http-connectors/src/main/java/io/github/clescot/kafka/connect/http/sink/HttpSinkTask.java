@@ -500,9 +500,9 @@ public abstract class HttpSinkTask<R, S> extends SinkTask {
 
     private List<CompletableFuture<HttpExchange>> process(SinkRecord sinkRecord) {
 
+        //httpRequestMapper
+        List<HttpRequest> httpRequests = toHttpRequests(sinkRecord);
         try {
-            //httpRequestMapper
-            List<HttpRequest> httpRequests = toHttpRequests(sinkRecord);
 
             //TODO regroup messages into one https://github.com/clescot/kafka-connect-http/issues/336
             //predicate on HtpRequest for reducer ?
@@ -569,7 +569,6 @@ public abstract class HttpSinkTask<R, S> extends SinkTask {
             //no splitter
             httpRequests.add(httpRequest);
         }
-        //we don't simulate some sub-sinkRecord, to preserve the integrity of the commit notion
         return httpRequests;
     }
 
