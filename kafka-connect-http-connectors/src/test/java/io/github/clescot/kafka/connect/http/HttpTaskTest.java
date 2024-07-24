@@ -104,7 +104,7 @@ class HttpTaskTest {
             Map<String, String> settings = Maps.newHashMap();
             HttpSinkConnectorConfig httpSinkConnectorConfig = new HttpSinkConnectorConfig(settings);
             Configuration<Request, Response> configuration = new Configuration<>("dummy",new OkHttpClientFactory(), httpSinkConnectorConfig, executorService, getCompositeMeterRegistry());
-            HttpExchange httpExchange = configuration.callWithRetryPolicy(httpRequest,executorService).get();
+            HttpExchange httpExchange = configuration.call(httpRequest).get();
 
             //then
             assertThat(httpExchange.isSuccess()).isTrue();
@@ -139,7 +139,7 @@ class HttpTaskTest {
             settings.put("config.dummy.retry.policy.response.code.regex",DEFAULT_DEFAULT_RETRY_RESPONSE_CODE_REGEX);
             HttpSinkConnectorConfig httpSinkConnectorConfig = new HttpSinkConnectorConfig(settings);
             Configuration<Request, Response> configuration = new Configuration<>("dummy",new OkHttpClientFactory(), httpSinkConnectorConfig, executorService, getCompositeMeterRegistry());
-            HttpExchange httpExchange = configuration.callWithRetryPolicy(httpRequest,executorService).get();
+            HttpExchange httpExchange = configuration.call(httpRequest).get();
 
             //then
             AtomicInteger attempts = httpExchange.getAttempts();

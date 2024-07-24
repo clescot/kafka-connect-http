@@ -65,7 +65,7 @@ public class HttpTask<T extends ConnectRecord<T>, R, S> {
             LOGGER.trace("configuration:{}", foundConfiguration);
         }
         //handle Request and Response
-        return foundConfiguration.callWithRetryPolicy(httpRequest,executorService)
+        return foundConfiguration.call(httpRequest)
                 .thenApply(
                         httpExchange -> {
                             LOGGER.debug("HTTP exchange :{}", httpExchange);

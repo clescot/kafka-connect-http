@@ -89,6 +89,7 @@ public class Configuration<R,S> {
     //http client
     private HttpClient<R,S> httpClient;
     public final String id;
+    private final ExecutorService executorService;
     private final Map<String, Object> settings;
     private final Function<HttpRequest, HttpRequest> enrichRequestFunction;
     public Configuration(String id,
@@ -97,6 +98,7 @@ public class Configuration<R,S> {
                          ExecutorService executorService,
                          CompositeMeterRegistry meterRegistry) {
         this.id = id;
+        this.executorService = executorService;
         Preconditions.checkNotNull(id, "id must not be null");
         Preconditions.checkNotNull(config, "httpSinkConnectorConfig must not be null");
 
@@ -192,8 +194,7 @@ public class Configuration<R,S> {
 
     }
 
-    public CompletableFuture<HttpExchange> callWithRetryPolicy(HttpRequest httpRequest,
-                                                                  ExecutorService executorService) {
+    public CompletableFuture<HttpExchange> call(HttpRequest httpRequest) {
         Optional<RetryPolicy<HttpExchange>> retryPolicyForCall = getRetryPolicy();
         if (httpRequest != null) {
             AtomicInteger attempts = new AtomicInteger();
