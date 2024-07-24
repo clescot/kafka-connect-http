@@ -31,10 +31,8 @@ public class HttpTask<T extends ConnectRecord<T>, R, S> {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(HttpTask.class);
 
-
     private final List<Configuration<R, S>> customConfigurations;
     private final Configuration<R, S> defaultConfiguration;
-    private final ExecutorService executorService;
     private static CompositeMeterRegistry meterRegistry;
 
 
@@ -44,7 +42,6 @@ public class HttpTask<T extends ConnectRecord<T>, R, S> {
                     CompositeMeterRegistry meterRegistry,
                     ExecutorService executorService) {
 
-        this.executorService = executorService;
         if (HttpTask.meterRegistry == null) {
             HttpTask.meterRegistry = meterRegistry;
         }

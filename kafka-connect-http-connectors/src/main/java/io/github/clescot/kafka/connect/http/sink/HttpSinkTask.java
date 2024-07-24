@@ -325,7 +325,6 @@ public abstract class HttpSinkTask<R, S> extends SinkTask {
     }
 
     /**
-     * define a static field from a non-static method need a static synchronized method
      *
      * @param customFixedThreadPoolSize max thread pool size for the executorService.
      * @return executorService
