@@ -486,7 +486,7 @@ public abstract class HttpSinkTask<R, S> extends SinkTask {
                 .collect(Collectors.toList());
         //List<SinkRecord>-> SinkRecord
         List<CompletableFuture<HttpExchange>> completableFutures = requests.stream()
-                .map(this::process)
+                .map(this::call)
                 .collect(Collectors.toList());
         List<HttpExchange> httpExchanges = completableFutures.stream().map(CompletableFuture::join).collect(Collectors.toList());
         LOGGER.debug("HttpExchanges created :'{}'", httpExchanges.size());
@@ -500,7 +500,7 @@ public abstract class HttpSinkTask<R, S> extends SinkTask {
         LOGGER.debug("value Schema from SinkRecord is '{}'", sinkRecord.valueSchema());
     }
 
-    private CompletableFuture<HttpExchange> process(Pair<SinkRecord, HttpRequest> pair) {
+    private CompletableFuture<HttpExchange> call(Pair<SinkRecord, HttpRequest> pair) {
 
 
         //TODO regroup messages into one https://github.com/clescot/kafka-connect-http/issues/336
