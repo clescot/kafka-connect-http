@@ -502,7 +502,6 @@ public abstract class HttpSinkTask<R, S> extends SinkTask {
 
         //httpRequestMapper
         List<HttpRequest> httpRequests = toHttpRequests(sinkRecord);
-        try {
 
             //TODO regroup messages into one https://github.com/clescot/kafka-connect-http/issues/336
             //predicate on HtpRequest for reducer ?
@@ -514,33 +513,29 @@ public abstract class HttpSinkTask<R, S> extends SinkTask {
                     .stream()
                     .map(currentRequest -> httpTask
                             .call(currentRequest)
-                            .thenApply(publish(sinkRecord)))
+                            .thenApply(
+                                 publish(sinkRecord)
+                            )
+                            .exceptionally(throwable -> {
+                                if (errantRecordReporter != null) {
+                                    // Send errant record to error reporter
+                                    Future<Void> future = errantRecordReporter.report(sinkRecord, throwable);
+                                    // Optionally wait till the failure's been recorded in Kafka
+                                    try {
+                                        future.get();
+                                        return null;
+                                    } catch (InterruptedException | ExecutionException ex) {
+                                        Thread.currentThread().interrupt();
+                                        throw new ConnectException(ex);
+                                    }
+                                } else {
+                                    // There's no error reporter, so fail
+                                    throw new ConnectException("Failed on record", throwable);
+                                }
+                            })
+                    )
                     .collect(Collectors.toList());
 
-        } catch (ConnectException connectException) {
-            if (errantRecordReporter != null) {
-                errantRecordReporter.report(sinkRecord, connectException);
-            } else {
-                LOGGER.warn("errantRecordReporter has been added to Kafka Connect since 2.6.0 release. you should upgrade the Kafka Connect Runtime shortly.");
-            }
-            throw connectException;
-        } catch (Exception e) {
-            if (errantRecordReporter != null) {
-                // Send errant record to error reporter
-                Future<Void> future = errantRecordReporter.report(sinkRecord, e);
-                // Optionally wait till the failure's been recorded in Kafka
-                try {
-                    future.get();
-                    return List.of(CompletableFuture.failedFuture(e));
-                } catch (InterruptedException | ExecutionException ex) {
-                    Thread.currentThread().interrupt();
-                    throw new ConnectException(ex);
-                }
-            } else {
-                // There's no error reporter, so fail
-                throw new ConnectException("Failed on record", e);
-            }
-        }
 
     }
 
@@ -591,22 +586,21 @@ public abstract class HttpSinkTask<R, S> extends SinkTask {
 
                 LOGGER.debug("publish.mode : 'PRODUCER' : HttpExchange success will be published at topic : '{}'", httpSinkConnectorConfig.getProducerSuccessTopic());
                 LOGGER.debug("publish.mode : 'PRODUCER' : HttpExchange error will be published at topic : '{}'", httpSinkConnectorConfig.getProducerErrorTopic());
-                try {
                     String targetTopic = httpExchange.isSuccess() ? httpSinkConnectorConfig.getProducerSuccessTopic() : httpSinkConnectorConfig.getProducerErrorTopic();
                     ProducerRecord<String, HttpExchange> myRecord = new ProducerRecord<>(targetTopic, httpExchange);
                     LOGGER.trace("before send to {}", targetTopic);
-                    RecordMetadata recordMetadata = this.producer.send(myRecord).get(3, TimeUnit.SECONDS);
-                    long offset = recordMetadata.offset();
+                RecordMetadata recordMetadata = null;
+                try {
+                    recordMetadata = this.producer.send(myRecord).get(3, TimeUnit.SECONDS);
+                } catch (Exception e) {
+                    throw new HttpException(e);
+                }
+                long offset = recordMetadata.offset();
                     int partition = recordMetadata.partition();
                     long timestamp = recordMetadata.timestamp();
                     String topic = recordMetadata.topic();
                     LOGGER.debug("✉✉ record sent ✉✉ : topic:{},partition:{},offset:{},timestamp:{}", topic, partition, offset, timestamp);
-                } catch (InterruptedException | ExecutionException | TimeoutException e) {
-                    LOGGER.debug(RECORD_NOT_SENT);
-                    LOGGER.error(e.getMessage(), e);
-                    Thread.currentThread().interrupt();
-                    throw new ConnectException(RECORD_NOT_SENT, e);
-                }
+
             } else {
                 LOGGER.debug("publish.mode : 'NONE' http exchange NOT published :'{}'", httpExchange);
             }
