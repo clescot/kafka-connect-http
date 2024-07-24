@@ -39,6 +39,7 @@ import org.apache.commons.jexl3.JexlBuilder;
 import org.apache.commons.jexl3.JexlEngine;
 import org.apache.commons.jexl3.JexlFeatures;
 import org.apache.commons.jexl3.introspection.JexlPermissions;
+import org.apache.commons.lang3.tuple.Pair;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.clients.producer.RecordMetadata;
 import org.apache.kafka.common.KafkaException;
@@ -477,68 +478,63 @@ public abstract class HttpSinkTask<R, S> extends SinkTask {
         Stream<SinkRecord> stream = records.stream();
 
         //TODO regroup messages into one https://github.com/clescot/kafka-connect-http/issues/336
-        //List<SinkRecord>-> SinkRecord
-        List<CompletableFuture<HttpExchange>> completableFutures = stream
+        List<Pair<SinkRecord, HttpRequest>> requests = stream
                 .peek(this::debugConnectRecord)
-                .filter(sinkRecord -> sinkRecord.value()!=null)
+                .filter(sinkRecord -> sinkRecord.value() != null)
+                .map(this::toHttpRequests)
+                .flatMap(List::stream)
+                .collect(Collectors.toList());
+        //List<SinkRecord>-> SinkRecord
+        List<CompletableFuture<HttpExchange>> completableFutures = requests.stream()
                 .map(this::process)
-                .collect(Collectors.toList())
-                .stream()
-                .flatMap(Collection::stream)
                 .collect(Collectors.toList());
         List<HttpExchange> httpExchanges = completableFutures.stream().map(CompletableFuture::join).collect(Collectors.toList());
         LOGGER.debug("HttpExchanges created :'{}'", httpExchanges.size());
 
     }
 
-    private void debugConnectRecord(SinkRecord sinkRecord){
+    private void debugConnectRecord(SinkRecord sinkRecord) {
         Object value = sinkRecord.value();
         Class<?> valueClass = value.getClass();
         LOGGER.debug("valueClass is '{}'", valueClass.getName());
         LOGGER.debug("value Schema from SinkRecord is '{}'", sinkRecord.valueSchema());
     }
 
-    private List<CompletableFuture<HttpExchange>> process(SinkRecord sinkRecord) {
+    private CompletableFuture<HttpExchange> process(Pair<SinkRecord, HttpRequest> pair) {
 
-        //httpRequestMapper
-        List<HttpRequest> httpRequests = toHttpRequests(sinkRecord);
 
-            //TODO regroup messages into one https://github.com/clescot/kafka-connect-http/issues/336
-            //predicate on HtpRequest for reducer ?
-            //max messages ?
-            //max body length ?
-            //List<SinkRecord>-> SinkRecord
+        //TODO regroup messages into one https://github.com/clescot/kafka-connect-http/issues/336
+        //predicate on HtpRequest for reducer ?
+        //max messages ?
+        //max body length ?
+        //List<SinkRecord>-> SinkRecord
 
-            return httpRequests
-                    .stream()
-                    .map(currentRequest -> httpTask
-                            .call(currentRequest)
-                            .thenApply(
-                                 publish(sinkRecord)
-                            )
-                            .exceptionally(throwable -> {
-                                LOGGER.error(throwable.getMessage());
-                                if (errantRecordReporter != null) {
-                                    // Send errant record to error reporter
-                                    Future<Void> future = errantRecordReporter.report(sinkRecord, throwable);
-                                    // Optionally wait till the failure's been recorded in Kafka
-                                    try {
-                                        future.get();
+        return httpTask
+                .call(pair.getRight())
+                .thenApply(
+                        publish(pair.getLeft())
+                )
+                .exceptionally(throwable -> {
+                    LOGGER.error(throwable.getMessage());
+                    if (errantRecordReporter != null) {
+                        // Send errant record to error reporter
+                        Future<Void> future = errantRecordReporter.report(pair.getLeft(), throwable);
+                        // Optionally wait till the failure's been recorded in Kafka
+                        try {
+                            future.get();
 
-                                    } catch (InterruptedException | ExecutionException ex) {
-                                        Thread.currentThread().interrupt();
-                                        LOGGER.error(ex.getMessage());
-                                    }
-                                }
-                                return null;
-                            })
-                    )
-                    .collect(Collectors.toList());
+                        } catch (InterruptedException | ExecutionException ex) {
+                            Thread.currentThread().interrupt();
+                            LOGGER.error(ex.getMessage());
+                        }
+                    }
+                    return null;
+                });
 
 
     }
 
-    private @NotNull List<HttpRequest> toHttpRequests(SinkRecord sinkRecord) {
+    private @NotNull List<Pair<SinkRecord, HttpRequest>> toHttpRequests(SinkRecord sinkRecord) {
         HttpRequestMapper httpRequestMapper = httpRequestMappers.stream()
                 .filter(mapper -> mapper.matches(sinkRecord))
                 .findFirst()
@@ -546,7 +542,7 @@ public abstract class HttpSinkTask<R, S> extends SinkTask {
 
         //build HttpRequest
         HttpRequest httpRequest = httpRequestMapper.map(sinkRecord);
-        List<HttpRequest> httpRequests = Lists.newArrayList();
+        List<Pair<SinkRecord, HttpRequest>> httpRequests = Lists.newArrayList();
 
         //splitter
         if (HttpRequest.BodyType.STRING.equals(httpRequest.getBodyType())
@@ -556,17 +552,18 @@ public abstract class HttpSinkTask<R, S> extends SinkTask {
                     .map(part -> {
                         HttpRequest partRequest = new HttpRequest(httpRequest);
                         partRequest.setBodyAsString(part);
-                        return partRequest;
+                        return Pair.of(sinkRecord, partRequest);
                     })
                     .collect(Collectors.toList()));
         } else {
             //no splitter
-            httpRequests.add(httpRequest);
+            httpRequests.add(Pair.of(sinkRecord, httpRequest));
         }
         return httpRequests;
     }
 
-    private @NotNull Function<HttpExchange, HttpExchange> publish(SinkRecord sinkRecord) throws HttpException{
+
+    private @NotNull Function<HttpExchange, HttpExchange> publish(SinkRecord sinkRecord) throws HttpException {
         return httpExchange -> {
             //publish eventually to 'in memory' queue
             if (PublishMode.IN_MEMORY_QUEUE.equals(this.publishMode)) {
@@ -585,9 +582,9 @@ public abstract class HttpSinkTask<R, S> extends SinkTask {
 
                 LOGGER.debug("publish.mode : 'PRODUCER' : HttpExchange success will be published at topic : '{}'", httpSinkConnectorConfig.getProducerSuccessTopic());
                 LOGGER.debug("publish.mode : 'PRODUCER' : HttpExchange error will be published at topic : '{}'", httpSinkConnectorConfig.getProducerErrorTopic());
-                    String targetTopic = httpExchange.isSuccess() ? httpSinkConnectorConfig.getProducerSuccessTopic() : httpSinkConnectorConfig.getProducerErrorTopic();
-                    ProducerRecord<String, HttpExchange> myRecord = new ProducerRecord<>(targetTopic, httpExchange);
-                    LOGGER.trace("before send to {}", targetTopic);
+                String targetTopic = httpExchange.isSuccess() ? httpSinkConnectorConfig.getProducerSuccessTopic() : httpSinkConnectorConfig.getProducerErrorTopic();
+                ProducerRecord<String, HttpExchange> myRecord = new ProducerRecord<>(targetTopic, httpExchange);
+                LOGGER.trace("before send to {}", targetTopic);
                 RecordMetadata recordMetadata;
                 try {
                     recordMetadata = this.producer.send(myRecord).get(3, TimeUnit.SECONDS);
@@ -595,10 +592,10 @@ public abstract class HttpSinkTask<R, S> extends SinkTask {
                     throw new HttpException(e);
                 }
                 long offset = recordMetadata.offset();
-                    int partition = recordMetadata.partition();
-                    long timestamp = recordMetadata.timestamp();
-                    String topic = recordMetadata.topic();
-                    LOGGER.debug("✉✉ record sent ✉✉ : topic:{},partition:{},offset:{},timestamp:{}", topic, partition, offset, timestamp);
+                int partition = recordMetadata.partition();
+                long timestamp = recordMetadata.timestamp();
+                String topic = recordMetadata.topic();
+                LOGGER.debug("✉✉ record sent ✉✉ : topic:{},partition:{},offset:{},timestamp:{}", topic, partition, offset, timestamp);
 
             } else {
                 LOGGER.debug("publish.mode : 'NONE' http exchange NOT published :'{}'", httpExchange);
