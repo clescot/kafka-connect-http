@@ -478,6 +478,11 @@ public abstract class HttpSinkTask<R, S> extends SinkTask {
         Stream<SinkRecord> stream = records.stream();
 
         //TODO regroup messages into one https://github.com/clescot/kafka-connect-http/issues/336
+        //predicate on HtpRequest for reducer ?
+        //max messages ?
+        //max body length ?
+        //List<SinkRecord>-> SinkRecord
+
         List<Pair<SinkRecord, HttpRequest>> requests = stream
                 .peek(this::debugConnectRecord)
                 .filter(sinkRecord -> sinkRecord.value() != null)
@@ -501,13 +506,6 @@ public abstract class HttpSinkTask<R, S> extends SinkTask {
     }
 
     private CompletableFuture<HttpExchange> call(Pair<SinkRecord, HttpRequest> pair) {
-
-
-        //TODO regroup messages into one https://github.com/clescot/kafka-connect-http/issues/336
-        //predicate on HtpRequest for reducer ?
-        //max messages ?
-        //max body length ?
-        //List<SinkRecord>-> SinkRecord
 
         return httpTask
                 .call(pair.getRight())
