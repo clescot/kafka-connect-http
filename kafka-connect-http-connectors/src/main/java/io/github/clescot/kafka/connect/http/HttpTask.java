@@ -59,7 +59,7 @@ public class HttpTask<T extends ConnectRecord<T>, R, S> {
      * @param httpRequest
      * @return
      */
-    public CompletableFuture<HttpExchange> processHttpRequest(HttpRequest httpRequest) {
+    public CompletableFuture<HttpExchange> call(HttpRequest httpRequest) {
         Configuration<R, S> foundConfiguration = getConfiguration(httpRequest);
         if (LOGGER.isTraceEnabled()) {
             LOGGER.trace("configuration:{}", foundConfiguration);
@@ -127,9 +127,6 @@ public class HttpTask<T extends ConnectRecord<T>, R, S> {
         return defaultConfiguration;
     }
 
-    public ExecutorService getExecutorService() {
-        return executorService;
-    }
 
     public static CompositeMeterRegistry getMeterRegistry() {
         return HttpTask.meterRegistry;

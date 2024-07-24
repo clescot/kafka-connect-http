@@ -116,10 +116,6 @@ public class HttpSinkTaskTest {
     @AfterAll
     public static void shutdown() {
 
-//        Awaitility.await()
-//                .timeout(660, SECONDS)
-//                .pollDelay(650, SECONDS)
-//                .untilAsserted(() -> Assertions.assertTrue(true));
     }
 
 

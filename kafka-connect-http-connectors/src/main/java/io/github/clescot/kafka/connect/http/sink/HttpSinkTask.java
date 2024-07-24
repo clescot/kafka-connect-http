@@ -514,7 +514,7 @@ public abstract class HttpSinkTask<R, S> extends SinkTask {
             return httpRequests
                     .stream()
                     .map(currentRequest -> httpTask
-                            .processHttpRequest(currentRequest)
+                            .call(currentRequest)
                             .thenApply(publish(sinkRecord)))
                     .collect(Collectors.toList());
 
