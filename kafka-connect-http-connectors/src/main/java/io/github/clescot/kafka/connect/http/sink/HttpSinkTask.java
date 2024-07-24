@@ -486,6 +486,10 @@ public abstract class HttpSinkTask<R, S> extends SinkTask {
         //predicate on HtpRequest for reducer ?
         //max messages ?
         //max body length ?
+        //preserve order ?
+        //separator between parts
+        //initial separator
+        //final separator
         //List<SinkRecord>-> SinkRecord
 
         List<Pair<SinkRecord, HttpRequest>> requests = stream
