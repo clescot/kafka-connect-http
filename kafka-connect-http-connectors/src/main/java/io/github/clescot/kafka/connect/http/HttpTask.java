@@ -11,6 +11,7 @@ import io.micrometer.core.instrument.binder.system.ProcessorMetrics;
 import io.micrometer.core.instrument.composite.CompositeMeterRegistry;
 import org.apache.kafka.common.config.AbstractConfig;
 import org.apache.kafka.connect.connector.ConnectRecord;
+import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -56,7 +57,7 @@ public class HttpTask<T extends ConnectRecord<T>, R, S> {
      * @param httpRequest
      * @return
      */
-    public CompletableFuture<HttpExchange> call(HttpRequest httpRequest) {
+    public CompletableFuture<HttpExchange> call(@NotNull HttpRequest httpRequest) {
         Configuration<R, S> foundConfiguration = getConfiguration(httpRequest);
         if (LOGGER.isTraceEnabled()) {
             LOGGER.trace("configuration:{}", foundConfiguration);

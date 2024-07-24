@@ -517,21 +517,20 @@ public abstract class HttpSinkTask<R, S> extends SinkTask {
                                  publish(sinkRecord)
                             )
                             .exceptionally(throwable -> {
+                                LOGGER.error(throwable.getMessage());
                                 if (errantRecordReporter != null) {
                                     // Send errant record to error reporter
                                     Future<Void> future = errantRecordReporter.report(sinkRecord, throwable);
                                     // Optionally wait till the failure's been recorded in Kafka
                                     try {
                                         future.get();
-                                        return null;
+
                                     } catch (InterruptedException | ExecutionException ex) {
                                         Thread.currentThread().interrupt();
-                                        throw new ConnectException(ex);
+                                        LOGGER.error(ex.getMessage());
                                     }
-                                } else {
-                                    // There's no error reporter, so fail
-                                    throw new ConnectException("Failed on record", throwable);
                                 }
+                                return null;
                             })
                     )
                     .collect(Collectors.toList());
@@ -567,7 +566,7 @@ public abstract class HttpSinkTask<R, S> extends SinkTask {
         return httpRequests;
     }
 
-    private @NotNull Function<HttpExchange, HttpExchange> publish(SinkRecord sinkRecord) {
+    private @NotNull Function<HttpExchange, HttpExchange> publish(SinkRecord sinkRecord) throws HttpException{
         return httpExchange -> {
             //publish eventually to 'in memory' queue
             if (PublishMode.IN_MEMORY_QUEUE.equals(this.publishMode)) {
@@ -589,7 +588,7 @@ public abstract class HttpSinkTask<R, S> extends SinkTask {
                     String targetTopic = httpExchange.isSuccess() ? httpSinkConnectorConfig.getProducerSuccessTopic() : httpSinkConnectorConfig.getProducerErrorTopic();
                     ProducerRecord<String, HttpExchange> myRecord = new ProducerRecord<>(targetTopic, httpExchange);
                     LOGGER.trace("before send to {}", targetTopic);
-                RecordMetadata recordMetadata = null;
+                RecordMetadata recordMetadata;
                 try {
                     recordMetadata = this.producer.send(myRecord).get(3, TimeUnit.SECONDS);
                 } catch (Exception e) {

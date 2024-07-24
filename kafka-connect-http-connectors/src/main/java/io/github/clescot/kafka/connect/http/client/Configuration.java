@@ -194,9 +194,8 @@ public class Configuration<R,S> {
 
     }
 
-    public CompletableFuture<HttpExchange> call(HttpRequest httpRequest) {
+    public CompletableFuture<HttpExchange> call(@NotNull HttpRequest httpRequest) {
         Optional<RetryPolicy<HttpExchange>> retryPolicyForCall = getRetryPolicy();
-        if (httpRequest != null) {
             AtomicInteger attempts = new AtomicInteger();
             try {
 
@@ -224,9 +223,6 @@ public class Configuration<R,S> {
                         HttpClient.FAILURE);
                 return CompletableFuture.supplyAsync(() -> httpExchange);
             }
-        } else {
-            throw new IllegalArgumentException("httpRequest is null");
-        }
     }
 
     /**
