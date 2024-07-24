@@ -88,11 +88,12 @@ public abstract class HttpSinkTask<R, S> extends SinkTask {
     public static final String MISSING_ID_CACHE_TTL_SEC = "missing.id.cache.ttl.sec";
     public static final String RECORD_NOT_SENT = "/!\\ ☠☠ record NOT sent ☠☠";
     public static final String JEXL_ALWAYS_MATCHES = "true";
+    public static final String DEFAULT = "default";
     private Configuration<R, S> defaultConfiguration;
     private List<Configuration<R, S>> customConfigurations;
     private HttpRequestMapper defaultHttpRequestMapper;
     private List<HttpRequestMapper> httpRequestMappers;
-    public static final String DEFAULT_CONFIGURATION_ID = "default";
+    public static final String DEFAULT_CONFIGURATION_ID = DEFAULT;
     private final HttpClientFactory<R, S> httpClientFactory;
 
     private ErrantRecordReporter errantRecordReporter;
@@ -166,7 +167,9 @@ public abstract class HttpSinkTask<R, S> extends SinkTask {
             MapperMode mapperMode = MapperMode.valueOf(Optional.ofNullable(settings.get(modeKey)).orElse(MapperMode.DIRECT.name()).toString());
             switch (mapperMode) {
                 case JEXL: {
-                    httpRequestMapper = new JEXLHttpRequestMapper(jexlEngine,
+                    httpRequestMapper = new JEXLHttpRequestMapper(
+                            httpRequestMapperId,
+                            jexlEngine,
                             (String) settings.get(".matcher"),
                             (String) settings.get(".url"),
                             (String) settings.get(".method"),
@@ -179,6 +182,7 @@ public abstract class HttpSinkTask<R, S> extends SinkTask {
                 case DIRECT:
                 default: {
                     httpRequestMapper = new DirectHttpRequestMapper(
+                            httpRequestMapperId,
                             jexlEngine,
                             (String) settings.get(".matcher")
                     );
@@ -274,7 +278,9 @@ public abstract class HttpSinkTask<R, S> extends SinkTask {
         switch (defaultRequestMapperMode) {
             case JEXL: {
                 Preconditions.checkNotNull(connectorConfig.getDefaultUrlExpression(), "'" + REQUEST_MAPPER_DEFAULT_URL_EXPRESSION + "' need to be set");
-                httpRequestMapper = new JEXLHttpRequestMapper(jexlEngine,
+                httpRequestMapper = new JEXLHttpRequestMapper(
+                        DEFAULT,
+                        jexlEngine,
                         JEXL_ALWAYS_MATCHES,
                         connectorConfig.getDefaultUrlExpression(),
                         connectorConfig.getDefaultMethodExpression(),
@@ -286,7 +292,11 @@ public abstract class HttpSinkTask<R, S> extends SinkTask {
             }
             case DIRECT:
             default: {
-                httpRequestMapper = new DirectHttpRequestMapper(jexlEngine, JEXL_ALWAYS_MATCHES);
+                httpRequestMapper = new DirectHttpRequestMapper(
+                        DEFAULT,
+                        jexlEngine,
+                        JEXL_ALWAYS_MATCHES
+                );
                 break;
             }
         }

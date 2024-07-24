@@ -42,6 +42,7 @@ import java.util.Optional;
 
 import static io.confluent.kafka.serializers.json.KafkaJsonSchemaDeserializerConfig.JSON_VALUE_TYPE;
 import static io.github.clescot.kafka.connect.http.core.HttpRequestAsStruct.SCHEMA;
+import static io.github.clescot.kafka.connect.http.sink.HttpSinkTask.DEFAULT;
 import static org.assertj.core.api.Assertions.assertThat;
 
 class DirectHttpRequestMapperTest {
@@ -61,7 +62,7 @@ class DirectHttpRequestMapperTest {
                 .sideEffectGlobal(false)
                 .sideEffect(false);
         JexlEngine jexlEngine = new JexlBuilder().features(features).permissions(permissions).create();
-        httpRequestMapper = new DirectHttpRequestMapper(jexlEngine, "true");
+        httpRequestMapper = new DirectHttpRequestMapper(DEFAULT,jexlEngine, "true");
     }
     @Nested
     class TestMap {

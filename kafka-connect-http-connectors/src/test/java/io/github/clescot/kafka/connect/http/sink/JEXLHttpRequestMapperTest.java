@@ -19,6 +19,7 @@ import org.junit.jupiter.api.Test;
 
 import java.util.List;
 
+import static io.github.clescot.kafka.connect.http.sink.HttpSinkTask.DEFAULT;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 
 class JEXLHttpRequestMapperTest {
@@ -47,30 +48,30 @@ class JEXLHttpRequestMapperTest {
 
         @Test
         void test_empty_expression() {
-            Assertions.assertThrows(IllegalArgumentException.class,()->new JEXLHttpRequestMapper(jexlEngine,"","",null,null,null,null));
+            Assertions.assertThrows(IllegalArgumentException.class,()->new JEXLHttpRequestMapper(DEFAULT,jexlEngine,"","",null,null,null,null));
         }
         @Test
         void test_null_expression() {
-            Assertions.assertThrows(NullPointerException.class,()->new JEXLHttpRequestMapper(jexlEngine,null,"'http://url.com'",null,null,null,null));
+            Assertions.assertThrows(NullPointerException.class,()->new JEXLHttpRequestMapper(DEFAULT,jexlEngine,null,"'http://url.com'",null,null,null,null));
         }
 
         @Test
         void test_valid_expression_with_url_as_constant() {
-            Assertions.assertDoesNotThrow(()->new JEXLHttpRequestMapper(jexlEngine,"sinkRecord.topic()=='myTopic'","'http://url.com'",null,null,null,null));
+            Assertions.assertDoesNotThrow(()->new JEXLHttpRequestMapper(DEFAULT,jexlEngine,"sinkRecord.topic()=='myTopic'","'http://url.com'",null,null,null,null));
         }
 
         @Test
         void test_valid_expression_with_url_from_sink_record() {
-            Assertions.assertDoesNotThrow(()->new JEXLHttpRequestMapper(jexlEngine, "sinkRecord.topic()=='myTopic'", "sinkRecord.value()", null, null, null, null));
+            Assertions.assertDoesNotThrow(()->new JEXLHttpRequestMapper(DEFAULT,jexlEngine, "sinkRecord.topic()=='myTopic'", "sinkRecord.value()", null, null, null, null));
 
         }
         @Test
         void test_valid_expression_with_url_and_method_from_sink_record() {
-            Assertions.assertDoesNotThrow(()->new JEXLHttpRequestMapper(jexlEngine, "sinkRecord.topic()=='myTopic'", "sinkRecord.value()", "'POST'", null, null, null));
+            Assertions.assertDoesNotThrow(()->new JEXLHttpRequestMapper(DEFAULT,jexlEngine, "sinkRecord.topic()=='myTopic'", "sinkRecord.value()", "'POST'", null, null, null));
         }
         @Test
         void test_valid_expression_with_url_method_and_body_from_sink_record() {
-            Assertions.assertDoesNotThrow(()->new JEXLHttpRequestMapper(jexlEngine, "sinkRecord.topic()=='myTopic'", "sinkRecord.value().split(\"#\")[0]", "'POST'", null, "sinkRecord.value().split(\"#\")[1]", null));
+            Assertions.assertDoesNotThrow(()->new JEXLHttpRequestMapper(DEFAULT,jexlEngine, "sinkRecord.topic()=='myTopic'", "sinkRecord.value().split(\"#\")[0]", "'POST'", null, "sinkRecord.value().split(\"#\")[1]", null));
         }
 
     }
@@ -100,14 +101,14 @@ class JEXLHttpRequestMapperTest {
 
         @Test
         void test_nominal() {
-            JEXLHttpRequestMapper httpRequestMapper = new JEXLHttpRequestMapper(jexlEngine,"sinkRecord.topic()=='myTopic'","'http://url.com'",null,null,null,null);
+            JEXLHttpRequestMapper httpRequestMapper = new JEXLHttpRequestMapper(DEFAULT,jexlEngine,"sinkRecord.topic()=='myTopic'","'http://url.com'",null,null,null,null);
             boolean matches = httpRequestMapper.matches(sinkRecord);
             assertThat(matches).isTrue();
         }
 
         @Test
         void test_invalid_expression() {
-            JEXLHttpRequestMapper httpRequestMapper = new JEXLHttpRequestMapper(jexlEngine,"toto.topic()=='myTopic'","'http://url.com'",null,null,null,null);
+            JEXLHttpRequestMapper httpRequestMapper = new JEXLHttpRequestMapper(DEFAULT,jexlEngine,"toto.topic()=='myTopic'","'http://url.com'",null,null,null,null);
             boolean matches = httpRequestMapper.matches(sinkRecord);
             assertThat(matches).isFalse();
         }
@@ -141,7 +142,7 @@ class JEXLHttpRequestMapperTest {
         }
         @Test
         void test_url_as_constant(){
-            JEXLHttpRequestMapper httpRequestMapper = new JEXLHttpRequestMapper(jexlEngine,"sinkRecord.topic()=='myTopic'","'http://url.com'",null,null,null,null);
+            JEXLHttpRequestMapper httpRequestMapper = new JEXLHttpRequestMapper(DEFAULT,jexlEngine,"sinkRecord.topic()=='myTopic'","'http://url.com'",null,null,null,null);
             boolean matches = httpRequestMapper.matches(sinkRecord);
             assertThat(matches).isTrue();
             HttpRequest httpRequest = httpRequestMapper.map(sinkRecord);
@@ -151,7 +152,7 @@ class JEXLHttpRequestMapperTest {
         }
         @Test
         void test_url_as_variable(){
-            JEXLHttpRequestMapper httpRequestMapper = new JEXLHttpRequestMapper(jexlEngine,"sinkRecord.topic()=='myTopic'","sinkRecord.value()",null,null,null,null);
+            JEXLHttpRequestMapper httpRequestMapper = new JEXLHttpRequestMapper(DEFAULT,jexlEngine,"sinkRecord.topic()=='myTopic'","sinkRecord.value()",null,null,null,null);
             boolean matches = httpRequestMapper.matches(sinkRecord);
             assertThat(matches).isTrue();
             HttpRequest httpRequest = httpRequestMapper.map(sinkRecord);
@@ -162,6 +163,7 @@ class JEXLHttpRequestMapperTest {
         @Test
         void test_with_all_variables(){
             JEXLHttpRequestMapper httpRequestMapper = new JEXLHttpRequestMapper(
+                    DEFAULT,
                     jexlEngine,
                     "sinkRecord.topic()=='myTopic'",
                     "sinkRecord.value()",
@@ -183,7 +185,7 @@ class JEXLHttpRequestMapperTest {
 
         @Test
         void test_valid_expression_with_url_from_sink_record() {
-            JEXLHttpRequestMapper jexlHttpRequestMapper = new JEXLHttpRequestMapper(jexlEngine, "sinkRecord.topic()=='myTopic'", "sinkRecord.value()", null, null, null, null);
+            JEXLHttpRequestMapper jexlHttpRequestMapper = new JEXLHttpRequestMapper(DEFAULT,jexlEngine, "sinkRecord.topic()=='myTopic'", "sinkRecord.value()", null, null, null, null);
             String url = "http://test.com";
             SinkRecord sinkRecord = new SinkRecord("test",0,Schema.STRING_SCHEMA,"123",Schema.STRING_SCHEMA, url,0);
             HttpRequest httpRequest = jexlHttpRequestMapper.map(sinkRecord);
@@ -191,7 +193,7 @@ class JEXLHttpRequestMapperTest {
         }
         @Test
         void test_valid_expression_with_url_and_method_from_sink_record() {
-            JEXLHttpRequestMapper jexlHttpRequestMapper = new JEXLHttpRequestMapper(jexlEngine, "sinkRecord.topic()=='myTopic'", "sinkRecord.value()", "'POST'", null, null, null);
+            JEXLHttpRequestMapper jexlHttpRequestMapper = new JEXLHttpRequestMapper(DEFAULT,jexlEngine, "sinkRecord.topic()=='myTopic'", "sinkRecord.value()", "'POST'", null, null, null);
             String url = "http://test.com";
             SinkRecord mySinkRecord = new SinkRecord("test",0,Schema.STRING_SCHEMA,"123",Schema.STRING_SCHEMA, url,0);
             HttpRequest httpRequest = jexlHttpRequestMapper.map(mySinkRecord);
@@ -200,7 +202,7 @@ class JEXLHttpRequestMapperTest {
         }
         @Test
         void test_valid_expression_with_url_method_and_body_from_sink_record() {
-            JEXLHttpRequestMapper jexlHttpRequestMapper = new JEXLHttpRequestMapper(jexlEngine, "sinkRecord.topic()=='myTopic'", "sinkRecord.value().split(\"#\")[0]", "'POST'", null, "sinkRecord.value().split(\"#\")[1]", null);
+            JEXLHttpRequestMapper jexlHttpRequestMapper = new JEXLHttpRequestMapper(DEFAULT,jexlEngine, "sinkRecord.topic()=='myTopic'", "sinkRecord.value().split(\"#\")[0]", "'POST'", null, "sinkRecord.value().split(\"#\")[1]", null);
             String value = "http://test.com#mybodycontent";
             SinkRecord mySinkRecord = new SinkRecord("test",0,Schema.STRING_SCHEMA,"123",Schema.STRING_SCHEMA, value,0);
             HttpRequest httpRequest = jexlHttpRequestMapper.map(mySinkRecord);
@@ -213,6 +215,7 @@ class JEXLHttpRequestMapperTest {
         void test_valid_expression_with_all_resolved_variables_from_sink_record() {
             String value = "http://test.com#PUT#STRING#mybodycontent#key1-value1/key2-value2";
             JEXLHttpRequestMapper jexlHttpRequestMapper = new JEXLHttpRequestMapper(
+                    DEFAULT,
                     jexlEngine,
                     "sinkRecord.topic()=='myTopic'",
                     "sinkRecord.value().split(\"#\")[0]",

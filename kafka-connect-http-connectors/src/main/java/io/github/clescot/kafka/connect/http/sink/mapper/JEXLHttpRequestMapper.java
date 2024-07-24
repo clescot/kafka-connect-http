@@ -12,6 +12,7 @@ import org.slf4j.LoggerFactory;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 
 public class JEXLHttpRequestMapper extends AbstractHttpRequestMapper {
@@ -28,7 +29,8 @@ public class JEXLHttpRequestMapper extends AbstractHttpRequestMapper {
     private final Optional<JexlExpression> jexlHeadersExpression;
 
 
-    public JEXLHttpRequestMapper(JexlEngine jexlEngine,
+    public JEXLHttpRequestMapper(String id,
+                                 JexlEngine jexlEngine,
                                  @NotNull String matchingExpression,
                                  @NotNull String urlExpression,
                                  @Nullable String methodExpression,
@@ -36,6 +38,7 @@ public class JEXLHttpRequestMapper extends AbstractHttpRequestMapper {
                                  @Nullable String bodyExpression,
                                  @Nullable String headersExpression
                                  ) {
+        super(id);
         Preconditions.checkNotNull(matchingExpression);
         Preconditions.checkArgument(!matchingExpression.isEmpty());
         jexlMatchingExpression = jexlEngine.createExpression(matchingExpression);
@@ -98,5 +101,33 @@ public class JEXLHttpRequestMapper extends AbstractHttpRequestMapper {
 
     public JexlExpression getJexlUrlExpression() {
         return jexlUrlExpression;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof JEXLHttpRequestMapper)) return false;
+        JEXLHttpRequestMapper that = (JEXLHttpRequestMapper) o;
+        return Objects.equals(jexlMatchingExpression, that.jexlMatchingExpression) && Objects.equals(jexlUrlExpression, that.jexlUrlExpression) && Objects.equals(jexlMethodExpression, that.jexlMethodExpression) && Objects.equals(jexlBodyTypeExpression, that.jexlBodyTypeExpression) && Objects.equals(jexlBodyExpression, that.jexlBodyExpression) && Objects.equals(jexlHeadersExpression, that.jexlHeadersExpression);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(jexlMatchingExpression, jexlUrlExpression, jexlMethodExpression, jexlBodyTypeExpression, jexlBodyExpression, jexlHeadersExpression);
+    }
+
+    @Override
+    public String toString() {
+        return "JEXLHttpRequestMapper{" +
+                "jexlBodyExpression=" + jexlBodyExpression +
+                ", jexlBodyTypeExpression=" + jexlBodyTypeExpression +
+                ", jexlHeadersExpression=" + jexlHeadersExpression +
+                ", jexlMatchingExpression=" + jexlMatchingExpression +
+                ", jexlMethodExpression=" + jexlMethodExpression +
+                ", jexlUrlExpression=" + jexlUrlExpression +
+                ", id='" + id + '\'' +
+                ", splitLimit=" + splitLimit +
+                ", splitPattern=" + splitPattern +
+                '}';
     }
 }

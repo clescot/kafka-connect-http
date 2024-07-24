@@ -7,6 +7,8 @@ import java.util.regex.Pattern;
 
 public interface HttpRequestMapper {
 
+
+    String getId();
     /**
      * does this instance can be used to map this sinkRecord to an HttpRequest.
      * @param sinkRecord message to map
