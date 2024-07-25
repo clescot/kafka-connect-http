@@ -383,7 +383,7 @@ public abstract class HttpSinkTask<R, S> extends SinkTask {
         return httpTask
                 .call(pair.getRight())
                 .thenApply(
-                        publish(pair.getLeft())
+                        publish(pair.getLeft(), this.publishMode, httpSinkConnectorConfig)
                 )
                 .exceptionally(throwable -> {
                     LOGGER.error(throwable.getMessage());
@@ -434,11 +434,11 @@ public abstract class HttpSinkTask<R, S> extends SinkTask {
     }
 
 
-    private @NotNull Function<HttpExchange, HttpExchange> publish(SinkRecord sinkRecord) throws HttpException {
+    private @NotNull Function<HttpExchange, HttpExchange> publish(SinkRecord sinkRecord, PublishMode publishMode, HttpSinkConnectorConfig connectorConfig) throws HttpException {
         return httpExchange -> {
             //publish eventually to 'in memory' queue
-            if (PublishMode.IN_MEMORY_QUEUE.equals(this.publishMode)) {
-                LOGGER.debug("publish.mode : 'IN_MEMORY_QUEUE': http exchange published to queue '{}':{}", queueName, httpExchange);
+            if (PublishMode.IN_MEMORY_QUEUE.equals(publishMode)) {
+                LOGGER.debug("publish.mode : 'IN_MEMORY_QUEUE': http exchange published to queue '{}':{}", connectorConfig.getQueueName(), httpExchange);
                 boolean offer = queue.offer(new KafkaRecord(sinkRecord.headers(), sinkRecord.keySchema(), sinkRecord.key(), httpExchange));
                 if (!offer) {
                     LOGGER.error("sinkRecord(topic:{},partition:{},key:{},timestamp:{}) not added to the 'in memory' queue:{}",
@@ -446,14 +446,14 @@ public abstract class HttpSinkTask<R, S> extends SinkTask {
                             sinkRecord.kafkaPartition(),
                             sinkRecord.key(),
                             sinkRecord.timestamp(),
-                            queueName
+                            connectorConfig.getQueueName()
                     );
                 }
-            } else if (PublishMode.PRODUCER.equals(this.publishMode)) {
+            } else if (PublishMode.PRODUCER.equals(publishMode)) {
 
-                LOGGER.debug("publish.mode : 'PRODUCER' : HttpExchange success will be published at topic : '{}'", httpSinkConnectorConfig.getProducerSuccessTopic());
-                LOGGER.debug("publish.mode : 'PRODUCER' : HttpExchange error will be published at topic : '{}'", httpSinkConnectorConfig.getProducerErrorTopic());
-                String targetTopic = httpExchange.isSuccess() ? httpSinkConnectorConfig.getProducerSuccessTopic() : httpSinkConnectorConfig.getProducerErrorTopic();
+                LOGGER.debug("publish.mode : 'PRODUCER' : HttpExchange success will be published at topic : '{}'", connectorConfig.getProducerSuccessTopic());
+                LOGGER.debug("publish.mode : 'PRODUCER' : HttpExchange error will be published at topic : '{}'", connectorConfig.getProducerErrorTopic());
+                String targetTopic = httpExchange.isSuccess() ? connectorConfig.getProducerSuccessTopic() : connectorConfig.getProducerErrorTopic();
                 ProducerRecord<String, HttpExchange> myRecord = new ProducerRecord<>(targetTopic, httpExchange);
                 LOGGER.trace("before send to {}", targetTopic);
                 RecordMetadata recordMetadata;
