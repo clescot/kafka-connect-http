@@ -67,7 +67,7 @@ public class Configuration<R,S> {
     public static final String USER_AGENT_PROJECT_MODE = "project";
     public static final String USER_AGENT_CUSTOM_MODE = "custom";
 
-    private final Predicate<HttpRequest> mainpredicate;
+    private final Predicate<HttpRequest> predicate;
 
 
     public static final String STATIC_SCOPE = "static";
@@ -106,7 +106,7 @@ public class Configuration<R,S> {
         this.settings = config.originalsWithPrefix("config." + id + ".");
         settings.put(CONFIGURATION_ID, id);
         //main predicate
-        this.mainpredicate = buildPredicate(settings);
+        this.predicate = buildPredicate(settings);
 
         Random random = getRandom(settings);
 
@@ -410,7 +410,7 @@ public class Configuration<R,S> {
 
 
     public boolean matches(HttpRequest httpRequest) {
-        return this.mainpredicate.test(httpRequest);
+        return this.predicate.test(httpRequest);
     }
 
 
@@ -485,7 +485,7 @@ public class Configuration<R,S> {
     public String toString() {
         return "Configuration{" +
                 "id='" + id +
-                "', mainpredicate='" + predicateToString() +
+                "', predicate='" + predicateToString() +
                 "', defaultSuccessPattern='" + defaultSuccessPattern +
                 "', addStaticHeadersToHttpRequestFunction='" + addStaticHeadersToHttpRequestFunction +
                 "', addMissingRequestIdHeaderToHttpRequestFunction='" + addMissingRequestIdHeaderToHttpRequestFunction +
