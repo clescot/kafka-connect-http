@@ -36,7 +36,7 @@ import java.util.regex.Pattern;
 import static io.github.clescot.kafka.connect.http.sink.HttpSinkConfigDefinition.*;
 
 /**
- * Configuration of the http call mechanism, specific to some websites according to the configured <span class="strong">predicate</span>.
+ * Configuration of the {@link HttpClient}, specific to some websites according to the configured <span class="strong">predicate</span>.
  * @param <R> native HttpRequest
  * @param <S> native HttpResponse
  * <p>
