@@ -21,6 +21,7 @@ import io.github.clescot.kafka.connect.http.core.queue.QueueFactory;
 import io.github.clescot.kafka.connect.http.sink.mapper.DirectHttpRequestMapper;
 import io.github.clescot.kafka.connect.http.sink.mapper.JEXLHttpRequestMapper;
 import io.github.clescot.kafka.connect.http.sink.mapper.MapperMode;
+import io.github.clescot.kafka.connect.http.sink.publish.PublishMode;
 import io.micrometer.core.instrument.Meter;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.composite.CompositeMeterRegistry;

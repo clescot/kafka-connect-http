@@ -1,4 +1,4 @@
-package io.github.clescot.kafka.connect.http.sink;
+package io.github.clescot.kafka.connect.http.sink.publish;
 
 public enum PublishMode {
     /**

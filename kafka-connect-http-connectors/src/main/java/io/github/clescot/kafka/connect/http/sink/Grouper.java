@@ -25,6 +25,10 @@ public class Grouper {
     }
 
 
+    public boolean matches(HttpRequest httpRequest) {
+        return this.predicate.test(httpRequest);
+    }
+
     private List<Pair<SinkRecord, HttpRequest>> reduce(
             HttpRequestMapper httpRequestMapper,
             List<Pair<SinkRecord, HttpRequest>> entries

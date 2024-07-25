@@ -30,7 +30,7 @@ import io.github.clescot.kafka.connect.http.core.HttpExchange;
 import io.github.clescot.kafka.connect.http.core.HttpExchangeSerializer;
 import io.github.clescot.kafka.connect.http.core.HttpRequest;
 import io.github.clescot.kafka.connect.http.core.queue.QueueFactory;
-import io.github.clescot.kafka.connect.http.sink.PublishMode;
+import io.github.clescot.kafka.connect.http.sink.publish.PublishMode;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.Response;

@@ -33,6 +33,7 @@ import java.util.function.Predicate;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import static io.github.clescot.kafka.connect.http.client.config.PredicateBuilder.*;
 import static io.github.clescot.kafka.connect.http.sink.HttpSinkConfigDefinition.*;
 
 /**
@@ -52,13 +53,7 @@ public class Configuration<R,S> {
     private static final Logger LOGGER = LoggerFactory.getLogger(Configuration.class);
 
 
-    //predicate
-    public static final String PREDICATE = "predicate.";
-    public static final String URL_REGEX = PREDICATE + "url.regex";
-    public static final String METHOD_REGEX = PREDICATE + "method.regex";
-    public static final String BODYTYPE_REGEX = PREDICATE + "bodytype.regex";
-    public static final String HEADER_KEY_REGEX = PREDICATE + "header.key.regex";
-    public static final String HEADER_VALUE_REGEX = PREDICATE + "header.value.regex";
+
     public static final String HAS_BEEN_SET = " has been set.";
     public static final String SHA_1_PRNG = "SHA1PRNG";
     public static final String MUST_BE_SET_TOO = " must be set too.";
@@ -106,7 +101,7 @@ public class Configuration<R,S> {
         this.settings = config.originalsWithPrefix("config." + id + ".");
         settings.put(CONFIGURATION_ID, id);
         //main predicate
-        this.predicate = buildPredicate(settings);
+        this.predicate = PredicateBuilder.build().buildPredicate(settings);
 
         Random random = getRandom(settings);
 
@@ -249,48 +244,7 @@ public class Configuration<R,S> {
     }
 
 
-    private Predicate<HttpRequest> buildPredicate(Map<String, Object> configMap) {
-        Predicate<HttpRequest> predicate = httpRequest -> true;
-        if (configMap.containsKey(URL_REGEX)) {
-            String urlRegex = (String) configMap.get(URL_REGEX);
-            Pattern urlPattern = Pattern.compile(urlRegex);
-            predicate = predicate.and(httpRequest -> urlPattern.matcher(httpRequest.getUrl()).matches());
-        }
-        if (configMap.containsKey(METHOD_REGEX)) {
-            String methodRegex = (String) configMap.get(METHOD_REGEX);
-            Pattern methodPattern = Pattern.compile(methodRegex);
-            predicate = predicate.and(httpRequest -> methodPattern.matcher(httpRequest.getMethod().name()).matches());
-        }
-        if (configMap.containsKey(BODYTYPE_REGEX)) {
-            String bodytypeRegex = (String) configMap.get(BODYTYPE_REGEX);
-            Pattern bodytypePattern = Pattern.compile(bodytypeRegex);
-            predicate = predicate.and(httpRequest -> bodytypePattern.matcher(httpRequest.getBodyType().name()).matches());
-        }
-        if (configMap.containsKey(HEADER_KEY_REGEX)) {
-            String headerKeyRegex = (String) configMap.get(HEADER_KEY_REGEX);
-            Pattern headerKeyPattern = Pattern.compile(headerKeyRegex);
-            Predicate<HttpRequest> headerKeyPredicate = httpRequest -> httpRequest
-                    .getHeaders()
-                    .entrySet()
-                    .stream()
-                    .anyMatch(entry -> {
-                        boolean headerKeyFound = headerKeyPattern.matcher(entry.getKey()).matches();
-                        if (headerKeyFound
-                                && entry.getValue() != null
-                                && !entry.getValue().isEmpty()
-                                && configMap.containsKey(HEADER_VALUE_REGEX)) {
-                            String headerValue = (String) configMap.get(HEADER_VALUE_REGEX);
-                            Pattern headerValuePattern = Pattern.compile(headerValue);
-                            return headerValuePattern.matcher(entry.getValue().get(0)).matches();
-                        } else {
-                            return headerKeyFound;
-                        }
 
-                    });
-            predicate = predicate.and(headerKeyPredicate);
-        }
-        return predicate;
-    }
 
     protected HttpRequest enrich(HttpRequest httpRequest) {
         return enrichRequestFunction.apply(httpRequest);
