@@ -75,7 +75,6 @@ public abstract class HttpSinkTask<R, S> extends SinkTask {
     private ErrantRecordReporter errantRecordReporter;
     private HttpTask<SinkRecord, R, S> httpTask;
     private KafkaProducer<String, HttpExchange> producer;
-    private String queueName;
     private Queue<KafkaRecord> queue;
     private PublishMode publishMode;
     private HttpSinkConnectorConfig httpSinkConnectorConfig;
@@ -230,7 +229,6 @@ public abstract class HttpSinkTask<R, S> extends SinkTask {
 
                 break;
             case IN_MEMORY_QUEUE:
-                this.queueName = httpSinkConnectorConfig.getQueueName();
                 this.queue = publishConfigurer.configureInMemoryQueue(httpSinkConnectorConfig);
                 break;
             case NONE:
