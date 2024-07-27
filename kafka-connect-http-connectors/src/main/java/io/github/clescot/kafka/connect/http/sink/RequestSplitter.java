@@ -10,17 +10,17 @@ import java.util.List;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
-public class Splitter {
+public class RequestSplitter {
 
     private final String id;
     private final Predicate<HttpRequest> predicate;
     private final String splitPattern;
     private final int splitLimit;
 
-    public Splitter(String id,
-                    Predicate<HttpRequest> predicate,
-                    String splitPattern,
-                    int splitLimit) {
+    public RequestSplitter(String id,
+                           Predicate<HttpRequest> predicate,
+                           String splitPattern,
+                           int splitLimit) {
         this.id = id;
         this.predicate = predicate;
         this.splitPattern = splitPattern;
