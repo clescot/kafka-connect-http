@@ -16,12 +16,20 @@ public class Grouper {
     private static final Logger LOGGER = LoggerFactory.getLogger(Grouper.class);
     private final String id;
     private final Predicate<HttpRequest> predicate;
+    private String init;
+    private final String separator;
+    private String end;
+    private int messageLimit;
+    private long bodyLimit = -1;
+
 
     public Grouper(String id,
-                   Predicate<HttpRequest> predicate
+                   Predicate<HttpRequest> predicate,
+                   String separator
                    ) {
         this.id = id;
         this.predicate = predicate;
+        this.separator = separator;
     }
 
 
@@ -33,11 +41,7 @@ public class Grouper {
             HttpRequestMapper httpRequestMapper,
             List<Pair<SinkRecord, HttpRequest>> entries
     ){
-        String init ="#";
-        String separator ="|";
-        String end="@";
-        int messageLimit=10;
-        long bodyLimit=1000;
+
         if(entries.isEmpty()){
             return Lists.newArrayList();
         }
@@ -50,19 +54,20 @@ public class Grouper {
         for (int i = 0; i < entries.size(); i++) {
             Pair<SinkRecord, HttpRequest> myEntry = entries.get(i);
             String part = myEntry.getRight().getBodyAsString();
-            if(i==messageLimit||builder.length()+part.length()>=bodyLimit){
+            if(messageLimit>0 && (i==messageLimit||builder.length()+part.length()>=bodyLimit)){
                 consumed = i;
                 interrupted = true;
                 break;
             }
             builder.append(part);
             builder.append(separator);
-            i++;
         }
         if(!interrupted){
             consumed = entries.size();
         }
-        builder.append(end);
+        if(end!=null) {
+            builder.append(end);
+        }
         aggregatedBody = builder.toString();
         aggregatedRequest.setBodyAsString(aggregatedBody);
         List<Pair<SinkRecord, HttpRequest>> nonAgregatedRequests = entries.subList(consumed, entries.size());
@@ -72,7 +77,47 @@ public class Grouper {
         return agregatedRequests;
     }
 
-//
+    public String getId() {
+        return id;
+    }
+
+    public String getEnd() {
+        return end;
+    }
+
+    public void setEnd(String end) {
+        this.end = end;
+    }
+
+    public String getSeparator() {
+        return separator;
+    }
+
+    public long getBodyLimit() {
+        return bodyLimit;
+    }
+
+    public void setBodyLimit(long bodyLimit) {
+        this.bodyLimit = bodyLimit;
+    }
+
+    public int getMessageLimit() {
+        return messageLimit;
+    }
+
+    public void setMessageLimit(int messageLimit) {
+        this.messageLimit = messageLimit;
+    }
+
+    public String getInit() {
+        return init;
+    }
+
+    public void setInit(String init) {
+        this.init = init;
+    }
+
+    //
 //    Map<String, List<Triple<SinkRecord, HttpRequest, HttpRequestMapper>>> collected = stream
 //            .peek(this::debugConnectRecord)
 //            .filter(sinkRecord -> sinkRecord.value() != null)

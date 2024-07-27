@@ -26,7 +26,7 @@ public class DirectHttpRequestMapper extends AbstractHttpRequestMapper {
     private static final Logger LOGGER = LoggerFactory.getLogger(DirectHttpRequestMapper.class);
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper().registerModule(new JavaTimeModule());
     public static final String SINK_RECORD_HAS_GOT_A_NULL_VALUE = "sinkRecord has got a 'null' value";
-    private JexlExpression expression;
+    private final JexlExpression expression;
 
     public DirectHttpRequestMapper(String id, JexlEngine jexlEngine, String matchingExpression) {
         super(id);
