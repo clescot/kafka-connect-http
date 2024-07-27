@@ -115,9 +115,13 @@ public class HttpSinkConfigDefinition {
     public static final String POLL_INTERVAL_REGISTRATION_QUEUE_CONSUMER_IN_MS_DOC = "poll interval, i.e, time between every poll for a registered consumer defined with the '" + POLL_INTERVAL_REGISTRATION_QUEUE_CONSUMER_IN_MS + "' parameter, " +
             "for a queue consumer (Source Connector) registration.if not set, default value is " + DEFAULT_POLL_INTERVAL_REGISTRATION_QUEUE_CONSUMER_IN_MS;
 
+    //splitter
+    public static final String HTTP_REQUEST_SPLITTER_IDS = "http.request.splitter.ids";
+    public static final String HTTP_REQUEST_SPLITTER_IDS_DOC = "custom splitter id list. no splitter is registered by default.";
+
     //mapper
     public static final String HTTP_REQUEST_MAPPER_IDS = "http.request.mapper.ids";
-    public static final String HTTP_REQUEST_MAPPER_IDS_DOC = "custom configurations id list. 'default' http request mapper is already registered.";
+    public static final String HTTP_REQUEST_MAPPER_IDS_DOC = "custom httpRequestMapper id list. 'default' http request mapper is already registered.";
 
     public static final String DEFAULT_REQUEST_MAPPER_PREFIX = "http.request.mapper.default.";
     public static final String REQUEST_MAPPER_DEFAULT_MODE = "mode";
@@ -630,7 +634,9 @@ public class HttpSinkConfigDefinition {
                 .define(CONFIGURATION_IDS, ConfigDef.Type.LIST, Lists.newArrayList(), ConfigDef.Importance.LOW, CONFIGURATION_IDS_DOC)
 
                 //custom request mappers
-                .define(HTTP_REQUEST_MAPPER_IDS, ConfigDef.Type.LIST, Lists.newArrayList(), ConfigDef.Importance.LOW, HTTP_REQUEST_MAPPER_IDS_DOC);
+                .define(HTTP_REQUEST_MAPPER_IDS, ConfigDef.Type.LIST, Lists.newArrayList(), ConfigDef.Importance.LOW, HTTP_REQUEST_MAPPER_IDS_DOC)
+                //custom request splitters
+                .define(HTTP_REQUEST_SPLITTER_IDS, ConfigDef.Type.LIST, Lists.newArrayList(), ConfigDef.Importance.LOW, HTTP_REQUEST_SPLITTER_IDS_DOC);
 
         //custom configurations
         String configurationIds = settings.get(CONFIGURATION_IDS);

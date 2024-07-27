@@ -664,10 +664,10 @@ public class HttpSinkTaskTest {
                 settings.put("http.request.mapper.myid1.bodytype", "'STRING'");
                 settings.put("http.request.mapper.myid1.body", "sinkRecord.value().split(\"#\")[2]");
                 settings.put("http.request.mapper.myid1.headers", "{'test1':['value1','value2',...]}");
-                settings.put("http.request.mapper.myid1.split.pattern", "\\|");
                 settings.put("http.request.mapper.myid2.mode", MapperMode.DIRECT.name());
                 settings.put("http.request.mapper.myid2.matcher", "sinkRecord.topic()=='myTopic2'");
-
+                settings.put(HTTP_REQUEST_SPLITTER_IDS, "myid1");
+                settings.put("http.request.splitter.myid1.pattern", "\\|");
 
                 okHttpSinkTask.start(settings);
 
@@ -749,10 +749,11 @@ public class HttpSinkTaskTest {
                 settings.put("http.request.mapper.myid1.bodytype", "'STRING'");
                 settings.put("http.request.mapper.myid1.body", "sinkRecord.value().split(\"#\")[2]");
                 settings.put("http.request.mapper.myid1.headers", "{'test1':['value1','value2',...]}");
-                settings.put("http.request.mapper.myid1.split.pattern", "\\|");
-                settings.put("http.request.mapper.myid1.split.limit", "2");
                 settings.put("http.request.mapper.myid2.mode", MapperMode.DIRECT.name());
                 settings.put("http.request.mapper.myid2.matcher", "sinkRecord.topic()=='myTopic2'");
+                settings.put(HTTP_REQUEST_SPLITTER_IDS, "myid1");
+                settings.put("http.request.splitter.myid1.pattern", "\\|");
+                settings.put("http.request.splitter.myid1.limit", "2");
 
 
                 okHttpSinkTask.start(settings);
@@ -833,7 +834,8 @@ public class HttpSinkTaskTest {
                 settings.put("http.request.mapper.default.bodytype", "'STRING'");
                 settings.put("http.request.mapper.default.body", "sinkRecord.value().split(\"#\")[2]");
                 settings.put("http.request.mapper.default.headers", "{'test1':['value1','value2',...]}");
-                settings.put("http.request.mapper.default.split.pattern", "\\|");
+                settings.put(HTTP_REQUEST_SPLITTER_IDS, "myid1");
+                settings.put("http.request.splitter.myid1.pattern", "\\|");
 
 
                 okHttpSinkTask.start(settings);
@@ -916,8 +918,9 @@ public class HttpSinkTaskTest {
                 settings.put("http.request.mapper.default.bodytype", "'STRING'");
                 settings.put("http.request.mapper.default.body", "sinkRecord.value().split(\"#\")[2]");
                 settings.put("http.request.mapper.default.headers", "{'test1':['value1','value2',...]}");
-                settings.put("http.request.mapper.default.split.pattern", "\\|");
-                settings.put("http.request.mapper.default.split.limit", "2");
+                settings.put(HTTP_REQUEST_SPLITTER_IDS, "myid1");
+                settings.put("http.request.splitter.myid1.pattern", "\\|");
+                settings.put("http.request.splitter.myid1.limit", "2");
 
 
                 okHttpSinkTask.start(settings);

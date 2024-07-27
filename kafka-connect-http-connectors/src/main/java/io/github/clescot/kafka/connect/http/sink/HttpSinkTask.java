@@ -8,6 +8,7 @@ import io.github.clescot.kafka.connect.http.VersionUtils;
 import io.github.clescot.kafka.connect.http.client.Configuration;
 import io.github.clescot.kafka.connect.http.client.HttpClientFactory;
 import io.github.clescot.kafka.connect.http.client.HttpException;
+import io.github.clescot.kafka.connect.http.client.config.PredicateBuilder;
 import io.github.clescot.kafka.connect.http.core.HttpExchange;
 import io.github.clescot.kafka.connect.http.core.HttpRequest;
 import io.github.clescot.kafka.connect.http.core.queue.KafkaRecord;
@@ -46,6 +47,7 @@ import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -62,6 +64,7 @@ public abstract class HttpSinkTask<R, S> extends SinkTask {
 
     public static final String JEXL_ALWAYS_MATCHES = "true";
     public static final String DEFAULT = "default";
+    public static final String HTTP_REQUEST_SPLITTER = "http.request.splitter.";
     private Configuration<R, S> defaultConfiguration;
     private List<Configuration<R, S>> customConfigurations;
     private HttpRequestMapper defaultHttpRequestMapper;
@@ -79,6 +82,7 @@ public abstract class HttpSinkTask<R, S> extends SinkTask {
     private Map<String, Object> producerSettings;
     private static CompositeMeterRegistry meterRegistry;
     private ExecutorService executorService;
+    private List<Splitter> splitters;
 
     public HttpSinkTask(HttpClientFactory<R, S> httpClientFactory) {
         this.httpClientFactory = httpClientFactory;
@@ -161,16 +165,7 @@ public abstract class HttpSinkTask<R, S> extends SinkTask {
                     break;
                 }
             }
-            String splitPattern = (String) settings.get(".split.pattern");
-            if (splitPattern != null) {
-                httpRequestMapper.setSplitPattern(splitPattern);
-            }
 
-            String limitAsString = (String) settings.get(".split.limit");
-            if (limitAsString != null) {
-                int splitLimit = Integer.parseInt(limitAsString);
-                httpRequestMapper.setSplitLimit(splitLimit);
-            }
             requestMappers.add(httpRequestMapper);
         }
         return requestMappers;
@@ -207,6 +202,7 @@ public abstract class HttpSinkTask<R, S> extends SinkTask {
 
         this.defaultHttpRequestMapper = buildDefaultHttpRequestMapper(httpSinkConnectorConfig,jexlEngine);
         this.httpRequestMappers = buildCustomHttpRequestMappers(httpSinkConnectorConfig, jexlEngine);
+        this.splitters = buildHttpRequestSplitters(httpSinkConnectorConfig);
 
         //configurations
         this.defaultConfiguration = new Configuration<>(DEFAULT_CONFIGURATION_ID, httpClientFactory, httpSinkConnectorConfig, executorService, meterRegistry);
@@ -245,6 +241,23 @@ public abstract class HttpSinkTask<R, S> extends SinkTask {
 
     }
 
+    private List<Splitter> buildHttpRequestSplitters(HttpSinkConnectorConfig connectorConfig) {
+        List<Splitter> splitterList = Lists.newArrayList();
+        for (String splitterId : Optional.ofNullable(connectorConfig.getList(HTTP_REQUEST_SPLITTER_IDS)).orElse(Lists.newArrayList())) {
+            Map<String, Object> settings = connectorConfig.originalsWithPrefix(HTTP_REQUEST_SPLITTER + splitterId + ".");
+            Predicate<HttpRequest> predicate = PredicateBuilder.build().buildPredicate(settings);
+            String splitPattern = (String) settings.get("pattern");
+            String limit = (String) settings.get("limit");
+            int splitLimit = 0;
+            if(limit!=null&& !limit.isBlank()) {
+                splitLimit = Integer.parseInt(limit);
+            }
+            Splitter splitter = new Splitter(splitterId,predicate,splitPattern,splitLimit);
+            splitterList.add(splitter);
+        }
+        return splitterList;
+    }
+
     private HttpRequestMapper buildDefaultHttpRequestMapper(HttpSinkConnectorConfig connectorConfig, JexlEngine jexlEngine){
         HttpRequestMapper httpRequestMapper;
         MapperMode defaultRequestMapperMode = connectorConfig.getDefaultRequestMapperMode();
@@ -273,15 +286,7 @@ public abstract class HttpSinkTask<R, S> extends SinkTask {
                 break;
             }
         }
-        String splitPattern = connectorConfig.getDefaultSplitPattern();
-        if (splitPattern != null) {
-            httpRequestMapper.setSplitPattern(splitPattern);
-        }
 
-        Integer splitLimit = connectorConfig.getDefaultSplitLimit();
-        if (splitLimit != null) {
-            httpRequestMapper.setSplitLimit(splitLimit);
-        }
         return httpRequestMapper;
     }
 
@@ -358,6 +363,7 @@ public abstract class HttpSinkTask<R, S> extends SinkTask {
                 .peek(this::debugConnectRecord)
                 .filter(sinkRecord -> sinkRecord.value() != null)
                 .map(this::toHttpRequests)
+                .map(this::split)
                 .flatMap(List::stream)
                 .collect(Collectors.toList());
 
@@ -405,7 +411,7 @@ public abstract class HttpSinkTask<R, S> extends SinkTask {
 
     }
 
-    private @NotNull List<Pair<SinkRecord, HttpRequest>> toHttpRequests(SinkRecord sinkRecord) {
+    private @NotNull Pair<SinkRecord, HttpRequest> toHttpRequests(SinkRecord sinkRecord) {
         HttpRequestMapper httpRequestMapper = httpRequestMappers.stream()
                 .filter(mapper -> mapper.matches(sinkRecord))
                 .findFirst()
@@ -413,24 +419,19 @@ public abstract class HttpSinkTask<R, S> extends SinkTask {
 
         //build HttpRequest
         HttpRequest httpRequest = httpRequestMapper.map(sinkRecord);
-        List<Pair<SinkRecord, HttpRequest>> httpRequests = Lists.newArrayList();
 
+        return Pair.of(sinkRecord, httpRequest);
+    }
+
+    private List<Pair<SinkRecord, HttpRequest>> split(Pair<SinkRecord, HttpRequest> pair){
+
+        Optional<Splitter> splitterFound = splitters.stream().filter(splitter->splitter.matches(pair.getRight())).findFirst();
         //splitter
-        if (HttpRequest.BodyType.STRING.equals(httpRequest.getBodyType())
-                && httpRequestMapper.getSplitPattern() != null) {
-            String bodyAsString = httpRequest.getBodyAsString();
-            httpRequests.addAll(Lists.newArrayList(httpRequestMapper.getSplitPattern().split(bodyAsString, httpRequestMapper.getSplitLimit())).stream()
-                    .map(part -> {
-                        HttpRequest partRequest = new HttpRequest(httpRequest);
-                        partRequest.setBodyAsString(part);
-                        return Pair.of(sinkRecord, partRequest);
-                    })
-                    .collect(Collectors.toList()));
-        } else {
-            //no splitter
-            httpRequests.add(Pair.of(sinkRecord, httpRequest));
+        if(splitterFound.isPresent()) {
+            return splitterFound.get().split(pair);
+        }else{
+            return List.of(pair);
         }
-        return httpRequests;
     }
 
 

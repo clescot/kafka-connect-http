@@ -85,14 +85,13 @@ public class HttpSinkConnectorConfig extends AbstractConfig {
     private final Integer customFixedThreadpoolSize;
     private final List<String> configurationIds;
     private final List<String> httpRequestMapperIds;
+    private final List<String> httpRequestSplitterIds;
     private final MapperMode defaultRequestMapperMode;
     private final String defaultUrlExpression;
     private final String defaultMethodExpression;
     private final String defaultBodyTypeExpression;
     private final String defaultBodyExpression;
     private final String defaultHeadersExpression;
-    private final String defaultSplitPattern;
-    private final Integer defaultSplitLimit;
 
     public HttpSinkConnectorConfig(Map<String,String> originals) {
         this(new HttpSinkConfigDefinition(originals).config(), originals);
@@ -182,8 +181,7 @@ public class HttpSinkConnectorConfig extends AbstractConfig {
         this.defaultBodyExpression = getString(DEFAULT_REQUEST_MAPPER_PREFIX+REQUEST_MAPPER_DEFAULT_BODY_EXPRESSION);
         this.defaultHeadersExpression = getString(DEFAULT_REQUEST_MAPPER_PREFIX+REQUEST_MAPPER_DEFAULT_HEADERS_EXPRESSION);
         this.httpRequestMapperIds = Optional.ofNullable(getList(HTTP_REQUEST_MAPPER_IDS)).orElse(Lists.newArrayList());
-        this.defaultSplitPattern = getString(DEFAULT_REQUEST_MAPPER_PREFIX+REQUEST_MAPPER_DEFAULT_SPLIT_PATTERN);
-        this.defaultSplitLimit = getInt(DEFAULT_REQUEST_MAPPER_PREFIX+REQUEST_MAPPER_DEFAULT_SPLIT_LIMIT);
+        this.httpRequestSplitterIds = Optional.ofNullable(getList(HTTP_REQUEST_SPLITTER_IDS)).orElse(Lists.newArrayList());
 
     }
 
@@ -442,12 +440,8 @@ public class HttpSinkConnectorConfig extends AbstractConfig {
         return httpRequestMapperIds;
     }
 
-    public Integer getDefaultSplitLimit() {
-        return defaultSplitLimit;
-    }
-
-    public String getDefaultSplitPattern() {
-        return defaultSplitPattern;
+    public List<String> getHttpRequestSplitterIds() {
+        return httpRequestSplitterIds;
     }
 
     @Override
@@ -509,14 +503,13 @@ public class HttpSinkConnectorConfig extends AbstractConfig {
                 ", customFixedThreadpoolSize=" + customFixedThreadpoolSize +
                 ", configurationIds=" + configurationIds +
                 ", httpRequestMapperIds=" + httpRequestMapperIds +
+                ", httpRequestSplitterIds=" + httpRequestSplitterIds +
                 ", defaultRequestMapperMode=" + defaultRequestMapperMode +
                 ", defaultUrlExpression='" + defaultUrlExpression + '\'' +
                 ", defaultMethodExpression='" + defaultMethodExpression + '\'' +
                 ", defaultBodyTypeExpression='" + defaultBodyTypeExpression + '\'' +
                 ", defaultBodyExpression='" + defaultBodyExpression + '\'' +
                 ", defaultHeadersExpression='" + defaultHeadersExpression + '\'' +
-                ", defaultSplitPattern='" + defaultSplitPattern + '\'' +
-                ", defaultSplitLimit=" + defaultSplitLimit +
                 '}';
     }
 
