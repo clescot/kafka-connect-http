@@ -362,8 +362,10 @@ public abstract class HttpSinkTask<R, S> extends SinkTask {
         List<Pair<SinkRecord, HttpRequest>> requests = stream
                 .peek(this::debugConnectRecord)
                 .filter(sinkRecord -> sinkRecord.value() != null)
+                .map(this::splitMessage)
+                .flatMap(List::stream)
                 .map(this::toHttpRequests)
-                .map(this::split)
+                .map(this::splitHttpRequest)
                 .flatMap(List::stream)
                 .collect(Collectors.toList());
 
@@ -375,6 +377,10 @@ public abstract class HttpSinkTask<R, S> extends SinkTask {
         List<HttpExchange> httpExchanges = completableFutures.stream().map(CompletableFuture::join).collect(Collectors.toList());
         LOGGER.debug("HttpExchanges created :'{}'", httpExchanges.size());
 
+    }
+
+    private List<SinkRecord> splitMessage(SinkRecord sinkRecord) {
+        return Lists.newArrayList(sinkRecord);
     }
 
     private void debugConnectRecord(SinkRecord sinkRecord) {
@@ -423,7 +429,7 @@ public abstract class HttpSinkTask<R, S> extends SinkTask {
         return Pair.of(sinkRecord, httpRequest);
     }
 
-    private List<Pair<SinkRecord, HttpRequest>> split(Pair<SinkRecord, HttpRequest> pair){
+    private List<Pair<SinkRecord, HttpRequest>> splitHttpRequest(Pair<SinkRecord, HttpRequest> pair){
 
         Optional<RequestSplitter> splitterFound = requestSplitters.stream().filter(requestSplitter -> requestSplitter.matches(pair.getRight())).findFirst();
         //splitter
