@@ -20,11 +20,10 @@ public class JEXLHttpRequestMapper extends AbstractHttpRequestMapper {
     private static final Logger LOGGER = LoggerFactory.getLogger(JEXLHttpRequestMapper.class);
     public static final String SINK_RECORD = "sinkRecord";
 
-    private JexlExpression jexlMatchingExpression;
-    private JexlExpression jexlUrlExpression;
+    private final JexlExpression jexlMatchingExpression;
+    private final JexlExpression jexlUrlExpression;
     private final Optional<JexlExpression> jexlMethodExpression;
     private final Optional<JexlExpression> jexlBodyTypeExpression;
-    @Nullable
     private final Optional<JexlExpression> jexlBodyExpression;
     private final Optional<JexlExpression> jexlHeadersExpression;
 

@@ -42,7 +42,7 @@ public class RequestSplitter {
         return this.predicate.test(httpRequest);
     }
 
-    public List<String> split(String body){
+    private List<String> split(String body){
         String pattern = getSplitPattern();
         List<String> parts = Lists.newArrayList();
         if (pattern != null && body!=null && !body.isBlank()) {

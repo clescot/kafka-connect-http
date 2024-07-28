@@ -8,7 +8,7 @@ import io.github.clescot.kafka.connect.http.VersionUtils;
 import io.github.clescot.kafka.connect.http.client.Configuration;
 import io.github.clescot.kafka.connect.http.client.HttpClientFactory;
 import io.github.clescot.kafka.connect.http.client.HttpException;
-import io.github.clescot.kafka.connect.http.client.config.PredicateBuilder;
+import io.github.clescot.kafka.connect.http.client.config.HttpRequestPredicateBuilder;
 import io.github.clescot.kafka.connect.http.core.HttpExchange;
 import io.github.clescot.kafka.connect.http.core.HttpRequest;
 import io.github.clescot.kafka.connect.http.core.queue.KafkaRecord;
@@ -64,6 +64,7 @@ public abstract class HttpSinkTask<R, S> extends SinkTask {
 
     public static final String JEXL_ALWAYS_MATCHES = "true";
     public static final String DEFAULT = "default";
+    public static final String MESSAGE_SPLITTER = "message.splitter.";
     public static final String HTTP_REQUEST_SPLITTER = "http.request.splitter.";
     private Configuration<R, S> defaultConfiguration;
     private List<Configuration<R, S>> customConfigurations;
@@ -81,6 +82,7 @@ public abstract class HttpSinkTask<R, S> extends SinkTask {
     private Map<String, Object> producerSettings;
     private static CompositeMeterRegistry meterRegistry;
     private ExecutorService executorService;
+    private List<MessageSplitter> messageSplitters;
     private List<RequestSplitter> requestSplitters;
 
     public HttpSinkTask(HttpClientFactory<R, S> httpClientFactory) {
@@ -199,6 +201,7 @@ public abstract class HttpSinkTask<R, S> extends SinkTask {
                 .sideEffect(false);
         JexlEngine jexlEngine = new JexlBuilder().features(features).permissions(permissions).create();
 
+        this.messageSplitters = buildMessageSplitters(httpSinkConnectorConfig,jexlEngine);
         this.defaultHttpRequestMapper = buildDefaultHttpRequestMapper(httpSinkConnectorConfig,jexlEngine);
         this.httpRequestMappers = buildCustomHttpRequestMappers(httpSinkConnectorConfig, jexlEngine);
         this.requestSplitters = buildHttpRequestSplitters(httpSinkConnectorConfig);
@@ -239,11 +242,28 @@ public abstract class HttpSinkTask<R, S> extends SinkTask {
 
     }
 
+    private List<MessageSplitter> buildMessageSplitters(HttpSinkConnectorConfig connectorConfig, JexlEngine jexlEngine) {
+        List<MessageSplitter> requestSplitterList = Lists.newArrayList();
+        for (String splitterId : Optional.ofNullable(connectorConfig.getList(MESSAGE_SPLITTER_IDS)).orElse(Lists.newArrayList())) {
+            Map<String, Object> settings = connectorConfig.originalsWithPrefix(MESSAGE_SPLITTER + splitterId + ".");
+            String splitPattern = (String) settings.get("pattern");
+            Preconditions.checkNotNull(splitPattern,"message splitter '"+splitterId+"' splitPattern is required");
+            String limit = (String) settings.get("limit");
+            int splitLimit = 0;
+            if(limit!=null&& !limit.isBlank()) {
+                splitLimit = Integer.parseInt(limit);
+            }
+            MessageSplitter requestSplitter = new MessageSplitter(splitterId,connectorConfig,jexlEngine,splitPattern,splitLimit);
+            requestSplitterList.add(requestSplitter);
+        }
+        return requestSplitterList;
+    }
+
     private List<RequestSplitter> buildHttpRequestSplitters(HttpSinkConnectorConfig connectorConfig) {
         List<RequestSplitter> requestSplitterList = Lists.newArrayList();
         for (String splitterId : Optional.ofNullable(connectorConfig.getList(HTTP_REQUEST_SPLITTER_IDS)).orElse(Lists.newArrayList())) {
             Map<String, Object> settings = connectorConfig.originalsWithPrefix(HTTP_REQUEST_SPLITTER + splitterId + ".");
-            Predicate<HttpRequest> predicate = PredicateBuilder.build().buildPredicate(settings);
+            Predicate<HttpRequest> predicate = HttpRequestPredicateBuilder.build().buildPredicate(settings);
             String splitPattern = (String) settings.get("pattern");
             String limit = (String) settings.get("limit");
             int splitLimit = 0;

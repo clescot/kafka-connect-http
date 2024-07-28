@@ -33,7 +33,7 @@ import java.util.function.Predicate;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import static io.github.clescot.kafka.connect.http.client.config.PredicateBuilder.*;
+import static io.github.clescot.kafka.connect.http.client.config.HttpRequestPredicateBuilder.*;
 import static io.github.clescot.kafka.connect.http.sink.HttpSinkConfigDefinition.*;
 
 /**
@@ -101,7 +101,7 @@ public class Configuration<R,S> {
         this.settings = config.originalsWithPrefix("config." + id + ".");
         settings.put(CONFIGURATION_ID, id);
         //main predicate
-        this.predicate = PredicateBuilder.build().buildPredicate(settings);
+        this.predicate = HttpRequestPredicateBuilder.build().buildPredicate(settings);
 
         Random random = getRandom(settings);
 

@@ -6,7 +6,7 @@ import java.util.Map;
 import java.util.function.Predicate;
 import java.util.regex.Pattern;
 
-public class PredicateBuilder {
+public class HttpRequestPredicateBuilder {
     //predicate
     public static final String PREDICATE = "predicate.";
     public static final String URL_REGEX = PREDICATE + "url.regex";
@@ -16,10 +16,10 @@ public class PredicateBuilder {
     public static final String HEADER_VALUE_REGEX = PREDICATE + "header.value.regex";
 
     //tests only
-    protected PredicateBuilder() {}
+    protected HttpRequestPredicateBuilder() {}
 
-    public static PredicateBuilder build(){
-        return new PredicateBuilder();
+    public static HttpRequestPredicateBuilder build(){
+        return new HttpRequestPredicateBuilder();
     }
 
     public Predicate<HttpRequest> buildPredicate(Map<String, Object> configMap) {

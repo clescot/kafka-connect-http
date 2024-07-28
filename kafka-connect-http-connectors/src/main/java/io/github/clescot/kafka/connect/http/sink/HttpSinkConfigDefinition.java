@@ -115,9 +115,14 @@ public class HttpSinkConfigDefinition {
     public static final String POLL_INTERVAL_REGISTRATION_QUEUE_CONSUMER_IN_MS_DOC = "poll interval, i.e, time between every poll for a registered consumer defined with the '" + POLL_INTERVAL_REGISTRATION_QUEUE_CONSUMER_IN_MS + "' parameter, " +
             "for a queue consumer (Source Connector) registration.if not set, default value is " + DEFAULT_POLL_INTERVAL_REGISTRATION_QUEUE_CONSUMER_IN_MS;
 
-    //splitter
+    //message splitter
+    public static final String MESSAGE_SPLITTER_IDS = "message.splitter.ids";
+    public static final String MESSAGE_SPLITTER_IDS_DOC = "custom message splitter id list. no splitter is registered by default.";
+
+
+    //request splitter
     public static final String HTTP_REQUEST_SPLITTER_IDS = "http.request.splitter.ids";
-    public static final String HTTP_REQUEST_SPLITTER_IDS_DOC = "custom splitter id list. no splitter is registered by default.";
+    public static final String HTTP_REQUEST_SPLITTER_IDS_DOC = "custom http request splitter id list. no splitter is registered by default.";
 
     //mapper
     public static final String HTTP_REQUEST_MAPPER_IDS = "http.request.mapper.ids";
@@ -633,6 +638,8 @@ public class HttpSinkConfigDefinition {
                 //custom configurations
                 .define(CONFIGURATION_IDS, ConfigDef.Type.LIST, Lists.newArrayList(), ConfigDef.Importance.LOW, CONFIGURATION_IDS_DOC)
 
+                //custom pessage splitters
+                .define(MESSAGE_SPLITTER_IDS, ConfigDef.Type.LIST, Lists.newArrayList(), ConfigDef.Importance.LOW, MESSAGE_SPLITTER_IDS_DOC)
                 //custom request mappers
                 .define(HTTP_REQUEST_MAPPER_IDS, ConfigDef.Type.LIST, Lists.newArrayList(), ConfigDef.Importance.LOW, HTTP_REQUEST_MAPPER_IDS_DOC)
                 //custom request splitters
