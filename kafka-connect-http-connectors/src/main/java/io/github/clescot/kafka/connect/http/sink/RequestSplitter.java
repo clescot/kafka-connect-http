@@ -44,7 +44,7 @@ public class RequestSplitter {
     }
 
     public List<Pair<SinkRecord, HttpRequest>> split(Pair<SinkRecord, HttpRequest> pair){
-        List<Pair<SinkRecord, HttpRequest>> httpRequests = Lists.newArrayList();
+        List<HttpRequest> httpRequests = Lists.newArrayList();
         SinkRecord sinkRecord = pair.getLeft();
         HttpRequest httpRequest = pair.getRight();
         String bodyAsString = httpRequest.getBodyAsString();
@@ -56,13 +56,13 @@ public class RequestSplitter {
                     .map(part -> {
                         HttpRequest partRequest = new HttpRequest(httpRequest);
                         partRequest.setBodyAsString(part);
-                        return Pair.of(sinkRecord, partRequest);
+                        return partRequest;
                     })
                     .collect(Collectors.toList()));
         } else {
             //no splitter
-            httpRequests.add(Pair.of(sinkRecord, httpRequest));
+            httpRequests.add(httpRequest);
         }
-        return httpRequests;
+        return httpRequests.stream().map(request-> Pair.of(sinkRecord,request)).collect(Collectors.toList());
     }
 }
