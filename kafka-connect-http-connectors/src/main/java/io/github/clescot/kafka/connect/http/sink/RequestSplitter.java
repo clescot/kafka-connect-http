@@ -5,7 +5,6 @@ import io.github.clescot.kafka.connect.http.core.HttpRequest;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.kafka.connect.sink.SinkRecord;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
@@ -43,15 +42,26 @@ public class RequestSplitter {
         return this.predicate.test(httpRequest);
     }
 
+    public List<String> split(String body){
+        String pattern = getSplitPattern();
+        List<String> parts = Lists.newArrayList();
+        if (pattern != null && body!=null && !body.isBlank()) {
+            parts = Lists.newArrayList(body.split(pattern, getSplitLimit()));
+        } else {
+            //no splitter
+            parts.add(body);
+        }
+        return parts;
+    }
+
     public List<Pair<SinkRecord, HttpRequest>> split(Pair<SinkRecord, HttpRequest> pair){
         List<HttpRequest> httpRequests = Lists.newArrayList();
         SinkRecord sinkRecord = pair.getLeft();
         HttpRequest httpRequest = pair.getRight();
         String bodyAsString = httpRequest.getBodyAsString();
-        String pattern = getSplitPattern();
         if (HttpRequest.BodyType.STRING.equals(httpRequest.getBodyType())
-                && pattern != null && bodyAsString!=null && !bodyAsString.isBlank()) {
-            ArrayList<String> parts = Lists.newArrayList(bodyAsString.split(pattern, getSplitLimit()));
+                 && bodyAsString!=null && !bodyAsString.isBlank()) {
+            List<String> parts = split(bodyAsString);
             httpRequests.addAll(parts.stream()
                     .map(part -> {
                         HttpRequest partRequest = new HttpRequest(httpRequest);
