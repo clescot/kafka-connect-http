@@ -57,13 +57,13 @@ public class PublishConfigurer {
         return new PublishConfigurer();
     }
 
-    public KafkaProducer<String, HttpExchange> configureProducerPublishMode(HttpSinkConnectorConfig httpSinkConnectorConfig, Map<String, Object> producerSettings) {
+    public KafkaProducer<String, HttpExchange> configureProducerPublishMode(HttpSinkConnectorConfig httpSinkConnectorConfig) {
         //low-level producer is configured (bootstrap.servers is a requirement)
         Preconditions.checkArgument(!Strings.isNullOrEmpty(httpSinkConnectorConfig.getProducerBootstrapServers()), "producer.bootstrap.servers is not set.\n" + httpSinkConnectorConfig.toString());
         Preconditions.checkArgument(!Strings.isNullOrEmpty(httpSinkConnectorConfig.getProducerSuccessTopic()), "producer.success.topic is not set.\n" + httpSinkConnectorConfig.toString());
         Preconditions.checkArgument(!Strings.isNullOrEmpty(httpSinkConnectorConfig.getProducerErrorTopic()), "producer.error.topic is not set.\n" + httpSinkConnectorConfig.toString());
         Serializer<HttpExchange> serializer = getHttpExchangeSerializer(httpSinkConnectorConfig);
-        producerSettings = httpSinkConnectorConfig.originalsWithPrefix(PRODUCER_PREFIX);
+        Map<String, Object> producerSettings = httpSinkConnectorConfig.originalsWithPrefix(PRODUCER_PREFIX);
         KafkaProducer<String, HttpExchange> producer = new KafkaProducer<>();
         producer.configure(producerSettings, new StringSerializer(), serializer);
 

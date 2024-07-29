@@ -79,7 +79,6 @@ public abstract class HttpSinkTask<R, S> extends SinkTask {
     private Queue<KafkaRecord> queue;
     private PublishMode publishMode;
     private HttpSinkConnectorConfig httpSinkConnectorConfig;
-    private Map<String, Object> producerSettings;
     private static CompositeMeterRegistry meterRegistry;
     private ExecutorService executorService;
     private List<MessageSplitter> messageSplitters;
@@ -221,8 +220,7 @@ public abstract class HttpSinkTask<R, S> extends SinkTask {
         PublishConfigurer publishConfigurer = PublishConfigurer.build();
         switch (publishMode) {
             case PRODUCER:
-                producer = publishConfigurer.configureProducerPublishMode(httpSinkConnectorConfig,producerSettings);
-
+                producer = publishConfigurer.configureProducerPublishMode(httpSinkConnectorConfig);
                 break;
             case IN_MEMORY_QUEUE:
                 this.queue = publishConfigurer.configureInMemoryQueue(httpSinkConnectorConfig);
@@ -231,7 +229,6 @@ public abstract class HttpSinkTask<R, S> extends SinkTask {
             default:
                 LOGGER.debug("NONE publish mode");
         }
-
 
     }
 
