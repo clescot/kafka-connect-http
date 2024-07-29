@@ -350,11 +350,6 @@ public abstract class HttpSinkTask<R, S> extends SinkTask {
         return compositeMeterRegistry;
     }
 
-
-
-
-
-
     @Override
     @SuppressWarnings("java:S3864")
     public void put(Collection<SinkRecord> records) {
@@ -398,7 +393,13 @@ public abstract class HttpSinkTask<R, S> extends SinkTask {
     }
 
     private List<SinkRecord> splitMessage(SinkRecord sinkRecord) {
-        return Lists.newArrayList(sinkRecord);
+        Optional<MessageSplitter> splitterFound = messageSplitters.stream().filter(messageSplitter -> messageSplitter.matches(sinkRecord)).findFirst();
+        //splitter
+        if(splitterFound.isPresent()) {
+            return splitterFound.get().split(sinkRecord);
+        }else{
+            return List.of(sinkRecord);
+        }
     }
 
     private void debugConnectRecord(SinkRecord sinkRecord) {
