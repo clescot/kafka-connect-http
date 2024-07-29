@@ -1,5 +1,6 @@
 package io.github.clescot.kafka.connect.http.sink;
 
+import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
 import org.apache.commons.jexl3.JexlContext;
 import org.apache.commons.jexl3.JexlEngine;
@@ -20,12 +21,14 @@ public class MessageSplitter {
     private final JexlExpression jexlMatchingExpression;
 
     public MessageSplitter(String id,
-                           HttpSinkConnectorConfig config,
-                           JexlEngine jexlEngine, String splitPattern,
+                           JexlEngine jexlEngine, String matchingExpression, String splitPattern,
                            int splitLimit) {
+        Preconditions.checkNotNull(id,"id is required");
         this.id = id;
-        String matchingExpression = config.getString("message.splitter." + id + ".matcher");
+
+        Preconditions.checkNotNull(matchingExpression,"matcher is required");
         jexlMatchingExpression = jexlEngine.createExpression(matchingExpression);
+        Preconditions.checkNotNull(splitPattern,"splitPattern is required");
         this.splitPattern = splitPattern;
         this.splitLimit = splitLimit;
     }

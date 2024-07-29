@@ -192,14 +192,7 @@ public abstract class HttpSinkTask<R, S> extends SinkTask {
 
         //build httpRequestMappers
 
-        // Restricted permissions to a safe set but with URI allowed
-        JexlPermissions permissions = new JexlPermissions.ClassPermissions(SinkRecord.class, ConnectRecord.class, HttpRequest.class);
-        // Create the engine
-        JexlFeatures features = new JexlFeatures()
-                .loops(false)
-                .sideEffectGlobal(false)
-                .sideEffect(false);
-        JexlEngine jexlEngine = new JexlBuilder().features(features).permissions(permissions).create();
+        JexlEngine jexlEngine = buildJexlEngine();
 
         this.messageSplitters = buildMessageSplitters(httpSinkConnectorConfig,jexlEngine);
         this.defaultHttpRequestMapper = buildDefaultHttpRequestMapper(httpSinkConnectorConfig,jexlEngine);
@@ -242,6 +235,17 @@ public abstract class HttpSinkTask<R, S> extends SinkTask {
 
     }
 
+    private static JexlEngine buildJexlEngine() {
+        // Restricted permissions to a safe set but with URI allowed
+        JexlPermissions permissions = new JexlPermissions.ClassPermissions(SinkRecord.class, ConnectRecord.class, HttpRequest.class);
+        // Create the engine
+        JexlFeatures features = new JexlFeatures()
+                .loops(false)
+                .sideEffectGlobal(false)
+                .sideEffect(false);
+        return new JexlBuilder().features(features).permissions(permissions).create();
+    }
+
     private List<MessageSplitter> buildMessageSplitters(HttpSinkConnectorConfig connectorConfig, JexlEngine jexlEngine) {
         List<MessageSplitter> requestSplitterList = Lists.newArrayList();
         for (String splitterId : Optional.ofNullable(connectorConfig.getList(MESSAGE_SPLITTER_IDS)).orElse(Lists.newArrayList())) {
@@ -253,7 +257,9 @@ public abstract class HttpSinkTask<R, S> extends SinkTask {
             if(limit!=null&& !limit.isBlank()) {
                 splitLimit = Integer.parseInt(limit);
             }
-            MessageSplitter requestSplitter = new MessageSplitter(splitterId,connectorConfig,jexlEngine,splitPattern,splitLimit);
+            Map<String, Object> map = connectorConfig.originalsWithPrefix("message.splitter." + splitterId);
+            String matchingExpression = (String) map.get(".matcher");
+            MessageSplitter requestSplitter = new MessageSplitter(splitterId,jexlEngine,matchingExpression,splitPattern,splitLimit);
             requestSplitterList.add(requestSplitter);
         }
         return requestSplitterList;
