@@ -119,11 +119,6 @@ public class HttpSinkConfigDefinition {
     public static final String MESSAGE_SPLITTER_IDS = "message.splitter.ids";
     public static final String MESSAGE_SPLITTER_IDS_DOC = "custom message splitter id list. no splitter is registered by default.";
 
-
-    //request splitter
-    public static final String HTTP_REQUEST_SPLITTER_IDS = "http.request.splitter.ids";
-    public static final String HTTP_REQUEST_SPLITTER_IDS_DOC = "custom http request splitter id list. no splitter is registered by default.";
-
     //mapper
     public static final String HTTP_REQUEST_MAPPER_IDS = "http.request.mapper.ids";
     public static final String HTTP_REQUEST_MAPPER_IDS_DOC = "custom httpRequestMapper id list. 'default' http request mapper is already registered.";
@@ -641,9 +636,7 @@ public class HttpSinkConfigDefinition {
                 //custom pessage splitters
                 .define(MESSAGE_SPLITTER_IDS, ConfigDef.Type.LIST, Lists.newArrayList(), ConfigDef.Importance.LOW, MESSAGE_SPLITTER_IDS_DOC)
                 //custom request mappers
-                .define(HTTP_REQUEST_MAPPER_IDS, ConfigDef.Type.LIST, Lists.newArrayList(), ConfigDef.Importance.LOW, HTTP_REQUEST_MAPPER_IDS_DOC)
-                //custom request splitters
-                .define(HTTP_REQUEST_SPLITTER_IDS, ConfigDef.Type.LIST, Lists.newArrayList(), ConfigDef.Importance.LOW, HTTP_REQUEST_SPLITTER_IDS_DOC);
+                .define(HTTP_REQUEST_MAPPER_IDS, ConfigDef.Type.LIST, Lists.newArrayList(), ConfigDef.Importance.LOW, HTTP_REQUEST_MAPPER_IDS_DOC);
 
         //custom configurations
         String configurationIds = settings.get(CONFIGURATION_IDS);

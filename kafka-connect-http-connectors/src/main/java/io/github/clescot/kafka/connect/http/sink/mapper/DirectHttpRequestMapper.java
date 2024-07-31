@@ -122,8 +122,6 @@ public class DirectHttpRequestMapper extends AbstractHttpRequestMapper {
         return "DirectHttpRequestMapper{" +
                 "expression=" + expression +
                 ", id='" + id + '\'' +
-                ", splitLimit=" + splitLimit +
-                ", splitPattern=" + splitPattern +
                 '}';
     }
 }

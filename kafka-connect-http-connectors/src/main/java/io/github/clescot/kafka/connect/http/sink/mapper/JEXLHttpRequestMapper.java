@@ -62,7 +62,12 @@ public class JEXLHttpRequestMapper extends AbstractHttpRequestMapper {
         context.set(SINK_RECORD, sinkRecord);
         String url = (String) jexlUrlExpression.evaluate(context);
         HttpRequest.Method method = jexlMethodExpression.map(jexlExpression -> HttpRequest.Method.valueOf((String) jexlExpression.evaluate(context))).orElse(HttpRequest.Method.GET);
-        String bodyTypeAsString = jexlBodyTypeExpression.map(jexlExpression -> (String) jexlExpression.evaluate(context)).orElseGet(HttpRequest.BodyType.STRING::name);
+        String bodyTypeAsString;
+        if(jexlBodyTypeExpression.isPresent()) {
+            bodyTypeAsString = (String) jexlBodyTypeExpression.get().evaluate(context);
+        }else {
+            bodyTypeAsString="STRING";
+        }
         HttpRequest.BodyType bodyType = HttpRequest.BodyType.valueOf(bodyTypeAsString);
         String content = jexlBodyExpression.isPresent()?jexlBodyExpression.map(jexlExpression -> (String) jexlExpression.evaluate(context)).orElse(null):null;
         HttpRequest httpRequest = new HttpRequest(url,method,bodyType.name());
@@ -125,8 +130,6 @@ public class JEXLHttpRequestMapper extends AbstractHttpRequestMapper {
                 ", jexlMethodExpression=" + jexlMethodExpression +
                 ", jexlUrlExpression=" + jexlUrlExpression +
                 ", id='" + id + '\'' +
-                ", splitLimit=" + splitLimit +
-                ", splitPattern=" + splitPattern +
                 '}';
     }
 }

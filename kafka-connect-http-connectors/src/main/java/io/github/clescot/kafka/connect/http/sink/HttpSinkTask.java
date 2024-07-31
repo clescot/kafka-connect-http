@@ -8,7 +8,6 @@ import io.github.clescot.kafka.connect.http.VersionUtils;
 import io.github.clescot.kafka.connect.http.client.Configuration;
 import io.github.clescot.kafka.connect.http.client.HttpClientFactory;
 import io.github.clescot.kafka.connect.http.client.HttpException;
-import io.github.clescot.kafka.connect.http.client.config.HttpRequestPredicateBuilder;
 import io.github.clescot.kafka.connect.http.core.HttpExchange;
 import io.github.clescot.kafka.connect.http.core.HttpRequest;
 import io.github.clescot.kafka.connect.http.core.queue.KafkaRecord;
@@ -16,8 +15,8 @@ import io.github.clescot.kafka.connect.http.sink.mapper.DirectHttpRequestMapper;
 import io.github.clescot.kafka.connect.http.sink.mapper.HttpRequestMapper;
 import io.github.clescot.kafka.connect.http.sink.mapper.JEXLHttpRequestMapper;
 import io.github.clescot.kafka.connect.http.sink.mapper.MapperMode;
-import io.github.clescot.kafka.connect.http.sink.publish.PublishMode;
 import io.github.clescot.kafka.connect.http.sink.publish.PublishConfigurer;
+import io.github.clescot.kafka.connect.http.sink.publish.PublishMode;
 import io.micrometer.core.instrument.Clock;
 import io.micrometer.core.instrument.composite.CompositeMeterRegistry;
 import io.micrometer.jmx.JmxConfig;
@@ -47,7 +46,6 @@ import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.function.Function;
-import java.util.function.Predicate;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -65,7 +63,6 @@ public abstract class HttpSinkTask<R, S> extends SinkTask {
     public static final String JEXL_ALWAYS_MATCHES = "true";
     public static final String DEFAULT = "default";
     public static final String MESSAGE_SPLITTER = "message.splitter.";
-    public static final String HTTP_REQUEST_SPLITTER = "http.request.splitter.";
     private Configuration<R, S> defaultConfiguration;
     private List<Configuration<R, S>> customConfigurations;
     private HttpRequestMapper defaultHttpRequestMapper;
@@ -82,8 +79,6 @@ public abstract class HttpSinkTask<R, S> extends SinkTask {
     private static CompositeMeterRegistry meterRegistry;
     private ExecutorService executorService;
     private List<MessageSplitter> messageSplitters;
-    private List<RequestSplitter> requestSplitters;
-
     public HttpSinkTask(HttpClientFactory<R, S> httpClientFactory) {
         this.httpClientFactory = httpClientFactory;
     }
@@ -196,7 +191,6 @@ public abstract class HttpSinkTask<R, S> extends SinkTask {
         this.messageSplitters = buildMessageSplitters(httpSinkConnectorConfig,jexlEngine);
         this.defaultHttpRequestMapper = buildDefaultHttpRequestMapper(httpSinkConnectorConfig,jexlEngine);
         this.httpRequestMappers = buildCustomHttpRequestMappers(httpSinkConnectorConfig, jexlEngine);
-        this.requestSplitters = buildHttpRequestSplitters(httpSinkConnectorConfig);
 
         //configurations
         this.defaultConfiguration = new Configuration<>(DEFAULT_CONFIGURATION_ID, httpClientFactory, httpSinkConnectorConfig, executorService, meterRegistry);
@@ -257,23 +251,6 @@ public abstract class HttpSinkTask<R, S> extends SinkTask {
             Map<String, Object> map = connectorConfig.originalsWithPrefix("message.splitter." + splitterId);
             String matchingExpression = (String) map.get(".matcher");
             MessageSplitter requestSplitter = new MessageSplitter(splitterId,jexlEngine,matchingExpression,splitPattern,splitLimit);
-            requestSplitterList.add(requestSplitter);
-        }
-        return requestSplitterList;
-    }
-
-    private List<RequestSplitter> buildHttpRequestSplitters(HttpSinkConnectorConfig connectorConfig) {
-        List<RequestSplitter> requestSplitterList = Lists.newArrayList();
-        for (String splitterId : Optional.ofNullable(connectorConfig.getList(HTTP_REQUEST_SPLITTER_IDS)).orElse(Lists.newArrayList())) {
-            Map<String, Object> settings = connectorConfig.originalsWithPrefix(HTTP_REQUEST_SPLITTER + splitterId + ".");
-            Predicate<HttpRequest> predicate = HttpRequestPredicateBuilder.build().buildPredicate(settings);
-            String splitPattern = (String) settings.get("pattern");
-            String limit = (String) settings.get("limit");
-            int splitLimit = 0;
-            if(limit!=null&& !limit.isBlank()) {
-                splitLimit = Integer.parseInt(limit);
-            }
-            RequestSplitter requestSplitter = new RequestSplitter(splitterId,predicate,splitPattern,splitLimit);
             requestSplitterList.add(requestSplitter);
         }
         return requestSplitterList;
@@ -376,13 +353,11 @@ public abstract class HttpSinkTask<R, S> extends SinkTask {
         //List<SinkRecord>-> SinkRecord
 
         List<Pair<SinkRecord, HttpRequest>> requests = stream
-                .peek(this::debugConnectRecord)
                 .filter(sinkRecord -> sinkRecord.value() != null)
+                .peek(this::debugConnectRecord)
                 .map(this::splitMessage)
                 .flatMap(List::stream)
                 .map(this::toHttpRequests)
-                .map(this::splitHttpRequest)
-                .flatMap(List::stream)
                 .collect(Collectors.toList());
 
 
@@ -398,18 +373,22 @@ public abstract class HttpSinkTask<R, S> extends SinkTask {
     private List<SinkRecord> splitMessage(SinkRecord sinkRecord) {
         Optional<MessageSplitter> splitterFound = messageSplitters.stream().filter(messageSplitter -> messageSplitter.matches(sinkRecord)).findFirst();
         //splitter
+        List<SinkRecord> results;
         if(splitterFound.isPresent()) {
-            return splitterFound.get().split(sinkRecord);
+            results = splitterFound.get().split(sinkRecord);
         }else{
-            return List.of(sinkRecord);
+            results = List.of(sinkRecord);
         }
+        return results;
     }
 
     private void debugConnectRecord(SinkRecord sinkRecord) {
         Object value = sinkRecord.value();
+        if(value!=null){
         Class<?> valueClass = value.getClass();
         LOGGER.debug("valueClass is '{}'", valueClass.getName());
         LOGGER.debug("value Schema from SinkRecord is '{}'", sinkRecord.valueSchema());
+        }
     }
 
     private CompletableFuture<HttpExchange> call(Pair<SinkRecord, HttpRequest> pair) {
@@ -451,16 +430,7 @@ public abstract class HttpSinkTask<R, S> extends SinkTask {
         return Pair.of(sinkRecord, httpRequest);
     }
 
-    private List<Pair<SinkRecord, HttpRequest>> splitHttpRequest(Pair<SinkRecord, HttpRequest> pair){
 
-        Optional<RequestSplitter> splitterFound = requestSplitters.stream().filter(requestSplitter -> requestSplitter.matches(pair.getRight())).findFirst();
-        //splitter
-        if(splitterFound.isPresent()) {
-            return splitterFound.get().split(pair);
-        }else{
-            return List.of(pair);
-        }
-    }
 
 
     private @NotNull Function<HttpExchange, HttpExchange> publish(SinkRecord sinkRecord, PublishMode publishMode, HttpSinkConnectorConfig connectorConfig) throws HttpException {
