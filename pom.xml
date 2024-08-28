@@ -52,7 +52,7 @@
         <maven.compiler.target>11</maven.compiler.target>
         <maven.plugin.validation>VERBOSE</maven.plugin.validation>
         <mock-oauth2-server.version>0.5.10</mock-oauth2-server.version>
-        <mockito.version>5.12.0</mockito.version>
+        <mockito.version>5.13.0</mockito.version>
         <micrometer.version>1.13.3</micrometer.version>
         <okhttp.version>4.12.0</okhttp.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
