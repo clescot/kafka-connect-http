@@ -119,6 +119,11 @@ public class HttpSinkConfigDefinition {
     public static final String MESSAGE_SPLITTER_IDS = "message.splitter.ids";
     public static final String MESSAGE_SPLITTER_IDS_DOC = "custom message splitter id list. no splitter is registered by default.";
 
+
+    //request grouper
+    public static final String REQUEST_GROUPER_IDS = "request.grouper.ids";
+    public static final String REQUEST_GROUPER_IDS_DOC = "custom request grouper id list. no request grouper is registered by default.";
+
     //mapper
     public static final String HTTP_REQUEST_MAPPER_IDS = "http.request.mapper.ids";
     public static final String HTTP_REQUEST_MAPPER_IDS_DOC = "custom httpRequestMapper id list. 'default' http request mapper is already registered.";
@@ -633,8 +638,10 @@ public class HttpSinkConfigDefinition {
                 //custom configurations
                 .define(CONFIGURATION_IDS, ConfigDef.Type.LIST, Lists.newArrayList(), ConfigDef.Importance.LOW, CONFIGURATION_IDS_DOC)
 
-                //custom pessage splitters
+                //custom message splitters
                 .define(MESSAGE_SPLITTER_IDS, ConfigDef.Type.LIST, Lists.newArrayList(), ConfigDef.Importance.LOW, MESSAGE_SPLITTER_IDS_DOC)
+                //custom request groupers
+                .define(REQUEST_GROUPER_IDS, ConfigDef.Type.LIST, Lists.newArrayList(), ConfigDef.Importance.LOW, REQUEST_GROUPER_IDS_DOC)
                 //custom request mappers
                 .define(HTTP_REQUEST_MAPPER_IDS, ConfigDef.Type.LIST, Lists.newArrayList(), ConfigDef.Importance.LOW, HTTP_REQUEST_MAPPER_IDS_DOC);
 

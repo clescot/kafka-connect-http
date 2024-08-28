@@ -8,6 +8,7 @@ import io.github.clescot.kafka.connect.http.VersionUtils;
 import io.github.clescot.kafka.connect.http.client.Configuration;
 import io.github.clescot.kafka.connect.http.client.HttpClientFactory;
 import io.github.clescot.kafka.connect.http.client.HttpException;
+import io.github.clescot.kafka.connect.http.client.config.HttpRequestPredicateBuilder;
 import io.github.clescot.kafka.connect.http.core.HttpExchange;
 import io.github.clescot.kafka.connect.http.core.HttpRequest;
 import io.github.clescot.kafka.connect.http.core.queue.KafkaRecord;
@@ -46,6 +47,7 @@ import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -63,6 +65,7 @@ public abstract class HttpSinkTask<R, S> extends SinkTask {
     public static final String JEXL_ALWAYS_MATCHES = "true";
     public static final String DEFAULT = "default";
     public static final String MESSAGE_SPLITTER = "message.splitter.";
+    public static final String REQUEST_GROUPER = "request.grouper.";
     private Configuration<R, S> defaultConfiguration;
     private List<Configuration<R, S>> customConfigurations;
     private HttpRequestMapper defaultHttpRequestMapper;
@@ -79,6 +82,7 @@ public abstract class HttpSinkTask<R, S> extends SinkTask {
     private static CompositeMeterRegistry meterRegistry;
     private ExecutorService executorService;
     private List<MessageSplitter> messageSplitters;
+    private List<RequestGrouper> requestGroupers;
     public HttpSinkTask(HttpClientFactory<R, S> httpClientFactory) {
         this.httpClientFactory = httpClientFactory;
     }
@@ -191,7 +195,7 @@ public abstract class HttpSinkTask<R, S> extends SinkTask {
         this.messageSplitters = buildMessageSplitters(httpSinkConnectorConfig,jexlEngine);
         this.defaultHttpRequestMapper = buildDefaultHttpRequestMapper(httpSinkConnectorConfig,jexlEngine);
         this.httpRequestMappers = buildCustomHttpRequestMappers(httpSinkConnectorConfig, jexlEngine);
-
+        this.requestGroupers = buildRequestGroupers(httpSinkConnectorConfig);
         //configurations
         this.defaultConfiguration = new Configuration<>(DEFAULT_CONFIGURATION_ID, httpClientFactory, httpSinkConnectorConfig, executorService, meterRegistry);
         customConfigurations = buildCustomConfigurations(httpClientFactory, httpSinkConnectorConfig, defaultConfiguration, executorService);
@@ -226,6 +230,21 @@ public abstract class HttpSinkTask<R, S> extends SinkTask {
 
     }
 
+    private List<RequestGrouper> buildRequestGroupers(HttpSinkConnectorConfig connectorConfig) {
+        List<RequestGrouper> requestGrouperList = Lists.newArrayList();
+        for (String requestGrouperId : Optional.ofNullable(connectorConfig.getList(REQUEST_GROUPER_IDS)).orElse(Lists.newArrayList())) {
+            Map<String, Object> settings = connectorConfig.originalsWithPrefix(REQUEST_GROUPER + requestGrouperId + ".");
+            Predicate<HttpRequest> httpRequestPredicate = HttpRequestPredicateBuilder.build().buildPredicate(settings);
+            String separator = (String) settings.get("separator");
+            String start = (String) settings.get("start");
+            String end = (String) settings.get("end");
+            int messageLimit = (int) settings.get("message.limit");
+            RequestGrouper requestGrouper = new RequestGrouper(requestGrouperId,httpRequestPredicate,separator,start,end,messageLimit);
+            requestGrouperList.add(requestGrouper);
+        }
+        return requestGrouperList;
+    }
+
     private static JexlEngine buildJexlEngine() {
         // Restricted permissions to a safe set but with URI allowed
         JexlPermissions permissions = new JexlPermissions.ClassPermissions(SinkRecord.class, ConnectRecord.class, HttpRequest.class);
@@ -248,7 +267,7 @@ public abstract class HttpSinkTask<R, S> extends SinkTask {
             if(limit!=null&& !limit.isBlank()) {
                 splitLimit = Integer.parseInt(limit);
             }
-            Map<String, Object> map = connectorConfig.originalsWithPrefix("message.splitter." + splitterId);
+            Map<String, Object> map = connectorConfig.originalsWithPrefix(MESSAGE_SPLITTER + splitterId);
             String matchingExpression = (String) map.get(".matcher");
             MessageSplitter requestSplitter = new MessageSplitter(splitterId,jexlEngine,matchingExpression,splitPattern,splitLimit);
             requestSplitterList.add(requestSplitter);
@@ -360,14 +379,25 @@ public abstract class HttpSinkTask<R, S> extends SinkTask {
                 .map(this::toHttpRequests)
                 .collect(Collectors.toList());
 
-
+        List<Pair<SinkRecord, HttpRequest>> groupedRequests = groupRequests(requests);
         //List<SinkRecord>-> SinkRecord
-        List<CompletableFuture<HttpExchange>> completableFutures = requests.stream()
+        List<CompletableFuture<HttpExchange>> completableFutures = groupedRequests.stream()
                 .map(this::call)
                 .collect(Collectors.toList());
         List<HttpExchange> httpExchanges = completableFutures.stream().map(CompletableFuture::join).collect(Collectors.toList());
         LOGGER.debug("HttpExchanges created :'{}'", httpExchanges.size());
 
+    }
+
+    private List<Pair<SinkRecord, HttpRequest>> groupRequests(List<Pair<SinkRecord, HttpRequest>> pairList){
+        if(requestGroupers!=null && !requestGroupers.isEmpty()) {
+            return requestGroupers.stream().map(requestGrouper -> requestGrouper.group(pairList)).reduce(Lists.newArrayList(), (l, r) -> {
+                l.addAll(r);
+                return l;
+            });
+        }else {
+            return pairList;
+        }
     }
 
     private List<SinkRecord> splitMessage(SinkRecord sinkRecord) {
