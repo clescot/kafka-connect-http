@@ -8,24 +8,14 @@ import io.github.clescot.kafka.connect.http.VersionUtils;
 import io.github.clescot.kafka.connect.http.client.Configuration;
 import io.github.clescot.kafka.connect.http.client.HttpClientFactory;
 import io.github.clescot.kafka.connect.http.client.HttpException;
-import io.github.clescot.kafka.connect.http.client.config.HttpRequestPredicateBuilder;
 import io.github.clescot.kafka.connect.http.core.HttpExchange;
 import io.github.clescot.kafka.connect.http.core.HttpRequest;
 import io.github.clescot.kafka.connect.http.core.queue.KafkaRecord;
-import io.github.clescot.kafka.connect.http.sink.mapper.DirectHttpRequestMapper;
 import io.github.clescot.kafka.connect.http.sink.mapper.HttpRequestMapper;
-import io.github.clescot.kafka.connect.http.sink.mapper.JEXLHttpRequestMapper;
-import io.github.clescot.kafka.connect.http.sink.mapper.MapperMode;
+import io.github.clescot.kafka.connect.http.sink.mapper.HttpRequestMapperFactory;
 import io.github.clescot.kafka.connect.http.sink.publish.PublishConfigurer;
 import io.github.clescot.kafka.connect.http.sink.publish.PublishMode;
-import io.micrometer.core.instrument.Clock;
 import io.micrometer.core.instrument.composite.CompositeMeterRegistry;
-import io.micrometer.jmx.JmxConfig;
-import io.micrometer.jmx.JmxMeterRegistry;
-import io.micrometer.prometheusmetrics.PrometheusConfig;
-import io.micrometer.prometheusmetrics.PrometheusMeterRegistry;
-import io.prometheus.metrics.exporter.httpserver.HTTPServer;
-import io.prometheus.metrics.model.registry.PrometheusRegistry;
 import org.apache.commons.jexl3.JexlBuilder;
 import org.apache.commons.jexl3.JexlEngine;
 import org.apache.commons.jexl3.JexlFeatures;
@@ -43,16 +33,15 @@ import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.function.Function;
-import java.util.function.Predicate;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static io.github.clescot.kafka.connect.http.sink.HttpSinkConfigDefinition.*;
+import static io.github.clescot.kafka.connect.http.sink.HttpSinkConfigDefinition.CONFIGURATION_IDS;
+import static io.github.clescot.kafka.connect.http.sink.HttpSinkConfigDefinition.HTTP_CLIENT_ASYNC_FIXED_THREAD_POOL_SIZE;
 
 
 public abstract class HttpSinkTask<R, S> extends SinkTask {
@@ -62,10 +51,9 @@ public abstract class HttpSinkTask<R, S> extends SinkTask {
 
 
 
-    public static final String JEXL_ALWAYS_MATCHES = "true";
     public static final String DEFAULT = "default";
-    public static final String MESSAGE_SPLITTER = "message.splitter.";
-    public static final String REQUEST_GROUPER = "request.grouper.";
+
+
     private Configuration<R, S> defaultConfiguration;
     private List<Configuration<R, S>> customConfigurations;
     private HttpRequestMapper defaultHttpRequestMapper;
@@ -132,43 +120,6 @@ public abstract class HttpSinkTask<R, S> extends SinkTask {
         return configurations;
     }
 
-    private List<HttpRequestMapper> buildCustomHttpRequestMappers(AbstractConfig config, JexlEngine jexlEngine) {
-        List<HttpRequestMapper> requestMappers = Lists.newArrayList();
-        for (String httpRequestMapperId : Optional.ofNullable(config.getList(HTTP_REQUEST_MAPPER_IDS)).orElse(Lists.newArrayList())) {
-            HttpRequestMapper httpRequestMapper;
-            String prefix = "http.request.mapper." + httpRequestMapperId;
-            Map<String, Object> settings = config.originalsWithPrefix(prefix);
-            String modeKey = ".mode";
-            MapperMode mapperMode = MapperMode.valueOf(Optional.ofNullable(settings.get(modeKey)).orElse(MapperMode.DIRECT.name()).toString());
-            switch (mapperMode) {
-                case JEXL: {
-                    httpRequestMapper = new JEXLHttpRequestMapper(
-                            httpRequestMapperId,
-                            jexlEngine,
-                            (String) settings.get(".matcher"),
-                            (String) settings.get(".url"),
-                            (String) settings.get(".method"),
-                            (String) settings.get(".bodytype"),
-                            (String) settings.get(".body"),
-                            (String) settings.get(".headers")
-                    );
-                    break;
-                }
-                case DIRECT:
-                default: {
-                    httpRequestMapper = new DirectHttpRequestMapper(
-                            httpRequestMapperId,
-                            jexlEngine,
-                            (String) settings.get(".matcher")
-                    );
-                    break;
-                }
-            }
-
-            requestMappers.add(httpRequestMapper);
-        }
-        return requestMappers;
-    }
 
 
     /**
@@ -180,22 +131,24 @@ public abstract class HttpSinkTask<R, S> extends SinkTask {
         HttpSinkConfigDefinition httpSinkConfigDefinition = new HttpSinkConfigDefinition(settings);
         this.httpSinkConnectorConfig = new HttpSinkConnectorConfig(httpSinkConfigDefinition.config(), settings);
 
-
         //build executorService
         Optional<Integer> customFixedThreadPoolSize = Optional.ofNullable(httpSinkConnectorConfig.getInt(HTTP_CLIENT_ASYNC_FIXED_THREAD_POOL_SIZE));
         customFixedThreadPoolSize.ifPresent(integer -> this.executorService = buildExecutorService(integer));
 
         //build meterRegistry
-        HttpSinkTask.meterRegistry = buildMeterRegistry(httpSinkConnectorConfig);
+        MeterRegistryFactory meterRegistryFactory = new MeterRegistryFactory();
+        HttpSinkTask.meterRegistry = meterRegistryFactory.buildMeterRegistry(httpSinkConnectorConfig);
 
         //build httpRequestMappers
 
         JexlEngine jexlEngine = buildJexlEngine();
-
-        this.messageSplitters = buildMessageSplitters(httpSinkConnectorConfig,jexlEngine);
-        this.defaultHttpRequestMapper = buildDefaultHttpRequestMapper(httpSinkConnectorConfig,jexlEngine);
-        this.httpRequestMappers = buildCustomHttpRequestMappers(httpSinkConnectorConfig, jexlEngine);
-        this.requestGroupers = buildRequestGroupers(httpSinkConnectorConfig);
+        MessageSplitterFactory messageSplitterFactory = new MessageSplitterFactory();
+        this.messageSplitters = messageSplitterFactory.buildMessageSplitters(httpSinkConnectorConfig,jexlEngine);
+        HttpRequestMapperFactory httpRequestMapperFactory = new HttpRequestMapperFactory();
+        this.defaultHttpRequestMapper = httpRequestMapperFactory.buildDefaultHttpRequestMapper(httpSinkConnectorConfig,jexlEngine);
+        this.httpRequestMappers = httpRequestMapperFactory.buildCustomHttpRequestMappers(httpSinkConnectorConfig, jexlEngine);
+        RequestGrouperFactory requestGrouperFactory = new RequestGrouperFactory();
+        this.requestGroupers = requestGrouperFactory.buildRequestGroupers(httpSinkConnectorConfig);
         //configurations
         this.defaultConfiguration = new Configuration<>(DEFAULT_CONFIGURATION_ID, httpClientFactory, httpSinkConnectorConfig, executorService, meterRegistry);
         customConfigurations = buildCustomConfigurations(httpClientFactory, httpSinkConnectorConfig, defaultConfiguration, executorService);
@@ -230,20 +183,6 @@ public abstract class HttpSinkTask<R, S> extends SinkTask {
 
     }
 
-    private List<RequestGrouper> buildRequestGroupers(HttpSinkConnectorConfig connectorConfig) {
-        List<RequestGrouper> requestGrouperList = Lists.newArrayList();
-        for (String requestGrouperId : Optional.ofNullable(connectorConfig.getList(REQUEST_GROUPER_IDS)).orElse(Lists.newArrayList())) {
-            Map<String, Object> settings = connectorConfig.originalsWithPrefix(REQUEST_GROUPER + requestGrouperId + ".");
-            Predicate<HttpRequest> httpRequestPredicate = HttpRequestPredicateBuilder.build().buildPredicate(settings);
-            String separator = (String) settings.get("separator");
-            String start = (String) settings.get("start");
-            String end = (String) settings.get("end");
-            int messageLimit = (int) settings.get("message.limit");
-            RequestGrouper requestGrouper = new RequestGrouper(requestGrouperId,httpRequestPredicate,separator,start,end,messageLimit);
-            requestGrouperList.add(requestGrouper);
-        }
-        return requestGrouperList;
-    }
 
     private static JexlEngine buildJexlEngine() {
         // Restricted permissions to a safe set but with URI allowed
@@ -256,61 +195,6 @@ public abstract class HttpSinkTask<R, S> extends SinkTask {
         return new JexlBuilder().features(features).permissions(permissions).create();
     }
 
-    private List<MessageSplitter> buildMessageSplitters(HttpSinkConnectorConfig connectorConfig, JexlEngine jexlEngine) {
-        List<MessageSplitter> requestSplitterList = Lists.newArrayList();
-        for (String splitterId : Optional.ofNullable(connectorConfig.getList(MESSAGE_SPLITTER_IDS)).orElse(Lists.newArrayList())) {
-            Map<String, Object> settings = connectorConfig.originalsWithPrefix(MESSAGE_SPLITTER + splitterId + ".");
-            String splitPattern = (String) settings.get("pattern");
-            Preconditions.checkNotNull(splitPattern,"message splitter '"+splitterId+"' splitPattern is required");
-            String limit = (String) settings.get("limit");
-            int splitLimit = 0;
-            if(limit!=null&& !limit.isBlank()) {
-                splitLimit = Integer.parseInt(limit);
-            }
-            Map<String, Object> map = connectorConfig.originalsWithPrefix(MESSAGE_SPLITTER + splitterId);
-            String matchingExpression = (String) map.get(".matcher");
-            MessageSplitter requestSplitter = new MessageSplitter(splitterId,jexlEngine,matchingExpression,splitPattern,splitLimit);
-            requestSplitterList.add(requestSplitter);
-        }
-        return requestSplitterList;
-    }
-
-    private HttpRequestMapper buildDefaultHttpRequestMapper(HttpSinkConnectorConfig connectorConfig, JexlEngine jexlEngine){
-        HttpRequestMapper httpRequestMapper;
-        MapperMode defaultRequestMapperMode = connectorConfig.getDefaultRequestMapperMode();
-        switch (defaultRequestMapperMode) {
-            case JEXL: {
-                Preconditions.checkNotNull(connectorConfig.getDefaultUrlExpression(), "'" + REQUEST_MAPPER_DEFAULT_URL_EXPRESSION + "' need to be set");
-                httpRequestMapper = new JEXLHttpRequestMapper(
-                        DEFAULT,
-                        jexlEngine,
-                        JEXL_ALWAYS_MATCHES,
-                        connectorConfig.getDefaultUrlExpression(),
-                        connectorConfig.getDefaultMethodExpression(),
-                        connectorConfig.getDefaultBodyTypeExpression(),
-                        connectorConfig.getDefaultBodyExpression(),
-                        connectorConfig.getDefaultHeadersExpression()
-                );
-                break;
-            }
-            case DIRECT:
-            default: {
-                httpRequestMapper = new DirectHttpRequestMapper(
-                        DEFAULT,
-                        jexlEngine,
-                        JEXL_ALWAYS_MATCHES
-                );
-                break;
-            }
-        }
-
-        return httpRequestMapper;
-    }
-
-
-
-
-
     /**
      *
      * @param customFixedThreadPoolSize max thread pool size for the executorService.
@@ -320,34 +204,6 @@ public abstract class HttpSinkTask<R, S> extends SinkTask {
         return Executors.newFixedThreadPool(customFixedThreadPoolSize);
     }
 
-    private CompositeMeterRegistry buildMeterRegistry(AbstractConfig config) {
-        CompositeMeterRegistry compositeMeterRegistry = new CompositeMeterRegistry();
-        boolean activateJMX = Boolean.parseBoolean(config.getString(METER_REGISTRY_EXPORTER_JMX_ACTIVATE));
-        if (activateJMX) {
-            JmxMeterRegistry jmxMeterRegistry = new JmxMeterRegistry(JmxConfig.DEFAULT, Clock.SYSTEM);
-            jmxMeterRegistry.start();
-            compositeMeterRegistry.add(jmxMeterRegistry);
-        }
-        boolean activatePrometheus = Boolean.parseBoolean(config.getString(METER_REGISTRY_EXPORTER_PROMETHEUS_ACTIVATE));
-        if (activatePrometheus) {
-            PrometheusMeterRegistry prometheusMeterRegistry = new PrometheusMeterRegistry(PrometheusConfig.DEFAULT);
-            Integer prometheusPort = config.getInt(METER_REGISTRY_EXPORTER_PROMETHEUS_PORT);
-            // you can set the daemon flag to false if you want the server to block
-
-            try {
-                int port = prometheusPort != null ? prometheusPort : 9090;
-                PrometheusRegistry prometheusRegistry = prometheusMeterRegistry.getPrometheusRegistry();
-                HTTPServer.builder()
-                        .port(port)
-                        .registry(prometheusRegistry)
-                        .buildAndStart();
-            } catch (IOException e) {
-                throw new HttpException(e);
-            }
-            compositeMeterRegistry.add(prometheusMeterRegistry);
-        }
-        return compositeMeterRegistry;
-    }
 
     @Override
     @SuppressWarnings("java:S3864")
