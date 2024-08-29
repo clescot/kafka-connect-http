@@ -57,6 +57,7 @@ public class RequestGrouper {
         StringBuilder builder = new StringBuilder(aggregatedBody);
         boolean interrupted=false;
         List<Pair<SinkRecord, HttpRequest>> matchingEntries = entries.stream().filter(pair-> this.matches(pair.getRight())).collect(Collectors.toList());
+        List<Pair<SinkRecord, HttpRequest>> nonMatchingEntries = entries.stream().filter(pair-> !this.matches(pair.getRight())).collect(Collectors.toList());
         for (int i = 0; i < matchingEntries.size(); i++) {
             Pair<SinkRecord, HttpRequest> myEntry = matchingEntries.get(i);
             String part = myEntry.getRight().getBodyAsString();
@@ -82,6 +83,7 @@ public class RequestGrouper {
         List<Pair<SinkRecord, HttpRequest>> aggregatedRequests = Lists.newArrayList();
         aggregatedRequests.add(Pair.of(entries.get(0).getLeft(),aggregatedRequest));
         aggregatedRequests.addAll(group(nonAggregatedRequests));
+        aggregatedRequests.addAll(nonMatchingEntries);
         return aggregatedRequests;
     }
 
