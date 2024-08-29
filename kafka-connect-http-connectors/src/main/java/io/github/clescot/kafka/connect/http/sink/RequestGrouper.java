@@ -20,7 +20,7 @@ public class RequestGrouper {
     private final String separator;
     private final String end;
     private final int messageLimit;
-    private long bodyLimit = -1;
+    private final long bodyLimit;
 
 
     public RequestGrouper(String id,
@@ -78,39 +78,15 @@ public class RequestGrouper {
         }
         aggregatedBody = builder.toString();
         aggregatedRequest.setBodyAsString(aggregatedBody);
-        List<Pair<SinkRecord, HttpRequest>> nonAgregatedRequests = entries.subList(consumed, entries.size());
-        List<Pair<SinkRecord, HttpRequest>> agregatedRequests = Lists.newArrayList();
-        agregatedRequests.add(Pair.of(entries.get(0).getLeft(),aggregatedRequest));
-        agregatedRequests.addAll(group(nonAgregatedRequests));
-        return agregatedRequests;
+        List<Pair<SinkRecord, HttpRequest>> nonAggregatedRequests = entries.subList(consumed, entries.size());
+        List<Pair<SinkRecord, HttpRequest>> aggregatedRequests = Lists.newArrayList();
+        aggregatedRequests.add(Pair.of(entries.get(0).getLeft(),aggregatedRequest));
+        aggregatedRequests.addAll(group(nonAggregatedRequests));
+        return aggregatedRequests;
     }
 
     public String getId() {
         return id;
     }
-
-    public String getEnd() {
-        return end;
-    }
-
-
-    public String getSeparator() {
-        return separator;
-    }
-
-    public long getBodyLimit() {
-        return bodyLimit;
-    }
-
-
-    public int getMessageLimit() {
-        return messageLimit;
-    }
-
-
-    public String getInit() {
-        return init;
-    }
-
 
 }
