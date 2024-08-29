@@ -65,10 +65,10 @@ public class RequestGrouper {
                 interrupted = true;
                 break;
             }
-            builder.append(part);
-            if(i<matchingEntries.size()-1) {
+            if(i>0) {
                 builder.append(separator);
             }
+            builder.append(part);
         }
         if(!interrupted){
             consumed = entries.size();
@@ -81,7 +81,7 @@ public class RequestGrouper {
         List<Pair<SinkRecord, HttpRequest>> nonAgregatedRequests = entries.subList(consumed, entries.size());
         List<Pair<SinkRecord, HttpRequest>> agregatedRequests = Lists.newArrayList();
         agregatedRequests.add(Pair.of(entries.get(0).getLeft(),aggregatedRequest));
-        agregatedRequests.addAll(nonAgregatedRequests);
+        agregatedRequests.addAll(group(nonAgregatedRequests));
         return agregatedRequests;
     }
 
