@@ -50,7 +50,6 @@ public abstract class HttpSinkTask<R, S> extends SinkTask {
     private static final VersionUtils VERSION_UTILS = new VersionUtils();
 
 
-
     public static final String DEFAULT = "default";
 
 
@@ -71,6 +70,7 @@ public abstract class HttpSinkTask<R, S> extends SinkTask {
     private ExecutorService executorService;
     private List<MessageSplitter> messageSplitters;
     private List<RequestGrouper> requestGroupers;
+
     public HttpSinkTask(HttpClientFactory<R, S> httpClientFactory) {
         this.httpClientFactory = httpClientFactory;
     }
@@ -121,7 +121,6 @@ public abstract class HttpSinkTask<R, S> extends SinkTask {
     }
 
 
-
     /**
      * @param settings configure the connector
      */
@@ -143,9 +142,9 @@ public abstract class HttpSinkTask<R, S> extends SinkTask {
 
         JexlEngine jexlEngine = buildJexlEngine();
         MessageSplitterFactory messageSplitterFactory = new MessageSplitterFactory();
-        this.messageSplitters = messageSplitterFactory.buildMessageSplitters(httpSinkConnectorConfig,jexlEngine);
+        this.messageSplitters = messageSplitterFactory.buildMessageSplitters(httpSinkConnectorConfig, jexlEngine);
         HttpRequestMapperFactory httpRequestMapperFactory = new HttpRequestMapperFactory();
-        this.defaultHttpRequestMapper = httpRequestMapperFactory.buildDefaultHttpRequestMapper(httpSinkConnectorConfig,jexlEngine);
+        this.defaultHttpRequestMapper = httpRequestMapperFactory.buildDefaultHttpRequestMapper(httpSinkConnectorConfig, jexlEngine);
         this.httpRequestMappers = httpRequestMapperFactory.buildCustomHttpRequestMappers(httpSinkConnectorConfig, jexlEngine);
         RequestGrouperFactory requestGrouperFactory = new RequestGrouperFactory();
         this.requestGroupers = requestGrouperFactory.buildRequestGroupers(httpSinkConnectorConfig);
@@ -217,16 +216,6 @@ public abstract class HttpSinkTask<R, S> extends SinkTask {
         //we submit futures to the pool
         Stream<SinkRecord> stream = records.stream();
 
-        //TODO regroup messages into one https://github.com/clescot/kafka-connect-http/issues/336
-        //predicate on HtpRequest for reducer ?
-        //max messages ?
-        //max body length ?
-        //preserve order ?
-        //separator between parts
-        //initial separator
-        //final separator
-        //List<SinkRecord>-> SinkRecord
-
         List<Pair<SinkRecord, HttpRequest>> requests = stream
                 .filter(sinkRecord -> sinkRecord.value() != null)
                 .peek(this::debugConnectRecord)
@@ -245,13 +234,13 @@ public abstract class HttpSinkTask<R, S> extends SinkTask {
 
     }
 
-    private List<Pair<SinkRecord, HttpRequest>> groupRequests(List<Pair<SinkRecord, HttpRequest>> pairList){
-        if(requestGroupers!=null && !requestGroupers.isEmpty()) {
+    private List<Pair<SinkRecord, HttpRequest>> groupRequests(List<Pair<SinkRecord, HttpRequest>> pairList) {
+        if (requestGroupers != null && !requestGroupers.isEmpty()) {
             return requestGroupers.stream().map(requestGrouper -> requestGrouper.group(pairList)).reduce(Lists.newArrayList(), (l, r) -> {
                 l.addAll(r);
                 return l;
             });
-        }else {
+        } else {
             return pairList;
         }
     }
@@ -260,9 +249,9 @@ public abstract class HttpSinkTask<R, S> extends SinkTask {
         Optional<MessageSplitter> splitterFound = messageSplitters.stream().filter(messageSplitter -> messageSplitter.matches(sinkRecord)).findFirst();
         //splitter
         List<SinkRecord> results;
-        if(splitterFound.isPresent()) {
+        if (splitterFound.isPresent()) {
             results = splitterFound.get().split(sinkRecord);
-        }else{
+        } else {
             results = List.of(sinkRecord);
         }
         return results;
@@ -270,10 +259,10 @@ public abstract class HttpSinkTask<R, S> extends SinkTask {
 
     private void debugConnectRecord(SinkRecord sinkRecord) {
         Object value = sinkRecord.value();
-        if(value!=null){
-        Class<?> valueClass = value.getClass();
-        LOGGER.debug("valueClass is '{}'", valueClass.getName());
-        LOGGER.debug("value Schema from SinkRecord is '{}'", sinkRecord.valueSchema());
+        if (value != null) {
+            Class<?> valueClass = value.getClass();
+            LOGGER.debug("valueClass is '{}'", valueClass.getName());
+            LOGGER.debug("value Schema from SinkRecord is '{}'", sinkRecord.valueSchema());
         }
     }
 
@@ -289,10 +278,9 @@ public abstract class HttpSinkTask<R, S> extends SinkTask {
                     if (errantRecordReporter != null) {
                         // Send errant record to error reporter
                         Future<Void> future = errantRecordReporter.report(pair.getLeft(), throwable);
-                        // Optionally wait till the failure's been recorded in Kafka
+                        // Optionally wait until the failure's been recorded in Kafka
                         try {
                             future.get();
-
                         } catch (InterruptedException | ExecutionException ex) {
                             Thread.currentThread().interrupt();
                             LOGGER.error(ex.getMessage());
@@ -315,8 +303,6 @@ public abstract class HttpSinkTask<R, S> extends SinkTask {
 
         return Pair.of(sinkRecord, httpRequest);
     }
-
-
 
 
     private @NotNull Function<HttpExchange, HttpExchange> publish(SinkRecord sinkRecord, PublishMode publishMode, HttpSinkConnectorConfig connectorConfig) throws HttpException {
