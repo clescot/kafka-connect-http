@@ -23,14 +23,18 @@ public class RequestGrouperFactory {
             Optional<String> separator = Optional.ofNullable((String) settings.get("separator"));
             Optional<String> start = Optional.ofNullable((String) settings.get("start"));
             Optional<String> end = Optional.ofNullable((String) settings.get("end"));
-            Optional<Integer> messageLimit = Optional.ofNullable((Integer) settings.get("message.limit"));
+            Optional<String> messageLimit = Optional.ofNullable((String) settings.get("message.limit"));
+            int messageLimitAsInt = messageLimit.isPresent()?Integer.parseInt(messageLimit.get()):-1;
+            Optional<String> bodyLimit = Optional.ofNullable((String) settings.get("body.limit"));
+            int bodyLimitAsInt = bodyLimit.isPresent()?Integer.parseInt(bodyLimit.get()):-1;
             RequestGrouper requestGrouper = new RequestGrouper(
                     requestGrouperId,
                     httpRequestPredicate,
                     separator.orElse(""),
                     start.orElse(""),
                     end.orElse(""),
-                    messageLimit.orElse(-1)
+                    messageLimitAsInt,
+                    bodyLimitAsInt
             );
             requestGrouperList.add(requestGrouper);
         }

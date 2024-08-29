@@ -20,7 +20,7 @@ public class RequestGrouper {
     private final String separator;
     private final String end;
     private final int messageLimit;
-    private final long bodyLimit = -1;
+    private long bodyLimit = -1;
 
 
     public RequestGrouper(String id,
@@ -28,7 +28,8 @@ public class RequestGrouper {
                           String separator,
                           String start,
                           String end,
-                          int messageLimit
+                          int messageLimit,
+                          int bodyLimit
                    ) {
         this.id = id;
         this.predicate = predicate;
@@ -36,6 +37,7 @@ public class RequestGrouper {
         this.init = start;
         this.end = end;
         this.messageLimit = messageLimit;
+        this.bodyLimit = bodyLimit;
     }
 
 
@@ -58,7 +60,7 @@ public class RequestGrouper {
         for (int i = 0; i < matchingEntries.size(); i++) {
             Pair<SinkRecord, HttpRequest> myEntry = matchingEntries.get(i);
             String part = myEntry.getRight().getBodyAsString();
-            if(messageLimit>0 && (i==messageLimit||builder.length()+part.length()>=bodyLimit)){
+            if((messageLimit>0 && i==messageLimit)||(bodyLimit!=-1 && builder.length()+part.length()>=bodyLimit)){
                 consumed = i;
                 interrupted = true;
                 break;
