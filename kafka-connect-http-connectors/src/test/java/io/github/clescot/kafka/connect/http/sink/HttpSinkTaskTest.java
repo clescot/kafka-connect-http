@@ -1570,6 +1570,170 @@ public class HttpSinkTaskTest {
         }
 
         @Test
+        void test_request_grouper_with_separator_and_more_non_matching_messages() {
+            Assertions.assertDoesNotThrow(() -> {
+                HashMap<String, String> settings = Maps.newHashMap();
+                String id = "myid1";
+                settings.put(REQUEST_GROUPER_IDS, id);
+                settings.put(REQUEST_GROUPER_PREFIX+id+"."+URL_REGEX, ".*/path1");
+                settings.put(REQUEST_GROUPER_PREFIX+id+"."+"separator", "#");
+                okHttpSinkTask.start(settings);
+
+                //given
+                WireMockRuntimeInfo wmRuntimeInfo = wmHttp.getRuntimeInfo();
+
+
+                //init sinkRecord
+                List<SinkRecord> records = Lists.newArrayList();
+                List<Header> headers = Lists.newArrayList();
+                String value1="        {\n" +
+                        "          \"url\": \"http://localhost:PORT/path1\",\n" +
+                        "          \"headers\": {\n" +
+                        "            \"X-request-id\": [\n" +
+                        "              \"aaaa-4466666-111\"\n" +
+                        "            ],\n" +
+                        "            \"X-correlation-id\": [\n" +
+                        "              \"sfds-55-77\"\n" +
+                        "            ]\n" +
+                        "          },\n" +
+                        "          \"method\": \"POST\",\n" +
+                        "          \"bodyAsString\": \"stuff1\",\n" +
+                        "          \"bodyAsForm\": {},\n" +
+                        "          \"bodyAsByteArray\": \"\",\n" +
+                        "          \"bodyAsMultipart\": [],\n" +
+                        "          \"bodyType\": \"STRING\"\n" +
+                        "        }\n";
+                SinkRecord sinkRecord1 = new SinkRecord("myTopic", 0, Schema.STRING_SCHEMA, "key", Schema.STRING_SCHEMA,
+                        value1.replaceFirst("PORT",""+wmRuntimeInfo.getHttpPort()),
+                        -1, System.currentTimeMillis(), TimestampType.CREATE_TIME, headers);
+                records.add(sinkRecord1);
+                String nonMatchingValue="        {\n" +
+                        "          \"url\": \"http://localhost:PORT/pathA\",\n" +
+                        "          \"headers\": {\n" +
+                        "            \"X-request-id\": [\n" +
+                        "              \"aaaa-4466666-111\"\n" +
+                        "            ],\n" +
+                        "            \"X-correlation-id\": [\n" +
+                        "              \"sfds-55-77\"\n" +
+                        "            ]\n" +
+                        "          },\n" +
+                        "          \"method\": \"POST\",\n" +
+                        "          \"bodyAsString\": \"stuffA\",\n" +
+                        "          \"bodyAsForm\": {},\n" +
+                        "          \"bodyAsByteArray\": \"\",\n" +
+                        "          \"bodyAsMultipart\": [],\n" +
+                        "          \"bodyType\": \"STRING\"\n" +
+                        "        }\n";
+                SinkRecord nonMatchingSinkRecord = new SinkRecord("myTopic", 0, Schema.STRING_SCHEMA, "key", Schema.STRING_SCHEMA,
+                        nonMatchingValue.replaceFirst("PORT",""+wmRuntimeInfo.getHttpPort()),
+                        -1, System.currentTimeMillis(), TimestampType.CREATE_TIME, headers);
+                records.add(nonMatchingSinkRecord);
+
+                String value2="        {\n" +
+                        "          \"url\": \"http://localhost:PORT/path1\",\n" +
+                        "          \"headers\": {\n" +
+                        "            \"X-request-id\": [\n" +
+                        "              \"aaaa-4466666-111\"\n" +
+                        "            ],\n" +
+                        "            \"X-correlation-id\": [\n" +
+                        "              \"sfds-55-77\"\n" +
+                        "            ]\n" +
+                        "          },\n" +
+                        "          \"method\": \"POST\",\n" +
+                        "          \"bodyAsString\": \"stuff2\",\n" +
+                        "          \"bodyAsForm\": {},\n" +
+                        "          \"bodyAsByteArray\": \"\",\n" +
+                        "          \"bodyAsMultipart\": [],\n" +
+                        "          \"bodyType\": \"STRING\"\n" +
+                        "        }\n";
+                SinkRecord sinkRecord2 = new SinkRecord("myTopic", 0, Schema.STRING_SCHEMA, "key", Schema.STRING_SCHEMA,
+                        value2.replaceFirst("PORT",""+wmRuntimeInfo.getHttpPort()) ,
+                        -1, System.currentTimeMillis(), TimestampType.CREATE_TIME, headers);
+                records.add(sinkRecord2);
+                String value3="        {\n" +
+                        "          \"url\": \"http://localhost:PORT/path1\",\n" +
+                        "          \"headers\": {\n" +
+                        "            \"X-request-id\": [\n" +
+                        "              \"aaaa-4466666-111\"\n" +
+                        "            ],\n" +
+                        "            \"X-correlation-id\": [\n" +
+                        "              \"sfds-55-77\"\n" +
+                        "            ]\n" +
+                        "          },\n" +
+                        "          \"method\": \"POST\",\n" +
+                        "          \"bodyAsString\": \"stuff3\",\n" +
+                        "          \"bodyAsForm\": {},\n" +
+                        "          \"bodyAsByteArray\": \"\",\n" +
+                        "          \"bodyAsMultipart\": [],\n" +
+                        "          \"bodyType\": \"STRING\"\n" +
+                        "        }\n";
+                SinkRecord sinkRecord3 = new SinkRecord("myTopic", 0, Schema.STRING_SCHEMA, "key", Schema.STRING_SCHEMA,
+                        value3.replaceFirst("PORT",""+wmRuntimeInfo.getHttpPort()),
+                        -1, System.currentTimeMillis(), TimestampType.CREATE_TIME, headers);
+                records.add(sinkRecord3);
+                String nonMatchingValue2="        {\n" +
+                        "          \"url\": \"http://localhost:PORT/pathA\",\n" +
+                        "          \"headers\": {\n" +
+                        "            \"X-request-id\": [\n" +
+                        "              \"aaaa-4466666-111\"\n" +
+                        "            ],\n" +
+                        "            \"X-correlation-id\": [\n" +
+                        "              \"sfds-55-77\"\n" +
+                        "            ]\n" +
+                        "          },\n" +
+                        "          \"method\": \"POST\",\n" +
+                        "          \"bodyAsString\": \"stuffA\",\n" +
+                        "          \"bodyAsForm\": {},\n" +
+                        "          \"bodyAsByteArray\": \"\",\n" +
+                        "          \"bodyAsMultipart\": [],\n" +
+                        "          \"bodyType\": \"STRING\"\n" +
+                        "        }\n";
+                SinkRecord nonMatchingSinkRecord2 = new SinkRecord("myTopic", 0, Schema.STRING_SCHEMA, "key", Schema.STRING_SCHEMA,
+                        nonMatchingValue2.replaceFirst("PORT",""+wmRuntimeInfo.getHttpPort()),
+                        -1, System.currentTimeMillis(), TimestampType.CREATE_TIME, headers);
+                records.add(nonMatchingSinkRecord2);
+                //define the http Mock Server interaction
+                WireMock wireMock = wmRuntimeInfo.getWireMock();
+                String bodyResponse = "{\"result\":\"pong\"}";
+                wireMock
+                        .register(WireMock.post("/path1")
+                                .willReturn(WireMock.aResponse()
+                                        .withHeader("Content-Type", "application/json")
+                                        .withBody(bodyResponse)
+                                        .withStatus(200)
+                                        .withStatusMessage(OK)
+                                        .withFixedDelay(1000)
+                                )
+                        );
+                wireMock
+                        .register(WireMock.post("/pathA")
+                                .willReturn(WireMock.aResponse()
+                                        .withHeader("Content-Type", "application/json")
+                                        .withBody(bodyResponse)
+                                        .withStatus(200)
+                                        .withStatusMessage(OK)
+                                        .withFixedDelay(1000)
+                                )
+                        );
+
+                //when
+                okHttpSinkTask.put(records);
+                //then
+                wireMock.verifyThat(postRequestedFor(
+                        urlEqualTo("/path1"))
+                        .withRequestBody(equalTo("stuff1#stuff2#stuff3"))
+                );
+                wireMock.verifyThat(2,postRequestedFor(
+                        urlEqualTo("/pathA"))
+                        .withRequestBody(equalTo("stuffA"))
+                );
+
+            });
+
+        }
+
+
+        @Test
         void test_request_grouper_with_message_limit() {
             Assertions.assertDoesNotThrow(() -> {
                 HashMap<String, String> settings = Maps.newHashMap();
