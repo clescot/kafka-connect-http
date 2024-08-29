@@ -121,7 +121,8 @@ public class HttpSinkConfigDefinition {
 
 
     //request grouper
-    public static final String REQUEST_GROUPER_IDS = "request.grouper.ids";
+    public static final String REQUEST_GROUPER_PREFIX = "request.grouper.";
+    public static final String REQUEST_GROUPER_IDS = REQUEST_GROUPER_PREFIX+"ids";
     public static final String REQUEST_GROUPER_IDS_DOC = "custom request grouper id list. no request grouper is registered by default.";
 
     //mapper

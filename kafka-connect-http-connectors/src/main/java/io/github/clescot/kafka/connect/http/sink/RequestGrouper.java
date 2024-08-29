@@ -77,7 +77,7 @@ public class RequestGrouper {
         List<Pair<SinkRecord, HttpRequest>> nonAgregatedRequests = entries.subList(consumed, entries.size());
         List<Pair<SinkRecord, HttpRequest>> agregatedRequests = Lists.newArrayList();
         agregatedRequests.add(Pair.of(entries.get(0).getLeft(),aggregatedRequest));
-        agregatedRequests.addAll(group(nonAgregatedRequests));
+        agregatedRequests.addAll(nonAgregatedRequests);
         return agregatedRequests;
     }
 

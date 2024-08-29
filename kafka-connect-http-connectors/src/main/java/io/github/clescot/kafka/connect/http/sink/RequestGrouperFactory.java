@@ -20,11 +20,18 @@ public class RequestGrouperFactory {
         for (String requestGrouperId : Optional.ofNullable(connectorConfig.getList(REQUEST_GROUPER_IDS)).orElse(Lists.newArrayList())) {
             Map<String, Object> settings = connectorConfig.originalsWithPrefix(REQUEST_GROUPER + requestGrouperId + ".");
             Predicate<HttpRequest> httpRequestPredicate = HttpRequestPredicateBuilder.build().buildPredicate(settings);
-            String separator = (String) settings.get("separator");
-            String start = (String) settings.get("start");
-            String end = (String) settings.get("end");
-            int messageLimit = (int) settings.get("message.limit");
-            RequestGrouper requestGrouper = new RequestGrouper(requestGrouperId,httpRequestPredicate,separator,start,end,messageLimit);
+            Optional<String> separator = Optional.ofNullable((String) settings.get("separator"));
+            Optional<String> start = Optional.ofNullable((String) settings.get("start"));
+            Optional<String> end = Optional.ofNullable((String) settings.get("end"));
+            Optional<Integer> messageLimit = Optional.ofNullable((Integer) settings.get("message.limit"));
+            RequestGrouper requestGrouper = new RequestGrouper(
+                    requestGrouperId,
+                    httpRequestPredicate,
+                    separator.orElse(""),
+                    start.orElse(""),
+                    end.orElse(""),
+                    messageLimit.orElse(-1)
+            );
             requestGrouperList.add(requestGrouper);
         }
         return requestGrouperList;
