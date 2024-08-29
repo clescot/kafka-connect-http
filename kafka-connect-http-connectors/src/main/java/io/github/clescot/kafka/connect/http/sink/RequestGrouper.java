@@ -64,7 +64,9 @@ public class RequestGrouper {
                 break;
             }
             builder.append(part);
-            builder.append(separator);
+            if(i<matchingEntries.size()-1) {
+                builder.append(separator);
+            }
         }
         if(!interrupted){
             consumed = entries.size();
