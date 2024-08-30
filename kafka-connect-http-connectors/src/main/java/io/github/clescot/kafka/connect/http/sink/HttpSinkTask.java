@@ -141,13 +141,20 @@ public abstract class HttpSinkTask<R, S> extends SinkTask {
         //build httpRequestMappers
 
         JexlEngine jexlEngine = buildJexlEngine();
+
+        //message splitters
         MessageSplitterFactory messageSplitterFactory = new MessageSplitterFactory();
         this.messageSplitters = messageSplitterFactory.buildMessageSplitters(httpSinkConnectorConfig, jexlEngine);
+
+        //HttpRequestMappers
         HttpRequestMapperFactory httpRequestMapperFactory = new HttpRequestMapperFactory();
         this.defaultHttpRequestMapper = httpRequestMapperFactory.buildDefaultHttpRequestMapper(httpSinkConnectorConfig, jexlEngine);
         this.httpRequestMappers = httpRequestMapperFactory.buildCustomHttpRequestMappers(httpSinkConnectorConfig, jexlEngine);
+
+        //request groupers
         RequestGrouperFactory requestGrouperFactory = new RequestGrouperFactory();
         this.requestGroupers = requestGrouperFactory.buildRequestGroupers(httpSinkConnectorConfig);
+
         //configurations
         this.defaultConfiguration = new Configuration<>(DEFAULT_CONFIGURATION_ID, httpClientFactory, httpSinkConnectorConfig, executorService, meterRegistry);
         customConfigurations = buildCustomConfigurations(httpClientFactory, httpSinkConnectorConfig, defaultConfiguration, executorService);
