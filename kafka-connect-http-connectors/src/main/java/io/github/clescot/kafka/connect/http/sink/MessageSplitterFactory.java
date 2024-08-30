@@ -23,8 +23,7 @@ public class MessageSplitterFactory {
             if(limit!=null&& !limit.isBlank()) {
                 splitLimit = Integer.parseInt(limit);
             }
-            Map<String, Object> map = connectorConfig.originalsWithPrefix(MESSAGE_SPLITTER + splitterId);
-            String matchingExpression = (String) map.get(".matcher");
+            String matchingExpression = (String) settings.get("matcher");
             MessageSplitter requestSplitter = new MessageSplitter(splitterId,jexlEngine,matchingExpression,splitPattern,splitLimit);
             requestSplitterList.add(requestSplitter);
         }
