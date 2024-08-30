@@ -4,7 +4,10 @@
 
 1. The HTTP Sink connector listen to the incoming HttpRequest topics (can be a list of topics, or a regex, via *topics* or *topics.regex* settings)
 2. a converter convert the byte array either as a string, or from a binary format described in a schema (Avro, JSON Schema or Protobuf)  to a Struct
-3. a sink task which get multiple records each time, convert the record (String or Struct) into an HttpRequest object, with a matching HttpRequestMapper.
+3.
+- a. a sink task which get multiple records each time, split the record/message into multiple messages.
+- b. convert each record (String or Struct) into an HttpRequest object, with a matching HttpRequestMapper.
+- c. group multiple HttpRequests into few ones.
 4. the sink task select the right configuration according to the predicate bound to it (the HttpRequest is tested against the predicate).
 5. if configured, the configuration add some additional static headers.
 6. if configured, the configuration add a correlation id if not found.
