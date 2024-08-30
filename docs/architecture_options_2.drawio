@@ -86,13 +86,13 @@
           </mxGeometry>
         </mxCell>
         <mxCell id="mRzZPIl0D3V7TroaUUCZ-8" value="" style="group" parent="1" vertex="1" connectable="0">
-          <mxGeometry x="530" y="195" width="145" height="340" as="geometry" />
+          <mxGeometry x="530" y="198" width="145" height="340" as="geometry" />
         </mxCell>
         <mxCell id="mRzZPIl0D3V7TroaUUCZ-6" value="" style="rounded=0;whiteSpace=wrap;html=1;" parent="mRzZPIl0D3V7TroaUUCZ-8" vertex="1">
           <mxGeometry width="145" height="334.92537313432837" as="geometry" />
         </mxCell>
         <mxCell id="mRzZPIl0D3V7TroaUUCZ-7" value="HTTP client&lt;div&gt;configuration&lt;/div&gt;" style="text;html=1;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;" parent="mRzZPIl0D3V7TroaUUCZ-8" vertex="1">
-          <mxGeometry x="24.166666666666668" y="273.22859387274156" width="96.66666666666667" height="52.88295365278869" as="geometry" />
+          <mxGeometry x="21.166666666666668" y="289.22859387274156" width="96.66666666666667" height="52.88295365278869" as="geometry" />
         </mxCell>
         <mxCell id="mRzZPIl0D3V7TroaUUCZ-15" value="enrich&lt;div&gt;request&lt;/div&gt;" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" parent="mRzZPIl0D3V7TroaUUCZ-8" vertex="1">
           <mxGeometry x="7" y="206.9360341151386" width="62.5" height="35.884861407249474" as="geometry" />
@@ -225,7 +225,7 @@
             <mxPoint x="578" y="414" as="sourcePoint" />
             <mxPoint x="607" y="345" as="targetPoint" />
             <Array as="points">
-              <mxPoint x="583" y="460" />
+              <mxPoint x="570" y="470" />
             </Array>
           </mxGeometry>
         </mxCell>
@@ -244,8 +244,8 @@
             <mxPoint x="552" y="419.8784648187633" as="targetPoint" />
           </mxGeometry>
         </mxCell>
-        <mxCell id="ytLzVgo9kWeMUwoSOrhg-2" value="config" style="strokeWidth=2;html=1;shape=mxgraph.flowchart.decision;whiteSpace=wrap;" vertex="1" parent="1">
-          <mxGeometry x="710" y="300" width="60" height="70" as="geometry" />
+        <mxCell id="ytLzVgo9kWeMUwoSOrhg-2" value="publisher&lt;div&gt;config&lt;/div&gt;" style="strokeWidth=2;html=1;shape=mxgraph.flowchart.decision;whiteSpace=wrap;" vertex="1" parent="1">
+          <mxGeometry x="710" y="300" width="70" height="70" as="geometry" />
         </mxCell>
         <mxCell id="ytLzVgo9kWeMUwoSOrhg-3" value="Direct low level&lt;div&gt;kafka producer&lt;/div&gt;" style="rounded=0;whiteSpace=wrap;html=1;" vertex="1" parent="1">
           <mxGeometry x="758" y="195" width="120" height="60" as="geometry" />
