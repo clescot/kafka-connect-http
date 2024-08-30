@@ -174,6 +174,7 @@ You can specify the topic of a DIRECT matcher mapping the `myTopic` messages wit
  
 ### http request groupers
 permit to regroup some http requests, into one http request with a body containing the grouped content.
+there is no default http request grouper.
 - `id`
   You need initially, to define some httpRequestGrouper ids with this setting :
   `"request.grouper.ids":"id1,id2,id3"`
