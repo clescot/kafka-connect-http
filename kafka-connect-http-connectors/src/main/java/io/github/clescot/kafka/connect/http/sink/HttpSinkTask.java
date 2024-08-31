@@ -317,41 +317,51 @@ public abstract class HttpSinkTask<R, S> extends SinkTask {
         return httpExchange -> {
             //publish eventually to 'in memory' queue
             if (PublishMode.IN_MEMORY_QUEUE.equals(publishMode)) {
-                LOGGER.debug("publish.mode : 'IN_MEMORY_QUEUE': http exchange published to queue '{}':{}", connectorConfig.getQueueName(), httpExchange);
-                boolean offer = queue.offer(new KafkaRecord(sinkRecord.headers(), sinkRecord.keySchema(), sinkRecord.key(), httpExchange));
-                if (!offer) {
-                    LOGGER.error("sinkRecord(topic:{},partition:{},key:{},timestamp:{}) not added to the 'in memory' queue:{}",
-                            sinkRecord.topic(),
-                            sinkRecord.kafkaPartition(),
-                            sinkRecord.key(),
-                            sinkRecord.timestamp(),
-                            connectorConfig.getQueueName()
-                    );
-                }
+                publishInInMemoryQueueMode(sinkRecord, connectorConfig, httpExchange);
             } else if (PublishMode.PRODUCER.equals(publishMode)) {
-
-                LOGGER.debug("publish.mode : 'PRODUCER' : HttpExchange success will be published at topic : '{}'", connectorConfig.getProducerSuccessTopic());
-                LOGGER.debug("publish.mode : 'PRODUCER' : HttpExchange error will be published at topic : '{}'", connectorConfig.getProducerErrorTopic());
-                String targetTopic = httpExchange.isSuccess() ? connectorConfig.getProducerSuccessTopic() : connectorConfig.getProducerErrorTopic();
-                ProducerRecord<String, HttpExchange> myRecord = new ProducerRecord<>(targetTopic, httpExchange);
-                LOGGER.trace("before send to {}", targetTopic);
-                RecordMetadata recordMetadata;
-                try {
-                    recordMetadata = this.producer.send(myRecord).get(3, TimeUnit.SECONDS);
-                } catch (Exception e) {
-                    throw new HttpException(e);
-                }
-                long offset = recordMetadata.offset();
-                int partition = recordMetadata.partition();
-                long timestamp = recordMetadata.timestamp();
-                String topic = recordMetadata.topic();
-                LOGGER.debug("✉✉ record sent ✉✉ : topic:{},partition:{},offset:{},timestamp:{}", topic, partition, offset, timestamp);
-
+                publishInProducerMode(connectorConfig, httpExchange);
             } else {
                 LOGGER.debug("publish.mode : 'NONE' http exchange NOT published :'{}'", httpExchange);
             }
             return httpExchange;
         };
+    }
+
+    private void publishInInMemoryQueueMode(SinkRecord sinkRecord, HttpSinkConnectorConfig connectorConfig, HttpExchange httpExchange) {
+        LOGGER.debug("publish.mode : 'IN_MEMORY_QUEUE': http exchange published to queue '{}':{}", connectorConfig.getQueueName(), httpExchange);
+        boolean offer = queue.offer(new KafkaRecord(sinkRecord.headers(), sinkRecord.keySchema(), sinkRecord.key(), httpExchange));
+        if (!offer) {
+            LOGGER.error("sinkRecord(topic:{},partition:{},key:{},timestamp:{}) not added to the 'in memory' queue:{}",
+                    sinkRecord.topic(),
+                    sinkRecord.kafkaPartition(),
+                    sinkRecord.key(),
+                    sinkRecord.timestamp(),
+                    connectorConfig.getQueueName()
+            );
+        }
+    }
+
+    private void publishInProducerMode(HttpSinkConnectorConfig connectorConfig, HttpExchange httpExchange) {
+        LOGGER.debug("publish.mode : 'PRODUCER' : HttpExchange success will be published at topic : '{}'", connectorConfig.getProducerSuccessTopic());
+        LOGGER.debug("publish.mode : 'PRODUCER' : HttpExchange error will be published at topic : '{}'", connectorConfig.getProducerErrorTopic());
+        String targetTopic = httpExchange.isSuccess() ? connectorConfig.getProducerSuccessTopic() : connectorConfig.getProducerErrorTopic();
+        ProducerRecord<String, HttpExchange> myRecord = new ProducerRecord<>(targetTopic, httpExchange);
+        LOGGER.trace("before send to {}", targetTopic);
+        RecordMetadata recordMetadata;
+        try {
+            recordMetadata = this.producer.send(myRecord).get(3, TimeUnit.SECONDS);
+        } catch (InterruptedException e) {
+            LOGGER.warn("Thread Interrupted!", e);
+            Thread.currentThread().interrupt();
+            throw new HttpException(e);
+        } catch (Exception e) {
+            throw new HttpException(e);
+        }
+        long offset = recordMetadata.offset();
+        int partition = recordMetadata.partition();
+        long timestamp = recordMetadata.timestamp();
+        String topic = recordMetadata.topic();
+        LOGGER.debug("✉✉ record sent ✉✉ : topic:{},partition:{},offset:{},timestamp:{}", topic, partition, offset, timestamp);
     }
 
     @Override
