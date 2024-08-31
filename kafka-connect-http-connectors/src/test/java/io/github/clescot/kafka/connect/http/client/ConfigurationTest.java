@@ -30,7 +30,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -63,8 +62,9 @@ class ConfigurationTest {
         @DisplayName("test Configuration constructor with null parameters")
         void test_constructor_with_null_parameters() {
             CompositeMeterRegistry compositeMeterRegistry = getCompositeMeterRegistry();
+            OkHttpClientFactory okHttpClientFactory = new OkHttpClientFactory();
             Assertions.assertThrows(NullPointerException.class, () ->
-                    new Configuration<>(null,new OkHttpClientFactory(), null, null, compositeMeterRegistry));
+                    new Configuration<>(null, okHttpClientFactory, null, null, compositeMeterRegistry));
         }
 
         @Test
@@ -287,7 +287,7 @@ class ConfigurationTest {
 
     @Nested
     class TestEnrichHttpRequest {
-        private ExecutorService executorService = Executors.newFixedThreadPool(2);
+        private final ExecutorService executorService = Executors.newFixedThreadPool(2);
         private final VersionUtils versionUtils = new VersionUtils();
 
         @Test
@@ -313,7 +313,6 @@ class ConfigurationTest {
             HttpRequest enrichedHttpRequest = configuration.enrich(httpRequest);
             Map<String, List<String>> headers = enrichedHttpRequest.getHeaders();
             assertThat(headers).containsKey("X-Request-ID");
-            ;
         }
 
         @Test
@@ -329,7 +328,7 @@ class ConfigurationTest {
 
         @Test
         @DisplayName("test override User-Agent header with 'custom' value")
-        void test_activating_user_agent_interceptor_with_custom_value() throws ExecutionException, InterruptedException {
+        void test_activating_user_agent_interceptor_with_custom_value(){
 
             //given
             Map<String, String> config = Maps.newHashMap();
@@ -344,7 +343,7 @@ class ConfigurationTest {
 
         @Test
         @DisplayName("test override User-Agent header with multiple 'custom' value")
-        void test_activating_user_agent_interceptor_with_multiple_custom_value() throws ExecutionException, InterruptedException {
+        void test_activating_user_agent_interceptor_with_multiple_custom_value()  {
 
             //given
             Map<String, String> config = Maps.newHashMap();
@@ -359,7 +358,7 @@ class ConfigurationTest {
 
         @Test
         @DisplayName("test override User-Agent header with already 'User-Agent' defined in Http Request")
-        void test_activating_user_agent_interceptor_with_already_defined_user_agent_in_http_request() throws ExecutionException, InterruptedException {
+        void test_activating_user_agent_interceptor_with_already_defined_user_agent_in_http_request() {
 
             //given
             Map<String, String> config = Maps.newHashMap();
@@ -375,7 +374,7 @@ class ConfigurationTest {
 
         @Test
         @DisplayName("test override User-Agent header with 'http_client' settings")
-        void test_activating_user_agent_interceptor_with_http_client_scope() throws ExecutionException, InterruptedException {
+        void test_activating_user_agent_interceptor_with_http_client_scope()  {
 
             //given
             Map<String, String> config = Maps.newHashMap();
@@ -513,7 +512,7 @@ class ConfigurationTest {
 
     @Nested
     class AddSuccessStatusToHttpExchangeFunction{
-        private final HttpRequest.Method DUMMY_METHOD = HttpRequest.Method.POST;
+        private final HttpRequest.Method dummyMethod = HttpRequest.Method.POST;
         private static final String DUMMY_BODY_TYPE = "STRING";
 
         private final ExecutorService executorService = Executors.newFixedThreadPool(2);
@@ -552,7 +551,7 @@ class ConfigurationTest {
         private HttpExchange getDummyHttpExchange() {
             Map<String, List<String>> requestHeaders = Maps.newHashMap();
             requestHeaders.put("X-dummy", Lists.newArrayList("blabla"));
-            HttpRequest httpRequest = new HttpRequest("http://www.titi.com", DUMMY_METHOD, DUMMY_BODY_TYPE);
+            HttpRequest httpRequest = new HttpRequest("http://www.titi.com", dummyMethod, DUMMY_BODY_TYPE);
             httpRequest.setHeaders(requestHeaders);
             httpRequest.setBodyAsString("stuff");
             HttpResponse httpResponse = new HttpResponse(200, "OK");
