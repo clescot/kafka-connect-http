@@ -5,7 +5,7 @@ import com.google.common.base.Preconditions;
 public abstract class AbstractHttpRequestMapper implements HttpRequestMapper{
     protected String id;
 
-    public AbstractHttpRequestMapper(String id) {
+    protected AbstractHttpRequestMapper(String id) {
         Preconditions.checkNotNull(id);
         this.id = id;
     }

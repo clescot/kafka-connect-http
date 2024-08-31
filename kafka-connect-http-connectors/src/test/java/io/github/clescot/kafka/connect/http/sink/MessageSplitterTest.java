@@ -61,7 +61,6 @@ class MessageSplitterTest {
                 .loops(false)
                 .sideEffectGlobal(false)
                 .sideEffect(false);
-        JexlEngine jexlEngine = new JexlBuilder().features(features).permissions(permissions).create();
-        return jexlEngine;
+        return new JexlBuilder().features(features).permissions(permissions).create();
     }
 }
