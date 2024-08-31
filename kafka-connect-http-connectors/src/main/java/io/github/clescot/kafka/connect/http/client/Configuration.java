@@ -196,8 +196,7 @@ public class Configuration<R,S> {
 
                 if (retryPolicyForCall.isPresent()) {
                     RetryPolicy<HttpExchange> myRetryPolicy = retryPolicyForCall.get();
-                    FailsafeExecutor<HttpExchange> failsafeExecutor = Failsafe
-                            .with(List.of(myRetryPolicy));
+                    FailsafeExecutor<HttpExchange> failsafeExecutor = Failsafe.with(List.of(myRetryPolicy));
                     if (executorService != null) {
                         failsafeExecutor = failsafeExecutor.with(executorService);
                     }
@@ -343,8 +342,7 @@ public class Configuration<R,S> {
         boolean responseCodeImpliesRetry = retryNeeded(httpExchange.getHttpResponse());
         LOGGER.debug("httpExchange success :'{}'", httpExchange.isSuccess());
         LOGGER.debug("response code('{}') implies retry:'{}'", httpExchange.getHttpResponse().getStatusCode(), responseCodeImpliesRetry);
-        if (!httpExchange.isSuccess()
-                && responseCodeImpliesRetry) {
+        if (!httpExchange.isSuccess() && responseCodeImpliesRetry) {
             throw new HttpException(httpExchange, "retry needed");
         }
         return httpExchange;
