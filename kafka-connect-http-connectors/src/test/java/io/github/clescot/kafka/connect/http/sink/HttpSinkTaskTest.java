@@ -115,10 +115,6 @@ public class HttpSinkTaskTest {
         HttpTask.removeCompositeMeterRegistry();
     }
 
-    @AfterAll
-    public static void shutdown() {
-
-    }
 
 
     @Nested

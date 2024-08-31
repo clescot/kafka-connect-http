@@ -66,6 +66,7 @@ public abstract class HttpSinkTask<R, S> extends SinkTask {
     private Queue<KafkaRecord> queue;
     private PublishMode publishMode;
     private HttpSinkConnectorConfig httpSinkConnectorConfig;
+
     private static CompositeMeterRegistry meterRegistry;
     private ExecutorService executorService;
     private List<MessageSplitter> messageSplitters;
