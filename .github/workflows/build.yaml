@@ -10,7 +10,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4.1.7
       - name: Set up JDK 11
-        uses: actions/setup-java@v4.2.1
+        uses: actions/setup-java@v4.2.2
         with:
           java-version: '11'
           distribution: 'adopt'
@@ -25,7 +25,7 @@ jobs:
       - name: Build with Maven
         run: mvn --batch-mode --update-snapshots package
       - run: mkdir staging && cp kafka-connect-http-core/target/*.jar staging && cp -r kafka-connect-http-connectors/target/components/packages/clescot-kafka-connect-http-connectors-*.zip staging
-      - uses: actions/upload-artifact@v4.3.4
+      - uses: actions/upload-artifact@v4.4.0
         with:
           name: Package
           path: staging
