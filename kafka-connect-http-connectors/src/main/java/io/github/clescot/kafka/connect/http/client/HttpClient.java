@@ -31,6 +31,11 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import static io.github.clescot.kafka.connect.http.sink.HttpSinkConfigDefinition.*;
 
+/**
+ * execute the HTTP call.
+ * @param <Q> native HttpRequest
+ * @param <S> native HttpResponse
+ */
 public interface HttpClient<Q, S> {
     boolean FAILURE = false;
     int SERVER_ERROR_STATUS_CODE = 500;
@@ -41,7 +46,7 @@ public interface HttpClient<Q, S> {
     String IS_NOT_SET = " is not set";
 
 
-    default HttpExchange buildHttpExchange(HttpRequest httpRequest,
+    static HttpExchange buildHttpExchange(HttpRequest httpRequest,
                                            HttpResponse httpResponse,
                                            Stopwatch stopwatch,
                                            OffsetDateTime now,
@@ -70,7 +75,6 @@ public interface HttpClient<Q, S> {
      * @param httpRequest http request to build.
      * @return native request.
      */
-
     Q buildRequest(HttpRequest httpRequest);
 
     default CompletableFuture<HttpExchange> call(HttpRequest httpRequest, AtomicInteger attempts) throws HttpException {
@@ -120,6 +124,11 @@ public interface HttpClient<Q, S> {
         }
     }
 
+    /**
+     * rate limited native call
+     * @param request native HttpRequest
+     * @return CompletableFuture of a native HttpResponse.
+     */
     CompletableFuture<S> call(Q request);
 
     /**
@@ -131,6 +140,11 @@ public interface HttpClient<Q, S> {
 
     HttpResponse buildResponse(S response);
 
+    /**
+     * raw native HttpRequest call.
+     * @param request native HttpRequest
+     * @return CompletableFuture of a native HttpResponse.
+     */
     CompletableFuture<S> nativeCall(Q request);
 
     static TrustManagerFactory getTrustManagerFactory(String trustStorePath,

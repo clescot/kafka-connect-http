@@ -12,6 +12,7 @@ import org.slf4j.LoggerFactory;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 
 public class JEXLHttpRequestMapper extends AbstractHttpRequestMapper {
@@ -19,16 +20,16 @@ public class JEXLHttpRequestMapper extends AbstractHttpRequestMapper {
     private static final Logger LOGGER = LoggerFactory.getLogger(JEXLHttpRequestMapper.class);
     public static final String SINK_RECORD = "sinkRecord";
 
-    private JexlExpression jexlMatchingExpression;
-    private JexlExpression jexlUrlExpression;
+    private final JexlExpression jexlMatchingExpression;
+    private final JexlExpression jexlUrlExpression;
     private final Optional<JexlExpression> jexlMethodExpression;
     private final Optional<JexlExpression> jexlBodyTypeExpression;
-    @Nullable
     private final Optional<JexlExpression> jexlBodyExpression;
     private final Optional<JexlExpression> jexlHeadersExpression;
 
 
-    public JEXLHttpRequestMapper(JexlEngine jexlEngine,
+    public JEXLHttpRequestMapper(String id,
+                                 JexlEngine jexlEngine,
                                  @NotNull String matchingExpression,
                                  @NotNull String urlExpression,
                                  @Nullable String methodExpression,
@@ -36,6 +37,7 @@ public class JEXLHttpRequestMapper extends AbstractHttpRequestMapper {
                                  @Nullable String bodyExpression,
                                  @Nullable String headersExpression
                                  ) {
+        super(id);
         Preconditions.checkNotNull(matchingExpression);
         Preconditions.checkArgument(!matchingExpression.isEmpty());
         jexlMatchingExpression = jexlEngine.createExpression(matchingExpression);
@@ -60,7 +62,12 @@ public class JEXLHttpRequestMapper extends AbstractHttpRequestMapper {
         context.set(SINK_RECORD, sinkRecord);
         String url = (String) jexlUrlExpression.evaluate(context);
         HttpRequest.Method method = jexlMethodExpression.map(jexlExpression -> HttpRequest.Method.valueOf((String) jexlExpression.evaluate(context))).orElse(HttpRequest.Method.GET);
-        String bodyTypeAsString = jexlBodyTypeExpression.map(jexlExpression -> (String) jexlExpression.evaluate(context)).orElseGet(HttpRequest.BodyType.STRING::name);
+        String bodyTypeAsString;
+        if(jexlBodyTypeExpression.isPresent()) {
+            bodyTypeAsString = (String) jexlBodyTypeExpression.get().evaluate(context);
+        }else {
+            bodyTypeAsString="STRING";
+        }
         HttpRequest.BodyType bodyType = HttpRequest.BodyType.valueOf(bodyTypeAsString);
         String content = jexlBodyExpression.isPresent()?jexlBodyExpression.map(jexlExpression -> (String) jexlExpression.evaluate(context)).orElse(null):null;
         HttpRequest httpRequest = new HttpRequest(url,method,bodyType.name());
@@ -98,5 +105,31 @@ public class JEXLHttpRequestMapper extends AbstractHttpRequestMapper {
 
     public JexlExpression getJexlUrlExpression() {
         return jexlUrlExpression;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof JEXLHttpRequestMapper)) return false;
+        JEXLHttpRequestMapper that = (JEXLHttpRequestMapper) o;
+        return Objects.equals(jexlMatchingExpression, that.jexlMatchingExpression) && Objects.equals(jexlUrlExpression, that.jexlUrlExpression) && Objects.equals(jexlMethodExpression, that.jexlMethodExpression) && Objects.equals(jexlBodyTypeExpression, that.jexlBodyTypeExpression) && Objects.equals(jexlBodyExpression, that.jexlBodyExpression) && Objects.equals(jexlHeadersExpression, that.jexlHeadersExpression);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(jexlMatchingExpression, jexlUrlExpression, jexlMethodExpression, jexlBodyTypeExpression, jexlBodyExpression, jexlHeadersExpression);
+    }
+
+    @Override
+    public String toString() {
+        return "JEXLHttpRequestMapper{" +
+                "jexlBodyExpression=" + jexlBodyExpression +
+                ", jexlBodyTypeExpression=" + jexlBodyTypeExpression +
+                ", jexlHeadersExpression=" + jexlHeadersExpression +
+                ", jexlMatchingExpression=" + jexlMatchingExpression +
+                ", jexlMethodExpression=" + jexlMethodExpression +
+                ", jexlUrlExpression=" + jexlUrlExpression +
+                ", id='" + id + '\'' +
+                '}';
     }
 }

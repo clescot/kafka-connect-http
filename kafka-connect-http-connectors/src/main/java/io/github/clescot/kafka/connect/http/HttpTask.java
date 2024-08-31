@@ -1,64 +1,49 @@
 package io.github.clescot.kafka.connect.http;
 
-import com.google.common.base.Stopwatch;
 import com.google.common.collect.Lists;
-import dev.failsafe.Failsafe;
-import dev.failsafe.FailsafeExecutor;
-import dev.failsafe.RetryPolicy;
 import io.github.clescot.kafka.connect.http.client.Configuration;
-import io.github.clescot.kafka.connect.http.client.HttpClient;
-import io.github.clescot.kafka.connect.http.client.HttpException;
 import io.github.clescot.kafka.connect.http.core.HttpExchange;
 import io.github.clescot.kafka.connect.http.core.HttpRequest;
-import io.github.clescot.kafka.connect.http.core.HttpResponse;
-import io.micrometer.core.instrument.Clock;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.binder.jvm.*;
 import io.micrometer.core.instrument.binder.logging.LogbackMetrics;
 import io.micrometer.core.instrument.binder.system.ProcessorMetrics;
 import io.micrometer.core.instrument.composite.CompositeMeterRegistry;
-import io.micrometer.jmx.JmxConfig;
-import io.micrometer.jmx.JmxMeterRegistry;
-import io.micrometer.prometheusmetrics.PrometheusConfig;
-import io.micrometer.prometheusmetrics.PrometheusMeterRegistry;
-import io.prometheus.metrics.exporter.httpserver.HTTPServer;
-import io.prometheus.metrics.model.registry.PrometheusRegistry;
 import org.apache.kafka.common.config.AbstractConfig;
 import org.apache.kafka.connect.connector.ConnectRecord;
+import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
-import java.time.OffsetDateTime;
-import java.time.ZoneId;
 import java.util.List;
-import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.atomic.AtomicInteger;
 
 import static io.github.clescot.kafka.connect.http.sink.HttpSinkConfigDefinition.*;
 
-public class HttpTask<T extends ConnectRecord<T>,R,S> {
+/**
+ *
+ * @param <T> either a SinkRecord (for a SinkTask) or a SourceRecord (for a SourceTask)
+ * @param <R> native HttpRequest
+ * @param <S> native HttpResponse
+ */
+public class HttpTask<T extends ConnectRecord<T>, R, S> {
 
 
     private static final Logger LOGGER = LoggerFactory.getLogger(HttpTask.class);
 
-
-    private final List<Configuration<R,S>> customConfigurations;
-    private final Configuration<R,S> defaultConfiguration;
-    private final ExecutorService executorService;
+    private final List<Configuration<R, S>> customConfigurations;
+    private final Configuration<R, S> defaultConfiguration;
     private static CompositeMeterRegistry meterRegistry;
 
 
     public HttpTask(AbstractConfig config,
-                    Configuration<R,S> defaultConfiguration,
-                    List<Configuration<R,S>> customConfigurations,
+                    Configuration<R, S> defaultConfiguration,
+                    List<Configuration<R, S>> customConfigurations,
                     CompositeMeterRegistry meterRegistry,
                     ExecutorService executorService) {
 
-        this.executorService = executorService;
-        if(HttpTask.meterRegistry==null) {
+        if (HttpTask.meterRegistry == null) {
             HttpTask.meterRegistry = meterRegistry;
         }
         //bind metrics to MeterRegistry and ExecutorService
@@ -67,119 +52,33 @@ public class HttpTask<T extends ConnectRecord<T>,R,S> {
         this.customConfigurations = customConfigurations;
     }
 
-
-
-
-
     /**
-     *  - enrich request
-     *  - execute the request
+     * get the Configuration matching the HttpRequest, and do the Http call with a retry policy.
      * @param httpRequest
-     * @param attempts
-     * @param configuration
      * @return
      */
-    private CompletableFuture<HttpExchange> callAndPublish(HttpRequest httpRequest,
-                                                           AtomicInteger attempts,
-                                                           Configuration<R,S> configuration) {
-        attempts.addAndGet(HttpClient.ONE_HTTP_REQUEST);
-        if(LOGGER.isTraceEnabled()){
-            LOGGER.trace("before enrichment:{}",httpRequest);
+    public CompletableFuture<HttpExchange> call(@NotNull HttpRequest httpRequest) {
+        Configuration<R, S> foundConfiguration = getConfiguration(httpRequest);
+        if (LOGGER.isTraceEnabled()) {
+            LOGGER.trace("configuration:{}", foundConfiguration);
         }
-        HttpRequest enrichedHttpRequest = configuration.enrich(httpRequest);
-        if(LOGGER.isTraceEnabled()){
-            LOGGER.trace("after enrichment:{}",enrichedHttpRequest);
-        }
-        CompletableFuture<HttpExchange> completableFuture = configuration.getHttpClient().call(enrichedHttpRequest, attempts);
-        return completableFuture
-                .thenApply(configuration::enrichHttpExchange);
-
+        //handle Request and Response
+        return foundConfiguration.call(httpRequest)
+                .thenApply(
+                        httpExchange -> {
+                            LOGGER.debug("HTTP exchange :{}", httpExchange);
+                            return httpExchange;
+                        }
+                );
     }
 
-    protected CompletableFuture<HttpExchange> callWithRetryPolicy(HttpRequest httpRequest,
-                                                                Configuration<R,S> configuration) {
-        Optional<RetryPolicy<HttpExchange>> retryPolicyForCall = configuration.getRetryPolicy();
-        if (httpRequest != null) {
-            AtomicInteger attempts = new AtomicInteger();
-            try {
-
-                if (retryPolicyForCall.isPresent()) {
-                    RetryPolicy<HttpExchange> retryPolicy = retryPolicyForCall.get();
-                    FailsafeExecutor<HttpExchange> failsafeExecutor = Failsafe
-                            .with(List.of(retryPolicy));
-                    if(executorService!=null){
-                        failsafeExecutor = failsafeExecutor.with(executorService);
-                    }
-                    return failsafeExecutor
-                            .getStageAsync(() -> callAndPublish(httpRequest, attempts, configuration)
-                            .thenApply(configuration::handleRetry));
-                } else {
-                    return callAndPublish(httpRequest, attempts, configuration);
-                }
-            } catch (Exception exception) {
-                LOGGER.error("Failed to call web service after {} retries with error({}). message:{} ", attempts, exception,
-                        exception.getMessage());
-                HttpExchange httpExchange = defaultConfiguration.getHttpClient().buildHttpExchange(
-                        httpRequest,
-                        new HttpResponse(HttpClient.SERVER_ERROR_STATUS_CODE, String.valueOf(exception.getMessage())),
-                        Stopwatch.createUnstarted(), OffsetDateTime.now(ZoneId.of(HttpClient.UTC_ZONE_ID)),
-                        attempts,
-                        HttpClient.FAILURE);
-                return CompletableFuture.supplyAsync(() -> httpExchange);
-            }
-        } else {
-            throw new IllegalArgumentException("httpRequest is null");
-        }
-    }
-
-    public CompletableFuture<HttpExchange> processHttpRequest(HttpRequest httpRequest) {
-
-
+    private Configuration<R, S> getConfiguration(HttpRequest httpRequest) {
         //is there a matching configuration against the request ?
-        Configuration foundConfiguration = customConfigurations
+        return customConfigurations
                 .stream()
                 .filter(config -> config.matches(httpRequest))
                 .findFirst()
                 .orElse(defaultConfiguration);
-        if(LOGGER.isTraceEnabled()){
-            LOGGER.trace("configuration:{}",foundConfiguration);
-        }
-        //handle Request and Response
-        return callWithRetryPolicy(httpRequest, foundConfiguration).thenApply(
-                httpExchange -> {
-                    LOGGER.debug("HTTP exchange :{}", httpExchange);
-                    return httpExchange;
-                }
-        );
-    }
-
-    private CompositeMeterRegistry buildMeterRegistry(AbstractConfig config) {
-        CompositeMeterRegistry compositeMeterRegistry = new CompositeMeterRegistry();
-        boolean activateJMX = Boolean.parseBoolean(config.getString(METER_REGISTRY_EXPORTER_JMX_ACTIVATE));
-        if (activateJMX) {
-            JmxMeterRegistry jmxMeterRegistry = new JmxMeterRegistry(JmxConfig.DEFAULT, Clock.SYSTEM);
-            jmxMeterRegistry.start();
-            compositeMeterRegistry.add(jmxMeterRegistry);
-        }
-        boolean activatePrometheus = Boolean.parseBoolean(config.getString(METER_REGISTRY_EXPORTER_PROMETHEUS_ACTIVATE));
-        if (activatePrometheus) {
-            PrometheusMeterRegistry prometheusMeterRegistry = new PrometheusMeterRegistry(PrometheusConfig.DEFAULT);
-            Integer prometheusPort = config.getInt(METER_REGISTRY_EXPORTER_PROMETHEUS_PORT);
-            // you can set the daemon flag to false if you want the server to block
-
-            try {
-                int port = prometheusPort != null ? prometheusPort : 9090;
-                PrometheusRegistry prometheusRegistry = prometheusMeterRegistry.getPrometheusRegistry();
-                HTTPServer.builder()
-                        .port(port)
-                        .registry(prometheusRegistry)
-                        .buildAndStart();
-            } catch (IOException e) {
-                throw new HttpException(e);
-            }
-            compositeMeterRegistry.add(prometheusMeterRegistry);
-        }
-        return compositeMeterRegistry;
     }
 
     private static void bindMetrics(AbstractConfig config, MeterRegistry meterRegistry, ExecutorService myExecutorService) {
@@ -222,20 +121,16 @@ public class HttpTask<T extends ConnectRecord<T>,R,S> {
     }
 
 
-
-    public Configuration<R,S> getDefaultConfiguration() {
+    public Configuration<R, S> getDefaultConfiguration() {
         return defaultConfiguration;
     }
 
-    public ExecutorService getExecutorService() {
-        return executorService;
-    }
 
     public static CompositeMeterRegistry getMeterRegistry() {
         return HttpTask.meterRegistry;
     }
 
-    public static void removeCompositeMeterRegistry(){
+    public static void removeCompositeMeterRegistry() {
         HttpTask.meterRegistry = null;
     }
 }

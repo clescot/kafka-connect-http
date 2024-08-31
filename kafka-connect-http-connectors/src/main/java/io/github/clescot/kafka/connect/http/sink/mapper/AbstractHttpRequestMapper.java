@@ -1,24 +1,18 @@
 package io.github.clescot.kafka.connect.http.sink.mapper;
 
-import java.util.regex.Pattern;
+import com.google.common.base.Preconditions;
 
 public abstract class AbstractHttpRequestMapper implements HttpRequestMapper{
-    protected Pattern splitPattern;
-    protected  int splitLimit;
-    @Override
-    public void setSplitLimit(int splitLimit) {
-        this.splitLimit = splitLimit;
+    protected String id;
+
+    protected AbstractHttpRequestMapper(String id) {
+        Preconditions.checkNotNull(id);
+        this.id = id;
     }
+
     @Override
-    public void setSplitPattern(String splitPattern) {
-        this.splitPattern = Pattern.compile(splitPattern);
+    public String getId() {
+        return id;
     }
-    @Override
-    public int getSplitLimit() {
-        return splitLimit;
-    }
-    @Override
-    public Pattern getSplitPattern() {
-        return splitPattern;
-    }
+
 }

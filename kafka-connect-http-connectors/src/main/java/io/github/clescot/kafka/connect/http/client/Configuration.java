@@ -1,8 +1,11 @@
 package io.github.clescot.kafka.connect.http.client;
 
 import com.google.common.base.Preconditions;
+import com.google.common.base.Stopwatch;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
+import dev.failsafe.Failsafe;
+import dev.failsafe.FailsafeExecutor;
 import dev.failsafe.RetryPolicy;
 import io.github.clescot.kafka.connect.http.VersionUtils;
 import io.github.clescot.kafka.connect.http.client.config.*;
@@ -19,17 +22,24 @@ import org.slf4j.LoggerFactory;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.time.Duration;
+import java.time.OffsetDateTime;
+import java.time.ZoneId;
 import java.util.*;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import static io.github.clescot.kafka.connect.http.client.config.HttpRequestPredicateBuilder.*;
 import static io.github.clescot.kafka.connect.http.sink.HttpSinkConfigDefinition.*;
 
 /**
- * Configuration of the http call mechanism, specific to some websites according to the configured <span class="strong">predicate</span>.
+ * Configuration of the {@link HttpClient}, specific to some websites according to the configured <span class="strong">predicate</span>.
+ * @param <R> native HttpRequest
+ * @param <S> native HttpResponse
  * <p>
  * It permits to customize :
  * <ul>
@@ -43,13 +53,7 @@ public class Configuration<R,S> {
     private static final Logger LOGGER = LoggerFactory.getLogger(Configuration.class);
 
 
-    //predicate
-    public static final String PREDICATE = "predicate.";
-    public static final String URL_REGEX = PREDICATE + "url.regex";
-    public static final String METHOD_REGEX = PREDICATE + "method.regex";
-    public static final String BODYTYPE_REGEX = PREDICATE + "bodytype.regex";
-    public static final String HEADER_KEY_REGEX = PREDICATE + "header.key.regex";
-    public static final String HEADER_VALUE_REGEX = PREDICATE + "header.value.regex";
+
     public static final String HAS_BEEN_SET = " has been set.";
     public static final String SHA_1_PRNG = "SHA1PRNG";
     public static final String MUST_BE_SET_TOO = " must be set too.";
@@ -58,7 +62,7 @@ public class Configuration<R,S> {
     public static final String USER_AGENT_PROJECT_MODE = "project";
     public static final String USER_AGENT_CUSTOM_MODE = "custom";
 
-    private final Predicate<HttpRequest> mainpredicate;
+    private final Predicate<HttpRequest> predicate;
 
 
     public static final String STATIC_SCOPE = "static";
@@ -80,6 +84,7 @@ public class Configuration<R,S> {
     //http client
     private HttpClient<R,S> httpClient;
     public final String id;
+    private final ExecutorService executorService;
     private final Map<String, Object> settings;
     private final Function<HttpRequest, HttpRequest> enrichRequestFunction;
     public Configuration(String id,
@@ -88,6 +93,7 @@ public class Configuration<R,S> {
                          ExecutorService executorService,
                          CompositeMeterRegistry meterRegistry) {
         this.id = id;
+        this.executorService = executorService;
         Preconditions.checkNotNull(id, "id must not be null");
         Preconditions.checkNotNull(config, "httpSinkConnectorConfig must not be null");
 
@@ -95,7 +101,7 @@ public class Configuration<R,S> {
         this.settings = config.originalsWithPrefix("config." + id + ".");
         settings.put(CONFIGURATION_ID, id);
         //main predicate
-        this.mainpredicate = buildPredicate(settings);
+        this.predicate = HttpRequestPredicateBuilder.build().buildPredicate(settings);
 
         Random random = getRandom(settings);
 
@@ -183,57 +189,68 @@ public class Configuration<R,S> {
 
     }
 
+    public CompletableFuture<HttpExchange> call(@NotNull HttpRequest httpRequest) {
+        Optional<RetryPolicy<HttpExchange>> retryPolicyForCall = getRetryPolicy();
+            AtomicInteger attempts = new AtomicInteger();
+            try {
 
-
-    private Predicate<HttpRequest> buildPredicate(Map<String, Object> configMap) {
-        Predicate<HttpRequest> predicate = httpRequest -> true;
-        if (configMap.containsKey(URL_REGEX)) {
-            String urlRegex = (String) configMap.get(URL_REGEX);
-            Pattern urlPattern = Pattern.compile(urlRegex);
-            predicate = predicate.and(httpRequest -> urlPattern.matcher(httpRequest.getUrl()).matches());
-        }
-        if (configMap.containsKey(METHOD_REGEX)) {
-            String methodRegex = (String) configMap.get(METHOD_REGEX);
-            Pattern methodPattern = Pattern.compile(methodRegex);
-            predicate = predicate.and(httpRequest -> methodPattern.matcher(httpRequest.getMethod().name()).matches());
-        }
-        if (configMap.containsKey(BODYTYPE_REGEX)) {
-            String bodytypeRegex = (String) configMap.get(BODYTYPE_REGEX);
-            Pattern bodytypePattern = Pattern.compile(bodytypeRegex);
-            predicate = predicate.and(httpRequest -> bodytypePattern.matcher(httpRequest.getBodyType().name()).matches());
-        }
-        if (configMap.containsKey(HEADER_KEY_REGEX)) {
-            String headerKeyRegex = (String) configMap.get(HEADER_KEY_REGEX);
-            Pattern headerKeyPattern = Pattern.compile(headerKeyRegex);
-            Predicate<HttpRequest> headerKeyPredicate = httpRequest -> httpRequest
-                    .getHeaders()
-                    .entrySet()
-                    .stream()
-                    .anyMatch(entry -> {
-                        boolean headerKeyFound = headerKeyPattern.matcher(entry.getKey()).matches();
-                        if (headerKeyFound
-                                && entry.getValue() != null
-                                && !entry.getValue().isEmpty()
-                                && configMap.containsKey(HEADER_VALUE_REGEX)) {
-                            String headerValue = (String) configMap.get(HEADER_VALUE_REGEX);
-                            Pattern headerValuePattern = Pattern.compile(headerValue);
-                            return headerValuePattern.matcher(entry.getValue().get(0)).matches();
-                        } else {
-                            return headerKeyFound;
-                        }
-
-                    });
-            predicate = predicate.and(headerKeyPredicate);
-        }
-        return predicate;
+                if (retryPolicyForCall.isPresent()) {
+                    RetryPolicy<HttpExchange> myRetryPolicy = retryPolicyForCall.get();
+                    FailsafeExecutor<HttpExchange> failsafeExecutor = Failsafe.with(List.of(myRetryPolicy));
+                    if (executorService != null) {
+                        failsafeExecutor = failsafeExecutor.with(executorService);
+                    }
+                    return failsafeExecutor
+                            .getStageAsync(() -> callAndEnrich(httpRequest, attempts)
+                                    .thenApply(this::handleRetry));
+                } else {
+                    return callAndEnrich(httpRequest, attempts);
+                }
+            } catch (Exception exception) {
+                LOGGER.error("Failed to call web service after {} retries with error({}). message:{} ", attempts, exception,
+                        exception.getMessage());
+                HttpExchange httpExchange = HttpClient.buildHttpExchange(
+                        httpRequest,
+                        new HttpResponse(HttpClient.SERVER_ERROR_STATUS_CODE, String.valueOf(exception.getMessage())),
+                        Stopwatch.createUnstarted(), OffsetDateTime.now(ZoneId.of(HttpClient.UTC_ZONE_ID)),
+                        attempts,
+                        HttpClient.FAILURE);
+                return CompletableFuture.supplyAsync(() -> httpExchange);
+            }
     }
 
-    public HttpRequest enrich(HttpRequest httpRequest) {
+    /**
+     *  - enrich request
+     *  - execute the request
+     * @param httpRequest HttpRequest to call
+     * @param attempts current attempts before the call.
+     * @return CompletableFuture of the HttpExchange (describing the request and response).
+     */
+    private CompletableFuture<HttpExchange> callAndEnrich(HttpRequest httpRequest,
+                                                          AtomicInteger attempts) {
+        attempts.addAndGet(HttpClient.ONE_HTTP_REQUEST);
+        if (LOGGER.isTraceEnabled()) {
+            LOGGER.trace("before enrichment:{}", httpRequest);
+        }
+        HttpRequest enrichedHttpRequest = enrich(httpRequest);
+        if (LOGGER.isTraceEnabled()) {
+            LOGGER.trace("after enrichment:{}", enrichedHttpRequest);
+        }
+        CompletableFuture<HttpExchange> completableFuture = getHttpClient().call(enrichedHttpRequest, attempts);
+        return completableFuture
+                .thenApply(this::enrichHttpExchange);
+
+    }
+
+
+
+
+    protected HttpRequest enrich(HttpRequest httpRequest) {
         return enrichRequestFunction.apply(httpRequest);
     }
 
 
-    public HttpExchange enrichHttpExchange(HttpExchange httpExchange) {
+    protected HttpExchange enrichHttpExchange(HttpExchange httpExchange) {
         return this.addSuccessStatusToHttpExchangeFunction.apply(httpExchange);
     }
 
@@ -320,13 +337,12 @@ public class Configuration<R,S> {
                 .build();
     }
 
-    public HttpExchange handleRetry(HttpExchange httpExchange) {
+    private HttpExchange handleRetry(HttpExchange httpExchange) {
         //we don't retry success HTTP Exchange
         boolean responseCodeImpliesRetry = retryNeeded(httpExchange.getHttpResponse());
         LOGGER.debug("httpExchange success :'{}'", httpExchange.isSuccess());
         LOGGER.debug("response code('{}') implies retry:'{}'", httpExchange.getHttpResponse().getStatusCode(), responseCodeImpliesRetry);
-        if (!httpExchange.isSuccess()
-                && responseCodeImpliesRetry) {
+        if (!httpExchange.isSuccess() && responseCodeImpliesRetry) {
             throw new HttpException(httpExchange, "retry needed");
         }
         return httpExchange;
@@ -346,7 +362,7 @@ public class Configuration<R,S> {
 
 
     public boolean matches(HttpRequest httpRequest) {
-        return this.mainpredicate.test(httpRequest);
+        return this.predicate.test(httpRequest);
     }
 
 
@@ -421,7 +437,7 @@ public class Configuration<R,S> {
     public String toString() {
         return "Configuration{" +
                 "id='" + id +
-                "', mainpredicate='" + predicateToString() +
+                "', predicate='" + predicateToString() +
                 "', defaultSuccessPattern='" + defaultSuccessPattern +
                 "', addStaticHeadersToHttpRequestFunction='" + addStaticHeadersToHttpRequestFunction +
                 "', addMissingRequestIdHeaderToHttpRequestFunction='" + addMissingRequestIdHeaderToHttpRequestFunction +

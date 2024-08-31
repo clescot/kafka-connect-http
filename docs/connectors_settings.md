@@ -98,6 +98,19 @@ Both exports (JMX and Prometheus) can be combined.
   by default, the port open is the default prometheus one (`9090`), but you can define yours with this setting :
   `"meter.registry.exporter.prometheus.port":"9087`
 
+### Message splitters
+Sometimes, we need to split value from one message, into multiple messages.
+It can be done by configuring some message splitters. there is no default message splitter.
+- `id`
+  You need initially, to define one or multiple message splitter ids with this setting : 
+  `"message.splitter.ids": "id1,id2"`
+- `pattern` (configured with `message.splitter.id1.pattern`)
+  define the delimiting java regex pattern used to split the message body into multiple ones.
+- `limit` (configured with `message.splitter.id1.limit`)
+  define the result threshold, like in the java split method.
+- `matcher` (configured with `message.splitter.id1.matcher`)
+  define the JEXL matching expression with identifies which message to split
+
 ### HttpRequestMapper
 
 #### general
@@ -159,8 +172,27 @@ You can specify the topic of a DIRECT matcher mapping the `myTopic` messages wit
 - `http.request.mapper.myid1.mode:'DIRECT'`
 - `http.request.mapper.myid1.matcher:'sinkRecord.topic()=='myTopic''` 
  
+### http request groupers
+permit to regroup some http requests, into one http request with a body containing the grouped content.
+there is no default http request grouper.
+- `id`
+  You need initially, to define some httpRequestGrouper ids with this setting :
+  `"request.grouper.ids":"id1,id2,id3"`
+- HttpRequest Predicate built with one or more settings:
+  - `predicate.url.regex`
+  - `predicate.method.regex`
+  - `predicate.bodytype.regex`
+  - `predicate.header.key.regex`
+  - `predicate.header.value.regex`
+- `separator` : define the string to insert between body parts from requests
+- `start` : define the string to insert at the start of the body
+- `end` : define the string to insert at the end of the body
+- `message.limit` : define the maximum of initial messages grouped into one.
+- `body.limit` : define the maximum body length in bytes of the grouped HttpRequest.
 
 ### Configuration
+
+Configuration of an Http Client instance.
 
 The connector ships with a `default` configuration, and we can, if needed, configure more configurations.
 A configuration is identified with a unique `id`.

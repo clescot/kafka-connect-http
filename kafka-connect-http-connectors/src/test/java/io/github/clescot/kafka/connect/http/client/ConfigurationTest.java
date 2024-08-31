@@ -30,12 +30,11 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static io.github.clescot.kafka.connect.http.client.Configuration.*;
+import static io.github.clescot.kafka.connect.http.client.config.HttpRequestPredicateBuilder.*;
 import static io.github.clescot.kafka.connect.http.sink.HttpSinkConfigDefinition.*;
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -63,8 +62,9 @@ class ConfigurationTest {
         @DisplayName("test Configuration constructor with null parameters")
         void test_constructor_with_null_parameters() {
             CompositeMeterRegistry compositeMeterRegistry = getCompositeMeterRegistry();
+            OkHttpClientFactory okHttpClientFactory = new OkHttpClientFactory();
             Assertions.assertThrows(NullPointerException.class, () ->
-                    new Configuration<>(null,new OkHttpClientFactory(), null, null, compositeMeterRegistry));
+                    new Configuration<>(null, okHttpClientFactory, null, null, compositeMeterRegistry));
         }
 
         @Test
@@ -287,7 +287,7 @@ class ConfigurationTest {
 
     @Nested
     class TestEnrichHttpRequest {
-        private ExecutorService executorService = Executors.newFixedThreadPool(2);
+        private final ExecutorService executorService = Executors.newFixedThreadPool(2);
         private final VersionUtils versionUtils = new VersionUtils();
 
         @Test
@@ -313,7 +313,6 @@ class ConfigurationTest {
             HttpRequest enrichedHttpRequest = configuration.enrich(httpRequest);
             Map<String, List<String>> headers = enrichedHttpRequest.getHeaders();
             assertThat(headers).containsKey("X-Request-ID");
-            ;
         }
 
         @Test
@@ -329,7 +328,7 @@ class ConfigurationTest {
 
         @Test
         @DisplayName("test override User-Agent header with 'custom' value")
-        void test_activating_user_agent_interceptor_with_custom_value() throws ExecutionException, InterruptedException {
+        void test_activating_user_agent_interceptor_with_custom_value(){
 
             //given
             Map<String, String> config = Maps.newHashMap();
@@ -344,7 +343,7 @@ class ConfigurationTest {
 
         @Test
         @DisplayName("test override User-Agent header with multiple 'custom' value")
-        void test_activating_user_agent_interceptor_with_multiple_custom_value() throws ExecutionException, InterruptedException {
+        void test_activating_user_agent_interceptor_with_multiple_custom_value()  {
 
             //given
             Map<String, String> config = Maps.newHashMap();
@@ -359,7 +358,7 @@ class ConfigurationTest {
 
         @Test
         @DisplayName("test override User-Agent header with already 'User-Agent' defined in Http Request")
-        void test_activating_user_agent_interceptor_with_already_defined_user_agent_in_http_request() throws ExecutionException, InterruptedException {
+        void test_activating_user_agent_interceptor_with_already_defined_user_agent_in_http_request() {
 
             //given
             Map<String, String> config = Maps.newHashMap();
@@ -375,7 +374,7 @@ class ConfigurationTest {
 
         @Test
         @DisplayName("test override User-Agent header with 'http_client' settings")
-        void test_activating_user_agent_interceptor_with_http_client_scope() throws ExecutionException, InterruptedException {
+        void test_activating_user_agent_interceptor_with_http_client_scope()  {
 
             //given
             Map<String, String> config = Maps.newHashMap();
@@ -508,6 +507,66 @@ class ConfigurationTest {
             String configurationAsString = configuration.toString();
             LOGGER.debug("configurationAsString:{}", configurationAsString);
             assertThat(configurationAsString).isNotEmpty();
+        }
+    }
+
+    @Nested
+    class AddSuccessStatusToHttpExchangeFunction{
+        private final HttpRequest.Method dummyMethod = HttpRequest.Method.POST;
+        private static final String DUMMY_BODY_TYPE = "STRING";
+
+        private final ExecutorService executorService = Executors.newFixedThreadPool(2);
+
+        @Test
+        void test_is_success_with_200() {
+
+            Map<String, String> config = Maps.newHashMap();
+            config.put("config.dummy." + SUCCESS_RESPONSE_CODE_REGEX, "^2[0-9][0-9]$");
+            Configuration<Request,Response> configuration = new Configuration<>("dummy", new OkHttpClientFactory(), new HttpSinkConnectorConfig(config), executorService, getCompositeMeterRegistry());
+            HttpExchange httpExchange = getDummyHttpExchange();
+            boolean success = configuration.enrichHttpExchange(httpExchange).isSuccess();
+            assertThat(success).isTrue();
+        }
+
+        @NotNull
+        private CompositeMeterRegistry getCompositeMeterRegistry() {
+            JmxMeterRegistry jmxMeterRegistry = new JmxMeterRegistry(s -> null, Clock.SYSTEM);
+            HashSet<MeterRegistry> registries = Sets.newHashSet();
+            registries.add(jmxMeterRegistry);
+            return new CompositeMeterRegistry(Clock.SYSTEM, registries);
+        }
+
+        @Test
+        void test_is_not_success_with_200_by_configuration() {
+            Map<String, String> config = Maps.newHashMap();
+            config.put("config.dummy." + SUCCESS_RESPONSE_CODE_REGEX, "^1[0-9][0-9]$");
+            Configuration<Request,Response> configuration = new Configuration<>("dummy",new OkHttpClientFactory(), new HttpSinkConnectorConfig(config), executorService, getCompositeMeterRegistry());
+            HttpExchange httpExchange = getDummyHttpExchange();
+            boolean success = configuration.enrichHttpExchange(httpExchange).isSuccess();
+            assertThat(success).isFalse();
+        }
+
+
+
+        private HttpExchange getDummyHttpExchange() {
+            Map<String, List<String>> requestHeaders = Maps.newHashMap();
+            requestHeaders.put("X-dummy", Lists.newArrayList("blabla"));
+            HttpRequest httpRequest = new HttpRequest("http://www.titi.com", dummyMethod, DUMMY_BODY_TYPE);
+            httpRequest.setHeaders(requestHeaders);
+            httpRequest.setBodyAsString("stuff");
+            HttpResponse httpResponse = new HttpResponse(200, "OK");
+            httpResponse.setResponseBody("my response");
+            Map<String, List<String>> responseHeaders = Maps.newHashMap();
+            responseHeaders.put("Content-Type", Lists.newArrayList("application/json"));
+            httpResponse.setResponseHeaders(responseHeaders);
+            return new HttpExchange(
+                    httpRequest,
+                    httpResponse,
+                    245L,
+                    OffsetDateTime.now(ZoneId.of("UTC")),
+                    new AtomicInteger(1),
+                    true
+            );
         }
     }
 

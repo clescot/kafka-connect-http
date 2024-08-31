@@ -17,6 +17,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.nio.charset.StandardCharsets;
+import java.util.Objects;
 
 /**
  * Map a sinkRecord already prepared to be parsed directly as an {@link HttpRequest}.
@@ -25,9 +26,11 @@ public class DirectHttpRequestMapper extends AbstractHttpRequestMapper {
     private static final Logger LOGGER = LoggerFactory.getLogger(DirectHttpRequestMapper.class);
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper().registerModule(new JavaTimeModule());
     public static final String SINK_RECORD_HAS_GOT_A_NULL_VALUE = "sinkRecord has got a 'null' value";
-    private JexlExpression expression;
-    public DirectHttpRequestMapper(JexlEngine jexlEngine,String matchingExpression) {
-         expression = jexlEngine.createExpression(matchingExpression);
+    private final JexlExpression expression;
+
+    public DirectHttpRequestMapper(String id, JexlEngine jexlEngine, String matchingExpression) {
+        super(id);
+        expression = jexlEngine.createExpression(matchingExpression);
     }
 
     @Override
@@ -99,5 +102,26 @@ public class DirectHttpRequestMapper extends AbstractHttpRequestMapper {
 
     public JexlExpression getExpression() {
         return expression;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof DirectHttpRequestMapper)) return false;
+        DirectHttpRequestMapper that = (DirectHttpRequestMapper) o;
+        return Objects.equals(expression, that.expression);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hashCode(expression);
+    }
+
+    @Override
+    public String toString() {
+        return "DirectHttpRequestMapper{" +
+                "expression=" + expression +
+                ", id='" + id + '\'' +
+                '}';
     }
 }
