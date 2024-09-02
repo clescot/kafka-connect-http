@@ -70,7 +70,7 @@ public abstract class HttpSinkTask<R, S> extends SinkTask {
     private List<MessageSplitter> messageSplitters;
     private List<RequestGrouper> requestGroupers;
 
-    @SuppressWarnings("java:s5993")
+    @SuppressWarnings("java:S5993")
     public HttpSinkTask(HttpClientFactory<R, S> httpClientFactory) {
         this.httpClientFactory = httpClientFactory;
     }
