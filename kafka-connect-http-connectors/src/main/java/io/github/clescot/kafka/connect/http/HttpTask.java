@@ -54,8 +54,8 @@ public class HttpTask<T extends ConnectRecord<T>, R, S> {
 
     /**
      * get the Configuration matching the HttpRequest, and do the Http call with a retry policy.
-     * @param httpRequest
-     * @return
+     * @param httpRequest http request
+     * @return a future of the HttpExchange (complete request and response informations).
      */
     public CompletableFuture<HttpExchange> call(@NotNull HttpRequest httpRequest) {
         Configuration<R, S> foundConfiguration = getConfiguration(httpRequest);
@@ -126,7 +126,7 @@ public class HttpTask<T extends ConnectRecord<T>, R, S> {
     }
 
 
-    public synchronized  static CompositeMeterRegistry getMeterRegistry() {
+    public static synchronized CompositeMeterRegistry getMeterRegistry() {
         return HttpTask.meterRegistry;
     }
 
