@@ -360,7 +360,6 @@ public abstract class HttpSinkTask<R, S> extends SinkTask {
         try {
             recordMetadata = this.producer.send(myRecord).get(3, TimeUnit.SECONDS);
         } catch (InterruptedException e) {
-            LOGGER.warn("Thread Interrupted!", e);
             Thread.currentThread().interrupt();
             throw new HttpException(e);
         } catch (Exception e) {
