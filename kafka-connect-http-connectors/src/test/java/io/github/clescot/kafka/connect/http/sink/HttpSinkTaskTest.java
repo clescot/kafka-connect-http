@@ -2323,6 +2323,12 @@ public class HttpSinkTaskTest {
 
     @Nested
     class PutWithMeterRegistry {
+
+        @BeforeEach
+        void setup(){
+            OkHttpSinkTask.clearMeterRegistry();
+        }
+
         @Test
         void test_meter_registry_activate_jmx() {
             Assertions.assertDoesNotThrow(() -> {

@@ -53,8 +53,6 @@ public abstract class HttpSinkTask<R, S> extends SinkTask {
     public static final String DEFAULT = "default";
 
 
-    private Configuration<R, S> defaultConfiguration;
-    private List<Configuration<R, S>> customConfigurations;
     private HttpRequestMapper defaultHttpRequestMapper;
     private List<HttpRequestMapper> httpRequestMappers;
     public static final String DEFAULT_CONFIGURATION_ID = DEFAULT;
@@ -72,6 +70,7 @@ public abstract class HttpSinkTask<R, S> extends SinkTask {
     private List<MessageSplitter> messageSplitters;
     private List<RequestGrouper> requestGroupers;
 
+    @SuppressWarnings("java:s5993")
     public HttpSinkTask(HttpClientFactory<R, S> httpClientFactory) {
         this.httpClientFactory = httpClientFactory;
     }
@@ -121,12 +120,22 @@ public abstract class HttpSinkTask<R, S> extends SinkTask {
         return configurations;
     }
 
+    public static synchronized void setMeterRegistry(CompositeMeterRegistry compositeMeterRegistry) {
+        if (meterRegistry == null) {
+            meterRegistry = compositeMeterRegistry;
+        }
+    }
 
+    protected static synchronized void clearMeterRegistry(){
+        meterRegistry = null;
+    }
     /**
      * @param settings configure the connector
      */
     @Override
     public void start(Map<String, String> settings) {
+        List<Configuration<R, S>> customConfigurations;
+        Configuration<R, S> defaultConfiguration;
         Preconditions.checkNotNull(settings, "settings cannot be null");
         HttpSinkConfigDefinition httpSinkConfigDefinition = new HttpSinkConfigDefinition(settings);
         this.httpSinkConnectorConfig = new HttpSinkConnectorConfig(httpSinkConfigDefinition.config(), settings);
@@ -137,7 +146,7 @@ public abstract class HttpSinkTask<R, S> extends SinkTask {
 
         //build meterRegistry
         MeterRegistryFactory meterRegistryFactory = new MeterRegistryFactory();
-        HttpSinkTask.meterRegistry = meterRegistryFactory.buildMeterRegistry(httpSinkConnectorConfig);
+        setMeterRegistry(meterRegistryFactory.buildMeterRegistry(httpSinkConnectorConfig));
 
         //build httpRequestMappers
 
@@ -157,7 +166,7 @@ public abstract class HttpSinkTask<R, S> extends SinkTask {
         this.requestGroupers = requestGrouperFactory.buildRequestGroupers(httpSinkConnectorConfig);
 
         //configurations
-        this.defaultConfiguration = new Configuration<>(DEFAULT_CONFIGURATION_ID, httpClientFactory, httpSinkConnectorConfig, executorService, meterRegistry);
+        defaultConfiguration = new Configuration<>(DEFAULT_CONFIGURATION_ID, httpClientFactory, httpSinkConnectorConfig, executorService, meterRegistry);
         customConfigurations = buildCustomConfigurations(httpClientFactory, httpSinkConnectorConfig, defaultConfiguration, executorService);
 
         httpTask = new HttpTask<>(httpSinkConnectorConfig, defaultConfiguration, customConfigurations, meterRegistry, executorService);

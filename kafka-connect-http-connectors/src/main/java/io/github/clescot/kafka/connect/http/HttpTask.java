@@ -126,7 +126,7 @@ public class HttpTask<T extends ConnectRecord<T>, R, S> {
     }
 
 
-    public static CompositeMeterRegistry getMeterRegistry() {
+    public synchronized  static CompositeMeterRegistry getMeterRegistry() {
         return HttpTask.meterRegistry;
     }
 
