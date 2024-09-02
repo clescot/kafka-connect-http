@@ -58,6 +58,7 @@ public class HttpSinkConnector extends SinkConnector {
 
     @Override
     public void stop() {
+        //no external dependencies to clear.
     }
 
     @Override
