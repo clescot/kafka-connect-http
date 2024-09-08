@@ -20,7 +20,7 @@ public class CronSourceConnector extends SourceConnector {
 
     @Override
     public Class<? extends Task> taskClass() {
-        return null;
+        return CronSourceTask.class;
     }
 
     @Override
