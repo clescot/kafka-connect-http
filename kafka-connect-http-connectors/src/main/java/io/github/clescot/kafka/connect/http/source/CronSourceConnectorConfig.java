@@ -1,5 +1,6 @@
 package io.github.clescot.kafka.connect.http.source;
 
+import com.google.common.base.Preconditions;
 import io.github.clescot.kafka.connect.http.core.HttpRequest;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.kafka.common.config.AbstractConfig;
@@ -35,8 +36,13 @@ public class CronSourceConnectorConfig extends AbstractConfig {
             // example: * * * * ? *|http://www.example.com
             // example: * * * * ? *|http://www.example.com::PUT
             // example: * * * * ? *|http://www.example.com::POST::mysuperbodycontent
-            String cron = (String) originals.get(id + ".cron");
-            String url = (String) originals.get(id+".url");
+            String cronKey = id + ".cron";
+            String cron = (String) originals.get(cronKey);
+            Preconditions.checkNotNull(cron,"'"+cronKey+"' in settings is missing");
+            String urlKey = id + ".url";
+            String url = (String) originals.get(urlKey);
+            Preconditions.checkNotNull(url,"'"+urlKey+"' in settings is missing");
+
             Optional<String> methodAsString = Optional.ofNullable((String) originals.get(id+".method"));
             HttpRequest.Method method = HttpRequest.Method.valueOf(methodAsString.orElse("GET"));
             Optional<String> bodyAsString = Optional.ofNullable((String) originals.get(id+".body"));

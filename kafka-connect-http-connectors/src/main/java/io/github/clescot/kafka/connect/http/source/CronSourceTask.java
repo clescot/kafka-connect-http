@@ -35,6 +35,7 @@ public class CronSourceTask extends SourceTask {
 
     @Override
     public void start(Map<String, String> settings) {
+        Preconditions.checkNotNull(settings,"settings must not be null or empty.");
         objectMapper = new ObjectMapper();
         objectMapper.registerModule(new JavaTimeModule());
 
