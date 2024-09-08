@@ -4,11 +4,13 @@ import io.github.clescot.kafka.connect.http.core.HttpRequest;
 import org.quartz.JobExecutionContext;
 import org.quartz.JobExecutionException;
 import org.quartz.JobListener;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.Queue;
 
 public class HttpListener implements JobListener {
-
+    private static final Logger LOGGER = LoggerFactory.getLogger(HttpListener.class);
     private final Queue<HttpRequest> queue;
 
     public HttpListener(Queue<HttpRequest> queue) {
@@ -17,7 +19,7 @@ public class HttpListener implements JobListener {
 
     @Override
     public String getName() {
-        return  "httpJobListener";
+        return "httpJobListener";
     }
 
     @Override
@@ -32,6 +34,8 @@ public class HttpListener implements JobListener {
 
     @Override
     public void jobWasExecuted(JobExecutionContext context, JobExecutionException jobException) {
-        queue.add((HttpRequest) context.getResult());
+        HttpRequest result = (HttpRequest) context.getResult();
+        LOGGER.debug("new request: {}",result);
+        queue.add(result);
     }
 }

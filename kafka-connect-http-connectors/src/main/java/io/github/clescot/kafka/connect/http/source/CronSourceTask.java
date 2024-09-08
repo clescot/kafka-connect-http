@@ -46,7 +46,7 @@ public class CronSourceTask extends SourceTask {
         try {
             scheduler = schedulerFactory.getScheduler();
             ListenerManager listenerManager = scheduler.getListenerManager();
-            listenerManager.addJobListener(new HttpListener(QueueFactory.getQueue()));
+            listenerManager.addJobListener(new HttpListener(queue));
             scheduler.start();
             List<String> jobs = cronSourceConnectorConfig.getJobs();
             jobs.forEach(id -> {
@@ -122,5 +122,9 @@ public class CronSourceTask extends SourceTask {
 
     protected Scheduler getScheduler() {
         return scheduler;
+    }
+
+    protected Queue<HttpRequest> getQueue(){
+        return queue;
     }
 }

@@ -3,10 +3,12 @@ package io.github.clescot.kafka.connect.http.source;
 
 import com.google.common.collect.Maps;
 import org.apache.kafka.common.config.ConfigException;
+import org.awaitility.Awaitility;
 import org.junit.jupiter.api.*;
 import org.quartz.*;
 
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -116,6 +118,40 @@ class CronSourceTaskTest {
             String version = cronSourceTask.version();
             assertThat(version).isNotNull();
             assertThat(version).isNotBlank();
+        }
+    }
+
+    @Nested
+    class Poll{
+        CronSourceTask cronSourceTask;
+
+        @BeforeEach
+        void setup() {
+            cronSourceTask = new CronSourceTask();
+        }
+
+        @AfterEach
+        void shutdown() {
+            cronSourceTask.stop();
+        }
+
+        @Test
+        void test_nominal_case() throws InterruptedException {
+            Map<String, String> settings = Maps.newHashMap();
+            settings.put("topic", "test");
+            settings.put("jobs", "job11,job22,job33");
+            settings.put("job11.cron", "* * * * * ?");
+            settings.put("job11.url", "https://example.com");
+            settings.put("job22.cron", "0 0 2 * * ?");
+            settings.put("job22.url", "https://test.com");
+            settings.put("job22.method", "PUT");
+            settings.put("job33.cron", "0 0 2 * * ?");
+            settings.put("job33.url", "https://test.com");
+            settings.put("job33.method", "POST");
+            settings.put("job33.body", "stuff");
+            cronSourceTask.start(settings);
+            Awaitility.await().atMost(5, TimeUnit.SECONDS).until(()->!cronSourceTask.poll().isEmpty());
+
         }
     }
 
