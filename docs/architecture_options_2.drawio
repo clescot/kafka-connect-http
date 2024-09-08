@@ -295,7 +295,7 @@
             <mxPoint x="648" y="414" as="targetPoint" />
           </mxGeometry>
         </mxCell>
-        <mxCell id="HtiEfCj0A7gehNwZgP48-1" value="&lt;font style=&quot;font-size: 22px;&quot;&gt;Cron Source Connector&lt;/font&gt;" style="rounded=0;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+        <mxCell id="HtiEfCj0A7gehNwZgP48-1" value="&lt;font style=&quot;font-size: 27px;&quot;&gt;Cron Source Connector&lt;/font&gt;" style="rounded=0;whiteSpace=wrap;html=1;" vertex="1" parent="1">
           <mxGeometry x="322" y="580" width="660" height="120" as="geometry" />
         </mxCell>
         <mxCell id="HtiEfCj0A7gehNwZgP48-2" value="" style="html=1;verticalLabelPosition=bottom;align=center;labelBackgroundColor=#ffffff;verticalAlign=top;strokeWidth=2;strokeColor=#0080F0;shadow=0;dashed=0;shape=mxgraph.ios7.icons.alarm_clock;" vertex="1" parent="1">
@@ -319,10 +319,10 @@
         <mxCell id="HtiEfCj0A7gehNwZgP48-11" value="" style="html=1;verticalLabelPosition=bottom;align=center;labelBackgroundColor=#ffffff;verticalAlign=top;strokeWidth=2;strokeColor=#0080F0;shadow=0;dashed=0;shape=mxgraph.ios7.icons.alarm_clock;" vertex="1" parent="1">
           <mxGeometry x="360" y="663" width="27" height="30" as="geometry" />
         </mxCell>
-        <mxCell id="HtiEfCj0A7gehNwZgP48-12" value="&lt;div style=&quot;font-size: 11px;&quot;&gt;every 30 minutes&lt;/div&gt;" style="text;html=1;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;" vertex="1" parent="1">
-          <mxGeometry x="394" y="607.5" width="103.32" height="15" as="geometry" />
+        <mxCell id="HtiEfCj0A7gehNwZgP48-12" value="&lt;div style=&quot;&quot;&gt;&lt;font style=&quot;font-size: 14px;&quot;&gt;every 30 minutes&lt;/font&gt;&lt;/div&gt;" style="text;html=1;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;" vertex="1" parent="1">
+          <mxGeometry x="394" y="607.5" width="116" height="22" as="geometry" />
         </mxCell>
-        <mxCell id="HtiEfCj0A7gehNwZgP48-13" value="&lt;div style=&quot;font-size: 11px;&quot;&gt;every day&lt;/div&gt;" style="text;html=1;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;" vertex="1" parent="1">
+        <mxCell id="HtiEfCj0A7gehNwZgP48-13" value="&lt;div style=&quot;&quot;&gt;&lt;font style=&quot;font-size: 16px;&quot;&gt;every day&lt;/font&gt;&lt;/div&gt;" style="text;html=1;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;" vertex="1" parent="1">
           <mxGeometry x="395" y="670.5" width="103.32" height="15" as="geometry" />
         </mxCell>
         <mxCell id="HtiEfCj0A7gehNwZgP48-14" value="" style="endArrow=classic;html=1;rounded=0;exitX=0.185;exitY=0.2;exitDx=0;exitDy=0;exitPerimeter=0;entryX=0.36;entryY=1.002;entryDx=0;entryDy=0;entryPerimeter=0;" edge="1" parent="1" source="HtiEfCj0A7gehNwZgP48-11" target="opBTZJq-6XGTckG7SBnG-1">
