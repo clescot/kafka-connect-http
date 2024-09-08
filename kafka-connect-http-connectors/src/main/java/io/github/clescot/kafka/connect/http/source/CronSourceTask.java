@@ -112,7 +112,9 @@ public class CronSourceTask extends SourceTask {
     @Override
     public void stop() {
         try {
-            scheduler.shutdown(true);
+            if(scheduler!=null) {
+                scheduler.shutdown(true);
+            }
         } catch (SchedulerException e) {
             throw new RuntimeException(e);
         }
