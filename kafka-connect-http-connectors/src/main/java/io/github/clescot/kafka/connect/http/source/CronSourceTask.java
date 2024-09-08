@@ -2,8 +2,6 @@ package io.github.clescot.kafka.connect.http.source;
 
 import com.google.common.base.Preconditions;
 import io.github.clescot.kafka.connect.http.VersionUtils;
-import io.github.clescot.kafka.connect.http.core.HttpRequest;
-import org.apache.commons.lang3.tuple.Pair;
 import org.apache.kafka.connect.source.SourceRecord;
 import org.apache.kafka.connect.source.SourceTask;
 import org.quartz.*;
@@ -11,7 +9,9 @@ import org.quartz.impl.StdSchedulerFactory;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
+import static io.github.clescot.kafka.connect.http.source.HttpJob.*;
 import static org.quartz.CronScheduleBuilder.cronSchedule;
 import static org.quartz.JobBuilder.newJob;
 import static org.quartz.TriggerBuilder.newTrigger;
@@ -34,20 +34,31 @@ public class CronSourceTask extends SourceTask {
         try {
             scheduler = schedulerFactory.getScheduler();
             scheduler.start();
-            List<Pair<CronExpression, HttpRequest>> jobs = cronSourceConnectorConfig.getJobs();
-            jobs.forEach(pair-> {
-                // define the job and tie it to our HttpJob class
+            List<String> jobs = cronSourceConnectorConfig.getJobs();
+            jobs.forEach(id-> {
+                JobDataMap jobDataMap = new JobDataMap();
+
+                String url = settings.get(id+".url");
+                jobDataMap.put(URL,url);
+
+                Optional<String> methodAsString = Optional.ofNullable(settings.get(id+".method"));
+                jobDataMap.put(METHOD,methodAsString);
+
+                Optional<String> bodyAsString = Optional.ofNullable(settings.get(id+".body"));
+                jobDataMap.put(BODY,bodyAsString);
+
                 JobDetail job = newJob(HttpJob.class)
-                        .withIdentity("job1")
-                        .build();
-                // Trigger the job to run now, and then repeat every 40 seconds
-                Trigger trigger = newTrigger()
-                        .withIdentity("trigger1", "group1")
-                        .startNow()
-                        .withSchedule(cronSchedule("* * * * ? *"))
+                        .withIdentity(id)
+                        .setJobData(jobDataMap)
                         .build();
 
-                // Tell quartz to schedule the job using our trigger
+                String cron = settings.get(id + ".cron");
+                Trigger trigger = newTrigger()
+                        .withIdentity(id)
+                        .startNow()
+                        .withSchedule(cronSchedule(cron))
+                        .build();
+
                 try {
                     scheduler.scheduleJob(job, trigger);
                 } catch (SchedulerException e) {

@@ -1,6 +1,5 @@
 package io.github.clescot.kafka.connect.http.source;
 
-import com.google.common.collect.Lists;
 import io.github.clescot.kafka.connect.http.core.HttpRequest;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.kafka.common.config.AbstractConfig;
@@ -10,7 +9,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.text.ParseException;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -20,7 +18,7 @@ public class CronSourceConnectorConfig extends AbstractConfig {
     private static final Logger LOGGER = LoggerFactory.getLogger(CronSourceConnectorConfig.class);
     public static final String CANNOT_BE_FOUND_IN_MAP_CONFIGURATION = " cannot be found in map configuration";
     private final String topic;
-    private List<Pair<CronExpression, HttpRequest>> jobs;
+    private List<String> jobIds;
 
 
     public CronSourceConnectorConfig(Map<?, ?> originals) {
@@ -30,23 +28,22 @@ public class CronSourceConnectorConfig extends AbstractConfig {
     public CronSourceConnectorConfig(ConfigDef configDef, Map<?, ?> originals){
         super(configDef,originals);
         this.topic = Optional.ofNullable(getString(CronSourceConfigDefinition.TOPIC)).orElseThrow(()-> new IllegalArgumentException(CronSourceConfigDefinition.TOPIC + CANNOT_BE_FOUND_IN_MAP_CONFIGURATION));
-        this.jobs = getList(CronSourceConfigDefinition.JOBS).stream().map(string->{
-            ArrayList<String> parts = Lists.newArrayList(string.split("\\|"));
-            String cron = parts.get(0);
-            String request = parts.get(1);
-            List<String> requestParts = Lists.newArrayList(request.split("::"));
+        this.jobIds  = getList(CronSourceConfigDefinition.JOBS);
+
+
+        jobIds.stream().map(id->{
+            // example: * * * * ? *|http://www.example.com
+            // example: * * * * ? *|http://www.example.com::PUT
+            // example: * * * * ? *|http://www.example.com::POST::mysuperbodycontent
+            String cron = (String) originals.get(id + ".cron");
+            String url = (String) originals.get(id+".url");
+            Optional<String> methodAsString = Optional.ofNullable((String) originals.get(id+".method"));
+            HttpRequest.Method method = HttpRequest.Method.valueOf(methodAsString.orElse("GET"));
+            Optional<String> bodyAsString = Optional.ofNullable((String) originals.get(id+".body"));
             try {
                 CronExpression cronExpression = new CronExpression(cron);
-                String url = requestParts.get(0);
-                HttpRequest.Method method = null;
-                if(requestParts.size()>=2) {
-                    method = HttpRequest.Method.valueOf(requestParts.get(1));
-                }
-                HttpRequest httpRequest = new HttpRequest(url, Optional.ofNullable(method).orElse(HttpRequest.Method.GET));
-                if(requestParts.size()==3) {
-                    String body = requestParts.get(2);
-                    httpRequest.setBodyAsString(body);
-                }
+                HttpRequest httpRequest = new HttpRequest(url, method);
+                bodyAsString.ifPresent(httpRequest::setBodyAsString);
                 return Pair.of(cronExpression,httpRequest);
             } catch (ParseException e) {
                 throw new RuntimeException(e);
@@ -61,7 +58,7 @@ public class CronSourceConnectorConfig extends AbstractConfig {
         return topic;
     }
 
-    public List<Pair<CronExpression, HttpRequest>> getJobs() {
-        return jobs;
+    public List<String> getJobs() {
+        return jobIds;
     }
 }

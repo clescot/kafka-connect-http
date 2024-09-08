@@ -4,7 +4,11 @@ import io.github.clescot.kafka.connect.http.core.HttpRequest;
 import org.quartz.Job;
 import org.quartz.JobExecutionContext;
 
+import java.util.Optional;
 
+/**
+ * build an HttpRequest.
+ */
 public class HttpJob implements Job {
 
     public static final String URL = "url";
@@ -14,7 +18,8 @@ public class HttpJob implements Job {
     @Override
     public void execute(JobExecutionContext context) {
         String url = (String) context.get(URL);
-        HttpRequest.Method method = HttpRequest.Method.valueOf((String) context.get(METHOD));
+        Optional<String> methodAsString = Optional.ofNullable((String) context.get(METHOD));
+        HttpRequest.Method method = HttpRequest.Method.valueOf(methodAsString.orElse("GET"));
         String body = (String)context.get(BODY);
         HttpRequest httpRequest = new HttpRequest(url, method);
         if(body!=null && !body.isBlank()){
