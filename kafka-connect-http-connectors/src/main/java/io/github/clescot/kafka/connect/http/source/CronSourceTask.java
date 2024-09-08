@@ -1,16 +1,20 @@
 package io.github.clescot.kafka.connect.http.source;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
 import io.github.clescot.kafka.connect.http.VersionUtils;
+import io.github.clescot.kafka.connect.http.core.HttpRequest;
+import io.github.clescot.kafka.connect.http.core.queue.QueueFactory;
 import org.apache.kafka.connect.source.SourceRecord;
 import org.apache.kafka.connect.source.SourceTask;
 import org.quartz.*;
 import org.quartz.impl.StdSchedulerFactory;
 
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 
 import static io.github.clescot.kafka.connect.http.source.HttpJob.*;
 import static org.quartz.CronScheduleBuilder.cronSchedule;
@@ -22,7 +26,8 @@ public class CronSourceTask extends SourceTask {
     private static final VersionUtils VERSION_UTILS = new VersionUtils();
     private CronSourceConnectorConfig cronSourceConnectorConfig;
     private Scheduler scheduler;
-
+    private Queue<HttpRequest> queue;
+    private ObjectMapper objectMapper;
     @Override
     public String version() {
         return VERSION_UTILS.getVersion();
@@ -30,11 +35,17 @@ public class CronSourceTask extends SourceTask {
 
     @Override
     public void start(Map<String, String> settings) {
+        objectMapper = new ObjectMapper();
+        objectMapper.registerModule(new JavaTimeModule());
+
+        queue = QueueFactory.getQueue(""+UUID.randomUUID());
         Preconditions.checkNotNull(settings);
         this.cronSourceConnectorConfig = new CronSourceConnectorConfig(settings);
         SchedulerFactory schedulerFactory = new StdSchedulerFactory();
         try {
             scheduler = schedulerFactory.getScheduler();
+            ListenerManager listenerManager = scheduler.getListenerManager();
+            listenerManager.addJobListener(new HttpListener(QueueFactory.getQueue()));
             scheduler.start();
             List<String> jobs = cronSourceConnectorConfig.getJobs();
             jobs.forEach(id -> {
@@ -83,7 +94,18 @@ public class CronSourceTask extends SourceTask {
 
     @Override
     public List<SourceRecord> poll() throws InterruptedException {
-        return List.of();
+        List<SourceRecord> records = Lists.newArrayList();
+        while (queue.peek() != null) {
+            HttpRequest httpRequest = queue.poll();
+            SourceRecord sourceRecord;
+            try {
+                sourceRecord = new SourceRecord(Maps.newHashMap(),Maps.newHashMap(),cronSourceConnectorConfig.getTopic(),null,objectMapper.writeValueAsString(httpRequest));
+            } catch (JsonProcessingException e) {
+                throw new RuntimeException(e);
+            }
+            records.add(sourceRecord);
+        }
+        return records;
     }
 
     @Override
