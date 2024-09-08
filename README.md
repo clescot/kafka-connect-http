@@ -4,7 +4,7 @@
 [![Maven Central](https://maven-badges.herokuapp.com/maven-central/io.github.clescot/kafka-connect-http/badge.svg)](https://maven-badges.herokuapp.com/maven-central/io.github.clescot/kafka-connect-http)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
 
-![Architecture](docs/http_sink_architecture_connector.png)
+![Architecture](docs/architecture_options_2.drawio.png)
 
 # 1. [Quick Start Guide](docs/quick_start.md)
 # 2. [Project Intention](docs/project_intention.md)
