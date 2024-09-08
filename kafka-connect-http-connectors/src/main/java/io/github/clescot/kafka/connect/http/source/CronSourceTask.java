@@ -1,6 +1,7 @@
 package io.github.clescot.kafka.connect.http.source;
 
 import com.google.common.base.Preconditions;
+import com.google.common.collect.Lists;
 import io.github.clescot.kafka.connect.http.VersionUtils;
 import org.apache.kafka.connect.source.SourceRecord;
 import org.apache.kafka.connect.source.SourceTask;
@@ -21,6 +22,7 @@ public class CronSourceTask extends SourceTask {
     private static final VersionUtils VERSION_UTILS = new VersionUtils();
     private CronSourceConnectorConfig cronSourceConnectorConfig;
     private Scheduler scheduler;
+
     @Override
     public String version() {
         return VERSION_UTILS.getVersion();
@@ -35,17 +37,25 @@ public class CronSourceTask extends SourceTask {
             scheduler = schedulerFactory.getScheduler();
             scheduler.start();
             List<String> jobs = cronSourceConnectorConfig.getJobs();
-            jobs.forEach(id-> {
+            jobs.forEach(id -> {
                 JobDataMap jobDataMap = new JobDataMap();
 
-                String url = settings.get(id+".url");
-                jobDataMap.put(URL,url);
+                String url = settings.get(id + ".url");
+                jobDataMap.put(URL, url);
 
-                Optional<String> methodAsString = Optional.ofNullable(settings.get(id+".method"));
-                jobDataMap.put(METHOD,methodAsString);
+                Optional<String> methodAsString = Optional.ofNullable(settings.get(id + ".method"));
+                methodAsString.ifPresent(method -> jobDataMap.put(METHOD, method));
 
-                Optional<String> bodyAsString = Optional.ofNullable(settings.get(id+".body"));
-                jobDataMap.put(BODY,bodyAsString);
+                Optional<String> bodyAsString = Optional.ofNullable(settings.get(id + ".body"));
+                bodyAsString.ifPresent(body -> jobDataMap.put(BODY, body));
+
+                Optional<String> headersAsString = Optional.ofNullable(settings.get(id + ".headers"));
+                List<String> headerKeys = Lists.newArrayList();
+                if (headersAsString.isPresent()) {
+                    headerKeys.addAll(Lists.newArrayList(headersAsString.get().split(",")));
+                    headerKeys.forEach(key-> jobDataMap.put(key,settings.get(id+".header."+key)));
+                }
+                jobDataMap.put(HEADERS, headersAsString);
 
                 JobDetail job = newJob(HttpJob.class)
                         .withIdentity(id)
