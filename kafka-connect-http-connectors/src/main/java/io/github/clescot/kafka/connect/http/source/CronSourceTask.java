@@ -100,7 +100,13 @@ public class CronSourceTask extends SourceTask {
             HttpRequest httpRequest = queue.poll();
             SourceRecord sourceRecord;
             try {
-                sourceRecord = new SourceRecord(Maps.newHashMap(),Maps.newHashMap(),cronSourceConnectorConfig.getTopic(),null,objectMapper.writeValueAsString(httpRequest));
+                sourceRecord = new SourceRecord(
+                        Maps.newHashMap(),
+                        Maps.newHashMap(),
+                        cronSourceConnectorConfig.getTopic(),
+                        null,
+                        objectMapper.writeValueAsString(httpRequest)
+                );
             } catch (JsonProcessingException e) {
                 throw new RuntimeException(e);
             }

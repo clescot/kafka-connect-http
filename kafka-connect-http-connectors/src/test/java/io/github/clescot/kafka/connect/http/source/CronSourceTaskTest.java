@@ -150,6 +150,7 @@ class CronSourceTaskTest {
             settings.put("job33.method", "POST");
             settings.put("job33.body", "stuff");
             cronSourceTask.start(settings);
+            Awaitility.await().atMost(5, TimeUnit.SECONDS).until(()->cronSourceTask.getQueue().peek()!=null);
             Awaitility.await().atMost(5, TimeUnit.SECONDS).until(()->!cronSourceTask.poll().isEmpty());
 
         }
