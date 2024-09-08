@@ -66,8 +66,8 @@ public class CronSourceTask extends SourceTask {
                 if (headersAsString.isPresent()) {
                     headerKeys.addAll(Lists.newArrayList(headersAsString.get().split(",")));
                     headerKeys.forEach(key-> jobDataMap.put(key,settings.get(id+".header."+key)));
+                    jobDataMap.put(HEADERS, headersAsString);
                 }
-                jobDataMap.put(HEADERS, headersAsString);
 
                 JobDetail job = newJob(HttpJob.class)
                         .withIdentity(id)
@@ -118,5 +118,9 @@ public class CronSourceTask extends SourceTask {
         } catch (SchedulerException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    protected Scheduler getScheduler() {
+        return scheduler;
     }
 }

@@ -4,8 +4,11 @@ package io.github.clescot.kafka.connect.http.source;
 import com.google.common.collect.Maps;
 import org.apache.kafka.common.config.ConfigException;
 import org.junit.jupiter.api.*;
+import org.quartz.*;
 
 import java.util.Map;
+
+import static org.assertj.core.api.Assertions.assertThat;
 
 class CronSourceTaskTest {
 
@@ -61,7 +64,7 @@ class CronSourceTaskTest {
         }
 
         @Test
-        void test_settings_with_topic_and_3_jobs_and_more_settings() {
+        void test_settings_with_topic_and_3_jobs_and_more_settings() throws SchedulerException {
 
             Map<String, String> settings = Maps.newHashMap();
             settings.put("topic", "test");
@@ -77,11 +80,42 @@ class CronSourceTaskTest {
             settings.put("job33.body", "stuff");
 
             Assertions.assertDoesNotThrow(() -> cronSourceTask.start(settings));
+            Scheduler scheduler = cronSourceTask.getScheduler();
+            JobDetail jobDetail = scheduler.getJobDetail(new JobKey("job11"));
+            Class<? extends Job> jobClass = jobDetail.getJobClass();
+            assertThat(jobClass).isEqualTo(HttpJob.class);
+            JobDataMap jobDataMap = jobDetail.getJobDataMap();
+            assertThat(jobDataMap).containsEntry("url", "https://example.com");
+
+            JobDetail jobDetail2 = scheduler.getJobDetail(new JobKey("job22"));
+            JobDataMap jobDataMap2 = jobDetail2.getJobDataMap();
+            assertThat(jobDataMap2).containsEntry("url", "https://test.com");
+            assertThat(jobDataMap2).containsEntry("method", "PUT");
+
+            JobDetail jobDetail3 = scheduler.getJobDetail(new JobKey("job33"));
+            JobDataMap jobDataMap3 = jobDetail3.getJobDataMap();
+            assertThat(jobDataMap3).containsEntry("url", "https://test.com");
+            assertThat(jobDataMap3).containsEntry("method", "POST");
+            assertThat(jobDataMap3).containsEntry("body", "stuff");
+
         }
 
         @AfterEach
         void shutdown() {
             cronSourceTask.stop();
+        }
+    }
+
+
+    @Nested
+    class Version {
+
+        @Test
+        void get_version() {
+            CronSourceTask cronSourceTask = new CronSourceTask();
+            String version = cronSourceTask.version();
+            assertThat(version).isNotNull();
+            assertThat(version).isNotBlank();
         }
     }
 
