@@ -11,7 +11,7 @@ with the `httpclient.async.fixed.thread.pool.size` parameter.
 
 ## Details
 
-![Request handling](retry_mechanism.png)
+![Request handling](images/retry_mechanism.png)
 
 According to this request Handling schema, here are the steps involved in request handling : 
 

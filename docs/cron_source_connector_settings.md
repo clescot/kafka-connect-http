@@ -1,0 +1,4 @@
+# CronSourceConnector
+
+## required parameters
+

@@ -1,6 +1,6 @@
 # Http Sink Connector detailed Architecture
 
-![Http Sink Connector organization](http_sink_connector.png)
+![Http Sink Connector organization](images/http_sink_connector.png)
 
 1. The HTTP Sink connector listen to the incoming HttpRequest topics (can be a list of topics, or a regex, via *topics* or *topics.regex* settings)
 2. a converter convert the byte array either as a string, or from a binary format described in a schema (Avro, JSON Schema or Protobuf)  to a Struct

@@ -50,7 +50,7 @@ You can solve the 'publish' challenge in 4 different modes (each one has got som
     - drawbacks :
       - you ignore the HTTP responses
 
-!['NONE' Publish mode Architecture](architecture_NONE.png)
+!['NONE' Publish mode Architecture](images/architecture_NONE.png)
 
 ### the `PRODUCER` mode
   - advantages :
@@ -62,7 +62,7 @@ You can solve the 'publish' challenge in 4 different modes (each one has got som
       - at the _kafka connect cluster_ level
       - at the _connector_ level
 
-!['Producer Publish' mode Architecture](architecture_low_level_producer.png)
+!['Producer Publish' mode Architecture](images/architecture_low_level_producer.png)
 
 ### the `IN_MEMORY_QUEUE` mode 
 
@@ -105,7 +105,7 @@ You can solve the 'publish' challenge in 4 different modes (each one has got som
     Note that a queue has got only one consumer, opposite to the Topic concept, which support multiple consumers.
     The only one queue consumer, is the configured Source Connector.
 
-  !['In Memory Queue' Publish mode Architecture](architecture_in_memory_queue.png)
+  !['In Memory Queue' Publish mode Architecture](images/architecture_in_memory_queue.png)
 
 
    1. format of the [incoming kafka message](docs/incoming_message_format.md) (HTTP intention)
