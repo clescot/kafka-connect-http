@@ -87,10 +87,6 @@ class OkHttpClientTest {
                 .build();
     }
 
-    @AfterAll
-    public static void afterAll() {
-//        Awaitility.await().atMost(5, TimeUnit.MINUTES).until(()-> true!=true);
-    }
 
     @NotNull
     private CompositeMeterRegistry getCompositeMeterRegistry() {
