@@ -58,7 +58,7 @@ are loaded with a dedicated classloader, to avoid any dependencies conflicts.
 
 To avoid any isolation issue between the Http Sink and Source plugin (to permit to exchange data via the in memory queue),
 and to ease the install process, we ship them in the same jar (contained in the same zip archive).
-So, any Http **Sink** connector, will have the ability to exchange data with the **Source** connector in the same classloader.
+So, any Http **`Sink`** connector, will have the ability to exchange data with the **Source** connector in the same classloader.
 On this field, you have no actions to do.
 
 #### on the same kafka connect instance
@@ -80,9 +80,8 @@ because the in memory queue preserves the key linked to the record.
 
 #### same tasks.max parameter
 
-you have to configure a *tasks.max* parameter for each connector : the kafka connect cluster will distribute partitions among tasks.
+you have to configure a *`tasks.max`* parameter for each connector : the kafka connect cluster will distribute partitions among tasks.
 Each connector instance will handle up to the `tasks.max` configuration parameter.
 Kafka connect distributes tasks among workers, which are processes that execute connectors and tasks.
 
 To avoid any issue, you must configure the same `tasks.max` parameters for the HTTP Sink and Source connectors.
-

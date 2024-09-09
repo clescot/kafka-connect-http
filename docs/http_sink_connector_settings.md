@@ -2,51 +2,47 @@
 
 Here are the settings to setup an HTTP Sink connector into a Kafka Connect cluster. 
 
-#### required parameters
+## required parameters
 
 every Kafka Connect Sink Connector need to define these required parameters :
 
 - *`connector.class`* : `io.github.clescot.kafka.connect.http.sink.HttpSinkConnector`
 - *`topics`* (or *`topics.regex`*): `http-requests` for example
 
-#### optional Kafka Connect parameters
+## optional common Kafka Connect parameters
 
 - *`tasks.max`*  (default to `1`)
 - *`key.converter`*
 - *`value.converter`*
 - ....
+## optional Http Sink connector parameters
 
-#### publish mode
-controlled by the  *`publish.mode`* parameter : `NONE` by default. When set to another value (`IN_MEMORY_QUEUE`,`PRODUCER`), publish HTTP interactions (request and responses)
-- *`publish.mode`* parameter : `IN_MEMORY_QUEUE` publish into the _in memory_ queue, with a topology constraint : the source connector which consumes the in memory queue, must be present on the same kafka connect instance.
-  - *`queue.name`* : if not set, `default` queue name is used, if the `publish.to.in.memory.queue` is set to `true`.
-    You can define multiple in memory queues, to permit to publish to different topics, different HTTP interactions. If
-    you set this parameter to a value different than `default`, you need to configure an HTTP source Connector listening
-    on the same queue name to avoid some OutOfMemoryErrors.
-  - *`wait.time.registration.queue.consumer.in.ms`* : wait time for a queue consumer (Source Connector) registration. default value is 60 seconds.
-  - *`poll.delay.registration.queue.consumer.in.ms`* : poll delay, i.e, wait time before start polling a registered consumer. default value is 2 seconds.
-  - *`poll.interval.registration.queue.consumer.in.ms`* : poll interval, i.e, time between every poll for a registered consumer. default value is 5000 milliseconds.
-- *`publish.mode`* parameter : `PRODUCER` : use a low level kafka producer to publish HttpExchange in a dedicated topic. No topology constraint is required, 
-  but unlike other connectors (kafka connect handle that for us and hide it), we must configure the low level connection details. All settings starting with the prefix `producer.` 
-  will be passed to the producer instance to configure it. 
-  - `producer.bootstrap.servers` : required parameter to contact the kafka cluster.
-  - `producer.topic` : name of the topic to publish httpExchange instances.
-  - `producer.missing.id.cache.ttl.sec` : parameter configuration of the _CachedSchemaRegistryClient_
-  - `producer.missing.version.cache.ttl.sec` : parameter configuration of the _CachedSchemaRegistryClient_
-  - `producer.missing.schema.cache.ttl.sec` : parameter configuration of the _CachedSchemaRegistryClient_
-  - `producer.missing.schema.cache.size` : parameter configuration of the _CachedSchemaRegistryClient_
-  - `producer.bearer.auth.cache.expiry.buffer.seconds` : parameter configuration of the _CachedSchemaRegistryClient_
-  - `producer.bearer.auth.scope.claim.name` : parameter configuration of the _CachedSchemaRegistryClient_
-  - `producer.bearer.auth.sub.claim.name` : parameter configuration of the _CachedSchemaRegistryClient_
-  - other parameters can be passed to the low level kafka producer instance.
-  - 
-### Metrics Registry
+
+
+### export metrics via a Metrics Registry
 
 metrics registry can be configured to add some metrics, and to export them. Metrics registry is global to the JVM.
+
+Both exports (JMX and Prometheus) can be combined.
+
+- JMX export
+  you need to activate this export with :
+  `"meter.registry.exporter.jmx.activate": "true"`
+
+
+- prometheus export
+  you need to activate this export with :
+  `"meter.registry.exporter.prometheus.activate": "true"`
+  by default, the port open is the default prometheus one (`9090`), but you can define yours with this setting :
+  `"meter.registry.exporter.prometheus.port":"9087`
+
+
+### expose some HTTP metrics
+
 Only _okhttp_ HTTP client support this feature.
 
 #### add some HTTP metrics
-When at least one of the export is activated, a listener is added to the okhttp to expose some metrics as timers :
+When at least one of the export is activated (JMX or Prometheus), a listener is added to the okhttp to expose some metrics as timers :
 - `okhttp`
 - `okhttp.dns`
 - `okhttp.socket.connection`
@@ -68,8 +64,7 @@ Each metrics with its name listed above, is bound to some tags/dimensions :
 - `target.scheme` : http scheme used to interact with remote http server
 - `target.uri` : will be `none`, except if you activate it with `meter.registry.tag.include.url.path` set to `true`. Beware of the high cardinality metrics issue if you've got many different paths in urls (https://last9.io/blog/how-to-manage-high-cardinality-metrics-in-prometheus/)
 
-
-#### other metrics are available
+#### add other metrics
 
 Some built-ins metrics are available :
 - executor services metrics can be activated with `meter.registry.bind.metrics.executor.service` set to `true`
@@ -81,20 +76,6 @@ Some built-ins metrics are available :
 - _JVM processors_ metrics can be activated with `"meter.registry.bind.metrics.jvm.processor"` set to `true`
 - _Logback_ metrics can be activated with `"meter.registry.bind.metrics.logback"` set to `true`
 
-
-#### export metrics
-Both exports (JMX and Prometheus) can be combined.
-
-- JMX export
-  you need to activate this export with :
-  `"meter.registry.exporter.jmx.activate": "true"`
-
-
-- prometheus export
-  you need to activate this export with :
-  `"meter.registry.exporter.prometheus.activate": "true"`
-  by default, the port open is the default prometheus one (`9090`), but you can define yours with this setting :
-  `"meter.registry.exporter.prometheus.port":"9087`
 
 ### Message splitters
 Sometimes, we need to split value from one message, into multiple messages.
@@ -468,6 +449,30 @@ You will have the ability to define optionnaly :
   }
 }
 ```
+
+#### publish mode
+controlled by the  *`publish.mode`* parameter : `NONE` by default. When set to another value (`IN_MEMORY_QUEUE`,`PRODUCER`), publish HTTP interactions (request and responses)
+- *`publish.mode`* parameter : `IN_MEMORY_QUEUE` publish into the _in memory_ queue, with a topology constraint : the source connector which consumes the in memory queue, must be present on the same kafka connect instance.
+  - *`queue.name`* : if not set, `default` queue name is used, if the `publish.to.in.memory.queue` is set to `true`.
+    You can define multiple in memory queues, to permit to publish to different topics, different HTTP interactions. If
+    you set this parameter to a value different than `default`, you need to configure an HTTP source Connector listening
+    on the same queue name to avoid some OutOfMemoryErrors.
+  - *`wait.time.registration.queue.consumer.in.ms`* : wait time for a queue consumer (Source Connector) registration. default value is 60 seconds.
+  - *`poll.delay.registration.queue.consumer.in.ms`* : poll delay, i.e, wait time before start polling a registered consumer. default value is 2 seconds.
+  - *`poll.interval.registration.queue.consumer.in.ms`* : poll interval, i.e, time between every poll for a registered consumer. default value is 5000 milliseconds.
+- *`publish.mode`* parameter : `PRODUCER` : use a low level kafka producer to publish HttpExchange in a dedicated topic. No topology constraint is required,
+  but unlike other connectors (kafka connect handle that for us and hide it), we must configure the low level connection details. All settings starting with the prefix `producer.`
+  will be passed to the producer instance to configure it.
+  - `producer.bootstrap.servers` : required parameter to contact the kafka cluster.
+  - `producer.topic` : name of the topic to publish httpExchange instances.
+  - `producer.missing.id.cache.ttl.sec` : parameter configuration of the _CachedSchemaRegistryClient_
+  - `producer.missing.version.cache.ttl.sec` : parameter configuration of the _CachedSchemaRegistryClient_
+  - `producer.missing.schema.cache.ttl.sec` : parameter configuration of the _CachedSchemaRegistryClient_
+  - `producer.missing.schema.cache.size` : parameter configuration of the _CachedSchemaRegistryClient_
+  - `producer.bearer.auth.cache.expiry.buffer.seconds` : parameter configuration of the _CachedSchemaRegistryClient_
+  - `producer.bearer.auth.scope.claim.name` : parameter configuration of the _CachedSchemaRegistryClient_
+  - `producer.bearer.auth.sub.claim.name` : parameter configuration of the _CachedSchemaRegistryClient_
+  - other parameters can be passed to the low level kafka producer instance.
 
 You can create or update this connector instance with this command :
 
