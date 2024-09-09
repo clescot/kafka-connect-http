@@ -158,7 +158,7 @@
           </mxGeometry>
         </mxCell>
         <mxCell id="3ZhziO7866kJiNsBVgEj-6" value="&lt;font style=&quot;font-size: 10px;&quot;&gt;HTTP &lt;i&gt;config2&lt;/i&gt; client&amp;nbsp;&lt;span style=&quot;background-color: initial;&quot;&gt;configuration&lt;/span&gt;&lt;/font&gt;" style="text;html=1;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;" vertex="1" parent="3ZhziO7866kJiNsBVgEj-4">
-          <mxGeometry x="-1" y="314" width="170" height="10" as="geometry" />
+          <mxGeometry x="10" y="314" width="159" height="10" as="geometry" />
         </mxCell>
         <mxCell id="mRzZPIl0D3V7TroaUUCZ-10" value="&lt;font style=&quot;font-size: 17px;&quot;&gt;Kafka&lt;/font&gt;&lt;div style=&quot;font-size: 17px;&quot;&gt;&lt;font style=&quot;font-size: 17px;&quot;&gt;topic&lt;/font&gt;&lt;/div&gt;&lt;div style=&quot;font-size: 17px;&quot;&gt;&lt;i style=&quot;&quot;&gt;&lt;font style=&quot;font-size: 17px;&quot;&gt;http-success&lt;/font&gt;&lt;/i&gt;&lt;/div&gt;" style="shape=cylinder3;whiteSpace=wrap;html=1;boundedLbl=1;backgroundOutline=1;size=15;fillColor=#d5e8d4;strokeColor=#82b366;" parent="1" vertex="1">
           <mxGeometry x="1220" y="190" width="100" height="190" as="geometry" />
@@ -366,7 +366,7 @@
           <mxGeometry x="361.68" y="685" width="33.32" height="15" as="geometry" />
         </mxCell>
         <mxCell id="3ZhziO7866kJiNsBVgEj-5" value="&lt;font style=&quot;font-size: 10px;&quot;&gt;HTTP &lt;i&gt;config1&lt;/i&gt; client&amp;nbsp;&lt;span style=&quot;background-color: initial;&quot;&gt;configuration&lt;/span&gt;&lt;/font&gt;" style="text;html=1;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;" vertex="1" parent="1">
-          <mxGeometry x="591" y="490" width="170" height="10" as="geometry" />
+          <mxGeometry x="612" y="490" width="160" height="10" as="geometry" />
         </mxCell>
         <mxCell id="3ZhziO7866kJiNsBVgEj-8" value="" style="endArrow=classic;html=1;rounded=0;fillColor=#d5e8d4;strokeColor=#000000;exitX=1.015;exitY=0.583;exitDx=0;exitDy=0;exitPerimeter=0;entryX=0.007;entryY=0.488;entryDx=0;entryDy=0;entryPerimeter=0;" edge="1" parent="1" target="3ZhziO7866kJiNsBVgEj-9">
           <mxGeometry width="50" height="50" relative="1" as="geometry">
