@@ -17,8 +17,6 @@ every Kafka Connect Sink Connector need to define these required parameters :
 - ....
 ## optional Http Sink connector parameters
 
-
-
 ### export metrics via a Metrics Registry
 
 metrics registry can be configured to add some metrics, and to export them. Metrics registry is global to the JVM.
@@ -39,7 +37,7 @@ Both exports (JMX and Prometheus) can be combined.
 
 ### expose some HTTP metrics
 
-Only _okhttp_ HTTP client support this feature.
+Only _okhttp_ HTTP client (default client) support this feature.
 
 #### add some HTTP metrics
 When at least one of the export is activated (JMX or Prometheus), a listener is added to the okhttp to expose some metrics as timers :
@@ -173,6 +171,59 @@ there is no default http request grouper.
 
 Configuration of an Http Client instance.
 
+
+#### default configuration
+
+Http Client is driven by a configuration, which owns :
+- a rate limiter
+- a success response code regex
+- a retry response code regex
+- a retry policy
+
+
+There is a _default_ configuration.
+
+#### custom configurations
+But you can override this configuration, for some specific HTTP requests.
+
+
+Each specific configuration is identified by a _prefix_, in the form :
+`config.<configurationid>.`
+
+The prefix for the _default_ configuration is `httpclient.default.` (its configuration id is `default`).
+
+To register some custom configurations, you need to register them by their id in the parameter :
+`config.custom.config.ids`.
+These configuration ids are separated by commas.
+
+exemple :
+```
+"config.custom.config.ids": "id1,id2,stuff"
+```
+
+for example, if you've registered a configuration with the id `test2`, it needs to be present in the field `httpclient.custom.config.ids`.
+
+You must register a **predicate** to detect the matching between the http request and the configuration.
+A predicate can be composed of multiple matchers (composed with a logical AND), configured with these parameters :
+- `config.test2.url.regex`
+- `config.test2.method.regex`
+- `config.test2.bodytype.regex`
+- `config.test2.header.key.regex`
+- `config.test2.header.value.regex` (can be added, only if the previous parameter is also configured)
+
+You will have the ability to define optionnaly :
+- a **rate limiter** with the parameters :
+  - `config.test2.rate.limiter.max.executions`
+  - `config.test2.rate.limiter.period.in.ms`
+  - a **success response code regex** with the parameter : `httpclient.test2.success.response.code.regex`
+  - a **retry response code regex** with the parameter : `httpclient.test2.retry.policy.response.code.regex`
+  - a **retry policy** with the parameters :
+    - `config.test2.retries`
+    - `config.test2.retry.delay.in.ms`
+    - `config.test2.retry.max.delay.in.ms`
+    - `config.test2.retry.delay.factor`
+    - `config.test2.retry.jitter.in.ms`
+
 The connector ships with a `default` configuration, and we can, if needed, configure more configurations.
 A configuration is identified with a unique `id`.
 
@@ -197,7 +248,7 @@ The predicate permits to filter some http requests, and can be composed, cumulat
 - a _header key_ with the settings for the `default` configuration (despite any value, when alone) : ```"config.default.predicate.header.key":"myheaderKey"```
 - a _header value_ with the settings for the `default` configuration (can only be configured with a header key setting) : ```"config.default.predicate.header.value":"myheaderValue"```
 
-- can enrich HttpRequest by 
+- a configuration can enrich HTTP request and response by : 
   - adding static headers with the settings for `default` configuration : 
   ``` 
    "config.default.enrich.request.static.header.names":"header1,header2"
@@ -333,59 +384,7 @@ The predicate permits to filter some http requests, and can be composed, cumulat
     - *`org.asynchttpclient.netty.timer`* (default `io.netty.util.HashedWheelTimer`)
     - *`org.asynchttpclient.byte.buffer.allocator`* (default `io.netty.buffer.PooledByteBufAllocator`)
 
-### per site parameters
 
-#### default configuration
-
-Http Client is driven by some specific parameters, and a configuration, which owns :
-- a rate limiter
-- a success response code regex
-- a retry response code regex
-- a retry policy
-
-
-There is a _default_ configuration.
-
-#### custom configurations
-But you can override this configuration, for some specific HTTP requests.
-
-
-Each specific configuration is identified by a _prefix_, in the form :
-`config.<configurationid>.`
-
-The prefix for the _default_ configuration is `httpclient.default.` (its configuration id is `default`).
-
-To register some custom configurations, you need to register them by their id in the parameter :
-`config.custom.config.ids`.
-These configuration ids are separated by commas.
-
-exemple :
-```
-"config.custom.config.ids": "id1,id2,stuff"
-```
-
-for example, if you've registered a configuration with the id `test2`, it needs to be present in the field `httpclient.custom.config.ids`.
-
-You must register a **predicate** to detect the matching between the http request and the configuration.
-A predicate can be composed of multiple matchers (composed with a logical AND), configured with these parameters :
-- `config.test2.url.regex`
-- `config.test2.method.regex`
-- `config.test2.bodytype.regex`
-- `config.test2.header.key.regex`
-- `config.test2.header.value.regex` (can be added, only if the previous parameter is also configured)
-
-You will have the ability to define optionnaly :
-- a **rate limiter** with the parameters :
-  - `config.test2.rate.limiter.max.executions`
-  - `config.test2.rate.limiter.period.in.ms`
-  - a **success response code regex** with the parameter : `httpclient.test2.success.response.code.regex`
-  - a **retry response code regex** with the parameter : `httpclient.test2.retry.policy.response.code.regex`
-  - a **retry policy** with the parameters :
-    - `config.test2.retries`
-    - `config.test2.retry.delay.in.ms`
-    - `config.test2.retry.max.delay.in.ms`
-    - `config.test2.retry.delay.factor`
-    - `config.test2.retry.jitter.in.ms`
 
 
 ### Configuration example
