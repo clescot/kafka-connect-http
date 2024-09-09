@@ -17,4 +17,8 @@ into a configured topic, which must be the topic listened by the HTTP Sink Conne
 
 * `job1.method` : `CONNECT`,`DELETE`,`GET`,`HEAD`,`PATCH`,`POST`,`PUT`,`OPTIONS`,`TRACE` are supported. if Not set,`GET` is implicitly configured.
 * `job1.body`  : string to submit as request's body.
-* 
+* `job1.headers` : request's headers list (`Content-Type,If-Modified-Since,Accept-Language`)
+* `job1.header.Content-Type: application/json` 
+* `job1.header.If-Modified-Since: Mon, 18 Jul 2016 02:36:04 GMT` 
+* `job1.header.If-Modified-Since: Mon, 18 Jul 2016 02:36:04 GMT` 
+* `job1.header.Cache-Control: max-age=0` 
