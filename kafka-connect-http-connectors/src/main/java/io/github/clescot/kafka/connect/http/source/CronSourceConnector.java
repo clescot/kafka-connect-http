@@ -1,5 +1,6 @@
 package io.github.clescot.kafka.connect.http.source;
 
+import com.google.common.base.Preconditions;
 import io.github.clescot.kafka.connect.http.VersionUtils;
 import org.apache.kafka.common.config.ConfigDef;
 import org.apache.kafka.connect.connector.Task;
@@ -25,6 +26,7 @@ public class CronSourceConnector extends SourceConnector {
 
     @Override
     public List<Map<String, String>> taskConfigs(int maxTasks) {
+        Preconditions.checkArgument(maxTasks>0,"maxTasks must be higher than 0");
         List<Map<String, String>> configs = new ArrayList<>(maxTasks);
         for (int i = 0; i < maxTasks; i++) {
             configs.add(this.cronSourceConnectorConfig.originalsStrings());
