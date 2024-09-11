@@ -3,8 +3,6 @@ package io.github.clescot.kafka.connect.http;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
-import com.github.terma.javaniotcpproxy.StaticTcpProxyConfig;
-import com.github.terma.javaniotcpproxy.TcpProxy;
 import com.github.tomakehurst.wiremock.client.WireMock;
 import com.github.tomakehurst.wiremock.core.WireMockConfiguration;
 import com.github.tomakehurst.wiremock.junit5.WireMockExtension;
@@ -166,10 +164,11 @@ public class ITConnectorTest {
 //            .withEnv("KAFKA_LOG4J_OPTS","")
 //            .withEnv(" KAFKA_JMX_OPTS","")
 //            .withEnv("DEFAULT_JAVA_DEBUG_OPTS","-agentlib:jdwp=transport=dt_socket,server=y,suspend=${DEBUG_SUSPEND_FLAG:-n},address=$JAVA_DEBUG_PORT")
-            .withEnv("DEBUG_SUSPEND_FLAG","n")
-            .withEnv("JAVA_DEBUG_PORT","*:5005")
+//            .withEnv("DEBUG_SUSPEND_FLAG","n")
+//            .withEnv("JAVA_DEBUG_PORT","*:5005")
             .withCopyFileToContainer(MountableFile.forClasspathResource(CLIENT_TRUSTSTORE_JKS_FILENAME), "/opt/" + CLIENT_TRUSTSTORE_JKS_FILENAME)
-            .withExposedPorts(8083,5005)
+            .withExposedPorts(8083)
+//            .withExposedPorts(8083,5005)
             .withLogConsumer(new Slf4jLogConsumer(LOGGER).withSeparateOutputStreams().withPrefix("kafka-connect"))
             .dependsOn(kafkaContainer, schemaRegistryContainer)
             .waitingFor(Wait.forHttp("/connector-plugins/"));
@@ -211,16 +210,16 @@ public class ITConnectorTest {
 
 
         kafkaContainer.followOutput(logConsumer);
-        Integer mappedPort = connectContainer.getMappedPort(5005);
-        var config = new StaticTcpProxyConfig(
-                5005,
-                connectContainer.getHost(),
-                mappedPort
-        );
-        LOGGER.info("debug 5005 mapped port :'{}'",mappedPort);
-        config.setWorkerCount(1);
-        var tcpProxy = new TcpProxy(config);
-        tcpProxy.start();
+//        Integer mappedPort = connectContainer.getMappedPort(5005);
+//        var config = new StaticTcpProxyConfig(
+//                5005,
+//                connectContainer.getHost(),
+//                mappedPort
+//        );
+//        LOGGER.info("debug 5005 mapped port :'{}'",mappedPort);
+//        config.setWorkerCount(1);
+//        var tcpProxy = new TcpProxy(config);
+//        tcpProxy.start();
     }
 
     private static void createTopics(String bootstrapServers, String... topics) {
@@ -290,12 +289,15 @@ public class ITConnectorTest {
     }
     private static void configureCronSourceConnector(String connectorName, String topic, List<CronJobConfig> configs) {
         //source connector
+        String jobs = Joiner.on(",").join(configs.stream().map(CronJobConfig::getId).collect(Collectors.toList()));
         ConnectorConfiguration sourceConnectorConfiguration = ConnectorConfiguration.create()
                 .with("connector.class", "io.github.clescot.kafka.connect.http.source.CronSourceConnector")
                 .with("tasks.max", "1")
                 .with("topic", topic)
                 .with("key.converter", "org.apache.kafka.connect.storage.StringConverter")
-                .with("value.converter", "org.apache.kafka.connect.json.JsonConverter");
+                .with("value.converter", "org.apache.kafka.connect.storage.StringConverter")
+                .with("jobs",jobs);
+
         for (CronJobConfig config : configs) {
             sourceConnectorConfiguration.with(config.getId()+".url",config.getUrl());
             sourceConnectorConfiguration.with(config.getId()+".cron",config.getCronExpression());
@@ -303,9 +305,14 @@ public class ITConnectorTest {
             if(config.getBody()!=null) {
                 sourceConnectorConfiguration.with(config.getId() + ".body", config.getBody());
             }
+            Map<String, List<String>> headers = config.getHeaders();
+            if(headers !=null && !headers.isEmpty()){
+                Set<String> keySet = headers.keySet();
+                String headerKeys = Joiner.on(",").join(new ArrayList<>(keySet));
+                sourceConnectorConfiguration.with(config.getId() + ".headers",headerKeys);
+                keySet.forEach(key-> sourceConnectorConfiguration.with(config.getId() + ".header."+key,Joiner.on(",").join(headers.get(key))));
+            }
         }
-
-
 
         connectContainer.registerConnector(connectorName, sourceConnectorConfiguration);
         connectContainer.ensureConnectorTaskState(connectorName, 0, Connector.State.RUNNING);
@@ -574,7 +581,7 @@ public class ITConnectorTest {
         headers.put("X-Correlation-ID", Lists.newArrayList("e6de70d1-f222-46e8-b755-754880687822"));
         headers.put("X-Request-ID", Lists.newArrayList("e6de70d1-f222-46e8-b755-11111"));
 
-        CronJobConfig cronJobConfig = new CronJobConfig("job1",url,"*/5 * * * ? *",HttpRequest.Method.POST,"stuff",headers);
+        CronJobConfig cronJobConfig = new CronJobConfig("job1",url,"0/5 * * ? * *",HttpRequest.Method.POST,"stuff",headers);
         configureCronSourceConnector("cron-source-connector",incomingTopic,Lists.newArrayList(cronJobConfig));
         List<String> registeredConnectors = connectContainer.getRegisteredConnectors();
         String joinedRegisteredConnectors = Joiner.on(",").join(registeredConnectors);
@@ -715,7 +722,7 @@ public class ITConnectorTest {
         KafkaConsumer<String, HttpExchange> consumer = getConsumer(kafkaContainer, externalSchemaRegistryUrl,producerOutputFormat);
 
         consumer.subscribe(Lists.newArrayList(successTopic, errorTopic));
-        List<ConsumerRecord<String, HttpExchange>> consumerRecords = drain(consumer, 1, 120);
+        List<ConsumerRecord<String, HttpExchange>> consumerRecords = drain(consumer, 1, 180);
         Assertions.assertThat(consumerRecords).hasSize(1);
         ConsumerRecord<String, HttpExchange> consumerRecord = consumerRecords.get(0);
         Assertions.assertThat(consumerRecord.key()).isNull();
@@ -772,7 +779,9 @@ public class ITConnectorTest {
             Response response = okHttpClient.newCall(request).execute();
             String content = response.body().string();
             System.out.println(content);
-            return content.contains("HttpSinkConnector");
+            return content.contains("HttpSinkConnector")
+                    && content.contains("HttpSourceConnector")
+                    && content.contains("CronSourceConnector");
         });
     }
 

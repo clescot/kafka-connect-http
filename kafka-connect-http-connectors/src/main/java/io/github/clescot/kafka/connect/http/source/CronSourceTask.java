@@ -66,7 +66,7 @@ public class CronSourceTask extends SourceTask {
                 if (headersAsString.isPresent()) {
                     headerKeys.addAll(Lists.newArrayList(headersAsString.get().split(",")));
                     headerKeys.forEach(key-> jobDataMap.put(key,settings.get(id+".header."+key)));
-                    jobDataMap.put(HEADERS, headersAsString);
+                    jobDataMap.put(HEADERS, headersAsString.get());
                 }
 
                 JobDetail job = newJob(HttpJob.class)
