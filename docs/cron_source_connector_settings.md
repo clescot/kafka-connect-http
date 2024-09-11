@@ -21,4 +21,24 @@ into a configured topic, which must be the topic listened by the HTTP Sink Conne
 * `job1.header.Content-Type: application/json` 
 * `job1.header.If-Modified-Since: Mon, 18 Jul 2016 02:36:04 GMT` 
 * `job1.header.If-Modified-Since: Mon, 18 Jul 2016 02:36:04 GMT` 
-* `job1.header.Cache-Control: max-age=0` 
+* `job1.header.Cache-Control: max-age=0`
+
+## configuration example
+
+```json
+{
+   "tasks.max" : "1",
+   "connector.class" : "io.github.clescot.kafka.connect.http.source.CronSourceConnector",
+   "topic" : "requests",
+   "key.converter" : "org.apache.kafka.connect.storage.StringConverter",
+   "value.converter" : "org.apache.kafka.connect.storage.StringConverter",
+   "jobs" : "job1",
+   "job1.url" : "http://mywebsite.com/ping",
+   "job1.cron" : "0/5 * * ? * *",
+   "job1.method" : "POST",
+   "job1.body" : "stuff",
+   "job1.headers" : "X-Request-ID,X-Correlation-ID",
+   "job1.header.X-Request-ID" : "e6de70d1-f222-46e8-b755-11111",
+   "job1.header.X-Correlation-ID" : "e6de70d1-f222-46e8-b755-754880687822"
+}
+```
