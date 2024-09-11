@@ -31,6 +31,7 @@ import io.github.clescot.kafka.connect.http.core.HttpExchangeSerializer;
 import io.github.clescot.kafka.connect.http.core.HttpRequest;
 import io.github.clescot.kafka.connect.http.core.queue.QueueFactory;
 import io.github.clescot.kafka.connect.http.sink.publish.PublishMode;
+import io.github.clescot.kafka.connect.http.source.CronJobConfig;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.Response;
@@ -272,7 +273,7 @@ public class ITConnectorTest {
 //        connectContainer.ensureConnectorTaskState(connectorName, 0, Connector.State.RUNNING);
     }
 
-    private static void configureSourceConnector(String connectorName, String queueName, String successTopic, String errorTopic) {
+    private static void configureHttpSourceConnector(String connectorName, String queueName, String successTopic, String errorTopic) {
         //source connector
         ConnectorConfiguration sourceConnectorConfiguration = ConnectorConfiguration.create()
                 .with("connector.class", "io.github.clescot.kafka.connect.http.source.HttpSourceConnector")
@@ -283,6 +284,28 @@ public class ITConnectorTest {
                 .with("value.converter", "io.confluent.connect.json.JsonSchemaConverter")
                 .with("value.converter.schema.registry.url", internalSchemaRegistryUrl)
                 .with("queue.name", queueName);
+
+        connectContainer.registerConnector(connectorName, sourceConnectorConfiguration);
+        connectContainer.ensureConnectorTaskState(connectorName, 0, Connector.State.RUNNING);
+    }
+    private static void configureCronSourceConnector(String connectorName, String topic, List<CronJobConfig> configs) {
+        //source connector
+        ConnectorConfiguration sourceConnectorConfiguration = ConnectorConfiguration.create()
+                .with("connector.class", "io.github.clescot.kafka.connect.http.source.CronSourceConnector")
+                .with("tasks.max", "1")
+                .with("topic", topic)
+                .with("key.converter", "org.apache.kafka.connect.storage.StringConverter")
+                .with("value.converter", "org.apache.kafka.connect.json.JsonConverter");
+        for (CronJobConfig config : configs) {
+            sourceConnectorConfiguration.with(config.getId()+".url",config.getUrl());
+            sourceConnectorConfiguration.with(config.getId()+".cron",config.getCronExpression());
+            sourceConnectorConfiguration.with(config.getId()+".method",config.getMethod().name());
+            if(config.getBody()!=null) {
+                sourceConnectorConfiguration.with(config.getId() + ".body", config.getBody());
+            }
+        }
+
+
 
         connectContainer.registerConnector(connectorName, sourceConnectorConfiguration);
         connectContainer.ensureConnectorTaskState(connectorName, 0, Connector.State.RUNNING);
@@ -306,7 +329,7 @@ public class ITConnectorTest {
         String successTopic = "success-test_sink_and_source_with_input_as_string";
         String errorTopic = "error-test_sink_and_source_with_input_as_string";
         checkConnectorPluginIsInstalled();
-        configureSourceConnector("http-source-connector-test_sink_and_source_with_input_as_string", queueName, successTopic, errorTopic);
+        configureHttpSourceConnector("http-source-connector-test_sink_and_source_with_input_as_string", queueName, successTopic, errorTopic);
         configureSinkConnector("http-sink-connector-test_sink_and_source_with_input_as_string",
                 PublishMode.IN_MEMORY_QUEUE.name(),
                 HTTP_REQUESTS_AS_STRING,
@@ -523,6 +546,110 @@ public class ITConnectorTest {
     }
 
     @Test
+    void test_sink_in_producer_mode_with_input_as_string_and_producer_output_as_string_with_cron() throws JSONException, JsonProcessingException {
+
+        WireMockRuntimeInfo wmRuntimeInfo = wmHttp.getRuntimeInfo();
+        String incomingTopic = "http_requests_string_for_producer_output_as_string";
+
+        String successTopic = "success_test_sink_and_source_with_input_as_string_and_producer_output_as_string";
+        String errorTopic = "error_test_sink_and_source_with_input_as_string_and_producer_output_as_string";
+
+        //register connectors
+        checkConnectorPluginIsInstalled();
+
+        String producerOutputFormat = "string";
+        configureSinkConnector("http-sink-connector-test_sink_and_source_with_input_as_string",
+                PublishMode.PRODUCER.name(),
+                incomingTopic,
+                "org.apache.kafka.connect.storage.StringConverter", successTopic,
+                new AbstractMap.SimpleImmutableEntry<>(CONFIG_GENERATE_MISSING_REQUEST_ID, "true"),
+                new AbstractMap.SimpleImmutableEntry<>(CONFIG_GENERATE_MISSING_CORRELATION_ID, "true"),
+                new AbstractMap.SimpleImmutableEntry<>("producer.format", producerOutputFormat)
+        );
+
+        String baseUrl = "http://" + getIP() + ":" + wmRuntimeInfo.getHttpPort();
+        String url = baseUrl + "/ping";
+        LOGGER.info("url:{}", url);
+        HashMap<String, List<String>> headers = Maps.newHashMap();
+        headers.put("X-Correlation-ID", Lists.newArrayList("e6de70d1-f222-46e8-b755-754880687822"));
+        headers.put("X-Request-ID", Lists.newArrayList("e6de70d1-f222-46e8-b755-11111"));
+
+        CronJobConfig cronJobConfig = new CronJobConfig("job1",url,"*/5 * * * ? *",HttpRequest.Method.POST,"stuff",headers);
+        configureCronSourceConnector("cron-source-connector",incomingTopic,Lists.newArrayList(cronJobConfig));
+        List<String> registeredConnectors = connectContainer.getRegisteredConnectors();
+        String joinedRegisteredConnectors = Joiner.on(",").join(registeredConnectors);
+        LOGGER.info("registered connectors :{}", joinedRegisteredConnectors);
+
+        //define the http Mock Server interaction
+        WireMock wireMock = wmRuntimeInfo.getWireMock();
+        String bodyResponse = "{\"result\":\"pong\"}";
+        String escapedJsonResponse = StringEscapeUtils.escapeJson(bodyResponse);
+        wireMock
+                .register(WireMock.post("/ping")
+                        .willReturn(WireMock.aResponse()
+                                .withHeader("Content-Type", "application/json")
+                                .withBody(bodyResponse)
+                                .withStatus(200)
+                                .withStatusMessage("OK")
+                        )
+                );
+
+
+
+        //verify http responses
+        KafkaConsumer<String, String> consumer = getConsumer(kafkaContainer, externalSchemaRegistryUrl,producerOutputFormat);
+
+        consumer.subscribe(Lists.newArrayList(successTopic, errorTopic));
+        List<ConsumerRecord<String, String>> consumerRecords = drain(consumer, 1, 120);
+        Assertions.assertThat(consumerRecords).hasSize(1);
+        ConsumerRecord<String, String> consumerRecord = consumerRecords.get(0);
+        Assertions.assertThat(consumerRecord.key()).isNull();
+        String httpExchangeAsString = consumerRecord.value();
+        String expectedJSON = "{\n" +
+                "  \"durationInMillis\": 0,\n" +
+                "  \"moment\": \"2022-11-10T17:19:42.740852Z\",\n" +
+                "  \"attempts\": 1,\n" +
+                "  \"httpRequest\": {\n" +
+                "    \"headers\": {\n" +
+                "      \"X-Correlation-ID\": [\n" +
+                "        \"e6de70d1-f222-46e8-b755-754880687822\"\n" +
+                "      ],\n" +
+                "      \"X-Request-ID\": [\n" +
+                "        \"e6de70d1-f222-46e8-b755-11111\"\n" +
+                "      ]\n" +
+                "    },\n" +
+                "    \"url\": \"" + baseUrl + "/ping\",\n" +
+                "    \"method\": \"POST\",\n" +
+                "    \"bodyType\": \"STRING\",\n" +
+                "    \"bodyAsString\": \"stuff\",\n" +
+                "    \"bodyAsForm\": {},\n" +
+                "    \"bodyAsByteArray\": \"\",\n" +
+                "    \"bodyAsMultipart\": []\n" +
+                "  },\n" +
+                "  \"httpResponse\": {" +
+                "   \"statusCode\":200,\n" +
+                "  \"statusMessage\": \"OK\",\n" +
+                "  \"responseHeaders\": {},\n" +
+                "  \"responseBody\": \"" + escapedJsonResponse + "\"\n" +
+                "}" +
+                "}";
+        JSONAssert.assertEquals(expectedJSON, httpExchangeAsString,
+                new CustomComparator(JSONCompareMode.LENIENT,
+                        new Customization("moment", (o1, o2) -> true),
+                        new Customization("correlationId", (o1, o2) -> true),
+                        new Customization("durationInMillis", (o1, o2) -> true),
+                        new Customization("requestHeaders.X-Correlation-ID", (o1, o2) -> true),
+                        new Customization("requestHeaders.X-Request-ID", (o1, o2) -> true),
+                        new Customization("requestId", (o1, o2) -> true),
+                        new Customization("responseHeaders.Matched-Stub-Id", (o1, o2) -> true)
+                ));
+        Assertions.assertThat(consumerRecord.headers().toArray()).isEmpty();
+    }
+
+
+
+
+    @Test
     void test_sink_in_producer_mode_with_input_as_string_and_producer_output_as_json() throws JSONException, JsonProcessingException {
 
         WireMockRuntimeInfo wmRuntimeInfo = wmHttp.getRuntimeInfo();
@@ -657,7 +784,7 @@ public class ITConnectorTest {
         String incomingTopic = "incoming-" + suffix;
         String successTopic = "success-" + suffix;
         String errorTopic = "error-" + suffix;
-        configureSourceConnector("http-source-connector-test_" + suffix, "test_" + suffix, successTopic, errorTopic);
+        configureHttpSourceConnector("http-source-connector-test_" + suffix, "test_" + suffix, successTopic, errorTopic);
         configureSinkConnector("http-sink-connector-test_" + suffix,
                 PUBLISH_TO_IN_MEMORY_QUEUE_OK,
                 incomingTopic,
@@ -772,7 +899,7 @@ public class ITConnectorTest {
         String incomingTopic = "incoming-" + suffix;
         String successTopic = "success-" + suffix;
         String errorTopic = "error-" + suffix;
-        configureSourceConnector("http-source-connector-test_" + suffix, "test_" + suffix, successTopic, errorTopic);
+        configureHttpSourceConnector("http-source-connector-test_" + suffix, "test_" + suffix, successTopic, errorTopic);
         configureSinkConnector("http-sink-connector-test_" + suffix,
                 PUBLISH_TO_IN_MEMORY_QUEUE_OK,
                 incomingTopic,
@@ -895,7 +1022,7 @@ public class ITConnectorTest {
         String errorTopic = "error-" + suffix;
         String queueName = "test_" + suffix;
         String connectorName = "http-source-connector-test_" + suffix;
-        configureSourceConnector(connectorName, queueName, successTopic, errorTopic);
+        configureHttpSourceConnector(connectorName, queueName, successTopic, errorTopic);
         int maxExecutionsPerSecond = 3;
         configureSinkConnector("http-sink-connector-test_" + suffix,
                 PUBLISH_TO_IN_MEMORY_QUEUE_OK,
@@ -989,7 +1116,7 @@ public class ITConnectorTest {
         String successTopic = "success-" + suffix;
         String errorTopic = "error-" + suffix;
         String queueName = "test_" + suffix;
-        configureSourceConnector("http-source-connector-test_" + suffix, queueName, successTopic, errorTopic);
+        configureHttpSourceConnector("http-source-connector-test_" + suffix, queueName, successTopic, errorTopic);
         configureSinkConnector("http-sink-connector-test_" + suffix,
                 PUBLISH_TO_IN_MEMORY_QUEUE_OK,
                 incomingTopic,
