@@ -6,7 +6,7 @@ import okhttp3.Response;
 
 public class OkHttpSinkTask extends HttpSinkTask<Request, Response> {
 
-    protected OkHttpSinkTask() {
+    public OkHttpSinkTask() {
         super(new OkHttpClientFactory());
     }
 
