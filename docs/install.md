@@ -45,6 +45,9 @@ For example, `clescot-kafka-connect-http-connectors-0.6.2.zip`.
              },
              {
                  "class": "source.io.github.clescot.kafka.connect.http.HttpSourceConnector"
+             },
+             {
+                 "class": "source.io.github.clescot.kafka.connect.http.CronSourceConnector"
              }
          ]
      
