@@ -86,7 +86,7 @@ This configuration publish HTTP results to an in memory queue.
 
 >Warning: when the option `publish.to.in.memory.queue` is set to `true`, a source connector on the same kafka connect instance is mandatory. 
 
-#### Source Connector configuration
+#### HTTP Source Connector configuration
 
 This configuration listen to the in memory queue, to publish HTTP results in the configured `success.topic` or `error.topic`topic,
 depending on the HTTP result.
@@ -100,5 +100,27 @@ depending on the HTTP result.
     "success.topic": "http-success",
     "error.topic": "http-error"
     }
+}
+```
+
+#### Cron Source Connector configuration
+
+This configuration emits an HTTP request in the `http-request` topic every 5 seconds.
+
+```json
+{
+   "tasks.max" : "1",
+   "connector.class" : "io.github.clescot.kafka.connect.http.source.CronSourceConnector",
+   "topic" : "http-request",
+   "key.converter" : "org.apache.kafka.connect.storage.StringConverter",
+   "value.converter" : "org.apache.kafka.connect.storage.StringConverter",
+   "jobs" : "job1",
+   "job1.url" : "http://mywebsite.com/ping",
+   "job1.cron" : "0/5 * * ? * *",
+   "job1.method" : "POST",
+   "job1.body" : "stuff",
+   "job1.headers" : "Content-Type,X-Correlation-ID",
+   "job1.header.Content-Type" : "application/json,Accept",
+   "job1.header.Accept" : "text/html, application/xhtml+xml, application/xml;q=0.9, */*;q=0.8"
 }
 ```
