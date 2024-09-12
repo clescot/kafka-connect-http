@@ -92,14 +92,16 @@ class CronSourceTaskTest {
 
             JobDetail jobDetail2 = scheduler.getJobDetail(new JobKey("job22"));
             JobDataMap jobDataMap2 = jobDetail2.getJobDataMap();
-            assertThat(jobDataMap2).containsEntry("url", "https://test.com");
-            assertThat(jobDataMap2).containsEntry("method", "PUT");
+            assertThat(jobDataMap2)
+                    .containsEntry("url", "https://test.com")
+                    .containsEntry("method", "PUT");
 
             JobDetail jobDetail3 = scheduler.getJobDetail(new JobKey("job33"));
             JobDataMap jobDataMap3 = jobDetail3.getJobDataMap();
-            assertThat(jobDataMap3).containsEntry("url", "https://test.com");
-            assertThat(jobDataMap3).containsEntry("method", "POST");
-            assertThat(jobDataMap3).containsEntry("body", "stuff");
+            assertThat(jobDataMap3)
+                    .containsEntry("url", "https://test.com")
+                    .containsEntry("method", "POST")
+                    .containsEntry("body", "stuff");
 
         }
 
