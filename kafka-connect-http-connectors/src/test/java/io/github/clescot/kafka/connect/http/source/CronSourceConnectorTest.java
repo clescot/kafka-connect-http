@@ -19,8 +19,7 @@ class CronSourceConnectorTest {
         void nominal_case(){
             CronSourceConnector cronSourceConnector = new CronSourceConnector();
             String version = cronSourceConnector.version();
-            assertThat(version).isNotNull();
-            assertThat(version).isNotBlank();
+            assertThat(version).isNotNull().isNotBlank();
         }
     }
 
