@@ -7,6 +7,7 @@ import org.awaitility.Awaitility;
 import org.junit.jupiter.api.*;
 import org.quartz.*;
 
+import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
@@ -28,7 +29,8 @@ class CronSourceTaskTest {
         @Test
         void test_empty_settings() {
             CronSourceTask cronSourceTask = new CronSourceTask();
-            Assertions.assertThrows(ConfigException.class, () -> cronSourceTask.start(Maps.newHashMap()));
+            HashMap<String, String> settings = Maps.newHashMap();
+            Assertions.assertThrows(ConfigException.class, () -> cronSourceTask.start(settings));
         }
 
         @Test
