@@ -7,6 +7,7 @@ import org.slf4j.LoggerFactory;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 
 public class CronSourceConnectorConfig extends AbstractConfig {
@@ -26,14 +27,26 @@ public class CronSourceConnectorConfig extends AbstractConfig {
         this.jobIds  = getList(CronSourceConfigDefinition.JOBS);
     }
 
-
-
-
     public String getTopic() {
         return topic;
     }
 
     public List<String> getJobs() {
         return jobIds;
+    }
+
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof CronSourceConnectorConfig)) return false;
+        if (!super.equals(o)) return false;
+        CronSourceConnectorConfig that = (CronSourceConnectorConfig) o;
+        return Objects.equals(topic, that.topic) && Objects.equals(jobIds, that.jobIds);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(super.hashCode(), topic, jobIds);
     }
 }
