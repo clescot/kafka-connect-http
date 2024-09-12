@@ -28,7 +28,6 @@ class CronSourceTaskTest {
 
         @Test
         void test_empty_settings() {
-            CronSourceTask cronSourceTask = new CronSourceTask();
             HashMap<String, String> settings = Maps.newHashMap();
             Assertions.assertThrows(ConfigException.class, () -> cronSourceTask.start(settings));
         }
