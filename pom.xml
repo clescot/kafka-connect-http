@@ -62,6 +62,7 @@
         <slf4j.version>2.0.16</slf4j.version>
         <skipIT>false</skipIT>
         <sonar.organization>clescot</sonar.organization>
+        <sonar.projectKey>clescot_kafka-connect-http</sonar.projectKey>
         <testcontainers.version>1.20.1</testcontainers.version>
         <wiremock.version>2.35.2</wiremock.version>
         <sonar.coverage.jacoco.xmlReportPaths>${project.basedir}/report-aggregate/target/site/report-aggregate/jacoco.xml</sonar.coverage.jacoco.xmlReportPaths>
@@ -274,6 +275,11 @@
                             </goals>
                         </execution>
                     </executions>
+                </plugin>
+                <plugin>
+                    <groupId>org.sonarsource.scanner.maven</groupId>
+                    <artifactId>sonar-maven-plugin</artifactId>
+                    <version>4.0.0.4121</version>
                 </plugin>
             </plugins>
         </pluginManagement>
