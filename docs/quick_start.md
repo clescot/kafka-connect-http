@@ -103,7 +103,7 @@ depending on the HTTP result.
 }
 ```
 
-#### Cron Source Connector configuration
+### Cron Source Connector configuration
 
 This configuration emits an HTTP request in the `http-request` topic every 5 seconds.
 
