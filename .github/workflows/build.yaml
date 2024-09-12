@@ -31,7 +31,7 @@ jobs:
           SIGN_KEY: "${{ secrets.GPG_KEY }}"
           SIGN_KEY_ID: "${{ secrets.GPG_KEY_ID }}"
           SIGN_KEY_PASS: "${{ secrets.GPG_PASSPHRASE }}"
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          SONAR_TOKEN: "${{ secrets.SONAR_TOKEN }}"
       - run: mkdir staging && cp kafka-connect-http-core/target/*.jar staging && cp -r kafka-connect-http-connectors/target/components/packages/clescot-kafka-connect-http-connectors-*.zip staging
       - uses: actions/upload-artifact@v4.4.0
         with:
