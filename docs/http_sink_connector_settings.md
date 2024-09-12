@@ -1,54 +1,46 @@
-# HTTP Connectors settings
+# Http Sink Connector settings
 
-Here are the settings to setup an HTTP Sink connector, and optionally an HTTP Source Connector, into a Kafka Connect
-cluster. 
+Here are the settings to setup an HTTP Sink connector into a Kafka Connect cluster. 
 
-### HTTP Sink Connector
-
-#### required parameters
+## required parameters
 
 every Kafka Connect Sink Connector need to define these required parameters :
 
 - *`connector.class`* : `io.github.clescot.kafka.connect.http.sink.HttpSinkConnector`
 - *`topics`* (or *`topics.regex`*): `http-requests` for example
 
-#### optional Kafka Connect parameters
+## optional common Kafka Connect parameters
 
 - *`tasks.max`*  (default to `1`)
 - *`key.converter`*
 - *`value.converter`*
 - ....
+## optional Http Sink connector parameters
 
-#### publish mode
-controlled by the  *`publish.mode`* parameter : `NONE` by default. When set to another value (`IN_MEMORY_QUEUE`,`PRODUCER`), publish HTTP interactions (request and responses)
-- *`publish.mode`* parameter : `IN_MEMORY_QUEUE` publish into the _in memory_ queue, with a topology constraint : the source connector which consumes the in memory queue, must be present on the same kafka connect instance.
-  - *`queue.name`* : if not set, `default` queue name is used, if the `publish.to.in.memory.queue` is set to `true`.
-    You can define multiple in memory queues, to permit to publish to different topics, different HTTP interactions. If
-    you set this parameter to a value different than `default`, you need to configure an HTTP source Connector listening
-    on the same queue name to avoid some OutOfMemoryErrors.
-  - *`wait.time.registration.queue.consumer.in.ms`* : wait time for a queue consumer (Source Connector) registration. default value is 60 seconds.
-  - *`poll.delay.registration.queue.consumer.in.ms`* : poll delay, i.e, wait time before start polling a registered consumer. default value is 2 seconds.
-  - *`poll.interval.registration.queue.consumer.in.ms`* : poll interval, i.e, time between every poll for a registered consumer. default value is 5000 milliseconds.
-- *`publish.mode`* parameter : `PRODUCER` : use a low level kafka producer to publish HttpExchange in a dedicated topic. No topology constraint is required, 
-  but unlike other connectors (kafka connect handle that for us and hide it), we must configure the low level connection details. All settings starting with the prefix `producer.` 
-  will be passed to the producer instance to configure it. 
-  - `producer.bootstrap.servers` : required parameter to contact the kafka cluster.
-  - `producer.topic` : name of the topic to publish httpExchange instances.
-  - `producer.missing.id.cache.ttl.sec` : parameter configuration of the _CachedSchemaRegistryClient_
-  - `producer.missing.version.cache.ttl.sec` : parameter configuration of the _CachedSchemaRegistryClient_
-  - `producer.missing.schema.cache.ttl.sec` : parameter configuration of the _CachedSchemaRegistryClient_
-  - `producer.missing.schema.cache.size` : parameter configuration of the _CachedSchemaRegistryClient_
-  - `producer.bearer.auth.cache.expiry.buffer.seconds` : parameter configuration of the _CachedSchemaRegistryClient_
-  - `producer.bearer.auth.scope.claim.name` : parameter configuration of the _CachedSchemaRegistryClient_
-  - `producer.bearer.auth.sub.claim.name` : parameter configuration of the _CachedSchemaRegistryClient_
-  - other parameters can be passed to the low level kafka producer instance.
-### Metrics Registry
+### export metrics via a Metrics Registry
 
 metrics registry can be configured to add some metrics, and to export them. Metrics registry is global to the JVM.
-Only _okhttp_ HTTP client support this feature.
+
+Both exports (JMX and Prometheus) can be combined.
+
+- JMX export
+  you need to activate this export with :
+  `"meter.registry.exporter.jmx.activate": "true"`
+
+
+- prometheus export
+  you need to activate this export with :
+  `"meter.registry.exporter.prometheus.activate": "true"`
+  by default, the port open is the default prometheus one (`9090`), but you can define yours with this setting :
+  `"meter.registry.exporter.prometheus.port":"9087`
+
+
+### expose some HTTP metrics
+
+Only _okhttp_ HTTP client (default client) support this feature.
 
 #### add some HTTP metrics
-When at least one of the export is activated, a listener is added to the okhttp to expose some metrics as timers :
+When at least one of the export is activated (JMX or Prometheus), a listener is added to the okhttp to expose some metrics as timers :
 - `okhttp`
 - `okhttp.dns`
 - `okhttp.socket.connection`
@@ -70,8 +62,7 @@ Each metrics with its name listed above, is bound to some tags/dimensions :
 - `target.scheme` : http scheme used to interact with remote http server
 - `target.uri` : will be `none`, except if you activate it with `meter.registry.tag.include.url.path` set to `true`. Beware of the high cardinality metrics issue if you've got many different paths in urls (https://last9.io/blog/how-to-manage-high-cardinality-metrics-in-prometheus/)
 
-
-#### other metrics are available
+#### add other metrics
 
 Some built-ins metrics are available :
 - executor services metrics can be activated with `meter.registry.bind.metrics.executor.service` set to `true`
@@ -83,20 +74,6 @@ Some built-ins metrics are available :
 - _JVM processors_ metrics can be activated with `"meter.registry.bind.metrics.jvm.processor"` set to `true`
 - _Logback_ metrics can be activated with `"meter.registry.bind.metrics.logback"` set to `true`
 
-
-#### export metrics
-Both exports (JMX and Prometheus) can be combined.
-
-- JMX export
-  you need to activate this export with :
-  `"meter.registry.exporter.jmx.activate": "true"`
-
-
-- prometheus export
-  you need to activate this export with :
-  `"meter.registry.exporter.prometheus.activate": "true"`
-  by default, the port open is the default prometheus one (`9090`), but you can define yours with this setting :
-  `"meter.registry.exporter.prometheus.port":"9087`
 
 ### Message splitters
 Sometimes, we need to split value from one message, into multiple messages.
@@ -194,6 +171,59 @@ there is no default http request grouper.
 
 Configuration of an Http Client instance.
 
+
+#### default configuration
+
+Http Client is driven by a configuration, which owns :
+- a rate limiter
+- a success response code regex
+- a retry response code regex
+- a retry policy
+
+
+There is a _default_ configuration.
+
+#### custom configurations
+But you can override this configuration, for some specific HTTP requests.
+
+
+Each specific configuration is identified by a _prefix_, in the form :
+`config.<configurationid>.`
+
+The prefix for the _default_ configuration is `httpclient.default.` (its configuration id is `default`).
+
+To register some custom configurations, you need to register them by their id in the parameter :
+`config.custom.config.ids`.
+These configuration ids are separated by commas.
+
+exemple :
+```
+"config.custom.config.ids": "id1,id2,stuff"
+```
+
+for example, if you've registered a configuration with the id `test2`, it needs to be present in the field `httpclient.custom.config.ids`.
+
+You must register a **predicate** to detect the matching between the http request and the configuration.
+A predicate can be composed of multiple matchers (composed with a logical AND), configured with these parameters :
+- `config.test2.url.regex`
+- `config.test2.method.regex`
+- `config.test2.bodytype.regex`
+- `config.test2.header.key.regex`
+- `config.test2.header.value.regex` (can be added, only if the previous parameter is also configured)
+
+You will have the ability to define optionnaly :
+- a **rate limiter** with the parameters :
+  - `config.test2.rate.limiter.max.executions`
+  - `config.test2.rate.limiter.period.in.ms`
+  - a **success response code regex** with the parameter : `httpclient.test2.success.response.code.regex`
+  - a **retry response code regex** with the parameter : `httpclient.test2.retry.policy.response.code.regex`
+  - a **retry policy** with the parameters :
+    - `config.test2.retries`
+    - `config.test2.retry.delay.in.ms`
+    - `config.test2.retry.max.delay.in.ms`
+    - `config.test2.retry.delay.factor`
+    - `config.test2.retry.jitter.in.ms`
+
 The connector ships with a `default` configuration, and we can, if needed, configure more configurations.
 A configuration is identified with a unique `id`.
 
@@ -218,7 +248,7 @@ The predicate permits to filter some http requests, and can be composed, cumulat
 - a _header key_ with the settings for the `default` configuration (despite any value, when alone) : ```"config.default.predicate.header.key":"myheaderKey"```
 - a _header value_ with the settings for the `default` configuration (can only be configured with a header key setting) : ```"config.default.predicate.header.value":"myheaderValue"```
 
-- can enrich HttpRequest by 
+- a configuration can enrich HTTP request and response by : 
   - adding static headers with the settings for `default` configuration : 
   ``` 
    "config.default.enrich.request.static.header.names":"header1,header2"
@@ -353,7 +383,9 @@ The predicate permits to filter some http requests, and can be composed, cumulat
     - *`org.asynchttpclient.cookie.store`* (default `org.asynchttpclient.cookie.ThreadSafeCookieStore`)
     - *`org.asynchttpclient.netty.timer`* (default `io.netty.util.HashedWheelTimer`)
     - *`org.asynchttpclient.byte.buffer.allocator`* (default `io.netty.buffer.PooledByteBufAllocator`)
-  
+
+
+
 
 ### Configuration example
 
@@ -417,148 +449,32 @@ The predicate permits to filter some http requests, and can be composed, cumulat
 }
 ```
 
+#### publish mode
+controlled by the  *`publish.mode`* parameter : `NONE` by default. When set to another value (`IN_MEMORY_QUEUE`,`PRODUCER`), publish HTTP interactions (request and responses)
+- *`publish.mode`* parameter : `IN_MEMORY_QUEUE` publish into the _in memory_ queue, with a topology constraint : the source connector which consumes the in memory queue, must be present on the same kafka connect instance.
+  - *`queue.name`* : if not set, `default` queue name is used, if the `publish.to.in.memory.queue` is set to `true`.
+    You can define multiple in memory queues, to permit to publish to different topics, different HTTP interactions. If
+    you set this parameter to a value different than `default`, you need to configure an HTTP source Connector listening
+    on the same queue name to avoid some OutOfMemoryErrors.
+  - *`wait.time.registration.queue.consumer.in.ms`* : wait time for a queue consumer (Source Connector) registration. default value is 60 seconds.
+  - *`poll.delay.registration.queue.consumer.in.ms`* : poll delay, i.e, wait time before start polling a registered consumer. default value is 2 seconds.
+  - *`poll.interval.registration.queue.consumer.in.ms`* : poll interval, i.e, time between every poll for a registered consumer. default value is 5000 milliseconds.
+- *`publish.mode`* parameter : `PRODUCER` : use a low level kafka producer to publish HttpExchange in a dedicated topic. No topology constraint is required,
+  but unlike other connectors (kafka connect handle that for us and hide it), we must configure the low level connection details. All settings starting with the prefix `producer.`
+  will be passed to the producer instance to configure it.
+  - `producer.bootstrap.servers` : required parameter to contact the kafka cluster.
+  - `producer.topic` : name of the topic to publish httpExchange instances.
+  - `producer.missing.id.cache.ttl.sec` : parameter configuration of the _CachedSchemaRegistryClient_
+  - `producer.missing.version.cache.ttl.sec` : parameter configuration of the _CachedSchemaRegistryClient_
+  - `producer.missing.schema.cache.ttl.sec` : parameter configuration of the _CachedSchemaRegistryClient_
+  - `producer.missing.schema.cache.size` : parameter configuration of the _CachedSchemaRegistryClient_
+  - `producer.bearer.auth.cache.expiry.buffer.seconds` : parameter configuration of the _CachedSchemaRegistryClient_
+  - `producer.bearer.auth.scope.claim.name` : parameter configuration of the _CachedSchemaRegistryClient_
+  - `producer.bearer.auth.sub.claim.name` : parameter configuration of the _CachedSchemaRegistryClient_
+  - other parameters can be passed to the low level kafka producer instance.
+
 You can create or update this connector instance with this command :
 
 ```bash
 curl -X PUT -H "Content-Type: application/json" --data @sink.json http://my-kafka-connect-cluster:8083/connectors/my-http-sink-connector/config
 ```
-### HTTP Source Connector
-
-The HTTP Source connector is only useful if you have configured the publishment of HTTP interactions into the queue,
-via the `publish.to.in.memory.queue` set to `true`.
-
-#### required HTTP Source connector parameters
-
-- *`success.topic`* : Topic to receive successful http request/responses, for example, http-success
-- *`error.topic`* : Topic to receive errors from http request/responses, for example, http-error
-
-#### optional HTTP Source connector parameters
-
-- *`queue.name`* : if not set, listen on the 'default' queue.
-
-#### Configuration example
-
-
-`source.json` example :
-```json 
-{
-    "name": "my-http-source-connector",
-    "config": {
-    "connector.class":"io.github.clescot.kafka.connect.http.source.HttpSourceConnector",
-    "tasks.max": "1",
-    "success.topic": "http-success",
-    "error.topic": "http-error"
-    }
-}
-```
-
-You can create or update this connector instance with this command :
-
-```bash
-curl -X PUT -H "Content-Type: application/json" --data @source.json http://my-kafka-connect-cluster:8083/connectors/my-http-source-connector/config
-```
-
-### Http Sink and Source Connectors
-
-> :warning: Below are some characteristics only applicable when the publish mode is set to `IN_MEMORY_QUEUE`.
-
-#### are linked 
-
-HTTP Sink connector can be used without the HTTP Source connector, if the `publish` mode is not set to `IN_MEMORY_QUEUE`.
-
-HTTP Source Connector cannot be used without the HTTP Sink connector.
-
-#### instantiated in the same location
-
-When Http Sink and Source connectors are configured together, they must be **instantiated in the same place**, to exchange data through the in memory queue.
-The above configuration permits to fullfill these needs.
-
-#### in the same classloader
-
-Kafka Connect, loads connector plugins in isolation : each zip owning a plugin and its dependencies,
-are loaded with a dedicated classloader, to avoid any dependencies conflicts.
-
-To avoid any isolation issue between the Http Sink and Source plugin (to permit to exchange data via the in memory queue),
-and to ease the install process, we ship them in the same jar (contained in the same zip archive).
-So, any Http **Sink** connector, will have the ability to exchange data with the **Source** connector in the same classloader.
-On this field, you have no actions to do.
-
-#### on the same kafka connect instance
-
-To exchange data, also if these Connector classes are located in the same jar, they need to be instantiated both on the same kafka connect instance,
-with the configuration explained below. 
-
-#### same partitioning for topics used by HTTP sink and source connectors. 
-
-To divide the work to be done, Kafka provide **partitioning** : 
-if data can be handled independently (without any requirement on order), you can split data between partitions to level up your throughput **if needed**.
-
-So, with multiple partitions, there are multiple parts of data to handle : **you must configure the same number of partitions** for topics used by the HTTP Sink and Source connectors,
-and don't change the partition algorithm.
-So, a record with a key in the topic used by the sink connector, will result in an HTTP Exchange,
-which will be stored in the same partition in the topic used by the Source connector (if you don't choose a round-robin algorithm),
-because the in memory queue preserves the key linked to the record. 
-
-
-#### same tasks.max parameter
-
-you have to configure a *tasks.max* parameter for each connector : the kafka connect cluster will distribute partitions among tasks.
-Each connector instance will handle up to the `tasks.max` configuration parameter.
-Kafka connect distributes tasks among workers, which are processes that execute connectors and tasks.
-
-To avoid any issue, you must configure the same `tasks.max` parameters for the HTTP Sink and Source connectors.
-
-### per site parameters
-
-
-#### default configuration
-
-Http Client is driven by some specific parameters, and a configuration, which owns :
-- a rate limiter
-- a success response code regex
-- a retry response code regex
-- a retry policy
-
-
-There is a _default_ configuration.
-
-#### custom configurations
-But you can override this configuration, for some specific HTTP requests.
-
-
-Each specific configuration is identified by a _prefix_, in the form : 
-`config.<configurationid>.`
-
-The prefix for the _default_ configuration is `httpclient.default.` (its configuration id is `default`).
-
-To register some custom configurations, you need to register them by their id in the parameter :
-`config.custom.config.ids`.
-These configuration ids are separated by commas.
-
-exemple : 
-```
-"config.custom.config.ids": "id1,id2,stuff"
-```
-
-for example, if you've registered a configuration with the id `test2`, it needs to be present in the field `httpclient.custom.config.ids`.
-
-You must register a **predicate** to detect the matching between the http request and the configuration.
-A predicate can be composed of multiple matchers (composed with a logical AND), configured with these parameters : 
-- `config.test2.url.regex`
-- `config.test2.method.regex`
-- `config.test2.bodytype.regex`
-- `config.test2.header.key.regex`
-- `config.test2.header.value.regex` (can be added, only if the previous parameter is also configured)
-
-You will have the ability to define optionnaly :
-- a **rate limiter** with the parameters :
-  - `config.test2.rate.limiter.max.executions`
-  - `config.test2.rate.limiter.period.in.ms`
-  - a **success response code regex** with the parameter : `httpclient.test2.success.response.code.regex`
-  - a **retry response code regex** with the parameter : `httpclient.test2.retry.policy.response.code.regex`
-  - a **retry policy** with the parameters : 
-    - `config.test2.retries`
-    - `config.test2.retry.delay.in.ms`
-    - `config.test2.retry.max.delay.in.ms`
-    - `config.test2.retry.delay.factor`
-    - `config.test2.retry.jitter.in.ms`

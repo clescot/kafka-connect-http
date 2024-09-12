@@ -3,12 +3,13 @@ package io.github.clescot.kafka.connect.http.sink.mapper;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Maps;
 import io.github.clescot.kafka.connect.http.core.HttpRequest;
-import org.apache.commons.jexl3.*;
+import org.apache.commons.jexl3.JexlContext;
+import org.apache.commons.jexl3.JexlEngine;
+import org.apache.commons.jexl3.JexlExpression;
+import org.apache.commons.jexl3.MapContext;
 import org.apache.kafka.connect.sink.SinkRecord;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.util.List;
 import java.util.Map;
@@ -17,7 +18,6 @@ import java.util.Optional;
 
 public class JEXLHttpRequestMapper extends AbstractHttpRequestMapper {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(JEXLHttpRequestMapper.class);
     public static final String SINK_RECORD = "sinkRecord";
 
     private final JexlExpression jexlMatchingExpression;
@@ -82,7 +82,6 @@ public class JEXLHttpRequestMapper extends AbstractHttpRequestMapper {
         return httpRequest;
     }
 
-    @Nullable
     public Optional<JexlExpression> getJexlBodyExpression() {
         return jexlBodyExpression;
     }
