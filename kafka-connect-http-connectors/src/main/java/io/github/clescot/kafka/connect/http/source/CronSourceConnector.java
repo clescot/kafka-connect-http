@@ -37,7 +37,7 @@ public class CronSourceConnector extends SourceConnector {
 
     @Override
     public void stop() {
-
+        //nothing to do
     }
 
     @Override

@@ -24,12 +24,12 @@ public class HttpListener implements JobListener {
 
     @Override
     public void jobToBeExecuted(JobExecutionContext context) {
-
+        //nothing to do
     }
 
     @Override
     public void jobExecutionVetoed(JobExecutionContext context) {
-
+        //nothing to do
     }
 
     @Override
