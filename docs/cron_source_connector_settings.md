@@ -14,7 +14,7 @@ into a configured topic, which must be the topic listened by the HTTP Sink Conne
 *  `job1.url` 
 
 ## optional parameters
-
+   
 * `job1.method` : `CONNECT`,`DELETE`,`GET`,`HEAD`,`PATCH`,`POST`,`PUT`,`OPTIONS`,`TRACE` are supported. if Not set,`GET` is implicitly configured.
 * `job1.body`  : string to submit as request's body.
 * `job1.headers` : request's headers list (`Content-Type,If-Modified-Since,Accept-Language`)
