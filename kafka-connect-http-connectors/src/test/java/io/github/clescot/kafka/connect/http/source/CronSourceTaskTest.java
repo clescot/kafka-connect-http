@@ -140,7 +140,7 @@ class CronSourceTaskTest {
         }
 
         @Test
-        void test_nominal_case() throws InterruptedException {
+        void test_nominal_case() {
             Map<String, String> settings = Maps.newHashMap();
             settings.put("topic", "test");
             settings.put("jobs", "job11,job22,job33");
