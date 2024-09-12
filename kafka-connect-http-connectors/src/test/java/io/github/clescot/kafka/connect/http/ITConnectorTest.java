@@ -580,6 +580,7 @@ public class ITConnectorTest {
         HashMap<String, List<String>> headers = Maps.newHashMap();
         headers.put("X-Correlation-ID", Lists.newArrayList("e6de70d1-f222-46e8-b755-754880687822"));
         headers.put("X-Request-ID", Lists.newArrayList("e6de70d1-f222-46e8-b755-11111"));
+        headers.put("Accept", Lists.newArrayList("text/html","application/xhtml+xml","application/xml;q=0.9","*/*;q=0.8"));
 
         CronJobConfig cronJobConfig = new CronJobConfig("job1",url,"0/5 * * ? * *",HttpRequest.Method.POST,"stuff",headers);
         configureCronSourceConnector("cron-source-connector",incomingTopic,Lists.newArrayList(cronJobConfig));
