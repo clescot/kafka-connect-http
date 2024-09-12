@@ -84,12 +84,12 @@ public class CronSourceTask extends SourceTask {
                 try {
                     scheduler.scheduleJob(job, trigger);
                 } catch (SchedulerException e) {
-                    throw new RuntimeException(e);
+                    throw new CronException(e);
                 }
             });
 
         } catch (SchedulerException e) {
-            throw new RuntimeException(e);
+            throw new CronException(e);
         }
     }
 
@@ -108,7 +108,7 @@ public class CronSourceTask extends SourceTask {
                         objectMapper.writeValueAsString(httpRequest)
                 );
             } catch (JsonProcessingException e) {
-                throw new RuntimeException(e);
+                throw new CronException(e);
             }
             records.add(sourceRecord);
         }
@@ -122,7 +122,7 @@ public class CronSourceTask extends SourceTask {
                 scheduler.shutdown(true);
             }
         } catch (SchedulerException e) {
-            throw new RuntimeException(e);
+            throw new CronException(e);
         }
     }
 
