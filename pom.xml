@@ -45,6 +45,7 @@
         <failsafe.version>3.3.2</failsafe.version>
         <guava.version>33.3.0-jre</guava.version>
         <jackson.version>2.17.2</jackson.version>
+        <jacoco.version>0.8.12</jacoco.version>
         <json.assert.version>1.5.3</json.assert.version>
         <junit.version>5.11.0</junit.version>
         <logback.version>1.5.8</logback.version>
@@ -62,10 +63,12 @@
         <testcontainers.version>1.20.1</testcontainers.version>
         <skipIT>false</skipIT>
         <wiremock.version>2.35.2</wiremock.version>
+        <sonar.coverage.jacoco.xmlReportPaths>${project.basedir}/report-aggregate/target/site/jacoco-aggregate/jacoco.xml</sonar.coverage.jacoco.xmlReportPaths>
     </properties>
     <modules>
         <module>kafka-connect-http-core</module>
         <module>kafka-connect-http-connectors</module>
+        <module>report-aggregate</module>
     </modules>
 
     <dependencyManagement>
@@ -474,11 +477,6 @@
                                 <goals>
                                     <goal>report</goal>
                                 </goals>
-                                <configuration>
-                                    <formats>
-                                        <format>XML</format>
-                                    </formats>
-                                </configuration>
                             </execution>
                         </executions>
                     </plugin>
