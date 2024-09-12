@@ -5,7 +5,7 @@
     <description>a set of Kafka Connect connectors (Sink and Source), to interact with HTTP servers, linked via an in memory queue.</description>
     <groupId>io.github.clescot</groupId>
     <artifactId>kafka-connect-http</artifactId>
-    <version>0.7.225-SNAPSHOT</version>
+    <version>0.7.229-SNAPSHOT</version>
     <url>https://github.com/clescot/kafka-connect-http</url>
     <licenses>
         <license>
@@ -39,7 +39,7 @@
         <async.http.client.version>2.12.3</async.http.client.version>
         <commons-text.version>1.12.0</commons-text.version>
         <connect-json.version>3.8.0</connect-json.version>
-        <debezium.version>2.7.1.Final</debezium.version>
+        <debezium.version>2.7.2.Final</debezium.version>
         <kafka.version>3.8.0</kafka.version>
         <confluent.platform.version>7.7.0</confluent.platform.version>
         <failsafe.version>3.3.2</failsafe.version>
@@ -47,13 +47,13 @@
         <jackson.version>2.17.2</jackson.version>
         <json.assert.version>1.5.3</json.assert.version>
         <junit.version>5.11.0</junit.version>
-        <logback.version>1.5.7</logback.version>
+        <logback.version>1.5.8</logback.version>
         <maven.compiler.source>11</maven.compiler.source>
         <maven.compiler.target>11</maven.compiler.target>
         <maven.plugin.validation>VERBOSE</maven.plugin.validation>
         <mock-oauth2-server.version>0.5.10</mock-oauth2-server.version>
         <mockito.version>5.13.0</mockito.version>
-        <micrometer.version>1.13.3</micrometer.version>
+        <micrometer.version>1.13.4</micrometer.version>
         <okhttp.version>4.12.0</okhttp.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
@@ -86,7 +86,7 @@
             <dependency>
                 <groupId>ch.qos.logback</groupId>
                 <artifactId>logback-classic</artifactId>
-                <version>1.5.7</version>
+                <version>1.5.8</version>
             </dependency>
 
             <dependency>
