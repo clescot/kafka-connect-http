@@ -119,8 +119,9 @@ class CronSourceTaskTest {
         void get_version() {
             CronSourceTask cronSourceTask = new CronSourceTask();
             String version = cronSourceTask.version();
-            assertThat(version).isNotNull();
-            assertThat(version).isNotBlank();
+            assertThat(version)
+                    .isNotNull()
+                    .isNotBlank();
         }
     }
 
