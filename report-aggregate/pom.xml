@@ -37,7 +37,7 @@
                         </goals>
                         <configuration>
                             <dataFileIncludes>
-                                <dataFileInclude>**/jacoco.exec</dataFileInclude>
+                                <dataFileInclude>**/jacoco.xml</dataFileInclude>
                             </dataFileIncludes>
                             <outputDirectory>${project.reporting.outputDirectory}/report-aggregate</outputDirectory>
                         </configuration>
