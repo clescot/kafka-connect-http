@@ -3,6 +3,7 @@
 [![build](https://github.com/clescot/kafka-connect-http/workflows/build/badge.svg)](https://github.com/clescot/kafka-connect-http/actions/workflows/build.yaml)
 [![Maven Central](https://maven-badges.herokuapp.com/maven-central/io.github.clescot/kafka-connect-http/badge.svg)](https://maven-badges.herokuapp.com/maven-central/io.github.clescot/kafka-connect-http)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
+[![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=clescot_kafka-connect-http&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=clescot_kafka-connect-http)
 
 ![Architecture](docs/images/architecture_options_2.drawio.png)
 

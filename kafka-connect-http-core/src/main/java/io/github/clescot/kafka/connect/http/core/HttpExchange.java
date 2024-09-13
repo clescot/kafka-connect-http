@@ -2,14 +2,15 @@ package io.github.clescot.kafka.connect.http.core;
 
 import java.io.Serializable;
 import java.time.OffsetDateTime;
+import java.util.Objects;
 import java.util.concurrent.atomic.AtomicInteger;
 
-@io.confluent.kafka.schemaregistry.annotations.Schema(value = HttpExchange.SCHEMA_AS_STRING,refs = {})
+@io.confluent.kafka.schemaregistry.annotations.Schema(value = HttpExchange.SCHEMA_AS_STRING, refs = {})
 public class HttpExchange implements Serializable {
 
     public static final long serialVersionUID = 1L;
     public static final String BASE_SCHEMA_ID = "https://raw.githubusercontent.com/clescot/kafka-connect-http/master/kafka-connect-http-core/src/main/resources/schemas/json/versions/1/";
-    public static final String SCHEMA_ID = BASE_SCHEMA_ID+"http-exchange.json";
+    public static final String SCHEMA_ID = BASE_SCHEMA_ID + "http-exchange.json";
     public static final String SCHEMA_AS_STRING = "{\n" +
             "  \"$id\": \"" + SCHEMA_ID + "\",\n" +
             "  \"$schema\": \"http://json-schema.org/draft/2019-09/schema#\",\n" +
@@ -30,10 +31,10 @@ public class HttpExchange implements Serializable {
             "      \"type\": \"boolean\"\n" +
             "    },\n" +
             "    \"httpResponse\": {\n" +
-            "      \"$ref\": \""+HttpResponse.SCHEMA_ID+"\"\n" +
+            "      \"$ref\": \"" + HttpResponse.SCHEMA_ID + "\"\n" +
             "    },\n" +
             "    \"httpRequest\": {\n" +
-            "      \"$ref\": \""+HttpRequest.SCHEMA_ID+"\"\n" +
+            "      \"$ref\": \"" + HttpRequest.SCHEMA_ID + "\"\n" +
             "    }\n" +
             "  },\n" +
             "  \"required\": [\n" +
@@ -194,5 +195,16 @@ public class HttpExchange implements Serializable {
         }
     }
 
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof HttpExchange)) return false;
+        HttpExchange that = (HttpExchange) o;
+        return success == that.success && Objects.equals(durationInMillis, that.durationInMillis) && Objects.equals(moment, that.moment) && Objects.equals(attempts.get(), that.attempts.get()) && Objects.equals(httpResponse, that.httpResponse) && Objects.equals(httpRequest, that.httpRequest);
+    }
 
+    @Override
+    public int hashCode() {
+        return Objects.hash(durationInMillis, moment, attempts, success, httpResponse, httpRequest);
+    }
 }

@@ -40,21 +40,22 @@ public class HttpExchangeTest {
         }
         @Test
         public void test_nominal_case() {
+            OffsetDateTime now = OffsetDateTime.now();
             HttpExchange httpExchange = new HttpExchange(
                     getDummyHttpRequest(),
                     getDummyHttpResponse(200),
                     100,
-                    OffsetDateTime.now(),
+                    now,
                     new AtomicInteger(2),
                     SUCCESS);
             HttpExchange httpExchange1 = new HttpExchange(
                     getDummyHttpRequest(),
                   getDummyHttpResponse(200),
                     100,
-                    OffsetDateTime.now(),
+                    now,
                     new AtomicInteger(2),
                     SUCCESS);
-            httpExchange1.equals(httpExchange);
+            assertThat(httpExchange1).isEqualTo(httpExchange);
         }
 
         @Test
