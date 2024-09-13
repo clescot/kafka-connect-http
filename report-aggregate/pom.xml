@@ -36,18 +36,12 @@
                             <goal>report-aggregate</goal>
                         </goals>
                         <configuration>
-                            <dataFileIncludes>
-                                <dataFileInclude>**/jacoco.xml</dataFileInclude>
-                            </dataFileIncludes>
-                            <outputDirectory>${project.reporting.outputDirectory}/report-aggregate</outputDirectory>
+                            <excludes>
+                                <exclude>**/*.zip</exclude>
+                            </excludes>
                         </configuration>
                     </execution>
                 </executions>
-                <configuration>
-                    <excludes>
-                        <exclude>**/*.zip</exclude>
-                    </excludes>
-                </configuration>
             </plugin>
         </plugins>
     </build>
