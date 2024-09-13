@@ -25,17 +25,17 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-maven-
       - name: Build with Maven
-        run: mvn --batch-mode --update-snapshots verify
+        run: mvn --batch-mode --update-snapshots verify org.sonarsource.scanner.maven:sonar-maven-plugin:sonar
         env:
           MAVEN_GPG_PASSPHRASE: "${{ secrets.GPG_PASSPHRASE }}"
           SIGN_KEY: "${{ secrets.GPG_KEY }}"
           SIGN_KEY_ID: "${{ secrets.GPG_KEY_ID }}"
           SIGN_KEY_PASS: "${{ secrets.GPG_PASSPHRASE }}"
           SONAR_TOKEN: "${{ secrets.SONAR_TOKEN }}"
-      - name: SonarCloud Scan
-        uses: sonarsource/sonarcloud-github-action@v3.0.0
-        env:
-          SONAR_TOKEN: "${{ secrets.SONAR_TOKEN }}"
+#      - name: SonarCloud Scan
+#        uses: sonarsource/sonarcloud-github-action@v3.0.0
+#        env:
+#          SONAR_TOKEN: "${{ secrets.SONAR_TOKEN }}"
       - run: mkdir staging && cp kafka-connect-http-core/target/*.jar staging && cp -r kafka-connect-http-connectors/target/components/packages/clescot-kafka-connect-http-connectors-*.zip staging
       - uses: actions/upload-artifact@v4.4.0
         with:
