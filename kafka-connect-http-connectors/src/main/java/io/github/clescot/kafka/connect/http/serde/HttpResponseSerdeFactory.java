@@ -1,4 +1,4 @@
-package io.github.clescot.kafka.connect.http;
+package io.github.clescot.kafka.connect.http.serde;
 
 import io.confluent.kafka.schemaregistry.client.SchemaRegistryClient;
 import io.confluent.kafka.streams.serdes.json.KafkaJsonSchemaSerde;
@@ -9,7 +9,7 @@ import org.slf4j.LoggerFactory;
 
 import java.util.Map;
 
-public class HttpResponseSerdeFactory {
+public class HttpResponseSerdeFactory implements SerdeFactory<HttpResponse> {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(HttpResponseSerdeFactory.class);
     private final SchemaRegistryClient schemaRegistryClient;
@@ -22,10 +22,11 @@ public class HttpResponseSerdeFactory {
         this.serdeConfig = serdeConfig;
     }
 
-    public Serde<HttpResponse> buildValueSerde(){
+    @Override
+    public Serde<HttpResponse> buildSerde(boolean recordKey){
         final KafkaJsonSchemaSerde<HttpResponse> jsonSchemaSerde = new KafkaJsonSchemaSerde<>(schemaRegistryClient,HttpResponse.class);
         serdeConfig.forEach((key, value) -> LOGGER.info("{}:{}", key, value));
-        jsonSchemaSerde.configure(serdeConfig, false);
+        jsonSchemaSerde.configure(serdeConfig, recordKey);
         return jsonSchemaSerde;
     }
 }

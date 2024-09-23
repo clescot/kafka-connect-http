@@ -13,6 +13,7 @@ import io.github.clescot.kafka.connect.http.core.HttpRequest;
 import io.github.clescot.kafka.connect.http.core.queue.KafkaRecord;
 import io.github.clescot.kafka.connect.http.sink.mapper.HttpRequestMapper;
 import io.github.clescot.kafka.connect.http.sink.mapper.HttpRequestMapperFactory;
+import io.github.clescot.kafka.connect.http.sink.publish.KafkaProducer;
 import io.github.clescot.kafka.connect.http.sink.publish.PublishConfigurer;
 import io.github.clescot.kafka.connect.http.sink.publish.PublishMode;
 import io.micrometer.core.instrument.composite.CompositeMeterRegistry;
@@ -60,7 +61,7 @@ public abstract class HttpSinkTask<R, S> extends SinkTask {
 
     private ErrantRecordReporter errantRecordReporter;
     private HttpTask<SinkRecord, R, S> httpTask;
-    private KafkaProducer<String, HttpExchange> producer;
+    private KafkaProducer<String, Object> producer;
     private Queue<KafkaRecord> queue;
     private PublishMode publishMode;
     private HttpSinkConnectorConfig httpSinkConnectorConfig;
@@ -354,7 +355,7 @@ public abstract class HttpSinkTask<R, S> extends SinkTask {
         LOGGER.debug("publish.mode : 'PRODUCER' : HttpExchange success will be published at topic : '{}'", connectorConfig.getProducerSuccessTopic());
         LOGGER.debug("publish.mode : 'PRODUCER' : HttpExchange error will be published at topic : '{}'", connectorConfig.getProducerErrorTopic());
         String targetTopic = httpExchange.isSuccess() ? connectorConfig.getProducerSuccessTopic() : connectorConfig.getProducerErrorTopic();
-        ProducerRecord<String, HttpExchange> myRecord = new ProducerRecord<>(targetTopic, httpExchange);
+        ProducerRecord<String, Object> myRecord = new ProducerRecord<>(targetTopic, httpExchange);
         LOGGER.trace("before send to {}", targetTopic);
         RecordMetadata recordMetadata;
         try {

@@ -21,7 +21,9 @@ public class HttpSinkConfigDefinition {
     public static final String PRODUCER_ERROR_TOPIC = PRODUCER_PREFIX + "error.topic";
     public static final String PRODUCER_TOPIC_DOC = "producer topic";
     public static final String PRODUCER_FORMAT = PRODUCER_PREFIX + "format";
-    public static final String PRODUCER_FORMAT_DOC = "can be 'json', or 'string'; default to 'string'.";
+    public static final String PRODUCER_FORMAT_DOC = "can be either 'json', or 'string'; default to 'string'.";
+    public static final String PRODUCER_CONTENT = PRODUCER_PREFIX + "content";
+    public static final String PRODUCER_CONTENT_DOC = "can be either 'exchange' (HttpExchange), or 'response' (HttpResponse); default to 'exchange'.";
     public static final String PRODUCER_SCHEMA_REGISTRY_URL = PRODUCER_PREFIX + "schema.registry.url";
     public static final String PRODUCER_SCHEMA_REGISTRY_URL_DOC = "url and port of the schema registry.";
     public static final String PRODUCER_SCHEMA_REGISTRY_CACHE_CAPACITY = PRODUCER_PREFIX + "schema.registry.cache.capacity";
@@ -599,6 +601,8 @@ public class HttpSinkConfigDefinition {
                 .define(PRODUCER_SCHEMA_REGISTRY_URL, ConfigDef.Type.STRING, "", ConfigDef.Importance.LOW, PRODUCER_SCHEMA_REGISTRY_URL_DOC)
                 .define(PRODUCER_SCHEMA_REGISTRY_CACHE_CAPACITY, ConfigDef.Type.INT, 1000, ConfigDef.Importance.LOW, PRODUCER_SCHEMA_REGISTRY_CACHE_CAPACITY_DOC)
                 .define(PRODUCER_SCHEMA_REGISTRY_AUTO_REGISTER, ConfigDef.Type.BOOLEAN, Boolean.TRUE, ConfigDef.Importance.LOW, PRODUCER_SCHEMA_REGISTRY_AUTO_REGISTER_DOC)
+                //content
+                .define(PRODUCER_CONTENT, ConfigDef.Type.STRING, "exchange", ConfigDef.Importance.LOW, PRODUCER_CONTENT)
                 //formats
                 .define(PRODUCER_FORMAT, ConfigDef.Type.STRING, "string", ConfigDef.Importance.LOW, PRODUCER_FORMAT_DOC)
                 //json

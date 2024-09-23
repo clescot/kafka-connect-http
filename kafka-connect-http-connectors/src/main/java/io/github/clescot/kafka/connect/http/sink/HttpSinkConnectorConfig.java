@@ -24,6 +24,7 @@ import static io.github.clescot.kafka.connect.http.sink.HttpSinkConfigDefinition
 public class HttpSinkConnectorConfig extends AbstractConfig {
     private static final Logger LOGGER = LoggerFactory.getLogger(HttpSinkConnectorConfig.class);
     private final String producerFormat;
+    private final String producerContent;
 
     //publish mode set to 'producer'
     private final String producerBootstrapServers;
@@ -107,6 +108,7 @@ public class HttpSinkConnectorConfig extends AbstractConfig {
         this.producerSchemaRegistryCacheCapacity = getInt(PRODUCER_SCHEMA_REGISTRY_CACHE_CAPACITY);
         this.producerSchemaRegistryautoRegister = getBoolean(PRODUCER_SCHEMA_REGISTRY_AUTO_REGISTER);
         this.producerFormat = getString(PRODUCER_FORMAT);
+        this.producerContent = getString(PRODUCER_CONTENT);
         this.producerJsonSchemaSpecVersion = getString(PRODUCER_JSON_SCHEMA_SPEC_VERSION);
         this.producerJsonWriteDatesAs8601 = getBoolean(PRODUCER_JSON_WRITE_DATES_AS_ISO_8601);
         this.producerJsonOneOfForNullables = getBoolean(PRODUCER_JSON_ONE_OF_FOR_NULLABLES);
@@ -419,6 +421,10 @@ public class HttpSinkConnectorConfig extends AbstractConfig {
 
     public String getProducerFormat() {
         return producerFormat;
+    }
+
+    public String getProducerContent() {
+        return producerContent;
     }
 
     public String getProducerJsonSchemaSpecVersion() {

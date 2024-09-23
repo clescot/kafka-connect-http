@@ -25,7 +25,7 @@ import io.debezium.testing.testcontainers.Connector;
 import io.debezium.testing.testcontainers.ConnectorConfiguration;
 import io.debezium.testing.testcontainers.DebeziumContainer;
 import io.github.clescot.kafka.connect.http.core.HttpExchange;
-import io.github.clescot.kafka.connect.http.core.HttpExchangeSerializer;
+import io.github.clescot.kafka.connect.http.core.JsonStringSerializer;
 import io.github.clescot.kafka.connect.http.core.HttpRequest;
 import io.github.clescot.kafka.connect.http.core.queue.QueueFactory;
 import io.github.clescot.kafka.connect.http.sink.publish.PublishMode;
@@ -437,8 +437,8 @@ public class ITConnectorTest {
 
     @NotNull
     private static String serializeHttpExchange(ConsumerRecord<String, HttpExchange> consumerRecord) {
-        HttpExchangeSerializer httpExchangeSerializer = new HttpExchangeSerializer();
-        return new String(httpExchangeSerializer.serialize("dummy", consumerRecord.value()), StandardCharsets.UTF_8);
+        JsonStringSerializer jsonStringSerializer = new JsonStringSerializer();
+        return new String(jsonStringSerializer.serialize("dummy", consumerRecord.value()), StandardCharsets.UTF_8);
     }
 
 
@@ -756,8 +756,8 @@ public class ITConnectorTest {
                 "  \"responseBody\": \"" + escapedJsonResponse + "\"\n" +
                 "}" +
                 "}";
-        HttpExchangeSerializer httpExchangeSerializer = new HttpExchangeSerializer();
-        String httpExchangeAsString = new String(httpExchangeSerializer.serialize("dummy", httpExchange), StandardCharsets.UTF_8);
+        JsonStringSerializer jsonStringSerializer = new JsonStringSerializer();
+        String httpExchangeAsString = new String(jsonStringSerializer.serialize("dummy", httpExchange), StandardCharsets.UTF_8);
         JSONAssert.assertEquals(expectedJSON, httpExchangeAsString,
                 new CustomComparator(JSONCompareMode.LENIENT,
                         new Customization("moment", (o1, o2) -> true),
