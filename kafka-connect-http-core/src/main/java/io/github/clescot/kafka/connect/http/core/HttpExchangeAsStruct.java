@@ -31,7 +31,7 @@ public class HttpExchangeAsStruct {
             // response
             .field(HTTP_RESPONSE, HttpResponseAsStruct.SCHEMA)
             .schema();
-    private HttpExchange httpExchange;
+    private final HttpExchange httpExchange;
 
     public HttpExchangeAsStruct(HttpExchange httpExchange) {
 
