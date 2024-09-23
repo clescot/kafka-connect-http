@@ -10,6 +10,8 @@ public class HttpSourceConfigDefinition {
     public static final String SUCCESS_TOPIC_DOC = "Topic to receive successful http request/responses";
     public static final String ERROR_TOPIC = "error.topic";
     public static final String ERROR_TOPIC_DOC = "Topic to receive errors from http request/responses";
+    public static final String CONTENT = "either 'exchange' (HttpExchange) or 'response'(HttpResponse). default is 'exchange'.";
+    public static final String CONTENT_DOC = "Topic to receive errors from http request/responses";
     private HttpSourceConfigDefinition() {
         //Class with only static methods
     }
@@ -19,6 +21,7 @@ public class HttpSourceConfigDefinition {
                 .define(SUCCESS_TOPIC, ConfigDef.Type.STRING,  ConfigDef.Importance.HIGH,SUCCESS_TOPIC_DOC)
                 .define(ERROR_TOPIC, ConfigDef.Type.STRING, ConfigDef.Importance.HIGH, ERROR_TOPIC_DOC)
                 .define(ConfigConstants.QUEUE_NAME, ConfigDef.Type.STRING, null,ConfigDef.Importance.MEDIUM, ConfigConstants.QUEUE_NAME_DOC)
+                .define(CONTENT, ConfigDef.Type.STRING, null,ConfigDef.Importance.MEDIUM, CONTENT_DOC)
                 ;
     }
 }

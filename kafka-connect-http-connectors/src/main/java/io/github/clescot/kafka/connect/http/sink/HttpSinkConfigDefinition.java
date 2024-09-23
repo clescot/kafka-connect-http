@@ -602,7 +602,7 @@ public class HttpSinkConfigDefinition {
                 .define(PRODUCER_SCHEMA_REGISTRY_CACHE_CAPACITY, ConfigDef.Type.INT, 1000, ConfigDef.Importance.LOW, PRODUCER_SCHEMA_REGISTRY_CACHE_CAPACITY_DOC)
                 .define(PRODUCER_SCHEMA_REGISTRY_AUTO_REGISTER, ConfigDef.Type.BOOLEAN, Boolean.TRUE, ConfigDef.Importance.LOW, PRODUCER_SCHEMA_REGISTRY_AUTO_REGISTER_DOC)
                 //content
-                .define(PRODUCER_CONTENT, ConfigDef.Type.STRING, "exchange", ConfigDef.Importance.LOW, PRODUCER_CONTENT)
+                .define(PRODUCER_CONTENT, ConfigDef.Type.STRING, "exchange", ConfigDef.Importance.LOW, PRODUCER_CONTENT_DOC)
                 //formats
                 .define(PRODUCER_FORMAT, ConfigDef.Type.STRING, "string", ConfigDef.Importance.LOW, PRODUCER_FORMAT_DOC)
                 //json
