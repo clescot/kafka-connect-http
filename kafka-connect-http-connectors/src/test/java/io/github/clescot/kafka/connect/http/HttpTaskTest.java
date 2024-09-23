@@ -42,8 +42,6 @@ import static io.github.clescot.kafka.connect.http.sink.HttpSinkConfigDefinition
 import static org.assertj.core.api.Assertions.assertThat;
 
 class HttpTaskTest {
-    private static final String DUMMY_BODY = "stuff";
-    private static final String DUMMY_URL = "http://www." + DUMMY_BODY + ".com";
     private static final HttpRequest.Method DUMMY_METHOD = HttpRequest.Method.POST;
     private static final String DUMMY_BODY_TYPE = "STRING";
     private static final ExecutorService executorService = Executors.newFixedThreadPool(2);
