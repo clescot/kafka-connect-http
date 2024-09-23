@@ -10,17 +10,18 @@ import io.confluent.kafka.schemaregistry.client.SchemaRegistryClient;
 import io.confluent.kafka.schemaregistry.client.rest.RestService;
 import io.confluent.kafka.schemaregistry.json.JsonSchemaProvider;
 import io.confluent.kafka.serializers.json.KafkaJsonSchemaSerializerConfig;
-import io.github.clescot.kafka.connect.http.HttpExchangeSerdeFactory;
-import io.github.clescot.kafka.connect.http.core.HttpExchange;
-import io.github.clescot.kafka.connect.http.core.HttpExchangeSerializer;
+import io.github.clescot.kafka.connect.http.serde.HttpExchangeSerdeFactory;
+import io.github.clescot.kafka.connect.http.serde.HttpResponseSerdeFactory;
+import io.github.clescot.kafka.connect.http.serde.SerdeFactory;
+import io.github.clescot.kafka.connect.http.core.JsonStringSerializer;
 import io.github.clescot.kafka.connect.http.core.queue.KafkaRecord;
 import io.github.clescot.kafka.connect.http.core.queue.QueueFactory;
 import io.github.clescot.kafka.connect.http.sink.HttpSinkConnectorConfig;
-import io.github.clescot.kafka.connect.http.sink.KafkaProducer;
 import org.apache.kafka.common.KafkaException;
 import org.apache.kafka.common.PartitionInfo;
 import org.apache.kafka.common.serialization.Serializer;
 import org.apache.kafka.common.serialization.StringSerializer;
+import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -38,7 +39,7 @@ import static io.confluent.kafka.serializers.json.KafkaJsonSchemaSerializerConfi
 public class PublishConfigurer {
     private static final Logger LOGGER = LoggerFactory.getLogger(PublishConfigurer.class);
     public static final String PRODUCER_PREFIX = "producer.";
-    public static final String JSON = "json";
+    public static final String JSON_SCHEMA = "json";
     public static final String BEARER_AUTH_SUB_CLAIM_NAME = "bearer.auth.sub.claim.name";
     public static final String BEARER_AUTH_SCOPE_CLAIM_NAME = "bearer.auth.scope.claim.name";
     public static final String BEARER_AUTH_CACHE_EXPIRY_BUFFER_SECONDS = "bearer.auth.cache.expiry.buffer.seconds";
@@ -57,14 +58,14 @@ public class PublishConfigurer {
         return new PublishConfigurer();
     }
 
-    public KafkaProducer<String, HttpExchange> configureProducerPublishMode(HttpSinkConnectorConfig httpSinkConnectorConfig) {
+    public KafkaProducer<String, Object> configureProducerPublishMode(HttpSinkConnectorConfig httpSinkConnectorConfig) {
         //low-level producer is configured (bootstrap.servers is a requirement)
         Preconditions.checkArgument(!Strings.isNullOrEmpty(httpSinkConnectorConfig.getProducerBootstrapServers()), "producer.bootstrap.servers is not set.\n" + httpSinkConnectorConfig.toString());
         Preconditions.checkArgument(!Strings.isNullOrEmpty(httpSinkConnectorConfig.getProducerSuccessTopic()), "producer.success.topic is not set.\n" + httpSinkConnectorConfig.toString());
         Preconditions.checkArgument(!Strings.isNullOrEmpty(httpSinkConnectorConfig.getProducerErrorTopic()), "producer.error.topic is not set.\n" + httpSinkConnectorConfig.toString());
-        Serializer<HttpExchange> serializer = getHttpExchangeSerializer(httpSinkConnectorConfig);
+        Serializer<Object> serializer =  getSerializer(httpSinkConnectorConfig);
         Map<String, Object> producerSettings = httpSinkConnectorConfig.originalsWithPrefix(PRODUCER_PREFIX);
-        KafkaProducer<String, HttpExchange> producer = new KafkaProducer<>();
+        KafkaProducer<String,Object> producer = new KafkaProducer<>();
         producer.configure(producerSettings, new StringSerializer(), serializer);
 
         //connectivity check for producer
@@ -72,7 +73,7 @@ public class PublishConfigurer {
         return producer;
     }
 
-    private void checkKafkaConnectivity(HttpSinkConnectorConfig sinkConnectorConfig, KafkaProducer<String, HttpExchange> producer) {
+    private void checkKafkaConnectivity(HttpSinkConnectorConfig sinkConnectorConfig, KafkaProducer<String, Object> producer) {
         LOGGER.info("test connectivity to kafka cluster for producer with address :'{}' for topic:'{}'", sinkConnectorConfig.getProducerBootstrapServers(), sinkConnectorConfig.getProducerSuccessTopic());
         List<PartitionInfo> partitionInfos;
         try {
@@ -108,46 +109,20 @@ public class PublishConfigurer {
         return queue;
     }
 
-    private Serializer<HttpExchange> getHttpExchangeSerializer(HttpSinkConnectorConfig httpSinkConnectorConfig) {
-        Serializer<HttpExchange> serializer;
+    private <T> Serializer<T> getSerializer(HttpSinkConnectorConfig httpSinkConnectorConfig) {
+        Serializer<T> serializer;
         String format = httpSinkConnectorConfig.getProducerFormat();
         LOGGER.info("producer format:'{}'", format);
+        String content = httpSinkConnectorConfig.getProducerContent();
+        LOGGER.info("producer content:'{}'", content);
+
         //if format is json
-        if (JSON.equalsIgnoreCase(format)) {
+        if (JSON_SCHEMA.equalsIgnoreCase(format)) {
             //json schema serde config
             Map<String, Object> serdeConfig = Maps.newHashMap();
 
             String schemaRegistryUrl = httpSinkConnectorConfig.getProducerSchemaRegistryUrl();
             serdeConfig.put(SCHEMA_REGISTRY_URL_CONFIG, schemaRegistryUrl);
-
-            int schemaRegistryCacheCapacity = httpSinkConnectorConfig.getProducerSchemaRegistryCacheCapacity();
-            List<SchemaProvider> schemaProviders = Lists.newArrayList();
-            schemaProviders.add(new JsonSchemaProvider());
-            Map<String, Object> config = Maps.newHashMap();
-            if (httpSinkConnectorConfig.getMissingIdCacheTTLSec() != null) {
-                config.put(MISSING_ID_CACHE_TTL_SEC, httpSinkConnectorConfig.getMissingIdCacheTTLSec());
-            }
-            if (httpSinkConnectorConfig.getMissingVersionCacheTTLSec() != null) {
-                config.put(MISSING_VERSION_CACHE_TTL_SEC, httpSinkConnectorConfig.getMissingVersionCacheTTLSec());
-            }
-            if (httpSinkConnectorConfig.getMissingSchemaCacheTTLSec() != null) {
-                config.put(MISSING_SCHEMA_CACHE_TTL_SEC, httpSinkConnectorConfig.getMissingVersionCacheTTLSec());
-            }
-            if (httpSinkConnectorConfig.getMissingCacheSize() != null) {
-                config.put(MISSING_CACHE_SIZE, httpSinkConnectorConfig.getMissingCacheSize());
-            }
-            if (httpSinkConnectorConfig.getMissingCacheSize() != null) {
-                config.put(BEARER_AUTH_CACHE_EXPIRY_BUFFER_SECONDS, httpSinkConnectorConfig.getBearerAuthCacheExpiryBufferSeconds());
-            }
-            if (httpSinkConnectorConfig.getBearerAuthScopeClaimName() != null) {
-                config.put(BEARER_AUTH_SCOPE_CLAIM_NAME, httpSinkConnectorConfig.getBearerAuthScopeClaimName());
-            }
-            if (httpSinkConnectorConfig.getBearerAuthSubClaimName() != null) {
-                config.put(BEARER_AUTH_SUB_CLAIM_NAME, httpSinkConnectorConfig.getBearerAuthSubClaimName());
-            }
-            Map<String, String> httpHeaders = Maps.newHashMap();
-            RestService restService = new RestService(schemaRegistryUrl);
-            SchemaRegistryClient schemaRegistryClient = new CachedSchemaRegistryClient(restService, schemaRegistryCacheCapacity, schemaProviders, config, httpHeaders);
 
             boolean autoRegisterSchemas = httpSinkConnectorConfig.isProducerSchemaRegistryautoRegister();
             serdeConfig.put(AUTO_REGISTER_SCHEMAS, autoRegisterSchemas);
@@ -179,12 +154,52 @@ public class PublishConfigurer {
             serdeConfig.put("key.subject.name.strategy", httpSinkConnectorConfig.getProducerKeySubjectNameStrategy());
             serdeConfig.put("value.subject.name.strategy", httpSinkConnectorConfig.getProducerValueSubjectNameStrategy());
 
-            HttpExchangeSerdeFactory httpExchangeSerdeFactory = new HttpExchangeSerdeFactory(schemaRegistryClient, serdeConfig);
-            serializer = httpExchangeSerdeFactory.buildValueSerde().serializer();
+            SchemaRegistryClient schemaRegistryClient = getSchemaRegistryClient(httpSinkConnectorConfig, schemaRegistryUrl);
+            SerdeFactory serdeFactory;
+            if(content.equalsIgnoreCase("response")){
+                serdeFactory = new HttpResponseSerdeFactory(schemaRegistryClient, serdeConfig);
+            }else {
+                serdeFactory = new HttpExchangeSerdeFactory(schemaRegistryClient, serdeConfig);
+            }
+            serializer = serdeFactory.buildSerde(false).serializer();
         } else {
             //serialize as a simple string
-            serializer = new HttpExchangeSerializer();
+            serializer = new JsonStringSerializer();
         }
         return serializer;
+    }
+
+    @NotNull
+    private SchemaRegistryClient getSchemaRegistryClient(HttpSinkConnectorConfig httpSinkConnectorConfig, String schemaRegistryUrl) {
+
+        Map<String, Object> schemaRegistryClientConfig = Maps.newHashMap();
+        if (httpSinkConnectorConfig.getMissingIdCacheTTLSec() != null) {
+            schemaRegistryClientConfig.put(MISSING_ID_CACHE_TTL_SEC, httpSinkConnectorConfig.getMissingIdCacheTTLSec());
+        }
+        if (httpSinkConnectorConfig.getMissingVersionCacheTTLSec() != null) {
+            schemaRegistryClientConfig.put(MISSING_VERSION_CACHE_TTL_SEC, httpSinkConnectorConfig.getMissingVersionCacheTTLSec());
+        }
+        if (httpSinkConnectorConfig.getMissingSchemaCacheTTLSec() != null) {
+            schemaRegistryClientConfig.put(MISSING_SCHEMA_CACHE_TTL_SEC, httpSinkConnectorConfig.getMissingVersionCacheTTLSec());
+        }
+        if (httpSinkConnectorConfig.getMissingCacheSize() != null) {
+            schemaRegistryClientConfig.put(MISSING_CACHE_SIZE, httpSinkConnectorConfig.getMissingCacheSize());
+        }
+        if (httpSinkConnectorConfig.getMissingCacheSize() != null) {
+            schemaRegistryClientConfig.put(BEARER_AUTH_CACHE_EXPIRY_BUFFER_SECONDS, httpSinkConnectorConfig.getBearerAuthCacheExpiryBufferSeconds());
+        }
+        if (httpSinkConnectorConfig.getBearerAuthScopeClaimName() != null) {
+            schemaRegistryClientConfig.put(BEARER_AUTH_SCOPE_CLAIM_NAME, httpSinkConnectorConfig.getBearerAuthScopeClaimName());
+        }
+        if (httpSinkConnectorConfig.getBearerAuthSubClaimName() != null) {
+            schemaRegistryClientConfig.put(BEARER_AUTH_SUB_CLAIM_NAME, httpSinkConnectorConfig.getBearerAuthSubClaimName());
+        }
+
+        RestService restService = new RestService(schemaRegistryUrl);
+        int schemaRegistryCacheCapacity = httpSinkConnectorConfig.getProducerSchemaRegistryCacheCapacity();
+        List<SchemaProvider> schemaProviders = Lists.newArrayList();
+        schemaProviders.add(new JsonSchemaProvider());
+        Map<String, String> httpHeaders = Maps.newHashMap();
+        return new CachedSchemaRegistryClient(restService, schemaRegistryCacheCapacity, schemaProviders, schemaRegistryClientConfig, httpHeaders);
     }
 }
