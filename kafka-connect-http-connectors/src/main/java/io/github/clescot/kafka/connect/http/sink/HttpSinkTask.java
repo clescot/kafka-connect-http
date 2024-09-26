@@ -355,7 +355,13 @@ public abstract class HttpSinkTask<R, S> extends SinkTask {
         LOGGER.debug("publish.mode : 'PRODUCER' : HttpExchange success will be published at topic : '{}'", connectorConfig.getProducerSuccessTopic());
         LOGGER.debug("publish.mode : 'PRODUCER' : HttpExchange error will be published at topic : '{}'", connectorConfig.getProducerErrorTopic());
         String targetTopic = httpExchange.isSuccess() ? connectorConfig.getProducerSuccessTopic() : connectorConfig.getProducerErrorTopic();
-        ProducerRecord<String, Object> myRecord = new ProducerRecord<>(targetTopic, httpExchange);
+        String producerContent = connectorConfig.getProducerContent();
+        ProducerRecord<String, Object> myRecord;
+        if("response".equalsIgnoreCase(producerContent)) {
+            myRecord = new ProducerRecord<>(targetTopic, httpExchange.getHttpResponse());
+        }else{
+            myRecord = new ProducerRecord<>(targetTopic, httpExchange);
+        }
         LOGGER.trace("before send to {}", targetTopic);
         RecordMetadata recordMetadata;
         try {
