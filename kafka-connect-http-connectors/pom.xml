@@ -155,7 +155,7 @@
         <dependency>
             <groupId>com.nimbusds</groupId>
             <artifactId>oauth2-oidc-sdk</artifactId>
-            <version>11.19.1</version>
+            <version>11.20</version>
         </dependency>
         <dependency>
             <groupId>org.apache.commons</groupId>
@@ -402,7 +402,7 @@
                     <plugin>
                         <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-failsafe-plugin</artifactId>
-                        <version>3.5.0</version>
+                        <version>3.5.1</version>
                         <executions>
                             <execution>
                                 <goals>
