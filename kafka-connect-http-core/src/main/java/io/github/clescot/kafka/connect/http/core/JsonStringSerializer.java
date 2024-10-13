@@ -8,10 +8,10 @@ import org.apache.kafka.connect.errors.ConnectException;
 
 import java.util.Map;
 
-public class HttpExchangeSerializer implements Serializer<HttpExchange> {
+public class JsonStringSerializer<T> implements Serializer<T> {
     private final ObjectMapper objectMapper;
 
-    public HttpExchangeSerializer() {
+    public JsonStringSerializer() {
          objectMapper= new ObjectMapper();
          objectMapper.registerModule(new JavaTimeModule());
     }
@@ -21,7 +21,7 @@ public class HttpExchangeSerializer implements Serializer<HttpExchange> {
     }
 
     @Override
-    public byte[] serialize(String topic, HttpExchange data) {
+    public byte[] serialize(String topic, T data) {
         try {
             return objectMapper.writeValueAsBytes(data);
         } catch (JsonProcessingException e) {

@@ -471,6 +471,7 @@ controlled by the  *`publish.mode`* parameter : `NONE` by default. When set to a
   - `producer.bearer.auth.cache.expiry.buffer.seconds` : parameter configuration of the _CachedSchemaRegistryClient_
   - `producer.bearer.auth.scope.claim.name` : parameter configuration of the _CachedSchemaRegistryClient_
   - `producer.bearer.auth.sub.claim.name` : parameter configuration of the _CachedSchemaRegistryClient_
+  - `producer.content` : can be `exchange` (default) or `response`. define if the complete HttpExchange is published (with request, response, and other data like timing), or only the HttpResponse.
   - other parameters can be passed to the low level kafka producer instance.
 
 You can create or update this connector instance with this command :

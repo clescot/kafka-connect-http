@@ -20,7 +20,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-class HttpExchangeSerializerTest {
+class JsonStringSerializerTest {
     private static final String DUMMY_BODY = "stuff";
     private static final HttpRequest.Method DUMMY_METHOD = HttpRequest.Method.POST;
     private static final String DUMMY_BODY_TYPE = "STRING";
@@ -30,8 +30,8 @@ class HttpExchangeSerializerTest {
         HttpRequest httpRequest = new HttpRequest();
         HttpResponse httpResponse= new HttpResponse();
         HttpExchange httpExchange = new HttpExchange(httpRequest,httpResponse,100, OffsetDateTime.now(),new AtomicInteger(1),true);
-        HttpExchangeSerializer httpExchangeSerializer = new HttpExchangeSerializer();
-        byte[] serialized = httpExchangeSerializer.serialize("dummy", httpExchange);
+        JsonStringSerializer<HttpExchange> jsonStringSerializer = new JsonStringSerializer();
+        byte[] serialized = jsonStringSerializer.serialize("dummy", httpExchange);
         assertThat(serialized).isNotNull();
     }
 

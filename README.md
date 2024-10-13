@@ -1,4 +1,4 @@
-# Kafka Connect HTTP Sink and (optionally) Source connectors project
+# Kafka Connect HTTP Sink, HTTP Source and Cron Source connectors project
 
 [![build](https://github.com/clescot/kafka-connect-http/workflows/build/badge.svg)](https://github.com/clescot/kafka-connect-http/actions/workflows/build.yaml)
 [![Maven Central](https://maven-badges.herokuapp.com/maven-central/io.github.clescot/kafka-connect-http/badge.svg)](https://maven-badges.herokuapp.com/maven-central/io.github.clescot/kafka-connect-http)

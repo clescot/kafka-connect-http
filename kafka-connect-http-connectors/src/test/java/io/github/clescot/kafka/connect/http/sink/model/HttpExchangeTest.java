@@ -96,7 +96,7 @@ public class HttpExchangeTest {
                     failUnknownProperties,
                     null
             );
-            System.out.println(expectedJsonSchema);
+            assertThat(expectedJsonSchema).isNotNull();
         }
         @Test
         public void test_serialize_http_exchange(){

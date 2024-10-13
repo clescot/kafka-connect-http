@@ -16,7 +16,7 @@ jobs:
           distribution: 'adopt'
           cache: maven
           gpg-private-key: "${{ secrets.GPG_KEY }}"
-          gpg-passphrase: MAVEN_GPG_PASSPHRASE
+          gpg-passphrase: "${{ secrets.GPG_PASSPHRASE }}"
       - name: Cache local Maven repository
         uses: actions/cache@v4.0.2
         with:

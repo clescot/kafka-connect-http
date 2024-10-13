@@ -6,6 +6,8 @@ import com.google.common.collect.Maps;
 import io.github.clescot.kafka.connect.http.VersionUtils;
 import io.github.clescot.kafka.connect.http.core.HttpExchange;
 import io.github.clescot.kafka.connect.http.core.HttpExchangeAsStruct;
+import io.github.clescot.kafka.connect.http.core.HttpResponse;
+import io.github.clescot.kafka.connect.http.core.HttpResponseAsStruct;
 import io.github.clescot.kafka.connect.http.core.queue.KafkaRecord;
 import io.github.clescot.kafka.connect.http.core.queue.QueueFactory;
 import org.apache.kafka.connect.data.Struct;
@@ -64,8 +66,17 @@ public class HttpSourceTask extends SourceTask {
         Map<String, ?> sourcePartition = Maps.newHashMap();
         Map<String, ?> sourceOffset= Maps.newHashMap();
         HttpExchange httpExchange = kafkaRecord.getHttpExchange();
-        HttpExchangeAsStruct httpExchangeAsStruct = new HttpExchangeAsStruct(httpExchange);
-        Struct struct = httpExchangeAsStruct.toStruct();
+
+        Struct struct;
+        if("response".equalsIgnoreCase(sourceConfig.getContent())){
+            HttpResponse httpResponse = httpExchange.getHttpResponse();
+            HttpResponseAsStruct httpResponseAsStruct = new HttpResponseAsStruct(httpResponse);
+            struct = httpResponseAsStruct.toStruct();
+        }else {
+            HttpExchangeAsStruct httpExchangeAsStruct = new HttpExchangeAsStruct(httpExchange);
+            struct = httpExchangeAsStruct.toStruct();
+        }
+
         LOGGER.debug("HttpSourcetask Struct received :{}",struct);
         return new SourceRecord(
                 sourcePartition,
