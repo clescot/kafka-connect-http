@@ -18,6 +18,8 @@ public class HttpExchangeSerdeFactory implements SerdeFactory<HttpExchange> {
 
     public HttpExchangeSerdeFactory(SchemaRegistryClient schemaRegistryClient,
                                     Map<String, Object> serdeConfig) {
+        Preconditions.checkNotNull(schemaRegistryClient);
+        Preconditions.checkNotNull(serdeConfig);
         this.schemaRegistryClient = schemaRegistryClient;
         this.serdeConfig = serdeConfig;
     }
