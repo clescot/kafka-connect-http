@@ -58,19 +58,20 @@ public class PublishConfigurer {
         return new PublishConfigurer();
     }
 
-    public KafkaProducer<String, Object> configureProducerPublishMode(HttpSinkConnectorConfig httpSinkConnectorConfig) {
+    public void configureProducerPublishMode(HttpSinkConnectorConfig httpSinkConnectorConfig, KafkaProducer<String, Object> producer) {
+
+        Preconditions.checkNotNull(httpSinkConnectorConfig,"'httpSinkConnectorConfig' is null but required");
+
         //low-level producer is configured (bootstrap.servers is a requirement)
         Preconditions.checkArgument(!Strings.isNullOrEmpty(httpSinkConnectorConfig.getProducerBootstrapServers()), "producer.bootstrap.servers is not set.\n" + httpSinkConnectorConfig.toString());
         Preconditions.checkArgument(!Strings.isNullOrEmpty(httpSinkConnectorConfig.getProducerSuccessTopic()), "producer.success.topic is not set.\n" + httpSinkConnectorConfig.toString());
         Preconditions.checkArgument(!Strings.isNullOrEmpty(httpSinkConnectorConfig.getProducerErrorTopic()), "producer.error.topic is not set.\n" + httpSinkConnectorConfig.toString());
         Serializer<Object> serializer =  getSerializer(httpSinkConnectorConfig);
         Map<String, Object> producerSettings = httpSinkConnectorConfig.originalsWithPrefix(PRODUCER_PREFIX);
-        KafkaProducer<String,Object> producer = new KafkaProducer<>();
         producer.configure(producerSettings, new StringSerializer(), serializer);
 
         //connectivity check for producer
         checkKafkaConnectivity(httpSinkConnectorConfig, producer);
-        return producer;
     }
 
     private void checkKafkaConnectivity(HttpSinkConnectorConfig sinkConnectorConfig, KafkaProducer<String, Object> producer) {
