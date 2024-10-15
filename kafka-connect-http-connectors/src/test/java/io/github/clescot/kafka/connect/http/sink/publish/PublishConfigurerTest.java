@@ -16,6 +16,7 @@ import org.junit.jupiter.api.Test;
 
 import java.util.HashMap;
 
+import static io.github.clescot.kafka.connect.http.sink.HttpSinkConfigDefinition.*;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -66,6 +67,29 @@ class PublishConfigurerTest {
             HashMap<String, String> originals = Maps.newHashMap();
             originals.put("producer.bootstrap.servers","localhost:9092");
             originals.put("producer.format","json");
+            HttpSinkConnectorConfig httpSinkConnectorConfig = new HttpSinkConnectorConfig(originals);
+            Cluster cluster = mock(Cluster.class);
+            Node node = new Node(1,"localhost",9092);
+            PartitionInfo partitionInfo = new PartitionInfo("success",0,node,new Node[]{},new Node[]{});
+            when(cluster.partitionsForTopic(anyString())).thenReturn(Lists.newArrayList(partitionInfo));
+            MockProducer<String, Object> mockProducer = new MockProducer<>(cluster,true,new StringSerializer(),null);
+            KafkaProducer<String, Object> kafkaProducer = new KafkaProducer<>(mockProducer);
+            Assertions.assertDoesNotThrow(()->publishConfigurer.configureProducerPublishMode(httpSinkConnectorConfig, kafkaProducer));
+        }
+
+        @Test
+        void test_bootstrap_servers_producer_format_and_schema_registry_options(){
+            PublishConfigurer publishConfigurer = PublishConfigurer.build();
+            HashMap<String, String> originals = Maps.newHashMap();
+            originals.put("producer.bootstrap.servers","localhost:9092");
+            originals.put("producer.format","json");
+            originals.put(PRODUCER_MISSING_ID_CACHE_TTL_SEC,"30");
+            originals.put(PRODUCER_MISSING_VERSION_CACHE_TTL_SEC,"30");
+            originals.put(PRODUCER_MISSING_SCHEMA_CACHE_TTL_SEC,"30");
+            originals.put(PRODUCER_MISSING_CACHE_SIZE,"60");
+            originals.put(PRODUCER_BEARER_AUTH_CACHE_EXPIRY_BUFFER_SECONDS,"60");
+            originals.put(PRODUCER_BEARER_AUTH_SCOPE_CLAIM_NAME,"test");
+            originals.put(PRODUCER_BEARER_AUTH_SUB_CLAIM_NAME,"test2");
             HttpSinkConnectorConfig httpSinkConnectorConfig = new HttpSinkConnectorConfig(originals);
             Cluster cluster = mock(Cluster.class);
             Node node = new Node(1,"localhost",9092);

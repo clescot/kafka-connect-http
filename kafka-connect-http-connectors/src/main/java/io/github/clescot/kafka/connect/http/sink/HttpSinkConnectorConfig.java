@@ -40,9 +40,9 @@ public class HttpSinkConnectorConfig extends AbstractConfig {
     private final boolean producerJsonFailUnknownProperties;
     private final String producerKeySubjectNameStrategy;
     private final String producerValueSubjectNameStrategy;
-    private final Integer missingIdCacheTTLSec;
-    private final Integer missingVersionCacheTTLSec;
-    private final Integer missingSchemaCacheTTLSec;
+    private final Long missingIdCacheTTLSec;
+    private final Long missingVersionCacheTTLSec;
+    private final Long missingSchemaCacheTTLSec;
     private final Integer missingCacheSize;
     private final Integer bearerAuthCacheExpiryBufferSeconds;
     private final String bearerAuthScopeClaimName;
@@ -94,11 +94,11 @@ public class HttpSinkConnectorConfig extends AbstractConfig {
     private final String defaultBodyExpression;
     private final String defaultHeadersExpression;
 
-    public HttpSinkConnectorConfig(Map<String,String> originals) {
+    public HttpSinkConnectorConfig(Map<String, String> originals) {
         this(new HttpSinkConfigDefinition(originals).config(), originals);
     }
 
-    public HttpSinkConnectorConfig(ConfigDef configDef, Map<String,String> originals) {
+    public HttpSinkConnectorConfig(ConfigDef configDef, Map<String, String> originals) {
         super(configDef, originals, LOGGER.isDebugEnabled());
 
 
@@ -116,9 +116,9 @@ public class HttpSinkConnectorConfig extends AbstractConfig {
         this.producerJsonFailUnknownProperties = getBoolean(PRODUCER_JSON_FAIL_UNKNOWN_PROPERTIES);
         this.producerKeySubjectNameStrategy = getString(PRODUCER_KEY_SUBJECT_NAME_STRATEGY);
         this.producerValueSubjectNameStrategy = getString(PRODUCER_VALUE_SUBJECT_NAME_STRATEGY);
-        this.missingIdCacheTTLSec = getInt(PRODUCER_MISSING_ID_CACHE_TTL_SEC);
-        this.missingVersionCacheTTLSec = getInt(PRODUCER_MISSING_VERSION_CACHE_TTL_SEC);
-        this.missingSchemaCacheTTLSec = getInt(PRODUCER_MISSING_SCHEMA_CACHE_TTL_SEC);
+        this.missingIdCacheTTLSec = getLong(PRODUCER_MISSING_ID_CACHE_TTL_SEC);
+        this.missingVersionCacheTTLSec = getLong(PRODUCER_MISSING_VERSION_CACHE_TTL_SEC);
+        this.missingSchemaCacheTTLSec = getLong(PRODUCER_MISSING_SCHEMA_CACHE_TTL_SEC);
         this.missingCacheSize = getInt(PRODUCER_MISSING_CACHE_SIZE);
         this.bearerAuthCacheExpiryBufferSeconds = getInt(PRODUCER_BEARER_AUTH_CACHE_EXPIRY_BUFFER_SECONDS);
         this.bearerAuthScopeClaimName = getString(PRODUCER_BEARER_AUTH_SCOPE_CLAIM_NAME);
@@ -145,7 +145,7 @@ public class HttpSinkConnectorConfig extends AbstractConfig {
         this.publishMode = PublishMode.valueOf(Optional.ofNullable(getString(PUBLISH_MODE)).orElse(PublishMode.NONE.name()));
         this.producerSuccessTopic = getString(PRODUCER_SUCCESS_TOPIC);
         this.producerErrorTopic = getString(PRODUCER_ERROR_TOPIC);
-        if (QueueFactory.queueMapIsEmpty()&& PublishMode.IN_MEMORY_QUEUE.name().equalsIgnoreCase(publishMode.name())) {
+        if (QueueFactory.queueMapIsEmpty() && PublishMode.IN_MEMORY_QUEUE.name().equalsIgnoreCase(publishMode.name())) {
             LOGGER.warn("no pre-existing queue exists. this HttpSourceConnector has created a '{}' one. It needs to consume a queue filled with a SinkConnector. Ignore this message if a SinkConnector will be created after this one.", queueName);
         }
 
@@ -168,19 +168,19 @@ public class HttpSinkConnectorConfig extends AbstractConfig {
         for (String headerName : additionalHeaderNamesList) {
             String key = DEFAULT_CONFIGURATION_PREFIX + STATIC_REQUEST_HEADER_PREFIX + headerName;
             String value = (String) originals().get(key);
-            Preconditions.checkNotNull(value, "'" + key + "' is not configured as a parameter. original parameters : \n"+ originalStrings);
+            Preconditions.checkNotNull(value, "'" + key + "' is not configured as a parameter. original parameters : \n" + originalStrings);
             staticRequestHeaders.put(headerName, Lists.newArrayList(value));
         }
         this.defaultSuccessResponseCodeRegex = getString(CONFIG_DEFAULT_SUCCESS_RESPONSE_CODE_REGEX);
         this.defaultRetryResponseCodeRegex = getString(CONFIG_DEFAULT_RETRY_RESPONSE_CODE_REGEX);
         this.customFixedThreadpoolSize = getInt(HTTP_CLIENT_ASYNC_FIXED_THREAD_POOL_SIZE);
         this.configurationIds = Optional.ofNullable(getList(CONFIGURATION_IDS)).orElse(Lists.newArrayList());
-        this.defaultRequestMapperMode = Optional.of(MapperMode.valueOf(getString(DEFAULT_REQUEST_MAPPER_PREFIX+REQUEST_MAPPER_DEFAULT_MODE))).orElse(MapperMode.DIRECT);
-        this.defaultUrlExpression = getString(DEFAULT_REQUEST_MAPPER_PREFIX+REQUEST_MAPPER_DEFAULT_URL_EXPRESSION);
-        this.defaultMethodExpression = getString(DEFAULT_REQUEST_MAPPER_PREFIX+REQUEST_MAPPER_DEFAULT_METHOD_EXPRESSION);
-        this.defaultBodyTypeExpression = Optional.ofNullable(getString(DEFAULT_REQUEST_MAPPER_PREFIX+REQUEST_MAPPER_DEFAULT_BODYTYPE_EXPRESSION)).orElse("'"+ HttpRequest.BodyType.STRING +"'");
-        this.defaultBodyExpression = getString(DEFAULT_REQUEST_MAPPER_PREFIX+REQUEST_MAPPER_DEFAULT_BODY_EXPRESSION);
-        this.defaultHeadersExpression = getString(DEFAULT_REQUEST_MAPPER_PREFIX+REQUEST_MAPPER_DEFAULT_HEADERS_EXPRESSION);
+        this.defaultRequestMapperMode = Optional.of(MapperMode.valueOf(getString(DEFAULT_REQUEST_MAPPER_PREFIX + REQUEST_MAPPER_DEFAULT_MODE))).orElse(MapperMode.DIRECT);
+        this.defaultUrlExpression = getString(DEFAULT_REQUEST_MAPPER_PREFIX + REQUEST_MAPPER_DEFAULT_URL_EXPRESSION);
+        this.defaultMethodExpression = getString(DEFAULT_REQUEST_MAPPER_PREFIX + REQUEST_MAPPER_DEFAULT_METHOD_EXPRESSION);
+        this.defaultBodyTypeExpression = Optional.ofNullable(getString(DEFAULT_REQUEST_MAPPER_PREFIX + REQUEST_MAPPER_DEFAULT_BODYTYPE_EXPRESSION)).orElse("'" + HttpRequest.BodyType.STRING + "'");
+        this.defaultBodyExpression = getString(DEFAULT_REQUEST_MAPPER_PREFIX + REQUEST_MAPPER_DEFAULT_BODY_EXPRESSION);
+        this.defaultHeadersExpression = getString(DEFAULT_REQUEST_MAPPER_PREFIX + REQUEST_MAPPER_DEFAULT_HEADERS_EXPRESSION);
         this.httpRequestMapperIds = Optional.ofNullable(getList(HTTP_REQUEST_MAPPER_IDS)).orElse(Lists.newArrayList());
         this.messageSplitterIds = Optional.ofNullable(getList(MESSAGE_SPLITTER_IDS)).orElse(Lists.newArrayList());
     }
@@ -214,15 +214,15 @@ public class HttpSinkConnectorConfig extends AbstractConfig {
         return queueName;
     }
 
-    public Integer getMissingIdCacheTTLSec() {
+    public Long getMissingIdCacheTTLSec() {
         return missingIdCacheTTLSec;
     }
 
-    public Integer getMissingVersionCacheTTLSec() {
+    public Long getMissingVersionCacheTTLSec() {
         return missingVersionCacheTTLSec;
     }
 
-    public Integer getMissingSchemaCacheTTLSec() {
+    public Long getMissingSchemaCacheTTLSec() {
         return missingSchemaCacheTTLSec;
     }
 
