@@ -83,7 +83,6 @@ class PublishConfigurerTest {
             originals.put("producer.bootstrap.servers","localhost:9092");
             HttpSinkConnectorConfig httpSinkConnectorConfig = new HttpSinkConnectorConfig(originals);
             Cluster cluster = mock(Cluster.class);
-            Node node = new Node(1,"localhost",9092);
             when(cluster.partitionsForTopic(anyString())).thenReturn(Lists.newArrayList());
             MockProducer<String, Object> mockProducer = new MockProducer<>(cluster,true,new StringSerializer(),null);
             KafkaProducer<String, Object> kafkaProducer = new KafkaProducer<>(mockProducer);

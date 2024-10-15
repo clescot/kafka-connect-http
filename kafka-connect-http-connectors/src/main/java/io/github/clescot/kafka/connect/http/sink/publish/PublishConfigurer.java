@@ -47,7 +47,6 @@ public class PublishConfigurer {
     public static final String MISSING_SCHEMA_CACHE_TTL_SEC = "missing.schema.cache.ttl.sec";
     public static final String MISSING_VERSION_CACHE_TTL_SEC = "missing.version.cache.ttl.sec";
     public static final String MISSING_ID_CACHE_TTL_SEC = "missing.id.cache.ttl.sec";
-    public static final String RECORD_NOT_SENT = "/!\\ ☠☠ record NOT sent ☠☠";
     private static final List<String> JSON_SCHEMA_VERSIONS = Lists.newArrayList("draft_4", "draft_6", "draft_7", "draft_2019_09");
 
     //tests only
@@ -165,7 +164,7 @@ public class PublishConfigurer {
             serializer = serdeFactory.buildSerde(false).serializer();
         } else {
             //serialize as a simple string
-            serializer = new JsonStringSerializer();
+            serializer = new JsonStringSerializer<>();
         }
         return serializer;
     }
