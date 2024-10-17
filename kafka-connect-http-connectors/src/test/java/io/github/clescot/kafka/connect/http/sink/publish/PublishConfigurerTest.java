@@ -3,6 +3,7 @@ package io.github.clescot.kafka.connect.http.sink.publish;
 
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
+import io.github.clescot.kafka.connect.http.core.queue.QueueFactory;
 import io.github.clescot.kafka.connect.http.sink.HttpSinkConnectorConfig;
 import org.apache.kafka.clients.producer.MockProducer;
 import org.apache.kafka.common.Cluster;
@@ -16,6 +17,7 @@ import org.junit.jupiter.api.Test;
 
 import java.util.HashMap;
 
+import static io.github.clescot.kafka.connect.http.core.queue.QueueFactory.DEFAULT_QUEUE_NAME;
 import static io.github.clescot.kafka.connect.http.sink.HttpSinkConfigDefinition.*;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
@@ -101,6 +103,23 @@ class PublishConfigurerTest {
         }
 
         @Test
+        void test_bootstrap_servers_producer_format_and_content(){
+            PublishConfigurer publishConfigurer = PublishConfigurer.build();
+            HashMap<String, String> originals = Maps.newHashMap();
+            originals.put("producer.bootstrap.servers","localhost:9092");
+            originals.put("producer.format","json");
+            originals.put("producer.content","response");
+            HttpSinkConnectorConfig httpSinkConnectorConfig = new HttpSinkConnectorConfig(originals);
+            Cluster cluster = mock(Cluster.class);
+            Node node = new Node(1,"localhost",9092);
+            PartitionInfo partitionInfo = new PartitionInfo("success",0,node,new Node[]{},new Node[]{});
+            when(cluster.partitionsForTopic(anyString())).thenReturn(Lists.newArrayList(partitionInfo));
+            MockProducer<String, Object> mockProducer = new MockProducer<>(cluster,true,new StringSerializer(),null);
+            KafkaProducer<String, Object> kafkaProducer = new KafkaProducer<>(mockProducer);
+            Assertions.assertDoesNotThrow(()->publishConfigurer.configureProducerPublishMode(httpSinkConnectorConfig, kafkaProducer));
+        }
+
+        @Test
         void test_only_bootstrap_servers_with_empty_partition_info(){
             PublishConfigurer publishConfigurer = PublishConfigurer.build();
             HashMap<String, String> originals = Maps.newHashMap();
@@ -126,4 +145,20 @@ class PublishConfigurerTest {
         }
     }
 
+    @Nested
+    class ConfigureInMemoryQueue{
+
+        @Test
+        void test_null(){
+            PublishConfigurer publishConfigurer = PublishConfigurer.build();
+            Assertions.assertThrows(NullPointerException.class,()->publishConfigurer.configureInMemoryQueue(null));
+        }
+        @Test
+        void test_empty_connector_config(){
+            PublishConfigurer publishConfigurer = PublishConfigurer.build();
+            HttpSinkConnectorConfig httpSinkConnectorConfig = new HttpSinkConnectorConfig(Maps.newHashMap());
+            QueueFactory.registerConsumerForQueue(DEFAULT_QUEUE_NAME);
+            Assertions.assertDoesNotThrow(()->publishConfigurer.configureInMemoryQueue(httpSinkConnectorConfig));
+        }
+    }
 }

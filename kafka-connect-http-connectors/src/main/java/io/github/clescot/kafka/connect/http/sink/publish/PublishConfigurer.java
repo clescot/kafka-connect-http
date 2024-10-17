@@ -62,9 +62,9 @@ public class PublishConfigurer {
         Preconditions.checkNotNull(httpSinkConnectorConfig,"'httpSinkConnectorConfig' is null but required");
 
         //low-level producer is configured (bootstrap.servers is a requirement)
-        Preconditions.checkArgument(!Strings.isNullOrEmpty(httpSinkConnectorConfig.getProducerBootstrapServers()), "producer.bootstrap.servers is not set.\n" + httpSinkConnectorConfig.toString());
-        Preconditions.checkArgument(!Strings.isNullOrEmpty(httpSinkConnectorConfig.getProducerSuccessTopic()), "producer.success.topic is not set.\n" + httpSinkConnectorConfig.toString());
-        Preconditions.checkArgument(!Strings.isNullOrEmpty(httpSinkConnectorConfig.getProducerErrorTopic()), "producer.error.topic is not set.\n" + httpSinkConnectorConfig.toString());
+        Preconditions.checkArgument(!Strings.isNullOrEmpty(httpSinkConnectorConfig.getProducerBootstrapServers()), "producer.bootstrap.servers is not set.\n" + httpSinkConnectorConfig);
+        Preconditions.checkArgument(!Strings.isNullOrEmpty(httpSinkConnectorConfig.getProducerSuccessTopic()), "producer.success.topic is not set.\n" + httpSinkConnectorConfig);
+        Preconditions.checkArgument(!Strings.isNullOrEmpty(httpSinkConnectorConfig.getProducerErrorTopic()), "producer.error.topic is not set.\n" + httpSinkConnectorConfig);
         Serializer<Object> serializer =  getSerializer(httpSinkConnectorConfig);
         Map<String, Object> producerSettings = httpSinkConnectorConfig.originalsWithPrefix(PRODUCER_PREFIX);
         producer.configure(producerSettings, new StringSerializer(), serializer);
@@ -95,6 +95,7 @@ public class PublishConfigurer {
     }
 
     public Queue<KafkaRecord> configureInMemoryQueue(HttpSinkConnectorConfig connectorConfig) {
+        Preconditions.checkNotNull(connectorConfig,"connectorConfig is required but 'null'");
         String queueName = connectorConfig.getQueueName();
         Queue<KafkaRecord> queue = QueueFactory.getQueue(queueName);
         Preconditions.checkArgument(QueueFactory.hasAConsumer(
