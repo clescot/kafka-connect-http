@@ -54,7 +54,7 @@
         <maven.compiler.source>11</maven.compiler.source>
         <maven.compiler.target>11</maven.compiler.target>
         <maven.plugin.validation>VERBOSE</maven.plugin.validation>
-        <mock-oauth2-server.version>0.5.10</mock-oauth2-server.version>
+        <mock-oauth2-server.version>2.1.9</mock-oauth2-server.version>
         <mockito.version>5.13.0</mockito.version>
         <micrometer.version>1.13.4</micrometer.version>
         <okhttp.version>4.12.0</okhttp.version>
@@ -69,7 +69,7 @@
         <sonar.host.url>https://sonarcloud.io</sonar.host.url>
         <sonar.organization>clescot</sonar.organization>
         <sonar.projectKey>clescot_kafka-connect-http</sonar.projectKey>
-        <testcontainers.version>1.20.1</testcontainers.version>
+        <testcontainers.version>1.20.3</testcontainers.version>
         <wiremock.version>2.35.2</wiremock.version>
     </properties>
     <modules>
