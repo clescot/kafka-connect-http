@@ -93,6 +93,7 @@ public class HttpSinkConnectorConfig extends AbstractConfig {
     private final String defaultBodyTypeExpression;
     private final String defaultBodyExpression;
     private final String defaultHeadersExpression;
+    private final Boolean producerJsonIndentOutput;
 
     public HttpSinkConnectorConfig(Map<String, String> originals) {
         this(new HttpSinkConfigDefinition(originals).config(), originals);
@@ -114,6 +115,7 @@ public class HttpSinkConnectorConfig extends AbstractConfig {
         this.producerJsonOneOfForNullables = getBoolean(PRODUCER_JSON_ONE_OF_FOR_NULLABLES);
         this.producerJsonFailInvalidSchema = getBoolean(PRODUCER_JSON_FAIL_INVALID_SCHEMA);
         this.producerJsonFailUnknownProperties = getBoolean(PRODUCER_JSON_FAIL_UNKNOWN_PROPERTIES);
+        this.producerJsonIndentOutput = getBoolean(PRODUCER_JSON_INDENT_OUTPUT);
         this.producerKeySubjectNameStrategy = getString(PRODUCER_KEY_SUBJECT_NAME_STRATEGY);
         this.producerValueSubjectNameStrategy = getString(PRODUCER_VALUE_SUBJECT_NAME_STRATEGY);
         this.missingIdCacheTTLSec = getLong(PRODUCER_MISSING_ID_CACHE_TTL_SEC);
@@ -405,6 +407,10 @@ public class HttpSinkConnectorConfig extends AbstractConfig {
 
     public boolean isProducerJsonWriteDatesAs8601() {
         return producerJsonWriteDatesAs8601;
+    }
+
+    public Boolean getProducerJsonIndentOutput() {
+        return producerJsonIndentOutput;
     }
 
     public boolean isProducerJsonOneOfForNullables() {
