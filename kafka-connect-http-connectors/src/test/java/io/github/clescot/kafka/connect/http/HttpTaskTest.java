@@ -65,7 +65,7 @@ class HttpTaskTest {
 
 
     @Nested
-    class callWithRetryPolicy {
+    class CallWithRetryPolicy {
         private HttpTask<SinkRecord,Request,Response> httpTask;
 
         @BeforeEach

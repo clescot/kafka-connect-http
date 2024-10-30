@@ -1,5 +1,6 @@
 package io.github.clescot.kafka.connect.http.serde;
 
+import com.google.common.base.Preconditions;
 import io.confluent.kafka.schemaregistry.client.SchemaRegistryClient;
 import io.confluent.kafka.streams.serdes.json.KafkaJsonSchemaSerde;
 import io.github.clescot.kafka.connect.http.core.HttpResponse;
@@ -18,6 +19,8 @@ public class HttpResponseSerdeFactory implements SerdeFactory<HttpResponse> {
 
     public HttpResponseSerdeFactory(SchemaRegistryClient schemaRegistryClient,
                                     Map<String, Object> serdeConfig) {
+        Preconditions.checkNotNull(schemaRegistryClient);
+        Preconditions.checkNotNull(serdeConfig);
         this.schemaRegistryClient = schemaRegistryClient;
         this.serdeConfig = serdeConfig;
     }

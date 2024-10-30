@@ -18,6 +18,7 @@ import io.confluent.kafka.schemaregistry.client.SchemaRegistryClient;
 import io.confluent.kafka.schemaregistry.json.JsonSchemaProvider;
 import io.confluent.kafka.schemaregistry.json.SpecificationVersion;
 import io.confluent.kafka.serializers.AbstractKafkaSchemaSerDeConfig;
+import io.confluent.kafka.serializers.KafkaJsonSerializer;
 import io.confluent.kafka.serializers.json.KafkaJsonSchemaDeserializer;
 import io.confluent.kafka.serializers.json.KafkaJsonSchemaSerializer;
 import io.confluent.kafka.serializers.json.KafkaJsonSchemaSerializerConfig;
@@ -25,7 +26,6 @@ import io.debezium.testing.testcontainers.Connector;
 import io.debezium.testing.testcontainers.ConnectorConfiguration;
 import io.debezium.testing.testcontainers.DebeziumContainer;
 import io.github.clescot.kafka.connect.http.core.HttpExchange;
-import io.github.clescot.kafka.connect.http.core.JsonStringSerializer;
 import io.github.clescot.kafka.connect.http.core.HttpRequest;
 import io.github.clescot.kafka.connect.http.core.queue.QueueFactory;
 import io.github.clescot.kafka.connect.http.sink.publish.PublishMode;
@@ -44,10 +44,7 @@ import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.common.header.Header;
-import org.apache.kafka.common.serialization.Deserializer;
-import org.apache.kafka.common.serialization.Serdes;
-import org.apache.kafka.common.serialization.StringDeserializer;
-import org.apache.kafka.common.serialization.StringSerializer;
+import org.apache.kafka.common.serialization.*;
 import org.assertj.core.api.Assertions;
 import org.checkerframework.checker.nullness.qual.Nullable;
 import org.jetbrains.annotations.NotNull;
@@ -437,7 +434,7 @@ public class ITConnectorTest {
 
     @NotNull
     private static String serializeHttpExchange(ConsumerRecord<String, HttpExchange> consumerRecord) {
-        JsonStringSerializer jsonStringSerializer = new JsonStringSerializer();
+        Serializer jsonStringSerializer = new KafkaJsonSerializer();
         return new String(jsonStringSerializer.serialize("dummy", consumerRecord.value()), StandardCharsets.UTF_8);
     }
 
@@ -756,7 +753,7 @@ public class ITConnectorTest {
                 "  \"responseBody\": \"" + escapedJsonResponse + "\"\n" +
                 "}" +
                 "}";
-        JsonStringSerializer jsonStringSerializer = new JsonStringSerializer();
+        Serializer jsonStringSerializer = new KafkaJsonSerializer();
         String httpExchangeAsString = new String(jsonStringSerializer.serialize("dummy", httpExchange), StandardCharsets.UTF_8);
         JSONAssert.assertEquals(expectedJSON, httpExchangeAsString,
                 new CustomComparator(JSONCompareMode.LENIENT,

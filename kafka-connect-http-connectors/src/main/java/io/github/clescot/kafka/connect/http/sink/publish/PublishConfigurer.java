@@ -9,13 +9,13 @@ import io.confluent.kafka.schemaregistry.client.CachedSchemaRegistryClient;
 import io.confluent.kafka.schemaregistry.client.SchemaRegistryClient;
 import io.confluent.kafka.schemaregistry.client.rest.RestService;
 import io.confluent.kafka.schemaregistry.json.JsonSchemaProvider;
+import io.confluent.kafka.serializers.KafkaJsonSerializer;
 import io.confluent.kafka.serializers.json.KafkaJsonSchemaSerializerConfig;
+import io.github.clescot.kafka.connect.http.core.queue.KafkaRecord;
+import io.github.clescot.kafka.connect.http.core.queue.QueueFactory;
 import io.github.clescot.kafka.connect.http.serde.HttpExchangeSerdeFactory;
 import io.github.clescot.kafka.connect.http.serde.HttpResponseSerdeFactory;
 import io.github.clescot.kafka.connect.http.serde.SerdeFactory;
-import io.github.clescot.kafka.connect.http.core.JsonStringSerializer;
-import io.github.clescot.kafka.connect.http.core.queue.KafkaRecord;
-import io.github.clescot.kafka.connect.http.core.queue.QueueFactory;
 import io.github.clescot.kafka.connect.http.sink.HttpSinkConnectorConfig;
 import org.apache.kafka.common.KafkaException;
 import org.apache.kafka.common.PartitionInfo;
@@ -31,6 +31,7 @@ import java.util.Queue;
 
 import static io.confluent.kafka.serializers.AbstractKafkaSchemaSerDeConfig.AUTO_REGISTER_SCHEMAS;
 import static io.confluent.kafka.serializers.AbstractKafkaSchemaSerDeConfig.SCHEMA_REGISTRY_URL_CONFIG;
+import static io.confluent.kafka.serializers.KafkaJsonSerializerConfig.JSON_INDENT_OUTPUT;
 import static io.confluent.kafka.serializers.KafkaJsonSerializerConfig.WRITE_DATES_AS_ISO8601;
 import static io.confluent.kafka.serializers.json.KafkaJsonSchemaDeserializerConfig.FAIL_INVALID_SCHEMA;
 import static io.confluent.kafka.serializers.json.KafkaJsonSchemaDeserializerConfig.FAIL_UNKNOWN_PROPERTIES;
@@ -47,7 +48,6 @@ public class PublishConfigurer {
     public static final String MISSING_SCHEMA_CACHE_TTL_SEC = "missing.schema.cache.ttl.sec";
     public static final String MISSING_VERSION_CACHE_TTL_SEC = "missing.version.cache.ttl.sec";
     public static final String MISSING_ID_CACHE_TTL_SEC = "missing.id.cache.ttl.sec";
-    public static final String RECORD_NOT_SENT = "/!\\ ☠☠ record NOT sent ☠☠";
     private static final List<String> JSON_SCHEMA_VERSIONS = Lists.newArrayList("draft_4", "draft_6", "draft_7", "draft_2019_09");
 
     //tests only
@@ -58,19 +58,20 @@ public class PublishConfigurer {
         return new PublishConfigurer();
     }
 
-    public KafkaProducer<String, Object> configureProducerPublishMode(HttpSinkConnectorConfig httpSinkConnectorConfig) {
+    public void configureProducerPublishMode(HttpSinkConnectorConfig httpSinkConnectorConfig, KafkaProducer<String, Object> producer) {
+
+        Preconditions.checkNotNull(httpSinkConnectorConfig,"'httpSinkConnectorConfig' is null but required");
+
         //low-level producer is configured (bootstrap.servers is a requirement)
-        Preconditions.checkArgument(!Strings.isNullOrEmpty(httpSinkConnectorConfig.getProducerBootstrapServers()), "producer.bootstrap.servers is not set.\n" + httpSinkConnectorConfig.toString());
-        Preconditions.checkArgument(!Strings.isNullOrEmpty(httpSinkConnectorConfig.getProducerSuccessTopic()), "producer.success.topic is not set.\n" + httpSinkConnectorConfig.toString());
-        Preconditions.checkArgument(!Strings.isNullOrEmpty(httpSinkConnectorConfig.getProducerErrorTopic()), "producer.error.topic is not set.\n" + httpSinkConnectorConfig.toString());
+        Preconditions.checkArgument(!Strings.isNullOrEmpty(httpSinkConnectorConfig.getProducerBootstrapServers()), "producer.bootstrap.servers is not set.\n" + httpSinkConnectorConfig);
+        Preconditions.checkArgument(!Strings.isNullOrEmpty(httpSinkConnectorConfig.getProducerSuccessTopic()), "producer.success.topic is not set.\n" + httpSinkConnectorConfig);
+        Preconditions.checkArgument(!Strings.isNullOrEmpty(httpSinkConnectorConfig.getProducerErrorTopic()), "producer.error.topic is not set.\n" + httpSinkConnectorConfig);
         Serializer<Object> serializer =  getSerializer(httpSinkConnectorConfig);
         Map<String, Object> producerSettings = httpSinkConnectorConfig.originalsWithPrefix(PRODUCER_PREFIX);
-        KafkaProducer<String,Object> producer = new KafkaProducer<>();
         producer.configure(producerSettings, new StringSerializer(), serializer);
 
         //connectivity check for producer
         checkKafkaConnectivity(httpSinkConnectorConfig, producer);
-        return producer;
     }
 
     private void checkKafkaConnectivity(HttpSinkConnectorConfig sinkConnectorConfig, KafkaProducer<String, Object> producer) {
@@ -95,6 +96,7 @@ public class PublishConfigurer {
     }
 
     public Queue<KafkaRecord> configureInMemoryQueue(HttpSinkConnectorConfig connectorConfig) {
+        Preconditions.checkNotNull(connectorConfig,"connectorConfig is required but 'null'");
         String queueName = connectorConfig.getQueueName();
         Queue<KafkaRecord> queue = QueueFactory.getQueue(queueName);
         Preconditions.checkArgument(QueueFactory.hasAConsumer(
@@ -115,7 +117,7 @@ public class PublishConfigurer {
         LOGGER.info("producer format:'{}'", format);
         String content = httpSinkConnectorConfig.getProducerContent();
         LOGGER.info("producer content:'{}'", content);
-
+        boolean writeDatesAsIso8601 = httpSinkConnectorConfig.isProducerJsonWriteDatesAs8601();
         //if format is json
         if (JSON_SCHEMA.equalsIgnoreCase(format)) {
             //json schema serde config
@@ -135,7 +137,7 @@ public class PublishConfigurer {
             serdeConfig.put(KafkaJsonSchemaSerializerConfig.SCHEMA_SPEC_VERSION, jsonSchemaSpecVersion);
             LOGGER.info("producer jsonSchemaSerdeConfigFactory: 'jsonSchemaSpecVersion':'{}'", jsonSchemaSpecVersion);
 
-            boolean writeDatesAsIso8601 = httpSinkConnectorConfig.isProducerJsonWriteDatesAs8601();
+
             serdeConfig.put(WRITE_DATES_AS_ISO8601, writeDatesAsIso8601);
             LOGGER.info("producer jsonSchemaSerdeConfigFactory: 'writeDatesAsIso8601':'{}'", writeDatesAsIso8601);
 
@@ -164,7 +166,12 @@ public class PublishConfigurer {
             serializer = serdeFactory.buildSerde(false).serializer();
         } else {
             //serialize as a simple string
-            serializer = new JsonStringSerializer();
+            serializer = new KafkaJsonSerializer<>();
+            Map<String,Object> serializerConfig = Maps.newHashMap();
+            boolean jsonIndentOutput = httpSinkConnectorConfig.getProducerJsonIndentOutput();
+            serializerConfig.put(JSON_INDENT_OUTPUT,jsonIndentOutput);
+            serializerConfig.put(WRITE_DATES_AS_ISO8601,writeDatesAsIso8601);
+            serializer.configure(serializerConfig,false);
         }
         return serializer;
     }

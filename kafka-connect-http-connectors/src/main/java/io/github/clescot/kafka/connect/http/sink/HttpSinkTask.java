@@ -188,7 +188,7 @@ public abstract class HttpSinkTask<R, S> extends SinkTask {
         PublishConfigurer publishConfigurer = PublishConfigurer.build();
         switch (publishMode) {
             case PRODUCER:
-                producer = publishConfigurer.configureProducerPublishMode(httpSinkConnectorConfig);
+                publishConfigurer.configureProducerPublishMode(httpSinkConnectorConfig, producer);
                 break;
             case IN_MEMORY_QUEUE:
                 this.queue = publishConfigurer.configureInMemoryQueue(httpSinkConnectorConfig);

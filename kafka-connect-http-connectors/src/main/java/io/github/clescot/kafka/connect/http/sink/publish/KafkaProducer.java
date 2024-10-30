@@ -12,23 +12,31 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Future;
 
-public class KafkaProducer<K,V> implements Producer<K,V> {
+public class KafkaProducer<K, V> implements Producer<K, V> {
 
 
     private Producer<K, V> producer;
-    private final boolean mock;
+    private boolean mock;
 
     public KafkaProducer(boolean mock) {
         this.mock = mock;
     }
+
+    public KafkaProducer(Producer<K, V> producer) {
+        this.producer = producer;
+    }
+
     public KafkaProducer() {
         this.mock = false;
     }
-    public void configure(Map<String, Object> producerSettings,Serializer<K> keySerializer,Serializer<V> valueSerializer){
-        if(mock){
-            producer = new MockProducer<>();
-        }else{
-            producer = new org.apache.kafka.clients.producer.KafkaProducer<>(producerSettings,keySerializer,valueSerializer);
+
+    public void configure(Map<String, Object> producerSettings, Serializer<K> keySerializer, Serializer<V> valueSerializer) {
+        if (producer == null) {
+            if (mock) {
+                producer = new MockProducer<>();
+            } else {
+                producer = new org.apache.kafka.clients.producer.KafkaProducer<>(producerSettings, keySerializer, valueSerializer);
+            }
         }
     }
 
@@ -44,12 +52,12 @@ public class KafkaProducer<K,V> implements Producer<K,V> {
 
     @Override
     public void sendOffsetsToTransaction(Map<TopicPartition, OffsetAndMetadata> offsets, String consumerGroupId) throws ProducerFencedException {
-        producer.sendOffsetsToTransaction(offsets,consumerGroupId);
+        producer.sendOffsetsToTransaction(offsets, consumerGroupId);
     }
 
     @Override
     public void sendOffsetsToTransaction(Map<TopicPartition, OffsetAndMetadata> offsets, ConsumerGroupMetadata groupMetadata) throws ProducerFencedException {
-        producer.sendOffsetsToTransaction(offsets,groupMetadata);
+        producer.sendOffsetsToTransaction(offsets, groupMetadata);
     }
 
     @Override
@@ -69,7 +77,7 @@ public class KafkaProducer<K,V> implements Producer<K,V> {
 
     @Override
     public Future<RecordMetadata> send(ProducerRecord<K, V> myRecord, Callback callback) {
-        return producer.send(myRecord,callback);
+        return producer.send(myRecord, callback);
     }
 
     @Override
