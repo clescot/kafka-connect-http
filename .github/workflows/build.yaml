@@ -15,8 +15,8 @@ jobs:
           java-version: '17'
           distribution: 'adopt'
           cache: maven
-          gpg-private-key: "${{ secrets.GPG_KEY }}"
-          gpg-passphrase: "${{ secrets.GPG_PASSPHRASE }}"
+          gpg-private-key: "${{ secrets.MAVEN_GPG_KEY }}"
+          gpg-passphrase: "${{ secrets.MAVEN_GPG_PASSPHRASE }}"
       - name: Cache local Maven repository
         uses: actions/cache@v4.0.2
         with:
@@ -27,9 +27,9 @@ jobs:
       - name: Build with Maven
         run: mvn -X --batch-mode --update-snapshots -Pcoverage clean verify org.sonarsource.scanner.maven:sonar-maven-plugin:sonar -Dsonar.host.url=https://sonarcloud.io -Dsonar.organization=clescot -Dsonar.projectKey=clescot_kafka-connect-http
         env:
-          MY_MAVEN_GPG_PASSPHRASE: "${{ secrets.GPG_PASSPHRASE }}"
-          SIGN_KEY: "${{ secrets.GPG_KEY }}"
-          SIGN_KEY_ID: "${{ secrets.GPG_KEY_ID }}"
+          MY_MAVEN_GPG_PASSPHRASE: "${{ secrets.MAVEN_GPG_PASSPHRASE }}"
+          SIGN_KEY: "${{ secrets.MAVEN_GPG_KEY }}"
+          SIGN_KEY_ID: "${{ secrets.MAVEN_GPG_KEY_ID }}"
           SIGN_KEY_PASS: "${{ secrets.GPG_PASSPHRASE }}"
           SONAR_TOKEN: "${{ secrets.SONAR_TOKEN }}"
       - run: mkdir staging && cp kafka-connect-http-core/target/*.jar staging && cp -r kafka-connect-http-connectors/target/components/packages/clescot-kafka-connect-http-connectors-*.zip staging
