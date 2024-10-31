@@ -398,6 +398,7 @@
                 </executions>
                 <configuration>
                     <bestPractices>true</bestPractices>
+                    <keyEnvName>MAVEN_GPG_KEY</keyEnvName>
                     <passphraseEnvName>MY_MAVEN_GPG_PASSPHRASE</passphraseEnvName>
                 </configuration>
             </plugin>
