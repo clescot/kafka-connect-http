@@ -39,14 +39,16 @@ class PublishConfigurerTest {
         @Test
         void test_null_arg(){
             PublishConfigurer publishConfigurer = PublishConfigurer.build();
-            Assertions.assertThrows(NullPointerException.class,()->publishConfigurer.configureProducerPublishMode(null, new KafkaProducer<>()));
+            KafkaProducer<String, Object> kafkaProducer = new KafkaProducer<>();
+            Assertions.assertThrows(NullPointerException.class,()->publishConfigurer.configureProducerPublishMode(null, kafkaProducer));
         }
 
         @Test
         void test_empty_arg(){
             PublishConfigurer publishConfigurer = PublishConfigurer.build();
             HttpSinkConnectorConfig httpSinkConnectorConfig = new HttpSinkConnectorConfig(Maps.newHashMap());
-            Assertions.assertThrows(IllegalArgumentException.class,()->publishConfigurer.configureProducerPublishMode(httpSinkConnectorConfig, new KafkaProducer<>()));
+            KafkaProducer<String, Object> kafkaProducer = new KafkaProducer<>();
+            Assertions.assertThrows(IllegalArgumentException.class,()->publishConfigurer.configureProducerPublishMode(httpSinkConnectorConfig, kafkaProducer));
         }
         @Test
         void test_only_bootstrap_servers(){

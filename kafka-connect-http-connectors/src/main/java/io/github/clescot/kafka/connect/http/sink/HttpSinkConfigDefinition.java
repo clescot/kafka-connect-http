@@ -22,7 +22,7 @@ public class HttpSinkConfigDefinition {
     public static final String PRODUCER_TOPIC_DOC = "producer topic";
     public static final String PRODUCER_FORMAT = PRODUCER_PREFIX + "format";
     public static final String PRODUCER_FORMAT_DOC = "can be either 'json', or 'string'; default to 'string'.";
-    public static final String PRODUCER_FORMAT_JSON_PREFIX = PRODUCER_FORMAT + "json.";
+    public static final String PRODUCER_FORMAT_JSON_PREFIX = PRODUCER_FORMAT + JSON_PREFIX;
     public static final String PRODUCER_JSON_INDENT_OUTPUT = PRODUCER_FORMAT_JSON_PREFIX + "indent.output";
     public static final String PRODUCER_FORMAT_JSON_INDENT_OUTPUT_DOC = "'true' to indent output, 'false' otherwise. default is 'false'.";
 

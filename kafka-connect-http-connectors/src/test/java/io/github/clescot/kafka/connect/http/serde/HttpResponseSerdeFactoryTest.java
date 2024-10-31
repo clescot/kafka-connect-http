@@ -23,7 +23,8 @@ class HttpResponseSerdeFactoryTest {
         }
         @Test
         void test_schema_registry_client_is_null(){
-            Assertions.assertThrows(NullPointerException.class,()-> new HttpResponseSerdeFactory(null, Maps.newHashMap()));
+            HashMap<String, Object> serdeConfig = Maps.newHashMap();
+            Assertions.assertThrows(NullPointerException.class,()-> new HttpResponseSerdeFactory(null, serdeConfig));
         }
         @Test
         void test_serde_config_is_null(){
