@@ -303,6 +303,36 @@ public class HttpSinkTaskTest {
 
     @Nested
     class Put {
+
+        @Test
+        void test_put_with_no_records() {
+            //given
+            Map<String, String> settings = Maps.newHashMap();
+            ahcSinkTask.start(settings);
+
+            //mock httpClient
+            AHCHttpClient httpClient = Mockito.mock(AHCHttpClient.class);
+            HttpExchange dummyHttpExchange = getDummyHttpExchange();
+            when(httpClient.call(any(HttpRequest.class), any(AtomicInteger.class))).thenReturn(CompletableFuture.supplyAsync(() -> dummyHttpExchange));
+            ahcSinkTask.getDefaultConfiguration().setHttpClient(httpClient);
+
+            //init sinkRecord
+            List<SinkRecord> records = Lists.newArrayList();
+
+            //when
+            ahcSinkTask.put(records);
+
+            //then
+
+            //no additional headers added
+            ArgumentCaptor<HttpRequest> captor = ArgumentCaptor.forClass(HttpRequest.class);
+            verify(httpClient,never()).call(captor.capture(), any(AtomicInteger.class));
+
+            //no records are published into the in memory queue by default
+            verify(dummyQueue, never()).offer(any(HttpExchange.class));
+        }
+
+
         @Test
         void test_put_add_static_headers_with_value_as_string() {
             //given
