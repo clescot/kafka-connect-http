@@ -28,7 +28,7 @@ jobs:
         run: mvn -X --batch-mode --update-snapshots -Pcoverage clean verify org.sonarsource.scanner.maven:sonar-maven-plugin:sonar -Dsonar.host.url=https://sonarcloud.io -Dsonar.organization=clescot -Dsonar.projectKey=clescot_kafka-connect-http
         env:
           MY_MAVEN_GPG_PASSPHRASE: "${{ secrets.MAVEN_GPG_PASSPHRASE }}"
-          SIGN_KEY: "${{ secrets.MAVEN_GPG_KEY }}"
+          MAVEN_GPG_KEY: "${{ secrets.MAVEN_GPG_KEY }}"
           SIGN_KEY_ID: "${{ secrets.MAVEN_GPG_KEY_ID }}"
           SIGN_KEY_PASS: "${{ secrets.GPG_PASSPHRASE }}"
           SONAR_TOKEN: "${{ secrets.SONAR_TOKEN }}"
