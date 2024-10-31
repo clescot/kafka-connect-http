@@ -10,6 +10,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
+import java.io.IOException;
 import java.util.HashMap;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -28,7 +29,11 @@ class HttpResponseSerdeFactoryTest {
         }
         @Test
         void test_serde_config_is_null(){
-            Assertions.assertThrows(NullPointerException.class,()-> new HttpResponseSerdeFactory(new MockSchemaRegistryClient(), null));
+            try(MockSchemaRegistryClient schemaRegistryClient = new MockSchemaRegistryClient()) {
+                Assertions.assertThrows(NullPointerException.class, () -> new HttpResponseSerdeFactory(schemaRegistryClient, null));
+            }catch (IOException e){
+                throw new RuntimeException(e);
+            }
         }
     }
 
