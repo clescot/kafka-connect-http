@@ -41,7 +41,7 @@
         <async.http.client.version>2.12.3</async.http.client.version>
         <commons-text.version>1.12.0</commons-text.version>
         <connect-json.version>3.8.1</connect-json.version>
-        <debezium.version>2.7.2.Final</debezium.version>
+        <debezium.version>2.7.3.Final</debezium.version>
         <kafka.version>3.8.1</kafka.version>
         <confluent.platform.version>7.7.1</confluent.platform.version>
         <failsafe.version>3.3.2</failsafe.version>
@@ -69,7 +69,7 @@
         <sonar.host.url>https://sonarcloud.io</sonar.host.url>
         <sonar.organization>clescot</sonar.organization>
         <sonar.projectKey>clescot_kafka-connect-http</sonar.projectKey>
-        <testcontainers.version>1.20.1</testcontainers.version>
+        <testcontainers.version>1.20.3</testcontainers.version>
         <wiremock.version>2.35.2</wiremock.version>
     </properties>
     <modules>
