@@ -22,7 +22,6 @@ import org.apache.commons.jexl3.JexlEngine;
 import org.apache.commons.jexl3.JexlFeatures;
 import org.apache.commons.jexl3.introspection.JexlPermissions;
 import org.apache.commons.lang3.tuple.Pair;
-import org.apache.kafka.clients.producer.MockProducer;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.clients.producer.RecordMetadata;
 import org.apache.kafka.common.config.AbstractConfig;
@@ -78,15 +77,6 @@ public abstract class HttpSinkTask<R, S> extends SinkTask {
         this.producer  = producer;
     }
 
-    /**
-     * for tests only.
-     *
-     * @param mockProducer true mock the underlying producer, false not.
-     */
-    protected HttpSinkTask(HttpClientFactory<R, S> httpClientFactory, MockProducer<String, Object> mockProducer) {
-        this.httpClientFactory = httpClientFactory;
-        producer = new KafkaProducer<>(mockProducer);
-    }
 
     @Override
     public String version() {
