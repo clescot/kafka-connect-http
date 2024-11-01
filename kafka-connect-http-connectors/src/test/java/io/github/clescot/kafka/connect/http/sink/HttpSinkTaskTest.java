@@ -534,18 +534,18 @@ public class HttpSinkTaskTest {
             jsonSerializer.configure(jsonSerializerConfig,false);
             MockProducer<String, Object> mockProducer = new MockProducer<>(cluster,true, new StringSerializer(), jsonSerializer);
 
-            OkHttpSinkTask okHttpSinkTask = new OkHttpSinkTask(mockProducer);
-            okHttpSinkTask.initialize(sinkTaskContext);
-            okHttpSinkTask.start(settings);
+            OkHttpSinkTask myOkHttpSinkTask = new OkHttpSinkTask(mockProducer);
+            myOkHttpSinkTask.initialize(sinkTaskContext);
+            myOkHttpSinkTask.start(settings);
             OkHttpClient httpClient = Mockito.mock(OkHttpClient.class);
             HttpExchange dummyHttpExchange = getHttpExchange();
             when(httpClient.call(any(HttpRequest.class), any(AtomicInteger.class))).thenReturn(CompletableFuture.supplyAsync(() -> dummyHttpExchange));
-            okHttpSinkTask.getDefaultConfiguration().setHttpClient(httpClient);
+            myOkHttpSinkTask.getDefaultConfiguration().setHttpClient(httpClient);
             List<SinkRecord> records = Lists.newArrayList();
             List<Header> headers = Lists.newArrayList();
             SinkRecord sinkRecord = new SinkRecord("myTopic", 0, Schema.STRING_SCHEMA, "key", Schema.STRING_SCHEMA, getDummyHttpRequestAsString(), -1, System.currentTimeMillis(), TimestampType.CREATE_TIME, headers);
             records.add(sinkRecord);
-            okHttpSinkTask.put(records);
+            myOkHttpSinkTask.put(records);
             verify(httpClient, times(1)).call(any(HttpRequest.class), any(AtomicInteger.class));
             List<ProducerRecord<String, Object>> history = mockProducer.history();
             assertThat(history).hasSize(1);
