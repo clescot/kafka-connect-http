@@ -8,6 +8,8 @@ import com.google.common.base.Preconditions;
 import com.google.common.base.Stopwatch;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
+import com.google.common.collect.Sets;
+import io.confluent.kafka.serializers.KafkaJsonSerializer;
 import io.github.clescot.kafka.connect.http.HttpTask;
 import io.github.clescot.kafka.connect.http.client.ahc.AHCHttpClient;
 import io.github.clescot.kafka.connect.http.client.okhttp.OkHttpClient;
@@ -27,7 +29,13 @@ import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.composite.CompositeMeterRegistry;
 import io.micrometer.jmx.JmxMeterRegistry;
 import io.micrometer.prometheusmetrics.PrometheusMeterRegistry;
+import org.apache.kafka.clients.producer.MockProducer;
+import org.apache.kafka.clients.producer.ProducerRecord;
+import org.apache.kafka.common.Cluster;
+import org.apache.kafka.common.Node;
+import org.apache.kafka.common.PartitionInfo;
 import org.apache.kafka.common.record.TimestampType;
+import org.apache.kafka.common.serialization.StringSerializer;
 import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.header.Header;
 import org.apache.kafka.connect.sink.ErrantRecordReporter;
@@ -84,6 +92,8 @@ public class HttpSinkTaskTest {
 
     @Mock
     Queue<HttpExchange> dummyQueue;
+
+
 
     @InjectMocks
     OkHttpSinkTask okHttpSinkTask;
@@ -465,7 +475,7 @@ public class HttpSinkTaskTest {
 
 
         @Test
-        void test_put_with_publish_in_memory_set_to_false() {
+        void test_put_with_publish_mode_set_to_none() {
             Map<String, String> settings = Maps.newHashMap();
             settings.put(PUBLISH_MODE, PublishMode.NONE.name());
             ahcSinkTask.start(settings);
@@ -482,6 +492,46 @@ public class HttpSinkTaskTest {
             ahcSinkTask.put(records);
             verify(httpClient, times(1)).call(any(HttpRequest.class), any(AtomicInteger.class));
             verify(queue, never()).offer(any(KafkaRecord.class));
+        }
+
+        @Test
+        void test_put_with_publish_mode_set_to_producer() {
+            Map<String, String> settings = Maps.newHashMap();
+            settings.put(PUBLISH_MODE, PublishMode.PRODUCER.name());
+            settings.put(PRODUCER_BOOTSTRAP_SERVERS, "127.0.0.1:9092");
+            settings.put(PRODUCER_SUCCESS_TOPIC, "myTopic");
+            Node node = new Node(0,"127.0.0.1",9092);
+            Collection<Node> nodes = Lists.newArrayList(node);
+            Collection<PartitionInfo> partitionInfos = Lists.newArrayList();
+            Node[] nodesArray = new Node[]{node};
+            PartitionInfo partitionInfo = new PartitionInfo("myTopic",0,node,nodesArray,nodesArray);
+            partitionInfos.add(partitionInfo);
+
+            Cluster cluster  = new Cluster("dummyClusterId",nodes,partitionInfos, Sets.newHashSet(),Sets.newHashSet());
+            KafkaJsonSerializer<Object> jsonSerializer = new KafkaJsonSerializer<>();
+            Map<String,Object> jsonSerializerConfig = Maps.newHashMap();
+            jsonSerializer.configure(jsonSerializerConfig,false);
+            MockProducer<String, Object> mockProducer = new MockProducer<>(cluster,true, new StringSerializer(), jsonSerializer);
+
+            OkHttpSinkTask okHttpSinkTask = new OkHttpSinkTask(mockProducer);
+            okHttpSinkTask.initialize(sinkTaskContext);
+            okHttpSinkTask.start(settings);
+            OkHttpClient httpClient = Mockito.mock(OkHttpClient.class);
+            HttpExchange dummyHttpExchange = getDummyHttpExchange();
+            when(httpClient.call(any(HttpRequest.class), any(AtomicInteger.class))).thenReturn(CompletableFuture.supplyAsync(() -> dummyHttpExchange));
+            okHttpSinkTask.getDefaultConfiguration().setHttpClient(httpClient);
+            List<SinkRecord> records = Lists.newArrayList();
+            List<Header> headers = Lists.newArrayList();
+            SinkRecord sinkRecord = new SinkRecord("myTopic", 0, Schema.STRING_SCHEMA, "key", Schema.STRING_SCHEMA, getDummyHttpRequestAsString(), -1, System.currentTimeMillis(), TimestampType.CREATE_TIME, headers);
+            records.add(sinkRecord);
+            okHttpSinkTask.put(records);
+            verify(httpClient, times(1)).call(any(HttpRequest.class), any(AtomicInteger.class));
+            List<ProducerRecord<String, Object>> history = mockProducer.history();
+            assertThat(history).hasSize(1);
+            ProducerRecord<String, Object> firstRecord = history.get(0);
+            assertThat(firstRecord.topic()).isEqualTo("myTopic");
+            assertThat(firstRecord.key()).isNull();
+            assertThat(firstRecord.value()).isNotNull();
         }
 
         @Test

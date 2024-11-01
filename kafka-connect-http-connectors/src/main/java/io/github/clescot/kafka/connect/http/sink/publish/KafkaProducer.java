@@ -16,28 +16,20 @@ public class KafkaProducer<K, V> implements Producer<K, V> {
 
 
     private Producer<K, V> producer;
-    private boolean mock;
 
-    public KafkaProducer(boolean mock) {
-        this.mock = mock;
-    }
 
     public KafkaProducer(Producer<K, V> producer) {
         this.producer = producer;
     }
 
     public KafkaProducer() {
-        this.mock = false;
     }
 
     public void configure(Map<String, Object> producerSettings, Serializer<K> keySerializer, Serializer<V> valueSerializer) {
-        if (producer == null) {
-            if (mock) {
-                producer = new MockProducer<>();
-            } else {
+
+            if (!MockProducer.class.isAssignableFrom(producer.getClass())) {
                 producer = new org.apache.kafka.clients.producer.KafkaProducer<>(producerSettings, keySerializer, valueSerializer);
             }
-        }
     }
 
     @Override

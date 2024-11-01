@@ -578,6 +578,8 @@ public class HttpSinkConfigDefinition {
 
     public static final String FALSE = "false";
     public static final String TRUE = "true";
+    public static final String PRODUCER_SUCCESS_DEFAULT_TOPIC = "http-success";
+    public static final String PRODUCER_ERROR_DEFAULT_TOPIC = "http-errors";
     private final Map<String, String> settings;
 
     public HttpSinkConfigDefinition(Map<String, String> settings) {
@@ -590,8 +592,8 @@ public class HttpSinkConfigDefinition {
                 //producer
                 //bootstrap servers
                 .define(PRODUCER_BOOTSTRAP_SERVERS, ConfigDef.Type.STRING, "", ConfigDef.Importance.MEDIUM, PRODUCER_BOOTSTRAP_SERVERS_DOC)
-                .define(PRODUCER_SUCCESS_TOPIC, ConfigDef.Type.STRING, "http-success", ConfigDef.Importance.MEDIUM, PRODUCER_TOPIC_DOC)
-                .define(PRODUCER_ERROR_TOPIC, ConfigDef.Type.STRING, "http-errors", ConfigDef.Importance.MEDIUM, PRODUCER_TOPIC_DOC)
+                .define(PRODUCER_SUCCESS_TOPIC, ConfigDef.Type.STRING, PRODUCER_SUCCESS_DEFAULT_TOPIC, ConfigDef.Importance.MEDIUM, PRODUCER_TOPIC_DOC)
+                .define(PRODUCER_ERROR_TOPIC, ConfigDef.Type.STRING, PRODUCER_ERROR_DEFAULT_TOPIC, ConfigDef.Importance.MEDIUM, PRODUCER_TOPIC_DOC)
                 .define(PRODUCER_KEY_SUBJECT_NAME_STRATEGY, ConfigDef.Type.STRING, "io.confluent.kafka.serializers.subject.TopicRecordNameStrategy", ConfigDef.Importance.MEDIUM, PRODUCER_KEY_SUBJECT_NAME_STRATEGY_DOC)
                 .define(PRODUCER_VALUE_SUBJECT_NAME_STRATEGY, ConfigDef.Type.STRING, "io.confluent.kafka.serializers.subject.TopicRecordNameStrategy", ConfigDef.Importance.MEDIUM, PRODUCER_VALUE_SUBJECT_NAME_STRATEGY_DOC)
                 .define(PRODUCER_MISSING_ID_CACHE_TTL_SEC, ConfigDef.Type.LONG, null, ConfigDef.Importance.LOW, PRODUCER_MISSING_ID_CACHE_TTL_SEC_DOC)
