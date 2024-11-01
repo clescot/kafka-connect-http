@@ -23,7 +23,7 @@ public class HttpResponseAsStruct {
             .field(RESPONSE_HEADERS, SchemaBuilder.map(Schema.STRING_SCHEMA, SchemaBuilder.array(Schema.STRING_SCHEMA)).build())
             .field(RESPONSE_BODY,Schema.OPTIONAL_STRING_SCHEMA);
 
-    private HttpResponse httpResponse;
+    private final HttpResponse httpResponse;
 
     public HttpResponseAsStruct(HttpResponse httpResponse) {
         this.httpResponse = httpResponse;

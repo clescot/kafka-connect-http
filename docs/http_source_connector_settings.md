@@ -13,6 +13,7 @@ Only the 'IN_MEMORY_QUEUE' publish mode require to setup an HTTP Source connecto
 #### optional HTTP Source connector parameters
 
 - *`queue.name`* : if not set, listen on the 'default' queue.
+- *`content`* : either `exchange` (HttpExchange) or `response`(HttpResponse). default is `exchange`.
 
 #### Configuration example
 

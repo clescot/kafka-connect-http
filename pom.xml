@@ -386,7 +386,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-gpg-plugin</artifactId>
-                <version>3.2.5</version>
+                <version>3.2.7</version>
                 <executions>
                     <execution>
                         <id>sign-artifacts</id>
@@ -398,10 +398,9 @@
                 </executions>
                 <configuration>
                     <bestPractices>true</bestPractices>
-                    <gpgArguments>
-                        <arg>--pinentry-mode</arg>
-                        <arg>loopback</arg>
-                    </gpgArguments>
+                    <keyEnvName>MAVEN_GPG_KEY</keyEnvName>
+                    <passphraseEnvName>MAVEN_GPG_PASSPHRASE</passphraseEnvName>
+                  <signer>bc</signer>
                 </configuration>
             </plugin>
         </plugins>

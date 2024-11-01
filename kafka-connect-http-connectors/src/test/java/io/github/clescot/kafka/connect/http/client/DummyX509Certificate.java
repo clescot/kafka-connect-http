@@ -20,12 +20,12 @@ public class DummyX509Certificate extends X509Certificate {
 
     @Override
     public void checkValidity() throws CertificateExpiredException, CertificateNotYetValidException {
-
+        //dummy certificate does not need any code
     }
 
     @Override
     public void checkValidity(Date date) throws CertificateExpiredException, CertificateNotYetValidException {
-
+        //dummy certificate does not need any code
     }
 
     @Override
@@ -142,12 +142,12 @@ public class DummyX509Certificate extends X509Certificate {
 
     @Override
     public void verify(PublicKey key) throws CertificateException, NoSuchAlgorithmException, InvalidKeyException, NoSuchProviderException, SignatureException {
-
+        //dummy certificate does not need any code
     }
 
     @Override
     public void verify(PublicKey key, String sigProvider) throws CertificateException, NoSuchAlgorithmException, InvalidKeyException, NoSuchProviderException, SignatureException {
-
+        //dummy certificate does not need any code
     }
 
     @Override

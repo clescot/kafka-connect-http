@@ -8,6 +8,8 @@ import com.google.common.base.Preconditions;
 import com.google.common.base.Stopwatch;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
+import com.google.common.collect.Sets;
+import io.confluent.kafka.serializers.KafkaJsonSerializer;
 import io.github.clescot.kafka.connect.http.HttpTask;
 import io.github.clescot.kafka.connect.http.client.ahc.AHCHttpClient;
 import io.github.clescot.kafka.connect.http.client.okhttp.OkHttpClient;
@@ -27,7 +29,13 @@ import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.composite.CompositeMeterRegistry;
 import io.micrometer.jmx.JmxMeterRegistry;
 import io.micrometer.prometheusmetrics.PrometheusMeterRegistry;
+import org.apache.kafka.clients.producer.MockProducer;
+import org.apache.kafka.clients.producer.ProducerRecord;
+import org.apache.kafka.common.Cluster;
+import org.apache.kafka.common.Node;
+import org.apache.kafka.common.PartitionInfo;
 import org.apache.kafka.common.record.TimestampType;
+import org.apache.kafka.common.serialization.StringSerializer;
 import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.header.Header;
 import org.apache.kafka.connect.sink.ErrantRecordReporter;
@@ -84,6 +92,8 @@ public class HttpSinkTaskTest {
 
     @Mock
     Queue<HttpExchange> dummyQueue;
+
+
 
     @InjectMocks
     OkHttpSinkTask okHttpSinkTask;
@@ -228,6 +238,27 @@ public class HttpSinkTaskTest {
             });
         }
     }
+    @Nested
+    class StartWithCustomConfigurations {
+        @Test
+        void test_start_with_one_custom_configuration() {
+            Assertions.assertDoesNotThrow(() -> {
+
+                Map<String, String> settings = Maps.newHashMap();
+                settings.put("config.ids","config1");
+                settings.put("config1."+URL_REGEX,"http://toto\\.com");
+                okHttpSinkTask.start(settings);
+                OkHttpClient httpClient = Mockito.mock(OkHttpClient.class);
+                when(httpClient.call(any(HttpRequest.class), any(AtomicInteger.class))).thenReturn(CompletableFuture.supplyAsync(() -> getHttpExchange("https://toto.com",HttpRequest.Method.GET,200)));
+                okHttpSinkTask.getCustomConfigurations().get(0).setHttpClient(httpClient);
+                Collection<SinkRecord> records = Lists.newArrayList();
+                SinkRecord myRecord = new SinkRecord("myTopic",0, Schema.STRING_SCHEMA,"key",Schema.STRING_SCHEMA,getHttpRequestAsString("https://toto.com",HttpRequest.Method.GET),0L);
+                records.add(myRecord);
+                okHttpSinkTask.put(records);
+                verify(httpClient, times(1)).call(any(HttpRequest.class), any(AtomicInteger.class));
+            });
+        }
+    }
 
 
     @Nested
@@ -303,6 +334,36 @@ public class HttpSinkTaskTest {
 
     @Nested
     class Put {
+
+        @Test
+        void test_put_with_no_records() {
+            //given
+            Map<String, String> settings = Maps.newHashMap();
+            ahcSinkTask.start(settings);
+
+            //mock httpClient
+            AHCHttpClient httpClient = Mockito.mock(AHCHttpClient.class);
+            HttpExchange dummyHttpExchange = getHttpExchange();
+            when(httpClient.call(any(HttpRequest.class), any(AtomicInteger.class))).thenReturn(CompletableFuture.supplyAsync(() -> dummyHttpExchange));
+            ahcSinkTask.getDefaultConfiguration().setHttpClient(httpClient);
+
+            //init sinkRecord
+            List<SinkRecord> records = Lists.newArrayList();
+
+            //when
+            ahcSinkTask.put(records);
+
+            //then
+
+            //no additional headers added
+            ArgumentCaptor<HttpRequest> captor = ArgumentCaptor.forClass(HttpRequest.class);
+            verify(httpClient,never()).call(captor.capture(), any(AtomicInteger.class));
+
+            //no records are published into the in memory queue by default
+            verify(dummyQueue, never()).offer(any(HttpExchange.class));
+        }
+
+
         @Test
         void test_put_add_static_headers_with_value_as_string() {
             //given
@@ -312,7 +373,7 @@ public class HttpSinkTaskTest {
             settings.put(DEFAULT_CONFIGURATION_PREFIX + STATIC_REQUEST_HEADER_PREFIX + "param2", "value2");
             okHttpSinkTask.start(settings);
             OkHttpClient httpClient = Mockito.mock(OkHttpClient.class);
-            HttpExchange dummyHttpExchange = getDummyHttpExchange();
+            HttpExchange dummyHttpExchange = getHttpExchange();
             when(httpClient.call(any(HttpRequest.class), any(AtomicInteger.class))).thenReturn(CompletableFuture.supplyAsync(() -> dummyHttpExchange));
             okHttpSinkTask.getDefaultConfiguration().setHttpClient(httpClient);
             List<SinkRecord> records = Lists.newArrayList();
@@ -338,7 +399,7 @@ public class HttpSinkTaskTest {
 
             //mock httpClient
             AHCHttpClient httpClient = Mockito.mock(AHCHttpClient.class);
-            HttpExchange dummyHttpExchange = getDummyHttpExchange();
+            HttpExchange dummyHttpExchange = getHttpExchange();
             when(httpClient.call(any(HttpRequest.class), any(AtomicInteger.class))).thenReturn(CompletableFuture.supplyAsync(() -> dummyHttpExchange));
             ahcSinkTask.getDefaultConfiguration().setHttpClient(httpClient);
 
@@ -371,7 +432,7 @@ public class HttpSinkTaskTest {
 
             //mock httpClient
             AHCHttpClient httpClient = Mockito.mock(AHCHttpClient.class);
-            HttpExchange dummyHttpExchange = getDummyHttpExchange();
+            HttpExchange dummyHttpExchange = getHttpExchange();
             when(httpClient.call(any(HttpRequest.class), any(AtomicInteger.class))).thenReturn(CompletableFuture.supplyAsync(() -> dummyHttpExchange));
             ahcSinkTask.getDefaultConfiguration().setHttpClient(httpClient);
 
@@ -404,7 +465,7 @@ public class HttpSinkTaskTest {
 
             //mock httpClient
             AHCHttpClient httpClient = Mockito.mock(AHCHttpClient.class);
-            HttpExchange dummyHttpExchange = getDummyHttpExchange();
+            HttpExchange dummyHttpExchange = getHttpExchange();
             when(httpClient.call(any(HttpRequest.class), any(AtomicInteger.class))).thenReturn(CompletableFuture.supplyAsync(() -> dummyHttpExchange));
             ahcSinkTask.getDefaultConfiguration().setHttpClient(httpClient);
 
@@ -435,12 +496,12 @@ public class HttpSinkTaskTest {
 
 
         @Test
-        void test_put_with_publish_in_memory_set_to_false() {
+        void test_put_with_publish_mode_set_to_none() {
             Map<String, String> settings = Maps.newHashMap();
             settings.put(PUBLISH_MODE, PublishMode.NONE.name());
             ahcSinkTask.start(settings);
             AHCHttpClient httpClient = Mockito.mock(AHCHttpClient.class);
-            HttpExchange dummyHttpExchange = getDummyHttpExchange();
+            HttpExchange dummyHttpExchange = getHttpExchange();
             when(httpClient.call(any(HttpRequest.class), any(AtomicInteger.class))).thenReturn(CompletableFuture.supplyAsync(() -> dummyHttpExchange));
             ahcSinkTask.getDefaultConfiguration().setHttpClient(httpClient);
             Queue<KafkaRecord> queue = mock(Queue.class);
@@ -455,6 +516,46 @@ public class HttpSinkTaskTest {
         }
 
         @Test
+        void test_put_with_publish_mode_set_to_producer() {
+            Map<String, String> settings = Maps.newHashMap();
+            settings.put(PUBLISH_MODE, PublishMode.PRODUCER.name());
+            settings.put(PRODUCER_BOOTSTRAP_SERVERS, "127.0.0.1:9092");
+            settings.put(PRODUCER_SUCCESS_TOPIC, "myTopic");
+            Node node = new Node(0,"127.0.0.1",9092);
+            Collection<Node> nodes = Lists.newArrayList(node);
+            Collection<PartitionInfo> partitionInfos = Lists.newArrayList();
+            Node[] nodesArray = new Node[]{node};
+            PartitionInfo partitionInfo = new PartitionInfo("myTopic",0,node,nodesArray,nodesArray);
+            partitionInfos.add(partitionInfo);
+
+            Cluster cluster  = new Cluster("dummyClusterId",nodes,partitionInfos, Sets.newHashSet(),Sets.newHashSet());
+            KafkaJsonSerializer<Object> jsonSerializer = new KafkaJsonSerializer<>();
+            Map<String,Object> jsonSerializerConfig = Maps.newHashMap();
+            jsonSerializer.configure(jsonSerializerConfig,false);
+            MockProducer<String, Object> mockProducer = new MockProducer<>(cluster,true, new StringSerializer(), jsonSerializer);
+
+            OkHttpSinkTask myOkHttpSinkTask = new OkHttpSinkTask(mockProducer);
+            myOkHttpSinkTask.initialize(sinkTaskContext);
+            myOkHttpSinkTask.start(settings);
+            OkHttpClient httpClient = Mockito.mock(OkHttpClient.class);
+            HttpExchange dummyHttpExchange = getHttpExchange();
+            when(httpClient.call(any(HttpRequest.class), any(AtomicInteger.class))).thenReturn(CompletableFuture.supplyAsync(() -> dummyHttpExchange));
+            myOkHttpSinkTask.getDefaultConfiguration().setHttpClient(httpClient);
+            List<SinkRecord> records = Lists.newArrayList();
+            List<Header> headers = Lists.newArrayList();
+            SinkRecord sinkRecord = new SinkRecord("myTopic", 0, Schema.STRING_SCHEMA, "key", Schema.STRING_SCHEMA, getDummyHttpRequestAsString(), -1, System.currentTimeMillis(), TimestampType.CREATE_TIME, headers);
+            records.add(sinkRecord);
+            myOkHttpSinkTask.put(records);
+            verify(httpClient, times(1)).call(any(HttpRequest.class), any(AtomicInteger.class));
+            List<ProducerRecord<String, Object>> history = mockProducer.history();
+            assertThat(history).hasSize(1);
+            ProducerRecord<String, Object> firstRecord = history.get(0);
+            assertThat(firstRecord.topic()).isEqualTo("myTopic");
+            assertThat(firstRecord.key()).isNull();
+            assertThat(firstRecord.value()).isNotNull();
+        }
+
+        @Test
         void test_put_with_publish_to_in_memory_queue_set_to_true_with_a_consumer() {
 
             //given
@@ -463,7 +564,7 @@ public class HttpSinkTaskTest {
             QueueFactory.registerConsumerForQueue(QueueFactory.DEFAULT_QUEUE_NAME);
             ahcSinkTask.start(settings);
             AHCHttpClient httpClient = Mockito.mock(AHCHttpClient.class);
-            HttpExchange dummyHttpExchange = getDummyHttpExchange();
+            HttpExchange dummyHttpExchange = getHttpExchange();
             when(httpClient.call(any(HttpRequest.class), any(AtomicInteger.class))).thenReturn(CompletableFuture.supplyAsync(() -> dummyHttpExchange));
             ahcSinkTask.getDefaultConfiguration().setHttpClient(httpClient);
             Queue<KafkaRecord> queue = mock(Queue.class);
@@ -2881,6 +2982,7 @@ public class HttpSinkTaskTest {
             //when
             Stopwatch stopwatch = Stopwatch.createStarted();
             okHttpSinkTask.put(records);
+            okHttpSinkTask.stop();
             stopwatch.stop();
             long elapsedMillis = stopwatch.elapsed(TimeUnit.MILLISECONDS);
             LOGGER.info("put method execution time :'{}' ms", elapsedMillis);
@@ -3279,13 +3381,17 @@ public class HttpSinkTaskTest {
     }
 
 
-    private HttpExchange getDummyHttpExchange() {
+    private HttpExchange getHttpExchange() {
+        return getHttpExchange("http://www.titi.com", DUMMY_METHOD, 200);
+    }
+
+    private HttpExchange getHttpExchange(String url, HttpRequest.Method method, int statusCode) {
         Map<String, List<String>> requestHeaders = Maps.newHashMap();
         requestHeaders.put("X-dummy", Lists.newArrayList("blabla"));
-        HttpRequest httpRequest = new HttpRequest("http://www.titi.com", DUMMY_METHOD, DUMMY_BODY_TYPE);
+        HttpRequest httpRequest = new HttpRequest(url, method, DUMMY_BODY_TYPE);
         httpRequest.setHeaders(requestHeaders);
         httpRequest.setBodyAsString("stuff");
-        HttpResponse httpResponse = new HttpResponse(200, OK);
+        HttpResponse httpResponse = new HttpResponse(statusCode, OK);
         httpResponse.setResponseBody("my response");
         Map<String, List<String>> responseHeaders = Maps.newHashMap();
         responseHeaders.put("Content-Type", Lists.newArrayList("application/json"));
@@ -3320,6 +3426,20 @@ public class HttpSinkTaskTest {
                 "  \"url\": \"" + DUMMY_URL + "\",\n" +
                 "  \"headers\": {},\n" +
                 "  \"method\": \"" + DUMMY_METHOD + "\",\n" +
+                "  \"bodyAsString\": \"" + DUMMY_BODY + "\",\n" +
+                "  \"bodyAsByteArray\": [],\n" +
+                "  \"bodyAsForm\": {},\n" +
+                "  \"bodyAsMultipart\": [],\n" +
+                "  \"bodyType\": \"" + DUMMY_BODY_TYPE + "\"\n" +
+                "}";
+    }
+
+
+    private String getHttpRequestAsString(String url,HttpRequest.Method method) {
+        return "{\n" +
+                "  \"url\": \"" + url + "\",\n" +
+                "  \"headers\": {},\n" +
+                "  \"method\": \"" + method + "\",\n" +
                 "  \"bodyAsString\": \"" + DUMMY_BODY + "\",\n" +
                 "  \"bodyAsByteArray\": [],\n" +
                 "  \"bodyAsForm\": {},\n" +

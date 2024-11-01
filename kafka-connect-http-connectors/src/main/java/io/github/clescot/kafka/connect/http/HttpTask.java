@@ -58,7 +58,7 @@ public class HttpTask<T extends ConnectRecord<T>, R, S> {
      * @return a future of the HttpExchange (complete request and response informations).
      */
     public CompletableFuture<HttpExchange> call(@NotNull HttpRequest httpRequest) {
-        Configuration<R, S> foundConfiguration = getConfiguration(httpRequest);
+        Configuration<R, S> foundConfiguration = selectConfiguration(httpRequest);
         if (LOGGER.isTraceEnabled()) {
             LOGGER.trace("configuration:{}", foundConfiguration);
         }
@@ -72,7 +72,7 @@ public class HttpTask<T extends ConnectRecord<T>, R, S> {
                 );
     }
 
-    private Configuration<R, S> getConfiguration(HttpRequest httpRequest) {
+    private Configuration<R, S> selectConfiguration(HttpRequest httpRequest) {
         //is there a matching configuration against the request ?
         return customConfigurations
                 .stream()
@@ -125,6 +125,9 @@ public class HttpTask<T extends ConnectRecord<T>, R, S> {
         return defaultConfiguration;
     }
 
+    public List<Configuration<R, S>> getCustomConfigurations() {
+        return customConfigurations;
+    }
 
     public static synchronized CompositeMeterRegistry getMeterRegistry() {
         return HttpTask.meterRegistry;

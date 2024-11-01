@@ -13,6 +13,7 @@ import io.github.clescot.kafka.connect.http.core.HttpRequest;
 import io.github.clescot.kafka.connect.http.core.queue.KafkaRecord;
 import io.github.clescot.kafka.connect.http.sink.mapper.HttpRequestMapper;
 import io.github.clescot.kafka.connect.http.sink.mapper.HttpRequestMapperFactory;
+import io.github.clescot.kafka.connect.http.sink.publish.KafkaProducer;
 import io.github.clescot.kafka.connect.http.sink.publish.PublishConfigurer;
 import io.github.clescot.kafka.connect.http.sink.publish.PublishMode;
 import io.micrometer.core.instrument.composite.CompositeMeterRegistry;
@@ -60,7 +61,7 @@ public abstract class HttpSinkTask<R, S> extends SinkTask {
 
     private ErrantRecordReporter errantRecordReporter;
     private HttpTask<SinkRecord, R, S> httpTask;
-    private KafkaProducer<String, HttpExchange> producer;
+    private KafkaProducer<String, Object> producer;
     private Queue<KafkaRecord> queue;
     private PublishMode publishMode;
     private HttpSinkConnectorConfig httpSinkConnectorConfig;
@@ -71,19 +72,11 @@ public abstract class HttpSinkTask<R, S> extends SinkTask {
     private List<RequestGrouper> requestGroupers;
 
     @SuppressWarnings("java:S5993")
-    public HttpSinkTask(HttpClientFactory<R, S> httpClientFactory) {
+    public HttpSinkTask(HttpClientFactory<R, S> httpClientFactory, KafkaProducer<String, Object> producer) {
         this.httpClientFactory = httpClientFactory;
+        this.producer  = producer;
     }
 
-    /**
-     * for tests only.
-     *
-     * @param mock true mock the underlying producer, false not.
-     */
-    protected HttpSinkTask(HttpClientFactory<R, S> httpClientFactory, boolean mock) {
-        this.httpClientFactory = httpClientFactory;
-        producer = new KafkaProducer<>(mock);
-    }
 
     @Override
     public String version() {
@@ -187,7 +180,7 @@ public abstract class HttpSinkTask<R, S> extends SinkTask {
         PublishConfigurer publishConfigurer = PublishConfigurer.build();
         switch (publishMode) {
             case PRODUCER:
-                producer = publishConfigurer.configureProducerPublishMode(httpSinkConnectorConfig);
+                publishConfigurer.configureProducerPublishMode(httpSinkConnectorConfig, producer);
                 break;
             case IN_MEMORY_QUEUE:
                 this.queue = publishConfigurer.configureInMemoryQueue(httpSinkConnectorConfig);
@@ -354,7 +347,13 @@ public abstract class HttpSinkTask<R, S> extends SinkTask {
         LOGGER.debug("publish.mode : 'PRODUCER' : HttpExchange success will be published at topic : '{}'", connectorConfig.getProducerSuccessTopic());
         LOGGER.debug("publish.mode : 'PRODUCER' : HttpExchange error will be published at topic : '{}'", connectorConfig.getProducerErrorTopic());
         String targetTopic = httpExchange.isSuccess() ? connectorConfig.getProducerSuccessTopic() : connectorConfig.getProducerErrorTopic();
-        ProducerRecord<String, HttpExchange> myRecord = new ProducerRecord<>(targetTopic, httpExchange);
+        String producerContent = connectorConfig.getProducerContent();
+        ProducerRecord<String, Object> myRecord;
+        if("response".equalsIgnoreCase(producerContent)) {
+            myRecord = new ProducerRecord<>(targetTopic, httpExchange.getHttpResponse());
+        }else{
+            myRecord = new ProducerRecord<>(targetTopic, httpExchange);
+        }
         LOGGER.trace("before send to {}", targetTopic);
         RecordMetadata recordMetadata;
         try {
@@ -405,6 +404,11 @@ public abstract class HttpSinkTask<R, S> extends SinkTask {
         return httpTask.getDefaultConfiguration();
     }
 
+    public List<Configuration<R, S>> getCustomConfigurations() {
+        Preconditions.checkNotNull(httpTask, "httpTask has not been initialized in the start method");
+        return httpTask.getCustomConfigurations();
+    }
+
     public HttpTask<SinkRecord, R, S> getHttpTask() {
         return httpTask;
     }
@@ -413,4 +417,6 @@ public abstract class HttpSinkTask<R, S> extends SinkTask {
     protected HttpRequestMapper getDefaultHttpRequestMapper() {
         return defaultHttpRequestMapper;
     }
+
+
 }
