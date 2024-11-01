@@ -1,6 +1,6 @@
 name: build
 on:
-  push:
+  pull_request_target:
     branches-ignore:
       - master
 jobs:
