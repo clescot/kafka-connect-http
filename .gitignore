@@ -9,3 +9,4 @@
 /kafka-connect-http-connectors/src/test/resources/clusterID/clusterID
 docs/.$http_sink_connector.drawio.bkp
 /docs/.$architecture_options_2.drawio.bkp
+/report-aggregate/target/
