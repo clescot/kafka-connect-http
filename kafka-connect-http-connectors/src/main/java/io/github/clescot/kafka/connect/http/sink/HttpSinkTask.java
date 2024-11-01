@@ -404,6 +404,11 @@ public abstract class HttpSinkTask<R, S> extends SinkTask {
         return httpTask.getDefaultConfiguration();
     }
 
+    public List<Configuration<R, S>> getCustomConfigurations() {
+        Preconditions.checkNotNull(httpTask, "httpTask has not been initialized in the start method");
+        return httpTask.getCustomConfigurations();
+    }
+
     public HttpTask<SinkRecord, R, S> getHttpTask() {
         return httpTask;
     }

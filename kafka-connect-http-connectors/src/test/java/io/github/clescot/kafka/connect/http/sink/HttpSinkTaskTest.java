@@ -238,6 +238,27 @@ public class HttpSinkTaskTest {
             });
         }
     }
+    @Nested
+    class StartWithCustomConfigurations {
+        @Test
+        void test_start_with_one_custom_configuration() {
+            Assertions.assertDoesNotThrow(() -> {
+
+                Map<String, String> settings = Maps.newHashMap();
+                settings.put("config.ids","config1");
+                settings.put("config1."+URL_REGEX,"http://toto\\.com");
+                okHttpSinkTask.start(settings);
+                OkHttpClient httpClient = Mockito.mock(OkHttpClient.class);
+                when(httpClient.call(any(HttpRequest.class), any(AtomicInteger.class))).thenReturn(CompletableFuture.supplyAsync(() -> getHttpExchange("https://toto.com",HttpRequest.Method.GET,200)));
+                okHttpSinkTask.getCustomConfigurations().get(0).setHttpClient(httpClient);
+                Collection<SinkRecord> records = Lists.newArrayList();
+                SinkRecord myRecord = new SinkRecord("myTopic",0, Schema.STRING_SCHEMA,"key",Schema.STRING_SCHEMA,getHttpRequestAsString("https://toto.com",HttpRequest.Method.GET),0L);
+                records.add(myRecord);
+                okHttpSinkTask.put(records);
+                verify(httpClient, times(1)).call(any(HttpRequest.class), any(AtomicInteger.class));
+            });
+        }
+    }
 
 
     @Nested
@@ -322,7 +343,7 @@ public class HttpSinkTaskTest {
 
             //mock httpClient
             AHCHttpClient httpClient = Mockito.mock(AHCHttpClient.class);
-            HttpExchange dummyHttpExchange = getDummyHttpExchange();
+            HttpExchange dummyHttpExchange = getHttpExchange();
             when(httpClient.call(any(HttpRequest.class), any(AtomicInteger.class))).thenReturn(CompletableFuture.supplyAsync(() -> dummyHttpExchange));
             ahcSinkTask.getDefaultConfiguration().setHttpClient(httpClient);
 
@@ -352,7 +373,7 @@ public class HttpSinkTaskTest {
             settings.put(DEFAULT_CONFIGURATION_PREFIX + STATIC_REQUEST_HEADER_PREFIX + "param2", "value2");
             okHttpSinkTask.start(settings);
             OkHttpClient httpClient = Mockito.mock(OkHttpClient.class);
-            HttpExchange dummyHttpExchange = getDummyHttpExchange();
+            HttpExchange dummyHttpExchange = getHttpExchange();
             when(httpClient.call(any(HttpRequest.class), any(AtomicInteger.class))).thenReturn(CompletableFuture.supplyAsync(() -> dummyHttpExchange));
             okHttpSinkTask.getDefaultConfiguration().setHttpClient(httpClient);
             List<SinkRecord> records = Lists.newArrayList();
@@ -378,7 +399,7 @@ public class HttpSinkTaskTest {
 
             //mock httpClient
             AHCHttpClient httpClient = Mockito.mock(AHCHttpClient.class);
-            HttpExchange dummyHttpExchange = getDummyHttpExchange();
+            HttpExchange dummyHttpExchange = getHttpExchange();
             when(httpClient.call(any(HttpRequest.class), any(AtomicInteger.class))).thenReturn(CompletableFuture.supplyAsync(() -> dummyHttpExchange));
             ahcSinkTask.getDefaultConfiguration().setHttpClient(httpClient);
 
@@ -411,7 +432,7 @@ public class HttpSinkTaskTest {
 
             //mock httpClient
             AHCHttpClient httpClient = Mockito.mock(AHCHttpClient.class);
-            HttpExchange dummyHttpExchange = getDummyHttpExchange();
+            HttpExchange dummyHttpExchange = getHttpExchange();
             when(httpClient.call(any(HttpRequest.class), any(AtomicInteger.class))).thenReturn(CompletableFuture.supplyAsync(() -> dummyHttpExchange));
             ahcSinkTask.getDefaultConfiguration().setHttpClient(httpClient);
 
@@ -444,7 +465,7 @@ public class HttpSinkTaskTest {
 
             //mock httpClient
             AHCHttpClient httpClient = Mockito.mock(AHCHttpClient.class);
-            HttpExchange dummyHttpExchange = getDummyHttpExchange();
+            HttpExchange dummyHttpExchange = getHttpExchange();
             when(httpClient.call(any(HttpRequest.class), any(AtomicInteger.class))).thenReturn(CompletableFuture.supplyAsync(() -> dummyHttpExchange));
             ahcSinkTask.getDefaultConfiguration().setHttpClient(httpClient);
 
@@ -480,7 +501,7 @@ public class HttpSinkTaskTest {
             settings.put(PUBLISH_MODE, PublishMode.NONE.name());
             ahcSinkTask.start(settings);
             AHCHttpClient httpClient = Mockito.mock(AHCHttpClient.class);
-            HttpExchange dummyHttpExchange = getDummyHttpExchange();
+            HttpExchange dummyHttpExchange = getHttpExchange();
             when(httpClient.call(any(HttpRequest.class), any(AtomicInteger.class))).thenReturn(CompletableFuture.supplyAsync(() -> dummyHttpExchange));
             ahcSinkTask.getDefaultConfiguration().setHttpClient(httpClient);
             Queue<KafkaRecord> queue = mock(Queue.class);
@@ -517,7 +538,7 @@ public class HttpSinkTaskTest {
             okHttpSinkTask.initialize(sinkTaskContext);
             okHttpSinkTask.start(settings);
             OkHttpClient httpClient = Mockito.mock(OkHttpClient.class);
-            HttpExchange dummyHttpExchange = getDummyHttpExchange();
+            HttpExchange dummyHttpExchange = getHttpExchange();
             when(httpClient.call(any(HttpRequest.class), any(AtomicInteger.class))).thenReturn(CompletableFuture.supplyAsync(() -> dummyHttpExchange));
             okHttpSinkTask.getDefaultConfiguration().setHttpClient(httpClient);
             List<SinkRecord> records = Lists.newArrayList();
@@ -543,7 +564,7 @@ public class HttpSinkTaskTest {
             QueueFactory.registerConsumerForQueue(QueueFactory.DEFAULT_QUEUE_NAME);
             ahcSinkTask.start(settings);
             AHCHttpClient httpClient = Mockito.mock(AHCHttpClient.class);
-            HttpExchange dummyHttpExchange = getDummyHttpExchange();
+            HttpExchange dummyHttpExchange = getHttpExchange();
             when(httpClient.call(any(HttpRequest.class), any(AtomicInteger.class))).thenReturn(CompletableFuture.supplyAsync(() -> dummyHttpExchange));
             ahcSinkTask.getDefaultConfiguration().setHttpClient(httpClient);
             Queue<KafkaRecord> queue = mock(Queue.class);
@@ -3360,13 +3381,17 @@ public class HttpSinkTaskTest {
     }
 
 
-    private HttpExchange getDummyHttpExchange() {
+    private HttpExchange getHttpExchange() {
+        return getHttpExchange("http://www.titi.com", DUMMY_METHOD, 200);
+    }
+
+    private HttpExchange getHttpExchange(String url, HttpRequest.Method method, int statusCode) {
         Map<String, List<String>> requestHeaders = Maps.newHashMap();
         requestHeaders.put("X-dummy", Lists.newArrayList("blabla"));
-        HttpRequest httpRequest = new HttpRequest("http://www.titi.com", DUMMY_METHOD, DUMMY_BODY_TYPE);
+        HttpRequest httpRequest = new HttpRequest(url, method, DUMMY_BODY_TYPE);
         httpRequest.setHeaders(requestHeaders);
         httpRequest.setBodyAsString("stuff");
-        HttpResponse httpResponse = new HttpResponse(200, OK);
+        HttpResponse httpResponse = new HttpResponse(statusCode, OK);
         httpResponse.setResponseBody("my response");
         Map<String, List<String>> responseHeaders = Maps.newHashMap();
         responseHeaders.put("Content-Type", Lists.newArrayList("application/json"));
@@ -3401,6 +3426,20 @@ public class HttpSinkTaskTest {
                 "  \"url\": \"" + DUMMY_URL + "\",\n" +
                 "  \"headers\": {},\n" +
                 "  \"method\": \"" + DUMMY_METHOD + "\",\n" +
+                "  \"bodyAsString\": \"" + DUMMY_BODY + "\",\n" +
+                "  \"bodyAsByteArray\": [],\n" +
+                "  \"bodyAsForm\": {},\n" +
+                "  \"bodyAsMultipart\": [],\n" +
+                "  \"bodyType\": \"" + DUMMY_BODY_TYPE + "\"\n" +
+                "}";
+    }
+
+
+    private String getHttpRequestAsString(String url,HttpRequest.Method method) {
+        return "{\n" +
+                "  \"url\": \"" + url + "\",\n" +
+                "  \"headers\": {},\n" +
+                "  \"method\": \"" + method + "\",\n" +
                 "  \"bodyAsString\": \"" + DUMMY_BODY + "\",\n" +
                 "  \"bodyAsByteArray\": [],\n" +
                 "  \"bodyAsForm\": {},\n" +
