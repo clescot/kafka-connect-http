@@ -2961,6 +2961,7 @@ public class HttpSinkTaskTest {
             //when
             Stopwatch stopwatch = Stopwatch.createStarted();
             okHttpSinkTask.put(records);
+            okHttpSinkTask.stop();
             stopwatch.stop();
             long elapsedMillis = stopwatch.elapsed(TimeUnit.MILLISECONDS);
             LOGGER.info("put method execution time :'{}' ms", elapsedMillis);

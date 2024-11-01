@@ -413,8 +413,5 @@ public abstract class HttpSinkTask<R, S> extends SinkTask {
         return defaultHttpRequestMapper;
     }
 
-    public HttpSinkConnectorConfig getHttpSinkConnectorConfig() {
-        return httpSinkConnectorConfig;
-    }
 
 }
