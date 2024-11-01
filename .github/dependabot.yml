@@ -23,4 +23,8 @@ updates:
         dependency-type: "production"
         exclude-patterns:
           - "mock-oauth2-server"
-
+    ignore:
+      - dependency-name: "io.debezium:debezium-testing-testcontainers"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "no.nav.security:mock-oauth2-server"
+        update-types: ["version-update:semver-major"]
