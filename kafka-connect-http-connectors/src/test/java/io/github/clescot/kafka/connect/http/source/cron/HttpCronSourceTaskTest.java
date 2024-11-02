@@ -1,4 +1,4 @@
-package io.github.clescot.kafka.connect.http.source;
+package io.github.clescot.kafka.connect.http.source.cron;
 
 
 import com.google.common.collect.Maps;
@@ -13,35 +13,35 @@ import java.util.concurrent.TimeUnit;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-class CronSourceTaskTest {
+class HttpCronSourceTaskTest {
 
     @Nested
     class Start {
 
-        CronSourceTask cronSourceTask;
+        HttpCronSourceTask httpCronSourceTask;
 
         @BeforeEach
         void setup() {
-            cronSourceTask = new CronSourceTask();
+            httpCronSourceTask = new HttpCronSourceTask();
         }
 
 
         @Test
         void test_empty_settings() {
             HashMap<String, String> settings = Maps.newHashMap();
-            Assertions.assertThrows(ConfigException.class, () -> cronSourceTask.start(settings));
+            Assertions.assertThrows(ConfigException.class, () -> httpCronSourceTask.start(settings));
         }
 
         @Test
         void test_null_settings() {
-            Assertions.assertThrows(NullPointerException.class, () -> cronSourceTask.start(null));
+            Assertions.assertThrows(NullPointerException.class, () -> httpCronSourceTask.start(null));
         }
 
         @Test
         void test_settings_with_topic_only() {
             Map<String, String> settings = Maps.newHashMap();
             settings.put("topic", "test");
-            Assertions.assertThrows(ConfigException.class, () -> cronSourceTask.start(settings));
+            Assertions.assertThrows(ConfigException.class, () -> httpCronSourceTask.start(settings));
         }
 
         @Test
@@ -51,7 +51,7 @@ class CronSourceTaskTest {
             settings.put("jobs", "job10");
             settings.put("job10.cron", "0 0 6 * * ?");
             settings.put("job10.url", "https://example.com");
-            Assertions.assertDoesNotThrow(() -> cronSourceTask.start(settings));
+            Assertions.assertDoesNotThrow(() -> httpCronSourceTask.start(settings));
         }
 
         @Test
@@ -63,7 +63,7 @@ class CronSourceTaskTest {
             settings.put("job1.url", "https://example.com");
             settings.put("job2.cron", "0 0 1 * * ?");
             settings.put("job2.url", "https://test.com");
-            Assertions.assertDoesNotThrow(() -> cronSourceTask.start(settings));
+            Assertions.assertDoesNotThrow(() -> httpCronSourceTask.start(settings));
         }
 
         @Test
@@ -82,11 +82,11 @@ class CronSourceTaskTest {
             settings.put("job33.method", "POST");
             settings.put("job33.body", "stuff");
 
-            Assertions.assertDoesNotThrow(() -> cronSourceTask.start(settings));
-            Scheduler scheduler = cronSourceTask.getScheduler();
+            Assertions.assertDoesNotThrow(() -> httpCronSourceTask.start(settings));
+            Scheduler scheduler = httpCronSourceTask.getScheduler();
             JobDetail jobDetail = scheduler.getJobDetail(new JobKey("job11"));
             Class<? extends Job> jobClass = jobDetail.getJobClass();
-            assertThat(jobClass).isEqualTo(HttpJob.class);
+            assertThat(jobClass).isEqualTo(HttpCronJob.class);
             JobDataMap jobDataMap = jobDetail.getJobDataMap();
             assertThat(jobDataMap).containsEntry("url", "https://example.com");
 
@@ -107,7 +107,7 @@ class CronSourceTaskTest {
 
         @AfterEach
         void shutdown() {
-            cronSourceTask.stop();
+            httpCronSourceTask.stop();
         }
     }
 
@@ -117,8 +117,8 @@ class CronSourceTaskTest {
 
         @Test
         void get_version() {
-            CronSourceTask cronSourceTask = new CronSourceTask();
-            String version = cronSourceTask.version();
+            HttpCronSourceTask httpCronSourceTask = new HttpCronSourceTask();
+            String version = httpCronSourceTask.version();
             assertThat(version)
                     .isNotNull()
                     .isNotBlank();
@@ -127,16 +127,16 @@ class CronSourceTaskTest {
 
     @Nested
     class Poll{
-        CronSourceTask cronSourceTask;
+        HttpCronSourceTask httpCronSourceTask;
 
         @BeforeEach
         void setup() {
-            cronSourceTask = new CronSourceTask();
+            httpCronSourceTask = new HttpCronSourceTask();
         }
 
         @AfterEach
         void shutdown() {
-            cronSourceTask.stop();
+            httpCronSourceTask.stop();
         }
 
         @Test
@@ -153,9 +153,9 @@ class CronSourceTaskTest {
             settings.put("job33.url", "https://test.com");
             settings.put("job33.method", "POST");
             settings.put("job33.body", "stuff");
-            cronSourceTask.start(settings);
-            Awaitility.await().atMost(5, TimeUnit.SECONDS).until(()->cronSourceTask.getQueue().peek()!=null);
-            Awaitility.await().atMost(5, TimeUnit.SECONDS).until(()->!cronSourceTask.poll().isEmpty());
+            httpCronSourceTask.start(settings);
+            Awaitility.await().atMost(5, TimeUnit.SECONDS).until(()-> httpCronSourceTask.getQueue().peek()!=null);
+            Awaitility.await().atMost(5, TimeUnit.SECONDS).until(()->!httpCronSourceTask.poll().isEmpty());
 
         }
     }

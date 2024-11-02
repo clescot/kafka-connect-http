@@ -1,4 +1,4 @@
-package io.github.clescot.kafka.connect.http.source;
+package io.github.clescot.kafka.connect.http.source.cron;
 
 
 import org.gradle.internal.impldep.com.google.common.collect.Maps;

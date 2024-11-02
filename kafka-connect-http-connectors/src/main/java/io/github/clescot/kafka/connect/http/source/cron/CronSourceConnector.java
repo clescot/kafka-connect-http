@@ -1,4 +1,4 @@
-package io.github.clescot.kafka.connect.http.source;
+package io.github.clescot.kafka.connect.http.source.cron;
 
 import com.google.common.base.Preconditions;
 import io.github.clescot.kafka.connect.http.VersionUtils;
@@ -13,15 +13,15 @@ import java.util.Map;
 public class CronSourceConnector extends SourceConnector {
 
     private static final VersionUtils VERSION_UTILS = new VersionUtils();
-    private CronSourceConnectorConfig cronSourceConnectorConfig;
+    private HttpCronSourceConnectorConfig httpCronSourceConnectorConfig;
     @Override
     public void start(Map<String, String> props) {
-        this.cronSourceConnectorConfig = new CronSourceConnectorConfig(config(),props);
+        this.httpCronSourceConnectorConfig = new HttpCronSourceConnectorConfig(config(),props);
     }
 
     @Override
     public Class<? extends Task> taskClass() {
-        return CronSourceTask.class;
+        return HttpCronSourceTask.class;
     }
 
     @Override
@@ -29,7 +29,7 @@ public class CronSourceConnector extends SourceConnector {
         Preconditions.checkArgument(maxTasks>0,"maxTasks must be higher than 0");
         List<Map<String, String>> configs = new ArrayList<>(maxTasks);
         for (int i = 0; i < maxTasks; i++) {
-            configs.add(this.cronSourceConnectorConfig.originalsStrings());
+            configs.add(this.httpCronSourceConnectorConfig.originalsStrings());
         }
 
         return configs;
@@ -42,7 +42,7 @@ public class CronSourceConnector extends SourceConnector {
 
     @Override
     public ConfigDef config() {
-        return CronSourceConfigDefinition.config();
+        return HttpCronSourceConfigDefinition.config();
     }
 
     @Override

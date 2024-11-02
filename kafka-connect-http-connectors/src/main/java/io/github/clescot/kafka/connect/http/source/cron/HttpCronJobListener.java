@@ -1,4 +1,4 @@
-package io.github.clescot.kafka.connect.http.source;
+package io.github.clescot.kafka.connect.http.source.cron;
 
 import io.github.clescot.kafka.connect.http.core.HttpRequest;
 import org.quartz.JobExecutionContext;
@@ -9,11 +9,11 @@ import org.slf4j.LoggerFactory;
 
 import java.util.Queue;
 
-public class HttpListener implements JobListener {
-    private static final Logger LOGGER = LoggerFactory.getLogger(HttpListener.class);
+public class HttpCronJobListener implements JobListener {
+    private static final Logger LOGGER = LoggerFactory.getLogger(HttpCronJobListener.class);
     private final Queue<HttpRequest> queue;
 
-    public HttpListener(Queue<HttpRequest> queue) {
+    public HttpCronJobListener(Queue<HttpRequest> queue) {
         this.queue = queue;
     }
 

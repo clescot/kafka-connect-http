@@ -1,4 +1,4 @@
-package io.github.clescot.kafka.connect.http.source;
+package io.github.clescot.kafka.connect.http.source.cron;
 
 import io.github.clescot.kafka.connect.http.core.HttpRequest;
 

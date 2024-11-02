@@ -7,11 +7,11 @@ import org.junit.jupiter.api.Test;
 
 import java.util.HashMap;
 
-import static io.github.clescot.kafka.connect.http.source.HttpSourceConfigDefinition.ERROR_TOPIC;
-import static io.github.clescot.kafka.connect.http.source.HttpSourceConfigDefinition.SUCCESS_TOPIC;
+import static io.github.clescot.kafka.connect.http.source.HttpInMemoryQueueSourceConfigDefinition.ERROR_TOPIC;
+import static io.github.clescot.kafka.connect.http.source.HttpInMemoryQueueSourceConfigDefinition.SUCCESS_TOPIC;
 
 
-class HttpSourceConnectorConfigTest {
+class HttpInMemoryQueueSourceConnectorConfigTest {
 
     @Test
     void test_null_map(){

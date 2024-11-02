@@ -95,7 +95,7 @@ depending on the HTTP result.
 {
     "name": "my-http-source-connector",
     "config": {
-    "connector.class":"io.github.clescot.kafka.connect.http.source.HttpSourceConnector",
+    "connector.class":"io.github.clescot.kafka.connect.http.source.HttpInMemoryQueueSourceConnector",
     "tasks.max": "1",
     "success.topic": "http-success",
     "error.topic": "http-error"
@@ -110,7 +110,7 @@ This configuration emits an HTTP request in the `http-request` topic every 5 sec
 ```json
 {
    "tasks.max" : "1",
-   "connector.class" : "io.github.clescot.kafka.connect.http.source.CronSourceConnector",
+   "connector.class" : "io.github.clescot.kafka.connect.http.source.cron.CronSourceConnector",
    "topic" : "http-request",
    "key.converter" : "org.apache.kafka.connect.storage.StringConverter",
    "value.converter" : "org.apache.kafka.connect.storage.StringConverter",

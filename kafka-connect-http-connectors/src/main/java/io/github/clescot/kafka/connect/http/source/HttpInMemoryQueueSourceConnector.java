@@ -9,7 +9,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-public class HttpSourceConnector extends SourceConnector {
+public class HttpInMemoryQueueSourceConnector extends SourceConnector {
     private static final VersionUtils VERSION_UTILS = new VersionUtils();
     private HttpSourceConnectorConfig httpSourceConnectorConfig;
     @Override
@@ -19,7 +19,7 @@ public class HttpSourceConnector extends SourceConnector {
 
     @Override
     public Class<? extends Task> taskClass() {
-        return HttpSourceTask.class;
+        return HttpInMemoryQueueSourceTask.class;
     }
 
     @Override
@@ -39,7 +39,7 @@ public class HttpSourceConnector extends SourceConnector {
 
     @Override
     public ConfigDef config() {
-        return HttpSourceConfigDefinition.config();
+        return HttpInMemoryQueueSourceConfigDefinition.config();
     }
 
     @Override

@@ -29,7 +29,7 @@ import io.github.clescot.kafka.connect.http.core.HttpExchange;
 import io.github.clescot.kafka.connect.http.core.HttpRequest;
 import io.github.clescot.kafka.connect.http.core.queue.QueueFactory;
 import io.github.clescot.kafka.connect.http.sink.publish.PublishMode;
-import io.github.clescot.kafka.connect.http.source.CronJobConfig;
+import io.github.clescot.kafka.connect.http.source.cron.CronJobConfig;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.Response;
@@ -288,7 +288,7 @@ public class ITConnectorTest {
         //source connector
         String jobs = Joiner.on(",").join(configs.stream().map(CronJobConfig::getId).collect(Collectors.toList()));
         ConnectorConfiguration sourceConnectorConfiguration = ConnectorConfiguration.create()
-                .with("connector.class", "io.github.clescot.kafka.connect.http.source.CronSourceConnector")
+                .with("connector.class", "io.github.clescot.kafka.connect.http.source.cron.CronSourceConnector")
                 .with("tasks.max", "1")
                 .with("topic", topic)
                 .with("key.converter", "org.apache.kafka.connect.storage.StringConverter")

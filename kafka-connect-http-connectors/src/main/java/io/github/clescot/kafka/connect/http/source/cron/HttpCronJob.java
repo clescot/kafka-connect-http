@@ -1,4 +1,4 @@
-package io.github.clescot.kafka.connect.http.source;
+package io.github.clescot.kafka.connect.http.source.cron;
 
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
@@ -14,7 +14,7 @@ import java.util.Optional;
 /**
  * build an HttpRequest.
  */
-public class HttpJob implements Job {
+public class HttpCronJob implements Job {
 
     public static final String URL = "url";
     public static final String METHOD = "method";
