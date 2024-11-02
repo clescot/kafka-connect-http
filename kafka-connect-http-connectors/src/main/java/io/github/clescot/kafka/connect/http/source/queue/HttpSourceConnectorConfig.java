@@ -1,4 +1,4 @@
-package io.github.clescot.kafka.connect.http.source;
+package io.github.clescot.kafka.connect.http.source.queue;
 
 import io.github.clescot.kafka.connect.http.core.queue.ConfigConstants;
 import io.github.clescot.kafka.connect.http.core.queue.QueueFactory;
@@ -20,15 +20,15 @@ public class HttpSourceConnectorConfig extends AbstractConfig {
 
 
     public HttpSourceConnectorConfig(Map<?, ?> originals) {
-        this(HttpSourceConfigDefinition.config(), originals);
+        this(HttpInMemoryQueueSourceConfigDefinition.config(), originals);
     }
 
     public HttpSourceConnectorConfig(ConfigDef configDef, Map<?, ?> originals){
         super(configDef,originals);
-        this.successTopic = Optional.ofNullable(getString(HttpSourceConfigDefinition.SUCCESS_TOPIC)).orElseThrow(()-> new IllegalArgumentException(HttpSourceConfigDefinition.SUCCESS_TOPIC + CANNOT_BE_FOUND_IN_MAP_CONFIGURATION));
-        this.errorsTopic = Optional.ofNullable(getString(HttpSourceConfigDefinition.ERROR_TOPIC)).orElseThrow(()-> new IllegalArgumentException(HttpSourceConfigDefinition.ERROR_TOPIC + CANNOT_BE_FOUND_IN_MAP_CONFIGURATION));
+        this.successTopic = Optional.ofNullable(getString(HttpInMemoryQueueSourceConfigDefinition.SUCCESS_TOPIC)).orElseThrow(()-> new IllegalArgumentException(HttpInMemoryQueueSourceConfigDefinition.SUCCESS_TOPIC + CANNOT_BE_FOUND_IN_MAP_CONFIGURATION));
+        this.errorsTopic = Optional.ofNullable(getString(HttpInMemoryQueueSourceConfigDefinition.ERROR_TOPIC)).orElseThrow(()-> new IllegalArgumentException(HttpInMemoryQueueSourceConfigDefinition.ERROR_TOPIC + CANNOT_BE_FOUND_IN_MAP_CONFIGURATION));
         this.queueName = Optional.ofNullable(getString(ConfigConstants.QUEUE_NAME)).orElse(QueueFactory.DEFAULT_QUEUE_NAME);
-        this.content = Optional.ofNullable(getString(HttpSourceConfigDefinition.CONTENT)).orElse("exchange");
+        this.content = Optional.ofNullable(getString(HttpInMemoryQueueSourceConfigDefinition.CONTENT)).orElse("exchange");
 
         if(QueueFactory.queueMapIsEmpty()){
             LOGGER.warn("no pre-existing queue exists. this HttpSourceConnector has created a '{}' one. It needs to consume a queue filled with a SinkConnector. Ignore this message if a SinkConnector will be created after this one.",queueName);

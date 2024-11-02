@@ -1,4 +1,4 @@
-package io.github.clescot.kafka.connect.http.source;
+package io.github.clescot.kafka.connect.http.source.cron;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -16,15 +16,15 @@ import org.quartz.impl.StdSchedulerFactory;
 
 import java.util.*;
 
-import static io.github.clescot.kafka.connect.http.source.HttpJob.*;
+import static io.github.clescot.kafka.connect.http.source.cron.HttpCronJob.*;
 import static org.quartz.CronScheduleBuilder.cronSchedule;
 import static org.quartz.JobBuilder.newJob;
 import static org.quartz.TriggerBuilder.newTrigger;
 
-public class CronSourceTask extends SourceTask {
+public class HttpCronSourceTask extends SourceTask {
 
     private static final VersionUtils VERSION_UTILS = new VersionUtils();
-    private CronSourceConnectorConfig cronSourceConnectorConfig;
+    private HttpCronSourceConnectorConfig httpCronSourceConnectorConfig;
     private Scheduler scheduler;
     private Queue<HttpRequest> queue;
     private ObjectMapper objectMapper;
@@ -41,14 +41,14 @@ public class CronSourceTask extends SourceTask {
 
         queue = QueueFactory.getQueue(""+UUID.randomUUID());
         Preconditions.checkNotNull(settings);
-        this.cronSourceConnectorConfig = new CronSourceConnectorConfig(settings);
+        this.httpCronSourceConnectorConfig = new HttpCronSourceConnectorConfig(settings);
         SchedulerFactory schedulerFactory = new StdSchedulerFactory();
         try {
             scheduler = schedulerFactory.getScheduler();
             ListenerManager listenerManager = scheduler.getListenerManager();
-            listenerManager.addJobListener(new HttpListener(queue));
+            listenerManager.addJobListener(new HttpCronJobListener(queue));
             scheduler.start();
-            List<String> jobs = cronSourceConnectorConfig.getJobs();
+            List<String> jobs = httpCronSourceConnectorConfig.getJobs();
             jobs.forEach(id -> {
                 JobDataMap jobDataMap = new JobDataMap();
 
@@ -69,7 +69,7 @@ public class CronSourceTask extends SourceTask {
                     jobDataMap.put(HEADERS, headersAsString.get());
                 }
 
-                JobDetail job = newJob(HttpJob.class)
+                JobDetail job = newJob(HttpCronJob.class)
                         .withIdentity(id)
                         .setJobData(jobDataMap)
                         .build();
@@ -103,7 +103,7 @@ public class CronSourceTask extends SourceTask {
                 sourceRecord = new SourceRecord(
                         Maps.newHashMap(),
                         Maps.newHashMap(),
-                        cronSourceConnectorConfig.getTopic(),
+                        httpCronSourceConnectorConfig.getTopic(),
                         null,
                         objectMapper.writeValueAsString(httpRequest)
                 );

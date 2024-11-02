@@ -1,15 +1,15 @@
-package io.github.clescot.kafka.connect.http.source;
+package io.github.clescot.kafka.connect.http.source.cron;
 
 import org.apache.kafka.common.config.ConfigDef;
 
 
-public class CronSourceConfigDefinition {
+public class HttpCronSourceConfigDefinition {
 
     public static final String TOPIC = "topic";
     public static final String TOPIC_DOC = "Topic to receive http request to execute";
     public static final String JOBS = "jobs";
     public static final String JOBS_DOC = "Topic to receive http request to execute";
-    private CronSourceConfigDefinition() {
+    private HttpCronSourceConfigDefinition() {
         //Class with only static methods
     }
 

@@ -1,7 +1,6 @@
-package io.github.clescot.kafka.connect.http.source;
+package io.github.clescot.kafka.connect.http.source.queue;
 
 import com.google.common.collect.Maps;
-import io.github.clescot.kafka.connect.http.QueueProducer;
 import io.github.clescot.kafka.connect.http.core.HttpExchange;
 import io.github.clescot.kafka.connect.http.core.HttpRequest;
 import io.github.clescot.kafka.connect.http.core.HttpResponse;
@@ -28,17 +27,17 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static io.github.clescot.kafka.connect.http.source.HttpSourceConfigDefinition.ERROR_TOPIC;
-import static io.github.clescot.kafka.connect.http.source.HttpSourceConfigDefinition.SUCCESS_TOPIC;
+import static io.github.clescot.kafka.connect.http.source.queue.HttpInMemoryQueueSourceConfigDefinition.ERROR_TOPIC;
+import static io.github.clescot.kafka.connect.http.source.queue.HttpInMemoryQueueSourceConfigDefinition.SUCCESS_TOPIC;
 import static org.assertj.core.api.Assertions.assertThat;
 
-class HttpSourceTaskTest {
-    private HttpSourceTask wsSourceTask;
-    private final static Logger LOGGER = LoggerFactory.getLogger(HttpSourceTaskTest.class);
+class HttpInMemoryQueueSourceTaskTest {
+    private HttpInMemoryQueueSourceTask wsSourceTask;
+    private final static Logger LOGGER = LoggerFactory.getLogger(HttpInMemoryQueueSourceTaskTest.class);
 
     @BeforeEach
     public void setup() {
-        wsSourceTask = new HttpSourceTask();
+        wsSourceTask = new HttpInMemoryQueueSourceTask();
     }
 
     @AfterEach
@@ -49,7 +48,7 @@ class HttpSourceTaskTest {
 
     @Test
     void test_start_with_null_settings() {
-        HttpSourceTask wsSourceTask = new HttpSourceTask();
+        HttpInMemoryQueueSourceTask wsSourceTask = new HttpInMemoryQueueSourceTask();
 
         Assertions.assertThrows(NullPointerException.class, () -> wsSourceTask.start(null));
     }

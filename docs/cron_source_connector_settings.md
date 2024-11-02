@@ -28,7 +28,7 @@ into a configured topic, which must be the topic listened by the HTTP Sink Conne
 ```json
 {
    "tasks.max" : "1",
-   "connector.class" : "io.github.clescot.kafka.connect.http.source.CronSourceConnector",
+   "connector.class" : "io.github.clescot.kafka.connect.http.source.cron.CronSourceConnector",
    "topic" : "requests",
    "key.converter" : "org.apache.kafka.connect.storage.StringConverter",
    "value.converter" : "org.apache.kafka.connect.storage.StringConverter",

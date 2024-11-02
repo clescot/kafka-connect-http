@@ -1,4 +1,4 @@
-package io.github.clescot.kafka.connect.http.source;
+package io.github.clescot.kafka.connect.http.source.queue;
 
 import com.google.common.collect.Maps;
 import org.apache.kafka.common.config.ConfigException;
@@ -14,18 +14,18 @@ import java.util.Map;
 
 import static io.github.clescot.kafka.connect.http.core.queue.ConfigConstants.QUEUE_NAME;
 import static io.github.clescot.kafka.connect.http.core.queue.QueueFactory.DEFAULT_QUEUE_NAME;
-import static io.github.clescot.kafka.connect.http.source.HttpSourceConfigDefinition.ERROR_TOPIC;
-import static io.github.clescot.kafka.connect.http.source.HttpSourceConfigDefinition.SUCCESS_TOPIC;
+import static io.github.clescot.kafka.connect.http.source.queue.HttpInMemoryQueueSourceConfigDefinition.ERROR_TOPIC;
+import static io.github.clescot.kafka.connect.http.source.queue.HttpInMemoryQueueSourceConfigDefinition.SUCCESS_TOPIC;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 
-class HttpSourceConnectorTest {
+class HttpInMemoryQueueSourceConnectorTest {
 
-    private final static Logger LOGGER = LoggerFactory.getLogger(HttpSourceConnectorTest.class);
-    private HttpSourceConnector httpSourceConnector;
+    private final static Logger LOGGER = LoggerFactory.getLogger(HttpInMemoryQueueSourceConnectorTest.class);
+    private HttpInMemoryQueueSourceConnector httpInMemoryQueueSourceConnector;
 
     @BeforeEach
     public void setup(){
-        httpSourceConnector = new HttpSourceConnector();
+        httpInMemoryQueueSourceConnector = new HttpInMemoryQueueSourceConnector();
     }
 
     @Test
@@ -33,7 +33,7 @@ class HttpSourceConnectorTest {
         Map<String, String> settings = Maps.newHashMap();
         settings.put(SUCCESS_TOPIC, "foo");
         settings.put(ERROR_TOPIC, "foo");
-        Assertions.assertDoesNotThrow( () -> httpSourceConnector.start(settings));
+        Assertions.assertDoesNotThrow( () -> httpInMemoryQueueSourceConnector.start(settings));
     }
 
     @Test
@@ -41,7 +41,7 @@ class HttpSourceConnectorTest {
         Map < String, String > settings = Maps.newHashMap();
         settings.put(ERROR_TOPIC, "foo");
         Assertions.assertThrows(ConfigException.class, () ->  {
-                httpSourceConnector.start(settings);
+                httpInMemoryQueueSourceConnector.start(settings);
         });
     }
 
@@ -50,7 +50,7 @@ class HttpSourceConnectorTest {
         Map < String, String > settings = Maps.newHashMap();
         settings.put(SUCCESS_TOPIC, "foo");
         Assertions.assertThrows(ConfigException.class, () ->  {
-                httpSourceConnector.start(settings);
+                httpInMemoryQueueSourceConnector.start(settings);
         });
     }
 
@@ -60,7 +60,7 @@ class HttpSourceConnectorTest {
         settings.put(SUCCESS_TOPIC, "foo1");
         settings.put(ERROR_TOPIC, "foo2");
         settings.put(QUEUE_NAME, "myQueue");
-        Assertions.assertDoesNotThrow( () -> httpSourceConnector.start(settings));
+        Assertions.assertDoesNotThrow( () -> httpInMemoryQueueSourceConnector.start(settings));
     }
 
     @Test
@@ -69,7 +69,7 @@ class HttpSourceConnectorTest {
         settings.put(SUCCESS_TOPIC, "foo1");
         settings.put(ERROR_TOPIC, "foo2");
         settings.put(QUEUE_NAME, DEFAULT_QUEUE_NAME);
-        Assertions.assertDoesNotThrow( () -> httpSourceConnector.start(settings));
+        Assertions.assertDoesNotThrow( () -> httpInMemoryQueueSourceConnector.start(settings));
     }
 
 
@@ -77,12 +77,12 @@ class HttpSourceConnectorTest {
     @Test
     void test_start_empty_settings_map(){
         Map<String,String> settings = Maps.newHashMap();
-        Assertions.assertThrows(ConfigException.class, () -> httpSourceConnector.start(settings));
+        Assertions.assertThrows(ConfigException.class, () -> httpInMemoryQueueSourceConnector.start(settings));
     }
 
     @Test
     void test_start_null_settings_map(){
-        Assertions.assertThrows(NullPointerException.class, () -> httpSourceConnector.start(null));
+        Assertions.assertThrows(NullPointerException.class, () -> httpInMemoryQueueSourceConnector.start(null));
     }
 
     @Test
@@ -90,8 +90,8 @@ class HttpSourceConnectorTest {
         Map<String,String> settings = Maps.newHashMap();
         settings.put(SUCCESS_TOPIC,"foo");
         settings.put(ERROR_TOPIC,"foo");
-        httpSourceConnector.start(settings);
-        List<Map<String, String>> maps = httpSourceConnector.taskConfigs(0);
+        httpInMemoryQueueSourceConnector.start(settings);
+        List<Map<String, String>> maps = httpInMemoryQueueSourceConnector.taskConfigs(0);
         assertThat(maps).asInstanceOf(InstanceOfAssertFactories.LIST).isEmpty();
     }
 
@@ -100,8 +100,8 @@ class HttpSourceConnectorTest {
         Map<String,String> settings = Maps.newHashMap();
         settings.put(SUCCESS_TOPIC,"foo");
         settings.put(ERROR_TOPIC,"foo");
-        httpSourceConnector.start(settings);
-        List<Map<String, String>> maps = httpSourceConnector.taskConfigs(1);
+        httpInMemoryQueueSourceConnector.start(settings);
+        List<Map<String, String>> maps = httpInMemoryQueueSourceConnector.taskConfigs(1);
         assertThat(maps).asInstanceOf(InstanceOfAssertFactories.LIST).hasSize(1);
 
     }
@@ -110,8 +110,8 @@ class HttpSourceConnectorTest {
         Map<String,String> settings = Maps.newHashMap();
           settings.put(SUCCESS_TOPIC,"foo");
           settings.put(ERROR_TOPIC,"foo");
-        httpSourceConnector.start(settings);
-          List<Map<String, String>> maps = httpSourceConnector.taskConfigs(10);
+        httpInMemoryQueueSourceConnector.start(settings);
+          List<Map<String, String>> maps = httpInMemoryQueueSourceConnector.taskConfigs(10);
           assertThat(maps).asInstanceOf(InstanceOfAssertFactories.LIST).hasSize(10);
       }
 
