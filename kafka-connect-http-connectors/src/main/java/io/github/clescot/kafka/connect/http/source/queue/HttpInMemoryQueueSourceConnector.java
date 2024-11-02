@@ -1,4 +1,4 @@
-package io.github.clescot.kafka.connect.http.source;
+package io.github.clescot.kafka.connect.http.source.queue;
 
 import io.github.clescot.kafka.connect.http.VersionUtils;
 import org.apache.kafka.common.config.ConfigDef;

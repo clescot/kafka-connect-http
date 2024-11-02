@@ -1,4 +1,4 @@
-package io.github.clescot.kafka.connect.http;
+package io.github.clescot.kafka.connect.http.source.queue;
 
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;

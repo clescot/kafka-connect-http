@@ -1,4 +1,4 @@
-package io.github.clescot.kafka.connect.http.source;
+package io.github.clescot.kafka.connect.http.source.queue;
 
 import com.google.common.collect.Maps;
 import org.apache.kafka.common.config.ConfigException;
@@ -7,8 +7,8 @@ import org.junit.jupiter.api.Test;
 
 import java.util.HashMap;
 
-import static io.github.clescot.kafka.connect.http.source.HttpInMemoryQueueSourceConfigDefinition.ERROR_TOPIC;
-import static io.github.clescot.kafka.connect.http.source.HttpInMemoryQueueSourceConfigDefinition.SUCCESS_TOPIC;
+import static io.github.clescot.kafka.connect.http.source.queue.HttpInMemoryQueueSourceConfigDefinition.ERROR_TOPIC;
+import static io.github.clescot.kafka.connect.http.source.queue.HttpInMemoryQueueSourceConfigDefinition.SUCCESS_TOPIC;
 
 
 class HttpInMemoryQueueSourceConnectorConfigTest {

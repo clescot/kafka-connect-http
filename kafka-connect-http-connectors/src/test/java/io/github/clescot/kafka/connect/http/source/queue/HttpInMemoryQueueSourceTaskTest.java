@@ -1,7 +1,6 @@
-package io.github.clescot.kafka.connect.http.source;
+package io.github.clescot.kafka.connect.http.source.queue;
 
 import com.google.common.collect.Maps;
-import io.github.clescot.kafka.connect.http.QueueProducer;
 import io.github.clescot.kafka.connect.http.core.HttpExchange;
 import io.github.clescot.kafka.connect.http.core.HttpRequest;
 import io.github.clescot.kafka.connect.http.core.HttpResponse;
@@ -28,8 +27,8 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static io.github.clescot.kafka.connect.http.source.HttpInMemoryQueueSourceConfigDefinition.ERROR_TOPIC;
-import static io.github.clescot.kafka.connect.http.source.HttpInMemoryQueueSourceConfigDefinition.SUCCESS_TOPIC;
+import static io.github.clescot.kafka.connect.http.source.queue.HttpInMemoryQueueSourceConfigDefinition.ERROR_TOPIC;
+import static io.github.clescot.kafka.connect.http.source.queue.HttpInMemoryQueueSourceConfigDefinition.SUCCESS_TOPIC;
 import static org.assertj.core.api.Assertions.assertThat;
 
 class HttpInMemoryQueueSourceTaskTest {

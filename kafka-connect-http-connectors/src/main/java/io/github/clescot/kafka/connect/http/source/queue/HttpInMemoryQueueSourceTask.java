@@ -1,4 +1,4 @@
-package io.github.clescot.kafka.connect.http.source;
+package io.github.clescot.kafka.connect.http.source.queue;
 
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;

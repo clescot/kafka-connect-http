@@ -23,7 +23,7 @@ Only the 'IN_MEMORY_QUEUE' publish mode require to setup an HTTP Source connecto
 {
     "name": "my-http-source-connector",
     "config": {
-    "connector.class":"io.github.clescot.kafka.connect.http.source.HttpInMemoryQueueSourceConnector",
+    "connector.class":"io.github.clescot.kafka.connect.http.source.queue.HttpInMemoryQueueSourceConnector",
     "tasks.max": "1",
     "success.topic": "http-success",
     "error.topic": "http-error"

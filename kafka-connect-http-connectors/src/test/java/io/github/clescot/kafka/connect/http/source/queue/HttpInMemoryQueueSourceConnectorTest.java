@@ -1,4 +1,4 @@
-package io.github.clescot.kafka.connect.http.source;
+package io.github.clescot.kafka.connect.http.source.queue;
 
 import com.google.common.collect.Maps;
 import org.apache.kafka.common.config.ConfigException;
@@ -14,8 +14,8 @@ import java.util.Map;
 
 import static io.github.clescot.kafka.connect.http.core.queue.ConfigConstants.QUEUE_NAME;
 import static io.github.clescot.kafka.connect.http.core.queue.QueueFactory.DEFAULT_QUEUE_NAME;
-import static io.github.clescot.kafka.connect.http.source.HttpInMemoryQueueSourceConfigDefinition.ERROR_TOPIC;
-import static io.github.clescot.kafka.connect.http.source.HttpInMemoryQueueSourceConfigDefinition.SUCCESS_TOPIC;
+import static io.github.clescot.kafka.connect.http.source.queue.HttpInMemoryQueueSourceConfigDefinition.ERROR_TOPIC;
+import static io.github.clescot.kafka.connect.http.source.queue.HttpInMemoryQueueSourceConfigDefinition.SUCCESS_TOPIC;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 
 class HttpInMemoryQueueSourceConnectorTest {

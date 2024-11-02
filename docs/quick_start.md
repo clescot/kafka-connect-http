@@ -95,7 +95,7 @@ depending on the HTTP result.
 {
     "name": "my-http-source-connector",
     "config": {
-    "connector.class":"io.github.clescot.kafka.connect.http.source.HttpInMemoryQueueSourceConnector",
+    "connector.class":"io.github.clescot.kafka.connect.http.source.queue.HttpInMemoryQueueSourceConnector",
     "tasks.max": "1",
     "success.topic": "http-success",
     "error.topic": "http-error"
