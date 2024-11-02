@@ -44,10 +44,10 @@ For example, `clescot-kafka-connect-http-connectors-0.6.2.zip`.
                  "class": "sink.io.github.clescot.kafka.connect.http.HttpSinkConnector"
              },
              {
-                 "class": "source.io.github.clescot.kafka.connect.http.HttpSourceConnector"
+                 "class": "source.io.github.clescot.kafka.connect.http.source.queue.HttpInMemoryQueueSourceConnector"
              },
              {
-                 "class": "source.io.github.clescot.kafka.connect.http.CronSourceConnector"
+                 "class": "source.io.github.clescot.kafka.connect.http.source.cron.CronSourceConnector"
              }
          ]
      
