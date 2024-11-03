@@ -511,6 +511,10 @@ public class HttpSinkConfigDefinition {
     public static final String CONFIG_DEFAULT_OKHTTP_CACHE_DIRECTORY_PATH = DEFAULT_CONFIGURATION_PREFIX + OKHTTP_CACHE_DIRECTORY_PATH;
     public static final String CONFIG_DEFAULT_OKHTTP_CACHE_DIRECTORY_PATH_DOC = "file system path of the cache directory.";
 
+    //DNS over HTTPS
+    public static final String OKHTTP_DOH_PREFIX=OKHTTP_PREFIX +"doh.";
+    public static final String OKHTTP_DOH_ACTIVATE=OKHTTP_DOH_PREFIX +".activate";
+    public static final String OKHTTP_DOH_ACTIVATE_DOC="resolve DNS domain with HTTPS if set to 'true'";
 
     //connection
     public static final String OKHTTP_CALL_TIMEOUT = OKHTTP_PREFIX + "call.timeout";

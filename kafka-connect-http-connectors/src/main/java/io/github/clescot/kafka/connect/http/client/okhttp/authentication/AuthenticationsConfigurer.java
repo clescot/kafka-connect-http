@@ -27,7 +27,7 @@ public class AuthenticationsConfigurer {
         this.authenticationConfigurers = authenticationConfigurers;
     }
 
-    public void configure(Map<String, Object> config, okhttp3.OkHttpClient.Builder httpClientBuilder) {
+    public okhttp3.OkHttpClient.Builder configure(Map<String, Object> config, okhttp3.OkHttpClient.Builder httpClientBuilder) {
         final Map<String, CachingAuthenticator> authCache = new ConcurrentHashMap<>();
 
         //authentication
@@ -50,7 +50,7 @@ public class AuthenticationsConfigurer {
                 httpClientBuilder.addNetworkInterceptor(new AuthenticationCacheInterceptor(authCache, new DefaultProxyCacheKeyProvider()));
             }
         }
-
+        return httpClientBuilder;
 
     }
 

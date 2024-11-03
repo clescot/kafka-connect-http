@@ -18,6 +18,7 @@ import io.micrometer.core.instrument.binder.system.DiskSpaceMetrics;
 import io.micrometer.core.instrument.composite.CompositeMeterRegistry;
 import kotlin.Pair;
 import okhttp3.*;
+import okhttp3.dnsoverhttps.DnsOverHttps;
 import okhttp3.internal.http.HttpMethod;
 import okhttp3.internal.io.FileSystem;
 import org.apache.commons.lang3.exception.ExceptionUtils;
@@ -29,6 +30,7 @@ import org.slf4j.MDC;
 import javax.net.ssl.*;
 import java.io.File;
 import java.io.IOException;
+import java.net.InetAddress;
 import java.net.Proxy;
 import java.net.ProxySelector;
 import java.nio.file.Files;
@@ -50,9 +52,9 @@ public class OkHttpClient extends AbstractHttpClient<Request, Response> {
     public static final String FILE_CACHE_TYPE = "file";
     public static final String CONNECTOR_NAME = "connector.name";
     public static final String CONNECTOR_TASK = "connector.task";
-    @java.lang.SuppressWarnings("java:S1075")
+    @SuppressWarnings("java:S1075")
     public static final String DEFAULT_IN_MEMORY_DIRECTORY_CACHE_PATH = "/kafka-connect-http-cache";
-    @java.lang.SuppressWarnings("java:S1075")
+    @SuppressWarnings("java:S1075")
     public static final String DEFAULT_FILE_DIRECTORY_CACHE_PATH = "/tmp/kafka-connect-http-cache";
 
 
@@ -96,6 +98,8 @@ public class OkHttpClient extends AbstractHttpClient<Request, Response> {
         //cache
         configureCache(config, httpClientBuilder);
 
+
+
         //interceptors
         configureInterceptors(config, httpClientBuilder);
 
@@ -115,8 +119,33 @@ public class OkHttpClient extends AbstractHttpClient<Request, Response> {
         authenticationsConfigurer.configure(config, httpClientBuilder);
 
 
-        client = httpClientBuilder.build();
 
+        //dns
+        configureDnsOverHttps(config, httpClientBuilder);
+
+        client = httpClientBuilder.build();
+    }
+
+    private void configureDnsOverHttps(Map<String, Object> config, okhttp3.OkHttpClient.Builder httpClientBuilder) {
+        if (config.containsKey(OKHTTP_DOH_ACTIVATE)&&Boolean.parseBoolean((String) config.get(OKHTTP_DOH_ACTIVATE))) {
+            List<InetAddress> bootstrapDnsHosts = Lists.newArrayList();
+            boolean includeipv6 = false;
+            boolean post = false;
+            boolean resolvePrivateAddresses = false;
+            boolean resolvePublicAddresses = false;
+            Dns dns = null;
+            HttpUrl url = null;
+            okhttp3.OkHttpClient bootstrapClient = httpClientBuilder.build();
+            DnsOverHttps dnsOverHttps = new DnsOverHttps.Builder().client(bootstrapClient)
+                    .bootstrapDnsHosts(bootstrapDnsHosts)
+                    .includeIPv6(includeipv6)
+                    .post(post)
+                    .resolvePrivateAddresses(resolvePrivateAddresses)
+                    .resolvePublicAddresses(resolvePublicAddresses)
+                    .systemDns(dns)
+                    .url(url).build();
+            httpClientBuilder.dns(dnsOverHttps);
+        }
     }
 
     private static void configureEvents(Map<String, Object> config, CompositeMeterRegistry meterRegistry, okhttp3.OkHttpClient.Builder httpClientBuilder) {
