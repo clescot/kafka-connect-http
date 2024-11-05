@@ -129,20 +129,35 @@ public class OkHttpClient extends AbstractHttpClient<Request, Response> {
     private void configureDnsOverHttps(Map<String, Object> config, okhttp3.OkHttpClient.Builder httpClientBuilder) {
         if (config.containsKey(OKHTTP_DOH_ACTIVATE)&&Boolean.parseBoolean((String) config.get(OKHTTP_DOH_ACTIVATE))) {
             List<InetAddress> bootstrapDnsHosts = Lists.newArrayList();
-            boolean includeipv6 = false;
-            boolean post = false;
+            if(config.containsKey(OKHTTP_DOH_BOOTSTRAP_DNS_HOSTS)){
+                bootstrapDnsHosts.addAll((List<InetAddress>) config.get(OKHTTP_DOH_BOOTSTRAP_DNS_HOSTS));
+            }
+            boolean includeipv6 = true;
+            if(config.containsKey(OKHTTP_DOH_INCLUDE_IPV6)){
+                includeipv6 = Boolean.parseBoolean((String) config.get(OKHTTP_DOH_INCLUDE_IPV6));
+            }
+            boolean usePostMethod = false;
+            if(config.containsKey(OKHTTP_DOH_USE_POST_METHOD)){
+                usePostMethod = Boolean.parseBoolean((String) config.get(OKHTTP_DOH_USE_POST_METHOD));
+            }
             boolean resolvePrivateAddresses = false;
-            boolean resolvePublicAddresses = false;
-            Dns dns = null;
+            if(config.containsKey(OKHTTP_DOH_RESOLVE_PRIVATE_ADDRESSES)){
+                resolvePrivateAddresses = Boolean.parseBoolean((String) config.get(OKHTTP_DOH_RESOLVE_PRIVATE_ADDRESSES));
+            }
+
+            boolean resolvePublicAddresses = true;
+            if(config.containsKey(OKHTTP_DOH_RESOLVE_PUBLIC_ADDRESSES)){
+                resolvePublicAddresses = Boolean.parseBoolean((String) config.get(OKHTTP_DOH_RESOLVE_PUBLIC_ADDRESSES));
+            }
+
             HttpUrl url = null;
             okhttp3.OkHttpClient bootstrapClient = httpClientBuilder.build();
             DnsOverHttps dnsOverHttps = new DnsOverHttps.Builder().client(bootstrapClient)
                     .bootstrapDnsHosts(bootstrapDnsHosts)
                     .includeIPv6(includeipv6)
-                    .post(post)
+                    .post(usePostMethod)
                     .resolvePrivateAddresses(resolvePrivateAddresses)
                     .resolvePublicAddresses(resolvePublicAddresses)
-                    .systemDns(dns)
                     .url(url).build();
             httpClientBuilder.dns(dnsOverHttps);
         }
