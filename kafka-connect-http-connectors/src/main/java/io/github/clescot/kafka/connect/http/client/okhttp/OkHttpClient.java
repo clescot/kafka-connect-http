@@ -149,8 +149,13 @@ public class OkHttpClient extends AbstractHttpClient<Request, Response> {
             if(config.containsKey(OKHTTP_DOH_RESOLVE_PUBLIC_ADDRESSES)){
                 resolvePublicAddresses = Boolean.parseBoolean((String) config.get(OKHTTP_DOH_RESOLVE_PUBLIC_ADDRESSES));
             }
+            HttpUrl url;
+            if(!config.containsKey(OKHTTP_DOH_URL)) {
+                throw new IllegalStateException("DNS Over HTTP (DoH) is activated but DoH's URL is not set.");
+            }else{
+                url = HttpUrl.parse((String) config.get(OKHTTP_DOH_URL));
+            }
 
-            HttpUrl url = null;
             okhttp3.OkHttpClient bootstrapClient = httpClientBuilder.build();
             DnsOverHttps dnsOverHttps = new DnsOverHttps.Builder().client(bootstrapClient)
                     .bootstrapDnsHosts(bootstrapDnsHosts)
