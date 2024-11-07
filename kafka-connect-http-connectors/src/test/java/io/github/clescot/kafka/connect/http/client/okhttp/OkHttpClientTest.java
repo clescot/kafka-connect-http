@@ -1513,6 +1513,7 @@ class OkHttpClientTest {
             );
             HttpExchange httpExchange = client.call(httpRequest, new AtomicInteger(1)).get();
             HttpResponse httpResponse = httpExchange.getHttpResponse();
+            assertThat(httpResponse.getStatusCode()).isEqualTo(200);
         }
 
         @Test

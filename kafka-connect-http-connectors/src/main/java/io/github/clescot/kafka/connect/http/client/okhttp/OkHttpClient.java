@@ -142,7 +142,6 @@ public class OkHttpClient extends AbstractHttpClient<Request, Response> {
                             }
                         })
                         .collect(Collectors.toList());
-                bootstrapDnsHosts.addAll(bootstrapDnsHosts);
             }else throw new IllegalStateException(OKHTTP_DOH_BOOTSTRAP_DNS_HOSTS+" not set");
             boolean includeipv6 = true;
             if(config.containsKey(OKHTTP_DOH_INCLUDE_IPV6)){
