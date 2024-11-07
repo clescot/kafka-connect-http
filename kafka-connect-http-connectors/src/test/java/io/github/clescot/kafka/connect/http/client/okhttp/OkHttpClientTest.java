@@ -24,7 +24,6 @@ import okhttp3.*;
 import okhttp3.internal.http.RealResponseBody;
 import okio.Buffer;
 import org.apache.commons.lang3.tuple.ImmutablePair;
-import org.assertj.core.api.Assertions;
 import org.assertj.core.util.Sets;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.*;
@@ -1481,6 +1480,63 @@ class OkHttpClientTest {
     }
 
     @Nested
+    class TestDnsOverHttp {
+        @Test
+        void test_only_activate_doh() {
+            //given
+            Map<String, Object> config = Maps.newHashMap();
+            config.put(CONFIGURATION_ID,"default");
+            config.put(OKHTTP_DOH_ACTIVATE, "true");
+            Assertions.assertThrows(IllegalStateException.class,()->new io.github.clescot.kafka.connect.http.client.okhttp.OkHttpClient(config, null, new Random(), null, null, getCompositeMeterRegistry()));
+//            HttpRequest httpRequest = new HttpRequest(
+//                    "https://www.toto.com",
+//                    HttpRequest.Method.GET,
+//                    "STRING"
+//            );
+//            client.call(httpRequest, new AtomicInteger(1)).get();
+        }
+
+        @Test
+        void test_activate_doh_and_set_url_with_bootstrap_dns() throws ExecutionException, InterruptedException {
+            //given
+            Map<String, Object> config = Maps.newHashMap();
+            config.put(CONFIGURATION_ID,"default");
+            config.put(OKHTTP_DOH_ACTIVATE, "true");
+            config.put(OKHTTP_DOH_URL, "https://cloudflare-dns.com/dns-query");
+            config.put(OKHTTP_DOH_BOOTSTRAP_DNS_HOSTS, Lists.newArrayList("1.1.1.2","1.0.0.2"));
+            OkHttpClient client = new OkHttpClient(config, null, new Random(), null, null, getCompositeMeterRegistry());
+
+            HttpRequest httpRequest = new HttpRequest(
+                    "https://www.toto.com",
+                    HttpRequest.Method.GET,
+                    "STRING"
+            );
+            HttpExchange httpExchange = client.call(httpRequest, new AtomicInteger(1)).get();
+            HttpResponse httpResponse = httpExchange.getHttpResponse();
+        }
+
+        @Test
+        void test_activate_doh_and_set_url_but_no_system_dns() throws ExecutionException, InterruptedException {
+            //given
+            Map<String, Object> config = Maps.newHashMap();
+            config.put(CONFIGURATION_ID,"default");
+            config.put(OKHTTP_DOH_ACTIVATE, "true");
+            config.put(OKHTTP_DOH_URL, "https://yahoo.com");
+            OkHttpClient client = new OkHttpClient(config, null, new Random(), null, null, getCompositeMeterRegistry());
+
+            HttpRequest httpRequest = new HttpRequest(
+                    "https://www.toto.com",
+                    HttpRequest.Method.GET,
+                    "STRING"
+            );
+            HttpExchange httpExchange = client.call(httpRequest, new AtomicInteger(1)).get();
+            HttpResponse httpResponse = httpExchange.getHttpResponse();
+            Map<String, List<String>> responseHeaders = httpResponse.getResponseHeaders();
+            assertThat(responseHeaders).containsEntry("throwable.class",List.of(UnknownHostException.class.getName()));
+            assertThat(responseHeaders.get("throwable.message").get(0)).contains("returned no addresses for yahoo.com");
+        }
+    }
+    @Nested
     class TestSSL {
 
         @Test
@@ -1499,7 +1555,7 @@ class OkHttpClientTest {
             X509TrustManager x509TrustManager = (X509TrustManager) trustManagers[0];
             X509Certificate dummyCertificate = new DummyX509Certificate();
             X509Certificate[] certs = new X509Certificate[]{dummyCertificate};
-            Assertions.assertThatCode(() -> x509TrustManager.checkServerTrusted(certs, "RSA")).doesNotThrowAnyException();
+            Assertions.assertDoesNotThrow(() -> x509TrustManager.checkServerTrusted(certs, "RSA"));
         }
 
         @Test

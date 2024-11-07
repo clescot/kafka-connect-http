@@ -33,6 +33,7 @@ import java.io.IOException;
 import java.net.InetAddress;
 import java.net.Proxy;
 import java.net.ProxySelector;
+import java.net.UnknownHostException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.security.SecureRandom;
@@ -40,6 +41,7 @@ import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 import static io.github.clescot.kafka.connect.http.sink.HttpSinkConfigDefinition.*;
 import static io.github.clescot.kafka.connect.http.sink.HttpSinkTask.DEFAULT_CONFIGURATION_ID;
@@ -128,10 +130,20 @@ public class OkHttpClient extends AbstractHttpClient<Request, Response> {
 
     private void configureDnsOverHttps(Map<String, Object> config, okhttp3.OkHttpClient.Builder httpClientBuilder) {
         if (config.containsKey(OKHTTP_DOH_ACTIVATE)&&Boolean.parseBoolean((String) config.get(OKHTTP_DOH_ACTIVATE))) {
-            List<InetAddress> bootstrapDnsHosts = Lists.newArrayList();
+            List<InetAddress> bootstrapDnsHosts;
             if(config.containsKey(OKHTTP_DOH_BOOTSTRAP_DNS_HOSTS)){
-                bootstrapDnsHosts.addAll((List<InetAddress>) config.get(OKHTTP_DOH_BOOTSTRAP_DNS_HOSTS));
-            }
+                bootstrapDnsHosts = ((List<String>)config.get(OKHTTP_DOH_BOOTSTRAP_DNS_HOSTS))
+                        .stream()
+                        .map(host->{
+                            try {
+                                return InetAddress.getByName(host);
+                            } catch (UnknownHostException e) {
+                                throw new RuntimeException(e);
+                            }
+                        })
+                        .collect(Collectors.toList());
+                bootstrapDnsHosts.addAll(bootstrapDnsHosts);
+            }else throw new IllegalStateException(OKHTTP_DOH_BOOTSTRAP_DNS_HOSTS+" not set");
             boolean includeipv6 = true;
             if(config.containsKey(OKHTTP_DOH_INCLUDE_IPV6)){
                 includeipv6 = Boolean.parseBoolean((String) config.get(OKHTTP_DOH_INCLUDE_IPV6));
@@ -163,7 +175,8 @@ public class OkHttpClient extends AbstractHttpClient<Request, Response> {
                     .post(usePostMethod)
                     .resolvePrivateAddresses(resolvePrivateAddresses)
                     .resolvePublicAddresses(resolvePublicAddresses)
-                    .url(url).build();
+                    .url(url)
+                    .build();
             httpClientBuilder.dns(dnsOverHttps);
         }
     }
