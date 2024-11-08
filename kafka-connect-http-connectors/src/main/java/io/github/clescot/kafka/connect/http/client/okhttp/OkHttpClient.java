@@ -138,7 +138,7 @@ public class OkHttpClient extends AbstractHttpClient<Request, Response> {
                             try {
                                 return InetAddress.getByName(host);
                             } catch (UnknownHostException e) {
-                                throw new RuntimeException(e);
+                                throw new IllegalArgumentException(e);
                             }
                         })
                         .collect(Collectors.toList());
