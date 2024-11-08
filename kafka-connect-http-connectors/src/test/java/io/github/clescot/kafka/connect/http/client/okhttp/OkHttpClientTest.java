@@ -1523,18 +1523,9 @@ class OkHttpClientTest {
             config.put(CONFIGURATION_ID,"default");
             config.put(OKHTTP_DOH_ACTIVATE, "true");
             config.put(OKHTTP_DOH_URL, "https://yahoo.com");
-            OkHttpClient client = new OkHttpClient(config, null, new Random(), null, null, getCompositeMeterRegistry());
+            Assertions.assertThrows(IllegalStateException.class,()->new OkHttpClient(config, null, new Random(), null, null, getCompositeMeterRegistry()));
 
-            HttpRequest httpRequest = new HttpRequest(
-                    "https://www.toto.com",
-                    HttpRequest.Method.GET,
-                    "STRING"
-            );
-            HttpExchange httpExchange = client.call(httpRequest, new AtomicInteger(1)).get();
-            HttpResponse httpResponse = httpExchange.getHttpResponse();
-            Map<String, List<String>> responseHeaders = httpResponse.getResponseHeaders();
-            assertThat(responseHeaders).containsEntry("throwable.class",List.of(UnknownHostException.class.getName()));
-            assertThat(responseHeaders.get("throwable.message").get(0)).contains("returned no addresses for yahoo.com");
+
         }
     }
     @Nested
