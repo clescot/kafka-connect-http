@@ -1520,6 +1520,26 @@ class OkHttpClientTest {
             HttpResponse httpResponse = httpExchange.getHttpResponse();
             assertThat(httpResponse.getStatusCode()).isEqualTo(200);
         }
+        @Test
+        void test_activate_doh_and_set_url_with_bootstrap_dns_and_ipv6_activated() throws ExecutionException, InterruptedException {
+            //given
+            Map<String, Object> config = Maps.newHashMap();
+            config.put(CONFIGURATION_ID,"default");
+            config.put(OKHTTP_DOH_ACTIVATE, "true");
+            config.put(OKHTTP_DOH_URL, "https://cloudflare-dns.com/dns-query");
+            config.put(OKHTTP_DOH_BOOTSTRAP_DNS_HOSTS, Lists.newArrayList("1.1.1.2","1.0.0.2"));
+            config.put(OKHTTP_DOH_INCLUDE_IPV6,"true");
+            OkHttpClient client = new OkHttpClient(config, null, new Random(), null, null, getCompositeMeterRegistry());
+
+            HttpRequest httpRequest = new HttpRequest(
+                    "https://www.google.com",
+                    HttpRequest.Method.GET,
+                    "STRING"
+            );
+            HttpExchange httpExchange = client.call(httpRequest, new AtomicInteger(1)).get();
+            HttpResponse httpResponse = httpExchange.getHttpResponse();
+            assertThat(httpResponse.getStatusCode()).isEqualTo(200);
+        }
 
         @Test
         void test_activate_doh_and_set_url_with_bootstrap_dns_and_post_method() throws ExecutionException, InterruptedException {
