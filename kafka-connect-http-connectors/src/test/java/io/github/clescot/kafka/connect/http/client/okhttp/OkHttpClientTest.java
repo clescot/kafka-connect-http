@@ -1606,7 +1606,45 @@ class OkHttpClientTest {
             Map<String, List<String>> responseHeaders = httpResponse.getResponseHeaders();
             assertThat(responseHeaders.get(THROWABLE_CLASS)).contains("java.net.UnknownHostException");
             assertThat(responseHeaders.get(THROWABLE_MESSAGE)).contains("private hosts not resolved");
-        }@Test
+        }
+
+        @Test
+        void test_activate_doh_and_set_url_with_bootstrap_dns_and_resolve_private_addresses() throws ExecutionException, InterruptedException {
+            //given
+            //scenario
+            String scenario = "activating logging interceptor";
+            WireMockRuntimeInfo wmRuntimeInfo = wmHttp.getRuntimeInfo();
+            WireMock wireMock = wmRuntimeInfo.getWireMock();
+            String bodyResponse = "{\"result\":\"pong\"}";
+            wireMock.register(WireMock.get("/ping").inScenario(scenario)
+                    .whenScenarioStateIs(STARTED)
+                    .willReturn(WireMock.aResponse()
+                            .withBody(bodyResponse)
+                            .withStatus(200)
+                            .withStatusMessage("OK")
+                    )
+            );
+
+
+            Map<String, Object> config = Maps.newHashMap();
+            config.put(CONFIGURATION_ID,"default");
+            config.put(OKHTTP_DOH_ACTIVATE, "true");
+            config.put(OKHTTP_DOH_RESOLVE_PRIVATE_ADDRESSES, "true");
+            config.put(OKHTTP_DOH_URL, "https://cloudflare-dns.com/dns-query");
+            OkHttpClient client = new OkHttpClient(config, null, new Random(), null, null, getCompositeMeterRegistry());
+
+            HttpRequest httpRequest = new HttpRequest(
+                    "http://127.0.0.1:"+wmHttp.getRuntimeInfo().getHttpPort()+"/ping",
+                    HttpRequest.Method.GET,
+                    "STRING"
+            );
+            HttpExchange httpExchange = client.call(httpRequest, new AtomicInteger(1)).get();
+            HttpResponse httpResponse = httpExchange.getHttpResponse();
+            assertThat(httpResponse.getStatusCode()).isEqualTo(200);
+        }
+
+
+        @Test
         void test_activate_doh_and_set_url_with_bootstrap_dns_and_does_not_resolve_private_addresses_by_default() throws ExecutionException, InterruptedException {
             //given
             Map<String, Object> config = Maps.newHashMap();
@@ -1647,7 +1685,7 @@ class OkHttpClientTest {
             config.put(CONFIGURATION_ID,"default");
             config.put(OKHTTP_DOH_ACTIVATE, "true");
             config.put(OKHTTP_DOH_URL, "https://yahoo.com");
-            Assertions.assertThrows(IllegalStateException.class,()->new OkHttpClient(config, null, new Random(), null, null, getCompositeMeterRegistry()));
+            Assertions.assertDoesNotThrow(()->new OkHttpClient(config, null, new Random(), null, null, getCompositeMeterRegistry()));
 
 
         }

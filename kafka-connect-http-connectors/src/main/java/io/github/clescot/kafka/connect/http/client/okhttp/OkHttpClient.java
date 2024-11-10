@@ -130,7 +130,7 @@ public class OkHttpClient extends AbstractHttpClient<Request, Response> {
 
     private void configureDnsOverHttps(Map<String, Object> config, okhttp3.OkHttpClient.Builder httpClientBuilder) {
         if (config.containsKey(OKHTTP_DOH_ACTIVATE)&&Boolean.parseBoolean((String) config.get(OKHTTP_DOH_ACTIVATE))) {
-            List<InetAddress> bootstrapDnsHosts;
+            List<InetAddress> bootstrapDnsHosts = null;
             if(config.containsKey(OKHTTP_DOH_BOOTSTRAP_DNS_HOSTS)){
                 bootstrapDnsHosts = ((List<String>)config.get(OKHTTP_DOH_BOOTSTRAP_DNS_HOSTS))
                         .stream()
@@ -142,7 +142,9 @@ public class OkHttpClient extends AbstractHttpClient<Request, Response> {
                             }
                         })
                         .collect(Collectors.toList());
-            }else throw new IllegalStateException(OKHTTP_DOH_BOOTSTRAP_DNS_HOSTS+" not set");
+            }else {
+                LOGGER.debug("no bootstrap DNS set. use system DNS");
+            };
             boolean includeipv6 = true;
             if(config.containsKey(OKHTTP_DOH_INCLUDE_IPV6)){
                 includeipv6 = Boolean.parseBoolean((String) config.get(OKHTTP_DOH_INCLUDE_IPV6));
