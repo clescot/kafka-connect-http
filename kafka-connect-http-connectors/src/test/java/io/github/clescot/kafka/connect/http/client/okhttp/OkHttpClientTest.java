@@ -1512,7 +1512,7 @@ class OkHttpClientTest {
             OkHttpClient client = new OkHttpClient(config, null, new Random(), null, null, getCompositeMeterRegistry());
 
             HttpRequest httpRequest = new HttpRequest(
-                    "https://www.toto.com",
+                    "https://www.google.com",
                     HttpRequest.Method.GET,
                     "STRING"
             );
@@ -1553,7 +1553,7 @@ class OkHttpClientTest {
             OkHttpClient client = new OkHttpClient(config, null, new Random(), null, null, getCompositeMeterRegistry());
 
             HttpRequest httpRequest = new HttpRequest(
-                    "https://www.toto.com",
+                    "https://www.google.com",
                     HttpRequest.Method.GET,
                     "STRING"
             );
