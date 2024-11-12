@@ -24,7 +24,6 @@ import okhttp3.*;
 import okhttp3.internal.http.RealResponseBody;
 import okio.Buffer;
 import org.apache.commons.lang3.tuple.ImmutablePair;
-import org.assertj.core.api.Assertions;
 import org.assertj.core.util.Sets;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.*;
@@ -53,6 +52,8 @@ import static com.github.tomakehurst.wiremock.client.WireMock.containing;
 import static com.github.tomakehurst.wiremock.client.WireMock.equalTo;
 import static com.github.tomakehurst.wiremock.stubbing.Scenario.STARTED;
 import static io.github.clescot.kafka.connect.http.client.Configuration.CONFIGURATION_ID;
+import static io.github.clescot.kafka.connect.http.client.HttpClient.THROWABLE_CLASS;
+import static io.github.clescot.kafka.connect.http.client.HttpClient.THROWABLE_MESSAGE;
 import static io.github.clescot.kafka.connect.http.sink.HttpSinkConfigDefinition.*;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
@@ -1481,6 +1482,215 @@ class OkHttpClientTest {
     }
 
     @Nested
+    class TestDnsOverHttp {
+        @Test
+        void test_only_activate_doh_without_bootstrap_dns_and_url() {
+            //given
+            Map<String, Object> config = Maps.newHashMap();
+            config.put(CONFIGURATION_ID,"default");
+            config.put(OKHTTP_DOH_ACTIVATE, "true");
+            Assertions.assertThrows(IllegalStateException.class,()->new io.github.clescot.kafka.connect.http.client.okhttp.OkHttpClient(config, null, new Random(), null, null, getCompositeMeterRegistry()));
+        }
+        @Test
+        void test_only_activate_doh_and_url() {
+            //given
+            Map<String, Object> config = Maps.newHashMap();
+            config.put(CONFIGURATION_ID,"default");
+            config.put(OKHTTP_DOH_ACTIVATE, "true");
+            config.put(OKHTTP_DOH_BOOTSTRAP_DNS_HOSTS, Lists.newArrayList("1.1.1.2","1.0.0.2"));
+            Assertions.assertThrows(IllegalStateException.class,()->new io.github.clescot.kafka.connect.http.client.okhttp.OkHttpClient(config, null, new Random(), null, null, getCompositeMeterRegistry()));
+        }
+
+        @Test
+        void test_activate_doh_and_set_url_with_bootstrap_dns() throws ExecutionException, InterruptedException {
+            //given
+            Map<String, Object> config = Maps.newHashMap();
+            config.put(CONFIGURATION_ID,"default");
+            config.put(OKHTTP_DOH_ACTIVATE, "true");
+            config.put(OKHTTP_DOH_URL, "https://cloudflare-dns.com/dns-query");
+            config.put(OKHTTP_DOH_BOOTSTRAP_DNS_HOSTS, Lists.newArrayList("1.1.1.2","1.0.0.2"));
+            OkHttpClient client = new OkHttpClient(config, null, new Random(), null, null, getCompositeMeterRegistry());
+
+            HttpRequest httpRequest = new HttpRequest(
+                    "https://www.google.com",
+                    HttpRequest.Method.GET,
+                    "STRING"
+            );
+            HttpExchange httpExchange = client.call(httpRequest, new AtomicInteger(1)).get();
+            HttpResponse httpResponse = httpExchange.getHttpResponse();
+            assertThat(httpResponse.getStatusCode()).isEqualTo(200);
+        }
+        @Test
+        void test_activate_doh_and_set_url_with_bootstrap_dns_and_ipv6_activated() throws ExecutionException, InterruptedException {
+            //given
+            Map<String, Object> config = Maps.newHashMap();
+            config.put(CONFIGURATION_ID,"default");
+            config.put(OKHTTP_DOH_ACTIVATE, "true");
+            config.put(OKHTTP_DOH_URL, "https://cloudflare-dns.com/dns-query");
+            config.put(OKHTTP_DOH_BOOTSTRAP_DNS_HOSTS, Lists.newArrayList("1.1.1.2","1.0.0.2"));
+            config.put(OKHTTP_DOH_INCLUDE_IPV6,"true");
+            OkHttpClient client = new OkHttpClient(config, null, new Random(), null, null, getCompositeMeterRegistry());
+
+            HttpRequest httpRequest = new HttpRequest(
+                    "https://www.google.com",
+                    HttpRequest.Method.GET,
+                    "STRING"
+            );
+            HttpExchange httpExchange = client.call(httpRequest, new AtomicInteger(1)).get();
+            HttpResponse httpResponse = httpExchange.getHttpResponse();
+            assertThat(httpResponse.getStatusCode()).isEqualTo(200);
+        }
+
+        @Test
+        void test_activate_doh_and_set_url_with_bootstrap_dns_and_post_method() throws ExecutionException, InterruptedException {
+            //given
+            Map<String, Object> config = Maps.newHashMap();
+            config.put(CONFIGURATION_ID,"default");
+            config.put(OKHTTP_DOH_ACTIVATE, "true");
+            config.put(OKHTTP_DOH_URL, "https://cloudflare-dns.com/dns-query");
+            config.put(OKHTTP_DOH_USE_POST_METHOD, "true");
+            config.put(OKHTTP_DOH_BOOTSTRAP_DNS_HOSTS, Lists.newArrayList("1.1.1.2","1.0.0.2"));
+            OkHttpClient client = new OkHttpClient(config, null, new Random(), null, null, getCompositeMeterRegistry());
+
+            HttpRequest httpRequest = new HttpRequest(
+                    "https://www.google.com",
+                    HttpRequest.Method.GET,
+                    "STRING"
+            );
+            HttpExchange httpExchange = client.call(httpRequest, new AtomicInteger(1)).get();
+            HttpResponse httpResponse = httpExchange.getHttpResponse();
+            assertThat(httpResponse.getStatusCode()).isEqualTo(200);
+        }
+        @Test
+        void test_activate_doh_and_set_url_with_bootstrap_dns_and_does_not_resolve_public_addresses() throws ExecutionException, InterruptedException {
+            //given
+            Map<String, Object> config = Maps.newHashMap();
+            config.put(CONFIGURATION_ID,"default");
+            config.put(OKHTTP_DOH_ACTIVATE, "true");
+            config.put(OKHTTP_DOH_RESOLVE_PUBLIC_ADDRESSES, "false");
+            config.put(OKHTTP_DOH_URL, "https://cloudflare-dns.com/dns-query");
+            config.put(OKHTTP_DOH_BOOTSTRAP_DNS_HOSTS, Lists.newArrayList("1.1.1.2","1.0.0.2"));
+            OkHttpClient client = new OkHttpClient(config, null, new Random(), null, null, getCompositeMeterRegistry());
+
+            HttpRequest httpRequest = new HttpRequest(
+                    "https://www.toto.com",
+                    HttpRequest.Method.GET,
+                    "STRING"
+            );
+            HttpExchange httpExchange = client.call(httpRequest, new AtomicInteger(1)).get();
+            HttpResponse httpResponse = httpExchange.getHttpResponse();
+            assertThat(httpResponse.getStatusCode()).isEqualTo(400);
+            Map<String, List<String>> responseHeaders = httpResponse.getResponseHeaders();
+            assertThat(responseHeaders.get(THROWABLE_CLASS)).contains("java.net.UnknownHostException");
+            assertThat(responseHeaders.get(THROWABLE_MESSAGE)).contains("public hosts not resolved");
+        }
+        @Test
+        void test_activate_doh_and_set_url_with_bootstrap_dns_and_does_not_resolve_private_addresses() throws ExecutionException, InterruptedException {
+            //given
+            Map<String, Object> config = Maps.newHashMap();
+            config.put(CONFIGURATION_ID,"default");
+            config.put(OKHTTP_DOH_ACTIVATE, "true");
+            config.put(OKHTTP_DOH_RESOLVE_PRIVATE_ADDRESSES, "false");
+            config.put(OKHTTP_DOH_URL, "https://cloudflare-dns.com/dns-query");
+            config.put(OKHTTP_DOH_BOOTSTRAP_DNS_HOSTS, Lists.newArrayList("1.1.1.2","1.0.0.2"));
+            OkHttpClient client = new OkHttpClient(config, null, new Random(), null, null, getCompositeMeterRegistry());
+
+            HttpRequest httpRequest = new HttpRequest(
+                    "https://localhost",
+                    HttpRequest.Method.GET,
+                    "STRING"
+            );
+            HttpExchange httpExchange = client.call(httpRequest, new AtomicInteger(1)).get();
+            HttpResponse httpResponse = httpExchange.getHttpResponse();
+            assertThat(httpResponse.getStatusCode()).isEqualTo(400);
+            Map<String, List<String>> responseHeaders = httpResponse.getResponseHeaders();
+            assertThat(responseHeaders.get(THROWABLE_CLASS)).contains("java.net.UnknownHostException");
+            assertThat(responseHeaders.get(THROWABLE_MESSAGE)).contains("private hosts not resolved");
+        }
+
+        @Test
+        void test_activate_doh_and_set_url_with_bootstrap_dns_and_resolve_private_addresses() throws ExecutionException, InterruptedException {
+            //given
+            //scenario
+            String scenario = "activating logging interceptor";
+            WireMockRuntimeInfo wmRuntimeInfo = wmHttp.getRuntimeInfo();
+            WireMock wireMock = wmRuntimeInfo.getWireMock();
+            String bodyResponse = "{\"result\":\"pong\"}";
+            wireMock.register(WireMock.get("/ping").inScenario(scenario)
+                    .whenScenarioStateIs(STARTED)
+                    .willReturn(WireMock.aResponse()
+                            .withBody(bodyResponse)
+                            .withStatus(200)
+                            .withStatusMessage("OK")
+                    )
+            );
+
+
+            Map<String, Object> config = Maps.newHashMap();
+            config.put(CONFIGURATION_ID,"default");
+            config.put(OKHTTP_DOH_ACTIVATE, "true");
+            config.put(OKHTTP_DOH_RESOLVE_PRIVATE_ADDRESSES, "true");
+            config.put(OKHTTP_DOH_URL, "https://cloudflare-dns.com/dns-query");
+            OkHttpClient client = new OkHttpClient(config, null, new Random(), null, null, getCompositeMeterRegistry());
+
+            HttpRequest httpRequest = new HttpRequest(
+                    "http://127.0.0.1:"+wmHttp.getRuntimeInfo().getHttpPort()+"/ping",
+                    HttpRequest.Method.GET,
+                    "STRING"
+            );
+            HttpExchange httpExchange = client.call(httpRequest, new AtomicInteger(1)).get();
+            HttpResponse httpResponse = httpExchange.getHttpResponse();
+            assertThat(httpResponse.getStatusCode()).isEqualTo(200);
+        }
+
+
+        @Test
+        void test_activate_doh_and_set_url_with_bootstrap_dns_and_does_not_resolve_private_addresses_by_default() throws ExecutionException, InterruptedException {
+            //given
+            Map<String, Object> config = Maps.newHashMap();
+            config.put(CONFIGURATION_ID,"default");
+            config.put(OKHTTP_DOH_ACTIVATE, "true");
+            config.put(OKHTTP_DOH_URL, "https://cloudflare-dns.com/dns-query");
+            config.put(OKHTTP_DOH_BOOTSTRAP_DNS_HOSTS, Lists.newArrayList("1.1.1.2","1.0.0.2"));
+            OkHttpClient client = new OkHttpClient(config, null, new Random(), null, null, getCompositeMeterRegistry());
+
+            HttpRequest httpRequest = new HttpRequest(
+                    "https://localhost",
+                    HttpRequest.Method.GET,
+                    "STRING"
+            );
+            HttpExchange httpExchange = client.call(httpRequest, new AtomicInteger(1)).get();
+            HttpResponse httpResponse = httpExchange.getHttpResponse();
+            assertThat(httpResponse.getStatusCode()).isEqualTo(400);
+            Map<String, List<String>> responseHeaders = httpResponse.getResponseHeaders();
+            assertThat(responseHeaders.get(THROWABLE_CLASS)).contains("java.net.UnknownHostException");
+            assertThat(responseHeaders.get(THROWABLE_MESSAGE)).contains("private hosts not resolved");
+        }
+        @Test
+        void test_activate_doh_and_set_url_with_dumb_bootstrap_dns() {
+            //given
+            Map<String, Object> config = Maps.newHashMap();
+            config.put(CONFIGURATION_ID,"default");
+            config.put(OKHTTP_DOH_ACTIVATE, "true");
+            config.put(OKHTTP_DOH_URL, "https://cloudflare-dns.com/dns-query");
+            config.put(OKHTTP_DOH_BOOTSTRAP_DNS_HOSTS, Lists.newArrayList("aaaaaa","bbbbbb"));
+            Assertions.assertThrows(IllegalArgumentException.class,()->new OkHttpClient(config, null, new Random(), null, null, getCompositeMeterRegistry()));
+
+        }
+
+        @Test
+        void test_activate_doh_and_set_url_but_no_system_dns() {
+            //given
+            Map<String, Object> config = Maps.newHashMap();
+            config.put(CONFIGURATION_ID,"default");
+            config.put(OKHTTP_DOH_ACTIVATE, "true");
+            config.put(OKHTTP_DOH_URL, "https://yahoo.com");
+            Assertions.assertDoesNotThrow(()->new OkHttpClient(config, null, new Random(), null, null, getCompositeMeterRegistry()));
+
+
+        }
+    }
+    @Nested
     class TestSSL {
 
         @Test
@@ -1499,7 +1709,7 @@ class OkHttpClientTest {
             X509TrustManager x509TrustManager = (X509TrustManager) trustManagers[0];
             X509Certificate dummyCertificate = new DummyX509Certificate();
             X509Certificate[] certs = new X509Certificate[]{dummyCertificate};
-            Assertions.assertThatCode(() -> x509TrustManager.checkServerTrusted(certs, "RSA")).doesNotThrowAnyException();
+            Assertions.assertDoesNotThrow(() -> x509TrustManager.checkServerTrusted(certs, "RSA"));
         }
 
         @Test

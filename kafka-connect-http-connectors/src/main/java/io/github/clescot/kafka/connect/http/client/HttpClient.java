@@ -2,11 +2,13 @@ package io.github.clescot.kafka.connect.http.client;
 
 import com.google.common.base.Preconditions;
 import com.google.common.base.Stopwatch;
+import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
 import dev.failsafe.RateLimiter;
+import io.github.clescot.kafka.connect.http.client.ssl.AlwaysTrustManagerFactory;
 import io.github.clescot.kafka.connect.http.core.HttpExchange;
 import io.github.clescot.kafka.connect.http.core.HttpRequest;
 import io.github.clescot.kafka.connect.http.core.HttpResponse;
-import io.github.clescot.kafka.connect.http.client.ssl.AlwaysTrustManagerFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -23,6 +25,7 @@ import java.security.NoSuchAlgorithmException;
 import java.security.cert.CertificateException;
 import java.time.OffsetDateTime;
 import java.time.ZoneId;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
@@ -44,6 +47,8 @@ public interface HttpClient<Q, S> {
     int ONE_HTTP_REQUEST = 1;
     Logger LOGGER = LoggerFactory.getLogger(HttpClient.class);
     String IS_NOT_SET = " is not set";
+    String THROWABLE_CLASS = "throwable.class";
+    String THROWABLE_MESSAGE = "throwable.message";
 
 
     static HttpExchange buildHttpExchange(HttpRequest httpRequest,
@@ -115,6 +120,10 @@ public interface HttpClient<Q, S> {
                         }
                 ).exceptionally((throwable-> {
                     HttpResponse httpResponse = new HttpResponse(400,throwable.getMessage());
+                    Map<String, List<String>> responseHeaders = Maps.newHashMap();
+                    responseHeaders.put(THROWABLE_CLASS, Lists.newArrayList(throwable.getCause().getClass().getName()));
+                    responseHeaders.put(THROWABLE_MESSAGE, Lists.newArrayList(throwable.getCause().getMessage()));
+                    httpResponse.setResponseHeaders(responseHeaders);
                     LOGGER.error(throwable.toString());
                     return buildHttpExchange(httpRequest, httpResponse, rateLimitedStopWatch, now, attempts,FAILURE);
                 }));

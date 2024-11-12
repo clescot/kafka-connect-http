@@ -511,6 +511,29 @@ public class HttpSinkConfigDefinition {
     public static final String CONFIG_DEFAULT_OKHTTP_CACHE_DIRECTORY_PATH = DEFAULT_CONFIGURATION_PREFIX + OKHTTP_CACHE_DIRECTORY_PATH;
     public static final String CONFIG_DEFAULT_OKHTTP_CACHE_DIRECTORY_PATH_DOC = "file system path of the cache directory.";
 
+    //DNS over HTTPS
+    public static final String OKHTTP_DOH_PREFIX=OKHTTP_PREFIX +"doh.";
+
+    public static final String OKHTTP_DOH_ACTIVATE=OKHTTP_DOH_PREFIX +".activate";
+    public static final String OKHTTP_DOH_ACTIVATE_DOC="resolve DNS domain with HTTPS if set to 'true'";
+
+    public static final String OKHTTP_DOH_BOOTSTRAP_DNS_HOSTS=OKHTTP_DOH_PREFIX +".bootstrap.dns.hosts";
+    public static final String OKHTTP_DOH_BOOTSTRAP_DNS_HOSTS_DOC="list of bootstrap dns";
+
+    public static final String OKHTTP_DOH_INCLUDE_IPV6=OKHTTP_DOH_PREFIX +".include.ipv6";
+    public static final String OKHTTP_DOH_INCLUDE_IPV6_DOC="include ipv6. default is 'true'";
+
+    public static final String OKHTTP_DOH_USE_POST_METHOD=OKHTTP_DOH_PREFIX +".use.post.method";
+    public static final String OKHTTP_DOH_USE_POST_METHOD_DOC="use HTTP 'POST' method instead of get. default is 'false'.";
+
+    public static final String OKHTTP_DOH_RESOLVE_PRIVATE_ADDRESSES=OKHTTP_DOH_PREFIX +".resolve.private.addresses";
+    public static final String OKHTTP_DOH_RESOLVE_PRIVATE_ADDRESSES_DOC="resolve private addresses. default is 'false'";
+
+    public static final String OKHTTP_DOH_RESOLVE_PUBLIC_ADDRESSES=OKHTTP_DOH_PREFIX +".resolve.public.addresses";
+    public static final String OKHTTP_DOH_RESOLVE_PUBLIC_ADDRESSES_DOC="resolve public addresses. default is 'true'";
+
+    public static final String OKHTTP_DOH_URL=OKHTTP_DOH_PREFIX +".url";
+    public static final String OKHTTP_DOH_URL_DOC="DNS Over HTTP url";
 
     //connection
     public static final String OKHTTP_CALL_TIMEOUT = OKHTTP_PREFIX + "call.timeout";
@@ -678,6 +701,15 @@ public class HttpSinkConfigDefinition {
         for (String httpRequestmapperName : mappers) {
             configDef = appendHttpRequestMapperConfigDef(configDef, httpRequestmapperName);
         }
+
+        //DNS over HTTPS (DoH)
+        configDef = configDef.define(OKHTTP_DOH_ACTIVATE,ConfigDef.Type.BOOLEAN,Boolean.FALSE,ConfigDef.Importance.LOW,OKHTTP_DOH_ACTIVATE_DOC)
+                .define(OKHTTP_DOH_BOOTSTRAP_DNS_HOSTS,ConfigDef.Type.LIST,null,ConfigDef.Importance.LOW,OKHTTP_DOH_BOOTSTRAP_DNS_HOSTS_DOC)
+                .define(OKHTTP_DOH_INCLUDE_IPV6,ConfigDef.Type.BOOLEAN,Boolean.TRUE,ConfigDef.Importance.LOW,OKHTTP_DOH_INCLUDE_IPV6_DOC)
+                .define(OKHTTP_DOH_USE_POST_METHOD,ConfigDef.Type.BOOLEAN,Boolean.FALSE,ConfigDef.Importance.LOW,OKHTTP_DOH_USE_POST_METHOD_DOC)
+                .define(OKHTTP_DOH_RESOLVE_PRIVATE_ADDRESSES,ConfigDef.Type.BOOLEAN,Boolean.FALSE,ConfigDef.Importance.LOW,OKHTTP_DOH_RESOLVE_PRIVATE_ADDRESSES_DOC)
+                .define(OKHTTP_DOH_RESOLVE_PUBLIC_ADDRESSES,ConfigDef.Type.BOOLEAN,Boolean.TRUE,ConfigDef.Importance.LOW,OKHTTP_DOH_RESOLVE_PUBLIC_ADDRESSES_DOC)
+                .define(OKHTTP_DOH_URL,ConfigDef.Type.STRING,null,ConfigDef.Importance.MEDIUM,OKHTTP_DOH_URL_DOC);
         return configDef;
     }
 

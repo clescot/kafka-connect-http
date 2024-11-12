@@ -373,6 +373,13 @@ The predicate permits to filter some http requests, and can be composed, cumulat
       - remote principal
       - remote certificates
       - cipherSuite name
+    - *`config.default.okhttp.doh.activate`* (default `false`, and can be set to `true`): activate Dns Over Https (DoH) feature
+    - *`config.default.okhttp.doh.bootstrap.dns.hosts`* : dns hosts used to resolve DoH URL. if not set, use system dns.
+    - *`config.default.okhttp.doh.url`* : url to resolve with https the host requested
+    - *`config.default.okhttp.doh.include.ipv6`* : (default `true`, and can be set to `false`) : if set to `true`, include in the response the ipv6 part if available.
+    - *`config.default.okhttp.doh.use.post.method`* : (default `false`, and can be set to `true`) : by default, host resolution is done with a `GET` HTTPS request. if set to `true`, use a `POST` HTTPS request.
+    - *`config.default.okhttp.doh.resolve.private.addresses`* : (default `false`, and can be set to `true`) : if set to `true`, resolve private adresses (cf https://www.rfc-editor.org/rfc/rfc6762#appendix-G).
+    - *`config.default.okhttp.doh.resolve.public.addresses`* : (default `true`, and can be set to `false`) : if set to `true`, resolve public adresses.
   - _Async Http Client (AHC)_ implementation settings
     - *`org.asynchttpclient.http.max.connections`* :  (default `3`)
     - *`org.asynchttpclient.http.rate.limit.per.second`* (default `3`)

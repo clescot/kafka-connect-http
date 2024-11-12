@@ -18,6 +18,7 @@ import io.micrometer.core.instrument.binder.system.DiskSpaceMetrics;
 import io.micrometer.core.instrument.composite.CompositeMeterRegistry;
 import kotlin.Pair;
 import okhttp3.*;
+import okhttp3.dnsoverhttps.DnsOverHttps;
 import okhttp3.internal.http.HttpMethod;
 import okhttp3.internal.io.FileSystem;
 import org.apache.commons.lang3.exception.ExceptionUtils;
@@ -29,8 +30,10 @@ import org.slf4j.MDC;
 import javax.net.ssl.*;
 import java.io.File;
 import java.io.IOException;
+import java.net.InetAddress;
 import java.net.Proxy;
 import java.net.ProxySelector;
+import java.net.UnknownHostException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.security.SecureRandom;
@@ -38,6 +41,7 @@ import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 import static io.github.clescot.kafka.connect.http.sink.HttpSinkConfigDefinition.*;
 import static io.github.clescot.kafka.connect.http.sink.HttpSinkTask.DEFAULT_CONFIGURATION_ID;
@@ -50,9 +54,9 @@ public class OkHttpClient extends AbstractHttpClient<Request, Response> {
     public static final String FILE_CACHE_TYPE = "file";
     public static final String CONNECTOR_NAME = "connector.name";
     public static final String CONNECTOR_TASK = "connector.task";
-    @java.lang.SuppressWarnings("java:S1075")
+    @SuppressWarnings("java:S1075")
     public static final String DEFAULT_IN_MEMORY_DIRECTORY_CACHE_PATH = "/kafka-connect-http-cache";
-    @java.lang.SuppressWarnings("java:S1075")
+    @SuppressWarnings("java:S1075")
     public static final String DEFAULT_FILE_DIRECTORY_CACHE_PATH = "/tmp/kafka-connect-http-cache";
 
 
@@ -96,6 +100,8 @@ public class OkHttpClient extends AbstractHttpClient<Request, Response> {
         //cache
         configureCache(config, httpClientBuilder);
 
+
+
         //interceptors
         configureInterceptors(config, httpClientBuilder);
 
@@ -115,8 +121,65 @@ public class OkHttpClient extends AbstractHttpClient<Request, Response> {
         authenticationsConfigurer.configure(config, httpClientBuilder);
 
 
-        client = httpClientBuilder.build();
 
+        //dns
+        configureDnsOverHttps(config, httpClientBuilder);
+
+        client = httpClientBuilder.build();
+    }
+
+    private void configureDnsOverHttps(Map<String, Object> config, okhttp3.OkHttpClient.Builder httpClientBuilder) {
+        if (config.containsKey(OKHTTP_DOH_ACTIVATE)&&Boolean.parseBoolean((String) config.get(OKHTTP_DOH_ACTIVATE))) {
+            List<InetAddress> bootstrapDnsHosts = null;
+            if(config.containsKey(OKHTTP_DOH_BOOTSTRAP_DNS_HOSTS)){
+                bootstrapDnsHosts = ((List<String>)config.get(OKHTTP_DOH_BOOTSTRAP_DNS_HOSTS))
+                        .stream()
+                        .map(host->{
+                            try {
+                                return InetAddress.getByName(host);
+                            } catch (UnknownHostException e) {
+                                throw new IllegalArgumentException(e);
+                            }
+                        })
+                        .collect(Collectors.toList());
+            }else {
+                LOGGER.debug("no bootstrap DNS set. use system DNS");
+            };
+            boolean includeipv6 = true;
+            if(config.containsKey(OKHTTP_DOH_INCLUDE_IPV6)){
+                includeipv6 = Boolean.parseBoolean((String) config.get(OKHTTP_DOH_INCLUDE_IPV6));
+            }
+            boolean usePostMethod = false;
+            if(config.containsKey(OKHTTP_DOH_USE_POST_METHOD)){
+                usePostMethod = Boolean.parseBoolean((String) config.get(OKHTTP_DOH_USE_POST_METHOD));
+            }
+            boolean resolvePrivateAddresses = false;
+            if(config.containsKey(OKHTTP_DOH_RESOLVE_PRIVATE_ADDRESSES)){
+                resolvePrivateAddresses = Boolean.parseBoolean((String) config.get(OKHTTP_DOH_RESOLVE_PRIVATE_ADDRESSES));
+            }
+
+            boolean resolvePublicAddresses = true;
+            if(config.containsKey(OKHTTP_DOH_RESOLVE_PUBLIC_ADDRESSES)){
+                resolvePublicAddresses = Boolean.parseBoolean((String) config.get(OKHTTP_DOH_RESOLVE_PUBLIC_ADDRESSES));
+            }
+            HttpUrl url;
+            if(!config.containsKey(OKHTTP_DOH_URL)) {
+                throw new IllegalStateException("DNS Over HTTP (DoH) is activated but DoH's URL is not set.");
+            }else{
+                url = HttpUrl.parse((String) config.get(OKHTTP_DOH_URL));
+            }
+
+            okhttp3.OkHttpClient bootstrapClient = httpClientBuilder.build();
+            DnsOverHttps dnsOverHttps = new DnsOverHttps.Builder().client(bootstrapClient)
+                    .bootstrapDnsHosts(bootstrapDnsHosts)
+                    .includeIPv6(includeipv6)
+                    .post(usePostMethod)
+                    .resolvePrivateAddresses(resolvePrivateAddresses)
+                    .resolvePublicAddresses(resolvePublicAddresses)
+                    .url(url)
+                    .build();
+            httpClientBuilder.dns(dnsOverHttps);
+        }
     }
 
     private static void configureEvents(Map<String, Object> config, CompositeMeterRegistry meterRegistry, okhttp3.OkHttpClient.Builder httpClientBuilder) {
