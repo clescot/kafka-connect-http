@@ -37,7 +37,7 @@ public abstract class AbstractHttpClient<R,S> implements HttpClient<R,S> {
     protected Map<String, Object> config;
     private Optional<RateLimiter<HttpExchange>> rateLimiter = Optional.empty();
     protected TrustManagerFactory trustManagerFactory;
-    protected  String configurationId;
+    protected String configurationId;
 
     //rate limiter
     private static final Map<String, RateLimiter<HttpExchange>> sharedRateLimiters = Maps.newHashMap();

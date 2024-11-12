@@ -18,7 +18,6 @@ public class HttpRequest implements Serializable {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(HttpRequest.class);
 
-
     //request
     @JsonProperty(required = true)
     private String url;
@@ -139,9 +138,6 @@ public class HttpRequest implements Serializable {
         }
         return results;
     }
-
-
-
 
     public void setBodyType(BodyType bodyType) {
         this.bodyType = bodyType;
