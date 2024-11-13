@@ -32,10 +32,7 @@ import org.skyscreamer.jsonassert.JSONAssert;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -74,6 +71,36 @@ class HttpRequestTest {
         String serializedHttpRequest = objectMapper.writeValueAsString(httpRequest);
         JSONAssert.assertEquals(expectedHttpRequest, serializedHttpRequest,true);
     }
+
+    @Test
+    void test_serialization_with_byte_array() throws JsonProcessingException, JSONException {
+        ObjectMapper objectMapper = new ObjectMapper();
+        objectMapper.registerModule(new JavaTimeModule());
+        HttpRequest httpRequest = new HttpRequest(
+                "http://www.stuff.com",
+                HttpRequest.Method.POST,
+                HttpRequest.BodyType.BYTE_ARRAY.name()
+        );
+        httpRequest.setBodyAsByteArray(DUMMY_BODY_AS_STRING.getBytes(StandardCharsets.UTF_8));
+        Map<String,List<String>> headers = Maps.newHashMap();
+        headers.put("X-correlation-id",Lists.newArrayList("sfds-55-77"));
+        headers.put("X-request-id",Lists.newArrayList("aaaa-4466666-111"));
+        httpRequest.setHeaders(headers);
+
+        String expectedHttpRequest = "{\n" +
+                "  \"url\": \"http://www.stuff.com\",\n" +
+                "  \"headers\":{\"X-request-id\":[\"aaaa-4466666-111\"],\"X-correlation-id\":[\"sfds-55-77\"]},\n" +
+                "  \"method\": \"POST\",\n" +
+                "  \"bodyAsString\": \"\",\n" +
+                "  \"bodyAsForm\": {},\n" +
+                "  \"bodyAsByteArray\": \"c3R1ZmY=\",\n" +
+                "  \"bodyAsMultipart\": [],\n" +
+                "  \"bodyType\": \"BYTE_ARRAY\"\n" +
+                "}";
+
+        String serializedHttpRequest = objectMapper.writeValueAsString(httpRequest);
+        JSONAssert.assertEquals(expectedHttpRequest, serializedHttpRequest,true);
+    }
     @Test
     void test_deserialization() throws JsonProcessingException {
         ObjectMapper objectMapper = new ObjectMapper();
@@ -97,6 +124,35 @@ class HttpRequestTest {
                 "  \"bodyAsByteArray\": \"\",\n" +
                 "  \"bodyAsMultipart\": [],\n" +
                 "  \"bodyType\": \"STRING\"\n" +
+                "}";
+
+        HttpRequest parsedHttpRequest = objectMapper.readValue(httpRequestAsString, HttpRequest.class);
+        assertThat(parsedHttpRequest).isEqualTo(expectedHttpRequest);
+    }
+    @Test
+    void test_deserialization_with_byte_array() throws JsonProcessingException {
+        ObjectMapper objectMapper = new ObjectMapper();
+        objectMapper.registerModule(new JavaTimeModule());
+        HttpRequest expectedHttpRequest = new HttpRequest(
+                "http://www.stuff.com",
+                HttpRequest.Method.POST,
+                HttpRequest.BodyType.BYTE_ARRAY.name()
+        );
+        expectedHttpRequest.setBodyAsByteArray(DUMMY_BODY_AS_STRING.getBytes(StandardCharsets.UTF_8));
+        Map<String,List<String>> headers = Maps.newHashMap();
+        headers.put("X-correlation-id",Lists.newArrayList("sfds-55-77"));
+        headers.put("X-request-id",Lists.newArrayList("aaaa-4466666-111"));
+        expectedHttpRequest.setHeaders(headers);
+
+        String httpRequestAsString = "{\n" +
+                "  \"url\": \"http://www.stuff.com\",\n" +
+                "  \"headers\":{\"X-request-id\":[\"aaaa-4466666-111\"],\"X-correlation-id\":[\"sfds-55-77\"]},\n" +
+                "  \"method\": \"POST\",\n" +
+                "  \"bodyAsString\": \"\",\n" +
+                "  \"bodyAsForm\": {},\n" +
+                "  \"bodyAsByteArray\": \"c3R1ZmY=\",\n" +
+                "  \"bodyAsMultipart\": [],\n" +
+                "  \"bodyType\": \"BYTE_ARRAY\"\n" +
                 "}";
 
         HttpRequest parsedHttpRequest = objectMapper.readValue(httpRequestAsString, HttpRequest.class);
@@ -154,6 +210,57 @@ class HttpRequestTest {
         HttpRequest deserializedHttpRequest = deserializer.deserialize(DUMMY_TOPIC, bytes);
         assertThat(deserializedHttpRequest).isEqualTo(httpRequest);
     }
+    @Test
+    void test_serialize_and_deserialize_http_request_with_byte_array_and_low_level_serializer() throws IOException {
+        //given
+
+        //build httpRequest
+        HttpRequest httpRequest = new HttpRequest(
+                "http://www.stuff.com",
+                HttpRequest.Method.POST,
+                HttpRequest.BodyType.BYTE_ARRAY.name()
+        );
+        httpRequest.setBodyAsString(DUMMY_BODY_AS_STRING);
+        Map<String, List<String>> headers = Maps.newHashMap();
+        headers.put("X-stuff", Lists.newArrayList("m-y-value"));
+        headers.put("X-correlation-id", Lists.newArrayList("44-999-33-dd"));
+        headers.put("X-request-id", Lists.newArrayList("11-999-ff-777"));
+        httpRequest.setHeaders(headers);
+        SpecificationVersion jsonSchemaSpecification = SpecificationVersion.DRAFT_2019_09;
+        boolean useOneOfForNullables=false;
+        boolean failUnknownProperties=true;
+        //get JSON schema
+        JsonSchema expectedJsonSchema = JsonSchemaUtils.getSchema(
+                httpRequest,
+                jsonSchemaSpecification,
+                useOneOfForNullables,
+                failUnknownProperties,
+                null
+                );
+
+        //serialize http as byte[]
+        Map<String,String> jsonSchemaSerializerConfig = Maps.newHashMap();
+        jsonSchemaSerializerConfig.put(KafkaJsonSchemaSerializerConfig.SCHEMA_REGISTRY_URL_CONFIG,"mock://stuff.com");
+        jsonSchemaSerializerConfig.put(KafkaJsonSchemaSerializerConfig.SCHEMA_SPEC_VERSION,jsonSchemaSpecification.toString());
+        jsonSchemaSerializerConfig.put(KafkaJsonSchemaSerializerConfig.WRITE_DATES_AS_ISO8601,"true");
+        jsonSchemaSerializerConfig.put(KafkaJsonSchemaSerializerConfig.ONEOF_FOR_NULLABLES,""+useOneOfForNullables);
+        jsonSchemaSerializerConfig.put(KafkaJsonSchemaSerializerConfig.FAIL_UNKNOWN_PROPERTIES,""+failUnknownProperties);
+
+        MockSchemaRegistryClient schemaRegistryClient = new MockSchemaRegistryClient(Lists.newArrayList(new JsonSchemaProvider()));
+
+        KafkaJsonSchemaSerializer<HttpRequest> serializer = new KafkaJsonSchemaSerializer<>(schemaRegistryClient,jsonSchemaSerializerConfig);
+
+
+        byte[] bytes = serializer.serialize(DUMMY_TOPIC, httpRequest);
+        System.out.println("bytesArray:"+ Arrays.toString(bytes));
+
+        //like in kafka connect Sink connector, convert byte[] to struct
+        Map<String,String> jsonSchemaDeserializerConfig = Maps.newHashMap();
+        jsonSchemaDeserializerConfig.put(KafkaJsonSchemaDeserializerConfig.SCHEMA_REGISTRY_URL_CONFIG,"mock://stuff.com");
+        KafkaJsonSchemaDeserializer<HttpRequest> deserializer = new KafkaJsonSchemaDeserializer<>(schemaRegistryClient,jsonSchemaDeserializerConfig,HttpRequest.class);
+        HttpRequest deserializedHttpRequest = deserializer.deserialize(DUMMY_TOPIC, bytes);
+        assertThat(deserializedHttpRequest).isEqualTo(httpRequest);
+    }
 
     @Test
     void test_serialize_http_request_with_serializer_and_deserialize_with_high_level_converter() throws IOException {
@@ -164,6 +271,64 @@ class HttpRequestTest {
                 "http://www.stuff.com",
                 HttpRequest.Method.GET,
                 "STRING"
+        );
+        httpRequest.setBodyAsString(DUMMY_BODY_AS_STRING);
+        Map<String, List<String>> headers = Maps.newHashMap();
+        headers.put("X-stuff", Lists.newArrayList("m-y-value"));
+        headers.put("X-correlation-id", Lists.newArrayList("44-999-33-dd"));
+        headers.put("X-request-id", Lists.newArrayList("11-999-ff-777"));
+        httpRequest.setHeaders(headers);
+
+        SpecificationVersion jsonSchemaSpecification = SpecificationVersion.DRAFT_2019_09;
+        boolean useOneOfForNullables=false;
+        boolean failUnknownProperties=false;
+        //get JSON schema
+        JsonSchema expectedJsonSchema = JsonSchemaUtils.getSchema(
+                httpRequest,
+                jsonSchemaSpecification,
+                useOneOfForNullables,
+                failUnknownProperties,
+                null
+        );
+
+        Map<String,String> jsonSchemaSerializerConfig = Maps.newHashMap();
+        jsonSchemaSerializerConfig.put(KafkaJsonSchemaSerializerConfig.SCHEMA_REGISTRY_URL_CONFIG,"mock://stuff.com");
+        jsonSchemaSerializerConfig.put(KafkaJsonSchemaSerializerConfig.SCHEMA_SPEC_VERSION,jsonSchemaSpecification.toString());
+        jsonSchemaSerializerConfig.put(KafkaJsonSchemaSerializerConfig.WRITE_DATES_AS_ISO8601,"true");
+        jsonSchemaSerializerConfig.put(KafkaJsonSchemaSerializerConfig.ONEOF_FOR_NULLABLES,""+useOneOfForNullables);
+        jsonSchemaSerializerConfig.put(KafkaJsonSchemaSerializerConfig.FAIL_UNKNOWN_PROPERTIES,""+failUnknownProperties);
+        MockSchemaRegistryClient schemaRegistryClient = new MockSchemaRegistryClient(Lists.newArrayList(new JsonSchemaProvider()));
+        KafkaJsonSchemaSerializer<HttpRequest> serializer = new KafkaJsonSchemaSerializer<>(schemaRegistryClient,jsonSchemaSerializerConfig);
+
+        //serialize http as byte[]
+        byte[] bytes = serializer.serialize(DUMMY_TOPIC, httpRequest);
+
+        System.out.println("bytesAsString:"+new String(bytes, StandardCharsets.UTF_8));
+        JsonSchemaConverter jsonSchemaConverter = new JsonSchemaConverter(schemaRegistryClient);
+        Map<String,String> converterConfig= Maps.newHashMap();
+        converterConfig.put(JsonSchemaConverterConfig.SCHEMA_REGISTRY_URL_CONFIG,"mock://stuff.com");
+        converterConfig.put(KafkaJsonSchemaDeserializerConfig.JSON_VALUE_TYPE,HttpRequest.class.getName());
+        jsonSchemaConverter.configure(converterConfig,false);
+
+        //like in kafka connect Sink connector, convert byte[] to struct
+        SchemaAndValue schemaAndValue = jsonSchemaConverter.toConnectData(DUMMY_TOPIC, bytes);
+        Struct value = (Struct) schemaAndValue.value();
+        assertThat(expectedJsonSchema.equals(value.schema()));
+        //when
+        HttpRequest parsedHttpRequest = HttpRequestAsStruct.Builder.anHttpRequest().withStruct(value).build();
+
+        System.out.println(parsedHttpRequest);
+    }
+
+    @Test
+    void test_serialize_http_request_with_byte_array_and_serializer_and_deserialize_with_high_level_converter() throws IOException {
+        //given
+
+        //build httpRequest
+        HttpRequest httpRequest = new HttpRequest(
+                "http://www.stuff.com",
+                HttpRequest.Method.POST,
+                HttpRequest.BodyType.BYTE_ARRAY.name()
         );
         httpRequest.setBodyAsString(DUMMY_BODY_AS_STRING);
         Map<String, List<String>> headers = Maps.newHashMap();
@@ -258,6 +423,26 @@ class HttpRequestTest {
         assertThat(httpRequest.getMethod()).isEqualTo(dummyMethod);
         assertThat(httpRequest.getBodyType()).hasToString(dummyBodyType);
         assertThat(httpRequest.getBodyAsString()).hasToString(DUMMY_BODY_AS_STRING);
+    }
+    @Test
+    void test_with_struct_and_byte_array_nominal_case(){
+        //given
+        Struct struct = new Struct(HttpRequestAsStruct.SCHEMA);
+        String dummyUrl = "http://stuff.com";
+        struct.put("url", dummyUrl);
+        HttpRequest.Method dummyMethod = HttpRequest.Method.POST;
+        struct.put("method", dummyMethod.name());
+        String dummyBodyType = "BYTE_ARRAY";
+        struct.put("bodyType", dummyBodyType);
+        struct.put("bodyAsByteArray", Base64.getEncoder().encodeToString(DUMMY_BODY_AS_STRING.getBytes(StandardCharsets.UTF_8)));
+        //when
+        HttpRequest httpRequest = HttpRequestAsStruct.Builder.anHttpRequest().withStruct(struct).build();
+        //then
+        assertThat(httpRequest).isNotNull();
+        assertThat(httpRequest.getUrl()).isEqualTo(dummyUrl);
+        assertThat(httpRequest.getMethod()).isEqualTo(dummyMethod);
+        assertThat(httpRequest.getBodyType()).hasToString(dummyBodyType);
+        assertThat(httpRequest.getBodyAsByteArray()).isEqualTo(DUMMY_BODY_AS_STRING.getBytes(StandardCharsets.UTF_8));
     }
 
 
