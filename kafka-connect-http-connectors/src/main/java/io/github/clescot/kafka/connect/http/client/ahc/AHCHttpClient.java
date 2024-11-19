@@ -236,14 +236,14 @@ public class AHCHttpClient extends AbstractHttpClient<Request, Response> {
     public HttpResponse buildResponse(Response response) throws HttpException {
         List<Map.Entry<String, String>> responseEntries = response.getHeaders() != null ? response.getHeaders().entries() : Lists.newArrayList();
         HttpResponse httpResponse = new HttpResponse(response.getStatusCode(), response.getStatusText());
-        httpResponse.setResponseBody(response.getResponseBody());
+        httpResponse.setBodyAsString(response.getResponseBody());
         Map<String, List<String>> responseHeaders = responseEntries.stream()
                 .map(entry -> new AbstractMap.SimpleImmutableEntry<String, List<String>>(entry.getKey(), Lists.newArrayList(entry.getValue())))
                 .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue,(l1,l2)->{
                     l1.addAll(l2);
                     return l1;
                 }));
-        httpResponse.setResponseHeaders(responseHeaders);
+        httpResponse.setHeaders(responseHeaders);
         return httpResponse;
     }
     private AsyncHttpClient getAsyncHttpClient(Map<String, Object> config) {

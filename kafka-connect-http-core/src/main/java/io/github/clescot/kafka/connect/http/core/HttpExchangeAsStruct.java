@@ -11,7 +11,7 @@ import java.time.format.DateTimeFormatter;
 public class HttpExchangeAsStruct {
 
     private final static Logger LOGGER = LoggerFactory.getLogger(HttpExchangeAsStruct.class);
-    public static final int HTTP_EXCHANGE_VERSION = 1;
+    public static final int HTTP_EXCHANGE_VERSION = 2;
     public static final String DURATION_IN_MILLIS = "durationInMillis";
     public static final String MOMENT = "moment";
     public static final String ATTEMPTS = "attempts";

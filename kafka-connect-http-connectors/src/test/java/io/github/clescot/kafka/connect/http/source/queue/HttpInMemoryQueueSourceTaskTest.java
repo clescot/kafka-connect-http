@@ -103,7 +103,7 @@ class HttpInMemoryQueueSourceTaskTest {
         );
         httpRequest.setBodyAsString("stuff");
         HttpResponse httpResponse = new HttpResponse(200, "OK");
-        httpResponse.setResponseBody("dummy response");
+        httpResponse.setBodyAsString("dummy response");
         HttpExchange httpExchange = new HttpExchange(
                 httpRequest,
                 httpResponse,
@@ -132,7 +132,7 @@ class HttpInMemoryQueueSourceTaskTest {
         );
         httpRequest.setBodyAsString("stuff");
         HttpResponse httpResponse = new HttpResponse(500, "Internal Server Error");
-        httpResponse.setResponseBody("dummy response");
+        httpResponse.setBodyAsString("dummy response");
         HttpExchange httpExchange = new HttpExchange(
                 httpRequest,
                 httpResponse,

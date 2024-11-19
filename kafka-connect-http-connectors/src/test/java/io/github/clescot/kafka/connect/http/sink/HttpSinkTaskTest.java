@@ -3392,10 +3392,10 @@ public class HttpSinkTaskTest {
         httpRequest.setHeaders(requestHeaders);
         httpRequest.setBodyAsString("stuff");
         HttpResponse httpResponse = new HttpResponse(statusCode, OK);
-        httpResponse.setResponseBody("my response");
+        httpResponse.setBodyAsString("my response");
         Map<String, List<String>> responseHeaders = Maps.newHashMap();
         responseHeaders.put("Content-Type", Lists.newArrayList("application/json"));
-        httpResponse.setResponseHeaders(responseHeaders);
+        httpResponse.setHeaders(responseHeaders);
         return new HttpExchange(
                 httpRequest,
                 httpResponse,

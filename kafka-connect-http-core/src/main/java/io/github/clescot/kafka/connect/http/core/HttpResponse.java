@@ -15,7 +15,7 @@ public class HttpResponse implements Serializable {
     public static final long serialVersionUID = 1L;
     public static final String SCHEMA_ID = HttpExchange.BASE_SCHEMA_ID+"http-response.json";
     public static final String SCHEMA_AS_STRING = "{\n" +
-            "  \"$id\": \"" + SCHEMA_ID + "\",\n" +
+            "  \"$id\": \"https://raw.githubusercontent.com/clescot/kafka-connect-http/master/kafka-connect-http-core/src/main/resources/schemas/json/versions/1/http-response.json\",\n" +
             "  \"$schema\": \"http://json-schema.org/draft/2019-09/schema#\",\n" +
             "  \"title\": \"Http Response\",\n" +
             "  \"type\": \"object\",\n" +
@@ -30,7 +30,7 @@ public class HttpResponse implements Serializable {
             "    \"protocol\":  {\n" +
             "      \"type\": \"string\"\n" +
             "    },\n" +
-            "    \"responseHeaders\":  {\n" +
+            "    \"headers\":  {\n" +
             "      \"type\": \"object\",\n" +
             "      \"additionalProperties\": {\n" +
             "        \"type\": \"array\",\n" +
@@ -39,7 +39,7 @@ public class HttpResponse implements Serializable {
             "        }\n" +
             "      }\n" +
             "    },\n" +
-            "    \"responseBody\":  {\n" +
+            "    \"bodyAsString\":  {\n" +
             "      \"type\": \"string\"\n" +
             "    }\n" +
             "  },\n" +
@@ -53,10 +53,10 @@ public class HttpResponse implements Serializable {
     private Integer statusCode;
     @JsonProperty(required = true)
     private String statusMessage;
-    private String responseBody="";
+    private String bodyAsString ="";
     private String protocol="";
 
-    private Map<String, List<String>> responseHeaders = Maps.newHashMap();
+    private Map<String, List<String>> headers = Maps.newHashMap();
 
     /**
      * only for json deserialization
@@ -70,8 +70,8 @@ public class HttpResponse implements Serializable {
         this.statusMessage = statusMessage;
     }
 
-    public Map<String, List<String>> getResponseHeaders() {
-        return responseHeaders;
+    public Map<String, List<String>> getHeaders() {
+        return headers;
     }
 
     public Integer getStatusCode() {
@@ -82,16 +82,16 @@ public class HttpResponse implements Serializable {
         return statusMessage;
     }
 
-    public String getResponseBody() {
-        return responseBody;
+    public String getBodyAsString() {
+        return bodyAsString;
     }
 
-    public void setResponseHeaders(Map<String, List<String>> responseHeaders) {
-        this.responseHeaders = responseHeaders;
+    public void setHeaders(Map<String, List<String>> headers) {
+        this.headers = headers;
     }
 
-    public void setResponseBody(String responseBody) {
-        this.responseBody = responseBody;
+    public void setBodyAsString(String bodyAsString) {
+        this.bodyAsString = bodyAsString;
     }
 
 
@@ -116,12 +116,12 @@ public class HttpResponse implements Serializable {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         HttpResponse that = (HttpResponse) o;
-        return statusCode.equals(that.statusCode) && statusMessage.equals(that.statusMessage) && protocol.equals(that.protocol)&& responseBody.equals(that.responseBody) && Objects.equals(responseHeaders, that.responseHeaders);
+        return statusCode.equals(that.statusCode) && statusMessage.equals(that.statusMessage) && protocol.equals(that.protocol)&& bodyAsString.equals(that.bodyAsString) && Objects.equals(headers, that.headers);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(statusCode, statusMessage, responseBody, responseHeaders);
+        return Objects.hash(statusCode, statusMessage, bodyAsString, headers);
     }
 
     @Override
@@ -130,8 +130,8 @@ public class HttpResponse implements Serializable {
                 "statusCode=" + statusCode +
                 ", statusMessage='" + statusMessage + '\'' +
                 ", protocol='" + protocol + '\'' +
-                ", responseBody='" + responseBody + '\'' +
-                ", responseHeaders=" + responseHeaders +
+                ", responseBody='" + bodyAsString + '\'' +
+                ", responseHeaders=" + headers +
                 '}';
     }
 }

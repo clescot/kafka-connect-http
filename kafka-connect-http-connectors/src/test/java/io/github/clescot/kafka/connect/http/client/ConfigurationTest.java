@@ -555,10 +555,10 @@ class ConfigurationTest {
             httpRequest.setHeaders(requestHeaders);
             httpRequest.setBodyAsString("stuff");
             HttpResponse httpResponse = new HttpResponse(200, "OK");
-            httpResponse.setResponseBody("my response");
+            httpResponse.setBodyAsString("my response");
             Map<String, List<String>> responseHeaders = Maps.newHashMap();
             responseHeaders.put("Content-Type", Lists.newArrayList("application/json"));
-            httpResponse.setResponseHeaders(responseHeaders);
+            httpResponse.setHeaders(responseHeaders);
             return new HttpExchange(
                     httpRequest,
                     httpResponse,
@@ -573,10 +573,10 @@ class ConfigurationTest {
     private HttpExchange getDummyHttpExchange() {
         HttpRequest httpRequest = getDummyHttpRequest();
         HttpResponse httpResponse = new HttpResponse(200, "OK");
-        httpResponse.setResponseBody("my response");
+        httpResponse.setBodyAsString("my response");
         Map<String, List<String>> responseHeaders = Maps.newHashMap();
         responseHeaders.put("Content-Type", Lists.newArrayList("application/json"));
-        httpResponse.setResponseHeaders(responseHeaders);
+        httpResponse.setHeaders(responseHeaders);
         return new HttpExchange(
                 httpRequest,
                 httpResponse,

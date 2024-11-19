@@ -27,7 +27,7 @@ public class HttpRequestAsStruct {
     public static final String BODY_AS_FORM = "bodyAsForm";
     public static final String BODY_AS_BYTE_ARRAY = "bodyAsByteArray";
     public static final String BODY_AS_MULTIPART = "bodyAsMultipart";
-    public static final int VERSION = 1;
+    public static final int VERSION = 2;
 
     public static final Schema SCHEMA = SchemaBuilder
             .struct()

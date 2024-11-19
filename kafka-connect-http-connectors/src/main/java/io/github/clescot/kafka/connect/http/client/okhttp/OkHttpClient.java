@@ -436,7 +436,7 @@ public class OkHttpClient extends AbstractHttpClient<Request, Response> {
             }
             httpResponse = new HttpResponse(response.code(), response.message());
             if (response.body() != null) {
-                httpResponse.setResponseBody(response.body().string());
+                httpResponse.setBodyAsString(response.body().string());
             }
             if (protocol != null) {
                 httpResponse.setProtocol(protocol.name());
@@ -448,7 +448,7 @@ public class OkHttpClient extends AbstractHttpClient<Request, Response> {
                 Pair<String, String> header = iterator.next();
                 responseHeaders.put(header.getFirst(), Lists.newArrayList(header.getSecond()));
             }
-            httpResponse.setResponseHeaders(responseHeaders);
+            httpResponse.setHeaders(responseHeaders);
         } catch (IOException e) {
             throw new HttpException(e);
         }

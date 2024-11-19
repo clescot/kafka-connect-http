@@ -184,8 +184,8 @@ class OkHttpClientTest {
             LOGGER.debug("response:{}", response);
             assertThat(response.code()).isEqualTo(httpResponse.getStatusCode());
             assertThat(response.message()).isEqualTo(httpResponse.getStatusMessage());
-            assertThat(response.header("key1")).isEqualTo(httpResponse.getResponseHeaders().get("key1").get(0));
-            assertThat(response.header(CONTENT_TYPE)).isEqualTo(httpResponse.getResponseHeaders().get(CONTENT_TYPE).get(0));
+            assertThat(response.header("key1")).isEqualTo(httpResponse.getHeaders().get("key1").get(0));
+            assertThat(response.header(CONTENT_TYPE)).isEqualTo(httpResponse.getHeaders().get(CONTENT_TYPE).get(0));
 
         }
 
@@ -1580,7 +1580,7 @@ class OkHttpClientTest {
             HttpExchange httpExchange = client.call(httpRequest, new AtomicInteger(1)).get();
             HttpResponse httpResponse = httpExchange.getHttpResponse();
             assertThat(httpResponse.getStatusCode()).isEqualTo(400);
-            Map<String, List<String>> responseHeaders = httpResponse.getResponseHeaders();
+            Map<String, List<String>> responseHeaders = httpResponse.getHeaders();
             assertThat(responseHeaders.get(THROWABLE_CLASS)).contains("java.net.UnknownHostException");
             assertThat(responseHeaders.get(THROWABLE_MESSAGE)).contains("public hosts not resolved");
         }
@@ -1603,7 +1603,7 @@ class OkHttpClientTest {
             HttpExchange httpExchange = client.call(httpRequest, new AtomicInteger(1)).get();
             HttpResponse httpResponse = httpExchange.getHttpResponse();
             assertThat(httpResponse.getStatusCode()).isEqualTo(400);
-            Map<String, List<String>> responseHeaders = httpResponse.getResponseHeaders();
+            Map<String, List<String>> responseHeaders = httpResponse.getHeaders();
             assertThat(responseHeaders.get(THROWABLE_CLASS)).contains("java.net.UnknownHostException");
             assertThat(responseHeaders.get(THROWABLE_MESSAGE)).contains("private hosts not resolved");
         }
@@ -1662,7 +1662,7 @@ class OkHttpClientTest {
             HttpExchange httpExchange = client.call(httpRequest, new AtomicInteger(1)).get();
             HttpResponse httpResponse = httpExchange.getHttpResponse();
             assertThat(httpResponse.getStatusCode()).isEqualTo(400);
-            Map<String, List<String>> responseHeaders = httpResponse.getResponseHeaders();
+            Map<String, List<String>> responseHeaders = httpResponse.getHeaders();
             assertThat(responseHeaders.get(THROWABLE_CLASS)).contains("java.net.UnknownHostException");
             assertThat(responseHeaders.get(THROWABLE_MESSAGE)).contains("private hosts not resolved");
         }

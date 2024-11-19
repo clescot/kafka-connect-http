@@ -35,7 +35,7 @@ public class HttpExchangeTest {
         private HttpResponse getDummyHttpResponse(int statusCode){
             HttpResponse httpResponse = new HttpResponse(
                     statusCode, "OK");
-            httpResponse.setResponseBody("nfgnlksdfnlnskdfnlsf");
+            httpResponse.setBodyAsString("nfgnlksdfnlnskdfnlsf");
             return httpResponse;
         }
         @Test
@@ -70,7 +70,7 @@ public class HttpExchangeTest {
                     new AtomicInteger(2),
                     SUCCESS
             );
-            assertThat(httpExchange.getHttpResponse().getResponseBody()).isEqualTo(responseBody);
+            assertThat(httpExchange.getHttpResponse().getBodyAsString()).isEqualTo(responseBody);
             assertThat(httpExchange.getHttpResponse().getStatusCode()).isEqualTo(statusCode);
         }
         @Test

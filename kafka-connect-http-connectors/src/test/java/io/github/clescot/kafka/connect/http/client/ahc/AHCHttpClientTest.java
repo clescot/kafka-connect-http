@@ -108,11 +108,11 @@ class AHCHttpClientTest {
 
     private HttpResponse getDummyHttpResponse(int statusCode) {
         HttpResponse httpResponse = new HttpResponse(statusCode, "OK");
-        httpResponse.setResponseBody("my response");
+        httpResponse.setBodyAsString("my response");
         Map<String, List<String>> headers = Maps.newHashMap();
         headers.put("Content-Type", Lists.newArrayList("application/json"));
         headers.put("X-stuff", Lists.newArrayList("foo"));
-        httpResponse.setResponseHeaders(headers);
+        httpResponse.setHeaders(headers);
         return httpResponse;
     }
 
