@@ -43,10 +43,10 @@
         <connect-json.version>3.9.0</connect-json.version>
         <debezium.version>2.7.3.Final</debezium.version>
         <kafka.version>3.9.0</kafka.version>
-        <confluent.platform.version>7.7.1</confluent.platform.version>
+        <confluent.platform.version>7.7.2</confluent.platform.version>
         <failsafe.version>3.3.2</failsafe.version>
         <guava.version>33.3.1-jre</guava.version>
-        <jackson.version>2.18.1</jackson.version>
+        <jackson.version>2.18.2</jackson.version>
         <jacoco.version>0.8.12</jacoco.version>
         <json.assert.version>1.5.3</json.assert.version>
         <junit.version>5.11.3</junit.version>
