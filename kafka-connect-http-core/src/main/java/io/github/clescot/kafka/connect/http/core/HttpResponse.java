@@ -41,7 +41,31 @@ public class HttpResponse implements Serializable {
             "    },\n" +
             "    \"bodyAsString\":  {\n" +
             "      \"type\": \"string\"\n" +
-            "    }\n" +
+            "    },\n" +
+            "    \"bodyAsForm\":\n" +
+            "    {\n" +
+            "      \"type\": \"object\",\n" +
+            "      \"connect.type\": \"map\",\n" +
+            "      \"additionalProperties\" : { \"type\": \"string\" }\n" +
+            "    },\n" +
+            "    \"bodyAsByteArray\":  {\n" +
+            "      \"type\": \"string\"\n" +
+            "    },\n" +
+            "    \"bodyAsMultipart\": {\n" +
+            "      \"type\": \"array\",\n" +
+            "      \"items\": {\n" +
+            "        \"type\": \"string\"\n" +
+            "        }" +
+            "       },\n" +
+            "    \"bodyType\": {\n" +
+            "      \"type\": \"string\",\n" +
+            "      \"enum\": [\n" +
+            "        \"STRING\",\n" +
+            "        \"FORM\",\n" +
+            "        \"BYTE_ARRAY\",\n" +
+            "        \"MULTIPART\"\n" +
+            "      ]\n" +
+            "     }\n" +
             "  },\n" +
             "  \"required\": [\n" +
             "    \"statusCode\",\n" +

@@ -1,11 +1,16 @@
 package io.github.clescot.kafka.connect.http.core;
 
+import io.confluent.kafka.schemaregistry.annotations.SchemaReference;
+
 import java.io.Serializable;
 import java.time.OffsetDateTime;
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicInteger;
 
-@io.confluent.kafka.schemaregistry.annotations.Schema(value = HttpExchange.SCHEMA_AS_STRING, refs = {})
+@io.confluent.kafka.schemaregistry.annotations.Schema(value = HttpExchange.SCHEMA_AS_STRING, refs = {
+        @io.confluent.kafka.schemaregistry.annotations.SchemaReference(name="io.github.clescot.kafka.connect.http.core.HttpRequest", subject="httpRequest"),
+        @io.confluent.kafka.schemaregistry.annotations.SchemaReference(name="io.github.clescot.kafka.connect.http.core.HttpResponse", subject="httpResponse")
+})
 public class HttpExchange implements Serializable {
 
     public static final long serialVersionUID = 1L;
