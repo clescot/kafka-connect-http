@@ -323,7 +323,7 @@ class HttpRequestTest {
 
 
     @Test
-    void test_serialize_and_deserialize_http_request_with_body_as_string_with_converter()throws IOException {
+    void test_serialize_and_deserialize_http_request_with_body_as_string_with_converter() {
         //given
 
         //build httpRequest
@@ -338,18 +338,6 @@ class HttpRequestTest {
         headers.put("X-correlation-id", Lists.newArrayList("44-999-33-dd"));
         headers.put("X-request-id", Lists.newArrayList("11-999-ff-777"));
         httpRequest.setHeaders(headers);
-
-        SpecificationVersion jsonSchemaSpecification = SpecificationVersion.DRAFT_2019_09;
-        boolean useOneOfForNullables=false;
-        boolean failUnknownProperties=false;
-        //get JSON schema
-        JsonSchema expectedJsonSchema = JsonSchemaUtils.getSchema(
-                httpRequest,
-                jsonSchemaSpecification,
-                useOneOfForNullables,
-                failUnknownProperties,
-                null
-        );
 
         MockSchemaRegistryClient schemaRegistryClient = new MockSchemaRegistryClient(Lists.newArrayList(new JsonSchemaProvider()));
 
@@ -371,7 +359,7 @@ class HttpRequestTest {
     }
 
     @Test
-    void test_serialize_and_deserialize_http_request_with_body_as_string() throws IOException {
+    void test_serialize_and_deserialize_http_request_with_body_as_string() {
         //given
 
         //build httpRequest
@@ -420,6 +408,44 @@ class HttpRequestTest {
         assertThat(deserializedRequest).isEqualTo(httpRequest);
 
     }
+
+    @Test
+    void test_serialize_and_deserialize_http_request_with_body_as_array_with_converter() {
+        //given
+
+        //build httpRequest
+        HttpRequest httpRequest = new HttpRequest(
+                "http://www.stuff.com",
+                HttpRequest.Method.POST,
+                HttpRequest.BodyType.BYTE_ARRAY.name()
+        );
+        httpRequest.setBodyAsByteArray(DUMMY_BODY_AS_STRING.getBytes(StandardCharsets.UTF_8));
+        Map<String, List<String>> headers = Maps.newHashMap();
+        headers.put("X-stuff", Lists.newArrayList("m-y-value"));
+        headers.put("X-correlation-id", Lists.newArrayList("44-999-33-dd"));
+        headers.put("X-request-id", Lists.newArrayList("11-999-ff-777"));
+        httpRequest.setHeaders(headers);
+
+        MockSchemaRegistryClient schemaRegistryClient = new MockSchemaRegistryClient(Lists.newArrayList(new JsonSchemaProvider()));
+
+        JsonSchemaConverter jsonSchemaConverter = new JsonSchemaConverter(schemaRegistryClient);
+        Map<String,String> converterConfig= Maps.newHashMap();
+        converterConfig.put(JsonSchemaConverterConfig.SCHEMA_REGISTRY_URL_CONFIG,"mock://stuff.com");
+        converterConfig.put(KafkaJsonSchemaDeserializerConfig.JSON_VALUE_TYPE,HttpRequest.class.getName());
+        jsonSchemaConverter.configure(converterConfig,false);
+
+        //when
+        HttpRequestAsStruct httpRequestAsStruct = new HttpRequestAsStruct(httpRequest);
+        byte[] fromConnectData = jsonSchemaConverter.fromConnectData(DUMMY_TOPIC, HttpRequestAsStruct.SCHEMA, httpRequestAsStruct.toStruct());
+        //like in kafka connect Sink connector, convert byte[] to struct
+        SchemaAndValue schemaAndValue = jsonSchemaConverter.toConnectData(DUMMY_TOPIC, fromConnectData);
+        //then
+        Schema schema = schemaAndValue.schema();
+        assertThat(schema).isEqualTo(HttpRequestAsStruct.SCHEMA);
+        assertThat(schemaAndValue.value()).isEqualTo(httpRequestAsStruct.toStruct());
+    }
+
+
 
     @Test
     void test_serialize_and_deserialize_http_request_with_body_as_byte_array() throws IOException {
