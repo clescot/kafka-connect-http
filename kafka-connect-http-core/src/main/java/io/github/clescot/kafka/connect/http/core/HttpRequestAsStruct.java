@@ -34,14 +34,15 @@ public class HttpRequestAsStruct {
             .name(HttpRequest.class.getName())
             .version(VERSION)
             //request
-            .field(HEADERS, SchemaBuilder.map(Schema.STRING_SCHEMA, SchemaBuilder.array(Schema.STRING_SCHEMA)).build())
+            .field(HEADERS, SchemaBuilder.map(Schema.STRING_SCHEMA, SchemaBuilder.array(Schema.STRING_SCHEMA).schema()).build())
             .field(URL, Schema.STRING_SCHEMA)
             .field(METHOD, Schema.STRING_SCHEMA)
             .field(BODY_TYPE, Schema.STRING_SCHEMA)
             .field(BODY_AS_STRING, Schema.OPTIONAL_STRING_SCHEMA)
-            .field(BODY_AS_FORM, SchemaBuilder.map(Schema.STRING_SCHEMA,Schema.STRING_SCHEMA))
+            .field(BODY_AS_FORM, SchemaBuilder.map(Schema.STRING_SCHEMA,Schema.STRING_SCHEMA).schema())
             .field(BODY_AS_BYTE_ARRAY, Schema.OPTIONAL_STRING_SCHEMA)
-            .field(BODY_AS_MULTIPART, SchemaBuilder.array(Schema.OPTIONAL_STRING_SCHEMA));
+            .field(BODY_AS_MULTIPART, SchemaBuilder.array(Schema.OPTIONAL_STRING_SCHEMA).schema())
+            .schema();
 
     private HttpRequest httpRequest;
 
