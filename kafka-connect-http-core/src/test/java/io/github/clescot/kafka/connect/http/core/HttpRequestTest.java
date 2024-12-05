@@ -98,7 +98,7 @@ class HttpRequestTest {
         JSONAssert.assertEquals(expectedHttpRequest, serializedHttpRequest,true);
     }
     @Test
-    void test_serialization_with_multipart() throws JsonProcessingException, JSONException {
+    void test_serialization_with_multipart() throws JsonProcessingException {
         ObjectMapper objectMapper = new ObjectMapper();
         objectMapper.registerModule(new JavaTimeModule());
 
