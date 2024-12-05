@@ -448,7 +448,7 @@ class HttpRequestTest {
 
 
     @Test
-    void test_serialize_and_deserialize_http_request_with_body_as_byte_array() throws IOException {
+    void test_serialize_and_deserialize_http_request_with_body_as_byte_array() {
         //given
 
         //build httpRequest
@@ -458,6 +458,63 @@ class HttpRequestTest {
                 HttpRequest.BodyType.BYTE_ARRAY.name()
         );
         httpRequest.setBodyAsByteArray(DUMMY_BODY_AS_STRING.getBytes(StandardCharsets.UTF_8));
+        Map<String, List<String>> headers = Maps.newHashMap();
+        headers.put("X-stuff", Lists.newArrayList("m-y-value"));
+        headers.put("X-correlation-id", Lists.newArrayList("44-999-33-dd"));
+        headers.put("X-request-id", Lists.newArrayList("11-999-ff-777"));
+        httpRequest.setHeaders(headers);
+
+        SpecificationVersion jsonSchemaSpecification = SpecificationVersion.DRAFT_2019_09;
+        boolean useOneOfForNullables=false;
+        boolean failUnknownProperties=false;
+
+
+        //build serializer
+        Map<String,String> jsonSchemaSerializerConfig = Maps.newHashMap();
+        jsonSchemaSerializerConfig.put(KafkaJsonSchemaSerializerConfig.SCHEMA_REGISTRY_URL_CONFIG,"mock://stuff.com");
+        jsonSchemaSerializerConfig.put(KafkaJsonSchemaSerializerConfig.SCHEMA_SPEC_VERSION,jsonSchemaSpecification.toString());
+        jsonSchemaSerializerConfig.put(KafkaJsonSchemaSerializerConfig.WRITE_DATES_AS_ISO8601,"true");
+        jsonSchemaSerializerConfig.put(KafkaJsonSchemaSerializerConfig.ONEOF_FOR_NULLABLES,""+useOneOfForNullables);
+        jsonSchemaSerializerConfig.put(KafkaJsonSchemaSerializerConfig.FAIL_UNKNOWN_PROPERTIES,""+failUnknownProperties);
+        MockSchemaRegistryClient schemaRegistryClient = new MockSchemaRegistryClient(Lists.newArrayList(new JsonSchemaProvider()));
+        KafkaJsonSchemaSerializer<HttpRequest> serializer = new KafkaJsonSchemaSerializer<>(schemaRegistryClient,jsonSchemaSerializerConfig);
+
+        //when
+        //serialize http as byte[]
+        byte[] bytes = serializer.serialize(DUMMY_TOPIC, httpRequest);
+
+        System.out.println("bytesAsString:"+new String(bytes, StandardCharsets.UTF_8));
+
+
+        //build serializer
+        Map<String,String> jsonSchemaDeSerializerConfig = Maps.newHashMap();
+        jsonSchemaDeSerializerConfig.put(KafkaJsonSchemaDeserializerConfig.SCHEMA_REGISTRY_URL_CONFIG,"mock://stuff.com");
+        jsonSchemaDeSerializerConfig.put(KafkaJsonSchemaDeserializerConfig.JSON_VALUE_TYPE,HttpRequest.class.getClass().getName());
+        jsonSchemaDeSerializerConfig.put(KafkaJsonSchemaDeserializerConfig.FAIL_UNKNOWN_PROPERTIES,""+failUnknownProperties);
+        KafkaJsonSchemaDeserializer<HttpRequest> deserializer = new KafkaJsonSchemaDeserializer<>(schemaRegistryClient,jsonSchemaDeSerializerConfig,HttpRequest.class);
+
+        HttpRequest deserializedRequest = deserializer.deserialize(DUMMY_TOPIC, bytes);
+
+        //then
+        assertThat(deserializedRequest).isEqualTo(httpRequest);
+
+    }
+
+
+    @Test
+    void test_serialize_and_deserialize_http_request_with_body_as_form() {
+        //given
+
+        //build httpRequest
+        HttpRequest httpRequest = new HttpRequest(
+                "http://www.stuff.com",
+                HttpRequest.Method.POST,
+                HttpRequest.BodyType.FORM.name()
+        );
+        Map<String,String> form = Maps.newHashMap();
+        form.put("key1","value1");
+        form.put("key2","value2");
+        httpRequest.setBodyAsForm(form);
         Map<String, List<String>> headers = Maps.newHashMap();
         headers.put("X-stuff", Lists.newArrayList("m-y-value"));
         headers.put("X-correlation-id", Lists.newArrayList("44-999-33-dd"));
