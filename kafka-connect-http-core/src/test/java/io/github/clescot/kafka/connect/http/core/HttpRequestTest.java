@@ -98,6 +98,43 @@ class HttpRequestTest {
         JSONAssert.assertEquals(expectedHttpRequest, serializedHttpRequest,true);
     }
     @Test
+    void test_serialization_with_multipart() throws JsonProcessingException, JSONException {
+        ObjectMapper objectMapper = new ObjectMapper();
+        objectMapper.registerModule(new JavaTimeModule());
+
+        //build httpRequest
+        HttpRequest httpRequest = new HttpRequest(
+                "http://www.stuff.com",
+                HttpRequest.Method.POST,
+                HttpRequest.BodyType.MULTIPART.name()
+        );
+        List<byte[]> parts = Lists.newArrayList();
+        parts.add("part1".getBytes(StandardCharsets.UTF_8));
+        parts.add("part2".getBytes(StandardCharsets.UTF_8));
+        parts.add("part3".getBytes(StandardCharsets.UTF_8));
+        httpRequest.setBodyAsMultipart(parts);
+        Map<String,List<String>> headers = Maps.newHashMap();
+        headers.put("X-correlation-id",Lists.newArrayList("sfds-55-77"));
+        headers.put("X-request-id",Lists.newArrayList("aaaa-4466666-111"));
+        httpRequest.setHeaders(headers);
+
+        String expectedHttpRequest = "{\n" +
+                "  \"url\": \"http://www.stuff.com\",\n" +
+                "  \"headers\":{\"X-request-id\":[\"aaaa-4466666-111\"],\"X-correlation-id\":[\"sfds-55-77\"]},\n" +
+                "  \"method\": \"POST\",\n" +
+                "  \"bodyAsString\": \"\",\n" +
+                "  \"bodyAsForm\": {},\n" +
+                "  \"bodyAsByteArray\": \"c3R1ZmY=\",\n" +
+                "  \"bodyAsMultipart\": [],\n" +
+                "  \"bodyType\": \"MULTIPART\"\n" +
+                "}";
+
+
+        String serializedHttpRequest = objectMapper.writeValueAsString(httpRequest);
+        HttpRequest deserializedRequest = objectMapper.readValue(serializedHttpRequest, HttpRequest.class);
+        assertThat(httpRequest).isEqualTo(deserializedRequest);
+    }
+    @Test
     void test_deserialization() throws JsonProcessingException {
         ObjectMapper objectMapper = new ObjectMapper();
         objectMapper.registerModule(new JavaTimeModule());

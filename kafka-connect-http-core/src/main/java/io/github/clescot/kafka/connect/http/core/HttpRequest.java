@@ -208,7 +208,14 @@ public class HttpRequest implements Serializable {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         HttpRequest that = (HttpRequest) o;
-        return url.equals(that.url) && Objects.equals(headers, that.headers) && method.equals(that.method) && Objects.equals(bodyAsString, that.bodyAsString) && Objects.equals(bodyAsForm, that.bodyAsForm) && Objects.equals(bodyAsByteArray, that.bodyAsByteArray) && Objects.equals(bodyAsMultipart, that.bodyAsMultipart) && bodyType == that.bodyType;
+        return url.equals(that.url)
+                && Objects.equals(headers, that.headers)
+                && method.equals(that.method)
+                && bodyType == that.bodyType
+                && Objects.equals(bodyAsString, that.bodyAsString)
+                && Objects.equals(bodyAsForm, that.bodyAsForm)
+                && Objects.equals(bodyAsByteArray, that.bodyAsByteArray)
+                && Objects.equals(bodyAsMultipart, that.bodyAsMultipart);
     }
 
     @Override
