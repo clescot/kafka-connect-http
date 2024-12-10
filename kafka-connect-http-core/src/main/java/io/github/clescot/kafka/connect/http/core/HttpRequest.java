@@ -33,6 +33,8 @@ public class HttpRequest implements Serializable {
     private String bodyAsByteArray = "";
     @JsonProperty
     private List<String> bodyAsMultipart = Lists.newArrayList();
+    @JsonProperty
+    private String multipartBoundary="---";
     @JsonProperty(defaultValue = "STRING")
     private BodyType bodyType;
 
@@ -81,6 +83,9 @@ public class HttpRequest implements Serializable {
             "      \"items\": {\n" +
             "        \"type\": \"string\"\n" +
             "      }\n" +
+            "    },\n" +
+            "    \"multipartBoundary\":  {\n" +
+            "      \"type\": \"string\"\n" +
             "    },\n" +
             "    \"bodyType\": {\n" +
             "      \"type\": \"string\",\n" +
@@ -201,7 +206,13 @@ public class HttpRequest implements Serializable {
         this.headers = headers;
     }
 
+    public String getMultipartBoundary() {
+        return multipartBoundary;
+    }
 
+    public void setMultipartBoundary(String multipartBoundary) {
+        this.multipartBoundary = multipartBoundary;
+    }
 
     @Override
     public boolean equals(Object o) {

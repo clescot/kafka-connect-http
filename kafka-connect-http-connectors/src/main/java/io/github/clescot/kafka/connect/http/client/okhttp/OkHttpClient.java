@@ -417,6 +417,16 @@ public class OkHttpClient extends AbstractHttpClient<Request, Response> {
                 //TODO handle multipart
                 //HttpRequest.BodyType = MULTIPART
                 List<byte[]> bodyAsMultipart = httpRequest.getBodyAsMultipart();
+                MultipartBody.Builder multipartBuilder  = new MultipartBody.Builder("---");
+                multipartBuilder.setType(MediaType.parse(""));
+                multipartBuilder.addFormDataPart("name","value");
+                multipartBuilder.addFormDataPart("name","filename",requestBody);
+                MultipartBody.Part part = null;
+                multipartBuilder.addPart(part);
+                multipartBuilder.addPart(requestBody);
+                Headers myHeaders = null;
+                multipartBuilder.addPart(myHeaders,requestBody);
+                requestBody = multipartBuilder.build();
             }
         } else if (httpRequest.getBodyAsString() != null && !httpRequest.getBodyAsString().isBlank()) {
             LOGGER.warn("Http Request with '{}' method does not permit a body. the provided body has been removed. please use another method to use one", method);
