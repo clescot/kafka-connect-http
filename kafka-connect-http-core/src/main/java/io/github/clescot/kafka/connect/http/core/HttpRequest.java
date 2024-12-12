@@ -141,12 +141,12 @@ public class HttpRequest implements Serializable {
                        HttpRequest.Method method,
                        String multiPartMimeType
     ) {
-        Preconditions.checkNotNull(url, "url is required");
+        Preconditions.checkNotNull(url, "'url' is required");
         this.url = url;
         this.method = method;
-        Preconditions.checkNotNull(url, "method is required");
+        Preconditions.checkNotNull(url, "'method' is required");
         this.multipartMimeType = multiPartMimeType;
-        Preconditions.checkNotNull(url, "multipartMimeType is required");
+        Preconditions.checkNotNull(url, "'multipartMimeType' is required");
         this.multipartBoundary = UUID.randomUUID().toString();
     }
     public HttpRequest(String url,
@@ -154,14 +154,14 @@ public class HttpRequest implements Serializable {
                        String multiPartMimeType,
                        String multipartBoundary
                        ) {
-        Preconditions.checkNotNull(url, "url is required");
+        Preconditions.checkNotNull(url, "'url' is required");
         this.url = url;
-        Preconditions.checkNotNull(url, "method is required");
+        Preconditions.checkNotNull(url, "'method' is required");
         this.method = method;
         this.multipartMimeType = multiPartMimeType;
-        Preconditions.checkNotNull(url, "multipartMimeType is required");
+        Preconditions.checkNotNull(url, "'multipartMimeType' is required");
         this.multipartBoundary = multipartBoundary;
-        Preconditions.checkNotNull(url, "multipartBoundary is required");
+        Preconditions.checkNotNull(url, "'multipartBoundary' is required");
     }
 
     public HttpRequest(HttpRequest original){
