@@ -98,8 +98,7 @@ class HttpInMemoryQueueSourceTaskTest {
         Queue<KafkaRecord> queue = QueueFactory.getQueue();
         HttpRequest httpRequest = new HttpRequest(
                 "http://www.dummy.com",
-                HttpRequest.Method.GET,
-                "STRING"
+                HttpRequest.Method.GET
         );
         httpRequest.setBodyAsString("stuff");
         HttpResponse httpResponse = new HttpResponse(200, "OK");
@@ -127,8 +126,7 @@ class HttpInMemoryQueueSourceTaskTest {
         Queue<KafkaRecord> queue = QueueFactory.getQueue();
         HttpRequest httpRequest = new HttpRequest(
                 "http://www.dummy.com",
-                HttpRequest.Method.GET,
-                "STRING"
+                HttpRequest.Method.GET
         );
         httpRequest.setBodyAsString("stuff");
         HttpResponse httpResponse = new HttpResponse(500, "Internal Server Error");

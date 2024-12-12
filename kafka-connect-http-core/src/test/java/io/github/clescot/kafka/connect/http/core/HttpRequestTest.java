@@ -44,8 +44,7 @@ class HttpRequestTest {
         objectMapper.registerModule(new JavaTimeModule());
         HttpRequest httpRequest = new HttpRequest(
                 "http://www.stuff.com",
-                HttpRequest.Method.GET,
-                "STRING"
+                HttpRequest.Method.GET
         );
         httpRequest.setBodyAsString(DUMMY_BODY_AS_STRING);
         Map<String,List<String>> headers = Maps.newHashMap();
@@ -74,8 +73,7 @@ class HttpRequestTest {
         objectMapper.registerModule(new JavaTimeModule());
         HttpRequest httpRequest = new HttpRequest(
                 "http://www.stuff.com",
-                HttpRequest.Method.POST,
-                HttpRequest.BodyType.BYTE_ARRAY.name()
+                HttpRequest.Method.POST
         );
         httpRequest.setBodyAsByteArray(DUMMY_BODY_AS_STRING.getBytes(StandardCharsets.UTF_8));
         Map<String,List<String>> headers = Maps.newHashMap();
@@ -105,14 +103,13 @@ class HttpRequestTest {
         //build httpRequest
         HttpRequest httpRequest = new HttpRequest(
                 "http://www.stuff.com",
-                HttpRequest.Method.POST,
-                HttpRequest.BodyType.MULTIPART.name()
+                HttpRequest.Method.POST
         );
-        List<byte[]> parts = Lists.newArrayList();
-        parts.add("part1".getBytes(StandardCharsets.UTF_8));
-        parts.add("part2".getBytes(StandardCharsets.UTF_8));
-        parts.add("part3".getBytes(StandardCharsets.UTF_8));
-        httpRequest.setBodyAsMultipart(parts);
+        List<Part> parts = Lists.newArrayList();
+        parts.add(new Part("part1".getBytes(StandardCharsets.UTF_8)));
+        parts.add(new Part("part2".getBytes(StandardCharsets.UTF_8)));
+        parts.add(new Part("part3".getBytes(StandardCharsets.UTF_8)));
+        httpRequest.setParts(parts);
         Map<String,List<String>> headers = Maps.newHashMap();
         headers.put("X-correlation-id",Lists.newArrayList("sfds-55-77"));
         headers.put("X-request-id",Lists.newArrayList("aaaa-4466666-111"));
@@ -140,8 +137,7 @@ class HttpRequestTest {
         objectMapper.registerModule(new JavaTimeModule());
         HttpRequest expectedHttpRequest = new HttpRequest(
                 "http://www.stuff.com",
-                HttpRequest.Method.GET,
-                "STRING"
+                HttpRequest.Method.GET
         );
         expectedHttpRequest.setBodyAsString(DUMMY_BODY_AS_STRING);
         Map<String,List<String>> headers = Maps.newHashMap();
@@ -168,8 +164,7 @@ class HttpRequestTest {
         objectMapper.registerModule(new JavaTimeModule());
         HttpRequest expectedHttpRequest = new HttpRequest(
                 "http://www.stuff.com",
-                HttpRequest.Method.POST,
-                HttpRequest.BodyType.BYTE_ARRAY.name()
+                HttpRequest.Method.POST
         );
         expectedHttpRequest.setBodyAsByteArray(DUMMY_BODY_AS_STRING.getBytes(StandardCharsets.UTF_8));
         Map<String,List<String>> headers = Maps.newHashMap();
@@ -199,8 +194,7 @@ class HttpRequestTest {
         //build httpRequest
         HttpRequest httpRequest = new HttpRequest(
                 "http://www.stuff.com",
-                HttpRequest.Method.GET,
-                "STRING"
+                HttpRequest.Method.GET
         );
         httpRequest.setBodyAsString(DUMMY_BODY_AS_STRING);
         Map<String, List<String>> headers = Maps.newHashMap();
@@ -250,8 +244,7 @@ class HttpRequestTest {
         //build httpRequest
         HttpRequest httpRequest = new HttpRequest(
                 "http://www.stuff.com",
-                HttpRequest.Method.POST,
-                HttpRequest.BodyType.BYTE_ARRAY.name()
+                HttpRequest.Method.POST
         );
         httpRequest.setBodyAsString(DUMMY_BODY_AS_STRING);
         Map<String, List<String>> headers = Maps.newHashMap();
@@ -305,8 +298,7 @@ class HttpRequestTest {
         //build httpRequest
         HttpRequest httpRequest = new HttpRequest(
                 "http://www.stuff.com",
-                HttpRequest.Method.POST,
-                HttpRequest.BodyType.STRING.name()
+                HttpRequest.Method.POST
         );
         httpRequest.setBodyAsString(DUMMY_BODY_AS_STRING);
         Map<String, List<String>> headers = Maps.newHashMap();
@@ -324,14 +316,13 @@ class HttpRequestTest {
         jsonSchemaConverter.configure(converterConfig,false);
 
         //when
-        HttpRequestAsStruct httpRequestAsStruct = new HttpRequestAsStruct(httpRequest);
-        byte[] fromConnectData = jsonSchemaConverter.fromConnectData(DUMMY_TOPIC, HttpRequestAsStruct.SCHEMA, httpRequestAsStruct.toStruct());
+        byte[] fromConnectData = jsonSchemaConverter.fromConnectData(DUMMY_TOPIC, HttpRequest.SCHEMA, httpRequest.toStruct());
         //like in kafka connect Sink connector, convert byte[] to struct
         SchemaAndValue schemaAndValue = jsonSchemaConverter.toConnectData(DUMMY_TOPIC, fromConnectData);
         //then
         Schema schema = schemaAndValue.schema();
-        assertThat(schema).isEqualTo(HttpRequestAsStruct.SCHEMA);
-        assertThat(schemaAndValue.value()).isEqualTo(httpRequestAsStruct.toStruct());
+        assertThat(schema).isEqualTo(HttpRequest.SCHEMA);
+        assertThat(schemaAndValue.value()).isEqualTo(httpRequest.toStruct());
     }
 
     @Test
@@ -341,8 +332,7 @@ class HttpRequestTest {
         //build httpRequest
         HttpRequest httpRequest = new HttpRequest(
                 "http://www.stuff.com",
-                HttpRequest.Method.POST,
-                HttpRequest.BodyType.STRING.name()
+                HttpRequest.Method.POST
         );
         httpRequest.setBodyAsString(DUMMY_BODY_AS_STRING);
         Map<String, List<String>> headers = Maps.newHashMap();
@@ -392,8 +382,7 @@ class HttpRequestTest {
         //build httpRequest
         HttpRequest httpRequest = new HttpRequest(
                 "http://www.stuff.com",
-                HttpRequest.Method.POST,
-                HttpRequest.BodyType.BYTE_ARRAY.name()
+                HttpRequest.Method.POST
         );
         httpRequest.setBodyAsByteArray(DUMMY_BODY_AS_STRING.getBytes(StandardCharsets.UTF_8));
         Map<String, List<String>> headers = Maps.newHashMap();
@@ -411,14 +400,13 @@ class HttpRequestTest {
         jsonSchemaConverter.configure(converterConfig,false);
 
         //when
-        HttpRequestAsStruct httpRequestAsStruct = new HttpRequestAsStruct(httpRequest);
-        byte[] fromConnectData = jsonSchemaConverter.fromConnectData(DUMMY_TOPIC, HttpRequestAsStruct.SCHEMA, httpRequestAsStruct.toStruct());
+        byte[] fromConnectData = jsonSchemaConverter.fromConnectData(DUMMY_TOPIC, HttpRequest.SCHEMA, httpRequest.toStruct());
         //like in kafka connect Sink connector, convert byte[] to struct
         SchemaAndValue schemaAndValue = jsonSchemaConverter.toConnectData(DUMMY_TOPIC, fromConnectData);
         //then
         Schema schema = schemaAndValue.schema();
-        assertThat(schema).isEqualTo(HttpRequestAsStruct.SCHEMA);
-        assertThat(schemaAndValue.value()).isEqualTo(httpRequestAsStruct.toStruct());
+        assertThat(schema).isEqualTo(HttpRequest.SCHEMA);
+        assertThat(schemaAndValue.value()).isEqualTo(httpRequest.toStruct());
     }
 
 
@@ -430,8 +418,7 @@ class HttpRequestTest {
         //build httpRequest
         HttpRequest httpRequest = new HttpRequest(
                 "http://www.stuff.com",
-                HttpRequest.Method.POST,
-                HttpRequest.BodyType.BYTE_ARRAY.name()
+                HttpRequest.Method.POST
         );
         httpRequest.setBodyAsByteArray(DUMMY_BODY_AS_STRING.getBytes(StandardCharsets.UTF_8));
         Map<String, List<String>> headers = Maps.newHashMap();
@@ -484,8 +471,7 @@ class HttpRequestTest {
         //build httpRequest
         HttpRequest httpRequest = new HttpRequest(
                 "http://www.stuff.com",
-                HttpRequest.Method.POST,
-                HttpRequest.BodyType.FORM.name()
+                HttpRequest.Method.POST
         );
         Map<String,String> form = Maps.newHashMap();
         form.put("key1","value1");
@@ -538,31 +524,31 @@ class HttpRequestTest {
     @Test
     void test_with_empty_struct(){
         //given
-        Struct struct = new Struct(HttpRequestAsStruct.SCHEMA);
+        Struct struct = new Struct(HttpRequest.SCHEMA);
         //when
-        Assertions.assertThrows(NullPointerException.class,()->HttpRequestAsStruct.Builder.anHttpRequest().withStruct(struct).build());
+        Assertions.assertThrows(NullPointerException.class,()->new HttpRequest(struct));
     }
     @Test
     void test_with_struct_only_url(){
         //given
-        Struct struct = new Struct(HttpRequestAsStruct.SCHEMA);
+        Struct struct = new Struct(HttpRequest.SCHEMA);
         struct.put("url","http://stuff.com");
         //when
-        Assertions.assertThrows(NullPointerException.class,()->HttpRequestAsStruct.Builder.anHttpRequest().withStruct(struct).build());
+        Assertions.assertThrows(NullPointerException.class,()->new HttpRequest(struct));
     }
     @Test
     void test_with_struct_only_url_and_method(){
         //given
-        Struct struct = new Struct(HttpRequestAsStruct.SCHEMA);
+        Struct struct = new Struct(HttpRequest.SCHEMA);
         struct.put("url","http://stuff.com");
         struct.put("method","GET");
         //when
-        Assertions.assertThrows(NullPointerException.class,()->HttpRequestAsStruct.Builder.anHttpRequest().withStruct(struct).build());
+        Assertions.assertThrows(NullPointerException.class,()->new HttpRequest(struct));
     }
     @Test
     void test_with_struct_nominal_case(){
         //given
-        Struct struct = new Struct(HttpRequestAsStruct.SCHEMA);
+        Struct struct = new Struct(HttpRequest.SCHEMA);
         String dummyUrl = "http://stuff.com";
         struct.put("url", dummyUrl);
         HttpRequest.Method dummyMethod = HttpRequest.Method.GET;
@@ -571,18 +557,17 @@ class HttpRequestTest {
         struct.put("bodyType", dummyBodyType);
         struct.put("bodyAsString", DUMMY_BODY_AS_STRING);
         //when
-        HttpRequest httpRequest = HttpRequestAsStruct.Builder.anHttpRequest().withStruct(struct).build();
+        HttpRequest httpRequest = new HttpRequest(struct);
         //then
         assertThat(httpRequest).isNotNull();
         assertThat(httpRequest.getUrl()).isEqualTo(dummyUrl);
         assertThat(httpRequest.getMethod()).isEqualTo(dummyMethod);
-        assertThat(httpRequest.getBodyType()).hasToString(dummyBodyType);
-        assertThat(httpRequest.getBodyAsString()).hasToString(DUMMY_BODY_AS_STRING);
+        assertThat(httpRequest.getBodyAsString()).isEqualTo(DUMMY_BODY_AS_STRING);
     }
     @Test
     void test_with_struct_and_byte_array_nominal_case(){
         //given
-        Struct struct = new Struct(HttpRequestAsStruct.SCHEMA);
+        Struct struct = new Struct(HttpRequest.SCHEMA);
         String dummyUrl = "http://stuff.com";
         struct.put("url", dummyUrl);
         HttpRequest.Method dummyMethod = HttpRequest.Method.POST;
@@ -591,12 +576,11 @@ class HttpRequestTest {
         struct.put("bodyType", dummyBodyType);
         struct.put("bodyAsByteArray", Base64.getEncoder().encodeToString(DUMMY_BODY_AS_STRING.getBytes(StandardCharsets.UTF_8)));
         //when
-        HttpRequest httpRequest = HttpRequestAsStruct.Builder.anHttpRequest().withStruct(struct).build();
+        HttpRequest httpRequest = new HttpRequest(struct);
         //then
         assertThat(httpRequest).isNotNull();
         assertThat(httpRequest.getUrl()).isEqualTo(dummyUrl);
         assertThat(httpRequest.getMethod()).isEqualTo(dummyMethod);
-        assertThat(httpRequest.getBodyType()).hasToString(dummyBodyType);
         assertThat(httpRequest.getBodyAsByteArray()).isEqualTo(DUMMY_BODY_AS_STRING.getBytes(StandardCharsets.UTF_8));
     }
 

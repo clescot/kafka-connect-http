@@ -12,7 +12,7 @@ import io.confluent.kafka.schemaregistry.client.rest.exceptions.RestClientExcept
 import io.confluent.kafka.schemaregistry.json.JsonSchema;
 import io.confluent.kafka.schemaregistry.json.JsonSchemaProvider;
 import io.github.clescot.kafka.connect.http.core.HttpRequest;
-import io.github.clescot.kafka.connect.http.core.HttpRequestAsStruct;
+import io.github.clescot.kafka.connect.http.core.Part;
 import io.github.clescot.kafka.connect.http.sink.mapper.DirectHttpRequestMapper;
 import org.apache.commons.jexl3.JexlBuilder;
 import org.apache.commons.jexl3.JexlEngine;
@@ -41,7 +41,7 @@ import java.util.Map;
 import java.util.Optional;
 
 import static io.confluent.kafka.serializers.json.KafkaJsonSchemaDeserializerConfig.JSON_VALUE_TYPE;
-import static io.github.clescot.kafka.connect.http.core.HttpRequestAsStruct.SCHEMA;
+import static io.github.clescot.kafka.connect.http.core.HttpRequest.SCHEMA;
 import static io.github.clescot.kafka.connect.http.sink.HttpSinkTask.DEFAULT;
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -95,7 +95,6 @@ class DirectHttpRequestMapperTest {
             assertThat(httpRequest).isNotNull();
             assertThat(httpRequest.getUrl()).isEqualTo(DUMMY_URL);
             assertThat(httpRequest.getMethod()).isEqualTo(DUMMY_METHOD);
-            assertThat(httpRequest.getBodyType().toString()).hasToString(DUMMY_BODY_TYPE);
         }
 
         @Test
@@ -111,7 +110,7 @@ class DirectHttpRequestMapperTest {
             JsonSchemaConverter jsonSchemaConverter = getJsonSchemaConverter(schemaRegistryClient);
 
 
-            byte[] httpRequestAsJsonSchemaWithConverter = jsonSchemaConverter.fromConnectData(topic, SCHEMA, new HttpRequestAsStruct(dummyHttpRequest).toStruct());
+            byte[] httpRequestAsJsonSchemaWithConverter = jsonSchemaConverter.fromConnectData(topic, SCHEMA, new HttpRequest(dummyHttpRequest).toStruct());
 
             SchemaAndValue schemaAndValue = jsonSchemaConverter.toConnectData(topic, httpRequestAsJsonSchemaWithConverter);
 
@@ -122,7 +121,6 @@ class DirectHttpRequestMapperTest {
             assertThat(httpRequest).isNotNull();
             assertThat(httpRequest.getUrl()).isEqualTo(DUMMY_URL);
             assertThat(httpRequest.getMethod()).isEqualTo(DUMMY_METHOD);
-            assertThat(httpRequest.getBodyType().toString()).hasToString(DUMMY_BODY_TYPE);
         }
 
 
@@ -137,7 +135,6 @@ class DirectHttpRequestMapperTest {
             assertThat(httpRequest).isNotNull();
             assertThat(httpRequest.getUrl()).isEqualTo(DUMMY_URL);
             assertThat(httpRequest.getMethod()).isEqualTo(DUMMY_METHOD);
-            assertThat(httpRequest.getBodyType().toString()).hasToString(DUMMY_BODY_TYPE);
         }
 
 
@@ -183,8 +180,7 @@ class DirectHttpRequestMapperTest {
 
     private Struct getDummyHttpRequestAsStruct(String url) {
         HttpRequest httpRequest = getDummyHttpRequest(url);
-        HttpRequestAsStruct httpRequestAsStruct = new HttpRequestAsStruct(httpRequest);
-        return httpRequestAsStruct.toStruct();
+        return httpRequest.toStruct();
     }
 
 
@@ -192,12 +188,12 @@ class DirectHttpRequestMapperTest {
 
     @NotNull
     private static HttpRequest getDummyHttpRequest(String url) {
-        HttpRequest httpRequest = new HttpRequest(url, DUMMY_METHOD, DUMMY_BODY_TYPE);
+        HttpRequest httpRequest = new HttpRequest(url, DUMMY_METHOD);
         Map<String, List<String>> headers = Maps.newHashMap();
         headers.put("Content-Type", Lists.newArrayList("application/json"));
         httpRequest.setHeaders(headers);
-        httpRequest.setBodyAsString("stuff");
-        httpRequest.setBodyAsForm(Maps.newHashMap());
+        Part part = new Part("application/json","stuff");
+        httpRequest.setParts(Lists.newArrayList(part));
         return httpRequest;
     }
 

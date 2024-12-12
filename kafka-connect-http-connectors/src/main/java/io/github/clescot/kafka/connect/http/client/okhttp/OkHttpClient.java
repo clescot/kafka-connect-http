@@ -397,43 +397,63 @@ public class OkHttpClient extends AbstractHttpClient<Request, Response> {
         if (contentType != null && !contentType.isEmpty()) {
             firstContentType = contentType.get(0);
         }
-        RequestBody requestBody = null;
         String method = httpRequest.getMethod().name();
+        RequestBody requestBody = null;
         if (HttpMethod.permitsRequestBody(method)) {
-            if (HttpRequest.BodyType.STRING.equals(httpRequest.getBodyType())) {
-                //use the contentType set in HttpRequest. if not set, use application/json
-                requestBody = RequestBody.create(httpRequest.getBodyAsString(), MediaType.parse(Optional.ofNullable(firstContentType).orElse("application/json")));
-            } else if (HttpRequest.BodyType.BYTE_ARRAY.equals(httpRequest.getBodyType())) {
-                String encoded = Base64.getEncoder().encodeToString(httpRequest.getBodyAsByteArray());
-                requestBody = RequestBody.create(encoded, MediaType.parse(Optional.ofNullable(firstContentType).orElse("application/octet-stream")));
-            } else if (HttpRequest.BodyType.FORM.equals(httpRequest.getBodyType())) {
-                FormBody.Builder formBuilder = new FormBody.Builder();
-                Map<String, String> multiparts = httpRequest.getBodyAsForm();
-                for (Map.Entry<String, String> entry : multiparts.entrySet()) {
-                    formBuilder.add(entry.getKey(), entry.getValue());
+            switch (httpRequest.getBodyType()){
+
+                case BYTE_ARRAY:{
+                    String encoded = Base64.getEncoder().encodeToString(httpRequest.getBodyAsByteArray());
+                    //use the contentType set in HttpRequest. if not set, use application/octet-stream
+                    requestBody = RequestBody.create(encoded, MediaType.parse(Optional.ofNullable(firstContentType).orElse("application/octet-stream")));
+                    //file upload through a FORM is the same as a byte array (content of the file). this case handle also this case, except part of a multipart request
+                    break;
                 }
-                requestBody = formBuilder.build();
-            } else {
-                //TODO handle multipart
-                //HttpRequest.BodyType = MULTIPART
-                List<byte[]> bodyAsMultipart = httpRequest.getBodyAsMultipart();
-                MultipartBody.Builder multipartBuilder  = new MultipartBody.Builder("---");
-                multipartBuilder.setType(MediaType.parse(""));
-                multipartBuilder.addFormDataPart("name","value");
-                multipartBuilder.addFormDataPart("name","filename",requestBody);
-                MultipartBody.Part part = null;
-                multipartBuilder.addPart(part);
-                multipartBuilder.addPart(requestBody);
-                Headers myHeaders = null;
-                multipartBuilder.addPart(myHeaders,requestBody);
-                requestBody = multipartBuilder.build();
+
+                case FORM: {
+                    //contentType is  application/x-www-form-urlencoded
+                    FormBody.Builder formBuilder = new FormBody.Builder();
+
+                    Map<String, String> entries = httpRequest.getBodyAsForm();
+                    for (Map.Entry<String, String> entry : entries.entrySet()) {
+                        formBuilder.add(entry.getKey(), entry.getValue());
+                    }
+                    requestBody = formBuilder.build();
+                    break;
+                }
+
+                case STRING:
+                default:{
+                    //use the contentType set in HttpRequest. if not set, use application/json
+                    requestBody = RequestBody.create(httpRequest.getBodyAsString(), MediaType.parse(Optional.ofNullable(firstContentType).orElse("application/json")));
+                    break;
+                }
             }
+
         } else if (httpRequest.getBodyAsString() != null && !httpRequest.getBodyAsString().isBlank()) {
             LOGGER.warn("Http Request with '{}' method does not permit a body. the provided body has been removed. please use another method to use one", method);
         }
         builder.method(method, requestBody);
         return builder.build();
     }
+
+    // case MULTIPART: {
+    //                    //HttpRequest.BodyType = MULTIPART
+    //                    List<byte[]> bodyAsMultipart = httpRequest.getBodyAsMultipart();
+    //                    MultipartBody.Builder multipartBuilder  = new MultipartBody.Builder("---");
+    //                    multipartBuilder.setType(MediaType.parse("multipart/form-data"));
+    //                    multipartBuilder.addFormDataPart("name","value");
+    //                    multipartBuilder.addFormDataPart("name","filename",requestBody);
+    //                    MultipartBody.Part part = null;
+    //                    multipartBuilder.addPart(part);
+    //                    multipartBuilder.addPart(requestBody);
+    //                    Headers myHeaders = null;
+    //                    multipartBuilder.addPart(myHeaders,requestBody);
+    //                    requestBody = multipartBuilder.build();
+    //
+    //                    break;
+    //                }
+
 
     @Override
     public HttpResponse buildResponse(Response response) {

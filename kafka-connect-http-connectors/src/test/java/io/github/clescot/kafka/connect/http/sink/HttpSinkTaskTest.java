@@ -3388,7 +3388,7 @@ public class HttpSinkTaskTest {
     private HttpExchange getHttpExchange(String url, HttpRequest.Method method, int statusCode) {
         Map<String, List<String>> requestHeaders = Maps.newHashMap();
         requestHeaders.put("X-dummy", Lists.newArrayList("blabla"));
-        HttpRequest httpRequest = new HttpRequest(url, method, DUMMY_BODY_TYPE);
+        HttpRequest httpRequest = new HttpRequest(url, method);
         httpRequest.setHeaders(requestHeaders);
         httpRequest.setBodyAsString("stuff");
         HttpResponse httpResponse = new HttpResponse(statusCode, OK);

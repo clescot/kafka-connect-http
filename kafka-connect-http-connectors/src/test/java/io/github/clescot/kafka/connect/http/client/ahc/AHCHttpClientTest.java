@@ -269,8 +269,7 @@ class AHCHttpClientTest {
         headers.put("X-Stuff", Lists.newArrayList("dummy stuff"));
         HttpRequest httpRequest = new HttpRequest(
                 "http://localhost:8089",
-                HttpRequest.Method.GET,
-                "STRING");
+                HttpRequest.Method.GET);
         httpRequest.setHeaders(headers);
         httpRequest.setBodyAsString(body);
         httpRequest.getHeaders().put(HEADER_X_CORRELATION_ID, Lists.newArrayList("45-66-33"));

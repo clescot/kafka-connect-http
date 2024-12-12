@@ -4,11 +4,17 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
+import org.apache.kafka.connect.data.Schema;
+import org.apache.kafka.connect.data.SchemaBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.Serializable;
 import java.util.*;
+
+import org.apache.kafka.connect.data.Struct;
+
+import static io.github.clescot.kafka.connect.http.core.Part.*;
 
 @io.confluent.kafka.schemaregistry.annotations.Schema(value = HttpRequest.SCHEMA_AS_STRING,
         refs = {})
@@ -17,6 +23,14 @@ public class HttpRequest implements Serializable {
     private static final long serialVersionUID = 1L;
 
     private static final Logger LOGGER = LoggerFactory.getLogger(HttpRequest.class);
+    public static final String URL = "url";
+    public static final String METHOD = "method";
+    public static final String HEADERS = "headers";
+    public static final String PARTS = "parts";
+    public static final String MULTIPART_MIMETYPE = "multipartMimeType";
+    public static final String MULTIPART_BOUNDARY = "multipartBoundary";
+
+    public static final int VERSION = 2;
 
     //request
     @JsonProperty(required = true)
@@ -26,19 +40,23 @@ public class HttpRequest implements Serializable {
     @JsonProperty(defaultValue = "GET")
     private HttpRequest.Method method;
     @JsonProperty
-    private String bodyAsString = "";
-    @JsonProperty
-    private Map<String,String> bodyAsForm = Maps.newHashMap();
-    @JsonProperty
-    private String bodyAsByteArray = "";
-    @JsonProperty
-    private List<String> bodyAsMultipart = Lists.newArrayList();
-    @JsonProperty
-    private String multipartBoundary="---";
-    @JsonProperty(defaultValue = "STRING")
-    private BodyType bodyType;
+    private String multipartBoundary=UUID.randomUUID().toString();
+    @JsonProperty(defaultValue = "multipart/form-data")
+    private String multipartMimeType;
+    private List<Part> parts = Lists.newArrayList();
 
-
+    public static final Schema SCHEMA = SchemaBuilder
+            .struct()
+            .name(HttpRequest.class.getName())
+            .version(VERSION)
+            //request
+            .field(HEADERS, SchemaBuilder.map(Schema.STRING_SCHEMA, SchemaBuilder.array(Schema.STRING_SCHEMA).schema()).build())
+            .field(URL, Schema.STRING_SCHEMA)
+            .field(METHOD, Schema.STRING_SCHEMA)
+            .field(PARTS,SchemaBuilder.array(Part.SCHEMA).build())
+            .field(MULTIPART_MIMETYPE,Schema.OPTIONAL_STRING_SCHEMA)
+            .field(MULTIPART_BOUNDARY,Schema.OPTIONAL_STRING_SCHEMA)
+            .schema();
     public static final String SCHEMA_ID = HttpExchange.BASE_SCHEMA_ID+"http-request.json";
     public static final String SCHEMA_AS_STRING = "{\n" +
             "  \"$id\": \"" + SCHEMA_ID + "\",\n" +
@@ -107,46 +125,71 @@ public class HttpRequest implements Serializable {
     /**
      * only for json deserialization
      */
-    protected HttpRequest() {
-    }
+    protected HttpRequest() {}
     public HttpRequest(String url){
-        this(url,HttpRequest.Method.GET,BodyType.STRING.name());
+        this(url,HttpRequest.Method.GET,null,null);
     }
-    public HttpRequest(String url,HttpRequest.Method method){
-        this(url,method,BodyType.STRING.name());
+    public HttpRequest(String url,
+                       HttpRequest.Method method){
+        this(url,method,null,null);
     }
     public HttpRequest(String url,
                        HttpRequest.Method method,
-                       String bodyType) {
+                       String multiPartMimeType,
+                       String multipartBoundary
+                       ) {
         Preconditions.checkNotNull(url, "url is required");
-        Preconditions.checkNotNull(bodyType, "bodyType is required");
         this.url = url;
         this.method = method;
-        this.bodyType = BodyType.valueOf(bodyType);
+        this.multipartMimeType = multiPartMimeType;
+        this.multipartBoundary = multipartBoundary;
     }
 
     public HttpRequest(HttpRequest original){
-            this(original.getUrl(),original.getMethod(),original.getBodyType().name());
+            this(original.getUrl(),original.getMethod(),original.getMultipartMimeType(),original.getMultipartBoundary());
             this.setHeaders(Maps.newHashMap(original.getHeaders()));
-            switch(original.getBodyType()){
-                case STRING:this.setBodyAsString(original.getBodyAsString());break;
-                case MULTIPART:this.setBodyAsMultipart(Lists.newArrayList(original.getBodyAsMultipart()));break;
-                case FORM:this.setBodyAsForm(Maps.newHashMap(original.getBodyAsForm()));break;
-                case BYTE_ARRAY:this.setBodyAsByteArray(original.getBodyAsByteArray());
-            }
+            this.setParts(original.getParts());
+            this.setMultipartMimeType(original.getMultipartMimeType());
+            this.setMultipartBoundary(original.getMultipartBoundary());
     }
+    public HttpRequest(Struct struct){
+        this.url = struct.getString(URL);
+        Preconditions.checkNotNull(url, "'url' is required");
 
-    private List<String> convertMultipart(List<byte[]> bodyAsMultipart) {
-        List<String> results = Lists.newArrayList();
-        for (byte[] bytes : bodyAsMultipart) {
-            results.add(Base64.getEncoder().encodeToString(bytes));
+        Map<String, List<String>> headers = struct.getMap(HEADERS);
+        if(headers!=null&&!headers.isEmpty()) {
+            this.headers = headers;
         }
-        return results;
+
+        this.method = HttpRequest.Method.valueOf(struct.getString(METHOD).toUpperCase());
+        Preconditions.checkNotNull(method, "'method' is required");
+
+        this.multipartMimeType = struct.getString(MULTIPART_MIMETYPE);
+        this.multipartBoundary = struct.getString(MULTIPART_BOUNDARY);
+        this.parts = struct.getArray(PARTS);
+
     }
 
-    public void setBodyType(BodyType bodyType) {
-        this.bodyType = bodyType;
+    public String getMultipartMimeType() {
+        return multipartMimeType;
     }
+
+    public void setMultipartMimeType(String multipartMimeType) {
+        this.multipartMimeType = multipartMimeType;
+    }
+
+    public List<Part> getParts() {
+        return parts;
+    }
+
+    public void setParts(List<Part> parts) {
+        this.parts = parts;
+    }
+
+    public void addPart(Part part){
+        parts.add(part);
+    }
+
 
     public Map<String, List<String>> getHeaders() {
         return headers;
@@ -160,47 +203,8 @@ public class HttpRequest implements Serializable {
         return method;
     }
 
-    public String getBodyAsString() {
-        return bodyAsString;
-    }
 
-    public byte[] getBodyAsByteArray() {
-        return this.bodyAsByteArray != null ? Base64.getDecoder().decode(bodyAsByteArray) : new byte[0];
-    }
 
-    public Map<String, String> getBodyAsForm() {
-        return bodyAsForm;
-    }
-
-    public List<byte[]> getBodyAsMultipart() {
-        List<byte[]> multipart = Lists.newArrayList();
-        for (String encodedPart : this.bodyAsMultipart) {
-            multipart.add(Base64.getDecoder().decode(encodedPart));
-        }
-        return multipart;
-    }
-
-    public BodyType getBodyType() {
-        return bodyType;
-    }
-
-    public void setBodyAsString(String bodyAsString) {
-        this.bodyAsString = bodyAsString;
-    }
-
-    public void setBodyAsForm(Map<String, String> bodyAsForm) {
-        this.bodyAsForm = bodyAsForm;
-    }
-
-    public void setBodyAsByteArray( byte[] bodyAsByteArray) {
-        this.bodyAsByteArray = Base64.getEncoder().encodeToString(bodyAsByteArray);
-    }
-
-    public void setBodyAsMultipart(List<byte[]> bodyAsMultipart) {
-        if(bodyAsMultipart!=null) {
-            this.bodyAsMultipart = convertMultipart(bodyAsMultipart);
-        }
-    }
 
     public void setHeaders(Map<String, List<String>> headers) {
         this.headers = headers;
@@ -222,34 +226,154 @@ public class HttpRequest implements Serializable {
         return url.equals(that.url)
                 && Objects.equals(headers, that.headers)
                 && method.equals(that.method)
-                && bodyType == that.bodyType
-                && Objects.equals(bodyAsString, that.bodyAsString)
-                && Objects.equals(bodyAsForm, that.bodyAsForm)
-                && Objects.equals(bodyAsByteArray, that.bodyAsByteArray)
-                && Objects.equals(bodyAsMultipart, that.bodyAsMultipart);
+                && Objects.equals(parts, that.parts)
+                && Objects.equals(multipartMimeType,that.multipartMimeType)
+                && Objects.equals(multipartBoundary, that.multipartBoundary);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(url, headers, method, bodyAsForm, bodyAsByteArray, bodyAsMultipart, bodyType);
+        return Objects.hash(url, headers, method,parts,multipartMimeType, multipartBoundary);
     }
 
     @Override
     public String toString() {
         return "HttpRequest{" +
-                "url='" + url + '\'' +
-                ", headers=" + headers +
-                ", method='" + method + '\'' +
-                ", bodyAsString='" + bodyAsString + '\'' +
-                ", bodyAsForm='" + bodyAsForm + '\'' +
-                ", bodyAsByteArray='" + bodyAsByteArray + '\'' +
-                ", bodyAsMultipart=" + bodyAsMultipart +
-                ", bodyType=" + bodyType +
+                "headers=" + headers +
+                ", url='" + url + '\'' +
+                ", method=" + method +
+                ", multipartMimeType=" + multipartMimeType +
+                ", multipartBoundary='" + multipartBoundary + '\'' +
+                ", parts=" + parts +
                 '}';
     }
 
 
 
+    public Struct toStruct() {
+        return new Struct(SCHEMA)
+                .put(URL, this.getUrl())
+                .put(HEADERS, this.getHeaders())
+                .put(METHOD, this.getMethod().name())
+                .put(PARTS,this.getParts())
+                .put(MULTIPART_MIMETYPE,this.getMultipartMimeType())
+                .put(MULTIPART_BOUNDARY,this.getMultipartBoundary())
+                ;
+    }
+
+    public void setBodyAsString(String bodyAsString) {
+        setBodyAsString(APPLICATION_JSON,bodyAsString);
+    }
+    public void setBodyAsString(String mimeType,String bodyAsString) {
+        if(mimeType==null||mimeType.isBlank()){
+            mimeType = "application/json";
+        }
+        if(parts==null){
+            parts = Lists.newArrayList();
+        }
+        if(parts.isEmpty()){
+            parts.add(new Part(mimeType,bodyAsString));
+        }
+        if(parts.size()==1){
+            parts.get(0).setContentAsString(bodyAsString);
+        }else{
+            //parts has more than one part
+            throw new IllegalArgumentException("you cannot set a body to a multipart request. add a part instead");
+        }
+    }
+
+    public void setBodyAsByteArray(byte[] content) {
+        setBodyAsByteArray(APPLICATION_OCTET_STREAM,content);
+    }
+    public void setBodyAsByteArray(String contentType,byte[] content) {
+        if(parts==null){
+            parts = Lists.newArrayList();
+        }
+        if(parts.isEmpty()){
+            parts.add(new Part(contentType,content));
+        }
+        if(parts.size()==1){
+            parts.get(0).setContentAsByteArray(content);
+        }else{
+            //parts has more than one part
+            throw new IllegalArgumentException("you cannot set a body to a multipart request. add a part instead");
+        }
+    }
+
+    public byte[] getBodyAsByteArray(){
+        if(parts==null||parts.isEmpty()){
+            return new byte[]{};
+        }else if(parts.size()==1){
+            Part part = parts.get(0);
+            if(BodyType.BYTE_ARRAY.equals(part.getBodyType())){
+                return part.getContentAsByteArray();
+            }else{
+                throw new IllegalStateException("the bodyType is not BYTE_ARRAY but '"+part.getBodyType()+"'");
+            }
+        }else{
+            throw new IllegalStateException("this is a multipart request");
+        }
+    }
+
+    public void setBodyAsForm(Map<String, String> form) {
+        setBodyAsForm(APPLICATION_X_WWW_FORM_URLENCODED,form);
+    }
+
+    public void setBodyAsForm(String contentType, Map<String, String> form) {
+        if(parts==null){
+            parts = Lists.newArrayList();
+        }
+        if(parts.isEmpty()){
+            parts.add(new Part(contentType,form));
+        }
+        if(parts.size()==1){
+            parts.get(0).setContentAsForm(form);
+        }else{
+            //parts has more than one part
+            throw new IllegalArgumentException("you cannot set a body to a multipart request. add a part instead");
+        }
+    }
+
+    public String getBodyAsString() {
+        if(parts==null||parts.isEmpty()){
+            return null;
+        }else if(parts.size()==1){
+            Part part = parts.get(0);
+            if(BodyType.STRING.equals(part.getBodyType())){
+                return part.getContentAsString();
+            }else{
+                throw new IllegalStateException("the bodyType is not BYTE_ARRAY but '"+part.getBodyType()+"'");
+            }
+        }else{
+            throw new IllegalStateException("this is a multipart request");
+        }
+    }
+
+    public BodyType getBodyType() {
+        if(parts==null||parts.isEmpty()){
+            return BodyType.STRING;
+        }else if(parts.size()>1){
+            return BodyType.MULTIPART;
+        }else{
+            return parts.get(0).getBodyType();
+        }
+
+    }
+
+    public Map<String, String> getBodyAsForm() {
+        if(parts==null||parts.isEmpty()){
+            return null;
+        }else if(parts.size()==1){
+            Part part = parts.get(0);
+            if(BodyType.FORM.equals(part.getBodyType())){
+                return part.getContentAsForm();
+            }else{
+                throw new IllegalStateException("the bodyType is not BYTE_ARRAY but '"+part.getBodyType()+"'");
+            }
+        }else{
+            throw new IllegalStateException("this is a multipart request");
+        }
+    }
 
     public enum BodyType {
         STRING,

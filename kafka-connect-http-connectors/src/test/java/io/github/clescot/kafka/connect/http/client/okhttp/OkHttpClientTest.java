@@ -106,7 +106,7 @@ class OkHttpClientTest {
             HashMap<String, Object> config = Maps.newHashMap();
             config.put(CONFIGURATION_ID,"default");
             io.github.clescot.kafka.connect.http.client.okhttp.OkHttpClient client = new io.github.clescot.kafka.connect.http.client.okhttp.OkHttpClient(config, null, new Random(), null, null, getCompositeMeterRegistry());
-            HttpRequest httpRequest = new HttpRequest("http://dummy.com/", HttpRequest.Method.POST, HttpRequest.BodyType.STRING.name());
+            HttpRequest httpRequest = new HttpRequest("http://dummy.com/", HttpRequest.Method.POST);
             httpRequest.setBodyAsString("stuff");
 
             //given
@@ -131,7 +131,7 @@ class OkHttpClientTest {
             HashMap<String, Object> config = Maps.newHashMap();
             config.put(CONFIGURATION_ID,"default");
             io.github.clescot.kafka.connect.http.client.okhttp.OkHttpClient client = new io.github.clescot.kafka.connect.http.client.okhttp.OkHttpClient(config, null, new Random(), null, null, getCompositeMeterRegistry());
-            HttpRequest httpRequest = new HttpRequest("http://dummy.com/", HttpRequest.Method.GET, HttpRequest.BodyType.STRING.name());
+            HttpRequest httpRequest = new HttpRequest("http://dummy.com/", HttpRequest.Method.GET);
             httpRequest.setBodyAsString("stuff");
 
             //when
@@ -156,7 +156,7 @@ class OkHttpClientTest {
             config.put(CONFIGURATION_ID,"default");
             io.github.clescot.kafka.connect.http.client.okhttp.OkHttpClient client = new io.github.clescot.kafka.connect.http.client.okhttp.OkHttpClient(config, null, new Random(), null, null, getCompositeMeterRegistry());
 
-            HttpRequest httpRequest = new HttpRequest("http://dummy.com/", HttpRequest.Method.POST, HttpRequest.BodyType.STRING.name());
+            HttpRequest httpRequest = new HttpRequest("http://dummy.com/", HttpRequest.Method.POST);
             httpRequest.setBodyAsString("stuff");
             Request request = client.buildRequest(httpRequest);
 
@@ -491,8 +491,7 @@ class OkHttpClientTest {
             headers.put("User-Agent", Lists.newArrayList("toto"));
             HttpRequest httpRequest = new HttpRequest(
                     url,
-                    HttpRequest.Method.POST,
-                    "STRING"
+                    HttpRequest.Method.POST
             );
             httpRequest.setHeaders(headers);
             httpRequest.setBodyAsString("stuff");
@@ -523,8 +522,7 @@ class OkHttpClientTest {
             headers.put("User-Agent", Lists.newArrayList("toto"));
             HttpRequest httpRequest = new HttpRequest(
                     url,
-                    HttpRequest.Method.POST,
-                    "STRING"
+                    HttpRequest.Method.POST
             );
             httpRequest.setHeaders(headers);
             httpRequest.setBodyAsString("stuff");
@@ -565,8 +563,7 @@ class OkHttpClientTest {
             headers.put("X-Request-ID", Lists.newArrayList("e6de70d1-f222-46e8-b755-11111"));
             HttpRequest httpRequest = new HttpRequest(
                     url,
-                    HttpRequest.Method.POST,
-                    "STRING"
+                    HttpRequest.Method.POST
             );
             httpRequest.setHeaders(headers);
             httpRequest.setBodyAsString("stuff");
@@ -620,8 +617,7 @@ class OkHttpClientTest {
             headers.put("X-Request-ID", Lists.newArrayList("e6de70d1-f222-46e8-b755-11111"));
             HttpRequest httpRequest = new HttpRequest(
                     url,
-                    HttpRequest.Method.POST,
-                    "STRING"
+                    HttpRequest.Method.POST
             );
             httpRequest.setHeaders(headers);
             httpRequest.setBodyAsString("stuff");
@@ -698,8 +694,7 @@ class OkHttpClientTest {
             headers.put("X-Request-ID", Lists.newArrayList("e6de70d1-f222-46e8-b755-11111"));
             HttpRequest httpRequest = new HttpRequest(
                     url,
-                    HttpRequest.Method.POST,
-                    "STRING"
+                    HttpRequest.Method.POST
             );
             httpRequest.setHeaders(headers);
             httpRequest.setBodyAsString("stuff");
@@ -711,8 +706,7 @@ class OkHttpClientTest {
             headers2.put("X-Request-ID", Lists.newArrayList("22222-33333-000-000-0000"));
             HttpRequest httpRequest2 = new HttpRequest(
                     url2,
-                    HttpRequest.Method.POST,
-                    "STRING"
+                    HttpRequest.Method.POST
             );
             httpRequest2.setHeaders(headers2);
             httpRequest2.setBodyAsString("stuff2");
@@ -834,8 +828,7 @@ class OkHttpClientTest {
             headers.put("X-Request-ID", Lists.newArrayList("e6de70d1-f222-46e8-b755-11111"));
             HttpRequest httpRequest = new HttpRequest(
                     url,
-                    HttpRequest.Method.GET,
-                    "STRING"
+                    HttpRequest.Method.GET
             );
             httpRequest.setHeaders(headers);
 
@@ -962,8 +955,7 @@ class OkHttpClientTest {
             headers.put("X-Request-ID", Lists.newArrayList("e6de70d1-f222-46e8-b755-11111"));
             HttpRequest httpRequest = new HttpRequest(
                     url,
-                    HttpRequest.Method.POST,
-                    "STRING"
+                    HttpRequest.Method.POST
             );
             httpRequest.setHeaders(headers);
             httpRequest.setBodyAsString("stuff");
@@ -1018,8 +1010,7 @@ class OkHttpClientTest {
             headers.put("X-Request-ID", Lists.newArrayList("e6de70d1-f222-46e8-b755-11111"));
             HttpRequest httpRequest = new HttpRequest(
                     url,
-                    HttpRequest.Method.POST,
-                    "STRING"
+                    HttpRequest.Method.POST
             );
             httpRequest.setHeaders(headers);
             httpRequest.setBodyAsString("stuff");
@@ -1105,8 +1096,7 @@ class OkHttpClientTest {
             headers.put("X-Request-ID", Lists.newArrayList("e6de70d1-f222-46e8-b755-11111"));
             HttpRequest httpRequest = new HttpRequest(
                     url,
-                    HttpRequest.Method.POST,
-                    "STRING"
+                    HttpRequest.Method.POST
             );
             httpRequest.setHeaders(headers);
             httpRequest.setBodyAsString("stuff");
@@ -1216,8 +1206,7 @@ class OkHttpClientTest {
             headers.put("X-Request-ID", Lists.newArrayList("e6de70d1-f222-46e8-b755-11111"));
             HttpRequest httpRequest = new HttpRequest(
                     url,
-                    HttpRequest.Method.GET,
-                    "STRING"
+                    HttpRequest.Method.GET
             );
             httpRequest.setHeaders(headers);
 
@@ -1383,8 +1372,7 @@ class OkHttpClientTest {
             headers.put("X-Request-ID", Lists.newArrayList("e6de70d1-f222-46e8-b755-11111"));
             HttpRequest httpRequest = new HttpRequest(
                     url,
-                    HttpRequest.Method.POST,
-                    "STRING"
+                    HttpRequest.Method.POST
             );
             httpRequest.setHeaders(headers);
             httpRequest.setBodyAsString("stuff");
@@ -1446,8 +1434,7 @@ class OkHttpClientTest {
             headers.put("X-Request-ID", Lists.newArrayList("e6de70d1-f222-46e8-b755-11111"));
             HttpRequest httpRequest = new HttpRequest(
                     url,
-                    HttpRequest.Method.POST,
-                    "STRING"
+                    HttpRequest.Method.POST
             );
             httpRequest.setHeaders(headers);
             httpRequest.setBodyAsString("stuff");
@@ -1513,8 +1500,7 @@ class OkHttpClientTest {
 
             HttpRequest httpRequest = new HttpRequest(
                     "https://www.google.com",
-                    HttpRequest.Method.GET,
-                    "STRING"
+                    HttpRequest.Method.GET
             );
             HttpExchange httpExchange = client.call(httpRequest, new AtomicInteger(1)).get();
             HttpResponse httpResponse = httpExchange.getHttpResponse();
@@ -1533,8 +1519,7 @@ class OkHttpClientTest {
 
             HttpRequest httpRequest = new HttpRequest(
                     "https://www.google.com",
-                    HttpRequest.Method.GET,
-                    "STRING"
+                    HttpRequest.Method.GET
             );
             HttpExchange httpExchange = client.call(httpRequest, new AtomicInteger(1)).get();
             HttpResponse httpResponse = httpExchange.getHttpResponse();
@@ -1554,8 +1539,7 @@ class OkHttpClientTest {
 
             HttpRequest httpRequest = new HttpRequest(
                     "https://www.google.com",
-                    HttpRequest.Method.GET,
-                    "STRING"
+                    HttpRequest.Method.GET
             );
             HttpExchange httpExchange = client.call(httpRequest, new AtomicInteger(1)).get();
             HttpResponse httpResponse = httpExchange.getHttpResponse();
@@ -1574,8 +1558,7 @@ class OkHttpClientTest {
 
             HttpRequest httpRequest = new HttpRequest(
                     "https://www.toto.com",
-                    HttpRequest.Method.GET,
-                    "STRING"
+                    HttpRequest.Method.GET
             );
             HttpExchange httpExchange = client.call(httpRequest, new AtomicInteger(1)).get();
             HttpResponse httpResponse = httpExchange.getHttpResponse();
@@ -1597,8 +1580,7 @@ class OkHttpClientTest {
 
             HttpRequest httpRequest = new HttpRequest(
                     "https://localhost",
-                    HttpRequest.Method.GET,
-                    "STRING"
+                    HttpRequest.Method.GET
             );
             HttpExchange httpExchange = client.call(httpRequest, new AtomicInteger(1)).get();
             HttpResponse httpResponse = httpExchange.getHttpResponse();
@@ -1635,8 +1617,7 @@ class OkHttpClientTest {
 
             HttpRequest httpRequest = new HttpRequest(
                     "http://127.0.0.1:"+wmHttp.getRuntimeInfo().getHttpPort()+"/ping",
-                    HttpRequest.Method.GET,
-                    "STRING"
+                    HttpRequest.Method.GET
             );
             HttpExchange httpExchange = client.call(httpRequest, new AtomicInteger(1)).get();
             HttpResponse httpResponse = httpExchange.getHttpResponse();
@@ -1656,8 +1637,7 @@ class OkHttpClientTest {
 
             HttpRequest httpRequest = new HttpRequest(
                     "https://localhost",
-                    HttpRequest.Method.GET,
-                    "STRING"
+                    HttpRequest.Method.GET
             );
             HttpExchange httpExchange = client.call(httpRequest, new AtomicInteger(1)).get();
             HttpResponse httpResponse = httpExchange.getHttpResponse();
@@ -1732,8 +1712,7 @@ class OkHttpClientTest {
             headers.put("X-Request-ID", Lists.newArrayList("e6de70d1-f222-46e8-b755-11111"));
             HttpRequest httpRequest = new HttpRequest(
                     url,
-                    HttpRequest.Method.POST,
-                    "STRING"
+                    HttpRequest.Method.POST
             );
             httpRequest.setHeaders(headers);
             httpRequest.setBodyAsString("stuff");
@@ -1785,8 +1764,7 @@ class OkHttpClientTest {
             headers.put("X-Request-ID", Lists.newArrayList("e6de70d1-f222-46e8-b755-11111"));
             HttpRequest httpRequest = new HttpRequest(
                     url,
-                    HttpRequest.Method.POST,
-                    "STRING"
+                    HttpRequest.Method.POST
             );
             httpRequest.setHeaders(headers);
             httpRequest.setBodyAsString("stuff");
@@ -1845,8 +1823,7 @@ class OkHttpClientTest {
             headers.put("X-Request-ID", Lists.newArrayList("e6de70d1-f222-46e8-b755-11111"));
             HttpRequest httpRequest = new HttpRequest(
                     url,
-                    HttpRequest.Method.POST,
-                    "STRING"
+                    HttpRequest.Method.POST
             );
             httpRequest.setHeaders(headers);
             httpRequest.setBodyAsString("stuff");

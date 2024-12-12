@@ -37,7 +37,7 @@ public class HttpExchangeTest {
 
     private HttpRequest getDummyHttpRequest() {
         HttpRequest httpRequest = new HttpRequest(
-                "http://www.toto.com", HttpRequest.Method.GET, "STRING");
+                "http://www.toto.com", HttpRequest.Method.GET);
         httpRequest.setBodyAsString("stuff");
         return httpRequest;
     }
