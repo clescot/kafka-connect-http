@@ -30,6 +30,7 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
 
+import static io.github.clescot.kafka.connect.http.core.HttpRequest.PARTS;
 import static org.assertj.core.api.Assertions.assertThat;
 
 class HttpRequestTest {
@@ -75,21 +76,31 @@ class HttpRequestTest {
                 "http://www.stuff.com",
                 HttpRequest.Method.POST
         );
-        httpRequest.setBodyAsByteArray(DUMMY_BODY_AS_STRING.getBytes(StandardCharsets.UTF_8));
         Map<String,List<String>> headers = Maps.newHashMap();
         headers.put("X-correlation-id",Lists.newArrayList("sfds-55-77"));
         headers.put("X-request-id",Lists.newArrayList("aaaa-4466666-111"));
+        headers.put("Content-Type",Lists.newArrayList(""));
         httpRequest.setHeaders(headers);
+        httpRequest.setBodyAsByteArray(DUMMY_BODY_AS_STRING.getBytes(StandardCharsets.UTF_8));
 
         String expectedHttpRequest = "{\n" +
-                "  \"url\": \"http://www.stuff.com\",\n" +
-                "  \"headers\":{\"X-request-id\":[\"aaaa-4466666-111\"],\"X-correlation-id\":[\"sfds-55-77\"]},\n" +
-                "  \"method\": \"POST\",\n" +
-                "  \"bodyAsString\": \"\",\n" +
-                "  \"bodyAsForm\": {},\n" +
-                "  \"bodyAsByteArray\": \"c3R1ZmY=\",\n" +
-                "  \"bodyAsMultipart\": [],\n" +
-                "  \"bodyType\": \"BYTE_ARRAY\"\n" +
+                "  \"url\" : \"http://www.stuff.com\",\n" +
+                "  \"headers\" : {\n" +
+                "    \"X-request-id\" : [ \"aaaa-4466666-111\" ],\n" +
+                "    \"X-correlation-id\" : [ \"sfds-55-77\" ],\n" +
+                "    \"Content-Type\" : [ \"application/octet-stream\" ]\n" +
+                "  },\n" +
+                "  \"method\" : \"POST\",\n" +
+                "  \"multipartBoundary\" : null,\n" +
+                "  \"multipartMimeType\" : null,\n" +
+                "  \"parts\" : [ {\n" +
+                "    \"bodyType\" : \"BYTE_ARRAY\",\n" +
+                "    \"contentType\" : \"application/octet-stream\",\n" +
+                "    \"contentAsString\" : null,\n" +
+                "    \"contentAsByteArray\" : \"c3R1ZmY=\",\n" +
+                "    \"contentAsForm\" : null\n" +
+                "  } ],\n" +
+                "  \"bodyType\" : \"BYTE_ARRAY\"\n" +
                 "}";
 
         String serializedHttpRequest = objectMapper.writeValueAsString(httpRequest);
@@ -103,7 +114,8 @@ class HttpRequestTest {
         //build httpRequest
         HttpRequest httpRequest = new HttpRequest(
                 "http://www.stuff.com",
-                HttpRequest.Method.POST
+                HttpRequest.Method.POST,
+                "multipart/form-data","---"
         );
         List<Part> parts = Lists.newArrayList();
         parts.add(new Part("part1".getBytes(StandardCharsets.UTF_8)));
@@ -114,17 +126,6 @@ class HttpRequestTest {
         headers.put("X-correlation-id",Lists.newArrayList("sfds-55-77"));
         headers.put("X-request-id",Lists.newArrayList("aaaa-4466666-111"));
         httpRequest.setHeaders(headers);
-
-        String expectedHttpRequest = "{\n" +
-                "  \"url\": \"http://www.stuff.com\",\n" +
-                "  \"headers\":{\"X-request-id\":[\"aaaa-4466666-111\"],\"X-correlation-id\":[\"sfds-55-77\"]},\n" +
-                "  \"method\": \"POST\",\n" +
-                "  \"bodyAsString\": \"\",\n" +
-                "  \"bodyAsForm\": {},\n" +
-                "  \"bodyAsByteArray\": \"c3R1ZmY=\",\n" +
-                "  \"bodyAsMultipart\": [],\n" +
-                "  \"bodyType\": \"MULTIPART\"\n" +
-                "}";
 
 
         String serializedHttpRequest = objectMapper.writeValueAsString(httpRequest);
@@ -246,7 +247,7 @@ class HttpRequestTest {
                 "http://www.stuff.com",
                 HttpRequest.Method.POST
         );
-        httpRequest.setBodyAsString(DUMMY_BODY_AS_STRING);
+        httpRequest.setBodyAsByteArray(DUMMY_BODY_AS_STRING.getBytes(StandardCharsets.UTF_8));
         Map<String, List<String>> headers = Maps.newHashMap();
         headers.put("X-stuff", Lists.newArrayList("m-y-value"));
         headers.put("X-correlation-id", Lists.newArrayList("44-999-33-dd"));
@@ -572,9 +573,12 @@ class HttpRequestTest {
         struct.put("url", dummyUrl);
         HttpRequest.Method dummyMethod = HttpRequest.Method.POST;
         struct.put("method", dummyMethod.name());
+
         String dummyBodyType = "BYTE_ARRAY";
-        struct.put("bodyType", dummyBodyType);
-        struct.put("bodyAsByteArray", Base64.getEncoder().encodeToString(DUMMY_BODY_AS_STRING.getBytes(StandardCharsets.UTF_8)));
+        Struct partStruct = new Struct(Part.SCHEMA);
+        partStruct.put("bodyType", dummyBodyType);
+        partStruct.put("bodyAsByteArray", Base64.getEncoder().encodeToString(DUMMY_BODY_AS_STRING.getBytes(StandardCharsets.UTF_8)));
+        struct.put(PARTS,Lists.newArrayList(partStruct));
         //when
         HttpRequest httpRequest = new HttpRequest(struct);
         //then

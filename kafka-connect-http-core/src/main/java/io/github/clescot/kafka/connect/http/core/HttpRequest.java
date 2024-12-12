@@ -1,5 +1,6 @@
 package io.github.clescot.kafka.connect.http.core;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
@@ -11,6 +12,7 @@ import org.slf4j.LoggerFactory;
 
 import java.io.Serializable;
 import java.util.*;
+import java.util.stream.Collectors;
 
 import org.apache.kafka.connect.data.Struct;
 
@@ -31,6 +33,7 @@ public class HttpRequest implements Serializable {
     public static final String MULTIPART_BOUNDARY = "multipartBoundary";
 
     public static final int VERSION = 2;
+    public static final String CONTENT_TYPE = "Content-Type";
 
     //request
     @JsonProperty(required = true)
@@ -43,6 +46,7 @@ public class HttpRequest implements Serializable {
     private String multipartBoundary=UUID.randomUUID().toString();
     @JsonProperty(defaultValue = "multipart/form-data")
     private String multipartMimeType;
+    @JsonProperty
     private List<Part> parts = Lists.newArrayList();
 
     public static final Schema SCHEMA = SchemaBuilder
@@ -135,14 +139,29 @@ public class HttpRequest implements Serializable {
     }
     public HttpRequest(String url,
                        HttpRequest.Method method,
+                       String multiPartMimeType
+    ) {
+        Preconditions.checkNotNull(url, "url is required");
+        this.url = url;
+        this.method = method;
+        Preconditions.checkNotNull(url, "method is required");
+        this.multipartMimeType = multiPartMimeType;
+        Preconditions.checkNotNull(url, "multipartMimeType is required");
+        this.multipartBoundary = UUID.randomUUID().toString();
+    }
+    public HttpRequest(String url,
+                       HttpRequest.Method method,
                        String multiPartMimeType,
                        String multipartBoundary
                        ) {
         Preconditions.checkNotNull(url, "url is required");
         this.url = url;
+        Preconditions.checkNotNull(url, "method is required");
         this.method = method;
         this.multipartMimeType = multiPartMimeType;
+        Preconditions.checkNotNull(url, "multipartMimeType is required");
         this.multipartBoundary = multipartBoundary;
+        Preconditions.checkNotNull(url, "multipartBoundary is required");
     }
 
     public HttpRequest(HttpRequest original){
@@ -192,6 +211,9 @@ public class HttpRequest implements Serializable {
 
 
     public Map<String, List<String>> getHeaders() {
+        if(!this.getBodyType().equals(BodyType.MULTIPART)){
+            return getParts().get(0).getHeaders();
+        }
         return headers;
     }
 
@@ -207,7 +229,18 @@ public class HttpRequest implements Serializable {
 
 
     public void setHeaders(Map<String, List<String>> headers) {
-        this.headers = headers;
+        if(!this.getBodyType().equals(BodyType.MULTIPART)){
+            if(getParts()==null){
+                setParts(Lists.newArrayList());
+            }
+            if(getParts().isEmpty()){
+                Part part = new Part("");
+                addPart(part);
+            }
+            getParts().get(0).setHeaders(headers);
+        }else {
+            this.headers = headers;
+        }
     }
 
     public String getMultipartBoundary() {
@@ -255,24 +288,20 @@ public class HttpRequest implements Serializable {
                 .put(URL, this.getUrl())
                 .put(HEADERS, this.getHeaders())
                 .put(METHOD, this.getMethod().name())
-                .put(PARTS,this.getParts())
+                .put(PARTS,this.getParts().stream().map(Part::toStruct).collect(Collectors.toList()))
                 .put(MULTIPART_MIMETYPE,this.getMultipartMimeType())
                 .put(MULTIPART_BOUNDARY,this.getMultipartBoundary())
                 ;
     }
 
     public void setBodyAsString(String bodyAsString) {
-        setBodyAsString(APPLICATION_JSON,bodyAsString);
-    }
-    public void setBodyAsString(String mimeType,String bodyAsString) {
-        if(mimeType==null||mimeType.isBlank()){
-            mimeType = "application/json";
-        }
         if(parts==null){
             parts = Lists.newArrayList();
         }
         if(parts.isEmpty()){
-            parts.add(new Part(mimeType,bodyAsString));
+            Part part = new Part(bodyAsString);
+            part.getHeaders().putIfAbsent(CONTENT_TYPE,Lists.newArrayList(APPLICATION_JSON));
+            parts.add(part);
         }
         if(parts.size()==1){
             parts.get(0).setContentAsString(bodyAsString);
@@ -283,14 +312,13 @@ public class HttpRequest implements Serializable {
     }
 
     public void setBodyAsByteArray(byte[] content) {
-        setBodyAsByteArray(APPLICATION_OCTET_STREAM,content);
-    }
-    public void setBodyAsByteArray(String contentType,byte[] content) {
         if(parts==null){
             parts = Lists.newArrayList();
         }
         if(parts.isEmpty()){
-            parts.add(new Part(contentType,content));
+            Part part = new Part(content);
+            part.getHeaders().putIfAbsent(CONTENT_TYPE,Lists.newArrayList(APPLICATION_OCTET_STREAM));
+            parts.add(part);
         }
         if(parts.size()==1){
             parts.get(0).setContentAsByteArray(content);
@@ -300,6 +328,7 @@ public class HttpRequest implements Serializable {
         }
     }
 
+    @JsonIgnore
     public byte[] getBodyAsByteArray(){
         if(parts==null||parts.isEmpty()){
             return new byte[]{};
@@ -308,23 +337,23 @@ public class HttpRequest implements Serializable {
             if(BodyType.BYTE_ARRAY.equals(part.getBodyType())){
                 return part.getContentAsByteArray();
             }else{
-                throw new IllegalStateException("the bodyType is not BYTE_ARRAY but '"+part.getBodyType()+"'");
+                return null;
             }
         }else{
-            throw new IllegalStateException("this is a multipart request");
+            return null;
         }
     }
 
-    public void setBodyAsForm(Map<String, String> form) {
-        setBodyAsForm(APPLICATION_X_WWW_FORM_URLENCODED,form);
-    }
 
-    public void setBodyAsForm(String contentType, Map<String, String> form) {
+
+    public void setBodyAsForm(Map<String, String> form) {
         if(parts==null){
             parts = Lists.newArrayList();
         }
         if(parts.isEmpty()){
-            parts.add(new Part(contentType,form));
+            Part part = new Part(form);
+            part.getHeaders().putIfAbsent(CONTENT_TYPE,Lists.newArrayList(APPLICATION_X_WWW_FORM_URLENCODED));
+            parts.add(part);
         }
         if(parts.size()==1){
             parts.get(0).setContentAsForm(form);
@@ -334,6 +363,7 @@ public class HttpRequest implements Serializable {
         }
     }
 
+    @JsonIgnore
     public String getBodyAsString() {
         if(parts==null||parts.isEmpty()){
             return null;
@@ -342,10 +372,10 @@ public class HttpRequest implements Serializable {
             if(BodyType.STRING.equals(part.getBodyType())){
                 return part.getContentAsString();
             }else{
-                throw new IllegalStateException("the bodyType is not BYTE_ARRAY but '"+part.getBodyType()+"'");
+                return null;
             }
         }else{
-            throw new IllegalStateException("this is a multipart request");
+           return null;
         }
     }
 
@@ -360,6 +390,7 @@ public class HttpRequest implements Serializable {
 
     }
 
+    @JsonIgnore
     public Map<String, String> getBodyAsForm() {
         if(parts==null||parts.isEmpty()){
             return null;
@@ -368,10 +399,10 @@ public class HttpRequest implements Serializable {
             if(BodyType.FORM.equals(part.getBodyType())){
                 return part.getContentAsForm();
             }else{
-                throw new IllegalStateException("the bodyType is not BYTE_ARRAY but '"+part.getBodyType()+"'");
+                return null;
             }
         }else{
-            throw new IllegalStateException("this is a multipart request");
+            return null;
         }
     }
 

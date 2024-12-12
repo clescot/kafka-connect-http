@@ -1,11 +1,14 @@
 package io.github.clescot.kafka.connect.http.core;
 
 import com.google.common.base.MoreObjects;
+import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
 import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.data.SchemaBuilder;
 import org.apache.kafka.connect.data.Struct;
 
 import java.util.Arrays;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
@@ -13,14 +16,16 @@ public class Part {
     public static final String APPLICATION_X_WWW_FORM_URLENCODED = "application/x-www-form-urlencoded";
     public static final String APPLICATION_JSON = "application/json";
     public static final String APPLICATION_OCTET_STREAM = "application/octet-stream";
+    public static final String CONTENT_TYPE = "Content-Type";
     private final HttpRequest.BodyType bodyType;
+    private Map<String,List<String>> headers = Maps.newHashMap();
     private String contentType;
     private String contentAsString;
     private byte[] contentAsByteArray;
     private Map<String, String> contentAsForm;
     public static final int VERSION = 1;
+    public static final String HEADERS = "headers";
     public static final String BODY_TYPE = "bodyType";
-    public static final String CONTENT_TYPE = "contentType";
     public static final String BODY_AS_STRING = "bodyAsString";
     public static final String BODY_AS_FORM = "bodyAsForm";
     public static final String BODY_AS_BYTE_ARRAY = "bodyAsByteArray";
@@ -29,37 +34,30 @@ public class Part {
             .struct()
             .name(Part.class.getName())
             .version(VERSION)
+            .field(HEADERS, SchemaBuilder.map(Schema.STRING_SCHEMA, SchemaBuilder.array(Schema.STRING_SCHEMA).schema()).build())
             .field(BODY_TYPE,Schema.STRING_SCHEMA)
-            .field(CONTENT_TYPE,Schema.STRING_SCHEMA)
             .field(BODY_AS_STRING, Schema.OPTIONAL_STRING_SCHEMA)
             .field(BODY_AS_FORM, SchemaBuilder.map(Schema.STRING_SCHEMA, Schema.STRING_SCHEMA).optional().schema())
-            .field(BODY_AS_BYTE_ARRAY, Schema.OPTIONAL_STRING_SCHEMA)
+            .field(BODY_AS_BYTE_ARRAY, Schema.OPTIONAL_BYTES_SCHEMA)
             .schema();
 
 
-    public Part(String contentType, byte[] contentAsByteArray) {
+    public Part(byte[] contentAsByteArray) {
         this.bodyType = HttpRequest.BodyType.BYTE_ARRAY;
-        this.contentType = MoreObjects.firstNonNull(contentType, APPLICATION_OCTET_STREAM);
+        headers.putIfAbsent(CONTENT_TYPE, Lists.newArrayList(APPLICATION_OCTET_STREAM));
         this.contentAsByteArray = contentAsByteArray;
     }
-    public Part(byte[] contentAsByteArray) {
-        this(APPLICATION_OCTET_STREAM, contentAsByteArray);
-    }
-    public Part(String contentType, Map<String,String> contentAsForm) {
+
+    public Part(Map<String,String> contentAsForm) {
         this.bodyType = HttpRequest.BodyType.FORM;
-        this.contentType = MoreObjects.firstNonNull(contentType, APPLICATION_X_WWW_FORM_URLENCODED);
+        headers.putIfAbsent(CONTENT_TYPE, Lists.newArrayList(APPLICATION_X_WWW_FORM_URLENCODED));
         this.contentAsForm = contentAsForm;
     }
-    public Part(Map<String,String> contentAsForm) {
-        this(APPLICATION_X_WWW_FORM_URLENCODED, contentAsForm);
-    }
-    public Part(String contentType, String contentAsString) {
-        this.bodyType = HttpRequest.BodyType.STRING;
-        this.contentType = MoreObjects.firstNonNull(contentType, APPLICATION_JSON);
-        this.contentAsString = contentAsString;
-    }
+
     public Part(String contentAsString) {
-        this(APPLICATION_JSON, contentAsString);
+        this.bodyType = HttpRequest.BodyType.STRING;
+        headers.putIfAbsent(CONTENT_TYPE, Lists.newArrayList(APPLICATION_JSON));
+        this.contentAsString = contentAsString;
     }
 
     public HttpRequest.BodyType getBodyType() {
@@ -100,6 +98,14 @@ public class Part {
         return contentAsByteArray;
     }
 
+    public Map<String, List<String>> getHeaders() {
+        return headers;
+    }
+
+    public void setHeaders(Map<String, List<String>> headers) {
+        this.headers = headers;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (!(o instanceof Part)) return false;
@@ -125,8 +131,8 @@ public class Part {
 
     public Struct toStruct(){
         Struct struct = new Struct(SCHEMA);
-        struct.put(BODY_TYPE,getBodyType());
-        struct.put(CONTENT_TYPE,getContentType());
+        struct.put(HEADERS,getHeaders());
+        struct.put(BODY_TYPE,getBodyType().name());
         struct.put(BODY_AS_STRING,getContentAsString());
         struct.put(BODY_AS_FORM,getContentAsForm());
         struct.put(BODY_AS_BYTE_ARRAY,getContentAsByteArray());

@@ -192,7 +192,7 @@ class DirectHttpRequestMapperTest {
         Map<String, List<String>> headers = Maps.newHashMap();
         headers.put("Content-Type", Lists.newArrayList("application/json"));
         httpRequest.setHeaders(headers);
-        Part part = new Part("application/json","stuff");
+        Part part = new Part("stuff");
         httpRequest.setParts(Lists.newArrayList(part));
         return httpRequest;
     }
