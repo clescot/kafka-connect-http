@@ -1,6 +1,8 @@
 package io.github.clescot.kafka.connect.http.core;
 
-import com.google.common.base.MoreObjects;
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.google.common.base.Joiner;
+import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import org.apache.kafka.connect.data.Schema;
@@ -12,12 +14,18 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
+import static com.fasterxml.jackson.annotation.JsonInclude.*;
+
+/**
+ * part of a multi-part request.
+ */
+@JsonInclude(Include.NON_NULL)
 public class Part {
     public static final String APPLICATION_X_WWW_FORM_URLENCODED = "application/x-www-form-urlencoded";
     public static final String APPLICATION_JSON = "application/json";
     public static final String APPLICATION_OCTET_STREAM = "application/octet-stream";
     public static final String CONTENT_TYPE = "Content-Type";
-    private final HttpRequest.BodyType bodyType;
+    private HttpRequest.BodyType bodyType;
     private Map<String,List<String>> headers = Maps.newHashMap();
     private String contentType;
     private String contentAsString;
@@ -41,7 +49,8 @@ public class Part {
             .field(BODY_AS_BYTE_ARRAY, Schema.OPTIONAL_BYTES_SCHEMA)
             .schema();
 
-
+    //for deserialization only
+    protected Part(){}
     public Part(byte[] contentAsByteArray) {
         this.bodyType = HttpRequest.BodyType.BYTE_ARRAY;
         headers.putIfAbsent(CONTENT_TYPE, Lists.newArrayList(APPLICATION_OCTET_STREAM));
@@ -103,6 +112,13 @@ public class Part {
     }
 
     public void setHeaders(Map<String, List<String>> headers) {
+        Preconditions.checkArgument(headers.keySet().stream().allMatch(key->
+                "Content-Disposition".equalsIgnoreCase(key)||
+                "Content-Type".equalsIgnoreCase(key)||
+                "Content-Transfer-Encoding".equalsIgnoreCase(key)),
+                "all headers key in a multipart request must be 'Content-Disposition','Content-Type', " +
+                        "or 'Content-Transfer-Encoding'. current Headers key of this part are : "
+                        + Joiner.on(",").join(headers.keySet()));
         this.headers = headers;
     }
 
@@ -110,7 +126,11 @@ public class Part {
     public boolean equals(Object o) {
         if (!(o instanceof Part)) return false;
         Part part = (Part) o;
-        return bodyType == part.bodyType && Objects.equals(contentType, part.contentType) && Objects.equals(contentAsString, part.contentAsString) && Objects.deepEquals(contentAsByteArray, part.contentAsByteArray) && Objects.equals(contentAsForm, part.contentAsForm);
+        return bodyType == part.bodyType
+                && Objects.equals(contentType, part.contentType)
+                && Objects.equals(contentAsString, part.contentAsString)
+                && Objects.deepEquals(contentAsByteArray, part.contentAsByteArray)
+                && Objects.equals(contentAsForm, part.contentAsForm);
     }
 
     @Override
@@ -121,11 +141,11 @@ public class Part {
     @Override
     public String toString() {
         return "Part{" +
-                "bodyType=" + bodyType +
-                ", contentType='" + contentType + '\'' +
-                ", stringContent='" + contentAsString + '\'' +
-                ", byteContent=" + Arrays.toString(contentAsByteArray) +
-                ", formContent=" + contentAsForm +
+                "bodyType:\"" + bodyType +
+                "\", \"contentType:\"" + contentType + '\"' +
+                ", \"contentAsString\":" + contentAsString + '\"' +
+                ", \"contentAsByteArray\":\"" + Arrays.toString(contentAsByteArray) +"\""+
+                ", \"contentAsForm\":\"" + contentAsForm +"\""+
                 '}';
     }
 
