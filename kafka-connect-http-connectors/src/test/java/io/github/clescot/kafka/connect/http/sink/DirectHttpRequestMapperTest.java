@@ -104,7 +104,7 @@ class DirectHttpRequestMapperTest {
             HttpRequest dummyHttpRequest = getDummyHttpRequest(DUMMY_URL);
             String topic = "myTopic";
             SchemaRegistryClient schemaRegistryClient = getSchemaRegistryClient();
-            registerSchema(schemaRegistryClient, topic, 1, 1, HttpRequest.SCHEMA_AS_STRING);
+            registerSchema(schemaRegistryClient, topic, 1, 1, HttpRequest.JSON_SCHEMA);
 
 
             JsonSchemaConverter jsonSchemaConverter = getJsonSchemaConverter(schemaRegistryClient);

@@ -19,6 +19,8 @@ import static com.fasterxml.jackson.annotation.JsonInclude.*;
 /**
  * part of a multi-part request.
  */
+@io.confluent.kafka.schemaregistry.annotations.Schema(value =Part.JSON_SCHEMA,
+        refs = {})
 @JsonInclude(Include.NON_NULL)
 public class Part {
     public static final String APPLICATION_X_WWW_FORM_URLENCODED = "application/x-www-form-urlencoded";
@@ -42,12 +44,59 @@ public class Part {
             .struct()
             .name(Part.class.getName())
             .version(VERSION)
-            .field(HEADERS, SchemaBuilder.map(Schema.STRING_SCHEMA, SchemaBuilder.array(Schema.STRING_SCHEMA).schema()).build())
+            .field(HEADERS, SchemaBuilder.map(Schema.STRING_SCHEMA, SchemaBuilder.array(Schema.STRING_SCHEMA).schema()).optional().build())
             .field(BODY_TYPE,Schema.STRING_SCHEMA)
             .field(BODY_AS_STRING, Schema.OPTIONAL_STRING_SCHEMA)
             .field(BODY_AS_FORM, SchemaBuilder.map(Schema.STRING_SCHEMA, Schema.STRING_SCHEMA).optional().schema())
             .field(BODY_AS_BYTE_ARRAY, Schema.OPTIONAL_BYTES_SCHEMA)
+            .optional()
             .schema();
+    public static final String SCHEMA_ID = HttpExchange.BASE_SCHEMA_ID+"http-part.json";
+    public static final String JSON_SCHEMA =
+            "{\n" +
+            "  \"$id\": \"https://raw.githubusercontent.com/clescot/kafka-connect-http/master/kafka-connect-http-core/src/main/resources/schemas/json/versions/"+SCHEMA_ID+"\",\n" +
+            "  \"$schema\": \"http://json-schema.org/draft/2019-09/schema#\",\n" +
+            "  \"title\": \"Http Part\",\n" +
+            "  \"type\": \"object\",\n" +
+            "  \"additionalProperties\": false,\n" +
+            "  \"properties\": {\n" +
+            "    \"headers\": {\n" +
+            "      \"type\": \"object\",\n" +
+            "      \"connect.type\": \"map\",\n" +
+            "      \"additionalProperties\": {\n" +
+            "        \"type\": \"array\",\n" +
+            "        \"items\": {\n" +
+            "          \"type\": \"string\"\n" +
+            "        }\n" +
+            "      }\n" +
+            "    },\n" +
+            "    \"bodyAsString\": {\n" +
+            "      \"type\": \"string\"\n" +
+            "    },\n" +
+            "    \"bodyAsForm\": {\n" +
+            "      \"type\": \"object\",\n" +
+            "      \"connect.type\": \"map\",\n" +
+            "      \"additionalProperties\": {\n" +
+            "        \"type\": \"string\"\n" +
+            "      }\n" +
+            "    },\n" +
+            "    \"bodyAsByteArray\": {\n" +
+            "      \"type\": \"string\"\n" +
+            "    },\n" +
+            "    \"bodyType\": {\n" +
+            "      \"type\": \"string\",\n" +
+            "      \"enum\": [\n" +
+            "        \"STRING\",\n" +
+            "        \"FORM\",\n" +
+            "        \"BYTE_ARRAY\"\n" +
+            "      ]\n" +
+            "    }\n" +
+            "  },\n" +
+            "  \"required\": [\n" +
+            "    \"bodyType\"\n" +
+            "  ]\n" +
+            "}";
+
 
     //for deserialization only
     protected Part(){}

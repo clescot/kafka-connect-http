@@ -114,7 +114,7 @@ class HttpRequestTest {
         //build httpRequest
         HttpRequest httpRequest = new HttpRequest(
                 "http://www.stuff.com",
-                HttpRequest.Method.POST,
+                HttpRequest.Method.POST, HttpRequest.BodyType.MULTIPART,
                 "multipart/form-data","---"
         );
         List<Part> parts = Lists.newArrayList();
@@ -140,20 +140,24 @@ class HttpRequestTest {
                 "http://www.stuff.com",
                 HttpRequest.Method.GET
         );
-        expectedHttpRequest.setBodyAsString(DUMMY_BODY_AS_STRING);
         Map<String,List<String>> headers = Maps.newHashMap();
         headers.put("X-correlation-id",Lists.newArrayList("sfds-55-77"));
         headers.put("X-request-id",Lists.newArrayList("aaaa-4466666-111"));
         expectedHttpRequest.setHeaders(headers);
-
+        expectedHttpRequest.setBodyAsString(DUMMY_BODY_AS_STRING);
         String httpRequestAsString = "{\n" +
                 "  \"url\": \"http://www.stuff.com\",\n" +
                 "  \"headers\":{\"X-request-id\":[\"aaaa-4466666-111\"],\"X-correlation-id\":[\"sfds-55-77\"]},\n" +
                 "  \"method\": \"GET\",\n" +
-                "  \"bodyAsString\": \"stuff\",\n" +
-                "  \"bodyAsByteArray\": \"\",\n" +
-                "  \"bodyAsMultipart\": [],\n" +
-                "  \"bodyType\": \"STRING\"\n" +
+                "  \"parts\": [" +
+                "{" +
+                "\"bodyType\":\"STRING\", " +
+                "\"contentType\":null, " +
+                "\"contentAsString\":\"stuff\", " +
+                "\"contentAsByteArray\":null, " +
+                "\"contentAsForm\":null" +
+                "}" +
+                "]" +
                 "}";
 
         HttpRequest parsedHttpRequest = objectMapper.readValue(httpRequestAsString, HttpRequest.class);
@@ -577,7 +581,7 @@ class HttpRequestTest {
         String dummyBodyType = "BYTE_ARRAY";
         Struct partStruct = new Struct(Part.SCHEMA);
         partStruct.put("bodyType", dummyBodyType);
-        partStruct.put("bodyAsByteArray", Base64.getEncoder().encodeToString(DUMMY_BODY_AS_STRING.getBytes(StandardCharsets.UTF_8)));
+        partStruct.put("bodyAsByteArray", DUMMY_BODY_AS_STRING.getBytes(StandardCharsets.UTF_8));
         struct.put(PARTS,Lists.newArrayList(partStruct));
         //when
         HttpRequest httpRequest = new HttpRequest(struct);
@@ -592,7 +596,7 @@ class HttpRequestTest {
     @Test
     void validate_schema_with_JsonSchemaProvider(){
         JsonSchemaProvider jsonSchemaProvider = new JsonSchemaProvider();
-        Optional<ParsedSchema> parsedSchema = jsonSchemaProvider.parseSchema(HttpRequest.SCHEMA_AS_STRING, Lists.newArrayList());
+        Optional<ParsedSchema> parsedSchema = jsonSchemaProvider.parseSchema(HttpRequest.JSON_SCHEMA, Lists.newArrayList());
         assertThat(parsedSchema).isPresent();
         parsedSchema.get().validate(true);
     }
@@ -600,7 +604,7 @@ class HttpRequestTest {
     @Test
     void validate_schema_with_AvroJsonSchemaProvider(){
         AvroSchemaProvider avroSchemaProviderSchemaProvider = new AvroSchemaProvider();
-        Optional<ParsedSchema> parsedSchema = avroSchemaProviderSchemaProvider.parseSchema(HttpRequest.SCHEMA_AS_STRING, Lists.newArrayList());
+        Optional<ParsedSchema> parsedSchema = avroSchemaProviderSchemaProvider.parseSchema(HttpRequest.JSON_SCHEMA, Lists.newArrayList());
         assertThat(parsedSchema).isNotPresent();
     }
 

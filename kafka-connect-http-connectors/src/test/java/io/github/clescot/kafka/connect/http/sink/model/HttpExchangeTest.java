@@ -5,8 +5,6 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import io.confluent.kafka.schemaregistry.ParsedSchema;
 import io.confluent.kafka.schemaregistry.client.MockSchemaRegistryClient;
-import io.confluent.kafka.schemaregistry.client.SchemaRegistryClient;
-import io.confluent.kafka.schemaregistry.client.rest.entities.SchemaReference;
 import io.confluent.kafka.schemaregistry.client.rest.exceptions.RestClientException;
 import io.confluent.kafka.schemaregistry.json.JsonSchema;
 import io.confluent.kafka.schemaregistry.json.JsonSchemaProvider;
@@ -64,7 +62,7 @@ public class HttpExchangeTest {
         JsonSchemaProvider jsonSchemaProvider = new JsonSchemaProvider();
 
         schemaRegistryClient = new MockSchemaRegistryClient(Lists.newArrayList(jsonSchemaProvider));
-        ParsedSchema parsedSchemaRequest = new JsonSchema(HttpRequest.SCHEMA_AS_STRING);
+        ParsedSchema parsedSchemaRequest = new JsonSchema(HttpRequest.JSON_SCHEMA);
         schemaRegistryClient.register("httpRequest", parsedSchemaRequest);
         ParsedSchema parsedSchemaResponse = new JsonSchema(HttpResponse.SCHEMA_AS_STRING);
         schemaRegistryClient.register("httpResponse", parsedSchemaResponse);
