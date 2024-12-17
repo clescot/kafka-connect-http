@@ -152,7 +152,6 @@ class HttpRequestTest {
                 "  \"parts\": [" +
                 "{" +
                 "\"bodyType\":\"STRING\", " +
-                "\"contentType\":null, " +
                 "\"contentAsString\":\"stuff\", " +
                 "\"contentAsByteArray\":null, " +
                 "\"contentAsForm\":null" +
@@ -184,7 +183,6 @@ class HttpRequestTest {
                 "  \"bodyAsString\": \"\",\n" +
                 "  \"bodyAsForm\": {},\n" +
                 "  \"bodyAsByteArray\": \"c3R1ZmY=\",\n" +
-                "  \"bodyAsMultipart\": [],\n" +
                 "  \"bodyType\": \"BYTE_ARRAY\"\n" +
                 "}";
 
@@ -572,19 +570,20 @@ class HttpRequestTest {
     @Test
     void test_with_struct_and_byte_array_nominal_case(){
         //given
-        Struct struct = new Struct(HttpRequest.SCHEMA);
+        Struct httpRequestStruct = new Struct(HttpRequest.SCHEMA);
         String dummyUrl = "http://stuff.com";
-        struct.put("url", dummyUrl);
+        httpRequestStruct.put("url", dummyUrl);
         HttpRequest.Method dummyMethod = HttpRequest.Method.POST;
-        struct.put("method", dummyMethod.name());
+        httpRequestStruct.put("method", dummyMethod.name());
 
         String dummyBodyType = "BYTE_ARRAY";
         Struct partStruct = new Struct(Part.SCHEMA);
         partStruct.put("bodyType", dummyBodyType);
         partStruct.put("bodyAsByteArray", DUMMY_BODY_AS_STRING.getBytes(StandardCharsets.UTF_8));
-        struct.put(PARTS,Lists.newArrayList(partStruct));
+
+        httpRequestStruct.put(PARTS,Lists.newArrayList(partStruct));
         //when
-        HttpRequest httpRequest = new HttpRequest(struct);
+        HttpRequest httpRequest = new HttpRequest(httpRequestStruct);
         //then
         assertThat(httpRequest).isNotNull();
         assertThat(httpRequest.getUrl()).isEqualTo(dummyUrl);

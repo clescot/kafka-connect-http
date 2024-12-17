@@ -54,10 +54,10 @@ public class HttpRequest implements Serializable {
     @JsonProperty
     private Map<String,String> bodyAsForm = Maps.newHashMap();
     @JsonProperty
-    private String bodyAsString = "";
-    private String multipartBoundary=UUID.randomUUID().toString();
+    private String bodyAsString = null;
+    private String multipartBoundary=null;
     @JsonProperty
-    private String bodyAsByteArray = "";
+    private String bodyAsByteArray = null;
 
     @JsonProperty
     private List<Part> parts = Lists.newArrayList();
@@ -76,7 +76,7 @@ public class HttpRequest implements Serializable {
             .field(BODY_TYPE,Schema.STRING_SCHEMA)
             .field(BODY_AS_STRING, Schema.OPTIONAL_STRING_SCHEMA)
             .field(BODY_AS_FORM, SchemaBuilder.map(Schema.STRING_SCHEMA, Schema.STRING_SCHEMA).optional().schema())
-            .field(BODY_AS_BYTE_ARRAY, Schema.OPTIONAL_BYTES_SCHEMA)
+            .field(BODY_AS_BYTE_ARRAY, Schema.OPTIONAL_STRING_SCHEMA)
             .field(PARTS,SchemaBuilder.array(Part.SCHEMA).optional().schema())
             .field(MULTIPART_CONTENT_TYPE,Schema.OPTIONAL_STRING_SCHEMA)
             .field(MULTIPART_BOUNDARY,Schema.OPTIONAL_STRING_SCHEMA)
@@ -136,7 +136,7 @@ public class HttpRequest implements Serializable {
             "    },\n" +
             "    \"parts\": {\n" +
             "      \"type\": \"array\",\n" +
-            "      \"connect.type\": \"map\" " +
+            "      \"connect.type\": \"map\",\n " +
             "      \"items\": {\n" +
             "        \"$ref\": \""+Part.SCHEMA_ID+"\"\n" +
             "      }\n" +
@@ -192,10 +192,14 @@ public class HttpRequest implements Serializable {
         this.method = HttpRequest.Method.valueOf(struct.getString(METHOD).toUpperCase());
         Preconditions.checkNotNull(method, "'method' is required");
 
+        this.bodyAsByteArray = struct.getString(BODY_AS_BYTE_ARRAY);
+        this.bodyAsString = struct.getString(BODY_AS_STRING);
+        this.bodyAsForm = struct.getMap(BODY_AS_FORM);
+
         this.multipartContentType = struct.getString(MULTIPART_CONTENT_TYPE);
         this.multipartBoundary = struct.getString(MULTIPART_BOUNDARY);
         this.parts = struct.getArray(PARTS);
-        if (parts != null && parts.size() > 1) {
+        if (parts != null) {
             //this is a multipart request
             for (Part part : parts) {
                 if (!headersFromPartAreValid(part)) {
@@ -316,20 +320,7 @@ public class HttpRequest implements Serializable {
     }
 
     public void setBodyAsString(String bodyAsString) {
-        if (parts == null) {
-            parts = Lists.newArrayList();
-        }
-        if (parts.isEmpty()) {
-            Part part = new Part(bodyAsString);
-            part.getHeaders().putIfAbsent(CONTENT_TYPE, Lists.newArrayList(APPLICATION_JSON));
-            parts.add(part);
-        }
-        if (parts.size() == 1) {
-            parts.get(0).setContentAsString(bodyAsString);
-        } else {
-            //parts has more than one part
-            throw new IllegalArgumentException("you cannot set a body to a multipart request. add a part instead");
-        }
+        this.bodyAsString = bodyAsString;
     }
 
     public void setBodyAsByteArray(byte[] content) {
@@ -348,53 +339,18 @@ public class HttpRequest implements Serializable {
 
 
     public void setBodyAsForm(Map<String, String> form) {
-        if (parts == null) {
-            parts = Lists.newArrayList();
-        }
-        if (parts.isEmpty()) {
-            Part part = new Part(form);
-            part.getHeaders().putIfAbsent(CONTENT_TYPE, Lists.newArrayList(APPLICATION_X_WWW_FORM_URLENCODED));
-            parts.add(part);
-        }
-        if (parts.size() == 1) {
-            parts.get(0).setContentAsForm(form);
-        } else {
-            //parts has more than one part
-            throw new IllegalArgumentException("you cannot set a body to a multipart request. add a part instead");
-        }
+        this.bodyAsForm = form;
     }
 
     @JsonIgnore
     public String getBodyAsString() {
-        if (parts == null || parts.isEmpty()) {
-            return null;
-        } else if (parts.size() == 1) {
-            Part part = parts.get(0);
-            if (BodyType.STRING.equals(part.getBodyType())) {
-                return part.getContentAsString();
-            } else {
-                return null;
-            }
-        } else {
-            return null;
-        }
+        return this.bodyAsString;
     }
 
 
     @JsonIgnore
     public Map<String, String> getBodyAsForm() {
-        if (parts == null || parts.isEmpty()) {
-            return null;
-        } else if (parts.size() == 1) {
-            Part part = parts.get(0);
-            if (BodyType.FORM.equals(part.getBodyType())) {
-                return part.getContentAsForm();
-            } else {
-                return null;
-            }
-        } else {
-            return null;
-        }
+        return bodyAsForm;
     }
 
     public enum BodyType {

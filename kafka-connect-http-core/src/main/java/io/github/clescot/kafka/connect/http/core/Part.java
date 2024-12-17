@@ -9,10 +9,7 @@ import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.data.SchemaBuilder;
 import org.apache.kafka.connect.data.Struct;
 
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
+import java.util.*;
 
 import static com.fasterxml.jackson.annotation.JsonInclude.*;
 
@@ -29,9 +26,8 @@ public class Part {
     public static final String CONTENT_TYPE = "Content-Type";
     private HttpRequest.BodyType bodyType;
     private Map<String,List<String>> headers = Maps.newHashMap();
-    private String contentType;
     private String contentAsString;
-    private byte[] contentAsByteArray;
+    private String contentAsByteArray;
     private Map<String, String> contentAsForm;
     public static final int VERSION = 1;
     public static final String HEADERS = "headers";
@@ -103,7 +99,7 @@ public class Part {
     public Part(byte[] contentAsByteArray) {
         this.bodyType = HttpRequest.BodyType.BYTE_ARRAY;
         headers.putIfAbsent(CONTENT_TYPE, Lists.newArrayList(APPLICATION_OCTET_STREAM));
-        this.contentAsByteArray = contentAsByteArray;
+        this.contentAsByteArray = Base64.getMimeEncoder().encodeToString(contentAsByteArray);
     }
 
     public Part(Map<String,String> contentAsForm) {
@@ -118,18 +114,16 @@ public class Part {
         this.contentAsString = contentAsString;
     }
 
+    public Part(Struct struct){
+        this.headers =  struct.getMap(HEADERS);
+        this.contentAsByteArray = struct.getString(BODY_AS_BYTE_ARRAY);
+    }
+
     public HttpRequest.BodyType getBodyType() {
         return bodyType;
     }
 
 
-    public String getContentType() {
-        return contentType;
-    }
-
-    public void setContentType(String contentType) {
-        this.contentType = contentType;
-    }
 
     public String getContentAsString(){
         return contentAsString;
@@ -137,7 +131,9 @@ public class Part {
 
 
     public void setContentAsByteArray(byte[] contentAsByteArray) {
-        this.contentAsByteArray = contentAsByteArray;
+        if(contentAsByteArray!=null) {
+            this.contentAsByteArray = Base64.getEncoder().encodeToString(contentAsByteArray);
+        }
     }
 
     public void setContentAsString(String contentAsString) {
@@ -153,7 +149,10 @@ public class Part {
     }
 
     public byte[] getContentAsByteArray() {
-        return contentAsByteArray;
+        if(contentAsByteArray!=null) {
+            return Base64.getMimeDecoder().decode(contentAsByteArray);
+        }
+        return null;
     }
 
     public Map<String, List<String>> getHeaders() {
@@ -176,7 +175,6 @@ public class Part {
         if (!(o instanceof Part)) return false;
         Part part = (Part) o;
         return bodyType == part.bodyType
-                && Objects.equals(contentType, part.contentType)
                 && Objects.equals(contentAsString, part.contentAsString)
                 && Objects.deepEquals(contentAsByteArray, part.contentAsByteArray)
                 && Objects.equals(contentAsForm, part.contentAsForm);
@@ -184,16 +182,15 @@ public class Part {
 
     @Override
     public int hashCode() {
-        return Objects.hash(bodyType, contentType, contentAsString, Arrays.hashCode(contentAsByteArray), contentAsForm);
+        return Objects.hash(bodyType, contentAsString, contentAsByteArray, contentAsForm);
     }
 
     @Override
     public String toString() {
         return "Part{" +
                 "bodyType:\"" + bodyType +
-                "\", \"contentType:\"" + contentType + '\"' +
                 ", \"contentAsString\":" + contentAsString + '\"' +
-                ", \"contentAsByteArray\":\"" + Arrays.toString(contentAsByteArray) +"\""+
+                ", \"contentAsByteArray\":\"" + contentAsByteArray +"\""+
                 ", \"contentAsForm\":\"" + contentAsForm +"\""+
                 '}';
     }
