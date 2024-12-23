@@ -44,7 +44,7 @@ public class Part {
             .field(BODY_TYPE,Schema.STRING_SCHEMA)
             .field(BODY_AS_STRING, Schema.OPTIONAL_STRING_SCHEMA)
             .field(BODY_AS_FORM, SchemaBuilder.map(Schema.STRING_SCHEMA, Schema.STRING_SCHEMA).optional().schema())
-            .field(BODY_AS_BYTE_ARRAY, Schema.OPTIONAL_BYTES_SCHEMA)
+            .field(BODY_AS_BYTE_ARRAY, Schema.OPTIONAL_STRING_SCHEMA)
             .optional()
             .schema();
     public static final String SCHEMA_ID = HttpExchange.BASE_SCHEMA_ID+ VERSION + "/"+"http-part.json";

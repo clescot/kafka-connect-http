@@ -181,28 +181,29 @@ public class HttpRequest implements Serializable {
         this.setParts(Lists.newArrayList(original.getParts()));
     }
 
-    public HttpRequest(Struct struct) {
-        this.url = struct.getString(URL);
+    public HttpRequest(Struct requestAsstruct) {
+        this.url = requestAsstruct.getString(URL);
         Preconditions.checkNotNull(url, "'url' is required");
 
-        Map<String, List<String>> headers = struct.getMap(HEADERS);
+        Map<String, List<String>> headers = requestAsstruct.getMap(HEADERS);
         if (headers != null && !headers.isEmpty()) {
             this.headers = headers;
         }
 
-        this.method = HttpRequest.Method.valueOf(struct.getString(METHOD).toUpperCase());
+        this.method = HttpRequest.Method.valueOf(requestAsstruct.getString(METHOD).toUpperCase());
         Preconditions.checkNotNull(method, "'method' is required");
 
-        this.bodyAsByteArray = struct.getString(BODY_AS_BYTE_ARRAY);
-        this.bodyAsString = struct.getString(BODY_AS_STRING);
-        this.bodyAsForm = struct.getMap(BODY_AS_FORM);
+        this.bodyAsByteArray = requestAsstruct.getString(BODY_AS_BYTE_ARRAY);
+        this.bodyAsString = requestAsstruct.getString(BODY_AS_STRING);
+        this.bodyAsForm = requestAsstruct.getMap(BODY_AS_FORM);
 
-        this.multipartContentType = struct.getString(MULTIPART_CONTENT_TYPE);
-        this.multipartBoundary = struct.getString(MULTIPART_BOUNDARY);
-        this.parts = struct.getArray(PARTS);
-        if (parts != null) {
+        this.multipartContentType = requestAsstruct.getString(MULTIPART_CONTENT_TYPE);
+        this.multipartBoundary = requestAsstruct.getString(MULTIPART_BOUNDARY);
+        List<Struct> structs = requestAsstruct.getArray(PARTS);
+        if (structs != null) {
             //this is a multipart request
-            for (Part part : parts) {
+            for (Struct struct : structs) {
+                Part part = new Part(struct);
                 if (!headersFromPartAreValid(part)) {
                     LOGGER.warn("this is a multipart request. headers from part are not valid : there is at least one header that is not 'Content-Disposition', 'Content-Type' or 'Content-Transfer-Encoding'. clearing headers from this part");
                     part.getHeaders().clear();

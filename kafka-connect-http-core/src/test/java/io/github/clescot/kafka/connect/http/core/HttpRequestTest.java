@@ -574,7 +574,7 @@ class HttpRequestTest {
         String dummyBodyType = "BYTE_ARRAY";
         Struct partStruct = new Struct(Part.SCHEMA);
         partStruct.put("bodyType", dummyBodyType);
-        partStruct.put("bodyAsByteArray", DUMMY_BODY_AS_STRING.getBytes(StandardCharsets.UTF_8));
+        partStruct.put("bodyAsByteArray", Base64.getEncoder().encodeToString(DUMMY_BODY_AS_STRING.getBytes(StandardCharsets.UTF_8)));
 
         httpRequestStruct.put(PARTS,Lists.newArrayList(partStruct));
         //when
