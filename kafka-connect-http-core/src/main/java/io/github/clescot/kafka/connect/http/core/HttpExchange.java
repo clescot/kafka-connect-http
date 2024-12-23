@@ -1,6 +1,5 @@
 package io.github.clescot.kafka.connect.http.core;
 
-import io.confluent.kafka.schemaregistry.annotations.SchemaReference;
 import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.data.SchemaBuilder;
 import org.apache.kafka.connect.data.Struct;
@@ -38,8 +37,8 @@ public class HttpExchange implements Serializable {
             // response
             .field(HTTP_RESPONSE, HttpResponse.SCHEMA)
             .schema();
-    public static final String BASE_SCHEMA_ID = "https://raw.githubusercontent.com/clescot/kafka-connect-http/master/kafka-connect-http-core/src/main/resources/schemas/json/versions/" + VERSION + "/";
-    public static final String SCHEMA_ID = BASE_SCHEMA_ID + "http-exchange.json";
+    public static final String BASE_SCHEMA_ID = "https://raw.githubusercontent.com/clescot/kafka-connect-http/master/kafka-connect-http-core/src/main/resources/schemas/json/versions/";
+    public static final String SCHEMA_ID = BASE_SCHEMA_ID + VERSION + "/"+ "http-exchange.json";
     public static final String SCHEMA_AS_STRING = "{\n" +
             "  \"$id\": \"" + SCHEMA_ID + "\",\n" +
             "  \"$schema\": \"http://json-schema.org/draft/20" + VERSION + "9-09/schema#\",\n" +

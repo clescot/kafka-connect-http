@@ -20,8 +20,8 @@ import org.apache.kafka.connect.data.Struct;
 import static com.fasterxml.jackson.annotation.JsonInclude.*;
 import static io.github.clescot.kafka.connect.http.core.Part.*;
 
-@io.confluent.kafka.schemaregistry.annotations.Schema(value = HttpRequest.JSON_SCHEMA,
-        refs = {})
+@io.confluent.kafka.schemaregistry.annotations.Schema(value = HttpRequest.SCHEMA_AS_STRING,
+        refs = {@io.confluent.kafka.schemaregistry.annotations.SchemaReference(name=Part.SCHEMA_ID, subject="httpPart",version = Part.VERSION)})
 @JsonInclude(Include.NON_EMPTY)
 public class HttpRequest implements Serializable {
 
@@ -55,6 +55,7 @@ public class HttpRequest implements Serializable {
     private Map<String,String> bodyAsForm = Maps.newHashMap();
     @JsonProperty
     private String bodyAsString = null;
+    @JsonProperty
     private String multipartBoundary=null;
     @JsonProperty
     private String bodyAsByteArray = null;
@@ -82,9 +83,9 @@ public class HttpRequest implements Serializable {
             .field(MULTIPART_BOUNDARY,Schema.OPTIONAL_STRING_SCHEMA)
             .schema();
 
-    public static final String SCHEMA_ID = HttpExchange.BASE_SCHEMA_ID+"http-request.json";
-    public static final String JSON_SCHEMA = "{\n" +
-            "  \"$id\": \"https://raw.githubusercontent.com/clescot/kafka-connect-http/master/kafka-connect-http-core/src/main/resources/schemas/json/versions/"+SCHEMA_ID+"\",\n" +
+    public static final String SCHEMA_ID = HttpExchange.BASE_SCHEMA_ID+ VERSION + "/"+"http-request.json";
+    public static final String SCHEMA_AS_STRING = "{\n" +
+            "  \"$id\": \""+SCHEMA_ID+"\",\n" +
             "  \"$schema\": \"http://json-schema.org/draft/2019-09/schema#\",\n" +
             "  \"title\": \"Http Request\",\n" +
             "  \"type\": \"object\",\n" +

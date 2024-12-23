@@ -16,7 +16,7 @@ import static com.fasterxml.jackson.annotation.JsonInclude.*;
 /**
  * part of a multi-part request.
  */
-@io.confluent.kafka.schemaregistry.annotations.Schema(value =Part.JSON_SCHEMA,
+@io.confluent.kafka.schemaregistry.annotations.Schema(value =Part.SCHEMA_AS_STRING,
         refs = {})
 @JsonInclude(Include.NON_NULL)
 public class Part {
@@ -47,10 +47,10 @@ public class Part {
             .field(BODY_AS_BYTE_ARRAY, Schema.OPTIONAL_BYTES_SCHEMA)
             .optional()
             .schema();
-    public static final String SCHEMA_ID = HttpExchange.BASE_SCHEMA_ID+"http-part.json";
-    public static final String JSON_SCHEMA =
+    public static final String SCHEMA_ID = HttpExchange.BASE_SCHEMA_ID+ VERSION + "/"+"http-part.json";
+    public static final String SCHEMA_AS_STRING =
             "{\n" +
-            "  \"$id\": \"https://raw.githubusercontent.com/clescot/kafka-connect-http/master/kafka-connect-http-core/src/main/resources/schemas/json/versions/"+SCHEMA_ID+"\",\n" +
+            "  \"$id\": \""+SCHEMA_ID+"\",\n" +
             "  \"$schema\": \"http://json-schema.org/draft/2019-09/schema#\",\n" +
             "  \"title\": \"Http Part\",\n" +
             "  \"type\": \"object\",\n" +

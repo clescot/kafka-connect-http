@@ -62,7 +62,7 @@ public class HttpExchangeTest {
         JsonSchemaProvider jsonSchemaProvider = new JsonSchemaProvider();
 
         schemaRegistryClient = new MockSchemaRegistryClient(Lists.newArrayList(jsonSchemaProvider));
-        ParsedSchema parsedSchemaRequest = new JsonSchema(HttpRequest.JSON_SCHEMA);
+        ParsedSchema parsedSchemaRequest = new JsonSchema(HttpRequest.SCHEMA_AS_STRING);
         schemaRegistryClient.register("httpRequest", parsedSchemaRequest);
         ParsedSchema parsedSchemaResponse = new JsonSchema(HttpResponse.SCHEMA_AS_STRING);
         schemaRegistryClient.register("httpResponse", parsedSchemaResponse);

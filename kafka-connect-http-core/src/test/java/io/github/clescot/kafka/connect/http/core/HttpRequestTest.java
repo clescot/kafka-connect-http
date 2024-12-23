@@ -10,6 +10,8 @@ import io.confluent.connect.json.JsonSchemaConverterConfig;
 import io.confluent.kafka.schemaregistry.ParsedSchema;
 import io.confluent.kafka.schemaregistry.avro.AvroSchemaProvider;
 import io.confluent.kafka.schemaregistry.client.MockSchemaRegistryClient;
+import io.confluent.kafka.schemaregistry.client.SchemaRegistryClient;
+import io.confluent.kafka.schemaregistry.client.rest.exceptions.RestClientException;
 import io.confluent.kafka.schemaregistry.json.JsonSchema;
 import io.confluent.kafka.schemaregistry.json.JsonSchemaProvider;
 import io.confluent.kafka.schemaregistry.json.JsonSchemaUtils;
@@ -23,6 +25,7 @@ import org.apache.kafka.connect.data.SchemaAndValue;
 import org.apache.kafka.connect.data.Struct;
 import org.json.JSONException;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.skyscreamer.jsonassert.JSONAssert;
 
@@ -38,6 +41,25 @@ class HttpRequestTest {
 
     private static final String DUMMY_BODY_AS_STRING = "stuff";
     private static final String DUMMY_TOPIC = "myTopic";
+
+    private SchemaRegistryClient schemaRegistryClient;
+    @BeforeEach
+    void setup() throws RestClientException, IOException {
+        schemaRegistryClient = new MockSchemaRegistryClient(Lists.newArrayList(new JsonSchemaProvider()));
+        //Register http part
+        ParsedSchema parsedPartSchema = new JsonSchema(Part.SCHEMA_AS_STRING);
+        schemaRegistryClient.register("httpPart",parsedPartSchema);
+        //register http request
+        ParsedSchema parsedHttpRequestSchema = new JsonSchema(HttpRequest.SCHEMA_AS_STRING);
+        schemaRegistryClient.register("httpRequest",parsedHttpRequestSchema);
+        //register http response
+        ParsedSchema parsedHttpResponseSchema = new JsonSchema(HttpResponse.SCHEMA_AS_STRING);
+        schemaRegistryClient.register("httpResponse",parsedHttpResponseSchema);
+        //register http exchange
+        ParsedSchema parsedHttpExchangeSchema = new JsonSchema(HttpExchange.SCHEMA_AS_STRING);
+        schemaRegistryClient.register("httpExchange",parsedHttpExchangeSchema);
+    }
+
 
     @Test
     void test_serialization() throws JsonProcessingException, JSONException {
@@ -149,14 +171,10 @@ class HttpRequestTest {
                 "  \"url\": \"http://www.stuff.com\",\n" +
                 "  \"headers\":{\"X-request-id\":[\"aaaa-4466666-111\"],\"X-correlation-id\":[\"sfds-55-77\"]},\n" +
                 "  \"method\": \"GET\",\n" +
-                "  \"parts\": [" +
-                "{" +
                 "\"bodyType\":\"STRING\", " +
-                "\"contentAsString\":\"stuff\", " +
-                "\"contentAsByteArray\":null, " +
-                "\"contentAsForm\":null" +
-                "}" +
-                "]" +
+                "\"bodyAsString\":\"stuff\", " +
+                "\"bodyAsByteArray\":null, " +
+                "\"bodyAsForm\":null" +
                 "}";
 
         HttpRequest parsedHttpRequest = objectMapper.readValue(httpRequestAsString, HttpRequest.class);
@@ -225,7 +243,6 @@ class HttpRequestTest {
         jsonSchemaSerializerConfig.put(KafkaJsonSchemaSerializerConfig.ONEOF_FOR_NULLABLES,""+useOneOfForNullables);
         jsonSchemaSerializerConfig.put(KafkaJsonSchemaSerializerConfig.FAIL_UNKNOWN_PROPERTIES,""+failUnknownProperties);
 
-        MockSchemaRegistryClient schemaRegistryClient = new MockSchemaRegistryClient(Lists.newArrayList(new JsonSchemaProvider()));
 
         KafkaJsonSchemaSerializer<HttpRequest> serializer = new KafkaJsonSchemaSerializer<>(schemaRegistryClient,jsonSchemaSerializerConfig);
 
@@ -258,14 +275,6 @@ class HttpRequestTest {
         SpecificationVersion jsonSchemaSpecification = SpecificationVersion.DRAFT_2019_09;
         boolean useOneOfForNullables=false;
         boolean failUnknownProperties=true;
-        //get JSON schema
-        JsonSchema expectedJsonSchema = JsonSchemaUtils.getSchema(
-                httpRequest,
-                jsonSchemaSpecification,
-                useOneOfForNullables,
-                failUnknownProperties,
-                null
-                );
 
         //serialize http as byte[]
         Map<String,String> jsonSchemaSerializerConfig = Maps.newHashMap();
@@ -275,7 +284,6 @@ class HttpRequestTest {
         jsonSchemaSerializerConfig.put(KafkaJsonSchemaSerializerConfig.ONEOF_FOR_NULLABLES,""+useOneOfForNullables);
         jsonSchemaSerializerConfig.put(KafkaJsonSchemaSerializerConfig.FAIL_UNKNOWN_PROPERTIES,""+failUnknownProperties);
 
-        MockSchemaRegistryClient schemaRegistryClient = new MockSchemaRegistryClient(Lists.newArrayList(new JsonSchemaProvider()));
 
         KafkaJsonSchemaSerializer<HttpRequest> serializer = new KafkaJsonSchemaSerializer<>(schemaRegistryClient,jsonSchemaSerializerConfig);
 
@@ -310,7 +318,6 @@ class HttpRequestTest {
         headers.put("X-request-id", Lists.newArrayList("11-999-ff-777"));
         httpRequest.setHeaders(headers);
 
-        MockSchemaRegistryClient schemaRegistryClient = new MockSchemaRegistryClient(Lists.newArrayList(new JsonSchemaProvider()));
 
         JsonSchemaConverter jsonSchemaConverter = new JsonSchemaConverter(schemaRegistryClient);
         Map<String,String> converterConfig= Maps.newHashMap();
@@ -355,7 +362,6 @@ class HttpRequestTest {
         jsonSchemaSerializerConfig.put(KafkaJsonSchemaSerializerConfig.WRITE_DATES_AS_ISO8601,"true");
         jsonSchemaSerializerConfig.put(KafkaJsonSchemaSerializerConfig.ONEOF_FOR_NULLABLES,""+useOneOfForNullables);
         jsonSchemaSerializerConfig.put(KafkaJsonSchemaSerializerConfig.FAIL_UNKNOWN_PROPERTIES,""+failUnknownProperties);
-        MockSchemaRegistryClient schemaRegistryClient = new MockSchemaRegistryClient(Lists.newArrayList(new JsonSchemaProvider()));
         KafkaJsonSchemaSerializer<HttpRequest> serializer = new KafkaJsonSchemaSerializer<>(schemaRegistryClient,jsonSchemaSerializerConfig);
 
         //when
@@ -394,7 +400,6 @@ class HttpRequestTest {
         headers.put("X-request-id", Lists.newArrayList("11-999-ff-777"));
         httpRequest.setHeaders(headers);
 
-        MockSchemaRegistryClient schemaRegistryClient = new MockSchemaRegistryClient(Lists.newArrayList(new JsonSchemaProvider()));
 
         JsonSchemaConverter jsonSchemaConverter = new JsonSchemaConverter(schemaRegistryClient);
         Map<String,String> converterConfig= Maps.newHashMap();
@@ -442,7 +447,6 @@ class HttpRequestTest {
         jsonSchemaSerializerConfig.put(KafkaJsonSchemaSerializerConfig.WRITE_DATES_AS_ISO8601,"true");
         jsonSchemaSerializerConfig.put(KafkaJsonSchemaSerializerConfig.ONEOF_FOR_NULLABLES,""+useOneOfForNullables);
         jsonSchemaSerializerConfig.put(KafkaJsonSchemaSerializerConfig.FAIL_UNKNOWN_PROPERTIES,""+failUnknownProperties);
-        MockSchemaRegistryClient schemaRegistryClient = new MockSchemaRegistryClient(Lists.newArrayList(new JsonSchemaProvider()));
         KafkaJsonSchemaSerializer<HttpRequest> serializer = new KafkaJsonSchemaSerializer<>(schemaRegistryClient,jsonSchemaSerializerConfig);
 
         //when
@@ -498,7 +502,6 @@ class HttpRequestTest {
         jsonSchemaSerializerConfig.put(KafkaJsonSchemaSerializerConfig.WRITE_DATES_AS_ISO8601,"true");
         jsonSchemaSerializerConfig.put(KafkaJsonSchemaSerializerConfig.ONEOF_FOR_NULLABLES,""+useOneOfForNullables);
         jsonSchemaSerializerConfig.put(KafkaJsonSchemaSerializerConfig.FAIL_UNKNOWN_PROPERTIES,""+failUnknownProperties);
-        MockSchemaRegistryClient schemaRegistryClient = new MockSchemaRegistryClient(Lists.newArrayList(new JsonSchemaProvider()));
         KafkaJsonSchemaSerializer<HttpRequest> serializer = new KafkaJsonSchemaSerializer<>(schemaRegistryClient,jsonSchemaSerializerConfig);
 
         //when
@@ -595,7 +598,7 @@ class HttpRequestTest {
     @Test
     void validate_schema_with_JsonSchemaProvider(){
         JsonSchemaProvider jsonSchemaProvider = new JsonSchemaProvider();
-        Optional<ParsedSchema> parsedSchema = jsonSchemaProvider.parseSchema(HttpRequest.JSON_SCHEMA, Lists.newArrayList());
+        Optional<ParsedSchema> parsedSchema = jsonSchemaProvider.parseSchema(HttpRequest.SCHEMA_AS_STRING, Lists.newArrayList());
         assertThat(parsedSchema).isPresent();
         parsedSchema.get().validate(true);
     }
@@ -603,7 +606,7 @@ class HttpRequestTest {
     @Test
     void validate_schema_with_AvroJsonSchemaProvider(){
         AvroSchemaProvider avroSchemaProviderSchemaProvider = new AvroSchemaProvider();
-        Optional<ParsedSchema> parsedSchema = avroSchemaProviderSchemaProvider.parseSchema(HttpRequest.JSON_SCHEMA, Lists.newArrayList());
+        Optional<ParsedSchema> parsedSchema = avroSchemaProviderSchemaProvider.parseSchema(HttpRequest.SCHEMA_AS_STRING, Lists.newArrayList());
         assertThat(parsedSchema).isNotPresent();
     }
 
