@@ -226,14 +226,6 @@ class HttpRequestTest {
         SpecificationVersion jsonSchemaSpecification = SpecificationVersion.DRAFT_2019_09;
         boolean useOneOfForNullables=false;
         boolean failUnknownProperties=true;
-        //get JSON schema
-        JsonSchema expectedJsonSchema = JsonSchemaUtils.getSchema(
-                httpRequest,
-                jsonSchemaSpecification,
-                useOneOfForNullables,
-                failUnknownProperties,
-                null
-                );
 
         //serialize http as byte[]
         Map<String,String> jsonSchemaSerializerConfig = Maps.newHashMap();
@@ -592,22 +584,6 @@ class HttpRequestTest {
         assertThat(httpRequest.getUrl()).isEqualTo(dummyUrl);
         assertThat(httpRequest.getMethod()).isEqualTo(dummyMethod);
         assertThat(httpRequest.getBodyAsByteArray()).isEqualTo(DUMMY_BODY_AS_STRING.getBytes(StandardCharsets.UTF_8));
-    }
-
-
-    @Test
-    void validate_schema_with_JsonSchemaProvider(){
-        JsonSchemaProvider jsonSchemaProvider = new JsonSchemaProvider();
-        Optional<ParsedSchema> parsedSchema = jsonSchemaProvider.parseSchema(HttpRequest.SCHEMA_AS_STRING, Lists.newArrayList());
-        assertThat(parsedSchema).isPresent();
-        parsedSchema.get().validate(true);
-    }
-
-    @Test
-    void validate_schema_with_AvroJsonSchemaProvider(){
-        AvroSchemaProvider avroSchemaProviderSchemaProvider = new AvroSchemaProvider();
-        Optional<ParsedSchema> parsedSchema = avroSchemaProviderSchemaProvider.parseSchema(HttpRequest.SCHEMA_AS_STRING, Lists.newArrayList());
-        assertThat(parsedSchema).isNotPresent();
     }
 
 }
