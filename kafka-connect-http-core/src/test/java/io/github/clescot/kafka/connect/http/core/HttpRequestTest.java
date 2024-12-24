@@ -31,6 +31,7 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
 
+import static io.github.clescot.kafka.connect.http.core.HttpRequest.BODY_AS_BYTE_ARRAY;
 import static io.github.clescot.kafka.connect.http.core.HttpRequest.PARTS;
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -528,7 +529,7 @@ class HttpRequestTest {
         struct.put("url","http://stuff.com");
         struct.put("method","GET");
         //when
-        Assertions.assertThrows(NullPointerException.class,()->new HttpRequest(struct));
+        Assertions.assertDoesNotThrow(()->new HttpRequest(struct));
     }
     @Test
     void test_with_struct_nominal_case(){
@@ -559,11 +560,9 @@ class HttpRequestTest {
         httpRequestStruct.put("method", dummyMethod.name());
 
         String dummyBodyType = "BYTE_ARRAY";
-        Struct partStruct = new Struct(HttpPart.SCHEMA);
-        partStruct.put("bodyType", dummyBodyType);
-        partStruct.put("bodyAsByteArray", Base64.getEncoder().encodeToString(DUMMY_BODY_AS_STRING.getBytes(StandardCharsets.UTF_8)));
+        httpRequestStruct.put(HttpRequest.BODY_TYPE, dummyBodyType);
+        httpRequestStruct.put(BODY_AS_BYTE_ARRAY, Base64.getEncoder().encodeToString(DUMMY_BODY_AS_STRING.getBytes(StandardCharsets.UTF_8)));
 
-        httpRequestStruct.put(PARTS,Lists.newArrayList(partStruct));
         //when
         HttpRequest httpRequest = new HttpRequest(httpRequestStruct);
         //then

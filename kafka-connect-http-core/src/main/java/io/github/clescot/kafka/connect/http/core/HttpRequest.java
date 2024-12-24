@@ -31,6 +31,7 @@ public class HttpRequest implements Serializable {
     public static final String URL = "url";
     public static final String METHOD = "method";
     public static final String HEADERS = "headers";
+    public static final String BODY_TYPE = "bodyType";
     public static final String BODY_AS_STRING = "bodyAsString";
     public static final String BODY_AS_BYTE_ARRAY = "bodyAsByteArray";
     public static final String BODY_AS_FORM = "bodyAsForm";
@@ -193,6 +194,8 @@ public class HttpRequest implements Serializable {
         this.method = HttpRequest.Method.valueOf(requestAsstruct.getString(METHOD).toUpperCase());
         Preconditions.checkNotNull(method, "'method' is required");
 
+        this.bodyType = BodyType.valueOf(Optional.ofNullable(requestAsstruct.getString(BODY_TYPE)).orElse(BodyType.STRING.name()));
+
         this.bodyAsByteArray = requestAsstruct.getString(BODY_AS_BYTE_ARRAY);
         this.bodyAsString = requestAsstruct.getString(BODY_AS_STRING);
         this.bodyAsForm = requestAsstruct.getMap(BODY_AS_FORM);
@@ -218,7 +221,7 @@ public class HttpRequest implements Serializable {
         if (headersFromPart != null && !headersFromPart.isEmpty()) {
             return headersFromPart.keySet().stream()
                     .filter(key -> !key.equalsIgnoreCase("Content-Disposition"))
-                    .filter(key -> !key.equalsIgnoreCase("Content-Type"))
+                    .filter(key -> !key.equalsIgnoreCase(CONTENT_TYPE))
                     .filter(key -> !key.equalsIgnoreCase("Content-Transfer-Encoding"))
                     .findAny().isEmpty();
 
@@ -332,8 +335,8 @@ public class HttpRequest implements Serializable {
             bodyType = BodyType.BYTE_ARRAY;
         }
         //if no Content-Type is set, we set the default application/octet-stream
-        if(headers!=null && doesNotContainHeader("Content-Type")){
-            headers.put("Content-Type",Lists.newArrayList("application/octet-stream"));
+        if(headers!=null && doesNotContainHeader(CONTENT_TYPE)){
+            headers.put(CONTENT_TYPE,Lists.newArrayList("application/octet-stream"));
         }
     }
 
@@ -353,8 +356,8 @@ public class HttpRequest implements Serializable {
     public void setBodyAsForm(Map<String, String> form) {
         this.bodyAsForm = form;
         bodyType = BodyType.FORM;
-        if(headers!=null && doesNotContainHeader("Content-Type")){
-            headers.put("Content-Type",Lists.newArrayList("application/x-www-form-urlencoded"));
+        if(headers!=null && doesNotContainHeader(CONTENT_TYPE)){
+            headers.put(CONTENT_TYPE,Lists.newArrayList("application/x-www-form-urlencoded"));
         }
     }
 
