@@ -11,8 +11,8 @@ import io.confluent.kafka.schemaregistry.client.SchemaRegistryClient;
 import io.confluent.kafka.schemaregistry.client.rest.exceptions.RestClientException;
 import io.confluent.kafka.schemaregistry.json.JsonSchema;
 import io.confluent.kafka.schemaregistry.json.JsonSchemaProvider;
+import io.github.clescot.kafka.connect.http.core.HttpPart;
 import io.github.clescot.kafka.connect.http.core.HttpRequest;
-import io.github.clescot.kafka.connect.http.core.Part;
 import io.github.clescot.kafka.connect.http.sink.mapper.DirectHttpRequestMapper;
 import org.apache.commons.jexl3.JexlBuilder;
 import org.apache.commons.jexl3.JexlEngine;
@@ -192,8 +192,8 @@ class DirectHttpRequestMapperTest {
         Map<String, List<String>> headers = Maps.newHashMap();
         headers.put("Content-Type", Lists.newArrayList("application/json"));
         httpRequest.setHeaders(headers);
-        Part part = new Part("stuff");
-        httpRequest.setParts(Lists.newArrayList(part));
+        HttpPart httpPart = new HttpPart("stuff");
+        httpRequest.setParts(Lists.newArrayList(httpPart));
         return httpRequest;
     }
 

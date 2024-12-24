@@ -18,10 +18,10 @@ import java.util.stream.Collectors;
 import org.apache.kafka.connect.data.Struct;
 
 import static com.fasterxml.jackson.annotation.JsonInclude.*;
-import static io.github.clescot.kafka.connect.http.core.Part.*;
+import static io.github.clescot.kafka.connect.http.core.HttpPart.*;
 
 @io.confluent.kafka.schemaregistry.annotations.Schema(value = HttpRequest.SCHEMA_AS_STRING,
-        refs = {@io.confluent.kafka.schemaregistry.annotations.SchemaReference(name=Part.SCHEMA_ID, subject="httpPart",version = Part.VERSION)})
+        refs = {@io.confluent.kafka.schemaregistry.annotations.SchemaReference(name= HttpPart.SCHEMA_ID, subject="httpPart",version = HttpPart.VERSION)})
 @JsonInclude(Include.NON_EMPTY)
 public class HttpRequest implements Serializable {
 
@@ -61,7 +61,7 @@ public class HttpRequest implements Serializable {
     private String bodyAsByteArray = null;
 
     @JsonProperty
-    private List<Part> parts = Lists.newArrayList();
+    private List<HttpPart> httpParts = Lists.newArrayList();
 
     @JsonProperty(defaultValue = "STRING")
     private BodyType bodyType;
@@ -69,7 +69,7 @@ public class HttpRequest implements Serializable {
     private String multipartContentType;
     public static final Schema SCHEMA = SchemaBuilder
             .struct()
-            .name(Part.class.getName())
+            .name(HttpPart.class.getName())
             .version(VERSION)
             .field(URL,Schema.STRING_SCHEMA)
             .field(HEADERS, SchemaBuilder.map(Schema.STRING_SCHEMA, SchemaBuilder.array(Schema.STRING_SCHEMA).schema()).build())
@@ -78,7 +78,7 @@ public class HttpRequest implements Serializable {
             .field(BODY_AS_STRING, Schema.OPTIONAL_STRING_SCHEMA)
             .field(BODY_AS_FORM, SchemaBuilder.map(Schema.STRING_SCHEMA, Schema.STRING_SCHEMA).optional().schema())
             .field(BODY_AS_BYTE_ARRAY, Schema.OPTIONAL_STRING_SCHEMA)
-            .field(PARTS,SchemaBuilder.array(Part.SCHEMA).optional().schema())
+            .field(PARTS,SchemaBuilder.array(HttpPart.SCHEMA).optional().schema())
             .field(MULTIPART_CONTENT_TYPE,Schema.OPTIONAL_STRING_SCHEMA)
             .field(MULTIPART_BOUNDARY,Schema.OPTIONAL_STRING_SCHEMA)
             .schema();
@@ -139,7 +139,7 @@ public class HttpRequest implements Serializable {
             "      \"type\": \"array\",\n" +
             "      \"connect.type\": \"map\",\n " +
             "      \"items\": {\n" +
-            "        \"$ref\": \""+Part.SCHEMA_ID+"\"\n" +
+            "        \"$ref\": \""+ HttpPart.SCHEMA_ID+"\"\n" +
             "      }\n" +
             "    }\n" +
             "  },\n" +
@@ -203,18 +203,18 @@ public class HttpRequest implements Serializable {
         if (structs != null) {
             //this is a multipart request
             for (Struct struct : structs) {
-                Part part = new Part(struct);
-                if (!headersFromPartAreValid(part)) {
+                HttpPart httpPart = new HttpPart(struct);
+                if (!headersFromPartAreValid(httpPart)) {
                     LOGGER.warn("this is a multipart request. headers from part are not valid : there is at least one header that is not 'Content-Disposition', 'Content-Type' or 'Content-Transfer-Encoding'. clearing headers from this part");
-                    part.getHeaders().clear();
+                    httpPart.getHeaders().clear();
                 }
             }
         }
 
     }
 
-    private boolean headersFromPartAreValid(Part part) {
-        Map<String, List<String>> headersFromPart = part.getHeaders();
+    private boolean headersFromPartAreValid(HttpPart httpPart) {
+        Map<String, List<String>> headersFromPart = httpPart.getHeaders();
         if (headersFromPart != null && !headersFromPart.isEmpty()) {
             return headersFromPart.keySet().stream()
                     .filter(key -> !key.equalsIgnoreCase("Content-Disposition"))
@@ -238,16 +238,16 @@ public class HttpRequest implements Serializable {
         this.multipartContentType = multipartContentType;
     }
 
-    public List<Part> getParts() {
-        return parts;
+    public List<HttpPart> getParts() {
+        return httpParts;
     }
 
-    public void setParts(List<Part> parts) {
-        this.parts = parts;
+    public void setParts(List<HttpPart> httpParts) {
+        this.httpParts = httpParts;
     }
 
-    public void addPart(Part part) {
-        parts.add(part);
+    public void addPart(HttpPart httpPart) {
+        httpParts.add(httpPart);
     }
 
 
@@ -284,14 +284,14 @@ public class HttpRequest implements Serializable {
         return url.equals(that.url)
                 && Objects.equals(headers, that.headers)
                 && method.equals(that.method)
-                && Objects.equals(parts, that.parts)
+                && Objects.equals(httpParts, that.httpParts)
                 && Objects.equals(multipartContentType, that.multipartContentType)
                 && Objects.equals(multipartBoundary, that.multipartBoundary);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(url, headers, method, parts, multipartContentType, multipartBoundary);
+        return Objects.hash(url, headers, method, httpParts, multipartContentType, multipartBoundary);
     }
 
     @Override
@@ -304,7 +304,7 @@ public class HttpRequest implements Serializable {
                 ", bodyAsForm=" + bodyAsForm +
                 ", bodyAsString='" + bodyAsString + '\'' +
                 ", multipartBoundary='" + multipartBoundary + '\'' +
-                ", parts=" + parts +
+                ", parts=" + httpParts +
                 ", bodyType=" + bodyType +
                 ", multipartContentType='" + multipartContentType + '\'' +
                 '}';
@@ -315,7 +315,7 @@ public class HttpRequest implements Serializable {
                 .put(URL, this.getUrl())
                 .put(HEADERS, this.getHeaders())
                 .put(METHOD, this.getMethod().name())
-                .put(PARTS, this.getParts().stream().map(Part::toStruct).collect(Collectors.toList()))
+                .put(PARTS, this.getParts().stream().map(HttpPart::toStruct).collect(Collectors.toList()))
                 .put(MULTIPART_CONTENT_TYPE, this.getMultipartContentType())
                 .put(MULTIPART_BOUNDARY, this.getMultipartBoundary())
                 ;
@@ -323,12 +323,22 @@ public class HttpRequest implements Serializable {
 
     public void setBodyAsString(String bodyAsString) {
         this.bodyAsString = bodyAsString;
+        this.bodyType = BodyType.STRING;
     }
 
     public void setBodyAsByteArray(byte[] content) {
         if(content!=null && content.length>0) {
             bodyAsByteArray = Base64.getEncoder().encodeToString(content);
+            bodyType = BodyType.BYTE_ARRAY;
         }
+        //if no Content-Type is set, we set the default application/octet-stream
+        if(headers!=null && doesNotContainHeader("Content-Type")){
+            headers.put("Content-Type",Lists.newArrayList("application/octet-stream"));
+        }
+    }
+
+    private boolean doesNotContainHeader(String key) {
+        return headers.keySet().stream().filter(k -> k.equalsIgnoreCase(key)).findAny().isEmpty();
     }
 
     @JsonIgnore
@@ -342,6 +352,10 @@ public class HttpRequest implements Serializable {
 
     public void setBodyAsForm(Map<String, String> form) {
         this.bodyAsForm = form;
+        bodyType = BodyType.FORM;
+        if(headers!=null && doesNotContainHeader("Content-Type")){
+            headers.put("Content-Type",Lists.newArrayList("application/x-www-form-urlencoded"));
+        }
     }
 
     @JsonIgnore

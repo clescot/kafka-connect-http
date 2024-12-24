@@ -16,10 +16,10 @@ import static com.fasterxml.jackson.annotation.JsonInclude.*;
 /**
  * part of a multi-part request.
  */
-@io.confluent.kafka.schemaregistry.annotations.Schema(value =Part.SCHEMA_AS_STRING,
+@io.confluent.kafka.schemaregistry.annotations.Schema(value = HttpPart.SCHEMA_AS_STRING,
         refs = {})
 @JsonInclude(Include.NON_NULL)
-public class Part {
+public class HttpPart {
     public static final String APPLICATION_X_WWW_FORM_URLENCODED = "application/x-www-form-urlencoded";
     public static final String APPLICATION_JSON = "application/json";
     public static final String APPLICATION_OCTET_STREAM = "application/octet-stream";
@@ -38,7 +38,7 @@ public class Part {
 
     public static final Schema SCHEMA = SchemaBuilder
             .struct()
-            .name(Part.class.getName())
+            .name(HttpPart.class.getName())
             .version(VERSION)
             .field(HEADERS, SchemaBuilder.map(Schema.STRING_SCHEMA, SchemaBuilder.array(Schema.STRING_SCHEMA).schema()).optional().build())
             .field(BODY_TYPE,Schema.STRING_SCHEMA)
@@ -95,26 +95,26 @@ public class Part {
 
 
     //for deserialization only
-    protected Part(){}
-    public Part(byte[] contentAsByteArray) {
+    protected HttpPart(){}
+    public HttpPart(byte[] contentAsByteArray) {
         this.bodyType = HttpRequest.BodyType.BYTE_ARRAY;
         headers.putIfAbsent(CONTENT_TYPE, Lists.newArrayList(APPLICATION_OCTET_STREAM));
         this.contentAsByteArray = Base64.getMimeEncoder().encodeToString(contentAsByteArray);
     }
 
-    public Part(Map<String,String> contentAsForm) {
+    public HttpPart(Map<String,String> contentAsForm) {
         this.bodyType = HttpRequest.BodyType.FORM;
         headers.putIfAbsent(CONTENT_TYPE, Lists.newArrayList(APPLICATION_X_WWW_FORM_URLENCODED));
         this.contentAsForm = contentAsForm;
     }
 
-    public Part(String contentAsString) {
+    public HttpPart(String contentAsString) {
         this.bodyType = HttpRequest.BodyType.STRING;
         headers.putIfAbsent(CONTENT_TYPE, Lists.newArrayList(APPLICATION_JSON));
         this.contentAsString = contentAsString;
     }
 
-    public Part(Struct struct){
+    public HttpPart(Struct struct){
         this.headers =  struct.getMap(HEADERS);
         this.contentAsByteArray = struct.getString(BODY_AS_BYTE_ARRAY);
     }
@@ -172,12 +172,12 @@ public class Part {
 
     @Override
     public boolean equals(Object o) {
-        if (!(o instanceof Part)) return false;
-        Part part = (Part) o;
-        return bodyType == part.bodyType
-                && Objects.equals(contentAsString, part.contentAsString)
-                && Objects.deepEquals(contentAsByteArray, part.contentAsByteArray)
-                && Objects.equals(contentAsForm, part.contentAsForm);
+        if (!(o instanceof HttpPart)) return false;
+        HttpPart httpPart = (HttpPart) o;
+        return bodyType == httpPart.bodyType
+                && Objects.equals(contentAsString, httpPart.contentAsString)
+                && Objects.deepEquals(contentAsByteArray, httpPart.contentAsByteArray)
+                && Objects.equals(contentAsForm, httpPart.contentAsForm);
     }
 
     @Override

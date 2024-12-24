@@ -8,13 +8,11 @@ import com.google.common.collect.Maps;
 import io.confluent.connect.json.JsonSchemaConverter;
 import io.confluent.connect.json.JsonSchemaConverterConfig;
 import io.confluent.kafka.schemaregistry.ParsedSchema;
-import io.confluent.kafka.schemaregistry.avro.AvroSchemaProvider;
 import io.confluent.kafka.schemaregistry.client.MockSchemaRegistryClient;
 import io.confluent.kafka.schemaregistry.client.SchemaRegistryClient;
 import io.confluent.kafka.schemaregistry.client.rest.exceptions.RestClientException;
 import io.confluent.kafka.schemaregistry.json.JsonSchema;
 import io.confluent.kafka.schemaregistry.json.JsonSchemaProvider;
-import io.confluent.kafka.schemaregistry.json.JsonSchemaUtils;
 import io.confluent.kafka.schemaregistry.json.SpecificationVersion;
 import io.confluent.kafka.serializers.json.KafkaJsonSchemaDeserializer;
 import io.confluent.kafka.serializers.json.KafkaJsonSchemaDeserializerConfig;
@@ -47,7 +45,7 @@ class HttpRequestTest {
     void setup() throws RestClientException, IOException {
         schemaRegistryClient = new MockSchemaRegistryClient(Lists.newArrayList(new JsonSchemaProvider()));
         //Register http part
-        ParsedSchema parsedPartSchema = new JsonSchema(Part.SCHEMA_AS_STRING);
+        ParsedSchema parsedPartSchema = new JsonSchema(HttpPart.SCHEMA_AS_STRING);
         schemaRegistryClient.register("httpPart",parsedPartSchema);
         //register http request
         ParsedSchema parsedHttpRequestSchema = new JsonSchema(HttpRequest.SCHEMA_AS_STRING);
@@ -80,9 +78,6 @@ class HttpRequestTest {
                 "  \"headers\":{\"X-request-id\":[\"aaaa-4466666-111\"],\"X-correlation-id\":[\"sfds-55-77\"]},\n" +
                 "  \"method\": \"GET\",\n" +
                 "  \"bodyAsString\": \"stuff\",\n" +
-                "  \"bodyAsForm\": {},\n" +
-                "  \"bodyAsByteArray\": \"\",\n" +
-                "  \"bodyAsMultipart\": [],\n" +
                 "  \"bodyType\": \"STRING\"\n" +
                 "}";
 
@@ -101,7 +96,7 @@ class HttpRequestTest {
         Map<String,List<String>> headers = Maps.newHashMap();
         headers.put("X-correlation-id",Lists.newArrayList("sfds-55-77"));
         headers.put("X-request-id",Lists.newArrayList("aaaa-4466666-111"));
-        headers.put("Content-Type",Lists.newArrayList(""));
+        headers.put("Content-Type",Lists.newArrayList("application/octet-stream"));
         httpRequest.setHeaders(headers);
         httpRequest.setBodyAsByteArray(DUMMY_BODY_AS_STRING.getBytes(StandardCharsets.UTF_8));
 
@@ -113,15 +108,7 @@ class HttpRequestTest {
                 "    \"Content-Type\" : [ \"application/octet-stream\" ]\n" +
                 "  },\n" +
                 "  \"method\" : \"POST\",\n" +
-                "  \"multipartBoundary\" : null,\n" +
-                "  \"multipartMimeType\" : null,\n" +
-                "  \"parts\" : [ {\n" +
-                "    \"bodyType\" : \"BYTE_ARRAY\",\n" +
-                "    \"contentType\" : \"application/octet-stream\",\n" +
-                "    \"contentAsString\" : null,\n" +
-                "    \"contentAsByteArray\" : \"c3R1ZmY=\",\n" +
-                "    \"contentAsForm\" : null\n" +
-                "  } ],\n" +
+                "  \"bodyAsByteArray\":\"c3R1ZmY=\","+
                 "  \"bodyType\" : \"BYTE_ARRAY\"\n" +
                 "}";
 
@@ -139,11 +126,11 @@ class HttpRequestTest {
                 HttpRequest.Method.POST, HttpRequest.BodyType.MULTIPART,
                 "multipart/form-data","---"
         );
-        List<Part> parts = Lists.newArrayList();
-        parts.add(new Part("part1".getBytes(StandardCharsets.UTF_8)));
-        parts.add(new Part("part2".getBytes(StandardCharsets.UTF_8)));
-        parts.add(new Part("part3".getBytes(StandardCharsets.UTF_8)));
-        httpRequest.setParts(parts);
+        List<HttpPart> httpParts = Lists.newArrayList();
+        httpParts.add(new HttpPart("part1".getBytes(StandardCharsets.UTF_8)));
+        httpParts.add(new HttpPart("part2".getBytes(StandardCharsets.UTF_8)));
+        httpParts.add(new HttpPart("part3".getBytes(StandardCharsets.UTF_8)));
+        httpRequest.setParts(httpParts);
         Map<String,List<String>> headers = Maps.newHashMap();
         headers.put("X-correlation-id",Lists.newArrayList("sfds-55-77"));
         headers.put("X-request-id",Lists.newArrayList("aaaa-4466666-111"));
@@ -172,9 +159,7 @@ class HttpRequestTest {
                 "  \"headers\":{\"X-request-id\":[\"aaaa-4466666-111\"],\"X-correlation-id\":[\"sfds-55-77\"]},\n" +
                 "  \"method\": \"GET\",\n" +
                 "\"bodyType\":\"STRING\", " +
-                "\"bodyAsString\":\"stuff\", " +
-                "\"bodyAsByteArray\":null, " +
-                "\"bodyAsForm\":null" +
+                "\"bodyAsString\":\"stuff\" " +
                 "}";
 
         HttpRequest parsedHttpRequest = objectMapper.readValue(httpRequestAsString, HttpRequest.class);
@@ -192,14 +177,13 @@ class HttpRequestTest {
         Map<String,List<String>> headers = Maps.newHashMap();
         headers.put("X-correlation-id",Lists.newArrayList("sfds-55-77"));
         headers.put("X-request-id",Lists.newArrayList("aaaa-4466666-111"));
+        headers.put("Content-Type",Lists.newArrayList("application/octet-stream"));
         expectedHttpRequest.setHeaders(headers);
 
         String httpRequestAsString = "{\n" +
                 "  \"url\": \"http://www.stuff.com\",\n" +
                 "  \"headers\":{\"X-request-id\":[\"aaaa-4466666-111\"],\"X-correlation-id\":[\"sfds-55-77\"]},\n" +
                 "  \"method\": \"POST\",\n" +
-                "  \"bodyAsString\": \"\",\n" +
-                "  \"bodyAsForm\": {},\n" +
                 "  \"bodyAsByteArray\": \"c3R1ZmY=\",\n" +
                 "  \"bodyType\": \"BYTE_ARRAY\"\n" +
                 "}";
@@ -250,7 +234,7 @@ class HttpRequestTest {
         assertThat(deserializedHttpRequest).isEqualTo(httpRequest);
     }
     @Test
-    void test_serialize_and_deserialize_http_request_with_byte_array_and_low_level_serializer() throws IOException {
+    void test_serialize_and_deserialize_http_request_with_byte_array_and_low_level_serializer() {
         //given
 
         //build httpRequest
@@ -263,6 +247,7 @@ class HttpRequestTest {
         headers.put("X-stuff", Lists.newArrayList("m-y-value"));
         headers.put("X-correlation-id", Lists.newArrayList("44-999-33-dd"));
         headers.put("X-request-id", Lists.newArrayList("11-999-ff-777"));
+        headers.put("Content-Type", Lists.newArrayList("application/octet-stream"));
         httpRequest.setHeaders(headers);
         SpecificationVersion jsonSchemaSpecification = SpecificationVersion.DRAFT_2019_09;
         boolean useOneOfForNullables=false;
@@ -425,6 +410,7 @@ class HttpRequestTest {
         headers.put("X-stuff", Lists.newArrayList("m-y-value"));
         headers.put("X-correlation-id", Lists.newArrayList("44-999-33-dd"));
         headers.put("X-request-id", Lists.newArrayList("11-999-ff-777"));
+        headers.put("Content-Type", Lists.newArrayList("application/octet-stream"));
         httpRequest.setHeaders(headers);
 
         SpecificationVersion jsonSchemaSpecification = SpecificationVersion.DRAFT_2019_09;
@@ -480,6 +466,7 @@ class HttpRequestTest {
         headers.put("X-stuff", Lists.newArrayList("m-y-value"));
         headers.put("X-correlation-id", Lists.newArrayList("44-999-33-dd"));
         headers.put("X-request-id", Lists.newArrayList("11-999-ff-777"));
+        headers.put("Content-Type", Lists.newArrayList("application/x-www-form-urlencoded"));
         httpRequest.setHeaders(headers);
 
         SpecificationVersion jsonSchemaSpecification = SpecificationVersion.DRAFT_2019_09;
@@ -572,7 +559,7 @@ class HttpRequestTest {
         httpRequestStruct.put("method", dummyMethod.name());
 
         String dummyBodyType = "BYTE_ARRAY";
-        Struct partStruct = new Struct(Part.SCHEMA);
+        Struct partStruct = new Struct(HttpPart.SCHEMA);
         partStruct.put("bodyType", dummyBodyType);
         partStruct.put("bodyAsByteArray", Base64.getEncoder().encodeToString(DUMMY_BODY_AS_STRING.getBytes(StandardCharsets.UTF_8)));
 
