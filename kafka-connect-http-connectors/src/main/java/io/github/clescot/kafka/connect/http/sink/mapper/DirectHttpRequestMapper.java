@@ -60,7 +60,7 @@ public class DirectHttpRequestMapper extends AbstractHttpRequestMapper {
             LOGGER.debug("schema type name referenced in Struct is '{}'", schemaTypeName);
             Integer version = schema.version();
             LOGGER.debug("schema version referenced in Struct is '{}'", version);
-
+            httpRequest = new HttpRequest(valueAsStruct);
             LOGGER.debug("httpRequest : {}", httpRequest);
         } else if (byte[].class.isAssignableFrom(valueClass)) {
             //we assume the value is a byte array
