@@ -165,7 +165,7 @@ public class HttpRequest implements Serializable {
         Preconditions.checkNotNull(method, "'method' is required");
         this.method = method;
         this.headers = MoreObjects.firstNonNull(headers,Maps.newHashMap());
-        this.bodyType = BodyType.MULTIPART;
+        this.bodyType = bodyType;
         if(parts!=null && !parts.isEmpty()){
             if(getContentType()==null){
                 //default multipart Content-Type
@@ -250,6 +250,9 @@ public class HttpRequest implements Serializable {
 
     public void setParts(List<HttpPart> httpParts) {
         this.parts = httpParts;
+        if(parts!=null && !parts.isEmpty()){
+            this.bodyType = BodyType.MULTIPART;
+        }
     }
 
     public void addPart(HttpPart httpPart) {
@@ -327,6 +330,7 @@ public class HttpRequest implements Serializable {
                 .put(URL, this.getUrl())
                 .put(HEADERS, this.getHeaders())
                 .put(METHOD, this.getMethod().name())
+                .put(BODY_TYPE,this.getBodyType().name())
                 .put(PARTS, this.getParts().stream().map(HttpPart::toStruct).collect(Collectors.toList()))
                 ;
     }

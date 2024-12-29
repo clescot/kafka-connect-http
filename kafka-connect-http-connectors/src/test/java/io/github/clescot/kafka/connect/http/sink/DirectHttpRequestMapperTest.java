@@ -188,13 +188,10 @@ class DirectHttpRequestMapperTest {
 
     @NotNull
     private static HttpRequest getDummyHttpRequest(String url) {
-        HttpRequest httpRequest = new HttpRequest(url, DUMMY_METHOD);
         Map<String, List<String>> headers = Maps.newHashMap();
         headers.put("Content-Type", Lists.newArrayList("application/json"));
-        httpRequest.setHeaders(headers);
         HttpPart httpPart = new HttpPart("stuff");
-        httpRequest.setParts(Lists.newArrayList(httpPart));
-        return httpRequest;
+        return new HttpRequest(url, DUMMY_METHOD,headers, HttpRequest.BodyType.MULTIPART,Lists.newArrayList(httpPart));
     }
 
     private String getDummyHttpRequestAsString() {
@@ -203,9 +200,6 @@ class DirectHttpRequestMapperTest {
                 "  \"headers\": {},\n" +
                 "  \"method\": \"" + DUMMY_METHOD + "\",\n" +
                 "  \"bodyAsString\": \"" + DUMMY_BODY + "\",\n" +
-                "  \"bodyAsByteArray\": [],\n" +
-                "  \"bodyAsForm\": {},\n" +
-                "  \"bodyAsMultipart\": [],\n" +
                 "  \"bodyType\": \"" + DUMMY_BODY_TYPE + "\"\n" +
                 "}";
     }
