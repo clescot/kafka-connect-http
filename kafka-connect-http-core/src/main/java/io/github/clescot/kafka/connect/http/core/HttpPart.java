@@ -1,5 +1,6 @@
 package io.github.clescot.kafka.connect.http.core;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.google.common.base.Joiner;
 import com.google.common.base.Preconditions;
@@ -168,6 +169,17 @@ public class HttpPart {
                         "or 'Content-Transfer-Encoding'. current Headers key of this part are : "
                         + Joiner.on(",").join(headers.keySet()));
         this.headers = headers;
+    }
+
+    @JsonIgnore
+    public String getContentType(){
+        if(headers != null
+                && headers.containsKey(CONTENT_TYPE)
+                &&headers.get(CONTENT_TYPE)!=null
+                &&!headers.get(CONTENT_TYPE).isEmpty()){
+            return headers.get("Content-Type").get(0);
+        }
+        return null;
     }
 
     @Override

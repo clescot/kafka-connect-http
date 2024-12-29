@@ -128,9 +128,12 @@ class HttpRequestTest {
                 "multipart/form-data","---"
         );
         List<HttpPart> httpParts = Lists.newArrayList();
-        httpParts.add(new HttpPart("part1".getBytes(StandardCharsets.UTF_8)));
-        httpParts.add(new HttpPart("part2".getBytes(StandardCharsets.UTF_8)));
-        httpParts.add(new HttpPart("part3".getBytes(StandardCharsets.UTF_8)));
+        HttpPart part1 = new HttpPart("part1".getBytes(StandardCharsets.UTF_8));
+        httpParts.add(part1);
+        HttpPart part2 = new HttpPart("part2".getBytes(StandardCharsets.UTF_8));
+        httpParts.add(part2);
+        HttpPart part3 = new HttpPart("part3".getBytes(StandardCharsets.UTF_8));
+        httpParts.add(part3);
         httpRequest.setParts(httpParts);
         Map<String,List<String>> headers = Maps.newHashMap();
         headers.put("X-correlation-id",Lists.newArrayList("sfds-55-77"));

@@ -18,7 +18,6 @@ import java.util.stream.Collectors;
 import org.apache.kafka.connect.data.Struct;
 
 import static com.fasterxml.jackson.annotation.JsonInclude.*;
-import static io.github.clescot.kafka.connect.http.core.HttpPart.*;
 
 @io.confluent.kafka.schemaregistry.annotations.Schema(value = HttpRequest.SCHEMA_AS_STRING,
         refs = {@io.confluent.kafka.schemaregistry.annotations.SchemaReference(name= HttpPart.SCHEMA_ID, subject="httpPart",version = HttpPart.VERSION)})
@@ -62,7 +61,7 @@ public class HttpRequest implements Serializable {
     private String bodyAsByteArray = null;
 
     @JsonProperty
-    private List<HttpPart> httpParts = Lists.newArrayList();
+    private List<HttpPart> parts = Lists.newArrayList();
 
     @JsonProperty(defaultValue = "STRING")
     private BodyType bodyType;
@@ -120,12 +119,6 @@ public class HttpRequest implements Serializable {
             "    },\n" +
             "    \"bodyAsByteArray\": {\n" +
             "      \"type\": \"string\"\n" +
-            "    },\n" +
-            "    \"bodyAsMultipart\": {\n" +
-            "      \"type\": \"array\",\n" +
-            "      \"items\": {\n" +
-            "        \"type\": \"string\"\n" +
-            "      }\n" +
             "    },\n" +
             "    \"bodyType\": {\n" +
             "      \"type\": \"string\",\n" +
@@ -242,18 +235,26 @@ public class HttpRequest implements Serializable {
     }
 
     public List<HttpPart> getParts() {
-        return httpParts;
+        return parts;
     }
 
     public void setParts(List<HttpPart> httpParts) {
-        this.httpParts = httpParts;
+        this.parts = httpParts;
     }
 
     public void addPart(HttpPart httpPart) {
-        httpParts.add(httpPart);
+        parts.add(httpPart);
     }
 
-
+    public String getContentType(){
+        if(headers != null
+                && headers.containsKey(CONTENT_TYPE)
+                &&headers.get(CONTENT_TYPE)!=null
+                &&!headers.get(CONTENT_TYPE).isEmpty()){
+            return headers.get("Content-Type").get(0);
+        }
+        return null;
+    }
 
     public Map<String, List<String>> getHeaders() {
        return headers;
@@ -287,14 +288,14 @@ public class HttpRequest implements Serializable {
         return url.equals(that.url)
                 && Objects.equals(headers, that.headers)
                 && method.equals(that.method)
-                && Objects.equals(httpParts, that.httpParts)
+                && Objects.equals(parts, that.parts)
                 && Objects.equals(multipartContentType, that.multipartContentType)
                 && Objects.equals(multipartBoundary, that.multipartBoundary);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(url, headers, method, httpParts, multipartContentType, multipartBoundary);
+        return Objects.hash(url, headers, method, parts, multipartContentType, multipartBoundary);
     }
 
     @Override
@@ -307,7 +308,7 @@ public class HttpRequest implements Serializable {
                 ", bodyAsForm=" + bodyAsForm +
                 ", bodyAsString='" + bodyAsString + '\'' +
                 ", multipartBoundary='" + multipartBoundary + '\'' +
-                ", parts=" + httpParts +
+                ", parts=" + parts +
                 ", bodyType=" + bodyType +
                 ", multipartContentType='" + multipartContentType + '\'' +
                 '}';
