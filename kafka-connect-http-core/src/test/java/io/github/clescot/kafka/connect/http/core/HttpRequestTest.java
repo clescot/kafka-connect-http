@@ -120,12 +120,13 @@ class HttpRequestTest {
     void test_serialization_with_multipart() throws JsonProcessingException {
         ObjectMapper objectMapper = new ObjectMapper();
         objectMapper.registerModule(new JavaTimeModule());
-
+        Map<String,List<String>> headers = Maps.newHashMap();
+        headers.put("Content-Type",Lists.newArrayList(
+                "multipart/form-data; boundary=45789ee5"));
         //build httpRequest
         HttpRequest httpRequest = new HttpRequest(
                 "http://www.stuff.com",
-                HttpRequest.Method.POST, HttpRequest.BodyType.MULTIPART,
-                "multipart/form-data","---"
+                HttpRequest.Method.POST,headers, HttpRequest.BodyType.MULTIPART
         );
         List<HttpPart> httpParts = Lists.newArrayList();
         HttpPart part1 = new HttpPart("part1".getBytes(StandardCharsets.UTF_8));
@@ -135,7 +136,6 @@ class HttpRequestTest {
         HttpPart part3 = new HttpPart("part3".getBytes(StandardCharsets.UTF_8));
         httpParts.add(part3);
         httpRequest.setParts(httpParts);
-        Map<String,List<String>> headers = Maps.newHashMap();
         headers.put("X-correlation-id",Lists.newArrayList("sfds-55-77"));
         headers.put("X-request-id",Lists.newArrayList("aaaa-4466666-111"));
         httpRequest.setHeaders(headers);

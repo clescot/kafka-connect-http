@@ -3,6 +3,7 @@ package io.github.clescot.kafka.connect.http.core;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.google.common.base.MoreObjects;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
@@ -35,8 +36,6 @@ public class HttpRequest implements Serializable {
     public static final String BODY_AS_BYTE_ARRAY = "bodyAsByteArray";
     public static final String BODY_AS_FORM = "bodyAsForm";
     public static final String PARTS = "parts";
-    public static final String MULTIPART_CONTENT_TYPE = "multipartContentType";
-    public static final String MULTIPART_BOUNDARY = "multipartBoundary";
 
     public static final int VERSION = 2;
     public static final String CONTENT_TYPE = "Content-Type";
@@ -56,8 +55,6 @@ public class HttpRequest implements Serializable {
     @JsonProperty
     private String bodyAsString = null;
     @JsonProperty
-    private String multipartBoundary=null;
-    @JsonProperty
     private String bodyAsByteArray = null;
 
     @JsonProperty
@@ -65,8 +62,6 @@ public class HttpRequest implements Serializable {
 
     @JsonProperty(defaultValue = "STRING")
     private BodyType bodyType;
-    @JsonProperty(defaultValue = "multipart/form-data")
-    private String multipartContentType;
     public static final Schema SCHEMA = SchemaBuilder
             .struct()
             .name(HttpPart.class.getName())
@@ -79,8 +74,6 @@ public class HttpRequest implements Serializable {
             .field(BODY_AS_FORM, SchemaBuilder.map(Schema.STRING_SCHEMA, Schema.STRING_SCHEMA).optional().schema())
             .field(BODY_AS_BYTE_ARRAY, Schema.OPTIONAL_STRING_SCHEMA)
             .field(PARTS,SchemaBuilder.array(HttpPart.SCHEMA).optional().schema())
-            .field(MULTIPART_CONTENT_TYPE,Schema.OPTIONAL_STRING_SCHEMA)
-            .field(MULTIPART_BOUNDARY,Schema.OPTIONAL_STRING_SCHEMA)
             .schema();
 
     public static final String SCHEMA_ID = HttpExchange.BASE_SCHEMA_ID+ VERSION + "/"+"http-request.json";
@@ -150,30 +143,55 @@ public class HttpRequest implements Serializable {
     protected HttpRequest() {
     }
     public HttpRequest(String url){
-        this(url,HttpRequest.Method.GET,BodyType.STRING,null,null);
+        this(url,HttpRequest.Method.GET,Maps.newHashMap(),BodyType.STRING,null);
     }
     public HttpRequest(String url,HttpRequest.Method method){
-        this(url,method,BodyType.STRING,null,null);
+        this(url,method,Maps.newHashMap(),BodyType.STRING,null);
+    }
+    public HttpRequest(String url,HttpRequest.Method method,Map<String, List<String>> headers){
+        this(url,method,headers,BodyType.STRING,null);
+    }
+    public HttpRequest(String url,HttpRequest.Method method,Map<String, List<String>> headers,BodyType bodyType){
+        this(url,method,headers,bodyType,null);
     }
     public HttpRequest(String url,
                        HttpRequest.Method method,
+                       Map<String, List<String>> headers,
                        BodyType bodyType,
-                       String multipartContentType,
-                       String multipartBoundary) {
+                       List<HttpPart> parts) {
         Preconditions.checkNotNull(url, "url is required");
         Preconditions.checkNotNull(bodyType, "bodyType is required");
         this.url = url;
         Preconditions.checkNotNull(method, "'method' is required");
         this.method = method;
-        this.multipartContentType = multipartContentType;
-        this.multipartBoundary = multipartBoundary;
+        this.headers = MoreObjects.firstNonNull(headers,Maps.newHashMap());
+        this.bodyType = BodyType.MULTIPART;
+        if(parts!=null && !parts.isEmpty()){
+            if(getContentType()==null){
+                //default multipart Content-Type
+                setContentType("multipart/form-data; boundary="+UUID.randomUUID());
+            }
+            this.parts = parts;
+        }else{
+            this.parts = Lists.newArrayList();
+        }
+
+
     }
 
     public HttpRequest(HttpRequest original) {
-        this(original.getUrl(), original.getMethod(), original.getBodyType(),original.getMultipartContentType(), original.getMultipartBoundary());
+        this(
+                original.getUrl(),
+                original.getMethod(),
+                original.getHeaders(),
+                original.getBodyType(),
+                original.getParts()
+        );
         this.setHeaders(Maps.newHashMap(original.getHeaders()));
         this.setParts(Lists.newArrayList(original.getParts()));
     }
+
+
 
     public HttpRequest(Struct requestAsstruct) {
         this.url = requestAsstruct.getString(URL);
@@ -182,6 +200,8 @@ public class HttpRequest implements Serializable {
         Map<String, List<String>> headers = requestAsstruct.getMap(HEADERS);
         if (headers != null && !headers.isEmpty()) {
             this.headers = headers;
+        }else{
+            this.headers = Maps.newHashMap();
         }
 
         this.method = HttpRequest.Method.valueOf(requestAsstruct.getString(METHOD).toUpperCase());
@@ -193,8 +213,6 @@ public class HttpRequest implements Serializable {
         this.bodyAsString = requestAsstruct.getString(BODY_AS_STRING);
         this.bodyAsForm = requestAsstruct.getMap(BODY_AS_FORM);
 
-        this.multipartContentType = requestAsstruct.getString(MULTIPART_CONTENT_TYPE);
-        this.multipartBoundary = requestAsstruct.getString(MULTIPART_BOUNDARY);
         List<Struct> structs = requestAsstruct.getArray(PARTS);
         if (structs != null) {
             //this is a multipart request
@@ -226,14 +244,6 @@ public class HttpRequest implements Serializable {
         return bodyType;
     }
 
-    public String getMultipartContentType() {
-        return multipartContentType;
-    }
-
-    public void setMultipartContentType(String multipartContentType) {
-        this.multipartContentType = multipartContentType;
-    }
-
     public List<HttpPart> getParts() {
         return parts;
     }
@@ -246,14 +256,19 @@ public class HttpRequest implements Serializable {
         parts.add(httpPart);
     }
 
+    @JsonIgnore
     public String getContentType(){
         if(headers != null
                 && headers.containsKey(CONTENT_TYPE)
                 &&headers.get(CONTENT_TYPE)!=null
                 &&!headers.get(CONTENT_TYPE).isEmpty()){
-            return headers.get("Content-Type").get(0);
+            return headers.get(CONTENT_TYPE).get(0);
         }
         return null;
+    }
+
+    public void setContentType(String contentType){
+        headers.put(CONTENT_TYPE,Lists.newArrayList(contentType));
     }
 
     public Map<String, List<String>> getHeaders() {
@@ -272,13 +287,6 @@ public class HttpRequest implements Serializable {
             this.headers = headers;
     }
 
-    public String getMultipartBoundary() {
-        return multipartBoundary;
-    }
-
-    public void setMultipartBoundary(String multipartBoundary) {
-        this.multipartBoundary = multipartBoundary;
-    }
 
     @Override
     public boolean equals(Object o) {
@@ -288,14 +296,12 @@ public class HttpRequest implements Serializable {
         return url.equals(that.url)
                 && Objects.equals(headers, that.headers)
                 && method.equals(that.method)
-                && Objects.equals(parts, that.parts)
-                && Objects.equals(multipartContentType, that.multipartContentType)
-                && Objects.equals(multipartBoundary, that.multipartBoundary);
+                && Objects.equals(parts, that.parts);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(url, headers, method, parts, multipartContentType, multipartBoundary);
+        return Objects.hash(url, headers, method, parts);
     }
 
     @Override
@@ -307,10 +313,8 @@ public class HttpRequest implements Serializable {
                 ", method=" + method +
                 ", bodyAsForm=" + bodyAsForm +
                 ", bodyAsString='" + bodyAsString + '\'' +
-                ", multipartBoundary='" + multipartBoundary + '\'' +
                 ", parts=" + parts +
                 ", bodyType=" + bodyType +
-                ", multipartContentType='" + multipartContentType + '\'' +
                 '}';
     }
 
@@ -320,8 +324,6 @@ public class HttpRequest implements Serializable {
                 .put(HEADERS, this.getHeaders())
                 .put(METHOD, this.getMethod().name())
                 .put(PARTS, this.getParts().stream().map(HttpPart::toStruct).collect(Collectors.toList()))
-                .put(MULTIPART_CONTENT_TYPE, this.getMultipartContentType())
-                .put(MULTIPART_BOUNDARY, this.getMultipartBoundary())
                 ;
     }
 
