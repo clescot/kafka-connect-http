@@ -14,7 +14,7 @@ import java.util.Objects;
 @io.confluent.kafka.schemaregistry.annotations.Schema(value = HttpResponse.SCHEMA_AS_STRING,
         refs = {})
 public class HttpResponse implements Serializable {
-    private static final Integer VERSION = 2;
+    public static final Integer VERSION = 2;
 
     public static final String STATUS_CODE = "statusCode";
     public static final String STATUS_MESSAGE = "statusMessage";

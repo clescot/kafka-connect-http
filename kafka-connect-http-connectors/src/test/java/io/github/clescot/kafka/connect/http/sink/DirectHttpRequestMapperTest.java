@@ -11,8 +11,10 @@ import io.confluent.kafka.schemaregistry.client.SchemaRegistryClient;
 import io.confluent.kafka.schemaregistry.client.rest.exceptions.RestClientException;
 import io.confluent.kafka.schemaregistry.json.JsonSchema;
 import io.confluent.kafka.schemaregistry.json.JsonSchemaProvider;
+import io.github.clescot.kafka.connect.http.core.HttpExchange;
 import io.github.clescot.kafka.connect.http.core.HttpPart;
 import io.github.clescot.kafka.connect.http.core.HttpRequest;
+import io.github.clescot.kafka.connect.http.core.HttpResponse;
 import io.github.clescot.kafka.connect.http.sink.mapper.DirectHttpRequestMapper;
 import org.apache.commons.jexl3.JexlBuilder;
 import org.apache.commons.jexl3.JexlEngine;
@@ -104,7 +106,10 @@ class DirectHttpRequestMapperTest {
             HttpRequest dummyHttpRequest = getDummyHttpRequest(DUMMY_URL);
             String topic = "myTopic";
             SchemaRegistryClient schemaRegistryClient = getSchemaRegistryClient();
-            registerSchema(schemaRegistryClient, topic, 1, 1, HttpRequest.SCHEMA_AS_STRING);
+            registerSchema(schemaRegistryClient, topic, HttpPart.VERSION, 1, HttpPart.SCHEMA_AS_STRING);
+            registerSchema(schemaRegistryClient, topic, HttpRequest.VERSION, 1, HttpRequest.SCHEMA_AS_STRING);
+            registerSchema(schemaRegistryClient, topic, HttpResponse.VERSION, 1, HttpResponse.SCHEMA_AS_STRING);
+            registerSchema(schemaRegistryClient, topic, HttpExchange.VERSION, 1, HttpExchange.SCHEMA_AS_STRING);
 
 
             JsonSchemaConverter jsonSchemaConverter = getJsonSchemaConverter(schemaRegistryClient);

@@ -17,7 +17,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class HttpExchange implements Serializable {
 
     public static final long serialVersionUID = 1L;
-    public static final String VERSION = "2";
+    public static final int VERSION = 2;
     public static final int HTTP_EXCHANGE_VERSION = 2;
     public static final String DURATION_IN_MILLIS = "durationInMillis";
     public static final String MOMENT = "moment";
