@@ -296,12 +296,16 @@ public class HttpRequest implements Serializable {
         return url.equals(that.url)
                 && Objects.equals(headers, that.headers)
                 && method.equals(that.method)
-                && Objects.equals(parts, that.parts);
+                && Objects.equals(parts, that.parts)
+                && Objects.equals(bodyAsByteArray, that.bodyAsByteArray)
+                && Objects.equals(bodyAsForm, that.bodyAsForm)
+                && Objects.equals(bodyAsString, that.bodyAsString)
+                ;
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(url, headers, method, parts);
+        return Objects.hash(url, headers, method, parts,bodyAsByteArray,bodyAsForm,bodyAsString);
     }
 
     @Override
