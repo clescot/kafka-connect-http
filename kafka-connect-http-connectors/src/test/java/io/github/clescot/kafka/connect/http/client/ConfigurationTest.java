@@ -108,7 +108,7 @@ class ConfigurationTest {
             Configuration<Request, Response> configuration = new Configuration<>("test", new OkHttpClientFactory(),httpSinkConnectorConfig, executorService, getCompositeMeterRegistry());
             HttpRequest httpRequest1 = new HttpRequest("http://toto.com", HttpRequest.Method.GET);
             assertThat(configuration.matches(httpRequest1)).isTrue();
-            HttpRequest httpRequest2 = new HttpRequest("http://toto.com", HttpRequest.Method.GET);
+            HttpRequest httpRequest2 = new HttpRequest("http://titi.com", HttpRequest.Method.GET);
             assertThat(configuration.matches(httpRequest2)).isFalse();
 
         }
