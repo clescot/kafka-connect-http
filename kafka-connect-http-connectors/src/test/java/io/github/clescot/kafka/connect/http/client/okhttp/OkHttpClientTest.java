@@ -100,7 +100,7 @@ class OkHttpClientTest {
     @Nested
     class BuildRequest {
         @Test
-        void test_build_POST_request() throws IOException {
+        void test_build_POST_request_with_body_as_string() throws IOException {
 
             //given
             HashMap<String, Object> config = Maps.newHashMap();
@@ -122,10 +122,57 @@ class OkHttpClientTest {
             assertThat(buffer.readUtf8()).isEqualTo(httpRequest.getBodyAsString());
         }
 
+        @Test
+        void test_build_PUT_request_with_body_as_string() throws IOException {
+
+            //given
+            HashMap<String, Object> config = Maps.newHashMap();
+            config.put(CONFIGURATION_ID,"default");
+            io.github.clescot.kafka.connect.http.client.okhttp.OkHttpClient client = new io.github.clescot.kafka.connect.http.client.okhttp.OkHttpClient(config, null, new Random(), null, null, getCompositeMeterRegistry());
+            HttpRequest httpRequest = new HttpRequest("http://dummy.com/", HttpRequest.Method.PUT);
+            httpRequest.setBodyAsString("stuff");
+
+            //given
+            Request request = client.buildRequest(httpRequest);
+
+            //then
+            LOGGER.debug("request:{}", request);
+            assertThat(request.url().url().toString()).hasToString(httpRequest.getUrl());
+            assertThat(request.method()).isEqualTo(httpRequest.getMethod().name());
+            RequestBody body = request.body();
+            final Buffer buffer = new Buffer();
+            body.writeTo(buffer);
+            assertThat(buffer.readUtf8()).isEqualTo(httpRequest.getBodyAsString());
+        }
+        @Test
+        void test_build_PUT_request_with_body_as_byte_array() throws IOException {
+
+            //given
+            HashMap<String, Object> config = Maps.newHashMap();
+            config.put(CONFIGURATION_ID,"default");
+            io.github.clescot.kafka.connect.http.client.okhttp.OkHttpClient client = new io.github.clescot.kafka.connect.http.client.okhttp.OkHttpClient(config, null, new Random(), null, null, getCompositeMeterRegistry());
+            HttpRequest httpRequest = new HttpRequest("http://dummy.com/", HttpRequest.Method.PUT);
+            httpRequest.setBodyAsByteArray("stuff".getBytes(StandardCharsets.UTF_8));
+
+            //given
+            Request request = client.buildRequest(httpRequest);
+
+            //then
+            LOGGER.debug("request:{}", request);
+            assertThat(request.url().url().toString()).hasToString(httpRequest.getUrl());
+            assertThat(request.method()).isEqualTo(httpRequest.getMethod().name());
+            RequestBody body = request.body();
+            final Buffer buffer = new Buffer();
+            body.writeTo(buffer);
+            String actual = buffer.readUtf8();
+            byte[] decoded = Base64.getDecoder().decode(actual);
+            assertThat(decoded).isEqualTo(httpRequest.getBodyAsByteArray());
+        }
+
 
 
         @Test
-        void test_build_GET_request_with_body() {
+        void test_build_GET_request_with_body_as_string() {
 
             //given
             HashMap<String, Object> config = Maps.newHashMap();
