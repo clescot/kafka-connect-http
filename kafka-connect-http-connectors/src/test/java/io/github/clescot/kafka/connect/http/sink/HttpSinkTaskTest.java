@@ -916,9 +916,6 @@ public class HttpSinkTaskTest {
                         "          },\n" +
                         "          \"method\": \"POST\",\n" +
                         "          \"bodyAsString\": \"stuff1\",\n" +
-                        "          \"bodyAsForm\": {},\n" +
-                        "          \"bodyAsByteArray\": \"\",\n" +
-                        "          \"bodyAsMultipart\": [],\n" +
                         "          \"bodyType\": \"STRING\"\n" +
                         "        }\n";
                 SinkRecord sinkRecord1 = new SinkRecord("myTopic", 0, Schema.STRING_SCHEMA, "key", Schema.STRING_SCHEMA,
@@ -937,9 +934,6 @@ public class HttpSinkTaskTest {
                         "          },\n" +
                         "          \"method\": \"POST\",\n" +
                         "          \"bodyAsString\": \"stuff2\",\n" +
-                        "          \"bodyAsForm\": {},\n" +
-                        "          \"bodyAsByteArray\": \"\",\n" +
-                        "          \"bodyAsMultipart\": [],\n" +
                         "          \"bodyType\": \"STRING\"\n" +
                         "        }\n";
                 SinkRecord sinkRecord2 = new SinkRecord("myTopic", 0, Schema.STRING_SCHEMA, "key", Schema.STRING_SCHEMA,
@@ -958,9 +952,6 @@ public class HttpSinkTaskTest {
                         "          },\n" +
                         "          \"method\": \"POST\",\n" +
                         "          \"bodyAsString\": \"stuff3\",\n" +
-                        "          \"bodyAsForm\": {},\n" +
-                        "          \"bodyAsByteArray\": \"\",\n" +
-                        "          \"bodyAsMultipart\": [],\n" +
                         "          \"bodyType\": \"STRING\"\n" +
                         "        }\n";
                 SinkRecord sinkRecord3 = new SinkRecord("myTopic", 0, Schema.STRING_SCHEMA, "key", Schema.STRING_SCHEMA,
@@ -1021,9 +1012,6 @@ public class HttpSinkTaskTest {
                         "          },\n" +
                         "          \"method\": \"POST\",\n" +
                         "          \"bodyAsString\": \"stuff1\",\n" +
-                        "          \"bodyAsForm\": {},\n" +
-                        "          \"bodyAsByteArray\": \"\",\n" +
-                        "          \"bodyAsMultipart\": [],\n" +
                         "          \"bodyType\": \"STRING\"\n" +
                         "        }\n";
                 SinkRecord sinkRecord1 = new SinkRecord("myTopic", 0, Schema.STRING_SCHEMA, "key", Schema.STRING_SCHEMA,
@@ -1042,9 +1030,6 @@ public class HttpSinkTaskTest {
                         "          },\n" +
                         "          \"method\": \"POST\",\n" +
                         "          \"bodyAsString\": \"stuff2\",\n" +
-                        "          \"bodyAsForm\": {},\n" +
-                        "          \"bodyAsByteArray\": \"\",\n" +
-                        "          \"bodyAsMultipart\": [],\n" +
                         "          \"bodyType\": \"STRING\"\n" +
                         "        }\n";
                 SinkRecord sinkRecord2 = new SinkRecord("myTopic", 0, Schema.STRING_SCHEMA, "key", Schema.STRING_SCHEMA,
@@ -1063,9 +1048,6 @@ public class HttpSinkTaskTest {
                         "          },\n" +
                         "          \"method\": \"POST\",\n" +
                         "          \"bodyAsString\": \"stuff3\",\n" +
-                        "          \"bodyAsForm\": {},\n" +
-                        "          \"bodyAsByteArray\": \"\",\n" +
-                        "          \"bodyAsMultipart\": [],\n" +
                         "          \"bodyType\": \"STRING\"\n" +
                         "        }\n";
                 SinkRecord sinkRecord3 = new SinkRecord("myTopic", 0, Schema.STRING_SCHEMA, "key", Schema.STRING_SCHEMA,
@@ -1126,9 +1108,6 @@ public class HttpSinkTaskTest {
                         "          },\n" +
                         "          \"method\": \"POST\",\n" +
                         "          \"bodyAsString\": \"stuff1\",\n" +
-                        "          \"bodyAsForm\": {},\n" +
-                        "          \"bodyAsByteArray\": \"\",\n" +
-                        "          \"bodyAsMultipart\": [],\n" +
                         "          \"bodyType\": \"STRING\"\n" +
                         "        }\n";
                 SinkRecord sinkRecord1 = new SinkRecord("myTopic", 0, Schema.STRING_SCHEMA, "key", Schema.STRING_SCHEMA,
@@ -1147,9 +1126,6 @@ public class HttpSinkTaskTest {
                         "          },\n" +
                         "          \"method\": \"POST\",\n" +
                         "          \"bodyAsString\": \"stuff2\",\n" +
-                        "          \"bodyAsForm\": {},\n" +
-                        "          \"bodyAsByteArray\": \"\",\n" +
-                        "          \"bodyAsMultipart\": [],\n" +
                         "          \"bodyType\": \"STRING\"\n" +
                         "        }\n";
                 SinkRecord sinkRecord2 = new SinkRecord("myTopic", 0, Schema.STRING_SCHEMA, "key", Schema.STRING_SCHEMA,
@@ -1168,9 +1144,6 @@ public class HttpSinkTaskTest {
                         "          },\n" +
                         "          \"method\": \"POST\",\n" +
                         "          \"bodyAsString\": \"stuff3\",\n" +
-                        "          \"bodyAsForm\": {},\n" +
-                        "          \"bodyAsByteArray\": \"\",\n" +
-                        "          \"bodyAsMultipart\": [],\n" +
                         "          \"bodyType\": \"STRING\"\n" +
                         "        }\n";
                 SinkRecord sinkRecord3 = new SinkRecord("myTopic", 0, Schema.STRING_SCHEMA, "key", Schema.STRING_SCHEMA,
@@ -1233,9 +1206,6 @@ public class HttpSinkTaskTest {
                         "          },\n" +
                         "          \"method\": \"POST\",\n" +
                         "          \"bodyAsString\": \"stuff1\",\n" +
-                        "          \"bodyAsForm\": {},\n" +
-                        "          \"bodyAsByteArray\": \"\",\n" +
-                        "          \"bodyAsMultipart\": [],\n" +
                         "          \"bodyType\": \"STRING\"\n" +
                         "        }\n";
                 SinkRecord sinkRecord1 = new SinkRecord("myTopic", 0, Schema.STRING_SCHEMA, "key", Schema.STRING_SCHEMA,
@@ -1254,9 +1224,6 @@ public class HttpSinkTaskTest {
                         "          },\n" +
                         "          \"method\": \"POST\",\n" +
                         "          \"bodyAsString\": \"stuff2\",\n" +
-                        "          \"bodyAsForm\": {},\n" +
-                        "          \"bodyAsByteArray\": \"\",\n" +
-                        "          \"bodyAsMultipart\": [],\n" +
                         "          \"bodyType\": \"STRING\"\n" +
                         "        }\n";
                 SinkRecord sinkRecord2 = new SinkRecord("myTopic", 0, Schema.STRING_SCHEMA, "key", Schema.STRING_SCHEMA,
@@ -1275,9 +1242,6 @@ public class HttpSinkTaskTest {
                         "          },\n" +
                         "          \"method\": \"POST\",\n" +
                         "          \"bodyAsString\": \"stuff3\",\n" +
-                        "          \"bodyAsForm\": {},\n" +
-                        "          \"bodyAsByteArray\": \"\",\n" +
-                        "          \"bodyAsMultipart\": [],\n" +
                         "          \"bodyType\": \"STRING\"\n" +
                         "        }\n";
                 SinkRecord sinkRecord3 = new SinkRecord("myTopic", 0, Schema.STRING_SCHEMA, "key", Schema.STRING_SCHEMA,
@@ -1341,9 +1305,6 @@ public class HttpSinkTaskTest {
                         "          },\n" +
                         "          \"method\": \"POST\",\n" +
                         "          \"bodyAsString\": \"stuff1\",\n" +
-                        "          \"bodyAsForm\": {},\n" +
-                        "          \"bodyAsByteArray\": \"\",\n" +
-                        "          \"bodyAsMultipart\": [],\n" +
                         "          \"bodyType\": \"STRING\"\n" +
                         "        }\n";
                 SinkRecord sinkRecord1 = new SinkRecord("myTopic", 0, Schema.STRING_SCHEMA, "key", Schema.STRING_SCHEMA,
@@ -1362,9 +1323,6 @@ public class HttpSinkTaskTest {
                         "          },\n" +
                         "          \"method\": \"POST\",\n" +
                         "          \"bodyAsString\": \"stuff2\",\n" +
-                        "          \"bodyAsForm\": {},\n" +
-                        "          \"bodyAsByteArray\": \"\",\n" +
-                        "          \"bodyAsMultipart\": [],\n" +
                         "          \"bodyType\": \"STRING\"\n" +
                         "        }\n";
                 SinkRecord sinkRecord2 = new SinkRecord("myTopic", 0, Schema.STRING_SCHEMA, "key", Schema.STRING_SCHEMA,
@@ -1383,9 +1341,6 @@ public class HttpSinkTaskTest {
                         "          },\n" +
                         "          \"method\": \"POST\",\n" +
                         "          \"bodyAsString\": \"stuff3\",\n" +
-                        "          \"bodyAsForm\": {},\n" +
-                        "          \"bodyAsByteArray\": \"\",\n" +
-                        "          \"bodyAsMultipart\": [],\n" +
                         "          \"bodyType\": \"STRING\"\n" +
                         "        }\n";
                 SinkRecord sinkRecord3 = new SinkRecord("myTopic", 0, Schema.STRING_SCHEMA, "key", Schema.STRING_SCHEMA,
@@ -1447,9 +1402,6 @@ public class HttpSinkTaskTest {
                         "          },\n" +
                         "          \"method\": \"POST\",\n" +
                         "          \"bodyAsString\": \"stuff1\",\n" +
-                        "          \"bodyAsForm\": {},\n" +
-                        "          \"bodyAsByteArray\": \"\",\n" +
-                        "          \"bodyAsMultipart\": [],\n" +
                         "          \"bodyType\": \"STRING\"\n" +
                         "        }\n";
                 SinkRecord sinkRecord1 = new SinkRecord("myTopic", 0, Schema.STRING_SCHEMA, "key", Schema.STRING_SCHEMA,
@@ -1468,9 +1420,6 @@ public class HttpSinkTaskTest {
                         "          },\n" +
                         "          \"method\": \"POST\",\n" +
                         "          \"bodyAsString\": \"stuff2\",\n" +
-                        "          \"bodyAsForm\": {},\n" +
-                        "          \"bodyAsByteArray\": \"\",\n" +
-                        "          \"bodyAsMultipart\": [],\n" +
                         "          \"bodyType\": \"STRING\"\n" +
                         "        }\n";
                 SinkRecord sinkRecord2 = new SinkRecord("myTopic", 0, Schema.STRING_SCHEMA, "key", Schema.STRING_SCHEMA,
@@ -1489,9 +1438,6 @@ public class HttpSinkTaskTest {
                         "          },\n" +
                         "          \"method\": \"POST\",\n" +
                         "          \"bodyAsString\": \"stuff3\",\n" +
-                        "          \"bodyAsForm\": {},\n" +
-                        "          \"bodyAsByteArray\": \"\",\n" +
-                        "          \"bodyAsMultipart\": [],\n" +
                         "          \"bodyType\": \"STRING\"\n" +
                         "        }\n";
                 SinkRecord sinkRecord3 = new SinkRecord("myTopic", 0, Schema.STRING_SCHEMA, "key", Schema.STRING_SCHEMA,
@@ -1553,9 +1499,6 @@ public class HttpSinkTaskTest {
                         "          },\n" +
                         "          \"method\": \"POST\",\n" +
                         "          \"bodyAsString\": \"stuff1\",\n" +
-                        "          \"bodyAsForm\": {},\n" +
-                        "          \"bodyAsByteArray\": \"\",\n" +
-                        "          \"bodyAsMultipart\": [],\n" +
                         "          \"bodyType\": \"STRING\"\n" +
                         "        }\n";
                 SinkRecord sinkRecord1 = new SinkRecord("myTopic", 0, Schema.STRING_SCHEMA, "key", Schema.STRING_SCHEMA,
@@ -1574,9 +1517,6 @@ public class HttpSinkTaskTest {
                         "          },\n" +
                         "          \"method\": \"POST\",\n" +
                         "          \"bodyAsString\": \"stuffA\",\n" +
-                        "          \"bodyAsForm\": {},\n" +
-                        "          \"bodyAsByteArray\": \"\",\n" +
-                        "          \"bodyAsMultipart\": [],\n" +
                         "          \"bodyType\": \"STRING\"\n" +
                         "        }\n";
                 SinkRecord nonMatchingSinkRecord = new SinkRecord("myTopic", 0, Schema.STRING_SCHEMA, "key", Schema.STRING_SCHEMA,
@@ -1595,9 +1535,6 @@ public class HttpSinkTaskTest {
                         "          },\n" +
                         "          \"method\": \"POST\",\n" +
                         "          \"bodyAsString\": \"stuff2\",\n" +
-                        "          \"bodyAsForm\": {},\n" +
-                        "          \"bodyAsByteArray\": \"\",\n" +
-                        "          \"bodyAsMultipart\": [],\n" +
                         "          \"bodyType\": \"STRING\"\n" +
                         "        }\n";
                 SinkRecord sinkRecord2 = new SinkRecord("myTopic", 0, Schema.STRING_SCHEMA, "key", Schema.STRING_SCHEMA,
@@ -1616,9 +1553,6 @@ public class HttpSinkTaskTest {
                         "          },\n" +
                         "          \"method\": \"POST\",\n" +
                         "          \"bodyAsString\": \"stuff3\",\n" +
-                        "          \"bodyAsForm\": {},\n" +
-                        "          \"bodyAsByteArray\": \"\",\n" +
-                        "          \"bodyAsMultipart\": [],\n" +
                         "          \"bodyType\": \"STRING\"\n" +
                         "        }\n";
                 SinkRecord sinkRecord3 = new SinkRecord("myTopic", 0, Schema.STRING_SCHEMA, "key", Schema.STRING_SCHEMA,
@@ -1698,9 +1632,6 @@ public class HttpSinkTaskTest {
                         "          },\n" +
                         "          \"method\": \"POST\",\n" +
                         "          \"bodyAsString\": \"stuff1\",\n" +
-                        "          \"bodyAsForm\": {},\n" +
-                        "          \"bodyAsByteArray\": \"\",\n" +
-                        "          \"bodyAsMultipart\": [],\n" +
                         "          \"bodyType\": \"STRING\"\n" +
                         "        }\n";
                 SinkRecord sinkRecord1 = new SinkRecord("myTopic", 0, Schema.STRING_SCHEMA, "key", Schema.STRING_SCHEMA,
@@ -1719,9 +1650,6 @@ public class HttpSinkTaskTest {
                         "          },\n" +
                         "          \"method\": \"POST\",\n" +
                         "          \"bodyAsString\": \"stuffA\",\n" +
-                        "          \"bodyAsForm\": {},\n" +
-                        "          \"bodyAsByteArray\": \"\",\n" +
-                        "          \"bodyAsMultipart\": [],\n" +
                         "          \"bodyType\": \"STRING\"\n" +
                         "        }\n";
                 SinkRecord nonMatchingSinkRecord = new SinkRecord("myTopic", 0, Schema.STRING_SCHEMA, "key", Schema.STRING_SCHEMA,
@@ -1740,9 +1668,6 @@ public class HttpSinkTaskTest {
                         "          },\n" +
                         "          \"method\": \"POST\",\n" +
                         "          \"bodyAsString\": \"stuff2\",\n" +
-                        "          \"bodyAsForm\": {},\n" +
-                        "          \"bodyAsByteArray\": \"\",\n" +
-                        "          \"bodyAsMultipart\": [],\n" +
                         "          \"bodyType\": \"STRING\"\n" +
                         "        }\n";
                 SinkRecord sinkRecord2 = new SinkRecord("myTopic", 0, Schema.STRING_SCHEMA, "key", Schema.STRING_SCHEMA,
@@ -1761,9 +1686,6 @@ public class HttpSinkTaskTest {
                         "          },\n" +
                         "          \"method\": \"POST\",\n" +
                         "          \"bodyAsString\": \"stuff3\",\n" +
-                        "          \"bodyAsForm\": {},\n" +
-                        "          \"bodyAsByteArray\": \"\",\n" +
-                        "          \"bodyAsMultipart\": [],\n" +
                         "          \"bodyType\": \"STRING\"\n" +
                         "        }\n";
                 SinkRecord sinkRecord3 = new SinkRecord("myTopic", 0, Schema.STRING_SCHEMA, "key", Schema.STRING_SCHEMA,
@@ -1840,9 +1762,6 @@ public class HttpSinkTaskTest {
                         "          },\n" +
                         "          \"method\": \"POST\",\n" +
                         "          \"bodyAsString\": \"stuff1\",\n" +
-                        "          \"bodyAsForm\": {},\n" +
-                        "          \"bodyAsByteArray\": \"\",\n" +
-                        "          \"bodyAsMultipart\": [],\n" +
                         "          \"bodyType\": \"STRING\"\n" +
                         "        }\n";
                 SinkRecord sinkRecord1 = new SinkRecord("myTopic", 0, Schema.STRING_SCHEMA, "key", Schema.STRING_SCHEMA,
@@ -1861,9 +1780,6 @@ public class HttpSinkTaskTest {
                         "          },\n" +
                         "          \"method\": \"POST\",\n" +
                         "          \"bodyAsString\": \"stuffA\",\n" +
-                        "          \"bodyAsForm\": {},\n" +
-                        "          \"bodyAsByteArray\": \"\",\n" +
-                        "          \"bodyAsMultipart\": [],\n" +
                         "          \"bodyType\": \"STRING\"\n" +
                         "        }\n";
                 SinkRecord nonMatchingSinkRecord = new SinkRecord("myTopic", 0, Schema.STRING_SCHEMA, "key", Schema.STRING_SCHEMA,
@@ -1883,9 +1799,6 @@ public class HttpSinkTaskTest {
                         "          },\n" +
                         "          \"method\": \"POST\",\n" +
                         "          \"bodyAsString\": \"stuff2\",\n" +
-                        "          \"bodyAsForm\": {},\n" +
-                        "          \"bodyAsByteArray\": \"\",\n" +
-                        "          \"bodyAsMultipart\": [],\n" +
                         "          \"bodyType\": \"STRING\"\n" +
                         "        }\n";
                 SinkRecord sinkRecord2 = new SinkRecord("myTopic", 0, Schema.STRING_SCHEMA, "key", Schema.STRING_SCHEMA,
@@ -1904,9 +1817,6 @@ public class HttpSinkTaskTest {
                         "          },\n" +
                         "          \"method\": \"POST\",\n" +
                         "          \"bodyAsString\": \"stuff3\",\n" +
-                        "          \"bodyAsForm\": {},\n" +
-                        "          \"bodyAsByteArray\": \"\",\n" +
-                        "          \"bodyAsMultipart\": [],\n" +
                         "          \"bodyType\": \"STRING\"\n" +
                         "        }\n";
                 SinkRecord sinkRecord3 = new SinkRecord("myTopic", 0, Schema.STRING_SCHEMA, "key", Schema.STRING_SCHEMA,
@@ -1925,9 +1835,6 @@ public class HttpSinkTaskTest {
                         "          },\n" +
                         "          \"method\": \"POST\",\n" +
                         "          \"bodyAsString\": \"stuffA\",\n" +
-                        "          \"bodyAsForm\": {},\n" +
-                        "          \"bodyAsByteArray\": \"\",\n" +
-                        "          \"bodyAsMultipart\": [],\n" +
                         "          \"bodyType\": \"STRING\"\n" +
                         "        }\n";
                 SinkRecord nonMatchingSinkRecord2 = new SinkRecord("myTopic", 0, Schema.STRING_SCHEMA, "key", Schema.STRING_SCHEMA,
@@ -2004,9 +1911,6 @@ public class HttpSinkTaskTest {
                         "          },\n" +
                         "          \"method\": \"POST\",\n" +
                         "          \"bodyAsString\": \"stuff1\",\n" +
-                        "          \"bodyAsForm\": {},\n" +
-                        "          \"bodyAsByteArray\": \"\",\n" +
-                        "          \"bodyAsMultipart\": [],\n" +
                         "          \"bodyType\": \"STRING\"\n" +
                         "        }\n";
                 SinkRecord sinkRecord1 = new SinkRecord("myTopic", 0, Schema.STRING_SCHEMA, "key", Schema.STRING_SCHEMA,
@@ -2025,9 +1929,6 @@ public class HttpSinkTaskTest {
                         "          },\n" +
                         "          \"method\": \"POST\",\n" +
                         "          \"bodyAsString\": \"stuff2\",\n" +
-                        "          \"bodyAsForm\": {},\n" +
-                        "          \"bodyAsByteArray\": \"\",\n" +
-                        "          \"bodyAsMultipart\": [],\n" +
                         "          \"bodyType\": \"STRING\"\n" +
                         "        }\n";
                 SinkRecord sinkRecord2 = new SinkRecord("myTopic", 0, Schema.STRING_SCHEMA, "key", Schema.STRING_SCHEMA,
@@ -2046,9 +1947,6 @@ public class HttpSinkTaskTest {
                         "          },\n" +
                         "          \"method\": \"POST\",\n" +
                         "          \"bodyAsString\": \"stuff3\",\n" +
-                        "          \"bodyAsForm\": {},\n" +
-                        "          \"bodyAsByteArray\": \"\",\n" +
-                        "          \"bodyAsMultipart\": [],\n" +
                         "          \"bodyType\": \"STRING\"\n" +
                         "        }\n";
                 SinkRecord sinkRecord3 = new SinkRecord("myTopic", 0, Schema.STRING_SCHEMA, "key", Schema.STRING_SCHEMA,
@@ -2117,9 +2015,6 @@ public class HttpSinkTaskTest {
                         "          },\n" +
                         "          \"method\": \"POST\",\n" +
                         "          \"bodyAsString\": \"stuff1\",\n" +
-                        "          \"bodyAsForm\": {},\n" +
-                        "          \"bodyAsByteArray\": \"\",\n" +
-                        "          \"bodyAsMultipart\": [],\n" +
                         "          \"bodyType\": \"STRING\"\n" +
                         "        }\n";
                 SinkRecord sinkRecord1 = new SinkRecord("myTopic", 0, Schema.STRING_SCHEMA, "key", Schema.STRING_SCHEMA,
@@ -2138,9 +2033,6 @@ public class HttpSinkTaskTest {
                         "          },\n" +
                         "          \"method\": \"POST\",\n" +
                         "          \"bodyAsString\": \"stuff2\",\n" +
-                        "          \"bodyAsForm\": {},\n" +
-                        "          \"bodyAsByteArray\": \"\",\n" +
-                        "          \"bodyAsMultipart\": [],\n" +
                         "          \"bodyType\": \"STRING\"\n" +
                         "        }\n";
                 SinkRecord sinkRecord2 = new SinkRecord("myTopic", 0, Schema.STRING_SCHEMA, "key", Schema.STRING_SCHEMA,
@@ -2159,9 +2051,6 @@ public class HttpSinkTaskTest {
                         "          },\n" +
                         "          \"method\": \"POST\",\n" +
                         "          \"bodyAsString\": \"stuff3\",\n" +
-                        "          \"bodyAsForm\": {},\n" +
-                        "          \"bodyAsByteArray\": \"\",\n" +
-                        "          \"bodyAsMultipart\": [],\n" +
                         "          \"bodyType\": \"STRING\"\n" +
                         "        }\n";
                 SinkRecord sinkRecord3 = new SinkRecord("myTopic", 0, Schema.STRING_SCHEMA, "key", Schema.STRING_SCHEMA,
@@ -2227,9 +2116,6 @@ public class HttpSinkTaskTest {
                         "          },\n" +
                         "          \"method\": \"POST\",\n" +
                         "          \"bodyAsString\": \"1234567890\",\n" +
-                        "          \"bodyAsForm\": {},\n" +
-                        "          \"bodyAsByteArray\": \"\",\n" +
-                        "          \"bodyAsMultipart\": [],\n" +
                         "          \"bodyType\": \"STRING\"\n" +
                         "        }\n";
                 SinkRecord sinkRecord1 = new SinkRecord("myTopic", 0, Schema.STRING_SCHEMA, "key", Schema.STRING_SCHEMA,
@@ -2248,9 +2134,6 @@ public class HttpSinkTaskTest {
                         "          },\n" +
                         "          \"method\": \"POST\",\n" +
                         "          \"bodyAsString\": \"1234567890\",\n" +
-                        "          \"bodyAsForm\": {},\n" +
-                        "          \"bodyAsByteArray\": \"\",\n" +
-                        "          \"bodyAsMultipart\": [],\n" +
                         "          \"bodyType\": \"STRING\"\n" +
                         "        }\n";
                 SinkRecord sinkRecord2 = new SinkRecord("myTopic", 0, Schema.STRING_SCHEMA, "key", Schema.STRING_SCHEMA,
@@ -2269,9 +2152,6 @@ public class HttpSinkTaskTest {
                         "          },\n" +
                         "          \"method\": \"POST\",\n" +
                         "          \"bodyAsString\": \"1234567890\",\n" +
-                        "          \"bodyAsForm\": {},\n" +
-                        "          \"bodyAsByteArray\": \"\",\n" +
-                        "          \"bodyAsMultipart\": [],\n" +
                         "          \"bodyType\": \"STRING\"\n" +
                         "        }\n";
                 SinkRecord sinkRecord3 = new SinkRecord("myTopic", 0, Schema.STRING_SCHEMA, "key", Schema.STRING_SCHEMA,
@@ -2340,9 +2220,6 @@ public class HttpSinkTaskTest {
                         "          },\n" +
                         "          \"method\": \"POST\",\n" +
                         "          \"bodyAsString\": \"stuff1\",\n" +
-                        "          \"bodyAsForm\": {},\n" +
-                        "          \"bodyAsByteArray\": \"\",\n" +
-                        "          \"bodyAsMultipart\": [],\n" +
                         "          \"bodyType\": \"STRING\"\n" +
                         "        }\n";
                 SinkRecord sinkRecord1 = new SinkRecord("myTopic", 0, Schema.STRING_SCHEMA, "key", Schema.STRING_SCHEMA,
@@ -2361,9 +2238,6 @@ public class HttpSinkTaskTest {
                         "          },\n" +
                         "          \"method\": \"POST\",\n" +
                         "          \"bodyAsString\": \"stuff2\",\n" +
-                        "          \"bodyAsForm\": {},\n" +
-                        "          \"bodyAsByteArray\": \"\",\n" +
-                        "          \"bodyAsMultipart\": [],\n" +
                         "          \"bodyType\": \"STRING\"\n" +
                         "        }\n";
                 SinkRecord sinkRecord2 = new SinkRecord("myTopic", 0, Schema.STRING_SCHEMA, "key", Schema.STRING_SCHEMA,
@@ -2382,9 +2256,6 @@ public class HttpSinkTaskTest {
                         "          },\n" +
                         "          \"method\": \"POST\",\n" +
                         "          \"bodyAsString\": \"stuff3\",\n" +
-                        "          \"bodyAsForm\": {},\n" +
-                        "          \"bodyAsByteArray\": \"\",\n" +
-                        "          \"bodyAsMultipart\": [],\n" +
                         "          \"bodyType\": \"STRING\"\n" +
                         "        }\n";
                 SinkRecord sinkRecord3 = new SinkRecord("myTopic", 0, Schema.STRING_SCHEMA, "key", Schema.STRING_SCHEMA,
@@ -3413,9 +3284,6 @@ public class HttpSinkTaskTest {
                 "  \"headers\": {},\n" +
                 "  \"method\": \"" + method + "\",\n" +
                 "  \"bodyAsString\": \"" + dummyBody + "\",\n" +
-                "  \"bodyAsByteArray\": [],\n" +
-                "  \"bodyAsForm\": {},\n" +
-                "  \"bodyAsMultipart\": [],\n" +
                 "  \"bodyType\": \"" + DUMMY_BODY_TYPE + "\"\n" +
                 "}";
     }
@@ -3427,9 +3295,6 @@ public class HttpSinkTaskTest {
                 "  \"headers\": {},\n" +
                 "  \"method\": \"" + DUMMY_METHOD + "\",\n" +
                 "  \"bodyAsString\": \"" + DUMMY_BODY + "\",\n" +
-                "  \"bodyAsByteArray\": [],\n" +
-                "  \"bodyAsForm\": {},\n" +
-                "  \"bodyAsMultipart\": [],\n" +
                 "  \"bodyType\": \"" + DUMMY_BODY_TYPE + "\"\n" +
                 "}";
     }
@@ -3441,9 +3306,6 @@ public class HttpSinkTaskTest {
                 "  \"headers\": {},\n" +
                 "  \"method\": \"" + method + "\",\n" +
                 "  \"bodyAsString\": \"" + DUMMY_BODY + "\",\n" +
-                "  \"bodyAsByteArray\": [],\n" +
-                "  \"bodyAsForm\": {},\n" +
-                "  \"bodyAsMultipart\": [],\n" +
                 "  \"bodyType\": \"" + DUMMY_BODY_TYPE + "\"\n" +
                 "}";
     }
