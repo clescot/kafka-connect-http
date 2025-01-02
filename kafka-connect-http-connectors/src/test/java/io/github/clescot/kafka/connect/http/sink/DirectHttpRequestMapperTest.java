@@ -54,8 +54,9 @@ class DirectHttpRequestMapperTest {
     private static final HttpRequest.Method DUMMY_METHOD = HttpRequest.Method.POST;
     private static final String DUMMY_BODY_TYPE = "STRING";
     private DirectHttpRequestMapper httpRequestMapper;
+    private SchemaRegistryClient schemaRegistryClient;
     @BeforeEach
-    public void setup() {
+    public void setup() throws RestClientException, IOException {
         // Restricted permissions to a safe set but with URI allowed
         JexlPermissions permissions = new JexlPermissions.ClassPermissions(SinkRecord.class, ConnectRecord.class,HttpRequest.class);
         // Create the engine
@@ -65,6 +66,19 @@ class DirectHttpRequestMapperTest {
                 .sideEffect(false);
         JexlEngine jexlEngine = new JexlBuilder().features(features).permissions(permissions).create();
         httpRequestMapper = new DirectHttpRequestMapper(DEFAULT,jexlEngine, "true");
+        schemaRegistryClient = new MockSchemaRegistryClient(Lists.newArrayList(new JsonSchemaProvider()));
+        //Register http part
+        ParsedSchema parsedPartSchema = new JsonSchema(HttpPart.SCHEMA_AS_STRING);
+        schemaRegistryClient.register("httpPart",parsedPartSchema);
+        //register http request
+        ParsedSchema parsedHttpRequestSchema = new JsonSchema(HttpRequest.SCHEMA_AS_STRING);
+        schemaRegistryClient.register("httpRequest",parsedHttpRequestSchema);
+        //register http response
+        ParsedSchema parsedHttpResponseSchema = new JsonSchema(HttpResponse.SCHEMA_AS_STRING);
+        schemaRegistryClient.register("httpResponse",parsedHttpResponseSchema);
+        //register http exchange
+        ParsedSchema parsedHttpExchangeSchema = new JsonSchema(HttpExchange.SCHEMA_AS_STRING);
+        schemaRegistryClient.register("httpExchange",parsedHttpExchangeSchema);
     }
     @Nested
     class TestMap {
@@ -105,11 +119,6 @@ class DirectHttpRequestMapperTest {
             List<Header> headers = Lists.newArrayList();
             HttpRequest dummyHttpRequest = getDummyHttpRequest(DUMMY_URL);
             String topic = "myTopic";
-            SchemaRegistryClient schemaRegistryClient = getSchemaRegistryClient();
-            registerSchema(schemaRegistryClient, topic, HttpPart.VERSION, 1, HttpPart.SCHEMA_AS_STRING);
-            registerSchema(schemaRegistryClient, topic, HttpRequest.VERSION, 1, HttpRequest.SCHEMA_AS_STRING);
-            registerSchema(schemaRegistryClient, topic, HttpResponse.VERSION, 1, HttpResponse.SCHEMA_AS_STRING);
-            registerSchema(schemaRegistryClient, topic, HttpExchange.VERSION, 1, HttpExchange.SCHEMA_AS_STRING);
 
 
             JsonSchemaConverter jsonSchemaConverter = getJsonSchemaConverter(schemaRegistryClient);
@@ -162,17 +171,14 @@ class DirectHttpRequestMapperTest {
         io.confluent.kafka.schemaregistry.client.rest.entities.Schema schema = new io.confluent.kafka.schemaregistry.client.rest.entities.Schema(subject, schemaVersion, schemaId, JsonSchema.TYPE, Lists.newArrayList(), schemaAsString);
         Optional<ParsedSchema> parsedSchema = mockSchemaRegistryClient.parseSchema(schema);
         try {
-            mockSchemaRegistryClient.register(subject, parsedSchema.get());
+            ParsedSchema schema1 = parsedSchema.get();
+            String canonicalString = schema1.canonicalString();
+            mockSchemaRegistryClient.register(subject, schema1);
         } catch (IOException | RestClientException e) {
             throw new RuntimeException(e);
         }
     }
 
-    @NotNull
-    private static SchemaRegistryClient getSchemaRegistryClient() {
-        SchemaProvider provider = new JsonSchemaProvider();
-        return new MockSchemaRegistryClient(Collections.singletonList(provider));
-    }
 
     private String getIP() {
         try (DatagramSocket datagramSocket = new DatagramSocket()) {
