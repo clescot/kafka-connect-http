@@ -36,27 +36,27 @@
         <url>https://github.com/clescot/kafka-connect-http/issues</url>
     </issueManagement>
     <properties>
-        <assertj.version>3.26.3</assertj.version>
+        <assertj.version>3.27.1</assertj.version>
         <awaitility.version>4.2.2</awaitility.version>
-        <async.http.client.version>2.12.3</async.http.client.version>
-        <commons-text.version>1.12.0</commons-text.version>
+        <async.http.client.version>2.12.4</async.http.client.version>
+        <commons-text.version>1.13.0</commons-text.version>
         <connect-json.version>3.9.0</connect-json.version>
-        <debezium.version>2.7.3.Final</debezium.version>
+        <debezium.version>2.7.4.Final</debezium.version>
         <kafka.version>3.9.0</kafka.version>
-        <confluent.platform.version>7.7.2</confluent.platform.version>
+        <confluent.platform.version>7.8.0</confluent.platform.version>
         <failsafe.version>3.3.2</failsafe.version>
-        <guava.version>33.3.1-jre</guava.version>
+        <guava.version>33.4.0-jre</guava.version>
         <jackson.version>2.18.2</jackson.version>
         <jacoco.version>0.8.12</jacoco.version>
         <json.assert.version>1.5.3</json.assert.version>
-        <junit.version>5.11.3</junit.version>
-        <logback.version>1.5.12</logback.version>
+        <junit.version>5.11.4</junit.version>
+        <logback.version>1.5.15</logback.version>
         <maven.compiler.source>11</maven.compiler.source>
         <maven.compiler.target>11</maven.compiler.target>
         <maven.plugin.validation>VERBOSE</maven.plugin.validation>
         <mock-oauth2-server.version>0.5.10</mock-oauth2-server.version>
         <mockito.version>5.14.2</mockito.version>
-        <micrometer.version>1.14.1</micrometer.version>
+        <micrometer.version>1.14.2</micrometer.version>
         <okhttp.version>4.12.0</okhttp.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
@@ -96,7 +96,7 @@
             <dependency>
                 <groupId>ch.qos.logback</groupId>
                 <artifactId>logback-classic</artifactId>
-                <version>1.5.12</version>
+                <version>1.5.15</version>
             </dependency>
 
             <dependency>
@@ -316,7 +316,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-javadoc-plugin</artifactId>
-                <version>3.11.1</version>
+                <version>3.11.2</version>
                 <executions>
                     <execution>
                         <id>attach-javadoc</id>
@@ -345,7 +345,7 @@
                     <dependency>
                         <groupId>me.fabriciorby</groupId>
                         <artifactId>maven-surefire-junit5-tree-reporter</artifactId>
-                        <version>1.3.0</version>
+                        <version>1.4.0</version>
                     </dependency>
                 </dependencies>
                 <configuration>
