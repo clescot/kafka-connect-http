@@ -55,6 +55,7 @@ public class HttpRequest implements Serializable {
     @JsonProperty
     private String bodyAsString = null;
     @JsonProperty
+    //byte array is base64 encoded as as String, as JSON is a text format not binary
     private String bodyAsByteArray = null;
 
     @JsonProperty
