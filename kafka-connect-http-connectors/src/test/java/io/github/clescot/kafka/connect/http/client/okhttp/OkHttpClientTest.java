@@ -5,6 +5,7 @@ import com.github.tomakehurst.wiremock.core.Options;
 import com.github.tomakehurst.wiremock.core.WireMockConfiguration;
 import com.github.tomakehurst.wiremock.junit5.WireMockExtension;
 import com.github.tomakehurst.wiremock.junit5.WireMockRuntimeInfo;
+import com.google.common.base.Splitter;
 import com.google.common.base.Stopwatch;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
@@ -167,6 +168,34 @@ class OkHttpClientTest {
             String actual = buffer.readUtf8();
             byte[] decoded = Base64.getDecoder().decode(actual);
             assertThat(decoded).isEqualTo(httpRequest.getBodyAsByteArray());
+        }
+        @Test
+        void test_build_POST_request_with_body_as_form() throws IOException {
+
+            //given
+            HashMap<String, Object> config = Maps.newHashMap();
+            config.put(CONFIGURATION_ID,"default");
+            io.github.clescot.kafka.connect.http.client.okhttp.OkHttpClient client = new io.github.clescot.kafka.connect.http.client.okhttp.OkHttpClient(config, null, new Random(), null, null, getCompositeMeterRegistry());
+            HttpRequest httpRequest = new HttpRequest("http://dummy.com/", HttpRequest.Method.POST);
+            Map<String,String> form = Maps.newHashMap();
+            form.put("key1","value1");
+            form.put("key2","value2");
+            form.put("key3","value3");
+            httpRequest.setBodyAsForm(form);
+
+            //given
+            Request request = client.buildRequest(httpRequest);
+
+            //then
+            LOGGER.debug("request:{}", request);
+            assertThat(request.url().url().toString()).hasToString(httpRequest.getUrl());
+            assertThat(request.method()).isEqualTo(httpRequest.getMethod().name());
+            RequestBody body = request.body();
+            final Buffer buffer = new Buffer();
+            body.writeTo(buffer);
+            String actual = buffer.readUtf8();
+            Map<String, String> keyValues = Splitter.on("&").withKeyValueSeparator("=").split(actual);
+            assertThat(keyValues).isEqualTo(httpRequest.getBodyAsForm());
         }
 
 
