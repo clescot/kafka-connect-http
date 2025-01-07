@@ -14,6 +14,8 @@ import org.slf4j.LoggerFactory;
 
 import java.io.Serializable;
 import java.util.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import org.apache.kafka.connect.data.Struct;
@@ -39,7 +41,7 @@ public class HttpRequest implements Serializable {
 
     public static final int VERSION = 2;
     public static final String CONTENT_TYPE = "Content-Type";
-
+    private static final Pattern BOUNDARY = Pattern.compile(".*; boundary=(.*)");
 
     //request
     @JsonProperty(required = true)
@@ -271,6 +273,17 @@ public class HttpRequest implements Serializable {
         return null;
     }
 
+    public String getBoundary(){
+        String contentType = getContentType();
+        String boundary = null;
+        if(contentType!=null){
+            Matcher matcher = BOUNDARY.matcher(contentType);
+            if(matcher.matches()){
+                boundary = matcher.group(1);
+            }
+        }
+        return boundary;
+    }
     public void setContentType(String contentType){
         headers.put(CONTENT_TYPE,Lists.newArrayList(contentType));
     }

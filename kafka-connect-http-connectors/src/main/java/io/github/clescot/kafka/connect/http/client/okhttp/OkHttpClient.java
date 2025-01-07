@@ -1,5 +1,6 @@
 package io.github.clescot.kafka.connect.http.client.okhttp;
 
+import com.google.common.base.MoreObjects;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
@@ -418,7 +419,14 @@ public class OkHttpClient extends AbstractHttpClient<Request, Response> {
                 case MULTIPART: {
                     //HttpRequest.BodyType = MULTIPART
                     List<HttpPart> bodyAsMultipart = httpRequest.getParts();
-                    MultipartBody.Builder multipartBuilder  = new MultipartBody.Builder("---");
+                    String boundary = null;
+                    if(firstContentType.contains("boundary=")){
+                        List<String> myParts = Lists.newArrayList(firstContentType.split("boundary="));
+                        if(myParts.size()==2){
+                            boundary = myParts.get(1);
+                        }
+                    }
+                    MultipartBody.Builder multipartBuilder  = new MultipartBody.Builder(MoreObjects.firstNonNull(boundary,"---"));
                     multipartBuilder.setType(MediaType.parse("multipart/form-data"));
                     for (HttpPart httpPart : bodyAsMultipart) {
                         RequestBody partRequestBody;
@@ -440,17 +448,18 @@ public class OkHttpClient extends AbstractHttpClient<Request, Response> {
                             default:
                                 String contentAsString = httpPart.getContentAsString();
                                 partRequestBody = RequestBody.create(contentAsString, MediaType.parse(httpPart.getContentType()));
-                                multipartBuilder.addPart(okPartHeaders,partRequestBody);
+                                MultipartBody.Part part =  MultipartBody.Part.create(partRequestBody);
+                                multipartBuilder.addPart(part);
                                 break;
                         }
                         requestBody = multipartBuilder.build();
                     }
                     //TODO file upload case
 //                    multipartBuilder.addFormDataPart("name","filename",requestBody);
-                    MultipartBody.Part part = null;
-                    Headers myHeaders = null;
-                    multipartBuilder.addPart(myHeaders,requestBody);
-                    requestBody = multipartBuilder.build();
+//                    MultipartBody.Part part = null;
+//                    Headers myHeaders = null;
+//                    multipartBuilder.addPart(myHeaders,requestBody);
+//                    requestBody = multipartBuilder.build();
                     break;
                 }
 

@@ -14,6 +14,7 @@ import io.github.clescot.kafka.connect.http.client.DummyX509Certificate;
 import io.github.clescot.kafka.connect.http.client.HttpClient;
 import io.github.clescot.kafka.connect.http.client.proxy.URIRegexProxySelector;
 import io.github.clescot.kafka.connect.http.core.HttpExchange;
+import io.github.clescot.kafka.connect.http.core.HttpPart;
 import io.github.clescot.kafka.connect.http.core.HttpRequest;
 import io.github.clescot.kafka.connect.http.core.HttpResponse;
 import io.github.clescot.kafka.connect.http.core.queue.QueueFactory;
@@ -48,6 +49,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Predicate;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.containing;
 import static com.github.tomakehurst.wiremock.client.WireMock.equalTo;
@@ -197,9 +199,73 @@ class OkHttpClientTest {
             Map<String, String> keyValues = Splitter.on("&").withKeyValueSeparator("=").split(actual);
             assertThat(keyValues).isEqualTo(httpRequest.getBodyAsForm());
         }
+        @Test
+        void test_build_POST_request_with_body_as_multipart() throws IOException {
 
+            //given
+            HashMap<String, Object> config = Maps.newHashMap();
+            config.put(CONFIGURATION_ID,"default");
+            io.github.clescot.kafka.connect.http.client.okhttp.OkHttpClient client = new io.github.clescot.kafka.connect.http.client.okhttp.OkHttpClient(config, null, new Random(), null, null, getCompositeMeterRegistry());
+            List<HttpPart> parts = Lists.newArrayList();
+            String content1 = "content1";
+            HttpPart httpPart1 = new HttpPart(Map.of("Content-Type",Lists.newArrayList("application/toto")),content1);
+            parts.add(httpPart1);
+            String content2 = "content2";
+            HttpPart httpPart2 = new HttpPart(content2);
+            parts.add(httpPart2);
+            Map<String, List<String>> headers = Maps.newHashMap();
+            headers.put("Content-Type",Lists.newArrayList("multipart/form-data; boundary=+++"));
+            HttpRequest httpRequest = new HttpRequest("http://dummy.com/", HttpRequest.Method.POST, headers, HttpRequest.BodyType.MULTIPART,parts);
 
+            //given
+            Request request = client.buildRequest(httpRequest);
 
+            //then
+            LOGGER.debug("request:{}", request);
+            assertThat(request.url().url().toString()).hasToString(httpRequest.getUrl());
+            assertThat(request.method()).isEqualTo(httpRequest.getMethod().name());
+            RequestBody body = request.body();
+            final Buffer buffer = new Buffer();
+            body.writeTo(buffer);
+            String actual = buffer.readUtf8();
+            String boundary = httpRequest.getBoundary();
+            List<String> myParts = getMultiPartsAsString(actual, boundary);
+            String part1AsString = myParts.get(0);
+            Map<String, String> headers1 = getHeaders(part1AsString);
+            assertThat(headers1.get("Content-Type")).contains("application/toto; charset=utf-8");
+            assertThat(getPartContent(part1AsString)).isEqualTo(content1);
+            String part2AsString = myParts.get(1);
+            Map<String, String> headers2 = getHeaders(part2AsString);
+            assertThat(headers2.get("Content-Type")).contains("application/json; charset=utf-8");
+            assertThat(getPartContent(part2AsString)).isEqualTo(content2);
+        }
+
+        @NotNull
+        private List<String> getMultiPartsAsString(String actual, String boundary) {
+            List<String> myParts = Lists.newArrayList(actual.split(Pattern.quote("--"+ boundary)))
+                    .stream()
+                    .filter(s-> !s.isEmpty())
+                    .filter(s-> !s.equals("--\r\n"))
+                    .collect(Collectors.toList());
+            return myParts;
+        }
+
+        private String getPartContent(String headersAndContentAsString){
+            return Lists.newArrayList(splitHeadersAndPartContent(headersAndContentAsString).get(1).split("\r\n")).get(0);
+        }
+
+        private Map<String,String> getHeaders(String headersAndContentAsString){
+            ArrayList<String> splits = splitHeadersAndPartContent(headersAndContentAsString);
+            Map<String,String> headers = Maps.newHashMap();
+            if(!splits.isEmpty()){
+                String headersContent = splits.get(0);
+                headers.putAll(Lists.newArrayList(headersContent.split("\r\n")).stream()
+                        .filter(s->!s.isEmpty())
+                        .map(s -> Lists.newArrayList(s.split(": ")))
+                        .collect(Collectors.toMap(s->s.get(0),s->s.get(1))));
+            }
+            return headers;
+        }
         @Test
         void test_build_GET_request_with_body_as_string() {
 
@@ -220,6 +286,11 @@ class OkHttpClientTest {
             assertThat(request.body()).isNull();
         }
 
+    }
+
+    @NotNull
+    private static ArrayList<String> splitHeadersAndPartContent(String multipartContent) {
+        return Lists.newArrayList(multipartContent.split("\r\n\r\n"));
     }
 
     @Nested

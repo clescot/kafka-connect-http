@@ -97,22 +97,33 @@ public class HttpPart {
 
     //for deserialization only
     protected HttpPart(){}
-    public HttpPart(byte[] contentAsByteArray) {
+
+    public HttpPart(Map<String,List<String>> headers,byte[] contentAsByteArray) {
         this.bodyType = HttpRequest.BodyType.BYTE_ARRAY;
-        headers.putIfAbsent(CONTENT_TYPE, Lists.newArrayList(APPLICATION_OCTET_STREAM));
+        this.headers = headers;
         this.contentAsByteArray = Base64.getMimeEncoder().encodeToString(contentAsByteArray);
     }
 
-    public HttpPart(Map<String,String> contentAsForm) {
-        this.bodyType = HttpRequest.BodyType.FORM;
-        headers.putIfAbsent(CONTENT_TYPE, Lists.newArrayList(APPLICATION_X_WWW_FORM_URLENCODED));
-        this.contentAsForm = contentAsForm;
+    public HttpPart(byte[] contentAsByteArray) {
+        this(Map.of(CONTENT_TYPE, Lists.newArrayList(APPLICATION_OCTET_STREAM)),contentAsByteArray);
     }
 
-    public HttpPart(String contentAsString) {
+    public HttpPart(Map<String,List<String>> headers,Map<String,String> contentAsForm) {
+        this.bodyType = HttpRequest.BodyType.FORM;
+        this.headers = headers;
+        this.contentAsForm = contentAsForm;
+    }
+    public HttpPart(Map<String,String> contentAsForm) {
+        this(Map.of(CONTENT_TYPE, Lists.newArrayList(APPLICATION_X_WWW_FORM_URLENCODED)),contentAsForm);
+    }
+
+    public HttpPart(Map<String,List<String>> headers,String contentAsString) {
         this.bodyType = HttpRequest.BodyType.STRING;
-        headers.putIfAbsent(CONTENT_TYPE, Lists.newArrayList(APPLICATION_JSON));
+        this.headers = headers;
         this.contentAsString = contentAsString;
+    }
+    public HttpPart(String contentAsString) {
+        this(Map.of(CONTENT_TYPE, Lists.newArrayList(APPLICATION_JSON)),contentAsString);
     }
 
     public HttpPart(Struct struct){
