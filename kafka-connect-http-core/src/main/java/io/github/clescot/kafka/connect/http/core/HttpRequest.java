@@ -401,6 +401,7 @@ public class HttpRequest implements Serializable {
         STRING,
         BYTE_ARRAY,
         FORM,
+        FORM_DATA,
         MULTIPART;
 
         @Override

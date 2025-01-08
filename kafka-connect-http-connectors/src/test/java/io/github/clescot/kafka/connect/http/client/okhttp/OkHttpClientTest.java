@@ -22,6 +22,7 @@ import io.micrometer.core.instrument.Clock;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.composite.CompositeMeterRegistry;
 import io.micrometer.jmx.JmxMeterRegistry;
+import io.vavr.Tuple;
 import okhttp3.*;
 import okhttp3.internal.http.RealResponseBody;
 import okio.Buffer;
@@ -32,10 +33,12 @@ import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.extension.RegisterExtension;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import scala.Tuple2;
 
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.TrustManagerFactory;
 import javax.net.ssl.X509TrustManager;
+import java.io.File;
 import java.io.IOException;
 import java.net.*;
 import java.nio.charset.StandardCharsets;
@@ -238,6 +241,66 @@ class OkHttpClientTest {
             Map<String, String> headers2 = getHeaders(part2AsString);
             assertThat(headers2.get("Content-Type")).contains("application/json; charset=utf-8");
             assertThat(getPartContent(part2AsString)).isEqualTo(content2);
+        }
+        @Test
+        void test_build_POST_request_with_body_as_multipart_with_file_upload() throws IOException, URISyntaxException {
+
+            //given
+            HashMap<String, Object> config = Maps.newHashMap();
+            config.put(CONFIGURATION_ID,"default");
+            io.github.clescot.kafka.connect.http.client.okhttp.OkHttpClient client = new io.github.clescot.kafka.connect.http.client.okhttp.OkHttpClient(config, null, new Random(), null, null, getCompositeMeterRegistry());
+            List<HttpPart> parts = Lists.newArrayList();
+
+            String content1 = "content1";
+            HttpPart httpPart1 = new HttpPart(Map.of("Content-Type",Lists.newArrayList("application/toto")),content1);
+            parts.add(httpPart1);
+
+            String content2 = "content2";
+            HttpPart httpPart2 = new HttpPart(Tuple.of("parameter2", Tuple.of(content2,Optional.empty())));
+            parts.add(httpPart2);
+
+            URL fileUrl = Thread.currentThread().getContextClassLoader().getResource("upload.txt");
+            File file = new File(fileUrl.toURI());
+            HttpPart httpPart3 = new HttpPart(Tuple.of("parameter3", Tuple.of("value3",Optional.of(file))));
+            parts.add(httpPart3);
+
+            Map<String, List<String>> headers = Maps.newHashMap();
+            headers.put("Content-Type",Lists.newArrayList("multipart/form-data; boundary=+++"));
+            HttpRequest httpRequest = new HttpRequest("http://dummy.com/", HttpRequest.Method.POST, headers, HttpRequest.BodyType.MULTIPART,parts);
+
+            //given
+            Request request = client.buildRequest(httpRequest);
+
+            //then
+            LOGGER.debug("request:{}", request);
+            assertThat(request.url().url().toString()).hasToString(httpRequest.getUrl());
+            assertThat(request.method()).isEqualTo(httpRequest.getMethod().name());
+            RequestBody body = request.body();
+            final Buffer buffer = new Buffer();
+            body.writeTo(buffer);
+            String actual = buffer.readUtf8();
+            String boundary = httpRequest.getBoundary();
+            List<String> myParts = getMultiPartsAsString(actual, boundary);
+
+            String part1AsString = myParts.get(0);
+            Map<String, String> headers1 = getHeaders(part1AsString);
+            assertThat(headers1.get("Content-Type")).contains("application/toto; charset=utf-8");
+            assertThat(getPartContent(part1AsString)).isEqualTo(content1);
+
+            String part2AsString = myParts.get(1);
+            Map<String, String> headers2 = getHeaders(part2AsString);
+            assertThat(headers2.get("Content-Disposition")).contains("form-data; name=\"parameter2\"");
+            String part2Content = getPartContent(part2AsString);
+            assertThat(part2Content).isEqualTo(content2);
+
+            String part3AsString = myParts.get(2);
+            Map<String, String> headers3 = getHeaders(part3AsString);
+            String contentDisposition3 = headers3.get("Content-Disposition");
+            assertThat(contentDisposition3).contains("form-data; name=\"parameter3\"; filename=\"upload.txt\"");
+            String part3Content = getPartContent(part3AsString);
+            assertThat(part3Content).isEqualTo("my content to upload\n" +
+                    "test1\n" +
+                    "test2");
         }
 
         @NotNull

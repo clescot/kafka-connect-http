@@ -18,6 +18,7 @@ import io.github.clescot.kafka.connect.http.core.HttpRequest;
 import io.github.clescot.kafka.connect.http.core.HttpResponse;
 import io.micrometer.core.instrument.binder.system.DiskSpaceMetrics;
 import io.micrometer.core.instrument.composite.CompositeMeterRegistry;
+import io.vavr.Tuple2;
 import kotlin.Pair;
 import okhttp3.*;
 import okhttp3.dnsoverhttps.DnsOverHttps;
@@ -432,11 +433,18 @@ public class OkHttpClient extends AbstractHttpClient<Request, Response> {
                         RequestBody partRequestBody;
                         Map<String, List<String>> partHeaders = httpPart.getHeaders();
                         Headers okPartHeaders = getHeaders(partHeaders);
-                        switch(httpPart.getBodyType()){
-                            case FORM:
-                                Map<String, String> contentAsForm = httpPart.getContentAsForm();
-                                for (Map.Entry<String, String> entry : contentAsForm.entrySet()) {
-                                    multipartBuilder.addFormDataPart(entry.getKey(),entry.getValue());
+                        HttpRequest.BodyType bodyType = httpPart.getBodyType();
+                        switch(bodyType){
+                            case FORM_DATA:
+                                Tuple2<String, Tuple2<String, Optional<File>>> contentAsFormEntry = httpPart.getContentAsFormEntry();
+                                Map.Entry<String, Tuple2<String, Optional<File>>> owningEntry = contentAsFormEntry.toEntry();
+                                Tuple2<String, Optional<File>> entry = owningEntry.getValue();
+                                if(entry.toEntry().getValue().isEmpty()) {
+                                    multipartBuilder.addFormDataPart(owningEntry.getKey(), owningEntry.getValue().toEntry().getKey());
+                                }else{
+                                    File file = entry.toEntry().getValue().get();
+                                    requestBody = RequestBody.create(file,MediaType.parse(""));
+                                    multipartBuilder.addFormDataPart(owningEntry.getKey(), file.getName(),requestBody);
                                 }
                                 break;
                             case BYTE_ARRAY:
@@ -444,6 +452,7 @@ public class OkHttpClient extends AbstractHttpClient<Request, Response> {
                                 multipartBuilder.addPart(okPartHeaders,partRequestBody);
                                 break;
                             case STRING:
+                            case FORM:// ?? a FORM cannot be placed into a multipart parent. we handle this bug as a String
                             case MULTIPART:// ?? a multipart cannot be placed into a multipart parent. we handle this bug as a String
                             default:
                                 String contentAsString = httpPart.getContentAsString();
@@ -452,14 +461,8 @@ public class OkHttpClient extends AbstractHttpClient<Request, Response> {
                                 multipartBuilder.addPart(part);
                                 break;
                         }
-                        requestBody = multipartBuilder.build();
                     }
-                    //TODO file upload case
-//                    multipartBuilder.addFormDataPart("name","filename",requestBody);
-//                    MultipartBody.Part part = null;
-//                    Headers myHeaders = null;
-//                    multipartBuilder.addPart(myHeaders,requestBody);
-//                    requestBody = multipartBuilder.build();
+                    requestBody = multipartBuilder.build();
                     break;
                 }
 
