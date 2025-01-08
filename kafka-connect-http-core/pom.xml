@@ -39,12 +39,20 @@
             <groupId>com.google.guava</groupId>
             <artifactId>guava</artifactId>
         </dependency>
+
+        <dependency>
+            <groupId>io.vavr</groupId>
+            <artifactId>vavr</artifactId>
+            <version>0.10.4</version>
+        </dependency>
+
+        <!-- provided dependencies -->
         <dependency>
             <groupId>org.apache.kafka</groupId>
             <artifactId>connect-api</artifactId>
             <scope>provided</scope>
         </dependency>
-
+        <!-- test dependencies -->
         <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter</artifactId>
@@ -60,12 +68,14 @@
             <artifactId>jsonassert</artifactId>
             <scope>test</scope>
         </dependency>
+
         <dependency>
             <groupId>io.confluent</groupId>
             <artifactId>kafka-connect-json-schema-converter</artifactId>
             <scope>test</scope>
             <version>${confluent.platform.version}</version>
         </dependency>
+
         <dependency>
             <groupId>org.apache.kafka</groupId>
             <artifactId>connect-json</artifactId>
