@@ -444,7 +444,7 @@ public class OkHttpClient extends AbstractHttpClient<Request, Response> {
                                 multipartBuilder.addPart(okPartHeaders,partRequestBody);
                                 break;
                             case STRING:
-                            case MULTIPART:// ??
+                            case MULTIPART:// ?? a multipart cannot be placed into a multipart parent. we handle this bug as a String
                             default:
                                 String contentAsString = httpPart.getContentAsString();
                                 partRequestBody = RequestBody.create(contentAsString, MediaType.parse(httpPart.getContentType()));
