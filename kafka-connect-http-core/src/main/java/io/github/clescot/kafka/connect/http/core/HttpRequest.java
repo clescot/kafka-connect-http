@@ -273,6 +273,7 @@ public class HttpRequest implements Serializable {
         return null;
     }
 
+    @JsonIgnore
     public String getBoundary(){
         String contentType = getContentType();
         String boundary = null;

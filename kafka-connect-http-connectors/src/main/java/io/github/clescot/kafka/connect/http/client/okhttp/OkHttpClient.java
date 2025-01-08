@@ -421,7 +421,7 @@ public class OkHttpClient extends AbstractHttpClient<Request, Response> {
                     //HttpRequest.BodyType = MULTIPART
                     List<HttpPart> bodyAsMultipart = httpRequest.getParts();
                     String boundary = null;
-                    if(firstContentType.contains("boundary=")){
+                    if(firstContentType!=null && firstContentType.contains("boundary=")){
                         List<String> myParts = Lists.newArrayList(firstContentType.split("boundary="));
                         if(myParts.size()==2){
                             boundary = myParts.get(1);

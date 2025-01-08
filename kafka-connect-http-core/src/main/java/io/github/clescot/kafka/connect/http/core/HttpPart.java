@@ -12,12 +12,15 @@ import org.apache.kafka.connect.data.SchemaBuilder;
 import org.apache.kafka.connect.data.Struct;
 
 import java.io.File;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.util.*;
 
 import static com.fasterxml.jackson.annotation.JsonInclude.Include;
 
 /**
- * part of a multi-part request.
+ * part of a multipart request.
  */
 @io.confluent.kafka.schemaregistry.annotations.Schema(value = HttpPart.SCHEMA_AS_STRING,
         refs = {})
@@ -28,9 +31,10 @@ public class HttpPart {
     public static final String APPLICATION_OCTET_STREAM = "application/octet-stream";
     public static final String CONTENT_TYPE = "Content-Type";
     private HttpRequest.BodyType bodyType;
-    private Map<String,List<String>> headers = Maps.newHashMap();
+    private Map<String, List<String>> headers = Maps.newHashMap();
     private String contentAsString;
     private String contentAsByteArray;
+    //Tuple2<parameterName,Tuple2<parameterValue,Optional<File>>
     private Tuple2<String, Tuple2<String, Optional<File>>> contentAsFormEntry;
     public static final int VERSION = 1;
     public static final String HEADERS = "headers";
@@ -44,88 +48,91 @@ public class HttpPart {
             .name(HttpPart.class.getName())
             .version(VERSION)
             .field(HEADERS, SchemaBuilder.map(Schema.STRING_SCHEMA, SchemaBuilder.array(Schema.STRING_SCHEMA).schema()).optional().build())
-            .field(BODY_TYPE,Schema.STRING_SCHEMA)
+            .field(BODY_TYPE, Schema.STRING_SCHEMA)
             .field(BODY_AS_STRING, Schema.OPTIONAL_STRING_SCHEMA)
-            .field(BODY_AS_FORM_DATA, SchemaBuilder.map(Schema.STRING_SCHEMA, Schema.STRING_SCHEMA).optional().schema())
+            .field(BODY_AS_FORM_DATA, SchemaBuilder.map(Schema.STRING_SCHEMA, SchemaBuilder.map(Schema.STRING_SCHEMA, Schema.OPTIONAL_STRING_SCHEMA).build()).optional().schema())
             .field(BODY_AS_BYTE_ARRAY, Schema.OPTIONAL_STRING_SCHEMA)
             .optional()
             .schema();
-    public static final String SCHEMA_ID = HttpExchange.BASE_SCHEMA_ID+ VERSION + "/"+"http-part.json";
+    public static final String SCHEMA_ID = HttpExchange.BASE_SCHEMA_ID + VERSION + "/" + "http-part.json";
     public static final String SCHEMA_AS_STRING =
             "{\n" +
-            "  \"$id\": \""+SCHEMA_ID+"\",\n" +
-            "  \"$schema\": \"http://json-schema.org/draft/2019-09/schema#\",\n" +
-            "  \"title\": \"Http Part\",\n" +
-            "  \"type\": \"object\",\n" +
-            "  \"additionalProperties\": false,\n" +
-            "  \"properties\": {\n" +
-            "    \"headers\": {\n" +
-            "      \"type\": \"object\",\n" +
-            "      \"connect.type\": \"map\",\n" +
-            "      \"additionalProperties\": {\n" +
-            "        \"type\": \"array\",\n" +
-            "        \"items\": {\n" +
-            "          \"type\": \"string\"\n" +
-            "        }\n" +
-            "      }\n" +
-            "    },\n" +
-            "    \"bodyAsString\": {\n" +
-            "      \"type\": \"string\"\n" +
-            "    },\n" +
-            "    \"bodyAsFormData\": {\n" +
-            "      \"type\": \"string\",\n" +
-            "    },\n" +
-            "    \"bodyAsByteArray\": {\n" +
-            "      \"type\": \"string\"\n" +
-            "    },\n" +
-            "    \"bodyType\": {\n" +
-            "      \"type\": \"string\",\n" +
-            "      \"enum\": [\n" +
-            "        \"STRING\",\n" +
-            "        \"FORM_DATA\",\n" +
-            "        \"BYTE_ARRAY\"\n" +
-            "      ]\n" +
-            "    }\n" +
-            "  },\n" +
-            "  \"required\": [\n" +
-            "    \"bodyType\"\n" +
-            "  ]\n" +
-            "}";
+                    "  \"$id\": \"" + SCHEMA_ID + "\",\n" +
+                    "  \"$schema\": \"http://json-schema.org/draft/2019-09/schema#\",\n" +
+                    "  \"title\": \"Http Part\",\n" +
+                    "  \"type\": \"object\",\n" +
+                    "  \"additionalProperties\": false,\n" +
+                    "  \"properties\": {\n" +
+                    "    \"headers\": {\n" +
+                    "      \"type\": \"object\",\n" +
+                    "      \"connect.type\": \"map\",\n" +
+                    "      \"additionalProperties\": {\n" +
+                    "        \"type\": \"array\",\n" +
+                    "        \"items\": {\n" +
+                    "          \"type\": \"string\"\n" +
+                    "        }\n" +
+                    "      }\n" +
+                    "    },\n" +
+                    "    \"bodyAsString\": {\n" +
+                    "      \"type\": \"string\"\n" +
+                    "    },\n" +
+                    "    \"bodyAsFormData\": {\n" +
+                    "      \"type\": \"string\"\n" +
+                    "    },\n" +
+                    "    \"bodyAsByteArray\": {\n" +
+                    "      \"type\": \"string\"\n" +
+                    "    },\n" +
+                    "    \"bodyType\": {\n" +
+                    "      \"type\": \"string\",\n" +
+                    "      \"enum\": [\n" +
+                    "        \"STRING\",\n" +
+                    "        \"FORM_DATA\",\n" +
+                    "        \"BYTE_ARRAY\"\n" +
+                    "      ]\n" +
+                    "    }\n" +
+                    "  },\n" +
+                    "  \"required\": [\n" +
+                    "    \"bodyType\"\n" +
+                    "  ]\n" +
+                    "}";
 
 
     //for deserialization only
-    protected HttpPart(){}
+    protected HttpPart() {
+    }
 
-    public HttpPart(Map<String,List<String>> headers,byte[] contentAsByteArray) {
+    public HttpPart(Map<String, List<String>> headers, byte[] contentAsByteArray) {
         this.bodyType = HttpRequest.BodyType.BYTE_ARRAY;
         this.headers = headers;
         this.contentAsByteArray = Base64.getMimeEncoder().encodeToString(contentAsByteArray);
     }
 
     public HttpPart(byte[] contentAsByteArray) {
-        this(Map.of(CONTENT_TYPE, Lists.newArrayList(APPLICATION_OCTET_STREAM)),contentAsByteArray);
+        this(Map.of(CONTENT_TYPE, Lists.newArrayList(APPLICATION_OCTET_STREAM)), contentAsByteArray);
     }
 
-    public HttpPart(Map<String,List<String>> headers,Tuple2<String,Tuple2<String, Optional<File>>> contentAsFormEntry) {
+    public HttpPart(Map<String, List<String>> headers, Tuple2<String, Tuple2<String, Optional<File>>> contentAsFormEntry) {
         this.bodyType = HttpRequest.BodyType.FORM_DATA;
         this.headers = headers;
         this.contentAsFormEntry = contentAsFormEntry;
     }
-    public HttpPart(Tuple2<String,Tuple2<String, Optional<File>>> contentAsFormEntry) {
+
+    public HttpPart(Tuple2<String, Tuple2<String, Optional<File>>> contentAsFormEntry) {
         this(Map.of(CONTENT_TYPE, Lists.newArrayList(APPLICATION_X_WWW_FORM_URLENCODED)), contentAsFormEntry);
     }
 
-    public HttpPart(Map<String,List<String>> headers,String contentAsString) {
+    public HttpPart(Map<String, List<String>> headers, String contentAsString) {
         this.bodyType = HttpRequest.BodyType.STRING;
         this.headers = headers;
         this.contentAsString = contentAsString;
     }
+
     public HttpPart(String contentAsString) {
-        this(Map.of(CONTENT_TYPE, Lists.newArrayList(APPLICATION_JSON)),contentAsString);
+        this(Map.of(CONTENT_TYPE, Lists.newArrayList(APPLICATION_JSON)), contentAsString);
     }
 
-    public HttpPart(Struct struct){
-        this.headers =  struct.getMap(HEADERS);
+    public HttpPart(Struct struct) {
+        this.headers = struct.getMap(HEADERS);
         this.contentAsByteArray = struct.getString(BODY_AS_BYTE_ARRAY);
     }
 
@@ -134,14 +141,13 @@ public class HttpPart {
     }
 
 
-
-    public String getContentAsString(){
+    public String getContentAsString() {
         return contentAsString;
     }
 
 
     public void setContentAsByteArray(byte[] contentAsByteArray) {
-        if(contentAsByteArray!=null) {
+        if (contentAsByteArray != null) {
             this.contentAsByteArray = Base64.getEncoder().encodeToString(contentAsByteArray);
         }
     }
@@ -154,12 +160,37 @@ public class HttpPart {
         this.contentAsFormEntry = contentAsFormEntry;
     }
 
-    public Tuple2<String, Tuple2<String, Optional<File>>> getContentAsFormEntry(){
+    public Tuple2<String, Tuple2<String, Optional<File>>> getContentAsFormEntry() {
         return contentAsFormEntry;
     }
 
+    public Map<String, Map<String, Optional<String>>> fromFormEntryAsTupleToMap(Tuple2<String, Tuple2<String, Optional<File>>> tuple) {
+
+        Map<String, Map<String, Optional<String>>> map = Maps.newHashMap();
+        Map<String, Optional<String>> innerMap = Maps.newHashMap();
+        if(tuple == null){
+            return map;
+        }
+        Map.Entry<String, Tuple2<String, Optional<File>>> entry = tuple.toEntry();
+        Map.Entry<String, Optional<File>> entry1 = entry.getValue().toEntry();
+        Optional<File> value = entry1.getValue();
+        if(value.isPresent()) {
+            try {
+                String fileContent = Files.readString(value.get().toPath());
+                innerMap.put(entry1.getKey(), Optional.ofNullable(Base64.getEncoder().encodeToString(fileContent.getBytes(StandardCharsets.UTF_8))));
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        }else{
+            innerMap.put(entry1.getKey(), Optional.empty());
+        }
+        map.put(entry.getKey(), innerMap);
+        return map;
+    }
+
+
     public byte[] getContentAsByteArray() {
-        if(contentAsByteArray!=null) {
+        if (contentAsByteArray != null) {
             return Base64.getMimeDecoder().decode(contentAsByteArray);
         }
         return null;
@@ -170,10 +201,10 @@ public class HttpPart {
     }
 
     public void setHeaders(Map<String, List<String>> headers) {
-        Preconditions.checkArgument(headers.keySet().stream().allMatch(key->
-                "Content-Disposition".equalsIgnoreCase(key)||
-                "Content-Type".equalsIgnoreCase(key)||
-                "Content-Transfer-Encoding".equalsIgnoreCase(key)),
+        Preconditions.checkArgument(headers.keySet().stream().allMatch(key ->
+                        "Content-Disposition".equalsIgnoreCase(key) ||
+                                "Content-Type".equalsIgnoreCase(key) ||
+                                "Content-Transfer-Encoding".equalsIgnoreCase(key)),
                 "all headers key in a multipart request must be 'Content-Disposition','Content-Type', " +
                         "or 'Content-Transfer-Encoding'. current Headers key of this part are : "
                         + Joiner.on(",").join(headers.keySet()));
@@ -181,11 +212,11 @@ public class HttpPart {
     }
 
     @JsonIgnore
-    public String getContentType(){
-        if(headers != null
+    public String getContentType() {
+        if (headers != null
                 && headers.containsKey(CONTENT_TYPE)
-                &&headers.get(CONTENT_TYPE)!=null
-                &&!headers.get(CONTENT_TYPE).isEmpty()){
+                && headers.get(CONTENT_TYPE) != null
+                && !headers.get(CONTENT_TYPE).isEmpty()) {
             return headers.get("Content-Type").get(0);
         }
         return null;
@@ -211,18 +242,18 @@ public class HttpPart {
         return "Part{" +
                 "bodyType:\"" + bodyType +
                 ", \"contentAsString\":" + contentAsString + '\"' +
-                ", \"contentAsByteArray\":\"" + contentAsByteArray +"\""+
-                ", \"contentAsForm\":\"" + contentAsFormEntry +"\""+
+                ", \"contentAsByteArray\":\"" + contentAsByteArray + "\"" +
+                ", \"contentAsForm\":\"" + contentAsFormEntry + "\"" +
                 '}';
     }
 
-    public Struct toStruct(){
+    public Struct toStruct() {
         Struct struct = new Struct(SCHEMA);
-        struct.put(HEADERS,getHeaders());
-        struct.put(BODY_TYPE,getBodyType().name());
-        struct.put(BODY_AS_STRING,getContentAsString());
-        struct.put(BODY_AS_FORM_DATA, getContentAsFormEntry());
-        struct.put(BODY_AS_BYTE_ARRAY,getContentAsByteArray());
+        struct.put(HEADERS, getHeaders());
+        struct.put(BODY_TYPE, getBodyType().name());
+        struct.put(BODY_AS_STRING, contentAsString);
+        struct.put(BODY_AS_FORM_DATA, fromFormEntryAsTupleToMap(contentAsFormEntry));
+        struct.put(BODY_AS_BYTE_ARRAY, contentAsByteArray);
         return struct;
     }
 

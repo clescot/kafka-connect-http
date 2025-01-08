@@ -32,7 +32,6 @@ import java.nio.charset.StandardCharsets;
 import java.util.*;
 
 import static io.github.clescot.kafka.connect.http.core.HttpRequest.BODY_AS_BYTE_ARRAY;
-import static io.github.clescot.kafka.connect.http.core.HttpRequest.PARTS;
 import static org.assertj.core.api.Assertions.assertThat;
 
 class HttpRequestTest {
