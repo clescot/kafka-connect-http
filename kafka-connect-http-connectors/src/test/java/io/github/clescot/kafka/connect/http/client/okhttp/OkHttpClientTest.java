@@ -22,7 +22,6 @@ import io.micrometer.core.instrument.Clock;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.composite.CompositeMeterRegistry;
 import io.micrometer.jmx.JmxMeterRegistry;
-import io.vavr.Tuple;
 import okhttp3.*;
 import okhttp3.internal.http.RealResponseBody;
 import okio.Buffer;
@@ -33,7 +32,6 @@ import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.extension.RegisterExtension;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import scala.Tuple2;
 
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.TrustManagerFactory;
@@ -256,12 +254,12 @@ class OkHttpClientTest {
             parts.add(httpPart1);
 
             String content2 = "content2";
-            HttpPart httpPart2 = new HttpPart(Tuple.of("parameter2", Tuple.of(content2,Optional.empty())));
+            HttpPart httpPart2 = new HttpPart("parameter2",content2,null);
             parts.add(httpPart2);
 
             URL fileUrl = Thread.currentThread().getContextClassLoader().getResource("upload.txt");
             File file = new File(fileUrl.toURI());
-            HttpPart httpPart3 = new HttpPart(Tuple.of("parameter3", Tuple.of("value3",Optional.of(file))));
+            HttpPart httpPart3 = new HttpPart("parameter3", "value3",file);
             parts.add(httpPart3);
 
             Map<String, List<String>> headers = Maps.newHashMap();

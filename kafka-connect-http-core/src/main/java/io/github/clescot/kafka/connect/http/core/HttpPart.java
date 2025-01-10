@@ -35,7 +35,7 @@ public class HttpPart {
     private String contentAsString;
     private String contentAsByteArray;
     //Tuple2<parameterName,Tuple2<parameterValue,Optional<File>>
-    private Tuple2<String, Tuple2<String, Optional<File>>> contentAsFormEntry;
+    private Map.Entry<String, Map.Entry<String, Optional<File>>> contentAsFormEntry;
     public static final int VERSION = 1;
     public static final String HEADERS = "headers";
     public static final String BODY_TYPE = "bodyType";
@@ -111,14 +111,14 @@ public class HttpPart {
         this(Map.of(CONTENT_TYPE, Lists.newArrayList(APPLICATION_OCTET_STREAM)), contentAsByteArray);
     }
 
-    public HttpPart(Map<String, List<String>> headers, Tuple2<String, Tuple2<String, Optional<File>>> contentAsFormEntry) {
+    public HttpPart(Map<String, List<String>> headers, String parameterName,String parameterValue,File file) {
         this.bodyType = HttpRequest.BodyType.FORM_DATA;
         this.headers = headers;
-        this.contentAsFormEntry = contentAsFormEntry;
+        this.contentAsFormEntry = Map.entry(parameterName,Map.entry(parameterValue,Optional.ofNullable(file)));
     }
 
-    public HttpPart(Tuple2<String, Tuple2<String, Optional<File>>> contentAsFormEntry) {
-        this(Map.of(CONTENT_TYPE, Lists.newArrayList(APPLICATION_X_WWW_FORM_URLENCODED)), contentAsFormEntry);
+    public HttpPart(String parameterName,String parameterValue,File file) {
+        this(Map.of(CONTENT_TYPE, Lists.newArrayList(APPLICATION_X_WWW_FORM_URLENCODED)), parameterName,parameterValue,file);
     }
 
     public HttpPart(Map<String, List<String>> headers, String contentAsString) {
@@ -156,37 +156,15 @@ public class HttpPart {
         this.contentAsString = contentAsString;
     }
 
-    public void setContentAsFormEntry(Tuple2<String, Tuple2<String, Optional<File>>> contentAsFormEntry) {
+    public void setContentAsFormEntry(Map.Entry<String, Map.Entry<String, Optional<File>>> contentAsFormEntry) {
         this.contentAsFormEntry = contentAsFormEntry;
     }
 
-    public Tuple2<String, Tuple2<String, Optional<File>>> getContentAsFormEntry() {
+    public Map.Entry<String, Map.Entry<String, Optional<File>>> getContentAsFormEntry() {
         return contentAsFormEntry;
     }
 
-    public Map<String, Map<String, Optional<String>>> fromFormEntryAsTupleToMap(Tuple2<String, Tuple2<String, Optional<File>>> tuple) {
 
-        Map<String, Map<String, Optional<String>>> map = Maps.newHashMap();
-        Map<String, Optional<String>> innerMap = Maps.newHashMap();
-        if(tuple == null){
-            return map;
-        }
-        Map.Entry<String, Tuple2<String, Optional<File>>> entry = tuple.toEntry();
-        Map.Entry<String, Optional<File>> entry1 = entry.getValue().toEntry();
-        Optional<File> value = entry1.getValue();
-        if(value.isPresent()) {
-            try {
-                String fileContent = Files.readString(value.get().toPath());
-                innerMap.put(entry1.getKey(), Optional.ofNullable(Base64.getEncoder().encodeToString(fileContent.getBytes(StandardCharsets.UTF_8))));
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            }
-        }else{
-            innerMap.put(entry1.getKey(), Optional.empty());
-        }
-        map.put(entry.getKey(), innerMap);
-        return map;
-    }
 
 
     public byte[] getContentAsByteArray() {
@@ -252,7 +230,7 @@ public class HttpPart {
         struct.put(HEADERS, getHeaders());
         struct.put(BODY_TYPE, getBodyType().name());
         struct.put(BODY_AS_STRING, contentAsString);
-        struct.put(BODY_AS_FORM_DATA, fromFormEntryAsTupleToMap(contentAsFormEntry));
+        struct.put(BODY_AS_FORM_DATA, contentAsFormEntry);
         struct.put(BODY_AS_BYTE_ARRAY, contentAsByteArray);
         return struct;
     }

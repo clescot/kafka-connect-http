@@ -18,7 +18,6 @@ import io.github.clescot.kafka.connect.http.core.HttpRequest;
 import io.github.clescot.kafka.connect.http.core.HttpResponse;
 import io.micrometer.core.instrument.binder.system.DiskSpaceMetrics;
 import io.micrometer.core.instrument.composite.CompositeMeterRegistry;
-import io.vavr.Tuple2;
 import kotlin.Pair;
 import okhttp3.*;
 import okhttp3.dnsoverhttps.DnsOverHttps;
@@ -436,15 +435,15 @@ public class OkHttpClient extends AbstractHttpClient<Request, Response> {
                         HttpRequest.BodyType bodyType = httpPart.getBodyType();
                         switch(bodyType){
                             case FORM_DATA:
-                                Tuple2<String, Tuple2<String, Optional<File>>> contentAsFormEntry = httpPart.getContentAsFormEntry();
-                                Map.Entry<String, Tuple2<String, Optional<File>>> owningEntry = contentAsFormEntry.toEntry();
-                                Tuple2<String, Optional<File>> entry = owningEntry.getValue();
-                                if(entry.toEntry().getValue().isEmpty()) {
-                                    multipartBuilder.addFormDataPart(owningEntry.getKey(), owningEntry.getValue().toEntry().getKey());
+                                Map.Entry<String, Map.Entry<String, Optional<File>>> contentAsFormEntry = httpPart.getContentAsFormEntry();
+
+                                Map.Entry<String, Optional<File>> entry = contentAsFormEntry.getValue();
+                                if(entry.getValue().isEmpty()) {
+                                    multipartBuilder.addFormDataPart(contentAsFormEntry.getKey(), contentAsFormEntry.getValue().getKey());
                                 }else{
-                                    File file = entry.toEntry().getValue().get();
+                                    File file = entry.getValue().get();
                                     requestBody = RequestBody.create(file,MediaType.parse(""));
-                                    multipartBuilder.addFormDataPart(owningEntry.getKey(), file.getName(),requestBody);
+                                    multipartBuilder.addFormDataPart(contentAsFormEntry.getKey(), file.getName(),requestBody);
                                 }
                                 break;
                             case BYTE_ARRAY:

@@ -2,6 +2,7 @@ package io.github.clescot.kafka.connect.http.core;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
@@ -27,7 +28,10 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.skyscreamer.jsonassert.JSONAssert;
 
+import java.io.File;
 import java.io.IOException;
+import java.net.URISyntaxException;
+import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
 
@@ -144,6 +148,47 @@ class HttpRequestTest {
         HttpRequest deserializedRequest = objectMapper.readValue(serializedHttpRequest, HttpRequest.class);
         assertThat(httpRequest).isEqualTo(deserializedRequest);
     }
+
+    @Test
+    void test_serialization_with_multipart_and_file() throws JsonProcessingException, URISyntaxException {
+        ObjectMapper objectMapper = new ObjectMapper();
+        objectMapper.registerModule(new JavaTimeModule());
+        objectMapper.registerModule(new Jdk8Module());
+        Map<String,List<String>> headers = Maps.newHashMap();
+        headers.put("Content-Type",Lists.newArrayList(
+                "multipart/form-data; boundary=45789ee5"));
+        //build httpRequest
+        HttpRequest httpRequest = new HttpRequest(
+                "http://www.stuff.com",
+                HttpRequest.Method.POST,headers, HttpRequest.BodyType.MULTIPART
+        );
+        List<HttpPart> httpParts = Lists.newArrayList();
+        URL resourceURL = Thread.currentThread().getContextClassLoader().getResource("upload.txt");
+        HttpPart part1;
+        if (resourceURL != null) {
+            File file = new File(resourceURL.toURI());
+            part1 = new HttpPart("parameter1","parameterValue1",file);
+        }else{
+            throw new IllegalStateException("file not found");
+        }
+
+        httpParts.add(part1);
+        HttpPart part2 = new HttpPart("part2".getBytes(StandardCharsets.UTF_8));
+        httpParts.add(part2);
+        HttpPart part3 = new HttpPart("part3");
+        httpParts.add(part3);
+        httpRequest.setParts(httpParts);
+        headers.put("X-correlation-id",Lists.newArrayList("sfds-55-77"));
+        headers.put("X-request-id",Lists.newArrayList("aaaa-4466666-111"));
+        httpRequest.setHeaders(headers);
+
+
+        String serializedHttpRequest = objectMapper.writeValueAsString(httpRequest);
+        HttpRequest deserializedRequest = objectMapper.readValue(serializedHttpRequest, HttpRequest.class);
+        assertThat(httpRequest).isEqualTo(deserializedRequest);
+        List<HttpPart> deserializedRequestParts = deserializedRequest.getParts();
+        assertThat(deserializedRequestParts).hasSameSizeAs(httpParts);
+    }
     @Test
     void test_deserialization() throws JsonProcessingException {
         ObjectMapper objectMapper = new ObjectMapper();
@@ -196,7 +241,7 @@ class HttpRequestTest {
     }
 
     @Test
-    void test_serialize_and_deserialize_http_request_with_low_level_serializer() throws IOException {
+    void test_serialize_and_deserialize_http_request_with_low_level_serializer() {
         //given
 
         //build httpRequest
