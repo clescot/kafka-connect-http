@@ -11,6 +11,7 @@ import org.apache.kafka.connect.data.SchemaBuilder;
 import org.apache.kafka.connect.data.Struct;
 
 import java.io.File;
+import java.net.URI;
 import java.util.*;
 
 import static com.fasterxml.jackson.annotation.JsonInclude.Include;
@@ -26,6 +27,7 @@ public class HttpPart {
     public static final String APPLICATION_JSON = "application/json";
     public static final String APPLICATION_OCTET_STREAM = "application/octet-stream";
     public static final String CONTENT_TYPE = "Content-Type";
+    private URI fileUri;
     private HttpRequest.BodyType bodyType;
     private Map<String, List<String>> headers = Maps.newHashMap();
     private String contentAsString;
@@ -38,6 +40,7 @@ public class HttpPart {
     public static final String BODY_AS_STRING = "bodyAsString";
     public static final String BODY_AS_FORM_DATA = "bodyAsFormData";
     public static final String BODY_AS_BYTE_ARRAY = "bodyAsByteArray";
+    public static final String FILE_URI = "fileUri";
 
     public static final Schema SCHEMA = SchemaBuilder
             .struct()
@@ -48,6 +51,7 @@ public class HttpPart {
             .field(BODY_AS_STRING, Schema.OPTIONAL_STRING_SCHEMA)
             .field(BODY_AS_FORM_DATA, SchemaBuilder.map(Schema.STRING_SCHEMA, SchemaBuilder.map(Schema.STRING_SCHEMA, Schema.OPTIONAL_STRING_SCHEMA).build()).optional().schema())
             .field(BODY_AS_BYTE_ARRAY, Schema.OPTIONAL_STRING_SCHEMA)
+            .field(FILE_URI, Schema.OPTIONAL_STRING_SCHEMA)
             .optional()
             .schema();
     public static final String SCHEMA_ID = HttpExchange.BASE_SCHEMA_ID + VERSION + "/" + "http-part.json";
@@ -111,6 +115,13 @@ public class HttpPart {
         this.bodyType = HttpRequest.BodyType.FORM_DATA;
         this.headers = headers;
         this.contentAsFormEntry = Map.entry(parameterName,Map.entry(parameterValue,Optional.ofNullable(file)));
+    }
+
+    public HttpPart(Map<String, List<String>> headers, String parameterName, String parameterValue, URI fileUri) {
+        this.bodyType = HttpRequest.BodyType.FORM_DATA;
+        this.headers = headers;
+        this.contentAsFormEntry = Map.entry(parameterName,Map.entry(parameterValue,Optional.empty()));
+        this.fileUri = fileUri;
     }
 
     public HttpPart(String parameterName,String parameterValue,File file) {
@@ -201,23 +212,28 @@ public class HttpPart {
         if (!(o instanceof HttpPart)) return false;
         HttpPart httpPart = (HttpPart) o;
         return bodyType == httpPart.bodyType
+                && Objects.equals(headers, httpPart.headers)
                 && Objects.equals(contentAsString, httpPart.contentAsString)
                 && Objects.deepEquals(contentAsByteArray, httpPart.contentAsByteArray)
-                && Objects.equals(contentAsFormEntry, httpPart.contentAsFormEntry);
+                && Objects.equals(contentAsFormEntry, httpPart.contentAsFormEntry)
+                && Objects.equals(fileUri, httpPart.fileUri)
+                ;
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(bodyType, contentAsString, contentAsByteArray, contentAsFormEntry);
+        return Objects.hash(bodyType, headers,contentAsString, contentAsByteArray, contentAsFormEntry,fileUri);
     }
 
     @Override
     public String toString() {
         return "Part{" +
                 "bodyType:\"" + bodyType +
+                "\", headers:" + headers +
                 ", \"contentAsString\":" + contentAsString + '\"' +
                 ", \"contentAsByteArray\":\"" + contentAsByteArray + "\"" +
                 ", \"contentAsForm\":\"" + contentAsFormEntry + "\"" +
+                ", \"fileUri\":\"" + fileUri + "\"" +
                 '}';
     }
 
@@ -228,6 +244,7 @@ public class HttpPart {
         struct.put(BODY_AS_STRING, contentAsString);
         struct.put(BODY_AS_FORM_DATA, contentAsFormEntry);
         struct.put(BODY_AS_BYTE_ARRAY, contentAsByteArray);
+        struct.put(FILE_URI, fileUri);
         return struct;
     }
 
