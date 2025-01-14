@@ -45,6 +45,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
+import static io.github.clescot.kafka.connect.http.core.HttpPart.BodyType.FORM_DATA;
 import static io.github.clescot.kafka.connect.http.sink.HttpSinkConfigDefinition.*;
 import static io.github.clescot.kafka.connect.http.sink.HttpSinkTask.DEFAULT_CONFIGURATION_ID;
 
@@ -432,8 +433,7 @@ public class OkHttpClient extends AbstractHttpClient<Request, Response> {
                         RequestBody partRequestBody;
                         Map<String, List<String>> partHeaders = httpPart.getHeaders();
                         Headers okPartHeaders = getHeaders(partHeaders);
-                        HttpRequest.BodyType bodyType = httpPart.getBodyType();
-                        switch(bodyType){
+                        switch(httpPart.getBodyType()){
                             case FORM_DATA:
                                 Map.Entry<String, Map.Entry<String, Optional<File>>> contentAsFormEntry = httpPart.getContentAsFormEntry();
 
@@ -446,13 +446,16 @@ public class OkHttpClient extends AbstractHttpClient<Request, Response> {
                                     multipartBuilder.addFormDataPart(contentAsFormEntry.getKey(), file.getName(),requestBody);
                                 }
                                 break;
+                            case FORM_DATA_AS_REFERENCE:
+                                Map.Entry<String, Map.Entry<String, Optional<File>>> formEntry = httpPart.getContentAsFormEntry();
+                                File file = new File(httpPart.getFileUri());
+                                requestBody = RequestBody.create(file,MediaType.parse(""));
+                                multipartBuilder.addFormDataPart(formEntry.getKey(), file.getName(),requestBody);
                             case BYTE_ARRAY:
                                 partRequestBody = toRequestBody(httpPart.getContentAsByteArray(), httpPart.getContentType());
                                 multipartBuilder.addPart(okPartHeaders,partRequestBody);
                                 break;
                             case STRING:
-                            case FORM:// ?? a FORM cannot be placed into a multipart parent. we handle this bug as a String
-                            case MULTIPART:// ?? a multipart cannot be placed into a multipart parent. we handle this bug as a String
                             default:
                                 String contentAsString = httpPart.getContentAsString();
                                 partRequestBody = RequestBody.create(contentAsString, MediaType.parse(httpPart.getContentType()));

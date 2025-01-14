@@ -15,6 +15,7 @@ import java.net.URI;
 import java.util.*;
 
 import static com.fasterxml.jackson.annotation.JsonInclude.Include;
+import static io.github.clescot.kafka.connect.http.core.HttpPart.BodyType.FORM_DATA;
 
 /**
  * part of a multipart request.
@@ -28,7 +29,7 @@ public class HttpPart {
     public static final String APPLICATION_OCTET_STREAM = "application/octet-stream";
     public static final String CONTENT_TYPE = "Content-Type";
     private URI fileUri;
-    private HttpRequest.BodyType bodyType;
+    private HttpPart.BodyType bodyType;
     private Map<String, List<String>> headers = Maps.newHashMap();
     private String contentAsString;
     private String contentAsByteArray;
@@ -106,7 +107,7 @@ public class HttpPart {
 
     //content as byte array
     public HttpPart(Map<String, List<String>> headers, byte[] contentAsByteArray) {
-        this.bodyType = HttpRequest.BodyType.BYTE_ARRAY;
+        this.bodyType = HttpPart.BodyType.BYTE_ARRAY;
         this.headers = headers;
         this.contentAsByteArray = Base64.getMimeEncoder().encodeToString(contentAsByteArray);
     }
@@ -118,26 +119,31 @@ public class HttpPart {
 
     //content as form data with plain file content
     public HttpPart(Map<String, List<String>> headers, String parameterName,String parameterValue,File file) {
-        this.bodyType = HttpRequest.BodyType.FORM_DATA;
+        this.bodyType = FORM_DATA;
         this.headers = headers;
         this.contentAsFormEntry = Map.entry(parameterName,Map.entry(parameterValue,Optional.ofNullable(file)));
     }
 
-    //content as form data with file content as a reference
-    public HttpPart(Map<String, List<String>> headers, String parameterName, String parameterValue, URI fileUri) {
-        this.bodyType = HttpRequest.BodyType.FORM_DATA;
-        this.headers = headers;
-        this.contentAsFormEntry = Map.entry(parameterName,Map.entry(parameterValue,Optional.empty()));
-        this.fileUri = fileUri;
-    }
     //content as form data with plain file content without headers
     public HttpPart(String parameterName,String parameterValue,File file) {
         this(Map.of(CONTENT_TYPE, Lists.newArrayList(APPLICATION_X_WWW_FORM_URLENCODED)), parameterName,parameterValue,file);
     }
 
+    //content as form data with file content as a reference
+    public HttpPart(Map<String, List<String>> headers, String parameterName, String parameterValue, URI fileUri) {
+        this.bodyType = BodyType.FORM_DATA_AS_REFERENCE;
+        this.headers = headers;
+        this.contentAsFormEntry = Map.entry(parameterName,Map.entry(parameterValue,Optional.empty()));
+        this.fileUri = fileUri;
+    }
+    //content as form data with file content as a reference without headers
+    public HttpPart(String parameterName, String parameterValue, URI fileUri) {
+        this(Map.of(CONTENT_TYPE, Lists.newArrayList(APPLICATION_X_WWW_FORM_URLENCODED)), parameterName, parameterValue, fileUri);
+    }
+
     //content as string
     public HttpPart(Map<String, List<String>> headers, String contentAsString) {
-        this.bodyType = HttpRequest.BodyType.STRING;
+        this.bodyType = HttpPart.BodyType.STRING;
         this.headers = headers;
         this.contentAsString = contentAsString;
     }
@@ -152,7 +158,7 @@ public class HttpPart {
         this.contentAsByteArray = struct.getString(BODY_AS_BYTE_ARRAY);
     }
 
-    public HttpRequest.BodyType getBodyType() {
+    public HttpPart.BodyType getBodyType() {
         return bodyType;
     }
 
@@ -161,6 +167,9 @@ public class HttpPart {
         return contentAsString;
     }
 
+    public URI getFileUri() {
+        return fileUri;
+    }
 
     public void setContentAsByteArray(byte[] contentAsByteArray) {
         if (contentAsByteArray != null) {
@@ -257,5 +266,12 @@ public class HttpPart {
         return struct;
     }
 
+
+    public enum BodyType {
+        STRING,
+        BYTE_ARRAY,
+        FORM_DATA,
+        FORM_DATA_AS_REFERENCE
+    }
 
 }

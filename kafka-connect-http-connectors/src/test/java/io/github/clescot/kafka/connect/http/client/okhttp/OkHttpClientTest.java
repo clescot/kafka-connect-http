@@ -254,7 +254,8 @@ class OkHttpClientTest {
             parts.add(httpPart1);
 
             String content2 = "content2";
-            HttpPart httpPart2 = new HttpPart("parameter2",content2,null);
+            File nullFile = null;
+            HttpPart httpPart2 = new HttpPart("parameter2",content2,nullFile);
             parts.add(httpPart2);
 
             URL fileUrl = Thread.currentThread().getContextClassLoader().getResource("upload.txt");
