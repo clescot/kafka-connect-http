@@ -82,6 +82,9 @@ public class HttpPart {
                     "    \"bodyAsByteArray\": {\n" +
                     "      \"type\": \"string\"\n" +
                     "    },\n" +
+                    "    \"fileURI\": {\n" +
+                    "      \"type\": \"string\"\n" +
+                    "    },\n" +
                     "    \"bodyType\": {\n" +
                     "      \"type\": \"string\",\n" +
                     "      \"enum\": [\n" +
@@ -101,43 +104,49 @@ public class HttpPart {
     protected HttpPart() {
     }
 
+    //content as byte array
     public HttpPart(Map<String, List<String>> headers, byte[] contentAsByteArray) {
         this.bodyType = HttpRequest.BodyType.BYTE_ARRAY;
         this.headers = headers;
         this.contentAsByteArray = Base64.getMimeEncoder().encodeToString(contentAsByteArray);
     }
 
+    //content as byte array without headers
     public HttpPart(byte[] contentAsByteArray) {
         this(Map.of(CONTENT_TYPE, Lists.newArrayList(APPLICATION_OCTET_STREAM)), contentAsByteArray);
     }
 
+    //content as form data with plain file content
     public HttpPart(Map<String, List<String>> headers, String parameterName,String parameterValue,File file) {
         this.bodyType = HttpRequest.BodyType.FORM_DATA;
         this.headers = headers;
         this.contentAsFormEntry = Map.entry(parameterName,Map.entry(parameterValue,Optional.ofNullable(file)));
     }
 
+    //content as form data with file content as a reference
     public HttpPart(Map<String, List<String>> headers, String parameterName, String parameterValue, URI fileUri) {
         this.bodyType = HttpRequest.BodyType.FORM_DATA;
         this.headers = headers;
         this.contentAsFormEntry = Map.entry(parameterName,Map.entry(parameterValue,Optional.empty()));
         this.fileUri = fileUri;
     }
-
+    //content as form data with plain file content without headers
     public HttpPart(String parameterName,String parameterValue,File file) {
         this(Map.of(CONTENT_TYPE, Lists.newArrayList(APPLICATION_X_WWW_FORM_URLENCODED)), parameterName,parameterValue,file);
     }
 
+    //content as string
     public HttpPart(Map<String, List<String>> headers, String contentAsString) {
         this.bodyType = HttpRequest.BodyType.STRING;
         this.headers = headers;
         this.contentAsString = contentAsString;
     }
-
+    //content as string without headers
     public HttpPart(String contentAsString) {
         this(Map.of(CONTENT_TYPE, Lists.newArrayList(APPLICATION_JSON)), contentAsString);
     }
 
+    //for serialization
     public HttpPart(Struct struct) {
         this.headers = struct.getMap(HEADERS);
         this.contentAsByteArray = struct.getString(BODY_AS_BYTE_ARRAY);

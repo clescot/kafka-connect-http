@@ -49,7 +49,20 @@ class HttpPartTest {
             assertThat(httpPart).isNotEqualTo(httpPart2);
         }
 
+        @Test
+        void test_equals_content_as_String(){
+            HttpPart httpPart = new HttpPart("test");
+            HttpPart httpPart2 = new HttpPart("test");
+            assertThat(httpPart).isEqualTo(httpPart2);
+        }
 
-
+        @Test
+        void test_equals_content_as_string_with_same_headers(){
+            Map<String,List<String>> headers = new HashMap<>();
+            headers.put("Content-Type",List.of("application/json"));
+            HttpPart httpPart = new HttpPart(headers,"test");
+            HttpPart httpPart2 = new HttpPart(headers,"test");
+            assertThat(httpPart).isEqualTo(httpPart2);
+        }
     }
 }
