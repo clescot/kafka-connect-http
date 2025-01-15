@@ -31,7 +31,7 @@ class HttpPartTest {
             objectMapper.registerModule(new JavaTimeModule());
 
             HttpPart httpPart = new HttpPart("test".getBytes(StandardCharsets.UTF_8));
-            String expectedHttpPart = "" +
+            String expectedHttpPart =
                     "{\n" +
                     "  \"bodyType\": \"BYTE_ARRAY\",\n" +
                     "  \"headers\": {\n" +
@@ -51,7 +51,7 @@ class HttpPartTest {
             Map<String,List<String>> headers = new HashMap<>();
             headers.put("Content-Type",List.of("application/json"));
             HttpPart httpPart = new HttpPart(headers, "test".getBytes(StandardCharsets.UTF_8));
-            String expectedHttpPart = "" +
+            String expectedHttpPart =
                     "{\n" +
                     "  \"bodyType\": \"BYTE_ARRAY\",\n" +
                     "  \"headers\": {\n" +
@@ -70,7 +70,7 @@ class HttpPartTest {
             objectMapper.registerModule(new JavaTimeModule());
 
             HttpPart httpPart = new HttpPart("test");
-            String expectedHttpPart = "" +
+            String expectedHttpPart =
                     "{\n" +
                     "  \"bodyType\": \"STRING\",\n" +
                     "  \"headers\": {\n" +
@@ -90,7 +90,7 @@ class HttpPartTest {
             Map<String,List<String>> headers = new HashMap<>();
             headers.put("Content-Type",List.of("application/toto"));
             HttpPart httpPart = new HttpPart(headers, "test");
-            String expectedHttpPart = "" +
+            String expectedHttpPart =
                     "{\n" +
                     "  \"bodyType\": \"STRING\",\n" +
                     "  \"headers\": {\n" +
@@ -102,6 +102,29 @@ class HttpPartTest {
                     "}";
             String serializedHttpPart = objectMapper.writeValueAsString(httpPart);
             JSONAssert.assertEquals(expectedHttpPart, serializedHttpPart,true);
+        }
+    }
+
+    @Nested
+    class TestDeserialization{
+
+
+        @Test
+        void test_deserialization_content_as_byte_array() throws JsonProcessingException, JSONException {
+            ObjectMapper objectMapper = new ObjectMapper();
+            objectMapper.registerModule(new JavaTimeModule());
+            String serializedHttpPart =
+                    "{\n" +
+                    "  \"bodyType\": \"BYTE_ARRAY\",\n" +
+                    "  \"headers\": {\n" +
+                    "    \"Content-Type\": [\n" +
+                    "      \"application/octet-stream\"\n" +
+                    "    ]\n" +
+                    "  },\n" +
+                    "  \"contentAsByteArray\": \"dGVzdA==\"\n" +
+                    "}";
+            HttpPart httpPart = objectMapper.readValue(serializedHttpPart,HttpPart.class);
+            assertThat(httpPart).isEqualTo(new HttpPart("test".getBytes(StandardCharsets.UTF_8)));
         }
     }
 
