@@ -1,5 +1,6 @@
 package io.github.clescot.kafka.connect.http.core;
 
+import java.io.File;
 import java.net.URL;
 import java.util.List;
 
@@ -138,6 +139,19 @@ class HttpPartTest {
             headers.put("Content-Type",List.of("application/json"));
             URL url = Thread.currentThread().getContextClassLoader().getResource("upload.txt");
             assertDoesNotThrow(()->new HttpPart(headers,"parameterName","parameterValue",url.toURI()));
+        }
+
+        @Test
+        void test_constructor_with_file_as_content(){
+            URL url = Thread.currentThread().getContextClassLoader().getResource("upload.txt");
+            assertDoesNotThrow(()->new HttpPart("parameterName","parameterValue",new File(url.toURI())));
+        }
+        @Test
+        void test_constructor_with_file_as_content_and_headers(){
+            Map<String,List<String>> headers = new HashMap<>();
+            headers.put("Content-Type",List.of("application/json"));
+            URL url = Thread.currentThread().getContextClassLoader().getResource("upload.txt");
+            assertDoesNotThrow(()->new HttpPart(headers,"parameterName","parameterValue",new File(url.toURI())));
         }
     }
 
