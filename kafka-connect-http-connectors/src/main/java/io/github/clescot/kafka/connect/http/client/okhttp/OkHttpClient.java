@@ -45,7 +45,6 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
-import static io.github.clescot.kafka.connect.http.core.HttpPart.BodyType.FORM_DATA;
 import static io.github.clescot.kafka.connect.http.sink.HttpSinkConfigDefinition.*;
 import static io.github.clescot.kafka.connect.http.sink.HttpSinkTask.DEFAULT_CONFIGURATION_ID;
 
@@ -451,6 +450,7 @@ public class OkHttpClient extends AbstractHttpClient<Request, Response> {
                                 File file = new File(httpPart.getFileUri());
                                 requestBody = RequestBody.create(file,MediaType.parse(""));
                                 multipartBuilder.addFormDataPart(formEntry.getKey(), file.getName(),requestBody);
+                                break;
                             case BYTE_ARRAY:
                                 partRequestBody = toRequestBody(httpPart.getContentAsByteArray(), httpPart.getContentType());
                                 multipartBuilder.addPart(okPartHeaders,partRequestBody);
@@ -514,6 +514,7 @@ public class OkHttpClient extends AbstractHttpClient<Request, Response> {
                 LOGGER.trace("protocol: '{}',cache-control: '{}',handshake: '{}',challenges: '{}'", protocol,response.cacheControl(),response.handshake(),response.challenges());
             }
             httpResponse = new HttpResponse(response.code(), response.message());
+            //TODO handle more bodyType for HttpResponse
             if (response.body() != null) {
                 httpResponse.setBodyAsString(response.body().string());
             }
