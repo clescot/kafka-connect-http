@@ -2,8 +2,14 @@ package io.github.clescot.kafka.connect.http.core;
 
 import java.net.URL;
 import java.util.List;
+
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import org.json.JSONException;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import org.skyscreamer.jsonassert.JSONAssert;
 
 import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
@@ -13,6 +19,90 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 
 class HttpPartTest {
+
+
+    @Nested
+    class TestSerialization{
+
+        @Test
+        void test_serialization_content_as_byte_array() throws JsonProcessingException, JSONException {
+            ObjectMapper objectMapper = new ObjectMapper();
+            objectMapper.registerModule(new JavaTimeModule());
+
+            HttpPart httpPart = new HttpPart("test".getBytes(StandardCharsets.UTF_8));
+            String expectedHttpPart = "" +
+                    "{\n" +
+                    "  \"bodyType\": \"BYTE_ARRAY\",\n" +
+                    "  \"headers\": {\n" +
+                    "    \"Content-Type\": [\n" +
+                    "      \"application/octet-stream\"\n" +
+                    "    ]\n" +
+                    "  },\n" +
+                    "  \"contentAsByteArray\": \"dGVzdA==\"\n" +
+                    "}";
+            String serializedHttpPart = objectMapper.writeValueAsString(httpPart);
+            JSONAssert.assertEquals(expectedHttpPart, serializedHttpPart,true);
+        }
+        @Test
+        void test_serialization_content_as_byte_array_and_headers() throws JsonProcessingException, JSONException {
+            ObjectMapper objectMapper = new ObjectMapper();
+            objectMapper.registerModule(new JavaTimeModule());
+            Map<String,List<String>> headers = new HashMap<>();
+            headers.put("Content-Type",List.of("application/json"));
+            HttpPart httpPart = new HttpPart(headers, "test".getBytes(StandardCharsets.UTF_8));
+            String expectedHttpPart = "" +
+                    "{\n" +
+                    "  \"bodyType\": \"BYTE_ARRAY\",\n" +
+                    "  \"headers\": {\n" +
+                    "    \"Content-Type\": [\n" +
+                    "      \"application/json\"\n" +
+                    "    ]\n" +
+                    "  },\n" +
+                    "  \"contentAsByteArray\": \"dGVzdA==\"\n" +
+                    "}";
+            String serializedHttpPart = objectMapper.writeValueAsString(httpPart);
+            JSONAssert.assertEquals(expectedHttpPart, serializedHttpPart,true);
+        }
+        @Test
+        void test_serialization_content_as_string() throws JsonProcessingException, JSONException {
+            ObjectMapper objectMapper = new ObjectMapper();
+            objectMapper.registerModule(new JavaTimeModule());
+
+            HttpPart httpPart = new HttpPart("test");
+            String expectedHttpPart = "" +
+                    "{\n" +
+                    "  \"bodyType\": \"STRING\",\n" +
+                    "  \"headers\": {\n" +
+                    "    \"Content-Type\": [\n" +
+                    "      \"application/json\"\n" +
+                    "    ]\n" +
+                    "  },\n" +
+                    "  \"contentAsString\": \"test\"\n" +
+                    "}";
+            String serializedHttpPart = objectMapper.writeValueAsString(httpPart);
+            JSONAssert.assertEquals(expectedHttpPart, serializedHttpPart,true);
+        }
+        @Test
+        void test_serialization_content_as_string_and_headers() throws JsonProcessingException, JSONException {
+            ObjectMapper objectMapper = new ObjectMapper();
+            objectMapper.registerModule(new JavaTimeModule());
+            Map<String,List<String>> headers = new HashMap<>();
+            headers.put("Content-Type",List.of("application/toto"));
+            HttpPart httpPart = new HttpPart(headers, "test");
+            String expectedHttpPart = "" +
+                    "{\n" +
+                    "  \"bodyType\": \"STRING\",\n" +
+                    "  \"headers\": {\n" +
+                    "    \"Content-Type\": [\n" +
+                    "      \"application/toto\"\n" +
+                    "    ]\n" +
+                    "  },\n" +
+                    "  \"contentAsString\": \"test\"\n" +
+                    "}";
+            String serializedHttpPart = objectMapper.writeValueAsString(httpPart);
+            JSONAssert.assertEquals(expectedHttpPart, serializedHttpPart,true);
+        }
+    }
 
     @Nested
     class TestConstructor{
