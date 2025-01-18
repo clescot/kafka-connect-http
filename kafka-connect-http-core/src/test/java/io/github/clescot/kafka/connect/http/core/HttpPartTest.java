@@ -15,6 +15,7 @@ import org.skyscreamer.jsonassert.JSONAssert;
 import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
@@ -110,7 +111,7 @@ class HttpPartTest {
 
 
         @Test
-        void test_deserialization_content_as_byte_array() throws JsonProcessingException, JSONException {
+        void test_deserialization_content_as_byte_array() throws JsonProcessingException {
             ObjectMapper objectMapper = new ObjectMapper();
             objectMapper.registerModule(new JavaTimeModule());
             String serializedHttpPart =
@@ -154,27 +155,27 @@ class HttpPartTest {
         @Test
         void test_constructor_with_file_as_ref_content(){
             URL url = Thread.currentThread().getContextClassLoader().getResource("upload.txt");
-            assertDoesNotThrow(()->new HttpPart("parameterName","parameterValue",url.toURI()));
+            assertDoesNotThrow(()->new HttpPart("parameterName","parameterValue", Objects.requireNonNull(url).toURI()));
         }
         @Test
         void test_constructor_with_file_as_ref_content_and_headers(){
             Map<String,List<String>> headers = new HashMap<>();
             headers.put("Content-Type",List.of("application/json"));
             URL url = Thread.currentThread().getContextClassLoader().getResource("upload.txt");
-            assertDoesNotThrow(()->new HttpPart(headers,"parameterName","parameterValue",url.toURI()));
+            assertDoesNotThrow(()->new HttpPart(headers,"parameterName","parameterValue", Objects.requireNonNull(url).toURI()));
         }
 
         @Test
         void test_constructor_with_file_as_content(){
             URL url = Thread.currentThread().getContextClassLoader().getResource("upload.txt");
-            assertDoesNotThrow(()->new HttpPart("parameterName","parameterValue",new File(url.toURI())));
+            assertDoesNotThrow(()->new HttpPart("parameterName","parameterValue",new File(Objects.requireNonNull(url).toURI())));
         }
         @Test
         void test_constructor_with_file_as_content_and_headers(){
             Map<String,List<String>> headers = new HashMap<>();
             headers.put("Content-Type",List.of("application/json"));
             URL url = Thread.currentThread().getContextClassLoader().getResource("upload.txt");
-            assertDoesNotThrow(()->new HttpPart(headers,"parameterName","parameterValue",new File(url.toURI())));
+            assertDoesNotThrow(()->new HttpPart(headers,"parameterName","parameterValue",new File(Objects.requireNonNull(url).toURI())));
         }
     }
 
