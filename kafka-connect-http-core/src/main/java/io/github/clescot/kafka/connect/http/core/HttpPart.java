@@ -33,7 +33,7 @@ public class HttpPart {
     private Map<String, List<String>> headers = Maps.newHashMap();
     private String contentAsString;
     private String contentAsByteArray;
-    //Tuple2<parameterName,Tuple2<parameterValue,Optional<File>>
+    //Map.Entry<parameterName,Map.Entry<parameterValue,Optional<File>>
     private Map.Entry<String, Map.Entry<String, Optional<File>>> contentAsFormEntry;
     public static final int VERSION = 1;
     public static final String HEADERS = "headers";
