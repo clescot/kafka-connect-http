@@ -91,6 +91,7 @@ public class HttpPart {
                     "      \"enum\": [\n" +
                     "        \"STRING\",\n" +
                     "        \"FORM_DATA\",\n" +
+                    "        \"FORM_DATA_AS_REFERENCE\",\n" +
                     "        \"BYTE_ARRAY\"\n" +
                     "      ]\n" +
                     "    }\n" +
