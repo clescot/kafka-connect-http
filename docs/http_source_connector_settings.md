@@ -72,7 +72,7 @@ with the configuration explained below.
 To divide the work to be done, Kafka provide **partitioning** :
 if data can be handled independently (without any requirement on order), you can split data between partitions to level up your throughput **if needed**.
 
-So, with multiple partitions, there are multiple parts of data to handle : **you must configure the same number of partitions** for topics used by the HTTP Sink and Source connectors,
+So, with multiple partitions, there are multiple httpParts of data to handle : **you must configure the same number of partitions** for topics used by the HTTP Sink and Source connectors,
 and don't change the partition algorithm.
 So, a record with a key in the topic used by the sink connector, will result in an HTTP Exchange,
 which will be stored in the same partition in the topic used by the Source connector (if you don't choose a round-robin algorithm),

@@ -4,7 +4,6 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import io.github.clescot.kafka.connect.http.core.HttpRequest;
-import io.github.clescot.kafka.connect.http.core.HttpRequestAsStruct;
 import org.apache.commons.jexl3.JexlContext;
 import org.apache.commons.jexl3.JexlEngine;
 import org.apache.commons.jexl3.JexlExpression;
@@ -61,12 +60,7 @@ public class DirectHttpRequestMapper extends AbstractHttpRequestMapper {
             LOGGER.debug("schema type name referenced in Struct is '{}'", schemaTypeName);
             Integer version = schema.version();
             LOGGER.debug("schema version referenced in Struct is '{}'", version);
-
-            httpRequest = HttpRequestAsStruct
-                    .Builder
-                    .anHttpRequest()
-                    .withStruct(valueAsStruct)
-                    .build();
+            httpRequest = new HttpRequest(valueAsStruct);
             LOGGER.debug("httpRequest : {}", httpRequest);
         } else if (byte[].class.isAssignableFrom(valueClass)) {
             //we assume the value is a byte array

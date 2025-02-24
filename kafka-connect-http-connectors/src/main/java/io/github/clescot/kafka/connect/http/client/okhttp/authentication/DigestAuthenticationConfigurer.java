@@ -9,7 +9,6 @@ import java.util.Map;
 import java.util.Random;
 
 import static io.github.clescot.kafka.connect.http.sink.HttpSinkConfigDefinition.*;
-import static io.github.clescot.kafka.connect.http.sink.HttpSinkConfigDefinition.HTTP_CLIENT_AUTHENTICATION_DIGEST_CHARSET;
 
 public class DigestAuthenticationConfigurer implements AuthenticationConfigurer{
 
