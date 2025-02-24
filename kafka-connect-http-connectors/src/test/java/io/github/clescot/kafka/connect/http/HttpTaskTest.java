@@ -149,7 +149,7 @@ class HttpTaskTest {
 
     @NotNull
     private static HttpRequest getDummyHttpRequest(String url) {
-        HttpRequest httpRequest = new HttpRequest(url, DUMMY_METHOD, DUMMY_BODY_TYPE);
+        HttpRequest httpRequest = new HttpRequest(url, DUMMY_METHOD);
         Map<String, List<String>> headers = Maps.newHashMap();
         headers.put("Content-Type", Lists.newArrayList("application/json"));
         httpRequest.setHeaders(headers);

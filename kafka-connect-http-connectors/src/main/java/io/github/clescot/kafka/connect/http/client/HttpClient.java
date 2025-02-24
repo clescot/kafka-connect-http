@@ -123,7 +123,7 @@ public interface HttpClient<Q, S> {
                     Map<String, List<String>> responseHeaders = Maps.newHashMap();
                     responseHeaders.put(THROWABLE_CLASS, Lists.newArrayList(throwable.getCause().getClass().getName()));
                     responseHeaders.put(THROWABLE_MESSAGE, Lists.newArrayList(throwable.getCause().getMessage()));
-                    httpResponse.setResponseHeaders(responseHeaders);
+                    httpResponse.setHeaders(responseHeaders);
                     LOGGER.error(throwable.toString());
                     return buildHttpExchange(httpRequest, httpResponse, rateLimitedStopWatch, now, attempts,FAILURE);
                 }));

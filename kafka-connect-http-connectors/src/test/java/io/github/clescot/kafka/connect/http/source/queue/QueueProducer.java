@@ -58,7 +58,7 @@ public class QueueProducer implements Runnable {
         requestheaders.put("X-Request-ID", Lists.newArrayList("sdqd-qsdqd-446564"));
         requestheaders.put("X-Correlation-ID",Lists.newArrayList("222-qsdqd-446564"));
         requestheaders.put(CONTENT_TYPE,Lists.newArrayList(APPLICATION_JSON));
-        HttpRequest httpRequest = new HttpRequest("http://www.toto.com",HttpRequest.Method.POST,"STRING");
+        HttpRequest httpRequest = new HttpRequest("http://www.toto.com",HttpRequest.Method.POST);
         httpRequest.setHeaders(requestheaders);
         httpRequest.setBodyAsString("fummy body");
         return success? getSuccessfulHttpExchange(httpRequest): getErrorHttpExchange(httpRequest);
@@ -69,8 +69,8 @@ public class QueueProducer implements Runnable {
         Map<String,List<String>> responseHeaders = Maps.newHashMap();
         responseHeaders.put(CONTENT_TYPE,Lists.newArrayList(APPLICATION_JSON));
         HttpResponse httpResponse = new HttpResponse(200,"OK");
-        httpResponse.setResponseBody("body");
-        httpResponse.setResponseHeaders(responseHeaders);
+        httpResponse.setBodyAsString("body");
+        httpResponse.setHeaders(responseHeaders);
         return HttpExchange.Builder.anHttpExchange()
                 //tracing headers
                 //request
@@ -92,8 +92,8 @@ public class QueueProducer implements Runnable {
         Map<String,List<String>> responseHeaders = Maps.newHashMap();
         responseHeaders.put(CONTENT_TYPE,Lists.newArrayList(APPLICATION_JSON));
         HttpResponse httpResponse = new HttpResponse(500,"Internal Server Error");
-        httpResponse.setResponseBody("Houston, we've got a problem....");
-        httpResponse.setResponseHeaders(responseHeaders);
+        httpResponse.setBodyAsString("Houston, we've got a problem....");
+        httpResponse.setHeaders(responseHeaders);
         return HttpExchange.Builder.anHttpExchange()
                 //tracing headers
                 .withHttpRequest(httpRequest)

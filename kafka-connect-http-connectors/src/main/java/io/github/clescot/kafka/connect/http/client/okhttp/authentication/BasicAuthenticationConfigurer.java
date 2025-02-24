@@ -8,7 +8,6 @@ import java.nio.charset.Charset;
 import java.util.Map;
 
 import static io.github.clescot.kafka.connect.http.sink.HttpSinkConfigDefinition.*;
-import static io.github.clescot.kafka.connect.http.sink.HttpSinkConfigDefinition.HTTP_CLIENT_AUTHENTICATION_BASIC_CHARSET;
 
 public class BasicAuthenticationConfigurer implements AuthenticationConfigurer{
     public static final String ISO_8859_1 = "ISO-8859-1";

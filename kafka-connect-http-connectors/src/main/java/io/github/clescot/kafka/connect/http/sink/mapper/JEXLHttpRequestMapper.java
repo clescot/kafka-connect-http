@@ -70,7 +70,7 @@ public class JEXLHttpRequestMapper extends AbstractHttpRequestMapper {
         }
         HttpRequest.BodyType bodyType = HttpRequest.BodyType.valueOf(bodyTypeAsString);
         String content = jexlBodyExpression.isPresent()?jexlBodyExpression.map(jexlExpression -> (String) jexlExpression.evaluate(context)).orElse(null):null;
-        HttpRequest httpRequest = new HttpRequest(url,method,bodyType.name());
+        HttpRequest httpRequest = new HttpRequest(url,method);
         switch (bodyType){
             case STRING:
             default:{

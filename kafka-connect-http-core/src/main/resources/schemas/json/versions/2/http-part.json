@@ -1,0 +1,43 @@
+{
+  "$id": "+SCHEMA_ID+",
+  "$schema": "http://json-schema.org/draft/2019-09/schema#",
+  "title": "Http Part",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "headers": {
+      "type": "object",
+      "connect.type": "map",
+      "additionalProperties": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        }
+      }
+    },
+    "bodyAsString": {
+      "type": "string"
+    },
+    "bodyAsForm": {
+      "type": "object",
+      "connect.type": "map",
+      "additionalProperties": {
+        "type": "string"
+      }
+    },
+    "bodyAsByteArray": {
+      "type": "string"
+    },
+    "bodyType": {
+      "type": "string",
+      "enum": [
+        "STRING",
+        "FORM",
+        "BYTE_ARRAY"
+      ]
+    }
+  },
+  "required": [
+    "bodyType"
+  ]
+}
