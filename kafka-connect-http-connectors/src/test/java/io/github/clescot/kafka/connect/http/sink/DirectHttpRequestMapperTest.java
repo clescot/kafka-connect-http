@@ -5,14 +5,15 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import io.confluent.connect.json.JsonSchemaConverter;
 import io.confluent.kafka.schemaregistry.ParsedSchema;
-import io.confluent.kafka.schemaregistry.SchemaProvider;
 import io.confluent.kafka.schemaregistry.client.MockSchemaRegistryClient;
 import io.confluent.kafka.schemaregistry.client.SchemaRegistryClient;
 import io.confluent.kafka.schemaregistry.client.rest.exceptions.RestClientException;
 import io.confluent.kafka.schemaregistry.json.JsonSchema;
 import io.confluent.kafka.schemaregistry.json.JsonSchemaProvider;
+import io.github.clescot.kafka.connect.http.core.HttpExchange;
+import io.github.clescot.kafka.connect.http.core.HttpPart;
 import io.github.clescot.kafka.connect.http.core.HttpRequest;
-import io.github.clescot.kafka.connect.http.core.HttpRequestAsStruct;
+import io.github.clescot.kafka.connect.http.core.HttpResponse;
 import io.github.clescot.kafka.connect.http.sink.mapper.DirectHttpRequestMapper;
 import org.apache.commons.jexl3.JexlBuilder;
 import org.apache.commons.jexl3.JexlEngine;
@@ -35,13 +36,12 @@ import org.junit.jupiter.api.Test;
 import java.io.IOException;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
 import static io.confluent.kafka.serializers.json.KafkaJsonSchemaDeserializerConfig.JSON_VALUE_TYPE;
-import static io.github.clescot.kafka.connect.http.core.HttpRequestAsStruct.SCHEMA;
+import static io.github.clescot.kafka.connect.http.core.HttpRequest.SCHEMA;
 import static io.github.clescot.kafka.connect.http.sink.HttpSinkTask.DEFAULT;
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -52,8 +52,9 @@ class DirectHttpRequestMapperTest {
     private static final HttpRequest.Method DUMMY_METHOD = HttpRequest.Method.POST;
     private static final String DUMMY_BODY_TYPE = "STRING";
     private DirectHttpRequestMapper httpRequestMapper;
+    private SchemaRegistryClient schemaRegistryClient;
     @BeforeEach
-    public void setup() {
+    public void setup() throws RestClientException, IOException {
         // Restricted permissions to a safe set but with URI allowed
         JexlPermissions permissions = new JexlPermissions.ClassPermissions(SinkRecord.class, ConnectRecord.class,HttpRequest.class);
         // Create the engine
@@ -63,6 +64,19 @@ class DirectHttpRequestMapperTest {
                 .sideEffect(false);
         JexlEngine jexlEngine = new JexlBuilder().features(features).permissions(permissions).create();
         httpRequestMapper = new DirectHttpRequestMapper(DEFAULT,jexlEngine, "true");
+        schemaRegistryClient = new MockSchemaRegistryClient(Lists.newArrayList(new JsonSchemaProvider()));
+        //Register http part
+        ParsedSchema parsedPartSchema = new JsonSchema(HttpPart.SCHEMA_AS_STRING);
+        schemaRegistryClient.register("httpPart",parsedPartSchema);
+        //register http request
+        ParsedSchema parsedHttpRequestSchema = new JsonSchema(HttpRequest.SCHEMA_AS_STRING);
+        schemaRegistryClient.register("httpRequest",parsedHttpRequestSchema);
+        //register http response
+        ParsedSchema parsedHttpResponseSchema = new JsonSchema(HttpResponse.SCHEMA_AS_STRING);
+        schemaRegistryClient.register("httpResponse",parsedHttpResponseSchema);
+        //register http exchange
+        ParsedSchema parsedHttpExchangeSchema = new JsonSchema(HttpExchange.SCHEMA_AS_STRING);
+        schemaRegistryClient.register("httpExchange",parsedHttpExchangeSchema);
     }
     @Nested
     class TestMap {
@@ -95,7 +109,6 @@ class DirectHttpRequestMapperTest {
             assertThat(httpRequest).isNotNull();
             assertThat(httpRequest.getUrl()).isEqualTo(DUMMY_URL);
             assertThat(httpRequest.getMethod()).isEqualTo(DUMMY_METHOD);
-            assertThat(httpRequest.getBodyType().toString()).hasToString(DUMMY_BODY_TYPE);
         }
 
         @Test
@@ -104,14 +117,12 @@ class DirectHttpRequestMapperTest {
             List<Header> headers = Lists.newArrayList();
             HttpRequest dummyHttpRequest = getDummyHttpRequest(DUMMY_URL);
             String topic = "myTopic";
-            SchemaRegistryClient schemaRegistryClient = getSchemaRegistryClient();
-            registerSchema(schemaRegistryClient, topic, 1, 1, HttpRequest.SCHEMA_AS_STRING);
 
 
             JsonSchemaConverter jsonSchemaConverter = getJsonSchemaConverter(schemaRegistryClient);
 
 
-            byte[] httpRequestAsJsonSchemaWithConverter = jsonSchemaConverter.fromConnectData(topic, SCHEMA, new HttpRequestAsStruct(dummyHttpRequest).toStruct());
+            byte[] httpRequestAsJsonSchemaWithConverter = jsonSchemaConverter.fromConnectData(topic, SCHEMA, new HttpRequest(dummyHttpRequest).toStruct());
 
             SchemaAndValue schemaAndValue = jsonSchemaConverter.toConnectData(topic, httpRequestAsJsonSchemaWithConverter);
 
@@ -122,7 +133,6 @@ class DirectHttpRequestMapperTest {
             assertThat(httpRequest).isNotNull();
             assertThat(httpRequest.getUrl()).isEqualTo(DUMMY_URL);
             assertThat(httpRequest.getMethod()).isEqualTo(DUMMY_METHOD);
-            assertThat(httpRequest.getBodyType().toString()).hasToString(DUMMY_BODY_TYPE);
         }
 
 
@@ -137,7 +147,6 @@ class DirectHttpRequestMapperTest {
             assertThat(httpRequest).isNotNull();
             assertThat(httpRequest.getUrl()).isEqualTo(DUMMY_URL);
             assertThat(httpRequest.getMethod()).isEqualTo(DUMMY_METHOD);
-            assertThat(httpRequest.getBodyType().toString()).hasToString(DUMMY_BODY_TYPE);
         }
 
 
@@ -160,17 +169,14 @@ class DirectHttpRequestMapperTest {
         io.confluent.kafka.schemaregistry.client.rest.entities.Schema schema = new io.confluent.kafka.schemaregistry.client.rest.entities.Schema(subject, schemaVersion, schemaId, JsonSchema.TYPE, Lists.newArrayList(), schemaAsString);
         Optional<ParsedSchema> parsedSchema = mockSchemaRegistryClient.parseSchema(schema);
         try {
-            mockSchemaRegistryClient.register(subject, parsedSchema.get());
+            ParsedSchema schema1 = parsedSchema.get();
+            String canonicalString = schema1.canonicalString();
+            mockSchemaRegistryClient.register(subject, schema1);
         } catch (IOException | RestClientException e) {
             throw new RuntimeException(e);
         }
     }
 
-    @NotNull
-    private static SchemaRegistryClient getSchemaRegistryClient() {
-        SchemaProvider provider = new JsonSchemaProvider();
-        return new MockSchemaRegistryClient(Collections.singletonList(provider));
-    }
 
     private String getIP() {
         try (DatagramSocket datagramSocket = new DatagramSocket()) {
@@ -183,8 +189,7 @@ class DirectHttpRequestMapperTest {
 
     private Struct getDummyHttpRequestAsStruct(String url) {
         HttpRequest httpRequest = getDummyHttpRequest(url);
-        HttpRequestAsStruct httpRequestAsStruct = new HttpRequestAsStruct(httpRequest);
-        return httpRequestAsStruct.toStruct();
+        return httpRequest.toStruct();
     }
 
 
@@ -192,13 +197,10 @@ class DirectHttpRequestMapperTest {
 
     @NotNull
     private static HttpRequest getDummyHttpRequest(String url) {
-        HttpRequest httpRequest = new HttpRequest(url, DUMMY_METHOD, DUMMY_BODY_TYPE);
         Map<String, List<String>> headers = Maps.newHashMap();
         headers.put("Content-Type", Lists.newArrayList("application/json"));
-        httpRequest.setHeaders(headers);
-        httpRequest.setBodyAsString("stuff");
-        httpRequest.setBodyAsForm(Maps.newHashMap());
-        return httpRequest;
+        HttpPart httpPart = new HttpPart("stuff");
+        return new HttpRequest(url, DUMMY_METHOD,headers, HttpRequest.BodyType.MULTIPART,Lists.newArrayList(httpPart));
     }
 
     private String getDummyHttpRequestAsString() {
@@ -207,9 +209,6 @@ class DirectHttpRequestMapperTest {
                 "  \"headers\": {},\n" +
                 "  \"method\": \"" + DUMMY_METHOD + "\",\n" +
                 "  \"bodyAsString\": \"" + DUMMY_BODY + "\",\n" +
-                "  \"bodyAsByteArray\": [],\n" +
-                "  \"bodyAsForm\": {},\n" +
-                "  \"bodyAsMultipart\": [],\n" +
                 "  \"bodyType\": \"" + DUMMY_BODY_TYPE + "\"\n" +
                 "}";
     }

@@ -1,19 +1,47 @@
 package io.github.clescot.kafka.connect.http.core;
 
+import org.apache.kafka.connect.data.Schema;
+import org.apache.kafka.connect.data.SchemaBuilder;
+import org.apache.kafka.connect.data.Struct;
+
 import java.io.Serializable;
 import java.time.OffsetDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicInteger;
 
-@io.confluent.kafka.schemaregistry.annotations.Schema(value = HttpExchange.SCHEMA_AS_STRING, refs = {})
+@io.confluent.kafka.schemaregistry.annotations.Schema(value = HttpExchange.SCHEMA_AS_STRING, refs = {
+        @io.confluent.kafka.schemaregistry.annotations.SchemaReference(name="io.github.clescot.kafka.connect.http.core.HttpRequest", subject="httpRequest"),
+        @io.confluent.kafka.schemaregistry.annotations.SchemaReference(name="io.github.clescot.kafka.connect.http.core.HttpResponse", subject="httpResponse")
+})
 public class HttpExchange implements Serializable {
 
     public static final long serialVersionUID = 1L;
-    public static final String BASE_SCHEMA_ID = "https://raw.githubusercontent.com/clescot/kafka-connect-http/master/kafka-connect-http-core/src/main/resources/schemas/json/versions/1/";
-    public static final String SCHEMA_ID = BASE_SCHEMA_ID + "http-exchange.json";
+    public static final int VERSION = 2;
+    public static final int HTTP_EXCHANGE_VERSION = 2;
+    public static final String DURATION_IN_MILLIS = "durationInMillis";
+    public static final String MOMENT = "moment";
+    public static final String ATTEMPTS = "attempts";
+    public static final String HTTP_REQUEST = "httpRequest";
+    public static final String HTTP_RESPONSE = "httpResponse";
+    public final static Schema SCHEMA = SchemaBuilder
+            .struct()
+            .name(HttpExchange.class.getName())
+            .version(HTTP_EXCHANGE_VERSION)
+            //metadata fields
+            .field(DURATION_IN_MILLIS, Schema.INT64_SCHEMA)
+            .field(MOMENT, Schema.STRING_SCHEMA)
+            .field(ATTEMPTS, Schema.INT32_SCHEMA)
+            //request
+            .field(HTTP_REQUEST, HttpRequest.SCHEMA)
+            // response
+            .field(HTTP_RESPONSE, HttpResponse.SCHEMA)
+            .schema();
+    public static final String BASE_SCHEMA_ID = "https://raw.githubusercontent.com/clescot/kafka-connect-http/master/kafka-connect-http-core/src/main/resources/schemas/json/versions/";
+    public static final String SCHEMA_ID = BASE_SCHEMA_ID + VERSION + "/"+ "http-exchange.json";
     public static final String SCHEMA_AS_STRING = "{\n" +
             "  \"$id\": \"" + SCHEMA_ID + "\",\n" +
-            "  \"$schema\": \"http://json-schema.org/draft/2019-09/schema#\",\n" +
+            "  \"$schema\": \"http://json-schema.org/draft/20" + VERSION + "9-09/schema#\",\n" +
             "  \"title\": \"Http Exchange\",\n" +
             "  \"type\": \"object\",\n" +
             "  \"additionalProperties\": false,\n" +
@@ -131,6 +159,21 @@ public class HttpExchange implements Serializable {
                 ", httpRequest=" + httpRequest +
                 ", httpResponse=" + httpResponse +
                 '}';
+    }
+
+    public Struct toStruct(){
+        Struct struct = new Struct(SCHEMA);
+        struct.put(DURATION_IN_MILLIS,this.getDurationInMillis());
+        struct.put(MOMENT,this.getMoment().format(DateTimeFormatter.ISO_ZONED_DATE_TIME));
+        struct.put(ATTEMPTS,this.getAttempts().intValue());
+        //request fields
+        HttpRequest httpRequest = this.getHttpRequest();
+        struct.put(HTTP_REQUEST, httpRequest.toStruct());
+        // response fields
+        HttpResponse httpResponse = this.getHttpResponse();
+        struct.put(HTTP_RESPONSE, httpResponse.toStruct());
+        return struct;
+
     }
 
 

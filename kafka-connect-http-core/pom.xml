@@ -5,7 +5,7 @@
     <parent>
         <groupId>io.github.clescot</groupId>
         <artifactId>kafka-connect-http</artifactId>
-        <version>0.8.9-SNAPSHOT</version>
+        <version>0.8.11-SNAPSHOT</version>
     </parent>
     <artifactId>kafka-connect-http-core</artifactId>
     <packaging>jar</packaging>
@@ -36,15 +36,22 @@
             <artifactId>jackson-datatype-jsr310</artifactId>
         </dependency>
         <dependency>
+            <groupId>com.fasterxml.jackson.datatype</groupId>
+            <artifactId>jackson-datatype-jdk8</artifactId>
+        </dependency>
+        <dependency>
             <groupId>com.google.guava</groupId>
             <artifactId>guava</artifactId>
         </dependency>
+
+
+        <!-- provided dependencies -->
         <dependency>
             <groupId>org.apache.kafka</groupId>
             <artifactId>connect-api</artifactId>
             <scope>provided</scope>
         </dependency>
-
+        <!-- test dependencies -->
         <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter</artifactId>
@@ -60,12 +67,14 @@
             <artifactId>jsonassert</artifactId>
             <scope>test</scope>
         </dependency>
+
         <dependency>
             <groupId>io.confluent</groupId>
             <artifactId>kafka-connect-json-schema-converter</artifactId>
             <scope>test</scope>
             <version>${confluent.platform.version}</version>
         </dependency>
+
         <dependency>
             <groupId>org.apache.kafka</groupId>
             <artifactId>connect-json</artifactId>
@@ -74,7 +83,7 @@
         <dependency>
             <groupId>ch.qos.logback</groupId>
             <artifactId>logback-classic</artifactId>
-            <version>1.5.12</version>
+            <version>1.5.16</version>
             <scope>test</scope>
         </dependency>
 

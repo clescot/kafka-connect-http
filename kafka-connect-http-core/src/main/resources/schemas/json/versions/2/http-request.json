@@ -1,0 +1,58 @@
+{
+  "$id": "https://raw.githubusercontent.com/clescot/kafka-connect-http/master/kafka-connect-http-core/src/main/resources/schemas/json/versions/2/http-request.json",
+  "$schema": "http://json-schema.org/draft/2019-09/schema#",
+  "title": "Http Request",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "url": {
+      "type": "string"
+    },
+    "headers": {
+      "type": "object",
+      "connect.type": "map",
+      "additionalProperties": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        }
+      }
+    },
+    "method": {
+      "type": "string",
+      "default": "GET"
+    },
+    "bodyAsString":
+    {
+      "type": "string"
+    },
+    "bodyAsForm":
+    {
+      "type": "object",
+      "connect.type": "map",
+      "additionalProperties" : { "type": "string" }
+    },
+    "bodyAsByteArray":  {
+      "type": "string"
+    },
+    "bodyAsMultipart": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "bodyType": {
+      "type": "string",
+      "default": "STRING",
+      "enum": [
+        "STRING",
+        "FORM",
+        "BYTE_ARRAY",
+        "MULTIPART"
+      ]
+    }
+  },
+  "required": [
+    "url"
+  ]
+}

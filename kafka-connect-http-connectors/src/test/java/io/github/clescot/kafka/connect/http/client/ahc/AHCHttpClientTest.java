@@ -108,11 +108,11 @@ class AHCHttpClientTest {
 
     private HttpResponse getDummyHttpResponse(int statusCode) {
         HttpResponse httpResponse = new HttpResponse(statusCode, "OK");
-        httpResponse.setResponseBody("my response");
+        httpResponse.setBodyAsString("my response");
         Map<String, List<String>> headers = Maps.newHashMap();
         headers.put("Content-Type", Lists.newArrayList("application/json"));
         headers.put("X-stuff", Lists.newArrayList("foo"));
-        httpResponse.setResponseHeaders(headers);
+        httpResponse.setHeaders(headers);
         return httpResponse;
     }
 
@@ -269,8 +269,7 @@ class AHCHttpClientTest {
         headers.put("X-Stuff", Lists.newArrayList("dummy stuff"));
         HttpRequest httpRequest = new HttpRequest(
                 "http://localhost:8089",
-                HttpRequest.Method.GET,
-                "STRING");
+                HttpRequest.Method.GET);
         httpRequest.setHeaders(headers);
         httpRequest.setBodyAsString(body);
         httpRequest.getHeaders().put(HEADER_X_CORRELATION_ID, Lists.newArrayList("45-66-33"));

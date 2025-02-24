@@ -109,7 +109,7 @@ example :
 - `http.request.mapper.myid1.matcher:'sinkRecord.topic()=='myTopic''`
 
 ##### `JEXL` HttpRequestMapper
-  This HttpRequestMapper implementation implies that we need to build an HttpRequest object with some parts of the message.
+  This HttpRequestMapper implementation implies that we need to build an HttpRequest object with some httpParts of the message.
 If the body of the kafka message from the topic `test` consumed is in the format :
 `url#method#body` (`http://mywebsite.com/path1#POST#body1`), we can configure the JEXL mapper :
 
@@ -161,7 +161,7 @@ there is no default http request grouper.
   - `predicate.bodytype.regex`
   - `predicate.header.key.regex`
   - `predicate.header.value.regex`
-- `separator` : define the string to insert between body parts from requests
+- `separator` : define the string to insert between body httpParts from requests
 - `start` : define the string to insert at the start of the body
 - `end` : define the string to insert at the end of the body
 - `message.limit` : define the maximum of initial messages grouped into one.
@@ -376,7 +376,7 @@ The predicate permits to filter some http requests, and can be composed, cumulat
     - *`config.default.okhttp.doh.activate`* (default `false`, and can be set to `true`): activate Dns Over Https (DoH) feature
     - *`config.default.okhttp.doh.bootstrap.dns.hosts`* : dns hosts used to resolve DoH URL. if not set, use system dns.
     - *`config.default.okhttp.doh.url`* : url to resolve with https the host requested
-    - *`config.default.okhttp.doh.include.ipv6`* : (default `true`, and can be set to `false`) : if set to `true`, include in the response the ipv6 part if available.
+    - *`config.default.okhttp.doh.include.ipv6`* : (default `true`, and can be set to `false`) : if set to `true`, include in the response the ipv6 httpPart if available.
     - *`config.default.okhttp.doh.use.post.method`* : (default `false`, and can be set to `true`) : by default, host resolution is done with a `GET` HTTPS request. if set to `true`, use a `POST` HTTPS request.
     - *`config.default.okhttp.doh.resolve.private.addresses`* : (default `false`, and can be set to `true`) : if set to `true`, resolve private adresses (cf https://www.rfc-editor.org/rfc/rfc6762#appendix-G).
     - *`config.default.okhttp.doh.resolve.public.addresses`* : (default `true`, and can be set to `false`) : if set to `true`, resolve public adresses.
@@ -385,7 +385,7 @@ The predicate permits to filter some http requests, and can be composed, cumulat
     - *`org.asynchttpclient.http.rate.limit.per.second`* (default `3`)
     - *`org.asynchttpclient.http.max.wait.ms`* (default `500 ms`)
     - *`org.asynchttpclient.keep.alive.class`* (default `org.asynchttpclient.channel.DefaultKeepAliveStrategy`)
-    - *`org.asynchttpclient.response.body.part.factory`* (default `EAGER`)
+    - *`org.asynchttpclient.response.body.httpPart.factory`* (default `EAGER`)
     - *`org.asynchttpclient.connection.semaphore.factory`* (default `org.asynchttpclient.netty.channel.DefaultConnectionSemaphoreFactory`)
     - *`org.asynchttpclient.cookie.store`* (default `org.asynchttpclient.cookie.ThreadSafeCookieStore`)
     - *`org.asynchttpclient.netty.timer`* (default `io.netty.util.HashedWheelTimer`)

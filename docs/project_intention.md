@@ -70,7 +70,7 @@ You can solve the 'publish' challenge in 4 different modes (each one has got som
 
   - a **Sink** Connector to query HTTP servers
 
-    We define a Sink Connector to read from kafka, and query HTTP servers according to the Kafka message. This is the most easy part.
+    We define a Sink Connector to read from kafka, and query HTTP servers according to the Kafka message. This is the most easy httpPart.
   
   - an **Source** Connector to store HTTP responses
 
