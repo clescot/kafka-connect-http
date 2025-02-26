@@ -133,12 +133,7 @@ public interface HttpClient<Q, S> {
         }
     }
 
-    /**
-     * rate limited native call
-     * @param request native HttpRequest
-     * @return CompletableFuture of a native HttpResponse.
-     */
-    CompletableFuture<S> call(Q request);
+
 
     /**
      * convert a native response (from the implementation) to an {@link HttpResponse}.

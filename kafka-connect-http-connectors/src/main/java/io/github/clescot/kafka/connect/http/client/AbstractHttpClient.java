@@ -119,22 +119,7 @@ public abstract class AbstractHttpClient<R,S> implements HttpClient<R,S> {
         }
     }
 
-    @Override
-    public CompletableFuture<S> call(R request){
-        try {
-            Optional<RateLimiter<HttpExchange>> limiter = getRateLimiter();
-            if (limiter.isPresent()) {
-                limiter.get().acquirePermits(HttpClient.ONE_HTTP_REQUEST);
-                LOGGER.trace("permits acquired request:'{}'", request);
-            }else{
-                LOGGER.trace("no rate limiter is configured");
-            }
-            return nativeCall(request);
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            throw new HttpException(e);
-        }
-    }
+
 
     @Override
     public void setRateLimiter(RateLimiter<HttpExchange> rateLimiter) {
