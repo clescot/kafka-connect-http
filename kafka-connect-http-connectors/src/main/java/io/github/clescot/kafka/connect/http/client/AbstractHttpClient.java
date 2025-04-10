@@ -6,10 +6,10 @@ import com.google.common.collect.Maps;
 import dev.failsafe.RateLimiter;
 import dev.failsafe.RateLimiterConfig;
 import io.github.clescot.kafka.connect.http.core.HttpExchange;
+import jakarta.annotation.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.annotation.Nullable;
 import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLSocketFactory;
@@ -25,7 +25,6 @@ import java.time.Duration;
 import java.time.temporal.ChronoUnit;
 import java.util.Map;
 import java.util.Optional;
-import java.util.concurrent.CompletableFuture;
 
 import static io.github.clescot.kafka.connect.http.client.Configuration.CONFIGURATION_ID;
 import static io.github.clescot.kafka.connect.http.client.Configuration.STATIC_SCOPE;
