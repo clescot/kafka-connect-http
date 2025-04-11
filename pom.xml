@@ -39,13 +39,13 @@
         <assertj.version>3.27.3</assertj.version>
         <awaitility.version>4.3.0</awaitility.version>
         <async.http.client.version>2.12.4</async.http.client.version>
-        <commons-text.version>1.13.0</commons-text.version>
+        <commons-text.version>1.13.1</commons-text.version>
         <connect-json.version>4.0.0</connect-json.version>
         <debezium.version>2.7.4.Final</debezium.version>
         <kafka.version>4.0.0</kafka.version>
         <confluent.platform.version>7.9.0</confluent.platform.version>
         <failsafe.version>3.3.2</failsafe.version>
-        <guava.version>33.4.6-jre</guava.version>
+        <guava.version>33.4.7-jre</guava.version>
         <jackson.version>2.18.3</jackson.version>
         <jacoco.version>0.8.12</jacoco.version>
         <json.assert.version>1.5.3</json.assert.version>
