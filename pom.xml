@@ -45,7 +45,7 @@
         <kafka.version>4.0.0</kafka.version>
         <confluent.platform.version>7.9.0</confluent.platform.version>
         <failsafe.version>3.3.2</failsafe.version>
-        <guava.version>33.4.7-jre</guava.version>
+        <guava.version>33.4.8-jre</guava.version>
         <jackson.version>2.18.3</jackson.version>
         <jacoco.version>0.8.12</jacoco.version>
         <json.assert.version>1.5.3</json.assert.version>
