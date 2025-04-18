@@ -77,7 +77,7 @@ public abstract class AbstractHttpClient<R,S> implements HttpClient<R,S> {
     }
 
 
-    private static KeyManagerFactory getKeyManagerFactory(String keyStorePath,
+    private KeyManagerFactory getKeyManagerFactory(String keyStorePath,
                                                   char[] password,
                                                   @Nullable String keystoreType,
                                                   @Nullable String algorithm) {
