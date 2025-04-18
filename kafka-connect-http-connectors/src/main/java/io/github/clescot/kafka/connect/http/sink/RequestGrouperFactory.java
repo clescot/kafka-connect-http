@@ -24,9 +24,9 @@ public class RequestGrouperFactory {
             Optional<String> start = Optional.ofNullable((String) settings.get("start"));
             Optional<String> end = Optional.ofNullable((String) settings.get("end"));
             Optional<String> messageLimit = Optional.ofNullable((String) settings.get("message.limit"));
-            int messageLimitAsInt = messageLimit.isPresent()?Integer.parseInt(messageLimit.get()):-1;
+            int messageLimitAsInt = messageLimit.map(Integer::parseInt).orElse(-1);
             Optional<String> bodyLimit = Optional.ofNullable((String) settings.get("body.limit"));
-            int bodyLimitAsInt = bodyLimit.isPresent()?Integer.parseInt(bodyLimit.get()):-1;
+            int bodyLimitAsInt = bodyLimit.map(Integer::parseInt).orElse(-1);
             RequestGrouper requestGrouper = new RequestGrouper(
                     requestGrouperId,
                     httpRequestPredicate,
