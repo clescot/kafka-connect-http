@@ -44,7 +44,7 @@ public class OAuth2ClientCredentialsFlowAuthenticator implements CachingAuthenti
     public OAuth2ClientCredentialsFlowAuthenticator(OkHttpClient okHttpClient,
                                                     String wellKnownUrl,
                                                     Map<String, Object> config,
-                                                    @javax.annotation.Nullable String... scopes) {
+                                                    @jakarta.annotation.Nullable String... scopes) {
         this.okHttpClient = okHttpClient;
         Preconditions.checkNotNull(okHttpClient, "okHttpClient is null");
         Preconditions.checkNotNull(wellKnownUrl, "wellKnownUrl is null");
