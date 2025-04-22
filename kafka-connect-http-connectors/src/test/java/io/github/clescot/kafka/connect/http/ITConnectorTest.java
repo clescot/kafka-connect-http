@@ -46,7 +46,6 @@ import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.common.header.Header;
 import org.apache.kafka.common.serialization.*;
 import org.assertj.core.api.Assertions;
-import org.checkerframework.checker.nullness.qual.Nullable;
 import org.jetbrains.annotations.NotNull;
 import org.json.JSONException;
 import org.junit.jupiter.api.AfterEach;
@@ -1319,7 +1318,7 @@ public class ITConnectorTest {
         Deserializer deserializer;
         switch(format) {
             case "json":
-                HashMap<String, @Nullable Object> props = Maps.newHashMap();
+                HashMap<String, Object> props = Maps.newHashMap();
                 props.put("schema.registry.url",schemaRegistryUrl);
                 props.put(JSON_KEY_TYPE,String.class);
                 props.put(JSON_VALUE_TYPE,HttpExchange.class);
