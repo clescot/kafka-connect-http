@@ -13,10 +13,7 @@ import com.google.common.io.Resources;
 import io.github.clescot.kafka.connect.http.client.DummyX509Certificate;
 import io.github.clescot.kafka.connect.http.client.HttpClient;
 import io.github.clescot.kafka.connect.http.client.proxy.URIRegexProxySelector;
-import io.github.clescot.kafka.connect.http.core.HttpExchange;
-import io.github.clescot.kafka.connect.http.core.HttpPart;
-import io.github.clescot.kafka.connect.http.core.HttpRequest;
-import io.github.clescot.kafka.connect.http.core.HttpResponse;
+import io.github.clescot.kafka.connect.http.core.*;
 import io.github.clescot.kafka.connect.http.core.queue.QueueFactory;
 import io.micrometer.core.instrument.Clock;
 import io.micrometer.core.instrument.MeterRegistry;
@@ -385,9 +382,9 @@ class OkHttpClientTest {
             builder.body(responseBody);
             builder.protocol(Protocol.HTTP_1_1);
             Response response = builder.build();
-
+            HttpResponseBuilder httpResponseBuilder = new HttpResponseBuilder(1024,100_000);
             //when
-            HttpResponse httpResponse = client.buildResponse(response);
+            HttpResponse httpResponse = client.buildResponse(httpResponseBuilder,response);
 
             //then
             LOGGER.debug("response:{}", response);
