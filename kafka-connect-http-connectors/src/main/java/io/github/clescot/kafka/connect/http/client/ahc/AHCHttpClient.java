@@ -8,6 +8,7 @@ import io.github.clescot.kafka.connect.http.client.HttpClient;
 import io.github.clescot.kafka.connect.http.client.HttpException;
 import io.github.clescot.kafka.connect.http.core.HttpRequest;
 import io.github.clescot.kafka.connect.http.core.HttpResponse;
+import io.github.clescot.kafka.connect.http.core.HttpResponseBuilder;
 import io.netty.buffer.ByteBufAllocator;
 import io.netty.buffer.PooledByteBufAllocator;
 import io.netty.handler.ssl.SslContext;
@@ -233,18 +234,18 @@ public class AHCHttpClient extends AbstractHttpClient<Request, Response> {
     private boolean isNotNullOrEmpty(String field) {
         return field != null && !field.isEmpty();
     }
-    public HttpResponse buildResponse(Response response) throws HttpException {
+    public HttpResponse buildResponse(HttpResponseBuilder httpResponseBuilder,Response response) throws HttpException {
         List<Map.Entry<String, String>> responseEntries = response.getHeaders() != null ? response.getHeaders().entries() : Lists.newArrayList();
-        HttpResponse httpResponse = new HttpResponse(response.getStatusCode(), response.getStatusText());
-        httpResponse.setBodyAsString(response.getResponseBody());
+        httpResponseBuilder.setStatus(response.getStatusCode(), response.getStatusText());
+        httpResponseBuilder.setBodyAsString(response.getResponseBody());
         Map<String, List<String>> responseHeaders = responseEntries.stream()
                 .map(entry -> new AbstractMap.SimpleImmutableEntry<String, List<String>>(entry.getKey(), Lists.newArrayList(entry.getValue())))
                 .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue,(l1,l2)->{
                     l1.addAll(l2);
                     return l1;
                 }));
-        httpResponse.setHeaders(responseHeaders);
-        return httpResponse;
+        httpResponseBuilder.setHeaders(responseHeaders);
+        return httpResponseBuilder.toHttpResponse();
     }
     private AsyncHttpClient getAsyncHttpClient(Map<String, Object> config) {
         AsyncHttpClient asyncClient;
