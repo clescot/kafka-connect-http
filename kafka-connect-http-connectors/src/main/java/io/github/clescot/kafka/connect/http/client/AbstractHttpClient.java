@@ -37,6 +37,8 @@ public abstract class AbstractHttpClient<R,S> implements HttpClient<R,S> {
     private Optional<RateLimiter<HttpExchange>> rateLimiter = Optional.empty();
     protected TrustManagerFactory trustManagerFactory;
     protected String configurationId;
+    private int statusMessageLimit;
+    private int bodyLimit;
 
     //rate limiter
     private static final Map<String, RateLimiter<HttpExchange>> sharedRateLimiters = Maps.newHashMap();
@@ -46,6 +48,28 @@ public abstract class AbstractHttpClient<R,S> implements HttpClient<R,S> {
         configurationId = (String) config.get(CONFIGURATION_ID);
         Preconditions.checkNotNull(configurationId,"configuration must have an id");
         setRateLimiter(buildRateLimiter(config));
+        setStatusMessageLimit(1024);
+        setBodyLimit(100_000);
+    }
+
+    @Override
+    public Integer getStatusMessageLimit() {
+        return statusMessageLimit;
+    }
+
+    @Override
+    public void setStatusMessageLimit(Integer statusMessageLimit) {
+        this.statusMessageLimit = statusMessageLimit;
+    }
+
+    @Override
+    public Integer getBodyLimit() {
+        return bodyLimit;
+    }
+
+    @Override
+    public void setBodyLimit(Integer bodyLimit) {
+        this.bodyLimit = bodyLimit;
     }
 
     protected Optional<TrustManagerFactory> buildTrustManagerFactory() {

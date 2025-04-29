@@ -46,6 +46,7 @@ public interface HttpClientFactory<R,S> {
         if (config.get(PROXY_SELECTOR_HTTP_CLIENT_0_HOSTNAME) != null) {
             proxySelector = proxySelectorFactory.build(config, random);
         }
+
         return build(config, executorService, random, proxy, proxySelector, meterRegistry);
     }
 

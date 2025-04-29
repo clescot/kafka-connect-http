@@ -83,6 +83,8 @@ public interface HttpClient<Q, S> {
      */
     Q buildRequest(HttpRequest httpRequest);
 
+
+
     default CompletableFuture<HttpExchange> call(HttpRequest httpRequest, AtomicInteger attempts) throws HttpException {
 
         Stopwatch rateLimitedStopWatch = Stopwatch.createStarted();
@@ -103,7 +105,7 @@ public interface HttpClient<Q, S> {
             response = nativeCall(request);
 
         Preconditions.checkNotNull(response, "response is null");
-        HttpResponseBuilder httpResponseBuilder = new HttpResponseBuilder(1024,100_000);
+        HttpResponseBuilder httpResponseBuilder = new HttpResponseBuilder(getStatusMessageLimit(),getBodyLimit());
         return response.thenApply((res)->buildResponse(httpResponseBuilder,res))
                 .thenApply(myResponse -> {
                             directStopWatch.stop();
@@ -204,6 +206,13 @@ public interface HttpClient<Q, S> {
         }
     }
 
+    Integer getStatusMessageLimit();
+
+    void setStatusMessageLimit(Integer statusMessageLimit);
+
+    Integer getBodyLimit();
+
+    void setBodyLimit(Integer bodyLimit);
 
     void setRateLimiter(RateLimiter<HttpExchange> rateLimiter);
 

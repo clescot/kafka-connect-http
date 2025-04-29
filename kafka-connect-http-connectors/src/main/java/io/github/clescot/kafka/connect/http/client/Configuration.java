@@ -236,6 +236,8 @@ public class Configuration<R,S> {
         if (LOGGER.isTraceEnabled()) {
             LOGGER.trace("after enrichment:{}", enrichedHttpRequest);
         }
+        //TODO multiple HTTP Clients instances per configuration
+        // https://github.com/clescot/kafka-connect-http/issues/718
         CompletableFuture<HttpExchange> completableFuture = getHttpClient().call(enrichedHttpRequest, attempts);
         return completableFuture
                 .thenApply(this::enrichHttpExchange);
