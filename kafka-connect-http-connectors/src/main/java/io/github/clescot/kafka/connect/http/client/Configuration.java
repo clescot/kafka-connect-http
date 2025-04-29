@@ -201,7 +201,7 @@ public class Configuration<R,S> {
                         failsafeExecutor = failsafeExecutor.with(executorService);
                     }
                     return failsafeExecutor
-                            .getStageAsync(() -> callAndEnrich(httpRequest, attempts)
+                            .getStageAsync((ctx) -> callAndEnrich(httpRequest, attempts)
                                     .thenApply(this::handleRetry));
                 } else {
                     return callAndEnrich(httpRequest, attempts);
