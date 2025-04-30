@@ -8,8 +8,8 @@ import java.util.Map;
 public class HttpResponseBuilder {
 
 
-    private Integer statusMessageLimit;
-    private Integer bodyLimit;
+    private Integer statusMessageLimit = Integer.MAX_VALUE;
+    private Integer bodyLimit = Integer.MAX_VALUE;
     private String protocol;
     private int statusCode;
     private String statusMessage;
