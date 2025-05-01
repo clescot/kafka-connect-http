@@ -46,7 +46,7 @@
         <confluent.platform.version>7.9.0</confluent.platform.version>
         <failsafe.version>3.3.2</failsafe.version>
         <guava.version>33.4.8-jre</guava.version>
-        <jackson.version>2.18.3</jackson.version>
+        <jackson.version>2.19.0</jackson.version>
         <jacoco.version>0.8.12</jacoco.version>
         <json.assert.version>1.5.3</json.assert.version>
         <junit.version>5.12.2</junit.version>
@@ -57,7 +57,7 @@
         <maven.plugin.validation>VERBOSE</maven.plugin.validation>
         <mock-oauth2-server.version>0.5.10</mock-oauth2-server.version>
         <mockito.version>5.17.0</mockito.version>
-        <micrometer.version>1.14.5</micrometer.version>
+        <micrometer.version>1.14.6</micrometer.version>
         <okhttp.version>4.12.0</okhttp.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
@@ -70,7 +70,7 @@
         <sonar.host.url>https://sonarcloud.io</sonar.host.url>
         <sonar.organization>clescot</sonar.organization>
         <sonar.projectKey>clescot_kafka-connect-http</sonar.projectKey>
-        <testcontainers.version>1.20.6</testcontainers.version>
+        <testcontainers.version>1.21.0</testcontainers.version>
         <wiremock.version>2.35.2</wiremock.version>
     </properties>
     <modules>
