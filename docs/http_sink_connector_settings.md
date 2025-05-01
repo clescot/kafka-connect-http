@@ -326,6 +326,9 @@ The predicate permits to filter some http requests, and can be composed, cumulat
     - *`config.default.httpclient.ssl.truststore.type`* : truststore type. can be `jks` or `pkcs12`.
     - *`config.default.httpclient.ssl.truststore.algorithm`* : the standard name of the requested algorithm. See the KeyManagerFactory section in the Java Security Standard Algorithm Names Specification for information about standard algorithm names.
     - *`config.default.httpclient.ssl.truststore.always.trust`* : add a truststore that always trust *any* certificates. Transport security is disabled. Be careful that the server cannot be trusted with this option !
+  - http client HTTP Response settings
+    - *`config.default.http.response.status.message.limit`*: Integer.MAX_VALUE if not set. truncate the status message to this length (to protect the HTTP Client instance).
+    - *`config.default.http.response.body.limit`*: Integer.MAX_VALUE if not set. truncate the body to this length (to protect the HTTP Client instance).
   - http client proxy settings
     - *`config.default.proxy.httpclient.hostname`* : hostname of the proxy. 
     - *`config.default.proxy.httpclient.port`* : port of the proxy.
