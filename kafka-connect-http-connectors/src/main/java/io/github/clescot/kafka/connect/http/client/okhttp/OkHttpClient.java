@@ -16,6 +16,7 @@ import io.github.clescot.kafka.connect.http.client.okhttp.interceptor.SSLHandsha
 import io.github.clescot.kafka.connect.http.core.HttpPart;
 import io.github.clescot.kafka.connect.http.core.HttpRequest;
 import io.github.clescot.kafka.connect.http.core.HttpResponse;
+import io.github.clescot.kafka.connect.http.core.HttpResponseBuilder;
 import io.micrometer.core.instrument.binder.system.DiskSpaceMetrics;
 import io.micrometer.core.instrument.composite.CompositeMeterRegistry;
 import kotlin.Pair;
@@ -505,7 +506,7 @@ public class OkHttpClient extends AbstractHttpClient<Request, Response> {
 
 
     @Override
-    public HttpResponse buildResponse(Response response) {
+    public HttpResponse buildResponse(HttpResponseBuilder httpResponseBuilder,Response response) {
         HttpResponse httpResponse;
         try {
             Protocol protocol = response.protocol();
@@ -513,13 +514,13 @@ public class OkHttpClient extends AbstractHttpClient<Request, Response> {
                 LOGGER.trace("native response :'{}'",response);
                 LOGGER.trace("protocol: '{}',cache-control: '{}',handshake: '{}',challenges: '{}'", protocol,response.cacheControl(),response.handshake(),response.challenges());
             }
-            httpResponse = new HttpResponse(response.code(), response.message());
+            httpResponseBuilder.setStatus(response.code(), response.message());
             //TODO handle more bodyType for HttpResponse
             if (response.body() != null) {
-                httpResponse.setBodyAsString(response.body().string());
+                httpResponseBuilder.setBodyAsString(response.body().string());
             }
             if (protocol != null) {
-                httpResponse.setProtocol(protocol.name());
+                httpResponseBuilder.setProtocol(protocol.name());
             }
             Headers headers = response.headers();
             Iterator<Pair<String, String>> iterator = headers.iterator();
@@ -528,11 +529,11 @@ public class OkHttpClient extends AbstractHttpClient<Request, Response> {
                 Pair<String, String> header = iterator.next();
                 responseHeaders.put(header.getFirst(), Lists.newArrayList(header.getSecond()));
             }
-            httpResponse.setHeaders(responseHeaders);
+            httpResponseBuilder.setHeaders(responseHeaders);
         } catch (IOException e) {
             throw new HttpException(e);
         }
-        return httpResponse;
+        return httpResponseBuilder.toHttpResponse();
     }
 
     @Override

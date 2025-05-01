@@ -37,6 +37,8 @@ public abstract class AbstractHttpClient<R,S> implements HttpClient<R,S> {
     private Optional<RateLimiter<HttpExchange>> rateLimiter = Optional.empty();
     protected TrustManagerFactory trustManagerFactory;
     protected String configurationId;
+    private Integer statusMessageLimit;
+    private Integer bodyLimit;
 
     //rate limiter
     private static final Map<String, RateLimiter<HttpExchange>> sharedRateLimiters = Maps.newHashMap();
@@ -46,6 +48,39 @@ public abstract class AbstractHttpClient<R,S> implements HttpClient<R,S> {
         configurationId = (String) config.get(CONFIGURATION_ID);
         Preconditions.checkNotNull(configurationId,"configuration must have an id");
         setRateLimiter(buildRateLimiter(config));
+
+        //httpResponse
+        //messageStatus limit
+        Integer httpResponseMessageStatusLimit = Integer.parseInt(Optional.ofNullable((String)config.get(HTTP_RESPONSE_MESSAGE_STATUS_LIMIT)).orElse(""+Integer.MAX_VALUE));
+        if(httpResponseMessageStatusLimit!=null && httpResponseMessageStatusLimit>0) {
+            setStatusMessageLimit(httpResponseMessageStatusLimit);
+        }
+        //body limit
+        Integer httpResponseBodyLimit = Integer.parseInt(Optional.ofNullable((String)config.get(HTTP_RESPONSE_BODY_LIMIT)).orElse(""+Integer.MAX_VALUE));
+        if(httpResponseBodyLimit!=null && httpResponseBodyLimit>0) {
+            setBodyLimit(httpResponseBodyLimit);
+        }
+
+    }
+
+    @Override
+    public Integer getStatusMessageLimit() {
+        return statusMessageLimit;
+    }
+
+    @Override
+    public void setStatusMessageLimit(Integer statusMessageLimit) {
+        this.statusMessageLimit = statusMessageLimit;
+    }
+
+    @Override
+    public Integer getBodyLimit() {
+        return bodyLimit;
+    }
+
+    @Override
+    public void setBodyLimit(Integer bodyLimit) {
+        this.bodyLimit = bodyLimit;
     }
 
     protected Optional<TrustManagerFactory> buildTrustManagerFactory() {

@@ -201,7 +201,7 @@ public class Configuration<R,S> {
                         failsafeExecutor = failsafeExecutor.with(executorService);
                     }
                     return failsafeExecutor
-                            .getStageAsync(() -> callAndEnrich(httpRequest, attempts)
+                            .getStageAsync((ctx) -> callAndEnrich(httpRequest, attempts)
                                     .thenApply(this::handleRetry));
                 } else {
                     return callAndEnrich(httpRequest, attempts);
@@ -236,6 +236,8 @@ public class Configuration<R,S> {
         if (LOGGER.isTraceEnabled()) {
             LOGGER.trace("after enrichment:{}", enrichedHttpRequest);
         }
+        //TODO multiple HTTP Clients instances per configuration
+        // https://github.com/clescot/kafka-connect-http/issues/718
         CompletableFuture<HttpExchange> completableFuture = getHttpClient().call(enrichedHttpRequest, attempts);
         return completableFuture
                 .thenApply(this::enrichHttpExchange);

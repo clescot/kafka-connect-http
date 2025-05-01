@@ -240,6 +240,15 @@ public class HttpSinkConfigDefinition {
     public static final String CONFIG_DEFAULT_USER_AGENT_CUSTOM_VALUES = DEFAULT_CONFIGURATION_PREFIX + USER_AGENT_CUSTOM_VALUES;
     public static final String CONFIG_DEFAULT_USER_AGENT_CUSTOM_VALUES_DOC = "custom values for the user-agent header. if multiple values are provided (with `|` separator), code will pick randomly the value to use.";
 
+    //HttpResponse
+    public static final String HTTP_RESPONSE = "http.response.";
+    public static final String HTTP_RESPONSE_MESSAGE_STATUS_LIMIT=HTTP_RESPONSE+"message.status.limit";
+    public static final String CONFIG_DEFAULT_HTTP_RESPONSE_MESSAGE_STATUS_LIMIT=DEFAULT_CONFIGURATION_PREFIX+HTTP_RESPONSE_MESSAGE_STATUS_LIMIT;
+    public static final String CONFIG_DEFAULT_HTTP_RESPONSE_MESSAGE_STATUS_LIMIT_DOC="define the max length of the HTTP Response message status.";
+
+    public static final String HTTP_RESPONSE_BODY_LIMIT=HTTP_RESPONSE+"body.limit";
+    public static final String CONFIG_DEFAULT_HTTP_RESPONSE_BODY_LIMIT=DEFAULT_CONFIGURATION_PREFIX+HTTP_RESPONSE_BODY_LIMIT;
+    public static final String CONFIG_DEFAULT_HTTP_RESPONSE_BODY_LIMIT_DOC="define the max length of the HTTP Response message body.";
 
     //enrich httpExchange
     public static final String ENRICH_EXCHANGE = "enrich.exchange.";
@@ -795,11 +804,6 @@ public class HttpSinkConfigDefinition {
                 .define(prefix + HTTP_CLIENT_PROXY_AUTHENTICATION_DIGEST_USERNAME, ConfigDef.Type.STRING, null, ConfigDef.Importance.LOW, CONFIG_DEFAULT_HTTPCLIENT_PROXY_AUTHENTICATION_DIGEST_USER_DOC)
                 .define(prefix + HTTP_CLIENT_PROXY_AUTHENTICATION_DIGEST_PASSWORD, ConfigDef.Type.STRING, null, ConfigDef.Importance.LOW, CONFIG_DEFAULT_HTTP_CLIENT_PROXY_AUTHENTICATION_DIGEST_PASSWORD_DOC)
                 .define(prefix + HTTP_CLIENT_PROXY_AUTHENTICATION_DIGEST_CHARSET, ConfigDef.Type.STRING, StandardCharsets.US_ASCII.name(), ConfigDef.Importance.LOW, CONFIG_DEFAULT_HTTP_CLIENT_PROXY_AUTHENTICATION_DIGEST_CHARSET_DOC)
-
-
-
-
-
                 //proxy
                 .define(prefix + PROXY_HTTP_CLIENT_HOSTNAME, ConfigDef.Type.STRING, null, ConfigDef.Importance.LOW, CONFIG_DEFAULT_PROXY_HTTP_CLIENT_HOSTNAME_DOC)
                 .define(prefix + PROXY_HTTP_CLIENT_PORT, ConfigDef.Type.STRING, null, ConfigDef.Importance.LOW, CONFIG_DEFAULT_PROXY_HTTP_CLIENT_PORT_DOC)
@@ -811,7 +815,9 @@ public class HttpSinkConfigDefinition {
                 .define(prefix + PROXY_SELECTOR_HTTP_CLIENT_0_TYPE, ConfigDef.Type.STRING, null, ConfigDef.Importance.LOW, CONFIG_DEFAULT_PROXY_SELECTOR_HTTP_CLIENT_0_TYPE_DOC)
                 .define(prefix + PROXY_SELECTOR_HTTP_CLIENT_0_URI_REGEX, ConfigDef.Type.STRING, null, ConfigDef.Importance.LOW, CONFIG_DEFAULT_PROXY_SELECTOR_HTTP_CLIENT_0_URI_REGEX_DOC)
                 .define(prefix + PROXY_SELECTOR_HTTP_CLIENT_NON_PROXY_HOSTS_URI_REGEX, ConfigDef.Type.STRING, null, ConfigDef.Importance.LOW, CONFIG_DEFAULT_PROXY_SELECTOR_HTTP_CLIENT_NON_PROXY_HOSTS_URI_REGEX_DOC)
-
+                //http response
+                .define(prefix + HTTP_RESPONSE_MESSAGE_STATUS_LIMIT,ConfigDef.Type.INT,null,ConfigDef.Importance.LOW,CONFIG_DEFAULT_HTTP_RESPONSE_MESSAGE_STATUS_LIMIT_DOC)
+                .define(prefix + HTTP_RESPONSE_BODY_LIMIT,ConfigDef.Type.INT,null,ConfigDef.Importance.LOW,CONFIG_DEFAULT_HTTP_RESPONSE_BODY_LIMIT_DOC)
                 //'okhttp' settings
                 //cache
                 .define(prefix + OKHTTP_CACHE_ACTIVATE, ConfigDef.Type.STRING, FALSE, ConfigDef.Importance.LOW, CONFIG_DEFAULT_OKHTTP_CACHE_ACTIVATE_DOC)

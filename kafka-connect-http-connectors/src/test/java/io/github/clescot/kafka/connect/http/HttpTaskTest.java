@@ -108,6 +108,96 @@ class HttpTaskTest {
             assertThat(httpExchange.isSuccess()).isTrue();
         }
         @Test
+        void test_successful_request_with_status_message_limit() throws ExecutionException, InterruptedException {
+
+            //given
+            String scenario = "test_successful_request_at_first_time";
+            WireMockRuntimeInfo wmRuntimeInfo = wmHttp.getRuntimeInfo();
+            WireMock wireMock = wmRuntimeInfo.getWireMock();
+            wireMock
+                    .register(WireMock.post("/ping").inScenario(scenario)
+                            .whenScenarioStateIs(STARTED)
+                            .willReturn(WireMock.aResponse()
+                                    .withStatus(200)
+                                    .withStatusMessage("OK!!!!!!!!!")
+                                    .withBody("")
+                            ).willSetStateTo(AUTHORIZED_STATE)
+                    );
+            //when
+            HttpRequest httpRequest = getDummyHttpRequest(wmHttp.url("/ping"));
+            Map<String, String> settings = Maps.newHashMap();
+            settings.put("config.dummy.http.response.message.status.limit","4");
+            HttpSinkConnectorConfig httpSinkConnectorConfig = new HttpSinkConnectorConfig(settings);
+            Configuration<Request, Response> configuration = new Configuration<>("dummy",new OkHttpClientFactory(), httpSinkConnectorConfig, executorService, getCompositeMeterRegistry());
+            HttpExchange httpExchange = configuration.call(httpRequest).get();
+
+            //then
+            assertThat(httpExchange.isSuccess()).isTrue();
+            assertThat(httpExchange.getHttpResponse().getStatusMessage()).isEqualTo("OK!!");
+        }
+
+        @Test
+        void test_successful_request_with_body_limit() throws ExecutionException, InterruptedException {
+
+            //given
+            String scenario = "test_successful_request_at_first_time";
+            WireMockRuntimeInfo wmRuntimeInfo = wmHttp.getRuntimeInfo();
+            WireMock wireMock = wmRuntimeInfo.getWireMock();
+            wireMock
+                    .register(WireMock.post("/ping").inScenario(scenario)
+                            .whenScenarioStateIs(STARTED)
+                            .willReturn(WireMock.aResponse()
+                                    .withStatus(200)
+                                    .withStatusMessage("OK!!!!!!!!!")
+                                    .withBody("01234567890123")
+                            ).willSetStateTo(AUTHORIZED_STATE)
+                    );
+            //when
+            HttpRequest httpRequest = getDummyHttpRequest(wmHttp.url("/ping"));
+            Map<String, String> settings = Maps.newHashMap();
+            settings.put("config.dummy.http.response.body.limit","10");
+            HttpSinkConnectorConfig httpSinkConnectorConfig = new HttpSinkConnectorConfig(settings);
+            Configuration<Request, Response> configuration = new Configuration<>("dummy",new OkHttpClientFactory(), httpSinkConnectorConfig, executorService, getCompositeMeterRegistry());
+            HttpExchange httpExchange = configuration.call(httpRequest).get();
+
+            //then
+            assertThat(httpExchange.isSuccess()).isTrue();
+            assertThat(httpExchange.getHttpResponse().getStatusMessage()).isEqualTo("OK!!!!!!!!!");
+            assertThat(httpExchange.getHttpResponse().getBodyAsString()).isEqualTo("0123456789");
+        }
+
+        @Test
+        void test_successful_request_with_status_message_limit_and_body_limit() throws ExecutionException, InterruptedException {
+
+            //given
+            String scenario = "test_successful_request_at_first_time";
+            WireMockRuntimeInfo wmRuntimeInfo = wmHttp.getRuntimeInfo();
+            WireMock wireMock = wmRuntimeInfo.getWireMock();
+            wireMock
+                    .register(WireMock.post("/ping").inScenario(scenario)
+                            .whenScenarioStateIs(STARTED)
+                            .willReturn(WireMock.aResponse()
+                                    .withStatus(200)
+                                    .withStatusMessage("OK!!")
+                                    .withBody("01234567890123")
+                            ).willSetStateTo(AUTHORIZED_STATE)
+                    );
+            //when
+            HttpRequest httpRequest = getDummyHttpRequest(wmHttp.url("/ping"));
+            Map<String, String> settings = Maps.newHashMap();
+            settings.put("config.dummy.http.response.status.message.limit","4");
+            settings.put("config.dummy.http.response.body.limit","10");
+            HttpSinkConnectorConfig httpSinkConnectorConfig = new HttpSinkConnectorConfig(settings);
+            Configuration<Request, Response> configuration = new Configuration<>("dummy",new OkHttpClientFactory(), httpSinkConnectorConfig, executorService, getCompositeMeterRegistry());
+            HttpExchange httpExchange = configuration.call(httpRequest).get();
+
+            //then
+            assertThat(httpExchange.isSuccess()).isTrue();
+            assertThat(httpExchange.getHttpResponse().getStatusMessage()).isEqualTo("OK!!");
+            assertThat(httpExchange.getHttpResponse().getBodyAsString()).isEqualTo("0123456789");
+        }
+
+        @Test
         void test_successful_request_at_second_time() throws ExecutionException, InterruptedException {
 
             //given

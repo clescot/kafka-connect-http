@@ -9,6 +9,7 @@ import io.github.clescot.kafka.connect.http.client.ssl.AlwaysTrustManagerFactory
 import io.github.clescot.kafka.connect.http.core.HttpExchange;
 import io.github.clescot.kafka.connect.http.core.HttpRequest;
 import io.github.clescot.kafka.connect.http.core.HttpResponse;
+import io.github.clescot.kafka.connect.http.core.HttpResponseBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -82,6 +83,8 @@ public interface HttpClient<Q, S> {
      */
     Q buildRequest(HttpRequest httpRequest);
 
+
+
     default CompletableFuture<HttpExchange> call(HttpRequest httpRequest, AtomicInteger attempts) throws HttpException {
 
         Stopwatch rateLimitedStopWatch = Stopwatch.createStarted();
@@ -102,7 +105,8 @@ public interface HttpClient<Q, S> {
             response = nativeCall(request);
 
         Preconditions.checkNotNull(response, "response is null");
-        return response.thenApply(this::buildResponse)
+        HttpResponseBuilder httpResponseBuilder = new HttpResponseBuilder(getStatusMessageLimit(),getBodyLimit());
+        return response.thenApply((res)->buildResponse(httpResponseBuilder,res))
                 .thenApply(myResponse -> {
                             directStopWatch.stop();
                             rateLimitedStopWatch.stop();
@@ -142,7 +146,7 @@ public interface HttpClient<Q, S> {
      * @return HttpResponse
      */
 
-    HttpResponse buildResponse(S response);
+    HttpResponse buildResponse(HttpResponseBuilder httpResponseBuilder,S response);
 
     /**
      * raw native HttpRequest call.
@@ -202,6 +206,13 @@ public interface HttpClient<Q, S> {
         }
     }
 
+    Integer getStatusMessageLimit();
+
+    void setStatusMessageLimit(Integer statusMessageLimit);
+
+    Integer getBodyLimit();
+
+    void setBodyLimit(Integer bodyLimit);
 
     void setRateLimiter(RateLimiter<HttpExchange> rateLimiter);
 
