@@ -51,12 +51,12 @@ public abstract class AbstractHttpClient<R,S> implements HttpClient<R,S> {
 
         //httpResponse
         //messageStatus limit
-        Integer httpResponseMessageStatusLimit = (Integer)config.get(HTTP_RESPONSE_MESSAGE_STATUS_LIMIT);
+        Integer httpResponseMessageStatusLimit = Integer.parseInt(Optional.ofNullable((String)config.get(HTTP_RESPONSE_MESSAGE_STATUS_LIMIT)).orElse(""+Integer.MAX_VALUE));
         if(httpResponseMessageStatusLimit!=null && httpResponseMessageStatusLimit>0) {
             setStatusMessageLimit(httpResponseMessageStatusLimit);
         }
         //body limit
-        Integer httpResponseBodyLimit = (Integer)config.get(HTTP_RESPONSE_BODY_LIMIT);
+        Integer httpResponseBodyLimit = Integer.parseInt(Optional.ofNullable((String)config.get(HTTP_RESPONSE_BODY_LIMIT)).orElse(""+Integer.MAX_VALUE));
         if(httpResponseBodyLimit!=null && httpResponseBodyLimit>0) {
             setBodyLimit(httpResponseBodyLimit);
         }
