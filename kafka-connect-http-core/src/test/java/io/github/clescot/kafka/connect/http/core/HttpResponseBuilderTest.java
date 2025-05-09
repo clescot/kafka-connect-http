@@ -24,6 +24,22 @@ class HttpResponseBuilderTest {
     }
 
     @Test
+    void test_body_limit(){
+        int bodyLimit = 20;
+        HttpResponseBuilder httpResponseBuilder = new HttpResponseBuilder(null,null, bodyLimit);
+        String statusMessage = "1234";
+        httpResponseBuilder.setStatus(200, statusMessage);
+        String twentyCharacters = "12345678901234567890";
+        httpResponseBuilder.setBodyAsString(twentyCharacters + "AAAAA");
+        assertThat(httpResponseBuilder.getStatusMessageLimit()).isEqualTo(Integer.MAX_VALUE);
+        assertThat(httpResponseBuilder.getBodyLimit()).isEqualTo(bodyLimit);
+        HttpResponse httpResponse = httpResponseBuilder.toHttpResponse();
+        assertThat(httpResponse.getStatusMessage()).isEqualTo(statusMessage);
+        assertThat(httpResponse.getHeaders()).isEmpty();
+        assertThat(httpResponse.getBodyAsString()).isEqualTo(twentyCharacters);
+    }
+
+    @Test
     void test_limits_set_to_zero(){
         HttpResponseBuilder httpResponseBuilder = new HttpResponseBuilder(0,0,0);
         httpResponseBuilder.setStatus(200,"1234");
