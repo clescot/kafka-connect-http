@@ -33,11 +33,15 @@ import static io.github.clescot.kafka.connect.http.sink.HttpSinkConfigDefinition
 public abstract class AbstractHttpClient<R,S> implements HttpClient<R,S> {
     private static final Logger LOGGER = LoggerFactory.getLogger(AbstractHttpClient.class);
     private static final String DEFAULT_SSL_PROTOCOL = "SSL";
+    public static final String DEFAULT_HTTP_RESPONSE_MESSAGE_STATUS_LIMIT = "1024";
+    public static final String DEFAULT_HTTP_RESPONSE_HEADERS_LIMIT = "10000";
+    public static final String DEFAULT_HTTP_RESPONSE_BODY_LIMIT = "100000";
     protected Map<String, Object> config;
     private Optional<RateLimiter<HttpExchange>> rateLimiter = Optional.empty();
     protected TrustManagerFactory trustManagerFactory;
     protected String configurationId;
     private Integer statusMessageLimit;
+    private Integer headersLimit;
     private Integer bodyLimit;
 
     //rate limiter
@@ -51,12 +55,19 @@ public abstract class AbstractHttpClient<R,S> implements HttpClient<R,S> {
 
         //httpResponse
         //messageStatus limit
-        Integer httpResponseMessageStatusLimit = Integer.parseInt(Optional.ofNullable((String)config.get(HTTP_RESPONSE_MESSAGE_STATUS_LIMIT)).orElse(""+Integer.MAX_VALUE));
+
+        Integer httpResponseMessageStatusLimit = Integer.parseInt(Optional.ofNullable((String)config.get(HTTP_RESPONSE_MESSAGE_STATUS_LIMIT)).orElse(DEFAULT_HTTP_RESPONSE_MESSAGE_STATUS_LIMIT));
         if(httpResponseMessageStatusLimit!=null && httpResponseMessageStatusLimit>0) {
             setStatusMessageLimit(httpResponseMessageStatusLimit);
         }
+
+        Integer httpResponseHeadersLimit = Integer.parseInt(Optional.ofNullable((String)config.get(HTTP_RESPONSE_HEADERS_LIMIT)).orElse(DEFAULT_HTTP_RESPONSE_HEADERS_LIMIT));
+        if(httpResponseHeadersLimit!=null && httpResponseHeadersLimit>0) {
+            setHeadersLimit(httpResponseHeadersLimit);
+        }
+
         //body limit
-        Integer httpResponseBodyLimit = Integer.parseInt(Optional.ofNullable((String)config.get(HTTP_RESPONSE_BODY_LIMIT)).orElse(""+Integer.MAX_VALUE));
+        Integer httpResponseBodyLimit = Integer.parseInt(Optional.ofNullable((String)config.get(HTTP_RESPONSE_BODY_LIMIT)).orElse(DEFAULT_HTTP_RESPONSE_BODY_LIMIT));
         if(httpResponseBodyLimit!=null && httpResponseBodyLimit>0) {
             setBodyLimit(httpResponseBodyLimit);
         }
@@ -71,6 +82,15 @@ public abstract class AbstractHttpClient<R,S> implements HttpClient<R,S> {
     @Override
     public void setStatusMessageLimit(Integer statusMessageLimit) {
         this.statusMessageLimit = statusMessageLimit;
+    }
+
+    @Override
+    public Integer getHeadersLimit() {
+        return headersLimit;
+    }
+
+    public void setHeadersLimit(Integer headersLimit) {
+        this.headersLimit = headersLimit;
     }
 
     @Override

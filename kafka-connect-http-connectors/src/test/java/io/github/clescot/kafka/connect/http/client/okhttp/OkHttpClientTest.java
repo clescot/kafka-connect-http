@@ -387,7 +387,7 @@ class OkHttpClientTest {
             builder.body(responseBody);
             builder.protocol(Protocol.HTTP_1_1);
             Response response = builder.build();
-            HttpResponseBuilder httpResponseBuilder = new HttpResponseBuilder(1024, 100_000);
+            HttpResponseBuilder httpResponseBuilder = new HttpResponseBuilder(1024, 8000,100_000);
             //when
             HttpResponse httpResponse = client.buildResponse(httpResponseBuilder, response);
 
@@ -429,7 +429,7 @@ class OkHttpClientTest {
             builder.body(responseBody);
             builder.protocol(Protocol.HTTP_1_1);
             Response response = builder.build();
-            HttpResponseBuilder httpResponseBuilder = new HttpResponseBuilder(4, 100_000);
+            HttpResponseBuilder httpResponseBuilder = new HttpResponseBuilder(4, 8000,100_000);
             //when
             HttpResponse httpResponse = client.buildResponse(httpResponseBuilder, response);
 
@@ -441,6 +441,51 @@ class OkHttpClientTest {
             assertThat(response.header(CONTENT_TYPE)).isEqualTo(httpResponse.getHeaders().get(CONTENT_TYPE).get(0));
 
         }
+
+        @Test
+        void test_build_response_with_headers_limit() {
+
+            //given
+            HashMap<String, Object> config = Maps.newHashMap();
+            config.put(CONFIGURATION_ID, "default");
+            config.put(CONFIG_DEFAULT_HTTP_RESPONSE_HEADERS_LIMIT_DOC, 20);
+            io.github.clescot.kafka.connect.http.client.okhttp.OkHttpClient client = new io.github.clescot.kafka.connect.http.client.okhttp.OkHttpClient(config, null, new Random(), null, null, getCompositeMeterRegistry());
+
+            HttpRequest httpRequest = new HttpRequest("http://dummy.com/", HttpRequest.Method.POST);
+            httpRequest.setBodyAsString("stuff");
+            Request request = client.buildRequest(httpRequest);
+
+            Response.Builder builder = new Response.Builder();
+            Headers headers = new Headers.Builder()
+                    .add("key1", "value1")
+                    .add(CONTENT_TYPE, APPLICATION_JSON)
+                    .build();
+            builder.headers(headers);
+            builder.request(request);
+            builder.code(200);
+            builder.message("OK!!!!!!!");
+            String responseContent = "blabla78965555";
+            Buffer buffer = new Buffer();
+            buffer.write(responseContent.getBytes(StandardCharsets.UTF_8));
+            ResponseBody responseBody = new RealResponseBody(APPLICATION_JSON, responseContent.length(), buffer);
+            builder.body(responseBody);
+            builder.protocol(Protocol.HTTP_1_1);
+            Response response = builder.build();
+            HttpResponseBuilder httpResponseBuilder = new HttpResponseBuilder(Integer.MAX_VALUE, 8000,10);
+            //when
+            HttpResponse httpResponse = client.buildResponse(httpResponseBuilder, response);
+
+            //then
+            LOGGER.debug("response:{}", response);
+            assertThat(response.code()).isEqualTo(httpResponse.getStatusCode());
+            assertThat(httpResponse.getStatusMessage()).isEqualTo("OK!!!!!!!");
+            assertThat(httpResponse.getBodyAsString()).isEqualTo("blabla7896");
+            assertThat(response.header("key1")).isEqualTo(httpResponse.getHeaders().get("key1").get(0));
+            assertThat(response.header(CONTENT_TYPE)).isEqualTo(httpResponse.getHeaders().get(CONTENT_TYPE).get(0));
+
+        }
+
+
 
         @Test
         void test_build_response_with_body_limit() {
@@ -471,7 +516,7 @@ class OkHttpClientTest {
             builder.body(responseBody);
             builder.protocol(Protocol.HTTP_1_1);
             Response response = builder.build();
-            HttpResponseBuilder httpResponseBuilder = new HttpResponseBuilder(Integer.MAX_VALUE, 10);
+            HttpResponseBuilder httpResponseBuilder = new HttpResponseBuilder(Integer.MAX_VALUE, 8000,10);
             //when
             HttpResponse httpResponse = client.buildResponse(httpResponseBuilder, response);
 

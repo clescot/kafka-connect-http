@@ -105,7 +105,7 @@ public interface HttpClient<Q, S> {
             response = nativeCall(request);
 
         Preconditions.checkNotNull(response, "response is null");
-        HttpResponseBuilder httpResponseBuilder = new HttpResponseBuilder(getStatusMessageLimit(),getBodyLimit());
+        HttpResponseBuilder httpResponseBuilder = new HttpResponseBuilder(getStatusMessageLimit(),getHeadersLimit(), getBodyLimit());
         return response.thenApply((res)->buildResponse(httpResponseBuilder,res))
                 .thenApply(myResponse -> {
                             directStopWatch.stop();
@@ -209,6 +209,8 @@ public interface HttpClient<Q, S> {
     Integer getStatusMessageLimit();
 
     void setStatusMessageLimit(Integer statusMessageLimit);
+
+    Integer getHeadersLimit();
 
     Integer getBodyLimit();
 

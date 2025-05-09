@@ -1,7 +1,9 @@
 package io.github.clescot.kafka.connect.http.core;
 
+import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
@@ -9,6 +11,7 @@ public class HttpResponseBuilder {
 
 
     private Integer statusMessageLimit = Integer.MAX_VALUE;
+    private Integer headersLimit = Integer.MAX_VALUE;
     private Integer bodyLimit = Integer.MAX_VALUE;
     private String protocol;
     private int statusCode;
@@ -17,7 +20,11 @@ public class HttpResponseBuilder {
     private Map<String, List<String>> headers = Maps.newHashMap();
 
 
-    public HttpResponseBuilder(Integer statusMessageLimit, Integer bodyLimit) {
+    public HttpResponseBuilder(Integer statusMessageLimit, Integer headersLimit,Integer bodyLimit) {
+        if(headersLimit!=null) {
+            this.headersLimit = Math.max(0, headersLimit);
+        }
+
         if(statusMessageLimit!=null) {
             this.statusMessageLimit = Math.max(0, statusMessageLimit);
         }
@@ -28,6 +35,10 @@ public class HttpResponseBuilder {
 
     public Integer getStatusMessageLimit() {
         return statusMessageLimit;
+    }
+
+    public Integer getHeadersLimit() {
+        return headersLimit;
     }
 
     public Integer getBodyLimit() {
@@ -72,7 +83,32 @@ public class HttpResponseBuilder {
     }
 
     public void setHeaders(Map<String, List<String>> headers) {
-        this.headers = headers;
+        Map<String, List<String>> headersWithLimit = Maps.newHashMap();
+        if(headers!=null){
+            int headersSize=0;
+            Iterator<Map.Entry<String, List<String>>> iterator = headers.entrySet().iterator();
+            while(iterator.hasNext()){
+                Map.Entry<String, List<String>> next = iterator.next();
+                headersSize+=next.getKey().length();
+                Iterator<String> valuesIterator = next.getValue().iterator();
+                List<String> valuesWithLimit = Lists.newArrayList();
+                while(valuesIterator.hasNext()){
+                    String myValue = valuesIterator.next();
+                    headersSize+=myValue.length();
+                    if(headersSize<headersLimit){
+                        valuesWithLimit.add(myValue);
+                    }else{
+                        break;
+                    }
+                }
+                if(headersSize<headersLimit){
+                    headersWithLimit.put(next.getKey(),valuesWithLimit);
+                }else {
+                    break;
+                }
+            }
+        }
+        this.headers = headersWithLimit;
     }
 
     public HttpResponse toHttpResponse(){
