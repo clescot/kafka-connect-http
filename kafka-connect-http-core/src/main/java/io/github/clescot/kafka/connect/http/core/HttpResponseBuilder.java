@@ -89,22 +89,25 @@ public class HttpResponseBuilder {
             Iterator<Map.Entry<String, List<String>>> iterator = headers.entrySet().iterator();
             while(iterator.hasNext()){
                 Map.Entry<String, List<String>> next = iterator.next();
-                headersSize+=next.getKey().length();
-                Iterator<String> valuesIterator = next.getValue().iterator();
-                List<String> valuesWithLimit = Lists.newArrayList();
-                while(valuesIterator.hasNext()){
-                    String myValue = valuesIterator.next();
-                    headersSize+=myValue.length();
-                    if(headersSize<headersLimit){
-                        valuesWithLimit.add(myValue);
-                    }else{
+                int keyLength = next.getKey().length();
+                if(headersSize+keyLength<headersLimit) {
+                    headersSize += keyLength;
+                    Iterator<String> valuesIterator = next.getValue().iterator();
+                    List<String> valuesWithLimit = Lists.newArrayList();
+                    while (valuesIterator.hasNext()) {
+                        String myValue = valuesIterator.next();
+                        if (headersSize + myValue.length() < headersLimit) {
+                            headersSize += myValue.length();
+                            valuesWithLimit.add(myValue);
+                        } else {
+                            break;
+                        }
+                    }
+                    if (headersSize < headersLimit) {
+                        headersWithLimit.put(next.getKey(), valuesWithLimit);
+                    } else {
                         break;
                     }
-                }
-                if(headersSize<headersLimit){
-                    headersWithLimit.put(next.getKey(),valuesWithLimit);
-                }else {
-                    break;
                 }
             }
         }
