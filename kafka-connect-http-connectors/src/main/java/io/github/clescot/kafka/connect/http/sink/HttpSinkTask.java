@@ -281,7 +281,7 @@ public abstract class HttpSinkTask<R, S> extends SinkTask {
         return httpTask
                 .call(pair.getRight())
                 .thenApply(
-                        publish(pair.getLeft(), this.publishMode, httpSinkConnectorConfig)
+                        publish(this.publishMode, httpSinkConnectorConfig)
                 )
                 .exceptionally(throwable -> {
                     LOGGER.error(throwable.getMessage());
@@ -315,11 +315,11 @@ public abstract class HttpSinkTask<R, S> extends SinkTask {
     }
 
 
-    private @NotNull Function<HttpExchange, HttpExchange> publish(SinkRecord sinkRecord, PublishMode publishMode, HttpSinkConnectorConfig connectorConfig) throws HttpException {
+    private @NotNull Function<HttpExchange, HttpExchange> publish(PublishMode publishMode, HttpSinkConnectorConfig connectorConfig) throws HttpException {
         return httpExchange -> {
             //publish eventually to 'in memory' queue
             if (PublishMode.IN_MEMORY_QUEUE.equals(publishMode)) {
-                publishInInMemoryQueueMode(sinkRecord, connectorConfig, httpExchange);
+                publishInInMemoryQueueMode(connectorConfig, httpExchange);
             } else if (PublishMode.PRODUCER.equals(publishMode)) {
                 publishInProducerMode(connectorConfig, httpExchange);
             } else {
@@ -329,15 +329,11 @@ public abstract class HttpSinkTask<R, S> extends SinkTask {
         };
     }
 
-    private void publishInInMemoryQueueMode(SinkRecord sinkRecord, HttpSinkConnectorConfig connectorConfig, HttpExchange httpExchange) {
+    private void publishInInMemoryQueueMode(HttpSinkConnectorConfig connectorConfig, HttpExchange httpExchange) {
         LOGGER.debug("publish.mode : 'IN_MEMORY_QUEUE': http exchange published to queue '{}':{}", connectorConfig.getQueueName(), httpExchange);
-        boolean offer = queue.offer(new KafkaRecord(sinkRecord.headers(), sinkRecord.keySchema(), sinkRecord.key(), httpExchange));
+        boolean offer = queue.offer(new KafkaRecord(null, null, null, httpExchange));
         if (!offer) {
-            LOGGER.error("sinkRecord(topic:{},partition:{},key:{},timestamp:{}) not added to the 'in memory' queue:{}",
-                    sinkRecord.topic(),
-                    sinkRecord.kafkaPartition(),
-                    sinkRecord.key(),
-                    sinkRecord.timestamp(),
+            LOGGER.error("sinkRecord  not added to the 'in memory' queue:{}",
                     connectorConfig.getQueueName()
             );
         }
