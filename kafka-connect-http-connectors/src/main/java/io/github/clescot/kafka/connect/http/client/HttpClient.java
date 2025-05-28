@@ -212,6 +212,8 @@ public interface HttpClient<Q, S> {
 
     Integer getHeadersLimit();
 
+    void setHeadersLimit(Integer headersLimit);
+
     Integer getBodyLimit();
 
     void setBodyLimit(Integer bodyLimit);
