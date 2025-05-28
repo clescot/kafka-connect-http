@@ -237,7 +237,7 @@ public abstract class HttpSinkTask<R, S> extends SinkTask {
         List<Pair<SinkRecord, HttpRequest>> groupedRequests = groupRequests(requests);
         //List<SinkRecord>-> SinkRecord
         List<CompletableFuture<HttpExchange>> completableFutures = groupedRequests.stream()
-                .map(this::call)
+                .map(this::callAndPublish)
                 .collect(Collectors.toList());
         List<HttpExchange> httpExchanges = completableFutures.stream().map(CompletableFuture::join).collect(Collectors.toList());
         LOGGER.debug("HttpExchanges created :'{}'", httpExchanges.size());
@@ -276,12 +276,12 @@ public abstract class HttpSinkTask<R, S> extends SinkTask {
         }
     }
 
-    private CompletableFuture<HttpExchange> call(Pair<SinkRecord, HttpRequest> pair) {
+    private CompletableFuture<HttpExchange> callAndPublish(Pair<SinkRecord, HttpRequest> pair) {
 
         return httpTask
                 .call(pair.getRight())
                 .thenApply(
-                        publish(pair.getLeft(), this.publishMode, httpSinkConnectorConfig)
+                        publish(this.publishMode, httpSinkConnectorConfig)
                 )
                 .exceptionally(throwable -> {
                     LOGGER.error(throwable.getMessage());
@@ -315,11 +315,11 @@ public abstract class HttpSinkTask<R, S> extends SinkTask {
     }
 
 
-    private @NotNull Function<HttpExchange, HttpExchange> publish(SinkRecord sinkRecord, PublishMode publishMode, HttpSinkConnectorConfig connectorConfig) throws HttpException {
+    private @NotNull Function<HttpExchange, HttpExchange> publish(PublishMode publishMode, HttpSinkConnectorConfig connectorConfig) throws HttpException {
         return httpExchange -> {
             //publish eventually to 'in memory' queue
             if (PublishMode.IN_MEMORY_QUEUE.equals(publishMode)) {
-                publishInInMemoryQueueMode(sinkRecord, connectorConfig, httpExchange);
+                publishInInMemoryQueueMode(connectorConfig, httpExchange);
             } else if (PublishMode.PRODUCER.equals(publishMode)) {
                 publishInProducerMode(connectorConfig, httpExchange);
             } else {
@@ -329,18 +329,19 @@ public abstract class HttpSinkTask<R, S> extends SinkTask {
         };
     }
 
-    private void publishInInMemoryQueueMode(SinkRecord sinkRecord, HttpSinkConnectorConfig connectorConfig, HttpExchange httpExchange) {
+    private void publishInInMemoryQueueMode(HttpSinkConnectorConfig connectorConfig, HttpExchange httpExchange) {
         LOGGER.debug("publish.mode : 'IN_MEMORY_QUEUE': http exchange published to queue '{}':{}", connectorConfig.getQueueName(), httpExchange);
-        boolean offer = queue.offer(new KafkaRecord(sinkRecord.headers(), sinkRecord.keySchema(), sinkRecord.key(), httpExchange));
+        boolean offer = queue.offer(mapToRecord(httpExchange));
         if (!offer) {
-            LOGGER.error("sinkRecord(topic:{},partition:{},key:{},timestamp:{}) not added to the 'in memory' queue:{}",
-                    sinkRecord.topic(),
-                    sinkRecord.kafkaPartition(),
-                    sinkRecord.key(),
-                    sinkRecord.timestamp(),
+            LOGGER.error("sinkRecord  not added to the 'in memory' queue:{}",
                     connectorConfig.getQueueName()
             );
         }
+    }
+
+    @NotNull
+    private KafkaRecord mapToRecord(HttpExchange httpExchange) {
+        return new KafkaRecord(null, null, null, httpExchange);
     }
 
     private void publishInProducerMode(HttpSinkConnectorConfig connectorConfig, HttpExchange httpExchange) {
@@ -348,12 +349,7 @@ public abstract class HttpSinkTask<R, S> extends SinkTask {
         LOGGER.debug("publish.mode : 'PRODUCER' : HttpExchange error will be published at topic : '{}'", connectorConfig.getProducerErrorTopic());
         String targetTopic = httpExchange.isSuccess() ? connectorConfig.getProducerSuccessTopic() : connectorConfig.getProducerErrorTopic();
         String producerContent = connectorConfig.getProducerContent();
-        ProducerRecord<String, Object> myRecord;
-        if("response".equalsIgnoreCase(producerContent)) {
-            myRecord = new ProducerRecord<>(targetTopic, httpExchange.getHttpResponse());
-        }else{
-            myRecord = new ProducerRecord<>(targetTopic, httpExchange);
-        }
+        ProducerRecord<String, Object> myRecord = mapToRecord(httpExchange, producerContent, targetTopic);
         LOGGER.trace("before send to {}", targetTopic);
         RecordMetadata recordMetadata;
         try {
@@ -369,6 +365,17 @@ public abstract class HttpSinkTask<R, S> extends SinkTask {
         long timestamp = recordMetadata.timestamp();
         String topic = recordMetadata.topic();
         LOGGER.debug("✉✉ record sent ✉✉ : topic:{},partition:{},offset:{},timestamp:{}", topic, partition, offset, timestamp);
+    }
+
+    @NotNull
+    private ProducerRecord<String, Object> mapToRecord(HttpExchange httpExchange, String producerContent, String targetTopic) {
+        ProducerRecord<String, Object> myRecord;
+        if("response".equalsIgnoreCase(producerContent)) {
+            myRecord = new ProducerRecord<>(targetTopic, httpExchange.getHttpResponse());
+        }else{
+            myRecord = new ProducerRecord<>(targetTopic, httpExchange);
+        }
+        return myRecord;
     }
 
     @Override

@@ -1,6 +1,7 @@
 package io.github.clescot.kafka.connect.http.core;
 
 
+import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import org.junit.jupiter.api.Test;
 
@@ -13,7 +14,7 @@ class HttpResponseBuilderTest {
 
     @Test
     void test_negative_limits(){
-        HttpResponseBuilder httpResponseBuilder = new HttpResponseBuilder(-100,-100);
+        HttpResponseBuilder httpResponseBuilder = new HttpResponseBuilder(-100,-100,-100);
         httpResponseBuilder.setStatus(200,"1234");
         httpResponseBuilder.setBodyAsString("abcd");
         assertThat(httpResponseBuilder.getStatusMessageLimit()).isEqualTo(0);
@@ -24,8 +25,51 @@ class HttpResponseBuilderTest {
     }
 
     @Test
+    void test_body_limit(){
+        int bodyLimit = 20;
+        HttpResponseBuilder httpResponseBuilder = new HttpResponseBuilder(null,null, bodyLimit);
+        String statusMessage = "1234";
+        httpResponseBuilder.setStatus(200, statusMessage);
+        String twentyCharacters = "12345678901234567890";
+        httpResponseBuilder.setBodyAsString(twentyCharacters + "AAAAA");
+        assertThat(httpResponseBuilder.getStatusMessageLimit()).isEqualTo(Integer.MAX_VALUE);
+        assertThat(httpResponseBuilder.getBodyLimit()).isEqualTo(bodyLimit);
+        HttpResponse httpResponse = httpResponseBuilder.toHttpResponse();
+        assertThat(httpResponse.getStatusMessage()).isEqualTo(statusMessage);
+        assertThat(httpResponse.getHeaders()).isEmpty();
+        assertThat(httpResponse.getBodyAsString()).isEqualTo(twentyCharacters);
+    }
+    @Test
+    void test_headers_limit(){
+        int headersLimit = 20;
+        HttpResponseBuilder httpResponseBuilder = new HttpResponseBuilder(null,headersLimit, null);
+        String statusMessage = "1234";
+        httpResponseBuilder.setStatus(200, statusMessage);
+        String twentyCharacters = "12345678901234567890";
+
+        Map<String, List<String>> headers = Maps.newHashMap();
+        List<String> headerValues = Lists.newArrayList();
+        headerValues.add("value1");
+        headerValues.add("value2");
+        headerValues.add("value3");
+        headerValues.add("value4");
+        headerValues.add("value5");
+        headerValues.add("value6");
+        headers.put("test",headerValues);
+        httpResponseBuilder.setHeaders(headers);
+        httpResponseBuilder.setBodyAsString(twentyCharacters + "AAAAA");
+        assertThat(httpResponseBuilder.getStatusMessageLimit()).isEqualTo(Integer.MAX_VALUE);
+        assertThat(httpResponseBuilder.getBodyLimit()).isEqualTo(Integer.MAX_VALUE);
+        assertThat(httpResponseBuilder.getHeadersLimit()).isEqualTo(headersLimit);
+        HttpResponse httpResponse = httpResponseBuilder.toHttpResponse();
+        assertThat(httpResponse.getStatusMessage()).isEqualTo(statusMessage);
+        assertThat(httpResponse.getHeaders()).isNotEmpty();
+        assertThat(httpResponse.getBodyAsString()).isEqualTo(twentyCharacters+ "AAAAA");
+    }
+
+    @Test
     void test_limits_set_to_zero(){
-        HttpResponseBuilder httpResponseBuilder = new HttpResponseBuilder(0,0);
+        HttpResponseBuilder httpResponseBuilder = new HttpResponseBuilder(0,0,0);
         httpResponseBuilder.setStatus(200,"1234");
         httpResponseBuilder.setBodyAsString("abcd");
         assertThat(httpResponseBuilder.getStatusMessageLimit()).isEqualTo(0);
@@ -37,7 +81,7 @@ class HttpResponseBuilderTest {
 
     @Test
     void test_positive_limits(){
-        HttpResponseBuilder httpResponseBuilder = new HttpResponseBuilder(2,2);
+        HttpResponseBuilder httpResponseBuilder = new HttpResponseBuilder(2,10,2);
         httpResponseBuilder.setStatus(200,"1234");
         httpResponseBuilder.setBodyAsString("abcd");
         assertThat(httpResponseBuilder.getStatusMessageLimit()).isEqualTo(2);
@@ -48,7 +92,7 @@ class HttpResponseBuilderTest {
     }
     @Test
     void test_minus_one_limits(){
-        HttpResponseBuilder httpResponseBuilder = new HttpResponseBuilder(-1,-1);
+        HttpResponseBuilder httpResponseBuilder = new HttpResponseBuilder(-1,-1,-1);
         httpResponseBuilder.setStatus(200,"1234");
         httpResponseBuilder.setBodyAsString("abcd");
         assertThat(httpResponseBuilder.getStatusMessageLimit()).isEqualTo(0);
@@ -59,7 +103,7 @@ class HttpResponseBuilderTest {
     }
     @Test
     void test_minus_one_limits_and_status_and_body_are_null(){
-        HttpResponseBuilder httpResponseBuilder = new HttpResponseBuilder(-1,-1);
+        HttpResponseBuilder httpResponseBuilder = new HttpResponseBuilder(-1,-1,-1);
         httpResponseBuilder.setStatus(200,null);
         httpResponseBuilder.setBodyAsString(null);
         assertThat(httpResponseBuilder.getStatusMessageLimit()).isEqualTo(0);
@@ -71,7 +115,7 @@ class HttpResponseBuilderTest {
 
     @Test
     void test_status_message_set_to_null(){
-        HttpResponseBuilder httpResponseBuilder = new HttpResponseBuilder(2,2);
+        HttpResponseBuilder httpResponseBuilder = new HttpResponseBuilder(2,2,2);
         httpResponseBuilder.setStatus(200,null);
         httpResponseBuilder.setBodyAsString("abcd");
         assertThat(httpResponseBuilder.getStatusMessageLimit()).isEqualTo(2);
@@ -83,7 +127,7 @@ class HttpResponseBuilderTest {
 
     @Test
     void test_body_set_to_null(){
-        HttpResponseBuilder httpResponseBuilder = new HttpResponseBuilder(10,10);
+        HttpResponseBuilder httpResponseBuilder = new HttpResponseBuilder(10,10,10);
         httpResponseBuilder.setStatus(200,null);
         httpResponseBuilder.setBodyAsString(null);
         assertThat(httpResponseBuilder.getStatusMessageLimit()).isEqualTo(10);
@@ -97,8 +141,9 @@ class HttpResponseBuilderTest {
     @Test
     void test_nominal_case(){
         int statusMessageLimit = 250;
+        int headersLimit = 800;
         int bodyLimit = 2000;
-        HttpResponseBuilder httpResponseBuilder = new HttpResponseBuilder(statusMessageLimit, bodyLimit);
+        HttpResponseBuilder httpResponseBuilder = new HttpResponseBuilder(statusMessageLimit, headersLimit, bodyLimit);
         String statusMessage = "1234";
         int statusCode = 200;
         httpResponseBuilder.setStatus(statusCode, statusMessage);

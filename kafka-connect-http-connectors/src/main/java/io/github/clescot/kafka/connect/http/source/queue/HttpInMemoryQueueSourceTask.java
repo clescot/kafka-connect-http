@@ -61,8 +61,6 @@ public class HttpInMemoryQueueSourceTask extends SourceTask {
     private SourceRecord toSourceRecord(KafkaRecord kafkaRecord){
         //sourcePartition and sourceOffset are useful to track data consumption from source
         //but it is useless in the in memory queue context
-        Map<String, ?> sourcePartition = Maps.newHashMap();
-        Map<String, ?> sourceOffset= Maps.newHashMap();
         HttpExchange httpExchange = kafkaRecord.getHttpExchange();
 
         Struct struct;
@@ -75,16 +73,11 @@ public class HttpInMemoryQueueSourceTask extends SourceTask {
 
         LOGGER.debug("HttpSourcetask Struct received :{}",struct);
         return new SourceRecord(
-                sourcePartition,
-                sourceOffset,
+                Maps.newHashMap(),
+                Maps.newHashMap(),
                 httpExchange.isSuccess()? sourceConfig.getSuccessTopic(): sourceConfig.getErrorsTopic(),
-                null,
-                kafkaRecord.getSchemaKey(),
-                kafkaRecord.getKey(),
                 struct.schema(),
-                struct,
-                null,
-                kafkaRecord.getHeaders()
+                struct
         );
     }
 

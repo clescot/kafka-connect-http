@@ -94,7 +94,7 @@ public class HttpCronSourceTask extends SourceTask {
     }
 
     @Override
-    public List<SourceRecord> poll() throws InterruptedException {
+    public List<SourceRecord> poll() {
         List<SourceRecord> records = Lists.newArrayList();
         while (queue.peek() != null) {
             HttpRequest httpRequest = queue.poll();

@@ -242,13 +242,18 @@ public class HttpSinkConfigDefinition {
 
     //HttpResponse
     public static final String HTTP_RESPONSE = "http.response.";
+    //message status limit
     public static final String HTTP_RESPONSE_MESSAGE_STATUS_LIMIT=HTTP_RESPONSE+"message.status.limit";
     public static final String CONFIG_DEFAULT_HTTP_RESPONSE_MESSAGE_STATUS_LIMIT=DEFAULT_CONFIGURATION_PREFIX+HTTP_RESPONSE_MESSAGE_STATUS_LIMIT;
-    public static final String CONFIG_DEFAULT_HTTP_RESPONSE_MESSAGE_STATUS_LIMIT_DOC="define the max length of the HTTP Response message status.";
-
+    public static final String CONFIG_DEFAULT_HTTP_RESPONSE_MESSAGE_STATUS_LIMIT_DOC="define the max length of the HTTP Response message status. 1024 is the default limit.";
+    //headers limit
+    public static final String HTTP_RESPONSE_HEADERS_LIMIT=HTTP_RESPONSE+"headers.limit";
+    public static final String CONFIG_DEFAULT_HTTP_RESPONSE_HEADERS_LIMIT=DEFAULT_CONFIGURATION_PREFIX+HTTP_RESPONSE_HEADERS_LIMIT;
+    public static final String CONFIG_DEFAULT_HTTP_RESPONSE_HEADERS_LIMIT_DOC="define the max length of the HTTP Response headers. 10_000 is the default limit.";
+    //body limit
     public static final String HTTP_RESPONSE_BODY_LIMIT=HTTP_RESPONSE+"body.limit";
     public static final String CONFIG_DEFAULT_HTTP_RESPONSE_BODY_LIMIT=DEFAULT_CONFIGURATION_PREFIX+HTTP_RESPONSE_BODY_LIMIT;
-    public static final String CONFIG_DEFAULT_HTTP_RESPONSE_BODY_LIMIT_DOC="define the max length of the HTTP Response message body.";
+    public static final String CONFIG_DEFAULT_HTTP_RESPONSE_BODY_LIMIT_DOC="define the max length of the HTTP Response message body. 100_000 is the default limit";
 
     //enrich httpExchange
     public static final String ENRICH_EXCHANGE = "enrich.exchange.";
@@ -816,8 +821,9 @@ public class HttpSinkConfigDefinition {
                 .define(prefix + PROXY_SELECTOR_HTTP_CLIENT_0_URI_REGEX, ConfigDef.Type.STRING, null, ConfigDef.Importance.LOW, CONFIG_DEFAULT_PROXY_SELECTOR_HTTP_CLIENT_0_URI_REGEX_DOC)
                 .define(prefix + PROXY_SELECTOR_HTTP_CLIENT_NON_PROXY_HOSTS_URI_REGEX, ConfigDef.Type.STRING, null, ConfigDef.Importance.LOW, CONFIG_DEFAULT_PROXY_SELECTOR_HTTP_CLIENT_NON_PROXY_HOSTS_URI_REGEX_DOC)
                 //http response
-                .define(prefix + HTTP_RESPONSE_MESSAGE_STATUS_LIMIT,ConfigDef.Type.INT,null,ConfigDef.Importance.LOW,CONFIG_DEFAULT_HTTP_RESPONSE_MESSAGE_STATUS_LIMIT_DOC)
-                .define(prefix + HTTP_RESPONSE_BODY_LIMIT,ConfigDef.Type.INT,null,ConfigDef.Importance.LOW,CONFIG_DEFAULT_HTTP_RESPONSE_BODY_LIMIT_DOC)
+                .define(prefix + HTTP_RESPONSE_MESSAGE_STATUS_LIMIT,ConfigDef.Type.INT,1024,ConfigDef.Importance.LOW,CONFIG_DEFAULT_HTTP_RESPONSE_MESSAGE_STATUS_LIMIT_DOC)
+                .define(prefix + HTTP_RESPONSE_HEADERS_LIMIT,ConfigDef.Type.INT,10_000,ConfigDef.Importance.LOW,CONFIG_DEFAULT_HTTP_RESPONSE_HEADERS_LIMIT_DOC)
+                .define(prefix + HTTP_RESPONSE_BODY_LIMIT,ConfigDef.Type.INT,100_000,ConfigDef.Importance.LOW,CONFIG_DEFAULT_HTTP_RESPONSE_BODY_LIMIT_DOC)
                 //'okhttp' settings
                 //cache
                 .define(prefix + OKHTTP_CACHE_ACTIVATE, ConfigDef.Type.STRING, FALSE, ConfigDef.Importance.LOW, CONFIG_DEFAULT_OKHTTP_CACHE_ACTIVATE_DOC)
