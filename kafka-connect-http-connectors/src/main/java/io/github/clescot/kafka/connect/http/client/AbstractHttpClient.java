@@ -56,19 +56,19 @@ public abstract class AbstractHttpClient<R,S> implements HttpClient<R,S> {
         //httpResponse
         //messageStatus limit
 
-        Integer httpResponseMessageStatusLimit = Integer.parseInt(Optional.ofNullable((String)config.get(HTTP_RESPONSE_MESSAGE_STATUS_LIMIT)).orElse(DEFAULT_HTTP_RESPONSE_MESSAGE_STATUS_LIMIT));
-        if(httpResponseMessageStatusLimit!=null && httpResponseMessageStatusLimit>0) {
+        int httpResponseMessageStatusLimit = Integer.parseInt(Optional.ofNullable((String)config.get(HTTP_RESPONSE_MESSAGE_STATUS_LIMIT)).orElse(DEFAULT_HTTP_RESPONSE_MESSAGE_STATUS_LIMIT));
+        if(httpResponseMessageStatusLimit>0) {
             setStatusMessageLimit(httpResponseMessageStatusLimit);
         }
 
-        Integer httpResponseHeadersLimit = Integer.parseInt(Optional.ofNullable((String)config.get(HTTP_RESPONSE_HEADERS_LIMIT)).orElse(DEFAULT_HTTP_RESPONSE_HEADERS_LIMIT));
-        if(httpResponseHeadersLimit!=null && httpResponseHeadersLimit>0) {
+        int httpResponseHeadersLimit = Integer.parseInt(Optional.ofNullable((String)config.get(HTTP_RESPONSE_HEADERS_LIMIT)).orElse(DEFAULT_HTTP_RESPONSE_HEADERS_LIMIT));
+        if(httpResponseHeadersLimit>0) {
             setHeadersLimit(httpResponseHeadersLimit);
         }
 
         //body limit
-        Integer httpResponseBodyLimit = Integer.parseInt(Optional.ofNullable((String)config.get(HTTP_RESPONSE_BODY_LIMIT)).orElse(DEFAULT_HTTP_RESPONSE_BODY_LIMIT));
-        if(httpResponseBodyLimit!=null && httpResponseBodyLimit>0) {
+        int httpResponseBodyLimit = Integer.parseInt(Optional.ofNullable((String)config.get(HTTP_RESPONSE_BODY_LIMIT)).orElse(DEFAULT_HTTP_RESPONSE_BODY_LIMIT));
+        if(httpResponseBodyLimit>0) {
             setBodyLimit(httpResponseBodyLimit);
         }
 
@@ -89,6 +89,7 @@ public abstract class AbstractHttpClient<R,S> implements HttpClient<R,S> {
         return headersLimit;
     }
 
+    @Override
     public void setHeadersLimit(Integer headersLimit) {
         this.headersLimit = headersLimit;
     }
