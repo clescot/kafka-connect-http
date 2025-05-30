@@ -70,7 +70,7 @@
         <sonar.host.url>https://sonarcloud.io</sonar.host.url>
         <sonar.organization>clescot</sonar.organization>
         <sonar.projectKey>clescot_kafka-connect-http</sonar.projectKey>
-        <testcontainers.version>1.21.0</testcontainers.version>
+        <testcontainers.version>1.21.1</testcontainers.version>
         <wiremock.version>2.35.2</wiremock.version>
     </properties>
     <modules>
