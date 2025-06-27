@@ -674,4 +674,106 @@ class HttpRequestTest {
             assertThat(clonedHttpRequest).isEqualTo(httpRequest);
         }
     }
+
+    @Nested
+    class TestEqualsAndHashCode {
+
+        @Test
+        void test_equals_and_hashcode_headers_and_body_as_string() {
+            //given
+            HttpRequest httpRequest1 = new HttpRequest(
+                    "http://www.stuff.com",
+                    HttpRequest.Method.GET
+            );
+            httpRequest1.setBodyAsString(DUMMY_BODY_AS_STRING);
+            Map<String, List<String>> headers = Maps.newHashMap();
+            headers.put("X-stuff", Lists.newArrayList("m-y-value"));
+            headers.put("X-correlation-id", Lists.newArrayList("44-999-33-dd"));
+            headers.put("X-request-id", Lists.newArrayList("11-999-ff-777"));
+            httpRequest1.setHeaders(headers);
+
+            HttpRequest httpRequest2 = new HttpRequest(
+                    "http://www.stuff.com",
+                    HttpRequest.Method.GET
+            );
+            httpRequest2.setBodyAsString(DUMMY_BODY_AS_STRING);
+            httpRequest2.setHeaders(headers);
+
+            //when
+            assertThat(httpRequest1).isEqualTo(httpRequest2);
+            assertThat(httpRequest1.hashCode()).isEqualTo(httpRequest2.hashCode());
+
+        }
+
+        @Test
+        void test_equals_and_hashcode_headers_and_body_as_byte_array() {
+            //given
+            HttpRequest httpRequest1 = new HttpRequest(
+                    "http://www.stuff.com",
+                    HttpRequest.Method.GET
+            );
+            httpRequest1.setBodyAsByteArray(DUMMY_BODY_AS_STRING.getBytes(StandardCharsets.UTF_8));
+            Map<String, List<String>> headers = Maps.newHashMap();
+            headers.put("X-stuff", Lists.newArrayList("m-y-value"));
+            headers.put("X-correlation-id", Lists.newArrayList("44-999-33-dd"));
+            headers.put("X-request-id", Lists.newArrayList("11-999-ff-777"));
+            httpRequest1.setHeaders(headers);
+
+            HttpRequest httpRequest2 = new HttpRequest(
+                    "http://www.stuff.com",
+                    HttpRequest.Method.GET
+            );
+            httpRequest2.setBodyAsByteArray(DUMMY_BODY_AS_STRING.getBytes(StandardCharsets.UTF_8));
+            httpRequest2.setHeaders(headers);
+
+            //when
+            assertThat(httpRequest1).isEqualTo(httpRequest2);
+            assertThat(httpRequest1.hashCode()).isEqualTo(httpRequest2.hashCode());
+
+        }
+    }
+
+    @Nested
+    class TestGetContentType{
+
+        @Test
+        void test_get_content_type_with_string_body() {
+            //given
+            HttpRequest httpRequest = new HttpRequest(
+                    "http://www.stuff.com",
+                    HttpRequest.Method.GET
+            );
+            Map<String, List<String>> headers = Maps.newHashMap();
+            headers.put("X-stuff", Lists.newArrayList("m-y-value"));
+            headers.put("X-correlation-id", Lists.newArrayList("44-999-33-dd"));
+            headers.put("X-request-id", Lists.newArrayList("11-999-ff-777"));
+            headers.put("Content-Type", Lists.newArrayList("text/plain; charset=UTF-8"));
+            httpRequest.setHeaders(headers);
+            httpRequest.setBodyAsString(DUMMY_BODY_AS_STRING);
+            //when
+            String contentType = httpRequest.getContentType();
+            //then
+            assertThat(contentType).isEqualTo("text/plain; charset=UTF-8");
+        }
+
+        @Test
+        void test_get_content_type_with_byte_array_body() {
+            //given
+            HttpRequest httpRequest = new HttpRequest(
+                    "http://www.stuff.com",
+                    HttpRequest.Method.GET
+            );
+
+            Map<String, List<String>> headers = Maps.newHashMap();
+            headers.put("X-stuff", Lists.newArrayList("m-y-value"));
+            headers.put("X-correlation-id", Lists.newArrayList("44-999-33-dd"));
+            headers.put("X-request-id", Lists.newArrayList("11-999-ff-777"));
+            httpRequest.setHeaders(headers);
+            httpRequest.setBodyAsByteArray(DUMMY_BODY_AS_STRING.getBytes(StandardCharsets.UTF_8));
+            //when
+            String contentType = httpRequest.getContentType();
+            //then
+            assertThat(contentType).isEqualTo("application/octet-stream");
+        }
+    }
 }
