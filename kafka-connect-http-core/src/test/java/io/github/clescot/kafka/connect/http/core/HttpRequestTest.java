@@ -775,5 +775,101 @@ class HttpRequestTest {
             //then
             assertThat(contentType).isEqualTo("application/octet-stream");
         }
+
+        @Test
+        void test_get_content_type_without_headers_and_body() {
+            //given
+            HttpRequest httpRequest = new HttpRequest(
+                    "http://www.stuff.com",
+                    HttpRequest.Method.GET
+            );
+
+            assertThat(httpRequest.getContentType()).isNull();
+
+        }
+
+        @Test
+        void test_get_content_type_with_headers_and_without_body() {
+            //given
+            HttpRequest httpRequest = new HttpRequest(
+                    "http://www.stuff.com",
+                    HttpRequest.Method.GET
+            );
+            Map<String, List<String>> headers = Maps.newHashMap();
+            headers.put("X-stuff", Lists.newArrayList("m-y-value"));
+            headers.put("X-correlation-id", Lists.newArrayList("44-999-33-dd"));
+            headers.put("X-request-id", Lists.newArrayList("11-999-ff-777"));
+            httpRequest.setHeaders(headers);
+
+            assertThat(httpRequest.getContentType()).isNull();
+
+        }
+
+        @Test
+        void test_get_content_type_with_headers_and_empty_content_type_and_without_body() {
+            //given
+            HttpRequest httpRequest = new HttpRequest(
+                    "http://www.stuff.com",
+                    HttpRequest.Method.GET
+            );
+            Map<String, List<String>> headers = Maps.newHashMap();
+            headers.put("X-stuff", Lists.newArrayList("m-y-value"));
+            headers.put("X-correlation-id", Lists.newArrayList("44-999-33-dd"));
+            headers.put("X-request-id", Lists.newArrayList("11-999-ff-777"));
+            headers.put("Content-Type", Lists.newArrayList(""));
+            httpRequest.setHeaders(headers);
+
+            assertThat(httpRequest.getContentType()).isEmpty();
+
+        }
+    }
+
+
+    @Nested
+    class TestGetBoundary{
+        @Test
+        void test_get_boundary_with_no_headers() {
+            //given
+            HttpRequest httpRequest = new HttpRequest(
+                    "http://www.stuff.com",
+                    HttpRequest.Method.GET
+            );
+            //when
+            String boundary = httpRequest.getBoundary();
+            //then
+            assertThat(boundary).isNull();
+        }
+
+        @Test
+        void test_get_boundary_with_headers_but_no_boundary() {
+            //given
+            HttpRequest httpRequest = new HttpRequest(
+                    "http://www.stuff.com",
+                    HttpRequest.Method.GET
+            );
+            Map<String, List<String>> headers = Maps.newHashMap();
+            httpRequest.setHeaders(headers);
+            //when
+            String boundary = httpRequest.getBoundary();
+            //then
+            assertThat(boundary).isNull();
+        }
+
+        @Test
+        void test_get_boundary_with_headers_and_boundary() {
+            //given
+            HttpRequest httpRequest = new HttpRequest(
+                    "http://www.stuff.com",
+                    HttpRequest.Method.GET
+            );
+            Map<String, List<String>> headers = Maps.newHashMap();
+            headers.put("Content-Type", Lists.newArrayList("multipart/form-data; boundary=----WebKitFormBoundary7MA4YWxkTrZu0gW"));
+            httpRequest.setHeaders(headers);
+            //when
+            String boundary = httpRequest.getBoundary();
+            //then
+            assertThat(boundary).isEqualTo("----WebKitFormBoundary7MA4YWxkTrZu0gW");
+        }
+
     }
 }
