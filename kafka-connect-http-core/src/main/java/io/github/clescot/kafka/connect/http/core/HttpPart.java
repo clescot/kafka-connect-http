@@ -103,6 +103,7 @@ public class HttpPart implements Cloneable{
 
 
     //for deserialization only
+    @SuppressWarnings("unused")
     protected HttpPart() {
     }
 
@@ -246,7 +247,7 @@ public class HttpPart implements Cloneable{
 
     @Override
     public String toString() {
-        return "Part{" +
+        return "HttpPart{" +
                 "bodyType:\"" + bodyType +
                 "\", headers:" + headers +
                 ", \"contentAsString\":" + contentAsString + '\"' +

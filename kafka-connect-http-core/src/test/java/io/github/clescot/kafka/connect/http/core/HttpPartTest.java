@@ -273,6 +273,7 @@ class HttpPartTest {
             assertThat(clonedHttpPart).isEqualTo(httpPart);
             assertThat(clonedHttpPart).isEqualTo(httpPart);
             assertThat(clonedHttpPart).isNotSameAs(httpPart);
+            assertThat(clonedHttpPart.hashCode()).isEqualTo(httpPart.hashCode());
             assertThat(clonedHttpPart.getContentType()).isEqualTo(httpPart.getContentType());
             assertThat(clonedHttpPart.getBodyType()).isEqualTo(httpPart.getBodyType());
         }
@@ -283,6 +284,7 @@ class HttpPartTest {
             headers.put("Content-Type",List.of("application/json"));
             HttpPart httpPart = new HttpPart(headers,"parameterName","parameterValue",new File("src/test/resources/upload.txt"));
             HttpPart clonedHttpPart = (HttpPart) httpPart.clone();
+            assertThat(clonedHttpPart.hashCode()).isEqualTo(httpPart.hashCode());
             assertThat(clonedHttpPart).isEqualTo(httpPart);
             assertThat(clonedHttpPart).isNotSameAs(httpPart);
             assertThat(clonedHttpPart.getContentType()).isEqualTo(httpPart.getContentType());
@@ -295,6 +297,7 @@ class HttpPartTest {
             headers.put("Content-Type",List.of("application/json"));
             HttpPart httpPart = new HttpPart(headers,"parameterName","parameterValue",new URI("src/test/resources/upload.txt"));
             HttpPart clonedHttpPart = (HttpPart) httpPart.clone();
+            assertThat(clonedHttpPart.hashCode()).isEqualTo(httpPart.hashCode());
             assertThat(clonedHttpPart).isEqualTo(httpPart);
             assertThat(clonedHttpPart).isNotSameAs(httpPart);
             assertThat(clonedHttpPart.getContentType()).isEqualTo(httpPart.getContentType());
@@ -304,6 +307,7 @@ class HttpPartTest {
         void test_clone_content_as_string() throws CloneNotSupportedException {
             HttpPart httpPart = new HttpPart("test");
             HttpPart clonedHttpPart = (HttpPart) httpPart.clone();
+            assertThat(clonedHttpPart.hashCode()).isEqualTo(httpPart.hashCode());
             assertThat(clonedHttpPart).isEqualTo(httpPart);
             assertThat(clonedHttpPart).isNotSameAs(httpPart);
             assertThat(clonedHttpPart.getContentType()).isEqualTo(httpPart.getContentType());
@@ -316,10 +320,29 @@ class HttpPartTest {
             headers.put("Content-Type",List.of("application/json"));
             httpPart.setHeaders(headers);
             HttpPart clonedHttpPart = (HttpPart) httpPart.clone();
+            assertThat(clonedHttpPart.hashCode()).isEqualTo(httpPart.hashCode());
             assertThat(clonedHttpPart).isEqualTo(httpPart);
             assertThat(clonedHttpPart).isNotSameAs(httpPart);
             assertThat(clonedHttpPart.getContentType()).isEqualTo(httpPart.getContentType());
             assertThat(clonedHttpPart.getBodyType()).isEqualTo(httpPart.getBodyType());
+        }
+    }
+
+    @Nested
+    class TestToString {
+
+        @Test
+        void test_to_string_content_as_byte_array() {
+            HttpPart httpPart = new HttpPart("test".getBytes(StandardCharsets.UTF_8));
+            String expected = "HttpPart{bodyType:\"BYTE_ARRAY\", headers:{Content-Type=[application/octet-stream]}, \"contentAsString\":null\", \"contentAsByteArray\":\"dGVzdA==\", \"contentAsForm\":\"null\", \"fileUri\":\"null\"}";
+            assertThat(httpPart.toString()).isEqualTo(expected);
+        }
+
+        @Test
+        void test_to_string_content_as_string() {
+            HttpPart httpPart = new HttpPart("test");
+            String expected = "HttpPart{bodyType:\"STRING\", headers:{Content-Type=[application/json]}, \"contentAsString\":test\", \"contentAsByteArray\":\"null\", \"contentAsForm\":\"null\", \"fileUri\":\"null\"}";
+            assertThat(httpPart.toString()).isEqualTo(expected);
         }
     }
 }
