@@ -22,9 +22,9 @@ import java.util.stream.Collectors;
 import static com.fasterxml.jackson.annotation.JsonInclude.Include;
 
 @io.confluent.kafka.schemaregistry.annotations.Schema(value = HttpRequest.SCHEMA_AS_STRING,
-        refs = {@io.confluent.kafka.schemaregistry.annotations.SchemaReference(name= HttpPart.SCHEMA_ID, subject="httpPart",version = HttpPart.VERSION)})
+        refs = {@io.confluent.kafka.schemaregistry.annotations.SchemaReference(name = HttpPart.SCHEMA_ID, subject = "httpPart", version = HttpPart.VERSION)})
 @JsonInclude(Include.NON_EMPTY)
-public class HttpRequest implements Serializable {
+public class HttpRequest implements Cloneable, Serializable {
 
     private static final long serialVersionUID = 1L;
 
@@ -52,7 +52,7 @@ public class HttpRequest implements Serializable {
 
     //regular body
     @JsonProperty
-    private Map<String,String> bodyAsForm = Maps.newHashMap();
+    private Map<String, String> bodyAsForm = Maps.newHashMap();
     @JsonProperty
     private String bodyAsString = null;
     @JsonProperty
@@ -68,19 +68,19 @@ public class HttpRequest implements Serializable {
             .struct()
             .name(HttpPart.class.getName())
             .version(VERSION)
-            .field(URL,Schema.STRING_SCHEMA)
+            .field(URL, Schema.STRING_SCHEMA)
             .field(HEADERS, SchemaBuilder.map(Schema.STRING_SCHEMA, SchemaBuilder.array(Schema.STRING_SCHEMA).schema()).build())
-            .field(METHOD,Schema.STRING_SCHEMA)
-            .field(BODY_TYPE,Schema.STRING_SCHEMA)
+            .field(METHOD, Schema.STRING_SCHEMA)
+            .field(BODY_TYPE, Schema.STRING_SCHEMA)
             .field(BODY_AS_STRING, Schema.OPTIONAL_STRING_SCHEMA)
             .field(BODY_AS_FORM, SchemaBuilder.map(Schema.STRING_SCHEMA, Schema.STRING_SCHEMA).optional().schema())
             .field(BODY_AS_BYTE_ARRAY, Schema.OPTIONAL_STRING_SCHEMA)
-            .field(PARTS,SchemaBuilder.array(HttpPart.SCHEMA).optional().schema())
+            .field(PARTS, SchemaBuilder.array(HttpPart.SCHEMA).optional().schema())
             .schema();
 
-    public static final String SCHEMA_ID = HttpExchange.BASE_SCHEMA_ID+ VERSION + "/"+"http-request.json";
+    public static final String SCHEMA_ID = HttpExchange.BASE_SCHEMA_ID + VERSION + "/" + "http-request.json";
     public static final String SCHEMA_AS_STRING = "{\n" +
-            "  \"$id\": \""+SCHEMA_ID+"\",\n" +
+            "  \"$id\": \"" + SCHEMA_ID + "\",\n" +
             "  \"$schema\": \"http://json-schema.org/draft/2019-09/schema#\",\n" +
             "  \"title\": \"Http Request\",\n" +
             "  \"type\": \"object\",\n" +
@@ -128,7 +128,7 @@ public class HttpRequest implements Serializable {
             "      \"type\": \"array\",\n" +
             "      \"connect.type\": \"map\",\n " +
             "      \"items\": {\n" +
-            "        \"$ref\": \""+ HttpPart.SCHEMA_ID+"\"\n" +
+            "        \"$ref\": \"" + HttpPart.SCHEMA_ID + "\"\n" +
             "      }\n" +
             "    }\n" +
             "  },\n" +
@@ -144,18 +144,23 @@ public class HttpRequest implements Serializable {
      */
     protected HttpRequest() {
     }
-    public HttpRequest(String url){
-        this(url,HttpRequest.Method.GET,Maps.newHashMap(),BodyType.STRING,null);
+
+    public HttpRequest(String url) {
+        this(url, HttpRequest.Method.GET, Maps.newHashMap(), BodyType.STRING, null);
     }
-    public HttpRequest(String url,HttpRequest.Method method){
-        this(url,method,Maps.newHashMap(),BodyType.STRING,null);
+
+    public HttpRequest(String url, HttpRequest.Method method) {
+        this(url, method, Maps.newHashMap(), BodyType.STRING, null);
     }
-    public HttpRequest(String url,HttpRequest.Method method,Map<String, List<String>> headers){
-        this(url,method,headers,BodyType.STRING,null);
+
+    public HttpRequest(String url, HttpRequest.Method method, Map<String, List<String>> headers) {
+        this(url, method, headers, BodyType.STRING, null);
     }
-    public HttpRequest(String url,HttpRequest.Method method,Map<String, List<String>> headers,BodyType bodyType){
-        this(url,method,headers,bodyType,null);
+
+    public HttpRequest(String url, HttpRequest.Method method, Map<String, List<String>> headers, BodyType bodyType) {
+        this(url, method, headers, bodyType, null);
     }
+
     public HttpRequest(String url,
                        HttpRequest.Method method,
                        Map<String, List<String>> headers,
@@ -166,15 +171,15 @@ public class HttpRequest implements Serializable {
         this.url = url;
         Preconditions.checkNotNull(method, "'method' is required");
         this.method = method;
-        this.headers = MoreObjects.firstNonNull(headers,Maps.newHashMap());
+        this.headers = MoreObjects.firstNonNull(headers, Maps.newHashMap());
         this.bodyType = bodyType;
-        if(parts!=null && !parts.isEmpty()){
-            if(getContentType()==null){
+        if (parts != null && !parts.isEmpty()) {
+            if (getContentType() == null) {
                 //default multipart Content-Type
-                setContentType("multipart/form-data; boundary="+UUID.randomUUID());
+                setContentType("multipart/form-data; boundary=" + UUID.randomUUID());
             }
             this.parts = parts;
-        }else{
+        } else {
             this.parts = Lists.newArrayList();
         }
 
@@ -194,7 +199,6 @@ public class HttpRequest implements Serializable {
     }
 
 
-
     public HttpRequest(Struct requestAsstruct) {
         this.url = requestAsstruct.getString(URL);
         Preconditions.checkNotNull(url, "'url' is required");
@@ -202,7 +206,7 @@ public class HttpRequest implements Serializable {
         Map<String, List<String>> headers = requestAsstruct.getMap(HEADERS);
         if (headers != null && !headers.isEmpty()) {
             this.headers = headers;
-        }else{
+        } else {
             this.headers = Maps.newHashMap();
         }
 
@@ -242,7 +246,7 @@ public class HttpRequest implements Serializable {
         return true;
     }
 
-    public BodyType getBodyType(){
+    public BodyType getBodyType() {
         return bodyType;
     }
 
@@ -252,7 +256,7 @@ public class HttpRequest implements Serializable {
 
     public void setParts(List<HttpPart> httpParts) {
         this.parts = httpParts;
-        if(parts!=null && !parts.isEmpty()){
+        if (parts != null && !parts.isEmpty()) {
             this.bodyType = BodyType.MULTIPART;
         }
     }
@@ -262,34 +266,35 @@ public class HttpRequest implements Serializable {
     }
 
     @JsonIgnore
-    public String getContentType(){
-        if(headers != null
+    public String getContentType() {
+        if (headers != null
                 && headers.containsKey(CONTENT_TYPE)
-                &&headers.get(CONTENT_TYPE)!=null
-                &&!headers.get(CONTENT_TYPE).isEmpty()){
+                && headers.get(CONTENT_TYPE) != null
+                && !headers.get(CONTENT_TYPE).isEmpty()) {
             return headers.get(CONTENT_TYPE).get(0);
         }
         return null;
     }
 
     @JsonIgnore
-    public String getBoundary(){
+    public String getBoundary() {
         String contentType = getContentType();
         String boundary = null;
-        if(contentType!=null){
+        if (contentType != null) {
             Matcher matcher = BOUNDARY.matcher(contentType);
-            if(matcher.matches()){
+            if (matcher.matches()) {
                 boundary = matcher.group(1);
             }
         }
         return boundary;
     }
-    public void setContentType(String contentType){
-        headers.put(CONTENT_TYPE,Lists.newArrayList(contentType));
+
+    public void setContentType(String contentType) {
+        headers.put(CONTENT_TYPE, Lists.newArrayList(contentType));
     }
 
     public Map<String, List<String>> getHeaders() {
-       return headers;
+        return headers;
     }
 
     public String getUrl() {
@@ -301,7 +306,7 @@ public class HttpRequest implements Serializable {
     }
 
     public void setHeaders(Map<String, List<String>> headers) {
-            this.headers = headers;
+        this.headers = headers;
     }
 
 
@@ -322,7 +327,7 @@ public class HttpRequest implements Serializable {
 
     @Override
     public int hashCode() {
-        return Objects.hash(url, headers, method, parts,bodyAsByteArray,bodyAsForm,bodyAsString);
+        return Objects.hash(url, headers, method, parts, bodyAsByteArray, bodyAsForm, bodyAsString);
     }
 
     @Override
@@ -344,7 +349,7 @@ public class HttpRequest implements Serializable {
                 .put(URL, this.getUrl())
                 .put(HEADERS, this.getHeaders())
                 .put(METHOD, this.getMethod().name())
-                .put(BODY_TYPE,this.getBodyType().name())
+                .put(BODY_TYPE, this.getBodyType().name())
                 .put(PARTS, this.getParts().stream().map(HttpPart::toStruct).collect(Collectors.toList()))
                 ;
     }
@@ -355,13 +360,14 @@ public class HttpRequest implements Serializable {
     }
 
     public void setBodyAsByteArray(byte[] content) {
-        if(content!=null && content.length>0) {
+        if (content != null && content.length > 0) {
             bodyAsByteArray = Base64.getEncoder().encodeToString(content);
             bodyType = BodyType.BYTE_ARRAY;
-        }
-        //if no Content-Type is set, we set the default application/octet-stream
-        if(headers!=null && doesNotContainHeader(CONTENT_TYPE)){
-            headers.put(CONTENT_TYPE,Lists.newArrayList("application/octet-stream"));
+
+            //if no Content-Type is set, we set the default application/octet-stream
+            if (headers != null && doesNotContainHeader(CONTENT_TYPE)) {
+                headers.put(CONTENT_TYPE, Lists.newArrayList("application/octet-stream"));
+            }
         }
     }
 
@@ -371,7 +377,7 @@ public class HttpRequest implements Serializable {
 
     @JsonIgnore
     public byte[] getBodyAsByteArray() {
-        if(bodyAsByteArray!=null && !bodyAsByteArray.isEmpty()) {
+        if (bodyAsByteArray != null && !bodyAsByteArray.isEmpty()) {
             return Base64.getDecoder().decode(bodyAsByteArray);
         }
         return null;
@@ -381,8 +387,8 @@ public class HttpRequest implements Serializable {
     public void setBodyAsForm(Map<String, String> form) {
         this.bodyAsForm = form;
         bodyType = BodyType.FORM;
-        if(headers!=null && doesNotContainHeader(CONTENT_TYPE)){
-            headers.put(CONTENT_TYPE,Lists.newArrayList("application/x-www-form-urlencoded"));
+        if (form!=null && !form.isEmpty() && headers != null && doesNotContainHeader(CONTENT_TYPE)) {
+            headers.put(CONTENT_TYPE, Lists.newArrayList("application/x-www-form-urlencoded"));
         }
     }
 
@@ -395,6 +401,24 @@ public class HttpRequest implements Serializable {
     @JsonIgnore
     public Map<String, String> getBodyAsForm() {
         return bodyAsForm;
+    }
+
+    @Override
+    public HttpRequest clone() {
+        try {
+            HttpRequest clone = (HttpRequest) super.clone();
+            clone.setHeaders(Maps.newHashMap(this.getHeaders()));
+            clone.setParts(Lists.newArrayList(this.getParts()));
+            clone.setBodyAsByteArray(this.getBodyAsByteArray());
+            clone.setBodyAsForm(new HashMap<>(this.getBodyAsForm()));
+            clone.setBodyAsString(this.getBodyAsString());
+            clone.bodyType = this.getBodyType();
+            clone.method = this.getMethod();
+            clone.url = this.getUrl();
+            return clone;
+        } catch (CloneNotSupportedException e) {
+            throw new AssertionError();
+        }
     }
 
     public enum BodyType {
