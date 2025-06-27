@@ -1,6 +1,8 @@
 package io.github.clescot.kafka.connect.http.core;
 
 import java.io.File;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.List;
 
@@ -231,6 +233,65 @@ class HttpPartTest {
             HttpPart httpPart = new HttpPart(headers,"test");
             HttpPart httpPart2 = new HttpPart(headers,"test");
             assertThat(httpPart).isEqualTo(httpPart2);
+        }
+    }
+
+    @Nested
+    class TestClone{
+        @Test
+        void test_clone_content_as_byte_array() throws CloneNotSupportedException {
+            HttpPart httpPart = new HttpPart("test".getBytes(StandardCharsets.UTF_8));
+            HttpPart clonedHttpPart = (HttpPart) httpPart.clone();
+            assertThat(clonedHttpPart).isEqualTo(httpPart);
+            assertThat(clonedHttpPart).isEqualTo(httpPart);
+            assertThat(clonedHttpPart).isNotSameAs(httpPart);
+            assertThat(clonedHttpPart.getContentType()).isEqualTo(httpPart.getContentType());
+            assertThat(clonedHttpPart.getBodyType()).isEqualTo(httpPart.getBodyType());
+        }
+
+        @Test
+        void test_clone_content_as_form_entry_with_file() throws CloneNotSupportedException {
+            Map<String,List<String>> headers = new HashMap<>();
+            headers.put("Content-Type",List.of("application/json"));
+            HttpPart httpPart = new HttpPart(headers,"parameterName","parameterValue",new File("src/test/resources/upload.txt"));
+            HttpPart clonedHttpPart = (HttpPart) httpPart.clone();
+            assertThat(clonedHttpPart).isEqualTo(httpPart);
+            assertThat(clonedHttpPart).isNotSameAs(httpPart);
+            assertThat(clonedHttpPart.getContentType()).isEqualTo(httpPart.getContentType());
+            assertThat(clonedHttpPart.getBodyType()).isEqualTo(httpPart.getBodyType());
+        }
+
+        @Test
+        void test_clone_content_as_form_entry_with_file_uri() throws CloneNotSupportedException, URISyntaxException {
+            Map<String,List<String>> headers = new HashMap<>();
+            headers.put("Content-Type",List.of("application/json"));
+            HttpPart httpPart = new HttpPart(headers,"parameterName","parameterValue",new URI("src/test/resources/upload.txt"));
+            HttpPart clonedHttpPart = (HttpPart) httpPart.clone();
+            assertThat(clonedHttpPart).isEqualTo(httpPart);
+            assertThat(clonedHttpPart).isNotSameAs(httpPart);
+            assertThat(clonedHttpPart.getContentType()).isEqualTo(httpPart.getContentType());
+            assertThat(clonedHttpPart.getBodyType()).isEqualTo(httpPart.getBodyType());
+        }
+        @Test
+        void test_clone_content_as_string() throws CloneNotSupportedException {
+            HttpPart httpPart = new HttpPart("test");
+            HttpPart clonedHttpPart = (HttpPart) httpPart.clone();
+            assertThat(clonedHttpPart).isEqualTo(httpPart);
+            assertThat(clonedHttpPart).isNotSameAs(httpPart);
+            assertThat(clonedHttpPart.getContentType()).isEqualTo(httpPart.getContentType());
+            assertThat(clonedHttpPart.getBodyType()).isEqualTo(httpPart.getBodyType());
+        }
+        @Test
+        void test_clone_content_as_string_with_headers() throws CloneNotSupportedException {
+            HttpPart httpPart = new HttpPart("test");
+            Map<String,List<String>> headers = new HashMap<>();
+            headers.put("Content-Type",List.of("application/json"));
+            httpPart.setHeaders(headers);
+            HttpPart clonedHttpPart = (HttpPart) httpPart.clone();
+            assertThat(clonedHttpPart).isEqualTo(httpPart);
+            assertThat(clonedHttpPart).isNotSameAs(httpPart);
+            assertThat(clonedHttpPart.getContentType()).isEqualTo(httpPart.getContentType());
+            assertThat(clonedHttpPart.getBodyType()).isEqualTo(httpPart.getBodyType());
         }
     }
 }

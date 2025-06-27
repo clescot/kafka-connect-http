@@ -23,7 +23,7 @@ import static io.github.clescot.kafka.connect.http.core.HttpPart.BodyType.FORM_D
 @io.confluent.kafka.schemaregistry.annotations.Schema(value = HttpPart.SCHEMA_AS_STRING,
         refs = {})
 @JsonInclude(Include.NON_NULL)
-public class HttpPart {
+public class HttpPart implements Cloneable{
     public static final String APPLICATION_X_WWW_FORM_URLENCODED = "application/x-www-form-urlencoded";
     public static final String APPLICATION_JSON = "application/json";
     public static final String APPLICATION_OCTET_STREAM = "application/octet-stream";
@@ -267,6 +267,35 @@ public class HttpPart {
         return struct;
     }
 
+    @Override
+    protected Object clone() throws CloneNotSupportedException {
+        HttpPart clone = (HttpPart) super.clone();
+        if(getHeaders()!=null) {
+            clone.setHeaders(new HashMap<>(getHeaders()));
+        }
+        if (getContentAsFormEntry() != null) {
+            clone.setContentAsFormEntry(Map.entry(
+                    getContentAsFormEntry().getKey(),
+                    Map.entry(getContentAsFormEntry().getValue().getKey(),
+                            getContentAsFormEntry().getValue().getValue())));
+        }
+        if(getContentAsString()!=null) {
+            clone.setContentAsString(getContentAsString());
+        }
+        if(getFileUri()!=null){
+            clone.fileUri = getFileUri();
+        }
+        if (getContentAsByteArray()!=null) {
+            clone.setContentAsByteArray(getContentAsByteArray());
+        }
+        if (getContentAsFormEntry() != null) {
+            clone.setContentAsFormEntry(Map.entry(
+                    getContentAsFormEntry().getKey(),
+                    Map.entry(getContentAsFormEntry().getValue().getKey(),
+                            getContentAsFormEntry().getValue().getValue())));
+        }
+        return clone;
+    }
 
     public enum BodyType {
         STRING,
