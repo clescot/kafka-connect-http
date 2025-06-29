@@ -224,6 +224,7 @@ public class HttpRequest implements Cloneable, Serializable {
             //this is a multipart request
             for (Struct struct : structs) {
                 HttpPart httpPart = new HttpPart(struct);
+                parts.add(httpPart);
                 if (!headersFromPartAreValid(httpPart)) {
                     LOGGER.warn("this is a multipart request. headers from part are not valid : there is at least one header that is not 'Content-Disposition', 'Content-Type' or 'Content-Transfer-Encoding'. clearing headers from this part");
                     httpPart.getHeaders().clear();

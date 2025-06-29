@@ -631,6 +631,39 @@ class HttpRequestTest {
             assertThat(httpRequest.getMethod()).isEqualTo(dummyMethod);
             assertThat(httpRequest.getBodyAsByteArray()).isEqualTo(DUMMY_BODY_AS_STRING.getBytes(StandardCharsets.UTF_8));
         }
+
+        @Test
+        void test_with_struct_and_parts_nominal_case() {
+            //given
+            Struct httpRequestStruct = new Struct(HttpRequest.SCHEMA);
+            String dummyUrl = "http://stuff.com";
+            httpRequestStruct.put("url", dummyUrl);
+            HttpRequest.Method dummyMethod = HttpRequest.Method.POST;
+            httpRequestStruct.put("method", dummyMethod.name());
+
+            String dummyBodyType = "MULTIPART";
+            httpRequestStruct.put(HttpRequest.BODY_TYPE, dummyBodyType);
+
+            List<Struct> parts = Lists.newArrayList();
+            HttpPart part1 = new HttpPart("part1".getBytes(StandardCharsets.UTF_8));
+            parts.add(part1.toStruct());
+            HttpPart part2 = new HttpPart("part2".getBytes(StandardCharsets.UTF_8));
+            parts.add(part2.toStruct());
+            HttpPart part3 = new HttpPart("part3".getBytes(StandardCharsets.UTF_8));
+            parts.add(part3.toStruct());
+
+            httpRequestStruct.put(HttpRequest.PARTS, parts);
+
+            //when
+            HttpRequest httpRequest = new HttpRequest(httpRequestStruct);
+            //then
+            assertThat(httpRequest).isNotNull();
+            assertThat(httpRequest.getUrl()).isEqualTo(dummyUrl);
+            assertThat(httpRequest.getMethod()).isEqualTo(dummyMethod);
+            List<HttpPart> httpParts = httpRequest.getParts();
+            assertThat(httpParts).hasSameSizeAs(parts);
+            assertThat(httpParts).contains(part1, part2, part3);
+        }
     }
 
     @Nested

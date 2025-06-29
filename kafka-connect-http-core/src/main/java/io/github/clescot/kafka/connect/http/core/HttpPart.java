@@ -157,7 +157,10 @@ public class HttpPart implements Cloneable{
     //for serialization
     public HttpPart(Struct struct) {
         this.headers = struct.getMap(HEADERS);
+        this.bodyType = HttpPart.BodyType.valueOf(struct.getString(BODY_TYPE));
         this.contentAsByteArray = struct.getString(BODY_AS_BYTE_ARRAY);
+        this.contentAsString = struct.getString(BODY_AS_STRING);
+        //this.contentAsFormEntry = struct.getMap(BODY_AS_FORM_DATA);
     }
 
     public HttpPart.BodyType getBodyType() {

@@ -179,14 +179,16 @@ class HttpPartTest {
             assertDoesNotThrow(()->new HttpPart(headers,"parameterName","parameterValue",new File(Objects.requireNonNull(url).toURI())));
         }
         @Test
-        void test_constructor_with_struct(){
+        void test_constructor_with_struct_and_body_as_string(){
             Map<String,List<String>> headers = new HashMap<>();
             headers.put("Content-Type",List.of("application/json"));
             Struct struct = new Struct(HttpPart.SCHEMA);
             struct.put("headers",headers);
             struct.put("bodyType",STRING.toString());
             struct.put("bodyAsString","dummy string");
-            assertDoesNotThrow(()->new HttpPart(struct));
+            HttpPart httpPart = new HttpPart(struct);
+            assertThat(httpPart.getBodyType()).isEqualTo(STRING);
+            assertThat(httpPart.getContentAsString()).isEqualTo("dummy string");
         }
     }
 
