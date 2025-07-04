@@ -5,6 +5,8 @@ import com.google.common.collect.Maps;
 import io.confluent.kafka.schemaregistry.client.MockSchemaRegistryClient;
 import io.confluent.kafka.schemaregistry.json.JsonSchemaProvider;
 import io.confluent.kafka.schemaregistry.json.SpecificationVersion;
+import io.confluent.kafka.serializers.json.KafkaJsonSchemaDeserializer;
+import io.confluent.kafka.serializers.json.KafkaJsonSchemaDeserializerConfig;
 import io.confluent.kafka.serializers.json.KafkaJsonSchemaSerializer;
 import io.confluent.kafka.serializers.json.KafkaJsonSchemaSerializerConfig;
 import org.apache.kafka.common.errors.SerializationException;
@@ -21,6 +23,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 class HttpResponseTest {
 
     private KafkaJsonSchemaSerializer<HttpResponse> serializer;
+    private KafkaJsonSchemaDeserializer<HttpResponse> deserializer;
 
     @BeforeEach
     public void setup(){
@@ -36,6 +39,12 @@ class HttpResponseTest {
         MockSchemaRegistryClient schemaRegistryClient = new MockSchemaRegistryClient(Lists.newArrayList(new JsonSchemaProvider()));
 
         serializer = new KafkaJsonSchemaSerializer<>(schemaRegistryClient,jsonSchemaSerializerConfig);
+        Map<String,String> jsonSchemaDeserializerConfig = Maps.newHashMap();
+        jsonSchemaDeserializerConfig.put(KafkaJsonSchemaDeserializerConfig.SCHEMA_REGISTRY_URL_CONFIG,"mock://stuff.com");
+        jsonSchemaDeserializerConfig.put(KafkaJsonSchemaDeserializerConfig.JSON_VALUE_TYPE,HttpResponse.class.getName());
+        jsonSchemaDeserializerConfig.put(KafkaJsonSchemaDeserializerConfig.FAIL_INVALID_SCHEMA,"true");
+        jsonSchemaDeserializerConfig.put(KafkaJsonSchemaDeserializerConfig.FAIL_UNKNOWN_PROPERTIES,""+true);
+        deserializer = new KafkaJsonSchemaDeserializer<>(schemaRegistryClient,jsonSchemaDeserializerConfig);
     }
 
     @Nested
@@ -52,6 +61,19 @@ class HttpResponseTest {
             HttpResponse httpResponse = new HttpResponse();
             httpResponse.setStatusCode(200);
             httpResponse.setStatusMessage("OK");
+            //required fields are missing
+            String topic = "dummy_topic";
+            byte[] bytes = serializer.serialize(topic, httpResponse);
+            assertThat(bytes).isNotEmpty();
+            deserializer.deserialize(topic, bytes);
+        }
+
+        @Test
+        public void test_serialize_http_response_with_body_as_string(){
+            HttpResponse httpResponse = new HttpResponse();
+            httpResponse.setStatusCode(200);
+            httpResponse.setStatusMessage("OK");
+            httpResponse.setBodyAsString("Hello World");
             //required fields are missing
             byte[] bytes = serializer.serialize("dummy_topic", httpResponse);
             assertThat(bytes).isNotEmpty();
