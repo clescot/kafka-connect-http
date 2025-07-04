@@ -34,7 +34,8 @@ public class HttpResponse implements Serializable {
             .field(STATUS_MESSAGE,Schema.STRING_SCHEMA)
             .field(PROTOCOL,Schema.OPTIONAL_STRING_SCHEMA)
             .field(HEADERS, SchemaBuilder.map(Schema.STRING_SCHEMA, SchemaBuilder.array(Schema.STRING_SCHEMA)).build())
-            .field(BODY_AS_STRING,Schema.OPTIONAL_STRING_SCHEMA);
+            .field(BODY_AS_STRING,Schema.OPTIONAL_STRING_SCHEMA)
+            .field(BODY_AS_BYTE_ARRAY,Schema.OPTIONAL_STRING_SCHEMA);
     private static final long serialVersionUID = 1L;
 
     @JsonProperty(required = true)
