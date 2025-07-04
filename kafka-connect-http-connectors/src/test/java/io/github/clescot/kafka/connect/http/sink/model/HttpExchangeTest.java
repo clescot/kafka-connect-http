@@ -15,7 +15,7 @@ import io.confluent.kafka.serializers.json.KafkaJsonSchemaSerializerConfig;
 import io.github.clescot.kafka.connect.http.core.HttpExchange;
 import io.github.clescot.kafka.connect.http.core.HttpRequest;
 import io.github.clescot.kafka.connect.http.core.HttpResponse;
-import io.github.clescot.kafka.connect.http.core.SchemaUtils;
+import io.github.clescot.kafka.connect.http.core.SchemaLoader;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -63,9 +63,9 @@ public class HttpExchangeTest {
         JsonSchemaProvider jsonSchemaProvider = new JsonSchemaProvider();
 
         schemaRegistryClient = new MockSchemaRegistryClient(Lists.newArrayList(jsonSchemaProvider));
-        ParsedSchema parsedSchemaRequest = SchemaUtils.loadHttpRequestSchema();
+        ParsedSchema parsedSchemaRequest = SchemaLoader.loadHttpRequestSchema();
         schemaRegistryClient.register("httpRequest", parsedSchemaRequest);
-        ParsedSchema parsedSchemaResponse = SchemaUtils.loadHttpResponseSchema();
+        ParsedSchema parsedSchemaResponse = SchemaLoader.loadHttpResponseSchema();
         schemaRegistryClient.register("httpResponse", parsedSchemaResponse);
 
         serializer = new KafkaJsonSchemaSerializer<>(schemaRegistryClient, jsonSchemaSerializerConfig);

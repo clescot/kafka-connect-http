@@ -9,7 +9,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
-public class SchemaUtils {
+public class SchemaLoader {
 
     private static String loadSchema(String schemaPath) throws IOException, URISyntaxException {
         URL url = Thread.currentThread().getContextClassLoader().getResource(schemaPath);

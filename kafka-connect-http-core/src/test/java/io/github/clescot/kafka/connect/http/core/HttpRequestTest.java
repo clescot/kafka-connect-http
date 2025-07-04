@@ -39,7 +39,7 @@ import java.util.List;
 import java.util.Map;
 
 import static io.github.clescot.kafka.connect.http.core.HttpRequest.BODY_AS_BYTE_ARRAY;
-import static io.github.clescot.kafka.connect.http.core.SchemaUtils.*;
+import static io.github.clescot.kafka.connect.http.core.SchemaLoader.*;
 import static org.assertj.core.api.Assertions.assertThat;
 
 class HttpRequestTest {
