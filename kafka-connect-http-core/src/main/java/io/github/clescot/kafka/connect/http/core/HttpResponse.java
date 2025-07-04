@@ -22,9 +22,11 @@ public class HttpResponse implements Serializable {
     public static final String STATUS_MESSAGE = "statusMessage";
     public static final String PROTOCOL = "protocol";
     public static final String HEADERS = "headers";
+    public static final String BODY_TYPE = "bodyType";
     public static final String BODY_AS_STRING = "bodyAsString";
     public static final String BODY_AS_BYTE_ARRAY = "bodyAsByteArray";
-    public static final String BODY_TYPE = "bodyType";
+    public static final String BODY_AS_FORM = "bodyAsForm";
+    public static final String PARTS = "parts";
 
     public static final Schema SCHEMA = SchemaBuilder
             .struct()
@@ -34,8 +36,12 @@ public class HttpResponse implements Serializable {
             .field(STATUS_MESSAGE,Schema.STRING_SCHEMA)
             .field(PROTOCOL,Schema.OPTIONAL_STRING_SCHEMA)
             .field(HEADERS, SchemaBuilder.map(Schema.STRING_SCHEMA, SchemaBuilder.array(Schema.STRING_SCHEMA)).build())
+            .field(BODY_TYPE, Schema.STRING_SCHEMA)
             .field(BODY_AS_STRING,Schema.OPTIONAL_STRING_SCHEMA)
-            .field(BODY_AS_BYTE_ARRAY,Schema.OPTIONAL_STRING_SCHEMA);
+            .field(BODY_AS_FORM, SchemaBuilder.map(Schema.STRING_SCHEMA, Schema.STRING_SCHEMA).optional().schema())
+            .field(BODY_AS_BYTE_ARRAY,Schema.OPTIONAL_STRING_SCHEMA)
+            .field(PARTS, SchemaBuilder.array(HttpPart.SCHEMA).optional().schema())
+            .schema();
     private static final long serialVersionUID = 1L;
 
     @JsonProperty(required = true)
@@ -46,7 +52,7 @@ public class HttpResponse implements Serializable {
     //byte array is base64 encoded as as String, as JSON is a text format not binary
     private String bodyAsByteArray = null;
     //@JsonProperty(defaultValue = "STRING")
-    private HttpRequest.BodyType bodyType;
+    private HttpResponse.BodyType bodyType = HttpResponse.BodyType.STRING;
     private String protocol="";
 
     private Map<String, List<String>> headers = Maps.newHashMap();
@@ -61,6 +67,7 @@ public class HttpResponse implements Serializable {
         Preconditions.checkArgument(statusCode>0,"status code must be a positive integer");
         this.statusCode = statusCode;
         this.statusMessage = statusMessage;
+        this.bodyType = BodyType.STRING;
     }
 
     public Map<String, List<String>> getHeaders() {
@@ -107,7 +114,7 @@ public class HttpResponse implements Serializable {
     public void setBodyAsByteArray(byte[] content) {
         if (content != null && content.length > 0) {
             bodyAsByteArray = Base64.getEncoder().encodeToString(content);
-            bodyType = HttpRequest.BodyType.BYTE_ARRAY;
+            bodyType = HttpResponse.BodyType.BYTE_ARRAY;
 
             //if no Content-Type is set, we set the default application/octet-stream
             if (headers != null && doesNotContainHeader(CONTENT_TYPE)) {
@@ -122,6 +129,10 @@ public class HttpResponse implements Serializable {
             return Base64.getDecoder().decode(bodyAsByteArray);
         }
         return null;
+    }
+
+    public BodyType getBodyType() {
+        return bodyType;
     }
 
     private boolean doesNotContainHeader(String key) {
@@ -165,6 +176,19 @@ public class HttpResponse implements Serializable {
                 .put(STATUS_CODE,this.getStatusCode().longValue())
                 .put(STATUS_MESSAGE,this.getStatusMessage())
                 .put(HEADERS,this.getHeaders())
+                .put(BODY_TYPE,this.getBodyType().toString())
                 .put(BODY_AS_STRING,this.getBodyAsString());
+    }
+
+    public enum BodyType {
+        STRING,
+        BYTE_ARRAY,
+        FORM,
+        MULTIPART;
+
+        @Override
+        public String toString() {
+            return name();
+        }
     }
 }
