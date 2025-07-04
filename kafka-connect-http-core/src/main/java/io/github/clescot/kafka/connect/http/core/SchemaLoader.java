@@ -23,18 +23,14 @@ public class SchemaLoader {
     public static ParsedSchema loadHttpRequestSchema(){
         try {
             return  new JsonSchema(loadSchema("schemas/json/versions/2/http-request.json"));
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        } catch (URISyntaxException e) {
+        } catch (IOException | URISyntaxException e) {
             throw new RuntimeException(e);
         }
     }
     public static ParsedSchema loadHttpResponseSchema(){
         try {
             return new JsonSchema(loadSchema("schemas/json/versions/2/http-response.json"));
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        } catch (URISyntaxException e) {
+        } catch (IOException | URISyntaxException e) {
             throw new RuntimeException(e);
         }
     }
@@ -42,18 +38,14 @@ public class SchemaLoader {
     public static ParsedSchema loadHttpPartSchema(){
         try {
             return  new JsonSchema(loadSchema("schemas/json/versions/2/http-part.json"));
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        } catch (URISyntaxException e) {
+        } catch (IOException | URISyntaxException e) {
             throw new RuntimeException(e);
         }
     }
     public static ParsedSchema loadHttpExchangeSchema(){
         try {
             return  new JsonSchema(loadSchema("schemas/json/versions/2/http-exchange.json"));
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        } catch (URISyntaxException e) {
+        } catch (IOException | URISyntaxException e) {
             throw new RuntimeException(e);
         }
     }
