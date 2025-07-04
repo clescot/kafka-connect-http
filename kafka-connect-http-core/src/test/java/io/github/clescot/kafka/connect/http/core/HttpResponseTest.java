@@ -10,6 +10,7 @@ import io.confluent.kafka.serializers.json.KafkaJsonSchemaSerializerConfig;
 import org.apache.kafka.common.errors.SerializationException;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import java.util.Map;
@@ -36,22 +37,40 @@ class HttpResponseTest {
         serializer = new KafkaJsonSchemaSerializer<>(schemaRegistryClient,jsonSchemaSerializerConfig);
     }
 
+    @Nested
+    class TestSerialize{
+        @Test
+        public void test_serialize_empty_http_response(){
+            HttpResponse httpResponse = new HttpResponse();
+            //required fields are missing
+            Assertions.assertThrows(SerializationException.class,()->serializer.serialize("dummy_topic",httpResponse));
+        }
 
-    @Test
-    public void test_serialize_empty_http_response(){
-        HttpResponse httpResponse = new HttpResponse();
-        //required fields are missing
-        Assertions.assertThrows(SerializationException.class,()->serializer.serialize("dummy_topic",httpResponse));
+        @Test
+        public void test_serialize_http_response_with_required_fields(){
+            HttpResponse httpResponse = new HttpResponse();
+            httpResponse.setStatusCode(200);
+            httpResponse.setStatusMessage("OK");
+            //required fields are missing
+            byte[] bytes = serializer.serialize("dummy_topic", httpResponse);
+            assertThat(bytes).isNotEmpty();
+        }
     }
 
-    @Test
-    public void test_serialize_http_response_with_required_fields(){
-        HttpResponse httpResponse = new HttpResponse();
-        httpResponse.setStatusCode(200);
-        httpResponse.setStatusMessage("OK");
-        //required fields are missing
-        byte[] bytes = serializer.serialize("dummy_topic", httpResponse);
-        assertThat(bytes).isNotEmpty();
-    }
+    @Nested
+    class TestClone{
+        @Test
+        public void test_clone_http_response() throws CloneNotSupportedException {
+            HttpResponse httpResponse = new HttpResponse(200,"OK");
+            httpResponse.setBodyAsString("Hello World");
 
+            HttpResponse cloned = httpResponse.clone();
+
+            assertThat(cloned).isNotSameAs(httpResponse);
+            assertThat(cloned.getStatusCode()).isEqualTo(httpResponse.getStatusCode());
+            assertThat(cloned.getStatusMessage()).isEqualTo(httpResponse.getStatusMessage());
+            assertThat(cloned.getBodyType()).isEqualTo(httpResponse.getBodyType());
+            assertThat(cloned.getBodyAsString()).isEqualTo(httpResponse.getBodyAsString());
+        }
+    }
 }

@@ -14,7 +14,8 @@ import java.util.Base64;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-public class HttpResponse implements Serializable {
+public class HttpResponse implements Cloneable, Serializable {
+    private static final long serialVersionUID = 1L;
     public static final Integer VERSION = 2;
     public static final String CONTENT_TYPE = "Content-Type";
 
@@ -42,7 +43,6 @@ public class HttpResponse implements Serializable {
             .field(BODY_AS_BYTE_ARRAY,Schema.OPTIONAL_STRING_SCHEMA)
             .field(PARTS, SchemaBuilder.array(HttpPart.SCHEMA).optional().schema())
             .schema();
-    private static final long serialVersionUID = 1L;
 
     @JsonProperty(required = true)
     private Integer statusCode;
@@ -206,6 +206,31 @@ public class HttpResponse implements Serializable {
                 .put(BODY_AS_BYTE_ARRAY,this.getBodyAsByteArray())
                 .put(BODY_AS_STRING,this.getBodyAsString())
                 ;
+    }
+
+    @Override
+    public HttpResponse clone() {
+        try {
+            HttpResponse clone = (HttpResponse) super.clone();
+            clone.setStatusCode(this.statusCode);
+            clone.setStatusMessage(this.statusMessage);
+            clone.setProtocol(this.protocol);
+            clone.setBodyAsString(this.bodyAsString);
+            clone.setBodyAsForm(Maps.newHashMap(this.bodyAsForm));
+            clone.setBodyAsByteArray(this.getBodyAsByteArray());
+            clone.setHeaders(Maps.newHashMap(this.headers));
+            clone.parts = Maps.newHashMap(this.parts);
+            clone.bodyType = this.bodyType;
+            clone.headers = Maps.newHashMap(this.headers);
+            if (this.parts != null) {
+                clone.parts = Maps.newHashMap(this.parts);
+            } else {
+                clone.parts = Maps.newHashMap();
+            }
+            return clone;
+        } catch (CloneNotSupportedException e) {
+            throw new AssertionError();
+        }
     }
 
     public enum BodyType {
