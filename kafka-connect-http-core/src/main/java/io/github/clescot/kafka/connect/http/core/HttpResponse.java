@@ -48,7 +48,11 @@ public class HttpResponse implements Serializable {
     private Integer statusCode;
     @JsonProperty(required = true)
     private String statusMessage;
+    //@JsonProperty
+    private Map<String, String> bodyAsForm = Maps.newHashMap();
+    @JsonProperty
     private String bodyAsString ="";
+   // @JsonProperty
     //byte array is base64 encoded as as String, as JSON is a text format not binary
     private String bodyAsByteArray = null;
     @JsonProperty(defaultValue = "STRING")
@@ -167,6 +171,7 @@ public class HttpResponse implements Serializable {
                 ", protocol='" + protocol + '\'' +
                 ", headers=" + headers +
                 ", bodyAsByteArray='" + bodyAsByteArray + '\'' +
+                ", bodyAsForm='" + bodyAsByteArray + '\'' +
                 ", bodyAsString='" + bodyAsString + '\'' +
                 '}';
     }
