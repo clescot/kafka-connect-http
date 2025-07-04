@@ -11,6 +11,7 @@ import org.apache.kafka.connect.data.SchemaBuilder;
 import org.apache.kafka.connect.data.Struct;
 
 import java.io.File;
+import java.io.Serializable;
 import java.net.URI;
 import java.util.*;
 
@@ -21,7 +22,8 @@ import static io.github.clescot.kafka.connect.http.core.HttpPart.BodyType.FORM_D
  * part of a multipart request.
  */
 @JsonInclude(Include.NON_NULL)
-public class HttpPart implements Cloneable{
+public class HttpPart implements Cloneable, Serializable {
+    private static final long serialVersionUID = 1L;
     public static final String APPLICATION_X_WWW_FORM_URLENCODED = "application/x-www-form-urlencoded";
     public static final String APPLICATION_JSON = "application/json";
     public static final String APPLICATION_OCTET_STREAM = "application/octet-stream";
@@ -32,8 +34,8 @@ public class HttpPart implements Cloneable{
     private String contentAsString;
     private String contentAsByteArray;
     //Map.Entry<parameterName,Map.Entry<parameterValue,Optional<File>>
-    private Map.Entry<String, Map.Entry<String, Optional<File>>> contentAsFormEntry;
-    public static final int VERSION = 1;
+    private Map.Entry<String, File> contentAsFormEntry;
+    public static final int VERSION = 2;
     public static final String HEADERS = "headers";
     public static final String BODY_TYPE = "bodyType";
     public static final String BODY_AS_STRING = "bodyAsString";
@@ -63,7 +65,7 @@ public class HttpPart implements Cloneable{
     //content as byte array
     public HttpPart(Map<String, List<String>> headers, byte[] contentAsByteArray) {
         this.bodyType = HttpPart.BodyType.BYTE_ARRAY;
-        this.headers = headers;
+        this.headers = headers!=null?headers:Maps.newHashMap();
         this.contentAsByteArray = Base64.getMimeEncoder().encodeToString(contentAsByteArray);
     }
 
@@ -73,33 +75,35 @@ public class HttpPart implements Cloneable{
     }
 
     //content as form data with plain file content
-    public HttpPart(Map<String, List<String>> headers, String parameterName,String parameterValue,File file) {
+    public HttpPart(Map<String, List<String>> headers, String fileName,File file) {
         this.bodyType = FORM_DATA;
-        this.headers = headers;
-        this.contentAsFormEntry = Map.entry(parameterName,Map.entry(parameterValue,Optional.ofNullable(file)));
+        this.headers = headers!=null?headers:Maps.newHashMap();
+        this.contentAsFormEntry = Map.entry(fileName,file);
     }
 
     //content as form data with plain file content without headers
-    public HttpPart(String parameterName,String parameterValue,File file) {
-        this(Map.of(CONTENT_TYPE, Lists.newArrayList(APPLICATION_X_WWW_FORM_URLENCODED)), parameterName,parameterValue,file);
+    public HttpPart(String fileName,File file) {
+        this(Map.of(CONTENT_TYPE, Lists.newArrayList(APPLICATION_X_WWW_FORM_URLENCODED)),fileName,file);
     }
 
     //content as form data with file content as a reference
-    public HttpPart(Map<String, List<String>> headers, String parameterName, String parameterValue, URI fileUri) {
+    public HttpPart(Map<String, List<String>> headers, String fileName, URI fileUri) {
         this.bodyType = BodyType.FORM_DATA_AS_REFERENCE;
-        this.headers = headers;
-        this.contentAsFormEntry = Map.entry(parameterName,Map.entry(parameterValue,Optional.empty()));
+        this.headers = headers!=null?headers:Maps.newHashMap();
+        this.contentAsFormEntry = Map.entry(fileName,new File(fileUri));
         this.fileUri = fileUri;
     }
+
+
     //content as form data with file content as a reference without headers
-    public HttpPart(String parameterName, String parameterValue, URI fileUri) {
-        this(Map.of(CONTENT_TYPE, Lists.newArrayList(APPLICATION_X_WWW_FORM_URLENCODED)), parameterName, parameterValue, fileUri);
+    public HttpPart(String fileName, URI fileUri) {
+        this(Map.of(CONTENT_TYPE, Lists.newArrayList(APPLICATION_X_WWW_FORM_URLENCODED)),  fileName, fileUri);
     }
 
     //content as string
     public HttpPart(Map<String, List<String>> headers, String contentAsString) {
         this.bodyType = HttpPart.BodyType.STRING;
-        this.headers = headers;
+        this.headers = headers!=null?headers:Maps.newHashMap();
         this.contentAsString = contentAsString;
     }
     //content as string without headers
@@ -109,7 +113,7 @@ public class HttpPart implements Cloneable{
 
     //for serialization
     public HttpPart(Struct struct) {
-        this.headers = struct.getMap(HEADERS);
+        this.headers = struct.getMap(HEADERS)!=null?struct.getMap(HEADERS): Maps.newHashMap();
         this.bodyType = HttpPart.BodyType.valueOf(struct.getString(BODY_TYPE));
         this.contentAsByteArray = struct.getString(BODY_AS_BYTE_ARRAY);
         this.contentAsString = struct.getString(BODY_AS_STRING);
@@ -139,16 +143,13 @@ public class HttpPart implements Cloneable{
         this.contentAsString = contentAsString;
     }
 
-    public void setContentAsFormEntry(Map.Entry<String, Map.Entry<String, Optional<File>>> contentAsFormEntry) {
+    public void setContentAsFormEntry(Map.Entry<String, File> contentAsFormEntry) {
         this.contentAsFormEntry = contentAsFormEntry;
     }
 
-    public Map.Entry<String, Map.Entry<String, Optional<File>>> getContentAsFormEntry() {
+    public Map.Entry<String,File> getContentAsFormEntry() {
         return contentAsFormEntry;
     }
-
-
-
 
     public byte[] getContentAsByteArray() {
         if (contentAsByteArray != null) {
@@ -233,8 +234,7 @@ public class HttpPart implements Cloneable{
         if (getContentAsFormEntry() != null) {
             clone.setContentAsFormEntry(Map.entry(
                     getContentAsFormEntry().getKey(),
-                    Map.entry(getContentAsFormEntry().getValue().getKey(),
-                            getContentAsFormEntry().getValue().getValue())));
+                            getContentAsFormEntry().getValue()));
         }
         if(getContentAsString()!=null) {
             clone.setContentAsString(getContentAsString());
@@ -245,12 +245,7 @@ public class HttpPart implements Cloneable{
         if (getContentAsByteArray()!=null) {
             clone.setContentAsByteArray(getContentAsByteArray());
         }
-        if (getContentAsFormEntry() != null) {
-            clone.setContentAsFormEntry(Map.entry(
-                    getContentAsFormEntry().getKey(),
-                    Map.entry(getContentAsFormEntry().getValue().getKey(),
-                            getContentAsFormEntry().getValue().getValue())));
-        }
+        clone.bodyType = getBodyType();
         return clone;
     }
 

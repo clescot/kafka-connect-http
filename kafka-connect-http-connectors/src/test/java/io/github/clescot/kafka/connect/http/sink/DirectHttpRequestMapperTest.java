@@ -197,7 +197,9 @@ class DirectHttpRequestMapperTest {
         Map<String, List<String>> headers = Maps.newHashMap();
         headers.put("Content-Type", Lists.newArrayList("application/json"));
         HttpPart httpPart = new HttpPart("stuff");
-        return new HttpRequest(url, DUMMY_METHOD,headers, HttpRequest.BodyType.MULTIPART,Lists.newArrayList(httpPart));
+        Map<String, HttpPart> parts = Maps.newHashMap();
+        parts.put("part1", httpPart);
+        return new HttpRequest(url, DUMMY_METHOD,headers, HttpRequest.BodyType.MULTIPART, parts);
     }
 
     private String getDummyHttpRequestAsString() {

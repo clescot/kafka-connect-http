@@ -156,27 +156,27 @@ class HttpPartTest {
         @Test
         void test_constructor_with_file_as_ref_content(){
             URL url = Thread.currentThread().getContextClassLoader().getResource("upload.txt");
-            assertDoesNotThrow(()->new HttpPart("parameterName","parameterValue", Objects.requireNonNull(url).toURI()));
+            assertDoesNotThrow(()->new HttpPart("filename", Objects.requireNonNull(url).toURI()));
         }
         @Test
         void test_constructor_with_file_as_ref_content_and_headers(){
             Map<String,List<String>> headers = new HashMap<>();
             headers.put("Content-Type",List.of("application/json"));
             URL url = Thread.currentThread().getContextClassLoader().getResource("upload.txt");
-            assertDoesNotThrow(()->new HttpPart(headers,"parameterName","parameterValue", Objects.requireNonNull(url).toURI()));
+            assertDoesNotThrow(()->new HttpPart(headers,"filename", Objects.requireNonNull(url).toURI()));
         }
 
         @Test
         void test_constructor_with_file_as_content(){
             URL url = Thread.currentThread().getContextClassLoader().getResource("upload.txt");
-            assertDoesNotThrow(()->new HttpPart("parameterName","parameterValue",new File(Objects.requireNonNull(url).toURI())));
+            assertDoesNotThrow(()->new HttpPart("filename",new File(Objects.requireNonNull(url).toURI())));
         }
         @Test
         void test_constructor_with_file_as_content_and_headers(){
             Map<String,List<String>> headers = new HashMap<>();
             headers.put("Content-Type",List.of("application/json"));
             URL url = Thread.currentThread().getContextClassLoader().getResource("upload.txt");
-            assertDoesNotThrow(()->new HttpPart(headers,"parameterName","parameterValue",new File(Objects.requireNonNull(url).toURI())));
+            assertDoesNotThrow(()->new HttpPart(headers,"filename",new File(Objects.requireNonNull(url).toURI())));
         }
         @Test
         void test_constructor_with_struct_and_body_as_string(){
@@ -284,7 +284,7 @@ class HttpPartTest {
         void test_clone_content_as_form_entry_with_file() throws CloneNotSupportedException {
             Map<String,List<String>> headers = new HashMap<>();
             headers.put("Content-Type",List.of("application/json"));
-            HttpPart httpPart = new HttpPart(headers,"parameterName","parameterValue",new File("src/test/resources/upload.txt"));
+            HttpPart httpPart = new HttpPart(headers,"filename",new File("src/test/resources/upload.txt"));
             HttpPart clonedHttpPart = (HttpPart) httpPart.clone();
             assertThat(clonedHttpPart.hashCode()).isEqualTo(httpPart.hashCode());
             assertThat(clonedHttpPart).isEqualTo(httpPart);
@@ -297,7 +297,8 @@ class HttpPartTest {
         void test_clone_content_as_form_entry_with_file_uri() throws CloneNotSupportedException, URISyntaxException {
             Map<String,List<String>> headers = new HashMap<>();
             headers.put("Content-Type",List.of("application/json"));
-            HttpPart httpPart = new HttpPart(headers,"parameterName","parameterValue",new URI("src/test/resources/upload.txt"));
+            URL uploadUrl = Thread.currentThread().getContextClassLoader().getResource("upload.txt");
+            HttpPart httpPart = new HttpPart(headers,"filename",uploadUrl.toURI());
             HttpPart clonedHttpPart = (HttpPart) httpPart.clone();
             assertThat(clonedHttpPart.hashCode()).isEqualTo(httpPart.hashCode());
             assertThat(clonedHttpPart).isEqualTo(httpPart);

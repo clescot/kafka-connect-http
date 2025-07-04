@@ -58,7 +58,7 @@ public class HttpRequest implements Cloneable, Serializable {
     private String bodyAsByteArray = null;
 
     @JsonProperty
-    private List<HttpPart> parts = Lists.newArrayList();
+    private Map<String,HttpPart> parts = Maps.newHashMap();
 
     @JsonProperty(defaultValue = "STRING")
     private BodyType bodyType;
@@ -73,7 +73,7 @@ public class HttpRequest implements Cloneable, Serializable {
             .field(BODY_AS_STRING, Schema.OPTIONAL_STRING_SCHEMA)
             .field(BODY_AS_FORM, SchemaBuilder.map(Schema.STRING_SCHEMA, Schema.STRING_SCHEMA).optional().schema())
             .field(BODY_AS_BYTE_ARRAY, Schema.OPTIONAL_STRING_SCHEMA)
-            .field(PARTS, SchemaBuilder.array(HttpPart.SCHEMA).optional().schema())
+            .field(PARTS, SchemaBuilder.map(Schema.STRING_SCHEMA,HttpPart.SCHEMA).optional().schema())
             .schema();
 
     /**
@@ -102,7 +102,7 @@ public class HttpRequest implements Cloneable, Serializable {
                        HttpRequest.Method method,
                        Map<String, List<String>> headers,
                        BodyType bodyType,
-                       List<HttpPart> parts) {
+                       Map<String,HttpPart> parts) {
         Preconditions.checkNotNull(url, "url is required");
         Preconditions.checkNotNull(bodyType, "bodyType is required");
         this.url = url;
@@ -117,7 +117,7 @@ public class HttpRequest implements Cloneable, Serializable {
             }
             this.parts = parts;
         } else {
-            this.parts = Lists.newArrayList();
+            this.parts = Maps.newHashMap();
         }
 
 
@@ -132,7 +132,7 @@ public class HttpRequest implements Cloneable, Serializable {
                 original.getParts()
         );
         this.setHeaders(Maps.newHashMap(original.getHeaders()));
-        this.setParts(Lists.newArrayList(original.getParts()));
+        this.setParts(Maps.newHashMap(original.getParts()));
     }
 
 
@@ -156,12 +156,12 @@ public class HttpRequest implements Cloneable, Serializable {
         this.bodyAsString = requestAsstruct.getString(BODY_AS_STRING);
         this.bodyAsForm = requestAsstruct.getMap(BODY_AS_FORM);
 
-        List<Struct> structs = requestAsstruct.getArray(PARTS);
+        Map<String,Struct> structs = requestAsstruct.getMap(PARTS);
         if (structs != null) {
             //this is a multipart request
-            for (Struct struct : structs) {
-                HttpPart httpPart = new HttpPart(struct);
-                parts.add(httpPart);
+            for (Map.Entry<String,Struct> entry : structs.entrySet()) {
+                HttpPart httpPart = new HttpPart(entry.getValue());
+                parts.put(entry.getKey(),httpPart);
                 if (!headersFromPartAreValid(httpPart)) {
                     LOGGER.warn("this is a multipart request. headers from part are not valid : there is at least one header that is not 'Content-Disposition', 'Content-Type' or 'Content-Transfer-Encoding'. clearing headers from this part");
                     httpPart.getHeaders().clear();
@@ -188,19 +188,19 @@ public class HttpRequest implements Cloneable, Serializable {
         return bodyType;
     }
 
-    public List<HttpPart> getParts() {
+    public Map<String,HttpPart> getParts() {
         return parts;
     }
 
-    public void setParts(List<HttpPart> httpParts) {
+    public void setParts(Map<String,HttpPart> httpParts) {
         this.parts = httpParts;
         if (parts != null && !parts.isEmpty()) {
             this.bodyType = BodyType.MULTIPART;
         }
     }
 
-    public void addPart(HttpPart httpPart) {
-        parts.add(httpPart);
+    public void addPart(String name,HttpPart httpPart) {
+        parts.put(name,httpPart);
     }
 
     @JsonIgnore
@@ -288,7 +288,13 @@ public class HttpRequest implements Cloneable, Serializable {
                 .put(HEADERS, this.getHeaders())
                 .put(METHOD, this.getMethod().name())
                 .put(BODY_TYPE, this.getBodyType().name())
-                .put(PARTS, this.getParts().stream().map(HttpPart::toStruct).collect(Collectors.toList()))
+                .put(PARTS,
+                        this.getParts().entrySet().stream()
+                                .collect(
+                                        Collectors.toMap(Map.Entry::getKey,
+                                                entry->entry.getValue().toStruct())
+                                )
+                )
                 ;
     }
 
@@ -346,7 +352,7 @@ public class HttpRequest implements Cloneable, Serializable {
         try {
             HttpRequest clone = (HttpRequest) super.clone();
             clone.setHeaders(Maps.newHashMap(this.getHeaders()));
-            clone.setParts(Lists.newArrayList(this.getParts()));
+            clone.setParts(Maps.newHashMap(this.getParts()));
             clone.setBodyAsByteArray(this.getBodyAsByteArray());
             clone.setBodyAsForm(new HashMap<>(this.getBodyAsForm()));
             clone.setBodyAsString(this.getBodyAsString());

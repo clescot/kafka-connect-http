@@ -140,13 +140,13 @@ class HttpRequestTest {
                     "http://www.stuff.com",
                     HttpRequest.Method.POST, headers, HttpRequest.BodyType.MULTIPART
             );
-            List<HttpPart> httpParts = Lists.newArrayList();
+            Map<String,HttpPart> httpParts = Maps.newHashMap();
             HttpPart part1 = new HttpPart("part1".getBytes(StandardCharsets.UTF_8));
-            httpParts.add(part1);
+            httpParts.put("id1",part1);
             HttpPart part2 = new HttpPart("part2".getBytes(StandardCharsets.UTF_8));
-            httpParts.add(part2);
+            httpParts.put("id2",part2);
             HttpPart part3 = new HttpPart("part3".getBytes(StandardCharsets.UTF_8));
-            httpParts.add(part3);
+            httpParts.put("id3",part3);
             httpRequest.setParts(httpParts);
             headers.put("X-correlation-id", Lists.newArrayList("sfds-55-77"));
             headers.put("X-request-id", Lists.newArrayList("aaaa-4466666-111"));
@@ -171,21 +171,21 @@ class HttpRequestTest {
                     "http://www.stuff.com",
                     HttpRequest.Method.POST, headers, HttpRequest.BodyType.MULTIPART
             );
-            List<HttpPart> httpParts = Lists.newArrayList();
+            Map<String,HttpPart> httpParts = Maps.newHashMap();
             URL resourceURL = Thread.currentThread().getContextClassLoader().getResource("upload.txt");
             HttpPart part1;
             if (resourceURL != null) {
                 File file = new File(resourceURL.toURI());
-                part1 = new HttpPart("parameter1", "parameterValue1", file);
+                part1 = new HttpPart( "fileName", file);
             } else {
                 throw new IllegalStateException("file not found");
             }
 
-            httpParts.add(part1);
+            httpParts.put("part1",part1);
             HttpPart part2 = new HttpPart("part2".getBytes(StandardCharsets.UTF_8));
-            httpParts.add(part2);
+            httpParts.put("part2",part2);
             HttpPart part3 = new HttpPart("part3");
-            httpParts.add(part3);
+            httpParts.put("part3",part3);
             httpRequest.setParts(httpParts);
             headers.put("X-correlation-id", Lists.newArrayList("sfds-55-77"));
             headers.put("X-request-id", Lists.newArrayList("aaaa-4466666-111"));
@@ -195,7 +195,7 @@ class HttpRequestTest {
             String serializedHttpRequest = objectMapper.writeValueAsString(httpRequest);
             HttpRequest deserializedRequest = objectMapper.readValue(serializedHttpRequest, HttpRequest.class);
             assertThat(httpRequest).isEqualTo(deserializedRequest);
-            List<HttpPart> deserializedRequestParts = deserializedRequest.getParts();
+            Map<String,HttpPart> deserializedRequestParts = deserializedRequest.getParts();
             assertThat(deserializedRequestParts).hasSameSizeAs(httpParts);
         }
 
@@ -646,13 +646,13 @@ class HttpRequestTest {
             String dummyBodyType = "MULTIPART";
             httpRequestStruct.put(HttpRequest.BODY_TYPE, dummyBodyType);
 
-            List<Struct> parts = Lists.newArrayList();
+            Map<String,Struct> parts = Maps.newHashMap();
             HttpPart part1 = new HttpPart("part1".getBytes(StandardCharsets.UTF_8));
-            parts.add(part1.toStruct());
+            parts.put("part1",part1.toStruct());
             HttpPart part2 = new HttpPart("part2".getBytes(StandardCharsets.UTF_8));
-            parts.add(part2.toStruct());
+            parts.put("part2",part2.toStruct());
             HttpPart part3 = new HttpPart("part3".getBytes(StandardCharsets.UTF_8));
-            parts.add(part3.toStruct());
+            parts.put("part3",part3.toStruct());
 
             httpRequestStruct.put(HttpRequest.PARTS, parts);
 
@@ -662,9 +662,9 @@ class HttpRequestTest {
             assertThat(httpRequest).isNotNull();
             assertThat(httpRequest.getUrl()).isEqualTo(dummyUrl);
             assertThat(httpRequest.getMethod()).isEqualTo(dummyMethod);
-            List<HttpPart> httpParts = httpRequest.getParts();
+            Map<String,HttpPart> httpParts = httpRequest.getParts();
             assertThat(httpParts).hasSameSizeAs(parts);
-            assertThat(httpParts).contains(part1, part2, part3);
+            assertThat(httpParts).contains(Map.entry("part1",part1),Map.entry("part2", part2), Map.entry("part3",part3));
         }
     }
 
