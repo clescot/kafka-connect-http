@@ -60,7 +60,7 @@ class HttpResponseTest {
     @Nested
     class TestClone{
         @Test
-        public void test_clone_http_response() throws CloneNotSupportedException {
+        public void test_clone_http_response() {
             HttpResponse httpResponse = new HttpResponse(200,"OK");
             httpResponse.setBodyAsString("Hello World");
 
@@ -69,8 +69,11 @@ class HttpResponseTest {
             assertThat(cloned).isNotSameAs(httpResponse);
             assertThat(cloned.getStatusCode()).isEqualTo(httpResponse.getStatusCode());
             assertThat(cloned.getStatusMessage()).isEqualTo(httpResponse.getStatusMessage());
+            assertThat(cloned.getHeaders()).containsAllEntriesOf(httpResponse.getHeaders());
             assertThat(cloned.getBodyType()).isEqualTo(httpResponse.getBodyType());
             assertThat(cloned.getBodyAsString()).isEqualTo(httpResponse.getBodyAsString());
+            assertThat(cloned.getBodyAsByteArray()).isEqualTo(httpResponse.getBodyAsByteArray());
+            assertThat(cloned.getBodyAsForm()).isEqualTo(httpResponse.getBodyAsForm());
         }
     }
 }
