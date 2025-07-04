@@ -1,24 +1,30 @@
 package io.github.clescot.kafka.connect.http.core;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.base.Preconditions;
+import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.data.SchemaBuilder;
 import org.apache.kafka.connect.data.Struct;
 
 import java.io.Serializable;
+import java.util.Base64;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 public class HttpResponse implements Serializable {
     public static final Integer VERSION = 2;
+    public static final String CONTENT_TYPE = "Content-Type";
 
     public static final String STATUS_CODE = "statusCode";
     public static final String STATUS_MESSAGE = "statusMessage";
     public static final String PROTOCOL = "protocol";
     public static final String HEADERS = "headers";
     public static final String BODY_AS_STRING = "bodyAsString";
+    public static final String BODY_AS_BYTE_ARRAY = "bodyAsByteArray";
+    public static final String BODY_TYPE = "bodyType";
 
     public static final Schema SCHEMA = SchemaBuilder
             .struct()
@@ -36,6 +42,10 @@ public class HttpResponse implements Serializable {
     @JsonProperty(required = true)
     private String statusMessage;
     private String bodyAsString ="";
+    //byte array is base64 encoded as as String, as JSON is a text format not binary
+    private String bodyAsByteArray = null;
+    //@JsonProperty(defaultValue = "STRING")
+    private HttpRequest.BodyType bodyType;
     private String protocol="";
 
     private Map<String, List<String>> headers = Maps.newHashMap();
@@ -93,17 +103,49 @@ public class HttpResponse implements Serializable {
         this.statusMessage = statusMessage;
     }
 
+    public void setBodyAsByteArray(byte[] content) {
+        if (content != null && content.length > 0) {
+            bodyAsByteArray = Base64.getEncoder().encodeToString(content);
+            bodyType = HttpRequest.BodyType.BYTE_ARRAY;
+
+            //if no Content-Type is set, we set the default application/octet-stream
+            if (headers != null && doesNotContainHeader(CONTENT_TYPE)) {
+                headers.put(CONTENT_TYPE, Lists.newArrayList("application/octet-stream"));
+            }
+        }
+    }
+
+    @JsonIgnore
+    public byte[] getBodyAsByteArray() {
+        if (bodyAsByteArray != null && !bodyAsByteArray.isEmpty()) {
+            return Base64.getDecoder().decode(bodyAsByteArray);
+        }
+        return null;
+    }
+
+    private boolean doesNotContainHeader(String key) {
+        return headers.keySet().stream().filter(k -> k.equalsIgnoreCase(key)).findAny().isEmpty();
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         HttpResponse that = (HttpResponse) o;
-        return statusCode.equals(that.statusCode) && statusMessage.equals(that.statusMessage) && protocol.equals(that.protocol)&& bodyAsString.equals(that.bodyAsString) && Objects.equals(headers, that.headers);
+        return
+                statusCode.equals(that.statusCode) &&
+                statusMessage.equals(that.statusMessage) &&
+                protocol.equals(that.protocol)&&
+                bodyType == that.bodyType &&
+                bodyAsString.equals(that.bodyAsString) &&
+                Objects.equals(headers, that.headers) &&
+                Objects.equals(bodyAsByteArray, that.bodyAsByteArray)
+                ;
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(statusCode, statusMessage, bodyAsString, headers);
+        return Objects.hash(statusCode, statusMessage, protocol, bodyType, bodyAsString, headers,bodyAsByteArray);
     }
 
     @Override
