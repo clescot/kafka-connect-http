@@ -271,10 +271,10 @@ public class HttpRequest implements Cloneable, Serializable {
     @Override
     public String toString() {
         return "HttpRequest{" +
-                "bodyAsByteArray='" + bodyAsByteArray + '\'' +
-                ", url='" + url + '\'' +
+                "  url='" + url + '\'' +
                 ", headers=" + headers +
                 ", method=" + method +
+                ", bodyAsByteArray='" + bodyAsByteArray + '\'' +
                 ", bodyAsForm=" + bodyAsForm +
                 ", bodyAsString='" + bodyAsString + '\'' +
                 ", parts=" + parts +

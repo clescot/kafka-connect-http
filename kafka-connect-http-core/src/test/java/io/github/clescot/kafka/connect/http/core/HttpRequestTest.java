@@ -907,4 +907,50 @@ class HttpRequestTest {
         }
 
     }
+
+    @Nested
+    class TestToString{
+        @Test
+        void test_to_string_with_body_as_string() {
+            //given
+            HttpRequest httpRequest = new HttpRequest(
+                    "http://www.stuff.com",
+                    HttpRequest.Method.GET
+            );
+            httpRequest.setBodyAsString(DUMMY_BODY_AS_STRING);
+            Map<String, List<String>> headers = Maps.newHashMap();
+            headers.put("X-stuff", Lists.newArrayList("m-y-value"));
+            headers.put("X-correlation-id", Lists.newArrayList("44-999-33-dd"));
+            headers.put("X-request-id", Lists.newArrayList("11-999-ff-777"));
+            httpRequest.setHeaders(headers);
+            //when
+            String toString = httpRequest.toString();
+            //then
+            assertThat(toString).contains("url=http://www.stuff.com");
+            assertThat(toString).contains("method=GET");
+            assertThat(toString).contains("bodyType=STRING");
+            assertThat(toString).contains("bodyAsString=" + DUMMY_BODY_AS_STRING);
+        }
+
+        @Test
+        void test_to_string_with_body_as_byte_array() {
+            //given
+            HttpRequest httpRequest = new HttpRequest(
+                    "http://www.stuff.com",
+                    HttpRequest.Method.GET
+            );
+            httpRequest.setBodyAsByteArray(DUMMY_BODY_AS_STRING.getBytes(StandardCharsets.UTF_8));
+            Map<String, List<String>> headers = Maps.newHashMap();
+            headers.put("X-stuff", Lists.newArrayList("m-y-value"));
+            headers.put("X-correlation-id", Lists.newArrayList("44-999-33-dd"));
+            headers.put("X-request-id", Lists.newArrayList("11-999-ff-777"));
+            httpRequest.setHeaders(headers);
+            //when
+            String toString = httpRequest.toString();
+            //then
+            assertThat(toString).contains("url='http://www.stuff.com'");
+            assertThat(toString).contains("method=GET");
+            assertThat(toString).contains("bodyType=BYTE_ARRAY");
+        }
+    }
 }
