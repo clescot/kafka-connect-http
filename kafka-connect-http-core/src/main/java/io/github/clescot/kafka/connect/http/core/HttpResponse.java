@@ -51,7 +51,7 @@ public class HttpResponse implements Serializable {
     private String bodyAsString ="";
     //byte array is base64 encoded as as String, as JSON is a text format not binary
     private String bodyAsByteArray = null;
-    //@JsonProperty(defaultValue = "STRING")
+    @JsonProperty(defaultValue = "STRING")
     private HttpResponse.BodyType bodyType = HttpResponse.BodyType.STRING;
     private String protocol="";
 
