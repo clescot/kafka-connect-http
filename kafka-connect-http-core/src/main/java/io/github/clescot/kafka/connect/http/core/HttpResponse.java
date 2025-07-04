@@ -67,7 +67,6 @@ public class HttpResponse implements Serializable {
         Preconditions.checkArgument(statusCode>0,"status code must be a positive integer");
         this.statusCode = statusCode;
         this.statusMessage = statusMessage;
-        this.bodyType = BodyType.STRING;
     }
 
     public Map<String, List<String>> getHeaders() {
@@ -166,8 +165,9 @@ public class HttpResponse implements Serializable {
                 "statusCode=" + statusCode +
                 ", statusMessage='" + statusMessage + '\'' +
                 ", protocol='" + protocol + '\'' +
-                ", responseBody='" + bodyAsString + '\'' +
-                ", responseHeaders=" + headers +
+                ", headers=" + headers +
+                ", bodyAsByteArray='" + bodyAsByteArray + '\'' +
+                ", bodyAsString='" + bodyAsString + '\'' +
                 '}';
     }
 
@@ -175,9 +175,12 @@ public class HttpResponse implements Serializable {
         return new Struct(SCHEMA)
                 .put(STATUS_CODE,this.getStatusCode().longValue())
                 .put(STATUS_MESSAGE,this.getStatusMessage())
+                .put(PROTOCOL,this.getProtocol())
                 .put(HEADERS,this.getHeaders())
                 .put(BODY_TYPE,this.getBodyType().toString())
-                .put(BODY_AS_STRING,this.getBodyAsString());
+                .put(BODY_AS_BYTE_ARRAY,this.getBodyAsByteArray())
+                .put(BODY_AS_STRING,this.getBodyAsString())
+                ;
     }
 
     public enum BodyType {
