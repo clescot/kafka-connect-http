@@ -10,11 +10,9 @@ import io.confluent.kafka.schemaregistry.client.SchemaRegistryClient;
 import io.confluent.kafka.schemaregistry.client.rest.exceptions.RestClientException;
 import io.confluent.kafka.schemaregistry.json.JsonSchema;
 import io.confluent.kafka.schemaregistry.json.JsonSchemaProvider;
-import io.github.clescot.kafka.connect.http.core.HttpExchange;
-import io.github.clescot.kafka.connect.http.core.HttpPart;
-import io.github.clescot.kafka.connect.http.core.HttpRequest;
-import io.github.clescot.kafka.connect.http.core.HttpResponse;
+import io.github.clescot.kafka.connect.http.core.*;
 import io.github.clescot.kafka.connect.http.sink.mapper.DirectHttpRequestMapper;
+import io.micrometer.core.instrument.binder.http.HttpRequestTags;
 import org.apache.commons.jexl3.JexlBuilder;
 import org.apache.commons.jexl3.JexlEngine;
 import org.apache.commons.jexl3.JexlFeatures;
@@ -36,6 +34,11 @@ import org.junit.jupiter.api.Test;
 import java.io.IOException;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
+import java.net.URISyntaxException;
+import java.net.URL;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -66,16 +69,16 @@ class DirectHttpRequestMapperTest {
         httpRequestMapper = new DirectHttpRequestMapper(DEFAULT,jexlEngine, "true");
         schemaRegistryClient = new MockSchemaRegistryClient(Lists.newArrayList(new JsonSchemaProvider()));
         //Register http part
-        ParsedSchema parsedPartSchema = new JsonSchema(HttpPart.SCHEMA_AS_STRING);
+        ParsedSchema parsedPartSchema = SchemaUtils.loadHttpPartSchema();
         schemaRegistryClient.register("httpPart",parsedPartSchema);
         //register http request
-        ParsedSchema parsedHttpRequestSchema = new JsonSchema(HttpRequest.SCHEMA_AS_STRING);
+        ParsedSchema parsedHttpRequestSchema = SchemaUtils.loadHttpRequestSchema();
         schemaRegistryClient.register("httpRequest",parsedHttpRequestSchema);
         //register http response
-        ParsedSchema parsedHttpResponseSchema = new JsonSchema(HttpResponse.SCHEMA_AS_STRING);
+        ParsedSchema parsedHttpResponseSchema = SchemaUtils.loadHttpResponseSchema();
         schemaRegistryClient.register("httpResponse",parsedHttpResponseSchema);
         //register http exchange
-        ParsedSchema parsedHttpExchangeSchema = new JsonSchema(HttpExchange.SCHEMA_AS_STRING);
+        ParsedSchema parsedHttpExchangeSchema = SchemaUtils.loadHttpExchangeSchema();
         schemaRegistryClient.register("httpExchange",parsedHttpExchangeSchema);
     }
     @Nested

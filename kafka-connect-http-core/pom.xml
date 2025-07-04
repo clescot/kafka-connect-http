@@ -43,7 +43,11 @@
             <groupId>com.google.guava</groupId>
             <artifactId>guava</artifactId>
         </dependency>
-
+        <dependency>
+            <groupId>io.confluent</groupId>
+            <artifactId>kafka-json-schema-provider</artifactId>
+            <version>${confluent.platform.version}</version>
+        </dependency>
 
         <!-- provided dependencies -->
         <dependency>
@@ -86,6 +90,7 @@
             <version>1.5.18</version>
             <scope>test</scope>
         </dependency>
+
 
     </dependencies>
 </project>

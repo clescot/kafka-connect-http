@@ -11,8 +11,6 @@ import java.io.Serializable;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-@io.confluent.kafka.schemaregistry.annotations.Schema(value = HttpResponse.SCHEMA_AS_STRING,
-        refs = {})
 public class HttpResponse implements Serializable {
     public static final Integer VERSION = 2;
 
@@ -32,65 +30,6 @@ public class HttpResponse implements Serializable {
             .field(HEADERS, SchemaBuilder.map(Schema.STRING_SCHEMA, SchemaBuilder.array(Schema.STRING_SCHEMA)).build())
             .field(BODY_AS_STRING,Schema.OPTIONAL_STRING_SCHEMA);
     private static final long serialVersionUID = 1L;
-    public static final String SCHEMA_ID = HttpExchange.BASE_SCHEMA_ID+"http-response.json";
-    public static final String SCHEMA_AS_STRING = "{\n" +
-            "  \"$id\": \"https://raw.githubusercontent.com/clescot/kafka-connect-http/master/kafka-connect-http-core/src/main/resources/schemas/json/versions/2/http-response.json\",\n" +
-            "  \"$schema\": \"http://json-schema.org/draft/2019-09/schema#\",\n" +
-            "  \"title\": \"Http Response\",\n" +
-            "  \"type\": \"object\",\n" +
-            "  \"additionalProperties\": false,\n" +
-            "  \"properties\": {\n" +
-            "    \"statusCode\":{\n" +
-            "      \"type\": \"integer\"\n" +
-            "    },\n" +
-            "    \"statusMessage\":  {\n" +
-            "      \"type\": \"string\"\n" +
-            "    },\n" +
-            "    \"protocol\":  {\n" +
-            "      \"type\": \"string\"\n" +
-            "    },\n" +
-            "    \"headers\":  {\n" +
-            "      \"type\": \"object\",\n" +
-            "      \"additionalProperties\": {\n" +
-            "        \"type\": \"array\",\n" +
-            "        \"items\": {\n" +
-            "          \"type\": \"string\"\n" +
-            "        }\n" +
-            "      }\n" +
-            "    },\n" +
-            "    \"bodyAsString\":  {\n" +
-            "      \"type\": \"string\"\n" +
-            "    },\n" +
-            "    \"bodyAsForm\":\n" +
-            "    {\n" +
-            "      \"type\": \"object\",\n" +
-            "      \"connect.type\": \"map\",\n" +
-            "      \"additionalProperties\" : { \"type\": \"string\" }\n" +
-            "    },\n" +
-            "    \"bodyAsByteArray\":  {\n" +
-            "      \"type\": \"string\"\n" +
-            "    },\n" +
-            "    \"bodyAsMultipart\": {\n" +
-            "      \"type\": \"array\",\n" +
-            "      \"items\": {\n" +
-            "        \"type\": \"string\"\n" +
-            "        }" +
-            "       },\n" +
-            "    \"bodyType\": {\n" +
-            "      \"type\": \"string\",\n" +
-            "      \"enum\": [\n" +
-            "        \"STRING\",\n" +
-            "        \"FORM\",\n" +
-            "        \"BYTE_ARRAY\",\n" +
-            "        \"MULTIPART\"\n" +
-            "      ]\n" +
-            "     }\n" +
-            "  },\n" +
-            "  \"required\": [\n" +
-            "    \"statusCode\",\n" +
-            "    \"statusMessage\"\n" +
-            "  ]\n" +
-            "}";
 
     @JsonProperty(required = true)
     private Integer statusCode;

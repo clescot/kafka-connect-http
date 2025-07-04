@@ -12,7 +12,6 @@ import io.confluent.kafka.schemaregistry.ParsedSchema;
 import io.confluent.kafka.schemaregistry.client.MockSchemaRegistryClient;
 import io.confluent.kafka.schemaregistry.client.SchemaRegistryClient;
 import io.confluent.kafka.schemaregistry.client.rest.exceptions.RestClientException;
-import io.confluent.kafka.schemaregistry.json.JsonSchema;
 import io.confluent.kafka.schemaregistry.json.JsonSchemaProvider;
 import io.confluent.kafka.schemaregistry.json.SpecificationVersion;
 import io.confluent.kafka.serializers.json.KafkaJsonSchemaDeserializer;
@@ -40,6 +39,7 @@ import java.util.List;
 import java.util.Map;
 
 import static io.github.clescot.kafka.connect.http.core.HttpRequest.BODY_AS_BYTE_ARRAY;
+import static io.github.clescot.kafka.connect.http.core.SchemaUtils.*;
 import static org.assertj.core.api.Assertions.assertThat;
 
 class HttpRequestTest {
@@ -54,18 +54,20 @@ class HttpRequestTest {
     void setup() throws RestClientException, IOException {
         schemaRegistryClient = new MockSchemaRegistryClient(Lists.newArrayList(new JsonSchemaProvider()));
         //Register http part
-        ParsedSchema parsedPartSchema = new JsonSchema(HttpPart.SCHEMA_AS_STRING);
+        ParsedSchema parsedPartSchema = loadHttpPartSchema();
         schemaRegistryClient.register("httpPart", parsedPartSchema);
         //register http request
-        ParsedSchema parsedHttpRequestSchema = new JsonSchema(HttpRequest.SCHEMA_AS_STRING);
+        ParsedSchema parsedHttpRequestSchema = loadHttpRequestSchema();
         schemaRegistryClient.register("httpRequest", parsedHttpRequestSchema);
         //register http response
-        ParsedSchema parsedHttpResponseSchema = new JsonSchema(HttpResponse.SCHEMA_AS_STRING);
+        ParsedSchema parsedHttpResponseSchema = loadHttpResponseSchema();
         schemaRegistryClient.register("httpResponse", parsedHttpResponseSchema);
         //register http exchange
-        ParsedSchema parsedHttpExchangeSchema = new JsonSchema(HttpExchange.SCHEMA_AS_STRING);
+        ParsedSchema parsedHttpExchangeSchema = loadHttpExchangeSchema();
         schemaRegistryClient.register("httpExchange", parsedHttpExchangeSchema);
     }
+
+
 
     @Nested
     class TestSerialization {

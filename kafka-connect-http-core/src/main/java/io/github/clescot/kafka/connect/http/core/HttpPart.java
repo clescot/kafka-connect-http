@@ -20,8 +20,6 @@ import static io.github.clescot.kafka.connect.http.core.HttpPart.BodyType.FORM_D
 /**
  * part of a multipart request.
  */
-@io.confluent.kafka.schemaregistry.annotations.Schema(value = HttpPart.SCHEMA_AS_STRING,
-        refs = {})
 @JsonInclude(Include.NON_NULL)
 public class HttpPart implements Cloneable{
     public static final String APPLICATION_X_WWW_FORM_URLENCODED = "application/x-www-form-urlencoded";
@@ -55,51 +53,6 @@ public class HttpPart implements Cloneable{
             .field(FILE_URI, Schema.OPTIONAL_STRING_SCHEMA)
             .optional()
             .schema();
-    public static final String SCHEMA_ID = HttpExchange.BASE_SCHEMA_ID + VERSION + "/" + "http-part.json";
-    public static final String SCHEMA_AS_STRING =
-            "{\n" +
-                    "  \"$id\": \"" + SCHEMA_ID + "\",\n" +
-                    "  \"$schema\": \"http://json-schema.org/draft/2019-09/schema#\",\n" +
-                    "  \"title\": \"Http Part\",\n" +
-                    "  \"type\": \"object\",\n" +
-                    "  \"additionalProperties\": false,\n" +
-                    "  \"properties\": {\n" +
-                    "    \"headers\": {\n" +
-                    "      \"type\": \"object\",\n" +
-                    "      \"connect.type\": \"map\",\n" +
-                    "      \"additionalProperties\": {\n" +
-                    "        \"type\": \"array\",\n" +
-                    "        \"items\": {\n" +
-                    "          \"type\": \"string\"\n" +
-                    "        }\n" +
-                    "      }\n" +
-                    "    },\n" +
-                    "    \"bodyAsString\": {\n" +
-                    "      \"type\": \"string\"\n" +
-                    "    },\n" +
-                    "    \"bodyAsFormData\": {\n" +
-                    "      \"type\": \"string\"\n" +
-                    "    },\n" +
-                    "    \"bodyAsByteArray\": {\n" +
-                    "      \"type\": \"string\"\n" +
-                    "    },\n" +
-                    "    \"fileURI\": {\n" +
-                    "      \"type\": \"string\"\n" +
-                    "    },\n" +
-                    "    \"bodyType\": {\n" +
-                    "      \"type\": \"string\",\n" +
-                    "      \"enum\": [\n" +
-                    "        \"STRING\",\n" +
-                    "        \"FORM_DATA\",\n" +
-                    "        \"FORM_DATA_AS_REFERENCE\",\n" +
-                    "        \"BYTE_ARRAY\"\n" +
-                    "      ]\n" +
-                    "    }\n" +
-                    "  },\n" +
-                    "  \"required\": [\n" +
-                    "    \"bodyType\"\n" +
-                    "  ]\n" +
-                    "}";
 
 
     //for deserialization only

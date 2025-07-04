@@ -21,8 +21,6 @@ import java.util.stream.Collectors;
 
 import static com.fasterxml.jackson.annotation.JsonInclude.Include;
 
-@io.confluent.kafka.schemaregistry.annotations.Schema(value = HttpRequest.SCHEMA_AS_STRING,
-        refs = {@io.confluent.kafka.schemaregistry.annotations.SchemaReference(name = HttpPart.SCHEMA_ID, subject = "httpPart", version = HttpPart.VERSION)})
 @JsonInclude(Include.NON_EMPTY)
 public class HttpRequest implements Cloneable, Serializable {
 
@@ -77,67 +75,6 @@ public class HttpRequest implements Cloneable, Serializable {
             .field(BODY_AS_BYTE_ARRAY, Schema.OPTIONAL_STRING_SCHEMA)
             .field(PARTS, SchemaBuilder.array(HttpPart.SCHEMA).optional().schema())
             .schema();
-
-    public static final String SCHEMA_ID = HttpExchange.BASE_SCHEMA_ID + VERSION + "/" + "http-request.json";
-    public static final String SCHEMA_AS_STRING = "{\n" +
-            "  \"$id\": \"" + SCHEMA_ID + "\",\n" +
-            "  \"$schema\": \"http://json-schema.org/draft/2019-09/schema#\",\n" +
-            "  \"title\": \"Http Request\",\n" +
-            "  \"type\": \"object\",\n" +
-            "  \"additionalProperties\": false,\n" +
-            "  \"properties\": {\n" +
-            "    \"url\": {\n" +
-            "      \"type\": \"string\"\n" +
-            "    },\n" +
-            "    \"headers\": {\n" +
-            "      \"type\": \"object\",\n" +
-            "      \"connect.type\": \"map\",\n" +
-            "      \"additionalProperties\": {\n" +
-            "        \"type\": \"array\",\n" +
-            "        \"items\": {\n" +
-            "          \"type\": \"string\"\n" +
-            "        }\n" +
-            "      }\n" +
-            "    },\n" +
-            "    \"method\": {\n" +
-            "      \"type\": \"string\"\n" +
-            "    },\n" +
-            "    \"bodyAsString\": {\n" +
-            "      \"type\": \"string\"\n" +
-            "    },\n" +
-            "    \"bodyAsForm\": {\n" +
-            "      \"type\": \"object\",\n" +
-            "      \"connect.type\": \"map\",\n" +
-            "      \"additionalProperties\": {\n" +
-            "        \"type\": \"string\"\n" +
-            "      }\n" +
-            "    },\n" +
-            "    \"bodyAsByteArray\": {\n" +
-            "      \"type\": \"string\"\n" +
-            "    },\n" +
-            "    \"bodyType\": {\n" +
-            "      \"type\": \"string\",\n" +
-            "      \"enum\": [\n" +
-            "        \"STRING\",\n" +
-            "        \"FORM\",\n" +
-            "        \"BYTE_ARRAY\",\n" +
-            "        \"MULTIPART\"\n" +
-            "      ]\n" +
-            "    },\n" +
-            "    \"parts\": {\n" +
-            "      \"type\": \"array\",\n" +
-            "      \"connect.type\": \"map\",\n " +
-            "      \"items\": {\n" +
-            "        \"$ref\": \"" + HttpPart.SCHEMA_ID + "\"\n" +
-            "      }\n" +
-            "    }\n" +
-            "  },\n" +
-            "  \"required\": [\n" +
-            "    \"url\",\n" +
-            "    \"method\",\n" +
-            "    \"bodyType\"\n" +
-            "  ]\n" +
-            "}";
 
     /**
      * only for json deserialization
