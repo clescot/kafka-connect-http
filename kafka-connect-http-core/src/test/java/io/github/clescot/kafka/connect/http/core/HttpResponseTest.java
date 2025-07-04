@@ -13,6 +13,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
+import java.nio.charset.StandardCharsets;
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -60,9 +61,46 @@ class HttpResponseTest {
     @Nested
     class TestClone{
         @Test
-        public void test_clone_http_response() {
+        public void test_clone_http_response_with_body_as_string() {
             HttpResponse httpResponse = new HttpResponse(200,"OK");
             httpResponse.setBodyAsString("Hello World");
+
+            HttpResponse cloned = httpResponse.clone();
+
+            assertThat(cloned).isNotSameAs(httpResponse);
+            assertThat(cloned.getStatusCode()).isEqualTo(httpResponse.getStatusCode());
+            assertThat(cloned.getStatusMessage()).isEqualTo(httpResponse.getStatusMessage());
+            assertThat(cloned.getHeaders()).containsAllEntriesOf(httpResponse.getHeaders());
+            assertThat(cloned.getBodyType()).isEqualTo(httpResponse.getBodyType());
+            assertThat(cloned.getBodyAsString()).isEqualTo(httpResponse.getBodyAsString());
+            assertThat(cloned.getBodyAsByteArray()).isEqualTo(httpResponse.getBodyAsByteArray());
+            assertThat(cloned.getBodyAsForm()).isEqualTo(httpResponse.getBodyAsForm());
+        }
+
+        @Test
+        public void test_clone_http_response_with_body_as_byte_array() {
+            HttpResponse httpResponse = new HttpResponse(200,"OK");
+            httpResponse.setBodyAsByteArray("Hello World".getBytes(StandardCharsets.UTF_8));
+
+            HttpResponse cloned = httpResponse.clone();
+
+            assertThat(cloned).isNotSameAs(httpResponse);
+            assertThat(cloned.getStatusCode()).isEqualTo(httpResponse.getStatusCode());
+            assertThat(cloned.getStatusMessage()).isEqualTo(httpResponse.getStatusMessage());
+            assertThat(cloned.getHeaders()).containsAllEntriesOf(httpResponse.getHeaders());
+            assertThat(cloned.getBodyType()).isEqualTo(httpResponse.getBodyType());
+            assertThat(cloned.getBodyAsString()).isEqualTo(httpResponse.getBodyAsString());
+            assertThat(cloned.getBodyAsByteArray()).isEqualTo(httpResponse.getBodyAsByteArray());
+            assertThat(cloned.getBodyAsForm()).isEqualTo(httpResponse.getBodyAsForm());
+        }
+
+        @Test
+        public void test_clone_http_response_with_body_as_form() {
+            HttpResponse httpResponse = new HttpResponse(200,"OK");
+            Map<String, String> form = Maps.newHashMap();
+            form.put("key1", "value1");
+            form.put("key2", "value2");
+            httpResponse.setBodyAsForm(form);
 
             HttpResponse cloned = httpResponse.clone();
 
