@@ -48,7 +48,7 @@ public class HttpResponse implements Serializable {
     private Integer statusCode;
     @JsonProperty(required = true)
     private String statusMessage;
-    //@JsonProperty
+    @JsonProperty
     private Map<String, String> bodyAsForm = Maps.newHashMap();
     @JsonProperty
     private String bodyAsString ="";
@@ -89,6 +89,11 @@ public class HttpResponse implements Serializable {
         return bodyAsString;
     }
 
+    @JsonIgnore
+    public Map<String, String> getBodyAsForm() {
+        return bodyAsForm;
+    }
+
     public void setHeaders(Map<String, List<String>> headers) {
         this.headers = headers;
     }
@@ -97,6 +102,13 @@ public class HttpResponse implements Serializable {
         this.bodyAsString = bodyAsString;
     }
 
+    public void setBodyAsForm(Map<String, String> form) {
+        this.bodyAsForm = form;
+        bodyType = HttpResponse.BodyType.FORM;
+        if (form!=null && !form.isEmpty() && headers != null && doesNotContainHeader(CONTENT_TYPE)) {
+            headers.put(CONTENT_TYPE, Lists.newArrayList("application/x-www-form-urlencoded"));
+        }
+    }
 
     public String getProtocol() {
         return protocol;
