@@ -1,5 +1,5 @@
 {
-  "$id": "https://raw.githubusercontent.com/clescot/kafka-connect-http/master/kafka-connect-http-core/src/main/resources/schemas/json/versions/2/http-request.json",
+  "$id": "https://raw.githubusercontent.com/clescot/kafka-connect-http/master/kafka-connect-http-core/src/main/resources/schemas/json/versions/3/http-request.json",
   "$schema": "http://json-schema.org/draft/2019-09/schema#",
   "title": "Http Request",
   "type": "object",
@@ -24,7 +24,10 @@
     },
     "bodyAsString":
     {
-      "type": "string"
+      "type": [
+        "string",
+        "null"
+      ]
     },
     "bodyAsForm":
     {
@@ -33,12 +36,16 @@
       "additionalProperties" : { "type": "string" }
     },
     "bodyAsByteArray":  {
-      "type": "string"
+      "type": [
+        "string",
+        "null"
+      ]
     },
-    "bodyAsMultipart": {
-      "type": "array",
+    "parts": {
+      "type": "object",
+      "connect.type": "map",
       "items": {
-        "type": "string"
+        "$ref": "https://raw.githubusercontent.com/clescot/kafka-connect-http/master/kafka-connect-http-core/src/main/resources/schemas/json/versions/2/http-part.json"
       }
     },
     "bodyType": {

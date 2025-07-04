@@ -58,6 +58,8 @@ public class HttpResponse implements Serializable {
     @JsonProperty(defaultValue = "STRING")
     private HttpResponse.BodyType bodyType = HttpResponse.BodyType.STRING;
     private String protocol="";
+    @JsonProperty
+    private Map<String,HttpPart> parts = Maps.newHashMap();
 
     private Map<String, List<String>> headers = Maps.newHashMap();
 
@@ -88,6 +90,12 @@ public class HttpResponse implements Serializable {
     public String getBodyAsString() {
         return bodyAsString;
     }
+
+
+    public Map<String,HttpPart> getParts() {
+        return parts;
+    }
+
 
     @JsonIgnore
     public Map<String, String> getBodyAsForm() {

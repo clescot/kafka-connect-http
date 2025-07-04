@@ -1,5 +1,5 @@
 {
-  "$id": "+SCHEMA_ID+",
+  "$id": "https://raw.githubusercontent.com/clescot/kafka-connect-http/master/kafka-connect-http-core/src/main/resources/schemas/json/versions/3/http-part.json",
   "$schema": "http://json-schema.org/draft/2019-09/schema#",
   "title": "Http Part",
   "type": "object",
