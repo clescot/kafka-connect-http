@@ -24,7 +24,10 @@
       }
     },
     "bodyAsString":  {
-      "type": "string"
+      "type": [
+        "string",
+        "null"
+      ]
     },
     "bodyAsForm":
     {
@@ -33,7 +36,10 @@
       "additionalProperties" : { "type": "string" }
     },
     "bodyAsByteArray":  {
-      "type": "string"
+      "type": [
+        "string",
+        "null"
+      ]
     },
     "bodyAsMultipart": {
       "type": "array",
