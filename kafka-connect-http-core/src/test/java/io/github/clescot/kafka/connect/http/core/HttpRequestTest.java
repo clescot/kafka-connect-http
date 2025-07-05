@@ -926,10 +926,10 @@ class HttpRequestTest {
             //when
             String toString = httpRequest.toString();
             //then
-            assertThat(toString).contains("url=http://www.stuff.com");
+            assertThat(toString).contains("url='http://www.stuff.com'");
             assertThat(toString).contains("method=GET");
             assertThat(toString).contains("bodyType=STRING");
-            assertThat(toString).contains("bodyAsString=" + DUMMY_BODY_AS_STRING);
+            assertThat(toString).contains("bodyAsString='" + DUMMY_BODY_AS_STRING+"'");
         }
 
         @Test
