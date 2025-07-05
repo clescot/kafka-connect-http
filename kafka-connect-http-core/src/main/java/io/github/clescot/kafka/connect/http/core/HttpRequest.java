@@ -70,9 +70,9 @@ public class HttpRequest implements Cloneable, Serializable {
             .field(HEADERS, SchemaBuilder.map(Schema.STRING_SCHEMA, SchemaBuilder.array(Schema.STRING_SCHEMA).schema()).build())
             .field(METHOD, Schema.STRING_SCHEMA)
             .field(BODY_TYPE, Schema.STRING_SCHEMA)
-            .field(BODY_AS_STRING, Schema.OPTIONAL_STRING_SCHEMA)
-            .field(BODY_AS_FORM, SchemaBuilder.map(Schema.STRING_SCHEMA, Schema.STRING_SCHEMA).optional().schema())
             .field(BODY_AS_BYTE_ARRAY, Schema.OPTIONAL_STRING_SCHEMA)
+            .field(BODY_AS_FORM, SchemaBuilder.map(Schema.STRING_SCHEMA, Schema.STRING_SCHEMA).optional().schema())
+            .field(BODY_AS_STRING, Schema.OPTIONAL_STRING_SCHEMA)
             .field(PARTS, SchemaBuilder.map(Schema.STRING_SCHEMA,HttpPart.SCHEMA).optional().schema())
             .schema();
 
@@ -288,6 +288,9 @@ public class HttpRequest implements Cloneable, Serializable {
                 .put(HEADERS, this.getHeaders())
                 .put(METHOD, this.getMethod().name())
                 .put(BODY_TYPE, this.getBodyType().name())
+                .put(BODY_AS_BYTE_ARRAY, this.bodyAsByteArray)
+                .put(BODY_AS_FORM, this.getBodyAsForm())
+                .put(BODY_AS_STRING, this.getBodyAsString())
                 .put(PARTS,
                         this.getParts().entrySet().stream()
                                 .collect(

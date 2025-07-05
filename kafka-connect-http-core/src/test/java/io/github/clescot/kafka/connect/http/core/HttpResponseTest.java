@@ -16,6 +16,7 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import java.nio.charset.StandardCharsets;
+import java.util.Base64;
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -193,7 +194,7 @@ class HttpResponseTest {
             var struct = httpResponse.toStruct();
             assertThat(struct.getInt64(HttpResponse.STATUS_CODE)).isEqualTo(200);
             assertThat(struct.getString(HttpResponse.STATUS_MESSAGE)).isEqualTo("OK");
-            assertThat(struct.getBytes(HttpResponse.BODY_AS_BYTE_ARRAY)).isEqualTo("Hello World".getBytes(StandardCharsets.UTF_8));
+            assertThat(struct.getString(HttpResponse.BODY_AS_BYTE_ARRAY)).isEqualTo(Base64.getEncoder().encodeToString("Hello World".getBytes(StandardCharsets.UTF_8)));
         }
     }
 }
