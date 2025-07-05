@@ -23,11 +23,10 @@ import static io.github.clescot.kafka.connect.http.sink.HttpSinkConfigDefinition
 
 /**
  *
- * @param <T> either a SinkRecord (for a SinkTask) or a SourceRecord (for a SourceTask)
  * @param <R> native HttpRequest
  * @param <S> native HttpResponse
  */
-public class HttpTask<T extends ConnectRecord<T>, R, S> {
+public class HttpTask<R, S> {
 
 
     private static final Logger LOGGER = LoggerFactory.getLogger(HttpTask.class);

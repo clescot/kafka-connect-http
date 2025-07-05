@@ -52,7 +52,7 @@ public class HttpResponse implements Cloneable, Serializable {
     private Map<String, String> bodyAsForm = Maps.newHashMap();
     @JsonProperty
     private String bodyAsString ="";
-    //@JsonProperty
+    @JsonProperty
     //byte array is base64 encoded as as String, as JSON is a text format not binary
     private String bodyAsByteArray = null;
     @JsonProperty(defaultValue = "STRING")

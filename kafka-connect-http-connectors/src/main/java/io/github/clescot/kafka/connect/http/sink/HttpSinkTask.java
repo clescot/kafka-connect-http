@@ -60,7 +60,7 @@ public abstract class HttpSinkTask<R, S> extends SinkTask {
     private final HttpClientFactory<R, S> httpClientFactory;
 
     private ErrantRecordReporter errantRecordReporter;
-    private HttpTask<SinkRecord, R, S> httpTask;
+    private HttpTask<R, S> httpTask;
     private KafkaProducer<String, Object> producer;
     private Queue<KafkaRecord> queue;
     private PublishMode publishMode;
@@ -416,7 +416,7 @@ public abstract class HttpSinkTask<R, S> extends SinkTask {
         return httpTask.getCustomConfigurations();
     }
 
-    public HttpTask<SinkRecord, R, S> getHttpTask() {
+    public HttpTask<R, S> getHttpTask() {
         return httpTask;
     }
 
