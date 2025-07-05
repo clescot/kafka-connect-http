@@ -33,10 +33,7 @@ import java.io.IOException;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
-import java.util.Arrays;
-import java.util.Base64;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 import static io.github.clescot.kafka.connect.http.core.HttpRequest.BODY_AS_BYTE_ARRAY;
 import static io.github.clescot.kafka.connect.http.core.SchemaLoader.*;
@@ -712,6 +709,62 @@ class HttpRequestTest {
 
     @Nested
     class TestEqualsAndHashCode {
+
+        @Test
+        void test_with_null(){
+            //given
+            HttpRequest httpRequest = new HttpRequest(
+                    "http://www.stuff.com",
+                    HttpRequest.Method.GET
+            );
+            httpRequest.setBodyAsString(DUMMY_BODY_AS_STRING);
+            Map<String, List<String>> headers = Maps.newHashMap();
+            headers.put("X-stuff", Lists.newArrayList("m-y-value"));
+            headers.put("X-correlation-id", Lists.newArrayList("44-999-33-dd"));
+            headers.put("X-request-id", Lists.newArrayList("11-999-ff-777"));
+            httpRequest.setHeaders(headers);
+
+            //when
+            assertThat(httpRequest).isNotEqualTo(null);
+        }
+
+        @Test
+        void test_with_other_class(){
+            //given
+            HttpRequest httpRequest = new HttpRequest(
+                    "http://www.stuff.com",
+                    HttpRequest.Method.GET
+            );
+            httpRequest.setBodyAsString(DUMMY_BODY_AS_STRING);
+            Map<String, List<String>> headers = Maps.newHashMap();
+            headers.put("X-stuff", Lists.newArrayList("m-y-value"));
+            headers.put("X-correlation-id", Lists.newArrayList("44-999-33-dd"));
+            headers.put("X-request-id", Lists.newArrayList("11-999-ff-777"));
+            httpRequest.setHeaders(headers);
+
+            //when
+            assertThat(httpRequest).isNotEqualTo(new ArrayList<>());
+        }
+
+
+        @Test
+        void test_same_instance(){
+            //given
+            HttpRequest httpRequest = new HttpRequest(
+                    "http://www.stuff.com",
+                    HttpRequest.Method.GET
+            );
+            httpRequest.setBodyAsString(DUMMY_BODY_AS_STRING);
+            Map<String, List<String>> headers = Maps.newHashMap();
+            headers.put("X-stuff", Lists.newArrayList("m-y-value"));
+            headers.put("X-correlation-id", Lists.newArrayList("44-999-33-dd"));
+            headers.put("X-request-id", Lists.newArrayList("11-999-ff-777"));
+            httpRequest.setHeaders(headers);
+
+            //when
+            assertThat(httpRequest).isEqualTo(httpRequest);
+            assertThat(httpRequest.hashCode()).isEqualTo(httpRequest.hashCode());
+        }
 
         @Test
         void test_equals_and_hashcode_headers_and_body_as_string() {

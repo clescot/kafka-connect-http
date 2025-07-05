@@ -40,7 +40,7 @@ public class HttpResponse implements Cloneable, Serializable {
             .field(BODY_TYPE, Schema.STRING_SCHEMA)
             .field(BODY_AS_STRING,Schema.OPTIONAL_STRING_SCHEMA)
             .field(BODY_AS_FORM, SchemaBuilder.map(Schema.STRING_SCHEMA, Schema.STRING_SCHEMA).optional().schema())
-            .field(BODY_AS_BYTE_ARRAY,Schema.OPTIONAL_STRING_SCHEMA)
+            .field(BODY_AS_BYTE_ARRAY,Schema.OPTIONAL_BYTES_SCHEMA)
             .field(PARTS, SchemaBuilder.array(HttpPart.SCHEMA).optional().schema())
             .schema();
 

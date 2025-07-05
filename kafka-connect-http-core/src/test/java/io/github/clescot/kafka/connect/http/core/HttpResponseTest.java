@@ -136,4 +136,64 @@ class HttpResponseTest {
             assertThat(cloned.getBodyAsForm()).isEqualTo(httpResponse.getBodyAsForm());
         }
     }
+
+    @Nested
+    class TestEqualsAndHashCode {
+        @Test
+        public void test_equals_and_hashcode() {
+            HttpResponse response1 = new HttpResponse(200, "OK");
+            response1.setBodyAsString("Hello World");
+
+            HttpResponse response2 = new HttpResponse(200, "OK");
+            response2.setBodyAsString("Hello World");
+
+            assertThat(response1).isEqualTo(response2);
+            assertThat(response1.hashCode()).isEqualTo(response2.hashCode());
+        }
+
+        @Test
+        public void test_not_equals_different_body_as_string() {
+            HttpResponse response1 = new HttpResponse(200, "OK");
+            response1.setBodyAsString("Hello World");
+
+            HttpResponse response2 = new HttpResponse(200, "OK");
+            response2.setBodyAsString("Hello World2");
+
+            assertThat(response1).isNotEqualTo(response2);
+            assertThat(response1.hashCode()).isNotEqualTo(response2.hashCode());
+        }
+
+        @Test
+        public void test_not_equals_different_status_code() {
+            HttpResponse response1 = new HttpResponse(200, "OK");
+            HttpResponse response2 = new HttpResponse(404, "Not Found");
+
+            assertThat(response1).isNotEqualTo(response2);
+        }
+    }
+
+    @Nested
+    class TestToStruct{
+        @Test
+        public void test_toStruct_with_body_as_string() {
+            HttpResponse httpResponse = new HttpResponse(200, "OK");
+            httpResponse.setBodyAsString("Hello World");
+
+            var struct = httpResponse.toStruct();
+            assertThat(struct.getInt64(HttpResponse.STATUS_CODE)).isEqualTo(200);
+            assertThat(struct.getString(HttpResponse.STATUS_MESSAGE)).isEqualTo("OK");
+            assertThat(struct.getString(HttpResponse.BODY_AS_STRING)).isEqualTo("Hello World");
+        }
+
+        @Test
+        public void test_toStruct_with_body_as_byte_array() {
+            HttpResponse httpResponse = new HttpResponse(200, "OK");
+            httpResponse.setBodyAsByteArray("Hello World".getBytes(StandardCharsets.UTF_8));
+
+            var struct = httpResponse.toStruct();
+            assertThat(struct.getInt64(HttpResponse.STATUS_CODE)).isEqualTo(200);
+            assertThat(struct.getString(HttpResponse.STATUS_MESSAGE)).isEqualTo("OK");
+            assertThat(struct.getBytes(HttpResponse.BODY_AS_BYTE_ARRAY)).isEqualTo("Hello World".getBytes(StandardCharsets.UTF_8));
+        }
+    }
 }
