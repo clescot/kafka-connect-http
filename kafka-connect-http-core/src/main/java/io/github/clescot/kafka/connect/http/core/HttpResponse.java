@@ -57,10 +57,11 @@ public class HttpResponse implements Cloneable, Serializable {
     private String bodyAsByteArray = null;
     @JsonProperty(defaultValue = "STRING")
     private HttpResponse.BodyType bodyType = HttpResponse.BodyType.STRING;
+    @JsonProperty
     private String protocol="";
     @JsonProperty
     private Map<String,HttpPart> parts = Maps.newHashMap();
-
+    @JsonProperty
     private Map<String, List<String>> headers = Maps.newHashMap();
 
     /**
