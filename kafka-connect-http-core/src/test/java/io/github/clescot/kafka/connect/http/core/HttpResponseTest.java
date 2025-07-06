@@ -99,6 +99,9 @@ class HttpResponseTest {
 
             byte[] bytes = serializer.serialize(RESPONSE_TOPIC, httpResponse);
             assertThat(bytes).isNotEmpty();
+            HttpResponse deserializedResponse = deserializer.deserialize(RESPONSE_TOPIC, bytes);
+            assertThat(deserializedResponse).isNotNull();
+            assertThat(deserializedResponse).isEqualTo(httpResponse);
         }
     }
 
