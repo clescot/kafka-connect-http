@@ -2,7 +2,9 @@ package io.github.clescot.kafka.connect.http.core;
 
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
+import io.confluent.kafka.schemaregistry.ParsedSchema;
 import io.confluent.kafka.schemaregistry.client.MockSchemaRegistryClient;
+import io.confluent.kafka.schemaregistry.client.rest.exceptions.RestClientException;
 import io.confluent.kafka.schemaregistry.json.JsonSchemaProvider;
 import io.confluent.kafka.schemaregistry.json.SpecificationVersion;
 import io.confluent.kafka.serializers.json.KafkaJsonSchemaDeserializer;
@@ -15,19 +17,24 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
+import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 import java.util.Map;
 
+import static io.github.clescot.kafka.connect.http.core.SchemaLoader.*;
+import static io.github.clescot.kafka.connect.http.core.SchemaLoader.loadHttpExchangeSchema;
 import static org.assertj.core.api.Assertions.assertThat;
 
 class HttpResponseTest {
 
     private KafkaJsonSchemaSerializer<HttpResponse> serializer;
     private KafkaJsonSchemaDeserializer<HttpResponse> deserializer;
-
+    private static final String RESPONSE_TOPIC = "dummy_response";
+    private static final String REQUEST_TOPIC = "dummy_request";
+    private static final String EXCHANGE_TOPIC = "dummy_exchange";
     @BeforeEach
-    public void setup(){
+    public void setup() throws RestClientException, IOException {
         SpecificationVersion jsonSchemaSpecification = SpecificationVersion.DRAFT_2019_09;
         Map<String,String> jsonSchemaSerializerConfig = Maps.newHashMap();
         jsonSchemaSerializerConfig.put(KafkaJsonSchemaSerializerConfig.SCHEMA_REGISTRY_URL_CONFIG,"mock://stuff.com");
@@ -38,6 +45,18 @@ class HttpResponseTest {
         jsonSchemaSerializerConfig.put(KafkaJsonSchemaSerializerConfig.FAIL_UNKNOWN_PROPERTIES,""+true);
 
         MockSchemaRegistryClient schemaRegistryClient = new MockSchemaRegistryClient(Lists.newArrayList(new JsonSchemaProvider()));
+        //Register http part
+        ParsedSchema parsedPartSchema = loadHttpPartSchema();
+        schemaRegistryClient.register("httpPart"+"-value", parsedPartSchema);
+        //register http request
+        ParsedSchema parsedHttpRequestSchema = loadHttpRequestSchema();
+        schemaRegistryClient.register(REQUEST_TOPIC+"-value", parsedHttpRequestSchema);
+        //register http response
+        ParsedSchema parsedHttpResponseSchema = loadHttpResponseSchema();
+        schemaRegistryClient.register(RESPONSE_TOPIC+"-value", parsedHttpResponseSchema);
+        //register http exchange
+        ParsedSchema parsedHttpExchangeSchema = loadHttpExchangeSchema();
+        schemaRegistryClient.register(EXCHANGE_TOPIC+"-value", parsedHttpExchangeSchema);
 
         serializer = new KafkaJsonSchemaSerializer<>(schemaRegistryClient,jsonSchemaSerializerConfig);
         Map<String,String> jsonSchemaDeserializerConfig = Maps.newHashMap();
@@ -63,10 +82,9 @@ class HttpResponseTest {
             httpResponse.setStatusCode(200);
             httpResponse.setStatusMessage("OK");
             //required fields are missing
-            String topic = "dummy_topic";
-            byte[] bytes = serializer.serialize(topic, httpResponse);
+            byte[] bytes = serializer.serialize(RESPONSE_TOPIC, httpResponse);
             assertThat(bytes).isNotEmpty();
-            deserializer.deserialize(topic, bytes);
+            deserializer.deserialize(RESPONSE_TOPIC, bytes);
         }
 
         @Test
@@ -76,7 +94,8 @@ class HttpResponseTest {
             httpResponse.setStatusMessage("OK");
             httpResponse.setBodyAsString("Hello World");
             //required fields are missing
-            byte[] bytes = serializer.serialize("dummy_topic", httpResponse);
+
+            byte[] bytes = serializer.serialize(RESPONSE_TOPIC, httpResponse);
             assertThat(bytes).isNotEmpty();
         }
     }
