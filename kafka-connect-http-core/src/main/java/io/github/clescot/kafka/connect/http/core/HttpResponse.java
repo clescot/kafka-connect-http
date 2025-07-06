@@ -14,6 +14,7 @@ import java.util.Base64;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+
 public class HttpResponse implements Cloneable, Serializable {
     private static final long serialVersionUID = 1L;
     public static final Integer VERSION = 2;
@@ -33,14 +34,14 @@ public class HttpResponse implements Cloneable, Serializable {
             .struct()
             .name(HttpResponse.class.getName())
             .version(VERSION)
-            .field(STATUS_CODE,Schema.INT64_SCHEMA)
-            .field(STATUS_MESSAGE,Schema.STRING_SCHEMA)
-            .field(PROTOCOL,Schema.OPTIONAL_STRING_SCHEMA)
+            .field(STATUS_CODE, Schema.INT64_SCHEMA)
+            .field(STATUS_MESSAGE, Schema.STRING_SCHEMA)
+            .field(PROTOCOL, Schema.OPTIONAL_STRING_SCHEMA)
             .field(HEADERS, SchemaBuilder.map(Schema.STRING_SCHEMA, SchemaBuilder.array(Schema.STRING_SCHEMA)).build())
             .field(BODY_TYPE, Schema.STRING_SCHEMA)
-            .field(BODY_AS_BYTE_ARRAY,Schema.OPTIONAL_STRING_SCHEMA)
+            .field(BODY_AS_BYTE_ARRAY, Schema.OPTIONAL_STRING_SCHEMA)
             .field(BODY_AS_FORM, SchemaBuilder.map(Schema.STRING_SCHEMA, Schema.STRING_SCHEMA).optional().schema())
-            .field(BODY_AS_STRING,Schema.OPTIONAL_STRING_SCHEMA)
+            .field(BODY_AS_STRING, Schema.OPTIONAL_STRING_SCHEMA)
             .field(PARTS, SchemaBuilder.array(HttpPart.SCHEMA).optional().schema())
             .schema();
 
@@ -51,16 +52,16 @@ public class HttpResponse implements Cloneable, Serializable {
     @JsonProperty
     private Map<String, String> bodyAsForm = Maps.newHashMap();
     @JsonProperty
-    private String bodyAsString ="";
+    private String bodyAsString = "";
     @JsonProperty
     //byte array is base64 encoded as as String, as JSON is a text format not binary
-    private String bodyAsByteArray ="";
+    private String bodyAsByteArray = "";
     @JsonProperty(defaultValue = "STRING")
     private HttpResponse.BodyType bodyType = HttpResponse.BodyType.STRING;
     @JsonProperty
-    private String protocol="";
+    private String protocol = "";
     @JsonProperty
-    private Map<String,HttpPart> parts = Maps.newHashMap();
+    private Map<String, HttpPart> parts = Maps.newHashMap();
     @JsonProperty
     private Map<String, List<String>> headers = Maps.newHashMap();
 
@@ -71,7 +72,7 @@ public class HttpResponse implements Cloneable, Serializable {
     }
 
     public HttpResponse(Integer statusCode, String statusMessage) {
-        Preconditions.checkArgument(statusCode>0,"status code must be a positive integer");
+        Preconditions.checkArgument(statusCode > 0, "status code must be a positive integer");
         this.statusCode = statusCode;
         this.statusMessage = statusMessage;
     }
@@ -93,7 +94,7 @@ public class HttpResponse implements Cloneable, Serializable {
     }
 
 
-    public Map<String,HttpPart> getParts() {
+    public Map<String, HttpPart> getParts() {
         return parts;
     }
 
@@ -114,7 +115,7 @@ public class HttpResponse implements Cloneable, Serializable {
     public void setBodyAsForm(Map<String, String> form) {
         this.bodyAsForm = form;
         bodyType = HttpResponse.BodyType.FORM;
-        if (form!=null && !form.isEmpty() && headers != null && doesNotContainHeader(CONTENT_TYPE)) {
+        if (form != null && !form.isEmpty() && headers != null && doesNotContainHeader(CONTENT_TYPE)) {
             headers.put(CONTENT_TYPE, Lists.newArrayList("application/x-www-form-urlencoded"));
         }
     }
@@ -169,19 +170,21 @@ public class HttpResponse implements Cloneable, Serializable {
         if (o == null || getClass() != o.getClass()) return false;
         HttpResponse that = (HttpResponse) o;
         return
-                statusCode.equals(that.statusCode) &&
-                statusMessage.equals(that.statusMessage) &&
-                protocol.equals(that.protocol)&&
-                bodyType == that.bodyType &&
-                bodyAsString.equals(that.bodyAsString) &&
-                Objects.equals(headers, that.headers) &&
-                Objects.equals(bodyAsByteArray, that.bodyAsByteArray)
-                ;
+            statusCode.equals(that.statusCode) &&
+            statusMessage.equals(that.statusMessage) &&
+            protocol.equals(that.protocol) &&
+            bodyType == that.bodyType &&
+            Objects.equals(headers, that.headers) &&
+            bodyAsString.equals(that.bodyAsString) &&
+            Objects.equals(bodyAsByteArray, that.bodyAsByteArray) &&
+            Objects.equals(bodyAsForm, that.bodyAsForm) &&
+            Objects.deepEquals(parts, that.parts)
+            ;
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(statusCode, statusMessage, protocol, bodyType, bodyAsString, headers,bodyAsByteArray);
+        return Objects.hash(statusCode, statusMessage, protocol, bodyType, bodyAsString, headers, bodyAsByteArray);
     }
 
     @Override
@@ -199,13 +202,13 @@ public class HttpResponse implements Cloneable, Serializable {
 
     public Struct toStruct() {
         return new Struct(SCHEMA)
-                .put(STATUS_CODE,this.getStatusCode().longValue())
-                .put(STATUS_MESSAGE,this.getStatusMessage())
-                .put(PROTOCOL,this.getProtocol())
-                .put(HEADERS,this.getHeaders())
-                .put(BODY_TYPE,this.getBodyType().toString())
-                .put(BODY_AS_BYTE_ARRAY,this.bodyAsByteArray)
-                .put(BODY_AS_STRING,this.getBodyAsString())
+                .put(STATUS_CODE, this.getStatusCode().longValue())
+                .put(STATUS_MESSAGE, this.getStatusMessage())
+                .put(PROTOCOL, this.getProtocol())
+                .put(HEADERS, this.getHeaders())
+                .put(BODY_TYPE, this.getBodyType().toString())
+                .put(BODY_AS_BYTE_ARRAY, this.bodyAsByteArray)
+                .put(BODY_AS_STRING, this.getBodyAsString())
                 ;
     }
 

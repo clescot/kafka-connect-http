@@ -256,16 +256,17 @@ public class HttpRequest implements Cloneable, Serializable {
         return url.equals(that.url)
                 && Objects.equals(headers, that.headers)
                 && method.equals(that.method)
-                && Objects.equals(parts, that.parts)
+                && bodyType == that.bodyType
                 && Objects.equals(bodyAsByteArray, that.bodyAsByteArray)
                 && Objects.equals(bodyAsForm, that.bodyAsForm)
                 && Objects.equals(bodyAsString, that.bodyAsString)
+                && Objects.deepEquals(parts, that.parts)
                 ;
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(url, headers, method, parts, bodyAsByteArray, bodyAsForm, bodyAsString);
+        return Objects.hash(url, headers, method, parts, bodyAsByteArray, bodyAsForm, bodyAsString,bodyType);
     }
 
     @Override
