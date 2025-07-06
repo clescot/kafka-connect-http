@@ -96,6 +96,7 @@ public interface HttpClient<Q, S> {
         try {
             Optional<RateLimiter<HttpExchange>> limiter = getRateLimiter();
             if (limiter.isPresent()) {
+                //TODO add a bandwidth rate Limiter per bandwidth (https://github.com/clescot/kafka-connect-http/issues/631)
                 limiter.get().acquirePermits(HttpClient.ONE_HTTP_REQUEST);
                 LOGGER.trace("permits acquired request:'{}'", request);
             }else{
