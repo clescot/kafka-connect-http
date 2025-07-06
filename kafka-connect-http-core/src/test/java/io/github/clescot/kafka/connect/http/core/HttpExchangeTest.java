@@ -26,6 +26,7 @@ import org.junit.jupiter.api.Test;
 import java.io.IOException;
 import java.time.OffsetDateTime;
 import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -268,6 +269,28 @@ public class HttpExchangeTest {
             assertThat(clone).isEqualTo(httpExchange);
             assertThat(clone.getHttpRequest()).isEqualTo(httpExchange.getHttpRequest());
             assertThat(clone.getHttpResponse()).isEqualTo(httpExchange.getHttpResponse());
+        }
+    }
+
+    @Nested
+    class TestToStruct{
+        @Test
+        void test_to_struct() {
+            OffsetDateTime moment = OffsetDateTime.now(ZoneId.of("UTC"));
+            AtomicInteger attempts = new AtomicInteger(2);
+            HttpExchange httpExchange = new HttpExchange(
+                    getDummyHttpRequest(),
+                    getDummyHttpResponse(200),
+                    100,
+                    moment,
+                    attempts,
+                    SUCCESS);
+            assertThat(httpExchange.toStruct()).isNotNull();
+            assertThat(httpExchange.toStruct().get("httpRequest")).isNotNull();
+            assertThat(httpExchange.toStruct().get("httpResponse")).isNotNull();
+            assertThat(httpExchange.toStruct().get("durationInMillis")).isEqualTo(100L);
+            assertThat(httpExchange.toStruct().get("moment")).isEqualTo(moment.format(DateTimeFormatter.ISO_ZONED_DATE_TIME));
+            assertThat(httpExchange.toStruct().get("attempts")).isEqualTo(attempts.get());
         }
     }
 }
