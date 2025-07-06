@@ -1,4 +1,5 @@
-package io.github.clescot.kafka.connect.http.sink.model;
+package io.github.clescot.kafka.connect.http.core;
+
 
 
 import com.google.common.collect.Lists;
@@ -10,6 +11,8 @@ import io.confluent.kafka.schemaregistry.json.JsonSchema;
 import io.confluent.kafka.schemaregistry.json.JsonSchemaProvider;
 import io.confluent.kafka.schemaregistry.json.JsonSchemaUtils;
 import io.confluent.kafka.schemaregistry.json.SpecificationVersion;
+import io.confluent.kafka.serializers.json.KafkaJsonSchemaDeserializer;
+import io.confluent.kafka.serializers.json.KafkaJsonSchemaDeserializerConfig;
 import io.confluent.kafka.serializers.json.KafkaJsonSchemaSerializer;
 import io.confluent.kafka.serializers.json.KafkaJsonSchemaSerializerConfig;
 import io.github.clescot.kafka.connect.http.core.HttpExchange;
@@ -21,18 +24,19 @@ import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.time.OffsetDateTime;
+import java.time.ZoneId;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static io.github.clescot.kafka.connect.http.client.ahc.AHCHttpClient.SUCCESS;
 import static org.assertj.core.api.AssertionsForInterfaceTypes.assertThat;
 
 
 public class HttpExchangeTest {
-
+    public static final boolean SUCCESS = true;
     public static final String DUMMY_TOPIC = "dummy_topic";
     MockSchemaRegistryClient schemaRegistryClient;
-    private KafkaJsonSchemaSerializer serializer;
+    private KafkaJsonSchemaSerializer<HttpExchange> serializer;
+    private KafkaJsonSchemaDeserializer<HttpExchange> deserializer;
 
     private HttpRequest getDummyHttpRequest() {
         HttpRequest httpRequest = new HttpRequest(
@@ -67,8 +71,17 @@ public class HttpExchangeTest {
         schemaRegistryClient.register("httpRequest", parsedSchemaRequest);
         ParsedSchema parsedSchemaResponse = SchemaLoader.loadHttpResponseSchema();
         schemaRegistryClient.register("httpResponse", parsedSchemaResponse);
+        ParsedSchema parsedSchemaExchange = SchemaLoader.loadHttpExchangeSchema();
+        schemaRegistryClient.register("httpExchange", parsedSchemaExchange);
 
         serializer = new KafkaJsonSchemaSerializer<>(schemaRegistryClient, jsonSchemaSerializerConfig);
+
+        Map<String,String> jsonSchemaDeserializerConfig = Maps.newHashMap();
+        jsonSchemaDeserializerConfig.put(KafkaJsonSchemaDeserializerConfig.SCHEMA_REGISTRY_URL_CONFIG,"mock://stuff.com");
+        jsonSchemaDeserializerConfig.put(KafkaJsonSchemaDeserializerConfig.JSON_VALUE_TYPE,HttpExchange.class.getName());
+        jsonSchemaDeserializerConfig.put(KafkaJsonSchemaDeserializerConfig.FAIL_INVALID_SCHEMA,"true");
+        jsonSchemaDeserializerConfig.put(KafkaJsonSchemaDeserializerConfig.FAIL_UNKNOWN_PROPERTIES,""+true);
+        deserializer = new KafkaJsonSchemaDeserializer<>(schemaRegistryClient,jsonSchemaDeserializerConfig, HttpExchange.class);
 
     }
 
@@ -135,13 +148,13 @@ public class HttpExchangeTest {
     }
 
     @Test
-    void test_serialize_http_exchange() throws RestClientException, IOException {
+    void test_serialize_http_exchange() {
         int statusCode = 200;
         HttpExchange httpExchange = new HttpExchange(
                 getDummyHttpRequest(),
                 getDummyHttpResponse(statusCode),
                 745L,
-                OffsetDateTime.now(),
+                OffsetDateTime.now(ZoneId.of("UTC")),
                 new AtomicInteger(2),
                 SUCCESS
         );
@@ -149,7 +162,11 @@ public class HttpExchangeTest {
 
         byte[] bytes = serializer.serialize(DUMMY_TOPIC, httpExchange);
         assertThat(bytes).isNotEmpty();
-
+        HttpExchange deserializedHttpExchange = deserializer.deserialize(DUMMY_TOPIC, bytes);
+        assertThat(deserializedHttpExchange.getHttpRequest()).isEqualTo(httpExchange.getHttpRequest());
+        assertThat(deserializedHttpExchange.getHttpResponse()).isEqualTo(httpExchange.getHttpResponse());
+        assertThat(deserializedHttpExchange).isEqualTo(httpExchange);
     }
 }
+
 
