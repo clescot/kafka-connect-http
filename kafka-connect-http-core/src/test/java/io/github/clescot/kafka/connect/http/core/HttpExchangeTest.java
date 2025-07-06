@@ -20,6 +20,7 @@ import io.github.clescot.kafka.connect.http.core.HttpRequest;
 import io.github.clescot.kafka.connect.http.core.HttpResponse;
 import io.github.clescot.kafka.connect.http.core.SchemaLoader;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
@@ -85,87 +86,189 @@ public class HttpExchangeTest {
 
     }
 
-    @Test
-    void test_nominal_case() {
-        OffsetDateTime now = OffsetDateTime.now();
-        HttpExchange httpExchange = new HttpExchange(
-                getDummyHttpRequest(),
-                getDummyHttpResponse(200),
-                100,
-                now,
-                new AtomicInteger(2),
-                SUCCESS);
-        HttpExchange httpExchange1 = new HttpExchange(
-                getDummyHttpRequest(),
-                getDummyHttpResponse(200),
-                100,
-                now,
-                new AtomicInteger(2),
-                SUCCESS);
-        assertThat(httpExchange1).isEqualTo(httpExchange);
+    @Nested
+    class TestEqualsAndHashcode {
+        @Test
+        void test_null() {
+            HttpExchange httpExchange = new HttpExchange(
+                    getDummyHttpRequest(),
+                    getDummyHttpResponse(200),
+                    100,
+                    OffsetDateTime.now(),
+                    new AtomicInteger(2),
+                    SUCCESS);
+            assertThat(httpExchange).isNotEqualTo(null);
+        }
+
+        @Test
+        void test_different_class() {
+            HttpExchange httpExchange = new HttpExchange(
+                    getDummyHttpRequest(),
+                    getDummyHttpResponse(200),
+                    100,
+                    OffsetDateTime.now(),
+                    new AtomicInteger(2),
+                    SUCCESS);
+            assertThat(httpExchange).isNotEqualTo(new Object());
+        }
+
+        @Test
+        void test_different_http_request() {
+            HttpExchange httpExchange = new HttpExchange(
+                    getDummyHttpRequest(),
+                    getDummyHttpResponse(200),
+                    100,
+                    OffsetDateTime.now(),
+                    new AtomicInteger(2),
+                    SUCCESS);
+            HttpExchange httpExchange1 = new HttpExchange(
+                    new HttpRequest("http://www.example.com", HttpRequest.Method.GET),
+                    getDummyHttpResponse(200),
+                    100,
+                    OffsetDateTime.now(),
+                    new AtomicInteger(2),
+                    SUCCESS);
+            assertThat(httpExchange1).isNotEqualTo(httpExchange);
+        }
+
+        @Test
+        void test_different_http_response() {
+            HttpExchange httpExchange = new HttpExchange(
+                    getDummyHttpRequest(),
+                    getDummyHttpResponse(200),
+                    100,
+                    OffsetDateTime.now(),
+                    new AtomicInteger(2),
+                    SUCCESS);
+            HttpExchange httpExchange1 = new HttpExchange(
+                    getDummyHttpRequest(),
+                    getDummyHttpResponse(404),
+                    100,
+                    OffsetDateTime.now(),
+                    new AtomicInteger(2),
+                    SUCCESS);
+            assertThat(httpExchange1).isNotEqualTo(httpExchange);
+        }
+
+        @Test
+        void test_different_duration_in_millis() {
+            HttpExchange httpExchange = new HttpExchange(
+                    getDummyHttpRequest(),
+                    getDummyHttpResponse(200),
+                    100,
+                    OffsetDateTime.now(),
+                    new AtomicInteger(2),
+                    SUCCESS);
+            HttpExchange httpExchange1 = new HttpExchange(
+                    getDummyHttpRequest(),
+                    getDummyHttpResponse(200),
+                    200,
+                    OffsetDateTime.now(),
+                    new AtomicInteger(2),
+                    SUCCESS);
+            assertThat(httpExchange1).isNotEqualTo(httpExchange);
+        }
+
+        @Test
+        void test_nominal_case() {
+            OffsetDateTime now = OffsetDateTime.now();
+            HttpExchange httpExchange = new HttpExchange(
+                    getDummyHttpRequest(),
+                    getDummyHttpResponse(200),
+                    100,
+                    now,
+                    new AtomicInteger(2),
+                    SUCCESS);
+            HttpExchange httpExchange1 = new HttpExchange(
+                    getDummyHttpRequest(),
+                    getDummyHttpResponse(200),
+                    100,
+                    now,
+                    new AtomicInteger(2),
+                    SUCCESS);
+            assertThat(httpExchange1).isEqualTo(httpExchange);
+        }
+
+        @Test
+        void test_nominal_case_detail() {
+            int statusCode = 404;
+            String responseBody = "nfgnlksdfnlnskdfnlsf";
+            HttpExchange httpExchange = new HttpExchange(
+                    getDummyHttpRequest(),
+                    getDummyHttpResponse(statusCode),
+                    745L,
+                    OffsetDateTime.now(),
+                    new AtomicInteger(2),
+                    SUCCESS
+            );
+            assertThat(httpExchange.getHttpResponse().getBodyAsString()).isEqualTo(responseBody);
+            assertThat(httpExchange.getHttpResponse().getStatusCode()).isEqualTo(statusCode);
+        }
+
+        @Test
+        void generate_json_schema() throws IOException {
+            int statusCode = 200;
+            HttpExchange httpExchange = new HttpExchange(
+                    getDummyHttpRequest(),
+                    getDummyHttpResponse(statusCode),
+                    745L,
+                    OffsetDateTime.now(),
+                    new AtomicInteger(2),
+                    SUCCESS
+            );
+
+            //get JSON schema
+            SpecificationVersion jsonSchemaSpecification = SpecificationVersion.DRAFT_2019_09;
+            boolean useOneOfForNullables = false;
+            boolean failUnknownProperties = true;
+            JsonSchema expectedJsonSchema = JsonSchemaUtils.getSchema(
+                    httpExchange,
+                    jsonSchemaSpecification,
+                    useOneOfForNullables,
+                    failUnknownProperties,
+                    schemaRegistryClient
+            );
+            assertThat(expectedJsonSchema).isNotNull();
+        }
+
+        @Test
+        void test_serialize_http_exchange() {
+            int statusCode = 200;
+            HttpExchange httpExchange = new HttpExchange(
+                    getDummyHttpRequest(),
+                    getDummyHttpResponse(statusCode),
+                    745L,
+                    OffsetDateTime.now(ZoneId.of("UTC")),
+                    new AtomicInteger(2),
+                    SUCCESS
+            );
+
+
+            byte[] bytes = serializer.serialize(DUMMY_TOPIC, httpExchange);
+            assertThat(bytes).isNotEmpty();
+            HttpExchange deserializedHttpExchange = deserializer.deserialize(DUMMY_TOPIC, bytes);
+            assertThat(deserializedHttpExchange.getHttpRequest()).isEqualTo(httpExchange.getHttpRequest());
+            assertThat(deserializedHttpExchange.getHttpResponse()).isEqualTo(httpExchange.getHttpResponse());
+            assertThat(deserializedHttpExchange).isEqualTo(httpExchange);
+        }
     }
 
-    @Test
-    void test_nominal_case_detail() {
-        int statusCode = 404;
-        String responseBody = "nfgnlksdfnlnskdfnlsf";
-        HttpExchange httpExchange = new HttpExchange(
-                getDummyHttpRequest(),
-                getDummyHttpResponse(statusCode),
-                745L,
-                OffsetDateTime.now(),
-                new AtomicInteger(2),
-                SUCCESS
-        );
-        assertThat(httpExchange.getHttpResponse().getBodyAsString()).isEqualTo(responseBody);
-        assertThat(httpExchange.getHttpResponse().getStatusCode()).isEqualTo(statusCode);
-    }
-
-    @Test
-    void generate_json_schema() throws IOException {
-        int statusCode = 200;
-        HttpExchange httpExchange = new HttpExchange(
-                getDummyHttpRequest(),
-                getDummyHttpResponse(statusCode),
-                745L,
-                OffsetDateTime.now(),
-                new AtomicInteger(2),
-                SUCCESS
-        );
-
-        //get JSON schema
-        SpecificationVersion jsonSchemaSpecification = SpecificationVersion.DRAFT_2019_09;
-        boolean useOneOfForNullables = false;
-        boolean failUnknownProperties = true;
-        JsonSchema expectedJsonSchema = JsonSchemaUtils.getSchema(
-                httpExchange,
-                jsonSchemaSpecification,
-                useOneOfForNullables,
-                failUnknownProperties,
-                schemaRegistryClient
-        );
-        assertThat(expectedJsonSchema).isNotNull();
-    }
-
-    @Test
-    void test_serialize_http_exchange() {
-        int statusCode = 200;
-        HttpExchange httpExchange = new HttpExchange(
-                getDummyHttpRequest(),
-                getDummyHttpResponse(statusCode),
-                745L,
-                OffsetDateTime.now(ZoneId.of("UTC")),
-                new AtomicInteger(2),
-                SUCCESS
-        );
-
-
-        byte[] bytes = serializer.serialize(DUMMY_TOPIC, httpExchange);
-        assertThat(bytes).isNotEmpty();
-        HttpExchange deserializedHttpExchange = deserializer.deserialize(DUMMY_TOPIC, bytes);
-        assertThat(deserializedHttpExchange.getHttpRequest()).isEqualTo(httpExchange.getHttpRequest());
-        assertThat(deserializedHttpExchange.getHttpResponse()).isEqualTo(httpExchange.getHttpResponse());
-        assertThat(deserializedHttpExchange).isEqualTo(httpExchange);
+    @Nested
+    class TestClone{
+        @Test
+        void test_clone() {
+            HttpExchange httpExchange = new HttpExchange(
+                    getDummyHttpRequest(),
+                    getDummyHttpResponse(200),
+                    100,
+                    OffsetDateTime.now(),
+                    new AtomicInteger(2),
+                    SUCCESS);
+            HttpExchange clone = httpExchange.clone();
+            assertThat(clone).isEqualTo(httpExchange);
+            assertThat(clone.getHttpRequest()).isEqualTo(httpExchange.getHttpRequest());
+            assertThat(clone.getHttpResponse()).isEqualTo(httpExchange.getHttpResponse());
+        }
     }
 }
 

@@ -11,7 +11,7 @@ import java.util.Objects;
 import java.util.concurrent.atomic.AtomicInteger;
 
 
-public class HttpExchange implements Serializable {
+public class HttpExchange implements Cloneable, Serializable {
 
     public static final long serialVersionUID = 1L;
     public static final int VERSION = 2;
@@ -136,6 +136,22 @@ public class HttpExchange implements Serializable {
         struct.put(HTTP_RESPONSE, httpResponse.toStruct());
         return struct;
 
+    }
+
+    @Override
+    public HttpExchange clone() {
+        try {
+            HttpExchange clone = (HttpExchange) super.clone();
+            clone.setDurationInMillis(this.durationInMillis);
+            clone.setMoment(this.moment);
+            clone.setAttempts(new AtomicInteger(this.attempts.get()));
+            clone.setHttpResponse(this.httpResponse.clone());
+            clone.setHttpRequest(this.httpRequest.clone());
+            clone.setSuccess(this.success);
+            return clone;
+        } catch (CloneNotSupportedException e) {
+            throw new AssertionError();
+        }
     }
 
 
