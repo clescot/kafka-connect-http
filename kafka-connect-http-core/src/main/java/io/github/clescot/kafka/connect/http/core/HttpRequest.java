@@ -52,10 +52,10 @@ public class HttpRequest implements Cloneable, Serializable {
     @JsonProperty
     private Map<String, String> bodyAsForm = Maps.newHashMap();
     @JsonProperty
-    private String bodyAsString = null;
+    private String bodyAsString = "";
     @JsonProperty
     //byte array is base64 encoded as as String, as JSON is a text format not binary
-    private String bodyAsByteArray = null;
+    private String bodyAsByteArray = "";
 
     @JsonProperty
     private Map<String,HttpPart> parts = Maps.newHashMap();

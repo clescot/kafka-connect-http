@@ -18,6 +18,7 @@ import io.confluent.kafka.serializers.json.KafkaJsonSchemaDeserializer;
 import io.confluent.kafka.serializers.json.KafkaJsonSchemaDeserializerConfig;
 import io.confluent.kafka.serializers.json.KafkaJsonSchemaSerializer;
 import io.confluent.kafka.serializers.json.KafkaJsonSchemaSerializerConfig;
+import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.data.SchemaAndValue;
 import org.apache.kafka.connect.data.Struct;
@@ -46,24 +47,45 @@ class HttpRequestTest {
     private static final String DUMMY_TOPIC = "myTopic";
 
     private SchemaRegistryClient schemaRegistryClient;
+    private KafkaJsonSchemaSerializer<HttpRequest> serializer;
+    private KafkaJsonSchemaDeserializer<HttpRequest> deserializer;
+    private static final String RESPONSE_TOPIC = "dummy_response";
+    private static final String REQUEST_TOPIC = "dummy_request";
+    private static final String EXCHANGE_TOPIC = "dummy_exchange";
 
     @BeforeEach
-    void setup() throws RestClientException, IOException {
-        schemaRegistryClient = new MockSchemaRegistryClient(Lists.newArrayList(new JsonSchemaProvider()));
+    public void setup() throws RestClientException, IOException {
+        SpecificationVersion jsonSchemaSpecification = SpecificationVersion.DRAFT_2019_09;
+        Map<String,String> jsonSchemaSerializerConfig = Maps.newHashMap();
+        jsonSchemaSerializerConfig.put(KafkaJsonSchemaSerializerConfig.SCHEMA_REGISTRY_URL_CONFIG,"mock://stuff.com");
+        jsonSchemaSerializerConfig.put(KafkaJsonSchemaSerializerConfig.SCHEMA_SPEC_VERSION,jsonSchemaSpecification.toString());
+        jsonSchemaSerializerConfig.put(KafkaJsonSchemaSerializerConfig.WRITE_DATES_AS_ISO8601,"true");
+        jsonSchemaSerializerConfig.put(KafkaJsonSchemaSerializerConfig.ONEOF_FOR_NULLABLES,""+false);
+        jsonSchemaSerializerConfig.put(KafkaJsonSchemaSerializerConfig.FAIL_INVALID_SCHEMA,""+true);
+        jsonSchemaSerializerConfig.put(KafkaJsonSchemaSerializerConfig.FAIL_UNKNOWN_PROPERTIES,""+true);
+
+        MockSchemaRegistryClient schemaRegistryClient = new MockSchemaRegistryClient(Lists.newArrayList(new JsonSchemaProvider()));
         //Register http part
         ParsedSchema parsedPartSchema = loadHttpPartSchema();
-        schemaRegistryClient.register("httpPart", parsedPartSchema);
+        schemaRegistryClient.register("httpPart"+"-value", parsedPartSchema);
         //register http request
         ParsedSchema parsedHttpRequestSchema = loadHttpRequestSchema();
-        schemaRegistryClient.register("httpRequest", parsedHttpRequestSchema);
+        schemaRegistryClient.register(REQUEST_TOPIC+"-value", parsedHttpRequestSchema);
         //register http response
         ParsedSchema parsedHttpResponseSchema = loadHttpResponseSchema();
-        schemaRegistryClient.register("httpResponse", parsedHttpResponseSchema);
+        schemaRegistryClient.register(RESPONSE_TOPIC+"-value", parsedHttpResponseSchema);
         //register http exchange
         ParsedSchema parsedHttpExchangeSchema = loadHttpExchangeSchema();
-        schemaRegistryClient.register("httpExchange", parsedHttpExchangeSchema);
-    }
+        schemaRegistryClient.register(EXCHANGE_TOPIC+"-value", parsedHttpExchangeSchema);
 
+        serializer = new KafkaJsonSchemaSerializer<>(schemaRegistryClient,jsonSchemaSerializerConfig);
+        Map<String,String> jsonSchemaDeserializerConfig = Maps.newHashMap();
+        jsonSchemaDeserializerConfig.put(KafkaJsonSchemaDeserializerConfig.SCHEMA_REGISTRY_URL_CONFIG,"mock://stuff.com");
+        jsonSchemaDeserializerConfig.put(KafkaJsonSchemaDeserializerConfig.JSON_VALUE_TYPE,HttpRequest.class.getName());
+        jsonSchemaDeserializerConfig.put(KafkaJsonSchemaDeserializerConfig.FAIL_INVALID_SCHEMA,"true");
+        jsonSchemaDeserializerConfig.put(KafkaJsonSchemaDeserializerConfig.FAIL_UNKNOWN_PROPERTIES,""+true);
+        deserializer = new KafkaJsonSchemaDeserializer<>(schemaRegistryClient,jsonSchemaDeserializerConfig, HttpRequest.class);
+    }
 
 
     @Nested
@@ -92,6 +114,10 @@ class HttpRequestTest {
 
             String serializedHttpRequest = objectMapper.writeValueAsString(httpRequest);
             JSONAssert.assertEquals(expectedHttpRequest, serializedHttpRequest, true);
+            byte[] serializedRequest = serializer.serialize(REQUEST_TOPIC, httpRequest);
+            assertThat(serializedRequest).isNotEmpty();
+            HttpRequest deserializedRequest = deserializer.deserialize(RESPONSE_TOPIC, serializedRequest);
+            assertThat(deserializedRequest).isEqualTo(httpRequest);
         }
 
         @Test

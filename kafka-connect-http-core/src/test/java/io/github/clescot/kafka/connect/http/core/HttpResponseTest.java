@@ -64,7 +64,7 @@ class HttpResponseTest {
         jsonSchemaDeserializerConfig.put(KafkaJsonSchemaDeserializerConfig.JSON_VALUE_TYPE,HttpResponse.class.getName());
         jsonSchemaDeserializerConfig.put(KafkaJsonSchemaDeserializerConfig.FAIL_INVALID_SCHEMA,"true");
         jsonSchemaDeserializerConfig.put(KafkaJsonSchemaDeserializerConfig.FAIL_UNKNOWN_PROPERTIES,""+true);
-        deserializer = new KafkaJsonSchemaDeserializer<>(schemaRegistryClient,jsonSchemaDeserializerConfig);
+        deserializer = new KafkaJsonSchemaDeserializer<>(schemaRegistryClient,jsonSchemaDeserializerConfig,HttpResponse.class);
     }
 
     @Nested
@@ -84,7 +84,9 @@ class HttpResponseTest {
             //required fields are missing
             byte[] bytes = serializer.serialize(RESPONSE_TOPIC, httpResponse);
             assertThat(bytes).isNotEmpty();
-            deserializer.deserialize(RESPONSE_TOPIC, bytes);
+            HttpResponse deserializedResponse = deserializer.deserialize(RESPONSE_TOPIC, bytes);
+            assertThat(deserializedResponse).isNotNull();
+            assertThat(deserializedResponse).isEqualTo(httpResponse);
         }
 
         @Test
