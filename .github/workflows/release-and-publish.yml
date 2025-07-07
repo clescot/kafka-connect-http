@@ -29,10 +29,10 @@ jobs:
           git config --global user.email "actions@github.com"
           git config --global user.name "clescot"
       - name: Publish to the Maven Central Repository via ossrh
-        run: mvn -B release:prepare release:perform -e -PossrhDeploy --no-transfer-progress  -DskipTests  deploy  -DskipNexusStagingDeployMojo=true
+        run: mvn -B release:prepare release:perform -e -PsonatypeDeploy --no-transfer-progress  -DskipTests  deploy  -DskipNexusStagingDeployMojo=true
         env:
-          MAVEN_USERNAME: "${{ secrets.OSSRH_USERNAME }}"
-          MAVEN_PASSWORD: "${{ secrets.OSSRH_TOKEN }}"
+          MAVEN_USERNAME: "${{ secrets.NEXUS_USERNAME }}"
+          MAVEN_PASSWORD: "${{ secrets.NEXUS_PASSWORD }}"
           MAVEN_GPG_KEY: "${{ secrets.MAVEN_GPG_KEY }}"
           MAVEN_GPG_KEY_ID: "${{ secrets.MAVEN_GPG_KEY_ID }}"
           MAVEN_GPG_PASSPHRASE: "${{ secrets.MAVEN_GPG_PASSPHRASE }}"
