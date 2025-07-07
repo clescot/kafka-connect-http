@@ -119,7 +119,7 @@ class DirectHttpRequestMapperTest {
             JsonSchemaConverter jsonSchemaConverter = getJsonSchemaConverter(schemaRegistryClient);
 
 
-            byte[] httpRequestAsJsonSchemaWithConverter = jsonSchemaConverter.fromConnectData(topic, SCHEMA, new HttpRequest(dummyHttpRequest).toStruct());
+            byte[] httpRequestAsJsonSchemaWithConverter = jsonSchemaConverter.fromConnectData(topic, SCHEMA, ((HttpRequest)dummyHttpRequest.clone()).toStruct());
 
             SchemaAndValue schemaAndValue = jsonSchemaConverter.toConnectData(topic, httpRequestAsJsonSchemaWithConverter);
 

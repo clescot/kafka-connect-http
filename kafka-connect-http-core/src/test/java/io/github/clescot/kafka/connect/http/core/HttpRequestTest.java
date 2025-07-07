@@ -18,7 +18,6 @@ import io.confluent.kafka.serializers.json.KafkaJsonSchemaDeserializer;
 import io.confluent.kafka.serializers.json.KafkaJsonSchemaDeserializerConfig;
 import io.confluent.kafka.serializers.json.KafkaJsonSchemaSerializer;
 import io.confluent.kafka.serializers.json.KafkaJsonSchemaSerializerConfig;
-import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.data.SchemaAndValue;
 import org.apache.kafka.connect.data.Struct;
@@ -707,7 +706,7 @@ class HttpRequestTest {
             headers.put("X-request-id", Lists.newArrayList("11-999-ff-777"));
             httpRequest.setHeaders(headers);
             //when
-            HttpRequest clonedHttpRequest = httpRequest.clone();
+            HttpRequest clonedHttpRequest = (HttpRequest) httpRequest.clone();
             //then
             assertThat(clonedHttpRequest).isEqualTo(httpRequest);
         }
@@ -727,7 +726,7 @@ class HttpRequestTest {
             headers.put("Content-Type",Lists.newArrayList("application/octet-stream"));
             httpRequest.setHeaders(headers);
             //when
-            HttpRequest clonedHttpRequest = httpRequest.clone();
+            HttpRequest clonedHttpRequest = (HttpRequest) httpRequest.clone();
             //then
             assertThat(clonedHttpRequest).isEqualTo(httpRequest);
         }

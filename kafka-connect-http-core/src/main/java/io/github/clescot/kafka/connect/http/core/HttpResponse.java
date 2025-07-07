@@ -213,7 +213,7 @@ public class HttpResponse implements Cloneable, Serializable {
     }
 
     @Override
-    public HttpResponse clone() {
+    public Object clone() {
         try {
             HttpResponse clone = (HttpResponse) super.clone();
             clone.setStatusCode(this.statusCode);

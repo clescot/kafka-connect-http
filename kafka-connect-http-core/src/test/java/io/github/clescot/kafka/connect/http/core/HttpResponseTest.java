@@ -112,7 +112,7 @@ class HttpResponseTest {
             HttpResponse httpResponse = new HttpResponse(200,"OK");
             httpResponse.setBodyAsString("Hello World");
 
-            HttpResponse cloned = httpResponse.clone();
+            HttpResponse cloned = (HttpResponse) httpResponse.clone();
 
             assertThat(cloned).isNotSameAs(httpResponse);
             assertThat(cloned.getStatusCode()).isEqualTo(httpResponse.getStatusCode());
@@ -129,7 +129,7 @@ class HttpResponseTest {
             HttpResponse httpResponse = new HttpResponse(200,"OK");
             httpResponse.setBodyAsByteArray("Hello World".getBytes(StandardCharsets.UTF_8));
 
-            HttpResponse cloned = httpResponse.clone();
+            HttpResponse cloned = (HttpResponse) httpResponse.clone();
 
             assertThat(cloned).isNotSameAs(httpResponse);
             assertThat(cloned.getStatusCode()).isEqualTo(httpResponse.getStatusCode());
@@ -149,7 +149,7 @@ class HttpResponseTest {
             form.put("key2", "value2");
             httpResponse.setBodyAsForm(form);
 
-            HttpResponse cloned = httpResponse.clone();
+            HttpResponse cloned = (HttpResponse) httpResponse.clone();
 
             assertThat(cloned).isNotSameAs(httpResponse);
             assertThat(cloned.getStatusCode()).isEqualTo(httpResponse.getStatusCode());

@@ -13,8 +13,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 public class HttpExchange implements Cloneable, Serializable {
 
-    public static final long serialVersionUID = 1L;
-    public static final int VERSION = 2;
+    private static final long serialVersionUID = 1L;
     public static final int HTTP_EXCHANGE_VERSION = 2;
     public static final String DURATION_IN_MILLIS = "durationInMillis";
     public static final String MOMENT = "moment";
@@ -34,8 +33,6 @@ public class HttpExchange implements Cloneable, Serializable {
             // response
             .field(HTTP_RESPONSE, HttpResponse.SCHEMA)
             .schema();
-    public static final String BASE_SCHEMA_ID = "https://raw.githubusercontent.com/clescot/kafka-connect-http/master/kafka-connect-http-core/src/main/resources/schemas/json/versions/";
-
 
     private Long durationInMillis;
     private OffsetDateTime moment;
@@ -139,14 +136,14 @@ public class HttpExchange implements Cloneable, Serializable {
     }
 
     @Override
-    public HttpExchange clone() {
+    public Object clone() {
         try {
             HttpExchange clone = (HttpExchange) super.clone();
             clone.setDurationInMillis(this.durationInMillis);
             clone.setMoment(this.moment);
             clone.setAttempts(new AtomicInteger(this.attempts.get()));
-            clone.setHttpResponse(this.httpResponse.clone());
-            clone.setHttpRequest(this.httpRequest.clone());
+            clone.setHttpResponse((HttpResponse) this.httpResponse.clone());
+            clone.setHttpRequest((HttpRequest) this.httpRequest.clone());
             clone.setSuccess(this.success);
             return clone;
         } catch (CloneNotSupportedException e) {

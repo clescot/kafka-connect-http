@@ -260,7 +260,7 @@ public class HttpExchangeTest {
                     OffsetDateTime.now(),
                     new AtomicInteger(2),
                     SUCCESS);
-            HttpExchange clone = httpExchange.clone();
+            HttpExchange clone = (HttpExchange) httpExchange.clone();
             assertThat(clone).isEqualTo(httpExchange);
             assertThat(clone.getHttpRequest()).isEqualTo(httpExchange.getHttpRequest());
             assertThat(clone.getHttpResponse()).isEqualTo(httpExchange.getHttpResponse());

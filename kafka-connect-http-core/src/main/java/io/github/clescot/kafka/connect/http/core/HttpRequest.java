@@ -123,17 +123,7 @@ public class HttpRequest implements Cloneable, Serializable {
 
     }
 
-    public HttpRequest(HttpRequest original) {
-        this(
-                original.getUrl(),
-                original.getMethod(),
-                original.getHeaders(),
-                original.getBodyType(),
-                original.getParts()
-        );
-        this.setHeaders(Maps.newHashMap(original.getHeaders()));
-        this.setParts(Maps.newHashMap(original.getParts()));
-    }
+
 
 
     public HttpRequest(Struct requestAsstruct) {
@@ -352,7 +342,7 @@ public class HttpRequest implements Cloneable, Serializable {
     }
 
     @Override
-    public HttpRequest clone() {
+    public Object clone() {
         try {
             HttpRequest clone = (HttpRequest) super.clone();
             clone.setHeaders(Maps.newHashMap(this.getHeaders()));
