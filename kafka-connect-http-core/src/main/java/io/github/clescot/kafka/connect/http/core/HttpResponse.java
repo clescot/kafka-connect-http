@@ -54,7 +54,7 @@ public class HttpResponse implements Cloneable, Serializable {
     @JsonProperty
     private String bodyAsString = "";
     @JsonProperty
-    //byte array is base64 encoded as as String, as JSON is a text format not binary
+    //byte array is base64 encoded as a String, as JSON is a text format not binary
     private String bodyAsByteArray = "";
     @JsonProperty(defaultValue = "STRING")
     private HttpResponse.BodyType bodyType = HttpResponse.BodyType.STRING;
