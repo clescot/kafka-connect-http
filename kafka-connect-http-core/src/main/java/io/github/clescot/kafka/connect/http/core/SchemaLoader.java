@@ -2,6 +2,7 @@ package io.github.clescot.kafka.connect.http.core;
 
 import io.confluent.kafka.schemaregistry.ParsedSchema;
 import io.confluent.kafka.schemaregistry.json.JsonSchema;
+
 import java.io.IOException;
 import java.net.URISyntaxException;
 import java.net.URL;

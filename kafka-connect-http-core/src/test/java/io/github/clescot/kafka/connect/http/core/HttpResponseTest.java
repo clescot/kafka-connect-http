@@ -24,7 +24,6 @@ import java.util.List;
 import java.util.Map;
 
 import static io.github.clescot.kafka.connect.http.core.SchemaLoader.*;
-import static io.github.clescot.kafka.connect.http.core.SchemaLoader.loadHttpExchangeSchema;
 import static org.assertj.core.api.Assertions.assertThat;
 
 class HttpResponseTest {
