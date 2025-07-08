@@ -7,6 +7,7 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import org.apache.kafka.connect.data.Struct;
 import org.json.JSONException;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.skyscreamer.jsonassert.JSONAssert;
@@ -298,6 +299,7 @@ class HttpPartTest {
             Map<String,List<String>> headers = new HashMap<>();
             headers.put("Content-Type",List.of("application/json"));
             URL uploadUrl = Thread.currentThread().getContextClassLoader().getResource("upload.txt");
+            Assertions.assertNotNull(uploadUrl);
             HttpPart httpPart = new HttpPart(headers,"filename",uploadUrl.toURI());
             HttpPart clonedHttpPart = (HttpPart) httpPart.clone();
             assertThat(clonedHttpPart.hashCode()).isEqualTo(httpPart.hashCode());
@@ -439,4 +441,20 @@ class HttpPartTest {
         }
     }
 
+    @Nested
+    class TestGetLength{
+        @Test
+        void test_get_length_content_as_byte_array() {
+            HttpPart httpPart = new HttpPart("test".getBytes(StandardCharsets.UTF_8));
+            long length = httpPart.getLength();
+            assertThat(length).isEqualTo("test".getBytes(StandardCharsets.UTF_8).length + httpPart.getHeadersLength());
+        }
+
+        @Test
+        void test_get_length_content_as_string() {
+            HttpPart httpPart = new HttpPart("test");
+            long length = httpPart.getLength();
+            assertThat(length).isEqualTo("test".length() + httpPart.getHeadersLength());
+        }
+    }
 }
