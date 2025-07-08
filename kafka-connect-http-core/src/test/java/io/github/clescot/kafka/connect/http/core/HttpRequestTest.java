@@ -1031,4 +1031,112 @@ class HttpRequestTest {
             assertThat(toString).contains("bodyType=BYTE_ARRAY");
         }
     }
+
+    @Nested
+    class TestGetContentLength{
+        @Test
+        void test_get_content_length_with_string_body() {
+            //given
+            HttpRequest httpRequest = new HttpRequest(
+                    "http://www.stuff.com",
+                    HttpRequest.Method.GET
+            );
+            httpRequest.setBodyAsString(DUMMY_BODY_AS_STRING);
+            Map<String, List<String>> headers = Maps.newHashMap();
+            headers.put("X-stuff", Lists.newArrayList("m-y-value"));
+            headers.put("X-correlation-id", Lists.newArrayList("44-999-33-dd"));
+            headers.put("X-request-id", Lists.newArrayList("11-999-ff-777"));
+            httpRequest.setHeaders(headers);
+            //when
+            long contentLength = httpRequest.getContentLength();
+            //then
+            assertThat(contentLength).isEqualTo(DUMMY_BODY_AS_STRING.length());
+        }
+
+        @Test
+        void test_get_content_length_with_byte_array_body() {
+            //given
+            HttpRequest httpRequest = new HttpRequest(
+                    "http://www.stuff.com",
+                    HttpRequest.Method.GET
+            );
+            httpRequest.setBodyAsByteArray(DUMMY_BODY_AS_STRING.getBytes(StandardCharsets.UTF_8));
+            Map<String, List<String>> headers = Maps.newHashMap();
+            headers.put("X-stuff", Lists.newArrayList("m-y-value"));
+            headers.put("X-correlation-id", Lists.newArrayList("44-999-33-dd"));
+            headers.put("X-request-id", Lists.newArrayList("11-999-ff-777"));
+            httpRequest.setHeaders(headers);
+            //when
+            long contentLength = httpRequest.getContentLength();
+            //then
+            assertThat(contentLength).isEqualTo(DUMMY_BODY_AS_STRING.getBytes(StandardCharsets.UTF_8).length);
+        }
+
+        @Test
+        void test_get_content_length_without_body() {
+            //given
+            HttpRequest httpRequest = new HttpRequest(
+                    "http://www.stuff.com",
+                    HttpRequest.Method.GET
+            );
+            //when
+            long contentLength = httpRequest.getContentLength();
+            //then
+            assertThat(contentLength).isEqualTo(0L);
+        }
+
+        @Test
+        void test_get_content_length_with_body_as_form() {
+            //given
+            HttpRequest httpRequest = new HttpRequest(
+                    "http://www.stuff.com",
+                    HttpRequest.Method.POST
+            );
+            Map<String, String> form = Maps.newHashMap();
+            String value1 = "value1";
+            String key1 = "key1";
+            form.put(key1, value1);
+            String value2 = "value2";
+            String key2 = "key22222";
+            form.put(key2, value2);
+            httpRequest.setBodyAsForm(form);
+            Map<String, List<String>> headers = Maps.newHashMap();
+            headers.put("X-stuff", Lists.newArrayList("m-y-value"));
+            headers.put("X-correlation-id", Lists.newArrayList("44-999-33-dd"));
+            headers.put("X-request-id", Lists.newArrayList("11-999-ff-777"));
+            httpRequest.setHeaders(headers);
+            //when
+            long contentLength = httpRequest.getContentLength();
+            //then
+            assertThat(contentLength).isGreaterThan(0L); //depends on the form encoding
+            assertThat(contentLength).isEqualTo(key1.length()+value1.length()+key2.length()+value2.length()); //depends on the form encoding
+        }
+
+        @Test
+        void test_get_content_length_with_multipart_body() {
+            //given
+            HttpRequest httpRequest = new HttpRequest(
+                    "http://www.stuff.com",
+                    HttpRequest.Method.POST
+            );
+            Map<String,HttpPart> parts = Maps.newHashMap();
+            HttpPart part1 = new HttpPart("part1".getBytes(StandardCharsets.UTF_8));
+            parts.put("part1",part1);
+            HttpPart part2 = new HttpPart("part2".getBytes(StandardCharsets.UTF_8));
+            parts.put("part2",part2);
+            HttpPart part3 = new HttpPart("part3".getBytes(StandardCharsets.UTF_8));
+            parts.put("part3",part3);
+            httpRequest.setParts(parts);
+            Map<String, List<String>> headers = Maps.newHashMap();
+            headers.put("X-stuff", Lists.newArrayList("m-y-value"));
+            headers.put("X-correlation-id", Lists.newArrayList("44-999-33-dd"));
+            headers.put("X-request-id", Lists.newArrayList("11-999-ff-777"));
+            httpRequest.setHeaders(headers);
+            //when
+            long contentLength = httpRequest.getContentLength();
+            //then
+            assertThat(contentLength).isGreaterThan(0L);
+            assertThat(contentLength).isEqualTo(part1.getContentLength() + part2.getContentLength() + part3.getContentLength());
+        }
+    }
 }

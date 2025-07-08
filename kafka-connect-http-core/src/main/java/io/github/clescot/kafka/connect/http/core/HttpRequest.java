@@ -313,6 +313,25 @@ public class HttpRequest implements Cloneable, Serializable {
         return headers.keySet().stream().filter(k -> k.equalsIgnoreCase(key)).findAny().isEmpty();
     }
 
+    public long getContentLength() {
+        if (bodyType == BodyType.STRING) {
+            return bodyAsString != null ? bodyAsString.length() : 0;
+        } else if (bodyType == BodyType.BYTE_ARRAY) {
+            return bodyAsByteArray != null ? getBodyAsByteArray().length : 0;
+        } else if (bodyType == BodyType.FORM) {
+            return bodyAsForm != null ?
+                    bodyAsForm
+                            .entrySet()
+                            .stream()
+                            .filter(pair->pair.getValue()!=null)
+                            .map(pair->pair.getKey().length()+pair.getValue().length())
+                            .reduce(Integer::sum).orElse(0): 0;
+        } else if (bodyType == BodyType.MULTIPART) {
+            return parts.values().stream().mapToLong(HttpPart::getContentLength).sum();
+        }
+        return 0;
+    }
+
     @JsonIgnore
     public byte[] getBodyAsByteArray() {
         if (bodyAsByteArray != null && !bodyAsByteArray.isEmpty()) {
