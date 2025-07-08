@@ -164,6 +164,40 @@ public class HttpResponse implements Cloneable, Serializable {
         return headers.keySet().stream().filter(k -> k.equalsIgnoreCase(key)).findAny().isEmpty();
     }
 
+    @JsonIgnore
+    public Long getContentLength() {
+        if (getHeaders().containsKey("Content-Length")) {
+            List<String> values = getHeaders().get("Content-Length");
+            if (values != null && !values.isEmpty()) {
+                try {
+                    return Long.parseLong(values.get(0));
+                } catch (NumberFormatException e) {
+                    // If parsing fails, we will calculate the content length based on the body type
+                    return getContentLengthFromBodyType();
+                }
+            }
+        }
+        return getContentLengthFromBodyType();
+    }
+    private long getContentLengthFromBodyType() {
+        if (bodyType == BodyType.STRING) {
+            return bodyAsString.getBytes().length;
+        } else if (bodyType == BodyType.BYTE_ARRAY) {
+            return getBodyAsByteArray() != null ? getBodyAsByteArray().length : 0;
+        } else if (bodyType == BodyType.FORM) {
+            return bodyAsForm != null ?
+                    bodyAsForm
+                            .entrySet()
+                            .stream()
+                            .filter(pair->pair.getValue()!=null)
+                            .map(pair->pair.getKey().length()+pair.getValue().length())
+                            .reduce(Integer::sum).orElse(0): 0;
+        } else if (bodyType == BodyType.MULTIPART) {
+            return parts.values().stream().mapToLong(HttpPart::getContentLength).sum();
+        }
+        return 0;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;

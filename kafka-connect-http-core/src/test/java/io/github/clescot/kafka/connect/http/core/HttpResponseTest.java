@@ -20,6 +20,7 @@ import org.junit.jupiter.api.Test;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
+import java.util.List;
 import java.util.Map;
 
 import static io.github.clescot.kafka.connect.http.core.SchemaLoader.*;
@@ -219,6 +220,82 @@ class HttpResponseTest {
             assertThat(struct.getInt64(HttpResponse.STATUS_CODE)).isEqualTo(200);
             assertThat(struct.getString(HttpResponse.STATUS_MESSAGE)).isEqualTo("OK");
             assertThat(struct.getString(HttpResponse.BODY_AS_BYTE_ARRAY)).isEqualTo(Base64.getEncoder().encodeToString("Hello World".getBytes(StandardCharsets.UTF_8)));
+        }
+    }
+
+    @Nested
+    class TestGetContentLength{
+        @Test
+        public void test_getContentLength_without_headers_with_body_as_string() {
+            HttpResponse httpResponse = new HttpResponse(200, "OK");
+            httpResponse.setBodyAsString("Hello World");
+
+            long contentLength = httpResponse.getContentLength();
+            assertThat(contentLength).isEqualTo("Hello World".getBytes(StandardCharsets.UTF_8).length);
+        }
+
+        @Test
+        public void test_getContentLength_without_headers_with_body_as_byte_array() {
+            HttpResponse httpResponse = new HttpResponse(200, "OK");
+            httpResponse.setBodyAsByteArray("Hello World".getBytes(StandardCharsets.UTF_8));
+
+            long contentLength = httpResponse.getContentLength();
+            assertThat(contentLength).isEqualTo("Hello World".getBytes(StandardCharsets.UTF_8).length);
+        }
+
+        @Test
+        public void test_getContentLength_without_headers_with_body_as_form() {
+            HttpResponse httpResponse = new HttpResponse(200, "OK");
+            Map<String, String> form = Maps.newHashMap();
+            String key1 = "longkey1";
+            String value1 = "valuuuuuue1";
+            form.put(key1, value1);
+            String key2 = "key2";
+            String value2 = "value2";
+            form.put(key2, value2);
+            httpResponse.setBodyAsForm(form);
+
+            long contentLength = httpResponse.getContentLength();
+            assertThat(contentLength).isEqualTo(key1.length()+value1.length()+key2.length()+value2.length()); // Length depends on form encoding
+        }
+
+        @Test
+        public void test_getContentLength_with_headers_with_body_as_form() {
+            HttpResponse httpResponse = new HttpResponse(200, "OK");
+            Map<String, String> form = Maps.newHashMap();
+            String key1 = "longkey1";
+            String value1 = "valuuuuuue1";
+            form.put(key1, value1);
+            String key2 = "key2";
+            String value2 = "value2";
+            form.put(key2, value2);
+            httpResponse.setBodyAsForm(form);
+            Map<String, List<String>> headers = Maps.newHashMap();
+            String initialContentLength = "450";
+            headers.put("Content-Length", Lists.newArrayList(initialContentLength));
+            httpResponse.setHeaders(headers);
+            long contentLength = httpResponse.getContentLength();
+            assertThat(contentLength).isEqualTo(Long.parseLong(initialContentLength)); // Length depends on form encoding
+        }
+
+        @Test
+        public void test_getContentLength_with_headers_and_multiple_values_with_body_as_form() {
+            HttpResponse httpResponse = new HttpResponse(200, "OK");
+            Map<String, String> form = Maps.newHashMap();
+            String key1 = "longkey1";
+            String value1 = "valuuuuuue1";
+            form.put(key1, value1);
+            String key2 = "key2";
+            String value2 = "value2";
+            form.put(key2, value2);
+            httpResponse.setBodyAsForm(form);
+            Map<String, List<String>> headers = Maps.newHashMap();
+            String initialContentLength = "450";
+            String secondContentLength = "800";
+            headers.put("Content-Length", Lists.newArrayList(initialContentLength,secondContentLength));
+            httpResponse.setHeaders(headers);
+            long contentLength = httpResponse.getContentLength();
+            assertThat(contentLength).isEqualTo(Long.parseLong(initialContentLength)); // Length depends on form encoding
         }
     }
 }
