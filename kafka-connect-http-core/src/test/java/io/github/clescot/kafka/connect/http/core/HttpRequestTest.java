@@ -935,6 +935,30 @@ class HttpRequestTest {
             assertThat(httpRequest.getContentType()).isEmpty();
 
         }
+        @Test
+        void test_get_content_type_with_headers_and_empty_content_type_and_multipart() {
+            //given
+            HttpRequest httpRequest = new HttpRequest(
+                    "http://www.stuff.com",
+                    HttpRequest.Method.GET
+            );
+            Map<String, List<String>> headers = Maps.newHashMap();
+            headers.put("X-stuff", Lists.newArrayList("m-y-value"));
+            headers.put("X-correlation-id", Lists.newArrayList("44-999-33-dd"));
+            headers.put("X-request-id", Lists.newArrayList("11-999-ff-777"));
+            headers.put("Content-Type", Lists.newArrayList(""));
+            httpRequest.setHeaders(headers);
+            Map<String,HttpPart> parts = Maps.newHashMap();
+            HttpPart part1 = new HttpPart("part1".getBytes(StandardCharsets.UTF_8));
+            parts.put("part1",part1);
+            HttpPart part2 = new HttpPart("part2".getBytes(StandardCharsets.UTF_8));
+            parts.put("part2",part2);
+            HttpPart part3 = new HttpPart("part3".getBytes(StandardCharsets.UTF_8));
+            parts.put("part3",part3);
+            httpRequest.setParts(parts);
+            assertThat(httpRequest.getContentType()).startsWith("multipart/form-data; boundary=");
+
+        }
     }
 
 

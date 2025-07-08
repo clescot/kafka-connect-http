@@ -7,6 +7,7 @@ import com.google.common.base.MoreObjects;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.data.SchemaBuilder;
 import org.apache.kafka.connect.data.Struct;
@@ -111,7 +112,7 @@ public class HttpRequest implements Cloneable, Serializable {
         this.headers = MoreObjects.firstNonNull(headers, Maps.newHashMap());
         this.bodyType = bodyType;
         if (parts != null && !parts.isEmpty()) {
-            if (getContentType() == null) {
+            if (StringUtils.isEmpty(getContentType())) {
                 //default multipart Content-Type
                 setContentType("multipart/form-data; boundary=" + UUID.randomUUID());
             }
@@ -186,10 +187,18 @@ public class HttpRequest implements Cloneable, Serializable {
         this.parts = httpParts;
         if (parts != null && !parts.isEmpty()) {
             this.bodyType = BodyType.MULTIPART;
+            if(StringUtils.isEmpty(getContentType())){
+                //default multipart Content-Type
+                setContentType("multipart/form-data; boundary=" + UUID.randomUUID());
+            }
         }
     }
 
     public void addPart(String name,HttpPart httpPart) {
+        if(parts.isEmpty() && StringUtils.isEmpty(getContentType())){
+            //default multipart Content-Type
+            setContentType("multipart/form-data; boundary=" + UUID.randomUUID());
+        }
         parts.put(name,httpPart);
     }
 
@@ -208,7 +217,7 @@ public class HttpRequest implements Cloneable, Serializable {
     public String getBoundary() {
         String contentType = getContentType();
         String boundary = null;
-        if (contentType != null) {
+        if (!StringUtils.isEmpty(contentType)) {
             Matcher matcher = BOUNDARY.matcher(contentType);
             if (matcher.matches()) {
                 boundary = matcher.group(1);
