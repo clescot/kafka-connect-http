@@ -324,11 +324,11 @@ public class HttpRequest implements Cloneable, Serializable {
 
     @JsonIgnore
     public long getContentLength() {
-        if (bodyType == BodyType.STRING) {
+        if (BodyType.STRING == bodyType) {
             return bodyAsString != null ? bodyAsString.length() : 0;
-        } else if (bodyType == BodyType.BYTE_ARRAY) {
+        } else if (BodyType.BYTE_ARRAY == bodyType) {
             return bodyAsByteArray != null ? getBodyAsByteArray().length : 0;
-        } else if (bodyType == BodyType.FORM) {
+        } else if (BodyType.FORM == bodyType) {
             return bodyAsForm != null ?
                     bodyAsForm
                             .entrySet()
@@ -336,7 +336,7 @@ public class HttpRequest implements Cloneable, Serializable {
                             .filter(pair->pair.getValue()!=null)
                             .map(pair->pair.getKey().length()+pair.getValue().length())
                             .reduce(Integer::sum).orElse(0): 0;
-        } else if (bodyType == BodyType.MULTIPART) {
+        } else if (BodyType.MULTIPART == bodyType) {
             return parts.values().stream().mapToLong(HttpPart::getContentLength).sum();
         }
         return 0;

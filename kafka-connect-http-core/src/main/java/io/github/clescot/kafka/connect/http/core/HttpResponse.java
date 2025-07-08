@@ -98,6 +98,10 @@ public class HttpResponse implements Cloneable, Serializable {
         return parts;
     }
 
+    public void setParts(Map<String, HttpPart> parts) {
+        this.parts = parts;
+        bodyType = HttpResponse.BodyType.MULTIPART;
+    }
 
     @JsonIgnore
     public Map<String, String> getBodyAsForm() {
@@ -180,11 +184,11 @@ public class HttpResponse implements Cloneable, Serializable {
         return getContentLengthFromBodyType();
     }
     private long getContentLengthFromBodyType() {
-        if (bodyType == BodyType.STRING) {
+        if (BodyType.STRING == bodyType) {
             return bodyAsString.getBytes().length;
-        } else if (bodyType == BodyType.BYTE_ARRAY) {
+        } else if (BodyType.BYTE_ARRAY == bodyType) {
             return getBodyAsByteArray() != null ? getBodyAsByteArray().length : 0;
-        } else if (bodyType == BodyType.FORM) {
+        } else if (BodyType.FORM == bodyType) {
             return bodyAsForm != null ?
                     bodyAsForm
                             .entrySet()
@@ -192,7 +196,7 @@ public class HttpResponse implements Cloneable, Serializable {
                             .filter(pair->pair.getValue()!=null)
                             .map(pair->pair.getKey().length()+pair.getValue().length())
                             .reduce(Integer::sum).orElse(0): 0;
-        } else if (bodyType == BodyType.MULTIPART) {
+        } else if (BodyType.MULTIPART == bodyType) {
             return parts.values().stream().mapToLong(HttpPart::getContentLength).sum();
         }
         return 0;

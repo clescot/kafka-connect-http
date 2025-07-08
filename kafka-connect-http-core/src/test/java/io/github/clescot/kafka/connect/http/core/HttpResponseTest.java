@@ -260,6 +260,22 @@ class HttpResponseTest {
         }
 
         @Test
+        public void test_getContentLength_without_headers_with_multipart() {
+            HttpResponse httpResponse = new HttpResponse(200, "OK");
+            Map<String,HttpPart> parts = Maps.newHashMap();
+            HttpPart part1 = new HttpPart("part1".getBytes(StandardCharsets.UTF_8));
+            parts.put("part1",part1);
+            HttpPart part2 = new HttpPart("part2".getBytes(StandardCharsets.UTF_8));
+            parts.put("part2",part2);
+            HttpPart part3 = new HttpPart("part3".getBytes(StandardCharsets.UTF_8));
+            parts.put("part3",part3);
+            httpResponse.setParts(parts);
+            assertThat(httpResponse.getContentLength()).isEqualTo(
+                    part1.getContentLength() + part2.getContentLength() + part3.getContentLength()
+            );
+        }
+
+        @Test
         public void test_getContentLength_with_headers_with_body_as_form() {
             HttpResponse httpResponse = new HttpResponse(200, "OK");
             Map<String, String> form = Maps.newHashMap();
