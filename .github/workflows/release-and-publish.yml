@@ -51,3 +51,4 @@ jobs:
           artifacts: "kafka-connect-http-core/target/*-${{ steps.tag-name.outputs.TAG }}.jar,kafka-connect-http-connectors/target/components/packages/*-${{ steps.tag-name.outputs.TAG }}.zip"
           generateReleaseNotes: true
           token: ${{ secrets.GITHUB_TOKEN }}
+
