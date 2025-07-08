@@ -249,6 +249,7 @@ public class HttpPart implements Cloneable, Serializable {
         return clone;
     }
 
+    @JsonIgnore
     public long getContentLength() {
         switch(bodyType) {
             case STRING:

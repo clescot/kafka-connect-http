@@ -313,6 +313,7 @@ public class HttpRequest implements Cloneable, Serializable {
         return headers.keySet().stream().filter(k -> k.equalsIgnoreCase(key)).findAny().isEmpty();
     }
 
+    @JsonIgnore
     public long getContentLength() {
         if (bodyType == BodyType.STRING) {
             return bodyAsString != null ? bodyAsString.length() : 0;
