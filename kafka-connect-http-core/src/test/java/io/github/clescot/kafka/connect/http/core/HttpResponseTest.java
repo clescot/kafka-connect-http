@@ -223,7 +223,7 @@ class HttpResponseTest {
     }
 
     @Nested
-    class TestGetContentLength{
+    class TestGetBodyContentLength {
         @Test
         public void test_getContentLength_without_headers_with_body_as_string() {
             HttpResponse httpResponse = new HttpResponse(200, "OK");
@@ -311,6 +311,84 @@ class HttpResponseTest {
             httpResponse.setHeaders(headers);
             long contentLength = httpResponse.getBodyContentLength();
             assertThat(contentLength).isEqualTo(Long.parseLong(initialContentLength)); // Length depends on form encoding
+        }
+    }
+
+    @Nested
+    class TestGetHeadersLength{
+        @Test
+        public void test_getHeadersLength_with_empty_headers() {
+            HttpResponse httpResponse = new HttpResponse(200, "OK");
+            assertThat(httpResponse.getHeadersLength()).isEqualTo(0);
+        }
+
+        @Test
+        public void test_getHeadersLength_with_single_header() {
+            HttpResponse httpResponse = new HttpResponse(200, "OK");
+            Map<String, List<String>> headers = Maps.newHashMap();
+            headers.put("Content-Type", Lists.newArrayList("application/json"));
+            httpResponse.setHeaders(headers);
+            assertThat(httpResponse.getHeadersLength()).isEqualTo("Content-Type".length() + "application/json".length());
+        }
+
+        @Test
+        public void test_getHeadersLength_with_multiple_headers() {
+            HttpResponse httpResponse = new HttpResponse(200, "OK");
+            Map<String, List<String>> headers = Maps.newHashMap();
+            headers.put("Content-Type", Lists.newArrayList("application/json"));
+            headers.put("Authorization", Lists.newArrayList("Bearer token"));
+            httpResponse.setHeaders(headers);
+            assertThat(httpResponse.getHeadersLength()).isEqualTo(
+                    "Content-Type".length() + "application/json".length() +
+                    "Authorization".length() + "Bearer token".length()
+            );
+        }
+    }
+
+    @Nested
+    class TestGetLength{
+        @Test
+        public void test_getLength_with_empty_response() {
+            HttpResponse httpResponse = new HttpResponse();
+            assertThat(httpResponse.getLength()).isEqualTo(0);
+        }
+
+        @Test
+        public void test_getLength_with_body_as_string() {
+            HttpResponse httpResponse = new HttpResponse(200, "OK");
+            httpResponse.setBodyAsString("Hello World");
+            assertThat(httpResponse.getLength()).isEqualTo(
+                    "Hello World".getBytes(StandardCharsets.UTF_8).length +
+                    httpResponse.getHeadersLength()
+            );
+        }
+
+        @Test
+        public void test_getLength_with_body_as_byte_array() {
+            HttpResponse httpResponse = new HttpResponse(200, "OK");
+            httpResponse.setBodyAsByteArray("Hello World".getBytes(StandardCharsets.UTF_8));
+            assertThat(httpResponse.getLength()).isEqualTo(
+                    "Hello World".getBytes(StandardCharsets.UTF_8).length +
+                    httpResponse.getHeadersLength()
+            );
+        }
+
+        @Test
+        public void test_getLength_with_body_as_form() {
+            HttpResponse httpResponse = new HttpResponse(200, "OK");
+            Map<String, String> form = Maps.newHashMap();
+            form.put("key1", "value1");
+            form.put("key2", "value2");
+            httpResponse.setBodyAsForm(form);
+            assertThat(httpResponse.getLength()).isEqualTo(
+                    form
+                        .entrySet()
+                        .stream()
+                        .filter(pair->pair.getValue()!=null)
+                        .map(pair->pair.getKey().length()+pair.getValue().length())
+                        .reduce(Integer::sum).orElse(0) +
+                    httpResponse.getHeadersLength()
+            );
         }
     }
 }
