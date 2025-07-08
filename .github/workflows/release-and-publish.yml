@@ -1,4 +1,4 @@
-name: release and publish to ossrh and github packages
+name: release and publish to central.sonatype.com and github packages
 on:
   push:
     branches:
@@ -15,12 +15,12 @@ jobs:
     steps:
       - uses: actions/checkout@v4.2.2
 
-      - name: Set up JDK 11 for ossrh
+      - name: Set up JDK 11 for central.sonatype.com
         uses: actions/setup-java@v4.7.1
         with:
           distribution: 'adopt'
           java-version: '11'
-          server-id: 'ossrh'
+          server-id: 'central'
           server-username: MAVEN_USERNAME
           server-password: MAVEN_PASSWORD
 
@@ -28,11 +28,11 @@ jobs:
         run: |
           git config --global user.email "actions@github.com"
           git config --global user.name "clescot"
-      - name: Publish to the Maven Central Repository via ossrh
-        run: mvn -B release:prepare release:perform -e -PossrhDeploy --no-transfer-progress  -DskipTests  deploy  -DskipNexusStagingDeployMojo=true
+      - name: Publish to the Maven Central Repository via central.sonatype.com
+        run: mvn -B release:prepare release:perform -e -PsonatypeDeploy --no-transfer-progress  -DskipTests  deploy  -DskipNexusStagingDeployMojo=true
         env:
-          MAVEN_USERNAME: "${{ secrets.OSSRH_USERNAME }}"
-          MAVEN_PASSWORD: "${{ secrets.OSSRH_TOKEN }}"
+          MAVEN_USERNAME: "${{ secrets.NEXUS_USERNAME }}"
+          MAVEN_PASSWORD: "${{ secrets.NEXUS_PASSWORD }}"
           MAVEN_GPG_KEY: "${{ secrets.MAVEN_GPG_KEY }}"
           MAVEN_GPG_KEY_ID: "${{ secrets.MAVEN_GPG_KEY_ID }}"
           MAVEN_GPG_PASSPHRASE: "${{ secrets.MAVEN_GPG_PASSPHRASE }}"
@@ -45,9 +45,10 @@ jobs:
           export TAG=$(git describe --tags --abbrev=0 HEAD~)
           echo "TAG=$TAG" >> $GITHUB_OUTPUT
       - name: upload artifacts to github packages
-        uses: ncipollo/release-action@v1.16.0
+        uses: ncipollo/release-action@v1.18.0
         with:
           tag: ${{ steps.tag-name.outputs.TAG }}
           artifacts: "kafka-connect-http-core/target/*-${{ steps.tag-name.outputs.TAG }}.jar,kafka-connect-http-connectors/target/components/packages/*-${{ steps.tag-name.outputs.TAG }}.zip"
           generateReleaseNotes: true
           token: ${{ secrets.GITHUB_TOKEN }}
+

@@ -1,10 +1,13 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
+    <name>${project.groupId}:${project.artifactId}</name>
+    <description>bundle of kafka connect connectors.</description>
+    <url>https://github.com/clescot/kafka-connect-http</url>
     <parent>
         <groupId>io.github.clescot</groupId>
         <artifactId>kafka-connect-http</artifactId>
-        <version>0.8.40-SNAPSHOT</version>
+        <version>0.8.48-SNAPSHOT</version>
     </parent>
     <artifactId>kafka-connect-http-connectors</artifactId>
     <packaging>jar</packaging>
@@ -17,7 +20,7 @@
             <groupId>io.github.clescot</groupId>
             <artifactId>kafka-connect-http-core</artifactId>
             <scope>compile</scope>
-            <version>0.8.40-SNAPSHOT</version>
+            <version>0.8.48-SNAPSHOT</version>
         </dependency>
         <dependency>
             <groupId>org.asynchttpclient</groupId>

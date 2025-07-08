@@ -2,13 +2,11 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <name>kafka-connect-http</name>
-    <description>a set of Kafka Connect connectors (Sink and Source), to interact with HTTP servers, linked via an in
-        memory queue.
-    </description>
+    <description>a set of Kafka Connect connectors (Sink and Source), to interact with HTTP servers.</description>
+    <url>https://github.com/clescot/kafka-connect-http</url>
     <groupId>io.github.clescot</groupId>
     <artifactId>kafka-connect-http</artifactId>
-    <version>0.8.40-SNAPSHOT</version>
-    <url>https://github.com/clescot/kafka-connect-http</url>
+    <version>0.8.48-SNAPSHOT</version>
     <licenses>
         <license>
             <name>Apache License, Version 2.0</name>
@@ -397,26 +395,7 @@
                     </archive>
                 </configuration>
             </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-gpg-plugin</artifactId>
-                <version>3.2.7</version>
-                <executions>
-                    <execution>
-                        <id>sign-artifacts</id>
-                        <phase>verify</phase>
-                        <goals>
-                            <goal>sign</goal>
-                        </goals>
-                    </execution>
-                </executions>
-                <configuration>
-                    <bestPractices>true</bestPractices>
-                    <keyEnvName>MAVEN_GPG_KEY</keyEnvName>
-                    <passphraseEnvName>MAVEN_GPG_PASSPHRASE</passphraseEnvName>
-                  <signer>bc</signer>
-                </configuration>
-            </plugin>
+
         </plugins>
     </build>
 
@@ -447,29 +426,41 @@
             </distributionManagement>
         </profile>
         <profile>
-            <id>ossrhDeploy</id>
-            <distributionManagement>
-                <snapshotRepository>
-                    <id>ossrh</id>
-                    <url>https://s01.oss.sonatype.org/content/repositories/snapshots</url>
-                </snapshotRepository>
-                <repository>
-                    <id>ossrh</id>
-                    <url>https://s01.oss.sonatype.org/service/local/staging/deploy/maven2/</url>
-                </repository>
-            </distributionManagement>
+            <id>sonatypeDeploy</id>
+            <activation>
+                <activeByDefault>false</activeByDefault>
+            </activation>
             <build>
                 <plugins>
                     <plugin>
-                        <groupId>org.sonatype.plugins</groupId>
-                        <artifactId>nexus-staging-maven-plugin</artifactId>
-                        <version>1.7.0</version>
+                        <groupId>org.sonatype.central</groupId>
+                        <artifactId>central-publishing-maven-plugin</artifactId>
+                        <version>0.8.0</version>
                         <extensions>true</extensions>
                         <configuration>
-                            <serverId>ossrh</serverId>
-                            <!-- cf https://central.sonatype.org/publish/publish-guide/#accessing-repositories -->
-                            <nexusUrl>https://s01.oss.sonatype.org/</nexusUrl>
-                            <autoReleaseAfterClose>true</autoReleaseAfterClose>
+                            <publishingServerId>central</publishingServerId>
+                            <autoPublish>true</autoPublish>
+                            <waitUntil>published</waitUntil>
+                        </configuration>
+                    </plugin>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-gpg-plugin</artifactId>
+                        <version>3.2.8</version>
+                        <executions>
+                            <execution>
+                                <id>sign-artifacts</id>
+                                <phase>verify</phase>
+                                <goals>
+                                    <goal>sign</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                        <configuration>
+                            <bestPractices>true</bestPractices>
+                            <keyEnvName>MAVEN_GPG_KEY</keyEnvName>
+                            <passphraseEnvName>MAVEN_GPG_PASSPHRASE</passphraseEnvName>
+                            <signer>bc</signer>
                         </configuration>
                     </plugin>
                 </plugins>
@@ -509,3 +500,6 @@
         </profile>
     </profiles>
 </project>
+
+
+

@@ -1,13 +1,14 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
+    <name>${project.groupId}:${project.artifactId}</name>
+    <description>Aggregate Coverage Report module.</description>
     <parent>
         <groupId>io.github.clescot</groupId>
         <artifactId>kafka-connect-http</artifactId>
-        <version>0.8.40-SNAPSHOT</version>
+        <version>0.8.48-SNAPSHOT</version>
     </parent>
     <artifactId>report-aggregate</artifactId>
-    <description>Aggregate Coverage Report</description>
     <dependencies>
         <dependency>
             <groupId>${project.groupId}</groupId>
