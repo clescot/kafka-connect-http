@@ -90,6 +90,10 @@ public abstract class AbstractHttpClient<R,S> implements HttpClient<R,S> {
     }
 
     @Override
+    public String getPermitsPerCall(){
+        return (String) config.getOrDefault(RATE_LIMITER_PERMITS_PER_CALL, DEFAULT_RATE_LIMITER_ONE_PERMIT_PER_CALL);
+    }
+    @Override
     public void setHeadersLimit(Integer headersLimit) {
         this.headersLimit = headersLimit;
     }
