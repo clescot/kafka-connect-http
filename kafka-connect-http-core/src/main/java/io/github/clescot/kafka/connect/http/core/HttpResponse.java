@@ -100,7 +100,9 @@ public class HttpResponse implements Cloneable, Serializable {
 
     public void setParts(Map<String, HttpPart> parts) {
         this.parts = parts;
-        bodyType = HttpResponse.BodyType.MULTIPART;
+        if(parts!=null && !parts.isEmpty()) {
+            bodyType = HttpResponse.BodyType.MULTIPART;
+        }
     }
 
     @JsonIgnore
