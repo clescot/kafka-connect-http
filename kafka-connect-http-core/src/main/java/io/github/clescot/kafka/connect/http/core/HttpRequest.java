@@ -233,6 +233,18 @@ public class HttpRequest implements Cloneable, Serializable {
     public Map<String, List<String>> getHeaders() {
         return headers;
     }
+    @JsonIgnore
+    public long getHeadersLength() {
+        return headers.entrySet().stream()
+                .filter(entry -> entry.getValue() != null && !entry.getValue().isEmpty())
+                .mapToLong(entry -> entry.getKey().length() + entry.getValue().stream().mapToLong(String::length).sum())
+                .sum();
+    }
+
+    @JsonIgnore
+    public long getLength() {
+        return getHeadersLength() + getBodyContentLength();
+    }
 
     public String getUrl() {
         return url;
@@ -323,7 +335,7 @@ public class HttpRequest implements Cloneable, Serializable {
     }
 
     @JsonIgnore
-    public long getContentLength() {
+    public long getBodyContentLength() {
         if (BodyType.STRING == bodyType) {
             return bodyAsString != null ? bodyAsString.length() : 0;
         } else if (BodyType.BYTE_ARRAY == bodyType) {
@@ -337,7 +349,7 @@ public class HttpRequest implements Cloneable, Serializable {
                             .map(pair->pair.getKey().length()+pair.getValue().length())
                             .reduce(Integer::sum).orElse(0): 0;
         } else if (BodyType.MULTIPART == bodyType) {
-            return parts.values().stream().mapToLong(HttpPart::getContentLength).sum();
+            return parts.values().stream().mapToLong(HttpPart::getBodyContentLength).sum();
         }
         return 0;
     }

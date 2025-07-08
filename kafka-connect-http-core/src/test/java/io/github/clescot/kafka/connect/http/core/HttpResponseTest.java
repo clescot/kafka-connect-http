@@ -230,7 +230,7 @@ class HttpResponseTest {
             HttpResponse httpResponse = new HttpResponse(200, "OK");
             httpResponse.setBodyAsString("Hello World");
 
-            long contentLength = httpResponse.getContentLength();
+            long contentLength = httpResponse.getBodyContentLength();
             assertThat(contentLength).isEqualTo("Hello World".getBytes(StandardCharsets.UTF_8).length);
         }
 
@@ -239,7 +239,7 @@ class HttpResponseTest {
             HttpResponse httpResponse = new HttpResponse(200, "OK");
             httpResponse.setBodyAsByteArray("Hello World".getBytes(StandardCharsets.UTF_8));
 
-            long contentLength = httpResponse.getContentLength();
+            long contentLength = httpResponse.getBodyContentLength();
             assertThat(contentLength).isEqualTo("Hello World".getBytes(StandardCharsets.UTF_8).length);
         }
 
@@ -255,7 +255,7 @@ class HttpResponseTest {
             form.put(key2, value2);
             httpResponse.setBodyAsForm(form);
 
-            long contentLength = httpResponse.getContentLength();
+            long contentLength = httpResponse.getBodyContentLength();
             assertThat(contentLength).isEqualTo(key1.length()+value1.length()+key2.length()+value2.length()); // Length depends on form encoding
         }
 
@@ -270,8 +270,8 @@ class HttpResponseTest {
             HttpPart part3 = new HttpPart("part3".getBytes(StandardCharsets.UTF_8));
             parts.put("part3",part3);
             httpResponse.setParts(parts);
-            assertThat(httpResponse.getContentLength()).isEqualTo(
-                    part1.getContentLength() + part2.getContentLength() + part3.getContentLength()
+            assertThat(httpResponse.getBodyContentLength()).isEqualTo(
+                    part1.getBodyContentLength() + part2.getBodyContentLength() + part3.getBodyContentLength()
             );
         }
 
@@ -290,7 +290,7 @@ class HttpResponseTest {
             String initialContentLength = "450";
             headers.put("Content-Length", Lists.newArrayList(initialContentLength));
             httpResponse.setHeaders(headers);
-            long contentLength = httpResponse.getContentLength();
+            long contentLength = httpResponse.getBodyContentLength();
             assertThat(contentLength).isEqualTo(Long.parseLong(initialContentLength)); // Length depends on form encoding
         }
 
@@ -310,7 +310,7 @@ class HttpResponseTest {
             String secondContentLength = "800";
             headers.put("Content-Length", Lists.newArrayList(initialContentLength,secondContentLength));
             httpResponse.setHeaders(headers);
-            long contentLength = httpResponse.getContentLength();
+            long contentLength = httpResponse.getBodyContentLength();
             assertThat(contentLength).isEqualTo(Long.parseLong(initialContentLength)); // Length depends on form encoding
         }
     }

@@ -9,6 +9,8 @@ import java.util.*;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
 import org.apache.kafka.connect.data.Struct;
 import org.json.JSONException;
 import org.junit.jupiter.api.Nested;
@@ -348,4 +350,95 @@ class HttpPartTest {
             assertThat(httpPart.toString()).isEqualTo(expected);
         }
     }
+
+    @Nested
+    class TestGetBodyLength{
+        @Test
+        void test_get_body_length_content_as_byte_array() {
+            HttpPart httpPart = new HttpPart("test".getBytes(StandardCharsets.UTF_8));
+            long bodyLength = httpPart.getBodyContentLength();
+            assertThat(bodyLength).isEqualTo("test".getBytes(StandardCharsets.UTF_8).length);
+        }
+
+        @Test
+        void test_get_body_length_content_as_string() {
+            HttpPart httpPart = new HttpPart("test");
+            long bodyLength = httpPart.getBodyContentLength();
+            assertThat(bodyLength).isEqualTo("test".length());
+        }
+
+        @Test
+        void test_get_body_length_content_as_form_entry_with_file() throws URISyntaxException {
+            URL url = Thread.currentThread().getContextClassLoader().getResource("upload.txt");
+            HttpPart httpPart = new HttpPart("filename", Objects.requireNonNull(url).toURI());
+            long bodyLength = httpPart.getBodyContentLength();
+            assertThat(bodyLength).isEqualTo(new File(Objects.requireNonNull(url).toURI()).length());
+        }
+
+        @Test
+        void test_get_body_length_content_as_form_entry_with_file_uri() throws URISyntaxException {
+            URL url = Thread.currentThread().getContextClassLoader().getResource("upload.txt");
+            HttpPart httpPart = new HttpPart("filename", Objects.requireNonNull(url).toURI());
+            long bodyLength = httpPart.getBodyContentLength();
+            assertThat(bodyLength).isEqualTo(new File(Objects.requireNonNull(url).toURI()).length());
+        }
+
+    }
+
+    @Nested
+    class TestGetHeadersLength{
+        @Test
+        void test_get_headers_length_with_no_headers() {
+            //given
+            HttpPart httpPart = new HttpPart(
+                    "test"
+            );
+            //when
+            long headersLength = httpPart.getHeadersLength();
+            //then
+            assertThat(httpPart.getContentType()).isEqualTo("application/json");
+            assertThat(headersLength).isEqualTo("Content-TYpe".length() + "application/json".length());
+        }
+
+        @Test
+        void test_get_headers_length_with_headers() {
+            //given
+            HttpRequest httpRequest = new HttpRequest(
+                    "http://www.stuff.com",
+                    HttpRequest.Method.GET
+            );
+            Map<String, List<String>> headers = Maps.newHashMap();
+            String key1 = "X-stuff";
+            String value1 = "m-y-value";
+            headers.put(key1, Lists.newArrayList(value1));
+            String key2 = "X-correlation-id";
+            String value2 = "44-999-33-dd";
+            headers.put(key2, Lists.newArrayList(value2,value2));
+            String key3 = "X-request-id";
+            String value3 = "11-999-ff-777";
+            headers.put(key3, Lists.newArrayList(value3));
+            httpRequest.setHeaders(headers);
+            //when
+            long headersLength = httpRequest.getHeadersLength();
+            //then
+            assertThat(headersLength).isEqualTo(
+                    key1.length()+value1.length()+
+                            key2.length()+value2.length()*2+
+                            key3.length()+value3.length());
+        }
+
+        @Test
+        void test_get_headers_length_without_headers() {
+            //given
+            HttpRequest httpRequest = new HttpRequest(
+                    "http://www.stuff.com",
+                    HttpRequest.Method.GET
+            );
+            //when
+            long headersLength = httpRequest.getHeadersLength();
+            //then
+            assertThat(headersLength).isEqualTo(0);
+        }
+    }
+
 }

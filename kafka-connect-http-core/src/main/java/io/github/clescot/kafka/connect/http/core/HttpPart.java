@@ -250,7 +250,7 @@ public class HttpPart implements Cloneable, Serializable {
     }
 
     @JsonIgnore
-    public long getContentLength() {
+    public long getBodyContentLength() {
         switch(bodyType) {
             case STRING:
                 return contentAsString != null ? contentAsString.length() : 0;
@@ -263,6 +263,20 @@ public class HttpPart implements Cloneable, Serializable {
                 return 0;
         }
     }
+
+    @JsonIgnore
+    public long getHeadersLength() {
+        return headers.entrySet().stream()
+                .filter(entry -> entry.getValue() != null && !entry.getValue().isEmpty())
+                .mapToLong(entry -> entry.getKey().length() + entry.getValue().stream().mapToLong(String::length).sum())
+                .sum();
+    }
+
+    @JsonIgnore
+    public long getLength() {
+        return getHeadersLength() + getBodyContentLength();
+    }
+
 
     public enum BodyType {
         STRING,

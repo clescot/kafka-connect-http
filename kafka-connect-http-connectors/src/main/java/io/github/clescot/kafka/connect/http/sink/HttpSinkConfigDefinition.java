@@ -204,6 +204,10 @@ public class HttpSinkConfigDefinition {
     public static final String CONFIG_DEFAULT_RATE_LIMITER_PERIOD_IN_MS = DEFAULT_CONFIGURATION_PREFIX + RATE_LIMITER_PERIOD_IN_MS;
     public static final String CONFIG_DEFAULT_RATE_LIMITER_PERIOD_IN_MS_DOC = "period of time in milliseconds, during the max execution cannot be exceeded";
 
+    public static final String RATE_LIMITER_PERMITS_PER_CALL = DEFAULT_RATE_LIMITER_PREFIX + "permits.per.call";
+    public static final String CONFIG_DEFAULT_RATE_LIMITER_PERMITS_PER_CALL = DEFAULT_CONFIGURATION_PREFIX + RATE_LIMITER_PERMITS_PER_CALL;
+    public static final String CONFIG_DEFAULT_RATE_LIMITER_PERMITS_PER_CALL_DOC = "how many permits are consumed per call. default is 1, i.e one permit per call. if set to CONTENT_LENGTH, the number of permits consumed will be equal to the content length of the request body. if set to CONTENT_LENGTH_PLUS_HEADERS, the number of permits consumed will be equal to the content length of the request body plus the size of all headers in bytes.";
+
     public static final String RATE_LIMITER_MAX_EXECUTIONS = DEFAULT_RATE_LIMITER_PREFIX + "max.executions";
     public static final String CONFIG_DEFAULT_RATE_LIMITER_MAX_EXECUTIONS = DEFAULT_CONFIGURATION_PREFIX + RATE_LIMITER_MAX_EXECUTIONS;
     public static final String CONFIG_DEFAULT_RATE_LIMITER_MAX_EXECUTIONS_DOC = "max executions in the period defined with the '" + CONFIG_DEFAULT_RATE_LIMITER_PERIOD_IN_MS + "' parameter";

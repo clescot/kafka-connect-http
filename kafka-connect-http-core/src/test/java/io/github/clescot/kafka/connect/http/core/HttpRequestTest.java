@@ -847,7 +847,63 @@ class HttpRequestTest {
     }
 
     @Nested
-    class TestGetContentType{
+    class TestGetHeadersLength{
+        @Test
+        void test_get_headers_length_with_no_headers() {
+            //given
+            HttpRequest httpRequest = new HttpRequest(
+                    "http://www.stuff.com",
+                    HttpRequest.Method.GET
+            );
+            //when
+            long headersLength = httpRequest.getHeadersLength();
+            //then
+            assertThat(headersLength).isEqualTo(0);
+        }
+
+        @Test
+        void test_get_headers_length_with_headers() {
+            //given
+            HttpRequest httpRequest = new HttpRequest(
+                    "http://www.stuff.com",
+                    HttpRequest.Method.GET
+            );
+            Map<String, List<String>> headers = Maps.newHashMap();
+            String key1 = "X-stuff";
+            String value1 = "m-y-value";
+            headers.put(key1, Lists.newArrayList(value1));
+            String key2 = "X-correlation-id";
+            String value2 = "44-999-33-dd";
+            headers.put(key2, Lists.newArrayList(value2,value2));
+            String key3 = "X-request-id";
+            String value3 = "11-999-ff-777";
+            headers.put(key3, Lists.newArrayList(value3));
+            httpRequest.setHeaders(headers);
+            //when
+            long headersLength = httpRequest.getHeadersLength();
+            //then
+            assertThat(headersLength).isEqualTo(
+                    key1.length()+value1.length()+
+                            key2.length()+value2.length()*2+
+                            key3.length()+value3.length());
+        }
+
+        @Test
+        void test_get_headers_length_without_headers() {
+            //given
+            HttpRequest httpRequest = new HttpRequest(
+                    "http://www.stuff.com",
+                    HttpRequest.Method.GET
+            );
+            //when
+            long headersLength = httpRequest.getHeadersLength();
+            //then
+            assertThat(headersLength).isEqualTo(0);
+        }
+    }
+
+    @Nested
+    class TestBodyGetContentType {
 
         @Test
         void test_get_content_type_with_string_body() {
@@ -1072,7 +1128,7 @@ class HttpRequestTest {
             headers.put("X-request-id", Lists.newArrayList("11-999-ff-777"));
             httpRequest.setHeaders(headers);
             //when
-            long contentLength = httpRequest.getContentLength();
+            long contentLength = httpRequest.getBodyContentLength();
             //then
             assertThat(contentLength).isEqualTo(DUMMY_BODY_AS_STRING.length());
         }
@@ -1091,7 +1147,7 @@ class HttpRequestTest {
             headers.put("X-request-id", Lists.newArrayList("11-999-ff-777"));
             httpRequest.setHeaders(headers);
             //when
-            long contentLength = httpRequest.getContentLength();
+            long contentLength = httpRequest.getBodyContentLength();
             //then
             assertThat(contentLength).isEqualTo(DUMMY_BODY_AS_STRING.getBytes(StandardCharsets.UTF_8).length);
         }
@@ -1104,7 +1160,7 @@ class HttpRequestTest {
                     HttpRequest.Method.GET
             );
             //when
-            long contentLength = httpRequest.getContentLength();
+            long contentLength = httpRequest.getBodyContentLength();
             //then
             assertThat(contentLength).isEqualTo(0L);
         }
@@ -1130,7 +1186,7 @@ class HttpRequestTest {
             headers.put("X-request-id", Lists.newArrayList("11-999-ff-777"));
             httpRequest.setHeaders(headers);
             //when
-            long contentLength = httpRequest.getContentLength();
+            long contentLength = httpRequest.getBodyContentLength();
             //then
             assertThat(contentLength).isGreaterThan(0L); //depends on the form encoding
             assertThat(contentLength).isEqualTo(key1.length()+value1.length()+key2.length()+value2.length()); //depends on the form encoding
@@ -1157,10 +1213,10 @@ class HttpRequestTest {
             headers.put("X-request-id", Lists.newArrayList("11-999-ff-777"));
             httpRequest.setHeaders(headers);
             //when
-            long contentLength = httpRequest.getContentLength();
+            long contentLength = httpRequest.getBodyContentLength();
             //then
             assertThat(contentLength).isGreaterThan(0L);
-            assertThat(contentLength).isEqualTo(part1.getContentLength() + part2.getContentLength() + part3.getContentLength());
+            assertThat(contentLength).isEqualTo(part1.getBodyContentLength() + part2.getBodyContentLength() + part3.getBodyContentLength());
         }
     }
 }

@@ -171,7 +171,21 @@ public class HttpResponse implements Cloneable, Serializable {
     }
 
     @JsonIgnore
-    public Long getContentLength() {
+    public long getHeadersLength() {
+        return headers.entrySet().stream()
+                .filter(entry -> entry.getValue() != null && !entry.getValue().isEmpty())
+                .mapToLong(entry -> entry.getKey().length() + entry.getValue().stream().mapToLong(String::length).sum())
+                .sum();
+    }
+
+    @JsonIgnore
+    public long getLength() {
+        return getHeadersLength() + getBodyContentLength();
+    }
+
+
+    @JsonIgnore
+    public Long getBodyContentLength() {
         if (getHeaders().containsKey("Content-Length")) {
             List<String> values = getHeaders().get("Content-Length");
             if (values != null && !values.isEmpty()) {
@@ -179,13 +193,13 @@ public class HttpResponse implements Cloneable, Serializable {
                     return Long.parseLong(values.get(0));
                 } catch (NumberFormatException e) {
                     // If parsing fails, we will calculate the content length based on the body type
-                    return getContentLengthFromBodyType();
+                    return getBodyContentLengthFromBodyType();
                 }
             }
         }
-        return getContentLengthFromBodyType();
+        return getBodyContentLengthFromBodyType();
     }
-    private long getContentLengthFromBodyType() {
+    private long getBodyContentLengthFromBodyType() {
         if (BodyType.STRING == bodyType) {
             return bodyAsString.getBytes().length;
         } else if (BodyType.BYTE_ARRAY == bodyType) {
@@ -199,7 +213,7 @@ public class HttpResponse implements Cloneable, Serializable {
                             .map(pair->pair.getKey().length()+pair.getValue().length())
                             .reduce(Integer::sum).orElse(0): 0;
         } else if (BodyType.MULTIPART == bodyType) {
-            return parts.values().stream().mapToLong(HttpPart::getContentLength).sum();
+            return parts.values().stream().mapToLong(HttpPart::getBodyContentLength).sum();
         }
         return 0;
     }
