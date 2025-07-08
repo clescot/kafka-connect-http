@@ -1019,6 +1019,50 @@ class HttpRequestTest {
 
 
     @Nested
+    class TestGetLength{
+        @Test
+        void test_get_length_with_no_body() {
+            //given
+            HttpRequest httpRequest = new HttpRequest(
+                    "http://www.stuff.com",
+                    HttpRequest.Method.GET
+            );
+            //when
+            long length = httpRequest.getLength();
+            //then
+            assertThat(length).isEqualTo(0);
+        }
+
+        @Test
+        void test_get_length_with_body_as_string() {
+            //given
+            HttpRequest httpRequest = new HttpRequest(
+                    "http://www.stuff.com",
+                    HttpRequest.Method.GET
+            );
+            httpRequest.setBodyAsString(DUMMY_BODY_AS_STRING);
+            //when
+            long length = httpRequest.getLength();
+            //then
+            assertThat(length).isEqualTo(DUMMY_BODY_AS_STRING.length());
+        }
+
+        @Test
+        void test_get_length_with_body_as_byte_array() {
+            //given
+            HttpRequest httpRequest = new HttpRequest(
+                    "http://www.stuff.com",
+                    HttpRequest.Method.GET
+            );
+            httpRequest.setBodyAsByteArray(DUMMY_BODY_AS_STRING.getBytes(StandardCharsets.UTF_8));
+            //when
+            long length = httpRequest.getLength();
+            //then
+            long headersLength = httpRequest.getHeadersLength();
+            assertThat(length).isEqualTo(headersLength+DUMMY_BODY_AS_STRING.getBytes(StandardCharsets.UTF_8).length);
+        }
+    }
+    @Nested
     class TestGetBoundary{
         @Test
         void test_get_boundary_with_no_headers() {
