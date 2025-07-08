@@ -2,13 +2,11 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <name>kafka-connect-http</name>
-    <description>a set of Kafka Connect connectors (Sink and Source), to interact with HTTP servers, linked via an in
-        memory queue.
-    </description>
+    <description>a set of Kafka Connect connectors (Sink and Source), to interact with HTTP servers.</description>
+    <url>https://github.com/clescot/kafka-connect-http</url>
     <groupId>io.github.clescot</groupId>
     <artifactId>kafka-connect-http</artifactId>
     <version>0.8.45-SNAPSHOT</version>
-    <url>https://github.com/clescot/kafka-connect-http</url>
     <licenses>
         <license>
             <name>Apache License, Version 2.0</name>
