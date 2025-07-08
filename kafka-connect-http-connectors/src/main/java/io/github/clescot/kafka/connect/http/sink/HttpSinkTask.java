@@ -161,8 +161,8 @@ public abstract class HttpSinkTask<R, S> extends SinkTask {
         //configurations
         defaultConfiguration = new Configuration<>(DEFAULT_CONFIGURATION_ID, httpClientFactory, httpSinkConnectorConfig, executorService, meterRegistry);
         customConfigurations = buildCustomConfigurations(httpClientFactory, httpSinkConnectorConfig, defaultConfiguration, executorService);
-
-        httpTask = new HttpTask<>(httpSinkConnectorConfig, defaultConfiguration, customConfigurations, meterRegistry, executorService);
+        Map<String,String> config = httpSinkConnectorConfig.originalsStrings();
+        httpTask = new HttpTask<>(config, defaultConfiguration, customConfigurations, meterRegistry, executorService);
 
         try {
             errantRecordReporter = context.errantRecordReporter();

@@ -9,12 +9,12 @@ import io.micrometer.core.instrument.binder.jvm.*;
 import io.micrometer.core.instrument.binder.logging.LogbackMetrics;
 import io.micrometer.core.instrument.binder.system.ProcessorMetrics;
 import io.micrometer.core.instrument.composite.CompositeMeterRegistry;
-import org.apache.kafka.common.config.AbstractConfig;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 
@@ -35,7 +35,7 @@ public class HttpTask<R, S> {
     private static CompositeMeterRegistry meterRegistry;
 
 
-    public HttpTask(AbstractConfig config,
+    public HttpTask(Map<String,String> config,
                     Configuration<R, S> defaultConfiguration,
                     List<Configuration<R, S>> customConfigurations,
                     CompositeMeterRegistry meterRegistry,
@@ -79,38 +79,38 @@ public class HttpTask<R, S> {
                 .orElse(defaultConfiguration);
     }
 
-    private static void bindMetrics(AbstractConfig config, MeterRegistry meterRegistry, ExecutorService myExecutorService) {
-        boolean bindExecutorServiceMetrics = Boolean.parseBoolean(config.getString(METER_REGISTRY_BIND_METRICS_EXECUTOR_SERVICE));
+    private static void bindMetrics(Map<String,String> config, MeterRegistry meterRegistry, ExecutorService myExecutorService) {
+        boolean bindExecutorServiceMetrics = Boolean.parseBoolean(config.get(METER_REGISTRY_BIND_METRICS_EXECUTOR_SERVICE));
         if (bindExecutorServiceMetrics) {
             new ExecutorServiceMetrics(myExecutorService, "HttpSinkTask", Lists.newArrayList()).bindTo(meterRegistry);
         }
-        boolean bindJvmMemoryMetrics = Boolean.parseBoolean(config.getString(METER_REGISTRY_BIND_METRICS_JVM_MEMORY));
+        boolean bindJvmMemoryMetrics = Boolean.parseBoolean(config.get(METER_REGISTRY_BIND_METRICS_JVM_MEMORY));
         if (bindJvmMemoryMetrics) {
             new JvmMemoryMetrics().bindTo(meterRegistry);
         }
-        boolean bindJvmThreadMetrics = Boolean.parseBoolean(config.getString(METER_REGISTRY_BIND_METRICS_JVM_THREAD));
+        boolean bindJvmThreadMetrics = Boolean.parseBoolean(config.get(METER_REGISTRY_BIND_METRICS_JVM_THREAD));
         if (bindJvmThreadMetrics) {
             new JvmThreadMetrics().bindTo(meterRegistry);
         }
-        boolean bindJvmInfoMetrics = Boolean.parseBoolean(config.getString(METER_REGISTRY_BIND_METRICS_JVM_INFO));
+        boolean bindJvmInfoMetrics = Boolean.parseBoolean(config.get(METER_REGISTRY_BIND_METRICS_JVM_INFO));
         if (bindJvmInfoMetrics) {
             new JvmInfoMetrics().bindTo(meterRegistry);
         }
-        boolean bindJvmGcMetrics = Boolean.parseBoolean(config.getString(METER_REGISTRY_BIND_METRICS_JVM_GC));
+        boolean bindJvmGcMetrics = Boolean.parseBoolean(config.get(METER_REGISTRY_BIND_METRICS_JVM_GC));
         if (bindJvmGcMetrics) {
             try (JvmGcMetrics gcMetrics = new JvmGcMetrics()) {
                 gcMetrics.bindTo(meterRegistry);
             }
         }
-        boolean bindJVMClassLoaderMetrics = Boolean.parseBoolean(config.getString(METER_REGISTRY_BIND_METRICS_JVM_CLASSLOADER));
+        boolean bindJVMClassLoaderMetrics = Boolean.parseBoolean(config.get(METER_REGISTRY_BIND_METRICS_JVM_CLASSLOADER));
         if (bindJVMClassLoaderMetrics) {
             new ClassLoaderMetrics().bindTo(meterRegistry);
         }
-        boolean bindJVMProcessorMetrics = Boolean.parseBoolean(config.getString(METER_REGISTRY_BIND_METRICS_JVM_PROCESSOR));
+        boolean bindJVMProcessorMetrics = Boolean.parseBoolean(config.get(METER_REGISTRY_BIND_METRICS_JVM_PROCESSOR));
         if (bindJVMProcessorMetrics) {
             new ProcessorMetrics().bindTo(meterRegistry);
         }
-        boolean bindLogbackMetrics = Boolean.parseBoolean(config.getString(METER_REGISTRY_BIND_METRICS_LOGBACK));
+        boolean bindLogbackMetrics = Boolean.parseBoolean(config.get(METER_REGISTRY_BIND_METRICS_LOGBACK));
         if (bindLogbackMetrics) {
             try (LogbackMetrics logbackMetrics = new LogbackMetrics()) {
                 logbackMetrics.bindTo(meterRegistry);
