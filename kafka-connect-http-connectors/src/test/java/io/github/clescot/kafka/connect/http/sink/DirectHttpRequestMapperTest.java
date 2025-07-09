@@ -64,20 +64,6 @@ class DirectHttpRequestMapperTest {
         JexlEngine jexlEngine = new JexlBuilder().features(features).permissions(permissions).create();
         httpRequestMapper = new DirectHttpRequestMapper(DEFAULT,jexlEngine, "true");
         schemaRegistryClient = new MockSchemaRegistryClient(Lists.newArrayList(new JsonSchemaProvider()));
-        //Register http part
-        LOGGER.info("Registering schemas in mock schema registry");
-        ParsedSchema parsedPartSchema = SchemaLoader.loadHttpPartSchema();
-        schemaRegistryClient.register("httpPart",parsedPartSchema);
-        //register http request
-        ParsedSchema parsedHttpRequestSchema = SchemaLoader.loadHttpRequestSchema();
-        schemaRegistryClient.register("httpRequest",parsedHttpRequestSchema);
-        //register http response
-        ParsedSchema parsedHttpResponseSchema = SchemaLoader.loadHttpResponseSchema();
-        schemaRegistryClient.register("httpResponse",parsedHttpResponseSchema);
-        //register http exchange
-        ParsedSchema parsedHttpExchangeSchema = SchemaLoader.loadHttpExchangeSchema();
-        schemaRegistryClient.register("httpExchange",parsedHttpExchangeSchema);
-        LOGGER.info("end Registering schemas in mock schema registry");
     }
     @Nested
     class TestMap {
