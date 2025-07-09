@@ -29,6 +29,8 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.net.DatagramSocket;
@@ -43,7 +45,7 @@ import static io.github.clescot.kafka.connect.http.sink.HttpSinkTask.DEFAULT;
 import static org.assertj.core.api.Assertions.assertThat;
 
 class DirectHttpRequestMapperTest {
-
+    private static final Logger LOGGER = LoggerFactory.getLogger(DirectHttpRequestMapperTest.class);
     private static final String DUMMY_BODY = "stuff";
     private static final String DUMMY_URL = "http://www." + DUMMY_BODY + ".com";
     private static final HttpRequest.Method DUMMY_METHOD = HttpRequest.Method.POST;
@@ -63,6 +65,7 @@ class DirectHttpRequestMapperTest {
         httpRequestMapper = new DirectHttpRequestMapper(DEFAULT,jexlEngine, "true");
         schemaRegistryClient = new MockSchemaRegistryClient(Lists.newArrayList(new JsonSchemaProvider()));
         //Register http part
+        LOGGER.info("Registering schemas in mock schema registry");
         ParsedSchema parsedPartSchema = SchemaLoader.loadHttpPartSchema();
         schemaRegistryClient.register("httpPart",parsedPartSchema);
         //register http request
@@ -74,6 +77,7 @@ class DirectHttpRequestMapperTest {
         //register http exchange
         ParsedSchema parsedHttpExchangeSchema = SchemaLoader.loadHttpExchangeSchema();
         schemaRegistryClient.register("httpExchange",parsedHttpExchangeSchema);
+        LOGGER.info("end Registering schemas in mock schema registry");
     }
     @Nested
     class TestMap {
