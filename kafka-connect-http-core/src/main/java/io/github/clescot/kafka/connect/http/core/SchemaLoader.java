@@ -37,11 +37,11 @@ public class SchemaLoader {
         File file = new File(directory);
         if (depth > 0) {
             for (int i = 0; i < depth; i++) {
-                System.out.print("   ");
+                LOGGER.info("   ");
             }
-            System.out.print("|__");
+            LOGGER.info("|__");
         }
-        System.out.println(file.getName());
+        LOGGER.info(file.getName());
         if (file.isDirectory()) {
             File[] files = file.listFiles();
             for (int i = 0; i < files.length; i++) {
