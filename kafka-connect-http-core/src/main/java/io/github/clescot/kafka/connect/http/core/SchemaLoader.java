@@ -5,6 +5,7 @@ import io.confluent.kafka.schemaregistry.json.JsonSchema;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.File;
 import java.io.IOException;
 import java.net.URISyntaxException;
 import java.net.URL;
@@ -25,9 +26,30 @@ public class SchemaLoader {
             return Files.readString(path);
         }catch (Throwable t){
             LOGGER.error("Error loading schema from path: " + schemaPath, t);
+            displayDirRecursively(".",0);
             throw new RuntimeException("Error loading schema from path: " + schemaPath, t);
         }
     }
+
+
+
+    public static void displayDirRecursively(String directory, int depth) {
+        File file = new File(directory);
+        if (depth > 0) {
+            for (int i = 0; i < depth; i++) {
+                System.out.print("   ");
+            }
+            System.out.print("|__");
+        }
+        System.out.println(file.getName());
+        if (file.isDirectory()) {
+            File[] files = file.listFiles();
+            for (int i = 0; i < files.length; i++) {
+                displayDirRecursively(files[i].getPath(), depth + 1);
+            }
+        }
+    }
+
 
     public static ParsedSchema loadHttpRequestSchema(){
         try {
