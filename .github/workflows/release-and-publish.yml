@@ -29,7 +29,7 @@ jobs:
           git config --global user.email "actions@github.com"
           git config --global user.name "clescot"
       - name: Publish to the Maven Central Repository via central.sonatype.com
-        run: mvn -B release:prepare release:perform -e -PsonatypeDeploy --no-transfer-progress  -DskipTests  deploy  -DskipNexusStagingDeployMojo=true
+        run: mvn -B release:prepare release:perform -e -PsonatypeDeploy --no-transfer-progress  -Dmaven.test.skip=true  deploy  -DskipNexusStagingDeployMojo=true
         env:
           MAVEN_USERNAME: "${{ secrets.NEXUS_USERNAME }}"
           MAVEN_PASSWORD: "${{ secrets.NEXUS_PASSWORD }}"
