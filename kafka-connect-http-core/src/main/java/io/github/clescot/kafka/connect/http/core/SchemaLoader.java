@@ -15,13 +15,18 @@ import java.nio.file.Paths;
 public class SchemaLoader {
     private static final Logger LOGGER = LoggerFactory.getLogger(SchemaLoader.class);
     private static String loadSchema(String schemaPath) throws IOException, URISyntaxException {
-        URL url = Thread.currentThread().getContextClassLoader().getResource(schemaPath);
-        if (url == null) {
-            LOGGER.error("Schema file not found: " + schemaPath);
-            throw new IllegalStateException("Schema file not found: " + schemaPath);
+        try {
+            URL url = Thread.currentThread().getContextClassLoader().getResource(schemaPath);
+            if (url == null) {
+                LOGGER.error("Schema file not found: " + schemaPath);
+                throw new IllegalStateException("Schema file not found: " + schemaPath);
+            }
+            Path path = Paths.get(url.toURI());
+            return Files.readString(path);
+        }catch (Throwable t){
+            LOGGER.error("Error loading schema from path: " + schemaPath, t);
+            throw new RuntimeException("Error loading schema from path: " + schemaPath, t);
         }
-        Path path = Paths.get(url.toURI());
-        return Files.readString(path);
     }
 
     public static ParsedSchema loadHttpRequestSchema(){
