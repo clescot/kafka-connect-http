@@ -2,6 +2,8 @@ package io.github.clescot.kafka.connect.http.core;
 
 import io.confluent.kafka.schemaregistry.ParsedSchema;
 import io.confluent.kafka.schemaregistry.json.JsonSchema;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.net.URISyntaxException;
@@ -11,10 +13,11 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 
 public class SchemaLoader {
-
+    private static final Logger LOGGER = LoggerFactory.getLogger(SchemaLoader.class);
     private static String loadSchema(String schemaPath) throws IOException, URISyntaxException {
         URL url = Thread.currentThread().getContextClassLoader().getResource(schemaPath);
         if (url == null) {
+            LOGGER.error("Schema file not found: " + schemaPath);
             throw new IllegalStateException("Schema file not found: " + schemaPath);
         }
         Path path = Paths.get(url.toURI());
