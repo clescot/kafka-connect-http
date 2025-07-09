@@ -1,0 +1,66 @@
+{
+  "$id": "https://raw.githubusercontent.com/clescot/kafka-connect-http/master/kafka-connect-http-core/src/main/resources/schemas/json/versions/3/http-response.json",
+  "$schema": "http://json-schema.org/draft/2019-09/schema#",
+  "title": "Http Response",
+  "type": "object",
+  "javaType":"io.github.clescot.kafka.connect.http.core.HttpResponse",
+  "additionalProperties": false,
+  "properties": {
+    "statusCode":{
+      "type": "integer"
+    },
+    "statusMessage":  {
+      "type": "string"
+    },
+    "protocol":  {
+      "type": "string"
+    },
+    "headers":  {
+      "type": "object",
+      "additionalProperties": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        }
+      }
+    },
+    "bodyAsString":  {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "bodyAsForm":
+    {
+      "type": "object",
+      "connect.type": "map",
+      "additionalProperties" : { "type": "string" }
+    },
+    "bodyAsByteArray":  {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "bodyAsMultipart": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "bodyType": {
+      "type": "string",
+      "default": "STRING",
+      "enum": [
+        "STRING",
+        "FORM",
+        "BYTE_ARRAY",
+        "MULTIPART"
+      ]
+    }
+  },
+  "required": [
+    "statusCode",
+    "statusMessage"
+  ]
+}

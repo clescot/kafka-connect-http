@@ -10,14 +10,10 @@ import java.time.format.DateTimeFormatter;
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicInteger;
 
-@io.confluent.kafka.schemaregistry.annotations.Schema(value = HttpExchange.SCHEMA_AS_STRING, refs = {
-        @io.confluent.kafka.schemaregistry.annotations.SchemaReference(name="io.github.clescot.kafka.connect.http.core.HttpRequest", subject="httpRequest"),
-        @io.confluent.kafka.schemaregistry.annotations.SchemaReference(name="io.github.clescot.kafka.connect.http.core.HttpResponse", subject="httpResponse")
-})
-public class HttpExchange implements Serializable {
 
-    public static final long serialVersionUID = 1L;
-    public static final int VERSION = 2;
+public class HttpExchange implements Cloneable, Serializable {
+
+    private static final long serialVersionUID = 1L;
     public static final int HTTP_EXCHANGE_VERSION = 2;
     public static final String DURATION_IN_MILLIS = "durationInMillis";
     public static final String MOMENT = "moment";
@@ -37,43 +33,6 @@ public class HttpExchange implements Serializable {
             // response
             .field(HTTP_RESPONSE, HttpResponse.SCHEMA)
             .schema();
-    public static final String BASE_SCHEMA_ID = "https://raw.githubusercontent.com/clescot/kafka-connect-http/master/kafka-connect-http-core/src/main/resources/schemas/json/versions/";
-    public static final String SCHEMA_ID = BASE_SCHEMA_ID + VERSION + "/"+ "http-exchange.json";
-    public static final String SCHEMA_AS_STRING = "{\n" +
-            "  \"$id\": \"" + SCHEMA_ID + "\",\n" +
-            "  \"$schema\": \"http://json-schema.org/draft/20" + VERSION + "9-09/schema#\",\n" +
-            "  \"title\": \"Http Exchange\",\n" +
-            "  \"type\": \"object\",\n" +
-            "  \"additionalProperties\": false,\n" +
-            "  \"properties\": {\n" +
-            "    \"durationInMillis\": {\n" +
-            "      \"type\": \"integer\"\n" +
-            "    },\n" +
-            "    \"moment\": {\n" +
-            "      \"type\": \"string\"\n" +
-            "    },\n" +
-            "    \"attempts\": {\n" +
-            "      \"type\": \"integer\"\n" +
-            "    },\n" +
-            "    \"success\": {\n" +
-            "      \"type\": \"boolean\"\n" +
-            "    },\n" +
-            "    \"httpResponse\": {\n" +
-            "      \"$ref\": \"" + HttpResponse.SCHEMA_ID + "\"\n" +
-            "    },\n" +
-            "    \"httpRequest\": {\n" +
-            "      \"$ref\": \"" + HttpRequest.SCHEMA_ID + "\"\n" +
-            "    }\n" +
-            "  },\n" +
-            "  \"required\": [\n" +
-            "    \"moment\",\n" +
-            "    \"attempts\",\n" +
-            "    \"success\",\n" +
-            "    \"httpRequest\",\n" +
-            "    \"httpResponse\"\n" +
-            "  ]\n" +
-            "\n" +
-            "}";
 
     private Long durationInMillis;
     private OffsetDateTime moment;
@@ -174,6 +133,22 @@ public class HttpExchange implements Serializable {
         struct.put(HTTP_RESPONSE, httpResponse.toStruct());
         return struct;
 
+    }
+
+    @Override
+    public Object clone() {
+        try {
+            HttpExchange clone = (HttpExchange) super.clone();
+            clone.setDurationInMillis(this.durationInMillis);
+            clone.setMoment(this.moment);
+            clone.setAttempts(new AtomicInteger(this.attempts.get()));
+            clone.setHttpResponse((HttpResponse) this.httpResponse.clone());
+            clone.setHttpRequest((HttpRequest) this.httpRequest.clone());
+            clone.setSuccess(this.success);
+            return clone;
+        } catch (CloneNotSupportedException e) {
+            throw new AssertionError();
+        }
     }
 
 

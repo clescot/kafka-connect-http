@@ -11,6 +11,7 @@ import org.apache.kafka.connect.data.SchemaBuilder;
 import org.apache.kafka.connect.data.Struct;
 
 import java.io.File;
+import java.io.Serializable;
 import java.net.URI;
 import java.util.*;
 
@@ -20,10 +21,9 @@ import static io.github.clescot.kafka.connect.http.core.HttpPart.BodyType.FORM_D
 /**
  * part of a multipart request.
  */
-@io.confluent.kafka.schemaregistry.annotations.Schema(value = HttpPart.SCHEMA_AS_STRING,
-        refs = {})
 @JsonInclude(Include.NON_NULL)
-public class HttpPart {
+public class HttpPart implements Cloneable, Serializable {
+    private static final long serialVersionUID = 1L;
     public static final String APPLICATION_X_WWW_FORM_URLENCODED = "application/x-www-form-urlencoded";
     public static final String APPLICATION_JSON = "application/json";
     public static final String APPLICATION_OCTET_STREAM = "application/octet-stream";
@@ -34,8 +34,8 @@ public class HttpPart {
     private String contentAsString;
     private String contentAsByteArray;
     //Map.Entry<parameterName,Map.Entry<parameterValue,Optional<File>>
-    private Map.Entry<String, Map.Entry<String, Optional<File>>> contentAsFormEntry;
-    public static final int VERSION = 1;
+    private Map.Entry<String, File> contentAsFormEntry;
+    public static final int VERSION = 2;
     public static final String HEADERS = "headers";
     public static final String BODY_TYPE = "bodyType";
     public static final String BODY_AS_STRING = "bodyAsString";
@@ -55,61 +55,17 @@ public class HttpPart {
             .field(FILE_URI, Schema.OPTIONAL_STRING_SCHEMA)
             .optional()
             .schema();
-    public static final String SCHEMA_ID = HttpExchange.BASE_SCHEMA_ID + VERSION + "/" + "http-part.json";
-    public static final String SCHEMA_AS_STRING =
-            "{\n" +
-                    "  \"$id\": \"" + SCHEMA_ID + "\",\n" +
-                    "  \"$schema\": \"http://json-schema.org/draft/2019-09/schema#\",\n" +
-                    "  \"title\": \"Http Part\",\n" +
-                    "  \"type\": \"object\",\n" +
-                    "  \"additionalProperties\": false,\n" +
-                    "  \"properties\": {\n" +
-                    "    \"headers\": {\n" +
-                    "      \"type\": \"object\",\n" +
-                    "      \"connect.type\": \"map\",\n" +
-                    "      \"additionalProperties\": {\n" +
-                    "        \"type\": \"array\",\n" +
-                    "        \"items\": {\n" +
-                    "          \"type\": \"string\"\n" +
-                    "        }\n" +
-                    "      }\n" +
-                    "    },\n" +
-                    "    \"bodyAsString\": {\n" +
-                    "      \"type\": \"string\"\n" +
-                    "    },\n" +
-                    "    \"bodyAsFormData\": {\n" +
-                    "      \"type\": \"string\"\n" +
-                    "    },\n" +
-                    "    \"bodyAsByteArray\": {\n" +
-                    "      \"type\": \"string\"\n" +
-                    "    },\n" +
-                    "    \"fileURI\": {\n" +
-                    "      \"type\": \"string\"\n" +
-                    "    },\n" +
-                    "    \"bodyType\": {\n" +
-                    "      \"type\": \"string\",\n" +
-                    "      \"enum\": [\n" +
-                    "        \"STRING\",\n" +
-                    "        \"FORM_DATA\",\n" +
-                    "        \"FORM_DATA_AS_REFERENCE\",\n" +
-                    "        \"BYTE_ARRAY\"\n" +
-                    "      ]\n" +
-                    "    }\n" +
-                    "  },\n" +
-                    "  \"required\": [\n" +
-                    "    \"bodyType\"\n" +
-                    "  ]\n" +
-                    "}";
 
 
     //for deserialization only
+    @SuppressWarnings("unused")
     protected HttpPart() {
     }
 
     //content as byte array
     public HttpPart(Map<String, List<String>> headers, byte[] contentAsByteArray) {
         this.bodyType = HttpPart.BodyType.BYTE_ARRAY;
-        this.headers = headers;
+        this.headers = headers!=null?headers:Maps.newHashMap();
         this.contentAsByteArray = Base64.getMimeEncoder().encodeToString(contentAsByteArray);
     }
 
@@ -119,33 +75,35 @@ public class HttpPart {
     }
 
     //content as form data with plain file content
-    public HttpPart(Map<String, List<String>> headers, String parameterName,String parameterValue,File file) {
+    public HttpPart(Map<String, List<String>> headers, String fileName,File file) {
         this.bodyType = FORM_DATA;
-        this.headers = headers;
-        this.contentAsFormEntry = Map.entry(parameterName,Map.entry(parameterValue,Optional.ofNullable(file)));
+        this.headers = headers!=null?headers:Maps.newHashMap();
+        this.contentAsFormEntry = Map.entry(fileName,file);
     }
 
     //content as form data with plain file content without headers
-    public HttpPart(String parameterName,String parameterValue,File file) {
-        this(Map.of(CONTENT_TYPE, Lists.newArrayList(APPLICATION_X_WWW_FORM_URLENCODED)), parameterName,parameterValue,file);
+    public HttpPart(String fileName,File file) {
+        this(Map.of(CONTENT_TYPE, Lists.newArrayList(APPLICATION_X_WWW_FORM_URLENCODED)),fileName,file);
     }
 
     //content as form data with file content as a reference
-    public HttpPart(Map<String, List<String>> headers, String parameterName, String parameterValue, URI fileUri) {
+    public HttpPart(Map<String, List<String>> headers, String fileName, URI fileUri) {
         this.bodyType = BodyType.FORM_DATA_AS_REFERENCE;
-        this.headers = headers;
-        this.contentAsFormEntry = Map.entry(parameterName,Map.entry(parameterValue,Optional.empty()));
+        this.headers = headers!=null?headers:Maps.newHashMap();
+        this.contentAsFormEntry = Map.entry(fileName,new File(fileUri));
         this.fileUri = fileUri;
     }
+
+
     //content as form data with file content as a reference without headers
-    public HttpPart(String parameterName, String parameterValue, URI fileUri) {
-        this(Map.of(CONTENT_TYPE, Lists.newArrayList(APPLICATION_X_WWW_FORM_URLENCODED)), parameterName, parameterValue, fileUri);
+    public HttpPart(String fileName, URI fileUri) {
+        this(Map.of(CONTENT_TYPE, Lists.newArrayList(APPLICATION_X_WWW_FORM_URLENCODED)),  fileName, fileUri);
     }
 
     //content as string
     public HttpPart(Map<String, List<String>> headers, String contentAsString) {
         this.bodyType = HttpPart.BodyType.STRING;
-        this.headers = headers;
+        this.headers = headers!=null?headers:Maps.newHashMap();
         this.contentAsString = contentAsString;
     }
     //content as string without headers
@@ -155,8 +113,11 @@ public class HttpPart {
 
     //for serialization
     public HttpPart(Struct struct) {
-        this.headers = struct.getMap(HEADERS);
+        this.headers = struct.getMap(HEADERS)!=null?struct.getMap(HEADERS): Maps.newHashMap();
+        this.bodyType = HttpPart.BodyType.valueOf(struct.getString(BODY_TYPE));
         this.contentAsByteArray = struct.getString(BODY_AS_BYTE_ARRAY);
+        this.contentAsString = struct.getString(BODY_AS_STRING);
+        //this.contentAsFormEntry = struct.getMap(BODY_AS_FORM_DATA);
     }
 
     public HttpPart.BodyType getBodyType() {
@@ -182,16 +143,13 @@ public class HttpPart {
         this.contentAsString = contentAsString;
     }
 
-    public void setContentAsFormEntry(Map.Entry<String, Map.Entry<String, Optional<File>>> contentAsFormEntry) {
+    public void setContentAsFormEntry(Map.Entry<String, File> contentAsFormEntry) {
         this.contentAsFormEntry = contentAsFormEntry;
     }
 
-    public Map.Entry<String, Map.Entry<String, Optional<File>>> getContentAsFormEntry() {
+    public Map.Entry<String,File> getContentAsFormEntry() {
         return contentAsFormEntry;
     }
-
-
-
 
     public byte[] getContentAsByteArray() {
         if (contentAsByteArray != null) {
@@ -246,7 +204,7 @@ public class HttpPart {
 
     @Override
     public String toString() {
-        return "Part{" +
+        return "HttpPart{" +
                 "bodyType:\"" + bodyType +
                 "\", headers:" + headers +
                 ", \"contentAsString\":" + contentAsString + '\"' +
@@ -265,6 +223,58 @@ public class HttpPart {
         struct.put(BODY_AS_BYTE_ARRAY, contentAsByteArray);
         struct.put(FILE_URI, fileUri);
         return struct;
+    }
+
+    @Override
+    protected Object clone() throws CloneNotSupportedException {
+        HttpPart clone = (HttpPart) super.clone();
+        if(getHeaders()!=null) {
+            clone.setHeaders(new HashMap<>(getHeaders()));
+        }
+        if (getContentAsFormEntry() != null) {
+            clone.setContentAsFormEntry(Map.entry(
+                    getContentAsFormEntry().getKey(),
+                            getContentAsFormEntry().getValue()));
+        }
+        if(getContentAsString()!=null) {
+            clone.setContentAsString(getContentAsString());
+        }
+        if(getFileUri()!=null){
+            clone.fileUri = getFileUri();
+        }
+        if (getContentAsByteArray()!=null) {
+            clone.setContentAsByteArray(getContentAsByteArray());
+        }
+        clone.bodyType = getBodyType();
+        return clone;
+    }
+
+    @JsonIgnore
+    public long getBodyContentLength() {
+        switch(bodyType) {
+            case STRING:
+                return contentAsString != null ? contentAsString.length() : 0;
+            case BYTE_ARRAY:
+                return contentAsByteArray != null ? getContentAsByteArray().length : 0;
+            case FORM_DATA:
+            case FORM_DATA_AS_REFERENCE:
+                return contentAsFormEntry != null && contentAsFormEntry.getValue() != null ? contentAsFormEntry.getValue().length() : 0;
+            default:
+                return 0;
+        }
+    }
+
+    @JsonIgnore
+    public long getHeadersLength() {
+        return headers.entrySet().stream()
+                .filter(entry -> entry.getValue() != null && !entry.getValue().isEmpty())
+                .mapToLong(entry -> entry.getKey().length() + entry.getValue().stream().mapToLong(String::length).sum())
+                .sum();
+    }
+
+    @JsonIgnore
+    public long getLength() {
+        return getHeadersLength() + getBodyContentLength();
     }
 
 

@@ -419,49 +419,49 @@ public class OkHttpClient extends AbstractHttpClient<Request, Response> {
                 }
                 case MULTIPART: {
                     //HttpRequest.BodyType = MULTIPART
-                    List<HttpPart> bodyAsMultipart = httpRequest.getParts();
+                    Map<String, HttpPart> bodyAsMultipart = httpRequest.getParts();
                     String boundary = null;
-                    if(firstContentType!=null && firstContentType.contains("boundary=")){
+                    if (firstContentType != null && firstContentType.contains("boundary=")) {
                         List<String> myParts = Lists.newArrayList(firstContentType.split("boundary="));
-                        if(myParts.size()==2){
+                        if (myParts.size() == 2) {
                             boundary = myParts.get(1);
                         }
                     }
-                    MultipartBody.Builder multipartBuilder  = new MultipartBody.Builder(MoreObjects.firstNonNull(boundary,"---"));
+                    MultipartBody.Builder multipartBuilder = new MultipartBody.Builder(MoreObjects.firstNonNull(boundary, MoreObjects.firstNonNull(boundary,"---")));
                     multipartBuilder.setType(MediaType.parse("multipart/form-data"));
-                    for (HttpPart httpPart : bodyAsMultipart) {
+                    for (Map.Entry<String, HttpPart> entry : bodyAsMultipart.entrySet()) {
                         RequestBody partRequestBody;
+                        String parameterName = entry.getKey();
+                        HttpPart httpPart = entry.getValue();
                         Map<String, List<String>> partHeaders = httpPart.getHeaders();
-                        Headers okPartHeaders = getHeaders(partHeaders);
-                        switch(httpPart.getBodyType()){
+                        Headers okPartHeaders = getHeaders(filterHeaders(partHeaders));
+                        switch (httpPart.getBodyType()) {
+                            //HttpPart is <string,optional<file>>
                             case FORM_DATA:
-                                Map.Entry<String, Map.Entry<String, Optional<File>>> contentAsFormEntry = httpPart.getContentAsFormEntry();
-
-                                Map.Entry<String, Optional<File>> entry = contentAsFormEntry.getValue();
-                                if(entry.getValue().isEmpty()) {
-                                    multipartBuilder.addFormDataPart(contentAsFormEntry.getKey(), contentAsFormEntry.getValue().getKey());
-                                }else{
-                                    File file = entry.getValue().get();
-                                    requestBody = RequestBody.create(file,MediaType.parse(""));
-                                    multipartBuilder.addFormDataPart(contentAsFormEntry.getKey(), file.getName(),requestBody);
-                                }
+                                Map.Entry<String, File> contentAsFormEntry = httpPart.getContentAsFormEntry();
+                                String fileName = contentAsFormEntry.getKey();
+                                File file = contentAsFormEntry.getValue();
+                                requestBody = RequestBody.create(file, MediaType.parse("application/octet-stream"));
+                                multipartBuilder.addFormDataPart(parameterName, fileName, requestBody);
                                 break;
+                            //HttpPart is <fileUri>
                             case FORM_DATA_AS_REFERENCE:
-                                Map.Entry<String, Map.Entry<String, Optional<File>>> formEntry = httpPart.getContentAsFormEntry();
-                                File file = new File(httpPart.getFileUri());
-                                requestBody = RequestBody.create(file,MediaType.parse(""));
-                                multipartBuilder.addFormDataPart(formEntry.getKey(), file.getName(),requestBody);
+                                Map.Entry<String, File> formEntry = httpPart.getContentAsFormEntry();
+                                File fileAsReference = new File(httpPart.getFileUri());
+                                requestBody = RequestBody.create(fileAsReference, MediaType.parse("application/octet-stream"));
+                                multipartBuilder.addFormDataPart(parameterName, formEntry.getKey(), requestBody);
                                 break;
+                            //HttpPart is <string,byte[]>
                             case BYTE_ARRAY:
                                 partRequestBody = toRequestBody(httpPart.getContentAsByteArray(), httpPart.getContentType());
                                 multipartBuilder.addPart(okPartHeaders,partRequestBody);
                                 break;
+                            //HttpPart is <string>
                             case STRING:
                             default:
                                 String contentAsString = httpPart.getContentAsString();
                                 partRequestBody = RequestBody.create(contentAsString, MediaType.parse(httpPart.getContentType()));
-                                MultipartBody.Part part =  MultipartBody.Part.create(partRequestBody);
-                                multipartBuilder.addPart(part);
+                                multipartBuilder.addPart(okPartHeaders,partRequestBody);
                                 break;
                         }
                     }
@@ -470,7 +470,7 @@ public class OkHttpClient extends AbstractHttpClient<Request, Response> {
                 }
 
                 case STRING:
-                default:{
+                default: {
                     //use the contentType set in HttpRequest. if not set, use application/json
                     requestBody = RequestBody.create(httpRequest.getBodyAsString(), MediaType.parse(Optional.ofNullable(firstContentType).orElse("application/json")));
                     break;
@@ -483,6 +483,18 @@ public class OkHttpClient extends AbstractHttpClient<Request, Response> {
         builder.method(method, requestBody);
         return builder.build();
     }
+
+    private Map<String, List<String>> filterHeaders(Map<String, List<String>> headers) {
+        return headers != null ? headers.entrySet().stream()
+                .filter(entry -> !entry.getKey().equalsIgnoreCase("Content-Type"))
+                .collect(
+                        Collectors.toMap(
+                                Map.Entry::getKey,
+                                Map.Entry::getValue
+                        )
+                ) : Maps.newHashMap();
+    }
+
 
     @NotNull
     private static Headers getHeaders(Map<String, List<String>> headers) {
@@ -506,13 +518,13 @@ public class OkHttpClient extends AbstractHttpClient<Request, Response> {
 
 
     @Override
-    public HttpResponse buildResponse(HttpResponseBuilder httpResponseBuilder,Response response) {
+    public HttpResponse buildResponse(HttpResponseBuilder httpResponseBuilder, Response response) {
         HttpResponse httpResponse;
         try {
             Protocol protocol = response.protocol();
             if (LOGGER.isTraceEnabled()) {
-                LOGGER.trace("native response :'{}'",response);
-                LOGGER.trace("protocol: '{}',cache-control: '{}',handshake: '{}',challenges: '{}'", protocol,response.cacheControl(),response.handshake(),response.challenges());
+                LOGGER.trace("native response :'{}'", response);
+                LOGGER.trace("protocol: '{}',cache-control: '{}',handshake: '{}',challenges: '{}'", protocol, response.cacheControl(), response.handshake(), response.challenges());
             }
             httpResponseBuilder.setStatus(response.code(), response.message());
             //TODO handle more bodyType for HttpResponse

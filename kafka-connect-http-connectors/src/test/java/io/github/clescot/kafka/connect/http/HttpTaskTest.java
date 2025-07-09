@@ -66,7 +66,7 @@ class HttpTaskTest {
 
     @Nested
     class CallWithRetryPolicy {
-        private HttpTask<SinkRecord,Request,Response> httpTask;
+        private HttpTask<Request,Response> httpTask;
 
         @BeforeEach
         public void setUp(){
@@ -78,7 +78,7 @@ class HttpTaskTest {
             jmxMeterRegistry.start();
             compositeMeterRegistry.add(jmxMeterRegistry);
             Configuration<Request, Response> test = new Configuration<>("test", new OkHttpClientFactory(), config, null, compositeMeterRegistry);
-            httpTask = new HttpTask<>(config, test,Lists.newArrayList(),compositeMeterRegistry,null);
+            httpTask = new HttpTask<>(config.originalsStrings(), test,Lists.newArrayList(),compositeMeterRegistry,null);
         }
 
         @Test

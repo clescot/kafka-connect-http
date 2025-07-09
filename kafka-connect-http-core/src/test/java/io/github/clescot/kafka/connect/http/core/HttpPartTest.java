@@ -1,22 +1,24 @@
 package io.github.clescot.kafka.connect.http.core;
 
-import java.io.File;
-import java.net.URL;
-import java.util.List;
-
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
+import org.apache.kafka.connect.data.Struct;
 import org.json.JSONException;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.skyscreamer.jsonassert.JSONAssert;
 
+import java.io.File;
+import java.net.URISyntaxException;
+import java.net.URL;
 import java.nio.charset.StandardCharsets;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Objects;
+import java.util.*;
 
+import static io.github.clescot.kafka.connect.http.core.HttpPart.BodyType.STRING;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 
@@ -155,27 +157,58 @@ class HttpPartTest {
         @Test
         void test_constructor_with_file_as_ref_content(){
             URL url = Thread.currentThread().getContextClassLoader().getResource("upload.txt");
-            assertDoesNotThrow(()->new HttpPart("parameterName","parameterValue", Objects.requireNonNull(url).toURI()));
+            assertDoesNotThrow(()->new HttpPart("filename", Objects.requireNonNull(url).toURI()));
         }
         @Test
         void test_constructor_with_file_as_ref_content_and_headers(){
             Map<String,List<String>> headers = new HashMap<>();
             headers.put("Content-Type",List.of("application/json"));
             URL url = Thread.currentThread().getContextClassLoader().getResource("upload.txt");
-            assertDoesNotThrow(()->new HttpPart(headers,"parameterName","parameterValue", Objects.requireNonNull(url).toURI()));
+            assertDoesNotThrow(()->new HttpPart(headers,"filename", Objects.requireNonNull(url).toURI()));
         }
 
         @Test
         void test_constructor_with_file_as_content(){
             URL url = Thread.currentThread().getContextClassLoader().getResource("upload.txt");
-            assertDoesNotThrow(()->new HttpPart("parameterName","parameterValue",new File(Objects.requireNonNull(url).toURI())));
+            assertDoesNotThrow(()->new HttpPart("filename",new File(Objects.requireNonNull(url).toURI())));
         }
         @Test
         void test_constructor_with_file_as_content_and_headers(){
             Map<String,List<String>> headers = new HashMap<>();
             headers.put("Content-Type",List.of("application/json"));
             URL url = Thread.currentThread().getContextClassLoader().getResource("upload.txt");
-            assertDoesNotThrow(()->new HttpPart(headers,"parameterName","parameterValue",new File(Objects.requireNonNull(url).toURI())));
+            assertDoesNotThrow(()->new HttpPart(headers,"filename",new File(Objects.requireNonNull(url).toURI())));
+        }
+        @Test
+        void test_constructor_with_struct_and_body_as_string(){
+            Map<String,List<String>> headers = new HashMap<>();
+            headers.put("Content-Type",List.of("application/json"));
+            Struct struct = new Struct(HttpPart.SCHEMA);
+            struct.put("headers",headers);
+            struct.put("bodyType",STRING.toString());
+            struct.put("bodyAsString","dummy string");
+            HttpPart httpPart = new HttpPart(struct);
+            assertThat(httpPart.getBodyType()).isEqualTo(STRING);
+            assertThat(httpPart.getContentAsString()).isEqualTo("dummy string");
+        }
+    }
+
+    @Nested
+    class TestToStruct{
+        @Test
+        void test_to_struct_content_as_byte_array() {
+            HttpPart httpPart = new HttpPart("test".getBytes(StandardCharsets.UTF_8));
+            Struct struct = httpPart.toStruct();
+            assertThat(struct.getString("bodyType")).isEqualTo(HttpPart.BodyType.BYTE_ARRAY.toString());
+            assertThat(new String(Base64.getDecoder().decode(struct.getString("bodyAsByteArray")))).isEqualTo("test");
+        }
+
+        @Test
+        void test_to_struct_content_as_string() {
+            HttpPart httpPart = new HttpPart("test");
+            Struct struct = httpPart.toStruct();
+            assertThat(struct.getString("bodyType")).isEqualTo(HttpPart.BodyType.STRING.toString());
+            assertThat(struct.getString("bodyAsString")).isEqualTo("test");
         }
     }
 
@@ -231,6 +264,197 @@ class HttpPartTest {
             HttpPart httpPart = new HttpPart(headers,"test");
             HttpPart httpPart2 = new HttpPart(headers,"test");
             assertThat(httpPart).isEqualTo(httpPart2);
+        }
+    }
+
+    @Nested
+    class TestClone{
+        @Test
+        void test_clone_content_as_byte_array() throws CloneNotSupportedException {
+            HttpPart httpPart = new HttpPart("test".getBytes(StandardCharsets.UTF_8));
+            HttpPart clonedHttpPart = (HttpPart) httpPart.clone();
+            assertThat(clonedHttpPart).isEqualTo(httpPart);
+            assertThat(clonedHttpPart).isEqualTo(httpPart);
+            assertThat(clonedHttpPart).isNotSameAs(httpPart);
+            assertThat(clonedHttpPart.hashCode()).isEqualTo(httpPart.hashCode());
+            assertThat(clonedHttpPart.getContentType()).isEqualTo(httpPart.getContentType());
+            assertThat(clonedHttpPart.getBodyType()).isEqualTo(httpPart.getBodyType());
+        }
+
+        @Test
+        void test_clone_content_as_form_entry_with_file() throws CloneNotSupportedException {
+            Map<String,List<String>> headers = new HashMap<>();
+            headers.put("Content-Type",List.of("application/json"));
+            HttpPart httpPart = new HttpPart(headers,"filename",new File("src/test/resources/upload.txt"));
+            HttpPart clonedHttpPart = (HttpPart) httpPart.clone();
+            assertThat(clonedHttpPart.hashCode()).isEqualTo(httpPart.hashCode());
+            assertThat(clonedHttpPart).isEqualTo(httpPart);
+            assertThat(clonedHttpPart).isNotSameAs(httpPart);
+            assertThat(clonedHttpPart.getContentType()).isEqualTo(httpPart.getContentType());
+            assertThat(clonedHttpPart.getBodyType()).isEqualTo(httpPart.getBodyType());
+        }
+
+        @Test
+        void test_clone_content_as_form_entry_with_file_uri() throws CloneNotSupportedException, URISyntaxException {
+            Map<String,List<String>> headers = new HashMap<>();
+            headers.put("Content-Type",List.of("application/json"));
+            URL uploadUrl = Thread.currentThread().getContextClassLoader().getResource("upload.txt");
+            Assertions.assertNotNull(uploadUrl);
+            HttpPart httpPart = new HttpPart(headers,"filename",uploadUrl.toURI());
+            HttpPart clonedHttpPart = (HttpPart) httpPart.clone();
+            assertThat(clonedHttpPart.hashCode()).isEqualTo(httpPart.hashCode());
+            assertThat(clonedHttpPart).isEqualTo(httpPart);
+            assertThat(clonedHttpPart).isNotSameAs(httpPart);
+            assertThat(clonedHttpPart.getContentType()).isEqualTo(httpPart.getContentType());
+            assertThat(clonedHttpPart.getBodyType()).isEqualTo(httpPart.getBodyType());
+        }
+        @Test
+        void test_clone_content_as_string() throws CloneNotSupportedException {
+            HttpPart httpPart = new HttpPart("test");
+            HttpPart clonedHttpPart = (HttpPart) httpPart.clone();
+            assertThat(clonedHttpPart.hashCode()).isEqualTo(httpPart.hashCode());
+            assertThat(clonedHttpPart).isEqualTo(httpPart);
+            assertThat(clonedHttpPart).isNotSameAs(httpPart);
+            assertThat(clonedHttpPart.getContentType()).isEqualTo(httpPart.getContentType());
+            assertThat(clonedHttpPart.getBodyType()).isEqualTo(httpPart.getBodyType());
+        }
+        @Test
+        void test_clone_content_as_string_with_headers() throws CloneNotSupportedException {
+            HttpPart httpPart = new HttpPart("test");
+            Map<String,List<String>> headers = new HashMap<>();
+            headers.put("Content-Type",List.of("application/json"));
+            httpPart.setHeaders(headers);
+            HttpPart clonedHttpPart = (HttpPart) httpPart.clone();
+            assertThat(clonedHttpPart.hashCode()).isEqualTo(httpPart.hashCode());
+            assertThat(clonedHttpPart).isEqualTo(httpPart);
+            assertThat(clonedHttpPart).isNotSameAs(httpPart);
+            assertThat(clonedHttpPart.getContentType()).isEqualTo(httpPart.getContentType());
+            assertThat(clonedHttpPart.getBodyType()).isEqualTo(httpPart.getBodyType());
+        }
+    }
+
+    @Nested
+    class TestToString {
+
+        @Test
+        void test_to_string_content_as_byte_array() {
+            HttpPart httpPart = new HttpPart("test".getBytes(StandardCharsets.UTF_8));
+            String expected = "HttpPart{bodyType:\"BYTE_ARRAY\", headers:{Content-Type=[application/octet-stream]}, \"contentAsString\":null\", \"contentAsByteArray\":\"dGVzdA==\", \"contentAsForm\":\"null\", \"fileUri\":\"null\"}";
+            assertThat(httpPart.toString()).isEqualTo(expected);
+        }
+
+        @Test
+        void test_to_string_content_as_string() {
+            HttpPart httpPart = new HttpPart("test");
+            String expected = "HttpPart{bodyType:\"STRING\", headers:{Content-Type=[application/json]}, \"contentAsString\":test\", \"contentAsByteArray\":\"null\", \"contentAsForm\":\"null\", \"fileUri\":\"null\"}";
+            assertThat(httpPart.toString()).isEqualTo(expected);
+        }
+    }
+
+    @Nested
+    class TestGetBodyLength{
+        @Test
+        void test_get_body_length_content_as_byte_array() {
+            HttpPart httpPart = new HttpPart("test".getBytes(StandardCharsets.UTF_8));
+            long bodyLength = httpPart.getBodyContentLength();
+            assertThat(bodyLength).isEqualTo("test".getBytes(StandardCharsets.UTF_8).length);
+        }
+
+        @Test
+        void test_get_body_length_content_as_string() {
+            HttpPart httpPart = new HttpPart("test");
+            long bodyLength = httpPart.getBodyContentLength();
+            assertThat(bodyLength).isEqualTo("test".length());
+        }
+
+        @Test
+        void test_get_body_length_content_as_form_entry_with_file() throws URISyntaxException {
+            URL url = Thread.currentThread().getContextClassLoader().getResource("upload.txt");
+            HttpPart httpPart = new HttpPart("filename", Objects.requireNonNull(url).toURI());
+            long bodyLength = httpPart.getBodyContentLength();
+            assertThat(bodyLength).isEqualTo(new File(Objects.requireNonNull(url).toURI()).length());
+        }
+
+        @Test
+        void test_get_body_length_content_as_form_entry_with_file_uri() throws URISyntaxException {
+            URL url = Thread.currentThread().getContextClassLoader().getResource("upload.txt");
+            HttpPart httpPart = new HttpPart("filename", Objects.requireNonNull(url).toURI());
+            long bodyLength = httpPart.getBodyContentLength();
+            assertThat(bodyLength).isEqualTo(new File(Objects.requireNonNull(url).toURI()).length());
+        }
+
+    }
+
+    @Nested
+    class TestGetHeadersLength{
+        @Test
+        void test_get_headers_length_with_no_headers() {
+            //given
+            HttpPart httpPart = new HttpPart(
+                    "test"
+            );
+            //when
+            long headersLength = httpPart.getHeadersLength();
+            //then
+            assertThat(httpPart.getContentType()).isEqualTo("application/json");
+            assertThat(headersLength).isEqualTo("Content-TYpe".length() + "application/json".length());
+        }
+
+        @Test
+        void test_get_headers_length_with_headers() {
+            //given
+            HttpRequest httpRequest = new HttpRequest(
+                    "http://www.stuff.com",
+                    HttpRequest.Method.GET
+            );
+            Map<String, List<String>> headers = Maps.newHashMap();
+            String key1 = "X-stuff";
+            String value1 = "m-y-value";
+            headers.put(key1, Lists.newArrayList(value1));
+            String key2 = "X-correlation-id";
+            String value2 = "44-999-33-dd";
+            headers.put(key2, Lists.newArrayList(value2,value2));
+            String key3 = "X-request-id";
+            String value3 = "11-999-ff-777";
+            headers.put(key3, Lists.newArrayList(value3));
+            httpRequest.setHeaders(headers);
+            //when
+            long headersLength = httpRequest.getHeadersLength();
+            //then
+            assertThat(headersLength).isEqualTo(
+                    key1.length()+value1.length()+
+                            key2.length()+value2.length()*2+
+                            key3.length()+value3.length());
+        }
+
+        @Test
+        void test_get_headers_length_without_headers() {
+            //given
+            HttpRequest httpRequest = new HttpRequest(
+                    "http://www.stuff.com",
+                    HttpRequest.Method.GET
+            );
+            //when
+            long headersLength = httpRequest.getHeadersLength();
+            //then
+            assertThat(headersLength).isEqualTo(0);
+        }
+    }
+
+    @Nested
+    class TestGetLength{
+        @Test
+        void test_get_length_content_as_byte_array() {
+            HttpPart httpPart = new HttpPart("test".getBytes(StandardCharsets.UTF_8));
+            long length = httpPart.getLength();
+            assertThat(length).isEqualTo("test".getBytes(StandardCharsets.UTF_8).length + httpPart.getHeadersLength());
+        }
+
+        @Test
+        void test_get_length_content_as_string() {
+            HttpPart httpPart = new HttpPart("test");
+            long length = httpPart.getLength();
+            assertThat(length).isEqualTo("test".length() + httpPart.getHeadersLength());
         }
     }
 }

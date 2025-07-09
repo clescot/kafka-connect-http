@@ -51,7 +51,7 @@ public class RequestGrouper {
             return Lists.newArrayList();
         }
         LOGGER.debug("'{}' grouping requests",getId());
-        HttpRequest aggregatedRequest = new HttpRequest(entries.get(0).getRight());
+        HttpRequest aggregatedRequest = (HttpRequest) (entries.get(0).getRight()).clone();
         String aggregatedBody=init;
         int consumed = 0;
         StringBuilder builder = new StringBuilder(aggregatedBody);

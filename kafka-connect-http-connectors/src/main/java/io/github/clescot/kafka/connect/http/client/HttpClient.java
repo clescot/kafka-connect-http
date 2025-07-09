@@ -96,8 +96,13 @@ public interface HttpClient<Q, S> {
         try {
             Optional<RateLimiter<HttpExchange>> limiter = getRateLimiter();
             if (limiter.isPresent()) {
-                limiter.get().acquirePermits(HttpClient.ONE_HTTP_REQUEST);
-                LOGGER.trace("permits acquired request:'{}'", request);
+                RateLimiter<HttpExchange> httpExchangeRateLimiter = limiter.get();
+                if(RATE_LIMITER_REQUEST_LENGTH_PER_CALL.equals(getPermitsPerCall())){
+                    httpExchangeRateLimiter.acquirePermits(Math.toIntExact(httpRequest.getLength()));
+                }else{
+                    httpExchangeRateLimiter.acquirePermits(HttpClient.ONE_HTTP_REQUEST);
+                    LOGGER.trace("permits acquired request:'{}'", request);
+                }
             }else{
                 LOGGER.trace("no rate limiter is configured");
             }
@@ -182,7 +187,7 @@ public interface HttpClient<Q, S> {
     }
 
     static TrustManagerFactory getTrustManagerFactory(Map<String,Object> config){
-        if(config.containsKey(HTTP_CLIENT_SSL_TRUSTSTORE_ALWAYS_TRUST)&& Boolean.TRUE.equals(Boolean.parseBoolean(config.get(HTTP_CLIENT_SSL_TRUSTSTORE_ALWAYS_TRUST).toString()))){
+        if(config.containsKey(HTTP_CLIENT_SSL_TRUSTSTORE_ALWAYS_TRUST)&& Boolean.parseBoolean(config.get(HTTP_CLIENT_SSL_TRUSTSTORE_ALWAYS_TRUST).toString())){
             LOGGER.warn("/!\\ activating 'always trust any certificate' feature : remote SSL certificates will always be granted. Use this feature at your own risk ! ");
             return new AlwaysTrustManagerFactory();
         }else {
@@ -215,6 +220,8 @@ public interface HttpClient<Q, S> {
     void setHeadersLimit(Integer headersLimit);
 
     Integer getBodyLimit();
+
+    String getPermitsPerCall();
 
     void setBodyLimit(Integer bodyLimit);
 
