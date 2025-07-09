@@ -15,11 +15,11 @@ jobs:
     steps:
       - uses: actions/checkout@v4.2.2
 
-      - name: Set up JDK 11 for central.sonatype.com
+      - name: Set up JDK 17 for central.sonatype.com
         uses: actions/setup-java@v4.7.1
         with:
+          java-version: '17'
           distribution: 'adopt'
-          java-version: '11'
           server-id: 'central'
           server-username: MAVEN_USERNAME
           server-password: MAVEN_PASSWORD
