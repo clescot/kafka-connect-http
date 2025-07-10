@@ -31,6 +31,7 @@ import io.micrometer.jmx.JmxMeterRegistry;
 import io.micrometer.prometheusmetrics.PrometheusMeterRegistry;
 import org.apache.kafka.clients.producer.MockProducer;
 import org.apache.kafka.clients.producer.ProducerRecord;
+import org.apache.kafka.clients.producer.RoundRobinPartitioner;
 import org.apache.kafka.common.Cluster;
 import org.apache.kafka.common.Node;
 import org.apache.kafka.common.PartitionInfo;
@@ -532,7 +533,7 @@ public class HttpSinkTaskTest {
             KafkaJsonSerializer<Object> jsonSerializer = new KafkaJsonSerializer<>();
             Map<String,Object> jsonSerializerConfig = Maps.newHashMap();
             jsonSerializer.configure(jsonSerializerConfig,false);
-            MockProducer<String, Object> mockProducer = new MockProducer<>(cluster,true, new StringSerializer(), jsonSerializer);
+            MockProducer<String, Object> mockProducer = new MockProducer<>(cluster,true,new RoundRobinPartitioner(), new StringSerializer(), jsonSerializer);
 
             OkHttpSinkTask myOkHttpSinkTask = new OkHttpSinkTask(mockProducer);
             myOkHttpSinkTask.initialize(sinkTaskContext);

@@ -6,6 +6,7 @@ import com.google.common.collect.Maps;
 import io.github.clescot.kafka.connect.http.core.queue.QueueFactory;
 import io.github.clescot.kafka.connect.http.sink.HttpSinkConnectorConfig;
 import org.apache.kafka.clients.producer.MockProducer;
+import org.apache.kafka.clients.producer.RoundRobinPartitioner;
 import org.apache.kafka.common.Cluster;
 import org.apache.kafka.common.KafkaException;
 import org.apache.kafka.common.Node;
@@ -60,7 +61,7 @@ class PublishConfigurerTest {
             Node node = new Node(1,"localhost",9092);
             PartitionInfo partitionInfo = new PartitionInfo("success",0,node,new Node[]{},new Node[]{});
             when(cluster.partitionsForTopic(anyString())).thenReturn(Lists.newArrayList(partitionInfo));
-            MockProducer<String, Object> mockProducer = new MockProducer<>(cluster,true,new StringSerializer(),null);
+            MockProducer<String, Object> mockProducer = new MockProducer<>(cluster,true,new RoundRobinPartitioner(),new StringSerializer(),null);
             KafkaProducer<String, Object> kafkaProducer = new KafkaProducer<>(mockProducer);
             Assertions.assertDoesNotThrow(()->publishConfigurer.configureProducerPublishMode(httpSinkConnectorConfig, kafkaProducer));
         }
@@ -76,7 +77,7 @@ class PublishConfigurerTest {
             Node node = new Node(1,"localhost",9092);
             PartitionInfo partitionInfo = new PartitionInfo("success",0,node,new Node[]{},new Node[]{});
             when(cluster.partitionsForTopic(anyString())).thenReturn(Lists.newArrayList(partitionInfo));
-            MockProducer<String, Object> mockProducer = new MockProducer<>(cluster,true,new StringSerializer(),null);
+            MockProducer<String, Object> mockProducer = new MockProducer<>(cluster,true,new RoundRobinPartitioner(),new StringSerializer(),null);
             KafkaProducer<String, Object> kafkaProducer = new KafkaProducer<>(mockProducer);
             Assertions.assertDoesNotThrow(()->publishConfigurer.configureProducerPublishMode(httpSinkConnectorConfig, kafkaProducer));
         }
@@ -99,7 +100,7 @@ class PublishConfigurerTest {
             Node node = new Node(1,"localhost",9092);
             PartitionInfo partitionInfo = new PartitionInfo("success",0,node,new Node[]{},new Node[]{});
             when(cluster.partitionsForTopic(anyString())).thenReturn(Lists.newArrayList(partitionInfo));
-            MockProducer<String, Object> mockProducer = new MockProducer<>(cluster,true,new StringSerializer(),null);
+            MockProducer<String, Object> mockProducer = new MockProducer<>(cluster,true,new RoundRobinPartitioner(),new StringSerializer(),null);
             KafkaProducer<String, Object> kafkaProducer = new KafkaProducer<>(mockProducer);
             Assertions.assertDoesNotThrow(()->publishConfigurer.configureProducerPublishMode(httpSinkConnectorConfig, kafkaProducer));
         }
@@ -116,7 +117,7 @@ class PublishConfigurerTest {
             Node node = new Node(1,"localhost",9092);
             PartitionInfo partitionInfo = new PartitionInfo("success",0,node,new Node[]{},new Node[]{});
             when(cluster.partitionsForTopic(anyString())).thenReturn(Lists.newArrayList(partitionInfo));
-            MockProducer<String, Object> mockProducer = new MockProducer<>(cluster,true,new StringSerializer(),null);
+            MockProducer<String, Object> mockProducer = new MockProducer<>(cluster,true,new RoundRobinPartitioner(),new StringSerializer(),null);
             KafkaProducer<String, Object> kafkaProducer = new KafkaProducer<>(mockProducer);
             Assertions.assertDoesNotThrow(()->publishConfigurer.configureProducerPublishMode(httpSinkConnectorConfig, kafkaProducer));
         }
@@ -129,7 +130,7 @@ class PublishConfigurerTest {
             HttpSinkConnectorConfig httpSinkConnectorConfig = new HttpSinkConnectorConfig(originals);
             Cluster cluster = mock(Cluster.class);
             when(cluster.partitionsForTopic(anyString())).thenReturn(Lists.newArrayList());
-            MockProducer<String, Object> mockProducer = new MockProducer<>(cluster,true,new StringSerializer(),null);
+            MockProducer<String, Object> mockProducer = new MockProducer<>(cluster,true,new RoundRobinPartitioner(),new StringSerializer(),null);
             KafkaProducer<String, Object> kafkaProducer = new KafkaProducer<>(mockProducer);
             Assertions.assertThrows(IllegalStateException.class,()->publishConfigurer.configureProducerPublishMode(httpSinkConnectorConfig, kafkaProducer));
         }
@@ -141,7 +142,7 @@ class PublishConfigurerTest {
             HttpSinkConnectorConfig httpSinkConnectorConfig = new HttpSinkConnectorConfig(originals);
             Cluster cluster = mock(Cluster.class);
             when(cluster.partitionsForTopic(anyString())).thenThrow(new KafkaException());
-            MockProducer<String, Object> mockProducer = new MockProducer<>(cluster,true,new StringSerializer(),null);
+            MockProducer<String, Object> mockProducer = new MockProducer<>(cluster,true,new RoundRobinPartitioner(),new StringSerializer(),null);
             KafkaProducer<String, Object> kafkaProducer = new KafkaProducer<>(mockProducer);
             Assertions.assertThrows(KafkaException.class,()->publishConfigurer.configureProducerPublishMode(httpSinkConnectorConfig, kafkaProducer));
         }

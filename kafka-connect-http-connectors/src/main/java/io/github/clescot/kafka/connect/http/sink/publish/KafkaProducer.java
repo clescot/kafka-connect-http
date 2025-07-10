@@ -5,6 +5,7 @@ import org.apache.kafka.clients.consumer.OffsetAndMetadata;
 import org.apache.kafka.clients.producer.*;
 import org.apache.kafka.common.*;
 import org.apache.kafka.common.errors.ProducerFencedException;
+import org.apache.kafka.common.metrics.KafkaMetric;
 import org.apache.kafka.common.serialization.Serializer;
 
 import java.time.Duration;
@@ -42,10 +43,6 @@ public class KafkaProducer<K, V> implements Producer<K, V> {
         producer.beginTransaction();
     }
 
-    @Override
-    public void sendOffsetsToTransaction(Map<TopicPartition, OffsetAndMetadata> offsets, String consumerGroupId) throws ProducerFencedException {
-        producer.sendOffsetsToTransaction(offsets, consumerGroupId);
-    }
 
     @Override
     public void sendOffsetsToTransaction(Map<TopicPartition, OffsetAndMetadata> offsets, ConsumerGroupMetadata groupMetadata) throws ProducerFencedException {
@@ -60,6 +57,16 @@ public class KafkaProducer<K, V> implements Producer<K, V> {
     @Override
     public void abortTransaction() throws ProducerFencedException {
         producer.abortTransaction();
+    }
+
+    @Override
+    public void registerMetricForSubscription(KafkaMetric kafkaMetric) {
+        producer.registerMetricForSubscription(kafkaMetric);
+    }
+
+    @Override
+    public void unregisterMetricFromSubscription(KafkaMetric kafkaMetric) {
+        producer.unregisterMetricFromSubscription(kafkaMetric);
     }
 
     @Override
