@@ -23,7 +23,6 @@ import kotlin.Pair;
 import okhttp3.*;
 import okhttp3.dnsoverhttps.DnsOverHttps;
 import okhttp3.internal.http.HttpMethod;
-import okhttp3.internal.io.FileSystem;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
@@ -366,7 +365,7 @@ public class OkHttpClient extends AbstractHttpClient<Request, Response> {
 
             File cacheDirectory = new File(directoryPath);
             long maxSize = Long.parseLong(config.getOrDefault(OKHTTP_CACHE_MAX_SIZE, DEFAULT_MAX_CACHE_ENTRIES).toString());
-            Cache cache = new Cache(cacheDirectory, maxSize, FileSystem.SYSTEM);
+            Cache cache = new Cache(cacheDirectory, maxSize);
             httpClientBuilder.cache(cache);
 
             DiskSpaceMetrics diskSpaceMetrics = new DiskSpaceMetrics(cacheDirectory);

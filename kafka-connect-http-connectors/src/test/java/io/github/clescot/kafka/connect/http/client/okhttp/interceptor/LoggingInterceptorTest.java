@@ -1,6 +1,5 @@
 package io.github.clescot.kafka.connect.http.client.okhttp.interceptor;
 
-import com.google.common.collect.Lists;
 import okhttp3.*;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -38,7 +37,13 @@ class LoggingInterceptorTest {
         when(connection.toString()).thenReturn(connectionAsString);
         when(chain.connection()).thenReturn(connection);
         when(chain.proceed(request)).thenReturn(response);
-        HttpUrl httpUrl = new HttpUrl("https","","","stuff.com",443, Lists.newArrayList(),null,"/","https://stuff.com");
+
+        HttpUrl httpUrl = new HttpUrl.Builder()
+                .scheme("https")
+                .host("stuff.com")
+                .port(443)
+                .fragment("/")
+                .build();
         when(request.url()).thenReturn(httpUrl);
         Headers.Builder headersRequestBuilder = new Headers.Builder();
         headersRequestBuilder.add("Content-Type","application/json");

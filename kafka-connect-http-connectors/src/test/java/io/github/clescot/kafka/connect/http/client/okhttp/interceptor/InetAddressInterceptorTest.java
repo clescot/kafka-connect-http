@@ -13,6 +13,7 @@ import java.net.InetAddress;
 import java.net.Socket;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -21,9 +22,7 @@ class InetAddressInterceptorTest {
 
     @Mock
     Interceptor.Chain chain;
-    @Mock
     Request request;
-    @Mock
     Response response;
     @Mock
     Connection connection;
@@ -34,20 +33,24 @@ class InetAddressInterceptorTest {
     @Test
     void test_intercept() throws IOException {
         //given
+        request = new Request.Builder()
+                .url("http://example.com")
+                .build();
+        response = new Response.Builder()
+                .request(request)
+                .protocol(Protocol.HTTP_1_1)
+                .code(200)
+                .message("OK")
+                .body(ResponseBody.create("", MediaType.get("text/plain")))
+                .build();
         when(chain.request()).thenReturn(request);
         when(chain.connection()).thenReturn(connection);
-        when(chain.proceed(request)).thenReturn(response);
+        when(chain.proceed(any(Request.class))).thenReturn(response);
         when(connection.socket()).thenReturn(socket);
         when(socket.getInetAddress()).thenReturn(inetAddress);
         when(inetAddress.getHostAddress()).thenReturn("hostAddress");
         when(inetAddress.getHostName()).thenReturn("hostName");
         when(inetAddress.getCanonicalHostName()).thenReturn("canonicalHostName");
-        Headers.Builder builder = new Headers.Builder();
-        when(response.headers()).thenReturn(builder.build());
-        when(response.request()).thenReturn(request);
-        when(response.protocol()).thenReturn(Protocol.HTTP_1_1);
-        when(response.code()).thenReturn(200);
-        when(response.message()).thenReturn("OK");
 
         InetAddressInterceptor inetAddressInterceptor = new InetAddressInterceptor();
 

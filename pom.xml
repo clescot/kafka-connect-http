@@ -49,9 +49,9 @@
         <json.assert.version>1.5.3</json.assert.version>
         <junit.version>5.13.3</junit.version>
         <logback.version>1.5.18</logback.version>
-        <maven.compiler.release>11</maven.compiler.release>
-        <maven.compiler.source>11</maven.compiler.source>
-        <maven.compiler.target>11</maven.compiler.target>
+        <maven.compiler.release>17</maven.compiler.release>
+        <maven.compiler.source>17</maven.compiler.source>
+        <maven.compiler.target>17</maven.compiler.target>
         <maven.plugin.validation>VERBOSE</maven.plugin.validation>
         <mock-oauth2-server.version>0.5.10</mock-oauth2-server.version>
         <mockito.version>5.18.0</mockito.version>
