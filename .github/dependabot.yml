@@ -15,16 +15,16 @@ updates:
       time: '04:00'
     open-pull-requests-limit: 10
     groups:
-      dev-deps:
-        dependency-type: "development"
-        exclude-patterns:
-          - "mock-oauth2-server"
-      prod-deps:
-        dependency-type: "production"
-        exclude-patterns:
-          - "mock-oauth2-server"
+#      dev-deps:
+#        dependency-type: "development"
+#        exclude-patterns:
+#          - "mock-oauth2-server"
+#      prod-deps:
+#        dependency-type: "production"
+#        exclude-patterns:
+#          - "mock-oauth2-server"
     ignore:
-      - dependency-name: "no.nav.security:mock-oauth2-server"
+      - dependency-name: "io.debezium:debezium-testing-testcontainers"
         update-types: ["version-update:semver-major"]
       - dependency-name: "org.asynchttpclient:async-http-client"
         versions: [ ">=3.0.0" ]
