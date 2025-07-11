@@ -216,7 +216,7 @@ You will have the ability to define optionnaly :
   - `config.test2.rate.limiter.max.executions`
   - `config.test2.rate.limiter.period.in.ms`
   - `config.test2.rate.limiter.scope` (can be either `instance` or `static`)
-  - `config.test2.rate.limiter.permits.per.call` (default `one`, i.e one http request per call, or `request_length`, i.e rate limiting base on the size of the request (body + headers) in bytes)
+  - `config.test2.rate.limiter.permits.per.execution` (default `one`, i.e one http request per call, or `request_length`, i.e rate limiting base on the size of the request (body + headers) in bytes)
 - a **success response code regex** with the parameter : `httpclient.test2.success.response.code.regex`
 - a **retry response code regex** with the parameter : `httpclient.test2.retry.policy.response.code.regex`
 - a **retry policy** with the parameters :
