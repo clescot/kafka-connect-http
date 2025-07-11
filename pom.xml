@@ -69,7 +69,7 @@
         <sonar.organization>clescot</sonar.organization>
         <sonar.projectKey>clescot_kafka-connect-http</sonar.projectKey>
         <testcontainers.version>1.21.3</testcontainers.version>
-        <wiremock.version>2.35.2</wiremock.version>
+        <wiremock.version>3.13.1</wiremock.version>
     </properties>
     <modules>
         <module>kafka-connect-http-core</module>
@@ -209,8 +209,8 @@
                 <scope>test</scope>
             </dependency>
             <dependency>
-                <groupId>com.github.tomakehurst</groupId>
-                <artifactId>wiremock-jre8</artifactId>
+                <groupId>org.wiremock</groupId>
+                <artifactId>wiremock</artifactId>
                 <version>${wiremock.version}</version>
                 <scope>test</scope>
             </dependency>
