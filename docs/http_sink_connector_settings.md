@@ -215,14 +215,16 @@ You will have the ability to define optionnaly :
 - a **rate limiter** with the parameters :
   - `config.test2.rate.limiter.max.executions`
   - `config.test2.rate.limiter.period.in.ms`
-  - a **success response code regex** with the parameter : `httpclient.test2.success.response.code.regex`
-  - a **retry response code regex** with the parameter : `httpclient.test2.retry.policy.response.code.regex`
-  - a **retry policy** with the parameters :
-    - `config.test2.retries`
-    - `config.test2.retry.delay.in.ms`
-    - `config.test2.retry.max.delay.in.ms`
-    - `config.test2.retry.delay.factor`
-    - `config.test2.retry.jitter.in.ms`
+  - `config.test2.rate.limiter.scope` (can be either `instance` or `static`)
+  - `config.test2.rate.limiter.permits.per.execution` (default `one`, i.e one http request per call, or `request_length`, i.e rate limiting base on the size of the request (body + headers) in bytes)
+- a **success response code regex** with the parameter : `httpclient.test2.success.response.code.regex`
+- a **retry response code regex** with the parameter : `httpclient.test2.retry.policy.response.code.regex`
+- a **retry policy** with the parameters :
+  - `config.test2.retries`
+  - `config.test2.retry.delay.in.ms`
+  - `config.test2.retry.max.delay.in.ms`
+  - `config.test2.retry.delay.factor`
+  - `config.test2.retry.jitter.in.ms`
 
 The connector ships with a `default` configuration, and we can, if needed, configure more configurations.
 A configuration is identified with a unique `id`.

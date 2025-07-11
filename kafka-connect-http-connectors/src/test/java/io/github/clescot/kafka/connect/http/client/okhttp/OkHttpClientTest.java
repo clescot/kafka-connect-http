@@ -645,6 +645,165 @@ class OkHttpClientTest {
         }
 
         @Test
+        @DisplayName("test rate limiter with bandwidth. one call limit matches request length")
+        void test_rate_limiter_with_bandwith() throws ExecutionException, InterruptedException {
+
+
+            //given
+            //scenario
+            String scenario = "activating logging interceptor";
+            WireMockRuntimeInfo wmRuntimeInfo = wmHttp.getRuntimeInfo();
+            WireMock wireMock = wmRuntimeInfo.getWireMock();
+            String bodyResponse = "{\"result\":\"pong\"}";
+            wireMock.register(WireMock.post("/ping").inScenario(scenario)
+                    .whenScenarioStateIs(STARTED)
+                    .willReturn(WireMock.aResponse()
+                            .withBody(bodyResponse)
+                            .withStatus(200)
+                            .withStatusMessage("OK")
+                    )
+            );
+            HttpRequest httpRequest = getHttpRequest(wmRuntimeInfo);
+            long length = httpRequest.getLength();
+
+            //build http client
+            HashMap<String, Object> config = Maps.newHashMap();
+            config.put(CONFIGURATION_ID, "default");
+            config.put("rate.limiter.max.executions", ""+length);
+            config.put("rate.limiter.permits.per.execution", RATE_LIMITER_REQUEST_LENGTH_PER_CALL);
+
+            OkHttpClient client = new OkHttpClient(
+                    config,
+                    null,
+                    new Random(),
+                    null,
+                    null,
+                    getCompositeMeterRegistry()
+            );
+
+
+            Stopwatch stopwatch = Stopwatch.createStarted();
+            List<HttpExchange> exchanges = Lists.newArrayList();
+            //call web service
+            for (int i = 0; i < 10; i++) {
+                HttpExchange httpExchange1 = client.call(httpRequest, new AtomicInteger(1)).get();
+                assertThat(httpExchange1.getHttpResponse().getStatusCode()).isEqualTo(200);
+                exchanges.add(httpExchange1);
+            }
+            stopwatch.stop();
+            long elapsedMillis = stopwatch.elapsed(TimeUnit.MILLISECONDS);
+            assertThat(elapsedMillis).isGreaterThan(7895);
+            for (HttpExchange exchange : exchanges) {
+                LOGGER.info("httpExchange direct time '{}' ms", exchange.getDurationInMillis());
+            }
+        }
+        @Test
+        @DisplayName("test rate limiter with bandwidth. one call limit matches 2 request lengths")
+        void test_rate_limiter_with_bandwith_of_2_requests_per_call() throws ExecutionException, InterruptedException {
+
+
+            //given
+            //scenario
+            String scenario = "activating logging interceptor";
+            WireMockRuntimeInfo wmRuntimeInfo = wmHttp.getRuntimeInfo();
+            WireMock wireMock = wmRuntimeInfo.getWireMock();
+            String bodyResponse = "{\"result\":\"pong\"}";
+            wireMock.register(WireMock.post("/ping").inScenario(scenario)
+                    .whenScenarioStateIs(STARTED)
+                    .willReturn(WireMock.aResponse()
+                            .withBody(bodyResponse)
+                            .withStatus(200)
+                            .withStatusMessage("OK")
+                    )
+            );
+            HttpRequest httpRequest = getHttpRequest(wmRuntimeInfo);
+            long length = httpRequest.getLength();
+
+            //build http client
+            HashMap<String, Object> config = Maps.newHashMap();
+            config.put(CONFIGURATION_ID, "default");
+            config.put("rate.limiter.max.executions", ""+length*2);
+            config.put("rate.limiter.permits.per.execution", RATE_LIMITER_REQUEST_LENGTH_PER_CALL);
+
+            OkHttpClient client = new OkHttpClient(
+                    config,
+                    null,
+                    new Random(),
+                    null,
+                    null,
+                    getCompositeMeterRegistry()
+            );
+
+
+            Stopwatch stopwatch = Stopwatch.createStarted();
+            List<HttpExchange> exchanges = Lists.newArrayList();
+            //call web service
+            for (int i = 0; i < 10; i++) {
+                HttpExchange httpExchange1 = client.call(httpRequest, new AtomicInteger(1)).get();
+                assertThat(httpExchange1.getHttpResponse().getStatusCode()).isEqualTo(200);
+                exchanges.add(httpExchange1);
+            }
+            stopwatch.stop();
+            long elapsedMillis = stopwatch.elapsed(TimeUnit.MILLISECONDS);
+            assertThat(elapsedMillis).isGreaterThan(4000);
+            for (HttpExchange exchange : exchanges) {
+                LOGGER.info("httpExchange direct time '{}' ms", exchange.getDurationInMillis());
+            }
+        }
+@Test
+        @DisplayName("test rate limiter per call. one execution limit.")
+        void test_rate_limiter_per_call() throws ExecutionException, InterruptedException {
+
+
+            //given
+            //scenario
+            String scenario = "activating logging interceptor";
+            WireMockRuntimeInfo wmRuntimeInfo = wmHttp.getRuntimeInfo();
+            WireMock wireMock = wmRuntimeInfo.getWireMock();
+            String bodyResponse = "{\"result\":\"pong\"}";
+            wireMock.register(WireMock.post("/ping").inScenario(scenario)
+                    .whenScenarioStateIs(STARTED)
+                    .willReturn(WireMock.aResponse()
+                            .withBody(bodyResponse)
+                            .withStatus(200)
+                            .withStatusMessage("OK")
+                    )
+            );
+            HttpRequest httpRequest = getHttpRequest(wmRuntimeInfo);
+
+            //build http client
+            HashMap<String, Object> config = Maps.newHashMap();
+            config.put(CONFIGURATION_ID, "default");
+            config.put("rate.limiter.max.executions", "1");
+            config.put("rate.limiter.permits.per.execution", DEFAULT_RATE_LIMITER_ONE_PERMIT_PER_CALL);
+
+            OkHttpClient client = new OkHttpClient(
+                    config,
+                    null,
+                    new Random(),
+                    null,
+                    null,
+                    getCompositeMeterRegistry()
+            );
+
+
+            Stopwatch stopwatch = Stopwatch.createStarted();
+            List<HttpExchange> exchanges = Lists.newArrayList();
+            //call web service
+            for (int i = 0; i < 10; i++) {
+                HttpExchange httpExchange1 = client.call(httpRequest, new AtomicInteger(1)).get();
+                assertThat(httpExchange1.getHttpResponse().getStatusCode()).isEqualTo(200);
+                exchanges.add(httpExchange1);
+            }
+            stopwatch.stop();
+            long elapsedMillis = stopwatch.elapsed(TimeUnit.MILLISECONDS);
+            assertThat(elapsedMillis).isGreaterThan(7895);
+            for (HttpExchange exchange : exchanges) {
+                LOGGER.info("httpExchange direct time '{}' ms", exchange.getDurationInMillis());
+            }
+        }
+
+        @Test
         @DisplayName("test without rate limiter")
         void test_without_rate_limiter() throws ExecutionException, InterruptedException {
 

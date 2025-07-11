@@ -97,11 +97,14 @@ public interface HttpClient<Q, S> {
             Optional<RateLimiter<HttpExchange>> limiter = getRateLimiter();
             if (limiter.isPresent()) {
                 RateLimiter<HttpExchange> httpExchangeRateLimiter = limiter.get();
-                if(RATE_LIMITER_REQUEST_LENGTH_PER_CALL.equals(getPermitsPerCall())){
-                    httpExchangeRateLimiter.acquirePermits(Math.toIntExact(httpRequest.getLength()));
+                String permitsPerExecution = getPermitsPerExecution();
+                if(RATE_LIMITER_REQUEST_LENGTH_PER_CALL.equals(permitsPerExecution)){
+                    long length = httpRequest.getLength();
+                    httpExchangeRateLimiter.acquirePermits(Math.toIntExact(length));
+                    LOGGER.warn("{} permits acquired for request:'{}'", length,request);
                 }else{
                     httpExchangeRateLimiter.acquirePermits(HttpClient.ONE_HTTP_REQUEST);
-                    LOGGER.trace("permits acquired request:'{}'", request);
+                    LOGGER.warn("1 permit acquired for request:'{}'", request);
                 }
             }else{
                 LOGGER.trace("no rate limiter is configured");
@@ -221,7 +224,7 @@ public interface HttpClient<Q, S> {
 
     Integer getBodyLimit();
 
-    String getPermitsPerCall();
+    String getPermitsPerExecution();
 
     void setBodyLimit(Integer bodyLimit);
 

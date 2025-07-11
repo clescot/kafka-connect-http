@@ -199,19 +199,26 @@ public class HttpSinkConfigDefinition {
             "Define max entropy to add, to prevent many retry policies instances with the same parameters, to flood servers at the same time";
 
     //rate limiter
+    public static final String DEFAULT_RATE_LIMITER_ONE_PERMIT_PER_CALL = "one";
+    public static final String RATE_LIMITER_REQUEST_LENGTH_PER_CALL = "request_length";
+
+    //rate limiter period
     public static final String DEFAULT_RATE_LIMITER_PREFIX = "rate.limiter.";
     public static final String RATE_LIMITER_PERIOD_IN_MS = DEFAULT_RATE_LIMITER_PREFIX + "period.in.ms";
     public static final String CONFIG_DEFAULT_RATE_LIMITER_PERIOD_IN_MS = DEFAULT_CONFIGURATION_PREFIX + RATE_LIMITER_PERIOD_IN_MS;
     public static final String CONFIG_DEFAULT_RATE_LIMITER_PERIOD_IN_MS_DOC = "period of time in milliseconds, during the max execution cannot be exceeded";
 
-    public static final String RATE_LIMITER_PERMITS_PER_CALL = DEFAULT_RATE_LIMITER_PREFIX + "permits.per.call";
-    public static final String CONFIG_DEFAULT_RATE_LIMITER_PERMITS_PER_CALL = DEFAULT_CONFIGURATION_PREFIX + RATE_LIMITER_PERMITS_PER_CALL;
-    public static final String CONFIG_DEFAULT_RATE_LIMITER_PERMITS_PER_CALL_DOC = "how many permits are consumed per call. default is ONE, i.e one permit per call. if set to LENGTH, the number of permits consumed will be equal to the content length of the request body. if set to CONTENT_LENGTH_PLUS_HEADERS, the number of permits consumed will be equal to the content length of the request body plus the size of all headers in bytes.";
+    //rate limiter permits per call
+    public static final String RATE_LIMITER_PERMITS_PER_EXECUTION = DEFAULT_RATE_LIMITER_PREFIX + "permits.per.execution";
+    public static final String CONFIG_DEFAULT_RATE_LIMITER_PERMITS_PER_EXECUTION = DEFAULT_CONFIGURATION_PREFIX + RATE_LIMITER_PERMITS_PER_EXECUTION;
+    public static final String CONFIG_DEFAULT_RATE_LIMITER_PERMITS_PER_EXECUTION_DOC = "how many permits are consumed per execution. default is '"+DEFAULT_RATE_LIMITER_ONE_PERMIT_PER_CALL+"', i.e one permit per call. if set to LENGTH, the number of permits consumed will be equal to the content length of the request body. if set to '"+RATE_LIMITER_REQUEST_LENGTH_PER_CALL+"', the number of permits consumed will be equal to the content length of the request body plus the size of all headers in bytes.";
 
+    //rate limiter max executions
     public static final String RATE_LIMITER_MAX_EXECUTIONS = DEFAULT_RATE_LIMITER_PREFIX + "max.executions";
     public static final String CONFIG_DEFAULT_RATE_LIMITER_MAX_EXECUTIONS = DEFAULT_CONFIGURATION_PREFIX + RATE_LIMITER_MAX_EXECUTIONS;
-    public static final String CONFIG_DEFAULT_RATE_LIMITER_MAX_EXECUTIONS_DOC = "max executions in the period defined with the '" + CONFIG_DEFAULT_RATE_LIMITER_PERIOD_IN_MS + "' parameter";
+    public static final String CONFIG_DEFAULT_RATE_LIMITER_MAX_EXECUTIONS_DOC = "max executions (permits, i.e execution if one permit per execution) in the period defined with the '" + CONFIG_DEFAULT_RATE_LIMITER_PERIOD_IN_MS + "' parameter";
 
+    //rate limiter scope
     public static final String RATE_LIMITER_SCOPE = DEFAULT_RATE_LIMITER_PREFIX + "scope";
     public static final String CONFIG_DEFAULT_RATE_LIMITER_SCOPE = DEFAULT_CONFIGURATION_PREFIX + RATE_LIMITER_SCOPE;
     public static final String CONFIG_DEFAULT_RATE_LIMITER_SCOPE_DOC = "scope of the '" + CONFIG_DEFAULT_RATE_LIMITER_SCOPE + "' parameter. can be either 'instance' (i.e a rate limiter per configuration in the connector instance),  or 'static' (a rate limiter per configuration id shared with all connectors instances in the same Java Virtual Machine.";
@@ -219,8 +226,7 @@ public class HttpSinkConfigDefinition {
     public static final long DEFAULT_RATE_LIMITER_PERIOD_IN_MS_VALUE = 1000L;
     public static final long DEFAULT_RATE_LIMITER_MAX_EXECUTIONS_VALUE = 1L;
     public static final String DEFAULT_RATE_LIMITER_SCOPE_VALUE = "instance";
-    public static final String DEFAULT_RATE_LIMITER_ONE_PERMIT_PER_CALL = "ONE";
-    public static final String RATE_LIMITER_REQUEST_LENGTH_PER_CALL = "REQUEST_LENGTH";
+
 
     //enrich HttpRequest
     public static final String ENRICH_REQUEST = "enrich.request.";
@@ -767,7 +773,7 @@ public class HttpSinkConfigDefinition {
                 .define(prefix + RATE_LIMITER_PERIOD_IN_MS, ConfigDef.Type.LONG, HttpSinkConfigDefinition.DEFAULT_RATE_LIMITER_PERIOD_IN_MS_VALUE, ConfigDef.Importance.MEDIUM, CONFIG_DEFAULT_RATE_LIMITER_PERIOD_IN_MS_DOC)
                 .define(prefix + RATE_LIMITER_MAX_EXECUTIONS, ConfigDef.Type.LONG, HttpSinkConfigDefinition.DEFAULT_RATE_LIMITER_MAX_EXECUTIONS_VALUE, ConfigDef.Importance.MEDIUM, CONFIG_DEFAULT_RATE_LIMITER_MAX_EXECUTIONS_DOC)
                 .define(prefix + RATE_LIMITER_SCOPE, ConfigDef.Type.STRING, HttpSinkConfigDefinition.DEFAULT_RATE_LIMITER_SCOPE_VALUE, ConfigDef.Importance.MEDIUM, CONFIG_DEFAULT_RATE_LIMITER_SCOPE_DOC)
-                .define(prefix + RATE_LIMITER_PERMITS_PER_CALL, ConfigDef.Type.STRING, HttpSinkConfigDefinition.DEFAULT_RATE_LIMITER_ONE_PERMIT_PER_CALL, ConfigDef.Importance.MEDIUM, CONFIG_DEFAULT_RATE_LIMITER_PERMITS_PER_CALL_DOC)
+                .define(prefix + RATE_LIMITER_PERMITS_PER_EXECUTION, ConfigDef.Type.STRING, HttpSinkConfigDefinition.DEFAULT_RATE_LIMITER_ONE_PERMIT_PER_CALL, ConfigDef.Importance.MEDIUM, CONFIG_DEFAULT_RATE_LIMITER_PERMITS_PER_EXECUTION_DOC)
                 //header settings
                 .define(prefix + STATIC_REQUEST_HEADER_NAMES, ConfigDef.Type.LIST, Collections.emptyList(), ConfigDef.Importance.MEDIUM, CONFIG_STATIC_REQUEST_HEADER_NAMES_DOC)
                 .define(prefix + GENERATE_MISSING_CORRELATION_ID, ConfigDef.Type.STRING, FALSE, ConfigDef.Importance.MEDIUM, CONFIG_GENERATE_MISSING_CORRELATION_ID_DOC)
