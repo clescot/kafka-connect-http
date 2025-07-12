@@ -5,7 +5,6 @@ import com.google.common.base.Stopwatch;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import dev.failsafe.RateLimiter;
-import io.github.clescot.kafka.connect.http.client.ssl.AlwaysTrustManagerFactory;
 import io.github.clescot.kafka.connect.http.core.HttpExchange;
 import io.github.clescot.kafka.connect.http.core.HttpRequest;
 import io.github.clescot.kafka.connect.http.core.HttpResponse;
@@ -13,17 +12,7 @@ import io.github.clescot.kafka.connect.http.core.HttpResponseBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import jakarta.annotation.Nullable;
 import javax.net.ssl.TrustManagerFactory;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.nio.file.Path;
-import java.security.KeyStore;
-import java.security.KeyStoreException;
-import java.security.NoSuchAlgorithmException;
-import java.security.cert.CertificateException;
 import java.time.OffsetDateTime;
 import java.time.ZoneId;
 import java.util.List;
@@ -33,7 +22,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static io.github.clescot.kafka.connect.http.sink.HttpSinkConfigDefinition.*;
+import static io.github.clescot.kafka.connect.http.sink.HttpSinkConfigDefinition.RATE_LIMITER_REQUEST_LENGTH_PER_CALL;
 
 /**
  * execute the HTTP call.
@@ -47,7 +36,7 @@ public interface HttpClient<Q, S> {
     boolean SUCCESS = true;
     int ONE_HTTP_REQUEST = 1;
     Logger LOGGER = LoggerFactory.getLogger(HttpClient.class);
-    String IS_NOT_SET = " is not set";
+
     String THROWABLE_CLASS = "throwable.class";
     String THROWABLE_MESSAGE = "throwable.message";
 
@@ -163,56 +152,6 @@ public interface HttpClient<Q, S> {
      */
     CompletableFuture<S> nativeCall(Q request);
 
-    static TrustManagerFactory getTrustManagerFactory(String trustStorePath,
-                                                      char[] password,
-                                                      @Nullable String keystoreType,
-                                                      @Nullable String algorithm) {
-        TrustManagerFactory trustManagerFactory;
-        KeyStore trustStore;
-        try {
-            String finalAlgorithm = Optional.ofNullable(algorithm).orElse(TrustManagerFactory.getDefaultAlgorithm());
-            trustManagerFactory = TrustManagerFactory.getInstance(finalAlgorithm);
-            String finalKeystoreType = Optional.ofNullable(keystoreType).orElse(KeyStore.getDefaultType());
-            trustStore = KeyStore.getInstance(finalKeystoreType);
-        } catch (NoSuchAlgorithmException | KeyStoreException e) {
-            throw new HttpException(e);
-        }
-
-        Path path = Path.of(trustStorePath);
-        File file = path.toFile();
-        try (InputStream inputStream = new FileInputStream(file)) {
-            trustStore.load(inputStream, password);
-            trustManagerFactory.init(trustStore);
-        } catch (IOException | NoSuchAlgorithmException | CertificateException | KeyStoreException e) {
-            throw new HttpException(e);
-        }
-        return trustManagerFactory;
-    }
-
-    static TrustManagerFactory getTrustManagerFactory(Map<String,Object> config){
-        if(config.containsKey(HTTP_CLIENT_SSL_TRUSTSTORE_ALWAYS_TRUST)&& Boolean.parseBoolean(config.get(HTTP_CLIENT_SSL_TRUSTSTORE_ALWAYS_TRUST).toString())){
-            LOGGER.warn("/!\\ activating 'always trust any certificate' feature : remote SSL certificates will always be granted. Use this feature at your own risk ! ");
-            return new AlwaysTrustManagerFactory();
-        }else {
-            String trustStorePath = (String) config.get(HTTP_CLIENT_SSL_TRUSTSTORE_PATH);
-            Preconditions.checkNotNull(trustStorePath, CONFIG_HTTP_CLIENT_SSL_TRUSTSTORE_PATH + IS_NOT_SET);
-
-            String truststorePassword = (String) config.get(HTTP_CLIENT_SSL_TRUSTSTORE_PASSWORD);
-            Preconditions.checkNotNull(truststorePassword, CONFIG_HTTP_CLIENT_SSL_TRUSTSTORE_PASSWORD + IS_NOT_SET);
-
-            String trustStoreType = (String) config.get(HTTP_CLIENT_SSL_TRUSTSTORE_TYPE);
-            Preconditions.checkNotNull(trustStoreType, CONFIG_HTTP_CLIENT_SSL_TRUSTSTORE_TYPE + IS_NOT_SET);
-
-            String truststoreAlgorithm = (String) config.get(HTTP_CLIENT_SSL_TRUSTSTORE_ALGORITHM);
-            Preconditions.checkNotNull(truststoreAlgorithm, HTTP_CLIENT_SSL_TRUSTSTORE_ALGORITHM + IS_NOT_SET);
-
-            return getTrustManagerFactory(
-                    trustStorePath,
-                    truststorePassword.toCharArray(),
-                    trustStoreType,
-                    truststoreAlgorithm);
-        }
-    }
 
     Integer getStatusMessageLimit();
 
@@ -235,4 +174,6 @@ public interface HttpClient<Q, S> {
     TrustManagerFactory getTrustManagerFactory();
 
     String getEngineId();
+
+    void setTrustManagerFactory(TrustManagerFactory trustManagerFactory);
 }

@@ -5,6 +5,7 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import io.github.clescot.kafka.connect.http.client.AbstractHttpClient;
 import io.github.clescot.kafka.connect.http.client.HttpClient;
+import io.github.clescot.kafka.connect.http.client.HttpClientFactory;
 import io.github.clescot.kafka.connect.http.client.HttpException;
 import io.github.clescot.kafka.connect.http.core.HttpRequest;
 import io.github.clescot.kafka.connect.http.core.HttpResponse;
@@ -326,7 +327,7 @@ public class AHCHttpClient extends AbstractHttpClient<Request, Response> {
         if (config.containsKey(CONFIG_HTTP_CLIENT_SSL_TRUSTSTORE_PATH) && config.containsKey(CONFIG_HTTP_CLIENT_SSL_TRUSTSTORE_PASSWORD)) {
 
             Optional<TrustManagerFactory> trustManagerFactory = Optional.ofNullable(
-                    HttpClient.getTrustManagerFactory(config));
+                    HttpClientFactory.getTrustManagerFactory(config));
             if (trustManagerFactory.isPresent()) {
                 this.trustManagerFactory = trustManagerFactory.get();
                 SslContext nettySSLContext;

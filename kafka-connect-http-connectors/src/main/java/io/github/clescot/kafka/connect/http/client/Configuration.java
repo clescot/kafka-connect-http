@@ -49,7 +49,7 @@ import static io.github.clescot.kafka.connect.http.sink.HttpSinkConfigDefinition
  * </ul>
  * Each configuration owns an Http Client instance.
  */
-public class Configuration<R,S> {
+public class Configuration<C extends HttpClient<R,S>,R,S> {
     private static final Logger LOGGER = LoggerFactory.getLogger(Configuration.class);
 
 
@@ -88,7 +88,7 @@ public class Configuration<R,S> {
     private final Map<String, Object> settings;
     private final Function<HttpRequest, HttpRequest> enrichRequestFunction;
     public Configuration(String id,
-                         HttpClientFactory<R,S> httpClientFactory,
+                         HttpClientFactory<C,R,S> httpClientFactory,
                          AbstractConfig config,
                          ExecutorService executorService,
                          CompositeMeterRegistry meterRegistry) {

@@ -9,6 +9,8 @@ import com.github.tomakehurst.wiremock.junit5.WireMockRuntimeInfo;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import io.github.clescot.kafka.connect.http.client.Configuration;
+import io.github.clescot.kafka.connect.http.client.HttpClient;
+import io.github.clescot.kafka.connect.http.client.okhttp.OkHttpClient;
 import io.github.clescot.kafka.connect.http.client.okhttp.OkHttpClientFactory;
 import io.github.clescot.kafka.connect.http.core.HttpExchange;
 import io.github.clescot.kafka.connect.http.core.HttpRequest;
@@ -66,7 +68,7 @@ class HttpTaskTest {
 
     @Nested
     class CallWithRetryPolicy {
-        private HttpTask<Request,Response> httpTask;
+        private HttpTask<OkHttpClient,Request,Response> httpTask;
 
         @BeforeEach
         public void setUp(){
@@ -77,7 +79,7 @@ class HttpTaskTest {
             JmxMeterRegistry jmxMeterRegistry = new JmxMeterRegistry(JmxConfig.DEFAULT, Clock.SYSTEM);
             jmxMeterRegistry.start();
             compositeMeterRegistry.add(jmxMeterRegistry);
-            Configuration<Request, Response> test = new Configuration<>("test", new OkHttpClientFactory(), config, null, compositeMeterRegistry);
+            Configuration<OkHttpClient,Request, Response> test = new Configuration<>("test", new OkHttpClientFactory(), config, null, compositeMeterRegistry);
             httpTask = new HttpTask<>(config.originalsStrings(), test,Lists.newArrayList(),compositeMeterRegistry,null);
         }
 
@@ -101,7 +103,7 @@ class HttpTaskTest {
             HttpRequest httpRequest = getDummyHttpRequest(wmHttp.url("/ping"));
             Map<String, String> settings = Maps.newHashMap();
             HttpSinkConnectorConfig httpSinkConnectorConfig = new HttpSinkConnectorConfig(settings);
-            Configuration<Request, Response> configuration = new Configuration<>("dummy",new OkHttpClientFactory(), httpSinkConnectorConfig, executorService, getCompositeMeterRegistry());
+            Configuration<OkHttpClient,Request, Response> configuration = new Configuration<>("dummy",new OkHttpClientFactory(), httpSinkConnectorConfig, executorService, getCompositeMeterRegistry());
             HttpExchange httpExchange = configuration.call(httpRequest).get();
 
             //then
@@ -128,7 +130,7 @@ class HttpTaskTest {
             Map<String, String> settings = Maps.newHashMap();
             settings.put("config.dummy.http.response.message.status.limit","4");
             HttpSinkConnectorConfig httpSinkConnectorConfig = new HttpSinkConnectorConfig(settings);
-            Configuration<Request, Response> configuration = new Configuration<>("dummy",new OkHttpClientFactory(), httpSinkConnectorConfig, executorService, getCompositeMeterRegistry());
+            Configuration<OkHttpClient,Request, Response> configuration = new Configuration<>("dummy",new OkHttpClientFactory(), httpSinkConnectorConfig, executorService, getCompositeMeterRegistry());
             HttpExchange httpExchange = configuration.call(httpRequest).get();
 
             //then
@@ -157,7 +159,7 @@ class HttpTaskTest {
             Map<String, String> settings = Maps.newHashMap();
             settings.put("config.dummy.http.response.body.limit","10");
             HttpSinkConnectorConfig httpSinkConnectorConfig = new HttpSinkConnectorConfig(settings);
-            Configuration<Request, Response> configuration = new Configuration<>("dummy",new OkHttpClientFactory(), httpSinkConnectorConfig, executorService, getCompositeMeterRegistry());
+            Configuration<OkHttpClient,Request, Response> configuration = new Configuration<>("dummy",new OkHttpClientFactory(), httpSinkConnectorConfig, executorService, getCompositeMeterRegistry());
             HttpExchange httpExchange = configuration.call(httpRequest).get();
 
             //then
@@ -188,7 +190,7 @@ class HttpTaskTest {
             settings.put("config.dummy.http.response.status.message.limit","4");
             settings.put("config.dummy.http.response.body.limit","10");
             HttpSinkConnectorConfig httpSinkConnectorConfig = new HttpSinkConnectorConfig(settings);
-            Configuration<Request, Response> configuration = new Configuration<>("dummy",new OkHttpClientFactory(), httpSinkConnectorConfig, executorService, getCompositeMeterRegistry());
+            Configuration<OkHttpClient,Request, Response> configuration = new Configuration<>("dummy",new OkHttpClientFactory(), httpSinkConnectorConfig, executorService, getCompositeMeterRegistry());
             HttpExchange httpExchange = configuration.call(httpRequest).get();
 
             //then
@@ -226,7 +228,7 @@ class HttpTaskTest {
             settings.put("config.dummy.retry.policy.retries","2");
             settings.put("config.dummy.retry.policy.response.code.regex",DEFAULT_DEFAULT_RETRY_RESPONSE_CODE_REGEX);
             HttpSinkConnectorConfig httpSinkConnectorConfig = new HttpSinkConnectorConfig(settings);
-            Configuration<Request, Response> configuration = new Configuration<>("dummy",new OkHttpClientFactory(), httpSinkConnectorConfig, executorService, getCompositeMeterRegistry());
+            Configuration<OkHttpClient,Request, Response> configuration = new Configuration<>("dummy",new OkHttpClientFactory(), httpSinkConnectorConfig, executorService, getCompositeMeterRegistry());
             HttpExchange httpExchange = configuration.call(httpRequest).get();
 
             //then

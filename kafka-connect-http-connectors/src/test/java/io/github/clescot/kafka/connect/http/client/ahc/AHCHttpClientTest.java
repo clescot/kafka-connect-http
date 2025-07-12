@@ -5,6 +5,7 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import io.github.clescot.kafka.connect.http.client.DummyX509Certificate;
 import io.github.clescot.kafka.connect.http.client.HttpClient;
+import io.github.clescot.kafka.connect.http.client.HttpClientFactory;
 import io.github.clescot.kafka.connect.http.core.HttpExchange;
 import io.github.clescot.kafka.connect.http.core.HttpRequest;
 import io.github.clescot.kafka.connect.http.core.HttpResponse;
@@ -289,7 +290,7 @@ class AHCHttpClientTest {
         config.put(HTTP_CLIENT_SSL_TRUSTSTORE_TYPE, HttpSinkTaskTest.JKS_STORE_TYPE);
         config.put(HTTP_CLIENT_SSL_TRUSTSTORE_ALGORITHM, HttpSinkTaskTest.TRUSTSTORE_PKIX_ALGORITHM);
         //when
-        TrustManagerFactory trustManagerFactory = HttpClient.getTrustManagerFactory(config);
+        TrustManagerFactory trustManagerFactory = HttpClientFactory.getTrustManagerFactory(config);
         //then
         assertThat(trustManagerFactory).isNotNull();
         assertThat(trustManagerFactory.getTrustManagers()).hasSize(1);
@@ -302,7 +303,7 @@ class AHCHttpClientTest {
         Map<String, Object> config = Maps.newHashMap();
         config.put(HTTP_CLIENT_SSL_TRUSTSTORE_ALWAYS_TRUST, "true");
         //when
-        TrustManagerFactory trustManagerFactory = HttpClient.getTrustManagerFactory(config);
+        TrustManagerFactory trustManagerFactory = HttpClientFactory.getTrustManagerFactory(config);
         //then
         assertThat(trustManagerFactory).isNotNull();
         TrustManager[] trustManagers = trustManagerFactory.getTrustManagers();
@@ -327,7 +328,7 @@ class AHCHttpClientTest {
         config.put(HTTP_CLIENT_SSL_TRUSTSTORE_TYPE, HttpSinkTaskTest.JKS_STORE_TYPE);
         config.put(HTTP_CLIENT_SSL_TRUSTSTORE_ALGORITHM, HttpSinkTaskTest.TRUSTSTORE_PKIX_ALGORITHM);
         //when
-        TrustManagerFactory trustManagerFactory = HttpClient.getTrustManagerFactory(config);
+        TrustManagerFactory trustManagerFactory = HttpClientFactory.getTrustManagerFactory(config);
         //then
         assertThat(trustManagerFactory).isNotNull();
         TrustManager[] trustManagers = trustManagerFactory.getTrustManagers();
