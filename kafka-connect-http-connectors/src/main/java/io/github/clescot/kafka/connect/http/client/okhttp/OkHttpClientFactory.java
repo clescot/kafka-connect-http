@@ -23,4 +23,15 @@ public class OkHttpClientFactory implements HttpClientFactory<Request, Response>
         return new OkHttpClient(config,executorService,random,proxy,proxySelector, meterRegistry);
     }
 
+    private okhttp3.OkHttpClient buildOkHttpClient(Map<String, Object> config,
+                                                              ExecutorService executorService,
+                                                              Random random,
+                                                              Proxy proxy,
+                                                              ProxySelector proxySelector,
+                                                   CompositeMeterRegistry meterRegistry) {
+
+
+
+        return null;
+    }
 }
