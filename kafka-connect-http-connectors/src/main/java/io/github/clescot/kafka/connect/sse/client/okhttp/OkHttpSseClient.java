@@ -23,13 +23,13 @@ public class OkHttpSseClient {
 
     }
 
-    public void connect(EventSourceListener listener) {
+    public void connect() {
         Request request = new Request.Builder()
                 .url(url)
                 .build();
 
         // Create the EventSource with the provided listener
-        eventSource = factory.newEventSource(request, listener);
+        eventSource = factory.newEventSource(request, new OkHttpEventSourceListener());
     }
 
     public void disconnect() {
