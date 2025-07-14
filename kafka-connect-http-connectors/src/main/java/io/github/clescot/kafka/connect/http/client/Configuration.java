@@ -38,6 +38,7 @@ import static io.github.clescot.kafka.connect.http.sink.HttpSinkConfigDefinition
 
 /**
  * Configuration of the {@link HttpClient}, specific to some websites according to the configured <span class="strong">predicate</span>.
+ * @param <C> client type, which is a subclass of HttpClient
  * @param <R> native HttpRequest
  * @param <S> native HttpResponse
  * <p>

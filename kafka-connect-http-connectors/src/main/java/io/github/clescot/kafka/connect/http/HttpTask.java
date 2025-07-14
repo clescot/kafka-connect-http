@@ -23,6 +23,7 @@ import static io.github.clescot.kafka.connect.http.sink.HttpSinkConfigDefinition
 
 /**
  *
+ * @param <C> client type, which is a subclass of HttpClient
  * @param <R> native HttpRequest
  * @param <S> native HttpResponse
  */
