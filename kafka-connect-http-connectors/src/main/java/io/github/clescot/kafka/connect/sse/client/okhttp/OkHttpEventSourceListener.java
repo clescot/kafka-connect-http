@@ -1,6 +1,5 @@
 package io.github.clescot.kafka.connect.sse.client.okhttp;
 
-import io.github.clescot.kafka.connect.http.sink.HttpSinkConnectorConfig;
 import okhttp3.Response;
 import okhttp3.sse.EventSource;
 import okhttp3.sse.EventSourceListener;
