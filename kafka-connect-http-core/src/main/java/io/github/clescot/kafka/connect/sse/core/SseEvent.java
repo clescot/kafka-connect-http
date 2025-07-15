@@ -31,4 +31,13 @@ public class SseEvent implements Cloneable, Serializable {
     public String getData() {
         return data;
     }
+
+    @Override
+    public SseEvent clone() {
+        try {
+            return (SseEvent) super.clone();
+        } catch (CloneNotSupportedException e) {
+            throw new AssertionError();
+        }
+    }
 }
