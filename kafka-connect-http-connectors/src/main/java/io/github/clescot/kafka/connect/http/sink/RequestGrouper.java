@@ -56,8 +56,12 @@ public class RequestGrouper {
         int consumed = 0;
         StringBuilder builder = new StringBuilder(aggregatedBody);
         boolean interrupted=false;
-        List<Pair<SinkRecord, HttpRequest>> matchingEntries = entries.stream().filter(pair-> this.matches(pair.getRight())).toList();
-        List<Pair<SinkRecord, HttpRequest>> nonMatchingEntries = entries.stream().filter(pair-> !this.matches(pair.getRight())).toList();
+        List<Pair<SinkRecord, HttpRequest>> matchingEntries = entries.stream()
+                .filter(pair-> this.matches(pair.getRight()))
+                .toList();
+        List<Pair<SinkRecord, HttpRequest>> nonMatchingEntries = entries.stream()
+                .filter(pair-> !this.matches(pair.getRight()))
+                .toList();
         for (int i = 0; i < matchingEntries.size(); i++) {
             Pair<SinkRecord, HttpRequest> myEntry = matchingEntries.get(i);
             String part = myEntry.getRight().getBodyAsString();

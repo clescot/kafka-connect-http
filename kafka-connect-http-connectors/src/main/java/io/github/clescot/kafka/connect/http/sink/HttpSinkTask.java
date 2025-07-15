@@ -226,7 +226,7 @@ public abstract class HttpSinkTask<C extends HttpClient<R,S>,R, S> extends SinkT
         Preconditions.checkNotNull(httpTask, "httpTask is null. 'start' method must be called once before put");
         //we submit futures to the pool
         Stream<SinkRecord> stream = records.stream();
-
+        //split SinkRecord messages, and convert them to HttpRequest
         List<Pair<SinkRecord, HttpRequest>> requests = stream
                 .filter(sinkRecord -> sinkRecord.value() != null)
                 .peek(this::debugConnectRecord)
