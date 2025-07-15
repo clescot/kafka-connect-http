@@ -239,7 +239,7 @@ public abstract class HttpSinkTask<C extends HttpClient<R,S>,R, S> extends SinkT
         //List<SinkRecord>-> SinkRecord
         List<CompletableFuture<HttpExchange>> completableFutures = groupedRequests.stream()
                 .map(this::callAndPublish)
-                .collect(Collectors.toList());
+                .toList();
         List<HttpExchange> httpExchanges = completableFutures.stream().map(CompletableFuture::join).collect(Collectors.toList());
         LOGGER.debug("HttpExchanges created :'{}'", httpExchanges.size());
 
