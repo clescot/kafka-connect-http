@@ -11,7 +11,6 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.io.Resources;
 import io.github.clescot.kafka.connect.http.client.DummyX509Certificate;
-import io.github.clescot.kafka.connect.http.client.HttpClient;
 import io.github.clescot.kafka.connect.http.client.HttpClientFactory;
 import io.github.clescot.kafka.connect.http.client.proxy.URIRegexProxySelector;
 import io.github.clescot.kafka.connect.http.core.*;

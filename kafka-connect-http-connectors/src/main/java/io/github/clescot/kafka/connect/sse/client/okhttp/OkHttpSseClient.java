@@ -1,12 +1,13 @@
 package io.github.clescot.kafka.connect.sse.client.okhttp;
 
+import io.github.clescot.kafka.connect.sse.core.SseEvent;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.sse.EventSource;
-import okhttp3.sse.EventSourceListener;
 import okhttp3.sse.EventSources;
 
 import java.util.Map;
+import java.util.Queue;
 
 /**
  * This class represents a client for Server-Sent Events (SSE) with the OkHttp library.
@@ -16,20 +17,21 @@ public class OkHttpSseClient {
 
     private final EventSource.Factory factory;
     private EventSource eventSource;
-    private final String url;
-    public OkHttpSseClient(Map<String, Object> config,OkHttpClient okHttpClient) {
-        this.factory = EventSources.createFactory(okHttpClient);
-        this.url = (String) config.get("sse.url");
+    private OkHttpEventSourceListener eventSourceListener;
 
+    public OkHttpSseClient(OkHttpClient okHttpClient, Queue<SseEvent> queue) {
+        this.factory = EventSources.createFactory(okHttpClient);
+        eventSourceListener = new OkHttpEventSourceListener(queue);
     }
 
-    public void connect() {
+    public void connect(Map<String, String> config) {
+        String url = config.get("sse.url");
         Request request = new Request.Builder()
                 .url(url)
                 .build();
-
         // Create the EventSource with the provided listener
-        eventSource = factory.newEventSource(request, new OkHttpEventSourceListener());
+
+        eventSource = factory.newEventSource(request, eventSourceListener);
     }
 
     public void disconnect() {

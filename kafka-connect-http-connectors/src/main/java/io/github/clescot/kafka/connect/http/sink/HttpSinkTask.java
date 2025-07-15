@@ -147,7 +147,7 @@ public abstract class HttpSinkTask<C extends HttpClient<R,S>,R, S> extends SinkT
 
         //build meterRegistry
         MeterRegistryFactory meterRegistryFactory = new MeterRegistryFactory();
-        setMeterRegistry(meterRegistryFactory.buildMeterRegistry(httpSinkConnectorConfig));
+        setMeterRegistry(meterRegistryFactory.buildMeterRegistry(httpSinkConnectorConfig.originalsStrings()));
 
         //build httpRequestMappers
 

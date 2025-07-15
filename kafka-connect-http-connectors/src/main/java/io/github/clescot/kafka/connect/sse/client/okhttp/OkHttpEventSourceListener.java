@@ -1,5 +1,6 @@
 package io.github.clescot.kafka.connect.sse.client.okhttp;
 
+import io.github.clescot.kafka.connect.sse.core.SseEvent;
 import okhttp3.Response;
 import okhttp3.sse.EventSource;
 import okhttp3.sse.EventSourceListener;
@@ -8,12 +9,16 @@ import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.Queue;
+
 public class OkHttpEventSourceListener extends EventSourceListener {
     private static final Logger LOGGER = LoggerFactory.getLogger(OkHttpEventSourceListener.class);
     private EventSource eventSource;
     private Response response;
-    public OkHttpEventSourceListener() {
-        super();
+    private final Queue<SseEvent> queue;
+    public OkHttpEventSourceListener(Queue<SseEvent> queue) {
+        this.queue = queue;
+        LOGGER.debug("OkHttpEventSourceListener initialized with queue: {}", queue);
     }
 
     @Override
@@ -28,6 +33,8 @@ public class OkHttpEventSourceListener extends EventSourceListener {
     public void onEvent(@NotNull EventSource eventSource, @Nullable String id, @Nullable String type, @NotNull String data) {
         super.onEvent(eventSource, id, type, data);
         LOGGER.debug("Event received: id={}, type={}, data={}", id, type, data);
+        SseEvent sseEvent = new SseEvent(id, type, data);
+        queue.add(sseEvent);
     }
 
     @Override
@@ -54,5 +61,9 @@ public class OkHttpEventSourceListener extends EventSourceListener {
 
     public Response getResponse() {
         return response;
+    }
+
+    public Queue<SseEvent> getQueue() {
+        return queue;
     }
 }

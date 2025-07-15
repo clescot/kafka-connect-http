@@ -28,6 +28,7 @@ public class HttpCronSourceTask extends SourceTask {
     private Scheduler scheduler;
     private Queue<HttpRequest> queue;
     private ObjectMapper objectMapper;
+
     @Override
     public String version() {
         return VERSION_UTILS.getVersion();

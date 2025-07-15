@@ -12,24 +12,25 @@ import io.prometheus.metrics.model.registry.PrometheusRegistry;
 import org.apache.kafka.common.config.AbstractConfig;
 
 import java.io.IOException;
+import java.util.Map;
 
 import static io.github.clescot.kafka.connect.http.sink.HttpSinkConfigDefinition.*;
 
 public class MeterRegistryFactory {
 
 
-    public CompositeMeterRegistry buildMeterRegistry(AbstractConfig config) {
+    public CompositeMeterRegistry buildMeterRegistry(Map<String,String> config) {
         CompositeMeterRegistry compositeMeterRegistry = new CompositeMeterRegistry();
-        boolean activateJMX = Boolean.parseBoolean(config.getString(METER_REGISTRY_EXPORTER_JMX_ACTIVATE));
+        boolean activateJMX = Boolean.parseBoolean(config.get(METER_REGISTRY_EXPORTER_JMX_ACTIVATE));
         if (activateJMX) {
             JmxMeterRegistry jmxMeterRegistry = new JmxMeterRegistry(JmxConfig.DEFAULT, Clock.SYSTEM);
             jmxMeterRegistry.start();
             compositeMeterRegistry.add(jmxMeterRegistry);
         }
-        boolean activatePrometheus = Boolean.parseBoolean(config.getString(METER_REGISTRY_EXPORTER_PROMETHEUS_ACTIVATE));
+        boolean activatePrometheus = Boolean.parseBoolean(config.get(METER_REGISTRY_EXPORTER_PROMETHEUS_ACTIVATE));
         if (activatePrometheus) {
             PrometheusMeterRegistry prometheusMeterRegistry = new PrometheusMeterRegistry(PrometheusConfig.DEFAULT);
-            Integer prometheusPort = config.getInt(METER_REGISTRY_EXPORTER_PROMETHEUS_PORT);
+            Integer prometheusPort = Integer.parseInt(config.get(METER_REGISTRY_EXPORTER_PROMETHEUS_PORT));
             // you can set the daemon flag to false if you want the server to block
 
             try {
