@@ -45,7 +45,14 @@ import java.util.stream.Stream;
 import static io.github.clescot.kafka.connect.http.sink.HttpSinkConfigDefinition.CONFIGURATION_IDS;
 import static io.github.clescot.kafka.connect.http.sink.HttpSinkConfigDefinition.HTTP_CLIENT_ASYNC_FIXED_THREAD_POOL_SIZE;
 
-
+/**
+ * HttpSinkTask is a Kafka Connect SinkTask that processes SinkRecords,
+ * splits messages, maps them to HttpRequests, and sends them to an HttpClient.
+ *
+ * @param <C> type of the HttpClient
+ * @param <R> type of the native HttpRequest
+ * @param <S> type of the native HttpResponse
+ */
 public abstract class HttpSinkTask<C extends HttpClient<R,S>,R, S> extends SinkTask {
     private static final Logger LOGGER = LoggerFactory.getLogger(HttpSinkTask.class);
 

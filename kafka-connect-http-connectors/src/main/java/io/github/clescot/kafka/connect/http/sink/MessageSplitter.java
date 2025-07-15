@@ -12,6 +12,11 @@ import org.jetbrains.annotations.NotNull;
 import java.util.List;
 import java.util.stream.Collectors;
 
+/**
+ * MessageSplitter is used to split a message based on a pattern.
+ * It uses JEXL expressions to determine if a SinkRecord matches the splitter's criteria.
+ * If it matches, it splits the message body according to the specified pattern and limit.
+ */
 public class MessageSplitter {
 
     private final String id;

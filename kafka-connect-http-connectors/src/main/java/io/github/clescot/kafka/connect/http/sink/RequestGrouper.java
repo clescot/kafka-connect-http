@@ -11,6 +11,11 @@ import java.util.List;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
+/**
+ * RequestGrouper is used to group HttpRequests based on a predicate.
+ * It aggregates the body of matching requests and returns a list of aggregated requests.
+ * Non-matching requests are returned as they are.
+ */
 public class RequestGrouper {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(RequestGrouper.class);

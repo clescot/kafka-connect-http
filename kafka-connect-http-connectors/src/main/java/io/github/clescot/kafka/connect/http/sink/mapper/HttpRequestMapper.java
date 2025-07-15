@@ -3,6 +3,10 @@ package io.github.clescot.kafka.connect.http.sink.mapper;
 import io.github.clescot.kafka.connect.http.core.HttpRequest;
 import org.apache.kafka.connect.sink.SinkRecord;
 
+/**
+ * Interface to map a {@link SinkRecord} to an {@link HttpRequest}.
+ * Implementations should provide the logic to determine if they can handle a specific record and how to map it.
+ */
 public interface HttpRequestMapper {
 
 
