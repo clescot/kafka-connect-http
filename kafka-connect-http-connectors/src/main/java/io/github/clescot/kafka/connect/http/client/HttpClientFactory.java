@@ -45,7 +45,8 @@ public interface HttpClientFactory<C extends HttpClient<R,S>,R,S> {
     default C buildHttpClient(Map<String, Object> config,
                                                   ExecutorService executorService,
                                                   CompositeMeterRegistry meterRegistry, Random random) {
-
+        Preconditions.checkNotNull(random, "Random must not be null.");
+        Preconditions.checkNotNull(meterRegistry, "MeterRegistry must not be null.");
         //get proxy
         Proxy proxy = null;
         if (config.containsKey(PROXY_HTTP_CLIENT_HOSTNAME)) {
