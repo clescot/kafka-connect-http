@@ -25,7 +25,12 @@ public class OkHttpSseClient {
         this.factory = EventSources.createFactory(okHttpClient);
         eventSourceListener = new OkHttpEventSourceListener(queue);
     }
-
+    /**
+     * Connects to the SSE server using the provided configuration.
+     * The configuration should contain the URL of the SSE endpoint.
+     *
+     * @param config A map containing the configuration settings, including the `url` parameter.
+     */
     public void connect(Map<String, String> config) {
         String url = config.get("url");
         Request request = new Request.Builder()
@@ -36,7 +41,10 @@ public class OkHttpSseClient {
         eventSource = factory.newEventSource(request, eventSourceListener);
         isConnected = true;
     }
-
+    /**
+     * Disconnects from the SSE server.
+     * This method cancels the EventSource connection and sets the isConnected flag to false.
+     */
     public void disconnect() {
         // Logic to disconnect from the SSE server
         if(eventSource != null) {
@@ -44,7 +52,9 @@ public class OkHttpSseClient {
         }
         isConnected = false;
     }
-
+    /**
+     * Disconnects from the SSE server and shuts down the OkHttp client.
+     */
     public void shutdown() {
         disconnect();
         okHttpClient.dispatcher().executorService().shutdown();
