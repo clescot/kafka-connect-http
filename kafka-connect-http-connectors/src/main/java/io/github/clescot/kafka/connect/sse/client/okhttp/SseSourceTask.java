@@ -74,6 +74,10 @@ public class SseSourceTask extends SourceTask {
         okHttpSseClient.disconnect();
     }
 
+    public boolean isConnected() {
+        return okHttpSseClient != null && okHttpSseClient.isConnected();
+    }
+
     public Queue<SseEvent> getQueue() {
         return queue;
     }
