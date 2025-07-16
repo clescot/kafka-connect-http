@@ -14,12 +14,14 @@ import java.util.Queue;
  * It is designed to handle connections to an SSE server.
  */
 public class OkHttpSseClient {
+    private final OkHttpClient okHttpClient;
     private boolean isConnected = false;
     private final EventSource.Factory factory;
     private EventSource eventSource;
     private final OkHttpEventSourceListener eventSourceListener;
 
     public OkHttpSseClient(OkHttpClient okHttpClient, Queue<SseEvent> queue) {
+        this.okHttpClient = okHttpClient;
         this.factory = EventSources.createFactory(okHttpClient);
         eventSourceListener = new OkHttpEventSourceListener(queue);
     }
@@ -37,8 +39,15 @@ public class OkHttpSseClient {
 
     public void disconnect() {
         // Logic to disconnect from the SSE server
-        eventSource.cancel();
+        if(eventSource != null) {
+            eventSource.cancel();
+        }
         isConnected = false;
+    }
+
+    public void shutdown() {
+        disconnect();
+        okHttpClient.dispatcher().executorService().shutdown();
     }
 
     public boolean isConnected() {
