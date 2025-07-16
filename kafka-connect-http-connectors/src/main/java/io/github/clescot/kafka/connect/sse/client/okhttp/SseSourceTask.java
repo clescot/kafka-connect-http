@@ -12,13 +12,11 @@ import io.github.clescot.kafka.connect.http.client.okhttp.OkHttpClientFactory;
 import io.github.clescot.kafka.connect.http.core.queue.QueueFactory;
 import io.github.clescot.kafka.connect.http.source.cron.CronException;
 import io.github.clescot.kafka.connect.sse.core.SseEvent;
+import io.micrometer.core.instrument.composite.CompositeMeterRegistry;
 import org.apache.kafka.connect.source.SourceRecord;
 import org.apache.kafka.connect.source.SourceTask;
 
-import java.util.List;
-import java.util.Map;
-import java.util.Queue;
-import java.util.UUID;
+import java.util.*;
 
 public class SseSourceTask extends SourceTask {
     private static final VersionUtils VERSION_UTILS = new VersionUtils();
@@ -38,8 +36,8 @@ public class SseSourceTask extends SourceTask {
         this.sseSourceConnectorConfig = new SseSourceConnectorConfig(settings);
         OkHttpClientFactory factory = new OkHttpClientFactory();
         Map<String,Object> config = Maps.newHashMap(settings);
-        OkHttpClient okHttpClient = factory.buildHttpClient(config,null,null,  null);
-        Queue<SseEvent> queue = QueueFactory.getQueue(""+ UUID.randomUUID());
+        OkHttpClient okHttpClient = factory.buildHttpClient(config,null,new CompositeMeterRegistry(),  new Random());
+        this.queue = QueueFactory.getQueue(""+ UUID.randomUUID());
         objectMapper = new ObjectMapper();
         objectMapper.registerModule(new JavaTimeModule());
         okHttpSseClient = new OkHttpSseClient(okHttpClient.getInternalClient(),queue);
@@ -70,6 +68,13 @@ public class SseSourceTask extends SourceTask {
 
     @Override
     public void stop() {
+        if(okHttpSseClient == null) {
+            return;
+        }
         okHttpSseClient.disconnect();
+    }
+
+    public Queue<SseEvent> getQueue() {
+        return queue;
     }
 }
