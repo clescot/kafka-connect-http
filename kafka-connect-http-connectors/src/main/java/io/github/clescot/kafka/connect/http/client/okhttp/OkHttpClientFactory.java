@@ -1,5 +1,6 @@
 package io.github.clescot.kafka.connect.http.client.okhttp;
 
+import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
 import com.google.common.jimfs.Jimfs;
 import io.github.clescot.kafka.connect.http.client.*;
@@ -81,7 +82,8 @@ public class OkHttpClientFactory implements HttpClientFactory<OkHttpClient,Reque
                                                Proxy proxy,
                                                ProxySelector proxySelector,
                                                CompositeMeterRegistry meterRegistry) {
-
+        Preconditions.checkNotNull(random, "Random must not be null.");
+        Preconditions.checkNotNull(meterRegistry, "MeterRegistry must not be null.");
         okhttp3.OkHttpClient internalOkHttpClient = buildOkHttpClient(config, executorService, random, proxy, proxySelector, meterRegistry);
         OkHttpClient okHttpClient = new OkHttpClient(config, internalOkHttpClient);
         okHttpClient.setTrustManagerFactory(trustManagerFactory);
@@ -94,7 +96,8 @@ public class OkHttpClientFactory implements HttpClientFactory<OkHttpClient,Reque
                                                               Proxy proxy,
                                                               ProxySelector proxySelector,
                                                    CompositeMeterRegistry meterRegistry) {
-
+        Preconditions.checkNotNull(random, "Random must not be null.");
+        Preconditions.checkNotNull(meterRegistry, "MeterRegistry must not be null.");
         okhttp3.OkHttpClient.Builder httpClientBuilder = new okhttp3.OkHttpClient.Builder();
         if (executorService != null) {
             Dispatcher dispatcher = new Dispatcher(executorService);
@@ -203,6 +206,7 @@ public class OkHttpClientFactory implements HttpClientFactory<OkHttpClient,Reque
     }
 
     private static void configureEvents(Map<String, Object> config, CompositeMeterRegistry meterRegistry, okhttp3.OkHttpClient.Builder httpClientBuilder) {
+        Preconditions.checkNotNull(meterRegistry, "MeterRegistry must not be null.");
         if (!meterRegistry.getRegistries().isEmpty()) {
             List<String> tags = Lists.newArrayList();
             tags.add(Configuration.CONFIGURATION_ID);
