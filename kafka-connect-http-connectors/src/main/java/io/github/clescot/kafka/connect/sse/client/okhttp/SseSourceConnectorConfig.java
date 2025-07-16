@@ -1,7 +1,5 @@
 package io.github.clescot.kafka.connect.sse.client.okhttp;
 
-import io.github.clescot.kafka.connect.http.core.queue.ConfigConstants;
-import io.github.clescot.kafka.connect.http.core.queue.QueueFactory;
 import io.github.clescot.kafka.connect.http.source.cron.HttpCronSourceConfigDefinition;
 import org.apache.kafka.common.config.AbstractConfig;
 import org.apache.kafka.common.config.ConfigDef;
@@ -14,7 +12,7 @@ public class SseSourceConnectorConfig extends AbstractConfig {
     private String topic;
     private String url;
     public SseSourceConnectorConfig(Map<?, ?> originals) {
-        this(HttpCronSourceConfigDefinition.config(), originals);
+        this(SseSourceConfigDefinition.config(), originals);
     }
 
     public SseSourceConnectorConfig(ConfigDef configDef, Map<?, ?> originals){
