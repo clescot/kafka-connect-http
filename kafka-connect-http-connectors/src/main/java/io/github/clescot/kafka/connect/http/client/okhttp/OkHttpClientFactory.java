@@ -286,17 +286,17 @@ public class OkHttpClientFactory implements HttpClientFactory<OkHttpClient,Reque
 
         //follow redirects
         if (config.containsKey(OKHTTP_FOLLOW_REDIRECT)) {
-            httpClientBuilder.followRedirects((Boolean) config.get(OKHTTP_FOLLOW_REDIRECT));
+            httpClientBuilder.followRedirects(Boolean.parseBoolean(config.get(OKHTTP_FOLLOW_REDIRECT).toString()));
         }
 
         //follow https redirects
         if (config.containsKey(OKHTTP_FOLLOW_SSL_REDIRECT)) {
-            httpClientBuilder.followSslRedirects((Boolean) config.get(OKHTTP_FOLLOW_SSL_REDIRECT));
+            httpClientBuilder.followSslRedirects(Boolean.parseBoolean(config.get(OKHTTP_FOLLOW_SSL_REDIRECT).toString()));
         }
 
         //retry on connection failure
         if (config.containsKey(OKHTTP_RETRY_ON_CONNECTION_FAILURE)) {
-            httpClientBuilder.retryOnConnectionFailure((Boolean) config.get(OKHTTP_RETRY_ON_CONNECTION_FAILURE));
+            httpClientBuilder.retryOnConnectionFailure(Boolean.parseBoolean(config.get(OKHTTP_RETRY_ON_CONNECTION_FAILURE).toString()));
         }
 
     }
