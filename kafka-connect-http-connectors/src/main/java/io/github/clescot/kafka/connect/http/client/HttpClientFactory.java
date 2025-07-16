@@ -42,7 +42,7 @@ public interface HttpClientFactory<C extends HttpClient<R,S>,R,S> {
                               Proxy proxy,
                               ProxySelector proxySelector, CompositeMeterRegistry meterRegistry);
 
-    default HttpClient<R,S> buildHttpClient(Map<String, Object> config,
+    default C buildHttpClient(Map<String, Object> config,
                                                   ExecutorService executorService,
                                                   CompositeMeterRegistry meterRegistry, Random random) {
 

@@ -39,7 +39,7 @@ public abstract class AbstractHttpClient<R,S> implements HttpClient<R,S> {
     protected AbstractHttpClient(Map<String, Object> config) {
         this.config = config;
         configurationId = (String) config.get(CONFIGURATION_ID);
-        Preconditions.checkNotNull(configurationId,"configuration must have an id");
+        Preconditions.checkNotNull(configurationId,"configuration must have an id : '"+CONFIGURATION_ID+"' is not set in the configuration map");
         setRateLimiter(buildRateLimiter(config));
 
         //httpResponse

@@ -38,7 +38,7 @@ public class SseSourceTask extends SourceTask {
         this.sseSourceConnectorConfig = new SseSourceConnectorConfig(settings);
         OkHttpClientFactory factory = new OkHttpClientFactory();
         Map<String,Object> config = Maps.newHashMap(settings);
-        OkHttpClient okHttpClient = (OkHttpClient) factory.buildHttpClient(config,null,null,  null);
+        OkHttpClient okHttpClient = factory.buildHttpClient(config,null,null,  null);
         Queue<SseEvent> queue = QueueFactory.getQueue(""+ UUID.randomUUID());
         objectMapper = new ObjectMapper();
         objectMapper.registerModule(new JavaTimeModule());

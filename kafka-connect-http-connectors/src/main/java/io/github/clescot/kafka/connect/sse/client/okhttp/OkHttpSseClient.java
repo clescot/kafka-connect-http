@@ -8,16 +8,17 @@ import okhttp3.sse.EventSources;
 
 import java.util.Map;
 import java.util.Queue;
+import java.util.stream.Stream;
 
 /**
  * This class represents a client for Server-Sent Events (SSE) with the OkHttp library.
  * It is designed to handle connections to an SSE server.
  */
 public class OkHttpSseClient {
-
+    private boolean isConnected = false;
     private final EventSource.Factory factory;
     private EventSource eventSource;
-    private OkHttpEventSourceListener eventSourceListener;
+    private final OkHttpEventSourceListener eventSourceListener;
 
     public OkHttpSseClient(OkHttpClient okHttpClient, Queue<SseEvent> queue) {
         this.factory = EventSources.createFactory(okHttpClient);
@@ -25,18 +26,28 @@ public class OkHttpSseClient {
     }
 
     public void connect(Map<String, String> config) {
-        String url = config.get("sse.url");
+        String url = config.get("url");
         Request request = new Request.Builder()
                 .url(url)
                 .build();
         // Create the EventSource with the provided listener
 
         eventSource = factory.newEventSource(request, eventSourceListener);
+        isConnected = true;
     }
 
     public void disconnect() {
         // Logic to disconnect from the SSE server
         eventSource.cancel();
+        isConnected = false;
     }
 
+    public boolean isConnected() {
+        return isConnected;
+    }
+
+    public Stream<SseEvent> getEventStream() {
+        Queue<SseEvent> queue = eventSourceListener.getQueue();
+        return queue.stream();
+    }
 }
