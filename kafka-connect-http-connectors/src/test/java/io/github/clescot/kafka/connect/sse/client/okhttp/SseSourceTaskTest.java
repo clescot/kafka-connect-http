@@ -1,18 +1,42 @@
 package io.github.clescot.kafka.connect.sse.client.okhttp;
 
+import com.github.tomakehurst.wiremock.client.WireMock;
+import com.github.tomakehurst.wiremock.core.Options;
+import com.github.tomakehurst.wiremock.core.WireMockConfiguration;
+import com.github.tomakehurst.wiremock.http.trafficlistener.ConsoleNotifyingWiremockNetworkTrafficListener;
+import com.github.tomakehurst.wiremock.junit5.WireMockExtension;
+import com.github.tomakehurst.wiremock.junit5.WireMockRuntimeInfo;
 import com.google.common.collect.Maps;
 import org.apache.kafka.common.config.ConfigException;
 import org.awaitility.Awaitility;
 import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.extension.RegisterExtension;
 import org.quartz.*;
 
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
+import static com.github.tomakehurst.wiremock.client.WireMock.okForContentType;
+import static com.github.tomakehurst.wiremock.stubbing.Scenario.STARTED;
 import static org.assertj.core.api.Assertions.assertThat;
 
 class SseSourceTaskTest {
+
+    @RegisterExtension
+    static WireMockExtension wmHttp;
+
+    static {
+
+        wmHttp = WireMockExtension.newInstance()
+                .options(
+                        WireMockConfiguration.wireMockConfig()
+                                .dynamicPort()
+                                .networkTrafficListener(new ConsoleNotifyingWiremockNetworkTrafficListener())
+                                .useChunkedTransferEncoding(Options.ChunkedEncodingPolicy.NEVER)
+                )
+                .build();
+    }
     @Nested
     class Start {
 
@@ -20,7 +44,7 @@ class SseSourceTaskTest {
 
         @BeforeEach
         void setup() {
-            sseSourceTask = new SseSourceTask();
+                sseSourceTask = new SseSourceTask();
         }
 
 
@@ -46,6 +70,7 @@ class SseSourceTaskTest {
         void test_settings_with_topic_and_url() {
             Map<String, String> settings = Maps.newHashMap();
             settings.put("topic", "test");
+            settings.put("configuration.id", "test_sse_client_connect");
             settings.put("url", "http://localhost:8080/sse");
             Assertions.assertDoesNotThrow(() -> sseSourceTask.start(settings));
         }
@@ -80,6 +105,28 @@ class SseSourceTaskTest {
         @BeforeEach
         void setup() {
             SseSourceTask = new SseSourceTask();
+            var url = "/events";
+
+            //prepare the WireMock server to simulate an SSE endpoint
+            String scenario = "test_sse_client_connect";
+            WireMockRuntimeInfo wmRuntimeInfo = wmHttp.getRuntimeInfo();
+            WireMock wireMock = wmRuntimeInfo.getWireMock();
+            String dataStream = """
+                id:1
+                event:random
+                data:{"id":"test post 1", "createdAt":"2025-04-26T10:15:30"}
+                
+                id:2
+                event:type2
+                data:{"id":"test post 2", "createdAt":"2025-04-26T10:15:31"}
+                
+                """;
+            wireMock
+                    .register(WireMock.get(url).inScenario(scenario)
+                            .whenScenarioStateIs(STARTED)
+                            .willReturn(okForContentType("text/event-stream", dataStream))
+                            .willSetStateTo("CONNECTED")
+                    );
         }
 
         @AfterEach
