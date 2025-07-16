@@ -8,7 +8,6 @@ import okhttp3.sse.EventSources;
 
 import java.util.Map;
 import java.util.Queue;
-import java.util.stream.Stream;
 
 /**
  * This class represents a client for Server-Sent Events (SSE) with the OkHttp library.
@@ -46,8 +45,7 @@ public class OkHttpSseClient {
         return isConnected;
     }
 
-    public Stream<SseEvent> getEventStream() {
-        Queue<SseEvent> queue = eventSourceListener.getQueue();
-        return queue.stream();
+    public Queue<SseEvent> getEventQueue() {
+        return eventSourceListener.getQueue();
     }
 }

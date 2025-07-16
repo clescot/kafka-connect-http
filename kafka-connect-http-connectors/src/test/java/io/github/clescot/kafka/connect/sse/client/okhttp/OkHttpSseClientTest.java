@@ -12,12 +12,14 @@ import io.github.clescot.kafka.connect.http.client.okhttp.OkHttpClientFactory;
 import io.github.clescot.kafka.connect.http.core.queue.QueueFactory;
 import io.github.clescot.kafka.connect.sse.core.SseEvent;
 import io.micrometer.core.instrument.composite.CompositeMeterRegistry;
+import org.awaitility.Awaitility;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Queue;
 import java.util.Random;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -56,11 +58,11 @@ class OkHttpSseClientTest {
         String dataStream = """
                 id:1
                 event:random
-                data:{"id":"test post 1", "createdAt":"2023-03-26T10:15:30"}
+                data:{"id":"test post 1", "createdAt":"2025-04-26T10:15:30"}
                 
                 id:2
                 event:type2
-                data:{"id":"test post 2", "createdAt":"2023-03-26T10:15:31"}
+                data:{"id":"test post 2", "createdAt":"2025-04-26T10:15:31"}
                 
                 """;
         wireMock
@@ -82,24 +84,27 @@ class OkHttpSseClientTest {
         config.put("url", wmHttp.url("/events"));
         assertDoesNotThrow(() -> client.connect(config));
         assertTrue(client.isConnected());
+        Awaitility.await().atMost(5, java.util.concurrent.TimeUnit.SECONDS)
+                .until(() -> !client.getEventQueue().isEmpty());
 
+        Queue<SseEvent> eventQueue = client.getEventQueue();
+        assertNotNull(eventQueue);
 
-        Stream<SseEvent> eventStream = client.getEventStream();
-        assertNotNull(eventStream);
-
-        List<SseEvent> events = eventStream.toList();
-        assertThat(events).hasSize(2);
-        SseEvent firstEvent = events.get(0);
+        assertThat(eventQueue).hasSize(2);
+        SseEvent firstEvent = eventQueue.poll();
         assertThat(firstEvent.getId()).isEqualTo("1");
         assertThat(firstEvent.getType()).isEqualTo("random");
         assertThat(firstEvent.getData()).isEqualTo("""
-                {"id":"test post 1", "createdAt":"2023-03-26T10:15:30"}
-                """);
-        SseEvent secondEvent = events.get(1);
+                {"id":"test post 1", "createdAt":"2025-04-26T10:15:30"}
+                """.strip());
+        SseEvent secondEvent = eventQueue.poll();
         assertThat(secondEvent.getId()).isEqualTo("2");
         assertThat(secondEvent.getType()).isEqualTo("type2");
         assertThat(secondEvent.getData()).isEqualTo("""
-                {"id":"test post 2", "createdAt":"2023-03-26T10:15:31"}
-                """);
+                {"id":"test post 2", "createdAt":"2025-04-26T10:15:31"}
+                """.strip());
+        client.disconnect();
+        assertThat(client.isConnected()).isFalse();
+        assertThat(client.getEventQueue().size()).isZero();
     }
 }
