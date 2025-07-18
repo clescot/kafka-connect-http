@@ -10,7 +10,6 @@ import io.github.clescot.kafka.connect.http.VersionUtils;
 import io.github.clescot.kafka.connect.http.client.okhttp.OkHttpClient;
 import io.github.clescot.kafka.connect.http.client.okhttp.OkHttpClientFactory;
 import io.github.clescot.kafka.connect.http.core.queue.QueueFactory;
-import io.github.clescot.kafka.connect.http.source.cron.CronException;
 import io.github.clescot.kafka.connect.sse.core.SseEvent;
 import io.micrometer.core.instrument.composite.CompositeMeterRegistry;
 import org.apache.kafka.connect.source.SourceRecord;
