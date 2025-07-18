@@ -112,7 +112,7 @@ class SseSourceTaskTest {
     @Nested
     class Poll{
         SseSourceTask SseSourceTask;
-
+        WireMockRuntimeInfo wmRuntimeInfo;
         @BeforeEach
         void setup() {
             SseSourceTask = new SseSourceTask();
@@ -120,7 +120,7 @@ class SseSourceTaskTest {
 
             //prepare the WireMock server to simulate an SSE endpoint
             String scenario = "test_sse_client_connect";
-            WireMockRuntimeInfo wmRuntimeInfo = wmHttp.getRuntimeInfo();
+            wmRuntimeInfo = wmHttp.getRuntimeInfo();
             WireMock wireMock = wmRuntimeInfo.getWireMock();
             String dataStream = """
                 id:1
@@ -150,9 +150,11 @@ class SseSourceTaskTest {
             Map<String, String> settings = Maps.newHashMap();
             settings.put("configuration.id", "test_sse_client_connect");
             settings.put("topic", "test");
-            settings.put("url", "http://localhost:8080/sse");
+            settings.put("url", wmRuntimeInfo.getHttpBaseUrl()+"/events");
             SseSourceTask.start(settings);
+            assertThat(SseSourceTask.isConnected()).isTrue();
             Awaitility.await().atMost(5, TimeUnit.SECONDS).until(()-> SseSourceTask.getQueue().peek()!=null);
+            assertThat(SseSourceTask.getQueue()).hasSize(2);
             Awaitility.await().atMost(5, TimeUnit.SECONDS).until(()->!SseSourceTask.poll().isEmpty());
 
         }

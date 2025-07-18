@@ -3,6 +3,7 @@ package io.github.clescot.kafka.connect.http;
 import com.google.common.collect.Lists;
 import io.github.clescot.kafka.connect.http.client.Configuration;
 import io.github.clescot.kafka.connect.http.client.HttpClient;
+import io.github.clescot.kafka.connect.http.client.HttpConfiguration;
 import io.github.clescot.kafka.connect.http.core.HttpExchange;
 import io.github.clescot.kafka.connect.http.core.HttpRequest;
 import io.micrometer.core.instrument.MeterRegistry;
@@ -32,14 +33,14 @@ public class HttpTask<C extends HttpClient<R,S>,R, S> {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(HttpTask.class);
 
-    private final List<Configuration<C,R, S>> customConfigurations;
-    private final Configuration<C,R, S> defaultConfiguration;
+    private final List<HttpConfiguration<C,R, S>> customConfigurations;
+    private final HttpConfiguration<C,R, S> defaultConfiguration;
     private static CompositeMeterRegistry meterRegistry;
 
 
     public HttpTask(Map<String,String> config,
-                    Configuration<C,R, S> defaultConfiguration,
-                    List<Configuration<C,R, S>> customConfigurations,
+                    HttpConfiguration<C,R, S> defaultConfiguration,
+                    List<HttpConfiguration<C,R, S>> customConfigurations,
                     CompositeMeterRegistry meterRegistry,
                     ExecutorService executorService) {
 
@@ -58,7 +59,7 @@ public class HttpTask<C extends HttpClient<R,S>,R, S> {
      * @return a future of the HttpExchange (complete request and response informations).
      */
     public CompletableFuture<HttpExchange> call(@NotNull HttpRequest httpRequest) {
-        Configuration<C,R, S> foundConfiguration = selectConfiguration(httpRequest);
+        HttpConfiguration<C,R, S> foundConfiguration = selectConfiguration(httpRequest);
         if (LOGGER.isTraceEnabled()) {
             LOGGER.trace("configuration:{}", foundConfiguration);
         }
@@ -72,7 +73,7 @@ public class HttpTask<C extends HttpClient<R,S>,R, S> {
                 );
     }
 
-    private Configuration<C,R, S> selectConfiguration(HttpRequest httpRequest) {
+    private HttpConfiguration<C,R, S> selectConfiguration(HttpRequest httpRequest) {
         //is there a matching configuration against the request ?
         return customConfigurations
                 .stream()
@@ -121,11 +122,11 @@ public class HttpTask<C extends HttpClient<R,S>,R, S> {
     }
 
 
-    public Configuration<C,R, S> getDefaultConfiguration() {
+    public HttpConfiguration<C,R, S> getDefaultConfiguration() {
         return defaultConfiguration;
     }
 
-    public List<Configuration<C,R, S>> getCustomConfigurations() {
+    public List<HttpConfiguration<C,R, S>> getCustomConfigurations() {
         return customConfigurations;
     }
 

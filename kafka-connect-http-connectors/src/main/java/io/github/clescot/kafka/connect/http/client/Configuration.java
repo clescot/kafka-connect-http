@@ -190,71 +190,17 @@ public class Configuration<C extends HttpClient<R,S>,R,S> {
 
     }
 
-    public CompletableFuture<HttpExchange> call(@NotNull HttpRequest httpRequest) {
-        Optional<RetryPolicy<HttpExchange>> retryPolicyForCall = getRetryPolicy();
-            AtomicInteger attempts = new AtomicInteger();
-            try {
-
-                if (retryPolicyForCall.isPresent()) {
-                    RetryPolicy<HttpExchange> myRetryPolicy = retryPolicyForCall.get();
-                    FailsafeExecutor<HttpExchange> failsafeExecutor = Failsafe.with(List.of(myRetryPolicy));
-                    if (executorService != null) {
-                        failsafeExecutor = failsafeExecutor.with(executorService);
-                    }
-                    return failsafeExecutor
-                            .getStageAsync((ctx) -> callAndEnrich(httpRequest, attempts)
-                                    .thenApply(this::handleRetry));
-                } else {
-                    return callAndEnrich(httpRequest, attempts);
-                }
-            } catch (Exception exception) {
-                LOGGER.error("Failed to call web service after {} retries with error({}). message:{} ", attempts, exception,
-                        exception.getMessage());
-                HttpExchange httpExchange = HttpClient.buildHttpExchange(
-                        httpRequest,
-                        new HttpResponse(HttpClient.SERVER_ERROR_STATUS_CODE, String.valueOf(exception.getMessage())),
-                        Stopwatch.createUnstarted(), OffsetDateTime.now(ZoneId.of(HttpClient.UTC_ZONE_ID)),
-                        attempts,
-                        HttpClient.FAILURE);
-                return CompletableFuture.supplyAsync(() -> httpExchange);
-            }
+    public Function<HttpRequest, HttpRequest> getEnrichRequestFunction() {
+        return enrichRequestFunction;
     }
 
-    /**
-     *  - enrich request
-     *  - execute the request
-     * @param httpRequest HttpRequest to call
-     * @param attempts current attempts before the call.
-     * @return CompletableFuture of the HttpExchange (describing the request and response).
-     */
-    private CompletableFuture<HttpExchange> callAndEnrich(HttpRequest httpRequest,
-                                                          AtomicInteger attempts) {
-        attempts.addAndGet(HttpClient.ONE_HTTP_REQUEST);
-        if (LOGGER.isTraceEnabled()) {
-            LOGGER.trace("before enrichment:{}", httpRequest);
-        }
-        HttpRequest enrichedHttpRequest = enrich(httpRequest);
-        if (LOGGER.isTraceEnabled()) {
-            LOGGER.trace("after enrichment:{}", enrichedHttpRequest);
-        }
-        CompletableFuture<HttpExchange> completableFuture = getHttpClient().call(enrichedHttpRequest, attempts);
-        return completableFuture
-                .thenApply(this::enrichHttpExchange);
-
+    public AddSuccessStatusToHttpExchangeFunction getAddSuccessStatusToHttpExchangeFunction() {
+        return addSuccessStatusToHttpExchangeFunction;
     }
 
-
-
-
-    protected HttpRequest enrich(HttpRequest httpRequest) {
-        return enrichRequestFunction.apply(httpRequest);
+    public ExecutorService getExecutorService() {
+        return executorService;
     }
-
-
-    protected HttpExchange enrichHttpExchange(HttpExchange httpExchange) {
-        return this.addSuccessStatusToHttpExchangeFunction.apply(httpExchange);
-    }
-
 
     @java.lang.SuppressWarnings({"java:S2119","java:S2245"})
     @NotNull
@@ -338,28 +284,10 @@ public class Configuration<C extends HttpClient<R,S>,R,S> {
                 .build();
     }
 
-    private HttpExchange handleRetry(HttpExchange httpExchange) {
-        //we don't retry success HTTP Exchange
-        boolean responseCodeImpliesRetry = retryNeeded(httpExchange.getHttpResponse());
-        LOGGER.debug("httpExchange success :'{}'", httpExchange.isSuccess());
-        LOGGER.debug("response code('{}') implies retry:'{}'", httpExchange.getHttpResponse().getStatusCode(), responseCodeImpliesRetry);
-        if (!httpExchange.isSuccess() && responseCodeImpliesRetry) {
-            throw new HttpException(httpExchange, "retry needed");
-        }
-        return httpExchange;
-    }
 
 
-    protected boolean retryNeeded(HttpResponse httpResponse) {
-        Optional<Pattern> myRetryResponseCodeRegex = getRetryResponseCodeRegex();
-        if (myRetryResponseCodeRegex.isPresent()) {
-            Pattern retryPattern = myRetryResponseCodeRegex.get();
-            Matcher matcher = retryPattern.matcher("" + httpResponse.getStatusCode());
-            return matcher.matches();
-        } else {
-            return false;
-        }
-    }
+
+
 
 
     public boolean matches(HttpRequest httpRequest) {

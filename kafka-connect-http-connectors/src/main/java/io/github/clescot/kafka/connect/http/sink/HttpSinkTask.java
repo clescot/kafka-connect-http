@@ -5,10 +5,7 @@ import com.google.common.collect.Lists;
 import dev.failsafe.RetryPolicy;
 import io.github.clescot.kafka.connect.http.HttpTask;
 import io.github.clescot.kafka.connect.http.VersionUtils;
-import io.github.clescot.kafka.connect.http.client.Configuration;
-import io.github.clescot.kafka.connect.http.client.HttpClient;
-import io.github.clescot.kafka.connect.http.client.HttpClientFactory;
-import io.github.clescot.kafka.connect.http.client.HttpException;
+import io.github.clescot.kafka.connect.http.client.*;
 import io.github.clescot.kafka.connect.http.core.HttpExchange;
 import io.github.clescot.kafka.connect.http.core.HttpRequest;
 import io.github.clescot.kafka.connect.http.core.queue.KafkaRecord;
@@ -91,11 +88,10 @@ public abstract class HttpSinkTask<C extends HttpClient<R,S>,R, S> extends SinkT
         return VERSION_UTILS.getVersion();
     }
 
-    private List<Configuration<C,R, S>> buildCustomConfigurations(HttpClientFactory<C,R, S> httpClientFactory,
-                                                                AbstractConfig config,
-                                                                Configuration<C,R, S> defaultConfiguration,
+    private List<HttpConfiguration<C,R, S>> buildCustomConfigurations(HttpClientFactory<C,R, S> httpClientFactory,
+                                                                AbstractConfig config, HttpConfiguration<C,R, S> defaultConfiguration,
                                                                 ExecutorService executorService) {
-        CopyOnWriteArrayList<Configuration<C ,R, S>> configurations = Lists.newCopyOnWriteArrayList();
+        List<HttpConfiguration<C ,R, S>> configurations = Lists.newArrayList();
 
         for (String configId : Optional.ofNullable(config.getList(CONFIGURATION_IDS)).orElse(Lists.newArrayList())) {
             Configuration<C ,R, S> configuration = new Configuration<>(configId, httpClientFactory, config, executorService, meterRegistry);
@@ -104,19 +100,19 @@ public abstract class HttpSinkTask<C extends HttpClient<R,S>,R, S> extends SinkT
             }
 
             //we reuse the default retry policy if not set
-            Optional<RetryPolicy<HttpExchange>> defaultRetryPolicy = defaultConfiguration.getRetryPolicy();
+            Optional<RetryPolicy<HttpExchange>> defaultRetryPolicy = defaultConfiguration.getConfiguration().getRetryPolicy();
             if (configuration.getRetryPolicy().isEmpty() && defaultRetryPolicy.isPresent()) {
                 configuration.setRetryPolicy(defaultRetryPolicy.get());
             }
             //we reuse the default success response code regex if not set
-            configuration.setSuccessResponseCodeRegex(defaultConfiguration.getSuccessResponseCodeRegex());
+            configuration.setSuccessResponseCodeRegex(defaultConfiguration.getConfiguration().getSuccessResponseCodeRegex());
 
-            Optional<Pattern> defaultRetryResponseCodeRegex = defaultConfiguration.getRetryResponseCodeRegex();
+            Optional<Pattern> defaultRetryResponseCodeRegex = defaultConfiguration.getConfiguration().getRetryResponseCodeRegex();
             if (configuration.getRetryResponseCodeRegex().isEmpty() && defaultRetryResponseCodeRegex.isPresent()) {
                 configuration.setRetryResponseCodeRegex(defaultRetryResponseCodeRegex.get());
             }
 
-            configurations.add(configuration);
+            configurations.add(new HttpConfiguration<>(configuration));
         }
         return configurations;
     }
@@ -135,8 +131,8 @@ public abstract class HttpSinkTask<C extends HttpClient<R,S>,R, S> extends SinkT
      */
     @Override
     public void start(Map<String, String> settings) {
-        List<Configuration<C,R, S>> customConfigurations;
-        Configuration<C,R, S> defaultConfiguration;
+        List<HttpConfiguration<C,R, S>> customConfigurations;
+        HttpConfiguration<C,R, S> defaultConfiguration;
         Preconditions.checkNotNull(settings, "settings cannot be null");
         HttpSinkConfigDefinition httpSinkConfigDefinition = new HttpSinkConfigDefinition(settings);
         this.httpSinkConnectorConfig = new HttpSinkConnectorConfig(httpSinkConfigDefinition.config(), settings);
@@ -167,7 +163,7 @@ public abstract class HttpSinkTask<C extends HttpClient<R,S>,R, S> extends SinkT
         this.requestGroupers = requestGrouperFactory.buildRequestGroupers(httpSinkConnectorConfig);
 
         //configurations
-        defaultConfiguration = new Configuration<>(DEFAULT_CONFIGURATION_ID, httpClientFactory, httpSinkConnectorConfig, executorService, meterRegistry);
+        defaultConfiguration = new HttpConfiguration<>(new Configuration<>(DEFAULT_CONFIGURATION_ID, httpClientFactory, httpSinkConnectorConfig, executorService, meterRegistry));
         customConfigurations = buildCustomConfigurations(httpClientFactory, httpSinkConnectorConfig, defaultConfiguration, executorService);
         Map<String,String> config = httpSinkConnectorConfig.originalsStrings();
         httpTask = new HttpTask<>(config, defaultConfiguration, customConfigurations, meterRegistry, executorService);
@@ -414,12 +410,12 @@ public abstract class HttpSinkTask<C extends HttpClient<R,S>,R, S> extends SinkT
         this.queue = queue;
     }
 
-    public Configuration<C,R, S> getDefaultConfiguration() {
+    public HttpConfiguration<C,R, S> getDefaultConfiguration() {
         Preconditions.checkNotNull(httpTask, "httpTask has not been initialized in the start method");
         return httpTask.getDefaultConfiguration();
     }
 
-    public List<Configuration<C,R, S>> getCustomConfigurations() {
+    public List<HttpConfiguration<C,R, S>> getCustomConfigurations() {
         Preconditions.checkNotNull(httpTask, "httpTask has not been initialized in the start method");
         return httpTask.getCustomConfigurations();
     }
