@@ -68,7 +68,7 @@ public class HttpConfiguration<C extends HttpClient<R, S>, R, S> {
                     failsafeExecutor = failsafeExecutor.with(this.configuration.getExecutorService());
                 }
                 return failsafeExecutor
-                        .getStageAsync((ctx) -> callAndEnrich(httpRequest, attempts)
+                        .getStageAsync(ctx -> callAndEnrich(httpRequest, attempts)
                                 .thenApply(this::handleRetry));
             } else {
                 return callAndEnrich(httpRequest, attempts);
