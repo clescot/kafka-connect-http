@@ -59,7 +59,7 @@ public class SseSourceTask extends SourceTask {
                         objectMapper.writeValueAsString(sseEvent)
                 );
             } catch (JsonProcessingException e) {
-                throw new CronException(e);
+                throw new SseException(e);
             }
             records.add(sourceRecord);
         }
