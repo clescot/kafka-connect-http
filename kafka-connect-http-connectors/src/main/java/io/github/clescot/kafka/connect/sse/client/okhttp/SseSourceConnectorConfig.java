@@ -1,6 +1,5 @@
 package io.github.clescot.kafka.connect.sse.client.okhttp;
 
-import io.github.clescot.kafka.connect.http.source.cron.HttpCronSourceConfigDefinition;
 import org.apache.kafka.common.config.AbstractConfig;
 import org.apache.kafka.common.config.ConfigDef;
 
