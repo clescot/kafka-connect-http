@@ -52,9 +52,6 @@ import static io.github.clescot.kafka.connect.http.sink.HttpSinkConfigDefinition
  */
 public class Configuration<C extends HttpClient<R,S>,R,S> {
     private static final Logger LOGGER = LoggerFactory.getLogger(Configuration.class);
-
-
-
     public static final String HAS_BEEN_SET = " has been set.";
     public static final String SHA_1_PRNG = "SHA1PRNG";
     public static final String MUST_BE_SET_TOO = " must be set too.";
@@ -283,12 +280,6 @@ public class Configuration<C extends HttpClient<R,S>,R,S> {
                 .onAbort(listener -> LOGGER.warn("call aborted ! result:'{}',exception:'{}'", listener.getResult(), listener.getException()))
                 .build();
     }
-
-
-
-
-
-
 
     public boolean matches(HttpRequest httpRequest) {
         return this.predicate.test(httpRequest);
