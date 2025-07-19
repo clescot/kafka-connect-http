@@ -16,6 +16,7 @@ public class OkHttpEventSourceListener extends EventSourceListener {
     private EventSource eventSource;
     private Response response;
     private final Queue<SseEvent> queue;
+
     public OkHttpEventSourceListener(Queue<SseEvent> queue) {
         this.queue = queue;
         LOGGER.debug("OkHttpEventSourceListener initialized with queue: {}", queue);

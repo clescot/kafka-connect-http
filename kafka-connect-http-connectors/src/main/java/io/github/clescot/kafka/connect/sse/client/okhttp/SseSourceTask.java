@@ -7,22 +7,30 @@ import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import io.github.clescot.kafka.connect.http.VersionUtils;
+import io.github.clescot.kafka.connect.http.client.Configuration;
 import io.github.clescot.kafka.connect.http.client.okhttp.OkHttpClient;
-import io.github.clescot.kafka.connect.http.client.okhttp.OkHttpClientFactory;
-import io.github.clescot.kafka.connect.http.core.queue.QueueFactory;
 import io.github.clescot.kafka.connect.sse.core.SseEvent;
-import io.micrometer.core.instrument.composite.CompositeMeterRegistry;
+import okhttp3.Request;
+import okhttp3.Response;
 import org.apache.kafka.connect.source.SourceRecord;
 import org.apache.kafka.connect.source.SourceTask;
 
-import java.util.*;
+import java.util.List;
+import java.util.Map;
+import java.util.Queue;
 
 public class SseSourceTask extends SourceTask {
     private static final VersionUtils VERSION_UTILS = new VersionUtils();
-    private OkHttpSseClient okHttpSseClient;
-    private Queue<SseEvent> queue;
-    private ObjectMapper objectMapper;
+
     private SseSourceConnectorConfig sseSourceConnectorConfig;
+    private SseConfiguration<OkHttpClient, Request, Response> sseConfiguration;
+    private Queue<SseEvent> queue;
+    private final ObjectMapper objectMapper;
+
+    public SseSourceTask() {
+        objectMapper = new ObjectMapper();
+        objectMapper.registerModule(new JavaTimeModule());
+    }
 
     @Override
     public String version() {
@@ -31,20 +39,16 @@ public class SseSourceTask extends SourceTask {
 
     @Override
     public void start(Map<String, String> settings) {
-        Preconditions.checkNotNull(settings,"settings must not be null or empty.");
+        Preconditions.checkNotNull(settings, "settings must not be null or empty.");
         this.sseSourceConnectorConfig = new SseSourceConnectorConfig(settings);
-        OkHttpClientFactory factory = new OkHttpClientFactory();
-        Map<String,Object> config = Maps.newHashMap(settings);
-        OkHttpClient okHttpClient = factory.buildHttpClient(config,null,new CompositeMeterRegistry(),  new Random());
-        this.queue = QueueFactory.getQueue(""+ UUID.randomUUID());
-        objectMapper = new ObjectMapper();
-        objectMapper.registerModule(new JavaTimeModule());
-        okHttpSseClient = new OkHttpSseClient(okHttpClient.getInternalClient(),queue);
-        okHttpSseClient.connect(settings);
+        Configuration<OkHttpClient, Request, Response> configuration = null;
+        this.sseConfiguration = new SseConfiguration<>(configuration);
+        this.queue = this.sseConfiguration.connect(settings);
     }
 
     @Override
     public List<SourceRecord> poll() {
+
         List<SourceRecord> records = Lists.newArrayList();
         while (queue.peek() != null) {
             SseEvent sseEvent = queue.poll();
@@ -67,17 +71,17 @@ public class SseSourceTask extends SourceTask {
 
     @Override
     public void stop() {
-        if(okHttpSseClient == null) {
-            return;
+        if (this.sseConfiguration != null) {
+            this.sseConfiguration.shutdown();
         }
-        okHttpSseClient.shutdown();
     }
 
-    public boolean isConnected() {
-        return okHttpSseClient != null && okHttpSseClient.isConnected();
-    }
 
     public Queue<SseEvent> getQueue() {
         return queue;
+    }
+
+    public boolean isConnected() {
+        return this.sseConfiguration.isConnected();
     }
 }
