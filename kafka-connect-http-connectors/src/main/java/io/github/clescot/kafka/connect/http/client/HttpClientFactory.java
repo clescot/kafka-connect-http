@@ -30,6 +30,12 @@ import java.util.concurrent.ExecutorService;
 
 import static io.github.clescot.kafka.connect.http.sink.HttpSinkConfigDefinition.*;
 
+/**
+ * Factory to build a HttpClient.
+ * @param <C> client type, which is a subclass of HttpClient
+ * @param <R> native HttpRequest
+ * @param <S> native HttpResponse
+ */
 public interface HttpClientFactory<C extends HttpClient<R,S>,R,S> {
 
     Logger LOGGER = LoggerFactory.getLogger(HttpClientFactory.class);
