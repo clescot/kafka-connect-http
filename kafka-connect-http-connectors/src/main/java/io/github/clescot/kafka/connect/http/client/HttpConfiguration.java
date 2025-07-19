@@ -4,9 +4,12 @@ import com.google.common.base.Stopwatch;
 import dev.failsafe.Failsafe;
 import dev.failsafe.FailsafeExecutor;
 import dev.failsafe.RetryPolicy;
+import io.github.clescot.kafka.connect.http.client.okhttp.OkHttpClient;
 import io.github.clescot.kafka.connect.http.core.HttpExchange;
 import io.github.clescot.kafka.connect.http.core.HttpRequest;
 import io.github.clescot.kafka.connect.http.core.HttpResponse;
+import okhttp3.Request;
+import okhttp3.Response;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -25,7 +28,7 @@ public class HttpConfiguration<C extends HttpClient<R, S>, R, S> {
 
     private final Configuration<C, R, S> configuration;
 
-    public <C extends HttpClient<R, S>,R,S> HttpConfiguration(Configuration configuration) {
+    public HttpConfiguration(Configuration<C, R, S> configuration) {
         this.configuration = configuration;
     }
 
