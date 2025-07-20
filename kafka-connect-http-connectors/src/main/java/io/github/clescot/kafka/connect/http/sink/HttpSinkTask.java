@@ -192,6 +192,7 @@ public abstract class HttpSinkTask<C extends HttpClient<R, S>, R, S> extends Sin
                 httpSinkConnectorConfig.getList(CONFIGURATION_IDS),
                 httpSinkConnectorConfig.originals()
         );
+        //wrap configurations in HttpConfiguration
         List<HttpConfiguration<C, R, S>> httpConfigurations = configurations.stream()
                 .map(HttpConfiguration::new)
                 .toList();
