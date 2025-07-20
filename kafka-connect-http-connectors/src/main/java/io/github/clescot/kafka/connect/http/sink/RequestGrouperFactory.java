@@ -9,15 +9,13 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.function.Predicate;
 
-import static io.github.clescot.kafka.connect.http.sink.HttpSinkConfigDefinition.REQUEST_GROUPER_IDS;
-
 public class RequestGrouperFactory {
 
     public static final String REQUEST_GROUPER = "request.grouper.";
 
-    public List<RequestGrouper> buildRequestGroupers(HttpSinkConnectorConfig connectorConfig) {
+    public List<RequestGrouper> buildRequestGroupers(HttpSinkConnectorConfig connectorConfig, List<String> requestGrouperIds) {
         List<RequestGrouper> requestGrouperList = Lists.newArrayList();
-        for (String requestGrouperId : Optional.ofNullable(connectorConfig.getList(REQUEST_GROUPER_IDS)).orElse(Lists.newArrayList())) {
+        for (String requestGrouperId : Optional.ofNullable(requestGrouperIds).orElse(Lists.newArrayList())) {
             Map<String, Object> settings = connectorConfig.originalsWithPrefix(REQUEST_GROUPER + requestGrouperId + ".");
             Predicate<HttpRequest> httpRequestPredicate = HttpRequestPredicateBuilder.build().buildPredicate(settings);
             Optional<String> separator = Optional.ofNullable((String) settings.get("separator"));

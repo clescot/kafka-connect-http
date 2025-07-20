@@ -36,11 +36,9 @@ import java.util.*;
 import java.util.concurrent.*;
 import java.util.function.Function;
 import java.util.regex.Pattern;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static io.github.clescot.kafka.connect.http.sink.HttpSinkConfigDefinition.CONFIGURATION_IDS;
-import static io.github.clescot.kafka.connect.http.sink.HttpSinkConfigDefinition.HTTP_CLIENT_ASYNC_FIXED_THREAD_POOL_SIZE;
+import static io.github.clescot.kafka.connect.http.sink.HttpSinkConfigDefinition.*;
 
 /**
  * HttpSinkTask is a Kafka Connect SinkTask that processes SinkRecords,
@@ -90,10 +88,10 @@ public abstract class HttpSinkTask<C extends HttpClient<R, S>, R, S> extends Sin
 
     private List<Configuration<C, R, S>> buildConfigurations(HttpClientFactory<C, R, S> httpClientFactory,
                                                              AbstractConfig config,
-                                                             ExecutorService executorService) {
+                                                             ExecutorService executorService, List<String> configIdList) {
         List<Configuration<C, R, S>> configurations = Lists.newArrayList();
         List<String> configurationIds = Lists.newArrayList();
-        Optional<List<String>> ids = Optional.ofNullable(config.getList(CONFIGURATION_IDS));
+        Optional<List<String>> ids = Optional.ofNullable(configIdList);
         configurationIds.add(DEFAULT_CONFIGURATION_ID);
         ids.ifPresent(configurationIds::addAll);
         Configuration<C, R, S> defaultConfiguration = null;
@@ -168,14 +166,14 @@ public abstract class HttpSinkTask<C extends HttpClient<R, S>, R, S> extends Sin
         //HttpRequestMappers
         HttpRequestMapperFactory httpRequestMapperFactory = new HttpRequestMapperFactory();
         this.defaultHttpRequestMapper = httpRequestMapperFactory.buildDefaultHttpRequestMapper(httpSinkConnectorConfig, jexlEngine);
-        this.httpRequestMappers = httpRequestMapperFactory.buildCustomHttpRequestMappers(httpSinkConnectorConfig, jexlEngine);
+        this.httpRequestMappers = httpRequestMapperFactory.buildCustomHttpRequestMappers(httpSinkConnectorConfig, jexlEngine, httpSinkConnectorConfig.getList(HTTP_REQUEST_MAPPER_IDS));
 
         //request groupers
         RequestGrouperFactory requestGrouperFactory = new RequestGrouperFactory();
-        this.requestGroupers = requestGrouperFactory.buildRequestGroupers(httpSinkConnectorConfig);
+        this.requestGroupers = requestGrouperFactory.buildRequestGroupers(httpSinkConnectorConfig, httpSinkConnectorConfig.getList(REQUEST_GROUPER_IDS));
 
         //configurations
-        configurations = buildConfigurations(httpClientFactory, httpSinkConnectorConfig, executorService);
+        configurations = buildConfigurations(httpClientFactory, httpSinkConnectorConfig, executorService, httpSinkConnectorConfig.getList(CONFIGURATION_IDS));
         List<HttpConfiguration<C, R, S>> httpConfigurations = configurations.stream()
                 .map(HttpConfiguration::new)
                 .toList();

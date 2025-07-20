@@ -10,7 +10,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
-import static io.github.clescot.kafka.connect.http.sink.HttpSinkConfigDefinition.HTTP_REQUEST_MAPPER_IDS;
 import static io.github.clescot.kafka.connect.http.sink.HttpSinkConfigDefinition.REQUEST_MAPPER_DEFAULT_URL_EXPRESSION;
 
 public class HttpRequestMapperFactory {
@@ -50,9 +49,9 @@ public class HttpRequestMapperFactory {
         return httpRequestMapper;
     }
 
-    public List<HttpRequestMapper> buildCustomHttpRequestMappers(AbstractConfig config, JexlEngine jexlEngine) {
+    public List<HttpRequestMapper> buildCustomHttpRequestMappers(AbstractConfig config, JexlEngine jexlEngine, List<String> requestMapperIds) {
         List<HttpRequestMapper> requestMappers = Lists.newArrayList();
-        for (String httpRequestMapperId : Optional.ofNullable(config.getList(HTTP_REQUEST_MAPPER_IDS)).orElse(Lists.newArrayList())) {
+        for (String httpRequestMapperId : Optional.ofNullable(requestMapperIds).orElse(Lists.newArrayList())) {
             HttpRequestMapper httpRequestMapper;
             String prefix = "http.request.mapper." + httpRequestMapperId;
             Map<String, Object> settings = config.originalsWithPrefix(prefix);
