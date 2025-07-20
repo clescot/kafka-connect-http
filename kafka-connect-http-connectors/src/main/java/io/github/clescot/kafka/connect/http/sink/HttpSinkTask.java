@@ -50,7 +50,7 @@ import static io.github.clescot.kafka.connect.http.sink.HttpSinkConfigDefinition
  * @param <R> type of the native HttpRequest
  * @param <S> type of the native HttpResponse
  */
-public abstract class HttpSinkTask<C extends HttpClient<R,S>,R, S> extends SinkTask {
+public abstract class HttpSinkTask<C extends HttpClient<R, S>, R, S> extends SinkTask {
     private static final Logger LOGGER = LoggerFactory.getLogger(HttpSinkTask.class);
 
     private static final VersionUtils VERSION_UTILS = new VersionUtils();
@@ -62,10 +62,10 @@ public abstract class HttpSinkTask<C extends HttpClient<R,S>,R, S> extends SinkT
     private HttpRequestMapper defaultHttpRequestMapper;
     private List<HttpRequestMapper> httpRequestMappers;
     public static final String DEFAULT_CONFIGURATION_ID = DEFAULT;
-    private final HttpClientFactory<C,R, S> httpClientFactory;
+    private final HttpClientFactory<C, R, S> httpClientFactory;
 
     private ErrantRecordReporter errantRecordReporter;
-    private HttpTask<C,R, S> httpTask;
+    private HttpTask<C, R, S> httpTask;
     private KafkaProducer<String, Object> producer;
     private Queue<KafkaRecord> queue;
     private PublishMode publishMode;
@@ -77,9 +77,9 @@ public abstract class HttpSinkTask<C extends HttpClient<R,S>,R, S> extends SinkT
     private List<RequestGrouper> requestGroupers;
 
     @SuppressWarnings("java:S5993")
-    public HttpSinkTask(HttpClientFactory<C,R, S> httpClientFactory, KafkaProducer<String, Object> producer) {
+    public HttpSinkTask(HttpClientFactory<C, R, S> httpClientFactory, KafkaProducer<String, Object> producer) {
         this.httpClientFactory = httpClientFactory;
-        this.producer  = producer;
+        this.producer = producer;
     }
 
 
@@ -88,31 +88,43 @@ public abstract class HttpSinkTask<C extends HttpClient<R,S>,R, S> extends SinkT
         return VERSION_UTILS.getVersion();
     }
 
-    private List<HttpConfiguration<C,R, S>> buildCustomConfigurations(HttpClientFactory<C,R, S> httpClientFactory,
-                                                                AbstractConfig config, HttpConfiguration<C,R, S> defaultConfiguration,
-                                                                ExecutorService executorService) {
-        List<HttpConfiguration<C ,R, S>> configurations = Lists.newArrayList();
+    private List<Configuration<C, R, S>> buildConfigurations(HttpClientFactory<C, R, S> httpClientFactory,
+                                                             AbstractConfig config,
+                                                             ExecutorService executorService) {
+        List<Configuration<C, R, S>> configurations = Lists.newArrayList();
+        List<String> configurationIds = Lists.newArrayList();
+        Optional<List<String>> ids = Optional.ofNullable(config.getList(CONFIGURATION_IDS));
+        configurationIds.add(DEFAULT_CONFIGURATION_ID);
+        ids.ifPresent(configurationIds::addAll);
+        Configuration<C, R, S> defaultConfiguration = null;
+        Optional<RetryPolicy<HttpExchange>> defaultRetryPolicy = Optional.empty();
+        Optional<Pattern> defaultRetryResponseCodeRegex = Optional.empty();
+        for (String configId : configurationIds) {
 
-        for (String configId : Optional.ofNullable(config.getList(CONFIGURATION_IDS)).orElse(Lists.newArrayList())) {
-            Configuration<C ,R, S> configuration = new Configuration<>(configId, httpClientFactory, config, executorService, meterRegistry);
-            if (configuration.getHttpClient() == null) {
+            Configuration<C, R, S> configuration = new Configuration<>(configId, httpClientFactory, config, executorService, meterRegistry);
+            if (configuration.getHttpClient() == null && !configurations.isEmpty() && defaultConfiguration != null) {
                 configuration.setHttpClient(defaultConfiguration.getHttpClient());
             }
 
             //we reuse the default retry policy if not set
-            Optional<RetryPolicy<HttpExchange>> defaultRetryPolicy = defaultConfiguration.getConfiguration().getRetryPolicy();
+
             if (configuration.getRetryPolicy().isEmpty() && defaultRetryPolicy.isPresent()) {
                 configuration.setRetryPolicy(defaultRetryPolicy.get());
             }
             //we reuse the default success response code regex if not set
-            configuration.setSuccessResponseCodeRegex(defaultConfiguration.getConfiguration().getSuccessResponseCodeRegex());
+            if (defaultConfiguration != null) {
+                configuration.setSuccessResponseCodeRegex(defaultConfiguration.getSuccessResponseCodeRegex());
+            }
 
-            Optional<Pattern> defaultRetryResponseCodeRegex = defaultConfiguration.getConfiguration().getRetryResponseCodeRegex();
             if (configuration.getRetryResponseCodeRegex().isEmpty() && defaultRetryResponseCodeRegex.isPresent()) {
                 configuration.setRetryResponseCodeRegex(defaultRetryResponseCodeRegex.get());
             }
-
-            configurations.add(new HttpConfiguration<>(configuration));
+            if (DEFAULT_CONFIGURATION_ID.equals(configId)) {
+                defaultConfiguration = configuration;
+                defaultRetryPolicy = defaultConfiguration.getRetryPolicy();
+                defaultRetryResponseCodeRegex = defaultConfiguration.getRetryResponseCodeRegex();
+            }
+            configurations.add(configuration);
         }
         return configurations;
     }
@@ -123,16 +135,16 @@ public abstract class HttpSinkTask<C extends HttpClient<R,S>,R, S> extends SinkT
         }
     }
 
-    protected static synchronized void clearMeterRegistry(){
+    protected static synchronized void clearMeterRegistry() {
         meterRegistry = null;
     }
+
     /**
      * @param settings configure the connector
      */
     @Override
     public void start(Map<String, String> settings) {
-        List<HttpConfiguration<C,R, S>> customConfigurations;
-        HttpConfiguration<C,R, S> defaultConfiguration;
+        List<Configuration<C, R, S>> configurations;
         Preconditions.checkNotNull(settings, "settings cannot be null");
         HttpSinkConfigDefinition httpSinkConfigDefinition = new HttpSinkConfigDefinition(settings);
         this.httpSinkConnectorConfig = new HttpSinkConnectorConfig(httpSinkConfigDefinition.config(), settings);
@@ -163,10 +175,12 @@ public abstract class HttpSinkTask<C extends HttpClient<R,S>,R, S> extends SinkT
         this.requestGroupers = requestGrouperFactory.buildRequestGroupers(httpSinkConnectorConfig);
 
         //configurations
-        defaultConfiguration = new HttpConfiguration<>(new Configuration<>(DEFAULT_CONFIGURATION_ID, httpClientFactory, httpSinkConnectorConfig, executorService, meterRegistry));
-        customConfigurations = buildCustomConfigurations(httpClientFactory, httpSinkConnectorConfig, defaultConfiguration, executorService);
-        Map<String,String> config = httpSinkConnectorConfig.originalsStrings();
-        httpTask = new HttpTask<>(config, defaultConfiguration, customConfigurations, meterRegistry, executorService);
+        configurations = buildConfigurations(httpClientFactory, httpSinkConnectorConfig, executorService);
+        List<HttpConfiguration<C, R, S>> httpConfigurations = configurations.stream()
+                .map(HttpConfiguration::new)
+                .toList();
+        Map<String, String> config = httpSinkConnectorConfig.originalsStrings();
+        httpTask = new HttpTask<>(config, httpConfigurations, meterRegistry, executorService);
 
         try {
             errantRecordReporter = context.errantRecordReporter();
@@ -209,7 +223,6 @@ public abstract class HttpSinkTask<C extends HttpClient<R,S>,R, S> extends SinkT
     }
 
     /**
-     *
      * @param customFixedThreadPoolSize max thread pool size for the executorService.
      * @return executorService
      */
@@ -236,14 +249,14 @@ public abstract class HttpSinkTask<C extends HttpClient<R,S>,R, S> extends SinkT
                 .map(this::splitMessage)
                 .flatMap(List::stream)
                 .map(this::toHttpRequests)
-                .collect(Collectors.toList());
+                .toList();
 
         List<Pair<SinkRecord, HttpRequest>> groupedRequests = groupRequests(requests);
         //List<SinkRecord>-> SinkRecord
         List<CompletableFuture<HttpExchange>> completableFutures = groupedRequests.stream()
                 .map(this::callAndPublish)
                 .toList();
-        List<HttpExchange> httpExchanges = completableFutures.stream().map(CompletableFuture::join).collect(Collectors.toList());
+        List<HttpExchange> httpExchanges = completableFutures.stream().map(CompletableFuture::join).toList();
         LOGGER.debug("HttpExchanges created :'{}'", httpExchanges.size());
 
     }
@@ -374,9 +387,9 @@ public abstract class HttpSinkTask<C extends HttpClient<R,S>,R, S> extends SinkT
     @NotNull
     private ProducerRecord<String, Object> mapToRecord(HttpExchange httpExchange, String producerContent, String targetTopic) {
         ProducerRecord<String, Object> myRecord;
-        if("response".equalsIgnoreCase(producerContent)) {
+        if ("response".equalsIgnoreCase(producerContent)) {
             myRecord = new ProducerRecord<>(targetTopic, httpExchange.getHttpResponse());
-        }else{
+        } else {
             myRecord = new ProducerRecord<>(targetTopic, httpExchange);
         }
         return myRecord;
@@ -410,17 +423,17 @@ public abstract class HttpSinkTask<C extends HttpClient<R,S>,R, S> extends SinkT
         this.queue = queue;
     }
 
-    public HttpConfiguration<C,R, S> getDefaultConfiguration() {
+    public HttpConfiguration<C, R, S> getDefaultConfiguration() {
         Preconditions.checkNotNull(httpTask, "httpTask has not been initialized in the start method");
         return httpTask.getDefaultConfiguration();
     }
 
-    public List<HttpConfiguration<C,R, S>> getCustomConfigurations() {
+    public List<HttpConfiguration<C, R, S>> getCustomConfigurations() {
         Preconditions.checkNotNull(httpTask, "httpTask has not been initialized in the start method");
-        return httpTask.getCustomConfigurations();
+        return httpTask.getConfigurations();
     }
 
-    public HttpTask<C,R, S> getHttpTask() {
+    public HttpTask<C, R, S> getHttpTask() {
         return httpTask;
     }
 

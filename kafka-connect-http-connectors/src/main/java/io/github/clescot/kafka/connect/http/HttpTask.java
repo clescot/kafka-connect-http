@@ -1,7 +1,7 @@
 package io.github.clescot.kafka.connect.http;
 
+import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
-import io.github.clescot.kafka.connect.http.client.Configuration;
 import io.github.clescot.kafka.connect.http.client.HttpClient;
 import io.github.clescot.kafka.connect.http.client.HttpConfiguration;
 import io.github.clescot.kafka.connect.http.core.HttpExchange;
@@ -33,14 +33,12 @@ public class HttpTask<C extends HttpClient<R,S>,R, S> {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(HttpTask.class);
 
-    private final List<HttpConfiguration<C,R, S>> customConfigurations;
-    private final HttpConfiguration<C,R, S> defaultConfiguration;
+    private final List<HttpConfiguration<C,R, S>> configurations;
     private static CompositeMeterRegistry meterRegistry;
 
 
     public HttpTask(Map<String,String> config,
-                    HttpConfiguration<C,R, S> defaultConfiguration,
-                    List<HttpConfiguration<C,R, S>> customConfigurations,
+                    List<HttpConfiguration<C,R, S>> configurations,
                     CompositeMeterRegistry meterRegistry,
                     ExecutorService executorService) {
 
@@ -49,8 +47,7 @@ public class HttpTask<C extends HttpClient<R,S>,R, S> {
         }
         //bind metrics to MeterRegistry and ExecutorService
         bindMetrics(config, meterRegistry, executorService);
-        this.defaultConfiguration = defaultConfiguration;
-        this.customConfigurations = customConfigurations;
+        this.configurations = configurations;
     }
 
     /**
@@ -74,12 +71,14 @@ public class HttpTask<C extends HttpClient<R,S>,R, S> {
     }
 
     private HttpConfiguration<C,R, S> selectConfiguration(HttpRequest httpRequest) {
+        Preconditions.checkNotNull(httpRequest, "HttpRequest must not be null.");
+        Preconditions.checkArgument(!configurations.isEmpty(), "Configurations list must not be null or empty.");
         //is there a matching configuration against the request ?
-        return customConfigurations
+        return configurations
                 .stream()
                 .filter(config -> config.matches(httpRequest))
                 .findFirst()
-                .orElse(defaultConfiguration);
+                .orElse(configurations.get(0)); //default configuration
     }
 
     private static void bindMetrics(Map<String,String> config, MeterRegistry meterRegistry, ExecutorService myExecutorService) {
@@ -122,12 +121,9 @@ public class HttpTask<C extends HttpClient<R,S>,R, S> {
     }
 
 
-    public HttpConfiguration<C,R, S> getDefaultConfiguration() {
-        return defaultConfiguration;
-    }
 
-    public List<HttpConfiguration<C,R, S>> getCustomConfigurations() {
-        return customConfigurations;
+    public List<HttpConfiguration<C,R, S>> getConfigurations() {
+        return configurations;
     }
 
     public static synchronized CompositeMeterRegistry getMeterRegistry() {
@@ -136,5 +132,12 @@ public class HttpTask<C extends HttpClient<R,S>,R, S> {
 
     public static void removeCompositeMeterRegistry() {
         HttpTask.meterRegistry = null;
+    }
+
+    public HttpConfiguration<C, R, S> getDefaultConfiguration() {
+        if( configurations != null && !configurations.isEmpty()) {
+            return configurations.get(0);
+        }
+        return null;
     }
 }

@@ -1,17 +1,13 @@
 package io.github.clescot.kafka.connect.http.client;
 
 import com.google.common.base.Preconditions;
-import com.google.common.base.Stopwatch;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
-import dev.failsafe.Failsafe;
-import dev.failsafe.FailsafeExecutor;
 import dev.failsafe.RetryPolicy;
 import io.github.clescot.kafka.connect.http.VersionUtils;
 import io.github.clescot.kafka.connect.http.client.config.*;
 import io.github.clescot.kafka.connect.http.core.HttpExchange;
 import io.github.clescot.kafka.connect.http.core.HttpRequest;
-import io.github.clescot.kafka.connect.http.core.HttpResponse;
 import io.micrometer.core.instrument.composite.CompositeMeterRegistry;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.kafka.common.config.AbstractConfig;
@@ -22,15 +18,10 @@ import org.slf4j.LoggerFactory;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.time.Duration;
-import java.time.OffsetDateTime;
-import java.time.ZoneId;
 import java.util.*;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
 import java.util.function.Predicate;
-import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import static io.github.clescot.kafka.connect.http.client.config.HttpRequestPredicateBuilder.*;
@@ -80,7 +71,7 @@ public class Configuration<C extends HttpClient<R,S>,R,S> {
     private RetryPolicy<HttpExchange> retryPolicy;
 
     //http client
-    private HttpClient<R,S> httpClient;
+    private C httpClient;
     public final String id;
     private final ExecutorService executorService;
     private final Map<String, Object> settings;
@@ -226,11 +217,11 @@ public class Configuration<C extends HttpClient<R,S>,R,S> {
     }
 
 
-    public HttpClient<R,S> getHttpClient() {
+    public C getHttpClient() {
         return httpClient;
     }
 
-    public void setHttpClient(HttpClient<R,S> httpClient) {
+    public void setHttpClient(C httpClient) {
         this.httpClient = httpClient;
     }
 

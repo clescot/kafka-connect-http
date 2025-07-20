@@ -130,7 +130,7 @@ public class HttpConfiguration<C extends HttpClient<R, S>, R, S> {
         return this.configuration.matches(httpRequest);
     }
 
-    public HttpClient<R,S> getHttpClient() {
+    public C getHttpClient() {
         return this.configuration.getHttpClient();
     }
 
