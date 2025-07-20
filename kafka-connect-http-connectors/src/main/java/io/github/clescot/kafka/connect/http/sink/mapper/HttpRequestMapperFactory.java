@@ -2,9 +2,8 @@ package io.github.clescot.kafka.connect.http.sink.mapper;
 
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
-import io.github.clescot.kafka.connect.http.sink.HttpSinkConnectorConfig;
+import io.github.clescot.kafka.connect.http.MapUtils;
 import org.apache.commons.jexl3.JexlEngine;
-import org.apache.kafka.common.config.AbstractConfig;
 
 import java.util.List;
 import java.util.Map;
@@ -17,21 +16,26 @@ public class HttpRequestMapperFactory {
 
     public static final String JEXL_ALWAYS_MATCHES = "true";
 
-    public HttpRequestMapper buildDefaultHttpRequestMapper(HttpSinkConnectorConfig connectorConfig, JexlEngine jexlEngine){
+    public HttpRequestMapper buildDefaultHttpRequestMapper(JexlEngine jexlEngine,
+                                                           MapperMode defaultRequestMapperMode,
+                                                           String defaultUrlExpression,
+                                                           String defaultMethodExpression,
+                                                           String defaultBodyTypeExpression,
+                                                           String defaultBodyExpression,
+                                                           String defaultHeadersExpression){
         HttpRequestMapper httpRequestMapper;
-        MapperMode defaultRequestMapperMode = connectorConfig.getDefaultRequestMapperMode();
         switch (defaultRequestMapperMode) {
             case JEXL: {
-                Preconditions.checkNotNull(connectorConfig.getDefaultUrlExpression(), "'" + REQUEST_MAPPER_DEFAULT_URL_EXPRESSION + "' need to be set");
+                Preconditions.checkNotNull(defaultUrlExpression, "'" + REQUEST_MAPPER_DEFAULT_URL_EXPRESSION + "' need to be set");
                 httpRequestMapper = new JEXLHttpRequestMapper(
                         DEFAULT,
                         jexlEngine,
                         JEXL_ALWAYS_MATCHES,
-                        connectorConfig.getDefaultUrlExpression(),
-                        connectorConfig.getDefaultMethodExpression(),
-                        connectorConfig.getDefaultBodyTypeExpression(),
-                        connectorConfig.getDefaultBodyExpression(),
-                        connectorConfig.getDefaultHeadersExpression()
+                        defaultUrlExpression,
+                        defaultMethodExpression,
+                        defaultBodyTypeExpression,
+                        defaultBodyExpression,
+                        defaultHeadersExpression
                 );
                 break;
             }
@@ -49,12 +53,12 @@ public class HttpRequestMapperFactory {
         return httpRequestMapper;
     }
 
-    public List<HttpRequestMapper> buildCustomHttpRequestMappers(AbstractConfig config, JexlEngine jexlEngine, List<String> requestMapperIds) {
+    public List<HttpRequestMapper> buildCustomHttpRequestMappers(Map<String, Object> config, JexlEngine jexlEngine, List<String> requestMapperIds) {
         List<HttpRequestMapper> requestMappers = Lists.newArrayList();
         for (String httpRequestMapperId : Optional.ofNullable(requestMapperIds).orElse(Lists.newArrayList())) {
             HttpRequestMapper httpRequestMapper;
             String prefix = "http.request.mapper." + httpRequestMapperId;
-            Map<String, Object> settings = config.originalsWithPrefix(prefix);
+            Map<String, Object> settings = MapUtils.getMapWithPrefix(config,prefix);
             String modeKey = ".mode";
             MapperMode mapperMode = MapperMode.valueOf(Optional.ofNullable(settings.get(modeKey)).orElse(MapperMode.DIRECT.name()).toString());
             switch (mapperMode) {
