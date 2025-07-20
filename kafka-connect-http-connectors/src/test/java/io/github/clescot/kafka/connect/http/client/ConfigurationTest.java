@@ -73,7 +73,7 @@ class ConfigurationTest {
             Map<String, String> settings = Maps.newHashMap();
             settings.put("config.test.predicate.url.regex", "^.*toto\\.com$");
             HttpSinkConnectorConfig httpSinkConnectorConfig = new HttpSinkConnectorConfig(settings);
-            Configuration<OkHttpClient,Request, Response> configuration = new Configuration<>("test", new OkHttpClientFactory(),httpSinkConnectorConfig, executorService, getCompositeMeterRegistry());
+            Configuration<OkHttpClient,Request, Response> configuration = new Configuration<>("test", new OkHttpClientFactory(),httpSinkConnectorConfig.originals(), executorService, getCompositeMeterRegistry());
             HttpRequest httpRequest = new HttpRequest("http://toto.com", HttpRequest.Method.GET);
             assertThat(configuration.matches(httpRequest)).isTrue();
             HttpRequest httpRequest2 = new HttpRequest("http://titi.com", HttpRequest.Method.GET);
@@ -87,7 +87,7 @@ class ConfigurationTest {
             settings.put("config.test.predicate.url.regex", "^.*toto\\.com$");
             settings.put("config.test.predicate.method.regex", "^GET|PUT$");
             HttpSinkConnectorConfig httpSinkConnectorConfig = new HttpSinkConnectorConfig(settings);
-            Configuration<OkHttpClient,Request,Response> configuration = new Configuration<>("test",new OkHttpClientFactory(), httpSinkConnectorConfig, executorService, getCompositeMeterRegistry());
+            Configuration<OkHttpClient,Request,Response> configuration = new Configuration<>("test",new OkHttpClientFactory(), httpSinkConnectorConfig.originals(), executorService, getCompositeMeterRegistry());
             HttpRequest httpRequest = new HttpRequest("http://toto.com", HttpRequest.Method.GET);
             assertThat(configuration.matches(httpRequest)).isTrue();
             HttpRequest httpRequest2 = new HttpRequest("http://titi.com", HttpRequest.Method.GET);
@@ -105,7 +105,7 @@ class ConfigurationTest {
             settings.put("config.test.predicate.url.regex", "^.*toto\\.com$");
             settings.put("config.test.predicate.bodytype.regex", "^STRING$");
             HttpSinkConnectorConfig httpSinkConnectorConfig = new HttpSinkConnectorConfig(settings);
-            Configuration<OkHttpClient,Request,Response> configuration = new Configuration<>("test", new OkHttpClientFactory(),httpSinkConnectorConfig, executorService, getCompositeMeterRegistry());
+            Configuration<OkHttpClient,Request,Response> configuration = new Configuration<>("test", new OkHttpClientFactory(),httpSinkConnectorConfig.originals(), executorService, getCompositeMeterRegistry());
             HttpRequest httpRequest1 = new HttpRequest("http://toto.com", HttpRequest.Method.GET);
             assertThat(configuration.matches(httpRequest1)).isTrue();
             HttpRequest httpRequest2 = new HttpRequest("http://titi.com", HttpRequest.Method.GET);
@@ -120,7 +120,7 @@ class ConfigurationTest {
             settings.put("config.test.predicate.url.regex", "^.*toto\\.com$");
             settings.put("config.test.predicate.header.key.regex", "SUPERNOVA");
             HttpSinkConnectorConfig httpSinkConnectorConfig = new HttpSinkConnectorConfig(settings);
-            Configuration<OkHttpClient,Request,Response> configuration = new Configuration<>("test",new OkHttpClientFactory(), httpSinkConnectorConfig, executorService, getCompositeMeterRegistry());
+            Configuration<OkHttpClient,Request,Response> configuration = new Configuration<>("test",new OkHttpClientFactory(), httpSinkConnectorConfig.originals(), executorService, getCompositeMeterRegistry());
             HttpRequest httpRequest1 = new HttpRequest("http://toto.com", HttpRequest.Method.GET);
             Map<String, List<String>> headers = Maps.newHashMap();
             headers.put("SUPERNOVA", List.of("stuff"));
@@ -137,7 +137,7 @@ class ConfigurationTest {
             settings.put("config.test.predicate.url.regex", "^.*toto\\.com$");
             settings.put("config.test.predicate.header.key.regex", "^SUPER.*$");
             HttpSinkConnectorConfig httpSinkConnectorConfig = new HttpSinkConnectorConfig(settings);
-            Configuration<OkHttpClient,Request,Response> configuration = new Configuration<>("test",new OkHttpClientFactory(), httpSinkConnectorConfig, executorService, getCompositeMeterRegistry());
+            Configuration<OkHttpClient,Request,Response> configuration = new Configuration<>("test",new OkHttpClientFactory(), httpSinkConnectorConfig.originals(), executorService, getCompositeMeterRegistry());
             HttpRequest httpRequest1 = new HttpRequest("http://toto.com", HttpRequest.Method.GET);
             Map<String, List<String>> headers = Maps.newHashMap();
             headers.put("SUPERNOVA", List.of("stuff"));
@@ -156,7 +156,7 @@ class ConfigurationTest {
             settings.put("config.test.predicate.header.key.regex", "SUPERNOVA");
             settings.put("config.test.predicate.header.value.regex", "top");
             HttpSinkConnectorConfig httpSinkConnectorConfig = new HttpSinkConnectorConfig(settings);
-            Configuration<OkHttpClient,Request,Response> configuration = new Configuration<>("test",new OkHttpClientFactory(), httpSinkConnectorConfig, executorService, getCompositeMeterRegistry());
+            Configuration<OkHttpClient,Request,Response> configuration = new Configuration<>("test",new OkHttpClientFactory(), httpSinkConnectorConfig.originals(), executorService, getCompositeMeterRegistry());
             HttpRequest httpRequest1 = new HttpRequest("http://toto.com", HttpRequest.Method.GET);
             Map<String, List<String>> headers = Maps.newHashMap();
             headers.put("SUPERNOVA", List.of("top"));
@@ -177,7 +177,7 @@ class ConfigurationTest {
             settings.put("config.test.predicate.header.key.regex", "^SUPER.*$");
             settings.put("config.test.predicate.header.value.regex", "^top.$");
             HttpSinkConnectorConfig httpSinkConnectorConfig = new HttpSinkConnectorConfig(settings);
-            Configuration<OkHttpClient,Request,Response> configuration = new Configuration<>("test",new OkHttpClientFactory(), httpSinkConnectorConfig, executorService, getCompositeMeterRegistry());
+            Configuration<OkHttpClient,Request,Response> configuration = new Configuration<>("test",new OkHttpClientFactory(), httpSinkConnectorConfig.originals(), executorService, getCompositeMeterRegistry());
             HttpRequest httpRequest1 = new HttpRequest("http://toto.com", HttpRequest.Method.GET);
             Map<String, List<String>> headers = Maps.newHashMap();
             headers.put("SUPERNOVA", List.of("top1"));
@@ -226,10 +226,10 @@ class ConfigurationTest {
             settings.put("config.test.rate.limiter.max.executions", "3");
             settings.put("config.test.rate.limiter.period.in.ms", "1000");
             HttpSinkConnectorConfig httpSinkConnectorConfig = new HttpSinkConnectorConfig(settings);
-            Configuration<OkHttpClient,Request,Response> configuration = new Configuration<>("test",new OkHttpClientFactory(), httpSinkConnectorConfig, executorService, getCompositeMeterRegistry());
+            Configuration<OkHttpClient,Request,Response> configuration = new Configuration<>("test",new OkHttpClientFactory(), httpSinkConnectorConfig.originals(), executorService, getCompositeMeterRegistry());
             Optional<RateLimiter<HttpExchange>> rateLimiter = configuration.getHttpClient().getRateLimiter();
             assertThat(rateLimiter).isPresent();
-            Configuration<OkHttpClient,Request,Response> configuration2 = new Configuration<>("test",new OkHttpClientFactory(), httpSinkConnectorConfig, executorService, getCompositeMeterRegistry());
+            Configuration<OkHttpClient,Request,Response> configuration2 = new Configuration<>("test",new OkHttpClientFactory(), httpSinkConnectorConfig.originals(), executorService, getCompositeMeterRegistry());
             Optional<RateLimiter<HttpExchange>> rateLimiter2 = configuration2.getHttpClient().getRateLimiter();
             assertThat(rateLimiter2).isPresent();
             assertThat(rateLimiter.get()).isNotSameAs(rateLimiter2.get());
@@ -246,10 +246,10 @@ class ConfigurationTest {
             settings.put("config.test.rate.limiter.period.in.ms", "1000");
             settings.put("config.test.rate.limiter.scope", "static");
             HttpSinkConnectorConfig httpSinkConnectorConfig = new HttpSinkConnectorConfig(settings);
-            Configuration<OkHttpClient,Request,Response> configuration = new Configuration<>("test",new OkHttpClientFactory(), httpSinkConnectorConfig, executorService, getCompositeMeterRegistry());
+            Configuration<OkHttpClient,Request,Response> configuration = new Configuration<>("test",new OkHttpClientFactory(), httpSinkConnectorConfig.originals(), executorService, getCompositeMeterRegistry());
             Optional<RateLimiter<HttpExchange>> rateLimiter = configuration.getHttpClient().getRateLimiter();
             assertThat(rateLimiter).isPresent();
-            Configuration<OkHttpClient,Request,Response> configuration2 = new Configuration<>("test",new OkHttpClientFactory(), httpSinkConnectorConfig, executorService, getCompositeMeterRegistry());
+            Configuration<OkHttpClient,Request,Response> configuration2 = new Configuration<>("test",new OkHttpClientFactory(), httpSinkConnectorConfig.originals(), executorService, getCompositeMeterRegistry());
             Optional<RateLimiter<HttpExchange>> rateLimiter2 = configuration2.getHttpClient().getRateLimiter();
             assertThat(rateLimiter2).isPresent();
             assertThat(rateLimiter).containsSame(rateLimiter2.get());
@@ -266,7 +266,7 @@ class ConfigurationTest {
             settings.put("config.test.rate.limiter.period.in.ms", "1000");
             settings.put("config.test.rate.limiter.scope", "static");
             HttpSinkConnectorConfig httpSinkConnectorConfig = new HttpSinkConnectorConfig(settings);
-            Configuration<OkHttpClient,Request,Response> configuration = new Configuration<>("test",new OkHttpClientFactory(), httpSinkConnectorConfig, executorService, getCompositeMeterRegistry());
+            Configuration<OkHttpClient,Request,Response> configuration = new Configuration<>("test",new OkHttpClientFactory(), httpSinkConnectorConfig.originals(), executorService, getCompositeMeterRegistry());
             Optional<RateLimiter<HttpExchange>> rateLimiter = configuration.getHttpClient().getRateLimiter();
             assertThat(rateLimiter).isPresent();
             Map<String, String> settings2 = Maps.newHashMap();
@@ -277,7 +277,7 @@ class ConfigurationTest {
             settings2.put("config.test2.rate.limiter.period.in.ms", "1000");
             settings2.put("config.test2.rate.limiter.scope", "static");
             HttpSinkConnectorConfig httpSinkConnectorConfig2 = new HttpSinkConnectorConfig(settings2);
-            Configuration<OkHttpClient,Request,Response> configuration2 = new Configuration<>("test2",new OkHttpClientFactory(), httpSinkConnectorConfig2, executorService, getCompositeMeterRegistry());
+            Configuration<OkHttpClient,Request,Response> configuration2 = new Configuration<>("test2",new OkHttpClientFactory(), httpSinkConnectorConfig2.originals(), executorService, getCompositeMeterRegistry());
             Optional<RateLimiter<HttpExchange>> rateLimiter2 = configuration2.getHttpClient().getRateLimiter();
             assertThat(rateLimiter2).isPresent();
             assertThat(rateLimiter.get()).isNotSameAs(rateLimiter2.get());
@@ -311,7 +311,7 @@ class ConfigurationTest {
             config.put("config.dummy." + RATE_LIMITER_MAX_EXECUTIONS, "4");
             config.put("config.dummy." + RATE_LIMITER_PERIOD_IN_MS, "1000");
             config.put("config.dummy." + RATE_LIMITER_SCOPE, "static");
-            Configuration<OkHttpClient,Request,Response> configuration = new Configuration<>("dummy",new OkHttpClientFactory(), new HttpSinkConnectorConfig(config), executorService, getCompositeMeterRegistry());
+            Configuration<OkHttpClient,Request,Response> configuration = new Configuration<>("dummy",new OkHttpClientFactory(), new HttpSinkConnectorConfig(config).originals(), executorService, getCompositeMeterRegistry());
             String configurationAsString = configuration.toString();
             LOGGER.debug("configurationAsString:{}", configurationAsString);
             assertThat(configurationAsString).isNotEmpty();

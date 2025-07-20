@@ -22,7 +22,6 @@ import org.apache.commons.jexl3.introspection.JexlPermissions;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.clients.producer.RecordMetadata;
-import org.apache.kafka.common.config.AbstractConfig;
 import org.apache.kafka.connect.connector.ConnectRecord;
 import org.apache.kafka.connect.errors.ConnectException;
 import org.apache.kafka.connect.sink.ErrantRecordReporter;
@@ -86,9 +85,12 @@ public abstract class HttpSinkTask<C extends HttpClient<R, S>, R, S> extends Sin
         return VERSION_UTILS.getVersion();
     }
 
-    private List<Configuration<C, R, S>> buildConfigurations(HttpClientFactory<C, R, S> httpClientFactory,
-                                                             AbstractConfig config,
-                                                             ExecutorService executorService, List<String> configIdList) {
+    private List<Configuration<C, R, S>> buildConfigurations(
+            HttpClientFactory<C, R, S> httpClientFactory,
+            ExecutorService executorService,
+            List<String> configIdList,
+            Map<String, Object> originals
+    ) {
         List<Configuration<C, R, S>> configurations = Lists.newArrayList();
         List<String> configurationIds = Lists.newArrayList();
         Optional<List<String>> ids = Optional.ofNullable(configIdList);
@@ -99,7 +101,7 @@ public abstract class HttpSinkTask<C extends HttpClient<R, S>, R, S> extends Sin
         Optional<Pattern> defaultRetryResponseCodeRegex = Optional.empty();
         for (String configId : configurationIds) {
 
-            Configuration<C, R, S> configuration = new Configuration<>(configId, httpClientFactory, config, executorService, meterRegistry);
+            Configuration<C, R, S> configuration = new Configuration<>(configId, httpClientFactory, originals, executorService, meterRegistry);
             if (configuration.getHttpClient() == null && !configurations.isEmpty() && defaultConfiguration != null) {
                 configuration.setHttpClient(defaultConfiguration.getHttpClient());
             }
@@ -161,19 +163,35 @@ public abstract class HttpSinkTask<C extends HttpClient<R, S>, R, S> extends Sin
 
         //message splitters
         MessageSplitterFactory messageSplitterFactory = new MessageSplitterFactory();
-        this.messageSplitters = messageSplitterFactory.buildMessageSplitters(httpSinkConnectorConfig, jexlEngine);
+        this.messageSplitters = messageSplitterFactory.buildMessageSplitters(httpSinkConnectorConfig.originals(), jexlEngine, httpSinkConnectorConfig.getList(MESSAGE_SPLITTER_IDS));
 
         //HttpRequestMappers
         HttpRequestMapperFactory httpRequestMapperFactory = new HttpRequestMapperFactory();
-        this.defaultHttpRequestMapper = httpRequestMapperFactory.buildDefaultHttpRequestMapper(httpSinkConnectorConfig, jexlEngine);
-        this.httpRequestMappers = httpRequestMapperFactory.buildCustomHttpRequestMappers(httpSinkConnectorConfig, jexlEngine, httpSinkConnectorConfig.getList(HTTP_REQUEST_MAPPER_IDS));
+        this.defaultHttpRequestMapper = httpRequestMapperFactory.buildDefaultHttpRequestMapper(
+                jexlEngine,
+                httpSinkConnectorConfig.getDefaultRequestMapperMode(),
+                httpSinkConnectorConfig.getDefaultUrlExpression(),
+                httpSinkConnectorConfig.getDefaultMethodExpression(),
+                httpSinkConnectorConfig.getDefaultBodyTypeExpression(),
+                httpSinkConnectorConfig.getDefaultBodyExpression(),
+                httpSinkConnectorConfig.getDefaultHeadersExpression());
+        this.httpRequestMappers = httpRequestMapperFactory.buildCustomHttpRequestMappers(
+                httpSinkConnectorConfig.originals(),
+                jexlEngine,
+                httpSinkConnectorConfig.getList(HTTP_REQUEST_MAPPER_IDS)
+        );
 
         //request groupers
         RequestGrouperFactory requestGrouperFactory = new RequestGrouperFactory();
         this.requestGroupers = requestGrouperFactory.buildRequestGroupers(httpSinkConnectorConfig, httpSinkConnectorConfig.getList(REQUEST_GROUPER_IDS));
 
         //configurations
-        configurations = buildConfigurations(httpClientFactory, httpSinkConnectorConfig, executorService, httpSinkConnectorConfig.getList(CONFIGURATION_IDS));
+        configurations = buildConfigurations(
+                httpClientFactory,
+                executorService,
+                httpSinkConnectorConfig.getList(CONFIGURATION_IDS),
+                httpSinkConnectorConfig.originals()
+        );
         List<HttpConfiguration<C, R, S>> httpConfigurations = configurations.stream()
                 .map(HttpConfiguration::new)
                 .toList();
@@ -205,9 +223,7 @@ public abstract class HttpSinkTask<C extends HttpClient<R, S>, R, S> extends Sin
             default:
                 LOGGER.debug("NONE publish mode");
         }
-
     }
-
 
     private static JexlEngine buildJexlEngine() {
         // Restricted permissions to a safe set but with URI allowed

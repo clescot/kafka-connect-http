@@ -4,6 +4,7 @@ import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import dev.failsafe.RetryPolicy;
+import io.github.clescot.kafka.connect.http.MapUtils;
 import io.github.clescot.kafka.connect.http.VersionUtils;
 import io.github.clescot.kafka.connect.http.client.config.*;
 import io.github.clescot.kafka.connect.http.core.HttpExchange;
@@ -78,7 +79,7 @@ public class Configuration<C extends HttpClient<R,S>,R,S> {
     private final Function<HttpRequest, HttpRequest> enrichRequestFunction;
     public Configuration(String id,
                          HttpClientFactory<C,R,S> httpClientFactory,
-                         AbstractConfig config,
+                         Map<String,Object> config,
                          ExecutorService executorService,
                          CompositeMeterRegistry meterRegistry) {
         this.id = id;
@@ -87,7 +88,7 @@ public class Configuration<C extends HttpClient<R,S>,R,S> {
         Preconditions.checkNotNull(config, "httpSinkConnectorConfig must not be null");
 
         //configuration id prefix is not present in the resulting configMap
-        this.settings = config.originalsWithPrefix("config." + id + ".");
+        this.settings = MapUtils.getMapWithPrefix(config,"config." + id + ".");
         settings.put(CONFIGURATION_ID, id);
         //main predicate
         this.predicate = HttpRequestPredicateBuilder.build().buildPredicate(settings);
