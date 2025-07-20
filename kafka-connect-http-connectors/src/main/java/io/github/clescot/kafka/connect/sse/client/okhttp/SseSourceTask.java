@@ -6,9 +6,11 @@ import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
+import com.launchdarkly.eventsource.background.BackgroundEventSource;
 import io.github.clescot.kafka.connect.http.VersionUtils;
 import io.github.clescot.kafka.connect.http.client.Configuration;
 import io.github.clescot.kafka.connect.http.client.okhttp.OkHttpClient;
+import io.github.clescot.kafka.connect.http.core.queue.QueueFactory;
 import io.github.clescot.kafka.connect.sse.core.SseEvent;
 import okhttp3.Request;
 import okhttp3.Response;
@@ -18,15 +20,16 @@ import org.apache.kafka.connect.source.SourceTask;
 import java.util.List;
 import java.util.Map;
 import java.util.Queue;
+import java.util.UUID;
 
 public class SseSourceTask extends SourceTask {
     private static final VersionUtils VERSION_UTILS = new VersionUtils();
 
     private SseSourceConnectorConfig sseSourceConnectorConfig;
-    private SseConfiguration<OkHttpClient, Request, Response> sseConfiguration;
+    private SseDarklyConfiguration sseConfiguration;
     private Queue<SseEvent> queue;
     private final ObjectMapper objectMapper;
-
+    private BackgroundEventSource backgroundEventSource;
     public SseSourceTask() {
         objectMapper = new ObjectMapper();
         objectMapper.registerModule(new JavaTimeModule());
@@ -42,8 +45,9 @@ public class SseSourceTask extends SourceTask {
         Preconditions.checkNotNull(settings, "settings must not be null or empty.");
         this.sseSourceConnectorConfig = new SseSourceConnectorConfig(settings);
         Configuration<OkHttpClient, Request, Response> configuration = null;
-        this.sseConfiguration = new SseConfiguration<>(configuration);
-        this.queue = this.sseConfiguration.connect(settings);
+        this.sseConfiguration = new SseDarklyConfiguration(configuration);
+        this.queue = QueueFactory.getQueue(String.valueOf(UUID.randomUUID()));
+        this.backgroundEventSource = this.sseConfiguration.connect(queue,settings);
     }
 
     @Override

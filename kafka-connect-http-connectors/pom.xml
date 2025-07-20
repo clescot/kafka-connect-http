@@ -185,6 +185,11 @@
             <artifactId>jakarta.annotation-api</artifactId>
             <version>3.0.0</version>
         </dependency>
+        <dependency>
+            <groupId>com.launchdarkly</groupId>
+            <artifactId>okhttp-eventsource</artifactId>
+            <version>4.1.1</version>
+        </dependency>
         <!-- test dependencies-->
         <dependency>
             <groupId>org.apache.kafka</groupId>
