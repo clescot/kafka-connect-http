@@ -28,7 +28,7 @@ import java.util.Optional;
 import java.util.Random;
 import java.util.concurrent.ExecutorService;
 
-import static io.github.clescot.kafka.connect.http.sink.HttpSinkConfigDefinition.*;
+import static io.github.clescot.kafka.connect.http.sink.HttpConfigDefinition.*;
 
 /**
  * Factory to build a HttpClient.

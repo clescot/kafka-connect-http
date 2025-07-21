@@ -10,7 +10,7 @@ import org.apache.kafka.common.config.ConfigDef;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
 
-public class HttpSinkConfigDefinition {
+public class HttpConfigDefinition {
 
     //producer
     public static final String PRODUCER_PREFIX = "producer.";
@@ -631,7 +631,7 @@ public class HttpSinkConfigDefinition {
     public static final String PRODUCER_ERROR_DEFAULT_TOPIC = "http-errors";
     private final Map<String, String> settings;
 
-    public HttpSinkConfigDefinition(Map<String, String> settings) {
+    public HttpConfigDefinition(Map<String, String> settings) {
         this.settings = settings;
     }
 
@@ -770,10 +770,10 @@ public class HttpSinkConfigDefinition {
                 .define(prefix + RETRY_DELAY_FACTOR, ConfigDef.Type.DOUBLE, DEFAULT_RETRY_DELAY_FACTOR_VALUE, ConfigDef.Importance.MEDIUM, CONFIG_DEFAULT_RETRY_DELAY_FACTOR_DOC)
                 .define(prefix + RETRY_JITTER_IN_MS, ConfigDef.Type.LONG, DEFAULT_RETRY_JITTER_IN_MS_VALUE, ConfigDef.Importance.MEDIUM, CONFIG_DEFAULT_RETRY_JITTER_IN_MS_DOC)
                 //rate limiting settings
-                .define(prefix + RATE_LIMITER_PERIOD_IN_MS, ConfigDef.Type.LONG, HttpSinkConfigDefinition.DEFAULT_RATE_LIMITER_PERIOD_IN_MS_VALUE, ConfigDef.Importance.MEDIUM, CONFIG_DEFAULT_RATE_LIMITER_PERIOD_IN_MS_DOC)
-                .define(prefix + RATE_LIMITER_MAX_EXECUTIONS, ConfigDef.Type.LONG, HttpSinkConfigDefinition.DEFAULT_RATE_LIMITER_MAX_EXECUTIONS_VALUE, ConfigDef.Importance.MEDIUM, CONFIG_DEFAULT_RATE_LIMITER_MAX_EXECUTIONS_DOC)
-                .define(prefix + RATE_LIMITER_SCOPE, ConfigDef.Type.STRING, HttpSinkConfigDefinition.DEFAULT_RATE_LIMITER_SCOPE_VALUE, ConfigDef.Importance.MEDIUM, CONFIG_DEFAULT_RATE_LIMITER_SCOPE_DOC)
-                .define(prefix + RATE_LIMITER_PERMITS_PER_EXECUTION, ConfigDef.Type.STRING, HttpSinkConfigDefinition.DEFAULT_RATE_LIMITER_ONE_PERMIT_PER_CALL, ConfigDef.Importance.MEDIUM, CONFIG_DEFAULT_RATE_LIMITER_PERMITS_PER_EXECUTION_DOC)
+                .define(prefix + RATE_LIMITER_PERIOD_IN_MS, ConfigDef.Type.LONG, HttpConfigDefinition.DEFAULT_RATE_LIMITER_PERIOD_IN_MS_VALUE, ConfigDef.Importance.MEDIUM, CONFIG_DEFAULT_RATE_LIMITER_PERIOD_IN_MS_DOC)
+                .define(prefix + RATE_LIMITER_MAX_EXECUTIONS, ConfigDef.Type.LONG, HttpConfigDefinition.DEFAULT_RATE_LIMITER_MAX_EXECUTIONS_VALUE, ConfigDef.Importance.MEDIUM, CONFIG_DEFAULT_RATE_LIMITER_MAX_EXECUTIONS_DOC)
+                .define(prefix + RATE_LIMITER_SCOPE, ConfigDef.Type.STRING, HttpConfigDefinition.DEFAULT_RATE_LIMITER_SCOPE_VALUE, ConfigDef.Importance.MEDIUM, CONFIG_DEFAULT_RATE_LIMITER_SCOPE_DOC)
+                .define(prefix + RATE_LIMITER_PERMITS_PER_EXECUTION, ConfigDef.Type.STRING, HttpConfigDefinition.DEFAULT_RATE_LIMITER_ONE_PERMIT_PER_CALL, ConfigDef.Importance.MEDIUM, CONFIG_DEFAULT_RATE_LIMITER_PERMITS_PER_EXECUTION_DOC)
                 //header settings
                 .define(prefix + STATIC_REQUEST_HEADER_NAMES, ConfigDef.Type.LIST, Collections.emptyList(), ConfigDef.Importance.MEDIUM, CONFIG_STATIC_REQUEST_HEADER_NAMES_DOC)
                 .define(prefix + GENERATE_MISSING_CORRELATION_ID, ConfigDef.Type.STRING, FALSE, ConfigDef.Importance.MEDIUM, CONFIG_GENERATE_MISSING_CORRELATION_ID_DOC)

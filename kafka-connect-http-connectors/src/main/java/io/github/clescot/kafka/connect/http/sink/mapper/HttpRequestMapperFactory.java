@@ -9,7 +9,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
-import static io.github.clescot.kafka.connect.http.sink.HttpSinkConfigDefinition.REQUEST_MAPPER_DEFAULT_URL_EXPRESSION;
+import static io.github.clescot.kafka.connect.http.sink.HttpConfigDefinition.REQUEST_MAPPER_DEFAULT_URL_EXPRESSION;
 
 public class HttpRequestMapperFactory {
     public static final String DEFAULT = "default";

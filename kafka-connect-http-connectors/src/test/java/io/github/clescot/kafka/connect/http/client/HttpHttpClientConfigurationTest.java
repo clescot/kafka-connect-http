@@ -8,7 +8,7 @@ import io.github.clescot.kafka.connect.http.client.okhttp.OkHttpClientFactory;
 import io.github.clescot.kafka.connect.http.core.HttpExchange;
 import io.github.clescot.kafka.connect.http.core.HttpRequest;
 import io.github.clescot.kafka.connect.http.core.HttpResponse;
-import io.github.clescot.kafka.connect.http.sink.HttpSinkConnectorConfig;
+import io.github.clescot.kafka.connect.http.sink.HttpConnectorConfig;
 import io.micrometer.core.instrument.Clock;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.composite.CompositeMeterRegistry;
@@ -32,11 +32,11 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static io.github.clescot.kafka.connect.http.sink.HttpSinkConfigDefinition.*;
-import static io.github.clescot.kafka.connect.http.sink.HttpSinkConfigDefinition.GENERATE_MISSING_CORRELATION_ID;
-import static io.github.clescot.kafka.connect.http.sink.HttpSinkConfigDefinition.SUCCESS_RESPONSE_CODE_REGEX;
-import static io.github.clescot.kafka.connect.http.sink.HttpSinkConfigDefinition.USER_AGENT_CUSTOM_VALUES;
-import static io.github.clescot.kafka.connect.http.sink.HttpSinkConfigDefinition.USER_AGENT_OVERRIDE;
+import static io.github.clescot.kafka.connect.http.sink.HttpConfigDefinition.*;
+import static io.github.clescot.kafka.connect.http.sink.HttpConfigDefinition.GENERATE_MISSING_CORRELATION_ID;
+import static io.github.clescot.kafka.connect.http.sink.HttpConfigDefinition.SUCCESS_RESPONSE_CODE_REGEX;
+import static io.github.clescot.kafka.connect.http.sink.HttpConfigDefinition.USER_AGENT_CUSTOM_VALUES;
+import static io.github.clescot.kafka.connect.http.sink.HttpConfigDefinition.USER_AGENT_OVERRIDE;
 import static org.assertj.core.api.Assertions.assertThat;
 class HttpHttpClientConfigurationTest {
 
@@ -71,7 +71,7 @@ class HttpHttpClientConfigurationTest {
             HttpClientConfiguration<OkHttpClient, Request, Response> httpClientConfiguration = new HttpClientConfiguration<>(
                     "dummy",
                     new OkHttpClientFactory(),
-                    new HttpSinkConnectorConfig(config).originals(),
+                    new HttpConnectorConfig(config).originals(),
                     executorService,
                     getCompositeMeterRegistry()
             );
@@ -90,7 +90,7 @@ class HttpHttpClientConfigurationTest {
             HttpClientConfiguration<OkHttpClient,Request,Response> httpClientConfiguration = new HttpClientConfiguration<>(
                     "dummy",
                     new OkHttpClientFactory(),
-                    new HttpSinkConnectorConfig(config).originals(),
+                    new HttpConnectorConfig(config).originals(),
                     executorService,
                     getCompositeMeterRegistry()
             );
@@ -107,7 +107,7 @@ class HttpHttpClientConfigurationTest {
             config.put("config.dummy." + GENERATE_MISSING_CORRELATION_ID, "true");
             HttpClientConfiguration<OkHttpClient,Request,Response> httpClientConfiguration = new HttpClientConfiguration<>("dummy",
                     new OkHttpClientFactory(),
-                    new HttpSinkConnectorConfig(config).originals(),
+                    new HttpConnectorConfig(config).originals(),
                     executorService, getCompositeMeterRegistry());
             HttpRequest httpRequest = getDummyHttpRequest();
             HttpConfiguration<OkHttpClient,okhttp3.Request,okhttp3.Response> httpConfiguration = new HttpConfiguration<>(httpClientConfiguration);
@@ -126,7 +126,7 @@ class HttpHttpClientConfigurationTest {
             config.put("config.dummy." + USER_AGENT_CUSTOM_VALUES, "custom_ua");
             HttpClientConfiguration<OkHttpClient,Request,Response> httpClientConfiguration = new HttpClientConfiguration<>("dummy",
                     new OkHttpClientFactory(),
-                    new HttpSinkConnectorConfig(config).originals(),
+                    new HttpConnectorConfig(config).originals(),
                     executorService,
                     getCompositeMeterRegistry());
             HttpRequest httpRequest = getDummyHttpRequest();
@@ -146,7 +146,7 @@ class HttpHttpClientConfigurationTest {
             config.put("config.dummy." + USER_AGENT_CUSTOM_VALUES, "custom_1|custom_2|custom_3");
             HttpClientConfiguration<OkHttpClient,Request,Response> httpClientConfiguration = new HttpClientConfiguration<>("dummy",
                     new OkHttpClientFactory(),
-                    new HttpSinkConnectorConfig(config).originals(),
+                    new HttpConnectorConfig(config).originals(),
                     executorService,
                     getCompositeMeterRegistry());
             HttpRequest httpRequest = getDummyHttpRequest();
@@ -166,7 +166,7 @@ class HttpHttpClientConfigurationTest {
             config.put("config.dummy." + USER_AGENT_CUSTOM_VALUES, "custom_1|custom_2|custom_3");
             HttpClientConfiguration<OkHttpClient,Request,Response> httpClientConfiguration = new HttpClientConfiguration<>("dummy",
                     new OkHttpClientFactory(),
-                    new HttpSinkConnectorConfig(config).originals(),
+                    new HttpConnectorConfig(config).originals(),
                     executorService, getCompositeMeterRegistry());
             HttpRequest httpRequest = getDummyHttpRequest();
             httpRequest.getHeaders().put("User-Agent", Lists.newArrayList("already"));
@@ -184,7 +184,7 @@ class HttpHttpClientConfigurationTest {
             Map<String, String> config = Maps.newHashMap();
             config.put("config.dummy." + USER_AGENT_OVERRIDE, "http_client");
             HttpClientConfiguration<OkHttpClient,Request,Response> httpClientConfiguration = new HttpClientConfiguration<>("dummy",
-                    new OkHttpClientFactory(), new HttpSinkConnectorConfig(config).originals(),
+                    new OkHttpClientFactory(), new HttpConnectorConfig(config).originals(),
                     executorService, getCompositeMeterRegistry());
             HttpRequest httpRequest = getDummyHttpRequest();
             HttpConfiguration<OkHttpClient,okhttp3.Request,okhttp3.Response> httpConfiguration = new HttpConfiguration<>(httpClientConfiguration);
@@ -203,7 +203,7 @@ class HttpHttpClientConfigurationTest {
             Map<String, String> config = Maps.newHashMap();
             config.put("config.dummy." + USER_AGENT_OVERRIDE, "project");
             HttpClientConfiguration<OkHttpClient,Request,Response> httpClientConfiguration = new HttpClientConfiguration<>("dummy",
-                    new OkHttpClientFactory(), new HttpSinkConnectorConfig(config).originals(),
+                    new OkHttpClientFactory(), new HttpConnectorConfig(config).originals(),
                     executorService, getCompositeMeterRegistry());
             HttpRequest httpRequest = getDummyHttpRequest();
             HttpConfiguration<OkHttpClient,okhttp3.Request,okhttp3.Response> httpConfiguration = new HttpConfiguration<>(httpClientConfiguration);
@@ -226,7 +226,7 @@ class HttpHttpClientConfigurationTest {
             Map<String, String> config = Maps.newHashMap();
             config.put("config.dummy." + SUCCESS_RESPONSE_CODE_REGEX, "^2[0-9][0-9]$");
             HttpClientConfiguration<OkHttpClient,Request,Response> httpClientConfiguration = new HttpClientConfiguration<>("dummy",
-                    new OkHttpClientFactory(), new HttpSinkConnectorConfig(config).originals(),
+                    new OkHttpClientFactory(), new HttpConnectorConfig(config).originals(),
                     executorService, getCompositeMeterRegistry());
             HttpExchange httpExchange = getDummyHttpExchange();
             HttpConfiguration<OkHttpClient,okhttp3.Request,okhttp3.Response> httpConfiguration = new HttpConfiguration<>(httpClientConfiguration);
@@ -239,7 +239,7 @@ class HttpHttpClientConfigurationTest {
             Map<String, String> config = Maps.newHashMap();
             config.put("config.dummy." + SUCCESS_RESPONSE_CODE_REGEX, "^1[0-9][0-9]$");
             HttpClientConfiguration<OkHttpClient,Request,Response> httpClientConfiguration = new HttpClientConfiguration<>("dummy",
-                    new OkHttpClientFactory(), new HttpSinkConnectorConfig(config).originals(),
+                    new OkHttpClientFactory(), new HttpConnectorConfig(config).originals(),
                     executorService, getCompositeMeterRegistry());
             HttpExchange httpExchange = getDummyHttpExchange();
             HttpConfiguration<OkHttpClient,okhttp3.Request,okhttp3.Response> httpConfiguration = new HttpConfiguration<>(httpClientConfiguration);
@@ -264,7 +264,7 @@ class HttpHttpClientConfigurationTest {
             config.put("config.dummy." + SUCCESS_RESPONSE_CODE_REGEX, "^2[0-9][0-9]$");
             HttpClientConfiguration<OkHttpClient,Request,Response> httpClientConfiguration = new HttpClientConfiguration<>("dummy",
                     new OkHttpClientFactory(),
-                    new HttpSinkConnectorConfig(config).originals(),
+                    new HttpConnectorConfig(config).originals(),
                     executorService,
                     getCompositeMeterRegistry());
             HttpExchange httpExchange = getDummyHttpExchange();
@@ -287,7 +287,7 @@ class HttpHttpClientConfigurationTest {
             config.put("config.dummy." + SUCCESS_RESPONSE_CODE_REGEX, "^1[0-9][0-9]$");
             HttpClientConfiguration<OkHttpClient,Request,Response> httpClientConfiguration = new HttpClientConfiguration<>(
                     "dummy",new OkHttpClientFactory(),
-                    new HttpSinkConnectorConfig(config).originals(),
+                    new HttpConnectorConfig(config).originals(),
                     executorService, getCompositeMeterRegistry()
             );
             HttpExchange httpExchange = getDummyHttpExchange();
@@ -327,7 +327,7 @@ class HttpHttpClientConfigurationTest {
             Map<String, String> config = Maps.newHashMap();
             config.put("config.dummy." + RETRY_RESPONSE_CODE_REGEX, "^5[0-9][0-9]$");
             HttpClientConfiguration<OkHttpClient,Request,Response> httpClientConfiguration = new HttpClientConfiguration<>("dummy",new OkHttpClientFactory(),
-                    new HttpSinkConnectorConfig(config).originals(),
+                    new HttpConnectorConfig(config).originals(),
                     executorService,
                     getCompositeMeterRegistry());
             HttpResponse httpResponse = new HttpResponse(500, "Internal Server Error");
@@ -341,7 +341,7 @@ class HttpHttpClientConfigurationTest {
             Map<String, String> config = Maps.newHashMap();
             config.put("httpclient.dummy." + RETRY_RESPONSE_CODE_REGEX, "^5[0-9][0-9]$");
             HttpClientConfiguration<OkHttpClient,Request,Response> httpClientConfiguration = new HttpClientConfiguration<>("dummy",new OkHttpClientFactory(),
-                    new HttpSinkConnectorConfig(config).originals(), executorService, getCompositeMeterRegistry());
+                    new HttpConnectorConfig(config).originals(), executorService, getCompositeMeterRegistry());
             HttpResponse httpResponse = new HttpResponse(400, "Internal Server Error");
             HttpConfiguration<OkHttpClient,okhttp3.Request,okhttp3.Response> httpConfiguration = new HttpConfiguration<>(httpClientConfiguration);
             boolean retryNeeded = httpConfiguration.retryNeeded(httpResponse);
@@ -354,7 +354,7 @@ class HttpHttpClientConfigurationTest {
             config.put("httpclient.dummy." + RETRY_RESPONSE_CODE_REGEX, "^5[0-9][0-9]$");
             HttpClientConfiguration<OkHttpClient,Request,Response> httpClientConfiguration = new HttpClientConfiguration<>("dummy",
                     new OkHttpClientFactory(),
-                    new HttpSinkConnectorConfig(config).originals(),
+                    new HttpConnectorConfig(config).originals(),
                     executorService, getCompositeMeterRegistry());
             HttpResponse httpResponse = new HttpResponse(200, "Internal Server Error");
             HttpConfiguration<OkHttpClient,okhttp3.Request,okhttp3.Response> httpConfiguration = new HttpConfiguration<>(httpClientConfiguration);
@@ -369,7 +369,7 @@ class HttpHttpClientConfigurationTest {
             config.put("config.dummy." + RETRY_RESPONSE_CODE_REGEX, "^2[0-9][0-9]$");
             config.put(CONFIG_DEFAULT_RETRY_RESPONSE_CODE_REGEX, "^[1-5][0-9][0-9]$");
             HttpClientConfiguration<OkHttpClient,Request,Response> httpClientConfiguration = new HttpClientConfiguration<>("dummy",new OkHttpClientFactory(),
-                    new HttpSinkConnectorConfig(config).originals(), executorService, getCompositeMeterRegistry());
+                    new HttpConnectorConfig(config).originals(), executorService, getCompositeMeterRegistry());
             HttpResponse httpResponse = new HttpResponse(200, "Internal Server Error");
             HttpConfiguration<OkHttpClient,okhttp3.Request,okhttp3.Response> httpConfiguration = new HttpConfiguration<>(httpClientConfiguration);
             boolean retryNeeded = httpConfiguration.retryNeeded(httpResponse);

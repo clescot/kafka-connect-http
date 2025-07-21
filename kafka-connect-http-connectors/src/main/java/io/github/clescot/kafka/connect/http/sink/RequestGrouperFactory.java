@@ -13,7 +13,7 @@ public class RequestGrouperFactory {
 
     public static final String REQUEST_GROUPER = "request.grouper.";
 
-    public List<RequestGrouper> buildRequestGroupers(HttpSinkConnectorConfig connectorConfig, List<String> requestGrouperIds) {
+    public List<RequestGrouper> buildRequestGroupers(HttpConnectorConfig connectorConfig, List<String> requestGrouperIds) {
         List<RequestGrouper> requestGrouperList = Lists.newArrayList();
         for (String requestGrouperId : Optional.ofNullable(requestGrouperIds).orElse(Lists.newArrayList())) {
             Map<String, Object> settings = connectorConfig.originalsWithPrefix(REQUEST_GROUPER + requestGrouperId + ".");

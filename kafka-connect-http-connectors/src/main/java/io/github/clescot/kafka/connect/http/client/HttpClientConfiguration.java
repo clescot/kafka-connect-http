@@ -9,7 +9,6 @@ import io.github.clescot.kafka.connect.http.VersionUtils;
 import io.github.clescot.kafka.connect.http.client.config.*;
 import io.github.clescot.kafka.connect.http.core.HttpExchange;
 import io.github.clescot.kafka.connect.http.core.HttpRequest;
-import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.composite.CompositeMeterRegistry;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
@@ -26,7 +25,7 @@ import java.util.function.Predicate;
 import java.util.regex.Pattern;
 
 import static io.github.clescot.kafka.connect.http.client.config.HttpRequestPredicateBuilder.*;
-import static io.github.clescot.kafka.connect.http.sink.HttpSinkConfigDefinition.*;
+import static io.github.clescot.kafka.connect.http.sink.HttpConfigDefinition.*;
 
 /**
  * Configuration of the {@link HttpClient}, specific to some websites according to the configured <span class="strong">predicate</span>.

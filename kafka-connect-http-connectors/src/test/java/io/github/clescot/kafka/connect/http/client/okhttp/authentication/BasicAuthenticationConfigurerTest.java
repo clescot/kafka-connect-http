@@ -8,7 +8,7 @@ import org.junit.jupiter.api.Test;
 
 import java.util.HashMap;
 
-import static io.github.clescot.kafka.connect.http.sink.HttpSinkConfigDefinition.*;
+import static io.github.clescot.kafka.connect.http.sink.HttpConfigDefinition.*;
 import static org.assertj.core.api.Assertions.assertThat;
 
 class BasicAuthenticationConfigurerTest {

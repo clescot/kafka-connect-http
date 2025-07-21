@@ -27,7 +27,6 @@ import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.clients.producer.RecordMetadata;
 import org.apache.kafka.connect.connector.ConnectRecord;
 import org.apache.kafka.connect.errors.ConnectException;
-import org.apache.kafka.connect.sink.ErrantRecordReporter;
 import org.apache.kafka.connect.sink.SinkRecord;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
@@ -39,7 +38,7 @@ import java.util.function.Function;
 import java.util.stream.Stream;
 
 import static io.github.clescot.kafka.connect.http.sink.HttpClientConfigurationFactory.buildConfigurations;
-import static io.github.clescot.kafka.connect.http.sink.HttpSinkConfigDefinition.*;
+import static io.github.clescot.kafka.connect.http.sink.HttpConfigDefinition.*;
 
 /**
  *
@@ -56,7 +55,7 @@ public class HttpTask<C extends HttpClient<R,S>,R, S> implements Task<C,HttpConf
     private Queue<KafkaRecord> queue;
     private List<HttpConfiguration<C,R, S>> configurations;
     private static CompositeMeterRegistry meterRegistry;
-    private HttpSinkConnectorConfig httpSinkConnectorConfig;
+    private HttpConnectorConfig httpConnectorConfig;
     private KafkaProducer<String, Object> producer;
     private HttpRequestMapper defaultHttpRequestMapper;
     private List<HttpRequestMapper> httpRequestMappers;
@@ -71,16 +70,16 @@ public class HttpTask<C extends HttpClient<R,S>,R, S> implements Task<C,HttpConf
         this.producer = producer;
         List<HttpClientConfiguration<C, R, S>> httpClientConfigurations;
         Preconditions.checkNotNull(settings, "settings cannot be null");
-        HttpSinkConfigDefinition httpSinkConfigDefinition = new HttpSinkConfigDefinition(settings);
-        this.httpSinkConnectorConfig = new HttpSinkConnectorConfig(httpSinkConfigDefinition.config(), settings);
+        HttpConfigDefinition httpConfigDefinition = new HttpConfigDefinition(settings);
+        this.httpConnectorConfig = new HttpConnectorConfig(httpConfigDefinition.config(), settings);
 
         //build executorService
-        Optional<Integer> customFixedThreadPoolSize = Optional.ofNullable(httpSinkConnectorConfig.getInt(HTTP_CLIENT_ASYNC_FIXED_THREAD_POOL_SIZE));
+        Optional<Integer> customFixedThreadPoolSize = Optional.ofNullable(httpConnectorConfig.getInt(HTTP_CLIENT_ASYNC_FIXED_THREAD_POOL_SIZE));
         customFixedThreadPoolSize.ifPresent(integer -> this.executorService = buildExecutorService(integer));
 
         //build meterRegistry
         MeterRegistryFactory meterRegistryFactory = new MeterRegistryFactory();
-        setMeterRegistry(meterRegistryFactory.buildMeterRegistry(httpSinkConnectorConfig.originalsStrings()));
+        setMeterRegistry(meterRegistryFactory.buildMeterRegistry(httpConnectorConfig.originalsStrings()));
 
         //build httpRequestMappers
 
@@ -88,49 +87,49 @@ public class HttpTask<C extends HttpClient<R,S>,R, S> implements Task<C,HttpConf
 
         //message splitters
         MessageSplitterFactory messageSplitterFactory = new MessageSplitterFactory();
-        this.messageSplitters = messageSplitterFactory.buildMessageSplitters(httpSinkConnectorConfig.originals(), jexlEngine, httpSinkConnectorConfig.getList(MESSAGE_SPLITTER_IDS));
+        this.messageSplitters = messageSplitterFactory.buildMessageSplitters(httpConnectorConfig.originals(), jexlEngine, httpConnectorConfig.getList(MESSAGE_SPLITTER_IDS));
 
         //HttpRequestMappers
         HttpRequestMapperFactory httpRequestMapperFactory = new HttpRequestMapperFactory();
         this.defaultHttpRequestMapper = httpRequestMapperFactory.buildDefaultHttpRequestMapper(
                 jexlEngine,
-                httpSinkConnectorConfig.getDefaultRequestMapperMode(),
-                httpSinkConnectorConfig.getDefaultUrlExpression(),
-                httpSinkConnectorConfig.getDefaultMethodExpression(),
-                httpSinkConnectorConfig.getDefaultBodyTypeExpression(),
-                httpSinkConnectorConfig.getDefaultBodyExpression(),
-                httpSinkConnectorConfig.getDefaultHeadersExpression());
+                httpConnectorConfig.getDefaultRequestMapperMode(),
+                httpConnectorConfig.getDefaultUrlExpression(),
+                httpConnectorConfig.getDefaultMethodExpression(),
+                httpConnectorConfig.getDefaultBodyTypeExpression(),
+                httpConnectorConfig.getDefaultBodyExpression(),
+                httpConnectorConfig.getDefaultHeadersExpression());
         this.httpRequestMappers = httpRequestMapperFactory.buildCustomHttpRequestMappers(
-                httpSinkConnectorConfig.originals(),
+                httpConnectorConfig.originals(),
                 jexlEngine,
-                httpSinkConnectorConfig.getList(HTTP_REQUEST_MAPPER_IDS)
+                httpConnectorConfig.getList(HTTP_REQUEST_MAPPER_IDS)
         );
 
         //request groupers
         RequestGrouperFactory requestGrouperFactory = new RequestGrouperFactory();
-        this.requestGroupers = requestGrouperFactory.buildRequestGroupers(httpSinkConnectorConfig, httpSinkConnectorConfig.getList(REQUEST_GROUPER_IDS));
+        this.requestGroupers = requestGrouperFactory.buildRequestGroupers(httpConnectorConfig, httpConnectorConfig.getList(REQUEST_GROUPER_IDS));
 
         //configurations
         httpClientConfigurations = buildConfigurations(
                 httpClientFactory,
                 executorService,
-                httpSinkConnectorConfig.getList(CONFIGURATION_IDS),
-                httpSinkConnectorConfig.originals(), meterRegistry
+                httpConnectorConfig.getList(CONFIGURATION_IDS),
+                httpConnectorConfig.originals(), meterRegistry
         );
         //wrap configurations in HttpConfiguration
         this.configurations = httpClientConfigurations.stream()
                 .map(HttpConfiguration::new)
                 .toList();
         //configure publishMode
-        this.publishMode = httpSinkConnectorConfig.getPublishMode();
+        this.publishMode = httpConnectorConfig.getPublishMode();
         LOGGER.debug("publishMode: {}", publishMode);
         PublishConfigurer publishConfigurer = PublishConfigurer.build();
         switch (publishMode) {
             case PRODUCER:
-                publishConfigurer.configureProducerPublishMode(httpSinkConnectorConfig, producer);
+                publishConfigurer.configureProducerPublishMode(httpConnectorConfig, producer);
                 break;
             case IN_MEMORY_QUEUE:
-                this.queue = publishConfigurer.configureInMemoryQueue(httpSinkConnectorConfig);
+                this.queue = publishConfigurer.configureInMemoryQueue(httpConnectorConfig);
                 break;
             case NONE:
             default:
@@ -280,11 +279,11 @@ public class HttpTask<C extends HttpClient<R,S>,R, S> implements Task<C,HttpConf
         return httpExchange -> {
             //publish eventually to 'in memory' queue
             if (PublishMode.IN_MEMORY_QUEUE.equals(publishMode)) {
-                publishInInMemoryQueueMode(httpExchange, this.httpSinkConnectorConfig.getQueueName());
+                publishInInMemoryQueueMode(httpExchange, this.httpConnectorConfig.getQueueName());
             } else if (PublishMode.PRODUCER.equals(publishMode)) {
-                publishInProducerMode(httpExchange, this.httpSinkConnectorConfig.getProducerContent(),
-                        this.httpSinkConnectorConfig.getProducerSuccessTopic(),
-                        this.httpSinkConnectorConfig.getProducerErrorTopic());
+                publishInProducerMode(httpExchange, this.httpConnectorConfig.getProducerContent(),
+                        this.httpConnectorConfig.getProducerSuccessTopic(),
+                        this.httpConnectorConfig.getProducerErrorTopic());
             } else {
                 LOGGER.debug("publish.mode : 'NONE' http exchange NOT published :'{}'", httpExchange);
             }
@@ -364,8 +363,8 @@ public class HttpTask<C extends HttpClient<R,S>,R, S> implements Task<C,HttpConf
         return new JexlBuilder().features(features).permissions(permissions).create();
     }
 
-    public HttpSinkConnectorConfig getHttpSinkConnectorConfig() {
-        return httpSinkConnectorConfig;
+    public HttpConnectorConfig getHttpSinkConnectorConfig() {
+        return httpConnectorConfig;
     }
 
     public void setQueue(Queue<KafkaRecord> queue) {

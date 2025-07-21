@@ -14,7 +14,7 @@ import io.github.clescot.kafka.connect.http.client.okhttp.OkHttpClient;
 import io.github.clescot.kafka.connect.http.client.okhttp.OkHttpClientFactory;
 import io.github.clescot.kafka.connect.http.core.HttpExchange;
 import io.github.clescot.kafka.connect.http.core.HttpRequest;
-import io.github.clescot.kafka.connect.http.sink.HttpSinkConnectorConfig;
+import io.github.clescot.kafka.connect.http.sink.HttpConnectorConfig;
 import io.micrometer.core.instrument.Clock;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.composite.CompositeMeterRegistry;
@@ -39,7 +39,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.github.tomakehurst.wiremock.stubbing.Scenario.STARTED;
-import static io.github.clescot.kafka.connect.http.sink.HttpSinkConfigDefinition.DEFAULT_DEFAULT_RETRY_RESPONSE_CODE_REGEX;
+import static io.github.clescot.kafka.connect.http.sink.HttpConfigDefinition.DEFAULT_DEFAULT_RETRY_RESPONSE_CODE_REGEX;
 import static org.assertj.core.api.Assertions.assertThat;
 
 class HttpTaskTest {
@@ -72,7 +72,7 @@ class HttpTaskTest {
         @BeforeEach
         public void setUp(){
             Map<String,String> configs = Maps.newHashMap();
-            AbstractConfig config = new HttpSinkConnectorConfig(configs);
+            AbstractConfig config = new HttpConnectorConfig(configs);
 
             CompositeMeterRegistry compositeMeterRegistry = new CompositeMeterRegistry();
             JmxMeterRegistry jmxMeterRegistry = new JmxMeterRegistry(JmxConfig.DEFAULT, Clock.SYSTEM);
@@ -104,11 +104,11 @@ class HttpTaskTest {
             //when
             HttpRequest httpRequest = getDummyHttpRequest(wmHttp.url("/ping"));
             Map<String, String> settings = Maps.newHashMap();
-            HttpSinkConnectorConfig httpSinkConnectorConfig = new HttpSinkConnectorConfig(settings);
+            HttpConnectorConfig httpConnectorConfig = new HttpConnectorConfig(settings);
             HttpClientConfiguration<OkHttpClient,Request, Response> httpClientConfiguration = new HttpClientConfiguration<>(
                     "dummy",
                     new OkHttpClientFactory(),
-                    httpSinkConnectorConfig.originals(),
+                    httpConnectorConfig.originals(),
                     executorService,
                     getCompositeMeterRegistry()
             );
@@ -138,11 +138,11 @@ class HttpTaskTest {
             HttpRequest httpRequest = getDummyHttpRequest(wmHttp.url("/ping"));
             Map<String, String> settings = Maps.newHashMap();
             settings.put("config.dummy.http.response.message.status.limit","4");
-            HttpSinkConnectorConfig httpSinkConnectorConfig = new HttpSinkConnectorConfig(settings);
+            HttpConnectorConfig httpConnectorConfig = new HttpConnectorConfig(settings);
             HttpClientConfiguration<OkHttpClient,Request, Response> httpClientConfiguration = new HttpClientConfiguration<>(
                     "dummy",
                     new OkHttpClientFactory(),
-                    httpSinkConnectorConfig.originals(),
+                    httpConnectorConfig.originals(),
                     executorService,
                     getCompositeMeterRegistry()
             );
@@ -174,11 +174,11 @@ class HttpTaskTest {
             HttpRequest httpRequest = getDummyHttpRequest(wmHttp.url("/ping"));
             Map<String, String> settings = Maps.newHashMap();
             settings.put("config.dummy.http.response.body.limit","10");
-            HttpSinkConnectorConfig httpSinkConnectorConfig = new HttpSinkConnectorConfig(settings);
+            HttpConnectorConfig httpConnectorConfig = new HttpConnectorConfig(settings);
             HttpClientConfiguration<OkHttpClient,Request, Response> httpClientConfiguration = new HttpClientConfiguration<>(
                     "dummy",
                     new OkHttpClientFactory(),
-                    httpSinkConnectorConfig.originals(),
+                    httpConnectorConfig.originals(),
                     executorService,
                     getCompositeMeterRegistry()
             );
@@ -212,11 +212,11 @@ class HttpTaskTest {
             Map<String, String> settings = Maps.newHashMap();
             settings.put("config.dummy.http.response.status.message.limit","4");
             settings.put("config.dummy.http.response.body.limit","10");
-            HttpSinkConnectorConfig httpSinkConnectorConfig = new HttpSinkConnectorConfig(settings);
+            HttpConnectorConfig httpConnectorConfig = new HttpConnectorConfig(settings);
             HttpClientConfiguration<OkHttpClient,Request, Response> httpClientConfiguration = new HttpClientConfiguration<>(
                     "dummy",
                     new OkHttpClientFactory(),
-                    httpSinkConnectorConfig.originals(),
+                    httpConnectorConfig.originals(),
                     executorService,
                     getCompositeMeterRegistry()
             );
@@ -257,11 +257,11 @@ class HttpTaskTest {
             Map<String, String> settings = Maps.newHashMap();
             settings.put("config.dummy.retry.policy.retries","2");
             settings.put("config.dummy.retry.policy.response.code.regex",DEFAULT_DEFAULT_RETRY_RESPONSE_CODE_REGEX);
-            HttpSinkConnectorConfig httpSinkConnectorConfig = new HttpSinkConnectorConfig(settings);
+            HttpConnectorConfig httpConnectorConfig = new HttpConnectorConfig(settings);
             HttpClientConfiguration<OkHttpClient,Request, Response> httpClientConfiguration = new HttpClientConfiguration<>(
                     "dummy",
                     new OkHttpClientFactory(),
-                    httpSinkConnectorConfig.originals(),
+                    httpConnectorConfig.originals(),
                     executorService,
                     getCompositeMeterRegistry()
             );
