@@ -19,7 +19,6 @@ import java.net.URI;
 import java.util.Map;
 import java.util.Queue;
 
-import static io.github.clescot.kafka.connect.http.sink.HttpSinkTask.DEFAULT_CONFIGURATION_ID;
 
 public class SseConfiguration implements Configuration<OkHttpClient, HttpRequest> {
     private final okhttp3.OkHttpClient internalClient;

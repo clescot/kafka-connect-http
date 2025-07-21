@@ -2,7 +2,6 @@ package io.github.clescot.kafka.connect.http.sink;
 
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
-import dev.failsafe.RetryPolicy;
 import io.github.clescot.kafka.connect.http.HttpTask;
 import io.github.clescot.kafka.connect.http.VersionUtils;
 import io.github.clescot.kafka.connect.http.client.*;
@@ -34,9 +33,9 @@ import org.slf4j.LoggerFactory;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.function.Function;
-import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
+import static io.github.clescot.kafka.connect.http.sink.HttpClientConfigurationFactory.buildConfigurations;
 import static io.github.clescot.kafka.connect.http.sink.HttpSinkConfigDefinition.*;
 
 /**
@@ -53,12 +52,11 @@ public abstract class HttpSinkTask<C extends HttpClient<R, S>, R, S> extends Sin
     private static final VersionUtils VERSION_UTILS = new VersionUtils();
 
 
-    public static final String DEFAULT = "default";
+
 
 
     private HttpRequestMapper defaultHttpRequestMapper;
     private List<HttpRequestMapper> httpRequestMappers;
-    public static final String DEFAULT_CONFIGURATION_ID = DEFAULT;
     private final HttpClientFactory<C, R, S> httpClientFactory;
 
     private ErrantRecordReporter errantRecordReporter;
@@ -85,49 +83,6 @@ public abstract class HttpSinkTask<C extends HttpClient<R, S>, R, S> extends Sin
         return VERSION_UTILS.getVersion();
     }
 
-    private List<HttpClientConfiguration<C, R, S>> buildConfigurations(
-            HttpClientFactory<C, R, S> httpClientFactory,
-            ExecutorService executorService,
-            List<String> configIdList,
-            Map<String, Object> originals
-    ) {
-        List<HttpClientConfiguration<C, R, S>> httpClientConfigurations = Lists.newArrayList();
-        List<String> configurationIds = Lists.newArrayList();
-        Optional<List<String>> ids = Optional.ofNullable(configIdList);
-        configurationIds.add(DEFAULT_CONFIGURATION_ID);
-        ids.ifPresent(configurationIds::addAll);
-        HttpClientConfiguration<C, R, S> defaultHttpClientConfiguration = null;
-        Optional<RetryPolicy<HttpExchange>> defaultRetryPolicy = Optional.empty();
-        Optional<Pattern> defaultRetryResponseCodeRegex = Optional.empty();
-        for (String configId : configurationIds) {
-
-            HttpClientConfiguration<C, R, S> httpClientConfiguration = new HttpClientConfiguration<>(configId, httpClientFactory, originals, executorService, meterRegistry);
-            if (httpClientConfiguration.getClient() == null && !httpClientConfigurations.isEmpty() && defaultHttpClientConfiguration != null) {
-                httpClientConfiguration.setHttpClient(defaultHttpClientConfiguration.getClient());
-            }
-
-            //we reuse the default retry policy if not set
-
-            if (httpClientConfiguration.getRetryPolicy().isEmpty() && defaultRetryPolicy.isPresent()) {
-                httpClientConfiguration.setRetryPolicy(defaultRetryPolicy.get());
-            }
-            //we reuse the default success response code regex if not set
-            if (defaultHttpClientConfiguration != null) {
-                httpClientConfiguration.setSuccessResponseCodeRegex(defaultHttpClientConfiguration.getSuccessResponseCodeRegex());
-            }
-
-            if (httpClientConfiguration.getRetryResponseCodeRegex().isEmpty() && defaultRetryResponseCodeRegex.isPresent()) {
-                httpClientConfiguration.setRetryResponseCodeRegex(defaultRetryResponseCodeRegex.get());
-            }
-            if (DEFAULT_CONFIGURATION_ID.equals(configId)) {
-                defaultHttpClientConfiguration = httpClientConfiguration;
-                defaultRetryPolicy = defaultHttpClientConfiguration.getRetryPolicy();
-                defaultRetryResponseCodeRegex = defaultHttpClientConfiguration.getRetryResponseCodeRegex();
-            }
-            httpClientConfigurations.add(httpClientConfiguration);
-        }
-        return httpClientConfigurations;
-    }
 
     public static synchronized void setMeterRegistry(CompositeMeterRegistry compositeMeterRegistry) {
         if (meterRegistry == null) {
@@ -190,7 +145,7 @@ public abstract class HttpSinkTask<C extends HttpClient<R, S>, R, S> extends Sin
                 httpClientFactory,
                 executorService,
                 httpSinkConnectorConfig.getList(CONFIGURATION_IDS),
-                httpSinkConnectorConfig.originals()
+                httpSinkConnectorConfig.originals(), meterRegistry
         );
         //wrap configurations in HttpConfiguration
         List<HttpConfiguration<C, R, S>> httpConfigurations = httpClientConfigurations.stream()

@@ -19,10 +19,10 @@ import org.junit.jupiter.api.Test;
 
 import java.util.List;
 
-import static io.github.clescot.kafka.connect.http.sink.HttpSinkTask.DEFAULT;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 
 class JEXLHttpRequestMapperTest {
+    private static final String DEFAULT = "default";
 
     private static final String DUMMY_BODY = "stuff";
     private static final String DUMMY_URL = "http://www." + DUMMY_BODY + ".com";
@@ -44,6 +44,7 @@ class JEXLHttpRequestMapperTest {
 
     @Nested
     class Constructor {
+
 
 
         @Test

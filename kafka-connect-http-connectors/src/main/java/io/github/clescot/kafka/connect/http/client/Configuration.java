@@ -8,7 +8,7 @@ package io.github.clescot.kafka.connect.http.client;
  * @param <R> the type of the request
  */
 public interface Configuration<C,R> {
-
+    String DEFAULT_CONFIGURATION_ID = "default";
     boolean matches(R request);
 
     C getClient();

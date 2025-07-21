@@ -9,6 +9,7 @@ import io.github.clescot.kafka.connect.http.VersionUtils;
 import io.github.clescot.kafka.connect.http.client.config.*;
 import io.github.clescot.kafka.connect.http.core.HttpExchange;
 import io.github.clescot.kafka.connect.http.core.HttpRequest;
+import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.composite.CompositeMeterRegistry;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;

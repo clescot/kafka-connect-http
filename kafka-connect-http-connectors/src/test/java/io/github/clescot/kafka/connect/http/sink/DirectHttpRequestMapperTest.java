@@ -41,7 +41,6 @@ import java.util.Optional;
 
 import static io.confluent.kafka.serializers.json.KafkaJsonSchemaDeserializerConfig.JSON_VALUE_TYPE;
 import static io.github.clescot.kafka.connect.http.core.HttpRequest.SCHEMA;
-import static io.github.clescot.kafka.connect.http.sink.HttpSinkTask.DEFAULT;
 import static org.assertj.core.api.Assertions.assertThat;
 
 class DirectHttpRequestMapperTest {
@@ -50,10 +49,11 @@ class DirectHttpRequestMapperTest {
     private static final String DUMMY_URL = "http://www." + DUMMY_BODY + ".com";
     private static final HttpRequest.Method DUMMY_METHOD = HttpRequest.Method.POST;
     private static final String DUMMY_BODY_TYPE = "STRING";
+    private static final String DEFAULT = "default";
     private DirectHttpRequestMapper httpRequestMapper;
     private SchemaRegistryClient schemaRegistryClient;
     @BeforeEach
-    public void setup() throws RestClientException, IOException {
+    public void setup() {
         // Restricted permissions to a safe set but with URI allowed
         JexlPermissions permissions = new JexlPermissions.ClassPermissions(SinkRecord.class, ConnectRecord.class,HttpRequest.class);
         // Create the engine
