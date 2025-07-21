@@ -312,7 +312,7 @@ public class HttpSinkTaskTest {
             Map<String, String> settings = Maps.newHashMap();
             settings.put(CONFIG_HTTP_CLIENT_SSL_TRUSTSTORE_ALWAYS_TRUST, "true");
             okHttpSinkTask.start(settings);
-            TrustManagerFactory trustManagerFactory = okHttpSinkTask.getHttpTask().getDefaultConfiguration().getHttpClient().getTrustManagerFactory();
+            TrustManagerFactory trustManagerFactory = okHttpSinkTask.getHttpTask().getDefaultConfiguration().getClient().getTrustManagerFactory();
             assertThat(trustManagerFactory).isInstanceOf(AlwaysTrustManagerFactory.class);
         }
 

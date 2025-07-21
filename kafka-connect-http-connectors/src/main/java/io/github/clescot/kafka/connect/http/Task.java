@@ -1,6 +1,11 @@
 package io.github.clescot.kafka.connect.http;
 
-public class Task<R,S> {
+import io.github.clescot.kafka.connect.http.client.Configuration;
+import io.github.clescot.kafka.connect.http.client.HttpConfiguration;
+import io.github.clescot.kafka.connect.http.core.HttpRequest;
+
+public abstract class Task<R,S> {
+    public abstract Configuration selectConfiguration(R request);
 
     // This class is a placeholder for the Task class in the Kafka Connect framework.
     // It can be extended to implement specific task functionality for HTTP connectors.

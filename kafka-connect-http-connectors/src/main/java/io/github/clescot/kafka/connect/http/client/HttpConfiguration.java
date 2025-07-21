@@ -20,7 +20,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-public class HttpConfiguration<C extends HttpClient<R, S>, R, S> {
+public class HttpConfiguration<C extends HttpClient<R, S>, R, S> implements Configuration<C,HttpRequest>{
     private static final Logger LOGGER = LoggerFactory.getLogger(HttpConfiguration.class);
 
     private final HttpClientConfiguration<C, R, S> httpClientConfiguration;
@@ -122,12 +122,13 @@ public class HttpConfiguration<C extends HttpClient<R, S>, R, S> {
     protected HttpExchange enrichHttpExchange(HttpExchange httpExchange) {
         return this.httpClientConfiguration.getAddSuccessStatusToHttpExchangeFunction().apply(httpExchange);
     }
-
+    @Override
     public boolean matches(HttpRequest httpRequest) {
         return this.httpClientConfiguration.matches(httpRequest);
     }
 
-    public C getHttpClient() {
+    @Override
+    public C getClient() {
         return this.httpClientConfiguration.getHttpClient();
     }
 

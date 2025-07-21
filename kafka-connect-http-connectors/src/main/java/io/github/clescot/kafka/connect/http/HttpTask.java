@@ -70,7 +70,7 @@ public class HttpTask<C extends HttpClient<R,S>,R, S> extends Task<HttpRequest, 
                         }
                 );
     }
-
+    @Override
     public HttpConfiguration<C,R, S> selectConfiguration(HttpRequest httpRequest) {
         Preconditions.checkNotNull(httpRequest, "HttpRequest must not be null.");
         Preconditions.checkArgument(!configurations.isEmpty(), "Configurations list must not be null or empty.");
