@@ -11,7 +11,6 @@ import io.github.clescot.kafka.connect.http.core.HttpExchange;
 import io.github.clescot.kafka.connect.http.core.HttpRequest;
 import io.micrometer.core.instrument.composite.CompositeMeterRegistry;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.kafka.common.config.AbstractConfig;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -42,8 +41,8 @@ import static io.github.clescot.kafka.connect.http.sink.HttpSinkConfigDefinition
  * </ul>
  * Each configuration owns an Http Client instance.
  */
-public class Configuration<C extends HttpClient<R,S>,R,S> {
-    private static final Logger LOGGER = LoggerFactory.getLogger(Configuration.class);
+public class HttpClientConfiguration<C extends HttpClient<R,S>,R,S> {
+    private static final Logger LOGGER = LoggerFactory.getLogger(HttpClientConfiguration.class);
     public static final String HAS_BEEN_SET = " has been set.";
     public static final String SHA_1_PRNG = "SHA1PRNG";
     public static final String MUST_BE_SET_TOO = " must be set too.";
@@ -77,11 +76,11 @@ public class Configuration<C extends HttpClient<R,S>,R,S> {
     private final ExecutorService executorService;
     private final Map<String, Object> settings;
     private final Function<HttpRequest, HttpRequest> enrichRequestFunction;
-    public Configuration(String id,
-                         HttpClientFactory<C,R,S> httpClientFactory,
-                         Map<String,Object> config,
-                         ExecutorService executorService,
-                         CompositeMeterRegistry meterRegistry) {
+    public HttpClientConfiguration(String id,
+                                   HttpClientFactory<C,R,S> httpClientFactory,
+                                   Map<String,Object> config,
+                                   ExecutorService executorService,
+                                   CompositeMeterRegistry meterRegistry) {
         this.id = id;
         this.executorService = executorService;
         Preconditions.checkNotNull(id, "id must not be null");

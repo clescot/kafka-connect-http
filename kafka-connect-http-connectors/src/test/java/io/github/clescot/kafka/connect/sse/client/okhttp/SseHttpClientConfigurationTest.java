@@ -27,7 +27,7 @@ import static io.github.clescot.kafka.connect.sse.client.okhttp.SseConfiguration
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.*;
 
-class SseConfigurationTest {
+class SseHttpClientConfigurationTest {
 
     @RegisterExtension
     static WireMockExtension wmHttp;

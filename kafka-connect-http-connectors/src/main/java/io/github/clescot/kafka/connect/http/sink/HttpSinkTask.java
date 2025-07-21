@@ -85,48 +85,48 @@ public abstract class HttpSinkTask<C extends HttpClient<R, S>, R, S> extends Sin
         return VERSION_UTILS.getVersion();
     }
 
-    private List<Configuration<C, R, S>> buildConfigurations(
+    private List<HttpClientConfiguration<C, R, S>> buildConfigurations(
             HttpClientFactory<C, R, S> httpClientFactory,
             ExecutorService executorService,
             List<String> configIdList,
             Map<String, Object> originals
     ) {
-        List<Configuration<C, R, S>> configurations = Lists.newArrayList();
+        List<HttpClientConfiguration<C, R, S>> httpClientConfigurations = Lists.newArrayList();
         List<String> configurationIds = Lists.newArrayList();
         Optional<List<String>> ids = Optional.ofNullable(configIdList);
         configurationIds.add(DEFAULT_CONFIGURATION_ID);
         ids.ifPresent(configurationIds::addAll);
-        Configuration<C, R, S> defaultConfiguration = null;
+        HttpClientConfiguration<C, R, S> defaultHttpClientConfiguration = null;
         Optional<RetryPolicy<HttpExchange>> defaultRetryPolicy = Optional.empty();
         Optional<Pattern> defaultRetryResponseCodeRegex = Optional.empty();
         for (String configId : configurationIds) {
 
-            Configuration<C, R, S> configuration = new Configuration<>(configId, httpClientFactory, originals, executorService, meterRegistry);
-            if (configuration.getHttpClient() == null && !configurations.isEmpty() && defaultConfiguration != null) {
-                configuration.setHttpClient(defaultConfiguration.getHttpClient());
+            HttpClientConfiguration<C, R, S> httpClientConfiguration = new HttpClientConfiguration<>(configId, httpClientFactory, originals, executorService, meterRegistry);
+            if (httpClientConfiguration.getHttpClient() == null && !httpClientConfigurations.isEmpty() && defaultHttpClientConfiguration != null) {
+                httpClientConfiguration.setHttpClient(defaultHttpClientConfiguration.getHttpClient());
             }
 
             //we reuse the default retry policy if not set
 
-            if (configuration.getRetryPolicy().isEmpty() && defaultRetryPolicy.isPresent()) {
-                configuration.setRetryPolicy(defaultRetryPolicy.get());
+            if (httpClientConfiguration.getRetryPolicy().isEmpty() && defaultRetryPolicy.isPresent()) {
+                httpClientConfiguration.setRetryPolicy(defaultRetryPolicy.get());
             }
             //we reuse the default success response code regex if not set
-            if (defaultConfiguration != null) {
-                configuration.setSuccessResponseCodeRegex(defaultConfiguration.getSuccessResponseCodeRegex());
+            if (defaultHttpClientConfiguration != null) {
+                httpClientConfiguration.setSuccessResponseCodeRegex(defaultHttpClientConfiguration.getSuccessResponseCodeRegex());
             }
 
-            if (configuration.getRetryResponseCodeRegex().isEmpty() && defaultRetryResponseCodeRegex.isPresent()) {
-                configuration.setRetryResponseCodeRegex(defaultRetryResponseCodeRegex.get());
+            if (httpClientConfiguration.getRetryResponseCodeRegex().isEmpty() && defaultRetryResponseCodeRegex.isPresent()) {
+                httpClientConfiguration.setRetryResponseCodeRegex(defaultRetryResponseCodeRegex.get());
             }
             if (DEFAULT_CONFIGURATION_ID.equals(configId)) {
-                defaultConfiguration = configuration;
-                defaultRetryPolicy = defaultConfiguration.getRetryPolicy();
-                defaultRetryResponseCodeRegex = defaultConfiguration.getRetryResponseCodeRegex();
+                defaultHttpClientConfiguration = httpClientConfiguration;
+                defaultRetryPolicy = defaultHttpClientConfiguration.getRetryPolicy();
+                defaultRetryResponseCodeRegex = defaultHttpClientConfiguration.getRetryResponseCodeRegex();
             }
-            configurations.add(configuration);
+            httpClientConfigurations.add(httpClientConfiguration);
         }
-        return configurations;
+        return httpClientConfigurations;
     }
 
     public static synchronized void setMeterRegistry(CompositeMeterRegistry compositeMeterRegistry) {
@@ -144,7 +144,7 @@ public abstract class HttpSinkTask<C extends HttpClient<R, S>, R, S> extends Sin
      */
     @Override
     public void start(Map<String, String> settings) {
-        List<Configuration<C, R, S>> configurations;
+        List<HttpClientConfiguration<C, R, S>> httpClientConfigurations;
         Preconditions.checkNotNull(settings, "settings cannot be null");
         HttpSinkConfigDefinition httpSinkConfigDefinition = new HttpSinkConfigDefinition(settings);
         this.httpSinkConnectorConfig = new HttpSinkConnectorConfig(httpSinkConfigDefinition.config(), settings);
@@ -186,14 +186,14 @@ public abstract class HttpSinkTask<C extends HttpClient<R, S>, R, S> extends Sin
         this.requestGroupers = requestGrouperFactory.buildRequestGroupers(httpSinkConnectorConfig, httpSinkConnectorConfig.getList(REQUEST_GROUPER_IDS));
 
         //configurations
-        configurations = buildConfigurations(
+        httpClientConfigurations = buildConfigurations(
                 httpClientFactory,
                 executorService,
                 httpSinkConnectorConfig.getList(CONFIGURATION_IDS),
                 httpSinkConnectorConfig.originals()
         );
         //wrap configurations in HttpConfiguration
-        List<HttpConfiguration<C, R, S>> httpConfigurations = configurations.stream()
+        List<HttpConfiguration<C, R, S>> httpConfigurations = httpClientConfigurations.stream()
                 .map(HttpConfiguration::new)
                 .toList();
         Map<String, String> config = httpSinkConnectorConfig.originalsStrings();

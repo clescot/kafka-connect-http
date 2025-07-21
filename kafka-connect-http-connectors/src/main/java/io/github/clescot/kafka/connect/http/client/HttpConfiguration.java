@@ -23,10 +23,10 @@ import java.util.regex.Pattern;
 public class HttpConfiguration<C extends HttpClient<R, S>, R, S> {
     private static final Logger LOGGER = LoggerFactory.getLogger(HttpConfiguration.class);
 
-    private final Configuration<C, R, S> configuration;
+    private final HttpClientConfiguration<C, R, S> httpClientConfiguration;
 
-    public HttpConfiguration(Configuration<C, R, S> configuration) {
-        this.configuration = configuration;
+    public HttpConfiguration(HttpClientConfiguration<C, R, S> httpClientConfiguration) {
+        this.httpClientConfiguration = httpClientConfiguration;
     }
 
     /**
@@ -46,7 +46,7 @@ public class HttpConfiguration<C extends HttpClient<R, S>, R, S> {
         if (LOGGER.isTraceEnabled()) {
             LOGGER.trace("after enrichment:{}", enrichedHttpRequest);
         }
-        CompletableFuture<HttpExchange> completableFuture = this.configuration.getHttpClient().call(enrichedHttpRequest, attempts);
+        CompletableFuture<HttpExchange> completableFuture = this.httpClientConfiguration.getHttpClient().call(enrichedHttpRequest, attempts);
         return completableFuture
                 .thenApply(this::enrichHttpExchange);
 
@@ -57,15 +57,15 @@ public class HttpConfiguration<C extends HttpClient<R, S>, R, S> {
      * @return CompletableFuture of the HttpExchange (describing the request and response).
      */
     public CompletableFuture<HttpExchange> call(@NotNull HttpRequest httpRequest) {
-        Optional<RetryPolicy<HttpExchange>> retryPolicyForCall = this.configuration.getRetryPolicy();
+        Optional<RetryPolicy<HttpExchange>> retryPolicyForCall = this.httpClientConfiguration.getRetryPolicy();
         AtomicInteger attempts = new AtomicInteger();
         try {
 
             if (retryPolicyForCall.isPresent()) {
                 RetryPolicy<HttpExchange> myRetryPolicy = retryPolicyForCall.get();
                 FailsafeExecutor<HttpExchange> failsafeExecutor = Failsafe.with(List.of(myRetryPolicy));
-                if (this.configuration.getExecutorService() != null) {
-                    failsafeExecutor = failsafeExecutor.with(this.configuration.getExecutorService());
+                if (this.httpClientConfiguration.getExecutorService() != null) {
+                    failsafeExecutor = failsafeExecutor.with(this.httpClientConfiguration.getExecutorService());
                 }
                 return failsafeExecutor
                         .getStageAsync(ctx -> callAndEnrich(httpRequest, attempts)
@@ -104,7 +104,7 @@ public class HttpConfiguration<C extends HttpClient<R, S>, R, S> {
     }
 
     protected boolean retryNeeded(HttpResponse httpResponse) {
-        Optional<Pattern> myRetryResponseCodeRegex = this.configuration.getRetryResponseCodeRegex();
+        Optional<Pattern> myRetryResponseCodeRegex = this.httpClientConfiguration.getRetryResponseCodeRegex();
         if (myRetryResponseCodeRegex.isPresent()) {
             Pattern retryPattern = myRetryResponseCodeRegex.get();
             Matcher matcher = retryPattern.matcher("" + httpResponse.getStatusCode());
@@ -115,23 +115,23 @@ public class HttpConfiguration<C extends HttpClient<R, S>, R, S> {
     }
 
     protected HttpRequest enrich(HttpRequest httpRequest) {
-        return this.configuration.getEnrichRequestFunction().apply(httpRequest);
+        return this.httpClientConfiguration.getEnrichRequestFunction().apply(httpRequest);
     }
 
 
     protected HttpExchange enrichHttpExchange(HttpExchange httpExchange) {
-        return this.configuration.getAddSuccessStatusToHttpExchangeFunction().apply(httpExchange);
+        return this.httpClientConfiguration.getAddSuccessStatusToHttpExchangeFunction().apply(httpExchange);
     }
 
     public boolean matches(HttpRequest httpRequest) {
-        return this.configuration.matches(httpRequest);
+        return this.httpClientConfiguration.matches(httpRequest);
     }
 
     public C getHttpClient() {
-        return this.configuration.getHttpClient();
+        return this.httpClientConfiguration.getHttpClient();
     }
 
-    public Configuration<C, R, S> getConfiguration() {
-        return configuration;
+    public HttpClientConfiguration<C, R, S> getConfiguration() {
+        return httpClientConfiguration;
     }
 }

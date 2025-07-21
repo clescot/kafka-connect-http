@@ -209,8 +209,8 @@ public class OkHttpClientFactory implements HttpClientFactory<OkHttpClient,Reque
         Preconditions.checkNotNull(meterRegistry, "MeterRegistry must not be null.");
         if (!meterRegistry.getRegistries().isEmpty()) {
             List<String> tags = Lists.newArrayList();
-            tags.add(Configuration.CONFIGURATION_ID);
-            tags.add(config.get(Configuration.CONFIGURATION_ID) != null ? (String) config.get(Configuration.CONFIGURATION_ID) : DEFAULT_CONFIGURATION_ID);
+            tags.add(HttpClientConfiguration.CONFIGURATION_ID);
+            tags.add(config.get(HttpClientConfiguration.CONFIGURATION_ID) != null ? (String) config.get(HttpClientConfiguration.CONFIGURATION_ID) : DEFAULT_CONFIGURATION_ID);
             String connectorName = MDC.get(CONNECTOR_NAME);
             if (connectorName != null) {
                 tags.add(CONNECTOR_NAME);

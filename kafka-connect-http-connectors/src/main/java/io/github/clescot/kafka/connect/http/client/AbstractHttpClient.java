@@ -15,8 +15,8 @@ import java.time.temporal.ChronoUnit;
 import java.util.Map;
 import java.util.Optional;
 
-import static io.github.clescot.kafka.connect.http.client.Configuration.CONFIGURATION_ID;
-import static io.github.clescot.kafka.connect.http.client.Configuration.STATIC_SCOPE;
+import static io.github.clescot.kafka.connect.http.client.HttpClientConfiguration.CONFIGURATION_ID;
+import static io.github.clescot.kafka.connect.http.client.HttpClientConfiguration.STATIC_SCOPE;
 import static io.github.clescot.kafka.connect.http.sink.HttpSinkConfigDefinition.*;
 
 public abstract class AbstractHttpClient<R,S> implements HttpClient<R,S> {

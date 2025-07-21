@@ -52,7 +52,7 @@ import java.util.stream.Collectors;
 import static com.github.tomakehurst.wiremock.client.WireMock.containing;
 import static com.github.tomakehurst.wiremock.client.WireMock.equalTo;
 import static com.github.tomakehurst.wiremock.stubbing.Scenario.STARTED;
-import static io.github.clescot.kafka.connect.http.client.Configuration.CONFIGURATION_ID;
+import static io.github.clescot.kafka.connect.http.client.HttpClientConfiguration.CONFIGURATION_ID;
 import static io.github.clescot.kafka.connect.http.client.HttpClient.THROWABLE_CLASS;
 import static io.github.clescot.kafka.connect.http.client.HttpClient.THROWABLE_MESSAGE;
 import static io.github.clescot.kafka.connect.http.sink.HttpSinkConfigDefinition.*;

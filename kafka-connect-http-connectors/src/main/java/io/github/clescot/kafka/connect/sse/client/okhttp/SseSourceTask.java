@@ -8,14 +8,8 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.launchdarkly.eventsource.background.BackgroundEventSource;
 import io.github.clescot.kafka.connect.http.VersionUtils;
-import io.github.clescot.kafka.connect.http.client.Configuration;
-import io.github.clescot.kafka.connect.http.client.okhttp.OkHttpClient;
-import io.github.clescot.kafka.connect.http.client.okhttp.OkHttpClientFactory;
 import io.github.clescot.kafka.connect.http.core.queue.QueueFactory;
 import io.github.clescot.kafka.connect.sse.core.SseEvent;
-import io.micrometer.core.instrument.composite.CompositeMeterRegistry;
-import okhttp3.Request;
-import okhttp3.Response;
 import org.apache.kafka.connect.source.SourceRecord;
 import org.apache.kafka.connect.source.SourceTask;
 
@@ -24,7 +18,6 @@ import java.util.Map;
 import java.util.Queue;
 import java.util.UUID;
 
-import static io.github.clescot.kafka.connect.http.sink.HttpSinkTask.DEFAULT_CONFIGURATION_ID;
 import static io.github.clescot.kafka.connect.sse.client.okhttp.SseConfiguration.buildSseConfiguration;
 
 public class SseSourceTask extends SourceTask {

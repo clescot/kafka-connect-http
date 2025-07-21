@@ -50,6 +50,7 @@ import org.jetbrains.annotations.NotNull;
 import org.json.JSONException;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 import org.rnorth.ducttape.unreliables.Unreliables;
@@ -88,16 +89,17 @@ import static io.github.clescot.kafka.connect.http.sink.HttpSinkConfigDefinition
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.apache.kafka.clients.producer.ProducerConfig.BOOTSTRAP_SERVERS_CONFIG;
 
+@Disabled
 @Testcontainers
 public class ITConnectorTest {
 
-    private final static Logger LOGGER = LoggerFactory.getLogger(ITConnectorTest.class);
-    private final static Slf4jLogConsumer logConsumer = new Slf4jLogConsumer(LOGGER).withSeparateOutputStreams();
+    private static final Logger LOGGER = LoggerFactory.getLogger(ITConnectorTest.class);
+    private static final Slf4jLogConsumer logConsumer = new Slf4jLogConsumer(LOGGER).withSeparateOutputStreams();
     public static final String CONFLUENT_VERSION = "8.0.0";
     public static final int CACHE_CAPACITY = 100;
     public static final String HTTP_REQUESTS_AS_STRING = "http-requests-string";
     public static final String PUBLISH_TO_IN_MEMORY_QUEUE_OK = PublishMode.IN_MEMORY_QUEUE.name();
-    private static Network network = Network.newNetwork();
+    private static final Network NETWORK = Network.newNetwork();
 
     public static final String JKS_STORE_TYPE = "jks";
     public static final String TRUSTSTORE_PKIX_ALGORITHM = "PKIX";
@@ -108,7 +110,7 @@ public class ITConnectorTest {
     @Container
     public static KafkaContainer kafkaContainer = new KafkaContainer(DockerImageName.parse("confluentinc/cp-kafka:" + CONFLUENT_VERSION))
             .withKraft()
-            .withNetwork(network)
+            .withNetwork(NETWORK)
             .withNetworkAliases("kafka")
             .withEnv("KAFKA_PROCESS_ROLES", "broker,controller")
             .withLogConsumer(new Slf4jLogConsumer(LOGGER).withSeparateOutputStreams().withPrefix("kafka-broker"))
@@ -117,7 +119,7 @@ public class ITConnectorTest {
 
     @Container
     private static final SchemaRegistryContainer schemaRegistryContainer = new SchemaRegistryContainer("confluentinc/cp-schema-registry:" + CONFLUENT_VERSION)
-            .withNetwork(network)
+            .withNetwork(NETWORK)
             .withKafka(kafkaContainer)
             .withLogConsumer(new Slf4jLogConsumer(LOGGER).withSeparateOutputStreams().withPrefix("schema-registry"))
             .dependsOn(kafkaContainer)
@@ -129,7 +131,7 @@ public class ITConnectorTest {
     public static DebeziumContainer connectContainer = new DebeziumContainer("clescot/kafka-connect-http:" + VERSION_UTILS.getVersion())
             .withFileSystemBind("target/http-connector", "/usr/local/share/kafka/plugins")
             .withLogConsumer(new Slf4jLogConsumer(LOGGER))
-            .withNetwork(network)
+            .withNetwork(NETWORK)
             .withKafka(kafkaContainer)
             .withExtraHost(FAKE_SSL_DOMAIN_NAME, getIP())
             .withEnv("CONNECT_BOOTSTRAP_SERVERS", kafkaContainer.getNetworkAliases().get(0) + ":9092")

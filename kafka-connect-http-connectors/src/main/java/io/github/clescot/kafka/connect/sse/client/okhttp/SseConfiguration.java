@@ -1,10 +1,11 @@
 package io.github.clescot.kafka.connect.sse.client.okhttp;
 
+import com.google.common.base.Preconditions;
 import com.launchdarkly.eventsource.ConnectStrategy;
 import com.launchdarkly.eventsource.ErrorStrategy;
 import com.launchdarkly.eventsource.EventSource;
 import com.launchdarkly.eventsource.background.BackgroundEventSource;
-import io.github.clescot.kafka.connect.http.client.Configuration;
+import io.github.clescot.kafka.connect.http.client.HttpClientConfiguration;
 import io.github.clescot.kafka.connect.http.client.okhttp.OkHttpClient;
 import io.github.clescot.kafka.connect.http.client.okhttp.OkHttpClientFactory;
 import io.github.clescot.kafka.connect.sse.core.SseEvent;
@@ -23,23 +24,27 @@ public class SseConfiguration {
     private boolean connected = false;
     private SseBackgroundEventHandler backgroundEventHandler;
 
-    public SseConfiguration(Configuration<OkHttpClient, Request, Response> configuration) {
-        this.internalClient = configuration.getHttpClient().getInternalClient();
+    public SseConfiguration(HttpClientConfiguration<OkHttpClient, Request, Response> httpClientConfiguration) {
+        this.internalClient = httpClientConfiguration.getHttpClient().getInternalClient();
 
     }
 
     public static SseConfiguration buildSseConfiguration(Map<String, Object> mySettings) {
-        Configuration<OkHttpClient, Request, Response> configuration = new Configuration<>(
+        HttpClientConfiguration<OkHttpClient, Request, Response> httpClientConfiguration = new HttpClientConfiguration<>(
                 DEFAULT_CONFIGURATION_ID,
                 new OkHttpClientFactory(),
                 mySettings,
                 null,
                 new CompositeMeterRegistry());
-        return new SseConfiguration(configuration);
+        return new SseConfiguration(httpClientConfiguration);
     }
 
     public BackgroundEventSource connect(Queue<SseEvent> sseEventQueue, Map<String, Object> settings) {
-        URI uri =  URI.create((String) settings.get("url"));
+        Preconditions.checkNotNull(settings, "settings must not be null or empty.");
+        Preconditions.checkArgument(!settings.isEmpty(), "settings must not be null or empty.");
+        String url = (String) settings.get("url");
+        Preconditions.checkNotNull(url, "'url' must not be null or empty.");
+        URI uri =  URI.create(url);
         String accessToken = "your_access_token";
         this.backgroundEventHandler = new SseBackgroundEventHandler(sseEventQueue, uri);
         BackgroundEventSource backgroundEventSource = new BackgroundEventSource.Builder(backgroundEventHandler,

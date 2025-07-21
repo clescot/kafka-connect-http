@@ -6,6 +6,7 @@ import io.github.clescot.kafka.connect.http.client.HttpClient;
 import io.github.clescot.kafka.connect.http.client.HttpConfiguration;
 import io.github.clescot.kafka.connect.http.core.HttpExchange;
 import io.github.clescot.kafka.connect.http.core.HttpRequest;
+import io.github.clescot.kafka.connect.http.core.HttpResponse;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.binder.jvm.*;
 import io.micrometer.core.instrument.binder.logging.LogbackMetrics;
@@ -28,7 +29,7 @@ import static io.github.clescot.kafka.connect.http.sink.HttpSinkConfigDefinition
  * @param <R> native HttpRequest
  * @param <S> native HttpResponse
  */
-public class HttpTask<C extends HttpClient<R,S>,R, S> {
+public class HttpTask<C extends HttpClient<R,S>,R, S> extends Task<HttpRequest, HttpResponse>{
 
 
     private static final Logger LOGGER = LoggerFactory.getLogger(HttpTask.class);
@@ -70,7 +71,7 @@ public class HttpTask<C extends HttpClient<R,S>,R, S> {
                 );
     }
 
-    private HttpConfiguration<C,R, S> selectConfiguration(HttpRequest httpRequest) {
+    public HttpConfiguration<C,R, S> selectConfiguration(HttpRequest httpRequest) {
         Preconditions.checkNotNull(httpRequest, "HttpRequest must not be null.");
         Preconditions.checkArgument(!configurations.isEmpty(), "Configurations list must not be null or empty.");
         //is there a matching configuration against the request ?
