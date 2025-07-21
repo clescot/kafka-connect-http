@@ -25,6 +25,7 @@ import java.util.Queue;
 import java.util.UUID;
 
 import static io.github.clescot.kafka.connect.http.sink.HttpSinkTask.DEFAULT_CONFIGURATION_ID;
+import static io.github.clescot.kafka.connect.sse.client.okhttp.SseConfiguration.buildSseConfiguration;
 
 public class SseSourceTask extends SourceTask {
     private static final VersionUtils VERSION_UTILS = new VersionUtils();
@@ -55,15 +56,7 @@ public class SseSourceTask extends SourceTask {
         this.backgroundEventSource.start();
     }
 
-    private SseConfiguration buildSseConfiguration(Map<String, Object> mySettings) {
-        Configuration<OkHttpClient, Request, Response> configuration = new Configuration<>(
-                DEFAULT_CONFIGURATION_ID,
-                new OkHttpClientFactory(),
-                mySettings,
-                null,
-                new CompositeMeterRegistry());
-        return new SseConfiguration(configuration);
-    }
+
 
     @Override
     public List<SourceRecord> poll() {

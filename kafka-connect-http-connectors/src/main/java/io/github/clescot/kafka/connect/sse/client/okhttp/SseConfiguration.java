@@ -1,66 +1,68 @@
 package io.github.clescot.kafka.connect.sse.client.okhttp;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
-import com.google.common.collect.Maps;
+import com.launchdarkly.eventsource.ConnectStrategy;
+import com.launchdarkly.eventsource.ErrorStrategy;
+import com.launchdarkly.eventsource.EventSource;
+import com.launchdarkly.eventsource.background.BackgroundEventSource;
 import io.github.clescot.kafka.connect.http.client.Configuration;
-import io.github.clescot.kafka.connect.http.client.HttpClient;
 import io.github.clescot.kafka.connect.http.client.okhttp.OkHttpClient;
 import io.github.clescot.kafka.connect.http.client.okhttp.OkHttpClientFactory;
-import io.github.clescot.kafka.connect.http.core.queue.QueueFactory;
 import io.github.clescot.kafka.connect.sse.core.SseEvent;
 import io.micrometer.core.instrument.composite.CompositeMeterRegistry;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import okhttp3.Request;
+import okhttp3.Response;
 
+import java.net.URI;
 import java.util.Map;
 import java.util.Queue;
-import java.util.Random;
-import java.util.UUID;
 
-public class SseConfiguration<C extends HttpClient<R, S>, R, S> {
-    private static final Logger LOGGER = LoggerFactory.getLogger(SseConfiguration.class);
-    private OkHttpSseClient okHttpSseClient;
-    private Queue<SseEvent> queue;
-    private ObjectMapper objectMapper;
+import static io.github.clescot.kafka.connect.http.sink.HttpSinkTask.DEFAULT_CONFIGURATION_ID;
 
-    private final Configuration<C, R, S> configuration;
+public class SseConfiguration {
+    private okhttp3.OkHttpClient internalClient = null;
+    private boolean connected = false;
+    private SseBackgroundEventHandler backgroundEventHandler;
 
-    public <C extends HttpClient<R, S>,R,S> SseConfiguration(Configuration configuration) {
-        this.configuration = configuration;
+    public SseConfiguration(Configuration<OkHttpClient, Request, Response> configuration) {
+        this.internalClient = configuration.getHttpClient().getInternalClient();
+
     }
 
-    public Queue<SseEvent> connect(Map<String,String> settings) {
-        // Implement connection logic here
-        LOGGER.info("Connecting with settings : {}", settings);
-        OkHttpClientFactory factory = new OkHttpClientFactory();
-        Map<String,Object> config = Maps.newHashMap(settings);
-        OkHttpClient okHttpClient = factory.buildHttpClient(config,null,new CompositeMeterRegistry(),  new Random());
-        this.queue = QueueFactory.getQueue(""+ UUID.randomUUID());
-        objectMapper = new ObjectMapper();
-        objectMapper.registerModule(new JavaTimeModule());
-        okHttpSseClient = new OkHttpSseClient(okHttpClient.getInternalClient(),queue);
-        //Optional<RetryPolicy<HttpExchange>> retryPolicy = configuration.getRetryPolicy();
-        //Failsafe.with(policy).with(executorService).getAsync(this::connect);
-        okHttpSseClient.connect(settings);
-        return queue;
+    public static SseConfiguration buildSseConfiguration(Map<String, Object> mySettings) {
+        Configuration<OkHttpClient, Request, Response> configuration = new Configuration<>(
+                DEFAULT_CONFIGURATION_ID,
+                new OkHttpClientFactory(),
+                mySettings,
+                null,
+                new CompositeMeterRegistry());
+        return new SseConfiguration(configuration);
     }
 
-    public void disconnect() {
-        if (okHttpSseClient != null) {
-            okHttpSseClient.disconnect();
-        }
+    public BackgroundEventSource connect(Queue<SseEvent> sseEventQueue, Map<String, Object> settings) {
+        URI uri =  URI.create((String) settings.get("url"));
+        String accessToken = "your_access_token";
+        this.backgroundEventHandler = new SseBackgroundEventHandler(sseEventQueue, uri);
+        BackgroundEventSource backgroundEventSource = new BackgroundEventSource.Builder(backgroundEventHandler,
+                new EventSource.Builder(ConnectStrategy.http(uri)
+                        .httpClient(internalClient)
+                        //.header("hue-application-key", accessToken)
+                )
+                        .errorStrategy(ErrorStrategy.alwaysContinue())
+        ).build();
+        connected = true;
+        return backgroundEventSource;
     }
 
     public void shutdown() {
-        disconnect();
-        if (okHttpSseClient != null) {
-            okHttpSseClient.shutdown();
-        }
+        connected = false;
     }
 
     public boolean isConnected() {
-        return okHttpSseClient != null && okHttpSseClient.isConnected();
+        return connected;
     }
 
+
+    public SseBackgroundEventHandler getBackgroundEventHandler() {
+        return backgroundEventHandler;
+    }
 }

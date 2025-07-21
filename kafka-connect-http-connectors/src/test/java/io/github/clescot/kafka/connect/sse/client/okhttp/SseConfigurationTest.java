@@ -7,29 +7,27 @@ import com.github.tomakehurst.wiremock.http.trafficlistener.ConsoleNotifyingWire
 import com.github.tomakehurst.wiremock.junit5.WireMockExtension;
 import com.github.tomakehurst.wiremock.junit5.WireMockRuntimeInfo;
 import com.google.common.collect.Maps;
+import com.launchdarkly.eventsource.background.BackgroundEventSource;
 import io.github.clescot.kafka.connect.http.client.okhttp.OkHttpClient;
 import io.github.clescot.kafka.connect.http.client.okhttp.OkHttpClientFactory;
 import io.github.clescot.kafka.connect.http.core.queue.QueueFactory;
 import io.github.clescot.kafka.connect.sse.core.SseEvent;
 import io.micrometer.core.instrument.composite.CompositeMeterRegistry;
 import org.awaitility.Awaitility;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
-import java.util.List;
 import java.util.Map;
 import java.util.Queue;
-import java.util.Random;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
+import java.util.UUID;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.*;
 import static com.github.tomakehurst.wiremock.stubbing.Scenario.STARTED;
+import static io.github.clescot.kafka.connect.sse.client.okhttp.SseConfiguration.buildSseConfiguration;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.*;
 
-class OkHttpSseClientTest {
+class SseConfigurationTest {
 
     @RegisterExtension
     static WireMockExtension wmHttp;
@@ -74,20 +72,22 @@ class OkHttpSseClientTest {
 
         // Create an OkHttpSseClient instance and connect to the WireMock server
         OkHttpClientFactory factory = new OkHttpClientFactory();
-        Map<String,Object> okHttpClientConfig = Maps.newHashMap();
-        okHttpClientConfig.put("configuration.id", "test_sse_client_connect");
-        OkHttpClient okHttpClient = factory.buildHttpClient(okHttpClientConfig, null, new CompositeMeterRegistry(), new Random());
-        OkHttpSseClient client = new OkHttpSseClient(okHttpClient.getInternalClient(), QueueFactory.getQueue("test_sse_client_connect"));
+        Map<String,Object> settings = Maps.newHashMap();
+        settings.put("configuration.id", "test_sse_client_connect");
+        SseConfiguration client = buildSseConfiguration(settings);
 
         // Connect to the SSE endpoint
-        Map<String, String> config = Maps.newHashMap();
+        Map<String, Object> config = Maps.newHashMap();
         config.put("url", wmHttp.url("/events"));
-        assertDoesNotThrow(() -> client.connect(config));
+        assertDoesNotThrow(() -> {
+            BackgroundEventSource backgroundEventSource = client.connect(QueueFactory.getQueue(String.valueOf(UUID.randomUUID())), config);
+            backgroundEventSource.start();
+        });
         assertTrue(client.isConnected());
+        Queue<SseEvent> eventQueue = client.getBackgroundEventHandler().getQueue();
         Awaitility.await().atMost(5, java.util.concurrent.TimeUnit.SECONDS)
-                .until(() -> !client.getEventQueue().isEmpty());
+                .until(() -> !eventQueue.isEmpty());
 
-        Queue<SseEvent> eventQueue = client.getEventQueue();
         assertNotNull(eventQueue);
 
         assertThat(eventQueue).hasSize(2);
@@ -103,8 +103,8 @@ class OkHttpSseClientTest {
         assertThat(secondEvent.getData()).isEqualTo("""
                 {"id":"test post 2", "createdAt":"2025-04-26T10:15:31"}
                 """.strip());
-        client.disconnect();
+        client.shutdown();
         assertThat(client.isConnected()).isFalse();
-        assertThat(client.getEventQueue().size()).isZero();
+        assertThat(eventQueue.size()).isZero();
     }
 }
