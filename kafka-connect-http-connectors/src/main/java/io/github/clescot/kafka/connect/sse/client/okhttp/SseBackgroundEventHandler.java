@@ -9,6 +9,11 @@ import org.slf4j.LoggerFactory;
 import java.net.URI;
 import java.util.Queue;
 
+/**
+ * SseBackgroundEventHandler is responsible for handling Server-Sent Events (SSE) in the background.
+ * It implements the BackgroundEventHandler interface to process events received from an SSE source,
+ * and put them into a Queue.
+ */
 public class SseBackgroundEventHandler implements BackgroundEventHandler {
     private static final Logger LOGGER = LoggerFactory.getLogger(SseBackgroundEventHandler.class);
     private final Queue<SseEvent> queue;
