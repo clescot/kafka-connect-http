@@ -17,16 +17,16 @@ import java.util.List;
 public interface Task<C,F extends Configuration<C,R>,R,S> {
 
 
-    default Configuration<C,R> selectConfiguration(R request) {
+    default F selectConfiguration(R request) {
         Preconditions.checkNotNull(request, "HttpRequest must not be null.");
         List<F> configurations = getConfigurations();
         Preconditions.checkArgument(!configurations.isEmpty(), "Configurations list must not be null or empty.");
         //is there a matching configuration against the request ?
-        Configuration<C, R> configuration = configurations.get(0);
+        F configuration = configurations.get(0);
         return configurations
                 .stream()
                 .filter(config -> config.matches(request))
-                .findFirst().orElse((F) configuration); //default configuration
+                .findFirst().orElse(configuration); //default configuration
     }
 
     List<F> getConfigurations();

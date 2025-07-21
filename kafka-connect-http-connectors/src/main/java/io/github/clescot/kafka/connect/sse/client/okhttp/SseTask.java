@@ -9,10 +9,7 @@ import io.github.clescot.kafka.connect.sse.core.SseEvent;
 import java.util.List;
 
 public class SseTask implements Task<OkHttpClient,SseConfiguration,HttpRequest, SseEvent> {
-    @Override
-    public Configuration<OkHttpClient,HttpRequest> selectConfiguration(HttpRequest request) {
-        return null;
-    }
+
 
     @Override
     public List<SseConfiguration> getConfigurations() {

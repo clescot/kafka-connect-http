@@ -71,17 +71,6 @@ public class HttpTask<C extends HttpClient<R,S>,R, S> implements Task<C,HttpConf
                         }
                 );
     }
-    @Override
-    public HttpConfiguration<C,R, S> selectConfiguration(HttpRequest httpRequest) {
-        Preconditions.checkNotNull(httpRequest, "HttpRequest must not be null.");
-        Preconditions.checkArgument(!configurations.isEmpty(), "Configurations list must not be null or empty.");
-        //is there a matching configuration against the request ?
-        return configurations
-                .stream()
-                .filter(config -> config.matches(httpRequest))
-                .findFirst()
-                .orElse(configurations.get(0)); //default configuration
-    }
 
     private static void bindMetrics(Map<String,String> config, MeterRegistry meterRegistry, ExecutorService myExecutorService) {
         boolean bindExecutorServiceMetrics = Boolean.parseBoolean(config.get(METER_REGISTRY_BIND_METRICS_EXECUTOR_SERVICE));
