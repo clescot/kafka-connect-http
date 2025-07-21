@@ -8,6 +8,7 @@ import org.apache.commons.jexl3.JexlContext;
 import org.apache.commons.jexl3.JexlEngine;
 import org.apache.commons.jexl3.JexlExpression;
 import org.apache.commons.jexl3.MapContext;
+import org.apache.kafka.connect.connector.ConnectRecord;
 import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.data.Struct;
 import org.apache.kafka.connect.errors.ConnectException;
@@ -33,7 +34,7 @@ public class DirectHttpRequestMapper extends AbstractHttpRequestMapper {
     }
 
     @Override
-    public boolean matches(SinkRecord sinkRecord) {
+    public boolean matches(ConnectRecord sinkRecord) {
         // populate the context
         JexlContext context = new MapContext();
         context.set("sinkRecord", sinkRecord);
@@ -41,7 +42,7 @@ public class DirectHttpRequestMapper extends AbstractHttpRequestMapper {
     }
 
     @Override
-    public HttpRequest map(SinkRecord sinkRecord) {
+    public HttpRequest map(ConnectRecord sinkRecord) {
         if (sinkRecord == null || sinkRecord.value() == null) {
             LOGGER.warn(SINK_RECORD_HAS_GOT_A_NULL_VALUE);
             throw new ConnectException(SINK_RECORD_HAS_GOT_A_NULL_VALUE);

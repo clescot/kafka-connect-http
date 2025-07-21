@@ -80,7 +80,9 @@ class HttpTaskTest {
             compositeMeterRegistry.add(jmxMeterRegistry);
             HttpClientConfiguration<OkHttpClient,Request, Response> test = new HttpClientConfiguration<>("test", new OkHttpClientFactory(), config.originals(), null, compositeMeterRegistry);
             HttpConfiguration<OkHttpClient, Request, Response> httpConfiguration = new HttpConfiguration<>(test);
-            httpTask = new HttpTask<>(config.originalsStrings(), Lists.newArrayList(httpConfiguration),compositeMeterRegistry,null);
+            httpTask = new HttpTask<>(config.originalsStrings(),
+                    Lists.newArrayList(httpConfiguration),
+                    compositeMeterRegistry);
         }
 
         @Test

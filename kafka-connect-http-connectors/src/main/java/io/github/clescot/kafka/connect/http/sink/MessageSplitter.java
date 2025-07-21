@@ -6,6 +6,7 @@ import org.apache.commons.jexl3.JexlContext;
 import org.apache.commons.jexl3.JexlEngine;
 import org.apache.commons.jexl3.JexlExpression;
 import org.apache.commons.jexl3.MapContext;
+import org.apache.kafka.connect.connector.ConnectRecord;
 import org.apache.kafka.connect.sink.SinkRecord;
 import org.jetbrains.annotations.NotNull;
 
@@ -50,7 +51,7 @@ public class MessageSplitter {
         return splitPattern;
     }
 
-    public boolean matches(SinkRecord sinkRecord) {
+    public boolean matches(ConnectRecord sinkRecord) {
         // populate the context
         JexlContext context = new MapContext();
         context.set(SINK_RECORD, sinkRecord);
@@ -69,7 +70,7 @@ public class MessageSplitter {
         return parts;
     }
 
-    public List<SinkRecord> split(@NotNull SinkRecord sinkRecord){
+    public List<ConnectRecord> split(@NotNull ConnectRecord sinkRecord){
         Object value = sinkRecord.value();
         if(value!=null && value.getClass().isAssignableFrom(String.class)){
             String body = (String)value;
@@ -83,7 +84,7 @@ public class MessageSplitter {
                     content,
                     -1,
                     sinkRecord.timestamp(),
-                    sinkRecord.timestampType(),
+                    null,
                     sinkRecord.headers())).collect(Collectors.toList());
         }else{
             return List.of(sinkRecord);

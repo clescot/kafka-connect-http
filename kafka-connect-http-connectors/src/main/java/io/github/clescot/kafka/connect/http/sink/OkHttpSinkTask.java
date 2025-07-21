@@ -16,4 +16,6 @@ public class OkHttpSinkTask extends HttpSinkTask<OkHttpClient,Request, Response>
     protected OkHttpSinkTask(MockProducer<String,Object> mockProducer) {
         super(new OkHttpClientFactory(),new KafkaProducer<>(mockProducer));
     }
+
+
 }

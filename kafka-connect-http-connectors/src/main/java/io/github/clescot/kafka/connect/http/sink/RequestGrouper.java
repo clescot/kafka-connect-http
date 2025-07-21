@@ -3,6 +3,7 @@ package io.github.clescot.kafka.connect.http.sink;
 import com.google.common.collect.Lists;
 import io.github.clescot.kafka.connect.http.core.HttpRequest;
 import org.apache.commons.lang3.tuple.Pair;
+import org.apache.kafka.connect.connector.ConnectRecord;
 import org.apache.kafka.connect.sink.SinkRecord;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -50,7 +51,7 @@ public class RequestGrouper {
         return this.predicate.test(httpRequest);
     }
 
-    public List<Pair<SinkRecord, HttpRequest>> group(List<Pair<SinkRecord, HttpRequest>> entries){
+    public List<Pair<ConnectRecord, HttpRequest>> group(List<Pair<ConnectRecord, HttpRequest>> entries){
 
         if(entries==null || entries.isEmpty()){
             return Lists.newArrayList();
@@ -61,14 +62,14 @@ public class RequestGrouper {
         int consumed = 0;
         StringBuilder builder = new StringBuilder(aggregatedBody);
         boolean interrupted=false;
-        List<Pair<SinkRecord, HttpRequest>> matchingEntries = entries.stream()
+        List<Pair<ConnectRecord, HttpRequest>> matchingEntries = entries.stream()
                 .filter(pair-> this.matches(pair.getRight()))
                 .toList();
-        List<Pair<SinkRecord, HttpRequest>> nonMatchingEntries = entries.stream()
+        List<Pair<ConnectRecord, HttpRequest>> nonMatchingEntries = entries.stream()
                 .filter(pair-> !this.matches(pair.getRight()))
                 .toList();
         for (int i = 0; i < matchingEntries.size(); i++) {
-            Pair<SinkRecord, HttpRequest> myEntry = matchingEntries.get(i);
+            Pair<ConnectRecord, HttpRequest> myEntry = matchingEntries.get(i);
             String part = myEntry.getRight().getBodyAsString();
             if((messageLimit>0 && i==messageLimit)||(bodyLimit!=-1 && builder.length()+part.length()>=bodyLimit)){
                 consumed = i;
@@ -88,8 +89,8 @@ public class RequestGrouper {
         }
         aggregatedBody = builder.toString();
         aggregatedRequest.setBodyAsString(aggregatedBody);
-        List<Pair<SinkRecord, HttpRequest>> nonAggregatedRequests = entries.subList(consumed, entries.size());
-        List<Pair<SinkRecord, HttpRequest>> aggregatedRequests = Lists.newArrayList();
+        List<Pair<ConnectRecord, HttpRequest>> nonAggregatedRequests = entries.subList(consumed, entries.size());
+        List<Pair<ConnectRecord, HttpRequest>> aggregatedRequests = Lists.newArrayList();
         aggregatedRequests.add(Pair.of(entries.get(0).getLeft(),aggregatedRequest));
         aggregatedRequests.addAll(group(nonAggregatedRequests));
         aggregatedRequests.addAll(nonMatchingEntries);

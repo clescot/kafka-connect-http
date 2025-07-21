@@ -1,6 +1,7 @@
 package io.github.clescot.kafka.connect.http.sink.mapper;
 
 import io.github.clescot.kafka.connect.http.core.HttpRequest;
+import org.apache.kafka.connect.connector.ConnectRecord;
 import org.apache.kafka.connect.sink.SinkRecord;
 
 /**
@@ -16,13 +17,13 @@ public interface HttpRequestMapper {
      * @param sinkRecord message to map
      * @return true or false
      */
-    boolean matches(SinkRecord sinkRecord);
+    boolean matches(ConnectRecord sinkRecord);
 
     /**
      *  map this sinkRecord to an HttpRequest.
      * @param sinkRecord message to map
      * @return built {{@link HttpRequest}
      */
-    HttpRequest map(SinkRecord sinkRecord);
+    HttpRequest map(ConnectRecord sinkRecord);
 
 }
