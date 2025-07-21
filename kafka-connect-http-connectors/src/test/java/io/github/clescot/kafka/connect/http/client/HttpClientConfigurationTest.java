@@ -221,10 +221,10 @@ class HttpClientConfigurationTest {
             settings.put("config.test.rate.limiter.period.in.ms", "1000");
             HttpSinkConnectorConfig httpSinkConnectorConfig = new HttpSinkConnectorConfig(settings);
             HttpClientConfiguration<OkHttpClient,Request,Response> httpClientConfiguration = new HttpClientConfiguration<>("test",new OkHttpClientFactory(), httpSinkConnectorConfig.originals(), executorService, getCompositeMeterRegistry());
-            Optional<RateLimiter<HttpExchange>> rateLimiter = httpClientConfiguration.getHttpClient().getRateLimiter();
+            Optional<RateLimiter<HttpExchange>> rateLimiter = httpClientConfiguration.getClient().getRateLimiter();
             assertThat(rateLimiter).isPresent();
             HttpClientConfiguration<OkHttpClient,Request,Response> httpClientConfiguration2 = new HttpClientConfiguration<>("test",new OkHttpClientFactory(), httpSinkConnectorConfig.originals(), executorService, getCompositeMeterRegistry());
-            Optional<RateLimiter<HttpExchange>> rateLimiter2 = httpClientConfiguration2.getHttpClient().getRateLimiter();
+            Optional<RateLimiter<HttpExchange>> rateLimiter2 = httpClientConfiguration2.getClient().getRateLimiter();
             assertThat(rateLimiter2).isPresent();
             assertThat(rateLimiter.get()).isNotSameAs(rateLimiter2.get());
         }
@@ -241,10 +241,10 @@ class HttpClientConfigurationTest {
             settings.put("config.test.rate.limiter.scope", "static");
             HttpSinkConnectorConfig httpSinkConnectorConfig = new HttpSinkConnectorConfig(settings);
             HttpClientConfiguration<OkHttpClient,Request,Response> httpClientConfiguration = new HttpClientConfiguration<>("test",new OkHttpClientFactory(), httpSinkConnectorConfig.originals(), executorService, getCompositeMeterRegistry());
-            Optional<RateLimiter<HttpExchange>> rateLimiter = httpClientConfiguration.getHttpClient().getRateLimiter();
+            Optional<RateLimiter<HttpExchange>> rateLimiter = httpClientConfiguration.getClient().getRateLimiter();
             assertThat(rateLimiter).isPresent();
             HttpClientConfiguration<OkHttpClient,Request,Response> httpClientConfiguration2 = new HttpClientConfiguration<>("test",new OkHttpClientFactory(), httpSinkConnectorConfig.originals(), executorService, getCompositeMeterRegistry());
-            Optional<RateLimiter<HttpExchange>> rateLimiter2 = httpClientConfiguration2.getHttpClient().getRateLimiter();
+            Optional<RateLimiter<HttpExchange>> rateLimiter2 = httpClientConfiguration2.getClient().getRateLimiter();
             assertThat(rateLimiter2).isPresent();
             assertThat(rateLimiter).containsSame(rateLimiter2.get());
         }
@@ -261,7 +261,7 @@ class HttpClientConfigurationTest {
             settings.put("config.test.rate.limiter.scope", "static");
             HttpSinkConnectorConfig httpSinkConnectorConfig = new HttpSinkConnectorConfig(settings);
             HttpClientConfiguration<OkHttpClient,Request,Response> httpClientConfiguration = new HttpClientConfiguration<>("test",new OkHttpClientFactory(), httpSinkConnectorConfig.originals(), executorService, getCompositeMeterRegistry());
-            Optional<RateLimiter<HttpExchange>> rateLimiter = httpClientConfiguration.getHttpClient().getRateLimiter();
+            Optional<RateLimiter<HttpExchange>> rateLimiter = httpClientConfiguration.getClient().getRateLimiter();
             assertThat(rateLimiter).isPresent();
             Map<String, String> settings2 = Maps.newHashMap();
             settings2.put("config.test2.predicate.url.regex", "^.*toto\\.com$");
@@ -272,7 +272,7 @@ class HttpClientConfigurationTest {
             settings2.put("config.test2.rate.limiter.scope", "static");
             HttpSinkConnectorConfig httpSinkConnectorConfig2 = new HttpSinkConnectorConfig(settings2);
             HttpClientConfiguration<OkHttpClient,Request,Response> httpClientConfiguration2 = new HttpClientConfiguration<>("test2",new OkHttpClientFactory(), httpSinkConnectorConfig2.originals(), executorService, getCompositeMeterRegistry());
-            Optional<RateLimiter<HttpExchange>> rateLimiter2 = httpClientConfiguration2.getHttpClient().getRateLimiter();
+            Optional<RateLimiter<HttpExchange>> rateLimiter2 = httpClientConfiguration2.getClient().getRateLimiter();
             assertThat(rateLimiter2).isPresent();
             assertThat(rateLimiter.get()).isNotSameAs(rateLimiter2.get());
         }

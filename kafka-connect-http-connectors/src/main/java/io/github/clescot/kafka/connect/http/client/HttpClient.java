@@ -26,10 +26,10 @@ import static io.github.clescot.kafka.connect.http.sink.HttpSinkConfigDefinition
 
 /**
  * execute the HTTP call.
- * @param <Q> native HttpRequest
+ * @param <R> native HttpRequest
  * @param <S> native HttpResponse
  */
-public interface HttpClient<Q, S> {
+public interface HttpClient<R, S> {
     boolean FAILURE = false;
     int SERVER_ERROR_STATUS_CODE = 500;
     String UTC_ZONE_ID = "UTC";
@@ -70,7 +70,7 @@ public interface HttpClient<Q, S> {
      * @param httpRequest http request to build.
      * @return native request.
      */
-    Q buildRequest(HttpRequest httpRequest);
+    R buildRequest(HttpRequest httpRequest);
 
 
 
@@ -79,7 +79,7 @@ public interface HttpClient<Q, S> {
         Stopwatch rateLimitedStopWatch = Stopwatch.createStarted();
         CompletableFuture<S> response;
         LOGGER.debug("httpRequest: {}", httpRequest);
-        Q request = buildRequest(httpRequest);
+        R request = buildRequest(httpRequest);
         LOGGER.debug("native request: {}", request);
         OffsetDateTime now = OffsetDateTime.now(ZoneId.of(UTC_ZONE_ID));
         try {
@@ -150,7 +150,7 @@ public interface HttpClient<Q, S> {
      * @param request native HttpRequest
      * @return CompletableFuture of a native HttpResponse.
      */
-    CompletableFuture<S> nativeCall(Q request);
+    CompletableFuture<S> nativeCall(R request);
 
 
     Integer getStatusMessageLimit();

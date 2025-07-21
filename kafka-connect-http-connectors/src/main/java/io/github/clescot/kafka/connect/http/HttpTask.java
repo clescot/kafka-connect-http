@@ -30,7 +30,7 @@ import static io.github.clescot.kafka.connect.http.sink.HttpSinkConfigDefinition
  * @param <R> native HttpRequest
  * @param <S> native HttpResponse
  */
-public class HttpTask<C extends HttpClient<R,S>,R, S> extends Task<C,HttpRequest, HttpResponse>{
+public class HttpTask<C extends HttpClient<R,S>,R, S> implements Task<C,HttpConfiguration<C,R,S>,HttpRequest, HttpResponse>{
 
 
     private static final Logger LOGGER = LoggerFactory.getLogger(HttpTask.class);
@@ -123,7 +123,7 @@ public class HttpTask<C extends HttpClient<R,S>,R, S> extends Task<C,HttpRequest
     }
 
 
-
+    @Override
     public List<HttpConfiguration<C,R, S>> getConfigurations() {
         return Optional.ofNullable(configurations).orElse(Lists.newArrayList());
     }

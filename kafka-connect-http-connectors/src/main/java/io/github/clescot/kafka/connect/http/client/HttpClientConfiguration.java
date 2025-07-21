@@ -41,7 +41,7 @@ import static io.github.clescot.kafka.connect.http.sink.HttpSinkConfigDefinition
  * </ul>
  * Each configuration owns an Http Client instance.
  */
-public class HttpClientConfiguration<C extends HttpClient<R,S>,R,S> {
+public class HttpClientConfiguration<C extends HttpClient<R,S>,R,S> implements Configuration<C,HttpRequest>{
     private static final Logger LOGGER = LoggerFactory.getLogger(HttpClientConfiguration.class);
     public static final String HAS_BEEN_SET = " has been set.";
     public static final String SHA_1_PRNG = "SHA1PRNG";
@@ -216,8 +216,8 @@ public class HttpClientConfiguration<C extends HttpClient<R,S>,R,S> {
         return random;
     }
 
-
-    public C getHttpClient() {
+    @Override
+    public C getClient() {
         return httpClient;
     }
 

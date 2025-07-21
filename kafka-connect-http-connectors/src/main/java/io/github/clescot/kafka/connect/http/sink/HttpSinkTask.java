@@ -102,8 +102,8 @@ public abstract class HttpSinkTask<C extends HttpClient<R, S>, R, S> extends Sin
         for (String configId : configurationIds) {
 
             HttpClientConfiguration<C, R, S> httpClientConfiguration = new HttpClientConfiguration<>(configId, httpClientFactory, originals, executorService, meterRegistry);
-            if (httpClientConfiguration.getHttpClient() == null && !httpClientConfigurations.isEmpty() && defaultHttpClientConfiguration != null) {
-                httpClientConfiguration.setHttpClient(defaultHttpClientConfiguration.getHttpClient());
+            if (httpClientConfiguration.getClient() == null && !httpClientConfigurations.isEmpty() && defaultHttpClientConfiguration != null) {
+                httpClientConfiguration.setHttpClient(defaultHttpClientConfiguration.getClient());
             }
 
             //we reuse the default retry policy if not set

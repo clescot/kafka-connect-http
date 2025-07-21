@@ -5,9 +5,11 @@ import com.launchdarkly.eventsource.ConnectStrategy;
 import com.launchdarkly.eventsource.ErrorStrategy;
 import com.launchdarkly.eventsource.EventSource;
 import com.launchdarkly.eventsource.background.BackgroundEventSource;
+import io.github.clescot.kafka.connect.http.client.Configuration;
 import io.github.clescot.kafka.connect.http.client.HttpClientConfiguration;
 import io.github.clescot.kafka.connect.http.client.okhttp.OkHttpClient;
 import io.github.clescot.kafka.connect.http.client.okhttp.OkHttpClientFactory;
+import io.github.clescot.kafka.connect.http.core.HttpRequest;
 import io.github.clescot.kafka.connect.sse.core.SseEvent;
 import io.micrometer.core.instrument.composite.CompositeMeterRegistry;
 import okhttp3.Request;
@@ -19,13 +21,13 @@ import java.util.Queue;
 
 import static io.github.clescot.kafka.connect.http.sink.HttpSinkTask.DEFAULT_CONFIGURATION_ID;
 
-public class SseConfiguration {
-    private okhttp3.OkHttpClient internalClient = null;
+public class SseConfiguration implements Configuration<OkHttpClient, HttpRequest> {
+    private final okhttp3.OkHttpClient internalClient;
     private boolean connected = false;
     private SseBackgroundEventHandler backgroundEventHandler;
 
     public SseConfiguration(HttpClientConfiguration<OkHttpClient, Request, Response> httpClientConfiguration) {
-        this.internalClient = httpClientConfiguration.getHttpClient().getInternalClient();
+        this.internalClient = httpClientConfiguration.getClient().getInternalClient();
 
     }
 
@@ -69,5 +71,15 @@ public class SseConfiguration {
 
     public SseBackgroundEventHandler getBackgroundEventHandler() {
         return backgroundEventHandler;
+    }
+
+    @Override
+    public boolean matches(HttpRequest request) {
+        return false;
+    }
+
+    @Override
+    public OkHttpClient getClient() {
+        return null;
     }
 }

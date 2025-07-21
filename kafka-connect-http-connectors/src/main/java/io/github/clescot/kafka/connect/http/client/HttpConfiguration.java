@@ -46,7 +46,7 @@ public class HttpConfiguration<C extends HttpClient<R, S>, R, S> implements Conf
         if (LOGGER.isTraceEnabled()) {
             LOGGER.trace("after enrichment:{}", enrichedHttpRequest);
         }
-        CompletableFuture<HttpExchange> completableFuture = this.httpClientConfiguration.getHttpClient().call(enrichedHttpRequest, attempts);
+        CompletableFuture<HttpExchange> completableFuture = this.httpClientConfiguration.getClient().call(enrichedHttpRequest, attempts);
         return completableFuture
                 .thenApply(this::enrichHttpExchange);
 
@@ -129,7 +129,7 @@ public class HttpConfiguration<C extends HttpClient<R, S>, R, S> implements Conf
 
     @Override
     public C getClient() {
-        return this.httpClientConfiguration.getHttpClient();
+        return this.httpClientConfiguration.getClient();
     }
 
     public HttpClientConfiguration<C, R, S> getConfiguration() {

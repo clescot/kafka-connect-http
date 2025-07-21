@@ -1,9 +1,36 @@
 package io.github.clescot.kafka.connect.http;
 
+import com.google.common.base.Preconditions;
 import io.github.clescot.kafka.connect.http.client.Configuration;
 
-public abstract class Task<C,R,S> {
-    public abstract Configuration<C,R> selectConfiguration(R request);
+import java.util.List;
+
+/**
+ * Task interface for HTTP connectors in Kafka Connect.
+ * This interface defines the contract for tasks that handle HTTP requests and responses.
+ *
+ * @param <C> the type of HTTP client used to make requests
+ * @param <F> the type of the configuration for the HTTP client
+ * @param <R> the type of HTTP request
+ * @param <S> the type of HTTP response
+ */
+public interface Task<C,F extends Configuration<C,R>,R,S> {
+
+
+    default Configuration<C,R> selectConfiguration(R request) {
+        Preconditions.checkNotNull(request, "HttpRequest must not be null.");
+        List<F> configurations = getConfigurations();
+        Preconditions.checkArgument(!configurations.isEmpty(), "Configurations list must not be null or empty.");
+        //is there a matching configuration against the request ?
+        Configuration<C, R> configuration = configurations.get(0);
+        return configurations
+                .stream()
+                .filter(config -> config.matches(request))
+                .findFirst().orElse((F) configuration); //default configuration
+    }
+
+    List<F> getConfigurations();
+
 
     // This class is a placeholder for the Task class in the Kafka Connect framework.
     // It can be extended to implement specific task functionality for HTTP connectors.
