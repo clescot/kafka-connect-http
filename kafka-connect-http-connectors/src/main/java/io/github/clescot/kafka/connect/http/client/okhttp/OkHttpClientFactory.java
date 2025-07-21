@@ -9,6 +9,7 @@ import io.github.clescot.kafka.connect.http.client.okhttp.event.AdvancedEventLis
 import io.github.clescot.kafka.connect.http.client.okhttp.interceptor.InetAddressInterceptor;
 import io.github.clescot.kafka.connect.http.client.okhttp.interceptor.LoggingInterceptor;
 import io.github.clescot.kafka.connect.http.client.okhttp.interceptor.SSLHandshakeInterceptor;
+import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.binder.system.DiskSpaceMetrics;
 import io.micrometer.core.instrument.composite.CompositeMeterRegistry;
 import okhttp3.*;
@@ -34,6 +35,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
+import static io.github.clescot.kafka.connect.http.client.Configuration.DEFAULT_CONFIGURATION_ID;
 import static io.github.clescot.kafka.connect.http.sink.HttpSinkConfigDefinition.*;
 import static io.github.clescot.kafka.connect.http.sink.HttpSinkConfigDefinition.CONFIG_DEFAULT_OKHTTP_INTERCEPTOR_INET_ADDRESS_ACTIVATE;
 import static io.github.clescot.kafka.connect.http.sink.HttpSinkConfigDefinition.CONFIG_DEFAULT_OKHTTP_INTERCEPTOR_LOGGING_ACTIVATE;
@@ -57,7 +59,6 @@ import static io.github.clescot.kafka.connect.http.sink.HttpSinkConfigDefinition
 import static io.github.clescot.kafka.connect.http.sink.HttpSinkConfigDefinition.OKHTTP_SSL_SKIP_HOSTNAME_VERIFICATION;
 import static io.github.clescot.kafka.connect.http.sink.HttpSinkConfigDefinition.OKHTTP_WRITE_TIMEOUT;
 import static io.github.clescot.kafka.connect.http.sink.HttpSinkConfigDefinition.TRUE;
-import static io.github.clescot.kafka.connect.http.sink.HttpSinkTask.DEFAULT_CONFIGURATION_ID;
 
 public class OkHttpClientFactory implements HttpClientFactory<OkHttpClient,Request, Response> {
 
