@@ -17,7 +17,7 @@ import java.util.Queue;
 public class SseDarklyConfiguration {
     private okhttp3.OkHttpClient internalClient = null;
     private boolean isConnected = false;
-    private MyBackgroundEventHandler backgroundEventHandler;
+    private SseBackgroundEventHandler backgroundEventHandler;
 
     public SseDarklyConfiguration(Configuration<OkHttpClient, Request, Response> configuration) {
         this.internalClient = configuration.getHttpClient().getInternalClient();
@@ -28,7 +28,7 @@ public class SseDarklyConfiguration {
     public BackgroundEventSource connect(Queue<SseEvent> sseEventQueue, Map<String, Object> settings) {
         URI uri =  URI.create((String) settings.get("url"));
         String accessToken = "your_access_token";
-        this.backgroundEventHandler = new MyBackgroundEventHandler(sseEventQueue, uri);
+        this.backgroundEventHandler = new SseBackgroundEventHandler(sseEventQueue, uri);
         BackgroundEventSource backgroundEventSource = new BackgroundEventSource.Builder(backgroundEventHandler,
                 new EventSource.Builder(ConnectStrategy.http(uri)
                         .httpClient(internalClient)
@@ -48,7 +48,7 @@ public class SseDarklyConfiguration {
         return isConnected;
     }
 
-    public MyBackgroundEventHandler getBackgroundEventHandler() {
+    public SseBackgroundEventHandler getBackgroundEventHandler() {
         return backgroundEventHandler;
     }
 }

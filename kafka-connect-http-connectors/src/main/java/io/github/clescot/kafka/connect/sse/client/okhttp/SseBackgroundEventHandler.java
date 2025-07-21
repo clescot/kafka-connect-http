@@ -9,12 +9,12 @@ import org.slf4j.LoggerFactory;
 import java.net.URI;
 import java.util.Queue;
 
-public class MyBackgroundEventHandler implements BackgroundEventHandler {
-    private static final Logger LOGGER = LoggerFactory.getLogger(MyBackgroundEventHandler.class);
+public class SseBackgroundEventHandler implements BackgroundEventHandler {
+    private static final Logger LOGGER = LoggerFactory.getLogger(SseBackgroundEventHandler.class);
     private final Queue<SseEvent> queue;
     private final URI uri;
 
-    public MyBackgroundEventHandler(Queue<SseEvent> queue, URI uri) {
+    public SseBackgroundEventHandler(Queue<SseEvent> queue, URI uri) {
         this.queue = queue;
         this.uri = uri;
         LOGGER.debug("MyBackgroundEventHandler initialized with queue: {}", queue);
@@ -32,7 +32,7 @@ public class MyBackgroundEventHandler implements BackgroundEventHandler {
 
     @Override
     public void onMessage(String event, MessageEvent messageEvent) throws Exception {
-        LOGGER.debug("Event received : {}, messageEvent:{}", event,messageEvent);
+        LOGGER.debug("Event  received type : {}, message:{}", event,messageEvent);
         SseEvent sseEvent = new SseEvent(
                 messageEvent.getLastEventId(),
                 messageEvent.getEventName(),
