@@ -27,22 +27,28 @@ public class MyBackgroundEventHandler implements BackgroundEventHandler {
 
     @Override
     public void onClosed() throws Exception {
-
+        LOGGER.debug("EventSource closed: {}", uri);
     }
 
     @Override
     public void onMessage(String event, MessageEvent messageEvent) throws Exception {
-
+        LOGGER.debug("Event received : {}, messageEvent:{}", event,messageEvent);
+        SseEvent sseEvent = new SseEvent(
+                messageEvent.getLastEventId(),
+                messageEvent.getEventName(),
+                messageEvent.getData()
+        );
+        queue.add(sseEvent);
     }
 
     @Override
     public void onComment(String comment) throws Exception {
-
+        LOGGER.debug("comment received: {}", comment);
     }
 
     @Override
     public void onError(Throwable t) {
-
+        LOGGER.error("Error in EventSource: {}", t.getMessage(), t);
     }
 
     public Queue<SseEvent> getQueue() {

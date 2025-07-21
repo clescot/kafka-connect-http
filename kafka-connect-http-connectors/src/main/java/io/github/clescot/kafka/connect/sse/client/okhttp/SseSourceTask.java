@@ -10,8 +10,10 @@ import com.launchdarkly.eventsource.background.BackgroundEventSource;
 import io.github.clescot.kafka.connect.http.VersionUtils;
 import io.github.clescot.kafka.connect.http.client.Configuration;
 import io.github.clescot.kafka.connect.http.client.okhttp.OkHttpClient;
+import io.github.clescot.kafka.connect.http.client.okhttp.OkHttpClientFactory;
 import io.github.clescot.kafka.connect.http.core.queue.QueueFactory;
 import io.github.clescot.kafka.connect.sse.core.SseEvent;
+import io.micrometer.core.instrument.composite.CompositeMeterRegistry;
 import okhttp3.Request;
 import okhttp3.Response;
 import org.apache.kafka.connect.source.SourceRecord;
@@ -21,6 +23,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Queue;
 import java.util.UUID;
+
+import static io.github.clescot.kafka.connect.http.sink.HttpSinkTask.DEFAULT_CONFIGURATION_ID;
 
 public class SseSourceTask extends SourceTask {
     private static final VersionUtils VERSION_UTILS = new VersionUtils();
@@ -44,10 +48,17 @@ public class SseSourceTask extends SourceTask {
     public void start(Map<String, String> settings) {
         Preconditions.checkNotNull(settings, "settings must not be null or empty.");
         this.sseSourceConnectorConfig = new SseSourceConnectorConfig(settings);
-        Configuration<OkHttpClient, Request, Response> configuration = null;
+        Map<String,Object> mySettings = Maps.newHashMap(settings);
+        Configuration<OkHttpClient, Request, Response> configuration = new Configuration<>(
+                DEFAULT_CONFIGURATION_ID,
+                new OkHttpClientFactory(),
+                mySettings,
+                null,
+                new CompositeMeterRegistry());
         this.sseConfiguration = new SseDarklyConfiguration(configuration);
         this.queue = QueueFactory.getQueue(String.valueOf(UUID.randomUUID()));
-        this.backgroundEventSource = this.sseConfiguration.connect(queue,settings);
+        this.backgroundEventSource = this.sseConfiguration.connect(queue,mySettings);
+        this.backgroundEventSource.start();
     }
 
     @Override
@@ -78,6 +89,9 @@ public class SseSourceTask extends SourceTask {
         if (this.sseConfiguration != null) {
             this.sseConfiguration.shutdown();
         }
+        if(this.backgroundEventSource!=null) {
+            this.backgroundEventSource.close();
+        }
     }
 
 
@@ -87,5 +101,9 @@ public class SseSourceTask extends SourceTask {
 
     public boolean isConnected() {
         return this.sseConfiguration.isConnected();
+    }
+
+    public BackgroundEventSource getBackgroundEventSource() {
+        return backgroundEventSource;
     }
 }

@@ -7,6 +7,9 @@ import com.github.tomakehurst.wiremock.http.trafficlistener.ConsoleNotifyingWire
 import com.github.tomakehurst.wiremock.junit5.WireMockExtension;
 import com.github.tomakehurst.wiremock.junit5.WireMockRuntimeInfo;
 import com.google.common.collect.Maps;
+import com.launchdarkly.eventsource.EventSource;
+import com.launchdarkly.eventsource.ReadyState;
+import io.github.clescot.kafka.connect.sse.core.SseEvent;
 import org.apache.kafka.common.config.ConfigException;
 import org.awaitility.Awaitility;
 import org.junit.jupiter.api.*;
@@ -15,6 +18,7 @@ import org.quartz.*;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Queue;
 import java.util.concurrent.TimeUnit;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.okForContentType;
@@ -74,18 +78,6 @@ class SseSourceTaskTest {
             settings.put("url", "http://localhost:8080/sse");
             Assertions.assertDoesNotThrow(() -> sseSourceTask.start(settings));
         }
-//        @Test
-//        void test_settings_with_sse_dev() {
-//            Map<String, String> settings = Maps.newHashMap();
-//            settings.put("topic", "test");
-//            settings.put("configuration.id", "test_sse_client_connect");
-//            settings.put("url", "http://localhost:10000/.sse");
-//            settings.put("okhttp.retry.on.connection.failure", "true");
-//            Assertions.assertDoesNotThrow(() -> sseSourceTask.start(settings));
-//            Awaitility.await().atMost(15, TimeUnit.SECONDS).until(()->!sseSourceTask.getQueue().isEmpty());
-//            sseSourceTask.getQueue().stream().forEach(msg-> System.out.println("############### :"+msg));
-//            Awaitility.await().atMost(15, TimeUnit.SECONDS).until(()->Boolean.TRUE.equals(Boolean.FALSE));
-//        }
 
 
 
@@ -154,8 +146,9 @@ class SseSourceTaskTest {
             settings.put("url", wmRuntimeInfo.getHttpBaseUrl()+"/events");
             SseSourceTask.start(settings);
             assertThat(SseSourceTask.isConnected()).isTrue();
-            Awaitility.await().atMost(5, TimeUnit.SECONDS).until(()-> SseSourceTask.getQueue().peek()!=null);
-            assertThat(SseSourceTask.getQueue()).hasSize(2);
+            Queue<SseEvent> queue = SseSourceTask.getQueue();
+            Awaitility.await().atMost(5, TimeUnit.SECONDS).until(()-> !queue.isEmpty());
+            assertThat(queue).hasSize(2);
             Awaitility.await().atMost(5, TimeUnit.SECONDS).until(()->!SseSourceTask.poll().isEmpty());
 
         }

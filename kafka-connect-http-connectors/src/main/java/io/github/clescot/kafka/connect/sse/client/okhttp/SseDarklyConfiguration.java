@@ -3,7 +3,6 @@ package io.github.clescot.kafka.connect.sse.client.okhttp;
 import com.launchdarkly.eventsource.ConnectStrategy;
 import com.launchdarkly.eventsource.ErrorStrategy;
 import com.launchdarkly.eventsource.EventSource;
-import com.launchdarkly.eventsource.background.BackgroundEventHandler;
 import com.launchdarkly.eventsource.background.BackgroundEventSource;
 import io.github.clescot.kafka.connect.http.client.Configuration;
 import io.github.clescot.kafka.connect.http.client.okhttp.OkHttpClient;
@@ -19,14 +18,15 @@ public class SseDarklyConfiguration {
     private okhttp3.OkHttpClient internalClient = null;
     private boolean isConnected = false;
     private MyBackgroundEventHandler backgroundEventHandler;
+
     public SseDarklyConfiguration(Configuration<OkHttpClient, Request, Response> configuration) {
         this.internalClient = configuration.getHttpClient().getInternalClient();
 
     }
 
 
-    public BackgroundEventSource connect(Queue<SseEvent> sseEventQueue, Map<String, String> settings) {
-        URI uri =  URI.create(settings.get("url"));
+    public BackgroundEventSource connect(Queue<SseEvent> sseEventQueue, Map<String, Object> settings) {
+        URI uri =  URI.create((String) settings.get("url"));
         String accessToken = "your_access_token";
         this.backgroundEventHandler = new MyBackgroundEventHandler(sseEventQueue, uri);
         BackgroundEventSource backgroundEventSource = new BackgroundEventSource.Builder(backgroundEventHandler,
