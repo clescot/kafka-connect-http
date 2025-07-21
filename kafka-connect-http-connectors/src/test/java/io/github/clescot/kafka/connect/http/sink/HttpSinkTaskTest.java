@@ -251,7 +251,7 @@ public class HttpSinkTaskTest {
                 okHttpSinkTask.start(settings);
                 OkHttpClient httpClient = Mockito.mock(OkHttpClient.class);
                 when(httpClient.call(any(HttpRequest.class), any(AtomicInteger.class))).thenReturn(CompletableFuture.supplyAsync(() -> getHttpExchange("https://toto.com",HttpRequest.Method.GET,200)));
-                okHttpSinkTask.getCustomConfigurations().get(0).getConfiguration().setHttpClient(httpClient);
+                okHttpSinkTask.getConfigurations().get(0).getConfiguration().setHttpClient(httpClient);
                 Collection<SinkRecord> records = Lists.newArrayList();
                 SinkRecord myRecord = new SinkRecord("myTopic",0, Schema.STRING_SCHEMA,"key",Schema.STRING_SCHEMA,getHttpRequestAsString("https://toto.com",HttpRequest.Method.GET),0L);
                 records.add(myRecord);

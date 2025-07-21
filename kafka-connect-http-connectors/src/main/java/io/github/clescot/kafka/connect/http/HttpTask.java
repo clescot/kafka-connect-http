@@ -18,6 +18,7 @@ import org.slf4j.LoggerFactory;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 
@@ -29,7 +30,7 @@ import static io.github.clescot.kafka.connect.http.sink.HttpSinkConfigDefinition
  * @param <R> native HttpRequest
  * @param <S> native HttpResponse
  */
-public class HttpTask<C extends HttpClient<R,S>,R, S> extends Task<HttpRequest, HttpResponse>{
+public class HttpTask<C extends HttpClient<R,S>,R, S> extends Task<C,HttpRequest, HttpResponse>{
 
 
     private static final Logger LOGGER = LoggerFactory.getLogger(HttpTask.class);
@@ -124,7 +125,7 @@ public class HttpTask<C extends HttpClient<R,S>,R, S> extends Task<HttpRequest, 
 
 
     public List<HttpConfiguration<C,R, S>> getConfigurations() {
-        return configurations;
+        return Optional.ofNullable(configurations).orElse(Lists.newArrayList());
     }
 
     public static synchronized CompositeMeterRegistry getMeterRegistry() {

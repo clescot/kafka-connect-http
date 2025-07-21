@@ -443,7 +443,7 @@ public abstract class HttpSinkTask<C extends HttpClient<R, S>, R, S> extends Sin
         return httpTask.getDefaultConfiguration();
     }
 
-    public List<HttpConfiguration<C, R, S>> getCustomConfigurations() {
+    public List<HttpConfiguration<C, R, S>> getConfigurations() {
         Preconditions.checkNotNull(httpTask, "httpTask has not been initialized in the start method");
         return httpTask.getConfigurations();
     }
