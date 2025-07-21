@@ -30,7 +30,7 @@ public class SseSourceTask extends SourceTask {
     private static final VersionUtils VERSION_UTILS = new VersionUtils();
 
     private SseSourceConnectorConfig sseSourceConnectorConfig;
-    private SseDarklyConfiguration sseConfiguration;
+    private SseConfiguration sseConfiguration;
     private Queue<SseEvent> queue;
     private final ObjectMapper objectMapper;
     private BackgroundEventSource backgroundEventSource;
@@ -49,16 +49,20 @@ public class SseSourceTask extends SourceTask {
         Preconditions.checkNotNull(settings, "settings must not be null or empty.");
         this.sseSourceConnectorConfig = new SseSourceConnectorConfig(settings);
         Map<String,Object> mySettings = Maps.newHashMap(settings);
+        this.sseConfiguration = buildSseConfiguration(mySettings);
+        this.queue = QueueFactory.getQueue(String.valueOf(UUID.randomUUID()));
+        this.backgroundEventSource = this.sseConfiguration.connect(queue,mySettings);
+        this.backgroundEventSource.start();
+    }
+
+    private SseConfiguration buildSseConfiguration(Map<String, Object> mySettings) {
         Configuration<OkHttpClient, Request, Response> configuration = new Configuration<>(
                 DEFAULT_CONFIGURATION_ID,
                 new OkHttpClientFactory(),
                 mySettings,
                 null,
                 new CompositeMeterRegistry());
-        this.sseConfiguration = new SseDarklyConfiguration(configuration);
-        this.queue = QueueFactory.getQueue(String.valueOf(UUID.randomUUID()));
-        this.backgroundEventSource = this.sseConfiguration.connect(queue,mySettings);
-        this.backgroundEventSource.start();
+        return new SseConfiguration(configuration);
     }
 
     @Override
