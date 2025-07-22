@@ -23,7 +23,7 @@ import static io.github.clescot.kafka.connect.sse.client.okhttp.SseConfiguration
 public class SseSourceTask extends SourceTask {
     private static final VersionUtils VERSION_UTILS = new VersionUtils();
 
-    private SseSourceConnectorConfig sseSourceConnectorConfig;
+    private SseConnectorConfig sseConnectorConfig;
     private SseConfiguration sseConfiguration;
     private Queue<SseEvent> queue;
     private final ObjectMapper objectMapper;
@@ -41,7 +41,7 @@ public class SseSourceTask extends SourceTask {
     @Override
     public void start(Map<String, String> settings) {
         Preconditions.checkNotNull(settings, "settings must not be null or empty.");
-        this.sseSourceConnectorConfig = new SseSourceConnectorConfig(settings);
+        this.sseConnectorConfig = new SseConnectorConfig(settings);
         Map<String,Object> mySettings = Maps.newHashMap(settings);
         this.sseConfiguration = buildSseConfiguration(mySettings);
         this.queue = QueueFactory.getQueue(String.valueOf(UUID.randomUUID()));
@@ -62,7 +62,7 @@ public class SseSourceTask extends SourceTask {
                 sourceRecord = new SourceRecord(
                         Maps.newHashMap(),
                         Maps.newHashMap(),
-                        sseSourceConnectorConfig.getTopic(),
+                        sseConnectorConfig.getTopic(),
                         null,
                         objectMapper.writeValueAsString(sseEvent)
                 );

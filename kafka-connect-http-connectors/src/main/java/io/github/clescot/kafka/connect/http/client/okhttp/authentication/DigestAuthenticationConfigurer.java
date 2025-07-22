@@ -8,6 +8,7 @@ import java.nio.charset.Charset;
 import java.util.Map;
 import java.util.Random;
 
+import static io.github.clescot.kafka.connect.http.sink.HttpClientConfigDefinition.*;
 import static io.github.clescot.kafka.connect.http.sink.HttpConfigDefinition.*;
 
 public class DigestAuthenticationConfigurer implements AuthenticationConfigurer{

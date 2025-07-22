@@ -7,6 +7,7 @@ import okhttp3.Authenticator;
 import java.nio.charset.Charset;
 import java.util.Map;
 
+import static io.github.clescot.kafka.connect.http.sink.HttpClientConfigDefinition.*;
 import static io.github.clescot.kafka.connect.http.sink.HttpConfigDefinition.*;
 
 public class BasicAuthenticationConfigurer implements AuthenticationConfigurer{

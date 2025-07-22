@@ -8,6 +8,7 @@ import org.slf4j.LoggerFactory;
 
 import java.util.Map;
 
+import static io.github.clescot.kafka.connect.http.sink.HttpClientConfigDefinition.*;
 import static io.github.clescot.kafka.connect.http.sink.HttpConfigDefinition.*;
 
 public class OAuth2ClientCredentialsFlowConfigurer implements AuthenticationConfigurer {

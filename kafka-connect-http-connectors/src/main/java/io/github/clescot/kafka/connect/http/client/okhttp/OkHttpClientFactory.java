@@ -35,28 +35,10 @@ import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 import static io.github.clescot.kafka.connect.http.client.Configuration.DEFAULT_CONFIGURATION_ID;
-import static io.github.clescot.kafka.connect.http.sink.HttpConfigDefinition.*;
-import static io.github.clescot.kafka.connect.http.sink.HttpConfigDefinition.CONFIG_DEFAULT_OKHTTP_INTERCEPTOR_INET_ADDRESS_ACTIVATE;
-import static io.github.clescot.kafka.connect.http.sink.HttpConfigDefinition.CONFIG_DEFAULT_OKHTTP_INTERCEPTOR_LOGGING_ACTIVATE;
-import static io.github.clescot.kafka.connect.http.sink.HttpConfigDefinition.CONFIG_DEFAULT_OKHTTP_INTERCEPTOR_SSL_HANDSHAKE_ACTIVATE;
+import static io.github.clescot.kafka.connect.http.sink.HttpClientConfigDefinition.*;
 import static io.github.clescot.kafka.connect.http.sink.HttpConfigDefinition.FALSE;
 import static io.github.clescot.kafka.connect.http.sink.HttpConfigDefinition.METER_REGISTRY_TAG_INCLUDE_LEGACY_HOST;
 import static io.github.clescot.kafka.connect.http.sink.HttpConfigDefinition.METER_REGISTRY_TAG_INCLUDE_URL_PATH;
-import static io.github.clescot.kafka.connect.http.sink.HttpConfigDefinition.OKHTTP_CALL_TIMEOUT;
-import static io.github.clescot.kafka.connect.http.sink.HttpConfigDefinition.OKHTTP_CONNECTION_POOL_SCOPE;
-import static io.github.clescot.kafka.connect.http.sink.HttpConfigDefinition.OKHTTP_CONNECT_TIMEOUT;
-import static io.github.clescot.kafka.connect.http.sink.HttpConfigDefinition.OKHTTP_DOH_INCLUDE_IPV6;
-import static io.github.clescot.kafka.connect.http.sink.HttpConfigDefinition.OKHTTP_DOH_RESOLVE_PRIVATE_ADDRESSES;
-import static io.github.clescot.kafka.connect.http.sink.HttpConfigDefinition.OKHTTP_DOH_RESOLVE_PUBLIC_ADDRESSES;
-import static io.github.clescot.kafka.connect.http.sink.HttpConfigDefinition.OKHTTP_DOH_URL;
-import static io.github.clescot.kafka.connect.http.sink.HttpConfigDefinition.OKHTTP_DOH_USE_POST_METHOD;
-import static io.github.clescot.kafka.connect.http.sink.HttpConfigDefinition.OKHTTP_FOLLOW_REDIRECT;
-import static io.github.clescot.kafka.connect.http.sink.HttpConfigDefinition.OKHTTP_FOLLOW_SSL_REDIRECT;
-import static io.github.clescot.kafka.connect.http.sink.HttpConfigDefinition.OKHTTP_PROTOCOLS;
-import static io.github.clescot.kafka.connect.http.sink.HttpConfigDefinition.OKHTTP_READ_TIMEOUT;
-import static io.github.clescot.kafka.connect.http.sink.HttpConfigDefinition.OKHTTP_RETRY_ON_CONNECTION_FAILURE;
-import static io.github.clescot.kafka.connect.http.sink.HttpConfigDefinition.OKHTTP_SSL_SKIP_HOSTNAME_VERIFICATION;
-import static io.github.clescot.kafka.connect.http.sink.HttpConfigDefinition.OKHTTP_WRITE_TIMEOUT;
 import static io.github.clescot.kafka.connect.http.sink.HttpConfigDefinition.TRUE;
 
 public class OkHttpClientFactory implements HttpClientFactory<OkHttpClient,Request, Response> {

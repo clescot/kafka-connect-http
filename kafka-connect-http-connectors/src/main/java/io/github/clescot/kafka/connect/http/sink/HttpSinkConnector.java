@@ -15,6 +15,7 @@ import java.util.Map;
 import java.util.Optional;
 
 import static io.github.clescot.kafka.connect.http.client.Configuration.DEFAULT_CONFIGURATION_ID;
+import static io.github.clescot.kafka.connect.http.sink.HttpClientConfigDefinition.*;
 import static io.github.clescot.kafka.connect.http.sink.HttpConfigDefinition.*;
 
 

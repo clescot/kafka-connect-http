@@ -13,10 +13,10 @@ import java.util.Map;
 public class SseSourceConnector extends SourceConnector {
 
     private static final VersionUtils VERSION_UTILS = new VersionUtils();
-    private SseSourceConnectorConfig sseSourceConnectorConfig;
+    private SseConnectorConfig sseConnectorConfig;
     @Override
     public void start(Map<String, String> props) {
-        this.sseSourceConnectorConfig = new SseSourceConnectorConfig(config(),props);
+        this.sseConnectorConfig = new SseConnectorConfig(config(),props);
     }
 
     @Override
@@ -29,7 +29,7 @@ public class SseSourceConnector extends SourceConnector {
         Preconditions.checkArgument(maxTasks>0,"maxTasks must be higher than 0");
         List<Map<String, String>> configs = new ArrayList<>(maxTasks);
         for (int i = 0; i < maxTasks; i++) {
-            configs.add(this.sseSourceConnectorConfig.originalsStrings());
+            configs.add(this.sseConnectorConfig.originalsStrings());
         }
 
         return configs;
@@ -42,7 +42,7 @@ public class SseSourceConnector extends SourceConnector {
 
     @Override
     public ConfigDef config() {
-        return SseSourceConfigDefinition.config();
+        return SseConfigDefinition.config();
     }
 
     @Override

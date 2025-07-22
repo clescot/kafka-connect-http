@@ -20,6 +20,7 @@ import java.nio.file.Paths;
 import java.util.Map;
 
 import static com.github.tomakehurst.wiremock.stubbing.Scenario.STARTED;
+import static io.github.clescot.kafka.connect.http.sink.HttpClientConfigDefinition.*;
 import static io.github.clescot.kafka.connect.http.sink.HttpConfigDefinition.*;
 import static org.assertj.core.api.Assertions.assertThat;
 

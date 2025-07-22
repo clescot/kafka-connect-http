@@ -37,6 +37,7 @@ import java.util.concurrent.*;
 import java.util.function.Function;
 import java.util.stream.Stream;
 
+import static io.github.clescot.kafka.connect.http.sink.HttpClientConfigDefinition.CONFIGURATION_IDS;
 import static io.github.clescot.kafka.connect.http.sink.HttpClientConfigurationFactory.buildConfigurations;
 import static io.github.clescot.kafka.connect.http.sink.HttpConfigDefinition.*;
 
