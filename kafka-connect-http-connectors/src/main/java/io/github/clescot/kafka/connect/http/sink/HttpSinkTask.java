@@ -9,7 +9,6 @@ import io.github.clescot.kafka.connect.http.core.HttpRequest;
 import io.github.clescot.kafka.connect.http.core.queue.KafkaRecord;
 import io.github.clescot.kafka.connect.http.sink.mapper.HttpRequestMapper;
 import io.github.clescot.kafka.connect.http.sink.publish.KafkaProducer;
-import io.github.clescot.kafka.connect.http.sink.publish.PublishMode;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.kafka.connect.connector.ConnectRecord;
 import org.apache.kafka.connect.sink.ErrantRecordReporter;
