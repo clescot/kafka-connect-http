@@ -39,15 +39,15 @@
         <async.http.client.version>2.12.4</async.http.client.version>
         <commons-text.version>1.13.1</commons-text.version>
         <connect-json.version>4.0.0</connect-json.version>
-        <debezium.version>2.7.4.Final</debezium.version>
+        <debezium.version>3.2.0.Final</debezium.version>
         <kafka.version>4.0.0</kafka.version>
         <confluent.platform.version>8.0.0</confluent.platform.version>
         <failsafe.version>3.3.2</failsafe.version>
         <guava.version>33.4.8-jre</guava.version>
-        <jackson.version>2.19.1</jackson.version>
+        <jackson.version>2.19.2</jackson.version>
         <jacoco.version>0.8.12</jacoco.version>
         <json.assert.version>1.5.3</json.assert.version>
-        <junit.version>5.13.3</junit.version>
+        <junit.version>5.13.4</junit.version>
         <logback.version>1.5.18</logback.version>
         <maven.compiler.release>17</maven.compiler.release>
         <maven.compiler.source>17</maven.compiler.source>
