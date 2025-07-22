@@ -4,6 +4,7 @@ import com.google.common.base.Preconditions;
 import com.launchdarkly.eventsource.ConnectStrategy;
 import com.launchdarkly.eventsource.ErrorStrategy;
 import com.launchdarkly.eventsource.EventSource;
+import com.launchdarkly.eventsource.RetryDelayStrategy;
 import com.launchdarkly.eventsource.background.BackgroundEventSource;
 import io.github.clescot.kafka.connect.http.client.Configuration;
 import io.github.clescot.kafka.connect.http.client.HttpClientConfiguration;
@@ -21,13 +22,12 @@ import java.util.Queue;
 
 
 public class SseConfiguration implements Configuration<OkHttpClient, HttpRequest> {
-    private final okhttp3.OkHttpClient internalClient;
+    private final OkHttpClient client;
     private boolean connected = false;
     private SseBackgroundEventHandler backgroundEventHandler;
 
     public SseConfiguration(HttpClientConfiguration<OkHttpClient, Request, Response> httpClientConfiguration) {
-        this.internalClient = httpClientConfiguration.getClient().getInternalClient();
-
+        this.client = httpClientConfiguration.getClient();
     }
 
     public static SseConfiguration buildSseConfiguration(Map<String, Object> mySettings) {
@@ -50,9 +50,11 @@ public class SseConfiguration implements Configuration<OkHttpClient, HttpRequest
         this.backgroundEventHandler = new SseBackgroundEventHandler(sseEventQueue, uri);
         BackgroundEventSource backgroundEventSource = new BackgroundEventSource.Builder(backgroundEventHandler,
                 new EventSource.Builder(ConnectStrategy.http(uri)
-                        .httpClient(internalClient)
-                        //.header("hue-application-key", accessToken)
+                        .httpClient(this.client.getInternalClient())
+                        //.header("my-application-key", accessToken)
                 )
+                        .streamEventData(false)
+                        .retryDelayStrategy(RetryDelayStrategy.defaultStrategy())
                         .errorStrategy(ErrorStrategy.alwaysContinue())
         ).build();
         connected = true;
@@ -79,6 +81,6 @@ public class SseConfiguration implements Configuration<OkHttpClient, HttpRequest
 
     @Override
     public OkHttpClient getClient() {
-        return null;
+        return client;
     }
 }
