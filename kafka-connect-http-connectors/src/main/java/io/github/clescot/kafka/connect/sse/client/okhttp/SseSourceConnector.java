@@ -42,7 +42,8 @@ public class SseSourceConnector extends SourceConnector {
 
     @Override
     public ConfigDef config() {
-        return SseConfigDefinition.config();
+        SseConfigDefinition sseConfigDefinition = new SseConfigDefinition(sseConnectorConfig.originalsStrings());
+        return sseConfigDefinition.config();
     }
 
     @Override
