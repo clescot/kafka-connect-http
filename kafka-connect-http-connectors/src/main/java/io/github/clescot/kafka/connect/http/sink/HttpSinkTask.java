@@ -39,7 +39,6 @@ public abstract class HttpSinkTask<C extends HttpClient<R, S>, R, S> extends Sin
     private HttpTask<C, R, S> httpTask;
     private KafkaProducer<String, Object> producer;
 
-    private PublishMode publishMode;
 
 
     @SuppressWarnings("java:S5993")
@@ -125,7 +124,6 @@ public abstract class HttpSinkTask<C extends HttpClient<R, S>, R, S> extends Sin
     public void stop() {
         if (httpTask == null) {
             LOGGER.error("httpTask hasn't been created with the 'start' method");
-            return;
         }
 
     }
