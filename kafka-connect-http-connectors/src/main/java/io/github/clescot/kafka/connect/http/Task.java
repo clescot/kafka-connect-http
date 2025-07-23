@@ -7,13 +7,13 @@ import io.github.clescot.kafka.connect.http.client.Configuration;
 import java.util.List;
 
 /**
- * Task interface for HTTP connectors in Kafka Connect.
- * This interface defines the contract for tasks that handle HTTP requests and responses.
+ * Task interface for handling requests.
+ * This interface defines methods for selecting configurations based on requests.
  *
  * @param <C> the type of HTTP client used to make requests
- * @param <F> the type of the configuration for the HTTP client
- * @param <R> the type of HTTP request
- * @param <S> the type of HTTP response
+ * @param <F> the type of the configuration for the client
+ * @param <R> the type of request
+ * @param <S> the type of response
  */
 public interface Task<C extends Client,F extends Configuration<C,R>,R,S> {
 

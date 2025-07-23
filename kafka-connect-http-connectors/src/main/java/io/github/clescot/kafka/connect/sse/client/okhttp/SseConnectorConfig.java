@@ -16,7 +16,7 @@ public class SseConnectorConfig extends AbstractConfig {
     private final String topic;
     private final String url;
     public SseConnectorConfig(Map<String, String> originals) {
-        this(new HttpConfigDefinition(originals).config(), originals);
+        this(new SseConfigDefinition(originals).config(), originals);
     }
 
     public SseConnectorConfig(ConfigDef configDef, Map<?, ?> originals){

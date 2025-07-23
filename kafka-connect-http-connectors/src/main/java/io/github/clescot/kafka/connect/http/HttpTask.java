@@ -234,7 +234,7 @@ public class HttpTask<C extends HttpClient<R,S>,R, S> implements Task<C,HttpConf
      * @param customFixedThreadPoolSize max thread pool size for the executorService.
      * @return executorService
      */
-    public ExecutorService buildExecutorService(Integer customFixedThreadPoolSize) {
+    private ExecutorService buildExecutorService(Integer customFixedThreadPoolSize) {
         return Executors.newFixedThreadPool(customFixedThreadPoolSize);
     }
 

@@ -14,8 +14,11 @@ public class SseSourceConnector extends SourceConnector {
 
     private static final VersionUtils VERSION_UTILS = new VersionUtils();
     private SseConnectorConfig sseConnectorConfig;
+    private Map<String, String> props;
+
     @Override
     public void start(Map<String, String> props) {
+        this.props = props;
         this.sseConnectorConfig = new SseConnectorConfig(config(),props);
     }
 
@@ -27,6 +30,7 @@ public class SseSourceConnector extends SourceConnector {
     @Override
     public List<Map<String, String>> taskConfigs(int maxTasks) {
         Preconditions.checkArgument(maxTasks>0,"maxTasks must be higher than 0");
+        Preconditions.checkNotNull(this.sseConnectorConfig, "sseConnectorConfig must not be null. Call start() first.");
         List<Map<String, String>> configs = new ArrayList<>(maxTasks);
         for (int i = 0; i < maxTasks; i++) {
             configs.add(this.sseConnectorConfig.originalsStrings());
@@ -37,12 +41,13 @@ public class SseSourceConnector extends SourceConnector {
 
     @Override
     public void stop() {
-
+        // No specific stop logic needed for this connector.
     }
 
     @Override
     public ConfigDef config() {
-        SseConfigDefinition sseConfigDefinition = new SseConfigDefinition(sseConnectorConfig.originalsStrings());
+        Preconditions.checkNotNull(props, "props must not be null. Call start() first.");
+        SseConfigDefinition sseConfigDefinition = new SseConfigDefinition(props);
         return sseConfigDefinition.config();
     }
 
