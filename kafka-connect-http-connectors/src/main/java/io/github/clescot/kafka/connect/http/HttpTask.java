@@ -73,7 +73,7 @@ public class HttpTask<C extends HttpClient<R,S>,R, S> implements Task<C,HttpConf
                     HttpClientFactory<C, R, S> httpClientFactory,
                     KafkaProducer<String, Object> producer) {
         this.producer = producer;
-        Map<String,HttpClientConfiguration<C, R, S>> httpClientConfigurations;
+
         Preconditions.checkNotNull(settings, "settings cannot be null");
         HttpConfigDefinition httpConfigDefinition = new HttpConfigDefinition(settings);
         this.httpConnectorConfig = new HttpConnectorConfig(httpConfigDefinition.config(), settings);
@@ -115,7 +115,7 @@ public class HttpTask<C extends HttpClient<R,S>,R, S> implements Task<C,HttpConf
         this.requestGroupers = requestGrouperFactory.buildRequestGroupers(httpConnectorConfig, httpConnectorConfig.getList(REQUEST_GROUPER_IDS));
 
         //configurations
-        httpClientConfigurations = buildConfigurations(
+        Map<String,HttpClientConfiguration<C, R, S>> httpClientConfigurations = buildConfigurations(
                 httpClientFactory,
                 executorService,
                 httpConnectorConfig.getList(CONFIGURATION_IDS),
@@ -130,8 +130,8 @@ public class HttpTask<C extends HttpClient<R,S>,R, S> implements Task<C,HttpConf
                 )
                 .collect(
                         Collectors.<Map.Entry<String, HttpConfiguration<C,R,S>>, String, HttpConfiguration<C, R, S>>toMap(
-                                entry -> entry.getKey(),
-                                entry -> entry.getValue())
+                                Map.Entry::getKey,
+                                Map.Entry::getValue)
                 );
         //configure publishMode
         this.publishMode = httpConnectorConfig.getPublishMode();
