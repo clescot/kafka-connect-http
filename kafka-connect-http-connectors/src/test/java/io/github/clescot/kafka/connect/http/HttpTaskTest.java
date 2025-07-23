@@ -8,6 +8,7 @@ import com.github.tomakehurst.wiremock.junit5.WireMockExtension;
 import com.github.tomakehurst.wiremock.junit5.WireMockRuntimeInfo;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
+import io.github.clescot.kafka.connect.Configuration;
 import io.github.clescot.kafka.connect.http.client.HttpClientConfiguration;
 import io.github.clescot.kafka.connect.http.client.HttpConfiguration;
 import io.github.clescot.kafka.connect.http.client.okhttp.OkHttpClient;
@@ -39,6 +40,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.github.tomakehurst.wiremock.stubbing.Scenario.STARTED;
+import static io.github.clescot.kafka.connect.Configuration.DEFAULT_CONFIGURATION_ID;
 import static io.github.clescot.kafka.connect.http.sink.HttpConfigDefinition.DEFAULT_DEFAULT_RETRY_RESPONSE_CODE_REGEX;
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -80,8 +82,10 @@ class HttpTaskTest {
             compositeMeterRegistry.add(jmxMeterRegistry);
             HttpClientConfiguration<OkHttpClient,Request, Response> test = new HttpClientConfiguration<>("test", new OkHttpClientFactory(), config.originals(), null, compositeMeterRegistry);
             HttpConfiguration<OkHttpClient, Request, Response> httpConfiguration = new HttpConfiguration<>(test);
+            Map<String, HttpConfiguration<OkHttpClient, Request, Response>> map = Maps.newHashMap();
+            map.put(DEFAULT_CONFIGURATION_ID, httpConfiguration);
             httpTask = new HttpTask<>(config.originalsStrings(),
-                    Lists.newArrayList(httpConfiguration),
+                    map,
                     compositeMeterRegistry);
         }
 

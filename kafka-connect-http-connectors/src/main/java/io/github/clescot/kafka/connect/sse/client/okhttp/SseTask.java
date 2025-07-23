@@ -36,8 +36,8 @@ public class SseTask implements Task<OkHttpClient,SseConfiguration,HttpRequest, 
 
 
     @Override
-    public List<SseConfiguration> getConfigurations() {
-        return List.of();
+    public Map<String, SseConfiguration> getConfigurations() {
+        return Map.of();
     }
 
     public Queue<SseEvent> getQueue() {

@@ -2,6 +2,7 @@ package io.github.clescot.kafka.connect.http;
 
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
 import io.github.clescot.kafka.connect.Task;
 import io.github.clescot.kafka.connect.http.client.*;
 import io.github.clescot.kafka.connect.http.core.HttpExchange;
@@ -36,8 +37,10 @@ import org.slf4j.LoggerFactory;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import static io.github.clescot.kafka.connect.Configuration.DEFAULT_CONFIGURATION_ID;
 import static io.github.clescot.kafka.connect.http.client.HttpClientConfigDefinition.CONFIGURATION_IDS;
 import static io.github.clescot.kafka.connect.http.client.HttpClientConfigurationFactory.buildConfigurations;
 import static io.github.clescot.kafka.connect.http.sink.HttpConfigDefinition.*;
@@ -55,7 +58,7 @@ public class HttpTask<C extends HttpClient<R,S>,R, S> implements Task<C,HttpConf
     private PublishMode publishMode;
 
     private Queue<KafkaRecord> queue;
-    private final List<HttpConfiguration<C,R, S>> configurations;
+    private final Map<String,HttpConfiguration<C,R, S>> configurations;
     private static CompositeMeterRegistry meterRegistry;
     private HttpConnectorConfig httpConnectorConfig;
     private KafkaProducer<String, Object> producer;
@@ -70,7 +73,7 @@ public class HttpTask<C extends HttpClient<R,S>,R, S> implements Task<C,HttpConf
                     HttpClientFactory<C, R, S> httpClientFactory,
                     KafkaProducer<String, Object> producer) {
         this.producer = producer;
-        List<HttpClientConfiguration<C, R, S>> httpClientConfigurations;
+        Map<String,HttpClientConfiguration<C, R, S>> httpClientConfigurations;
         Preconditions.checkNotNull(settings, "settings cannot be null");
         HttpConfigDefinition httpConfigDefinition = new HttpConfigDefinition(settings);
         this.httpConnectorConfig = new HttpConnectorConfig(httpConfigDefinition.config(), settings);
@@ -119,9 +122,17 @@ public class HttpTask<C extends HttpClient<R,S>,R, S> implements Task<C,HttpConf
                 httpConnectorConfig.originals(), meterRegistry
         );
         //wrap configurations in HttpConfiguration
-        this.configurations = httpClientConfigurations.stream()
-                .map(HttpConfiguration::new)
-                .toList();
+        this.configurations = httpClientConfigurations.entrySet().stream()
+                .map(
+                        entry->Map.entry(entry.getKey(),
+                        new HttpConfiguration<>(entry.getValue())
+                        )
+                )
+                .collect(
+                        Collectors.<Map.Entry<String, HttpConfiguration<C,R,S>>, String, HttpConfiguration<C, R, S>>toMap(
+                                entry -> entry.getKey(),
+                                entry -> entry.getValue())
+                );
         //configure publishMode
         this.publishMode = httpConnectorConfig.getPublishMode();
         LOGGER.debug("publishMode: {}", publishMode);
@@ -140,7 +151,7 @@ public class HttpTask<C extends HttpClient<R,S>,R, S> implements Task<C,HttpConf
     }
 
     public HttpTask(Map<String,String> config,
-                    List<HttpConfiguration<C,R, S>> configurations,
+                    Map<String,HttpConfiguration<C,R, S>> configurations,
                     CompositeMeterRegistry meterRegistry) {
 
         if (HttpTask.meterRegistry == null) {
@@ -212,8 +223,8 @@ public class HttpTask<C extends HttpClient<R,S>,R, S> implements Task<C,HttpConf
 
 
     @Override
-    public List<HttpConfiguration<C,R, S>> getConfigurations() {
-        return Optional.ofNullable(configurations).orElse(Lists.newArrayList());
+    public Map<String,HttpConfiguration<C,R, S>> getConfigurations() {
+        return Optional.ofNullable(configurations).orElse(Maps.newHashMap());
     }
 
     public static synchronized CompositeMeterRegistry getMeterRegistry() {
@@ -226,7 +237,7 @@ public class HttpTask<C extends HttpClient<R,S>,R, S> implements Task<C,HttpConf
 
     public HttpConfiguration<C, R, S> getDefaultConfiguration() {
         if( configurations != null && !configurations.isEmpty()) {
-            return configurations.get(0);
+            return configurations.get(DEFAULT_CONFIGURATION_ID);
         }
         return null;
     }

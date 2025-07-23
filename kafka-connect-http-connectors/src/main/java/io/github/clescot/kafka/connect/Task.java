@@ -3,6 +3,7 @@ package io.github.clescot.kafka.connect;
 import com.google.common.base.Preconditions;
 
 import java.util.List;
+import java.util.Map;
 
 /**
  * Task interface for handling requests.
@@ -18,17 +19,17 @@ public interface Task<C extends Client,F extends Configuration<C,R>,R,S> {
 
     default F selectConfiguration(R request) {
         Preconditions.checkNotNull(request, "Request must not be null.");
-        List<F> configurations = getConfigurations();
+        Map<String,F> configurations = getConfigurations();
         Preconditions.checkArgument(!configurations.isEmpty(), "Configurations list must not be null or empty.");
         //is there a matching configuration against the request ?
         F configuration = configurations.get(0);
         return configurations
-                .stream()
+                .values().stream()
                 .filter(config -> config.matches(request))
                 .findFirst().orElse(configuration); //default configuration
     }
 
-    List<F> getConfigurations();
+    Map<String,F> getConfigurations();
 
 
     // This class is a placeholder for the Task class in the Kafka Connect framework.

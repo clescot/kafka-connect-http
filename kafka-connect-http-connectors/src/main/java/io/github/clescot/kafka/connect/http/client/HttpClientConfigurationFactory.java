@@ -1,6 +1,7 @@
 package io.github.clescot.kafka.connect.http.client;
 
 import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
 import dev.failsafe.RetryPolicy;
 import io.github.clescot.kafka.connect.http.core.HttpExchange;
 import io.micrometer.core.instrument.composite.CompositeMeterRegistry;
@@ -15,13 +16,17 @@ import static io.github.clescot.kafka.connect.Configuration.DEFAULT_CONFIGURATIO
 
 public class HttpClientConfigurationFactory {
 
-    public static  <C extends HttpClient<R, S>, R, S>List<HttpClientConfiguration<C, R, S>> buildConfigurations(
+
+    private HttpClientConfigurationFactory() {
+    }
+
+    public static  <C extends HttpClient<R, S>, R, S>Map<String,HttpClientConfiguration<C, R, S>> buildConfigurations(
             HttpClientFactory<C, R, S> httpClientFactory,
             ExecutorService executorService,
             List<String> configIdList,
             Map<String, Object> originals, CompositeMeterRegistry meterRegistry
     ) {
-        List<HttpClientConfiguration<C, R, S>> httpClientConfigurations = Lists.newArrayList();
+        Map<String,HttpClientConfiguration<C, R, S>> httpClientConfigurations = Maps.newHashMap();
         List<String> configurationIds = Lists.newArrayList();
         Optional<List<String>> ids = Optional.ofNullable(configIdList);
         configurationIds.add(DEFAULT_CONFIGURATION_ID);
@@ -54,7 +59,7 @@ public class HttpClientConfigurationFactory {
                 defaultRetryPolicy = defaultHttpClientConfiguration.getRetryPolicy();
                 defaultRetryResponseCodeRegex = defaultHttpClientConfiguration.getRetryResponseCodeRegex();
             }
-            httpClientConfigurations.add(httpClientConfiguration);
+            httpClientConfigurations.put(configId,httpClientConfiguration);
         }
         return httpClientConfigurations;
     }
