@@ -7,7 +7,7 @@ import com.google.common.collect.Maps;
 import io.github.clescot.kafka.connect.http.core.HttpRequest;
 import io.github.clescot.kafka.connect.http.core.queue.ConfigConstants;
 import io.github.clescot.kafka.connect.http.core.queue.QueueFactory;
-import io.github.clescot.kafka.connect.http.sink.mapper.MapperMode;
+import io.github.clescot.kafka.connect.http.mapper.MapperMode;
 import io.github.clescot.kafka.connect.http.sink.publish.PublishMode;
 import org.apache.kafka.common.config.AbstractConfig;
 import org.apache.kafka.common.config.ConfigDef;
@@ -19,7 +19,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 
-import static io.github.clescot.kafka.connect.http.sink.HttpClientConfigDefinition.*;
+import static io.github.clescot.kafka.connect.http.client.HttpClientConfigDefinition.*;
 import static io.github.clescot.kafka.connect.http.sink.HttpConfigDefinition.*;
 
 public class HttpConnectorConfig extends AbstractConfig {

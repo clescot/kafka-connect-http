@@ -1,4 +1,4 @@
-package io.github.clescot.kafka.connect.http.sink.mapper;
+package io.github.clescot.kafka.connect.http.mapper;
 
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Maps;
@@ -8,8 +8,6 @@ import org.apache.commons.jexl3.JexlEngine;
 import org.apache.commons.jexl3.JexlExpression;
 import org.apache.commons.jexl3.MapContext;
 import org.apache.kafka.connect.connector.ConnectRecord;
-import org.apache.kafka.connect.sink.SinkRecord;
-import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.List;

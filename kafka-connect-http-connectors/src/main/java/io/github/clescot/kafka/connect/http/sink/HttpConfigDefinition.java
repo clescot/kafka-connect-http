@@ -2,15 +2,13 @@ package io.github.clescot.kafka.connect.http.sink;
 
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
-import io.github.clescot.kafka.connect.http.core.queue.ConfigConstants;
-import io.github.clescot.kafka.connect.http.sink.mapper.MapperMode;
-import io.github.clescot.kafka.connect.http.sink.publish.PublishMode;
+import io.github.clescot.kafka.connect.http.client.HttpClientConfigDefinition;
+import io.github.clescot.kafka.connect.http.mapper.MapperMode;
 import org.apache.kafka.common.config.ConfigDef;
 
-import java.nio.charset.StandardCharsets;
 import java.util.*;
 
-import static io.github.clescot.kafka.connect.http.sink.HttpClientConfigDefinition.*;
+import static io.github.clescot.kafka.connect.http.client.HttpClientConfigDefinition.*;
 
 public class HttpConfigDefinition {
 

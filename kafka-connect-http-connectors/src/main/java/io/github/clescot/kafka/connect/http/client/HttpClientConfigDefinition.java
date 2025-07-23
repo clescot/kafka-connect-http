@@ -1,4 +1,4 @@
-package io.github.clescot.kafka.connect.http.sink;
+package io.github.clescot.kafka.connect.http.client;
 
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;

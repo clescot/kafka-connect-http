@@ -5,6 +5,7 @@ import com.google.common.base.Stopwatch;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import dev.failsafe.RateLimiter;
+import io.github.clescot.kafka.connect.Client;
 import io.github.clescot.kafka.connect.http.core.HttpExchange;
 import io.github.clescot.kafka.connect.http.core.HttpRequest;
 import io.github.clescot.kafka.connect.http.core.HttpResponse;
@@ -29,7 +30,7 @@ import static io.github.clescot.kafka.connect.http.sink.HttpConfigDefinition.RAT
  * @param <R> native HttpRequest
  * @param <S> native HttpResponse
  */
-public interface HttpClient<R, S>  extends Client{
+public interface HttpClient<R, S>  extends Client {
     boolean FAILURE = false;
     int SERVER_ERROR_STATUS_CODE = 500;
     String UTC_ZONE_ID = "UTC";

@@ -36,8 +36,7 @@ import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 
-import static io.github.clescot.kafka.connect.http.sink.HttpClientConfigDefinition.*;
-import static io.github.clescot.kafka.connect.http.sink.HttpConfigDefinition.*;
+import static io.github.clescot.kafka.connect.http.client.HttpClientConfigDefinition.*;
 import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.ASYNC_CLIENT_CONFIG_ROOT;
 
 public class AHCHttpClient extends AbstractHttpClient<Request, Response> {

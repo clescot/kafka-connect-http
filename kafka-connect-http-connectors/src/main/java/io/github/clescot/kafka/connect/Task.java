@@ -1,8 +1,6 @@
-package io.github.clescot.kafka.connect.http;
+package io.github.clescot.kafka.connect;
 
 import com.google.common.base.Preconditions;
-import io.github.clescot.kafka.connect.http.client.Client;
-import io.github.clescot.kafka.connect.http.client.Configuration;
 
 import java.util.List;
 

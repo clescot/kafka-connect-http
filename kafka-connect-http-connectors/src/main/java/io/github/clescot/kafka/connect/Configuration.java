@@ -1,4 +1,4 @@
-package io.github.clescot.kafka.connect.http.client;
+package io.github.clescot.kafka.connect;
 
 
 /**

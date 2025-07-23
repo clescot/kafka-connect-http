@@ -2,7 +2,7 @@ package io.github.clescot.kafka.connect.http.sink;
 
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Maps;
-import io.github.clescot.kafka.connect.http.VersionUtils;
+import io.github.clescot.kafka.connect.VersionUtils;
 import org.apache.kafka.common.config.ConfigDef;
 import org.apache.kafka.connect.connector.Task;
 import org.apache.kafka.connect.sink.SinkConnector;
@@ -14,9 +14,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
-import static io.github.clescot.kafka.connect.http.client.Configuration.DEFAULT_CONFIGURATION_ID;
-import static io.github.clescot.kafka.connect.http.sink.HttpClientConfigDefinition.*;
-import static io.github.clescot.kafka.connect.http.sink.HttpConfigDefinition.*;
+import static io.github.clescot.kafka.connect.Configuration.DEFAULT_CONFIGURATION_ID;
+import static io.github.clescot.kafka.connect.http.client.HttpClientConfigDefinition.*;
 
 
 public class HttpSinkConnector extends SinkConnector {

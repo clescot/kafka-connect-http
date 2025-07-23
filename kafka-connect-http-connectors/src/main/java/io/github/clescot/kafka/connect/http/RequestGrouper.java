@@ -1,16 +1,14 @@
-package io.github.clescot.kafka.connect.http.sink;
+package io.github.clescot.kafka.connect.http;
 
 import com.google.common.collect.Lists;
 import io.github.clescot.kafka.connect.http.core.HttpRequest;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.kafka.connect.connector.ConnectRecord;
-import org.apache.kafka.connect.sink.SinkRecord;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.List;
 import java.util.function.Predicate;
-import java.util.stream.Collectors;
 
 /**
  * RequestGrouper is used to group HttpRequests based on a predicate.

@@ -34,8 +34,8 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
-import static io.github.clescot.kafka.connect.http.client.Configuration.DEFAULT_CONFIGURATION_ID;
-import static io.github.clescot.kafka.connect.http.sink.HttpClientConfigDefinition.*;
+import static io.github.clescot.kafka.connect.Configuration.DEFAULT_CONFIGURATION_ID;
+import static io.github.clescot.kafka.connect.http.client.HttpClientConfigDefinition.*;
 import static io.github.clescot.kafka.connect.http.sink.HttpConfigDefinition.FALSE;
 import static io.github.clescot.kafka.connect.http.sink.HttpConfigDefinition.METER_REGISTRY_TAG_INCLUDE_LEGACY_HOST;
 import static io.github.clescot.kafka.connect.http.sink.HttpConfigDefinition.METER_REGISTRY_TAG_INCLUDE_URL_PATH;

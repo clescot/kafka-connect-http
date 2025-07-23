@@ -4,8 +4,9 @@ import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import dev.failsafe.RetryPolicy;
-import io.github.clescot.kafka.connect.http.MapUtils;
-import io.github.clescot.kafka.connect.http.VersionUtils;
+import io.github.clescot.kafka.connect.Configuration;
+import io.github.clescot.kafka.connect.MapUtils;
+import io.github.clescot.kafka.connect.VersionUtils;
 import io.github.clescot.kafka.connect.http.client.config.*;
 import io.github.clescot.kafka.connect.http.core.HttpExchange;
 import io.github.clescot.kafka.connect.http.core.HttpRequest;
@@ -25,7 +26,7 @@ import java.util.function.Predicate;
 import java.util.regex.Pattern;
 
 import static io.github.clescot.kafka.connect.http.client.config.HttpRequestPredicateBuilder.*;
-import static io.github.clescot.kafka.connect.http.sink.HttpClientConfigDefinition.*;
+import static io.github.clescot.kafka.connect.http.client.HttpClientConfigDefinition.*;
 import static io.github.clescot.kafka.connect.http.sink.HttpConfigDefinition.*;
 
 /**
@@ -42,7 +43,7 @@ import static io.github.clescot.kafka.connect.http.sink.HttpConfigDefinition.*;
  * </ul>
  * Each configuration owns an Http Client instance.
  */
-public class HttpClientConfiguration<C extends HttpClient<R,S>,R,S> implements Configuration<C,HttpRequest>{
+public class HttpClientConfiguration<C extends HttpClient<R,S>,R,S> implements Configuration<C,HttpRequest> {
     private static final Logger LOGGER = LoggerFactory.getLogger(HttpClientConfiguration.class);
     public static final String HAS_BEEN_SET = " has been set.";
     public static final String SHA_1_PRNG = "SHA1PRNG";

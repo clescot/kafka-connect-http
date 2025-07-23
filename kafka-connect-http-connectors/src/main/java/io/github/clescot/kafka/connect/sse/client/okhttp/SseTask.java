@@ -3,7 +3,7 @@ package io.github.clescot.kafka.connect.sse.client.okhttp;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Maps;
 import com.launchdarkly.eventsource.background.BackgroundEventSource;
-import io.github.clescot.kafka.connect.http.Task;
+import io.github.clescot.kafka.connect.Task;
 import io.github.clescot.kafka.connect.http.client.okhttp.OkHttpClient;
 import io.github.clescot.kafka.connect.http.core.HttpRequest;
 import io.github.clescot.kafka.connect.http.core.queue.QueueFactory;

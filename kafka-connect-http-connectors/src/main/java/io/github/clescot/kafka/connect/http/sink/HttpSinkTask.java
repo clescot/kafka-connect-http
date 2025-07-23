@@ -2,12 +2,12 @@ package io.github.clescot.kafka.connect.http.sink;
 
 import com.google.common.base.Preconditions;
 import io.github.clescot.kafka.connect.http.HttpTask;
-import io.github.clescot.kafka.connect.http.VersionUtils;
+import io.github.clescot.kafka.connect.VersionUtils;
 import io.github.clescot.kafka.connect.http.client.*;
 import io.github.clescot.kafka.connect.http.core.HttpExchange;
 import io.github.clescot.kafka.connect.http.core.HttpRequest;
 import io.github.clescot.kafka.connect.http.core.queue.KafkaRecord;
-import io.github.clescot.kafka.connect.http.sink.mapper.HttpRequestMapper;
+import io.github.clescot.kafka.connect.http.mapper.HttpRequestMapper;
 import io.github.clescot.kafka.connect.http.sink.publish.KafkaProducer;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.kafka.connect.connector.ConnectRecord;

@@ -1,4 +1,4 @@
-package io.github.clescot.kafka.connect.http.sink;
+package io.github.clescot.kafka.connect.http;
 
 import io.github.clescot.kafka.connect.http.client.HttpException;
 import io.micrometer.core.instrument.Clock;

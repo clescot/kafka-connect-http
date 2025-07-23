@@ -2,14 +2,15 @@ package io.github.clescot.kafka.connect.http;
 
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
+import io.github.clescot.kafka.connect.Task;
 import io.github.clescot.kafka.connect.http.client.*;
 import io.github.clescot.kafka.connect.http.core.HttpExchange;
 import io.github.clescot.kafka.connect.http.core.HttpRequest;
 import io.github.clescot.kafka.connect.http.core.HttpResponse;
 import io.github.clescot.kafka.connect.http.core.queue.KafkaRecord;
+import io.github.clescot.kafka.connect.http.mapper.HttpRequestMapper;
+import io.github.clescot.kafka.connect.http.mapper.HttpRequestMapperFactory;
 import io.github.clescot.kafka.connect.http.sink.*;
-import io.github.clescot.kafka.connect.http.sink.mapper.HttpRequestMapper;
-import io.github.clescot.kafka.connect.http.sink.mapper.HttpRequestMapperFactory;
 import io.github.clescot.kafka.connect.http.sink.publish.KafkaProducer;
 import io.github.clescot.kafka.connect.http.sink.publish.PublishConfigurer;
 import io.github.clescot.kafka.connect.http.sink.publish.PublishMode;
@@ -37,8 +38,8 @@ import java.util.concurrent.*;
 import java.util.function.Function;
 import java.util.stream.Stream;
 
-import static io.github.clescot.kafka.connect.http.sink.HttpClientConfigDefinition.CONFIGURATION_IDS;
-import static io.github.clescot.kafka.connect.http.sink.HttpClientConfigurationFactory.buildConfigurations;
+import static io.github.clescot.kafka.connect.http.client.HttpClientConfigDefinition.CONFIGURATION_IDS;
+import static io.github.clescot.kafka.connect.http.client.HttpClientConfigurationFactory.buildConfigurations;
 import static io.github.clescot.kafka.connect.http.sink.HttpConfigDefinition.*;
 
 /**
@@ -47,7 +48,7 @@ import static io.github.clescot.kafka.connect.http.sink.HttpConfigDefinition.*;
  * @param <R> native HttpRequest
  * @param <S> native HttpResponse
  */
-public class HttpTask<C extends HttpClient<R,S>,R, S> implements Task<C,HttpConfiguration<C,R,S>,HttpRequest, HttpResponse>{
+public class HttpTask<C extends HttpClient<R,S>,R, S> implements Task<C,HttpConfiguration<C,R,S>,HttpRequest, HttpResponse> {
 
 
     private static final Logger LOGGER = LoggerFactory.getLogger(HttpTask.class);

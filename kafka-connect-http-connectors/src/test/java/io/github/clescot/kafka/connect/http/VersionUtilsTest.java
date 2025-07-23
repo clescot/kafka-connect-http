@@ -1,5 +1,6 @@
 package io.github.clescot.kafka.connect.http;
 
+import io.github.clescot.kafka.connect.VersionUtils;
 import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;

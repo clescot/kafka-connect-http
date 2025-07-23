@@ -1,8 +1,8 @@
-package io.github.clescot.kafka.connect.http.sink;
+package io.github.clescot.kafka.connect.http;
 
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
-import io.github.clescot.kafka.connect.http.MapUtils;
+import io.github.clescot.kafka.connect.MapUtils;
 import org.apache.commons.jexl3.JexlEngine;
 
 import java.util.List;

@@ -28,8 +28,7 @@ import java.io.IOException;
 import java.net.URI;
 import java.util.*;
 
-import static io.github.clescot.kafka.connect.http.sink.HttpClientConfigDefinition.*;
-import static io.github.clescot.kafka.connect.http.sink.HttpConfigDefinition.*;
+import static io.github.clescot.kafka.connect.http.client.HttpClientConfigDefinition.*;
 
 public class OAuth2ClientCredentialsFlowAuthenticator implements CachingAuthenticator {
 

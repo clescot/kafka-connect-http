@@ -1,15 +1,10 @@
 package io.github.clescot.kafka.connect.sse.client.okhttp;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.launchdarkly.eventsource.background.BackgroundEventSource;
-import io.github.clescot.kafka.connect.http.VersionUtils;
-import io.github.clescot.kafka.connect.http.client.okhttp.OkHttpClientFactory;
-import io.github.clescot.kafka.connect.http.core.queue.QueueFactory;
+import io.github.clescot.kafka.connect.VersionUtils;
 import io.github.clescot.kafka.connect.sse.core.SseEvent;
 import org.apache.kafka.connect.source.SourceRecord;
 import org.apache.kafka.connect.source.SourceTask;
@@ -17,9 +12,6 @@ import org.apache.kafka.connect.source.SourceTask;
 import java.util.List;
 import java.util.Map;
 import java.util.Queue;
-import java.util.UUID;
-
-import static io.github.clescot.kafka.connect.sse.client.okhttp.SseConfiguration.buildSseConfiguration;
 
 public class SseSourceTask extends SourceTask {
     private static final VersionUtils VERSION_UTILS = new VersionUtils();

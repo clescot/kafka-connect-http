@@ -4,6 +4,7 @@ import com.google.common.base.Stopwatch;
 import dev.failsafe.Failsafe;
 import dev.failsafe.FailsafeExecutor;
 import dev.failsafe.RetryPolicy;
+import io.github.clescot.kafka.connect.Configuration;
 import io.github.clescot.kafka.connect.http.core.HttpExchange;
 import io.github.clescot.kafka.connect.http.core.HttpRequest;
 import io.github.clescot.kafka.connect.http.core.HttpResponse;
@@ -20,7 +21,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-public class HttpConfiguration<C extends HttpClient<R, S>, R, S> implements Configuration<C,HttpRequest>{
+public class HttpConfiguration<C extends HttpClient<R, S>, R, S> implements Configuration<C,HttpRequest> {
     private static final Logger LOGGER = LoggerFactory.getLogger(HttpConfiguration.class);
 
     private final HttpClientConfiguration<C, R, S> httpClientConfiguration;

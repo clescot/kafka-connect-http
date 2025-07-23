@@ -1,4 +1,4 @@
-package io.github.clescot.kafka.connect.http;
+package io.github.clescot.kafka.connect;
 
 import java.util.Map;
 import java.util.stream.Collectors;

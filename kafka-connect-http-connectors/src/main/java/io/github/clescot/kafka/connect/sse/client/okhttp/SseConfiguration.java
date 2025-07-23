@@ -6,7 +6,7 @@ import com.launchdarkly.eventsource.ErrorStrategy;
 import com.launchdarkly.eventsource.EventSource;
 import com.launchdarkly.eventsource.RetryDelayStrategy;
 import com.launchdarkly.eventsource.background.BackgroundEventSource;
-import io.github.clescot.kafka.connect.http.client.Configuration;
+import io.github.clescot.kafka.connect.Configuration;
 import io.github.clescot.kafka.connect.http.client.HttpClientConfiguration;
 import io.github.clescot.kafka.connect.http.client.okhttp.OkHttpClient;
 import io.github.clescot.kafka.connect.http.client.okhttp.OkHttpClientFactory;

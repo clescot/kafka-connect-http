@@ -1,7 +1,7 @@
 package io.github.clescot.kafka.connect.http.source.cron;
 
 import com.google.common.base.Preconditions;
-import io.github.clescot.kafka.connect.http.VersionUtils;
+import io.github.clescot.kafka.connect.VersionUtils;
 import org.apache.kafka.common.config.ConfigDef;
 import org.apache.kafka.connect.connector.Task;
 import org.apache.kafka.connect.source.SourceConnector;

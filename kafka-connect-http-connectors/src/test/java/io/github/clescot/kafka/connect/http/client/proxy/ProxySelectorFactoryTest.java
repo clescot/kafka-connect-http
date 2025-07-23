@@ -16,8 +16,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Random;
 
-import static io.github.clescot.kafka.connect.http.sink.HttpClientConfigDefinition.*;
-import static io.github.clescot.kafka.connect.http.sink.HttpConfigDefinition.*;
+import static io.github.clescot.kafka.connect.http.client.HttpClientConfigDefinition.*;
 import static org.assertj.core.api.Assertions.assertThat;
 
 class ProxySelectorFactoryTest {

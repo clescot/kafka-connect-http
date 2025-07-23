@@ -2,7 +2,7 @@ package io.github.clescot.kafka.connect.http.client;
 
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
-import io.github.clescot.kafka.connect.http.VersionUtils;
+import io.github.clescot.kafka.connect.VersionUtils;
 import io.github.clescot.kafka.connect.http.client.okhttp.OkHttpClient;
 import io.github.clescot.kafka.connect.http.client.okhttp.OkHttpClientFactory;
 import io.github.clescot.kafka.connect.http.core.HttpExchange;

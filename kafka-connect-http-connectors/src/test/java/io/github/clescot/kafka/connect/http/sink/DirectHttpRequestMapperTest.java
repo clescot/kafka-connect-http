@@ -11,7 +11,7 @@ import io.confluent.kafka.schemaregistry.client.rest.exceptions.RestClientExcept
 import io.confluent.kafka.schemaregistry.json.JsonSchema;
 import io.confluent.kafka.schemaregistry.json.JsonSchemaProvider;
 import io.github.clescot.kafka.connect.http.core.*;
-import io.github.clescot.kafka.connect.http.sink.mapper.DirectHttpRequestMapper;
+import io.github.clescot.kafka.connect.http.mapper.DirectHttpRequestMapper;
 import org.apache.commons.jexl3.JexlBuilder;
 import org.apache.commons.jexl3.JexlEngine;
 import org.apache.commons.jexl3.JexlFeatures;

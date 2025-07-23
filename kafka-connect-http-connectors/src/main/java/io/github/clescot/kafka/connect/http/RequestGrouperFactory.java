@@ -1,8 +1,9 @@
-package io.github.clescot.kafka.connect.http.sink;
+package io.github.clescot.kafka.connect.http;
 
 import com.google.common.collect.Lists;
 import io.github.clescot.kafka.connect.http.client.config.HttpRequestPredicateBuilder;
 import io.github.clescot.kafka.connect.http.core.HttpRequest;
+import io.github.clescot.kafka.connect.http.sink.HttpConnectorConfig;
 
 import java.util.List;
 import java.util.Map;

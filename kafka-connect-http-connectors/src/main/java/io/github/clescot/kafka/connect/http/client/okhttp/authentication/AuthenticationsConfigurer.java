@@ -13,7 +13,7 @@ import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
-import static io.github.clescot.kafka.connect.http.sink.HttpClientConfigDefinition.PROXY_PREFIX;
+import static io.github.clescot.kafka.connect.http.client.HttpClientConfigDefinition.PROXY_PREFIX;
 
 
 /**

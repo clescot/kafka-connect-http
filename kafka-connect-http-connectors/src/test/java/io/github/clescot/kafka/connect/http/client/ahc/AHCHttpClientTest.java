@@ -39,8 +39,7 @@ import static io.github.clescot.kafka.connect.http.client.HttpClientConfiguratio
 import static io.github.clescot.kafka.connect.http.client.ahc.AHCHttpClient.SUCCESS;
 import static io.github.clescot.kafka.connect.http.client.config.AddMissingCorrelationIdHeaderToHttpRequestFunction.HEADER_X_CORRELATION_ID;
 import static io.github.clescot.kafka.connect.http.client.config.AddMissingRequestIdHeaderToHttpRequestFunction.HEADER_X_REQUEST_ID;
-import static io.github.clescot.kafka.connect.http.sink.HttpClientConfigDefinition.*;
-import static io.github.clescot.kafka.connect.http.sink.HttpConfigDefinition.*;
+import static io.github.clescot.kafka.connect.http.client.HttpClientConfigDefinition.*;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.when;
 

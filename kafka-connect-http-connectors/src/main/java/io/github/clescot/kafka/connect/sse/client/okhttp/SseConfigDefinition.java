@@ -1,6 +1,6 @@
 package io.github.clescot.kafka.connect.sse.client.okhttp;
 
-import io.github.clescot.kafka.connect.http.sink.HttpClientConfigDefinition;
+import io.github.clescot.kafka.connect.http.client.HttpClientConfigDefinition;
 import org.apache.kafka.common.config.ConfigDef;
 
 import java.util.Map;
