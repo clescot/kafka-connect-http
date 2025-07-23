@@ -7,7 +7,7 @@ package io.github.clescot.kafka.connect.http.client;
  * @param <C> the type of the client
  * @param <R> the type of the request
  */
-public interface Configuration<C, R> {
+public interface Configuration<C extends Client, R> {
     /**
      * Default configuration ID used when no specific configuration is provided.
      */

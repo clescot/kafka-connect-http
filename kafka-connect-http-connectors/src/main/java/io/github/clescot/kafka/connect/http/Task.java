@@ -1,6 +1,7 @@
 package io.github.clescot.kafka.connect.http;
 
 import com.google.common.base.Preconditions;
+import io.github.clescot.kafka.connect.http.client.Client;
 import io.github.clescot.kafka.connect.http.client.Configuration;
 
 import java.util.List;
@@ -14,7 +15,7 @@ import java.util.List;
  * @param <R> the type of HTTP request
  * @param <S> the type of HTTP response
  */
-public interface Task<C,F extends Configuration<C,R>,R,S> {
+public interface Task<C extends Client,F extends Configuration<C,R>,R,S> {
 
 
     default F selectConfiguration(R request) {
