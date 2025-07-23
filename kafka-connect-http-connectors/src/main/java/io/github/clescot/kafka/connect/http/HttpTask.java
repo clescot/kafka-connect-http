@@ -54,7 +54,7 @@ public class HttpTask<C extends HttpClient<R,S>,R, S> implements Task<C,HttpConf
     private PublishMode publishMode;
 
     private Queue<KafkaRecord> queue;
-    private List<HttpConfiguration<C,R, S>> configurations;
+    private final List<HttpConfiguration<C,R, S>> configurations;
     private static CompositeMeterRegistry meterRegistry;
     private HttpConnectorConfig httpConnectorConfig;
     private KafkaProducer<String, Object> producer;
