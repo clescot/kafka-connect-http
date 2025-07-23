@@ -8,6 +8,7 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.launchdarkly.eventsource.background.BackgroundEventSource;
 import io.github.clescot.kafka.connect.http.VersionUtils;
+import io.github.clescot.kafka.connect.http.client.okhttp.OkHttpClientFactory;
 import io.github.clescot.kafka.connect.http.core.queue.QueueFactory;
 import io.github.clescot.kafka.connect.sse.core.SseEvent;
 import org.apache.kafka.connect.source.SourceRecord;
@@ -23,15 +24,8 @@ import static io.github.clescot.kafka.connect.sse.client.okhttp.SseConfiguration
 public class SseSourceTask extends SourceTask {
     private static final VersionUtils VERSION_UTILS = new VersionUtils();
 
-    private SseConnectorConfig sseConnectorConfig;
-    private SseConfiguration sseConfiguration;
-    private Queue<SseEvent> queue;
-    private final ObjectMapper objectMapper;
     private BackgroundEventSource backgroundEventSource;
-    public SseSourceTask() {
-        objectMapper = new ObjectMapper();
-        objectMapper.registerModule(new JavaTimeModule());
-    }
+    private SseTask sseTask;
 
     @Override
     public String version() {
@@ -41,34 +35,23 @@ public class SseSourceTask extends SourceTask {
     @Override
     public void start(Map<String, String> settings) {
         Preconditions.checkNotNull(settings, "settings must not be null or empty.");
-        this.sseConnectorConfig = new SseConnectorConfig(settings);
-        Map<String,Object> mySettings = Maps.newHashMap(settings);
-        this.sseConfiguration = buildSseConfiguration(mySettings);
-        this.queue = QueueFactory.getQueue(String.valueOf(UUID.randomUUID()));
-        this.backgroundEventSource = this.sseConfiguration.connect(queue,mySettings);
-        this.backgroundEventSource.start();
+        this.sseTask = new SseTask(settings);
     }
-
 
 
     @Override
     public List<SourceRecord> poll() {
-
+        Queue<SseEvent> queue = this.sseTask.getQueue();
         List<SourceRecord> records = Lists.newArrayList();
         while (queue.peek() != null) {
             SseEvent sseEvent = queue.poll();
-            SourceRecord sourceRecord;
-            try {
-                sourceRecord = new SourceRecord(
-                        Maps.newHashMap(),
-                        Maps.newHashMap(),
-                        sseConnectorConfig.getTopic(),
-                        null,
-                        objectMapper.writeValueAsString(sseEvent)
-                );
-            } catch (JsonProcessingException e) {
-                throw new SseException(e);
-            }
+            SourceRecord sourceRecord = new SourceRecord(
+                    Maps.newHashMap(),
+                    Maps.newHashMap(),
+                    this.sseTask.getTopic(),
+                    null,
+                    sseEvent.toJson()
+            );
             records.add(sourceRecord);
         }
         return records;
@@ -76,21 +59,21 @@ public class SseSourceTask extends SourceTask {
 
     @Override
     public void stop() {
-        if (this.sseConfiguration != null) {
-            this.sseConfiguration.shutdown();
+        if (this.sseTask != null) {
+            this.sseTask.shutdown();
         }
-        if(this.backgroundEventSource!=null) {
+        if (this.backgroundEventSource != null) {
             this.backgroundEventSource.close();
         }
     }
 
 
     public Queue<SseEvent> getQueue() {
-        return queue;
+        return this.sseTask.getQueue();
     }
 
     public boolean isConnected() {
-        return this.sseConfiguration.isConnected();
+        return this.sseTask.isConnected();
     }
 
     public BackgroundEventSource getBackgroundEventSource() {

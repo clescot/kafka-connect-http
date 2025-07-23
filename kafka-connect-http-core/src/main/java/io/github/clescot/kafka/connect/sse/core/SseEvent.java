@@ -62,4 +62,8 @@ public class SseEvent implements Cloneable, Serializable {
                 ", data='" + data + '\'' +
                 '}';
     }
+
+    public String toJson() {
+        return "{\"id\":\"" + id + "\",\"type\":\"" + type + "\",\"data\":\"" + data + "\"}";
+    }
 }

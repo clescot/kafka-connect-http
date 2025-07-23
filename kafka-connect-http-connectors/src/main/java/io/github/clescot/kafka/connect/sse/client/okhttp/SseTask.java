@@ -1,39 +1,62 @@
 package io.github.clescot.kafka.connect.sse.client.okhttp;
 
+import com.google.common.base.Preconditions;
+import com.google.common.collect.Maps;
+import com.launchdarkly.eventsource.background.BackgroundEventSource;
 import io.github.clescot.kafka.connect.http.Task;
-import io.github.clescot.kafka.connect.http.client.HttpClientConfiguration;
-import io.github.clescot.kafka.connect.http.client.HttpClientFactory;
 import io.github.clescot.kafka.connect.http.client.okhttp.OkHttpClient;
 import io.github.clescot.kafka.connect.http.core.HttpRequest;
+import io.github.clescot.kafka.connect.http.core.queue.QueueFactory;
 import io.github.clescot.kafka.connect.sse.core.SseEvent;
-import okhttp3.Request;
-import okhttp3.Response;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Queue;
+import java.util.UUID;
 
-import static io.github.clescot.kafka.connect.http.sink.HttpClientConfigDefinition.CONFIGURATION_IDS;
-import static io.github.clescot.kafka.connect.http.sink.HttpClientConfigurationFactory.buildConfigurations;
+import static io.github.clescot.kafka.connect.sse.client.okhttp.SseConfiguration.buildSseConfiguration;
 
 public class SseTask implements Task<OkHttpClient,SseConfiguration,HttpRequest, SseEvent> {
 
+    private SseConnectorConfig sseConnectorConfig;
+    private SseConfiguration sseConfiguration;
+    private Queue<SseEvent> queue;
+    private BackgroundEventSource backgroundEventSource;
 
-    public SseTask(Map<String,String> settings,
-                   HttpClientFactory<OkHttpClient, Request, Response> httpClientFactory) {
+    public SseTask(Map<String,String> settings) {
 
-//        //configurations
-//        List<HttpClientConfiguration<OkHttpClient, Request, Response>> httpClientConfigurations = buildConfigurations(
-//                httpClientFactory,
-//                executorService,
-//                httpConnectorConfig.getList(CONFIGURATION_IDS),
-//                httpConnectorConfig.originals(), meterRegistry
-//        );
+        Preconditions.checkNotNull(settings, "settings must not be null or empty.");
+        this.sseConnectorConfig = new SseConnectorConfig(settings);
+        Map<String,Object> mySettings = Maps.newHashMap(settings);
+        this.sseConfiguration = buildSseConfiguration(mySettings);
+        this.queue = QueueFactory.getQueue(String.valueOf(UUID.randomUUID()));
+        this.backgroundEventSource = this.sseConfiguration.connect(queue,mySettings);
+        this.backgroundEventSource.start();
     }
+
 
     @Override
     public List<SseConfiguration> getConfigurations() {
         return List.of();
     }
 
+    public Queue<SseEvent> getQueue() {
+        return queue;
+    }
 
+
+    public boolean isConnected() {
+        return this.sseConfiguration.isConnected();
+    }
+
+    public void shutdown() {
+        this.sseConfiguration.shutdown();
+    }
+
+    public String getTopic() {
+        return this.sseConnectorConfig.getTopic();
+    }
+    public String getUrl() {
+        return this.sseConnectorConfig.getUrl();
+    }
 }
