@@ -104,7 +104,7 @@ public interface HttpClient<R, S>  extends Client {
 
         Preconditions.checkNotNull(response, "response is null");
         HttpResponseBuilder httpResponseBuilder = new HttpResponseBuilder(getStatusMessageLimit(),getHeadersLimit(), getBodyLimit());
-        return response.thenApply((res)->buildResponse(httpResponseBuilder,res))
+        return response.thenApply(res->buildResponse(httpResponseBuilder,res))
                 .thenApply(myResponse -> {
                             directStopWatch.stop();
                             rateLimitedStopWatch.stop();
