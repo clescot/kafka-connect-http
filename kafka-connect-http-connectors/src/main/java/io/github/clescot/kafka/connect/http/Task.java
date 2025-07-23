@@ -10,7 +10,7 @@ import java.util.List;
  * Task interface for handling requests.
  * This interface defines methods for selecting configurations based on requests.
  *
- * @param <C> the type of HTTP client used to make requests
+ * @param <C> the type of client used to make requests
  * @param <F> the type of the configuration for the client
  * @param <R> the type of request
  * @param <S> the type of response
