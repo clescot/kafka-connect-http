@@ -56,7 +56,5 @@ public class SseTask implements Task<OkHttpClient,SseConfiguration,HttpRequest, 
     public String getTopic() {
         return this.sseConnectorConfig.getTopic();
     }
-    public String getUrl() {
-        return this.sseConnectorConfig.getUrl();
-    }
+
 }
