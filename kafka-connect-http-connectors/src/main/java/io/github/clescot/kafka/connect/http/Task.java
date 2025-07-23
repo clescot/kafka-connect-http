@@ -19,7 +19,7 @@ public interface Task<C extends Client,F extends Configuration<C,R>,R,S> {
 
 
     default F selectConfiguration(R request) {
-        Preconditions.checkNotNull(request, "HttpRequest must not be null.");
+        Preconditions.checkNotNull(request, "Request must not be null.");
         List<F> configurations = getConfigurations();
         Preconditions.checkArgument(!configurations.isEmpty(), "Configurations list must not be null or empty.");
         //is there a matching configuration against the request ?
