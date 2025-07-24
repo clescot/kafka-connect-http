@@ -141,12 +141,13 @@ class SseSourceTaskTest {
         @Test
         void test_nominal_case() {
             Map<String, String> settings = Maps.newHashMap();
-            settings.put("configuration.id", "test_sse_client_connect");
-            settings.put("topic", "test");
-            settings.put("url", wmRuntimeInfo.getHttpBaseUrl()+"/events");
+            String configurationId = "test_sse_client_connect";
+            settings.put("config.ids", configurationId);
+            settings.put(configurationId+".topic", "test");
+            settings.put(configurationId+".url", wmRuntimeInfo.getHttpBaseUrl()+"/events");
             SseSourceTask.start(settings);
-            assertThat(SseSourceTask.isConnected()).isTrue();
-            Queue<SseEvent> queue = SseSourceTask.getQueue();
+            assertThat(SseSourceTask.isConnected(configurationId)).isTrue();
+            Queue<SseEvent> queue = SseSourceTask.getQueue(configurationId);
             Awaitility.await().atMost(5, TimeUnit.SECONDS).until(()-> !queue.isEmpty());
             assertThat(queue).hasSize(2);
             Awaitility.await().atMost(5, TimeUnit.SECONDS).until(()->!SseSourceTask.poll().isEmpty());

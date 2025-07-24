@@ -25,14 +25,16 @@ public class SseConfiguration implements Configuration<OkHttpClient, HttpRequest
     private final OkHttpClient client;
     private boolean connected = false;
     private SseBackgroundEventHandler backgroundEventHandler;
+    private BackgroundEventSource backgroundEventSource;
+    private Queue<SseEvent> queue;
 
     public SseConfiguration(HttpClientConfiguration<OkHttpClient, Request, Response> httpClientConfiguration) {
         this.client = httpClientConfiguration.getClient();
     }
 
-    public static SseConfiguration buildSseConfiguration(Map<String, Object> mySettings) {
+    public static SseConfiguration buildSseConfiguration(Map<String, Object> mySettings, String configurationId) {
         HttpClientConfiguration<OkHttpClient, Request, Response> httpClientConfiguration = new HttpClientConfiguration<>(
-                DEFAULT_CONFIGURATION_ID,
+                configurationId,
                 new OkHttpClientFactory(),
                 mySettings,
                 null,
@@ -40,15 +42,17 @@ public class SseConfiguration implements Configuration<OkHttpClient, HttpRequest
         return new SseConfiguration(httpClientConfiguration);
     }
 
-    public BackgroundEventSource connect(Queue<SseEvent> sseEventQueue, Map<String, Object> settings) {
+    public BackgroundEventSource connect(Queue<SseEvent> queue, Map<String, Object> settings) {
+        Preconditions.checkNotNull(queue, "queue must not be null.");
+        this.queue = queue;
         Preconditions.checkNotNull(settings, "settings must not be null or empty.");
         Preconditions.checkArgument(!settings.isEmpty(), "settings must not be null or empty.");
         String url = (String) settings.get("url");
         Preconditions.checkNotNull(url, "'url' must not be null or empty.");
         URI uri =  URI.create(url);
         String accessToken = "your_access_token";
-        this.backgroundEventHandler = new SseBackgroundEventHandler(sseEventQueue, uri);
-        BackgroundEventSource backgroundEventSource = new BackgroundEventSource.Builder(backgroundEventHandler,
+        this.backgroundEventHandler = new SseBackgroundEventHandler(queue, uri);
+        this.backgroundEventSource = new BackgroundEventSource.Builder(backgroundEventHandler,
                 new EventSource.Builder(ConnectStrategy.http(uri)
                         .httpClient(this.client.getInternalClient())
                         //.header("my-application-key", accessToken)
@@ -61,8 +65,18 @@ public class SseConfiguration implements Configuration<OkHttpClient, HttpRequest
         return backgroundEventSource;
     }
 
+    public void start() {
+        Preconditions.checkState(connected, "SSE client is not connected. Call connect() first.");
+        if (backgroundEventSource != null) {
+            backgroundEventSource.start();
+        }
+    }
+
     public void shutdown() {
         connected = false;
+        if (backgroundEventSource != null) {
+            backgroundEventSource.close();
+        }
     }
 
     public boolean isConnected() {
@@ -82,5 +96,9 @@ public class SseConfiguration implements Configuration<OkHttpClient, HttpRequest
     @Override
     public OkHttpClient getClient() {
         return client;
+    }
+
+    public Queue<SseEvent> getQueue() {
+        return queue;
     }
 }

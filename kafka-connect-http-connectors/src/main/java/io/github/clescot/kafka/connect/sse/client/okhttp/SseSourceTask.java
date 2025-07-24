@@ -9,6 +9,7 @@ import io.github.clescot.kafka.connect.sse.core.SseEvent;
 import org.apache.kafka.connect.source.SourceRecord;
 import org.apache.kafka.connect.source.SourceTask;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Queue;
@@ -33,7 +34,17 @@ public class SseSourceTask extends SourceTask {
 
     @Override
     public List<SourceRecord> poll() {
-        Queue<SseEvent> queue = this.sseTask.getQueue();
+        Collection<Queue<SseEvent>> queues = this.sseTask.getQueues();
+        List<SourceRecord> records = Lists.newArrayList();
+        for (Queue<SseEvent> queue : queues) {
+            records.addAll(poll(queue));
+        }
+
+        return records;
+    }
+
+    private List<SourceRecord> poll(Queue<SseEvent> queue){
+        Preconditions.checkNotNull(queue, "queue must not be null.");
         List<SourceRecord> records = Lists.newArrayList();
         while (queue.peek() != null) {
             SseEvent sseEvent = queue.poll();
@@ -41,6 +52,8 @@ public class SseSourceTask extends SourceTask {
                     Maps.newHashMap(),
                     Maps.newHashMap(),
                     this.sseTask.getTopic(),
+                    null,
+                    "sse_event",
                     null,
                     sseEvent.toJson()
             );
@@ -60,12 +73,12 @@ public class SseSourceTask extends SourceTask {
     }
 
 
-    public Queue<SseEvent> getQueue() {
-        return this.sseTask.getQueue();
+    public Queue<SseEvent> getQueue(String configurationId) {
+        return this.sseTask.getQueue(configurationId);
     }
 
-    public boolean isConnected() {
-        return this.sseTask.isConnected();
+    public boolean isConnected(String configurationId) {
+        return this.sseTask.isConnected(configurationId);
     }
 
     public BackgroundEventSource getBackgroundEventSource() {
