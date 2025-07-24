@@ -74,8 +74,8 @@ public class SseTask implements Task<OkHttpClient,SseConfiguration,HttpRequest, 
         this.sseConfigurations.forEach((name,configuration)-> configuration.shutdown());
     }
 
-    public String getTopic() {
-        return this.sseConnectorConfig.getTopic();
+    public String getDefaultTopic() {
+        return this.sseConnectorConfig.getDefaultTopic();
     }
 
 }

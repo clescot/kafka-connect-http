@@ -51,9 +51,9 @@ public class SseSourceTask extends SourceTask {
             SourceRecord sourceRecord = new SourceRecord(
                     Maps.newHashMap(),
                     Maps.newHashMap(),
-                    this.sseTask.getTopic(),
+                    this.sseTask.getDefaultTopic(),
                     null,
-                    "sse_event",
+                    sseEvent.getType(),
                     null,
                     sseEvent.toJson()
             );

@@ -30,11 +30,11 @@ public class SseConnectorConfig extends AbstractConfig {
     }
 
 
-    public String getTopic() {
+    public String getDefaultTopic() {
         return topic;
     }
 
-    public String getUrl() {
+    public String getDefaultUrl() {
         return url;
     }
 }
