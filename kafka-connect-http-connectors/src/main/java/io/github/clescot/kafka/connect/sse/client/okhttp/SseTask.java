@@ -48,7 +48,7 @@ public class SseTask implements Task<OkHttpClient,SseConfiguration,HttpRequest, 
 
     @Override
     public Map<String, SseConfiguration> getConfigurations() {
-        return Map.of();
+        return this.sseConfigurations;
     }
     public Collection<Queue<SseEvent>> getQueues() {
         return this.sseConfigurations.values().stream()
@@ -77,5 +77,7 @@ public class SseTask implements Task<OkHttpClient,SseConfiguration,HttpRequest, 
     public String getDefaultTopic() {
         return this.sseConnectorConfig.getDefaultTopic();
     }
+
+
 
 }
