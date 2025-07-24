@@ -7,12 +7,9 @@ import com.github.tomakehurst.wiremock.http.trafficlistener.ConsoleNotifyingWire
 import com.github.tomakehurst.wiremock.junit5.WireMockExtension;
 import com.github.tomakehurst.wiremock.junit5.WireMockRuntimeInfo;
 import com.google.common.collect.Maps;
-import com.launchdarkly.eventsource.background.BackgroundEventSource;
-import io.github.clescot.kafka.connect.http.client.okhttp.OkHttpClient;
-import io.github.clescot.kafka.connect.http.client.okhttp.OkHttpClientFactory;
+import io.github.clescot.kafka.connect.Configuration;
 import io.github.clescot.kafka.connect.http.core.queue.QueueFactory;
 import io.github.clescot.kafka.connect.sse.core.SseEvent;
-import io.micrometer.core.instrument.composite.CompositeMeterRegistry;
 import org.awaitility.Awaitility;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
@@ -71,20 +68,19 @@ class SseHttpClientConfigurationTest {
                 );
 
         // Create an OkHttpSseClient instance and connect to the WireMock server
-        OkHttpClientFactory factory = new OkHttpClientFactory();
         Map<String,Object> settings = Maps.newHashMap();
         settings.put("configuration.id", "test_sse_client_connect");
-        SseConfiguration client = buildSseConfiguration(settings);
+        SseConfiguration client = buildSseConfiguration(settings, Configuration.DEFAULT_CONFIGURATION_ID);
 
         // Connect to the SSE endpoint
         Map<String, Object> config = Maps.newHashMap();
         config.put("url", wmHttp.url("/events"));
         assertDoesNotThrow(() -> {
-            BackgroundEventSource backgroundEventSource = client.connect(QueueFactory.getQueue(String.valueOf(UUID.randomUUID())), config);
-            backgroundEventSource.start();
+            client.connect(QueueFactory.getQueue(String.valueOf(UUID.randomUUID())), config);
+            client.start();
         });
         assertTrue(client.isConnected());
-        Queue<SseEvent> eventQueue = client.getBackgroundEventHandler().getQueue();
+        Queue<SseEvent> eventQueue = client.getQueue();
         Awaitility.await().atMost(5, java.util.concurrent.TimeUnit.SECONDS)
                 .until(() -> !eventQueue.isEmpty());
 
