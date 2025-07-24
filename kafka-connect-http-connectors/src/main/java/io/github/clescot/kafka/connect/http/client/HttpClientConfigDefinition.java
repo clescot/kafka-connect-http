@@ -2,12 +2,12 @@ package io.github.clescot.kafka.connect.http.client;
 
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
-import io.github.clescot.kafka.connect.http.core.queue.ConfigConstants;
-import io.github.clescot.kafka.connect.http.sink.publish.PublishMode;
 import org.apache.kafka.common.config.ConfigDef;
 
 import java.nio.charset.StandardCharsets;
-import java.util.*;
+import java.util.Arrays;
+import java.util.Map;
+import java.util.Set;
 
 public class HttpClientConfigDefinition {
     private final Map<String, String> settings;

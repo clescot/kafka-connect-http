@@ -7,14 +7,11 @@ import com.github.tomakehurst.wiremock.http.trafficlistener.ConsoleNotifyingWire
 import com.github.tomakehurst.wiremock.junit5.WireMockExtension;
 import com.github.tomakehurst.wiremock.junit5.WireMockRuntimeInfo;
 import com.google.common.collect.Maps;
-import com.launchdarkly.eventsource.EventSource;
-import com.launchdarkly.eventsource.ReadyState;
 import io.github.clescot.kafka.connect.sse.core.SseEvent;
 import org.apache.kafka.common.config.ConfigException;
 import org.awaitility.Awaitility;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.extension.RegisterExtension;
-import org.quartz.*;
 
 import java.util.HashMap;
 import java.util.Map;

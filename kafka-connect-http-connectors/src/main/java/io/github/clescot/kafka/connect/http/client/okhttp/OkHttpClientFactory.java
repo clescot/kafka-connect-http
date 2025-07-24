@@ -3,7 +3,9 @@ package io.github.clescot.kafka.connect.http.client.okhttp;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
 import com.google.common.jimfs.Jimfs;
-import io.github.clescot.kafka.connect.http.client.*;
+import io.github.clescot.kafka.connect.http.client.HttpClientConfiguration;
+import io.github.clescot.kafka.connect.http.client.HttpClientFactory;
+import io.github.clescot.kafka.connect.http.client.HttpException;
 import io.github.clescot.kafka.connect.http.client.okhttp.authentication.*;
 import io.github.clescot.kafka.connect.http.client.okhttp.event.AdvancedEventListenerFactory;
 import io.github.clescot.kafka.connect.http.client.okhttp.interceptor.InetAddressInterceptor;
@@ -36,9 +38,8 @@ import java.util.stream.Collectors;
 
 import static io.github.clescot.kafka.connect.Configuration.DEFAULT_CONFIGURATION_ID;
 import static io.github.clescot.kafka.connect.http.client.HttpClientConfigDefinition.*;
+import static io.github.clescot.kafka.connect.http.sink.HttpConfigDefinition.*;
 import static io.github.clescot.kafka.connect.http.sink.HttpConfigDefinition.FALSE;
-import static io.github.clescot.kafka.connect.http.sink.HttpConfigDefinition.METER_REGISTRY_TAG_INCLUDE_LEGACY_HOST;
-import static io.github.clescot.kafka.connect.http.sink.HttpConfigDefinition.METER_REGISTRY_TAG_INCLUDE_URL_PATH;
 import static io.github.clescot.kafka.connect.http.sink.HttpConfigDefinition.TRUE;
 
 public class OkHttpClientFactory implements HttpClientFactory<OkHttpClient,Request, Response> {

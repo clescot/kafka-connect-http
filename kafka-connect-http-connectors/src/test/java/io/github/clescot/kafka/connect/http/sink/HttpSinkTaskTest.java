@@ -63,15 +63,15 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.*;
 import static com.github.tomakehurst.wiremock.stubbing.Scenario.STARTED;
-import static io.github.clescot.kafka.connect.http.client.config.HttpRequestPredicateBuilder.URL_REGEX;
 import static io.github.clescot.kafka.connect.http.client.HttpClientConfigDefinition.*;
-import static io.github.clescot.kafka.connect.http.sink.HttpConfigDefinition.*;
+import static io.github.clescot.kafka.connect.http.client.config.HttpRequestPredicateBuilder.URL_REGEX;
 import static io.github.clescot.kafka.connect.http.mapper.HttpRequestMapperFactory.JEXL_ALWAYS_MATCHES;
+import static io.github.clescot.kafka.connect.http.sink.HttpConfigDefinition.*;
 import static io.github.clescot.kafka.connect.http.sink.SinkConfigDefinition.*;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.*;
 import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.*;
 
 public class HttpSinkTaskTest {
     private static final Logger LOGGER = LoggerFactory.getLogger(HttpSinkTaskTest.class);

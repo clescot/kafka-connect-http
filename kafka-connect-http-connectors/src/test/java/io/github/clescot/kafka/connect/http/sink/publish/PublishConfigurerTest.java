@@ -19,7 +19,6 @@ import org.junit.jupiter.api.Test;
 import java.util.HashMap;
 
 import static io.github.clescot.kafka.connect.http.core.queue.QueueFactory.DEFAULT_QUEUE_NAME;
-import static io.github.clescot.kafka.connect.http.client.HttpClientConfigDefinition.*;
 import static io.github.clescot.kafka.connect.http.sink.SinkConfigDefinition.*;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;

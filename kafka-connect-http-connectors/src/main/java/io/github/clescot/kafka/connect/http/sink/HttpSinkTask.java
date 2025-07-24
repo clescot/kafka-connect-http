@@ -1,9 +1,11 @@
 package io.github.clescot.kafka.connect.http.sink;
 
 import com.google.common.base.Preconditions;
-import io.github.clescot.kafka.connect.http.HttpTask;
 import io.github.clescot.kafka.connect.VersionUtils;
-import io.github.clescot.kafka.connect.http.client.*;
+import io.github.clescot.kafka.connect.http.HttpTask;
+import io.github.clescot.kafka.connect.http.client.HttpClient;
+import io.github.clescot.kafka.connect.http.client.HttpClientFactory;
+import io.github.clescot.kafka.connect.http.client.HttpConfiguration;
 import io.github.clescot.kafka.connect.http.core.HttpExchange;
 import io.github.clescot.kafka.connect.http.core.HttpRequest;
 import io.github.clescot.kafka.connect.http.core.queue.KafkaRecord;
@@ -17,8 +19,13 @@ import org.apache.kafka.connect.sink.SinkTask;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.*;
-import java.util.concurrent.*;
+import java.util.Collection;
+import java.util.List;
+import java.util.Map;
+import java.util.Queue;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
 
 /**
  * HttpSinkTask is a Kafka Connect SinkTask that processes SinkRecords,

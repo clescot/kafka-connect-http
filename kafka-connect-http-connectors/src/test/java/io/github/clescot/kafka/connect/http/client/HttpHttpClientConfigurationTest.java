@@ -33,10 +33,6 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static io.github.clescot.kafka.connect.http.sink.HttpConfigDefinition.*;
-import static io.github.clescot.kafka.connect.http.sink.HttpConfigDefinition.GENERATE_MISSING_CORRELATION_ID;
-import static io.github.clescot.kafka.connect.http.sink.HttpConfigDefinition.SUCCESS_RESPONSE_CODE_REGEX;
-import static io.github.clescot.kafka.connect.http.sink.HttpConfigDefinition.USER_AGENT_CUSTOM_VALUES;
-import static io.github.clescot.kafka.connect.http.sink.HttpConfigDefinition.USER_AGENT_OVERRIDE;
 import static org.assertj.core.api.Assertions.assertThat;
 class HttpHttpClientConfigurationTest {
 

@@ -18,7 +18,7 @@ import java.util.Map;
 import java.util.Queue;
 import java.util.UUID;
 
-import static com.github.tomakehurst.wiremock.client.WireMock.*;
+import static com.github.tomakehurst.wiremock.client.WireMock.okForContentType;
 import static com.github.tomakehurst.wiremock.stubbing.Scenario.STARTED;
 import static io.github.clescot.kafka.connect.sse.client.okhttp.SseConfiguration.buildSseConfiguration;
 import static org.assertj.core.api.Assertions.assertThat;

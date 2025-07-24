@@ -3,7 +3,6 @@ package io.github.clescot.kafka.connect.sse.client.okhttp;
 import com.google.common.collect.Maps;
 import com.launchdarkly.eventsource.EventSource;
 import com.launchdarkly.eventsource.ReadyState;
-import io.github.clescot.kafka.connect.Configuration;
 import io.github.clescot.kafka.connect.sse.core.SseEvent;
 import org.awaitility.Awaitility;
 import org.junit.jupiter.api.Assertions;

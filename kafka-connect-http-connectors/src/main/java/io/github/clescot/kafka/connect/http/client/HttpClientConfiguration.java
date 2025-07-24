@@ -25,8 +25,8 @@ import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.regex.Pattern;
 
-import static io.github.clescot.kafka.connect.http.client.config.HttpRequestPredicateBuilder.*;
 import static io.github.clescot.kafka.connect.http.client.HttpClientConfigDefinition.*;
+import static io.github.clescot.kafka.connect.http.client.config.HttpRequestPredicateBuilder.*;
 import static io.github.clescot.kafka.connect.http.sink.HttpConfigDefinition.*;
 
 /**

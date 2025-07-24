@@ -2,9 +2,7 @@ package io.github.clescot.kafka.connect.sse.client.okhttp;
 
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Maps;
-import com.launchdarkly.eventsource.background.BackgroundEventSource;
 import io.github.clescot.kafka.connect.Task;
-import io.github.clescot.kafka.connect.http.client.HttpClientConfiguration;
 import io.github.clescot.kafka.connect.http.client.HttpClientConfigurationFactory;
 import io.github.clescot.kafka.connect.http.client.okhttp.OkHttpClient;
 import io.github.clescot.kafka.connect.http.client.okhttp.OkHttpClientFactory;
@@ -12,10 +10,10 @@ import io.github.clescot.kafka.connect.http.core.HttpRequest;
 import io.github.clescot.kafka.connect.http.core.queue.QueueFactory;
 import io.github.clescot.kafka.connect.sse.core.SseEvent;
 import io.micrometer.core.instrument.composite.CompositeMeterRegistry;
-import okhttp3.Request;
-import okhttp3.Response;
 
-import java.util.*;
+import java.util.Collection;
+import java.util.Map;
+import java.util.Queue;
 import java.util.stream.Collectors;
 
 import static io.github.clescot.kafka.connect.http.client.HttpClientConfigDefinition.CONFIGURATION_IDS;

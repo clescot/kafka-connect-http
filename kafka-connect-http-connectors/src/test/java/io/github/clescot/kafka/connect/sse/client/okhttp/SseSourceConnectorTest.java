@@ -1,6 +1,5 @@
 package io.github.clescot.kafka.connect.sse.client.okhttp;
 
-import io.github.clescot.kafka.connect.http.source.cron.CronSourceConnector;
 import org.gradle.internal.impldep.com.google.common.collect.Maps;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;

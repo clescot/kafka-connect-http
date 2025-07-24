@@ -1,8 +1,6 @@
 package io.github.clescot.kafka.connect.sse.client.okhttp;
 
 import com.google.common.collect.Lists;
-import io.github.clescot.kafka.connect.http.sink.HttpConfigDefinition;
-import io.github.clescot.kafka.connect.http.sink.HttpConnectorConfig;
 import org.apache.kafka.common.config.AbstractConfig;
 import org.apache.kafka.common.config.ConfigDef;
 import org.slf4j.Logger;

@@ -5,8 +5,8 @@ import com.nimbusds.oauth2.sdk.http.HTTPRequestSender;
 import com.nimbusds.oauth2.sdk.http.HTTPResponse;
 import com.nimbusds.oauth2.sdk.http.ReadOnlyHTTPRequest;
 import io.github.clescot.kafka.connect.http.client.HttpException;
-import okhttp3.OkHttpClient;
 import okhttp3.*;
+import okhttp3.OkHttpClient;
 
 import java.io.IOException;
 import java.util.List;

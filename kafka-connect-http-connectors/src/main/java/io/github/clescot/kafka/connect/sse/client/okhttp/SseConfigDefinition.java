@@ -1,6 +1,5 @@
 package io.github.clescot.kafka.connect.sse.client.okhttp;
 
-import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import io.github.clescot.kafka.connect.ConfigUtils;
 import io.github.clescot.kafka.connect.http.client.HttpClientConfigDefinition;

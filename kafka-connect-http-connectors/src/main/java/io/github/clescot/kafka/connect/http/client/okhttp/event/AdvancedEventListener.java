@@ -9,8 +9,8 @@ import io.micrometer.core.instrument.Tag;
 import io.micrometer.core.instrument.Tags;
 import io.micrometer.core.instrument.Timer;
 import io.micrometer.core.instrument.binder.http.Outcome;
-import okhttp3.EventListener;
 import okhttp3.*;
+import okhttp3.EventListener;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;

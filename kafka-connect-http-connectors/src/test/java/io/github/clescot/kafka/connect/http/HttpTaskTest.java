@@ -8,7 +8,6 @@ import com.github.tomakehurst.wiremock.junit5.WireMockExtension;
 import com.github.tomakehurst.wiremock.junit5.WireMockRuntimeInfo;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
-import io.github.clescot.kafka.connect.Configuration;
 import io.github.clescot.kafka.connect.http.client.HttpClientConfiguration;
 import io.github.clescot.kafka.connect.http.client.HttpConfiguration;
 import io.github.clescot.kafka.connect.http.client.okhttp.OkHttpClient;
