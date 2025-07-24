@@ -101,4 +101,8 @@ public class SseConfiguration implements Configuration<OkHttpClient, HttpRequest
     public Queue<SseEvent> getQueue() {
         return queue;
     }
+
+    public BackgroundEventSource getBackgroundEventSource() {
+        return backgroundEventSource;
+    }
 }
