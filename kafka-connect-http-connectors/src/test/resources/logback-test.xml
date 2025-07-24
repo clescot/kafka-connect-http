@@ -10,6 +10,7 @@
         <appender-ref ref="STDOUT" />
     </root>
     <logger name="io.github.clescot.kafka.connect.http" level="INFO" />
+    <logger name="io.github.clescot.kafka.connect.sse" level="DEBUG" />
     <logger name="io.github.clescot.kafka.connect.http.client.okhttp" level="INFO" />
     <logger name="io.github.clescot.kafka.connect.http.client.okhttp.interceptor" level="DEBUG" />
     <logger name="io.github.clescot.kafka.connect.http.sink" level="DEBUG" />

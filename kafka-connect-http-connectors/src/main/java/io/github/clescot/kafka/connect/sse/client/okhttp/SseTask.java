@@ -10,8 +10,9 @@ import io.github.clescot.kafka.connect.http.core.HttpRequest;
 import io.github.clescot.kafka.connect.http.core.queue.QueueFactory;
 import io.github.clescot.kafka.connect.sse.core.SseEvent;
 import io.micrometer.core.instrument.composite.CompositeMeterRegistry;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import java.util.Collection;
 import java.util.Map;
 import java.util.Queue;
 import java.util.stream.Collectors;
@@ -20,6 +21,7 @@ import static io.github.clescot.kafka.connect.http.client.HttpClientConfigDefini
 
 public class SseTask implements Task<OkHttpClient,SseConfiguration,HttpRequest, SseEvent> {
 
+    private static final Logger LOGGER = LoggerFactory.getLogger(SseTask.class);
     private SseConnectorConfig sseConnectorConfig;
     private Map<String,SseConfiguration> sseConfigurations;
 
@@ -50,10 +52,10 @@ public class SseTask implements Task<OkHttpClient,SseConfiguration,HttpRequest, 
     public Map<String, SseConfiguration> getConfigurations() {
         return this.sseConfigurations;
     }
-    public Collection<Queue<SseEvent>> getQueues() {
-        return this.sseConfigurations.values().stream()
-                .map(SseConfiguration::getQueue)
-                .toList();
+    public Map<String,Queue<SseEvent>> getQueues() {
+        return this.sseConfigurations.entrySet().stream()
+                .map(entry-> Map.entry(entry.getKey(),entry.getValue().getQueue()))
+                .collect(Collectors.toMap(entry->entry.getKey(), entry->entry.getValue()));
     }
     public Queue<SseEvent> getQueue(String configurationId) {
         if( this.sseConfigurations.containsKey(configurationId)) {

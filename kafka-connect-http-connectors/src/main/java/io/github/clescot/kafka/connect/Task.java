@@ -31,6 +31,13 @@ public interface Task<C extends Client,F extends Configuration<C,R>,R,S> {
     Map<String,F> getConfigurations();
 
 
+    default F getDefaultConfiguration() {
+        Map<String,F> configurations = getConfigurations();
+        Preconditions.checkArgument(!configurations.isEmpty(), "Configurations list must not be null or empty.");
+        //return the first configuration as default
+        return configurations.get(Configuration.DEFAULT_CONFIGURATION_ID);
+    }
+
     // This class is a placeholder for the Task class in the Kafka Connect framework.
     // It can be extended to implement specific task functionality for HTTP connectors.
 

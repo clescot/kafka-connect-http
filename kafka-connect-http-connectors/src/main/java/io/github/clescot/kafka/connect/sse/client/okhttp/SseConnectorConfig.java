@@ -16,8 +16,8 @@ public class SseConnectorConfig extends AbstractConfig {
     private static final Logger LOGGER = LoggerFactory.getLogger(SseConnectorConfig.class);
     public static final String CANNOT_BE_FOUND_IN_MAP_CONFIGURATION = " cannot be found in map configuration";
     private final List<String> configurationIds;
-    private final String topic;
-    private final String url;
+    private final String defaultTopic;
+    private final String defaultUrl;
     public SseConnectorConfig(Map<String, String> originals) {
         this(new SseConfigDefinition(originals).config(), originals);
     }
@@ -25,16 +25,20 @@ public class SseConnectorConfig extends AbstractConfig {
     public SseConnectorConfig(ConfigDef configDef, Map<?, ?> originals){
         super(configDef, originals, LOGGER.isDebugEnabled());
         this.configurationIds = Optional.ofNullable(getList(CONFIGURATION_IDS)).orElse(Lists.newArrayList());
-        this.topic = Optional.ofNullable(getString(SseConfigDefinition.DEFAULT_CONFIG_TOPIC)).orElseThrow(()-> new IllegalArgumentException(SseConfigDefinition.TOPIC + CANNOT_BE_FOUND_IN_MAP_CONFIGURATION));
-        this.url  = Optional.ofNullable(getString(SseConfigDefinition.DEFAULT_CONFIG_URL)).orElseThrow(()-> new IllegalArgumentException(SseConfigDefinition.URL + CANNOT_BE_FOUND_IN_MAP_CONFIGURATION));
+        this.defaultTopic = Optional.ofNullable(getString(SseConfigDefinition.DEFAULT_CONFIG_TOPIC)).orElseThrow(()-> new IllegalArgumentException(SseConfigDefinition.TOPIC + CANNOT_BE_FOUND_IN_MAP_CONFIGURATION));
+        this.defaultUrl = Optional.ofNullable(getString(SseConfigDefinition.DEFAULT_CONFIG_URL)).orElseThrow(()-> new IllegalArgumentException(SseConfigDefinition.URL + CANNOT_BE_FOUND_IN_MAP_CONFIGURATION));
     }
 
 
     public String getDefaultTopic() {
-        return topic;
+        return defaultTopic;
+    }
+
+    public List<String> getConfigurationIds() {
+        return configurationIds;
     }
 
     public String getDefaultUrl() {
-        return url;
+        return defaultUrl;
     }
 }
