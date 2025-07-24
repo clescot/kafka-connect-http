@@ -74,8 +74,8 @@ class SseSourceTaskTest {
         void test_settings_with_topic_and_url() {
             Map<String, String> settings = Maps.newHashMap();
             settings.put("topic", "test");
-            settings.put("configuration.id", "test_sse_client_connect");
-            settings.put("url", "http://localhost:8080/sse");
+            settings.put("config.default.url", "http://localhost:8080/sse");
+            settings.put("config.default.topic", "dummy_topic");
             Assertions.assertDoesNotThrow(() -> sseSourceTask.start(settings));
         }
 
@@ -141,13 +141,11 @@ class SseSourceTaskTest {
         @Test
         void test_nominal_case() {
             Map<String, String> settings = Maps.newHashMap();
-            String configurationId = "test_sse_client_connect";
-            settings.put("config.ids", configurationId);
-            settings.put(configurationId+".topic", "test");
-            settings.put(configurationId+".url", wmRuntimeInfo.getHttpBaseUrl()+"/events");
+            settings.put("config.default.topic", "test");
+            settings.put("config.default.url", wmRuntimeInfo.getHttpBaseUrl()+"/events");
             SseSourceTask.start(settings);
-            assertThat(SseSourceTask.isConnected(configurationId)).isTrue();
-            Queue<SseEvent> queue = SseSourceTask.getQueue(configurationId);
+            assertThat(SseSourceTask.isConnected("default")).isTrue();
+            Queue<SseEvent> queue = SseSourceTask.getQueue("default");
             Awaitility.await().atMost(5, TimeUnit.SECONDS).until(()-> !queue.isEmpty());
             assertThat(queue).hasSize(2);
             Awaitility.await().atMost(5, TimeUnit.SECONDS).until(()->!SseSourceTask.poll().isEmpty());

@@ -21,6 +21,7 @@ import java.util.Optional;
 
 import static io.github.clescot.kafka.connect.http.client.HttpClientConfigDefinition.*;
 import static io.github.clescot.kafka.connect.http.sink.HttpConfigDefinition.*;
+import static io.github.clescot.kafka.connect.http.sink.SinkConfigDefinition.*;
 
 public class HttpConnectorConfig extends AbstractConfig {
     private static final Logger LOGGER = LoggerFactory.getLogger(HttpConnectorConfig.class);

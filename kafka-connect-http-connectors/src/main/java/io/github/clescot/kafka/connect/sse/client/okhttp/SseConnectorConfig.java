@@ -27,8 +27,8 @@ public class SseConnectorConfig extends AbstractConfig {
     public SseConnectorConfig(ConfigDef configDef, Map<?, ?> originals){
         super(configDef, originals, LOGGER.isDebugEnabled());
         this.configurationIds = Optional.ofNullable(getList(CONFIGURATION_IDS)).orElse(Lists.newArrayList());
-        this.topic = Optional.ofNullable(getString(SseConfigDefinition.TOPIC)).orElseThrow(()-> new IllegalArgumentException(SseConfigDefinition.TOPIC + CANNOT_BE_FOUND_IN_MAP_CONFIGURATION));
-        this.url  = Optional.ofNullable(getString(SseConfigDefinition.URL)).orElseThrow(()-> new IllegalArgumentException(SseConfigDefinition.URL + CANNOT_BE_FOUND_IN_MAP_CONFIGURATION));
+        this.topic = Optional.ofNullable(getString(SseConfigDefinition.DEFAULT_CONFIG_TOPIC)).orElseThrow(()-> new IllegalArgumentException(SseConfigDefinition.TOPIC + CANNOT_BE_FOUND_IN_MAP_CONFIGURATION));
+        this.url  = Optional.ofNullable(getString(SseConfigDefinition.DEFAULT_CONFIG_URL)).orElseThrow(()-> new IllegalArgumentException(SseConfigDefinition.URL + CANNOT_BE_FOUND_IN_MAP_CONFIGURATION));
     }
 
 

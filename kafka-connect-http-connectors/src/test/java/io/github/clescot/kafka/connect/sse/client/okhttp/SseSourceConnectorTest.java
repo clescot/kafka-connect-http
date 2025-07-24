@@ -31,8 +31,8 @@ class SseSourceConnectorTest {
         void setup(){
             sseSourceConnector = new SseSourceConnector();
             HashMap<String, String> settings = Maps.newHashMap();
-            settings.put("topic","test");
-            settings.put("url","http://localhost:8080/sse");
+            settings.put("config.default.topic","test");
+            settings.put("config.default.url","http://localhost:8080/sse");
             sseSourceConnector.start(settings);
         }
         @Test

@@ -67,6 +67,7 @@ import static io.github.clescot.kafka.connect.http.client.config.HttpRequestPred
 import static io.github.clescot.kafka.connect.http.client.HttpClientConfigDefinition.*;
 import static io.github.clescot.kafka.connect.http.sink.HttpConfigDefinition.*;
 import static io.github.clescot.kafka.connect.http.mapper.HttpRequestMapperFactory.JEXL_ALWAYS_MATCHES;
+import static io.github.clescot.kafka.connect.http.sink.SinkConfigDefinition.*;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.verify;

@@ -88,6 +88,7 @@ import static io.confluent.kafka.serializers.json.KafkaJsonSchemaDeserializerCon
 import static io.confluent.kafka.serializers.json.KafkaJsonSchemaSerializerConfig.*;
 import static io.github.clescot.kafka.connect.http.client.HttpClientConfigDefinition.*;
 import static io.github.clescot.kafka.connect.http.sink.HttpConfigDefinition.*;
+import static io.github.clescot.kafka.connect.http.sink.SinkConfigDefinition.PUBLISH_MODE;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.apache.kafka.clients.producer.ProducerConfig.BOOTSTRAP_SERVERS_CONFIG;
 

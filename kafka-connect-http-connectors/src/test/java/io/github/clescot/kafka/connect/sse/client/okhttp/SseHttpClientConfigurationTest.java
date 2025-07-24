@@ -69,12 +69,11 @@ class SseHttpClientConfigurationTest {
 
         // Create an OkHttpSseClient instance and connect to the WireMock server
         Map<String,Object> settings = Maps.newHashMap();
-        settings.put("configuration.id", "test_sse_client_connect");
         SseConfiguration client = buildSseConfiguration(settings, Configuration.DEFAULT_CONFIGURATION_ID);
 
         // Connect to the SSE endpoint
         Map<String, Object> config = Maps.newHashMap();
-        config.put("url", wmHttp.url("/events"));
+        config.put("config.default.url", wmHttp.url("/events"));
         assertDoesNotThrow(() -> {
             client.connect(QueueFactory.getQueue(String.valueOf(UUID.randomUUID())), config);
             client.start();

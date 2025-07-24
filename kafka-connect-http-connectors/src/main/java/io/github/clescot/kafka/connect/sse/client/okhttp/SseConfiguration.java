@@ -47,7 +47,7 @@ public class SseConfiguration implements Configuration<OkHttpClient, HttpRequest
         this.queue = queue;
         Preconditions.checkNotNull(settings, "settings must not be null or empty.");
         Preconditions.checkArgument(!settings.isEmpty(), "settings must not be null or empty.");
-        String url = (String) settings.get("url");
+        String url = (String) settings.get(SseConfigDefinition.DEFAULT_CONFIG_URL);
         Preconditions.checkNotNull(url, "'url' must not be null or empty.");
         URI uri =  URI.create(url);
         String accessToken = "your_access_token";

@@ -2,6 +2,7 @@ package io.github.clescot.kafka.connect.http.sink;
 
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
+import io.github.clescot.kafka.connect.ConfigUtils;
 import io.github.clescot.kafka.connect.http.client.HttpClientConfigDefinition;
 import io.github.clescot.kafka.connect.http.mapper.MapperMode;
 import org.apache.kafka.common.config.ConfigDef;
@@ -241,7 +242,6 @@ public class HttpConfigDefinition {
     public ConfigDef config() {
         HttpClientConfigDefinition httpClientConfigDefinition = new HttpClientConfigDefinition(settings);
         ConfigDef configDef = httpClientConfigDefinition.config()
-
                 //meter registry
                 //exporters
                 .define(METER_REGISTRY_EXPORTER_JMX_ACTIVATE, ConfigDef.Type.STRING, FALSE, ConfigDef.Importance.LOW, METER_REGISTRY_EXPORTER_JMX_ACTIVATE_DOC)
@@ -271,7 +271,8 @@ public class HttpConfigDefinition {
                 .define(REQUEST_GROUPER_IDS, ConfigDef.Type.LIST, Lists.newArrayList(), ConfigDef.Importance.LOW, REQUEST_GROUPER_IDS_DOC)
                 //custom request mappers
                 .define(HTTP_REQUEST_MAPPER_IDS, ConfigDef.Type.LIST, Lists.newArrayList(), ConfigDef.Importance.LOW, HTTP_REQUEST_MAPPER_IDS_DOC);
-
+                SinkConfigDefinition sinkConfigDefinition = new SinkConfigDefinition();
+                configDef = ConfigUtils.mergeConfigDefs(configDef, sinkConfigDefinition.config());
 
         //custom httpRequestmappers
         String httpRequestMapperIds = settings.get(HTTP_REQUEST_MAPPER_IDS);
