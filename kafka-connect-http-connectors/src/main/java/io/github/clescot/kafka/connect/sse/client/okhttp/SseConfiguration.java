@@ -50,12 +50,10 @@ public class SseConfiguration implements Configuration<OkHttpClient, HttpRequest
         String url = (String) settings.get(SseConfigDefinition.DEFAULT_CONFIG_URL);
         Preconditions.checkNotNull(url, "'url' must not be null or empty.");
         URI uri =  URI.create(url);
-        String accessToken = "your_access_token";
         this.backgroundEventHandler = new SseBackgroundEventHandler(queue, uri);
         this.backgroundEventSource = new BackgroundEventSource.Builder(backgroundEventHandler,
                 new EventSource.Builder(ConnectStrategy.http(uri)
                         .httpClient(this.client.getInternalClient())
-                        //.header("my-application-key", accessToken)
                 )
                         .streamEventData(false)
                         .retryDelayStrategy(RetryDelayStrategy.defaultStrategy())
