@@ -7,7 +7,7 @@
     <parent>
         <groupId>io.github.clescot</groupId>
         <artifactId>kafka-connect-http</artifactId>
-        <version>0.8.56-SNAPSHOT</version>
+        <version>0.8.58-SNAPSHOT</version>
     </parent>
     <artifactId>kafka-connect-http-connectors</artifactId>
     <packaging>jar</packaging>
@@ -20,7 +20,7 @@
             <groupId>io.github.clescot</groupId>
             <artifactId>kafka-connect-http-core</artifactId>
             <scope>compile</scope>
-            <version>0.8.56-SNAPSHOT</version>
+            <version>0.8.58-SNAPSHOT</version>
         </dependency>
         <dependency>
             <groupId>org.asynchttpclient</groupId>
@@ -108,7 +108,7 @@
         <dependency>
             <groupId>com.google.jimfs</groupId>
             <artifactId>jimfs</artifactId>
-            <version>1.3.0</version>
+            <version>1.3.1</version>
         </dependency>
 
 
