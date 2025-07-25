@@ -1,7 +1,6 @@
 package io.github.clescot.kafka.connect.sse.client.okhttp;
 
 import com.google.common.collect.Sets;
-import com.launchdarkly.eventsource.ErrorStrategy;
 import io.github.clescot.kafka.connect.ConfigUtils;
 import io.github.clescot.kafka.connect.http.client.HttpClientConfigDefinition;
 import io.github.clescot.kafka.connect.http.sink.SinkConfigDefinition;
@@ -31,12 +30,12 @@ public class SseConfigDefinition {
     public static final String ERROR_STRATEGY_MAX_ATTEMPTS = "max-attempts";
     public static final String ERROR_STRATEGY_TIME_LIMIT_COUNT_IN_MILLIS = "time-limit-count-in-millis";
     public static final String ERROR_STRATEGY_CONTINUE_WITH_TIME_LIMIT = "continue-with-time-limit";
+
+    //retry delay strategy
     public static final String RETRY_DELAY_STRATEGY_MAX_DELAY_MILLIS = "retry.delay.strategy.max-delay-millis";
     public static final String RETRY_DELAY_STRATEGY_BACKOFF_MULTIPLIER = "retry.delay.strategy.backoff-multiplier";
     public static final String RETRY_DELAY_STRATEGY_JITTER_MULTIPLIER = "retry.delay.strategy.jitter-multiplier";
 
-    //retry delay strategy
-    public static final String RETRY_DELAY_STRATEGY = "retry.delay.strategy";
 
     private final Map<String, String> settings;
 
