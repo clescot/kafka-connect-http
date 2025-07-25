@@ -2,7 +2,9 @@
 
 Server Sent Event (SSE) Source connector permits to receive events and convert them as kafka messages.
 Multiple event streams can be configured with for each one its own configuration, with its `URL` and `topic`.
-
+SSE Connector is relying on [OkHttp](https://square.github.io/okhttp/) to handle the SSE protocol.
+So, many configuration options present in the HTTP Connector, are also available here to tune the connection, 
+like inserting custom headers, configuring timeouts, etc.
 
 ## required parameters
 
@@ -15,7 +17,8 @@ Multiple event streams can be configured with for each one its own configuration
 * `retry.delay.strategy.max-delay-millis` (default: `30000`) - Maximum delay in milliseconds between retries.
 * `retry.delay.strategy.backoff-multiplier` (default: `2`) - Multiplier for the backoff delay.
 * `retry.delay.strategy.jitter-multiplier` (default: `0.5`) - Jitter multiplier for the backoff delay.
-* `error.strategy` (default: `alwaysThrow`) - Strategy to use when an error occurs. Possible values are `always-throw`, `always-continue`, `continue-with-max-attempts`,`continue-with-time-limit`.
+* `error.strategy` (default: `alwaysThrow`) - Strategy to use when an error occurs. Possible values are 
+`always-throw`, `always-continue`, `continue-with-max-attempts`,`continue-with-time-limit`.
 * `error.strategy.max-attempts` (default: `3`) - Maximum number of attempts before giving up.
 * `error.strategy.time-limit-millis` (default: `60000`) - Time limit in milliseconds before giving up.
 
