@@ -8,6 +8,7 @@ import com.github.tomakehurst.wiremock.junit5.WireMockExtension;
 import com.github.tomakehurst.wiremock.junit5.WireMockRuntimeInfo;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
+import io.github.clescot.kafka.connect.MapUtils;
 import io.github.clescot.kafka.connect.http.client.HttpClientConfiguration;
 import io.github.clescot.kafka.connect.http.client.HttpConfiguration;
 import io.github.clescot.kafka.connect.http.client.okhttp.OkHttpClient;
@@ -145,7 +146,7 @@ class HttpTaskTest {
             HttpClientConfiguration<OkHttpClient,Request, Response> httpClientConfiguration = new HttpClientConfiguration<>(
                     "dummy",
                     new OkHttpClientFactory(),
-                    httpConnectorConfig.originals(),
+                    MapUtils.getMapWithPrefix(httpConnectorConfig.originals(),"config.dummy."),
                     executorService,
                     getCompositeMeterRegistry()
             );
@@ -181,7 +182,7 @@ class HttpTaskTest {
             HttpClientConfiguration<OkHttpClient,Request, Response> httpClientConfiguration = new HttpClientConfiguration<>(
                     "dummy",
                     new OkHttpClientFactory(),
-                    httpConnectorConfig.originals(),
+                    MapUtils.getMapWithPrefix(httpConnectorConfig.originals(),"config.dummy."),
                     executorService,
                     getCompositeMeterRegistry()
             );
@@ -219,7 +220,7 @@ class HttpTaskTest {
             HttpClientConfiguration<OkHttpClient,Request, Response> httpClientConfiguration = new HttpClientConfiguration<>(
                     "dummy",
                     new OkHttpClientFactory(),
-                    httpConnectorConfig.originals(),
+                    MapUtils.getMapWithPrefix(httpConnectorConfig.originals(),"config.dummy."),
                     executorService,
                     getCompositeMeterRegistry()
             );
@@ -264,7 +265,7 @@ class HttpTaskTest {
             HttpClientConfiguration<OkHttpClient,Request, Response> httpClientConfiguration = new HttpClientConfiguration<>(
                     "dummy",
                     new OkHttpClientFactory(),
-                    httpConnectorConfig.originals(),
+                    MapUtils.getMapWithPrefix(httpConnectorConfig.originals(),"config.dummy."),
                     executorService,
                     getCompositeMeterRegistry()
             );

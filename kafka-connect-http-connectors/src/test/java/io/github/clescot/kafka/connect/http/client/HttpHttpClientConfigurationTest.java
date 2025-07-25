@@ -2,6 +2,7 @@ package io.github.clescot.kafka.connect.http.client;
 
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
+import io.github.clescot.kafka.connect.MapUtils;
 import io.github.clescot.kafka.connect.VersionUtils;
 import io.github.clescot.kafka.connect.http.client.okhttp.OkHttpClient;
 import io.github.clescot.kafka.connect.http.client.okhttp.OkHttpClientFactory;
@@ -34,6 +35,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import static io.github.clescot.kafka.connect.http.sink.HttpConfigDefinition.*;
 import static org.assertj.core.api.Assertions.assertThat;
+
 class HttpHttpClientConfigurationTest {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(HttpHttpClientConfigurationTest.class);
@@ -41,6 +43,7 @@ class HttpHttpClientConfigurationTest {
     private static final String DUMMY_BODY = "stuff";
     private static final String DUMMY_URL = "http://www." + DUMMY_BODY + ".com";
     private static final HttpRequest.Method DUMMY_METHOD = HttpRequest.Method.POST;
+
     @NotNull
     private static HttpRequest getDummyHttpRequest() {
         HttpRequest httpRequest = new HttpRequest(DUMMY_URL, DUMMY_METHOD);
@@ -67,12 +70,12 @@ class HttpHttpClientConfigurationTest {
             HttpClientConfiguration<OkHttpClient, Request, Response> httpClientConfiguration = new HttpClientConfiguration<>(
                     "dummy",
                     new OkHttpClientFactory(),
-                    new HttpConnectorConfig(config).originals(),
+                    MapUtils.getMapWithPrefix(new HttpConnectorConfig(config).originals(), "config.dummy."),
                     executorService,
                     getCompositeMeterRegistry()
             );
             HttpRequest httpRequest = getDummyHttpRequest();
-            HttpConfiguration<OkHttpClient,okhttp3.Request,okhttp3.Response> httpConfiguration = new HttpConfiguration<>(httpClientConfiguration);
+            HttpConfiguration<OkHttpClient, okhttp3.Request, okhttp3.Response> httpConfiguration = new HttpConfiguration<>(httpClientConfiguration);
             HttpRequest enrichedHttpRequest = httpConfiguration.enrich(httpRequest);
             Map<String, List<String>> headers = enrichedHttpRequest.getHeaders();
             assertThat(headers).containsEntry("X-Stuff-Id", Lists.newArrayList("12345"))
@@ -83,15 +86,15 @@ class HttpHttpClientConfigurationTest {
         void test_generate_missing_request_id() {
             Map<String, String> config = Maps.newHashMap();
             config.put("config.dummy." + GENERATE_MISSING_REQUEST_ID, "true");
-            HttpClientConfiguration<OkHttpClient,Request,Response> httpClientConfiguration = new HttpClientConfiguration<>(
+            HttpClientConfiguration<OkHttpClient, Request, Response> httpClientConfiguration = new HttpClientConfiguration<>(
                     "dummy",
                     new OkHttpClientFactory(),
-                    new HttpConnectorConfig(config).originals(),
+                    MapUtils.getMapWithPrefix(new HttpConnectorConfig(config).originals(), "config.dummy."),
                     executorService,
                     getCompositeMeterRegistry()
             );
             HttpRequest httpRequest = getDummyHttpRequest();
-            HttpConfiguration<OkHttpClient,okhttp3.Request,okhttp3.Response> httpConfiguration = new HttpConfiguration<>(httpClientConfiguration);
+            HttpConfiguration<OkHttpClient, okhttp3.Request, okhttp3.Response> httpConfiguration = new HttpConfiguration<>(httpClientConfiguration);
             HttpRequest enrichedHttpRequest = httpConfiguration.enrich(httpRequest);
             Map<String, List<String>> headers = enrichedHttpRequest.getHeaders();
             assertThat(headers).containsKey("X-Request-ID");
@@ -101,12 +104,12 @@ class HttpHttpClientConfigurationTest {
         void test_generate_missing_correlation_id() {
             Map<String, String> config = Maps.newHashMap();
             config.put("config.dummy." + GENERATE_MISSING_CORRELATION_ID, "true");
-            HttpClientConfiguration<OkHttpClient,Request,Response> httpClientConfiguration = new HttpClientConfiguration<>("dummy",
+            HttpClientConfiguration<OkHttpClient, Request, Response> httpClientConfiguration = new HttpClientConfiguration<>("dummy",
                     new OkHttpClientFactory(),
-                    new HttpConnectorConfig(config).originals(),
+                    MapUtils.getMapWithPrefix(new HttpConnectorConfig(config).originals(), "config.dummy."),
                     executorService, getCompositeMeterRegistry());
             HttpRequest httpRequest = getDummyHttpRequest();
-            HttpConfiguration<OkHttpClient,okhttp3.Request,okhttp3.Response> httpConfiguration = new HttpConfiguration<>(httpClientConfiguration);
+            HttpConfiguration<OkHttpClient, okhttp3.Request, okhttp3.Response> httpConfiguration = new HttpConfiguration<>(httpClientConfiguration);
             HttpRequest enrichedHttpRequest = httpConfiguration.enrich(httpRequest);
             Map<String, List<String>> headers = enrichedHttpRequest.getHeaders();
             assertThat(headers).containsKey("X-Correlation-ID");
@@ -114,19 +117,19 @@ class HttpHttpClientConfigurationTest {
 
         @Test
         @DisplayName("test override User-Agent header with 'custom' value")
-        void test_activating_user_agent_interceptor_with_custom_value(){
+        void test_activating_user_agent_interceptor_with_custom_value() {
 
             //given
             Map<String, String> config = Maps.newHashMap();
             config.put("config.dummy." + USER_AGENT_OVERRIDE, "custom");
             config.put("config.dummy." + USER_AGENT_CUSTOM_VALUES, "custom_ua");
-            HttpClientConfiguration<OkHttpClient,Request,Response> httpClientConfiguration = new HttpClientConfiguration<>("dummy",
+            HttpClientConfiguration<OkHttpClient, Request, Response> httpClientConfiguration = new HttpClientConfiguration<>("dummy",
                     new OkHttpClientFactory(),
-                    new HttpConnectorConfig(config).originals(),
+                    MapUtils.getMapWithPrefix(new HttpConnectorConfig(config).originals(), "config.dummy."),
                     executorService,
                     getCompositeMeterRegistry());
             HttpRequest httpRequest = getDummyHttpRequest();
-            HttpConfiguration<OkHttpClient,okhttp3.Request,okhttp3.Response> httpConfiguration = new HttpConfiguration<>(httpClientConfiguration);
+            HttpConfiguration<OkHttpClient, okhttp3.Request, okhttp3.Response> httpConfiguration = new HttpConfiguration<>(httpClientConfiguration);
             HttpRequest enrichedHttpRequest = httpConfiguration.enrich(httpRequest);
             Map<String, List<String>> headers = enrichedHttpRequest.getHeaders();
             assertThat(headers).containsEntry("User-Agent", Lists.newArrayList("custom_ua"));
@@ -134,19 +137,19 @@ class HttpHttpClientConfigurationTest {
 
         @Test
         @DisplayName("test override User-Agent header with multiple 'custom' value")
-        void test_activating_user_agent_interceptor_with_multiple_custom_value()  {
+        void test_activating_user_agent_interceptor_with_multiple_custom_value() {
 
             //given
             Map<String, String> config = Maps.newHashMap();
             config.put("config.dummy." + USER_AGENT_OVERRIDE, "custom");
             config.put("config.dummy." + USER_AGENT_CUSTOM_VALUES, "custom_1|custom_2|custom_3");
-            HttpClientConfiguration<OkHttpClient,Request,Response> httpClientConfiguration = new HttpClientConfiguration<>("dummy",
+            HttpClientConfiguration<OkHttpClient, Request, Response> httpClientConfiguration = new HttpClientConfiguration<>("dummy",
                     new OkHttpClientFactory(),
-                    new HttpConnectorConfig(config).originals(),
+                    MapUtils.getMapWithPrefix(new HttpConnectorConfig(config).originals(), "config.dummy."),
                     executorService,
                     getCompositeMeterRegistry());
             HttpRequest httpRequest = getDummyHttpRequest();
-            HttpConfiguration<OkHttpClient,okhttp3.Request,okhttp3.Response> httpConfiguration = new HttpConfiguration<>(httpClientConfiguration);
+            HttpConfiguration<OkHttpClient, okhttp3.Request, okhttp3.Response> httpConfiguration = new HttpConfiguration<>(httpClientConfiguration);
             HttpRequest enrichedHttpRequest = httpConfiguration.enrich(httpRequest);
             Map<String, List<String>> headers = enrichedHttpRequest.getHeaders();
             assertThat(headers.get("User-Agent")).isSubsetOf(Lists.newArrayList("custom_1", "custom_2", "custom_3"));
@@ -160,13 +163,13 @@ class HttpHttpClientConfigurationTest {
             Map<String, String> config = Maps.newHashMap();
             config.put("config.dummy." + USER_AGENT_OVERRIDE, "custom");
             config.put("config.dummy." + USER_AGENT_CUSTOM_VALUES, "custom_1|custom_2|custom_3");
-            HttpClientConfiguration<OkHttpClient,Request,Response> httpClientConfiguration = new HttpClientConfiguration<>("dummy",
+            HttpClientConfiguration<OkHttpClient, Request, Response> httpClientConfiguration = new HttpClientConfiguration<>("dummy",
                     new OkHttpClientFactory(),
-                    new HttpConnectorConfig(config).originals(),
+                    MapUtils.getMapWithPrefix(new HttpConnectorConfig(config).originals(), "config.dummy."),
                     executorService, getCompositeMeterRegistry());
             HttpRequest httpRequest = getDummyHttpRequest();
             httpRequest.getHeaders().put("User-Agent", Lists.newArrayList("already"));
-            HttpConfiguration<OkHttpClient,okhttp3.Request,okhttp3.Response> httpConfiguration = new HttpConfiguration<>(httpClientConfiguration);
+            HttpConfiguration<OkHttpClient, okhttp3.Request, okhttp3.Response> httpConfiguration = new HttpConfiguration<>(httpClientConfiguration);
             HttpRequest enrichedHttpRequest = httpConfiguration.enrich(httpRequest);
             Map<String, List<String>> headers = enrichedHttpRequest.getHeaders();
             assertThat(headers.get("User-Agent").get(0)).isEqualTo("already");
@@ -174,16 +177,16 @@ class HttpHttpClientConfigurationTest {
 
         @Test
         @DisplayName("test override User-Agent header with 'http_client' settings")
-        void test_activating_user_agent_interceptor_with_http_client_scope()  {
+        void test_activating_user_agent_interceptor_with_http_client_scope() {
 
             //given
             Map<String, String> config = Maps.newHashMap();
             config.put("config.dummy." + USER_AGENT_OVERRIDE, "http_client");
-            HttpClientConfiguration<OkHttpClient,Request,Response> httpClientConfiguration = new HttpClientConfiguration<>("dummy",
-                    new OkHttpClientFactory(), new HttpConnectorConfig(config).originals(),
+            HttpClientConfiguration<OkHttpClient, Request, Response> httpClientConfiguration = new HttpClientConfiguration<>("dummy",
+                    new OkHttpClientFactory(), MapUtils.getMapWithPrefix(new HttpConnectorConfig(config).originals(), "config.dummy."),
                     executorService, getCompositeMeterRegistry());
             HttpRequest httpRequest = getDummyHttpRequest();
-            HttpConfiguration<OkHttpClient,okhttp3.Request,okhttp3.Response> httpConfiguration = new HttpConfiguration<>(httpClientConfiguration);
+            HttpConfiguration<OkHttpClient, okhttp3.Request, okhttp3.Response> httpConfiguration = new HttpConfiguration<>(httpClientConfiguration);
             HttpRequest enrichedHttpRequest = httpConfiguration.enrich(httpRequest);
             Map<String, List<String>> headers = enrichedHttpRequest.getHeaders();
             //user-agent in this cas is set by the underlying http client implementation
@@ -198,11 +201,11 @@ class HttpHttpClientConfigurationTest {
             //given
             Map<String, String> config = Maps.newHashMap();
             config.put("config.dummy." + USER_AGENT_OVERRIDE, "project");
-            HttpClientConfiguration<OkHttpClient,Request,Response> httpClientConfiguration = new HttpClientConfiguration<>("dummy",
-                    new OkHttpClientFactory(), new HttpConnectorConfig(config).originals(),
+            HttpClientConfiguration<OkHttpClient, Request, Response> httpClientConfiguration = new HttpClientConfiguration<>("dummy",
+                    new OkHttpClientFactory(), MapUtils.getMapWithPrefix(new HttpConnectorConfig(config).originals(), "config.dummy."),
                     executorService, getCompositeMeterRegistry());
             HttpRequest httpRequest = getDummyHttpRequest();
-            HttpConfiguration<OkHttpClient,okhttp3.Request,okhttp3.Response> httpConfiguration = new HttpConfiguration<>(httpClientConfiguration);
+            HttpConfiguration<OkHttpClient, okhttp3.Request, okhttp3.Response> httpConfiguration = new HttpConfiguration<>(httpClientConfiguration);
             HttpRequest enrichedHttpRequest = httpConfiguration.enrich(httpRequest);
             Map<String, List<String>> headers = enrichedHttpRequest.getHeaders();
             assertThat(headers).containsEntry("User-Agent", Lists.newArrayList("Mozilla/5.0 (compatible;kafka-connect-http/" + versionUtils.getVersion() + "; okhttp; https://github.com/clescot/kafka-connect-http)"));
@@ -221,11 +224,11 @@ class HttpHttpClientConfigurationTest {
 
             Map<String, String> config = Maps.newHashMap();
             config.put("config.dummy." + SUCCESS_RESPONSE_CODE_REGEX, "^2[0-9][0-9]$");
-            HttpClientConfiguration<OkHttpClient,Request,Response> httpClientConfiguration = new HttpClientConfiguration<>("dummy",
-                    new OkHttpClientFactory(), new HttpConnectorConfig(config).originals(),
+            HttpClientConfiguration<OkHttpClient, Request, Response> httpClientConfiguration = new HttpClientConfiguration<>("dummy",
+                    new OkHttpClientFactory(), MapUtils.getMapWithPrefix(new HttpConnectorConfig(config).originals(), "config.dummy."),
                     executorService, getCompositeMeterRegistry());
             HttpExchange httpExchange = getDummyHttpExchange();
-            HttpConfiguration<OkHttpClient,okhttp3.Request,okhttp3.Response> httpConfiguration = new HttpConfiguration<>(httpClientConfiguration);
+            HttpConfiguration<OkHttpClient, okhttp3.Request, okhttp3.Response> httpConfiguration = new HttpConfiguration<>(httpClientConfiguration);
             boolean success = httpConfiguration.enrichHttpExchange(httpExchange).isSuccess();
             assertThat(success).isTrue();
         }
@@ -234,11 +237,11 @@ class HttpHttpClientConfigurationTest {
         void test_is_not_success_with_200_by_configuration() {
             Map<String, String> config = Maps.newHashMap();
             config.put("config.dummy." + SUCCESS_RESPONSE_CODE_REGEX, "^1[0-9][0-9]$");
-            HttpClientConfiguration<OkHttpClient,Request,Response> httpClientConfiguration = new HttpClientConfiguration<>("dummy",
-                    new OkHttpClientFactory(), new HttpConnectorConfig(config).originals(),
+            HttpClientConfiguration<OkHttpClient, Request, Response> httpClientConfiguration = new HttpClientConfiguration<>("dummy",
+                    new OkHttpClientFactory(), MapUtils.getMapWithPrefix(new HttpConnectorConfig(config).originals(), "config.dummy."),
                     executorService, getCompositeMeterRegistry());
             HttpExchange httpExchange = getDummyHttpExchange();
-            HttpConfiguration<OkHttpClient,okhttp3.Request,okhttp3.Response> httpConfiguration = new HttpConfiguration<>(httpClientConfiguration);
+            HttpConfiguration<OkHttpClient, okhttp3.Request, okhttp3.Response> httpConfiguration = new HttpConfiguration<>(httpClientConfiguration);
             boolean success = httpConfiguration.enrichHttpExchange(httpExchange).isSuccess();
             assertThat(success).isFalse();
         }
@@ -247,7 +250,7 @@ class HttpHttpClientConfigurationTest {
 
 
     @Nested
-    class AddSuccessStatusToHttpExchangeFunction{
+    class AddSuccessStatusToHttpExchangeFunction {
         private final HttpRequest.Method dummyMethod = HttpRequest.Method.POST;
         private static final String DUMMY_BODY_TYPE = "STRING";
 
@@ -258,13 +261,13 @@ class HttpHttpClientConfigurationTest {
 
             Map<String, String> config = Maps.newHashMap();
             config.put("config.dummy." + SUCCESS_RESPONSE_CODE_REGEX, "^2[0-9][0-9]$");
-            HttpClientConfiguration<OkHttpClient,Request,Response> httpClientConfiguration = new HttpClientConfiguration<>("dummy",
+            HttpClientConfiguration<OkHttpClient, Request, Response> httpClientConfiguration = new HttpClientConfiguration<>("dummy",
                     new OkHttpClientFactory(),
-                    new HttpConnectorConfig(config).originals(),
+                    MapUtils.getMapWithPrefix(new HttpConnectorConfig(config).originals(), "config.dummy."),
                     executorService,
                     getCompositeMeterRegistry());
             HttpExchange httpExchange = getDummyHttpExchange();
-            HttpConfiguration<OkHttpClient,okhttp3.Request,okhttp3.Response> httpConfiguration = new HttpConfiguration<>(httpClientConfiguration);
+            HttpConfiguration<OkHttpClient, okhttp3.Request, okhttp3.Response> httpConfiguration = new HttpConfiguration<>(httpClientConfiguration);
             boolean success = httpConfiguration.enrichHttpExchange(httpExchange).isSuccess();
             assertThat(success).isTrue();
         }
@@ -281,17 +284,16 @@ class HttpHttpClientConfigurationTest {
         void test_is_not_success_with_200_by_configuration() {
             Map<String, String> config = Maps.newHashMap();
             config.put("config.dummy." + SUCCESS_RESPONSE_CODE_REGEX, "^1[0-9][0-9]$");
-            HttpClientConfiguration<OkHttpClient,Request,Response> httpClientConfiguration = new HttpClientConfiguration<>(
-                    "dummy",new OkHttpClientFactory(),
-                    new HttpConnectorConfig(config).originals(),
+            HttpClientConfiguration<OkHttpClient, Request, Response> httpClientConfiguration = new HttpClientConfiguration<>(
+                    "dummy", new OkHttpClientFactory(),
+                    MapUtils.getMapWithPrefix(new HttpConnectorConfig(config).originals(), "config.dummy."),
                     executorService, getCompositeMeterRegistry()
             );
             HttpExchange httpExchange = getDummyHttpExchange();
-            HttpConfiguration<OkHttpClient,okhttp3.Request,okhttp3.Response> httpConfiguration = new HttpConfiguration<>(httpClientConfiguration);
+            HttpConfiguration<OkHttpClient, okhttp3.Request, okhttp3.Response> httpConfiguration = new HttpConfiguration<>(httpClientConfiguration);
             boolean success = httpConfiguration.enrichHttpExchange(httpExchange).isSuccess();
             assertThat(success).isFalse();
         }
-
 
 
         private HttpExchange getDummyHttpExchange() {
@@ -322,12 +324,12 @@ class HttpHttpClientConfigurationTest {
         void test_retry_needed() {
             Map<String, String> config = Maps.newHashMap();
             config.put("config.dummy." + RETRY_RESPONSE_CODE_REGEX, "^5[0-9][0-9]$");
-            HttpClientConfiguration<OkHttpClient,Request,Response> httpClientConfiguration = new HttpClientConfiguration<>("dummy",new OkHttpClientFactory(),
-                    new HttpConnectorConfig(config).originals(),
+            HttpClientConfiguration<OkHttpClient, Request, Response> httpClientConfiguration = new HttpClientConfiguration<>("dummy", new OkHttpClientFactory(),
+                    MapUtils.getMapWithPrefix(new HttpConnectorConfig(config).originals(), "config.dummy."),
                     executorService,
                     getCompositeMeterRegistry());
             HttpResponse httpResponse = new HttpResponse(500, "Internal Server Error");
-            HttpConfiguration<OkHttpClient,okhttp3.Request,okhttp3.Response> httpConfiguration = new HttpConfiguration<>(httpClientConfiguration);
+            HttpConfiguration<OkHttpClient, okhttp3.Request, okhttp3.Response> httpConfiguration = new HttpConfiguration<>(httpClientConfiguration);
             boolean retryNeeded = httpConfiguration.retryNeeded(httpResponse);
             assertThat(retryNeeded).isTrue();
         }
@@ -336,10 +338,10 @@ class HttpHttpClientConfigurationTest {
         void test_retry_not_needed_with_400_status_code() {
             Map<String, String> config = Maps.newHashMap();
             config.put("httpclient.dummy." + RETRY_RESPONSE_CODE_REGEX, "^5[0-9][0-9]$");
-            HttpClientConfiguration<OkHttpClient,Request,Response> httpClientConfiguration = new HttpClientConfiguration<>("dummy",new OkHttpClientFactory(),
-                    new HttpConnectorConfig(config).originals(), executorService, getCompositeMeterRegistry());
+            HttpClientConfiguration<OkHttpClient, Request, Response> httpClientConfiguration = new HttpClientConfiguration<>("dummy", new OkHttpClientFactory(),
+                    MapUtils.getMapWithPrefix(new HttpConnectorConfig(config).originals(), "config.dummy."), executorService, getCompositeMeterRegistry());
             HttpResponse httpResponse = new HttpResponse(400, "Internal Server Error");
-            HttpConfiguration<OkHttpClient,okhttp3.Request,okhttp3.Response> httpConfiguration = new HttpConfiguration<>(httpClientConfiguration);
+            HttpConfiguration<OkHttpClient, okhttp3.Request, okhttp3.Response> httpConfiguration = new HttpConfiguration<>(httpClientConfiguration);
             boolean retryNeeded = httpConfiguration.retryNeeded(httpResponse);
             assertThat(retryNeeded).isFalse();
         }
@@ -348,12 +350,12 @@ class HttpHttpClientConfigurationTest {
         void test_retry_not_needed_with_200_status_code() {
             Map<String, String> config = Maps.newHashMap();
             config.put("httpclient.dummy." + RETRY_RESPONSE_CODE_REGEX, "^5[0-9][0-9]$");
-            HttpClientConfiguration<OkHttpClient,Request,Response> httpClientConfiguration = new HttpClientConfiguration<>("dummy",
+            HttpClientConfiguration<OkHttpClient, Request, Response> httpClientConfiguration = new HttpClientConfiguration<>("dummy",
                     new OkHttpClientFactory(),
-                    new HttpConnectorConfig(config).originals(),
+                    MapUtils.getMapWithPrefix(new HttpConnectorConfig(config).originals(), "config.dummy."),
                     executorService, getCompositeMeterRegistry());
             HttpResponse httpResponse = new HttpResponse(200, "Internal Server Error");
-            HttpConfiguration<OkHttpClient,okhttp3.Request,okhttp3.Response> httpConfiguration = new HttpConfiguration<>(httpClientConfiguration);
+            HttpConfiguration<OkHttpClient, okhttp3.Request, okhttp3.Response> httpConfiguration = new HttpConfiguration<>(httpClientConfiguration);
             boolean retryNeeded = httpConfiguration.retryNeeded(httpResponse);
             assertThat(retryNeeded).isFalse();
         }
@@ -364,15 +366,14 @@ class HttpHttpClientConfigurationTest {
             Map<String, String> config = Maps.newHashMap();
             config.put("config.dummy." + RETRY_RESPONSE_CODE_REGEX, "^2[0-9][0-9]$");
             config.put(CONFIG_DEFAULT_RETRY_RESPONSE_CODE_REGEX, "^[1-5][0-9][0-9]$");
-            HttpClientConfiguration<OkHttpClient,Request,Response> httpClientConfiguration = new HttpClientConfiguration<>("dummy",new OkHttpClientFactory(),
-                    new HttpConnectorConfig(config).originals(), executorService, getCompositeMeterRegistry());
+            HttpClientConfiguration<OkHttpClient, Request, Response> httpClientConfiguration = new HttpClientConfiguration<>("dummy", new OkHttpClientFactory(),
+                    MapUtils.getMapWithPrefix(new HttpConnectorConfig(config).originals(), "config.dummy."), executorService, getCompositeMeterRegistry());
             HttpResponse httpResponse = new HttpResponse(200, "Internal Server Error");
-            HttpConfiguration<OkHttpClient,okhttp3.Request,okhttp3.Response> httpConfiguration = new HttpConfiguration<>(httpClientConfiguration);
+            HttpConfiguration<OkHttpClient, okhttp3.Request, okhttp3.Response> httpConfiguration = new HttpConfiguration<>(httpClientConfiguration);
             boolean retryNeeded = httpConfiguration.retryNeeded(httpResponse);
             assertThat(retryNeeded).isTrue();
         }
     }
-
 
 
     @NotNull

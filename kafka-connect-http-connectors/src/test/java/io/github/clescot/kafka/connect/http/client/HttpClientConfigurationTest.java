@@ -65,7 +65,7 @@ class HttpClientConfigurationTest {
         @DisplayName("test Configuration constructor with url predicate")
         void test_constructor_with_url_predicate() {
             Map<String, String> settings = Maps.newHashMap();
-            settings.put("config.test.predicate.url.regex", "^.*toto\\.com$");
+            settings.put("predicate.url.regex", "^.*toto\\.com$");
             HttpConnectorConfig httpConnectorConfig = new HttpConnectorConfig(settings);
             HttpClientConfiguration<OkHttpClient,Request, Response> httpClientConfiguration = new HttpClientConfiguration<>("test", new OkHttpClientFactory(), httpConnectorConfig.originals(), executorService, getCompositeMeterRegistry());
             HttpRequest httpRequest = new HttpRequest("http://toto.com", HttpRequest.Method.GET);
@@ -78,8 +78,8 @@ class HttpClientConfigurationTest {
         @DisplayName("test Configuration constructor with url predicate and method")
         void test_constructor_with_url_predicate_and_method() {
             Map<String, String> settings = Maps.newHashMap();
-            settings.put("config.test.predicate.url.regex", "^.*toto\\.com$");
-            settings.put("config.test.predicate.method.regex", "^GET|PUT$");
+            settings.put("predicate.url.regex", "^.*toto\\.com$");
+            settings.put("predicate.method.regex", "^GET|PUT$");
             HttpConnectorConfig httpConnectorConfig = new HttpConnectorConfig(settings);
             HttpClientConfiguration<OkHttpClient,Request,Response> httpClientConfiguration = new HttpClientConfiguration<>("test",new OkHttpClientFactory(), httpConnectorConfig.originals(), executorService, getCompositeMeterRegistry());
             HttpRequest httpRequest = new HttpRequest("http://toto.com", HttpRequest.Method.GET);
@@ -96,8 +96,8 @@ class HttpClientConfigurationTest {
         @DisplayName("test Configuration constructor with url predicate and body type")
         void test_constructor_with_url_predicate_and_bodytype() {
             Map<String, String> settings = Maps.newHashMap();
-            settings.put("config.test.predicate.url.regex", "^.*toto\\.com$");
-            settings.put("config.test.predicate.bodytype.regex", "^STRING$");
+            settings.put("predicate.url.regex", "^.*toto\\.com$");
+            settings.put("predicate.bodytype.regex", "^STRING$");
             HttpConnectorConfig httpConnectorConfig = new HttpConnectorConfig(settings);
             HttpClientConfiguration<OkHttpClient,Request,Response> httpClientConfiguration = new HttpClientConfiguration<>("test", new OkHttpClientFactory(), httpConnectorConfig.originals(), executorService, getCompositeMeterRegistry());
             HttpRequest httpRequest1 = new HttpRequest("http://toto.com", HttpRequest.Method.GET);
@@ -111,8 +111,8 @@ class HttpClientConfigurationTest {
         @DisplayName("test Configuration constructor with url predicate and raw header key")
         void test_constructor_with_url_predicate_and_header_key() {
             Map<String, String> settings = Maps.newHashMap();
-            settings.put("config.test.predicate.url.regex", "^.*toto\\.com$");
-            settings.put("config.test.predicate.header.key.regex", "SUPERNOVA");
+            settings.put("predicate.url.regex", "^.*toto\\.com$");
+            settings.put("predicate.header.key.regex", "SUPERNOVA");
             HttpConnectorConfig httpConnectorConfig = new HttpConnectorConfig(settings);
             HttpClientConfiguration<OkHttpClient,Request,Response> httpClientConfiguration = new HttpClientConfiguration<>("test",new OkHttpClientFactory(), httpConnectorConfig.originals(), executorService, getCompositeMeterRegistry());
             HttpRequest httpRequest1 = new HttpRequest("http://toto.com", HttpRequest.Method.GET);
@@ -128,8 +128,8 @@ class HttpClientConfigurationTest {
         @DisplayName("test Configuration constructor with url predicate and header key regex")
         void test_constructor_with_url_predicate_and_header_key_regex() {
             Map<String, String> settings = Maps.newHashMap();
-            settings.put("config.test.predicate.url.regex", "^.*toto\\.com$");
-            settings.put("config.test.predicate.header.key.regex", "^SUPER.*$");
+            settings.put("predicate.url.regex", "^.*toto\\.com$");
+            settings.put("predicate.header.key.regex", "^SUPER.*$");
             HttpConnectorConfig httpConnectorConfig = new HttpConnectorConfig(settings);
             HttpClientConfiguration<OkHttpClient,Request,Response> httpClientConfiguration = new HttpClientConfiguration<>("test",new OkHttpClientFactory(), httpConnectorConfig.originals(), executorService, getCompositeMeterRegistry());
             HttpRequest httpRequest1 = new HttpRequest("http://toto.com", HttpRequest.Method.GET);
@@ -146,9 +146,9 @@ class HttpClientConfigurationTest {
         @DisplayName("test Configuration constructor with url predicate and raw header key and value")
         void test_constructor_with_url_predicate_header_key_and_value() {
             Map<String, String> settings = Maps.newHashMap();
-            settings.put("config.test.predicate.url.regex", "^.*toto\\.com$");
-            settings.put("config.test.predicate.header.key.regex", "SUPERNOVA");
-            settings.put("config.test.predicate.header.value.regex", "top");
+            settings.put("predicate.url.regex", "^.*toto\\.com$");
+            settings.put("predicate.header.key.regex", "SUPERNOVA");
+            settings.put("predicate.header.value.regex", "top");
             HttpConnectorConfig httpConnectorConfig = new HttpConnectorConfig(settings);
             HttpClientConfiguration<OkHttpClient,Request,Response> httpClientConfiguration = new HttpClientConfiguration<>("test",new OkHttpClientFactory(), httpConnectorConfig.originals(), executorService, getCompositeMeterRegistry());
             HttpRequest httpRequest1 = new HttpRequest("http://toto.com", HttpRequest.Method.GET);
@@ -167,9 +167,9 @@ class HttpClientConfigurationTest {
         @DisplayName("test Configuration constructor with url predicate and header key and value regex")
         void test_constructor_with_url_predicate_header_key_and_value_regex() {
             Map<String, String> settings = Maps.newHashMap();
-            settings.put("config.test.predicate.url.regex", "^.*toto\\.com$");
-            settings.put("config.test.predicate.header.key.regex", "^SUPER.*$");
-            settings.put("config.test.predicate.header.value.regex", "^top.$");
+            settings.put("predicate.url.regex", "^.*toto\\.com$");
+            settings.put("predicate.header.key.regex", "^SUPER.*$");
+            settings.put("predicate.header.value.regex", "^top.$");
             HttpConnectorConfig httpConnectorConfig = new HttpConnectorConfig(settings);
             HttpClientConfiguration<OkHttpClient,Request,Response> httpClientConfiguration = new HttpClientConfiguration<>("test",new OkHttpClientFactory(), httpConnectorConfig.originals(), executorService, getCompositeMeterRegistry());
             HttpRequest httpRequest1 = new HttpRequest("http://toto.com", HttpRequest.Method.GET);
@@ -214,11 +214,11 @@ class HttpClientConfigurationTest {
         @DisplayName("test rate limiter with implicit instance scope")
         void test_rate_limiter_with_implicit_instance_scope() {
             Map<String, String> settings = Maps.newHashMap();
-            settings.put("config.test.predicate.url.regex", "^.*toto\\.com$");
-            settings.put("config.test.static.request.header.names", "SUPERNOVA");
-            settings.put("config.test.static.request.header.names.SUPERNOVA", "top");
-            settings.put("config.test.rate.limiter.max.executions", "3");
-            settings.put("config.test.rate.limiter.period.in.ms", "1000");
+            settings.put("predicate.url.regex", "^.*toto\\.com$");
+            settings.put("static.request.header.names", "SUPERNOVA");
+            settings.put("static.request.header.names.SUPERNOVA", "top");
+            settings.put("rate.limiter.max.executions", "3");
+            settings.put("rate.limiter.period.in.ms", "1000");
             HttpConnectorConfig httpConnectorConfig = new HttpConnectorConfig(settings);
             HttpClientConfiguration<OkHttpClient,Request,Response> httpClientConfiguration = new HttpClientConfiguration<>("test",new OkHttpClientFactory(), httpConnectorConfig.originals(), executorService, getCompositeMeterRegistry());
             Optional<RateLimiter<HttpExchange>> rateLimiter = httpClientConfiguration.getClient().getRateLimiter();
@@ -233,12 +233,12 @@ class HttpClientConfigurationTest {
         @DisplayName("test rate limiter with static scope")
         void test_rate_limiter_with_static_scope() {
             Map<String, String> settings = Maps.newHashMap();
-            settings.put("config.test.predicate.url.regex", "^.*toto\\.com$");
-            settings.put("config.test.predicate.header.key", "SUPERNOVA");
-            settings.put("config.test.predicate.header.value", "top");
-            settings.put("config.test.rate.limiter.max.executions", "3");
-            settings.put("config.test.rate.limiter.period.in.ms", "1000");
-            settings.put("config.test.rate.limiter.scope", "static");
+            settings.put("predicate.url.regex", "^.*toto\\.com$");
+            settings.put("predicate.header.key", "SUPERNOVA");
+            settings.put("predicate.header.value", "top");
+            settings.put("rate.limiter.max.executions", "3");
+            settings.put("rate.limiter.period.in.ms", "1000");
+            settings.put("rate.limiter.scope", "static");
             HttpConnectorConfig httpConnectorConfig = new HttpConnectorConfig(settings);
             HttpClientConfiguration<OkHttpClient,Request,Response> httpClientConfiguration = new HttpClientConfiguration<>("test",new OkHttpClientFactory(), httpConnectorConfig.originals(), executorService, getCompositeMeterRegistry());
             Optional<RateLimiter<HttpExchange>> rateLimiter = httpClientConfiguration.getClient().getRateLimiter();
@@ -253,23 +253,23 @@ class HttpClientConfigurationTest {
         @DisplayName("test rate limiter with static scope")
         void test_rate_limiter_with_static_scope_and_different_ids() {
             Map<String, String> settings = Maps.newHashMap();
-            settings.put("config.test.predicate.url.regex", "^.*toto\\.com$");
-            settings.put("config.test.predicate.header.key", "SUPERNOVA");
-            settings.put("config.test.predicate.header.value", "top");
-            settings.put("config.test.rate.limiter.max.executions", "3");
-            settings.put("config.test.rate.limiter.period.in.ms", "1000");
-            settings.put("config.test.rate.limiter.scope", "static");
+            settings.put("predicate.url.regex", "^.*toto\\.com$");
+            settings.put("predicate.header.key", "SUPERNOVA");
+            settings.put("predicate.header.value", "top");
+            settings.put("rate.limiter.max.executions", "3");
+            settings.put("rate.limiter.period.in.ms", "1000");
+            settings.put("rate.limiter.scope", "static");
             HttpConnectorConfig httpConnectorConfig = new HttpConnectorConfig(settings);
             HttpClientConfiguration<OkHttpClient,Request,Response> httpClientConfiguration = new HttpClientConfiguration<>("test",new OkHttpClientFactory(), httpConnectorConfig.originals(), executorService, getCompositeMeterRegistry());
             Optional<RateLimiter<HttpExchange>> rateLimiter = httpClientConfiguration.getClient().getRateLimiter();
             assertThat(rateLimiter).isPresent();
             Map<String, String> settings2 = Maps.newHashMap();
-            settings2.put("config.test2.predicate.url.regex", "^.*toto\\.com$");
-            settings2.put("config.test2.predicate.header.key", "SUPERNOVA");
-            settings2.put("config.test2.predicate.header.value", "top");
-            settings2.put("config.test2.rate.limiter.max.executions", "3");
-            settings2.put("config.test2.rate.limiter.period.in.ms", "1000");
-            settings2.put("config.test2.rate.limiter.scope", "static");
+            settings2.put("predicate.url.regex", "^.*toto\\.com$");
+            settings2.put("predicate.header.key", "SUPERNOVA");
+            settings2.put("predicate.header.value", "top");
+            settings2.put("rate.limiter.max.executions", "3");
+            settings2.put("rate.limiter.period.in.ms", "1000");
+            settings2.put("rate.limiter.scope", "static");
             HttpConnectorConfig httpConnectorConfig2 = new HttpConnectorConfig(settings2);
             HttpClientConfiguration<OkHttpClient,Request,Response> httpClientConfiguration2 = new HttpClientConfiguration<>("test2",new OkHttpClientFactory(), httpConnectorConfig2.originals(), executorService, getCompositeMeterRegistry());
             Optional<RateLimiter<HttpExchange>> rateLimiter2 = httpClientConfiguration2.getClient().getRateLimiter();

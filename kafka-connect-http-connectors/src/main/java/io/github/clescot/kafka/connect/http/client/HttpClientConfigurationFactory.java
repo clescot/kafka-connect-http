@@ -3,6 +3,7 @@ package io.github.clescot.kafka.connect.http.client;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import dev.failsafe.RetryPolicy;
+import io.github.clescot.kafka.connect.MapUtils;
 import io.github.clescot.kafka.connect.http.core.HttpExchange;
 import io.micrometer.core.instrument.composite.CompositeMeterRegistry;
 
@@ -36,7 +37,7 @@ public class HttpClientConfigurationFactory {
         Optional<Pattern> defaultRetryResponseCodeRegex = Optional.empty();
         for (String configId : configurationIds) {
 
-            HttpClientConfiguration<C, R, S> httpClientConfiguration = new HttpClientConfiguration<>(configId, httpClientFactory, originals, executorService, meterRegistry);
+            HttpClientConfiguration<C, R, S> httpClientConfiguration = new HttpClientConfiguration<>(configId, httpClientFactory,  MapUtils.getMapWithPrefix(originals,"config." + configId + "."), executorService, meterRegistry);
             if (httpClientConfiguration.getClient() == null && !httpClientConfigurations.isEmpty() && defaultHttpClientConfiguration != null) {
                 httpClientConfiguration.setHttpClient(defaultHttpClientConfiguration.getClient());
             }

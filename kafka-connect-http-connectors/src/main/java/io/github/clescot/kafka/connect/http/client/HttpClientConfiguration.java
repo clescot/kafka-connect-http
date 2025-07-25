@@ -89,7 +89,7 @@ public class HttpClientConfiguration<C extends HttpClient<R,S>,R,S> implements C
         Preconditions.checkNotNull(config, "httpSinkConnectorConfig must not be null");
 
         //configuration id prefix is not present in the resulting configMap
-        this.settings = MapUtils.getMapWithPrefix(config,"config." + id + ".");
+        this.settings = config;
         settings.put(CONFIGURATION_ID, id);
         //main predicate
         this.predicate = HttpRequestPredicateBuilder.build().buildPredicate(settings);
