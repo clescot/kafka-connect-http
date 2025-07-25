@@ -2,6 +2,7 @@ package io.github.clescot.kafka.connect.sse.client.okhttp;
 
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Maps;
+import com.launchdarkly.eventsource.background.BackgroundEventSource;
 import io.github.clescot.kafka.connect.MapUtils;
 import io.github.clescot.kafka.connect.Task;
 import io.github.clescot.kafka.connect.http.client.HttpClientConfigurationFactory;
@@ -14,6 +15,7 @@ import io.micrometer.core.instrument.composite.CompositeMeterRegistry;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.net.URI;
 import java.util.Map;
 import java.util.Queue;
 import java.util.stream.Collectors;
@@ -42,9 +44,26 @@ public class SseTask implements Task<OkHttpClient,SseConfiguration,HttpRequest, 
                         config.getKey(),
                         new SseConfiguration(config.getKey(), config.getValue(), MapUtils.getMapWithPrefix(mySettings,"config."+config.getKey()+"."))
                 )).collect(Collectors.toMap(Map.Entry::getKey,Map.Entry::getValue));
+    }
+
+    public void connect(){
         this.sseConfigurations.forEach((name, config) -> {
-            config.connect(QueueFactory.getQueue(name));
-            config.start();
+            BackgroundEventSource backgroundEventSource = config.connect(QueueFactory.getQueue(name));
+            URI origin = backgroundEventSource.getEventSource().getOrigin();
+            LOGGER.debug("connected to SSE server at {} for configuration {}", origin, name);
+        });
+    }
+
+
+    public void start() {
+        Preconditions.checkNotNull(this.sseConfigurations, "sseConfigurations must not be null or empty.");
+        Preconditions.checkArgument(!this.sseConfigurations.isEmpty(), "sseConfigurations list must not be null or empty.");
+        this.sseConfigurations.forEach((name, config) -> {
+           if(config.isConnected()){
+               config.start();
+           }else{
+                LOGGER.warn("SSE configuration {} is not connected, skipping start.", name);
+           }
         });
     }
 
@@ -56,7 +75,7 @@ public class SseTask implements Task<OkHttpClient,SseConfiguration,HttpRequest, 
     public Map<String,Queue<SseEvent>> getQueues() {
         return this.sseConfigurations.entrySet().stream()
                 .map(entry-> Map.entry(entry.getKey(),entry.getValue().getQueue()))
-                .collect(Collectors.toMap(entry->entry.getKey(), entry->entry.getValue()));
+                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
     }
     public Queue<SseEvent> getQueue(String configurationId) {
         if( this.sseConfigurations.containsKey(configurationId)) {

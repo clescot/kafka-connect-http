@@ -29,6 +29,8 @@ public class SseSourceTask extends SourceTask {
     public void start(Map<String, String> settings) {
         Preconditions.checkNotNull(settings, "settings must not be null or empty.");
         this.sseTask = new SseTask(settings);
+        this.sseTask.connect();
+        this.sseTask.start();
     }
 
 
