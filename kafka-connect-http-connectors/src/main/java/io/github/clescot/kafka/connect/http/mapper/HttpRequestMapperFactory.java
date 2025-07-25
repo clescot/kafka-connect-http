@@ -57,21 +57,21 @@ public class HttpRequestMapperFactory {
         List<HttpRequestMapper> requestMappers = Lists.newArrayList();
         for (String httpRequestMapperId : Optional.ofNullable(requestMapperIds).orElse(Lists.newArrayList())) {
             HttpRequestMapper httpRequestMapper;
-            String prefix = "http.request.mapper." + httpRequestMapperId;
+            String prefix = "http.request.mapper." + httpRequestMapperId+".";
             Map<String, Object> settings = MapUtils.getMapWithPrefix(config,prefix);
-            String modeKey = ".mode";
+            String modeKey = "mode";
             MapperMode mapperMode = MapperMode.valueOf(Optional.ofNullable(settings.get(modeKey)).orElse(MapperMode.DIRECT.name()).toString());
             switch (mapperMode) {
                 case JEXL: {
                     httpRequestMapper = new JEXLHttpRequestMapper(
                             httpRequestMapperId,
                             jexlEngine,
-                            (String) settings.get(".matcher"),
-                            (String) settings.get(".url"),
-                            (String) settings.get(".method"),
-                            (String) settings.get(".bodytype"),
-                            (String) settings.get(".body"),
-                            (String) settings.get(".headers")
+                            (String) settings.get("matcher"),
+                            (String) settings.get("url"),
+                            (String) settings.get("method"),
+                            (String) settings.get("bodytype"),
+                            (String) settings.get("body"),
+                            (String) settings.get("headers")
                     );
                     break;
                 }
@@ -80,7 +80,7 @@ public class HttpRequestMapperFactory {
                     httpRequestMapper = new DirectHttpRequestMapper(
                             httpRequestMapperId,
                             jexlEngine,
-                            (String) settings.get(".matcher")
+                            (String) settings.get("matcher")
                     );
                     break;
                 }

@@ -22,34 +22,42 @@ import java.util.Queue;
 
 
 public class SseConfiguration implements Configuration<OkHttpClient, HttpRequest> {
+    private final String configurationId;
     private final OkHttpClient client;
+    private final Map<String, Object> settings;
     private boolean connected = false;
     private SseBackgroundEventHandler backgroundEventHandler;
     private BackgroundEventSource backgroundEventSource;
     private Queue<SseEvent> queue;
 
-    public SseConfiguration(HttpClientConfiguration<OkHttpClient, Request, Response> httpClientConfiguration) {
+    public SseConfiguration(String configurationId, HttpClientConfiguration<OkHttpClient, Request, Response> httpClientConfiguration, Map<String, Object> settings) {
+        this.configurationId = configurationId;
         this.client = httpClientConfiguration.getClient();
+        this.settings = settings;
     }
 
-    public static SseConfiguration buildSseConfiguration(Map<String, Object> mySettings, String configurationId) {
+    public static SseConfiguration buildSseConfiguration(String configurationId, Map<String, Object> mySettings) {
         HttpClientConfiguration<OkHttpClient, Request, Response> httpClientConfiguration = new HttpClientConfiguration<>(
                 configurationId,
                 new OkHttpClientFactory(),
                 mySettings,
                 null,
                 new CompositeMeterRegistry());
-        return new SseConfiguration(httpClientConfiguration);
+        return new SseConfiguration(configurationId,httpClientConfiguration,mySettings);
     }
 
-    public BackgroundEventSource connect(Queue<SseEvent> queue, Map<String, Object> settings) {
+    public BackgroundEventSource connect(Queue<SseEvent> queue) {
         Preconditions.checkNotNull(queue, "queue must not be null.");
         this.queue = queue;
         Preconditions.checkNotNull(settings, "settings must not be null or empty.");
         Preconditions.checkArgument(!settings.isEmpty(), "settings must not be null or empty.");
-        String url = (String) settings.get(SseConfigDefinition.DEFAULT_CONFIG_URL);
+        String url = (String) settings.get(SseConfigDefinition.URL);
         Preconditions.checkNotNull(url, "'url' must not be null or empty.");
         URI uri =  URI.create(url);
+        RetryDelayStrategy retryDelayStrategy = RetryDelayStrategy.defaultStrategy();
+        if (settings.containsKey(SseConfigDefinition.RETRY_DELAY_STRATEGY)) {
+
+        }
         this.backgroundEventHandler = new SseBackgroundEventHandler(queue, uri);
         this.backgroundEventSource = new BackgroundEventSource.Builder(backgroundEventHandler,
                 new EventSource.Builder(ConnectStrategy.http(uri)

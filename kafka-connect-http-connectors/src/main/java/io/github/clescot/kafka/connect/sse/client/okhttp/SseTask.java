@@ -2,6 +2,7 @@ package io.github.clescot.kafka.connect.sse.client.okhttp;
 
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Maps;
+import io.github.clescot.kafka.connect.MapUtils;
 import io.github.clescot.kafka.connect.Task;
 import io.github.clescot.kafka.connect.http.client.HttpClientConfigurationFactory;
 import io.github.clescot.kafka.connect.http.client.okhttp.OkHttpClient;
@@ -39,10 +40,10 @@ public class SseTask implements Task<OkHttpClient,SseConfiguration,HttpRequest, 
         ).entrySet().stream()
                 .map(config -> Maps.immutableEntry(
                         config.getKey(),
-                        new SseConfiguration(config.getValue())
+                        new SseConfiguration(config.getKey(), config.getValue(), MapUtils.getMapWithPrefix(mySettings,"config."+config.getKey()+"."))
                 )).collect(Collectors.toMap(Map.Entry::getKey,Map.Entry::getValue));
         this.sseConfigurations.forEach((name, config) -> {
-            config.connect(QueueFactory.getQueue(name),mySettings);
+            config.connect(QueueFactory.getQueue(name));
             config.start();
         });
     }
