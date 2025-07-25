@@ -174,7 +174,6 @@ public interface HttpClient<R, S>  extends Client {
 
     TrustManagerFactory getTrustManagerFactory();
 
-    String getEngineId();
 
     void setTrustManagerFactory(TrustManagerFactory trustManagerFactory);
 }
