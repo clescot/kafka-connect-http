@@ -17,7 +17,7 @@ import java.util.Queue;
 
 public class SseSourceTask extends SourceTask {
     private static final VersionUtils VERSION_UTILS = new VersionUtils();
-    private static final Logger LOGGER = LoggerFactory.getLogger(SseTask.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(SseSourceTask.class);
     private SseTask sseTask;
 
     @Override
@@ -51,9 +51,11 @@ public class SseSourceTask extends SourceTask {
         while (queue.peek() != null) {
             SseEvent sseEvent = queue.poll();
             LOGGER.debug("Polled from queue: {} event: {} ", sseEvent, configId);
+            Map<String, String> sourcePartition = sseEvent.getType()!=null?Map.of("type",sseEvent.getType()):Maps.newHashMap();
+            Map<String, String> sourceOffset = sseEvent.getId()!=null?Map.of("eventId", sseEvent.getId()):Maps.newHashMap();
             SourceRecord sourceRecord = new SourceRecord(
-                    Maps.newHashMap(),
-                    Maps.newHashMap(),
+                    sourcePartition,
+                    sourceOffset,
                     this.sseTask.getDefaultTopic(),
                     null,
                     sseEvent.getType(),
