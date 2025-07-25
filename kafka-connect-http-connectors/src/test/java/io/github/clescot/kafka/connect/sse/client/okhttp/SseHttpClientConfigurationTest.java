@@ -70,6 +70,7 @@ class SseHttpClientConfigurationTest {
         // Create an OkHttpSseClient instance and connect to the WireMock server
         Map<String,Object> settings = Maps.newHashMap();
         settings.put("url", wmHttp.url("/events"));
+        settings.put("topic", "test-topic");
         SseConfiguration client = buildSseConfiguration(Configuration.DEFAULT_CONFIGURATION_ID, settings);
 
         // Connect to the SSE endpoint

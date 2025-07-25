@@ -37,26 +37,27 @@ public class SseSourceTask extends SourceTask {
     @Override
     public List<SourceRecord> poll() {
         Map<String, Queue<SseEvent>> queues = this.sseTask.getQueues();
+        Map<String, SseConfiguration> configurations = this.sseTask.getConfigurations();
         List<SourceRecord> records = Lists.newArrayList();
         for (Map.Entry<String,Queue<SseEvent>> queue : queues.entrySet()) {
-            records.addAll(poll(queue.getKey(),queue.getValue()));
+            records.addAll(poll(configurations.get(queue.getKey()),queue.getValue()));
         }
 
         return records;
     }
 
-    private List<SourceRecord> poll(String configId,Queue<SseEvent> queue){
+    private List<SourceRecord> poll(SseConfiguration sseConfiguration,Queue<SseEvent> queue){
         Preconditions.checkNotNull(queue, "queue must not be null.");
         List<SourceRecord> records = Lists.newArrayList();
         while (queue.peek() != null) {
             SseEvent sseEvent = queue.poll();
-            LOGGER.debug("Polled from queue: {} event: {} ", sseEvent, configId);
+            LOGGER.debug("Polled from queue: {} event: {} ", sseEvent, sseConfiguration.getConfigurationId());
             Map<String, String> sourcePartition = sseEvent.getType()!=null?Map.of("type",sseEvent.getType()):Maps.newHashMap();
             Map<String, String> sourceOffset = sseEvent.getId()!=null?Map.of("eventId", sseEvent.getId()):Maps.newHashMap();
             SourceRecord sourceRecord = new SourceRecord(
                     sourcePartition,
                     sourceOffset,
-                    this.sseTask.getDefaultTopic(),
+                    sseConfiguration.getTopic(),
                     null,
                     sseEvent.getType(),
                     null,

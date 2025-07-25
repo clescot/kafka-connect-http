@@ -23,16 +23,28 @@ public class SseConfiguration implements Configuration<OkHttpClient, HttpRequest
     private final String configurationId;
     private final OkHttpClient client;
     private final Map<String, Object> settings;
+    private final URI uri;
+    private final String topic;
     private boolean connected = false;
     private boolean started = false;
     private SseBackgroundEventHandler backgroundEventHandler;
     private BackgroundEventSource backgroundEventSource;
     private Queue<SseEvent> queue;
 
-    public SseConfiguration(String configurationId, HttpClientConfiguration<OkHttpClient, Request, Response> httpClientConfiguration, Map<String, Object> settings) {
+    public SseConfiguration(String configurationId,
+                            HttpClientConfiguration<OkHttpClient, Request, Response> httpClientConfiguration,
+                            Map<String, Object> settings
+    ) {
         this.configurationId = configurationId;
         this.client = httpClientConfiguration.getClient();
         this.settings = settings;
+        Preconditions.checkNotNull(settings, "settings must not be null or empty.");
+        Preconditions.checkArgument(!settings.isEmpty(), "settings must not be null or empty.");
+        String url = (String) settings.get(SseConfigDefinition.URL);
+        Preconditions.checkNotNull(url, "'url' must not be null or empty.");
+        this.uri = URI.create(url);
+        this.topic = (String) settings.get(SseConfigDefinition.TOPIC);
+        Preconditions.checkNotNull(topic, "'topic' must not be null or empty.");
     }
 
     public static SseConfiguration buildSseConfiguration(String configurationId, Map<String, Object> mySettings) {
@@ -48,18 +60,14 @@ public class SseConfiguration implements Configuration<OkHttpClient, HttpRequest
     public BackgroundEventSource connect(Queue<SseEvent> queue) {
         Preconditions.checkNotNull(queue, "queue must not be null.");
         this.queue = queue;
-        Preconditions.checkNotNull(settings, "settings must not be null or empty.");
-        Preconditions.checkArgument(!settings.isEmpty(), "settings must not be null or empty.");
-        String url = (String) settings.get(SseConfigDefinition.URL);
-        Preconditions.checkNotNull(url, "'url' must not be null or empty.");
-        URI uri = URI.create(url);
+
 
         //retry strategy
         DefaultRetryDelayStrategy retryDelayStrategy = RetryDelayStrategy.defaultStrategy();
         if (settings.containsKey(SseConfigDefinition.RETRY_DELAY_STRATEGY_MAX_DELAY_MILLIS)) {
-            long maxDelayMillis = (long) settings.getOrDefault(SseConfigDefinition.RETRY_DELAY_STRATEGY_MAX_DELAY_MILLIS, 10000L);
-            float backoffMultiplier = (float) settings.getOrDefault(SseConfigDefinition.RETRY_DELAY_STRATEGY_BACKOFF_MULTIPLIER, 1.5F);
-            float jitterMultiplier = (float) settings.getOrDefault(SseConfigDefinition.RETRY_DELAY_STRATEGY_JITTER_MULTIPLIER, 0.1F);
+            long maxDelayMillis = (long) settings.getOrDefault(SseConfigDefinition.RETRY_DELAY_STRATEGY_MAX_DELAY_MILLIS, 30000L);
+            float backoffMultiplier = (float) settings.getOrDefault(SseConfigDefinition.RETRY_DELAY_STRATEGY_BACKOFF_MULTIPLIER, 2F);
+            float jitterMultiplier = (float) settings.getOrDefault(SseConfigDefinition.RETRY_DELAY_STRATEGY_JITTER_MULTIPLIER, 0.5F);
             retryDelayStrategy = retryDelayStrategy
                     .maxDelay(maxDelayMillis, TimeUnit.MILLISECONDS)
                     .backoffMultiplier(backoffMultiplier)
@@ -67,7 +75,7 @@ public class SseConfiguration implements Configuration<OkHttpClient, HttpRequest
         }
 
         //error strategy
-        ErrorStrategy errorStrategy = ErrorStrategy.alwaysContinue();
+        ErrorStrategy errorStrategy = ErrorStrategy.alwaysThrow();
         if (settings.containsKey(SseConfigDefinition.ERROR_STRATEGY)) {
             String errorStrategyAsString = (String) settings.get(SseConfigDefinition.ERROR_STRATEGY);
             switch (errorStrategyAsString) {
@@ -86,7 +94,7 @@ public class SseConfiguration implements Configuration<OkHttpClient, HttpRequest
                     errorStrategy = ErrorStrategy.continueWithTimeLimit(timeLimitCountInMillis, TimeUnit.MILLISECONDS);
                     break;
                 default:
-                    errorStrategy = ErrorStrategy.alwaysContinue();
+                    errorStrategy = ErrorStrategy.alwaysThrow();
             }
         }
         this.backgroundEventHandler = new SseBackgroundEventHandler(queue, uri);
@@ -150,5 +158,17 @@ public class SseConfiguration implements Configuration<OkHttpClient, HttpRequest
 
     public String getConfigurationId() {
         return configurationId;
+    }
+
+    public String getTopic() {
+        return topic;
+    }
+
+    public URI getUri() {
+        return uri;
+    }
+
+    public Map<String, Object> getSettings() {
+        return settings;
     }
 }
