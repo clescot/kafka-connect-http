@@ -98,7 +98,7 @@ class SseHttpClientConfigurationTest {
         assertThat(secondEvent.getData()).isEqualTo("""
                 {"id":"test post 2", "createdAt":"2025-04-26T10:15:31"}
                 """.strip());
-        client.shutdown();
+        client.stop();
         assertThat(client.isConnected()).isFalse();
         assertThat(eventQueue.size()).isZero();
     }

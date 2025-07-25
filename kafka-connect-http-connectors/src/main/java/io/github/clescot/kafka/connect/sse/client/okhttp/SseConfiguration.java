@@ -24,6 +24,7 @@ public class SseConfiguration implements Configuration<OkHttpClient, HttpRequest
     private final OkHttpClient client;
     private final Map<String, Object> settings;
     private boolean connected = false;
+    private boolean started = false;
     private SseBackgroundEventHandler backgroundEventHandler;
     private BackgroundEventSource backgroundEventSource;
     private Queue<SseEvent> queue;
@@ -106,10 +107,12 @@ public class SseConfiguration implements Configuration<OkHttpClient, HttpRequest
         if (backgroundEventSource != null) {
             backgroundEventSource.start();
         }
+        started = true;
     }
 
-    public void shutdown() {
+    public void stop() {
         connected = false;
+        started = false;
         if (backgroundEventSource != null) {
             backgroundEventSource.close();
         }
@@ -119,6 +122,9 @@ public class SseConfiguration implements Configuration<OkHttpClient, HttpRequest
         return connected;
     }
 
+    public boolean isStarted() {
+        return started;
+    }
 
     public SseBackgroundEventHandler getBackgroundEventHandler() {
         return backgroundEventHandler;
@@ -140,5 +146,9 @@ public class SseConfiguration implements Configuration<OkHttpClient, HttpRequest
 
     public BackgroundEventSource getBackgroundEventSource() {
         return backgroundEventSource;
+    }
+
+    public String getConfigurationId() {
+        return configurationId;
     }
 }

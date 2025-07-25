@@ -68,7 +68,7 @@ public class SseSourceTask extends SourceTask {
     @Override
     public void stop() {
         if (this.sseTask != null) {
-            this.sseTask.shutdown();
+            this.sseTask.stop();
         }
     }
 
