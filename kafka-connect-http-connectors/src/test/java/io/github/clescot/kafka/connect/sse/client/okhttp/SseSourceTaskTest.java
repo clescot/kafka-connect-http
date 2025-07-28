@@ -97,6 +97,16 @@ class SseSourceTaskTest {
             Assertions.assertDoesNotThrow(() -> sseSourceTask.start(settings));
         }
 
+        @Test
+        void test_settings_with_static_request_header() {
+            Map<String, String> settings = Maps.newHashMap();
+            settings.put("config.default.url", "http://localhost:8080/sse");
+            settings.put("config.default.topic", "dummy_topic");
+            settings.put("config.default.enrich.request.static.header.names", "auth1");
+            settings.put("config.default.enrich.request.static.header.auth1", "value1");
+            Assertions.assertDoesNotThrow(() -> sseSourceTask.start(settings));
+        }
+
 
 
 
