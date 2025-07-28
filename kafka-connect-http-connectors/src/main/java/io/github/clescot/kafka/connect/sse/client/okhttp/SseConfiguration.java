@@ -30,6 +30,9 @@ public class SseConfiguration implements Configuration<OkHttpClient, HttpRequest
     private SseBackgroundEventHandler backgroundEventHandler;
     private BackgroundEventSource backgroundEventSource;
     private Queue<SseEvent> queue;
+    private HttpConnectStrategy connectStrategy;
+    private DefaultRetryDelayStrategy retryDelayStrategy;
+    private ErrorStrategy errorStrategy;
 
     public SseConfiguration(String configurationId,
                             HttpClientConfiguration<OkHttpClient, Request, Response> httpClientConfiguration,
@@ -63,7 +66,7 @@ public class SseConfiguration implements Configuration<OkHttpClient, HttpRequest
 
 
         //retry strategy
-        DefaultRetryDelayStrategy retryDelayStrategy = RetryDelayStrategy.defaultStrategy();
+        this.retryDelayStrategy = RetryDelayStrategy.defaultStrategy();
         if (settings.containsKey(SseConfigDefinition.RETRY_DELAY_STRATEGY_MAX_DELAY_MILLIS)) {
             long maxDelayMillis = (long) settings.getOrDefault(SseConfigDefinition.RETRY_DELAY_STRATEGY_MAX_DELAY_MILLIS, 30000L);
             float backoffMultiplier = (float) settings.getOrDefault(SseConfigDefinition.RETRY_DELAY_STRATEGY_BACKOFF_MULTIPLIER, 2F);
@@ -75,7 +78,7 @@ public class SseConfiguration implements Configuration<OkHttpClient, HttpRequest
         }
 
         //error strategy
-        ErrorStrategy errorStrategy = ErrorStrategy.alwaysThrow();
+        this.errorStrategy = ErrorStrategy.alwaysThrow();
         if (settings.containsKey(SseConfigDefinition.ERROR_STRATEGY)) {
             String errorStrategyAsString = (String) settings.get(SseConfigDefinition.ERROR_STRATEGY);
             switch (errorStrategyAsString) {
@@ -98,13 +101,14 @@ public class SseConfiguration implements Configuration<OkHttpClient, HttpRequest
             }
         }
         this.backgroundEventHandler = new SseBackgroundEventHandler(queue, uri);
+        this.connectStrategy = ConnectStrategy.http(uri)
+                .httpClient(this.httpClientConfiguration.getClient().getInternalClient())
+                .requestTransformer(input -> {
+                    HttpRequest httpRequest = this.httpClientConfiguration.getClient().buildRequest(input);
+                    return this.httpClientConfiguration.getClient().buildNativeRequest(this.httpClientConfiguration.getEnrichRequestFunction().apply(httpRequest));
+                });
         this.backgroundEventSource = new BackgroundEventSource.Builder(backgroundEventHandler,
-                new EventSource.Builder(ConnectStrategy.http(uri)
-                        .httpClient(this.httpClientConfiguration.getClient().getInternalClient())
-                        .requestTransformer(input ->{
-                            HttpRequest httpRequest = this.httpClientConfiguration.getClient().buildRequest(input);
-                            return this.httpClientConfiguration.getClient().buildNativeRequest(this.httpClientConfiguration.getEnrichRequestFunction().apply(httpRequest));
-                        } )
+                new EventSource.Builder(connectStrategy
                 )
                         .streamEventData(false)
                         .retryDelayStrategy(retryDelayStrategy)
@@ -174,5 +178,17 @@ public class SseConfiguration implements Configuration<OkHttpClient, HttpRequest
 
     public Map<String, Object> getSettings() {
         return settings;
+    }
+
+    public HttpConnectStrategy getConnectStrategy() {
+        return connectStrategy;
+    }
+
+    public DefaultRetryDelayStrategy getRetryDelayStrategy() {
+        return retryDelayStrategy;
+    }
+
+    public ErrorStrategy getErrorStrategy() {
+        return errorStrategy;
     }
 }

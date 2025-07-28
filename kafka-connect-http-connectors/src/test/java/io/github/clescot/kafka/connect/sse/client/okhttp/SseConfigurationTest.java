@@ -2,6 +2,9 @@ package io.github.clescot.kafka.connect.sse.client.okhttp;
 
 
 import com.google.common.collect.Maps;
+import com.launchdarkly.eventsource.ErrorStrategy;
+import com.launchdarkly.eventsource.StreamException;
+import com.launchdarkly.eventsource.StreamHttpErrorException;
 import io.github.clescot.kafka.connect.http.client.HttpClientConfiguration;
 import io.github.clescot.kafka.connect.http.client.okhttp.OkHttpClient;
 import io.github.clescot.kafka.connect.http.client.okhttp.OkHttpClientFactory;
@@ -132,6 +135,171 @@ class SseConfigurationTest {
             settings.put("topic", "test-topic");
             SseConfiguration sseConfiguration = new SseConfiguration("test-id", configuration, settings);
             Assertions.assertThrows(NullPointerException.class, () -> sseConfiguration.connect(null));
+        }
+
+        @Test
+        void connect_with_retry_strategy() {
+            HttpClientConfiguration<OkHttpClient, Request, Response> configuration = new HttpClientConfiguration<>(
+                    "test-id",
+                    new OkHttpClientFactory(),
+                    Map.of("url", "http://example.com/sse", "topic", "test-topic"),
+                    null,
+                    new CompositeMeterRegistry()
+            );
+            HashMap<String, Object> settings = Maps.newHashMap();
+            settings.put("url", "http://example.com/sse");
+            settings.put("topic", "test-topic");
+            settings.put("retry.delay.strategy.max-delay-millis", 5000L);
+            settings.put("retry.delay.strategy.backoff-multiplier", 1.5F);
+            settings.put("retry.delay.strategy.jitter-multiplier", 0.4F);
+            SseConfiguration sseConfiguration = new SseConfiguration("test-id", configuration, settings);
+            sseConfiguration.connect(QueueFactory.getQueue(QueueFactory.DEFAULT_QUEUE_NAME));
+            assertThat(sseConfiguration.getBackgroundEventSource()).isNotNull();
+        }
+
+        @Test
+        void connect_with_error_strategy_always_continue() {
+            HttpClientConfiguration<OkHttpClient, Request, Response> configuration = new HttpClientConfiguration<>(
+                    "test-id",
+                    new OkHttpClientFactory(),
+                    Map.of("url", "http://example.com/sse", "topic", "test-topic"),
+                    null,
+                    new CompositeMeterRegistry()
+            );
+            HashMap<String, Object> settings = Maps.newHashMap();
+            settings.put("url", "http://example.com/sse");
+            settings.put("topic", "test-topic");
+            settings.put("error.strategy", "always-continue");
+            SseConfiguration sseConfiguration = new SseConfiguration("test-id", configuration, settings);
+            sseConfiguration.connect(QueueFactory.getQueue(QueueFactory.DEFAULT_QUEUE_NAME));
+            assertThat(sseConfiguration.getBackgroundEventSource()).isNotNull();
+            ErrorStrategy errorStrategy = sseConfiguration.getErrorStrategy();
+            ErrorStrategy.Result result = errorStrategy.apply(new StreamHttpErrorException(500));
+            assertThat(result.getAction()).isEqualTo(ErrorStrategy.Action.CONTINUE);
+        }
+
+        @Test
+        void connect_with_error_strategy_always_throw() {
+            HttpClientConfiguration<OkHttpClient, Request, Response> configuration = new HttpClientConfiguration<>(
+                    "test-id",
+                    new OkHttpClientFactory(),
+                    Map.of("url", "http://example.com/sse", "topic", "test-topic"),
+                    null,
+                    new CompositeMeterRegistry()
+            );
+            HashMap<String, Object> settings = Maps.newHashMap();
+            settings.put("url", "http://example.com/sse");
+            settings.put("topic", "test-topic");
+            settings.put("error.strategy", "always-throw");
+            SseConfiguration sseConfiguration = new SseConfiguration("test-id", configuration, settings);
+            sseConfiguration.connect(QueueFactory.getQueue(QueueFactory.DEFAULT_QUEUE_NAME));
+            assertThat(sseConfiguration.getBackgroundEventSource()).isNotNull();
+            ErrorStrategy errorStrategy = sseConfiguration.getErrorStrategy();
+            ErrorStrategy.Result result = errorStrategy.apply(new StreamHttpErrorException(500));
+            assertThat(result.getAction()).isEqualTo(ErrorStrategy.Action.THROW);
+        }
+        @Test
+        void connect_with_error_strategy_continue_with_max_attempts() {
+            HttpClientConfiguration<OkHttpClient, Request, Response> configuration = new HttpClientConfiguration<>(
+                    "test-id",
+                    new OkHttpClientFactory(),
+                    Map.of("url", "http://example.com/sse", "topic", "test-topic"),
+                    null,
+                    new CompositeMeterRegistry()
+            );
+            HashMap<String, Object> settings = Maps.newHashMap();
+            settings.put("url", "http://example.com/sse");
+            settings.put("topic", "test-topic");
+            settings.put("error.strategy", "continue-with-max-attempts");
+            settings.put("error.strategy.max-attempts", 3);
+            SseConfiguration sseConfiguration = new SseConfiguration("test-id", configuration, settings);
+            sseConfiguration.connect(QueueFactory.getQueue(QueueFactory.DEFAULT_QUEUE_NAME));
+            assertThat(sseConfiguration.getBackgroundEventSource()).isNotNull();
+            ErrorStrategy errorStrategy = sseConfiguration.getErrorStrategy();
+            ErrorStrategy.Result result = errorStrategy.apply(new StreamHttpErrorException(500));
+            assertThat(result.getAction()).isEqualTo(ErrorStrategy.Action.CONTINUE);
+            ErrorStrategy.Result result2 = result.getNext().apply(new StreamHttpErrorException(500));
+            assertThat(result2.getAction()).isEqualTo(ErrorStrategy.Action.CONTINUE);
+            ErrorStrategy.Result result3 = result2.getNext().apply(new StreamHttpErrorException(500));
+            assertThat(result3.getAction()).isEqualTo(ErrorStrategy.Action.CONTINUE);
+            ErrorStrategy.Result result4 = result3.getNext().apply(new StreamHttpErrorException(500));
+            assertThat(result4.getAction()).isEqualTo(ErrorStrategy.Action.THROW);
+
+        }
+
+        @Test
+        void connect_with_error_strategy_continue_with_time_limit() {
+            HttpClientConfiguration<OkHttpClient, Request, Response> configuration = new HttpClientConfiguration<>(
+                    "test-id",
+                    new OkHttpClientFactory(),
+                    Map.of("url", "http://example.com/sse", "topic", "test-topic"),
+                    null,
+                    new CompositeMeterRegistry()
+            );
+            HashMap<String, Object> settings = Maps.newHashMap();
+            settings.put("url", "http://example.com/sse");
+            settings.put("topic", "test-topic");
+            settings.put("error.strategy", "continue-with-max-attempts");
+            settings.put("error.strategy.time-limit-count-in-millis", 50000);
+            SseConfiguration sseConfiguration = new SseConfiguration("test-id", configuration, settings);
+            sseConfiguration.connect(QueueFactory.getQueue(QueueFactory.DEFAULT_QUEUE_NAME));
+            assertThat(sseConfiguration.getBackgroundEventSource()).isNotNull();
+        }
+
+        @Test
+        void connect_with_error_strategy_continue_with_time_limit_without_time_limit() {
+            HttpClientConfiguration<OkHttpClient, Request, Response> configuration = new HttpClientConfiguration<>(
+                    "test-id",
+                    new OkHttpClientFactory(),
+                    Map.of("url", "http://example.com/sse", "topic", "test-topic"),
+                    null,
+                    new CompositeMeterRegistry()
+            );
+            HashMap<String, Object> settings = Maps.newHashMap();
+            settings.put("url", "http://example.com/sse");
+            settings.put("topic", "test-topic");
+            settings.put("error.strategy", "continue-with-max-attempts");
+            SseConfiguration sseConfiguration = new SseConfiguration("test-id", configuration, settings);
+            sseConfiguration.connect(QueueFactory.getQueue(QueueFactory.DEFAULT_QUEUE_NAME));
+            assertThat(sseConfiguration.getBackgroundEventSource()).isNotNull();
+
+        }
+    }
+
+    @Nested
+    class Start{
+        @Test
+        void nominal_case() {
+            HttpClientConfiguration<OkHttpClient, Request, Response> configuration = new HttpClientConfiguration<>(
+                    "test-id",
+                    new OkHttpClientFactory(),
+                    Map.of("url", "http://example.com/sse", "topic", "test-topic"),
+                    null,
+                    new CompositeMeterRegistry()
+            );
+            HashMap<String, Object> settings = Maps.newHashMap();
+            settings.put("url", "http://example.com/sse");
+            settings.put("topic", "test-topic");
+            SseConfiguration sseConfiguration = new SseConfiguration("test-id", configuration, settings);
+            sseConfiguration.connect(QueueFactory.getQueue(QueueFactory.DEFAULT_QUEUE_NAME));
+            sseConfiguration.start();
+            assertThat(sseConfiguration.isStarted()).isTrue();
+        }
+
+        @Test
+        void not_connected() {
+            HttpClientConfiguration<OkHttpClient, Request, Response> configuration = new HttpClientConfiguration<>(
+                    "test-id",
+                    new OkHttpClientFactory(),
+                    Map.of("url", "http://example.com/sse", "topic", "test-topic"),
+                    null,
+                    new CompositeMeterRegistry()
+            );
+            HashMap<String, Object> settings = Maps.newHashMap();
+            settings.put("url", "http://example.com/sse");
+            settings.put("topic", "test-topic");
+            SseConfiguration sseConfiguration = new SseConfiguration("test-id", configuration, settings);
+            Assertions.assertThrows(IllegalStateException.class, () -> sseConfiguration.start());
         }
     }
 

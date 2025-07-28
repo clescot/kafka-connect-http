@@ -34,10 +34,10 @@ public class SseConfigDefinition {
     public static final String ERROR_STRATEGY_CONTINUE_WITH_MAX_ATTEMPTS = "continue-with-max-attempts";
     public static final String ERROR_STRATEGY_CONTINUE_WITH_MAX_ATTEMPTS_DOC = "Continue processing events, but limit the number of attempts to process an event before giving up. " +
             "This strategy will log the error and continue to the next event after the maximum number of attempts is reached.";
-    public static final String ERROR_STRATEGY_MAX_ATTEMPTS = "max-attempts";
+    public static final String ERROR_STRATEGY_MAX_ATTEMPTS = "error.strategy.max-attempts";
     public static final String ERROR_STRATEGY_MAX_ATTEMPTS_DOC = "Maximum number of attempts to process an event before giving up. " +
             "This setting is only used when the error strategy is set to 'continue-with-max-attempts'.";
-    public static final String ERROR_STRATEGY_TIME_LIMIT_COUNT_IN_MILLIS = "time-limit-count-in-millis";
+    public static final String ERROR_STRATEGY_TIME_LIMIT_COUNT_IN_MILLIS = "error.strategy.time-limit-count-in-millis";
     public static final String ERROR_STRATEGY_TIME_LIMIT_COUNT_IN_MILLIS_DOC = "Time limit in milliseconds for processing an event before giving up. " +
             "This setting is only used when the error strategy is set to 'continue-with-time-limit'.";
     public static final String ERROR_STRATEGY_CONTINUE_WITH_TIME_LIMIT = "continue-with-time-limit";
