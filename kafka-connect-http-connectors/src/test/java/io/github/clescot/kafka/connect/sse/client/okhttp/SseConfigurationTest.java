@@ -3,7 +3,6 @@ package io.github.clescot.kafka.connect.sse.client.okhttp;
 
 import com.google.common.collect.Maps;
 import com.launchdarkly.eventsource.ErrorStrategy;
-import com.launchdarkly.eventsource.StreamException;
 import com.launchdarkly.eventsource.StreamHttpErrorException;
 import com.launchdarkly.eventsource.background.BackgroundEventSource;
 import io.github.clescot.kafka.connect.http.client.HttpClientConfiguration;
@@ -13,7 +12,6 @@ import io.github.clescot.kafka.connect.http.core.queue.QueueFactory;
 import io.micrometer.core.instrument.composite.CompositeMeterRegistry;
 import okhttp3.Request;
 import okhttp3.Response;
-import org.awaitility.Awaitility;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
