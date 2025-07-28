@@ -5,6 +5,7 @@ import com.google.common.collect.Maps;
 import com.launchdarkly.eventsource.ErrorStrategy;
 import com.launchdarkly.eventsource.StreamException;
 import com.launchdarkly.eventsource.StreamHttpErrorException;
+import com.launchdarkly.eventsource.background.BackgroundEventSource;
 import io.github.clescot.kafka.connect.http.client.HttpClientConfiguration;
 import io.github.clescot.kafka.connect.http.client.okhttp.OkHttpClient;
 import io.github.clescot.kafka.connect.http.client.okhttp.OkHttpClientFactory;
@@ -159,6 +160,26 @@ class SseConfigurationTest {
         }
 
         @Test
+        void connect_without_error_strategy_set() {
+            HttpClientConfiguration<OkHttpClient, Request, Response> configuration = new HttpClientConfiguration<>(
+                    "test-id",
+                    new OkHttpClientFactory(),
+                    Map.of("url", "http://example.com/sse", "topic", "test-topic"),
+                    null,
+                    new CompositeMeterRegistry()
+            );
+            HashMap<String, Object> settings = Maps.newHashMap();
+            settings.put("url", "http://example.com/sse");
+            settings.put("topic", "test-topic");
+            SseConfiguration sseConfiguration = new SseConfiguration("test-id", configuration, settings);
+            sseConfiguration.connect(QueueFactory.getQueue(QueueFactory.DEFAULT_QUEUE_NAME));
+            assertThat(sseConfiguration.getBackgroundEventSource()).isNotNull();
+            ErrorStrategy errorStrategy = sseConfiguration.getErrorStrategy();
+            ErrorStrategy.Result result = errorStrategy.apply(new StreamHttpErrorException(500));
+            assertThat(result.getAction()).isEqualTo(ErrorStrategy.Action.THROW);
+        }
+
+        @Test
         void connect_with_error_strategy_always_continue() {
             HttpClientConfiguration<OkHttpClient, Request, Response> configuration = new HttpClientConfiguration<>(
                     "test-id",
@@ -198,6 +219,28 @@ class SseConfigurationTest {
             ErrorStrategy errorStrategy = sseConfiguration.getErrorStrategy();
             ErrorStrategy.Result result = errorStrategy.apply(new StreamHttpErrorException(500));
             assertThat(result.getAction()).isEqualTo(ErrorStrategy.Action.THROW);
+        }
+
+        @Test
+        void connect_with_unknown_error_strategy() {
+            HttpClientConfiguration<OkHttpClient, Request, Response> configuration = new HttpClientConfiguration<>(
+                    "test-id",
+                    new OkHttpClientFactory(),
+                    Map.of("url", "http://example.com/sse", "topic", "test-topic"),
+                    null,
+                    new CompositeMeterRegistry()
+            );
+            HashMap<String, Object> settings = Maps.newHashMap();
+            settings.put("url", "http://example.com/sse");
+            settings.put("topic", "test-topic");
+            settings.put("error.strategy", "dummy");
+            SseConfiguration sseConfiguration = new SseConfiguration("test-id", configuration, settings);
+            try(BackgroundEventSource ignored = sseConfiguration.connect(QueueFactory.getQueue(QueueFactory.DEFAULT_QUEUE_NAME))) {
+                assertThat(sseConfiguration.getBackgroundEventSource()).isNotNull();
+                ErrorStrategy errorStrategy = sseConfiguration.getErrorStrategy();
+                ErrorStrategy.Result result = errorStrategy.apply(new StreamHttpErrorException(500));
+                assertThat(result.getAction()).isEqualTo(ErrorStrategy.Action.THROW);
+            }
         }
 
         @Test
@@ -271,8 +314,8 @@ class SseConfigurationTest {
             HashMap<String, Object> settings = Maps.newHashMap();
             settings.put("url", "http://example.com/sse");
             settings.put("topic", "test-topic");
-            settings.put("error.strategy", "continue-with-max-attempts");
-            settings.put("error.strategy.time-limit-count-in-millis", 50000);
+            settings.put("error.strategy", "continue-with-time-limit");
+            settings.put("error.strategy.time-limit-count-in-millis", 50000L);
             SseConfiguration sseConfiguration = new SseConfiguration("test-id", configuration, settings);
             sseConfiguration.connect(QueueFactory.getQueue(QueueFactory.DEFAULT_QUEUE_NAME));
             assertThat(sseConfiguration.getBackgroundEventSource()).isNotNull();
@@ -290,7 +333,7 @@ class SseConfigurationTest {
             HashMap<String, Object> settings = Maps.newHashMap();
             settings.put("url", "http://example.com/sse");
             settings.put("topic", "test-topic");
-            settings.put("error.strategy", "continue-with-max-attempts");
+            settings.put("error.strategy", "continue-with-time-limit");
             SseConfiguration sseConfiguration = new SseConfiguration("test-id", configuration, settings);
             sseConfiguration.connect(QueueFactory.getQueue(QueueFactory.DEFAULT_QUEUE_NAME));
             assertThat(sseConfiguration.getBackgroundEventSource()).isNotNull();
@@ -313,9 +356,10 @@ class SseConfigurationTest {
             settings.put("url", "http://example.com/sse");
             settings.put("topic", "test-topic");
             SseConfiguration sseConfiguration = new SseConfiguration("test-id", configuration, settings);
-            sseConfiguration.connect(QueueFactory.getQueue(QueueFactory.DEFAULT_QUEUE_NAME));
-            sseConfiguration.start();
-            assertThat(sseConfiguration.isStarted()).isTrue();
+            try(BackgroundEventSource ignored = sseConfiguration.connect(QueueFactory.getQueue(QueueFactory.DEFAULT_QUEUE_NAME))) {
+                sseConfiguration.start();
+                assertThat(sseConfiguration.isStarted()).isTrue();
+            }
         }
 
         @Test
@@ -331,7 +375,7 @@ class SseConfigurationTest {
             settings.put("url", "http://example.com/sse");
             settings.put("topic", "test-topic");
             SseConfiguration sseConfiguration = new SseConfiguration("test-id", configuration, settings);
-            Assertions.assertThrows(IllegalStateException.class, () -> sseConfiguration.start());
+            Assertions.assertThrows(IllegalStateException.class, sseConfiguration::start);
         }
     }
 

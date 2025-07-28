@@ -93,7 +93,7 @@ public class SseConfiguration implements Configuration<OkHttpClient, HttpRequest
                     errorStrategy = ErrorStrategy.continueWithMaxAttempts(maxAttempts);
                     break;
                 case SseConfigDefinition.ERROR_STRATEGY_CONTINUE_WITH_TIME_LIMIT:
-                    long timeLimitCountInMillis = (long) settings.getOrDefault(SseConfigDefinition.ERROR_STRATEGY_TIME_LIMIT_COUNT_IN_MILLIS, 60000);
+                    long timeLimitCountInMillis = (long) settings.getOrDefault(SseConfigDefinition.ERROR_STRATEGY_TIME_LIMIT_COUNT_IN_MILLIS, 60000L);
                     errorStrategy = ErrorStrategy.continueWithTimeLimit(timeLimitCountInMillis, TimeUnit.MILLISECONDS);
                     break;
                 default:

@@ -19,7 +19,7 @@ public class SseConfigDefinition {
     public static final String URL_DOC = "URL of the SSE server to connect to";
     public static final String TOPIC = "topic";
 
-    public static final String DEFAULT_CONFIG_TOPIC = DEFAULT_CONFIGURATION_PREFIX+"topic";
+    public static final String DEFAULT_CONFIG_TOPIC = DEFAULT_CONFIGURATION_PREFIX+TOPIC;
     public static final String TOPIC_DOC = "topic to publish events to";
 
     //error strategy
