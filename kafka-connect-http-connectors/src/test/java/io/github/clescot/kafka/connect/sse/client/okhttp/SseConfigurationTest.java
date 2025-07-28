@@ -234,7 +234,7 @@ class SseConfigurationTest {
             settings.put("topic", "test-topic");
             settings.put("error.strategy", "dummy");
             SseConfiguration sseConfiguration = new SseConfiguration("test-id", configuration, settings);
-            try(BackgroundEventSource ignored = sseConfiguration.connect(QueueFactory.getQueue(QueueFactory.DEFAULT_QUEUE_NAME))) {
+            try (BackgroundEventSource ignored = sseConfiguration.connect(QueueFactory.getQueue(QueueFactory.DEFAULT_QUEUE_NAME))) {
                 assertThat(sseConfiguration.getBackgroundEventSource()).isNotNull();
                 ErrorStrategy errorStrategy = sseConfiguration.getErrorStrategy();
                 ErrorStrategy.Result result = errorStrategy.apply(new StreamHttpErrorException(500));
@@ -332,7 +332,7 @@ class SseConfigurationTest {
     }
 
     @Nested
-    class Connect_with_high_execution_time{
+    class Connect_with_high_execution_time {
         @Test
         @SuppressWarnings("java:s2925")
         void connect_with_error_strategy_continue_with_time_limit_without_time_limit() throws InterruptedException {
@@ -379,7 +379,7 @@ class SseConfigurationTest {
             settings.put("url", "http://example.com/sse");
             settings.put("topic", "test-topic");
             SseConfiguration sseConfiguration = new SseConfiguration("test-id", configuration, settings);
-            try(BackgroundEventSource ignored = sseConfiguration.connect(QueueFactory.getQueue(QueueFactory.DEFAULT_QUEUE_NAME))) {
+            try (BackgroundEventSource ignored = sseConfiguration.connect(QueueFactory.getQueue(QueueFactory.DEFAULT_QUEUE_NAME))) {
                 sseConfiguration.start();
                 assertThat(sseConfiguration.isStarted()).isTrue();
             }
@@ -399,6 +399,86 @@ class SseConfigurationTest {
             settings.put("topic", "test-topic");
             SseConfiguration sseConfiguration = new SseConfiguration("test-id", configuration, settings);
             Assertions.assertThrows(IllegalStateException.class, sseConfiguration::start);
+        }
+    }
+
+    @Nested
+    class Stop {
+        @Test
+        void nominal_case() {
+            HttpClientConfiguration<OkHttpClient, Request, Response> configuration = new HttpClientConfiguration<>(
+                    "test-id",
+                    new OkHttpClientFactory(),
+                    Map.of("url", "http://example.com/sse", "topic", "test-topic"),
+                    null,
+                    new CompositeMeterRegistry()
+            );
+            HashMap<String, Object> settings = Maps.newHashMap();
+            settings.put("url", "http://example.com/sse");
+            settings.put("topic", "test-topic");
+            SseConfiguration sseConfiguration = new SseConfiguration("test-id", configuration, settings);
+            try (BackgroundEventSource ignored = sseConfiguration.connect(QueueFactory.getQueue(QueueFactory.DEFAULT_QUEUE_NAME))) {
+                sseConfiguration.start();
+                sseConfiguration.stop();
+                assertThat(sseConfiguration.isConnected()).isFalse();
+                assertThat(sseConfiguration.isStarted()).isFalse();
+            }
+        }
+
+        @Test
+        void stop_without_previous_start_nor_connect() {
+            HttpClientConfiguration<OkHttpClient, Request, Response> configuration = new HttpClientConfiguration<>(
+                    "test-id",
+                    new OkHttpClientFactory(),
+                    Map.of("url", "http://example.com/sse", "topic", "test-topic"),
+                    null,
+                    new CompositeMeterRegistry()
+            );
+            HashMap<String, Object> settings = Maps.newHashMap();
+            settings.put("url", "http://example.com/sse");
+            settings.put("topic", "test-topic");
+            SseConfiguration sseConfiguration = new SseConfiguration("test-id", configuration, settings);
+            sseConfiguration.stop();
+            assertThat(sseConfiguration.isConnected()).isFalse();
+            assertThat(sseConfiguration.isStarted()).isFalse();
+        }
+
+        @Test
+        void stop_without_previous_start() {
+            HttpClientConfiguration<OkHttpClient, Request, Response> configuration = new HttpClientConfiguration<>(
+                    "test-id",
+                    new OkHttpClientFactory(),
+                    Map.of("url", "http://example.com/sse", "topic", "test-topic"),
+                    null,
+                    new CompositeMeterRegistry()
+            );
+            HashMap<String, Object> settings = Maps.newHashMap();
+            settings.put("url", "http://example.com/sse");
+            settings.put("topic", "test-topic");
+            SseConfiguration sseConfiguration = new SseConfiguration("test-id", configuration, settings);
+            try (BackgroundEventSource ignored = sseConfiguration.connect(QueueFactory.getQueue(QueueFactory.DEFAULT_QUEUE_NAME))) {
+                sseConfiguration.stop();
+                assertThat(sseConfiguration.isConnected()).isFalse();
+                assertThat(sseConfiguration.isStarted()).isFalse();
+            }
+        }
+
+        @Test
+        void stop_without_previous_connect() {
+            HttpClientConfiguration<OkHttpClient, Request, Response> configuration = new HttpClientConfiguration<>(
+                    "test-id",
+                    new OkHttpClientFactory(),
+                    Map.of("url", "http://example.com/sse", "topic", "test-topic"),
+                    null,
+                    new CompositeMeterRegistry()
+            );
+            HashMap<String, Object> settings = Maps.newHashMap();
+            settings.put("url", "http://example.com/sse");
+            settings.put("topic", "test-topic");
+            SseConfiguration sseConfiguration = new SseConfiguration("test-id", configuration, settings);
+            sseConfiguration.stop();
+            assertThat(sseConfiguration.isConnected()).isFalse();
+            assertThat(sseConfiguration.isStarted()).isFalse();
         }
     }
 
