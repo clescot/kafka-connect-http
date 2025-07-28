@@ -5,6 +5,7 @@ import org.apache.kafka.common.config.ConfigException;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
+import java.util.HashMap;
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -22,7 +23,8 @@ class SseTaskTest {
         }
         @Test
         void empty_settings() {
-            assertThrows(ConfigException.class, () -> new SseTask(Maps.newHashMap()));
+            HashMap<String, String> emptySettings = Maps.newHashMap();
+            assertThrows(ConfigException.class, () -> new SseTask(emptySettings));
         }
 
         @Test
