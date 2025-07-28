@@ -20,6 +20,7 @@ import java.util.concurrent.TimeUnit;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.okForContentType;
 import static com.github.tomakehurst.wiremock.stubbing.Scenario.STARTED;
+import static io.github.clescot.kafka.connect.http.client.HttpClientConfigDefinition.CONFIGURATION_IDS;
 import static org.assertj.core.api.Assertions.assertThat;
 
 class SseSourceTaskTest {
@@ -32,9 +33,9 @@ class SseSourceTaskTest {
         wmHttp = WireMockExtension.newInstance()
                 .options(
                         WireMockConfiguration.wireMockConfig()
-                                .dynamicPort()
-                                .networkTrafficListener(new ConsoleNotifyingWiremockNetworkTrafficListener())
-                                .useChunkedTransferEncoding(Options.ChunkedEncodingPolicy.NEVER)
+                            .dynamicPort()
+                            .networkTrafficListener(new ConsoleNotifyingWiremockNetworkTrafficListener())
+                            .useChunkedTransferEncoding(Options.ChunkedEncodingPolicy.NEVER)
                 )
                 .build();
     }
@@ -63,16 +64,36 @@ class SseSourceTaskTest {
         @Test
         void test_settings_with_topic_only() {
             Map<String, String> settings = Maps.newHashMap();
-            settings.put("topic", "test");
+            settings.put("config.default.topic", "test");
             Assertions.assertThrows(ConfigException.class, () -> sseSourceTask.start(settings));
         }
 
         @Test
         void test_settings_with_topic_and_url() {
             Map<String, String> settings = Maps.newHashMap();
-            settings.put("topic", "test");
             settings.put("config.default.url", "http://localhost:8080/sse");
             settings.put("config.default.topic", "dummy_topic");
+            Assertions.assertDoesNotThrow(() -> sseSourceTask.start(settings));
+        }
+
+        @Test
+        void test_settings_with_multiple_configurations() {
+            Map<String, String> settings = Maps.newHashMap();
+            settings.put(CONFIGURATION_IDS, "test");
+            settings.put("config.default.url", "http://localhost:8080/sse");
+            settings.put("config.default.topic", "dummy_topic");
+            settings.put("config.test.url", "http://localhost:8080/sse2");
+            settings.put("config.test.topic", "dummy_topic2");
+            Assertions.assertDoesNotThrow(() -> sseSourceTask.start(settings));
+        }
+        @Test
+        void test_settings_with_multiple_configurations_and_default_defined() {
+            Map<String, String> settings = Maps.newHashMap();
+            settings.put(CONFIGURATION_IDS, "default,test");
+            settings.put("config.default.url", "http://localhost:8080/sse");
+            settings.put("config.default.topic", "dummy_topic");
+            settings.put("config.test.url", "http://localhost:8080/sse2");
+            settings.put("config.test.topic", "dummy_topic2");
             Assertions.assertDoesNotThrow(() -> sseSourceTask.start(settings));
         }
 
