@@ -150,9 +150,9 @@ class SseConfigurationTest {
             HashMap<String, Object> settings = Maps.newHashMap();
             settings.put("url", "http://example.com/sse");
             settings.put("topic", "test-topic");
-            settings.put("retry.delay.strategy.max-delay-millis", 5000L);
-            settings.put("retry.delay.strategy.backoff-multiplier", 1.5F);
-            settings.put("retry.delay.strategy.jitter-multiplier", 0.4F);
+            settings.put("retry.delay.strategy.max-delay-millis", "5000");
+            settings.put("retry.delay.strategy.backoff-multiplier", "1.5");
+            settings.put("retry.delay.strategy.jitter-multiplier", "0.4");
             SseConfiguration sseConfiguration = new SseConfiguration("test-id", configuration, settings);
             sseConfiguration.connect(QueueFactory.getQueue(QueueFactory.DEFAULT_QUEUE_NAME));
             assertThat(sseConfiguration.getBackgroundEventSource()).isNotNull();
@@ -255,7 +255,7 @@ class SseConfigurationTest {
             settings.put("url", "http://example.com/sse");
             settings.put("topic", "test-topic");
             settings.put("error.strategy", "continue-with-max-attempts");
-            settings.put("error.strategy.max-attempts", 4);
+            settings.put("error.strategy.max-attempts", "4");
             SseConfiguration sseConfiguration = new SseConfiguration("test-id", configuration, settings);
             sseConfiguration.connect(QueueFactory.getQueue(QueueFactory.DEFAULT_QUEUE_NAME));
             assertThat(sseConfiguration.getBackgroundEventSource()).isNotNull();
@@ -314,7 +314,7 @@ class SseConfigurationTest {
             settings.put("url", "http://example.com/sse");
             settings.put("topic", "test-topic");
             settings.put("error.strategy", "continue-with-time-limit");
-            settings.put("error.strategy.time-limit-count-in-millis", 5000L);
+            settings.put("error.strategy.time-limit-count-in-millis", "5000");
             SseConfiguration sseConfiguration = new SseConfiguration("test-id", configuration, settings);
             sseConfiguration.connect(QueueFactory.getQueue(QueueFactory.DEFAULT_QUEUE_NAME));
             assertThat(sseConfiguration.getBackgroundEventSource()).isNotNull();

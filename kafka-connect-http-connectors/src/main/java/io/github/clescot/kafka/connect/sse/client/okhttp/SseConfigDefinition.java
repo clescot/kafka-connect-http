@@ -90,12 +90,12 @@ public class SseConfigDefinition {
                 .define(prefix + TOPIC, ConfigDef.Type.STRING, ConfigDef.Importance.HIGH, TOPIC_DOC)
                 //error strategy
                 .define(prefix + ERROR_STRATEGY, ConfigDef.Type.STRING,ERROR_STRATEGY_ALWAYS_CONTINUE, ConfigDef.Importance.MEDIUM, ERROR_STRATEGY_DOC)
-                .define(prefix + ERROR_STRATEGY_MAX_ATTEMPTS, ConfigDef.Type.INT,3, ConfigDef.Importance.MEDIUM, ERROR_STRATEGY_MAX_ATTEMPTS_DOC)
-                .define(prefix + ERROR_STRATEGY_TIME_LIMIT_COUNT_IN_MILLIS, ConfigDef.Type.INT,60000, ConfigDef.Importance.MEDIUM, ERROR_STRATEGY_TIME_LIMIT_COUNT_IN_MILLIS_DOC)
+                .define(prefix + ERROR_STRATEGY_MAX_ATTEMPTS, ConfigDef.Type.STRING,"3", ConfigDef.Importance.MEDIUM, ERROR_STRATEGY_MAX_ATTEMPTS_DOC)
+                .define(prefix + ERROR_STRATEGY_TIME_LIMIT_COUNT_IN_MILLIS, ConfigDef.Type.STRING,"60000", ConfigDef.Importance.MEDIUM, ERROR_STRATEGY_TIME_LIMIT_COUNT_IN_MILLIS_DOC)
                 //retry delay strategy
-                .define(prefix + RETRY_DELAY_STRATEGY_MAX_DELAY_MILLIS, ConfigDef.Type.LONG,30000L, ConfigDef.Importance.MEDIUM, RETRY_DELAY_STRATEGY_MAX_DELAY_MILLIS_DOC)
-                .define(prefix + RETRY_DELAY_STRATEGY_BACKOFF_MULTIPLIER, ConfigDef.Type.INT,2, ConfigDef.Importance.MEDIUM, RETRY_DELAY_STRATEGY_BACKOFF_MULTIPLIER_DOC)
-                .define(prefix + RETRY_DELAY_STRATEGY_JITTER_MULTIPLIER, ConfigDef.Type.DOUBLE,0.5, ConfigDef.Importance.MEDIUM, RETRY_DELAY_STRATEGY_JITTER_MULTIPLIER_DOC)
+                .define(prefix + RETRY_DELAY_STRATEGY_MAX_DELAY_MILLIS, ConfigDef.Type.STRING,"30000", ConfigDef.Importance.MEDIUM, RETRY_DELAY_STRATEGY_MAX_DELAY_MILLIS_DOC)
+                .define(prefix + RETRY_DELAY_STRATEGY_BACKOFF_MULTIPLIER, ConfigDef.Type.STRING,"2", ConfigDef.Importance.MEDIUM, RETRY_DELAY_STRATEGY_BACKOFF_MULTIPLIER_DOC)
+                .define(prefix + RETRY_DELAY_STRATEGY_JITTER_MULTIPLIER, ConfigDef.Type.STRING,"0.5", ConfigDef.Importance.MEDIUM, RETRY_DELAY_STRATEGY_JITTER_MULTIPLIER_DOC)
                 ;
     }
 }
