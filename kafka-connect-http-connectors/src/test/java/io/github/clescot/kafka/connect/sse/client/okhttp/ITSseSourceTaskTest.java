@@ -92,7 +92,7 @@ public class ITSseSourceTaskTest {
         Set<Map.Entry<String, Queue<SseEvent>>> entries = sseSourceTask.getQueues().entrySet();
         for (Map.Entry<String, Queue<SseEvent>> entry : entries) {
             System.out.println("############### configId :"+entry.getKey());
-            entry.getValue().stream().forEach(msg-> System.out.println("############### event :"+msg));
+            entry.getValue().forEach(msg-> System.out.println("############### event :"+msg));
         }
     }
 
