@@ -5,6 +5,9 @@ Multiple event streams can be configured with for each one its own configuration
 SSE Connector is relying on [OkHttp](https://square.github.io/okhttp/) to handle the SSE protocol.
 So, many configuration options present in the HTTP Connector, are also available here to tune the connection, 
 like inserting custom headers, configuring timeouts, etc.
+Unlike the HTTP Sink connector which select the right configuration against the current HTTP request, 
+the SSE Source connector is connecting to all configured URLs owned by configurations, listening to events 
+and provide them to each configured topic.
 
 ## required parameters
 
@@ -35,5 +38,27 @@ like inserting custom headers, configuring timeouts, etc.
    "value.converter" : "org.apache.kafka.connect.storage.StringConverter",
    "config.default.url":"http://mywebsite.com/sse",
    "config.default.topic":"sse_events"
+}
+```
+
+
+## example for a default configuration, with a static header, a connect timeout, a retry strategy, and an error strategy.
+
+```json
+{
+   "tasks.max" : "1",
+   "connector.class" : "io.github.clescot.kafka.connect.sse.client.okhttp.SseSourceConnector",
+   "topic" : "sse_events",
+   "key.converter" : "org.apache.kafka.connect.storage.StringConverter",
+   "value.converter" : "org.apache.kafka.connect.storage.StringConverter",
+   "config.default.url":"http://mywebsite.com/sse",
+   "config.default.topic":"sse_events",
+   "config.default.enrich.request.static.header.names": "auth1",
+   "config.default.enrich.request.static.header.auth1": "value1",
+   "config.default.okhttp.connect.timeout": "3000",
+   "config.default.retry.delay.strategy.max-delay-millis": "5000",
+   "config.default.retry.delay.strategy.backoff-multiplier": "1.5",
+   "config.default.error.strategy":"continue-with-max-attempts",
+   "config.default.error.strategy.max-attempts":"4"
 }
 ```

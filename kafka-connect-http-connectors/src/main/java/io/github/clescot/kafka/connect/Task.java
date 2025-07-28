@@ -16,6 +16,13 @@ import java.util.Map;
 public interface Task<C extends Client,F extends Configuration<C,R>,R,S> {
 
 
+    /**
+     * Selects a configuration based on the provided request.
+     * If no matching configuration is found, it returns the default configuration.
+     *
+     * @param request the request to match against configurations
+     * @return the selected configuration
+     */
     default F selectConfiguration(R request) {
         Preconditions.checkNotNull(request, "Request must not be null.");
         Map<String,F> configurations = getConfigurations();
