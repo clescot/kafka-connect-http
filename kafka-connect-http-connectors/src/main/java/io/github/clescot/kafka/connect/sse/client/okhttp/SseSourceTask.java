@@ -6,6 +6,7 @@ import com.google.common.collect.Maps;
 import io.github.clescot.kafka.connect.Configuration;
 import io.github.clescot.kafka.connect.VersionUtils;
 import io.github.clescot.kafka.connect.sse.core.SseEvent;
+import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.source.SourceRecord;
 import org.apache.kafka.connect.source.SourceTask;
 import org.slf4j.Logger;
@@ -59,9 +60,9 @@ public class SseSourceTask extends SourceTask {
                     sourcePartition,
                     sourceOffset,
                     sseConfiguration.getTopic(),
-                    null,
+                    Schema.STRING_SCHEMA,
                     sseEvent.getType(),
-                    null,
+                    SseEvent.SCHEMA,
                     sseEvent.toJson()
             );
             records.add(sourceRecord);
