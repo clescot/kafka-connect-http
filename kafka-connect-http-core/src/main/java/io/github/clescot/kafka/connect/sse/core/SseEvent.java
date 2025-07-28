@@ -1,5 +1,11 @@
 package io.github.clescot.kafka.connect.sse.core;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
+import io.github.clescot.kafka.connect.http.core.HttpPart;
+import org.apache.kafka.connect.data.Schema;
+import org.apache.kafka.connect.data.SchemaBuilder;
+import org.apache.kafka.connect.data.Struct;
+
 import java.io.Serial;
 import java.io.Serializable;
 import java.util.Objects;
@@ -11,14 +17,39 @@ import java.util.Objects;
 public class SseEvent implements Cloneable, Serializable {
     @Serial
     private static final long serialVersionUID = 1L;
-    private final String id;
-    private final String type;
-    private final String data;
+    @JsonProperty
+    private String id;
+    @JsonProperty
+    private String type;
+    @JsonProperty
+    private String data;
+
+    public static final int VERSION = 1;
+
+    private static final String ID = "id";
+    private static final String TYPE = "type";
+    private static final String DATA = "data";
+    public static final Schema SCHEMA = SchemaBuilder
+            .struct()
+            .name(SseEvent.class.getName())
+            .version(VERSION)
+            .field(ID, Schema.OPTIONAL_STRING_SCHEMA)
+            .field(TYPE, Schema.STRING_SCHEMA)
+            .field(DATA, Schema.STRING_SCHEMA)
+            .schema();
+
+    protected SseEvent() {}
 
     public SseEvent(String id, String type, String data) {
         this.id = id;
         this.type = type;
         this.data = data;
+    }
+
+    public SseEvent(Struct struct) {
+        this.id = struct.getString(ID);
+        this.type = struct.getString(TYPE);
+        this.data = struct.getString(DATA);
     }
 
     public String getId() {
@@ -31,6 +62,19 @@ public class SseEvent implements Cloneable, Serializable {
 
     public String getData() {
         return data;
+    }
+
+
+    protected void setId(String id) {
+        this.id = id;
+    }
+
+    protected void setType(String type) {
+        this.type = type;
+    }
+
+    protected void setData(String data) {
+        this.data = data;
     }
 
     @Override
@@ -65,5 +109,12 @@ public class SseEvent implements Cloneable, Serializable {
 
     public String toJson() {
         return "{\"id\":\"" + id + "\",\"type\":\"" + type + "\",\"data\":\"" + data + "\"}";
+    }
+
+    public Struct toStruct() {
+        return new Struct(SCHEMA)
+                .put(ID, id)
+                .put(TYPE, type)
+                .put(DATA, data);
     }
 }
