@@ -86,6 +86,7 @@ public class SseSourceTask extends SourceTask {
     }
 
     public boolean isConnected(String configurationId) {
+        Preconditions.checkNotNull(this.sseTask, "sseTask must not be null. call 'start()' method first.");
         return this.sseTask.isConnected(configurationId);
     }
 

@@ -196,7 +196,7 @@ class SseSourceTaskTest {
         }
 
         @Test
-        void test_nominal_case() {
+        void test_polling_nominal_case() {
             Map<String, String> settings = Maps.newHashMap();
             settings.put("config.default.topic", "test");
             settings.put("config.default.url", wmRuntimeInfo.getHttpBaseUrl()+"/events1");
@@ -210,7 +210,7 @@ class SseSourceTaskTest {
         }
 
         @Test
-        void test_with_static_header() {
+        void test_polling_with_static_header() {
             Map<String, String> settings = Maps.newHashMap();
             settings.put("config.default.topic", "test");
             settings.put("config.default.url", wmRuntimeInfo.getHttpBaseUrl()+"/events2");
@@ -221,6 +221,20 @@ class SseSourceTaskTest {
             Queue<SseEvent> queue = sseSourceTask.getQueue("default").orElseThrow();
             Awaitility.await().atMost(5, TimeUnit.SECONDS).until(()-> !queue.isEmpty());
             assertThat(queue).hasSize(4);
+            Awaitility.await().atMost(5, TimeUnit.SECONDS).until(()->!sseSourceTask.poll().isEmpty());
+        }
+
+        @Test
+        void test_polling_with_connect_timeout_set() {
+            Map<String, String> settings = Maps.newHashMap();
+            settings.put("config.default.topic", "test");
+            settings.put("config.default.url", wmRuntimeInfo.getHttpBaseUrl()+"/events1");
+            settings.put("config.default.okhttp.connect.timeout", "3000");
+            sseSourceTask.start(settings);
+            assertThat(sseSourceTask.isConnected("default")).isTrue();
+            Queue<SseEvent> queue = sseSourceTask.getQueue("default").orElseThrow();
+            Awaitility.await().atMost(5, TimeUnit.SECONDS).until(()-> !queue.isEmpty());
+            assertThat(queue).hasSize(2);
             Awaitility.await().atMost(5, TimeUnit.SECONDS).until(()->!sseSourceTask.poll().isEmpty());
         }
     }
