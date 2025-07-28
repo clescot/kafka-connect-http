@@ -1,6 +1,7 @@
 package io.github.clescot.kafka.connect.http.sink;
 
 
+import io.github.clescot.kafka.connect.http.MessageSplitter;
 import io.github.clescot.kafka.connect.http.core.HttpRequest;
 import org.apache.commons.jexl3.JexlBuilder;
 import org.apache.commons.jexl3.JexlEngine;

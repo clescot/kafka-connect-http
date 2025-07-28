@@ -289,11 +289,11 @@ The predicate permits to filter some http requests, and can be composed, cumulat
     - *`config.default.rate.limiter.scope`* : can be either `instance` (default option when not set, i.e a rate limiter per configuration in the connector instance),  or `static` (a rate limiter per configuration id shared with all connectors instances in the same Java Virtual Machine.
     - - owns a retry regex
   - header settings
-    - *`config.default.static.request.header.names`* : list of headers names to attach to all requests. *Static* term, means that these headers
+    - *`config.default.enrich.request.static.header.names`* : list of headers names to attach to all requests. *Static* term, means that these headers
       are not managed by initial kafka message, but are defined at the connector level and added globally. this list is divided by
       `,` character. The connector will try to get the value to add to request by querying the config with the header name as parameter name.
       For example, if set `static.request.header.names: param_name1, param_name2`, the connector will lookup the param_name1
-      and param_name2 parameters to get values to add.
+      and param_name2 parameters to get values to add (`config.default.enrich.request.static.header.param_name1` and `config.default.enrich.request.static.header.param_name2` respectively).
     - *`config.default.generate.missing.request.id`* : `false` by default. when set to `true`, generate an uuid bound to the `X-Request-ID` header.
     - *`config.default.generate.missing.correlation.id`* : `false` by default. when set to `true`, generate an uuid bound to the `X-Correlation-ID` header.
   - http client authentication parameters

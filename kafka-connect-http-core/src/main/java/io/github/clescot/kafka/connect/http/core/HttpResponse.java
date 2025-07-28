@@ -9,6 +9,7 @@ import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.data.SchemaBuilder;
 import org.apache.kafka.connect.data.Struct;
 
+import java.io.Serial;
 import java.io.Serializable;
 import java.util.Base64;
 import java.util.List;
@@ -16,6 +17,7 @@ import java.util.Map;
 import java.util.Objects;
 
 public class HttpResponse implements Cloneable, Serializable {
+    @Serial
     private static final long serialVersionUID = 1L;
     public static final Integer VERSION = 2;
     public static final String CONTENT_TYPE = "Content-Type";

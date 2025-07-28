@@ -7,7 +7,7 @@ import okhttp3.Authenticator;
 import java.nio.charset.Charset;
 import java.util.Map;
 
-import static io.github.clescot.kafka.connect.http.sink.HttpSinkConfigDefinition.*;
+import static io.github.clescot.kafka.connect.http.client.HttpClientConfigDefinition.*;
 
 public class BasicAuthenticationConfigurer implements AuthenticationConfigurer{
     public static final String ISO_8859_1 = "ISO-8859-1";

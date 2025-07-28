@@ -1,16 +1,20 @@
-package io.github.clescot.kafka.connect.http.sink;
+package io.github.clescot.kafka.connect.http;
 
 import com.google.common.collect.Lists;
 import io.github.clescot.kafka.connect.http.core.HttpRequest;
 import org.apache.commons.lang3.tuple.Pair;
-import org.apache.kafka.connect.sink.SinkRecord;
+import org.apache.kafka.connect.connector.ConnectRecord;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.List;
 import java.util.function.Predicate;
-import java.util.stream.Collectors;
 
+/**
+ * RequestGrouper is used to group HttpRequests based on a predicate.
+ * It aggregates the body of matching requests and returns a list of aggregated requests.
+ * Non-matching requests are returned as they are.
+ */
 public class RequestGrouper {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(RequestGrouper.class);
@@ -45,7 +49,7 @@ public class RequestGrouper {
         return this.predicate.test(httpRequest);
     }
 
-    public List<Pair<SinkRecord, HttpRequest>> group(List<Pair<SinkRecord, HttpRequest>> entries){
+    public List<Pair<ConnectRecord, HttpRequest>> group(List<Pair<ConnectRecord, HttpRequest>> entries){
 
         if(entries==null || entries.isEmpty()){
             return Lists.newArrayList();
@@ -56,10 +60,14 @@ public class RequestGrouper {
         int consumed = 0;
         StringBuilder builder = new StringBuilder(aggregatedBody);
         boolean interrupted=false;
-        List<Pair<SinkRecord, HttpRequest>> matchingEntries = entries.stream().filter(pair-> this.matches(pair.getRight())).collect(Collectors.toList());
-        List<Pair<SinkRecord, HttpRequest>> nonMatchingEntries = entries.stream().filter(pair-> !this.matches(pair.getRight())).collect(Collectors.toList());
+        List<Pair<ConnectRecord, HttpRequest>> matchingEntries = entries.stream()
+                .filter(pair-> this.matches(pair.getRight()))
+                .toList();
+        List<Pair<ConnectRecord, HttpRequest>> nonMatchingEntries = entries.stream()
+                .filter(pair-> !this.matches(pair.getRight()))
+                .toList();
         for (int i = 0; i < matchingEntries.size(); i++) {
-            Pair<SinkRecord, HttpRequest> myEntry = matchingEntries.get(i);
+            Pair<ConnectRecord, HttpRequest> myEntry = matchingEntries.get(i);
             String part = myEntry.getRight().getBodyAsString();
             if((messageLimit>0 && i==messageLimit)||(bodyLimit!=-1 && builder.length()+part.length()>=bodyLimit)){
                 consumed = i;
@@ -79,8 +87,8 @@ public class RequestGrouper {
         }
         aggregatedBody = builder.toString();
         aggregatedRequest.setBodyAsString(aggregatedBody);
-        List<Pair<SinkRecord, HttpRequest>> nonAggregatedRequests = entries.subList(consumed, entries.size());
-        List<Pair<SinkRecord, HttpRequest>> aggregatedRequests = Lists.newArrayList();
+        List<Pair<ConnectRecord, HttpRequest>> nonAggregatedRequests = entries.subList(consumed, entries.size());
+        List<Pair<ConnectRecord, HttpRequest>> aggregatedRequests = Lists.newArrayList();
         aggregatedRequests.add(Pair.of(entries.get(0).getLeft(),aggregatedRequest));
         aggregatedRequests.addAll(group(nonAggregatedRequests));
         aggregatedRequests.addAll(nonMatchingEntries);

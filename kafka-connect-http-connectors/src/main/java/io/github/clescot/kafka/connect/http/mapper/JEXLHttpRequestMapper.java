@@ -1,4 +1,4 @@
-package io.github.clescot.kafka.connect.http.sink.mapper;
+package io.github.clescot.kafka.connect.http.mapper;
 
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Maps;
@@ -7,8 +7,7 @@ import org.apache.commons.jexl3.JexlContext;
 import org.apache.commons.jexl3.JexlEngine;
 import org.apache.commons.jexl3.JexlExpression;
 import org.apache.commons.jexl3.MapContext;
-import org.apache.kafka.connect.sink.SinkRecord;
-import org.jetbrains.annotations.NotNull;
+import org.apache.kafka.connect.connector.ConnectRecord;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
@@ -30,15 +29,17 @@ public class JEXLHttpRequestMapper extends AbstractHttpRequestMapper {
 
     public JEXLHttpRequestMapper(String id,
                                  JexlEngine jexlEngine,
-                                 @NotNull String matchingExpression,
-                                 @NotNull String urlExpression,
+                                 String matchingExpression,
+                                 String urlExpression,
                                  @Nullable String methodExpression,
                                  @Nullable String bodyTypeExpression,
                                  @Nullable String bodyExpression,
                                  @Nullable String headersExpression
                                  ) {
         super(id);
+        Preconditions.checkNotNull(jexlEngine);
         Preconditions.checkNotNull(matchingExpression);
+        Preconditions.checkNotNull(urlExpression);
         Preconditions.checkArgument(!matchingExpression.isEmpty());
         jexlMatchingExpression = jexlEngine.createExpression(matchingExpression);
         jexlUrlExpression = jexlEngine.createExpression(urlExpression);
@@ -49,7 +50,7 @@ public class JEXLHttpRequestMapper extends AbstractHttpRequestMapper {
     }
 
     @Override
-    public boolean matches(SinkRecord sinkRecord) {
+    public boolean matches(ConnectRecord sinkRecord) {
         // populate the context
         JexlContext context = new MapContext();
         context.set(SINK_RECORD, sinkRecord);
@@ -57,7 +58,7 @@ public class JEXLHttpRequestMapper extends AbstractHttpRequestMapper {
     }
 
     @Override
-    public HttpRequest map(SinkRecord sinkRecord) {
+    public HttpRequest map(ConnectRecord sinkRecord) {
         JexlContext context = new MapContext();
         context.set(SINK_RECORD, sinkRecord);
         String url = (String) jexlUrlExpression.evaluate(context);

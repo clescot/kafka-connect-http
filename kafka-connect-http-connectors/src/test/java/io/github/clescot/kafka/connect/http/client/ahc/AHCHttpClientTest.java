@@ -5,6 +5,7 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import io.github.clescot.kafka.connect.http.client.DummyX509Certificate;
 import io.github.clescot.kafka.connect.http.client.HttpClient;
+import io.github.clescot.kafka.connect.http.client.HttpClientFactory;
 import io.github.clescot.kafka.connect.http.core.HttpExchange;
 import io.github.clescot.kafka.connect.http.core.HttpRequest;
 import io.github.clescot.kafka.connect.http.core.HttpResponse;
@@ -34,11 +35,11 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static io.github.clescot.kafka.connect.http.client.Configuration.CONFIGURATION_ID;
+import static io.github.clescot.kafka.connect.http.client.HttpClientConfigDefinition.*;
+import static io.github.clescot.kafka.connect.http.client.HttpClientConfiguration.CONFIGURATION_ID;
 import static io.github.clescot.kafka.connect.http.client.ahc.AHCHttpClient.SUCCESS;
 import static io.github.clescot.kafka.connect.http.client.config.AddMissingCorrelationIdHeaderToHttpRequestFunction.HEADER_X_CORRELATION_ID;
 import static io.github.clescot.kafka.connect.http.client.config.AddMissingRequestIdHeaderToHttpRequestFunction.HEADER_X_REQUEST_ID;
-import static io.github.clescot.kafka.connect.http.sink.HttpSinkConfigDefinition.*;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.when;
 
@@ -251,7 +252,7 @@ class AHCHttpClientTest {
 
         //when
         HttpRequest httpRequest = getDummyHttpRequest();
-        Request request = httpClient.buildRequest(httpRequest);
+        Request request = httpClient.buildNativeRequest(httpRequest);
 
         //then
         assertThat(request.getUrl()).isEqualTo(httpRequest.getUrl());
@@ -289,7 +290,7 @@ class AHCHttpClientTest {
         config.put(HTTP_CLIENT_SSL_TRUSTSTORE_TYPE, HttpSinkTaskTest.JKS_STORE_TYPE);
         config.put(HTTP_CLIENT_SSL_TRUSTSTORE_ALGORITHM, HttpSinkTaskTest.TRUSTSTORE_PKIX_ALGORITHM);
         //when
-        TrustManagerFactory trustManagerFactory = HttpClient.getTrustManagerFactory(config);
+        TrustManagerFactory trustManagerFactory = HttpClientFactory.getTrustManagerFactory(config);
         //then
         assertThat(trustManagerFactory).isNotNull();
         assertThat(trustManagerFactory.getTrustManagers()).hasSize(1);
@@ -302,7 +303,7 @@ class AHCHttpClientTest {
         Map<String, Object> config = Maps.newHashMap();
         config.put(HTTP_CLIENT_SSL_TRUSTSTORE_ALWAYS_TRUST, "true");
         //when
-        TrustManagerFactory trustManagerFactory = HttpClient.getTrustManagerFactory(config);
+        TrustManagerFactory trustManagerFactory = HttpClientFactory.getTrustManagerFactory(config);
         //then
         assertThat(trustManagerFactory).isNotNull();
         TrustManager[] trustManagers = trustManagerFactory.getTrustManagers();
@@ -327,7 +328,7 @@ class AHCHttpClientTest {
         config.put(HTTP_CLIENT_SSL_TRUSTSTORE_TYPE, HttpSinkTaskTest.JKS_STORE_TYPE);
         config.put(HTTP_CLIENT_SSL_TRUSTSTORE_ALGORITHM, HttpSinkTaskTest.TRUSTSTORE_PKIX_ALGORITHM);
         //when
-        TrustManagerFactory trustManagerFactory = HttpClient.getTrustManagerFactory(config);
+        TrustManagerFactory trustManagerFactory = HttpClientFactory.getTrustManagerFactory(config);
         //then
         assertThat(trustManagerFactory).isNotNull();
         TrustManager[] trustManagers = trustManagerFactory.getTrustManagers();

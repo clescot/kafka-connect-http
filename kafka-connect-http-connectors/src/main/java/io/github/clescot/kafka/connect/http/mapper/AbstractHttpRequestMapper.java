@@ -1,4 +1,4 @@
-package io.github.clescot.kafka.connect.http.sink.mapper;
+package io.github.clescot.kafka.connect.http.mapper;
 
 import com.google.common.base.Preconditions;
 

@@ -6,33 +6,22 @@ import com.google.common.collect.Maps;
 import dev.failsafe.RateLimiter;
 import dev.failsafe.RateLimiterConfig;
 import io.github.clescot.kafka.connect.http.core.HttpExchange;
-import jakarta.annotation.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.net.ssl.KeyManagerFactory;
-import javax.net.ssl.SSLContext;
-import javax.net.ssl.SSLSocketFactory;
 import javax.net.ssl.TrustManagerFactory;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.nio.file.Path;
-import java.security.*;
-import java.security.cert.CertificateException;
 import java.time.Duration;
 import java.time.temporal.ChronoUnit;
 import java.util.Map;
 import java.util.Optional;
 
-import static io.github.clescot.kafka.connect.http.client.Configuration.CONFIGURATION_ID;
-import static io.github.clescot.kafka.connect.http.client.Configuration.STATIC_SCOPE;
-import static io.github.clescot.kafka.connect.http.sink.HttpSinkConfigDefinition.*;
+import static io.github.clescot.kafka.connect.http.client.HttpClientConfiguration.CONFIGURATION_ID;
+import static io.github.clescot.kafka.connect.http.client.HttpClientConfiguration.STATIC_SCOPE;
+import static io.github.clescot.kafka.connect.http.sink.HttpConfigDefinition.*;
 
 public abstract class AbstractHttpClient<R,S> implements HttpClient<R,S> {
     private static final Logger LOGGER = LoggerFactory.getLogger(AbstractHttpClient.class);
-    private static final String DEFAULT_SSL_PROTOCOL = "SSL";
+
     public static final String DEFAULT_HTTP_RESPONSE_MESSAGE_STATUS_LIMIT = "1024";
     public static final String DEFAULT_HTTP_RESPONSE_HEADERS_LIMIT = "10000";
     public static final String DEFAULT_HTTP_RESPONSE_BODY_LIMIT = "100000";
@@ -50,7 +39,7 @@ public abstract class AbstractHttpClient<R,S> implements HttpClient<R,S> {
     protected AbstractHttpClient(Map<String, Object> config) {
         this.config = config;
         configurationId = (String) config.get(CONFIGURATION_ID);
-        Preconditions.checkNotNull(configurationId,"configuration must have an id");
+        Preconditions.checkNotNull(configurationId,"configuration must have an id : '"+CONFIGURATION_ID+"' is not set in the configuration map");
         setRateLimiter(buildRateLimiter(config));
 
         //httpResponse
@@ -108,75 +97,7 @@ public abstract class AbstractHttpClient<R,S> implements HttpClient<R,S> {
         this.bodyLimit = bodyLimit;
     }
 
-    protected Optional<TrustManagerFactory> buildTrustManagerFactory() {
-        if ((config.containsKey(HTTP_CLIENT_SSL_TRUSTSTORE_PATH)
-                && config.containsKey(HTTP_CLIENT_SSL_TRUSTSTORE_PASSWORD))||config.containsKey(HTTP_CLIENT_SSL_TRUSTSTORE_ALWAYS_TRUST)) {
 
-            Optional<TrustManagerFactory> trustManagerFactoryOption = Optional.ofNullable(
-                    HttpClient.getTrustManagerFactory(config));
-            if (trustManagerFactoryOption.isPresent()) {
-                TrustManagerFactory myTrustManagerFactory = trustManagerFactoryOption.get();
-                LOGGER.info("using trustManagerFactory class : {}",myTrustManagerFactory.getClass().getName());
-                return Optional.of(myTrustManagerFactory);
-            }
-        }
-        return Optional.empty();
-    }
-
-    protected Optional<KeyManagerFactory> getKeyManagerFactory() {
-        if (config.containsKey(HTTP_CLIENT_SSL_KEYSTORE_PATH)
-                && config.containsKey(HTTP_CLIENT_SSL_KEYSTORE_PASSWORD)) {
-            return Optional.of(
-                    getKeyManagerFactory(
-                            config.get(HTTP_CLIENT_SSL_KEYSTORE_PATH).toString(),
-                            config.get(HTTP_CLIENT_SSL_KEYSTORE_PASSWORD).toString().toCharArray(),
-                            config.get(HTTP_CLIENT_SSL_KEYSTORE_TYPE).toString(),
-                            config.get(HTTP_CLIENT_SSL_KEYSTORE_ALGORITHM).toString()));
-        }
-        return Optional.empty();
-    }
-
-
-    private KeyManagerFactory getKeyManagerFactory(String keyStorePath,
-                                                  char[] password,
-                                                  @Nullable String keystoreType,
-                                                  @Nullable String algorithm) {
-        KeyManagerFactory keyManagerFactory;
-        KeyStore keyStore;
-        try {
-            String finalAlgorithm = Optional.ofNullable(algorithm).orElse(KeyManagerFactory.getDefaultAlgorithm());
-            keyManagerFactory = KeyManagerFactory.getInstance(finalAlgorithm);
-            String finalKeystoreType = Optional.ofNullable(keystoreType).orElse(KeyStore.getDefaultType());
-            keyStore = KeyStore.getInstance(finalKeystoreType);
-        } catch (NoSuchAlgorithmException | KeyStoreException e) {
-            throw new HttpException(e);
-        }
-
-        Path path = Path.of(keyStorePath);
-        File file = path.toFile();
-        try (InputStream inputStream = new FileInputStream(file)) {
-            keyStore.load(inputStream, password);
-            keyManagerFactory.init(keyStore,password);
-        } catch (IOException | NoSuchAlgorithmException | CertificateException | KeyStoreException |
-                 UnrecoverableKeyException e) {
-            throw new HttpException(e);
-        }
-        return keyManagerFactory;
-    }
-
-
-    protected static SSLSocketFactory getSSLSocketFactory(@Nullable KeyManagerFactory keyManagerFactory,
-                                                          @Nullable TrustManagerFactory trustManagerFactory,
-                                                          @Nullable String protocol,
-                                                          SecureRandom random){
-        try {
-            SSLContext sslContext = SSLContext.getInstance(Optional.ofNullable(protocol).orElse(DEFAULT_SSL_PROTOCOL));
-            sslContext.init(keyManagerFactory!=null?keyManagerFactory.getKeyManagers():null,trustManagerFactory!=null?trustManagerFactory.getTrustManagers():null, random);
-            return sslContext.getSocketFactory();
-        } catch (NoSuchAlgorithmException | KeyManagementException e) {
-            throw new HttpException(e);
-        }
-    }
 
 
 
@@ -194,6 +115,10 @@ public abstract class AbstractHttpClient<R,S> implements HttpClient<R,S> {
     @Override
     public TrustManagerFactory getTrustManagerFactory() {
         return trustManagerFactory;
+    }
+    @Override
+    public void setTrustManagerFactory(TrustManagerFactory trustManagerFactory) {
+        this.trustManagerFactory = trustManagerFactory;
     }
 
     public abstract Object getInternalClient();

@@ -7,7 +7,7 @@ import com.google.common.collect.Maps;
 import io.github.clescot.kafka.connect.http.core.HttpRequest;
 import io.github.clescot.kafka.connect.http.core.queue.ConfigConstants;
 import io.github.clescot.kafka.connect.http.core.queue.QueueFactory;
-import io.github.clescot.kafka.connect.http.sink.mapper.MapperMode;
+import io.github.clescot.kafka.connect.http.mapper.MapperMode;
 import io.github.clescot.kafka.connect.http.sink.publish.PublishMode;
 import org.apache.kafka.common.config.AbstractConfig;
 import org.apache.kafka.common.config.ConfigDef;
@@ -19,10 +19,12 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 
-import static io.github.clescot.kafka.connect.http.sink.HttpSinkConfigDefinition.*;
+import static io.github.clescot.kafka.connect.http.client.HttpClientConfigDefinition.*;
+import static io.github.clescot.kafka.connect.http.sink.HttpConfigDefinition.*;
+import static io.github.clescot.kafka.connect.http.sink.SinkConfigDefinition.*;
 
-public class HttpSinkConnectorConfig extends AbstractConfig {
-    private static final Logger LOGGER = LoggerFactory.getLogger(HttpSinkConnectorConfig.class);
+public class HttpConnectorConfig extends AbstractConfig {
+    private static final Logger LOGGER = LoggerFactory.getLogger(HttpConnectorConfig.class);
     private final String producerFormat;
     private final String producerContent;
 
@@ -95,11 +97,11 @@ public class HttpSinkConnectorConfig extends AbstractConfig {
     private final String defaultHeadersExpression;
     private final Boolean producerJsonIndentOutput;
 
-    public HttpSinkConnectorConfig(Map<String, String> originals) {
-        this(new HttpSinkConfigDefinition(originals).config(), originals);
+    public HttpConnectorConfig(Map<String, String> originals) {
+        this(new HttpConfigDefinition(originals).config(), originals);
     }
 
-    public HttpSinkConnectorConfig(ConfigDef configDef, Map<String, String> originals) {
+    public HttpConnectorConfig(ConfigDef configDef, Map<String, String> originals) {
         super(configDef, originals, LOGGER.isDebugEnabled());
 
 
@@ -526,9 +528,9 @@ public class HttpSinkConnectorConfig extends AbstractConfig {
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
-        if (!(o instanceof HttpSinkConnectorConfig)) return false;
+        if (!(o instanceof HttpConnectorConfig)) return false;
         if (!super.equals(o)) return false;
-        HttpSinkConnectorConfig that = (HttpSinkConnectorConfig) o;
+        HttpConnectorConfig that = (HttpConnectorConfig) o;
         return producerSchemaRegistryCacheCapacity == that.producerSchemaRegistryCacheCapacity && producerSchemaRegistryautoRegister == that.producerSchemaRegistryautoRegister && producerJsonWriteDatesAs8601 == that.producerJsonWriteDatesAs8601 && producerJsonOneOfForNullables == that.producerJsonOneOfForNullables && producerJsonFailInvalidSchema == that.producerJsonFailInvalidSchema && producerJsonFailUnknownProperties == that.producerJsonFailUnknownProperties && meterRegistryExporterJmxActivate == that.meterRegistryExporterJmxActivate && meterRegistryExporterPrometheusActivate == that.meterRegistryExporterPrometheusActivate && meterRegistryExporterPrometheusPort == that.meterRegistryExporterPrometheusPort && meterRegistryBindMetricsExecutorService == that.meterRegistryBindMetricsExecutorService && meterRegistryBindMetricsJvmClassloader == that.meterRegistryBindMetricsJvmClassloader && meterRegistryBindMetricsJvmProcessor == that.meterRegistryBindMetricsJvmProcessor && meterRegistryBindMetricsJvmGc == that.meterRegistryBindMetricsJvmGc && meterRegistryBindMetricsJvmInfo == that.meterRegistryBindMetricsJvmInfo && meterRegistryBindMetricsJvmMemory == that.meterRegistryBindMetricsJvmMemory && meterRegistryBindMetricsJvmThread == that.meterRegistryBindMetricsJvmThread && meterRegistryBindMetricsLogback == that.meterRegistryBindMetricsLogback && meterRegistryTagIncludeLegacyHost == that.meterRegistryTagIncludeLegacyHost && meterRegistryTagIncludeUrlPath == that.meterRegistryTagIncludeUrlPath && generateMissingRequestId == that.generateMissingRequestId && generateMissingCorrelationId == that.generateMissingCorrelationId && maxWaitTimeRegistrationOfQueueConsumerInMs == that.maxWaitTimeRegistrationOfQueueConsumerInMs && pollDelayRegistrationOfQueueConsumerInMs == that.pollDelayRegistrationOfQueueConsumerInMs && pollIntervalRegistrationOfQueueConsumerInMs == that.pollIntervalRegistrationOfQueueConsumerInMs && Objects.equals(producerFormat, that.producerFormat) && Objects.equals(producerBootstrapServers, that.producerBootstrapServers) && Objects.equals(producerSuccessTopic, that.producerSuccessTopic) && Objects.equals(producerSchemaRegistryUrl, that.producerSchemaRegistryUrl) && Objects.equals(producerJsonSchemaSpecVersion, that.producerJsonSchemaSpecVersion) && Objects.equals(producerKeySubjectNameStrategy, that.producerKeySubjectNameStrategy) && Objects.equals(producerValueSubjectNameStrategy, that.producerValueSubjectNameStrategy) && Objects.equals(missingIdCacheTTLSec, that.missingIdCacheTTLSec) && Objects.equals(missingVersionCacheTTLSec, that.missingVersionCacheTTLSec) && Objects.equals(missingSchemaCacheTTLSec, that.missingSchemaCacheTTLSec) && Objects.equals(missingCacheSize, that.missingCacheSize) && Objects.equals(bearerAuthCacheExpiryBufferSeconds, that.bearerAuthCacheExpiryBufferSeconds) && Objects.equals(bearerAuthScopeClaimName, that.bearerAuthScopeClaimName) && Objects.equals(bearerAuthSubClaimName, that.bearerAuthSubClaimName) && Objects.equals(httpClientImplementation, that.httpClientImplementation) && Objects.equals(defaultSuccessResponseCodeRegex, that.defaultSuccessResponseCodeRegex) && Objects.equals(defaultRetryResponseCodeRegex, that.defaultRetryResponseCodeRegex) && Objects.equals(queueName, that.queueName) && publishMode == that.publishMode && Objects.equals(defaultRetries, that.defaultRetries) && Objects.equals(defaultRetryDelayInMs, that.defaultRetryDelayInMs) && Objects.equals(defaultRetryMaxDelayInMs, that.defaultRetryMaxDelayInMs) && Objects.equals(defaultRetryDelayFactor, that.defaultRetryDelayFactor) && Objects.equals(defaultRetryJitterInMs, that.defaultRetryJitterInMs) && Objects.equals(defaultRateLimiterMaxExecutions, that.defaultRateLimiterMaxExecutions) && Objects.equals(defaultRateLimiterScope, that.defaultRateLimiterScope) && Objects.equals(defaultRateLimiterPeriodInMs, that.defaultRateLimiterPeriodInMs) && Objects.equals(staticRequestHeaders, that.staticRequestHeaders) && Objects.equals(customFixedThreadpoolSize, that.customFixedThreadpoolSize) && Objects.equals(configurationIds, that.configurationIds);
     }
 

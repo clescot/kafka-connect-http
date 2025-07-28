@@ -1,4 +1,4 @@
-package io.github.clescot.kafka.connect.http.sink;
+package io.github.clescot.kafka.connect.http;
 
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
@@ -6,12 +6,18 @@ import org.apache.commons.jexl3.JexlContext;
 import org.apache.commons.jexl3.JexlEngine;
 import org.apache.commons.jexl3.JexlExpression;
 import org.apache.commons.jexl3.MapContext;
+import org.apache.kafka.connect.connector.ConnectRecord;
 import org.apache.kafka.connect.sink.SinkRecord;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
 import java.util.stream.Collectors;
 
+/**
+ * MessageSplitter is used to split a message based on a pattern.
+ * It uses JEXL expressions to determine if a SinkRecord matches the splitter's criteria.
+ * If it matches, it splits the message body according to the specified pattern and limit.
+ */
 public class MessageSplitter {
 
     private final String id;
@@ -45,7 +51,7 @@ public class MessageSplitter {
         return splitPattern;
     }
 
-    public boolean matches(SinkRecord sinkRecord) {
+    public boolean matches(ConnectRecord sinkRecord) {
         // populate the context
         JexlContext context = new MapContext();
         context.set(SINK_RECORD, sinkRecord);
@@ -64,7 +70,7 @@ public class MessageSplitter {
         return parts;
     }
 
-    public List<SinkRecord> split(@NotNull SinkRecord sinkRecord){
+    public List<ConnectRecord> split(@NotNull ConnectRecord sinkRecord){
         Object value = sinkRecord.value();
         if(value!=null && value.getClass().isAssignableFrom(String.class)){
             String body = (String)value;
@@ -78,7 +84,7 @@ public class MessageSplitter {
                     content,
                     -1,
                     sinkRecord.timestamp(),
-                    sinkRecord.timestampType(),
+                    null,
                     sinkRecord.headers())).collect(Collectors.toList());
         }else{
             return List.of(sinkRecord);

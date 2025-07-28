@@ -1,80 +1,56 @@
 package io.github.clescot.kafka.connect.http.sink;
 
 import com.google.common.base.Preconditions;
-import com.google.common.collect.Lists;
-import dev.failsafe.RetryPolicy;
+import io.github.clescot.kafka.connect.VersionUtils;
 import io.github.clescot.kafka.connect.http.HttpTask;
-import io.github.clescot.kafka.connect.http.VersionUtils;
-import io.github.clescot.kafka.connect.http.client.Configuration;
+import io.github.clescot.kafka.connect.http.client.HttpClient;
 import io.github.clescot.kafka.connect.http.client.HttpClientFactory;
-import io.github.clescot.kafka.connect.http.client.HttpException;
+import io.github.clescot.kafka.connect.http.client.HttpConfiguration;
 import io.github.clescot.kafka.connect.http.core.HttpExchange;
 import io.github.clescot.kafka.connect.http.core.HttpRequest;
 import io.github.clescot.kafka.connect.http.core.queue.KafkaRecord;
-import io.github.clescot.kafka.connect.http.sink.mapper.HttpRequestMapper;
-import io.github.clescot.kafka.connect.http.sink.mapper.HttpRequestMapperFactory;
+import io.github.clescot.kafka.connect.http.mapper.HttpRequestMapper;
 import io.github.clescot.kafka.connect.http.sink.publish.KafkaProducer;
-import io.github.clescot.kafka.connect.http.sink.publish.PublishConfigurer;
-import io.github.clescot.kafka.connect.http.sink.publish.PublishMode;
-import io.micrometer.core.instrument.composite.CompositeMeterRegistry;
-import org.apache.commons.jexl3.JexlBuilder;
-import org.apache.commons.jexl3.JexlEngine;
-import org.apache.commons.jexl3.JexlFeatures;
-import org.apache.commons.jexl3.introspection.JexlPermissions;
 import org.apache.commons.lang3.tuple.Pair;
-import org.apache.kafka.clients.producer.ProducerRecord;
-import org.apache.kafka.clients.producer.RecordMetadata;
-import org.apache.kafka.common.config.AbstractConfig;
 import org.apache.kafka.connect.connector.ConnectRecord;
-import org.apache.kafka.connect.errors.ConnectException;
 import org.apache.kafka.connect.sink.ErrantRecordReporter;
 import org.apache.kafka.connect.sink.SinkRecord;
 import org.apache.kafka.connect.sink.SinkTask;
-import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.*;
-import java.util.concurrent.*;
-import java.util.function.Function;
-import java.util.regex.Pattern;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
+import java.util.Collection;
+import java.util.List;
+import java.util.Map;
+import java.util.Queue;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
 
-import static io.github.clescot.kafka.connect.http.sink.HttpSinkConfigDefinition.CONFIGURATION_IDS;
-import static io.github.clescot.kafka.connect.http.sink.HttpSinkConfigDefinition.HTTP_CLIENT_ASYNC_FIXED_THREAD_POOL_SIZE;
-
-
-public abstract class HttpSinkTask<R, S> extends SinkTask {
+/**
+ * HttpSinkTask is a Kafka Connect SinkTask that processes SinkRecords,
+ * splits messages, maps them to HttpRequests, and sends them to an HttpClient.
+ *
+ * @param <C> type of the HttpClient
+ * @param <R> type of the native HttpRequest
+ * @param <S> type of the native HttpResponse
+ */
+public abstract class HttpSinkTask<C extends HttpClient<R, S>, R, S> extends SinkTask {
     private static final Logger LOGGER = LoggerFactory.getLogger(HttpSinkTask.class);
 
     private static final VersionUtils VERSION_UTILS = new VersionUtils();
-
-
-    public static final String DEFAULT = "default";
-
-
-    private HttpRequestMapper defaultHttpRequestMapper;
-    private List<HttpRequestMapper> httpRequestMappers;
-    public static final String DEFAULT_CONFIGURATION_ID = DEFAULT;
-    private final HttpClientFactory<R, S> httpClientFactory;
-
+    private final HttpClientFactory<C, R, S> httpClientFactory;
     private ErrantRecordReporter errantRecordReporter;
-    private HttpTask<R, S> httpTask;
-    private KafkaProducer<String, Object> producer;
-    private Queue<KafkaRecord> queue;
-    private PublishMode publishMode;
-    private HttpSinkConnectorConfig httpSinkConnectorConfig;
 
-    private static CompositeMeterRegistry meterRegistry;
-    private ExecutorService executorService;
-    private List<MessageSplitter> messageSplitters;
-    private List<RequestGrouper> requestGroupers;
+    private HttpTask<C, R, S> httpTask;
+    private KafkaProducer<String, Object> producer;
+
+
 
     @SuppressWarnings("java:S5993")
-    public HttpSinkTask(HttpClientFactory<R, S> httpClientFactory, KafkaProducer<String, Object> producer) {
+    public HttpSinkTask(HttpClientFactory<C, R, S> httpClientFactory, KafkaProducer<String, Object> producer) {
         this.httpClientFactory = httpClientFactory;
-        this.producer  = producer;
+        this.producer = producer;
     }
 
 
@@ -83,86 +59,12 @@ public abstract class HttpSinkTask<R, S> extends SinkTask {
         return VERSION_UTILS.getVersion();
     }
 
-    private List<Configuration<R, S>> buildCustomConfigurations(HttpClientFactory<R, S> httpClientFactory,
-                                                                AbstractConfig config,
-                                                                Configuration<R, S> defaultConfiguration,
-                                                                ExecutorService executorService) {
-        CopyOnWriteArrayList<Configuration<R, S>> configurations = Lists.newCopyOnWriteArrayList();
 
-        for (String configId : Optional.ofNullable(config.getList(CONFIGURATION_IDS)).orElse(Lists.newArrayList())) {
-            Configuration<R, S> configuration = new Configuration<>(configId, httpClientFactory, config, executorService, meterRegistry);
-            if (configuration.getHttpClient() == null) {
-                configuration.setHttpClient(defaultConfiguration.getHttpClient());
-            }
-
-            //we reuse the default retry policy if not set
-            Optional<RetryPolicy<HttpExchange>> defaultRetryPolicy = defaultConfiguration.getRetryPolicy();
-            if (configuration.getRetryPolicy().isEmpty() && defaultRetryPolicy.isPresent()) {
-                configuration.setRetryPolicy(defaultRetryPolicy.get());
-            }
-            //we reuse the default success response code regex if not set
-            configuration.setSuccessResponseCodeRegex(defaultConfiguration.getSuccessResponseCodeRegex());
-
-            Optional<Pattern> defaultRetryResponseCodeRegex = defaultConfiguration.getRetryResponseCodeRegex();
-            if (configuration.getRetryResponseCodeRegex().isEmpty() && defaultRetryResponseCodeRegex.isPresent()) {
-                configuration.setRetryResponseCodeRegex(defaultRetryResponseCodeRegex.get());
-            }
-
-            configurations.add(configuration);
-        }
-        return configurations;
-    }
-
-    public static synchronized void setMeterRegistry(CompositeMeterRegistry compositeMeterRegistry) {
-        if (meterRegistry == null) {
-            meterRegistry = compositeMeterRegistry;
-        }
-    }
-
-    protected static synchronized void clearMeterRegistry(){
-        meterRegistry = null;
-    }
     /**
      * @param settings configure the connector
      */
     @Override
     public void start(Map<String, String> settings) {
-        List<Configuration<R, S>> customConfigurations;
-        Configuration<R, S> defaultConfiguration;
-        Preconditions.checkNotNull(settings, "settings cannot be null");
-        HttpSinkConfigDefinition httpSinkConfigDefinition = new HttpSinkConfigDefinition(settings);
-        this.httpSinkConnectorConfig = new HttpSinkConnectorConfig(httpSinkConfigDefinition.config(), settings);
-
-        //build executorService
-        Optional<Integer> customFixedThreadPoolSize = Optional.ofNullable(httpSinkConnectorConfig.getInt(HTTP_CLIENT_ASYNC_FIXED_THREAD_POOL_SIZE));
-        customFixedThreadPoolSize.ifPresent(integer -> this.executorService = buildExecutorService(integer));
-
-        //build meterRegistry
-        MeterRegistryFactory meterRegistryFactory = new MeterRegistryFactory();
-        setMeterRegistry(meterRegistryFactory.buildMeterRegistry(httpSinkConnectorConfig));
-
-        //build httpRequestMappers
-
-        JexlEngine jexlEngine = buildJexlEngine();
-
-        //message splitters
-        MessageSplitterFactory messageSplitterFactory = new MessageSplitterFactory();
-        this.messageSplitters = messageSplitterFactory.buildMessageSplitters(httpSinkConnectorConfig, jexlEngine);
-
-        //HttpRequestMappers
-        HttpRequestMapperFactory httpRequestMapperFactory = new HttpRequestMapperFactory();
-        this.defaultHttpRequestMapper = httpRequestMapperFactory.buildDefaultHttpRequestMapper(httpSinkConnectorConfig, jexlEngine);
-        this.httpRequestMappers = httpRequestMapperFactory.buildCustomHttpRequestMappers(httpSinkConnectorConfig, jexlEngine);
-
-        //request groupers
-        RequestGrouperFactory requestGrouperFactory = new RequestGrouperFactory();
-        this.requestGroupers = requestGrouperFactory.buildRequestGroupers(httpSinkConnectorConfig);
-
-        //configurations
-        defaultConfiguration = new Configuration<>(DEFAULT_CONFIGURATION_ID, httpClientFactory, httpSinkConnectorConfig, executorService, meterRegistry);
-        customConfigurations = buildCustomConfigurations(httpClientFactory, httpSinkConnectorConfig, defaultConfiguration, executorService);
-        Map<String,String> config = httpSinkConnectorConfig.originalsStrings();
-        httpTask = new HttpTask<>(config, defaultConfiguration, customConfigurations, meterRegistry, executorService);
 
         try {
             errantRecordReporter = context.errantRecordReporter();
@@ -173,44 +75,9 @@ public abstract class HttpSinkTask<R, S> extends SinkTask {
             LOGGER.warn("errantRecordReporter has been added to Kafka Connect since 2.6.0 release. you should upgrade the Kafka Connect Runtime shortly.");
             errantRecordReporter = null;
         }
-
-        //configure publishMode
-        this.publishMode = httpSinkConnectorConfig.getPublishMode();
-        LOGGER.debug("publishMode: {}", publishMode);
-        PublishConfigurer publishConfigurer = PublishConfigurer.build();
-        switch (publishMode) {
-            case PRODUCER:
-                publishConfigurer.configureProducerPublishMode(httpSinkConnectorConfig, producer);
-                break;
-            case IN_MEMORY_QUEUE:
-                this.queue = publishConfigurer.configureInMemoryQueue(httpSinkConnectorConfig);
-                break;
-            case NONE:
-            default:
-                LOGGER.debug("NONE publish mode");
-        }
-
-    }
+        httpTask = new HttpTask<>(settings, httpClientFactory, producer);
 
 
-    private static JexlEngine buildJexlEngine() {
-        // Restricted permissions to a safe set but with URI allowed
-        JexlPermissions permissions = new JexlPermissions.ClassPermissions(SinkRecord.class, ConnectRecord.class, HttpRequest.class);
-        // Create the engine
-        JexlFeatures features = new JexlFeatures()
-                .loops(false)
-                .sideEffectGlobal(false)
-                .sideEffect(false);
-        return new JexlBuilder().features(features).permissions(permissions).create();
-    }
-
-    /**
-     *
-     * @param customFixedThreadPoolSize max thread pool size for the executorService.
-     * @return executorService
-     */
-    public ExecutorService buildExecutorService(Integer customFixedThreadPoolSize) {
-        return Executors.newFixedThreadPool(customFixedThreadPoolSize);
     }
 
 
@@ -223,71 +90,27 @@ public abstract class HttpSinkTask<R, S> extends SinkTask {
             return;
         }
         Preconditions.checkNotNull(httpTask, "httpTask is null. 'start' method must be called once before put");
-        //we submit futures to the pool
-        Stream<SinkRecord> stream = records.stream();
-
-        List<Pair<SinkRecord, HttpRequest>> requests = stream
-                .filter(sinkRecord -> sinkRecord.value() != null)
-                .peek(this::debugConnectRecord)
-                .map(this::splitMessage)
-                .flatMap(List::stream)
-                .map(this::toHttpRequests)
-                .collect(Collectors.toList());
-
-        List<Pair<SinkRecord, HttpRequest>> groupedRequests = groupRequests(requests);
+        List<Pair<ConnectRecord, HttpRequest>> preparedRequests = httpTask.prepareRequests(records);
         //List<SinkRecord>-> SinkRecord
-        List<CompletableFuture<HttpExchange>> completableFutures = groupedRequests.stream()
+        List<CompletableFuture<HttpExchange>> completableFutures = preparedRequests.stream()
                 .map(this::callAndPublish)
-                .collect(Collectors.toList());
-        List<HttpExchange> httpExchanges = completableFutures.stream().map(CompletableFuture::join).collect(Collectors.toList());
+                .toList();
+        List<HttpExchange> httpExchanges = completableFutures.stream().map(CompletableFuture::join).toList();
         LOGGER.debug("HttpExchanges created :'{}'", httpExchanges.size());
 
     }
 
-    private List<Pair<SinkRecord, HttpRequest>> groupRequests(List<Pair<SinkRecord, HttpRequest>> pairList) {
-        if (requestGroupers != null && !requestGroupers.isEmpty()) {
-            return requestGroupers.stream().map(requestGrouper -> requestGrouper.group(pairList)).reduce(Lists.newArrayList(), (l, r) -> {
-                l.addAll(r);
-                return l;
-            });
-        } else {
-            return pairList;
-        }
-    }
+    public CompletableFuture<HttpExchange> callAndPublish(Pair<ConnectRecord, HttpRequest> pair) {
 
-    private List<SinkRecord> splitMessage(SinkRecord sinkRecord) {
-        Optional<MessageSplitter> splitterFound = messageSplitters.stream().filter(messageSplitter -> messageSplitter.matches(sinkRecord)).findFirst();
-        //splitter
-        List<SinkRecord> results;
-        if (splitterFound.isPresent()) {
-            results = splitterFound.get().split(sinkRecord);
-        } else {
-            results = List.of(sinkRecord);
-        }
-        return results;
-    }
-
-    private void debugConnectRecord(SinkRecord sinkRecord) {
-        Object value = sinkRecord.value();
-        if (value != null) {
-            Class<?> valueClass = value.getClass();
-            LOGGER.debug("valueClass is '{}'", valueClass.getName());
-            LOGGER.debug("value Schema from SinkRecord is '{}'", sinkRecord.valueSchema());
-        }
-    }
-
-    private CompletableFuture<HttpExchange> callAndPublish(Pair<SinkRecord, HttpRequest> pair) {
-
-        return httpTask
-                .call(pair.getRight())
+        return httpTask.call(pair.getRight())
                 .thenApply(
-                        publish(this.publishMode, httpSinkConnectorConfig)
+                        httpTask.publish()
                 )
                 .exceptionally(throwable -> {
                     LOGGER.error(throwable.getMessage());
                     if (errantRecordReporter != null) {
                         // Send errant record to error reporter
-                        Future<Void> future = errantRecordReporter.report(pair.getLeft(), throwable);
+                        Future<Void> future = errantRecordReporter.report((SinkRecord) pair.getLeft(), throwable);
                         // Optionally wait until the failure's been recorded in Kafka
                         try {
                             future.get();
@@ -302,128 +125,41 @@ public abstract class HttpSinkTask<R, S> extends SinkTask {
 
     }
 
-    private @NotNull Pair<SinkRecord, HttpRequest> toHttpRequests(SinkRecord sinkRecord) {
-        HttpRequestMapper httpRequestMapper = httpRequestMappers.stream()
-                .filter(mapper -> mapper.matches(sinkRecord))
-                .findFirst()
-                .orElse(defaultHttpRequestMapper);
-
-        //build HttpRequest
-        HttpRequest httpRequest = httpRequestMapper.map(sinkRecord);
-
-        return Pair.of(sinkRecord, httpRequest);
-    }
-
-
-    private @NotNull Function<HttpExchange, HttpExchange> publish(PublishMode publishMode, HttpSinkConnectorConfig connectorConfig) throws HttpException {
-        return httpExchange -> {
-            //publish eventually to 'in memory' queue
-            if (PublishMode.IN_MEMORY_QUEUE.equals(publishMode)) {
-                publishInInMemoryQueueMode(connectorConfig, httpExchange);
-            } else if (PublishMode.PRODUCER.equals(publishMode)) {
-                publishInProducerMode(connectorConfig, httpExchange);
-            } else {
-                LOGGER.debug("publish.mode : 'NONE' http exchange NOT published :'{}'", httpExchange);
-            }
-            return httpExchange;
-        };
-    }
-
-    private void publishInInMemoryQueueMode(HttpSinkConnectorConfig connectorConfig, HttpExchange httpExchange) {
-        LOGGER.debug("publish.mode : 'IN_MEMORY_QUEUE': http exchange published to queue '{}':{}", connectorConfig.getQueueName(), httpExchange);
-        boolean offer = queue.offer(mapToRecord(httpExchange));
-        if (!offer) {
-            LOGGER.error("sinkRecord  not added to the 'in memory' queue:{}",
-                    connectorConfig.getQueueName()
-            );
-        }
-    }
-
-    @NotNull
-    private KafkaRecord mapToRecord(HttpExchange httpExchange) {
-        return new KafkaRecord(null, null, null, httpExchange);
-    }
-
-    private void publishInProducerMode(HttpSinkConnectorConfig connectorConfig, HttpExchange httpExchange) {
-        LOGGER.debug("publish.mode : 'PRODUCER' : HttpExchange success will be published at topic : '{}'", connectorConfig.getProducerSuccessTopic());
-        LOGGER.debug("publish.mode : 'PRODUCER' : HttpExchange error will be published at topic : '{}'", connectorConfig.getProducerErrorTopic());
-        String targetTopic = httpExchange.isSuccess() ? connectorConfig.getProducerSuccessTopic() : connectorConfig.getProducerErrorTopic();
-        String producerContent = connectorConfig.getProducerContent();
-        ProducerRecord<String, Object> myRecord = mapToRecord(httpExchange, producerContent, targetTopic);
-        LOGGER.trace("before send to {}", targetTopic);
-        RecordMetadata recordMetadata;
-        try {
-            recordMetadata = this.producer.send(myRecord).get(3, TimeUnit.SECONDS);
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            throw new HttpException(e);
-        } catch (Exception e) {
-            throw new HttpException(e);
-        }
-        long offset = recordMetadata.offset();
-        int partition = recordMetadata.partition();
-        long timestamp = recordMetadata.timestamp();
-        String topic = recordMetadata.topic();
-        LOGGER.debug("✉✉ record sent ✉✉ : topic:{},partition:{},offset:{},timestamp:{}", topic, partition, offset, timestamp);
-    }
-
-    @NotNull
-    private ProducerRecord<String, Object> mapToRecord(HttpExchange httpExchange, String producerContent, String targetTopic) {
-        ProducerRecord<String, Object> myRecord;
-        if("response".equalsIgnoreCase(producerContent)) {
-            myRecord = new ProducerRecord<>(targetTopic, httpExchange.getHttpResponse());
-        }else{
-            myRecord = new ProducerRecord<>(targetTopic, httpExchange);
-        }
-        return myRecord;
-    }
 
     @Override
     public void stop() {
         if (httpTask == null) {
             LOGGER.error("httpTask hasn't been created with the 'start' method");
-            return;
         }
-        if (executorService != null) {
-            if (!executorService.isShutdown()) {
-                executorService.shutdown();
-            }
-            try {
-                boolean awaitTermination = executorService.awaitTermination(30, TimeUnit.SECONDS);
-                if (!awaitTermination) {
-                    LOGGER.warn("timeout elapsed before executor termination");
-                }
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-                throw new ConnectException(e);
-            }
-            LOGGER.info("executor is shutdown : '{}'", executorService.isShutdown());
-            LOGGER.info("executor tasks are terminated : '{}'", executorService.isTerminated());
-        }
+
     }
 
-    protected void setQueue(Queue<KafkaRecord> queue) {
-        this.queue = queue;
-    }
 
-    public Configuration<R, S> getDefaultConfiguration() {
+    public HttpConfiguration<C, R, S> getDefaultConfiguration() {
         Preconditions.checkNotNull(httpTask, "httpTask has not been initialized in the start method");
         return httpTask.getDefaultConfiguration();
     }
 
-    public List<Configuration<R, S>> getCustomConfigurations() {
+    public Map<String,HttpConfiguration<C, R, S>> getConfigurations() {
         Preconditions.checkNotNull(httpTask, "httpTask has not been initialized in the start method");
-        return httpTask.getCustomConfigurations();
+        return httpTask.getConfigurations();
     }
 
-    public HttpTask<R, S> getHttpTask() {
+    public HttpTask<C, R, S> getHttpTask() {
         return httpTask;
     }
 
 
     protected HttpRequestMapper getDefaultHttpRequestMapper() {
-        return defaultHttpRequestMapper;
+        return this.httpTask.getDefaultHttpRequestMapper();
     }
 
+    public void setQueue(Queue<KafkaRecord> queue) {
+        this.httpTask.setQueue(queue);
+    }
+
+    public static void clearMeterRegistry() {
+        HttpTask.clearMeterRegistry();
+    }
 
 }

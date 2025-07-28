@@ -11,7 +11,7 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.io.Resources;
 import io.github.clescot.kafka.connect.http.client.DummyX509Certificate;
-import io.github.clescot.kafka.connect.http.client.HttpClient;
+import io.github.clescot.kafka.connect.http.client.HttpClientFactory;
 import io.github.clescot.kafka.connect.http.client.proxy.URIRegexProxySelector;
 import io.github.clescot.kafka.connect.http.core.*;
 import io.github.clescot.kafka.connect.http.core.queue.QueueFactory;
@@ -27,6 +27,8 @@ import org.assertj.core.util.Sets;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.extension.RegisterExtension;
+import org.junit.jupiter.api.parallel.Execution;
+import org.junit.jupiter.api.parallel.ExecutionMode;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -52,15 +54,17 @@ import java.util.stream.Collectors;
 import static com.github.tomakehurst.wiremock.client.WireMock.containing;
 import static com.github.tomakehurst.wiremock.client.WireMock.equalTo;
 import static com.github.tomakehurst.wiremock.stubbing.Scenario.STARTED;
-import static io.github.clescot.kafka.connect.http.client.Configuration.CONFIGURATION_ID;
 import static io.github.clescot.kafka.connect.http.client.HttpClient.THROWABLE_CLASS;
 import static io.github.clescot.kafka.connect.http.client.HttpClient.THROWABLE_MESSAGE;
-import static io.github.clescot.kafka.connect.http.sink.HttpSinkConfigDefinition.*;
+import static io.github.clescot.kafka.connect.http.client.HttpClientConfigDefinition.*;
+import static io.github.clescot.kafka.connect.http.client.HttpClientConfiguration.CONFIGURATION_ID;
+import static io.github.clescot.kafka.connect.http.sink.HttpConfigDefinition.*;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
 
+@Execution(ExecutionMode.SAME_THREAD)
 class OkHttpClientTest {
     public static final String ACCESS_GRANTED_STATE = "access_granted";
     public static final String UNAUTHORIZED_STATE = "Unauthorized";
@@ -69,7 +73,7 @@ class OkHttpClientTest {
     public static final String APPLICATION_JSON = "application/json";
 
     private final Logger LOGGER = LoggerFactory.getLogger(OkHttpClientTest.class);
-
+    private final OkHttpClientFactory factory = new OkHttpClientFactory();
     @RegisterExtension
     static WireMockExtension wmHttp;
 
@@ -106,12 +110,12 @@ class OkHttpClientTest {
             //given
             HashMap<String, Object> config = Maps.newHashMap();
             config.put(CONFIGURATION_ID, "default");
-            OkHttpClient client = new OkHttpClient(config, null, new Random(), null, null, getCompositeMeterRegistry());
+            OkHttpClient client = factory.build(config, null, new Random(), null, null, getCompositeMeterRegistry());
             HttpRequest httpRequest = new HttpRequest("http://dummy.com/", HttpRequest.Method.POST);
             httpRequest.setBodyAsString("stuff");
 
             //given
-            Request request = client.buildRequest(httpRequest);
+            Request request = client.buildNativeRequest(httpRequest);
 
             //then
             LOGGER.debug("request:{}", request);
@@ -129,12 +133,12 @@ class OkHttpClientTest {
             //given
             HashMap<String, Object> config = Maps.newHashMap();
             config.put(CONFIGURATION_ID, "default");
-            OkHttpClient client = new OkHttpClient(config, null, new Random(), null, null, getCompositeMeterRegistry());
+            OkHttpClient client = factory.build(config, null, new Random(), null, null, getCompositeMeterRegistry());
             HttpRequest httpRequest = new HttpRequest("http://dummy.com/", HttpRequest.Method.PUT);
             httpRequest.setBodyAsString("stuff");
 
             //given
-            Request request = client.buildRequest(httpRequest);
+            Request request = client.buildNativeRequest(httpRequest);
 
             //then
             LOGGER.debug("request:{}", request);
@@ -152,12 +156,12 @@ class OkHttpClientTest {
             //given
             HashMap<String, Object> config = Maps.newHashMap();
             config.put(CONFIGURATION_ID, "default");
-            OkHttpClient client = new OkHttpClient(config, null, new Random(), null, null, getCompositeMeterRegistry());
+            OkHttpClient client = factory.build(config, null, new Random(), null, null, getCompositeMeterRegistry());
             HttpRequest httpRequest = new HttpRequest("http://dummy.com/", HttpRequest.Method.PUT);
             httpRequest.setBodyAsByteArray("stuff".getBytes(StandardCharsets.UTF_8));
 
             //given
-            Request request = client.buildRequest(httpRequest);
+            Request request = client.buildNativeRequest(httpRequest);
 
             //then
             LOGGER.debug("request:{}", request);
@@ -177,7 +181,7 @@ class OkHttpClientTest {
             //given
             HashMap<String, Object> config = Maps.newHashMap();
             config.put(CONFIGURATION_ID, "default");
-            OkHttpClient client = new OkHttpClient(config, null, new Random(), null, null, getCompositeMeterRegistry());
+            OkHttpClient client = factory.build(config, null, new Random(), null, null, getCompositeMeterRegistry());
             HttpRequest httpRequest = new HttpRequest("http://dummy.com/", HttpRequest.Method.POST);
             Map<String, String> form = Maps.newHashMap();
             form.put("key1", "value1");
@@ -186,7 +190,7 @@ class OkHttpClientTest {
             httpRequest.setBodyAsForm(form);
 
             //given
-            Request request = client.buildRequest(httpRequest);
+            Request request = client.buildNativeRequest(httpRequest);
 
             //then
             LOGGER.debug("request:{}", request);
@@ -206,20 +210,20 @@ class OkHttpClientTest {
             //given
             HashMap<String, Object> config = Maps.newHashMap();
             config.put(CONFIGURATION_ID, "default");
-            OkHttpClient client = new OkHttpClient(config, null, new Random(), null, null, getCompositeMeterRegistry());
-            Map<String,HttpPart> parts = Maps.newHashMap();
+            OkHttpClient client = factory.build(config, null, new Random(), null, null, getCompositeMeterRegistry());
+            Map<String, HttpPart> parts = Maps.newHashMap();
             String content1 = "content1";
             HttpPart httpPart1 = new HttpPart(Map.of("Content-Type", Lists.newArrayList("application/toto")), content1);
-            parts.put("part1",httpPart1);
+            parts.put("part1", httpPart1);
             String content2 = "content2";
             HttpPart httpPart2 = new HttpPart(content2);
-            parts.put("part2",httpPart2);
+            parts.put("part2", httpPart2);
             Map<String, List<String>> headers = Maps.newHashMap();
             headers.put("Content-Type", Lists.newArrayList("multipart/form-data; boundary=+++"));
             HttpRequest httpRequest = new HttpRequest("http://dummy.com/", HttpRequest.Method.POST, headers, HttpRequest.BodyType.MULTIPART, parts);
 
             //given
-            Request request = client.buildRequest(httpRequest);
+            Request request = client.buildNativeRequest(httpRequest);
 
             //then
             LOGGER.debug("request:{}", request);
@@ -247,24 +251,24 @@ class OkHttpClientTest {
             //given
             HashMap<String, Object> config = Maps.newHashMap();
             config.put(CONFIGURATION_ID, "default");
-            OkHttpClient client = new OkHttpClient(config, null, new Random(), null, null, getCompositeMeterRegistry());
-            Map<String,HttpPart> parts = Maps.newHashMap();
+            OkHttpClient client = factory.build(config, null, new Random(), null, null, getCompositeMeterRegistry());
+            Map<String, HttpPart> parts = Maps.newHashMap();
 
             //content as string
             String content1 = "content1";
             HttpPart httpPart1 = new HttpPart(Map.of("Content-Type", Lists.newArrayList("application/toto")), content1);
-            parts.put("part1",httpPart1);
+            parts.put("part1", httpPart1);
 
             //content as byte array
             String content2 = "content2";
             HttpPart httpPart2 = new HttpPart(content2.getBytes(StandardCharsets.UTF_8));
-            parts.put("part2",httpPart2);
+            parts.put("part2", httpPart2);
 
             //content as file
             URL fileUrl = Thread.currentThread().getContextClassLoader().getResource("upload.txt");
             File file = new File(fileUrl.toURI());
-            HttpPart httpPart3 = new HttpPart( "upload.txt", file);
-            parts.put("part3",httpPart3);
+            HttpPart httpPart3 = new HttpPart("upload.txt", file);
+            parts.put("part3", httpPart3);
 
 
             Map<String, List<String>> headers = Maps.newHashMap();
@@ -272,7 +276,7 @@ class OkHttpClientTest {
             HttpRequest httpRequest = new HttpRequest("http://dummy.com/", HttpRequest.Method.POST, headers, HttpRequest.BodyType.MULTIPART, parts);
 
             //given
-            Request request = client.buildRequest(httpRequest);
+            Request request = client.buildNativeRequest(httpRequest);
 
             //then
             LOGGER.debug("request:{}", request);
@@ -338,12 +342,12 @@ class OkHttpClientTest {
             //given
             HashMap<String, Object> config = Maps.newHashMap();
             config.put(CONFIGURATION_ID, "default");
-            OkHttpClient client = new OkHttpClient(config, null, new Random(), null, null, getCompositeMeterRegistry());
+            OkHttpClient client = factory.build(config, null, new Random(), null, null, getCompositeMeterRegistry());
             HttpRequest httpRequest = new HttpRequest("http://dummy.com/", HttpRequest.Method.GET);
             httpRequest.setBodyAsString("stuff");
 
             //when
-            Request request = client.buildRequest(httpRequest);
+            Request request = client.buildNativeRequest(httpRequest);
 
             //then
             LOGGER.debug("request:{}", request);
@@ -367,11 +371,11 @@ class OkHttpClientTest {
             //given
             HashMap<String, Object> config = Maps.newHashMap();
             config.put(CONFIGURATION_ID, "default");
-            OkHttpClient client = new OkHttpClient(config, null, new Random(), null, null, getCompositeMeterRegistry());
+            OkHttpClient client = factory.build(config, null, new Random(), null, null, getCompositeMeterRegistry());
 
             HttpRequest httpRequest = new HttpRequest("http://dummy.com/", HttpRequest.Method.POST);
             httpRequest.setBodyAsString("stuff");
-            Request request = client.buildRequest(httpRequest);
+            Request request = client.buildNativeRequest(httpRequest);
 
             Response.Builder builder = new Response.Builder();
             Headers headers = new Headers.Builder()
@@ -389,7 +393,7 @@ class OkHttpClientTest {
             builder.body(responseBody);
             builder.protocol(Protocol.HTTP_1_1);
             Response response = builder.build();
-            HttpResponseBuilder httpResponseBuilder = new HttpResponseBuilder(1024, 8000,100_000);
+            HttpResponseBuilder httpResponseBuilder = new HttpResponseBuilder(1024, 8000, 100_000);
             //when
             HttpResponse httpResponse = client.buildResponse(httpResponseBuilder, response);
 
@@ -409,11 +413,11 @@ class OkHttpClientTest {
             HashMap<String, Object> config = Maps.newHashMap();
             config.put(CONFIGURATION_ID, "default");
             config.put(CONFIG_DEFAULT_HTTP_RESPONSE_MESSAGE_STATUS_LIMIT, 4);
-            OkHttpClient client = new OkHttpClient(config, null, new Random(), null, null, getCompositeMeterRegistry());
+            OkHttpClient client = factory.build(config, null, new Random(), null, null, getCompositeMeterRegistry());
 
             HttpRequest httpRequest = new HttpRequest("http://dummy.com/", HttpRequest.Method.POST);
             httpRequest.setBodyAsString("stuff");
-            Request request = client.buildRequest(httpRequest);
+            Request request = client.buildNativeRequest(httpRequest);
 
             Response.Builder builder = new Response.Builder();
             Headers headers = new Headers.Builder()
@@ -431,7 +435,7 @@ class OkHttpClientTest {
             builder.body(responseBody);
             builder.protocol(Protocol.HTTP_1_1);
             Response response = builder.build();
-            HttpResponseBuilder httpResponseBuilder = new HttpResponseBuilder(4, 8000,100_000);
+            HttpResponseBuilder httpResponseBuilder = new HttpResponseBuilder(4, 8000, 100_000);
             //when
             HttpResponse httpResponse = client.buildResponse(httpResponseBuilder, response);
 
@@ -451,11 +455,11 @@ class OkHttpClientTest {
             HashMap<String, Object> config = Maps.newHashMap();
             config.put(CONFIGURATION_ID, "default");
             config.put(CONFIG_DEFAULT_HTTP_RESPONSE_HEADERS_LIMIT_DOC, 20);
-            OkHttpClient client = new OkHttpClient(config, null, new Random(), null, null, getCompositeMeterRegistry());
+            OkHttpClient client = factory.build(config, null, new Random(), null, null, getCompositeMeterRegistry());
 
             HttpRequest httpRequest = new HttpRequest("http://dummy.com/", HttpRequest.Method.POST);
             httpRequest.setBodyAsString("stuff");
-            Request request = client.buildRequest(httpRequest);
+            Request request = client.buildNativeRequest(httpRequest);
 
             Response.Builder builder = new Response.Builder();
             Headers headers = new Headers.Builder()
@@ -473,7 +477,7 @@ class OkHttpClientTest {
             builder.body(responseBody);
             builder.protocol(Protocol.HTTP_1_1);
             Response response = builder.build();
-            HttpResponseBuilder httpResponseBuilder = new HttpResponseBuilder(Integer.MAX_VALUE, 8000,10);
+            HttpResponseBuilder httpResponseBuilder = new HttpResponseBuilder(Integer.MAX_VALUE, 8000, 10);
             //when
             HttpResponse httpResponse = client.buildResponse(httpResponseBuilder, response);
 
@@ -488,7 +492,6 @@ class OkHttpClientTest {
         }
 
 
-
         @Test
         void test_build_response_with_body_limit() {
 
@@ -496,11 +499,11 @@ class OkHttpClientTest {
             HashMap<String, Object> config = Maps.newHashMap();
             config.put(CONFIGURATION_ID, "default");
             config.put(CONFIG_DEFAULT_HTTP_RESPONSE_BODY_LIMIT, 10);
-            OkHttpClient client = new OkHttpClient(config, null, new Random(), null, null, getCompositeMeterRegistry());
+            OkHttpClient client = factory.build(config, null, new Random(), null, null, getCompositeMeterRegistry());
 
             HttpRequest httpRequest = new HttpRequest("http://dummy.com/", HttpRequest.Method.POST);
             httpRequest.setBodyAsString("stuff");
-            Request request = client.buildRequest(httpRequest);
+            Request request = client.buildNativeRequest(httpRequest);
 
             Response.Builder builder = new Response.Builder();
             Headers headers = new Headers.Builder()
@@ -518,7 +521,7 @@ class OkHttpClientTest {
             builder.body(responseBody);
             builder.protocol(Protocol.HTTP_1_1);
             Response response = builder.build();
-            HttpResponseBuilder httpResponseBuilder = new HttpResponseBuilder(Integer.MAX_VALUE, 8000,10);
+            HttpResponseBuilder httpResponseBuilder = new HttpResponseBuilder(Integer.MAX_VALUE, 8000, 10);
             //when
             HttpResponse httpResponse = client.buildResponse(httpResponseBuilder, response);
 
@@ -542,7 +545,7 @@ class OkHttpClientTest {
             HashMap<String, Object> config = Maps.newHashMap();
             config.put(CONFIGURATION_ID, "default");
             config.put(OKHTTP_CACHE_ACTIVATE, "true");
-            org.junit.jupiter.api.Assertions.assertDoesNotThrow(() -> new OkHttpClient(config, null, new Random(), null, null, getCompositeMeterRegistry()));
+            org.junit.jupiter.api.Assertions.assertDoesNotThrow(() -> factory.build(config, null, new Random(), null, null, getCompositeMeterRegistry()));
         }
 
         @Test
@@ -551,7 +554,7 @@ class OkHttpClientTest {
             config.put(CONFIGURATION_ID, "default");
             config.put(OKHTTP_CACHE_ACTIVATE, "true");
             config.put(OKHTTP_CACHE_MAX_SIZE, "50000");
-            org.junit.jupiter.api.Assertions.assertDoesNotThrow(() -> new OkHttpClient(config, null, new Random(), null, null, getCompositeMeterRegistry()));
+            org.junit.jupiter.api.Assertions.assertDoesNotThrow(() -> factory.build(config, null, new Random(), null, null, getCompositeMeterRegistry()));
 
         }
 
@@ -562,7 +565,7 @@ class OkHttpClientTest {
             config.put(OKHTTP_CACHE_ACTIVATE, "true");
             config.put(OKHTTP_CACHE_MAX_SIZE, "50000");
             config.put(OKHTTP_CACHE_DIRECTORY_PATH, "/tmp/toto");
-            org.junit.jupiter.api.Assertions.assertDoesNotThrow(() -> new OkHttpClient(config, null, new Random(), null, null, getCompositeMeterRegistry()));
+            org.junit.jupiter.api.Assertions.assertDoesNotThrow(() -> factory.build(config, null, new Random(), null, null, getCompositeMeterRegistry()));
         }
 
         @Test
@@ -571,7 +574,7 @@ class OkHttpClientTest {
             config.put(CONFIGURATION_ID, "default");
             config.put(OKHTTP_CACHE_ACTIVATE, "true");
             config.put(OKHTTP_CACHE_TYPE, "inmemory");
-            org.junit.jupiter.api.Assertions.assertDoesNotThrow(() -> new OkHttpClient(config, null, new Random(), null, null, getCompositeMeterRegistry()));
+            org.junit.jupiter.api.Assertions.assertDoesNotThrow(() -> factory.build(config, null, new Random(), null, null, getCompositeMeterRegistry()));
         }
 
         @Test
@@ -579,14 +582,14 @@ class OkHttpClientTest {
             HashMap<String, Object> config = Maps.newHashMap();
             config.put(CONFIGURATION_ID, "default");
             config.put(OKHTTP_CACHE_ACTIVATE, "false");
-            org.junit.jupiter.api.Assertions.assertDoesNotThrow(() -> new OkHttpClient(config, null, new Random(), null, null, getCompositeMeterRegistry()));
+            org.junit.jupiter.api.Assertions.assertDoesNotThrow(() -> factory.build(config, null, new Random(), null, null, getCompositeMeterRegistry()));
         }
 
         @Test
         void test_no_cache() {
             HashMap<String, Object> config = Maps.newHashMap();
             config.put(CONFIGURATION_ID, "default");
-            org.junit.jupiter.api.Assertions.assertDoesNotThrow(() -> new OkHttpClient(config, null, new Random(), null, null, getCompositeMeterRegistry()));
+            org.junit.jupiter.api.Assertions.assertDoesNotThrow(() -> factory.build(config, null, new Random(), null, null, getCompositeMeterRegistry()));
         }
     }
 
@@ -617,15 +620,7 @@ class OkHttpClientTest {
             HashMap<String, Object> config = Maps.newHashMap();
             config.put(CONFIGURATION_ID, "default");
             config.put("rate.limiter.max.executions", "1");
-
-            OkHttpClient client = new OkHttpClient(
-                    config,
-                    null,
-                    new Random(),
-                    null,
-                    null,
-                    getCompositeMeterRegistry()
-            );
+            OkHttpClient client = factory.build(config, null, new Random(), null, null, getCompositeMeterRegistry());
 
             HttpRequest httpRequest = getHttpRequest(wmRuntimeInfo);
             Stopwatch stopwatch = Stopwatch.createStarted();
@@ -669,17 +664,10 @@ class OkHttpClientTest {
             //build http client
             HashMap<String, Object> config = Maps.newHashMap();
             config.put(CONFIGURATION_ID, "default");
-            config.put("rate.limiter.max.executions", ""+length);
+            config.put("rate.limiter.max.executions", "" + length);
             config.put("rate.limiter.permits.per.execution", RATE_LIMITER_REQUEST_LENGTH_PER_CALL);
 
-            OkHttpClient client = new OkHttpClient(
-                    config,
-                    null,
-                    new Random(),
-                    null,
-                    null,
-                    getCompositeMeterRegistry()
-            );
+            OkHttpClient client = factory.build(config, null, new Random(), null, null, getCompositeMeterRegistry());
 
 
             Stopwatch stopwatch = Stopwatch.createStarted();
@@ -697,6 +685,7 @@ class OkHttpClientTest {
                 LOGGER.info("httpExchange direct time '{}' ms", exchange.getDurationInMillis());
             }
         }
+
         @Test
         @DisplayName("test rate limiter with bandwidth. one call limit matches 2 request lengths")
         void test_rate_limiter_with_bandwith_of_2_requests_per_call() throws ExecutionException, InterruptedException {
@@ -722,17 +711,10 @@ class OkHttpClientTest {
             //build http client
             HashMap<String, Object> config = Maps.newHashMap();
             config.put(CONFIGURATION_ID, "default");
-            config.put("rate.limiter.max.executions", ""+length*2);
+            config.put("rate.limiter.max.executions", "" + length * 2);
             config.put("rate.limiter.permits.per.execution", RATE_LIMITER_REQUEST_LENGTH_PER_CALL);
 
-            OkHttpClient client = new OkHttpClient(
-                    config,
-                    null,
-                    new Random(),
-                    null,
-                    null,
-                    getCompositeMeterRegistry()
-            );
+            OkHttpClient client = factory.build(config, null, new Random(), null, null, getCompositeMeterRegistry());
 
 
             Stopwatch stopwatch = Stopwatch.createStarted();
@@ -750,7 +732,8 @@ class OkHttpClientTest {
                 LOGGER.info("httpExchange direct time '{}' ms", exchange.getDurationInMillis());
             }
         }
-@Test
+
+        @Test
         @DisplayName("test rate limiter per call. one execution limit.")
         void test_rate_limiter_per_call() throws ExecutionException, InterruptedException {
 
@@ -777,15 +760,7 @@ class OkHttpClientTest {
             config.put("rate.limiter.max.executions", "1");
             config.put("rate.limiter.permits.per.execution", DEFAULT_RATE_LIMITER_ONE_PERMIT_PER_CALL);
 
-            OkHttpClient client = new OkHttpClient(
-                    config,
-                    null,
-                    new Random(),
-                    null,
-                    null,
-                    getCompositeMeterRegistry()
-            );
-
+            OkHttpClient client = factory.build(config, null, new Random(), null, null, getCompositeMeterRegistry());
 
             Stopwatch stopwatch = Stopwatch.createStarted();
             List<HttpExchange> exchanges = Lists.newArrayList();
@@ -829,15 +804,7 @@ class OkHttpClientTest {
             config.put(CONFIGURATION_ID, "default");
             config.put("dummy.config", "1");
 
-            OkHttpClient client = new OkHttpClient(
-                    config,
-                    null,
-                    new Random(),
-                    null,
-                    null,
-                    getCompositeMeterRegistry()
-            );
-
+            OkHttpClient client = factory.build(config, null, new Random(), null, null, getCompositeMeterRegistry());
             HttpRequest httpRequest = getHttpRequest(wmRuntimeInfo);
             Stopwatch stopwatch = Stopwatch.createStarted();
             List<HttpExchange> exchanges = Lists.newArrayList();
@@ -882,22 +849,8 @@ class OkHttpClientTest {
             config.put("rate.limiter.max.executions", "1");
             config.put("rate.limiter.scope", "static");
 
-            OkHttpClient client1 = new OkHttpClient(
-                    config,
-                    null,
-                    new Random(),
-                    null,
-                    null,
-                    getCompositeMeterRegistry()
-            );
-            OkHttpClient client2 = new OkHttpClient(
-                    config,
-                    null,
-                    new Random(),
-                    null,
-                    null,
-                    getCompositeMeterRegistry()
-            );
+            OkHttpClient client1 = factory.build(config, null, new Random(), null, null, getCompositeMeterRegistry());
+            OkHttpClient client2 = factory.build(config, null, new Random(), null, null, getCompositeMeterRegistry());
 
             HttpRequest httpRequest = getHttpRequest(wmRuntimeInfo);
             Stopwatch stopwatch = Stopwatch.createStarted();
@@ -945,22 +898,8 @@ class OkHttpClientTest {
             config.put(CONFIGURATION_ID, "default");
             config.put("rate.limiter.max.executions", "1");
 
-            OkHttpClient client1 = new OkHttpClient(
-                    config,
-                    null,
-                    new Random(),
-                    null,
-                    null,
-                    getCompositeMeterRegistry()
-            );
-            OkHttpClient client2 = new OkHttpClient(
-                    config,
-                    null,
-                    new Random(),
-                    null,
-                    null,
-                    getCompositeMeterRegistry()
-            );
+            OkHttpClient client1 = factory.build(config, null, new Random(), null, null, getCompositeMeterRegistry());
+            OkHttpClient client2 = factory.build(config, null, new Random(), null, null, getCompositeMeterRegistry());
 
             HttpRequest httpRequest = getHttpRequest(wmRuntimeInfo);
             Stopwatch stopwatch = Stopwatch.createStarted();
@@ -1013,7 +952,7 @@ class OkHttpClientTest {
 
             HashMap<String, Object> config = Maps.newHashMap();
             config.put(CONFIGURATION_ID, "default");
-            OkHttpClient client = new OkHttpClient(config, null, new Random(), null, null, getCompositeMeterRegistry());
+            OkHttpClient client = factory.build(config, null, new Random(), null, null, getCompositeMeterRegistry());
 
             String baseUrl = "http://" + getIP() + ":" + wmRuntimeInfo.getHttpPort();
             String url = baseUrl + "/ping";
@@ -1055,7 +994,7 @@ class OkHttpClientTest {
             HashMap<String, Object> config = Maps.newHashMap();
             config.put(CONFIGURATION_ID, "default");
             config.put(CONFIG_DEFAULT_OKHTTP_INTERCEPTOR_LOGGING_ACTIVATE, "true");
-            OkHttpClient client = new OkHttpClient(config, null, new Random(), null, null, getCompositeMeterRegistry());
+            OkHttpClient client = factory.build(config, null, new Random(), null, null, getCompositeMeterRegistry());
 
             String baseUrl = "http://" + getIP() + ":" + wmRuntimeInfo.getHttpPort();
             String url = baseUrl + "/ping";
@@ -1109,7 +1048,7 @@ class OkHttpClientTest {
             config.put("httpclient.authentication.basic.username", username);
             config.put("httpclient.authentication.basic.password", password);
 
-            OkHttpClient client = new OkHttpClient(config, null, new Random(), null, null, getCompositeMeterRegistry());
+            OkHttpClient client = factory.build(config, null, new Random(), null, null, getCompositeMeterRegistry());
 
             String baseUrl = "http://" + getIP() + ":" + wmRuntimeInfo.getHttpPort();
             String url = baseUrl + "/ping";
@@ -1186,7 +1125,7 @@ class OkHttpClientTest {
             config.put("httpclient.authentication.digest.username", username);
             config.put("httpclient.authentication.digest.password", password);
             Random random = getFixedRandom();
-            OkHttpClient client = new OkHttpClient(config, null, random, null, null, getCompositeMeterRegistry());
+            OkHttpClient client = factory.build(config, null, random, null, null, getCompositeMeterRegistry());
 
             String baseUrl = "http://" + getIP() + ":" + wmRuntimeInfo.getHttpPort();
             String url = baseUrl + "/ping";
@@ -1398,7 +1337,7 @@ class OkHttpClientTest {
 
 
             Random random = getFixedRandom();
-            OkHttpClient client = new OkHttpClient(config, null, random, null, null, getCompositeMeterRegistry());
+            OkHttpClient client = factory.build(config, null, new Random(), null, null, getCompositeMeterRegistry());
 
             HttpExchange httpExchange1 = client.call(httpRequest, new AtomicInteger(1)).get();
             assertThat(httpExchange1.getHttpResponse().getStatusCode()).isEqualTo(200);
@@ -1447,7 +1386,7 @@ class OkHttpClientTest {
             Proxy proxy = new Proxy(Proxy.Type.HTTP, new InetSocketAddress(getIP(), wmRuntimeInfo.getHttpPort()));
 
 
-            OkHttpClient client = new OkHttpClient(config, null, new Random(), proxy, null, getCompositeMeterRegistry());
+            OkHttpClient client = factory.build(config, null, new Random(), proxy, null, getCompositeMeterRegistry());
 
             HashMap<String, List<String>> headers = Maps.newHashMap();
             headers.put(CONTENT_TYPE, Lists.newArrayList("text/plain"));
@@ -1484,8 +1423,6 @@ class OkHttpClientTest {
         @Test
         @DisplayName("test proxy with basic authentication")
         void test_proxy_with_basic_authentication() throws ExecutionException, InterruptedException {
-
-
             String bodyResponse = "{\"result\":\"pong\"}";
             WireMockRuntimeInfo wmRuntimeInfo = wmHttp.getRuntimeInfo();
             WireMock wireMock = wmRuntimeInfo.getWireMock();
@@ -1502,7 +1439,7 @@ class OkHttpClientTest {
             config.put(HTTP_CLIENT_PROXY_AUTHENTICATION_BASIC_PASSWORD, password);
             Proxy proxy = new Proxy(Proxy.Type.HTTP, new InetSocketAddress(getIP(), wmRuntimeInfo.getHttpPort()));
 
-            OkHttpClient client = new OkHttpClient(config, null, new Random(), proxy, null, getCompositeMeterRegistry());
+            OkHttpClient client = factory.build(config, null, new Random(), proxy, null, getCompositeMeterRegistry());
 
             HashMap<String, List<String>> headers = Maps.newHashMap();
             headers.put(CONTENT_TYPE, Lists.newArrayList("text/plain"));
@@ -1588,7 +1525,7 @@ class OkHttpClientTest {
             config.put("httpclient.authentication.basic.password", password);
             Proxy proxy = new Proxy(Proxy.Type.HTTP, new InetSocketAddress(getIP(), wmRuntimeInfo.getHttpPort()));
 
-            OkHttpClient client = new OkHttpClient(config, null, new Random(), proxy, null, getCompositeMeterRegistry());
+            OkHttpClient client = factory.build(config, null, new Random(), proxy, null, getCompositeMeterRegistry());
 
             HashMap<String, List<String>> headers = Maps.newHashMap();
             headers.put(CONTENT_TYPE, Lists.newArrayList("text/plain"));
@@ -1698,7 +1635,7 @@ class OkHttpClientTest {
                 return null;
             }).when(random).nextBytes(any(byte[].class));
 
-            OkHttpClient client = new OkHttpClient(config, null, random, proxy, null, getCompositeMeterRegistry());
+            OkHttpClient client = factory.build(config, null, random, proxy, null, getCompositeMeterRegistry());
 
             HashMap<String, List<String>> headers = Maps.newHashMap();
             headers.put(CONTENT_TYPE, Lists.newArrayList("text/plain"));
@@ -1864,7 +1801,7 @@ class OkHttpClientTest {
             ImmutablePair<Predicate<URI>, Proxy> pair = new ImmutablePair<>(predicate, proxy);
             proxies.add(pair);
             URIRegexProxySelector proxySelector = new URIRegexProxySelector(proxies);
-            OkHttpClient client = new OkHttpClient(config, null, new Random(), null, proxySelector, getCompositeMeterRegistry());
+            OkHttpClient client = factory.build(config, null, new Random(), null, proxySelector, getCompositeMeterRegistry());
 
             HashMap<String, List<String>> headers = Maps.newHashMap();
             headers.put(CONTENT_TYPE, Lists.newArrayList("text/plain"));
@@ -1926,8 +1863,7 @@ class OkHttpClientTest {
 
             URIRegexProxySelector proxySelector = new URIRegexProxySelector(proxies);
 
-            OkHttpClient client = new OkHttpClient(config, null, new Random(), null, proxySelector, getCompositeMeterRegistry());
-
+            OkHttpClient client = factory.build(config, null, new Random(), null, proxySelector, getCompositeMeterRegistry());
             HashMap<String, List<String>> headers = Maps.newHashMap();
             headers.put(CONTENT_TYPE, Lists.newArrayList("text/plain"));
             headers.put("X-Correlation-ID", Lists.newArrayList("e6de70d1-f222-46e8-b755-754880687822"));
@@ -1976,7 +1912,7 @@ class OkHttpClientTest {
             Map<String, Object> config = Maps.newHashMap();
             config.put(CONFIGURATION_ID, "default");
             config.put(OKHTTP_DOH_ACTIVATE, "true");
-            Assertions.assertThrows(IllegalStateException.class, () -> new OkHttpClient(config, null, new Random(), null, null, getCompositeMeterRegistry()));
+            Assertions.assertThrows(IllegalStateException.class, () -> factory.build(config, null, new Random(), null, null, getCompositeMeterRegistry()));
         }
 
         @Test
@@ -1986,7 +1922,7 @@ class OkHttpClientTest {
             config.put(CONFIGURATION_ID, "default");
             config.put(OKHTTP_DOH_ACTIVATE, "true");
             config.put(OKHTTP_DOH_BOOTSTRAP_DNS_HOSTS, Lists.newArrayList("1.1.1.2", "1.0.0.2"));
-            Assertions.assertThrows(IllegalStateException.class, () -> new OkHttpClient(config, null, new Random(), null, null, getCompositeMeterRegistry()));
+            Assertions.assertThrows(IllegalStateException.class, () -> factory.build(config, null, new Random(), null, null, getCompositeMeterRegistry()));
         }
 
         @Test
@@ -1997,7 +1933,7 @@ class OkHttpClientTest {
             config.put(OKHTTP_DOH_ACTIVATE, "true");
             config.put(OKHTTP_DOH_URL, "https://cloudflare-dns.com/dns-query");
             config.put(OKHTTP_DOH_BOOTSTRAP_DNS_HOSTS, Lists.newArrayList("1.1.1.2", "1.0.0.2"));
-            OkHttpClient client = new OkHttpClient(config, null, new Random(), null, null, getCompositeMeterRegistry());
+            OkHttpClient client = factory.build(config, null, new Random(), null, null, getCompositeMeterRegistry());
 
             HttpRequest httpRequest = new HttpRequest(
                     "https://www.google.com",
@@ -2017,7 +1953,7 @@ class OkHttpClientTest {
             config.put(OKHTTP_DOH_URL, "https://cloudflare-dns.com/dns-query");
             config.put(OKHTTP_DOH_BOOTSTRAP_DNS_HOSTS, Lists.newArrayList("1.1.1.2", "1.0.0.2"));
             config.put(OKHTTP_DOH_INCLUDE_IPV6, "true");
-            OkHttpClient client = new OkHttpClient(config, null, new Random(), null, null, getCompositeMeterRegistry());
+            OkHttpClient client = factory.build(config, null, new Random(), null, null, getCompositeMeterRegistry());
 
             HttpRequest httpRequest = new HttpRequest(
                     "https://www.google.com",
@@ -2037,7 +1973,7 @@ class OkHttpClientTest {
             config.put(OKHTTP_DOH_URL, "https://cloudflare-dns.com/dns-query");
             config.put(OKHTTP_DOH_USE_POST_METHOD, "true");
             config.put(OKHTTP_DOH_BOOTSTRAP_DNS_HOSTS, Lists.newArrayList("1.1.1.2", "1.0.0.2"));
-            OkHttpClient client = new OkHttpClient(config, null, new Random(), null, null, getCompositeMeterRegistry());
+            OkHttpClient client = factory.build(config, null, new Random(), null, null, getCompositeMeterRegistry());
 
             HttpRequest httpRequest = new HttpRequest(
                     "https://www.google.com",
@@ -2057,7 +1993,7 @@ class OkHttpClientTest {
             config.put(OKHTTP_DOH_RESOLVE_PUBLIC_ADDRESSES, "false");
             config.put(OKHTTP_DOH_URL, "https://cloudflare-dns.com/dns-query");
             config.put(OKHTTP_DOH_BOOTSTRAP_DNS_HOSTS, Lists.newArrayList("1.1.1.2", "1.0.0.2"));
-            OkHttpClient client = new OkHttpClient(config, null, new Random(), null, null, getCompositeMeterRegistry());
+            OkHttpClient client = factory.build(config, null, new Random(), null, null, getCompositeMeterRegistry());
 
             HttpRequest httpRequest = new HttpRequest(
                     "https://www.toto.com",
@@ -2080,7 +2016,7 @@ class OkHttpClientTest {
             config.put(OKHTTP_DOH_RESOLVE_PRIVATE_ADDRESSES, "false");
             config.put(OKHTTP_DOH_URL, "https://cloudflare-dns.com/dns-query");
             config.put(OKHTTP_DOH_BOOTSTRAP_DNS_HOSTS, Lists.newArrayList("1.1.1.2", "1.0.0.2"));
-            OkHttpClient client = new OkHttpClient(config, null, new Random(), null, null, getCompositeMeterRegistry());
+            OkHttpClient client = factory.build(config, null, new Random(), null, null, getCompositeMeterRegistry());
 
             HttpRequest httpRequest = new HttpRequest(
                     "https://localhost",
@@ -2117,7 +2053,7 @@ class OkHttpClientTest {
             config.put(OKHTTP_DOH_ACTIVATE, "true");
             config.put(OKHTTP_DOH_RESOLVE_PRIVATE_ADDRESSES, "true");
             config.put(OKHTTP_DOH_URL, "https://cloudflare-dns.com/dns-query");
-            OkHttpClient client = new OkHttpClient(config, null, new Random(), null, null, getCompositeMeterRegistry());
+            OkHttpClient client = factory.build(config, null, new Random(), null, null, getCompositeMeterRegistry());
 
             HttpRequest httpRequest = new HttpRequest(
                     "http://127.0.0.1:" + wmHttp.getRuntimeInfo().getHttpPort() + "/ping",
@@ -2137,7 +2073,7 @@ class OkHttpClientTest {
             config.put(OKHTTP_DOH_ACTIVATE, "true");
             config.put(OKHTTP_DOH_URL, "https://cloudflare-dns.com/dns-query");
             config.put(OKHTTP_DOH_BOOTSTRAP_DNS_HOSTS, Lists.newArrayList("1.1.1.2", "1.0.0.2"));
-            OkHttpClient client = new OkHttpClient(config, null, new Random(), null, null, getCompositeMeterRegistry());
+            OkHttpClient client = factory.build(config, null, new Random(), null, null, getCompositeMeterRegistry());
 
             HttpRequest httpRequest = new HttpRequest(
                     "https://localhost",
@@ -2159,7 +2095,7 @@ class OkHttpClientTest {
             config.put(OKHTTP_DOH_ACTIVATE, "true");
             config.put(OKHTTP_DOH_URL, "https://cloudflare-dns.com/dns-query");
             config.put(OKHTTP_DOH_BOOTSTRAP_DNS_HOSTS, Lists.newArrayList("aaaaaa", "bbbbbb"));
-            Assertions.assertThrows(IllegalArgumentException.class, () -> new OkHttpClient(config, null, new Random(), null, null, getCompositeMeterRegistry()));
+            Assertions.assertThrows(IllegalArgumentException.class, () -> factory.build(config, null, new Random(), null, null, getCompositeMeterRegistry()));
 
         }
 
@@ -2170,7 +2106,7 @@ class OkHttpClientTest {
             config.put(CONFIGURATION_ID, "default");
             config.put(OKHTTP_DOH_ACTIVATE, "true");
             config.put(OKHTTP_DOH_URL, "https://yahoo.com");
-            Assertions.assertDoesNotThrow(() -> new OkHttpClient(config, null, new Random(), null, null, getCompositeMeterRegistry()));
+            Assertions.assertDoesNotThrow(() -> factory.build(config, null, new Random(), null, null, getCompositeMeterRegistry()));
 
 
         }
@@ -2186,7 +2122,7 @@ class OkHttpClientTest {
             Map<String, Object> config = Maps.newHashMap();
             config.put(HTTP_CLIENT_SSL_TRUSTSTORE_ALWAYS_TRUST, "true");
             //when
-            TrustManagerFactory trustManagerFactory = HttpClient.getTrustManagerFactory(config);
+            TrustManagerFactory trustManagerFactory = HttpClientFactory.getTrustManagerFactory(config);
             //then
             assertThat(trustManagerFactory).isNotNull();
             TrustManager[] trustManagers = trustManagerFactory.getTrustManagers();
@@ -2209,7 +2145,7 @@ class OkHttpClientTest {
             config.put(OKHTTP_SSL_SKIP_HOSTNAME_VERIFICATION, "true");
             WireMockRuntimeInfo wmRuntimeInfo = wmHttp.getRuntimeInfo();
             WireMock wireMock = wmRuntimeInfo.getWireMock();
-            OkHttpClient client = new OkHttpClient(config, null, new Random(), null, null, getCompositeMeterRegistry());
+            OkHttpClient client = factory.build(config, null, new Random(), null, null, getCompositeMeterRegistry());
             String baseUrl = "https://" + getIP() + ":" + wmRuntimeInfo.getHttpsPort();
             String url = baseUrl + "/ping";
             HashMap<String, List<String>> headers = Maps.newHashMap();
@@ -2260,7 +2196,7 @@ class OkHttpClientTest {
             config.put("okhttp.connection.pool.keep.alive.duration", 1000);
 
 
-            OkHttpClient client = new OkHttpClient(config, null, new Random(), null, null, getCompositeMeterRegistry());
+            OkHttpClient client = factory.build(config, null, new Random(), null, null, getCompositeMeterRegistry());
 
             String baseUrl = "http://" + getIP() + ":" + wmRuntimeInfo.getHttpPort();
             String url = baseUrl + "/ping";
@@ -2310,7 +2246,7 @@ class OkHttpClientTest {
             config.put("okhttp.connection.pool.max.idle.connections", 10);
             config.put("okhttp.connection.pool.keep.alive.duration", 1000);
 
-            OkHttpClient client = new OkHttpClient(config, null, new Random(), null, null, getCompositeMeterRegistry());
+            OkHttpClient client = factory.build(config, null, new Random(), null, null, getCompositeMeterRegistry());
 
             HashMap<String, Object> config2 = Maps.newHashMap();
             config2.put(CONFIGURATION_ID, "default");
@@ -2319,8 +2255,7 @@ class OkHttpClientTest {
             config2.put("okhttp.connection.pool.keep.alive.duration", 1000);
 
 
-            OkHttpClient client2 = new OkHttpClient(config2, null, new Random(), null, null, getCompositeMeterRegistry());
-
+            OkHttpClient client2 = factory.build(config, null, new Random(), null, null, getCompositeMeterRegistry());
             String baseUrl = "http://" + getIP() + ":" + wmRuntimeInfo.getHttpPort();
             String url = baseUrl + "/ping";
             HashMap<String, List<String>> headers = Maps.newHashMap();

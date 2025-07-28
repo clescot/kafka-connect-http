@@ -4,7 +4,7 @@ import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import io.github.clescot.kafka.connect.http.client.AbstractHttpClient;
-import io.github.clescot.kafka.connect.http.client.HttpClient;
+import io.github.clescot.kafka.connect.http.client.HttpClientFactory;
 import io.github.clescot.kafka.connect.http.client.HttpException;
 import io.github.clescot.kafka.connect.http.core.HttpRequest;
 import io.github.clescot.kafka.connect.http.core.HttpResponse;
@@ -15,6 +15,7 @@ import io.netty.handler.ssl.SslContext;
 import io.netty.handler.ssl.SslContextBuilder;
 import io.netty.util.HashedWheelTimer;
 import io.netty.util.Timer;
+import org.apache.commons.lang3.NotImplementedException;
 import org.asynchttpclient.*;
 import org.asynchttpclient.channel.DefaultKeepAliveStrategy;
 import org.asynchttpclient.channel.KeepAliveStrategy;
@@ -36,7 +37,7 @@ import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 
-import static io.github.clescot.kafka.connect.http.sink.HttpSinkConfigDefinition.*;
+import static io.github.clescot.kafka.connect.http.client.HttpClientConfigDefinition.*;
 import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.ASYNC_CLIENT_CONFIG_ROOT;
 
 public class AHCHttpClient extends AbstractHttpClient<Request, Response> {
@@ -115,7 +116,7 @@ public class AHCHttpClient extends AbstractHttpClient<Request, Response> {
 
 
     @Override
-    public Request buildRequest(HttpRequest httpRequest) {
+    public Request buildNativeRequest(HttpRequest httpRequest) {
         Preconditions.checkNotNull(httpRequest, "'httpRequest' is required but null");
         Preconditions.checkNotNull(httpRequest.getHeaders(), "'headers' are required but null");
         Preconditions.checkNotNull(httpRequest.getBodyAsString(), "'body' is required but null");
@@ -159,6 +160,11 @@ public class AHCHttpClient extends AbstractHttpClient<Request, Response> {
             requestBuilder.setReadTimeout(readTimeoutInMillis);
         }
         return requestBuilder.build();
+    }
+
+    @Override
+    public HttpRequest buildRequest(Request nativeRequest) {
+        throw new NotImplementedException();
     }
 
 
@@ -326,7 +332,7 @@ public class AHCHttpClient extends AbstractHttpClient<Request, Response> {
         if (config.containsKey(CONFIG_HTTP_CLIENT_SSL_TRUSTSTORE_PATH) && config.containsKey(CONFIG_HTTP_CLIENT_SSL_TRUSTSTORE_PASSWORD)) {
 
             Optional<TrustManagerFactory> trustManagerFactory = Optional.ofNullable(
-                    HttpClient.getTrustManagerFactory(config));
+                    HttpClientFactory.getTrustManagerFactory(config));
             if (trustManagerFactory.isPresent()) {
                 this.trustManagerFactory = trustManagerFactory.get();
                 SslContext nettySSLContext;

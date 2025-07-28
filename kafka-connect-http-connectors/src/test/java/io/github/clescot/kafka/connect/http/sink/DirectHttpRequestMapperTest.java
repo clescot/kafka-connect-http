@@ -10,8 +10,9 @@ import io.confluent.kafka.schemaregistry.client.SchemaRegistryClient;
 import io.confluent.kafka.schemaregistry.client.rest.exceptions.RestClientException;
 import io.confluent.kafka.schemaregistry.json.JsonSchema;
 import io.confluent.kafka.schemaregistry.json.JsonSchemaProvider;
-import io.github.clescot.kafka.connect.http.core.*;
-import io.github.clescot.kafka.connect.http.sink.mapper.DirectHttpRequestMapper;
+import io.github.clescot.kafka.connect.http.core.HttpPart;
+import io.github.clescot.kafka.connect.http.core.HttpRequest;
+import io.github.clescot.kafka.connect.http.mapper.DirectHttpRequestMapper;
 import org.apache.commons.jexl3.JexlBuilder;
 import org.apache.commons.jexl3.JexlEngine;
 import org.apache.commons.jexl3.JexlFeatures;
@@ -41,7 +42,6 @@ import java.util.Optional;
 
 import static io.confluent.kafka.serializers.json.KafkaJsonSchemaDeserializerConfig.JSON_VALUE_TYPE;
 import static io.github.clescot.kafka.connect.http.core.HttpRequest.SCHEMA;
-import static io.github.clescot.kafka.connect.http.sink.HttpSinkTask.DEFAULT;
 import static org.assertj.core.api.Assertions.assertThat;
 
 class DirectHttpRequestMapperTest {
@@ -50,10 +50,11 @@ class DirectHttpRequestMapperTest {
     private static final String DUMMY_URL = "http://www." + DUMMY_BODY + ".com";
     private static final HttpRequest.Method DUMMY_METHOD = HttpRequest.Method.POST;
     private static final String DUMMY_BODY_TYPE = "STRING";
+    private static final String DEFAULT = "default";
     private DirectHttpRequestMapper httpRequestMapper;
     private SchemaRegistryClient schemaRegistryClient;
     @BeforeEach
-    public void setup() throws RestClientException, IOException {
+    public void setup() {
         // Restricted permissions to a safe set but with URI allowed
         JexlPermissions permissions = new JexlPermissions.ClassPermissions(SinkRecord.class, ConnectRecord.class,HttpRequest.class);
         // Create the engine

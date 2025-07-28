@@ -1,4 +1,4 @@
-<configuration>
+<httpClientConfiguration>
     <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
         <withJansi>true</withJansi>
         <encoder>
@@ -10,13 +10,15 @@
         <appender-ref ref="STDOUT" />
     </root>
     <logger name="io.github.clescot.kafka.connect.http" level="INFO" />
+    <logger name="io.github.clescot.kafka.connect.sse" level="DEBUG" />
     <logger name="io.github.clescot.kafka.connect.http.client.okhttp" level="INFO" />
     <logger name="io.github.clescot.kafka.connect.http.client.okhttp.interceptor" level="DEBUG" />
     <logger name="io.github.clescot.kafka.connect.http.sink" level="DEBUG" />
     <logger name="io.github.clescot.kafka.connect.http.source" level="DEBUG" />
-    <logger name="io.github.clescot.kafka.connect.http.sink.HttpSinkConnectorConfig" level="INFO" />
+    <logger name="io.github.clescot.kafka.connect.sse.client.okhttp" level="DEBUG" />
+    <logger name="io.github.clescot.kafka.connect.http.sink.HttpConnectorConfig" level="INFO" />
     <logger name="org.eclipse.jetty" level="WARN" />
     <logger name="ch.qos.logback" level="WARN" />
     <logger name="ch.qos.logback.classic.LoggerContext" level="WARN" />
     <logger name="ch.qos.logback.classic.model.processor.LoggerModelHandler" level="WARN" />
-</configuration>
+</httpClientConfiguration>

@@ -1,20 +1,16 @@
 package io.github.clescot.kafka.connect.http.client;
 
 import com.google.common.base.Preconditions;
-import com.google.common.base.Stopwatch;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
-import dev.failsafe.Failsafe;
-import dev.failsafe.FailsafeExecutor;
 import dev.failsafe.RetryPolicy;
-import io.github.clescot.kafka.connect.http.VersionUtils;
+import io.github.clescot.kafka.connect.Configuration;
+import io.github.clescot.kafka.connect.VersionUtils;
 import io.github.clescot.kafka.connect.http.client.config.*;
 import io.github.clescot.kafka.connect.http.core.HttpExchange;
 import io.github.clescot.kafka.connect.http.core.HttpRequest;
-import io.github.clescot.kafka.connect.http.core.HttpResponse;
 import io.micrometer.core.instrument.composite.CompositeMeterRegistry;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.kafka.common.config.AbstractConfig;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -22,22 +18,19 @@ import org.slf4j.LoggerFactory;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.time.Duration;
-import java.time.OffsetDateTime;
-import java.time.ZoneId;
 import java.util.*;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
 import java.util.function.Predicate;
-import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import static io.github.clescot.kafka.connect.http.client.HttpClientConfigDefinition.*;
 import static io.github.clescot.kafka.connect.http.client.config.HttpRequestPredicateBuilder.*;
-import static io.github.clescot.kafka.connect.http.sink.HttpSinkConfigDefinition.*;
+import static io.github.clescot.kafka.connect.http.sink.HttpConfigDefinition.*;
 
 /**
  * Configuration of the {@link HttpClient}, specific to some websites according to the configured <span class="strong">predicate</span>.
+ * @param <C> client type, which is a subclass of HttpClient
  * @param <R> native HttpRequest
  * @param <S> native HttpResponse
  * <p>
@@ -49,11 +42,8 @@ import static io.github.clescot.kafka.connect.http.sink.HttpSinkConfigDefinition
  * </ul>
  * Each configuration owns an Http Client instance.
  */
-public class Configuration<R,S> {
-    private static final Logger LOGGER = LoggerFactory.getLogger(Configuration.class);
-
-
-
+public class HttpClientConfiguration<C extends HttpClient<R,S>,R,S> implements Configuration<C,HttpRequest> {
+    private static final Logger LOGGER = LoggerFactory.getLogger(HttpClientConfiguration.class);
     public static final String HAS_BEEN_SET = " has been set.";
     public static final String SHA_1_PRNG = "SHA1PRNG";
     public static final String MUST_BE_SET_TOO = " must be set too.";
@@ -82,23 +72,24 @@ public class Configuration<R,S> {
     private RetryPolicy<HttpExchange> retryPolicy;
 
     //http client
-    private HttpClient<R,S> httpClient;
+    private C httpClient;
     public final String id;
     private final ExecutorService executorService;
     private final Map<String, Object> settings;
     private final Function<HttpRequest, HttpRequest> enrichRequestFunction;
-    public Configuration(String id,
-                         HttpClientFactory<R,S> httpClientFactory,
-                         AbstractConfig config,
-                         ExecutorService executorService,
-                         CompositeMeterRegistry meterRegistry) {
+    public HttpClientConfiguration(String id,
+                                   HttpClientFactory<C,R,S> httpClientFactory,
+                                   Map<String,Object> config,
+                                   ExecutorService executorService,
+                                   CompositeMeterRegistry meterRegistry) {
         this.id = id;
         this.executorService = executorService;
         Preconditions.checkNotNull(id, "id must not be null");
         Preconditions.checkNotNull(config, "httpSinkConnectorConfig must not be null");
+        Preconditions.checkNotNull(httpClientFactory,"httpClientFactory must not be null");
 
         //configuration id prefix is not present in the resulting configMap
-        this.settings = config.originalsWithPrefix("config." + id + ".");
+        this.settings = Maps.newHashMap(config);
         settings.put(CONFIGURATION_ID, id);
         //main predicate
         this.predicate = HttpRequestPredicateBuilder.build().buildPredicate(settings);
@@ -189,71 +180,17 @@ public class Configuration<R,S> {
 
     }
 
-    public CompletableFuture<HttpExchange> call(@NotNull HttpRequest httpRequest) {
-        Optional<RetryPolicy<HttpExchange>> retryPolicyForCall = getRetryPolicy();
-            AtomicInteger attempts = new AtomicInteger();
-            try {
-
-                if (retryPolicyForCall.isPresent()) {
-                    RetryPolicy<HttpExchange> myRetryPolicy = retryPolicyForCall.get();
-                    FailsafeExecutor<HttpExchange> failsafeExecutor = Failsafe.with(List.of(myRetryPolicy));
-                    if (executorService != null) {
-                        failsafeExecutor = failsafeExecutor.with(executorService);
-                    }
-                    return failsafeExecutor
-                            .getStageAsync((ctx) -> callAndEnrich(httpRequest, attempts)
-                                    .thenApply(this::handleRetry));
-                } else {
-                    return callAndEnrich(httpRequest, attempts);
-                }
-            } catch (Exception exception) {
-                LOGGER.error("Failed to call web service after {} retries with error({}). message:{} ", attempts, exception,
-                        exception.getMessage());
-                HttpExchange httpExchange = HttpClient.buildHttpExchange(
-                        httpRequest,
-                        new HttpResponse(HttpClient.SERVER_ERROR_STATUS_CODE, String.valueOf(exception.getMessage())),
-                        Stopwatch.createUnstarted(), OffsetDateTime.now(ZoneId.of(HttpClient.UTC_ZONE_ID)),
-                        attempts,
-                        HttpClient.FAILURE);
-                return CompletableFuture.supplyAsync(() -> httpExchange);
-            }
+    public Function<HttpRequest, HttpRequest> getEnrichRequestFunction() {
+        return enrichRequestFunction;
     }
 
-    /**
-     *  - enrich request
-     *  - execute the request
-     * @param httpRequest HttpRequest to call
-     * @param attempts current attempts before the call.
-     * @return CompletableFuture of the HttpExchange (describing the request and response).
-     */
-    private CompletableFuture<HttpExchange> callAndEnrich(HttpRequest httpRequest,
-                                                          AtomicInteger attempts) {
-        attempts.addAndGet(HttpClient.ONE_HTTP_REQUEST);
-        if (LOGGER.isTraceEnabled()) {
-            LOGGER.trace("before enrichment:{}", httpRequest);
-        }
-        HttpRequest enrichedHttpRequest = enrich(httpRequest);
-        if (LOGGER.isTraceEnabled()) {
-            LOGGER.trace("after enrichment:{}", enrichedHttpRequest);
-        }
-        CompletableFuture<HttpExchange> completableFuture = getHttpClient().call(enrichedHttpRequest, attempts);
-        return completableFuture
-                .thenApply(this::enrichHttpExchange);
-
+    public AddSuccessStatusToHttpExchangeFunction getAddSuccessStatusToHttpExchangeFunction() {
+        return addSuccessStatusToHttpExchangeFunction;
     }
 
-
-
-
-    protected HttpRequest enrich(HttpRequest httpRequest) {
-        return enrichRequestFunction.apply(httpRequest);
+    public ExecutorService getExecutorService() {
+        return executorService;
     }
-
-
-    protected HttpExchange enrichHttpExchange(HttpExchange httpExchange) {
-        return this.addSuccessStatusToHttpExchangeFunction.apply(httpExchange);
-    }
-
 
     @java.lang.SuppressWarnings({"java:S2119","java:S2245"})
     @NotNull
@@ -281,12 +218,12 @@ public class Configuration<R,S> {
         return random;
     }
 
-
-    public HttpClient<R,S> getHttpClient() {
+    @Override
+    public C getClient() {
         return httpClient;
     }
 
-    public void setHttpClient(HttpClient<R,S> httpClient) {
+    public void setHttpClient(C httpClient) {
         this.httpClient = httpClient;
     }
 
@@ -336,30 +273,6 @@ public class Configuration<R,S> {
                 .onAbort(listener -> LOGGER.warn("call aborted ! result:'{}',exception:'{}'", listener.getResult(), listener.getException()))
                 .build();
     }
-
-    private HttpExchange handleRetry(HttpExchange httpExchange) {
-        //we don't retry success HTTP Exchange
-        boolean responseCodeImpliesRetry = retryNeeded(httpExchange.getHttpResponse());
-        LOGGER.debug("httpExchange success :'{}'", httpExchange.isSuccess());
-        LOGGER.debug("response code('{}') implies retry:'{}'", httpExchange.getHttpResponse().getStatusCode(), responseCodeImpliesRetry);
-        if (!httpExchange.isSuccess() && responseCodeImpliesRetry) {
-            throw new HttpException(httpExchange, "retry needed");
-        }
-        return httpExchange;
-    }
-
-
-    protected boolean retryNeeded(HttpResponse httpResponse) {
-        Optional<Pattern> myRetryResponseCodeRegex = getRetryResponseCodeRegex();
-        if (myRetryResponseCodeRegex.isPresent()) {
-            Pattern retryPattern = myRetryResponseCodeRegex.get();
-            Matcher matcher = retryPattern.matcher("" + httpResponse.getStatusCode());
-            return matcher.matches();
-        } else {
-            return false;
-        }
-    }
-
 
     public boolean matches(HttpRequest httpRequest) {
         return this.predicate.test(httpRequest);

@@ -4,6 +4,7 @@ import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.data.SchemaBuilder;
 import org.apache.kafka.connect.data.Struct;
 
+import java.io.Serial;
 import java.io.Serializable;
 import java.time.OffsetDateTime;
 import java.time.format.DateTimeFormatter;
@@ -12,7 +13,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 
 public class HttpExchange implements Cloneable, Serializable {
-
+    @Serial
     private static final long serialVersionUID = 1L;
     public static final int HTTP_EXCHANGE_VERSION = 2;
     public static final String DURATION_IN_MILLIS = "durationInMillis";
@@ -20,7 +21,7 @@ public class HttpExchange implements Cloneable, Serializable {
     public static final String ATTEMPTS = "attempts";
     public static final String HTTP_REQUEST = "httpRequest";
     public static final String HTTP_RESPONSE = "httpResponse";
-    public final static Schema SCHEMA = SchemaBuilder
+    public static final Schema SCHEMA = SchemaBuilder
             .struct()
             .name(HttpExchange.class.getName())
             .version(HTTP_EXCHANGE_VERSION)
@@ -124,13 +125,11 @@ public class HttpExchange implements Cloneable, Serializable {
         Struct struct = new Struct(SCHEMA);
         struct.put(DURATION_IN_MILLIS,this.getDurationInMillis());
         struct.put(MOMENT,this.getMoment().format(DateTimeFormatter.ISO_ZONED_DATE_TIME));
-        struct.put(ATTEMPTS,this.getAttempts().intValue());
+        struct.put(ATTEMPTS,this.attempts.intValue());
         //request fields
-        HttpRequest httpRequest = this.getHttpRequest();
-        struct.put(HTTP_REQUEST, httpRequest.toStruct());
+        struct.put(HTTP_REQUEST, this.httpRequest.toStruct());
         // response fields
-        HttpResponse httpResponse = this.getHttpResponse();
-        struct.put(HTTP_RESPONSE, httpResponse.toStruct());
+        struct.put(HTTP_RESPONSE, this.httpResponse.toStruct());
         return struct;
 
     }
@@ -216,9 +215,13 @@ public class HttpExchange implements Cloneable, Serializable {
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
-        if (!(o instanceof HttpExchange)) return false;
-        HttpExchange that = (HttpExchange) o;
-        return success == that.success && Objects.equals(durationInMillis, that.durationInMillis) && Objects.equals(moment, that.moment) && Objects.equals(attempts.get(), that.attempts.get()) && Objects.equals(httpResponse, that.httpResponse) && Objects.equals(httpRequest, that.httpRequest);
+        if (!(o instanceof HttpExchange that)) return false;
+        return success == that.success
+                && Objects.equals(durationInMillis, that.durationInMillis)
+                && Objects.equals(moment, that.moment)
+                && Objects.equals(attempts.get(), that.attempts.get())
+                && Objects.equals(httpResponse, that.httpResponse)
+                && Objects.equals(httpRequest, that.httpRequest);
     }
 
     @Override

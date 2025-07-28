@@ -2,7 +2,7 @@ package io.github.clescot.kafka.connect.http.sink;
 
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Maps;
-import io.github.clescot.kafka.connect.http.VersionUtils;
+import io.github.clescot.kafka.connect.VersionUtils;
 import org.apache.kafka.common.config.ConfigDef;
 import org.apache.kafka.connect.connector.Task;
 import org.apache.kafka.connect.sink.SinkConnector;
@@ -14,14 +14,14 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
-import static io.github.clescot.kafka.connect.http.sink.HttpSinkConfigDefinition.*;
-import static io.github.clescot.kafka.connect.http.sink.HttpSinkTask.DEFAULT_CONFIGURATION_ID;
+import static io.github.clescot.kafka.connect.Configuration.DEFAULT_CONFIGURATION_ID;
+import static io.github.clescot.kafka.connect.http.client.HttpClientConfigDefinition.*;
 
 
 public class HttpSinkConnector extends SinkConnector {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(HttpSinkConnector.class);
-    private HttpSinkConnectorConfig httpSinkConnectorConfig;
+    private HttpConnectorConfig httpConnectorConfig;
     private static final VersionUtils VERSION_UTILS = new VersionUtils();
     private Map<String, String> settings;
 
@@ -29,12 +29,12 @@ public class HttpSinkConnector extends SinkConnector {
     public void start(Map<String, String> settings) {
         this.settings = settings;
         Preconditions.checkNotNull(settings);
-        this.httpSinkConnectorConfig = new HttpSinkConnectorConfig(config(),settings);
+        this.httpConnectorConfig = new HttpConnectorConfig(config(),settings);
     }
 
     @Override
     public Class<? extends Task> taskClass() {
-        Map<String, Object> defaultConfigurationSettings = httpSinkConnectorConfig.originalsWithPrefix("config." + DEFAULT_CONFIGURATION_ID + ".");
+        Map<String, Object> defaultConfigurationSettings = httpConnectorConfig.originalsWithPrefix("config." + DEFAULT_CONFIGURATION_ID + ".");
         String httpClientImplementation = (String) Optional.ofNullable(defaultConfigurationSettings.get(CONFIG_HTTP_CLIENT_IMPLEMENTATION)).orElse(OKHTTP_IMPLEMENTATION);
         if (AHC_IMPLEMENTATION.equalsIgnoreCase(httpClientImplementation)) {
            return AHCSinkTask.class;
@@ -51,7 +51,7 @@ public class HttpSinkConnector extends SinkConnector {
     public List<Map<String, String>> taskConfigs(int taskCount) {
         List<Map<String, String>> configs = new ArrayList<>(taskCount);
         for (int i = 0; i < taskCount; i++) {
-            configs.add(this.httpSinkConnectorConfig.originalsStrings());
+            configs.add(this.httpConnectorConfig.originalsStrings());
         }
         return configs;
     }
@@ -63,8 +63,8 @@ public class HttpSinkConnector extends SinkConnector {
 
     @Override
     public ConfigDef config() {
-        HttpSinkConfigDefinition httpSinkConfigDefinition = new HttpSinkConfigDefinition(Optional.ofNullable(settings).orElse(Maps.newHashMap()));
-        return httpSinkConfigDefinition.config();
+        HttpConfigDefinition httpConfigDefinition = new HttpConfigDefinition(Optional.ofNullable(settings).orElse(Maps.newHashMap()));
+        return httpConfigDefinition.config();
     }
 
     @Override
