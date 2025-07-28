@@ -44,13 +44,14 @@ class SseConfigurationTest {
 
         @Test
         void null_args() {
-            Assertions.assertThrows(NullPointerException.class,()->new SseConfiguration(null,null,null));
+            Assertions.assertThrows(NullPointerException.class, () -> new SseConfiguration(null, null, null));
         }
 
         @Test
         void null_args_with_configuration_id_set() {
-            Assertions.assertThrows(NullPointerException.class,()->new SseConfiguration("test",null,null));
+            Assertions.assertThrows(NullPointerException.class, () -> new SseConfiguration("test", null, null));
         }
+
         @Test
         void null_args_with_configuration_id__and_http_client_configuration_set() {
             HttpClientConfiguration<OkHttpClient, Request, Response> configuration = new HttpClientConfiguration<>(
@@ -60,7 +61,7 @@ class SseConfigurationTest {
                     null,
                     new CompositeMeterRegistry()
             );
-            Assertions.assertThrows(NullPointerException.class,()->new SseConfiguration("test",configuration,null));
+            Assertions.assertThrows(NullPointerException.class, () -> new SseConfiguration("test", configuration, null));
         }
 
         @Test
@@ -73,12 +74,12 @@ class SseConfigurationTest {
                     new CompositeMeterRegistry()
             );
             HashMap<String, Object> emptySettings = Maps.newHashMap();
-            Assertions.assertThrows(IllegalArgumentException.class,()->new SseConfiguration("test",configuration, emptySettings));
+            Assertions.assertThrows(IllegalArgumentException.class, () -> new SseConfiguration("test", configuration, emptySettings));
         }
     }
 
     @Nested
-    class BuildSseConfiguration{
+    class BuildSseConfiguration {
         @Test
         void nominal_case() {
             Map<String, Object> settings = Maps.newHashMap();
@@ -103,7 +104,7 @@ class SseConfigurationTest {
     }
 
     @Nested
-    class Connect{
+    class Connect {
         @Test
         void nominal_case() {
             HttpClientConfiguration<OkHttpClient, Request, Response> configuration = new HttpClientConfiguration<>(
@@ -198,6 +199,7 @@ class SseConfigurationTest {
             ErrorStrategy.Result result = errorStrategy.apply(new StreamHttpErrorException(500));
             assertThat(result.getAction()).isEqualTo(ErrorStrategy.Action.THROW);
         }
+
         @Test
         void connect_with_error_strategy_continue_with_max_attempts() {
             HttpClientConfiguration<OkHttpClient, Request, Response> configuration = new HttpClientConfiguration<>(
@@ -211,7 +213,37 @@ class SseConfigurationTest {
             settings.put("url", "http://example.com/sse");
             settings.put("topic", "test-topic");
             settings.put("error.strategy", "continue-with-max-attempts");
-            settings.put("error.strategy.max-attempts", 3);
+            settings.put("error.strategy.max-attempts", 4);
+            SseConfiguration sseConfiguration = new SseConfiguration("test-id", configuration, settings);
+            sseConfiguration.connect(QueueFactory.getQueue(QueueFactory.DEFAULT_QUEUE_NAME));
+            assertThat(sseConfiguration.getBackgroundEventSource()).isNotNull();
+            ErrorStrategy errorStrategy = sseConfiguration.getErrorStrategy();
+            ErrorStrategy.Result result = errorStrategy.apply(new StreamHttpErrorException(500));
+            assertThat(result.getAction()).isEqualTo(ErrorStrategy.Action.CONTINUE);
+            ErrorStrategy.Result result2 = result.getNext().apply(new StreamHttpErrorException(500));
+            assertThat(result2.getAction()).isEqualTo(ErrorStrategy.Action.CONTINUE);
+            ErrorStrategy.Result result3 = result2.getNext().apply(new StreamHttpErrorException(500));
+            assertThat(result3.getAction()).isEqualTo(ErrorStrategy.Action.CONTINUE);
+            ErrorStrategy.Result result4 = result3.getNext().apply(new StreamHttpErrorException(500));
+            assertThat(result4.getAction()).isEqualTo(ErrorStrategy.Action.CONTINUE);
+            ErrorStrategy.Result result5 = result4.getNext().apply(new StreamHttpErrorException(500));
+            assertThat(result5.getAction()).isEqualTo(ErrorStrategy.Action.THROW);
+
+        }
+
+        @Test
+        void connect_with_error_strategy_continue_with_max_attempts_without_max_attempts() {
+            HttpClientConfiguration<OkHttpClient, Request, Response> configuration = new HttpClientConfiguration<>(
+                    "test-id",
+                    new OkHttpClientFactory(),
+                    Map.of("url", "http://example.com/sse", "topic", "test-topic"),
+                    null,
+                    new CompositeMeterRegistry()
+            );
+            HashMap<String, Object> settings = Maps.newHashMap();
+            settings.put("url", "http://example.com/sse");
+            settings.put("topic", "test-topic");
+            settings.put("error.strategy", "continue-with-max-attempts");
             SseConfiguration sseConfiguration = new SseConfiguration("test-id", configuration, settings);
             sseConfiguration.connect(QueueFactory.getQueue(QueueFactory.DEFAULT_QUEUE_NAME));
             assertThat(sseConfiguration.getBackgroundEventSource()).isNotNull();
@@ -267,7 +299,7 @@ class SseConfigurationTest {
     }
 
     @Nested
-    class Start{
+    class Start {
         @Test
         void nominal_case() {
             HttpClientConfiguration<OkHttpClient, Request, Response> configuration = new HttpClientConfiguration<>(
