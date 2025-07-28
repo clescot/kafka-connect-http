@@ -123,8 +123,8 @@ class SseSourceTaskTest {
 
         @Test
         void get_version() {
-            SseSourceTask SseSourceTask = new SseSourceTask();
-            String version = SseSourceTask.version();
+            SseSourceTask sseSourceTask = new SseSourceTask();
+            String version = sseSourceTask.version();
             assertThat(version)
                     .isNotNull()
                     .isNotBlank();
@@ -133,12 +133,12 @@ class SseSourceTaskTest {
 
     @Nested
     class Poll{
-        SseSourceTask SseSourceTask;
+        SseSourceTask sseSourceTask;
         WireMockRuntimeInfo wmRuntimeInfo;
         @BeforeEach
         void setup() {
-            SseSourceTask = new SseSourceTask();
-            var url1 = "/events";
+            sseSourceTask = new SseSourceTask();
+            var url1 = "/events1";
             var url2 = "/events2";
 
             //prepare the WireMock server to simulate an SSE endpoint
@@ -192,7 +192,7 @@ class SseSourceTaskTest {
 
         @AfterEach
         void shutdown() {
-            SseSourceTask.stop();
+            sseSourceTask.stop();
         }
 
         @Test
@@ -200,12 +200,12 @@ class SseSourceTaskTest {
             Map<String, String> settings = Maps.newHashMap();
             settings.put("config.default.topic", "test");
             settings.put("config.default.url", wmRuntimeInfo.getHttpBaseUrl()+"/events1");
-            SseSourceTask.start(settings);
-            assertThat(SseSourceTask.isConnected("default")).isTrue();
-            Queue<SseEvent> queue = SseSourceTask.getQueue("default").orElseThrow();
+            sseSourceTask.start(settings);
+            assertThat(sseSourceTask.isConnected("default")).isTrue();
+            Queue<SseEvent> queue = sseSourceTask.getQueue("default").orElseThrow();
             Awaitility.await().atMost(5, TimeUnit.SECONDS).until(()-> !queue.isEmpty());
             assertThat(queue).hasSize(2);
-            Awaitility.await().atMost(5, TimeUnit.SECONDS).until(()->!SseSourceTask.poll().isEmpty());
+            Awaitility.await().atMost(5, TimeUnit.SECONDS).until(()->!sseSourceTask.poll().isEmpty());
 
         }
 
@@ -216,12 +216,12 @@ class SseSourceTaskTest {
             settings.put("config.default.url", wmRuntimeInfo.getHttpBaseUrl()+"/events2");
             settings.put("config.default.enrich.request.static.header.names", "auth1");
             settings.put("config.default.enrich.request.static.header.auth1", "value1");
-            SseSourceTask.start(settings);
-            assertThat(SseSourceTask.isConnected("default")).isTrue();
-            Queue<SseEvent> queue = SseSourceTask.getQueue("default").orElseThrow();
+            sseSourceTask.start(settings);
+            assertThat(sseSourceTask.isConnected("default")).isTrue();
+            Queue<SseEvent> queue = sseSourceTask.getQueue("default").orElseThrow();
             Awaitility.await().atMost(5, TimeUnit.SECONDS).until(()-> !queue.isEmpty());
             assertThat(queue).hasSize(4);
-            Awaitility.await().atMost(5, TimeUnit.SECONDS).until(()->!SseSourceTask.poll().isEmpty());
+            Awaitility.await().atMost(5, TimeUnit.SECONDS).until(()->!sseSourceTask.poll().isEmpty());
         }
     }
 
