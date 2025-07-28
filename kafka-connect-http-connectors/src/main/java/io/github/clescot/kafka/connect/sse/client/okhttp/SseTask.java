@@ -47,6 +47,10 @@ public class SseTask implements Task<OkHttpClient, SseConfiguration, HttpRequest
                 )).collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
     }
 
+    /**
+     * Connects to the configured SSE servers using the provided configurations.
+     * Each configuration is connected to a queue for processing events.
+     */
     public void connect() {
         this.sseConfigurations.forEach((name, config) -> {
             BackgroundEventSource backgroundEventSource = config.connect(QueueFactory.getQueue(name));
@@ -71,7 +75,12 @@ public class SseTask implements Task<OkHttpClient, SseConfiguration, HttpRequest
         Preconditions.checkNotNull(this.sseConfigurations, "sseConfigurations must not be null or empty.");
         Preconditions.checkArgument(!this.sseConfigurations.isEmpty(), "sseConfigurations list must not be null or empty.");
         this.sseConfigurations.forEach((name, config) -> {
-            config.stop();
+            if (config.isConnected()) {
+                LOGGER.debug("stopping SSE connection for configuration {}", name);
+                config.stop();
+            } else {
+                LOGGER.debug("SSE connection for configuration {} is not connected, skipping stop.", name);
+            }
         });
     }
 
