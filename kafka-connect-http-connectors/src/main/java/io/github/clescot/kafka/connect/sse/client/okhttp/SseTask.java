@@ -53,10 +53,10 @@ public class SseTask implements Task<OkHttpClient, SseConfiguration, HttpRequest
      */
     public void connect() {
         this.sseConfigurations.forEach((name, config) -> {
-                    try (BackgroundEventSource backgroundEventSource = config.connect(QueueFactory.getQueue(name))) {
-                        URI origin = backgroundEventSource.getEventSource().getOrigin();
-                        LOGGER.debug("connected to SSE server at {} for configuration {}", origin, name);
-                    }
+                    //don't close the backgroundEventSource to receive events
+                    BackgroundEventSource backgroundEventSource = config.connect(QueueFactory.getQueue(name));
+                    URI origin = backgroundEventSource.getEventSource().getOrigin();
+                    LOGGER.debug("connected to SSE server at {} for configuration {}", origin, name);
                 }
         );
     }

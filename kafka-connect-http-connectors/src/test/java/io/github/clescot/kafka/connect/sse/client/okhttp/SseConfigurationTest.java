@@ -8,6 +8,7 @@ import com.launchdarkly.eventsource.background.BackgroundEventSource;
 import io.github.clescot.kafka.connect.http.client.HttpClientConfiguration;
 import io.github.clescot.kafka.connect.http.client.okhttp.OkHttpClient;
 import io.github.clescot.kafka.connect.http.client.okhttp.OkHttpClientFactory;
+import io.github.clescot.kafka.connect.http.core.HttpRequest;
 import io.github.clescot.kafka.connect.http.core.queue.QueueFactory;
 import io.micrometer.core.instrument.composite.CompositeMeterRegistry;
 import okhttp3.Request;
@@ -31,7 +32,7 @@ class SseConfigurationTest {
             HttpClientConfiguration<OkHttpClient, Request, Response> configuration = new HttpClientConfiguration<>(
                     "test-id",
                     new OkHttpClientFactory(),
-                    Map.of("url", "http://example.com/sse", "topic", "test-topic"),
+                    Maps.newHashMap(),
                     null,
                     new CompositeMeterRegistry()
             );
@@ -40,7 +41,19 @@ class SseConfigurationTest {
             settings.put("topic", "test-topic");
             SseConfiguration sseConfiguration = new SseConfiguration("test-id", configuration, settings);
             assertThat(sseConfiguration.getConfigurationId()).isEqualTo("test-id");
+            assertThat(sseConfiguration.getUri().toString()).hasToString(   "http://example.com/sse");
+            assertThat(sseConfiguration.getTopic()).isEqualTo("test-topic");
+            //error strategy, retry delay strategy and connect strategy should be null by default at constructor
+            //they are built when connect is called
+            assertThat(sseConfiguration.getErrorStrategy()).isNull();
+            assertThat(sseConfiguration.getRetryDelayStrategy()).isNull();
+            assertThat(sseConfiguration.getConnectStrategy()).isNull();
+            assertThat(sseConfiguration.getBackgroundEventHandler()).isNull();
+            assertThat(sseConfiguration.matches(new HttpRequest("http://localhost:8080"))).isFalse();
+            assertThat(sseConfiguration.getClient()).isNotNull();
+            assertThat(sseConfiguration.getSettings()).isEqualTo(settings);
         }
+
 
         @Test
         void null_args() {
@@ -156,6 +169,31 @@ class SseConfigurationTest {
             SseConfiguration sseConfiguration = new SseConfiguration("test-id", configuration, settings);
             sseConfiguration.connect(QueueFactory.getQueue(QueueFactory.DEFAULT_QUEUE_NAME));
             assertThat(sseConfiguration.getBackgroundEventSource()).isNotNull();
+            assertThat(sseConfiguration.getRetryDelayStrategy()).isNotNull();
+        }
+        @Test
+        void connect_with_retry_error_and_connect_strategy() {
+            HttpClientConfiguration<OkHttpClient, Request, Response> configuration = new HttpClientConfiguration<>(
+                    "test-id",
+                    new OkHttpClientFactory(),
+                    Map.of("url", "http://example.com/sse", "topic", "test-topic"),
+                    null,
+                    new CompositeMeterRegistry()
+            );
+            HashMap<String, Object> settings = Maps.newHashMap();
+            settings.put("url", "http://example.com/sse");
+            settings.put("topic", "test-topic");
+            settings.put("retry.delay.strategy.max-delay-millis", "5000");
+            settings.put("retry.delay.strategy.backoff-multiplier", "1.5");
+            settings.put("retry.delay.strategy.jitter-multiplier", "0.4");
+            settings.put("error.strategy", "always-throw");
+            settings.put("okhttp.connect.timeout", "3000");
+            SseConfiguration sseConfiguration = new SseConfiguration("test-id", configuration, settings);
+            sseConfiguration.connect(QueueFactory.getQueue(QueueFactory.DEFAULT_QUEUE_NAME));
+            assertThat(sseConfiguration.getBackgroundEventSource()).isNotNull();
+            assertThat(sseConfiguration.getConnectStrategy()).isNotNull();
+            assertThat(sseConfiguration.getErrorStrategy()).isNotNull();
+            assertThat(sseConfiguration.getRetryDelayStrategy()).isNotNull();
         }
 
         @Test
