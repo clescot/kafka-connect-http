@@ -142,7 +142,7 @@ class SseSourceTaskTest {
             settings.put("config.default.url", wmRuntimeInfo.getHttpBaseUrl()+"/events");
             SseSourceTask.start(settings);
             assertThat(SseSourceTask.isConnected("default")).isTrue();
-            Queue<SseEvent> queue = SseSourceTask.getQueue("default");
+            Queue<SseEvent> queue = SseSourceTask.getQueue("default").orElseThrow();
             Awaitility.await().atMost(5, TimeUnit.SECONDS).until(()-> !queue.isEmpty());
             assertThat(queue).hasSize(2);
             Awaitility.await().atMost(5, TimeUnit.SECONDS).until(()->!SseSourceTask.poll().isEmpty());

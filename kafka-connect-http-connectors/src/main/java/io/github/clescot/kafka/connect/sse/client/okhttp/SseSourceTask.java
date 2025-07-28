@@ -13,6 +13,7 @@ import org.slf4j.LoggerFactory;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Queue;
 
 public class SseSourceTask extends SourceTask {
@@ -76,7 +77,7 @@ public class SseSourceTask extends SourceTask {
     }
 
 
-    public Queue<SseEvent> getQueue(String configurationId) {
+    public Optional<Queue<SseEvent>> getQueue(String configurationId) {
         return this.sseTask.getQueue(configurationId);
     }
 

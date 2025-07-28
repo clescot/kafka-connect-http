@@ -17,6 +17,7 @@ import org.slf4j.LoggerFactory;
 
 import java.net.URI;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Queue;
 import java.util.stream.Collectors;
 
@@ -25,8 +26,8 @@ import static io.github.clescot.kafka.connect.http.client.HttpClientConfigDefini
 public class SseTask implements Task<OkHttpClient, SseConfiguration, HttpRequest, SseEvent> {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(SseTask.class);
-    private SseConnectorConfig sseConnectorConfig;
-    private Map<String, SseConfiguration> sseConfigurations;
+    private final SseConnectorConfig sseConnectorConfig;
+    private final Map<String, SseConfiguration> sseConfigurations;
 
     public SseTask(Map<String, String> settings) {
 
@@ -86,11 +87,11 @@ public class SseTask implements Task<OkHttpClient, SseConfiguration, HttpRequest
                 .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
     }
 
-    public Queue<SseEvent> getQueue(String configurationId) {
+    public Optional<Queue<SseEvent>> getQueue(String configurationId) {
         if (this.sseConfigurations.containsKey(configurationId)) {
-            return this.sseConfigurations.get(configurationId).getQueue();
+            return Optional.ofNullable(this.sseConfigurations.get(configurationId).getQueue());
         }
-        return null;
+        return Optional.empty();
     }
 
 

@@ -54,7 +54,7 @@ public class ITSseSourceTaskTest {
         settings.put("config.default.topic", "dummy_topic");
         settings.put("okhttp.retry.on.connection.failure", "true");
         Assertions.assertDoesNotThrow(() -> sseSourceTask.start(settings));
-        Queue<SseEvent> queue = sseSourceTask.getQueue(configurationId);
+        Queue<SseEvent> queue = sseSourceTask.getQueue(configurationId).orElseThrow();
         Awaitility.await().atMost(15, TimeUnit.SECONDS).until(()->!queue.isEmpty());
         Awaitility.await().atMost(40, TimeUnit.SECONDS).until(()->queue.size()>20);
         assertThat(sseSourceTask.isConnected(configurationId)).isTrue();
@@ -80,7 +80,7 @@ public class ITSseSourceTaskTest {
         settings.put("config."+configurationId+".topic","dummy_topic2");
         settings.put("okhttp.retry.on.connection.failure", "true");
         Assertions.assertDoesNotThrow(() -> sseSourceTask.start(settings));
-        Queue<SseEvent> queue = sseSourceTask.getQueue(configurationId);
+        Queue<SseEvent> queue = sseSourceTask.getQueue(configurationId).orElseThrow();
         Awaitility.await().atMost(15, TimeUnit.SECONDS).until(()->!queue.isEmpty());
         Awaitility.await().atMost(40, TimeUnit.SECONDS).until(()->queue.size()>20);
         assertThat(sseSourceTask.isConnected(configurationId)).isTrue();
