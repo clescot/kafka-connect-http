@@ -87,9 +87,10 @@ public class HttpClientConfiguration<C extends HttpClient<R,S>,R,S> implements C
         this.executorService = executorService;
         Preconditions.checkNotNull(id, "id must not be null");
         Preconditions.checkNotNull(config, "httpSinkConnectorConfig must not be null");
+        Preconditions.checkNotNull(httpClientFactory,"httpClientFactory must not be null");
 
         //configuration id prefix is not present in the resulting configMap
-        this.settings = config;
+        this.settings = Maps.newHashMap(config);
         settings.put(CONFIGURATION_ID, id);
         //main predicate
         this.predicate = HttpRequestPredicateBuilder.build().buildPredicate(settings);
