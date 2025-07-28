@@ -27,6 +27,8 @@ import org.assertj.core.util.Sets;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.extension.RegisterExtension;
+import org.junit.jupiter.api.parallel.Execution;
+import org.junit.jupiter.api.parallel.ExecutionMode;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -62,6 +64,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
 
+@Execution(ExecutionMode.SAME_THREAD)
 class OkHttpClientTest {
     public static final String ACCESS_GRANTED_STATE = "access_granted";
     public static final String UNAUTHORIZED_STATE = "Unauthorized";

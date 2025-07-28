@@ -30,6 +30,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
+import org.junit.jupiter.api.parallel.Execution;
+import org.junit.jupiter.api.parallel.ExecutionMode;
 
 import java.util.HashSet;
 import java.util.List;
@@ -44,6 +46,7 @@ import static io.github.clescot.kafka.connect.Configuration.DEFAULT_CONFIGURATIO
 import static io.github.clescot.kafka.connect.http.sink.HttpConfigDefinition.DEFAULT_DEFAULT_RETRY_RESPONSE_CODE_REGEX;
 import static org.assertj.core.api.Assertions.assertThat;
 
+@Execution(ExecutionMode.SAME_THREAD)
 class HttpTaskTest {
     private static final HttpRequest.Method DUMMY_METHOD = HttpRequest.Method.POST;
     private static final String DUMMY_BODY_TYPE = "STRING";

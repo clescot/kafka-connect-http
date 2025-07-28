@@ -44,6 +44,8 @@ import org.apache.kafka.connect.sink.SinkRecord;
 import org.apache.kafka.connect.sink.SinkTaskContext;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.extension.RegisterExtension;
+import org.junit.jupiter.api.parallel.Execution;
+import org.junit.jupiter.api.parallel.ExecutionMode;
 import org.mockito.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -73,6 +75,7 @@ import static org.mockito.Mockito.*;
 import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.verify;
 
+@Execution(ExecutionMode.SAME_THREAD)
 public class HttpSinkTaskTest {
     private static final Logger LOGGER = LoggerFactory.getLogger(HttpSinkTaskTest.class);
     private static final String DUMMY_BODY = "stuff";

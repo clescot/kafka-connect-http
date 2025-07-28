@@ -5,6 +5,8 @@ import com.google.common.collect.Maps;
 import org.apache.kafka.common.config.ConfigException;
 import org.awaitility.Awaitility;
 import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.parallel.Execution;
+import org.junit.jupiter.api.parallel.ExecutionMode;
 import org.quartz.*;
 
 import java.util.HashMap;
@@ -13,6 +15,7 @@ import java.util.concurrent.TimeUnit;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+@Execution(ExecutionMode.SAME_THREAD)
 class HttpCronSourceTaskTest {
 
     @Nested

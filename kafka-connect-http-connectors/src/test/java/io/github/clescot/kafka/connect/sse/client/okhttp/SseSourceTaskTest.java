@@ -12,6 +12,8 @@ import org.apache.kafka.common.config.ConfigException;
 import org.awaitility.Awaitility;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.extension.RegisterExtension;
+import org.junit.jupiter.api.parallel.Execution;
+import org.junit.jupiter.api.parallel.ExecutionMode;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -24,6 +26,7 @@ import static com.github.tomakehurst.wiremock.stubbing.Scenario.STARTED;
 import static io.github.clescot.kafka.connect.http.client.HttpClientConfigDefinition.CONFIGURATION_IDS;
 import static org.assertj.core.api.Assertions.assertThat;
 
+@Execution(ExecutionMode.SAME_THREAD)
 class SseSourceTaskTest {
 
     @RegisterExtension
