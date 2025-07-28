@@ -13,6 +13,7 @@ import io.github.clescot.kafka.connect.http.core.queue.QueueFactory;
 import io.micrometer.core.instrument.composite.CompositeMeterRegistry;
 import okhttp3.Request;
 import okhttp3.Response;
+import org.awaitility.Awaitility;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -303,7 +304,7 @@ class SseConfigurationTest {
         }
 
         @Test
-        void connect_with_error_strategy_continue_with_time_limit() {
+        void connect_with_error_strategy_continue_with_time_limit() throws InterruptedException {
             HttpClientConfiguration<OkHttpClient, Request, Response> configuration = new HttpClientConfiguration<>(
                     "test-id",
                     new OkHttpClientFactory(),
@@ -315,14 +316,27 @@ class SseConfigurationTest {
             settings.put("url", "http://example.com/sse");
             settings.put("topic", "test-topic");
             settings.put("error.strategy", "continue-with-time-limit");
-            settings.put("error.strategy.time-limit-count-in-millis", 50000L);
+            settings.put("error.strategy.time-limit-count-in-millis", 5000L);
             SseConfiguration sseConfiguration = new SseConfiguration("test-id", configuration, settings);
             sseConfiguration.connect(QueueFactory.getQueue(QueueFactory.DEFAULT_QUEUE_NAME));
             assertThat(sseConfiguration.getBackgroundEventSource()).isNotNull();
+            ErrorStrategy errorStrategy = sseConfiguration.getErrorStrategy();
+            ErrorStrategy.Result result = errorStrategy.apply(new StreamHttpErrorException(500));
+            assertThat(result.getAction()).isEqualTo(ErrorStrategy.Action.CONTINUE);
+            // Simulate the time limit being reached
+            Thread.sleep(5000);
+            // After the time limit, it should throw an exception
+            ErrorStrategy.Result result2 = result.getNext().apply(new StreamHttpErrorException(500));
+            assertThat(result2.getAction()).isEqualTo(ErrorStrategy.Action.THROW);
         }
 
+
+    }
+
+    @Nested
+    class Connect_with_high_execution_time{
         @Test
-        void connect_with_error_strategy_continue_with_time_limit_without_time_limit() {
+        void connect_with_error_strategy_continue_with_time_limit_without_time_limit() throws InterruptedException {
             HttpClientConfiguration<OkHttpClient, Request, Response> configuration = new HttpClientConfiguration<>(
                     "test-id",
                     new OkHttpClientFactory(),
@@ -337,7 +351,17 @@ class SseConfigurationTest {
             SseConfiguration sseConfiguration = new SseConfiguration("test-id", configuration, settings);
             sseConfiguration.connect(QueueFactory.getQueue(QueueFactory.DEFAULT_QUEUE_NAME));
             assertThat(sseConfiguration.getBackgroundEventSource()).isNotNull();
-
+            ErrorStrategy errorStrategy = sseConfiguration.getErrorStrategy();
+            ErrorStrategy.Result result = errorStrategy.apply(new StreamHttpErrorException(500));
+            assertThat(result.getAction()).isEqualTo(ErrorStrategy.Action.CONTINUE);
+            Thread.sleep(5000);
+            // Test the time limit being reached
+            ErrorStrategy.Result result2 = result.getNext().apply(new StreamHttpErrorException(500));
+            assertThat(result2.getAction()).isEqualTo(ErrorStrategy.Action.CONTINUE);
+            Thread.sleep(60000L); // Wait for a long time to ensure no further actions are taken
+            // After the time limit, it should throw an exception
+            ErrorStrategy.Result result3 = result2.getNext().apply(new StreamHttpErrorException(500));
+            assertThat(result3.getAction()).isEqualTo(ErrorStrategy.Action.THROW);
         }
     }
 
