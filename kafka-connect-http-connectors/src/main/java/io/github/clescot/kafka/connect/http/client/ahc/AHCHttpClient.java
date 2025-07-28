@@ -15,6 +15,7 @@ import io.netty.handler.ssl.SslContext;
 import io.netty.handler.ssl.SslContextBuilder;
 import io.netty.util.HashedWheelTimer;
 import io.netty.util.Timer;
+import org.apache.commons.lang3.NotImplementedException;
 import org.asynchttpclient.*;
 import org.asynchttpclient.channel.DefaultKeepAliveStrategy;
 import org.asynchttpclient.channel.KeepAliveStrategy;
@@ -115,7 +116,7 @@ public class AHCHttpClient extends AbstractHttpClient<Request, Response> {
 
 
     @Override
-    public Request buildRequest(HttpRequest httpRequest) {
+    public Request buildNativeRequest(HttpRequest httpRequest) {
         Preconditions.checkNotNull(httpRequest, "'httpRequest' is required but null");
         Preconditions.checkNotNull(httpRequest.getHeaders(), "'headers' are required but null");
         Preconditions.checkNotNull(httpRequest.getBodyAsString(), "'body' is required but null");
@@ -159,6 +160,11 @@ public class AHCHttpClient extends AbstractHttpClient<Request, Response> {
             requestBuilder.setReadTimeout(readTimeoutInMillis);
         }
         return requestBuilder.build();
+    }
+
+    @Override
+    public HttpRequest buildRequest(Request nativeRequest) {
+        throw new NotImplementedException();
     }
 
 

@@ -13,6 +13,7 @@ import io.github.clescot.kafka.connect.http.core.HttpResponseBuilder;
 import kotlin.Pair;
 import okhttp3.*;
 import okhttp3.internal.http.HttpMethod;
+import okio.Buffer;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -28,7 +29,6 @@ import java.util.stream.Collectors;
 public class OkHttpClient extends AbstractHttpClient<Request, Response> {
 
 
-
     private final okhttp3.OkHttpClient client;
     private static final Logger LOGGER = LoggerFactory.getLogger(OkHttpClient.class);
 
@@ -40,7 +40,7 @@ public class OkHttpClient extends AbstractHttpClient<Request, Response> {
     }
 
     @Override
-    public Request buildRequest(HttpRequest httpRequest) {
+    public Request buildNativeRequest(HttpRequest httpRequest) {
         Request.Builder builder = new Request.Builder();
 
         //url
@@ -65,13 +65,28 @@ public class OkHttpClient extends AbstractHttpClient<Request, Response> {
         return builder.build();
     }
 
+    @Override
+    public HttpRequest buildRequest(Request nativeRequest) {
+        HttpRequest request = new HttpRequest(nativeRequest.url().toString(), HttpRequest.Method.valueOf(nativeRequest.method()), nativeRequest.headers().toMultimap(), HttpRequest.BodyType.STRING);
+        if (nativeRequest.body() != null) {
+            final Buffer buffer = new Buffer();
+            try {
+                nativeRequest.body().writeTo(buffer);
+                request.setBodyAsString(buffer.readUtf8());
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        }
+        return request;
+    }
+
     @Nullable
     private RequestBody getRequestBody(HttpRequest httpRequest, String method, String firstContentType) {
         RequestBody requestBody = null;
         if (HttpMethod.permitsRequestBody(method)) {
-            switch (httpRequest.getBodyType()){
+            switch (httpRequest.getBodyType()) {
 
-                case BYTE_ARRAY:{
+                case BYTE_ARRAY: {
                     byte[] bodyAsByteArray = httpRequest.getBodyAsByteArray();
                     requestBody = toRequestBody(bodyAsByteArray, firstContentType);
                     //file upload through a FORM is the same as a byte array (content of the file). this case handle also this case, except part of a multipart request
@@ -120,7 +135,7 @@ public class OkHttpClient extends AbstractHttpClient<Request, Response> {
                 boundary = myParts.get(1);
             }
         }
-        MultipartBody.Builder multipartBuilder = new MultipartBody.Builder(MoreObjects.firstNonNull(boundary, MoreObjects.firstNonNull(boundary,"---")));
+        MultipartBody.Builder multipartBuilder = new MultipartBody.Builder(MoreObjects.firstNonNull(boundary, MoreObjects.firstNonNull(boundary, "---")));
         multipartBuilder.setType(MediaType.parse("multipart/form-data"));
         for (Map.Entry<String, HttpPart> entry : bodyAsMultipart.entrySet()) {
             RequestBody partRequestBody;
@@ -147,14 +162,14 @@ public class OkHttpClient extends AbstractHttpClient<Request, Response> {
                 //HttpPart is <string,byte[]>
                 case BYTE_ARRAY:
                     partRequestBody = toRequestBody(httpPart.getContentAsByteArray(), httpPart.getContentType());
-                    multipartBuilder.addPart(okPartHeaders,partRequestBody);
+                    multipartBuilder.addPart(okPartHeaders, partRequestBody);
                     break;
                 //HttpPart is <string>
                 case STRING:
                 default:
                     String contentAsString = httpPart.getContentAsString();
                     partRequestBody = RequestBody.create(contentAsString, MediaType.parse(httpPart.getContentType()));
-                    multipartBuilder.addPart(okPartHeaders,partRequestBody);
+                    multipartBuilder.addPart(okPartHeaders, partRequestBody);
                     break;
             }
         }

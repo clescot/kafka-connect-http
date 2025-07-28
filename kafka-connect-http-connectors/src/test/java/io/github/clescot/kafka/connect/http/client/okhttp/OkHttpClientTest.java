@@ -112,7 +112,7 @@ class OkHttpClientTest {
             httpRequest.setBodyAsString("stuff");
 
             //given
-            Request request = client.buildRequest(httpRequest);
+            Request request = client.buildNativeRequest(httpRequest);
 
             //then
             LOGGER.debug("request:{}", request);
@@ -135,7 +135,7 @@ class OkHttpClientTest {
             httpRequest.setBodyAsString("stuff");
 
             //given
-            Request request = client.buildRequest(httpRequest);
+            Request request = client.buildNativeRequest(httpRequest);
 
             //then
             LOGGER.debug("request:{}", request);
@@ -158,7 +158,7 @@ class OkHttpClientTest {
             httpRequest.setBodyAsByteArray("stuff".getBytes(StandardCharsets.UTF_8));
 
             //given
-            Request request = client.buildRequest(httpRequest);
+            Request request = client.buildNativeRequest(httpRequest);
 
             //then
             LOGGER.debug("request:{}", request);
@@ -187,7 +187,7 @@ class OkHttpClientTest {
             httpRequest.setBodyAsForm(form);
 
             //given
-            Request request = client.buildRequest(httpRequest);
+            Request request = client.buildNativeRequest(httpRequest);
 
             //then
             LOGGER.debug("request:{}", request);
@@ -220,7 +220,7 @@ class OkHttpClientTest {
             HttpRequest httpRequest = new HttpRequest("http://dummy.com/", HttpRequest.Method.POST, headers, HttpRequest.BodyType.MULTIPART, parts);
 
             //given
-            Request request = client.buildRequest(httpRequest);
+            Request request = client.buildNativeRequest(httpRequest);
 
             //then
             LOGGER.debug("request:{}", request);
@@ -273,7 +273,7 @@ class OkHttpClientTest {
             HttpRequest httpRequest = new HttpRequest("http://dummy.com/", HttpRequest.Method.POST, headers, HttpRequest.BodyType.MULTIPART, parts);
 
             //given
-            Request request = client.buildRequest(httpRequest);
+            Request request = client.buildNativeRequest(httpRequest);
 
             //then
             LOGGER.debug("request:{}", request);
@@ -344,7 +344,7 @@ class OkHttpClientTest {
             httpRequest.setBodyAsString("stuff");
 
             //when
-            Request request = client.buildRequest(httpRequest);
+            Request request = client.buildNativeRequest(httpRequest);
 
             //then
             LOGGER.debug("request:{}", request);
@@ -372,7 +372,7 @@ class OkHttpClientTest {
 
             HttpRequest httpRequest = new HttpRequest("http://dummy.com/", HttpRequest.Method.POST);
             httpRequest.setBodyAsString("stuff");
-            Request request = client.buildRequest(httpRequest);
+            Request request = client.buildNativeRequest(httpRequest);
 
             Response.Builder builder = new Response.Builder();
             Headers headers = new Headers.Builder()
@@ -414,7 +414,7 @@ class OkHttpClientTest {
 
             HttpRequest httpRequest = new HttpRequest("http://dummy.com/", HttpRequest.Method.POST);
             httpRequest.setBodyAsString("stuff");
-            Request request = client.buildRequest(httpRequest);
+            Request request = client.buildNativeRequest(httpRequest);
 
             Response.Builder builder = new Response.Builder();
             Headers headers = new Headers.Builder()
@@ -456,7 +456,7 @@ class OkHttpClientTest {
 
             HttpRequest httpRequest = new HttpRequest("http://dummy.com/", HttpRequest.Method.POST);
             httpRequest.setBodyAsString("stuff");
-            Request request = client.buildRequest(httpRequest);
+            Request request = client.buildNativeRequest(httpRequest);
 
             Response.Builder builder = new Response.Builder();
             Headers headers = new Headers.Builder()
@@ -500,7 +500,7 @@ class OkHttpClientTest {
 
             HttpRequest httpRequest = new HttpRequest("http://dummy.com/", HttpRequest.Method.POST);
             httpRequest.setBodyAsString("stuff");
-            Request request = client.buildRequest(httpRequest);
+            Request request = client.buildNativeRequest(httpRequest);
 
             Response.Builder builder = new Response.Builder();
             Headers headers = new Headers.Builder()

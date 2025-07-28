@@ -21,7 +21,7 @@ import java.util.concurrent.TimeUnit;
 
 public class SseConfiguration implements Configuration<OkHttpClient, HttpRequest> {
     private final String configurationId;
-    private final OkHttpClient client;
+    private final HttpClientConfiguration<OkHttpClient, Request, Response> httpClientConfiguration;
     private final Map<String, Object> settings;
     private final URI uri;
     private final String topic;
@@ -36,7 +36,7 @@ public class SseConfiguration implements Configuration<OkHttpClient, HttpRequest
                             Map<String, Object> settings
     ) {
         this.configurationId = configurationId;
-        this.client = httpClientConfiguration.getClient();
+        this.httpClientConfiguration = httpClientConfiguration;
         this.settings = settings;
         Preconditions.checkNotNull(settings, "settings must not be null or empty.");
         Preconditions.checkArgument(!settings.isEmpty(), "settings must not be null or empty.");
@@ -100,7 +100,11 @@ public class SseConfiguration implements Configuration<OkHttpClient, HttpRequest
         this.backgroundEventHandler = new SseBackgroundEventHandler(queue, uri);
         this.backgroundEventSource = new BackgroundEventSource.Builder(backgroundEventHandler,
                 new EventSource.Builder(ConnectStrategy.http(uri)
-                        .httpClient(this.client.getInternalClient())
+                        .httpClient(this.httpClientConfiguration.getClient().getInternalClient())
+                        .requestTransformer(input ->{
+                            HttpRequest httpRequest = this.httpClientConfiguration.getClient().buildRequest(input);
+                            return this.httpClientConfiguration.getClient().buildNativeRequest(this.httpClientConfiguration.getEnrichRequestFunction().apply(httpRequest));
+                        } )
                 )
                         .streamEventData(false)
                         .retryDelayStrategy(retryDelayStrategy)
@@ -145,7 +149,7 @@ public class SseConfiguration implements Configuration<OkHttpClient, HttpRequest
 
     @Override
     public OkHttpClient getClient() {
-        return client;
+        return httpClientConfiguration.getClient();
     }
 
     public Queue<SseEvent> getQueue() {

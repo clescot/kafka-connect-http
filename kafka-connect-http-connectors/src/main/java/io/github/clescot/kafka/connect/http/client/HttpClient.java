@@ -71,7 +71,10 @@ public interface HttpClient<R, S>  extends Client {
      * @param httpRequest http request to build.
      * @return native request.
      */
-    R buildRequest(HttpRequest httpRequest);
+    R buildNativeRequest(HttpRequest httpRequest);
+
+
+    HttpRequest buildRequest(R nativeRequest);
 
 
 
@@ -80,7 +83,7 @@ public interface HttpClient<R, S>  extends Client {
         Stopwatch rateLimitedStopWatch = Stopwatch.createStarted();
         CompletableFuture<S> response;
         LOGGER.debug("httpRequest: {}", httpRequest);
-        R request = buildRequest(httpRequest);
+        R request = buildNativeRequest(httpRequest);
         LOGGER.debug("native request: {}", request);
         OffsetDateTime now = OffsetDateTime.now(ZoneId.of(UTC_ZONE_ID));
         try {

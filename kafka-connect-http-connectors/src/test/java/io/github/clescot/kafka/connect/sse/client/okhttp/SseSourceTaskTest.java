@@ -18,6 +18,7 @@ import java.util.Map;
 import java.util.Queue;
 import java.util.concurrent.TimeUnit;
 
+import static com.github.tomakehurst.wiremock.client.WireMock.equalTo;
 import static com.github.tomakehurst.wiremock.client.WireMock.okForContentType;
 import static com.github.tomakehurst.wiremock.stubbing.Scenario.STARTED;
 import static io.github.clescot.kafka.connect.http.client.HttpClientConfigDefinition.CONFIGURATION_IDS;
@@ -137,13 +138,14 @@ class SseSourceTaskTest {
         @BeforeEach
         void setup() {
             SseSourceTask = new SseSourceTask();
-            var url = "/events";
+            var url1 = "/events";
+            var url2 = "/events2";
 
             //prepare the WireMock server to simulate an SSE endpoint
             String scenario = "test_sse_client_connect";
             wmRuntimeInfo = wmHttp.getRuntimeInfo();
             WireMock wireMock = wmRuntimeInfo.getWireMock();
-            String dataStream = """
+            String dataStream1 = """
                 id:1
                 event:random
                 data:{"id":"test post 1", "createdAt":"2025-04-26T10:15:30"}
@@ -153,10 +155,37 @@ class SseSourceTaskTest {
                 data:{"id":"test post 2", "createdAt":"2025-04-26T10:15:31"}
                 
                 """;
+            String dataStream2 = """
+                id:1
+                event:type3
+                data:{"id":"test post 1", "createdAt":"2025-04-26T10:15:30"}
+                
+                id:2
+                event:type4
+                data:{"id":"test post 2", "createdAt":"2025-04-26T10:15:31"}
+                
+                id:3
+                event:type4
+                data:{"id":"test post 3", "createdAt":"2025-04-26T10:15:31"}
+                
+                id:4
+                event:type4
+                data:{"id":"test post 4", "createdAt":"2025-04-26T10:15:31"}
+                
+                """;
             wireMock
-                    .register(WireMock.get(url).inScenario(scenario)
+                    .register(WireMock.get(url1).inScenario(scenario)
                             .whenScenarioStateIs(STARTED)
-                            .willReturn(okForContentType("text/event-stream", dataStream))
+                            .willReturn(okForContentType("text/event-stream", dataStream1))
+                            .willSetStateTo("CONNECTED")
+                    );
+            wireMock
+                    .register(WireMock
+                            .get(url2)
+                            .withHeader("auth1", equalTo("value1"))
+                            .inScenario(scenario)
+                            .whenScenarioStateIs(STARTED)
+                            .willReturn(okForContentType("text/event-stream", dataStream2))
                             .willSetStateTo("CONNECTED")
                     );
         }
@@ -170,7 +199,7 @@ class SseSourceTaskTest {
         void test_nominal_case() {
             Map<String, String> settings = Maps.newHashMap();
             settings.put("config.default.topic", "test");
-            settings.put("config.default.url", wmRuntimeInfo.getHttpBaseUrl()+"/events");
+            settings.put("config.default.url", wmRuntimeInfo.getHttpBaseUrl()+"/events1");
             SseSourceTask.start(settings);
             assertThat(SseSourceTask.isConnected("default")).isTrue();
             Queue<SseEvent> queue = SseSourceTask.getQueue("default").orElseThrow();
@@ -178,6 +207,21 @@ class SseSourceTaskTest {
             assertThat(queue).hasSize(2);
             Awaitility.await().atMost(5, TimeUnit.SECONDS).until(()->!SseSourceTask.poll().isEmpty());
 
+        }
+
+        @Test
+        void test_with_static_header() {
+            Map<String, String> settings = Maps.newHashMap();
+            settings.put("config.default.topic", "test");
+            settings.put("config.default.url", wmRuntimeInfo.getHttpBaseUrl()+"/events2");
+            settings.put("config.default.enrich.request.static.header.names", "auth1");
+            settings.put("config.default.enrich.request.static.header.auth1", "value1");
+            SseSourceTask.start(settings);
+            assertThat(SseSourceTask.isConnected("default")).isTrue();
+            Queue<SseEvent> queue = SseSourceTask.getQueue("default").orElseThrow();
+            Awaitility.await().atMost(5, TimeUnit.SECONDS).until(()-> !queue.isEmpty());
+            assertThat(queue).hasSize(4);
+            Awaitility.await().atMost(5, TimeUnit.SECONDS).until(()->!SseSourceTask.poll().isEmpty());
         }
     }
 

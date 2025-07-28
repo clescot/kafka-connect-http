@@ -252,7 +252,7 @@ class AHCHttpClientTest {
 
         //when
         HttpRequest httpRequest = getDummyHttpRequest();
-        Request request = httpClient.buildRequest(httpRequest);
+        Request request = httpClient.buildNativeRequest(httpRequest);
 
         //then
         assertThat(request.getUrl()).isEqualTo(httpRequest.getUrl());
