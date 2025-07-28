@@ -336,6 +336,7 @@ class SseConfigurationTest {
     @Nested
     class Connect_with_high_execution_time{
         @Test
+        @SuppressWarnings("java:s2925")
         void connect_with_error_strategy_continue_with_time_limit_without_time_limit() throws InterruptedException {
             HttpClientConfiguration<OkHttpClient, Request, Response> configuration = new HttpClientConfiguration<>(
                     "test-id",
