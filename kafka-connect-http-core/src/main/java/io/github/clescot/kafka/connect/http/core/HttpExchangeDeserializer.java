@@ -17,7 +17,7 @@ public class HttpExchangeDeserializer implements Deserializer<HttpExchange> {
 
     @Override
     public void configure(Map<String, ?> configs, boolean isKey) {
-
+        //nothing to configure
     }
 
     @Override

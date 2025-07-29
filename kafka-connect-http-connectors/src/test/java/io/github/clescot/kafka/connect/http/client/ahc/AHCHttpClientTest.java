@@ -48,7 +48,7 @@ class AHCHttpClientTest {
     private AsyncHttpClient asyncHttpClient;
 
     @BeforeEach
-    public void setUp() {
+    void setUp() {
         asyncHttpClient = Mockito.mock(AsyncHttpClient.class);
     }
 

@@ -54,7 +54,7 @@ class DirectHttpRequestMapperTest {
     private DirectHttpRequestMapper httpRequestMapper;
     private SchemaRegistryClient schemaRegistryClient;
     @BeforeEach
-    public void setup() {
+    void setup() {
         // Restricted permissions to a safe set but with URI allowed
         JexlPermissions permissions = new JexlPermissions.ClassPermissions(SinkRecord.class, ConnectRecord.class,HttpRequest.class);
         // Create the engine

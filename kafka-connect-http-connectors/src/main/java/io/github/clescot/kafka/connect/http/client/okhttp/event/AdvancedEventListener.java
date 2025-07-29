@@ -197,7 +197,7 @@ public class AdvancedEventListener extends EventListener {
                 .and(extraTags)
                 .and(stream(contextSpecificTags.spliterator(), false)
                         .map(contextTag -> contextTag.apply(request, state.response))
-                        .collect(toList()))
+                        .toList())
                 .and(getRequestTags(request))
                 .and(generateTagsForRoute(request));
 

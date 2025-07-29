@@ -6,6 +6,9 @@ import java.util.Collection;
 
 public class ConfigUtils {
 
+    private ConfigUtils(){
+        // Utility class, no instantiation
+    }
     public static ConfigDef mergeConfigDefs(ConfigDef... configDefs) {
         ConfigDef mergedConfigDef = new ConfigDef();
         for (ConfigDef configDef : configDefs) {
