@@ -11,6 +11,7 @@ import org.apache.kafka.connect.util.ConnectorUtils;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Stream;
 
 /**
  * CronSourceConnector is a Kafka Connect Source Connector that triggers HTTP requests based on a cron schedule.
@@ -36,9 +37,12 @@ public class CronSourceConnector extends SourceConnector {
         List<Map<String, String>> configs = new ArrayList<>(maxTasks);
         Preconditions.checkNotNull(httpCronSourceConnectorConfig, "httpCronSourceConnectorConfig must not be null. Call start() first.");
         int numGroups = Math.min(httpCronSourceConnectorConfig.getJobs().size(), maxTasks);
-        List<List<String>> jobs = ConnectorUtils.groupPartitions(httpCronSourceConnectorConfig.getJobs(), numGroups);
-            for (List<String> job : jobs) {
-                configs.add(MapUtils.filterEntriesStartingWithPrefixes(httpCronSourceConnectorConfig.originalsStrings(),"job."+job));
+        List<List<String>> partitions = ConnectorUtils.groupPartitions(httpCronSourceConnectorConfig.getJobs(), numGroups);
+            for (List<String> partition : partitions) {
+                List<String> list = partition.stream().map(jobId -> "job." + jobId).toList();
+                Map<String, String> subSettings = MapUtils.filterEntriesStartingWithPrefixes(httpCronSourceConnectorConfig.originalsStrings(), list.toArray(new String[0]));
+                subSettings.put("topic", httpCronSourceConnectorConfig.getTopic());
+                configs.add(subSettings);
             }
 
 
