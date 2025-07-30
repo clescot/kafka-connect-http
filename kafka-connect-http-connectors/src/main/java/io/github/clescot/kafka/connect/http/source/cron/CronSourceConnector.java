@@ -1,10 +1,12 @@
 package io.github.clescot.kafka.connect.http.source.cron;
 
 import com.google.common.base.Preconditions;
+import io.github.clescot.kafka.connect.MapUtils;
 import io.github.clescot.kafka.connect.VersionUtils;
 import org.apache.kafka.common.config.ConfigDef;
 import org.apache.kafka.connect.connector.Task;
 import org.apache.kafka.connect.source.SourceConnector;
+import org.apache.kafka.connect.util.ConnectorUtils;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -32,9 +34,13 @@ public class CronSourceConnector extends SourceConnector {
     public List<Map<String, String>> taskConfigs(int maxTasks) {
         Preconditions.checkArgument(maxTasks>0,"maxTasks must be higher than 0");
         List<Map<String, String>> configs = new ArrayList<>(maxTasks);
-        for (int i = 0; i < maxTasks; i++) {
-            configs.add(this.httpCronSourceConnectorConfig.originalsStrings());
-        }
+        Preconditions.checkNotNull(httpCronSourceConnectorConfig, "httpCronSourceConnectorConfig must not be null. Call start() first.");
+        int numGroups = Math.min(httpCronSourceConnectorConfig.getJobs().size(), maxTasks);
+        List<List<String>> jobs = ConnectorUtils.groupPartitions(httpCronSourceConnectorConfig.getJobs(), numGroups);
+            for (List<String> job : jobs) {
+                configs.add(MapUtils.filterEntriesStartingWithPrefixes(httpCronSourceConnectorConfig.originalsStrings(),"job."+job));
+            }
+
 
         return configs;
     }
