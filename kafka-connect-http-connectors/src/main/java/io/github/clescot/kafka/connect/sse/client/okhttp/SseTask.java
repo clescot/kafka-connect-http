@@ -16,6 +16,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.net.URI;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Queue;
@@ -23,22 +24,24 @@ import java.util.stream.Collectors;
 
 import static io.github.clescot.kafka.connect.http.client.HttpClientConfigDefinition.CONFIGURATION_IDS;
 
+
 public class SseTask implements Task<OkHttpClient, SseConfiguration, HttpRequest, SseEvent> {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(SseTask.class);
-    private final SseConnectorConfig sseConnectorConfig;
     private final Map<String, SseConfiguration> sseConfigurations;
 
     public SseTask(Map<String, String> settings) {
 
         Preconditions.checkNotNull(settings, "settings must not be null or empty.");
-        this.sseConnectorConfig = new SseConnectorConfig(settings);
-        Map<String, Object> mySettings = Maps.newHashMap(settings);
+        Map<String, String> mySettings = Maps.newHashMap(settings);
+        String configurationIds = Optional.ofNullable(settings.get(CONFIGURATION_IDS)).orElseThrow(()-> new IllegalArgumentException("Configuration IDs must be provided in the settings."));
+        List<String> configurationIdList = List.of(configurationIds.split(","));
+        Preconditions.checkArgument(!configurationIds.isEmpty(), "Configuration IDs must not be empty.");
         this.sseConfigurations = HttpClientConfigurationFactory.buildConfigurations(
                         new OkHttpClientFactory(),
                         null,
-                        sseConnectorConfig.getConfigurationIds(),
-                        sseConnectorConfig.originals(),
+                        configurationIdList,
+                        settings,
                         new CompositeMeterRegistry()
                 ).entrySet().stream()
                 .map(config -> Maps.immutableEntry(
@@ -118,11 +121,5 @@ public class SseTask implements Task<OkHttpClient, SseConfiguration, HttpRequest
         }
         return false;
     }
-
-
-    public String getDefaultTopic() {
-        return this.sseConnectorConfig.getDefaultTopic();
-    }
-
 
 }
