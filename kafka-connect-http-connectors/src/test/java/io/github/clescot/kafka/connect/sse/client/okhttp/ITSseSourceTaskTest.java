@@ -50,6 +50,7 @@ public class ITSseSourceTaskTest {
         Map<String, String> settings = Maps.newHashMap();
         settings.put("topic", "test");
         String configurationId = "default";
+        settings.put("config.ids", "default");
         settings.put("config.default.url", "http://localhost:"+mappedPort+"/.sse");
         settings.put("config.default.topic", "dummy_topic");
         settings.put("okhttp.retry.on.connection.failure", "true");
@@ -73,7 +74,7 @@ public class ITSseSourceTaskTest {
         Map<String, String> settings = Maps.newHashMap();
         settings.put("topic", "test");
         String configurationId = "test_sse_client_connect";
-        settings.put(CONFIGURATION_IDS, configurationId);
+        settings.put(CONFIGURATION_IDS, "default,"+configurationId);
         settings.put("config.default.url", "http://localhost:"+mappedPort+"/.sse");
         settings.put("config.default.topic", "dummy_topic");
         settings.put("config."+configurationId+".url", "http://localhost:"+mappedPort+"/.sse");
@@ -91,8 +92,7 @@ public class ITSseSourceTaskTest {
         assertThat(eventSource.getLastEventId()).isEqualTo("21");
         Set<Map.Entry<String, Queue<SseEvent>>> entries = sseSourceTask.getQueues().entrySet();
         for (Map.Entry<String, Queue<SseEvent>> entry : entries) {
-            System.out.println("############### configId :"+entry.getKey());
-            entry.getValue().forEach(msg-> System.out.println("############### event :"+msg));
+            entry.getValue().forEach(msg-> System.out.println("############### configId :"+entry.getKey()+" ############### event :"+msg));
         }
     }
 

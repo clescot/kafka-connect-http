@@ -79,7 +79,7 @@ public class HttpClientConfiguration<C extends HttpClient<R,S>,R,S> implements C
     private final Function<HttpRequest, HttpRequest> enrichRequestFunction;
     public HttpClientConfiguration(String id,
                                    HttpClientFactory<C,R,S> httpClientFactory,
-                                   Map<String,Object> config,
+                                   Map<String,String> config,
                                    ExecutorService executorService,
                                    CompositeMeterRegistry meterRegistry) {
         this.id = id;

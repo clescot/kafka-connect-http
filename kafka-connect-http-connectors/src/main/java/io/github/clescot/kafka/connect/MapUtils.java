@@ -17,7 +17,7 @@ public class MapUtils {
      * @param prefix
      * @return
      */
-    public static Map<String,Object> getMapWithPrefix(Map<String, Object> map, String prefix) {
+    public static Map<String,String> getMapWithPrefix(Map<String, String> map, String prefix) {
         return map.entrySet().stream()
                 .filter(entry -> entry.getKey().startsWith(prefix))
                 .collect(Collectors.toMap(

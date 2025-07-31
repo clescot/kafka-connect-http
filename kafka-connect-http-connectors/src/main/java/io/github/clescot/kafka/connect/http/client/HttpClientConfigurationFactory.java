@@ -25,7 +25,7 @@ public class HttpClientConfigurationFactory {
             HttpClientFactory<C, R, S> httpClientFactory,
             ExecutorService executorService,
             List<String> configIdList,
-            Map<String, Object> originals, CompositeMeterRegistry meterRegistry
+            Map<String, String> originals, CompositeMeterRegistry meterRegistry
     ) {
         Map<String,HttpClientConfiguration<C, R, S>> httpClientConfigurations = Maps.newHashMap();
         List<String> configurationIds = Lists.newArrayList();

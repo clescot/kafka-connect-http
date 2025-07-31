@@ -67,7 +67,7 @@ class HttpClientConfigurationTest {
             Map<String, String> settings = Maps.newHashMap();
             settings.put("predicate.url.regex", "^.*toto\\.com$");
             HttpConnectorConfig httpConnectorConfig = new HttpConnectorConfig(settings);
-            HttpClientConfiguration<OkHttpClient,Request, Response> httpClientConfiguration = new HttpClientConfiguration<>("test", new OkHttpClientFactory(), httpConnectorConfig.originals(), executorService, getCompositeMeterRegistry());
+            HttpClientConfiguration<OkHttpClient,Request, Response> httpClientConfiguration = new HttpClientConfiguration<>("test", new OkHttpClientFactory(), httpConnectorConfig.originalsStrings(), executorService, getCompositeMeterRegistry());
             HttpRequest httpRequest = new HttpRequest("http://toto.com", HttpRequest.Method.GET);
             assertThat(httpClientConfiguration.matches(httpRequest)).isTrue();
             HttpRequest httpRequest2 = new HttpRequest("http://titi.com", HttpRequest.Method.GET);
@@ -81,7 +81,7 @@ class HttpClientConfigurationTest {
             settings.put("predicate.url.regex", "^.*toto\\.com$");
             settings.put("predicate.method.regex", "^GET|PUT$");
             HttpConnectorConfig httpConnectorConfig = new HttpConnectorConfig(settings);
-            HttpClientConfiguration<OkHttpClient,Request,Response> httpClientConfiguration = new HttpClientConfiguration<>("test",new OkHttpClientFactory(), httpConnectorConfig.originals(), executorService, getCompositeMeterRegistry());
+            HttpClientConfiguration<OkHttpClient,Request,Response> httpClientConfiguration = new HttpClientConfiguration<>("test",new OkHttpClientFactory(), httpConnectorConfig.originalsStrings(), executorService, getCompositeMeterRegistry());
             HttpRequest httpRequest = new HttpRequest("http://toto.com", HttpRequest.Method.GET);
             assertThat(httpClientConfiguration.matches(httpRequest)).isTrue();
             HttpRequest httpRequest2 = new HttpRequest("http://titi.com", HttpRequest.Method.GET);
@@ -99,7 +99,7 @@ class HttpClientConfigurationTest {
             settings.put("predicate.url.regex", "^.*toto\\.com$");
             settings.put("predicate.bodytype.regex", "^STRING$");
             HttpConnectorConfig httpConnectorConfig = new HttpConnectorConfig(settings);
-            HttpClientConfiguration<OkHttpClient,Request,Response> httpClientConfiguration = new HttpClientConfiguration<>("test", new OkHttpClientFactory(), httpConnectorConfig.originals(), executorService, getCompositeMeterRegistry());
+            HttpClientConfiguration<OkHttpClient,Request,Response> httpClientConfiguration = new HttpClientConfiguration<>("test", new OkHttpClientFactory(), httpConnectorConfig.originalsStrings(), executorService, getCompositeMeterRegistry());
             HttpRequest httpRequest1 = new HttpRequest("http://toto.com", HttpRequest.Method.GET);
             assertThat(httpClientConfiguration.matches(httpRequest1)).isTrue();
             HttpRequest httpRequest2 = new HttpRequest("http://titi.com", HttpRequest.Method.GET);
@@ -114,7 +114,7 @@ class HttpClientConfigurationTest {
             settings.put("predicate.url.regex", "^.*toto\\.com$");
             settings.put("predicate.header.key.regex", "SUPERNOVA");
             HttpConnectorConfig httpConnectorConfig = new HttpConnectorConfig(settings);
-            HttpClientConfiguration<OkHttpClient,Request,Response> httpClientConfiguration = new HttpClientConfiguration<>("test",new OkHttpClientFactory(), httpConnectorConfig.originals(), executorService, getCompositeMeterRegistry());
+            HttpClientConfiguration<OkHttpClient,Request,Response> httpClientConfiguration = new HttpClientConfiguration<>("test",new OkHttpClientFactory(), httpConnectorConfig.originalsStrings(), executorService, getCompositeMeterRegistry());
             HttpRequest httpRequest1 = new HttpRequest("http://toto.com", HttpRequest.Method.GET);
             Map<String, List<String>> headers = Maps.newHashMap();
             headers.put("SUPERNOVA", List.of("stuff"));
@@ -131,7 +131,7 @@ class HttpClientConfigurationTest {
             settings.put("predicate.url.regex", "^.*toto\\.com$");
             settings.put("predicate.header.key.regex", "^SUPER.*$");
             HttpConnectorConfig httpConnectorConfig = new HttpConnectorConfig(settings);
-            HttpClientConfiguration<OkHttpClient,Request,Response> httpClientConfiguration = new HttpClientConfiguration<>("test",new OkHttpClientFactory(), httpConnectorConfig.originals(), executorService, getCompositeMeterRegistry());
+            HttpClientConfiguration<OkHttpClient,Request,Response> httpClientConfiguration = new HttpClientConfiguration<>("test",new OkHttpClientFactory(), httpConnectorConfig.originalsStrings(), executorService, getCompositeMeterRegistry());
             HttpRequest httpRequest1 = new HttpRequest("http://toto.com", HttpRequest.Method.GET);
             Map<String, List<String>> headers = Maps.newHashMap();
             headers.put("SUPERNOVA", List.of("stuff"));
@@ -150,7 +150,7 @@ class HttpClientConfigurationTest {
             settings.put("predicate.header.key.regex", "SUPERNOVA");
             settings.put("predicate.header.value.regex", "top");
             HttpConnectorConfig httpConnectorConfig = new HttpConnectorConfig(settings);
-            HttpClientConfiguration<OkHttpClient,Request,Response> httpClientConfiguration = new HttpClientConfiguration<>("test",new OkHttpClientFactory(), httpConnectorConfig.originals(), executorService, getCompositeMeterRegistry());
+            HttpClientConfiguration<OkHttpClient,Request,Response> httpClientConfiguration = new HttpClientConfiguration<>("test",new OkHttpClientFactory(), httpConnectorConfig.originalsStrings(), executorService, getCompositeMeterRegistry());
             HttpRequest httpRequest1 = new HttpRequest("http://toto.com", HttpRequest.Method.GET);
             Map<String, List<String>> headers = Maps.newHashMap();
             headers.put("SUPERNOVA", List.of("top"));
@@ -171,7 +171,7 @@ class HttpClientConfigurationTest {
             settings.put("predicate.header.key.regex", "^SUPER.*$");
             settings.put("predicate.header.value.regex", "^top.$");
             HttpConnectorConfig httpConnectorConfig = new HttpConnectorConfig(settings);
-            HttpClientConfiguration<OkHttpClient,Request,Response> httpClientConfiguration = new HttpClientConfiguration<>("test",new OkHttpClientFactory(), httpConnectorConfig.originals(), executorService, getCompositeMeterRegistry());
+            HttpClientConfiguration<OkHttpClient,Request,Response> httpClientConfiguration = new HttpClientConfiguration<>("test",new OkHttpClientFactory(), httpConnectorConfig.originalsStrings(), executorService, getCompositeMeterRegistry());
             HttpRequest httpRequest1 = new HttpRequest("http://toto.com", HttpRequest.Method.GET);
             Map<String, List<String>> headers = Maps.newHashMap();
             headers.put("SUPERNOVA", List.of("top1"));
@@ -220,10 +220,10 @@ class HttpClientConfigurationTest {
             settings.put("rate.limiter.max.executions", "3");
             settings.put("rate.limiter.period.in.ms", "1000");
             HttpConnectorConfig httpConnectorConfig = new HttpConnectorConfig(settings);
-            HttpClientConfiguration<OkHttpClient,Request,Response> httpClientConfiguration = new HttpClientConfiguration<>("test",new OkHttpClientFactory(), httpConnectorConfig.originals(), executorService, getCompositeMeterRegistry());
+            HttpClientConfiguration<OkHttpClient,Request,Response> httpClientConfiguration = new HttpClientConfiguration<>("test",new OkHttpClientFactory(), httpConnectorConfig.originalsStrings(), executorService, getCompositeMeterRegistry());
             Optional<RateLimiter<HttpExchange>> rateLimiter = httpClientConfiguration.getClient().getRateLimiter();
             assertThat(rateLimiter).isPresent();
-            HttpClientConfiguration<OkHttpClient,Request,Response> httpClientConfiguration2 = new HttpClientConfiguration<>("test",new OkHttpClientFactory(), httpConnectorConfig.originals(), executorService, getCompositeMeterRegistry());
+            HttpClientConfiguration<OkHttpClient,Request,Response> httpClientConfiguration2 = new HttpClientConfiguration<>("test",new OkHttpClientFactory(), httpConnectorConfig.originalsStrings(), executorService, getCompositeMeterRegistry());
             Optional<RateLimiter<HttpExchange>> rateLimiter2 = httpClientConfiguration2.getClient().getRateLimiter();
             assertThat(rateLimiter2).isPresent();
             assertThat(rateLimiter.get()).isNotSameAs(rateLimiter2.get());
@@ -240,10 +240,10 @@ class HttpClientConfigurationTest {
             settings.put("rate.limiter.period.in.ms", "1000");
             settings.put("rate.limiter.scope", "static");
             HttpConnectorConfig httpConnectorConfig = new HttpConnectorConfig(settings);
-            HttpClientConfiguration<OkHttpClient,Request,Response> httpClientConfiguration = new HttpClientConfiguration<>("test",new OkHttpClientFactory(), httpConnectorConfig.originals(), executorService, getCompositeMeterRegistry());
+            HttpClientConfiguration<OkHttpClient,Request,Response> httpClientConfiguration = new HttpClientConfiguration<>("test",new OkHttpClientFactory(), httpConnectorConfig.originalsStrings(), executorService, getCompositeMeterRegistry());
             Optional<RateLimiter<HttpExchange>> rateLimiter = httpClientConfiguration.getClient().getRateLimiter();
             assertThat(rateLimiter).isPresent();
-            HttpClientConfiguration<OkHttpClient,Request,Response> httpClientConfiguration2 = new HttpClientConfiguration<>("test",new OkHttpClientFactory(), httpConnectorConfig.originals(), executorService, getCompositeMeterRegistry());
+            HttpClientConfiguration<OkHttpClient,Request,Response> httpClientConfiguration2 = new HttpClientConfiguration<>("test",new OkHttpClientFactory(), httpConnectorConfig.originalsStrings(), executorService, getCompositeMeterRegistry());
             Optional<RateLimiter<HttpExchange>> rateLimiter2 = httpClientConfiguration2.getClient().getRateLimiter();
             assertThat(rateLimiter2).isPresent();
             assertThat(rateLimiter).containsSame(rateLimiter2.get());
@@ -260,7 +260,7 @@ class HttpClientConfigurationTest {
             settings.put("rate.limiter.period.in.ms", "1000");
             settings.put("rate.limiter.scope", "static");
             HttpConnectorConfig httpConnectorConfig = new HttpConnectorConfig(settings);
-            HttpClientConfiguration<OkHttpClient,Request,Response> httpClientConfiguration = new HttpClientConfiguration<>("test",new OkHttpClientFactory(), httpConnectorConfig.originals(), executorService, getCompositeMeterRegistry());
+            HttpClientConfiguration<OkHttpClient,Request,Response> httpClientConfiguration = new HttpClientConfiguration<>("test",new OkHttpClientFactory(), httpConnectorConfig.originalsStrings(), executorService, getCompositeMeterRegistry());
             Optional<RateLimiter<HttpExchange>> rateLimiter = httpClientConfiguration.getClient().getRateLimiter();
             assertThat(rateLimiter).isPresent();
             Map<String, String> settings2 = Maps.newHashMap();
@@ -271,7 +271,7 @@ class HttpClientConfigurationTest {
             settings2.put("rate.limiter.period.in.ms", "1000");
             settings2.put("rate.limiter.scope", "static");
             HttpConnectorConfig httpConnectorConfig2 = new HttpConnectorConfig(settings2);
-            HttpClientConfiguration<OkHttpClient,Request,Response> httpClientConfiguration2 = new HttpClientConfiguration<>("test2",new OkHttpClientFactory(), httpConnectorConfig2.originals(), executorService, getCompositeMeterRegistry());
+            HttpClientConfiguration<OkHttpClient,Request,Response> httpClientConfiguration2 = new HttpClientConfiguration<>("test2",new OkHttpClientFactory(), httpConnectorConfig2.originalsStrings(), executorService, getCompositeMeterRegistry());
             Optional<RateLimiter<HttpExchange>> rateLimiter2 = httpClientConfiguration2.getClient().getRateLimiter();
             assertThat(rateLimiter2).isPresent();
             assertThat(rateLimiter.get()).isNotSameAs(rateLimiter2.get());
@@ -305,7 +305,7 @@ class HttpClientConfigurationTest {
             config.put("config.dummy." + RATE_LIMITER_MAX_EXECUTIONS, "4");
             config.put("config.dummy." + RATE_LIMITER_PERIOD_IN_MS, "1000");
             config.put("config.dummy." + RATE_LIMITER_SCOPE, "static");
-            HttpClientConfiguration<OkHttpClient,Request,Response> httpClientConfiguration = new HttpClientConfiguration<>("dummy",new OkHttpClientFactory(), new HttpConnectorConfig(config).originals(), executorService, getCompositeMeterRegistry());
+            HttpClientConfiguration<OkHttpClient,Request,Response> httpClientConfiguration = new HttpClientConfiguration<>("dummy",new OkHttpClientFactory(), new HttpConnectorConfig(config).originalsStrings(), executorService, getCompositeMeterRegistry());
             String configurationAsString = httpClientConfiguration.toString();
             LOGGER.debug("configurationAsString:{}", configurationAsString);
             assertThat(configurationAsString).isNotEmpty();

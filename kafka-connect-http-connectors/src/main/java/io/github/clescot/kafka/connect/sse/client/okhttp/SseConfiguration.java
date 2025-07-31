@@ -22,7 +22,7 @@ import java.util.concurrent.TimeUnit;
 public class SseConfiguration implements Configuration<OkHttpClient, HttpRequest> {
     private final String configurationId;
     private final HttpClientConfiguration<OkHttpClient, Request, Response> httpClientConfiguration;
-    private final Map<String, Object> settings;
+    private final Map<String, String> settings;
     private final URI uri;
     private final String topic;
     private boolean connected = false;
@@ -36,21 +36,24 @@ public class SseConfiguration implements Configuration<OkHttpClient, HttpRequest
 
     public SseConfiguration(String configurationId,
                             HttpClientConfiguration<OkHttpClient, Request, Response> httpClientConfiguration,
-                            Map<String, Object> settings
+                            Map<String, String> settings
     ) {
+        Preconditions.checkNotNull(configurationId,"configurationId must not be null.");
+        Preconditions.checkArgument(!configurationId.isEmpty(), "configurationId must not be empty.");
+        Preconditions.checkNotNull(httpClientConfiguration, "httpClientConfiguration must not be null.");
         this.configurationId = configurationId;
         this.httpClientConfiguration = httpClientConfiguration;
         this.settings = settings;
         Preconditions.checkNotNull(settings, "settings must not be null or empty.");
         Preconditions.checkArgument(!settings.isEmpty(), "settings must not be null or empty.");
-        String url = (String) settings.get(SseConfigDefinition.URL);
+        String url = settings.get(SseConfigDefinition.URL);
         Preconditions.checkNotNull(url, "'url' must not be null or empty.");
         this.uri = URI.create(url);
-        this.topic = (String) settings.get(SseConfigDefinition.TOPIC);
+        this.topic = settings.get(SseConfigDefinition.TOPIC);
         Preconditions.checkNotNull(topic, "'topic' must not be null or empty.");
     }
 
-    public static SseConfiguration buildSseConfiguration(String configurationId, Map<String, Object> mySettings) {
+    public static SseConfiguration buildSseConfiguration(String configurationId, Map<String, String> mySettings) {
         HttpClientConfiguration<OkHttpClient, Request, Response> httpClientConfiguration = new HttpClientConfiguration<>(
                 configurationId,
                 new OkHttpClientFactory(),
@@ -80,7 +83,7 @@ public class SseConfiguration implements Configuration<OkHttpClient, HttpRequest
         //error strategy
         this.errorStrategy = ErrorStrategy.alwaysThrow();
         if (settings.containsKey(SseConfigDefinition.ERROR_STRATEGY)) {
-            String errorStrategyAsString = (String) settings.get(SseConfigDefinition.ERROR_STRATEGY);
+            String errorStrategyAsString = settings.get(SseConfigDefinition.ERROR_STRATEGY);
             switch (errorStrategyAsString) {
                 case SseConfigDefinition.ERROR_STRATEGY_ALWAYS_CONTINUE:
                     errorStrategy = ErrorStrategy.alwaysContinue();
@@ -176,7 +179,7 @@ public class SseConfiguration implements Configuration<OkHttpClient, HttpRequest
         return uri;
     }
 
-    public Map<String, Object> getSettings() {
+    public Map<String, String> getSettings() {
         return settings;
     }
 
