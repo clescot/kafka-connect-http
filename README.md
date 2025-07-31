@@ -18,6 +18,7 @@
 # 9. [incoming message format](docs/incoming_message_format.md)
 # 10. [request handling](docs/request_handling.md)
 # 11. [outcoming message format](docs/outcoming_message_format.md)
+# 12. [scalability](docs/scalability.md)
 
 
 
