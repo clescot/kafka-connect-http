@@ -32,7 +32,7 @@ class HttpCronSourceTaskTest {
         @Test
         void test_empty_settings() {
             HashMap<String, String> settings = Maps.newHashMap();
-            Assertions.assertThrows(ConfigException.class, () -> httpCronSourceTask.start(settings));
+            Assertions.assertThrows(IllegalArgumentException.class, () -> httpCronSourceTask.start(settings));
         }
 
         @Test
@@ -44,7 +44,7 @@ class HttpCronSourceTaskTest {
         void test_settings_with_topic_only() {
             Map<String, String> settings = Maps.newHashMap();
             settings.put("topic", "test");
-            Assertions.assertThrows(ConfigException.class, () -> httpCronSourceTask.start(settings));
+            Assertions.assertThrows(IllegalArgumentException.class, () -> httpCronSourceTask.start(settings));
         }
 
         @Test

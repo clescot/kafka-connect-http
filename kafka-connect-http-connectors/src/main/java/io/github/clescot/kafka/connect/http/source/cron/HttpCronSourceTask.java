@@ -25,10 +25,10 @@ public class HttpCronSourceTask extends SourceTask {
 
     private static final VersionUtils VERSION_UTILS = new VersionUtils();
     public static final String JOB_PREFIX = "job.";
-    private HttpCronSourceConnectorConfig httpCronSourceConnectorConfig;
     private Scheduler scheduler;
     private Queue<HttpRequest> queue;
     private ObjectMapper objectMapper;
+    private Map<String, String> settings;
 
     @Override
     public String version() {
@@ -43,14 +43,15 @@ public class HttpCronSourceTask extends SourceTask {
 
         queue = QueueFactory.getQueue(""+UUID.randomUUID());
         Preconditions.checkNotNull(settings);
-        this.httpCronSourceConnectorConfig = new HttpCronSourceConnectorConfig(settings);
+        this.settings = settings;
         SchedulerFactory schedulerFactory = new StdSchedulerFactory();
         try {
             scheduler = schedulerFactory.getScheduler();
             ListenerManager listenerManager = scheduler.getListenerManager();
             listenerManager.addJobListener(new HttpCronJobListener(queue));
             scheduler.start();
-            List<String> jobs = Arrays.asList(settings.get(HttpCronSourceConfigDefinition.JOBS).split(","));
+            String jobIds = Optional.ofNullable(settings.get(HttpCronSourceConfigDefinition.JOBS)).orElseThrow(()-> new IllegalArgumentException("jobs configuration is required"));
+            List<String> jobs = Arrays.asList(jobIds.split(","));
             jobs.forEach(jobId -> {
                 JobDataMap jobDataMap = new JobDataMap();
 
@@ -105,7 +106,7 @@ public class HttpCronSourceTask extends SourceTask {
                 sourceRecord = new SourceRecord(
                         Maps.newHashMap(),
                         Maps.newHashMap(),
-                        httpCronSourceConnectorConfig.getTopic(),
+                        settings.get(HttpCronSourceConfigDefinition.TOPIC),
                         null,
                         objectMapper.writeValueAsString(httpRequest)
                 );
