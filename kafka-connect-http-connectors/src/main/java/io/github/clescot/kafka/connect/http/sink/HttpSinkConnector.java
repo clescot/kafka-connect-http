@@ -49,6 +49,9 @@ public class HttpSinkConnector extends SinkConnector {
 
     @Override
     public List<Map<String, String>> taskConfigs(int taskCount) {
+        Preconditions.checkNotNull(settings);
+        Preconditions.checkArgument(!this.httpConnectorConfig.getConfigurationIds().isEmpty());
+        Preconditions.checkArgument(this.httpConnectorConfig.getConfigurationIds().contains(DEFAULT_CONFIGURATION_ID));
         List<Map<String, String>> configs = new ArrayList<>(taskCount);
         for (int i = 0; i < taskCount; i++) {
             configs.add(this.httpConnectorConfig.originalsStrings());

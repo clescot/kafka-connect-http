@@ -37,7 +37,7 @@ public class SseTask implements Task<OkHttpClient, SseConfiguration, HttpRequest
         this.sseConfigurations = HttpClientConfigurationFactory.buildConfigurations(
                         new OkHttpClientFactory(),
                         null,
-                        sseConnectorConfig.getList(CONFIGURATION_IDS),
+                        sseConnectorConfig.getConfigurationIds(),
                         sseConnectorConfig.originals(),
                         new CompositeMeterRegistry()
                 ).entrySet().stream()

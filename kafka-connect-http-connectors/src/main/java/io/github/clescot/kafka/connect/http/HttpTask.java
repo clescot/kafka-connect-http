@@ -122,7 +122,7 @@ public class HttpTask<C extends HttpClient<R,S>,R, S> implements Task<C,HttpConf
         Map<String,HttpClientConfiguration<C, R, S>> httpClientConfigurations = buildConfigurations(
                 httpClientFactory,
                 executorService,
-                httpConnectorConfig.getList(CONFIGURATION_IDS),
+                httpConnectorConfig.getConfigurationIds(),
                 httpConnectorConfig.originals(), meterRegistry
         );
         //wrap configurations in HttpConfiguration

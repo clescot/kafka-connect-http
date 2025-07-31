@@ -10,6 +10,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
+import static io.github.clescot.kafka.connect.Configuration.DEFAULT_CONFIGURATION_ID;
 import static io.github.clescot.kafka.connect.http.client.HttpClientConfigDefinition.CONFIGURATION_IDS;
 
 public class SseConnectorConfig extends AbstractConfig {
@@ -24,7 +25,11 @@ public class SseConnectorConfig extends AbstractConfig {
 
     public SseConnectorConfig(ConfigDef configDef, Map<?, ?> originals){
         super(configDef, originals, LOGGER.isDebugEnabled());
-        this.configurationIds = Optional.ofNullable(getList(CONFIGURATION_IDS)).orElse(Lists.newArrayList());
+        List<String> configIds = Lists.newArrayList(getList(CONFIGURATION_IDS));
+        if(configIds.isEmpty()||!configIds.contains(DEFAULT_CONFIGURATION_ID)){
+            configIds.add(DEFAULT_CONFIGURATION_ID);
+        }
+        this.configurationIds =Optional.of(configIds).orElse(Lists.newArrayList(DEFAULT_CONFIGURATION_ID));
         this.defaultTopic = Optional.ofNullable(getString(SseConfigDefinition.DEFAULT_CONFIG_TOPIC)).orElseThrow(()-> new IllegalArgumentException(SseConfigDefinition.TOPIC + CANNOT_BE_FOUND_IN_MAP_CONFIGURATION));
         this.defaultUrl = Optional.ofNullable(getString(SseConfigDefinition.DEFAULT_CONFIG_URL)).orElseThrow(()-> new IllegalArgumentException(SseConfigDefinition.URL + CANNOT_BE_FOUND_IN_MAP_CONFIGURATION));
     }
