@@ -38,14 +38,12 @@ public class CronSourceConnector extends SourceConnector {
         Preconditions.checkNotNull(httpCronSourceConnectorConfig, "httpCronSourceConnectorConfig must not be null. Call start() first.");
         int numGroups = Math.min(httpCronSourceConnectorConfig.getJobs().size(), maxTasks);
         List<List<String>> partitions = ConnectorUtils.groupPartitions(httpCronSourceConnectorConfig.getJobs(), numGroups);
-            for (List<String> partition : partitions) {
-                List<String> list = partition.stream().map(jobId -> "job." + jobId).toList();
-                Map<String, String> subSettings = MapUtils.filterEntriesStartingWithPrefixes(httpCronSourceConnectorConfig.originalsStrings(), list.toArray(new String[0]));
-                subSettings.put("topic", httpCronSourceConnectorConfig.getTopic());
-                configs.add(subSettings);
-            }
-
-
+        for (List<String> partition : partitions) {
+            List<String> list = partition.stream().map(jobId -> "job." + jobId).toList();
+            Map<String, String> subSettings = MapUtils.filterEntriesStartingWithPrefixes(httpCronSourceConnectorConfig.originalsStrings(), list.toArray(new String[0]));
+            subSettings.put("topic", httpCronSourceConnectorConfig.getTopic());
+            configs.add(subSettings);
+        }
         return configs;
     }
 
