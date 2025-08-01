@@ -33,7 +33,7 @@ Each connector instance will create a task for each configured SSE endpoint.
 The distribution of the load is done by the number of tasks created for each connector instance.
 
 
-# the Cron Source Connector
+## the Cron Source Connector
 The Cron Source Connector is designed to generate messages based on a cron expression.
 Each connector instance will create a task for each configured cron expression.
 The distribution of the load is done by the number of tasks created for each connector instance.
