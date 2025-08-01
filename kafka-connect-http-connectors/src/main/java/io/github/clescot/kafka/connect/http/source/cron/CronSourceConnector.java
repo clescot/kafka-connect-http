@@ -11,6 +11,7 @@ import org.apache.kafka.connect.util.ConnectorUtils;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /**
@@ -41,7 +42,16 @@ public class CronSourceConnector extends SourceConnector {
         for (List<String> partition : partitions) {
             List<String> list = partition.stream().map(jobId -> "job." + jobId).toList();
             Map<String, String> subSettings = MapUtils.filterEntriesStartingWithPrefixes(httpCronSourceConnectorConfig.originalsStrings(), list.toArray(new String[0]));
-            subSettings.put("topic", httpCronSourceConnectorConfig.getTopic());
+            subSettings.put("jobs", String.join(",", partition));
+            subSettings.putAll(
+                    // Filter out job-specific settings and keep only the common settings
+                    httpCronSourceConnectorConfig
+                            .originalsStrings()
+                            .entrySet()
+                            .stream()
+                            .filter(entry-> !entry.getKey().startsWith("jobs"))
+                            .filter(entry-> !entry.getKey().startsWith("job."))
+                            .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue)));
             configs.add(subSettings);
         }
         return configs;

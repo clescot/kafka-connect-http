@@ -9,6 +9,8 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
@@ -24,7 +26,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 @Testcontainers
 public class ITSseSourceTaskTest {
-
+    private final static Logger LOGGER = LoggerFactory.getLogger(ITSseSourceTaskTest.class);
     @Container
     public GenericContainer sseServerContainer = new GenericContainer(DockerImageName.parse("jmalloc/echo-server:v0.3.7"))
             .withExposedPorts(8080)
@@ -63,8 +65,8 @@ public class ITSseSourceTaskTest {
         assertThat(sseSourceTask.isConnected(configurationId)).isFalse();
         EventSource eventSource = sseSourceTask.getDefaultConfiguration().getBackgroundEventSource().getEventSource();
         assertThat(eventSource.getState()).isEqualTo(ReadyState.CLOSED);
+        queue.forEach(msg-> LOGGER.info("############### :{}",msg));
         assertThat(eventSource.getLastEventId()).isEqualTo("21");
-        queue.stream().forEach(msg-> System.out.println("############### :"+msg));
     }
 
 
@@ -92,7 +94,7 @@ public class ITSseSourceTaskTest {
         assertThat(eventSource.getLastEventId()).isEqualTo("21");
         Set<Map.Entry<String, Queue<SseEvent>>> entries = sseSourceTask.getQueues().entrySet();
         for (Map.Entry<String, Queue<SseEvent>> entry : entries) {
-            entry.getValue().forEach(msg-> System.out.println("############### configId :"+entry.getKey()+" ############### event :"+msg));
+            entry.getValue().forEach(msg-> LOGGER.info("############### configId :{} ############### event :{}",entry.getKey(),msg));
         }
     }
 

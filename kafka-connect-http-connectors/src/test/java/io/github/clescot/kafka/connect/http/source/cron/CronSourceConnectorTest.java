@@ -46,12 +46,24 @@ class CronSourceConnectorTest {
             cronSourceConnector.start(settings);
         }
         @Test
-        void nominal_case(){
+        void two_jobs_with_one_task(){
             List<Map<String, String>> list = cronSourceConnector.taskConfigs(1);
             assertThat(list).hasSize(1);
             Map<String, String> taskConfig = list.get(0);
             assertThat(taskConfig).isNotNull();
-            assertThat(taskConfig).hasSize(9);
+            assertThat(taskConfig).hasSize(10);
+        }
+        @Test
+        void two_jobs_with_two_tasks(){
+            List<Map<String, String>> list = cronSourceConnector.taskConfigs(2);
+            assertThat(list).hasSize(2);
+            Map<String, String> firstTaskConfig = list.get(0);
+            assertThat(firstTaskConfig).isNotNull();
+            assertThat(firstTaskConfig).hasSize(6);
+            assertThat(firstTaskConfig).containsAllEntriesOf(Map.of("topic","test","jobs","job1","job.job1.url","http://localhost:8080/test"));
+            Map<String, String> secondTaskConfig = list.get(1);
+            assertThat(secondTaskConfig).isNotNull();
+            assertThat(secondTaskConfig).hasSize(6);
         }
         @Test
         void test_0_tasks(){

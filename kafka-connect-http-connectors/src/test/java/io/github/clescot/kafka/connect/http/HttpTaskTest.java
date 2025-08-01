@@ -49,7 +49,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 @Execution(ExecutionMode.SAME_THREAD)
 class HttpTaskTest {
     private static final HttpRequest.Method DUMMY_METHOD = HttpRequest.Method.POST;
-    private static final String DUMMY_BODY_TYPE = "STRING";
     private static final ExecutorService executorService = Executors.newFixedThreadPool(2);
     public static final String AUTHORIZED_STATE = "Authorized";
     public static final String INTERNAL_SERVER_ERROR_STATE = "InternalServerError";
