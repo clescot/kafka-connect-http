@@ -36,7 +36,7 @@ class SseConfigurationTest {
                     null,
                     new CompositeMeterRegistry()
             );
-            HashMap<String, Object> settings = Maps.newHashMap();
+            Map<String, String> settings = Maps.newHashMap();
             settings.put("url", "http://example.com/sse");
             settings.put("topic", "test-topic");
             SseConfiguration sseConfiguration = new SseConfiguration("test-id", configuration, settings);
@@ -86,7 +86,7 @@ class SseConfigurationTest {
                     null,
                     new CompositeMeterRegistry()
             );
-            HashMap<String, Object> emptySettings = Maps.newHashMap();
+            HashMap<String, String> emptySettings = Maps.newHashMap();
             Assertions.assertThrows(IllegalArgumentException.class, () -> new SseConfiguration("test", configuration, emptySettings));
         }
     }
@@ -95,7 +95,7 @@ class SseConfigurationTest {
     class BuildSseConfiguration {
         @Test
         void nominal_case() {
-            Map<String, Object> settings = Maps.newHashMap();
+            Map<String, String> settings = Maps.newHashMap();
             settings.put("url", "http://example.com/sse");
             settings.put("topic", "test-topic");
             SseConfiguration sseConfiguration = SseConfiguration.buildSseConfiguration("test-id", settings);
@@ -111,7 +111,7 @@ class SseConfigurationTest {
 
         @Test
         void empty_settings() {
-            HashMap<String, Object> emptySettings = Maps.newHashMap();
+            HashMap<String, String> emptySettings = Maps.newHashMap();
             Assertions.assertThrows(IllegalArgumentException.class, () -> SseConfiguration.buildSseConfiguration("test-id", emptySettings));
         }
     }
@@ -127,7 +127,7 @@ class SseConfigurationTest {
                     null,
                     new CompositeMeterRegistry()
             );
-            HashMap<String, Object> settings = Maps.newHashMap();
+            Map<String, String> settings = Maps.newHashMap();
             settings.put("url", "http://example.com/sse");
             settings.put("topic", "test-topic");
             SseConfiguration sseConfiguration = new SseConfiguration("test-id", configuration, settings);
@@ -144,7 +144,7 @@ class SseConfigurationTest {
                     null,
                     new CompositeMeterRegistry()
             );
-            HashMap<String, Object> settings = Maps.newHashMap();
+            Map<String, String> settings = Maps.newHashMap();
             settings.put("url", "http://example.com/sse");
             settings.put("topic", "test-topic");
             SseConfiguration sseConfiguration = new SseConfiguration("test-id", configuration, settings);
@@ -160,7 +160,7 @@ class SseConfigurationTest {
                     null,
                     new CompositeMeterRegistry()
             );
-            HashMap<String, Object> settings = Maps.newHashMap();
+            Map<String, String> settings = Maps.newHashMap();
             settings.put("url", "http://example.com/sse");
             settings.put("topic", "test-topic");
             settings.put("retry.delay.strategy.max-delay-millis", "5000");
@@ -180,7 +180,7 @@ class SseConfigurationTest {
                     null,
                     new CompositeMeterRegistry()
             );
-            HashMap<String, Object> settings = Maps.newHashMap();
+            Map<String, String> settings = Maps.newHashMap();
             settings.put("url", "http://example.com/sse");
             settings.put("topic", "test-topic");
             settings.put("retry.delay.strategy.max-delay-millis", "5000");
@@ -205,7 +205,7 @@ class SseConfigurationTest {
                     null,
                     new CompositeMeterRegistry()
             );
-            HashMap<String, Object> settings = Maps.newHashMap();
+            Map<String, String> settings = Maps.newHashMap();
             settings.put("url", "http://example.com/sse");
             settings.put("topic", "test-topic");
             SseConfiguration sseConfiguration = new SseConfiguration("test-id", configuration, settings);
@@ -225,7 +225,7 @@ class SseConfigurationTest {
                     null,
                     new CompositeMeterRegistry()
             );
-            HashMap<String, Object> settings = Maps.newHashMap();
+            Map<String, String> settings = Maps.newHashMap();
             settings.put("url", "http://example.com/sse");
             settings.put("topic", "test-topic");
             settings.put("error.strategy", "always-continue");
@@ -246,7 +246,7 @@ class SseConfigurationTest {
                     null,
                     new CompositeMeterRegistry()
             );
-            HashMap<String, Object> settings = Maps.newHashMap();
+            Map<String, String> settings = Maps.newHashMap();
             settings.put("url", "http://example.com/sse");
             settings.put("topic", "test-topic");
             settings.put("error.strategy", "always-throw");
@@ -267,7 +267,7 @@ class SseConfigurationTest {
                     null,
                     new CompositeMeterRegistry()
             );
-            HashMap<String, Object> settings = Maps.newHashMap();
+            Map<String, String> settings = Maps.newHashMap();
             settings.put("url", "http://example.com/sse");
             settings.put("topic", "test-topic");
             settings.put("error.strategy", "dummy");
@@ -289,7 +289,7 @@ class SseConfigurationTest {
                     null,
                     new CompositeMeterRegistry()
             );
-            HashMap<String, Object> settings = Maps.newHashMap();
+            Map<String, String> settings = Maps.newHashMap();
             settings.put("url", "http://example.com/sse");
             settings.put("topic", "test-topic");
             settings.put("error.strategy", "continue-with-max-attempts");
@@ -320,7 +320,7 @@ class SseConfigurationTest {
                     null,
                     new CompositeMeterRegistry()
             );
-            HashMap<String, Object> settings = Maps.newHashMap();
+            Map<String, String> settings = Maps.newHashMap();
             settings.put("url", "http://example.com/sse");
             settings.put("topic", "test-topic");
             settings.put("error.strategy", "continue-with-max-attempts");
@@ -348,7 +348,7 @@ class SseConfigurationTest {
                     null,
                     new CompositeMeterRegistry()
             );
-            HashMap<String, Object> settings = Maps.newHashMap();
+            Map<String, String> settings = Maps.newHashMap();
             settings.put("url", "http://example.com/sse");
             settings.put("topic", "test-topic");
             settings.put("error.strategy", "continue-with-time-limit");
@@ -381,7 +381,7 @@ class SseConfigurationTest {
                     null,
                     new CompositeMeterRegistry()
             );
-            HashMap<String, Object> settings = Maps.newHashMap();
+            Map<String, String> settings = Maps.newHashMap();
             settings.put("url", "http://example.com/sse");
             settings.put("topic", "test-topic");
             settings.put("error.strategy", "continue-with-time-limit");
@@ -413,7 +413,7 @@ class SseConfigurationTest {
                     null,
                     new CompositeMeterRegistry()
             );
-            HashMap<String, Object> settings = Maps.newHashMap();
+            Map<String, String> settings = Maps.newHashMap();
             settings.put("url", "http://example.com/sse");
             settings.put("topic", "test-topic");
             SseConfiguration sseConfiguration = new SseConfiguration("test-id", configuration, settings);
@@ -432,7 +432,7 @@ class SseConfigurationTest {
                     null,
                     new CompositeMeterRegistry()
             );
-            HashMap<String, Object> settings = Maps.newHashMap();
+            Map<String, String> settings = Maps.newHashMap();
             settings.put("url", "http://example.com/sse");
             settings.put("topic", "test-topic");
             SseConfiguration sseConfiguration = new SseConfiguration("test-id", configuration, settings);
@@ -451,7 +451,7 @@ class SseConfigurationTest {
                     null,
                     new CompositeMeterRegistry()
             );
-            HashMap<String, Object> settings = Maps.newHashMap();
+            Map<String, String> settings = Maps.newHashMap();
             settings.put("url", "http://example.com/sse");
             settings.put("topic", "test-topic");
             SseConfiguration sseConfiguration = new SseConfiguration("test-id", configuration, settings);
@@ -472,7 +472,7 @@ class SseConfigurationTest {
                     null,
                     new CompositeMeterRegistry()
             );
-            HashMap<String, Object> settings = Maps.newHashMap();
+            Map<String, String> settings = Maps.newHashMap();
             settings.put("url", "http://example.com/sse");
             settings.put("topic", "test-topic");
             SseConfiguration sseConfiguration = new SseConfiguration("test-id", configuration, settings);
@@ -490,7 +490,7 @@ class SseConfigurationTest {
                     null,
                     new CompositeMeterRegistry()
             );
-            HashMap<String, Object> settings = Maps.newHashMap();
+            Map<String, String> settings = Maps.newHashMap();
             settings.put("url", "http://example.com/sse");
             settings.put("topic", "test-topic");
             SseConfiguration sseConfiguration = new SseConfiguration("test-id", configuration, settings);
@@ -510,7 +510,7 @@ class SseConfigurationTest {
                     null,
                     new CompositeMeterRegistry()
             );
-            HashMap<String, Object> settings = Maps.newHashMap();
+            Map<String, String> settings = Maps.newHashMap();
             settings.put("url", "http://example.com/sse");
             settings.put("topic", "test-topic");
             SseConfiguration sseConfiguration = new SseConfiguration("test-id", configuration, settings);

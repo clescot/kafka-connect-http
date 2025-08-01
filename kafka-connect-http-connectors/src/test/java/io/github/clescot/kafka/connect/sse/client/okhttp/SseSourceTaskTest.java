@@ -57,7 +57,7 @@ class SseSourceTaskTest {
         @Test
         void test_empty_settings() {
             HashMap<String, String> settings = Maps.newHashMap();
-            Assertions.assertThrows(ConfigException.class, () -> sseSourceTask.start(settings));
+            Assertions.assertThrows(IllegalArgumentException.class, () -> sseSourceTask.start(settings));
         }
 
         @Test
@@ -68,13 +68,15 @@ class SseSourceTaskTest {
         @Test
         void test_settings_with_topic_only() {
             Map<String, String> settings = Maps.newHashMap();
+            settings.put("config.ids", "default");
             settings.put("config.default.topic", "test");
-            Assertions.assertThrows(ConfigException.class, () -> sseSourceTask.start(settings));
+            Assertions.assertThrows(NullPointerException.class, () -> sseSourceTask.start(settings));
         }
 
         @Test
         void test_settings_with_topic_and_url() {
             Map<String, String> settings = Maps.newHashMap();
+            settings.put("config.ids", "default");
             settings.put("config.default.url", "http://localhost:8080/sse");
             settings.put("config.default.topic", "dummy_topic");
             Assertions.assertDoesNotThrow(() -> sseSourceTask.start(settings));
@@ -104,6 +106,7 @@ class SseSourceTaskTest {
         @Test
         void test_settings_with_static_request_header() {
             Map<String, String> settings = Maps.newHashMap();
+            settings.put("config.ids", "default");
             settings.put("config.default.url", "http://localhost:8080/sse");
             settings.put("config.default.topic", "dummy_topic");
             settings.put("config.default.enrich.request.static.header.names", "auth1");
@@ -201,6 +204,7 @@ class SseSourceTaskTest {
         @Test
         void test_polling_nominal_case() {
             Map<String, String> settings = Maps.newHashMap();
+            settings.put("config.ids", "default");
             settings.put("config.default.topic", "test");
             settings.put("config.default.url", wmRuntimeInfo.getHttpBaseUrl()+"/events1");
             sseSourceTask.start(settings);
@@ -215,6 +219,7 @@ class SseSourceTaskTest {
         @Test
         void test_polling_with_static_header() {
             Map<String, String> settings = Maps.newHashMap();
+            settings.put("config.ids", "default");
             settings.put("config.default.topic", "test");
             settings.put("config.default.url", wmRuntimeInfo.getHttpBaseUrl()+"/events2");
             settings.put("config.default.enrich.request.static.header.names", "auth1");
@@ -230,6 +235,7 @@ class SseSourceTaskTest {
         @Test
         void test_polling_with_connect_timeout_set() {
             Map<String, String> settings = Maps.newHashMap();
+            settings.put("config.ids", "default");
             settings.put("config.default.topic", "test");
             settings.put("config.default.url", wmRuntimeInfo.getHttpBaseUrl()+"/events1");
             settings.put("config.default.okhttp.connect.timeout", "3000");

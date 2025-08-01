@@ -49,7 +49,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 @Execution(ExecutionMode.SAME_THREAD)
 class HttpTaskTest {
     private static final HttpRequest.Method DUMMY_METHOD = HttpRequest.Method.POST;
-    private static final String DUMMY_BODY_TYPE = "STRING";
     private static final ExecutorService executorService = Executors.newFixedThreadPool(2);
     public static final String AUTHORIZED_STATE = "Authorized";
     public static final String INTERNAL_SERVER_ERROR_STATE = "InternalServerError";
@@ -83,7 +82,7 @@ class HttpTaskTest {
             JmxMeterRegistry jmxMeterRegistry = new JmxMeterRegistry(JmxConfig.DEFAULT, Clock.SYSTEM);
             jmxMeterRegistry.start();
             compositeMeterRegistry.add(jmxMeterRegistry);
-            HttpClientConfiguration<OkHttpClient,Request, Response> test = new HttpClientConfiguration<>("test", new OkHttpClientFactory(), config.originals(), null, compositeMeterRegistry);
+            HttpClientConfiguration<OkHttpClient,Request, Response> test = new HttpClientConfiguration<>("test", new OkHttpClientFactory(), config.originalsStrings(), null, compositeMeterRegistry);
             HttpConfiguration<OkHttpClient, Request, Response> httpConfiguration = new HttpConfiguration<>(test);
             Map<String, HttpConfiguration<OkHttpClient, Request, Response>> map = Maps.newHashMap();
             map.put(DEFAULT_CONFIGURATION_ID, httpConfiguration);
@@ -115,7 +114,7 @@ class HttpTaskTest {
             HttpClientConfiguration<OkHttpClient,Request, Response> httpClientConfiguration = new HttpClientConfiguration<>(
                     "dummy",
                     new OkHttpClientFactory(),
-                    httpConnectorConfig.originals(),
+                    httpConnectorConfig.originalsStrings(),
                     executorService,
                     getCompositeMeterRegistry()
             );
@@ -149,7 +148,7 @@ class HttpTaskTest {
             HttpClientConfiguration<OkHttpClient,Request, Response> httpClientConfiguration = new HttpClientConfiguration<>(
                     "dummy",
                     new OkHttpClientFactory(),
-                    MapUtils.getMapWithPrefix(httpConnectorConfig.originals(),"config.dummy."),
+                    MapUtils.getMapWithPrefix(httpConnectorConfig.originalsStrings(),"config.dummy."),
                     executorService,
                     getCompositeMeterRegistry()
             );
@@ -185,7 +184,7 @@ class HttpTaskTest {
             HttpClientConfiguration<OkHttpClient,Request, Response> httpClientConfiguration = new HttpClientConfiguration<>(
                     "dummy",
                     new OkHttpClientFactory(),
-                    MapUtils.getMapWithPrefix(httpConnectorConfig.originals(),"config.dummy."),
+                    MapUtils.getMapWithPrefix(httpConnectorConfig.originalsStrings(),"config.dummy."),
                     executorService,
                     getCompositeMeterRegistry()
             );
@@ -223,7 +222,7 @@ class HttpTaskTest {
             HttpClientConfiguration<OkHttpClient,Request, Response> httpClientConfiguration = new HttpClientConfiguration<>(
                     "dummy",
                     new OkHttpClientFactory(),
-                    MapUtils.getMapWithPrefix(httpConnectorConfig.originals(),"config.dummy."),
+                    MapUtils.getMapWithPrefix(httpConnectorConfig.originalsStrings(),"config.dummy."),
                     executorService,
                     getCompositeMeterRegistry()
             );
@@ -268,7 +267,7 @@ class HttpTaskTest {
             HttpClientConfiguration<OkHttpClient,Request, Response> httpClientConfiguration = new HttpClientConfiguration<>(
                     "dummy",
                     new OkHttpClientFactory(),
-                    MapUtils.getMapWithPrefix(httpConnectorConfig.originals(),"config.dummy."),
+                    MapUtils.getMapWithPrefix(httpConnectorConfig.originalsStrings(),"config.dummy."),
                     executorService,
                     getCompositeMeterRegistry()
             );

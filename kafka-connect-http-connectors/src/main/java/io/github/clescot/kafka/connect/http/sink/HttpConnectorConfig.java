@@ -19,6 +19,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 
+import static io.github.clescot.kafka.connect.Configuration.DEFAULT_CONFIGURATION_ID;
 import static io.github.clescot.kafka.connect.http.client.HttpClientConfigDefinition.*;
 import static io.github.clescot.kafka.connect.http.sink.HttpConfigDefinition.*;
 import static io.github.clescot.kafka.connect.http.sink.SinkConfigDefinition.*;
@@ -178,7 +179,11 @@ public class HttpConnectorConfig extends AbstractConfig {
         this.defaultSuccessResponseCodeRegex = getString(CONFIG_DEFAULT_SUCCESS_RESPONSE_CODE_REGEX);
         this.defaultRetryResponseCodeRegex = getString(CONFIG_DEFAULT_RETRY_RESPONSE_CODE_REGEX);
         this.customFixedThreadpoolSize = getInt(HTTP_CLIENT_ASYNC_FIXED_THREAD_POOL_SIZE);
-        this.configurationIds = Optional.ofNullable(getList(CONFIGURATION_IDS)).orElse(Lists.newArrayList());
+        List<String> configIds = Lists.newArrayList(getList(CONFIGURATION_IDS));
+        if(configIds.isEmpty()||!configIds.contains(DEFAULT_CONFIGURATION_ID)){
+            configIds.add(DEFAULT_CONFIGURATION_ID);
+        }
+        this.configurationIds = Optional.of(configIds).orElse(Lists.newArrayList(DEFAULT_CONFIGURATION_ID));
         this.defaultRequestMapperMode = Optional.of(MapperMode.valueOf(getString(DEFAULT_REQUEST_MAPPER_PREFIX + REQUEST_MAPPER_DEFAULT_MODE))).orElse(MapperMode.DIRECT);
         this.defaultUrlExpression = getString(DEFAULT_REQUEST_MAPPER_PREFIX + REQUEST_MAPPER_DEFAULT_URL_EXPRESSION);
         this.defaultMethodExpression = getString(DEFAULT_REQUEST_MAPPER_PREFIX + REQUEST_MAPPER_DEFAULT_METHOD_EXPRESSION);

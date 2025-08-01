@@ -53,12 +53,12 @@ public class HttpRequestMapperFactory {
         return httpRequestMapper;
     }
 
-    public List<HttpRequestMapper> buildCustomHttpRequestMappers(Map<String, Object> config, JexlEngine jexlEngine, List<String> requestMapperIds) {
+    public List<HttpRequestMapper> buildCustomHttpRequestMappers(Map<String, String> config, JexlEngine jexlEngine, List<String> requestMapperIds) {
         List<HttpRequestMapper> requestMappers = Lists.newArrayList();
         for (String httpRequestMapperId : Optional.ofNullable(requestMapperIds).orElse(Lists.newArrayList())) {
             HttpRequestMapper httpRequestMapper;
             String prefix = "http.request.mapper." + httpRequestMapperId+".";
-            Map<String, Object> settings = MapUtils.getMapWithPrefix(config,prefix);
+            Map<String, String> settings = MapUtils.getMapWithPrefix(config,prefix);
             String modeKey = "mode";
             MapperMode mapperMode = MapperMode.valueOf(Optional.ofNullable(settings.get(modeKey)).orElse(MapperMode.DIRECT.name()).toString());
             switch (mapperMode) {
@@ -66,12 +66,12 @@ public class HttpRequestMapperFactory {
                     httpRequestMapper = new JEXLHttpRequestMapper(
                             httpRequestMapperId,
                             jexlEngine,
-                            (String) settings.get("matcher"),
-                            (String) settings.get("url"),
-                            (String) settings.get("method"),
-                            (String) settings.get("bodytype"),
-                            (String) settings.get("body"),
-                            (String) settings.get("headers")
+                            settings.get("matcher"),
+                            settings.get("url"),
+                            settings.get("method"),
+                            settings.get("bodytype"),
+                            settings.get("body"),
+                            settings.get("headers")
                     );
                     break;
                 }
@@ -80,7 +80,7 @@ public class HttpRequestMapperFactory {
                     httpRequestMapper = new DirectHttpRequestMapper(
                             httpRequestMapperId,
                             jexlEngine,
-                            (String) settings.get("matcher")
+                            settings.get("matcher")
                     );
                     break;
                 }

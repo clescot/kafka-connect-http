@@ -11,18 +11,18 @@ import java.util.Optional;
 
 public class MessageSplitterFactory {
     public static final String MESSAGE_SPLITTER = "message.splitter.";
-    public List<MessageSplitter> buildMessageSplitters(Map<String, Object> config, JexlEngine jexlEngine, List<String> messageSplitterIds) {
+    public List<MessageSplitter> buildMessageSplitters(Map<String, String> config, JexlEngine jexlEngine, List<String> messageSplitterIds) {
         List<MessageSplitter> requestSplitterList = Lists.newArrayList();
         for (String splitterId : Optional.ofNullable(messageSplitterIds).orElse(Lists.newArrayList())) {
-            Map<String, Object> settings = MapUtils.getMapWithPrefix(config,MESSAGE_SPLITTER + splitterId + ".");
-            String splitPattern = (String) settings.get("pattern");
+            Map<String, String> settings = MapUtils.getMapWithPrefix(config,MESSAGE_SPLITTER + splitterId + ".");
+            String splitPattern = settings.get("pattern");
             Preconditions.checkNotNull(splitPattern,"message splitter '"+splitterId+"' splitPattern is required");
-            String limit = (String) settings.get("limit");
+            String limit = settings.get("limit");
             int splitLimit = 0;
             if(limit!=null&& !limit.isBlank()) {
                 splitLimit = Integer.parseInt(limit);
             }
-            String matchingExpression = (String) settings.get("matcher");
+            String matchingExpression = settings.get("matcher");
             MessageSplitter requestSplitter = new MessageSplitter(splitterId,jexlEngine,matchingExpression,splitPattern,splitLimit);
             requestSplitterList.add(requestSplitter);
         }

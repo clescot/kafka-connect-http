@@ -3,12 +3,15 @@ package io.github.clescot.kafka.connect.sse.client.okhttp;
 import com.google.common.collect.Maps;
 import com.launchdarkly.eventsource.EventSource;
 import com.launchdarkly.eventsource.ReadyState;
+import io.github.clescot.kafka.connect.Configuration;
 import io.github.clescot.kafka.connect.sse.core.SseEvent;
 import org.awaitility.Awaitility;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
@@ -24,7 +27,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 @Testcontainers
 public class ITSseSourceTaskTest {
-
+    private final static Logger LOGGER = LoggerFactory.getLogger(ITSseSourceTaskTest.class);
     @Container
     public GenericContainer sseServerContainer = new GenericContainer(DockerImageName.parse("jmalloc/echo-server:v0.3.7"))
             .withExposedPorts(8080)
@@ -50,6 +53,7 @@ public class ITSseSourceTaskTest {
         Map<String, String> settings = Maps.newHashMap();
         settings.put("topic", "test");
         String configurationId = "default";
+        settings.put("config.ids", "default");
         settings.put("config.default.url", "http://localhost:"+mappedPort+"/.sse");
         settings.put("config.default.topic", "dummy_topic");
         settings.put("okhttp.retry.on.connection.failure", "true");
@@ -60,10 +64,10 @@ public class ITSseSourceTaskTest {
         assertThat(sseSourceTask.isConnected(configurationId)).isTrue();
         sseSourceTask.stop();
         assertThat(sseSourceTask.isConnected(configurationId)).isFalse();
-        EventSource eventSource = sseSourceTask.getDefaultConfiguration().getBackgroundEventSource().getEventSource();
+        EventSource eventSource = sseSourceTask.getConfigurations().get(Configuration.DEFAULT_CONFIGURATION_ID).getBackgroundEventSource().getEventSource();
         assertThat(eventSource.getState()).isEqualTo(ReadyState.CLOSED);
+        queue.forEach(msg-> LOGGER.info("############### :{}",msg));
         assertThat(eventSource.getLastEventId()).isEqualTo("21");
-        queue.stream().forEach(msg-> System.out.println("############### :"+msg));
     }
 
 
@@ -73,7 +77,7 @@ public class ITSseSourceTaskTest {
         Map<String, String> settings = Maps.newHashMap();
         settings.put("topic", "test");
         String configurationId = "test_sse_client_connect";
-        settings.put(CONFIGURATION_IDS, configurationId);
+        settings.put(CONFIGURATION_IDS, "default,"+configurationId);
         settings.put("config.default.url", "http://localhost:"+mappedPort+"/.sse");
         settings.put("config.default.topic", "dummy_topic");
         settings.put("config."+configurationId+".url", "http://localhost:"+mappedPort+"/.sse");
@@ -91,8 +95,7 @@ public class ITSseSourceTaskTest {
         assertThat(eventSource.getLastEventId()).isEqualTo("21");
         Set<Map.Entry<String, Queue<SseEvent>>> entries = sseSourceTask.getQueues().entrySet();
         for (Map.Entry<String, Queue<SseEvent>> entry : entries) {
-            System.out.println("############### configId :"+entry.getKey());
-            entry.getValue().forEach(msg-> System.out.println("############### event :"+msg));
+            entry.getValue().forEach(msg-> LOGGER.info("############### configId :{} ############### event :{}",entry.getKey(),msg));
         }
     }
 

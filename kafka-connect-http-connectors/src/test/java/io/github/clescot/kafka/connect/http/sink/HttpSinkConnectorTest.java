@@ -58,6 +58,9 @@ public class HttpSinkConnectorTest {
         void test_taskConfigs_nominal_case() {
             HttpSinkConnector httpSinkConnector = new HttpSinkConnector();
             Map<String, String> settings = Maps.newHashMap();
+            settings.put("producer.format","string");
+            settings.put("producer.bootstrap.servers","kafka:9092");
+            settings.put("producer.schema.registry.url","https://myschemaregistry.com:8081");
             httpSinkConnector.start(settings);
             List<Map<String, String>> maps = httpSinkConnector.taskConfigs(1);
             assertThat(maps).hasSize(1);
@@ -80,6 +83,9 @@ public class HttpSinkConnectorTest {
         void test_2_tasks() {
             HttpSinkConnector httpSinkConnector = new HttpSinkConnector();
             Map<String, String> settings = Maps.newHashMap();
+            settings.put("producer.format","string");
+            settings.put("producer.bootstrap.servers","kafka:9092");
+            settings.put("producer.schema.registry.url","https://myschemaregistry.com:8081");
             httpSinkConnector.start(settings);
             List<Map<String, String>> maps = httpSinkConnector.taskConfigs(2);
             assertThat(maps).hasSize(2);

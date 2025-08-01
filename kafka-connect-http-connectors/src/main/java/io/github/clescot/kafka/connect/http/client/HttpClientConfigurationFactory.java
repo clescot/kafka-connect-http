@@ -25,12 +25,11 @@ public class HttpClientConfigurationFactory {
             HttpClientFactory<C, R, S> httpClientFactory,
             ExecutorService executorService,
             List<String> configIdList,
-            Map<String, Object> originals, CompositeMeterRegistry meterRegistry
+            Map<String, String> originals, CompositeMeterRegistry meterRegistry
     ) {
         Map<String,HttpClientConfiguration<C, R, S>> httpClientConfigurations = Maps.newHashMap();
         List<String> configurationIds = Lists.newArrayList();
         Optional<List<String>> ids = Optional.ofNullable(configIdList);
-        configurationIds.add(DEFAULT_CONFIGURATION_ID);
         ids.ifPresent(configurationIds::addAll);
         HttpClientConfiguration<C, R, S> defaultHttpClientConfiguration = null;
         Optional<RetryPolicy<HttpExchange>> defaultRetryPolicy = Optional.empty();

@@ -24,13 +24,15 @@ class SseTaskTest {
         @Test
         void empty_settings() {
             HashMap<String, String> emptySettings = Maps.newHashMap();
-            assertThrows(ConfigException.class, () -> new SseTask(emptySettings));
+            assertThrows(IllegalArgumentException.class, () -> new SseTask(emptySettings));
         }
 
         @Test
         void valid_args() {
             SseTask sseTask = new SseTask(
-                    Map.of("config.default.url", "http://localhost:8080/sse",
+                    Map.of(
+                            "config.ids", "default",
+                            "config.default.url", "http://localhost:8080/sse",
                             "config.default.topic", "test-topic"
                     )
             );
@@ -44,13 +46,15 @@ class SseTaskTest {
         @Test
         void connect() {
             SseTask sseTask = new SseTask(
-                    Map.of("config.default.url", "http://localhost:8080/sse",
+                    Map.of(
+                            "config.ids", "default",
+                            "config.default.url", "http://localhost:8080/sse",
                             "config.default.topic", "test-topic"
                     )
             );
             sseTask.connect();
             assertThat(sseTask.getDefaultConfiguration().getConfigurationId()).isEqualTo("default");
-            assertThat(sseTask.getDefaultTopic()).isEqualTo("test-topic");
+            assertThat(sseTask.getConfigurations().get("default").getTopic()).isEqualTo("test-topic");
             assertThat(sseTask.isConnected("default")).isTrue();
             assertThat(sseTask.isStarted("default")).isFalse();
             assertFalse(sseTask.getQueues().isEmpty());
@@ -65,7 +69,9 @@ class SseTaskTest {
         @Test
         void start() {
             SseTask sseTask = new SseTask(
-                    Map.of("config.default.url", "http://localhost:8080/sse",
+                    Map.of(
+                            "config.ids", "default",
+                            "config.default.url", "http://localhost:8080/sse",
                             "config.default.topic", "test-topic"
                     )
             );
@@ -77,7 +83,9 @@ class SseTaskTest {
         @Test
         void start_not_connected() {
             SseTask sseTask = new SseTask(
-                    Map.of("config.default.url", "http://localhost:8080/sse",
+                    Map.of(
+                            "config.ids", "default",
+                            "config.default.url", "http://localhost:8080/sse",
                             "config.default.topic", "test-topic"
                     )
             );
@@ -93,7 +101,9 @@ class SseTaskTest {
         @Test
         void connect_start_and_stop() {
             SseTask sseTask = new SseTask(
-                    Map.of("config.default.url", "http://localhost:8080/sse",
+                    Map.of(
+                            "config.ids", "default",
+                            "config.default.url", "http://localhost:8080/sse",
                             "config.default.topic", "test-topic"
                     )
             );
@@ -107,7 +117,9 @@ class SseTaskTest {
         @Test
         void stop_without_connect_and_start() {
             SseTask sseTask = new SseTask(
-                    Map.of("config.default.url", "http://localhost:8080/sse",
+                    Map.of(
+                            "config.ids", "default",
+                            "config.default.url", "http://localhost:8080/sse",
                             "config.default.topic", "test-topic"
                     )
             );

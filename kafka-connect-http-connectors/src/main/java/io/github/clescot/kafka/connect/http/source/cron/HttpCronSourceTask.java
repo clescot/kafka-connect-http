@@ -24,10 +24,11 @@ import static org.quartz.TriggerBuilder.newTrigger;
 public class HttpCronSourceTask extends SourceTask {
 
     private static final VersionUtils VERSION_UTILS = new VersionUtils();
-    private HttpCronSourceConnectorConfig httpCronSourceConnectorConfig;
+    public static final String JOB_PREFIX = "job.";
     private Scheduler scheduler;
     private Queue<HttpRequest> queue;
     private ObjectMapper objectMapper;
+    private Map<String, String> settings;
 
     @Override
     public String version() {
@@ -42,42 +43,43 @@ public class HttpCronSourceTask extends SourceTask {
 
         queue = QueueFactory.getQueue(""+UUID.randomUUID());
         Preconditions.checkNotNull(settings);
-        this.httpCronSourceConnectorConfig = new HttpCronSourceConnectorConfig(settings);
+        this.settings = settings;
         SchedulerFactory schedulerFactory = new StdSchedulerFactory();
         try {
             scheduler = schedulerFactory.getScheduler();
             ListenerManager listenerManager = scheduler.getListenerManager();
             listenerManager.addJobListener(new HttpCronJobListener(queue));
             scheduler.start();
-            List<String> jobs = httpCronSourceConnectorConfig.getJobs();
-            jobs.forEach(id -> {
+            String jobIds = Optional.ofNullable(settings.get(HttpCronSourceConfigDefinition.JOBS)).orElseThrow(()-> new IllegalArgumentException("jobs configuration is required"));
+            List<String> jobs = Arrays.asList(jobIds.split(","));
+            jobs.forEach(jobId -> {
                 JobDataMap jobDataMap = new JobDataMap();
 
-                String url = settings.get(id + ".url");
+                String url = settings.get(JOB_PREFIX +jobId + ".url");
                 jobDataMap.put(URL, url);
 
-                Optional<String> methodAsString = Optional.ofNullable(settings.get(id + ".method"));
+                Optional<String> methodAsString = Optional.ofNullable(settings.get(JOB_PREFIX +jobId + ".method"));
                 methodAsString.ifPresent(method -> jobDataMap.put(METHOD, method));
 
-                Optional<String> bodyAsString = Optional.ofNullable(settings.get(id + ".body"));
+                Optional<String> bodyAsString = Optional.ofNullable(settings.get(JOB_PREFIX +jobId + ".body"));
                 bodyAsString.ifPresent(body -> jobDataMap.put(BODY, body));
 
-                Optional<String> headersAsString = Optional.ofNullable(settings.get(id + ".headers"));
+                Optional<String> headersAsString = Optional.ofNullable(settings.get(JOB_PREFIX +jobId + ".headers"));
                 List<String> headerKeys = Lists.newArrayList();
                 if (headersAsString.isPresent()) {
                     headerKeys.addAll(Lists.newArrayList(headersAsString.get().split(",")));
-                    headerKeys.forEach(key-> jobDataMap.put(key,settings.get(id+".header."+key)));
+                    headerKeys.forEach(key-> jobDataMap.put(key,settings.get(JOB_PREFIX +jobId+".header."+key)));
                     jobDataMap.put(HEADERS, headersAsString.get());
                 }
 
                 JobDetail job = newJob(HttpCronJob.class)
-                        .withIdentity(id)
+                        .withIdentity(jobId)
                         .setJobData(jobDataMap)
                         .build();
 
-                String cron = settings.get(id + ".cron");
+                String cron = settings.get(JOB_PREFIX +jobId + ".cron");
                 Trigger trigger = newTrigger()
-                        .withIdentity(id)
+                        .withIdentity(jobId)
                         .startNow()
                         .withSchedule(cronSchedule(cron))
                         .build();
@@ -104,7 +106,7 @@ public class HttpCronSourceTask extends SourceTask {
                 sourceRecord = new SourceRecord(
                         Maps.newHashMap(),
                         Maps.newHashMap(),
-                        httpCronSourceConnectorConfig.getTopic(),
+                        settings.get(HttpCronSourceConfigDefinition.TOPIC),
                         null,
                         objectMapper.writeValueAsString(httpRequest)
                 );

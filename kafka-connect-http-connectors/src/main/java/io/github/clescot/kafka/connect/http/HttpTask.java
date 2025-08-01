@@ -96,7 +96,7 @@ public class HttpTask<C extends HttpClient<R,S>,R, S> implements Task<C,HttpConf
 
         //message splitters
         MessageSplitterFactory messageSplitterFactory = new MessageSplitterFactory();
-        this.messageSplitters = messageSplitterFactory.buildMessageSplitters(httpConnectorConfig.originals(), jexlEngine, httpConnectorConfig.getList(MESSAGE_SPLITTER_IDS));
+        this.messageSplitters = messageSplitterFactory.buildMessageSplitters(httpConnectorConfig.originalsStrings(), jexlEngine, httpConnectorConfig.getList(MESSAGE_SPLITTER_IDS));
 
         //HttpRequestMappers
         HttpRequestMapperFactory httpRequestMapperFactory = new HttpRequestMapperFactory();
@@ -109,7 +109,7 @@ public class HttpTask<C extends HttpClient<R,S>,R, S> implements Task<C,HttpConf
                 httpConnectorConfig.getDefaultBodyExpression(),
                 httpConnectorConfig.getDefaultHeadersExpression());
         this.httpRequestMappers = httpRequestMapperFactory.buildCustomHttpRequestMappers(
-                httpConnectorConfig.originals(),
+                httpConnectorConfig.originalsStrings(),
                 jexlEngine,
                 httpConnectorConfig.getList(HTTP_REQUEST_MAPPER_IDS)
         );
@@ -122,8 +122,8 @@ public class HttpTask<C extends HttpClient<R,S>,R, S> implements Task<C,HttpConf
         Map<String,HttpClientConfiguration<C, R, S>> httpClientConfigurations = buildConfigurations(
                 httpClientFactory,
                 executorService,
-                httpConnectorConfig.getList(CONFIGURATION_IDS),
-                httpConnectorConfig.originals(), meterRegistry
+                httpConnectorConfig.getConfigurationIds(),
+                httpConnectorConfig.originalsStrings(), meterRegistry
         );
         //wrap configurations in HttpConfiguration
         this.configurations = httpClientConfigurations.entrySet().stream()

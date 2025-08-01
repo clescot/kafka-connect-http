@@ -32,7 +32,7 @@ class HttpCronSourceTaskTest {
         @Test
         void test_empty_settings() {
             HashMap<String, String> settings = Maps.newHashMap();
-            Assertions.assertThrows(ConfigException.class, () -> httpCronSourceTask.start(settings));
+            Assertions.assertThrows(IllegalArgumentException.class, () -> httpCronSourceTask.start(settings));
         }
 
         @Test
@@ -44,7 +44,7 @@ class HttpCronSourceTaskTest {
         void test_settings_with_topic_only() {
             Map<String, String> settings = Maps.newHashMap();
             settings.put("topic", "test");
-            Assertions.assertThrows(ConfigException.class, () -> httpCronSourceTask.start(settings));
+            Assertions.assertThrows(IllegalArgumentException.class, () -> httpCronSourceTask.start(settings));
         }
 
         @Test
@@ -52,8 +52,8 @@ class HttpCronSourceTaskTest {
             Map<String, String> settings = Maps.newHashMap();
             settings.put("topic", "test");
             settings.put("jobs", "job10");
-            settings.put("job10.cron", "0 0 6 * * ?");
-            settings.put("job10.url", "https://example.com");
+            settings.put("job.job10.cron", "0 0 6 * * ?");
+            settings.put("job.job10.url", "https://example.com");
             Assertions.assertDoesNotThrow(() -> httpCronSourceTask.start(settings));
         }
 
@@ -62,10 +62,10 @@ class HttpCronSourceTaskTest {
             Map<String, String> settings = Maps.newHashMap();
             settings.put("topic", "test");
             settings.put("jobs", "job1,job2");
-            settings.put("job1.cron", "0 0 6 * * ?");
-            settings.put("job1.url", "https://example.com");
-            settings.put("job2.cron", "0 0 1 * * ?");
-            settings.put("job2.url", "https://test.com");
+            settings.put("job.job1.cron", "0 0 6 * * ?");
+            settings.put("job.job1.url", "https://example.com");
+            settings.put("job.job2.cron", "0 0 1 * * ?");
+            settings.put("job.job2.url", "https://test.com");
             Assertions.assertDoesNotThrow(() -> httpCronSourceTask.start(settings));
         }
 
@@ -75,15 +75,15 @@ class HttpCronSourceTaskTest {
             Map<String, String> settings = Maps.newHashMap();
             settings.put("topic", "test");
             settings.put("jobs", "job11,job22,job33");
-            settings.put("job11.cron", "0 0 6 * * ?");
-            settings.put("job11.url", "https://example.com");
-            settings.put("job22.cron", "0 0 2 * * ?");
-            settings.put("job22.url", "https://test.com");
-            settings.put("job22.method", "PUT");
-            settings.put("job33.cron", "0 0 2 * * ?");
-            settings.put("job33.url", "https://test.com");
-            settings.put("job33.method", "POST");
-            settings.put("job33.body", "stuff");
+            settings.put("job.job11.cron", "0 0 6 * * ?");
+            settings.put("job.job11.url", "https://example.com");
+            settings.put("job.job22.cron", "0 0 2 * * ?");
+            settings.put("job.job22.url", "https://test.com");
+            settings.put("job.job22.method", "PUT");
+            settings.put("job.job33.cron", "0 0 2 * * ?");
+            settings.put("job.job33.url", "https://test.com");
+            settings.put("job.job33.method", "POST");
+            settings.put("job.job33.body", "stuff");
 
             Assertions.assertDoesNotThrow(() -> httpCronSourceTask.start(settings));
             Scheduler scheduler = httpCronSourceTask.getScheduler();
@@ -147,15 +147,15 @@ class HttpCronSourceTaskTest {
             Map<String, String> settings = Maps.newHashMap();
             settings.put("topic", "test");
             settings.put("jobs", "job11,job22,job33");
-            settings.put("job11.cron", "* * * * * ?");
-            settings.put("job11.url", "https://example.com");
-            settings.put("job22.cron", "0 0 2 * * ?");
-            settings.put("job22.url", "https://test.com");
-            settings.put("job22.method", "PUT");
-            settings.put("job33.cron", "0 0 2 * * ?");
-            settings.put("job33.url", "https://test.com");
-            settings.put("job33.method", "POST");
-            settings.put("job33.body", "stuff");
+            settings.put("job.job11.cron", "* * * * * ?");
+            settings.put("job.job11.url", "https://example.com");
+            settings.put("job.job22.cron", "0 0 2 * * ?");
+            settings.put("job.job22.url", "https://test.com");
+            settings.put("job.job22.method", "PUT");
+            settings.put("job.job33.cron", "0 0 2 * * ?");
+            settings.put("job.job33.url", "https://test.com");
+            settings.put("job.job33.method", "POST");
+            settings.put("job.job33.body", "stuff");
             httpCronSourceTask.start(settings);
             Awaitility.await().atMost(5, TimeUnit.SECONDS).until(()-> httpCronSourceTask.getQueue().peek()!=null);
             Awaitility.await().atMost(5, TimeUnit.SECONDS).until(()->!httpCronSourceTask.poll().isEmpty());

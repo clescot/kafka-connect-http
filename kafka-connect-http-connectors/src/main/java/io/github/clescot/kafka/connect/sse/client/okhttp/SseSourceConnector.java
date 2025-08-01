@@ -1,10 +1,12 @@
 package io.github.clescot.kafka.connect.sse.client.okhttp;
 
 import com.google.common.base.Preconditions;
+import io.github.clescot.kafka.connect.MapUtils;
 import io.github.clescot.kafka.connect.VersionUtils;
 import org.apache.kafka.common.config.ConfigDef;
 import org.apache.kafka.connect.connector.Task;
 import org.apache.kafka.connect.source.SourceConnector;
+import org.apache.kafka.connect.util.ConnectorUtils;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -31,11 +33,14 @@ public class SseSourceConnector extends SourceConnector {
     public List<Map<String, String>> taskConfigs(int maxTasks) {
         Preconditions.checkArgument(maxTasks>0,"maxTasks must be higher than 0");
         Preconditions.checkNotNull(this.sseConnectorConfig, "sseConnectorConfig must not be null. Call start() first.");
+        int numGroups = Math.min(this.sseConnectorConfig.getConfigurationIds().size(), maxTasks);
+        List<List<String>> partitions = ConnectorUtils.groupPartitions(this.sseConnectorConfig.getConfigurationIds(), numGroups);
         List<Map<String, String>> configs = new ArrayList<>(maxTasks);
-        for (int i = 0; i < maxTasks; i++) {
-            configs.add(this.sseConnectorConfig.originalsStrings());
+        for (List<String> partition : partitions) {
+            List<String> list = partition.stream().map(configurationId -> "config." + configurationId).toList();
+            Map<String, String> subSettings = MapUtils.filterEntriesStartingWithPrefixes(this.sseConnectorConfig.originalsStrings(), list.toArray(new String[0]));
+            configs.add(subSettings);
         }
-
         return configs;
     }
 

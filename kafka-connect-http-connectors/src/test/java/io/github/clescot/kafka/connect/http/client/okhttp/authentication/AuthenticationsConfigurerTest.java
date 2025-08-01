@@ -5,6 +5,9 @@ import com.google.common.collect.Lists;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
+import java.util.ArrayList;
+import java.util.List;
+
 class AuthenticationsConfigurerTest {
 
     @Test
@@ -14,6 +17,7 @@ class AuthenticationsConfigurerTest {
 
     @Test
     void test_constructor_with_empty_list(){
-        Assertions.assertThrows(IllegalArgumentException.class,()->new AuthenticationsConfigurer(Lists.newArrayList()));
+        List<AuthenticationConfigurer> emptyList = Lists.newArrayList();
+        Assertions.assertThrows(IllegalArgumentException.class,()->new AuthenticationsConfigurer(emptyList));
     }
 }

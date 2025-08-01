@@ -49,8 +49,15 @@ public class HttpSinkConnector extends SinkConnector {
 
     @Override
     public List<Map<String, String>> taskConfigs(int taskCount) {
+        Preconditions.checkNotNull(settings,"settings must not be null. Call start() first.");
+        Preconditions.checkArgument(!settings.isEmpty(),"settings must not be empty.");
+        Preconditions.checkArgument(!this.httpConnectorConfig.getConfigurationIds().isEmpty());
+        Preconditions.checkArgument(this.httpConnectorConfig.getConfigurationIds().contains(DEFAULT_CONFIGURATION_ID));
         List<Map<String, String>> configs = new ArrayList<>(taskCount);
         for (int i = 0; i < taskCount; i++) {
+            //all tasks have all the configurations, to handle all Http requests.
+            //scalability with multiple connector instances is handled by partitioning the incoming topic.
+            //each task will have one or more partitions to handle.
             configs.add(this.httpConnectorConfig.originalsStrings());
         }
         return configs;

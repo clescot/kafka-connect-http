@@ -1,4 +1,4 @@
-<httpClientConfiguration>
+<configuration>
     <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
         <withJansi>true</withJansi>
         <encoder>
@@ -13,6 +13,7 @@
     <logger name="io.github.clescot.kafka.connect.sse" level="DEBUG" />
     <logger name="io.github.clescot.kafka.connect.http.client.okhttp" level="INFO" />
     <logger name="io.github.clescot.kafka.connect.http.client.okhttp.interceptor" level="DEBUG" />
+    <logger name="io.github.clescot.kafka.connect.sse.client.okhttp" level="DEBUG" />
     <logger name="io.github.clescot.kafka.connect.http.sink" level="DEBUG" />
     <logger name="io.github.clescot.kafka.connect.http.source" level="DEBUG" />
     <logger name="io.github.clescot.kafka.connect.sse.client.okhttp" level="DEBUG" />
@@ -21,4 +22,9 @@
     <logger name="ch.qos.logback" level="WARN" />
     <logger name="ch.qos.logback.classic.LoggerContext" level="WARN" />
     <logger name="ch.qos.logback.classic.model.processor.LoggerModelHandler" level="WARN" />
-</httpClientConfiguration>
+    <logger name="org.testcontainers" level="INFO"/>
+    <!-- The following logger can be used for containers logs since 1.18.0 -->
+    <logger name="tc" level="INFO"/>
+    <logger name="com.github.dockerjava" level="WARN"/>
+    <logger name="com.github.dockerjava.zerodep.shaded.org.apache.hc.client5.http.wire" level="OFF"/>
+</configuration>
