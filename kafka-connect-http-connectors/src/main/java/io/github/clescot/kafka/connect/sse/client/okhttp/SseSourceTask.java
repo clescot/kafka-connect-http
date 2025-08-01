@@ -95,11 +95,5 @@ public class SseSourceTask extends SourceTask {
         return this.sseTask.getConfigurations();
     }
 
-    public SseConfiguration getDefaultConfiguration() {
-        Map<String,SseConfiguration> configurations = getConfigurations();
-        Preconditions.checkArgument(!configurations.isEmpty(), "Configurations list must not be null or empty.");
-        //return the first configuration as default
-        return configurations.get(Configuration.DEFAULT_CONFIGURATION_ID);
-    }
 
 }

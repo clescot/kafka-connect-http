@@ -3,6 +3,7 @@ package io.github.clescot.kafka.connect.sse.client.okhttp;
 import com.google.common.collect.Maps;
 import com.launchdarkly.eventsource.EventSource;
 import com.launchdarkly.eventsource.ReadyState;
+import io.github.clescot.kafka.connect.Configuration;
 import io.github.clescot.kafka.connect.sse.core.SseEvent;
 import org.awaitility.Awaitility;
 import org.junit.jupiter.api.AfterEach;
@@ -63,7 +64,7 @@ public class ITSseSourceTaskTest {
         assertThat(sseSourceTask.isConnected(configurationId)).isTrue();
         sseSourceTask.stop();
         assertThat(sseSourceTask.isConnected(configurationId)).isFalse();
-        EventSource eventSource = sseSourceTask.getDefaultConfiguration().getBackgroundEventSource().getEventSource();
+        EventSource eventSource = sseSourceTask.getConfigurations().get(Configuration.DEFAULT_CONFIGURATION_ID).getBackgroundEventSource().getEventSource();
         assertThat(eventSource.getState()).isEqualTo(ReadyState.CLOSED);
         queue.forEach(msg-> LOGGER.info("############### :{}",msg));
         assertThat(eventSource.getLastEventId()).isEqualTo("21");
