@@ -71,9 +71,9 @@ public class SseConfiguration implements Configuration<OkHttpClient, HttpRequest
         //retry strategy
         this.retryDelayStrategy = RetryDelayStrategy.defaultStrategy();
         if (settings.containsKey(SseConfigDefinition.RETRY_DELAY_STRATEGY_MAX_DELAY_MILLIS)) {
-            long maxDelayMillis = Long.parseLong(settings.getOrDefault(SseConfigDefinition.RETRY_DELAY_STRATEGY_MAX_DELAY_MILLIS, "30000").toString());
-            float backoffMultiplier = Float.parseFloat(settings.getOrDefault(SseConfigDefinition.RETRY_DELAY_STRATEGY_BACKOFF_MULTIPLIER, "2").toString());
-            float jitterMultiplier = Float.parseFloat(settings.getOrDefault(SseConfigDefinition.RETRY_DELAY_STRATEGY_JITTER_MULTIPLIER, "0.5").toString());
+            long maxDelayMillis = Long.parseLong(settings.getOrDefault(SseConfigDefinition.RETRY_DELAY_STRATEGY_MAX_DELAY_MILLIS, "30000"));
+            float backoffMultiplier = Float.parseFloat(settings.getOrDefault(SseConfigDefinition.RETRY_DELAY_STRATEGY_BACKOFF_MULTIPLIER, "2"));
+            float jitterMultiplier = Float.parseFloat(settings.getOrDefault(SseConfigDefinition.RETRY_DELAY_STRATEGY_JITTER_MULTIPLIER, "0.5"));
             retryDelayStrategy = retryDelayStrategy
                     .maxDelay(maxDelayMillis, TimeUnit.MILLISECONDS)
                     .backoffMultiplier(backoffMultiplier)
@@ -92,11 +92,11 @@ public class SseConfiguration implements Configuration<OkHttpClient, HttpRequest
                     errorStrategy = ErrorStrategy.alwaysThrow();
                     break;
                 case SseConfigDefinition.ERROR_STRATEGY_CONTINUE_WITH_MAX_ATTEMPTS:
-                    int maxAttempts = Integer.parseInt(settings.getOrDefault(SseConfigDefinition.ERROR_STRATEGY_MAX_ATTEMPTS, "3").toString());
+                    int maxAttempts = Integer.parseInt(settings.getOrDefault(SseConfigDefinition.ERROR_STRATEGY_MAX_ATTEMPTS, "3"));
                     errorStrategy = ErrorStrategy.continueWithMaxAttempts(maxAttempts);
                     break;
                 case SseConfigDefinition.ERROR_STRATEGY_CONTINUE_WITH_TIME_LIMIT:
-                    long timeLimitCountInMillis = Long.parseLong(settings.getOrDefault(SseConfigDefinition.ERROR_STRATEGY_TIME_LIMIT_COUNT_IN_MILLIS, "60000").toString());
+                    long timeLimitCountInMillis = Long.parseLong(settings.getOrDefault(SseConfigDefinition.ERROR_STRATEGY_TIME_LIMIT_COUNT_IN_MILLIS, "60000"));
                     errorStrategy = ErrorStrategy.continueWithTimeLimit(timeLimitCountInMillis, TimeUnit.MILLISECONDS);
                     break;
                 default:
