@@ -25,6 +25,5 @@ updates:
 #          - "mock-oauth2-server"
     ignore:
       - dependency-name: "io.debezium:debezium-testing-testcontainers"
-        versions: [ ">=3.0.0" ]
       - dependency-name: "org.asynchttpclient:async-http-client"
         versions: [ ">=3.0.0" ]
