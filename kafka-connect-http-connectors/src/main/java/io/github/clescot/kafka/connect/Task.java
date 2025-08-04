@@ -1,6 +1,8 @@
 package io.github.clescot.kafka.connect;
 
 import com.google.common.base.Preconditions;
+import io.github.clescot.kafka.connect.http.MeterRegistryFactory;
+import io.micrometer.core.instrument.composite.CompositeMeterRegistry;
 
 import java.util.Map;
 
@@ -45,8 +47,13 @@ public interface Task<C extends Client,F extends Configuration<C,R>,R,S> {
         return configurations.get(Configuration.DEFAULT_CONFIGURATION_ID);
     }
 
-    // This class is a placeholder for the Task class in the Kafka Connect framework.
-    // It can be extended to implement specific task functionality for HTTP connectors.
+    default CompositeMeterRegistry buildMeterRegistry(Map<String,String> settings) {
+        MeterRegistryFactory meterRegistryFactory = new MeterRegistryFactory();
+        return meterRegistryFactory.buildMeterRegistry(settings);
+    }
+
+    // This class is a placeholder for the Task class.
+    // It can be extended to implement specific task functionality.
 
     // The generic types R and S can be used to represent request and response types respectively.
     // This allows for flexibility in defining the types of requests and responses handled by the task.

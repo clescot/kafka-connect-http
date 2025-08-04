@@ -86,8 +86,7 @@ public class HttpTask<C extends HttpClient<R,S>,R, S> implements Task<C,HttpConf
         customFixedThreadPoolSize.ifPresent(integer -> this.executorService = buildExecutorService(integer));
 
         //build meterRegistry
-        MeterRegistryFactory meterRegistryFactory = new MeterRegistryFactory();
-        setMeterRegistry(meterRegistryFactory.buildMeterRegistry(httpConnectorConfig.originalsStrings()));
+        meterRegistry = buildMeterRegistry(httpConnectorConfig.originalsStrings());
 
         //build httpRequestMappers
 

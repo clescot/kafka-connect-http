@@ -18,7 +18,7 @@ import static io.github.clescot.kafka.connect.http.sink.HttpConfigDefinition.*;
 public class MeterRegistryFactory {
 
 
-    public CompositeMeterRegistry buildMeterRegistry(Map<String,String> config) {
+    public CompositeMeterRegistry buildMeterRegistry(Map<String, String> config) {
         CompositeMeterRegistry compositeMeterRegistry = new CompositeMeterRegistry();
         boolean activateJMX = Boolean.parseBoolean(config.get(METER_REGISTRY_EXPORTER_JMX_ACTIVATE));
         if (activateJMX) {
@@ -33,7 +33,7 @@ public class MeterRegistryFactory {
             // you can set the daemon flag to false if you want the server to block
 
             try {
-                int port = prometheusPort != null ? prometheusPort : 9090;
+                int port = prometheusPort!=null?prometheusPort:9090;
                 PrometheusRegistry prometheusRegistry = prometheusMeterRegistry.getPrometheusRegistry();
                 HTTPServer.builder()
                         .port(port)

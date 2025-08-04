@@ -28,6 +28,7 @@ import static io.github.clescot.kafka.connect.http.client.HttpClientConfigDefini
 public class SseTask implements Task<OkHttpClient, SseConfiguration, HttpRequest, SseEvent> {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(SseTask.class);
+    private static CompositeMeterRegistry meterRegistry;
     private final Map<String, SseConfiguration> sseConfigurations;
 
     public SseTask(Map<String, String> settings) {
@@ -48,6 +49,9 @@ public class SseTask implements Task<OkHttpClient, SseConfiguration, HttpRequest
                         config.getKey(),
                         new SseConfiguration(config.getKey(), config.getValue(), MapUtils.getMapWithPrefix(mySettings, "config." + config.getKey() + "."))
                 )).collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+
+        //build meterRegistry
+        meterRegistry = buildMeterRegistry(settings);
     }
 
     /**
