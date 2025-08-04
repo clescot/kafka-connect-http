@@ -28,6 +28,7 @@ public class HttpPart implements Cloneable, Serializable {
     public static final String APPLICATION_JSON = "application/json";
     public static final String APPLICATION_OCTET_STREAM = "application/octet-stream";
     public static final String CONTENT_TYPE = "Content-Type";
+    public static final byte[] EMPTY_BYTE_ARRAY = new byte[0];
     private URI fileUri;
     private HttpPart.BodyType bodyType;
     private Map<String, List<String>> headers = Maps.newHashMap();
@@ -156,7 +157,7 @@ public class HttpPart implements Cloneable, Serializable {
         if (contentAsByteArray != null) {
             return Base64.getMimeDecoder().decode(contentAsByteArray);
         }
-        return new byte[0];
+        return EMPTY_BYTE_ARRAY;
     }
 
     public Map<String, List<String>> getHeaders() {
@@ -246,7 +247,7 @@ public class HttpPart implements Cloneable, Serializable {
         if (getContentAsByteArray()!=null) {
             clone.setContentAsByteArray(getContentAsByteArray());
         }else{
-            clone.setContentAsByteArray(new byte[0]);
+            clone.setContentAsByteArray(EMPTY_BYTE_ARRAY);
         }
         clone.bodyType = getBodyType();
         return clone;
