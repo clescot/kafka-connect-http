@@ -18,7 +18,7 @@ import java.util.stream.Collectors;
  * It uses JEXL expressions to determine if a SinkRecord matches the splitter's criteria.
  * If it matches, it splits the message body according to the specified pattern and limit.
  */
-public class MessageSplitter {
+public class MessageSplitter<T extends ConnectRecord> {
 
     private final String id;
     private final String splitPattern;
@@ -51,7 +51,7 @@ public class MessageSplitter {
         return splitPattern;
     }
 
-    public boolean matches(ConnectRecord sinkRecord) {
+    public boolean matches(T sinkRecord) {
         // populate the context
         JexlContext context = new MapContext();
         context.set(SINK_RECORD, sinkRecord);
@@ -70,24 +70,24 @@ public class MessageSplitter {
         return parts;
     }
 
-    public List<ConnectRecord> split(@NotNull ConnectRecord sinkRecord){
-        Object value = sinkRecord.value();
+    public List<T> split(@NotNull T connectRecord){
+        Object value = connectRecord.value();
         if(value!=null && value.getClass().isAssignableFrom(String.class)){
             String body = (String)value;
             List<String> list = split(body);
-            return list.stream().map(content-> new SinkRecord(
-                    sinkRecord.topic(),
-                    sinkRecord.kafkaPartition(),
-                    sinkRecord.keySchema(),
-                    sinkRecord.key(),
-                    sinkRecord.valueSchema(),
+            return (List<T>) list.stream().map(content-> (ConnectRecord)new SinkRecord(
+                    connectRecord.topic(),
+                    connectRecord.kafkaPartition(),
+                    connectRecord.keySchema(),
+                    connectRecord.key(),
+                    connectRecord.valueSchema(),
                     content,
                     -1,
-                    sinkRecord.timestamp(),
+                    connectRecord.timestamp(),
                     null,
-                    sinkRecord.headers())).collect(Collectors.toList());
+                    connectRecord.headers())).collect(Collectors.toList());
         }else{
-            return List.of(sinkRecord);
+            return List.of(connectRecord);
         }
     }
 }

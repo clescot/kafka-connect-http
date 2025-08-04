@@ -4,6 +4,7 @@ import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
 import io.github.clescot.kafka.connect.MapUtils;
 import org.apache.commons.jexl3.JexlEngine;
+import org.apache.kafka.connect.connector.ConnectRecord;
 
 import java.util.List;
 import java.util.Map;
@@ -11,8 +12,8 @@ import java.util.Optional;
 
 public class MessageSplitterFactory {
     public static final String MESSAGE_SPLITTER = "message.splitter.";
-    public List<MessageSplitter> buildMessageSplitters(Map<String, String> config, JexlEngine jexlEngine, List<String> messageSplitterIds) {
-        List<MessageSplitter> requestSplitterList = Lists.newArrayList();
+    public <T extends ConnectRecord> List<MessageSplitter<T>> buildMessageSplitters(Map<String, String> config, JexlEngine jexlEngine, List<String> messageSplitterIds) {
+        List<MessageSplitter<T>> requestSplitterList = Lists.newArrayList();
         for (String splitterId : Optional.ofNullable(messageSplitterIds).orElse(Lists.newArrayList())) {
             Map<String, String> settings = MapUtils.getMapWithPrefix(config,MESSAGE_SPLITTER + splitterId + ".");
             String splitPattern = settings.get("pattern");
@@ -23,7 +24,7 @@ public class MessageSplitterFactory {
                 splitLimit = Integer.parseInt(limit);
             }
             String matchingExpression = settings.get("matcher");
-            MessageSplitter requestSplitter = new MessageSplitter(splitterId,jexlEngine,matchingExpression,splitPattern,splitLimit);
+            MessageSplitter<T> requestSplitter = new MessageSplitter<>(splitterId,jexlEngine,matchingExpression,splitPattern,splitLimit);
             requestSplitterList.add(requestSplitter);
         }
         return requestSplitterList;

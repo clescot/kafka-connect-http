@@ -12,7 +12,6 @@ import io.github.clescot.kafka.connect.http.core.queue.KafkaRecord;
 import io.github.clescot.kafka.connect.http.mapper.HttpRequestMapper;
 import io.github.clescot.kafka.connect.http.sink.publish.KafkaProducer;
 import org.apache.commons.lang3.tuple.Pair;
-import org.apache.kafka.connect.connector.ConnectRecord;
 import org.apache.kafka.connect.sink.ErrantRecordReporter;
 import org.apache.kafka.connect.sink.SinkRecord;
 import org.apache.kafka.connect.sink.SinkTask;
@@ -42,8 +41,8 @@ public abstract class HttpSinkTask<C extends HttpClient<R, S>, R, S> extends Sin
     private final HttpClientFactory<C, R, S> httpClientFactory;
     private ErrantRecordReporter errantRecordReporter;
 
-    private HttpTask<C, R, S> httpTask;
-    private KafkaProducer<String, Object> producer;
+    private HttpTask<SinkRecord,C, R, S> httpTask;
+    private final KafkaProducer<String, Object> producer;
 
 
 
@@ -90,7 +89,7 @@ public abstract class HttpSinkTask<C extends HttpClient<R, S>, R, S> extends Sin
             return;
         }
         Preconditions.checkNotNull(httpTask, "httpTask is null. 'start' method must be called once before put");
-        List<Pair<ConnectRecord, HttpRequest>> preparedRequests = httpTask.prepareRequests(records);
+        List<Pair<SinkRecord, HttpRequest>> preparedRequests = httpTask.prepareRequests(records);
         //List<SinkRecord>-> SinkRecord
         List<CompletableFuture<HttpExchange>> completableFutures = preparedRequests.stream()
                 .map(this::callAndPublish)
@@ -100,7 +99,7 @@ public abstract class HttpSinkTask<C extends HttpClient<R, S>, R, S> extends Sin
 
     }
 
-    public CompletableFuture<HttpExchange> callAndPublish(Pair<ConnectRecord, HttpRequest> pair) {
+    public CompletableFuture<HttpExchange> callAndPublish(Pair<SinkRecord, HttpRequest> pair) {
 
         return httpTask.call(pair.getRight())
                 .thenApply(
@@ -110,7 +109,7 @@ public abstract class HttpSinkTask<C extends HttpClient<R, S>, R, S> extends Sin
                     LOGGER.error(throwable.getMessage());
                     if (errantRecordReporter != null) {
                         // Send errant record to error reporter
-                        Future<Void> future = errantRecordReporter.report((SinkRecord) pair.getLeft(), throwable);
+                        Future<Void> future = errantRecordReporter.report(pair.getLeft(), throwable);
                         // Optionally wait until the failure's been recorded in Kafka
                         try {
                             future.get();
@@ -145,7 +144,7 @@ public abstract class HttpSinkTask<C extends HttpClient<R, S>, R, S> extends Sin
         return httpTask.getConfigurations();
     }
 
-    public HttpTask<C, R, S> getHttpTask() {
+    public HttpTask<SinkRecord,C, R, S> getHttpTask() {
         return httpTask;
     }
 

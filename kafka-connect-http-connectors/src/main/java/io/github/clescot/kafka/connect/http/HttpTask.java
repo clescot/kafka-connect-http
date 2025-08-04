@@ -44,13 +44,13 @@ import static io.github.clescot.kafka.connect.http.client.HttpClientConfiguratio
 import static io.github.clescot.kafka.connect.http.sink.HttpConfigDefinition.*;
 
 /**
- *
+ * @param <T> type of the incoming Record, which can be SinkRecord or SourceRecord.
  * @param <C> client type, which is a subclass of HttpClient
  * @param <R> native HttpRequest
  * @param <S> native HttpResponse
  */
 @SuppressWarnings("java:S3740")//we don't want to use the generic of ConnectRecord, to handle both SinkRecord and SourceRecord
-public class HttpTask<C extends HttpClient<R,S>,R, S> implements Task<C,HttpConfiguration<C,R,S>,HttpRequest, HttpResponse> {
+public class HttpTask<T extends ConnectRecord,C extends HttpClient<R,S>,R, S> implements Task<C,HttpConfiguration<C,R,S>,HttpRequest, HttpResponse> {
 
 
     private static final Logger LOGGER = LoggerFactory.getLogger(HttpTask.class);
@@ -65,7 +65,7 @@ public class HttpTask<C extends HttpClient<R,S>,R, S> implements Task<C,HttpConf
     private List<HttpRequestMapper> httpRequestMappers;
 
     private ExecutorService executorService;
-    private List<MessageSplitter> messageSplitters;
+    private List<MessageSplitter<T>> messageSplitters;
     private List<RequestGrouper> requestGroupers;
 
     public HttpTask(Map<String, String> settings,
@@ -203,7 +203,7 @@ public class HttpTask<C extends HttpClient<R,S>,R, S> implements Task<C,HttpConf
         return Executors.newFixedThreadPool(customFixedThreadPoolSize);
     }
 
-    private List<Pair<ConnectRecord, HttpRequest>> groupRequests(List<Pair<ConnectRecord, HttpRequest>> pairList) {
+    private List<Pair<T, HttpRequest>> groupRequests(List<Pair<T, HttpRequest>> pairList) {
         if (requestGroupers != null && !requestGroupers.isEmpty()) {
             return requestGroupers.stream().map(requestGrouper -> requestGrouper.group(pairList)).reduce(Lists.newArrayList(), (l, r) -> {
                 l.addAll(r);
@@ -214,11 +214,11 @@ public class HttpTask<C extends HttpClient<R,S>,R, S> implements Task<C,HttpConf
         }
     }
 
-    private List<ConnectRecord> splitMessage(ConnectRecord sinkRecord) {
-        Optional<MessageSplitter> splitterFound = messageSplitters.stream()
+    private List<T> splitMessage(T sinkRecord) {
+        Optional<MessageSplitter<T>> splitterFound = messageSplitters.stream()
                 .filter(messageSplitter -> messageSplitter.matches(sinkRecord)).findFirst();
         //splitter
-        List<ConnectRecord> results;
+        List<T> results;
         if (splitterFound.isPresent()) {
             results = splitterFound.get().split(sinkRecord);
         } else {
@@ -227,7 +227,7 @@ public class HttpTask<C extends HttpClient<R,S>,R, S> implements Task<C,HttpConf
         return results;
     }
 
-    private @NotNull Pair<ConnectRecord, HttpRequest> toHttpRequests(ConnectRecord sinkRecord) {
+    private @NotNull Pair<T, HttpRequest> toHttpRequests(T sinkRecord) {
         HttpRequestMapper httpRequestMapper = httpRequestMappers.stream()
                 .filter(mapper -> mapper.matches(sinkRecord))
                 .findFirst()
@@ -363,11 +363,11 @@ public class HttpTask<C extends HttpClient<R,S>,R, S> implements Task<C,HttpConf
     }
 
     @SuppressWarnings("java:S3864")
-    public List<Pair<ConnectRecord, HttpRequest>> prepareRequests(Collection<? extends ConnectRecord> records) {
+    public List<Pair<T, HttpRequest>> prepareRequests(Collection<T> records) {
         //we submit futures to the pool
-        Stream<? extends ConnectRecord> stream = records.stream();
+        Stream<T> stream = records.stream();
         //split SinkRecord messages, and convert them to HttpRequest
-        List<Pair<ConnectRecord, HttpRequest>> requests = stream
+        List<Pair<T, HttpRequest>> requests = stream
                 .filter(sinkRecord -> sinkRecord.value() != null)
                 .peek(this::debugConnectRecord)
                 .map(this::splitMessage)

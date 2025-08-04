@@ -15,7 +15,7 @@ import java.util.function.Predicate;
  * It aggregates the body of matching requests and returns a list of aggregated requests.
  * Non-matching requests are returned as they are.
  */
-public class RequestGrouper {
+public class RequestGrouper<T extends ConnectRecord> {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(RequestGrouper.class);
     private final String id;
@@ -49,7 +49,7 @@ public class RequestGrouper {
         return this.predicate.test(httpRequest);
     }
 
-    public List<Pair<ConnectRecord, HttpRequest>> group(List<Pair<ConnectRecord, HttpRequest>> entries){
+    public List<Pair<T, HttpRequest>> group(List<Pair<T, HttpRequest>> entries){
 
         if(entries==null || entries.isEmpty()){
             return Lists.newArrayList();
@@ -60,14 +60,14 @@ public class RequestGrouper {
         int consumed = 0;
         StringBuilder builder = new StringBuilder(aggregatedBody);
         boolean interrupted=false;
-        List<Pair<ConnectRecord, HttpRequest>> matchingEntries = entries.stream()
+        List<Pair<T, HttpRequest>> matchingEntries = entries.stream()
                 .filter(pair-> this.matches(pair.getRight()))
                 .toList();
-        List<Pair<ConnectRecord, HttpRequest>> nonMatchingEntries = entries.stream()
+        List<Pair<T, HttpRequest>> nonMatchingEntries = entries.stream()
                 .filter(pair-> !this.matches(pair.getRight()))
                 .toList();
         for (int i = 0; i < matchingEntries.size(); i++) {
-            Pair<ConnectRecord, HttpRequest> myEntry = matchingEntries.get(i);
+            Pair<T, HttpRequest> myEntry = matchingEntries.get(i);
             String part = myEntry.getRight().getBodyAsString();
             if((messageLimit>0 && i==messageLimit)||(bodyLimit!=-1 && builder.length()+part.length()>=bodyLimit)){
                 consumed = i;
@@ -87,8 +87,8 @@ public class RequestGrouper {
         }
         aggregatedBody = builder.toString();
         aggregatedRequest.setBodyAsString(aggregatedBody);
-        List<Pair<ConnectRecord, HttpRequest>> nonAggregatedRequests = entries.subList(consumed, entries.size());
-        List<Pair<ConnectRecord, HttpRequest>> aggregatedRequests = Lists.newArrayList();
+        List<Pair<T, HttpRequest>> nonAggregatedRequests = entries.subList(consumed, entries.size());
+        List<Pair<T, HttpRequest>> aggregatedRequests = Lists.newArrayList();
         aggregatedRequests.add(Pair.of(entries.get(0).getLeft(),aggregatedRequest));
         aggregatedRequests.addAll(group(nonAggregatedRequests));
         aggregatedRequests.addAll(nonMatchingEntries);
