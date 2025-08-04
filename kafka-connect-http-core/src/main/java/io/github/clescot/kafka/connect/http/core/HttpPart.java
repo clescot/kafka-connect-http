@@ -32,7 +32,7 @@ public class HttpPart implements Cloneable, Serializable {
     private HttpPart.BodyType bodyType;
     private Map<String, List<String>> headers = Maps.newHashMap();
     private String contentAsString;
-    private String contentAsByteArray;
+    private String contentAsByteArray="";
     //Map.Entry<parameterName,Map.Entry<parameterValue,Optional<File>>
     private Map.Entry<String, File> contentAsFormEntry;
     public static final int VERSION = 2;
@@ -151,11 +151,12 @@ public class HttpPart implements Cloneable, Serializable {
         return contentAsFormEntry;
     }
 
+    @JsonInclude(Include.NON_EMPTY)
     public byte[] getContentAsByteArray() {
         if (contentAsByteArray != null) {
             return Base64.getMimeDecoder().decode(contentAsByteArray);
         }
-        return null;
+        return new byte[0];
     }
 
     public Map<String, List<String>> getHeaders() {
@@ -244,6 +245,8 @@ public class HttpPart implements Cloneable, Serializable {
         }
         if (getContentAsByteArray()!=null) {
             clone.setContentAsByteArray(getContentAsByteArray());
+        }else{
+            clone.setContentAsByteArray(new byte[0]);
         }
         clone.bodyType = getBodyType();
         return clone;

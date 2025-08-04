@@ -346,7 +346,7 @@ class HttpPartTest {
         @Test
         void test_to_string_content_as_string() {
             HttpPart httpPart = new HttpPart("test");
-            String expected = "HttpPart{bodyType:\"STRING\", headers:{Content-Type=[application/json]}, \"contentAsString\":test\", \"contentAsByteArray\":\"null\", \"contentAsForm\":\"null\", \"fileUri\":\"null\"}";
+            String expected = "HttpPart{bodyType:\"STRING\", headers:{Content-Type=[application/json]}, \"contentAsString\":test\", \"contentAsByteArray\":\"\", \"contentAsForm\":\"null\", \"fileUri\":\"null\"}";
             assertThat(httpPart.toString()).isEqualTo(expected);
         }
     }
