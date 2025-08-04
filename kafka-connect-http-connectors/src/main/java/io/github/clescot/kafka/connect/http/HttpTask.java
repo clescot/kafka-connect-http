@@ -45,7 +45,6 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static io.github.clescot.kafka.connect.Configuration.DEFAULT_CONFIGURATION_ID;
-import static io.github.clescot.kafka.connect.http.client.HttpClientConfigDefinition.CONFIGURATION_IDS;
 import static io.github.clescot.kafka.connect.http.client.HttpClientConfigurationFactory.buildConfigurations;
 import static io.github.clescot.kafka.connect.http.sink.HttpConfigDefinition.*;
 
