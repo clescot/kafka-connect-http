@@ -2,7 +2,6 @@ package io.github.clescot.kafka.connect.http.source.cron;
 
 
 import com.google.common.collect.Maps;
-import org.apache.kafka.common.config.ConfigException;
 import org.awaitility.Awaitility;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.parallel.Execution;

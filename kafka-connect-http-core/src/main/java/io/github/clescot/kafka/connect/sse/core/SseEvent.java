@@ -1,7 +1,6 @@
 package io.github.clescot.kafka.connect.sse.core;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import io.github.clescot.kafka.connect.http.core.HttpPart;
 import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.data.SchemaBuilder;
 import org.apache.kafka.connect.data.Struct;

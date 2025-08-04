@@ -13,11 +13,6 @@ import java.util.Map;
 import java.util.concurrent.ExecutorService;
 
 import static io.github.clescot.kafka.connect.http.sink.HttpConfigDefinition.*;
-import static io.github.clescot.kafka.connect.http.sink.HttpConfigDefinition.METER_REGISTRY_BIND_METRICS_JVM_CLASSLOADER;
-import static io.github.clescot.kafka.connect.http.sink.HttpConfigDefinition.METER_REGISTRY_BIND_METRICS_JVM_GC;
-import static io.github.clescot.kafka.connect.http.sink.HttpConfigDefinition.METER_REGISTRY_BIND_METRICS_JVM_INFO;
-import static io.github.clescot.kafka.connect.http.sink.HttpConfigDefinition.METER_REGISTRY_BIND_METRICS_JVM_PROCESSOR;
-import static io.github.clescot.kafka.connect.http.sink.HttpConfigDefinition.METER_REGISTRY_BIND_METRICS_LOGBACK;
 
 /**
  * Task interface for handling requests.

@@ -20,11 +20,10 @@ import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 
 class HttpInMemoryQueueSourceConnectorTest {
 
-    private final static Logger LOGGER = LoggerFactory.getLogger(HttpInMemoryQueueSourceConnectorTest.class);
     private HttpInMemoryQueueSourceConnector httpInMemoryQueueSourceConnector;
 
     @BeforeEach
-    public void setup(){
+    void setup(){
         httpInMemoryQueueSourceConnector = new HttpInMemoryQueueSourceConnector();
     }
 
