@@ -49,6 +49,7 @@ import static io.github.clescot.kafka.connect.http.sink.HttpConfigDefinition.*;
  * @param <R> native HttpRequest
  * @param <S> native HttpResponse
  */
+@SuppressWarnings("java:S3740")//we don't want to use the generic of ConnectRecord, to handle both SinkRecord and SourceRecord
 public class HttpTask<C extends HttpClient<R,S>,R, S> implements Task<C,HttpConfiguration<C,R,S>,HttpRequest, HttpResponse> {
 
 
@@ -361,6 +362,7 @@ public class HttpTask<C extends HttpClient<R,S>,R, S> implements Task<C,HttpConf
         }
     }
 
+    @SuppressWarnings("java:S3864")
     public List<Pair<ConnectRecord, HttpRequest>> prepareRequests(Collection<? extends ConnectRecord> records) {
         //we submit futures to the pool
         Stream<? extends ConnectRecord> stream = records.stream();
