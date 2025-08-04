@@ -373,8 +373,7 @@ public class HttpTask<C extends HttpClient<R,S>,R, S> implements Task<C,HttpConf
                 .map(this::toHttpRequests)
                 .toList();
 
-        List<Pair<ConnectRecord, HttpRequest>> groupedRequests = groupRequests(requests);
-        return groupedRequests;
+        return groupRequests(requests);
 
     }
 
