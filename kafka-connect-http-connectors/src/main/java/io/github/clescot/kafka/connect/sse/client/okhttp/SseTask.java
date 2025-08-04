@@ -52,6 +52,7 @@ public class SseTask implements Task<OkHttpClient, SseConfiguration, HttpRequest
 
         //build meterRegistry
         meterRegistry = buildMeterRegistry(settings);
+        bindMetrics(settings,meterRegistry, null);
     }
 
     /**

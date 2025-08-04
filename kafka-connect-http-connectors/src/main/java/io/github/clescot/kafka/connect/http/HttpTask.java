@@ -16,10 +16,6 @@ import io.github.clescot.kafka.connect.http.sink.HttpConnectorConfig;
 import io.github.clescot.kafka.connect.http.sink.publish.KafkaProducer;
 import io.github.clescot.kafka.connect.http.sink.publish.PublishConfigurer;
 import io.github.clescot.kafka.connect.http.sink.publish.PublishMode;
-import io.micrometer.core.instrument.MeterRegistry;
-import io.micrometer.core.instrument.binder.jvm.*;
-import io.micrometer.core.instrument.binder.logging.LogbackMetrics;
-import io.micrometer.core.instrument.binder.system.ProcessorMetrics;
 import io.micrometer.core.instrument.composite.CompositeMeterRegistry;
 import org.apache.commons.jexl3.JexlBuilder;
 import org.apache.commons.jexl3.JexlEngine;
@@ -86,15 +82,15 @@ public class HttpTask<C extends HttpClient<R,S>,R, S> implements Task<C,HttpConf
         customFixedThreadPoolSize.ifPresent(integer -> this.executorService = buildExecutorService(integer));
 
         //build meterRegistry
-        meterRegistry = buildMeterRegistry(httpConnectorConfig.originalsStrings());
-
-        //build httpRequestMappers
+        Map<String, String> originalsStrings = httpConnectorConfig.originalsStrings();
+        meterRegistry = buildMeterRegistry(originalsStrings);
+        bindMetrics(originalsStrings,meterRegistry, executorService);
 
         JexlEngine jexlEngine = buildJexlEngine();
 
         //message splitters
         MessageSplitterFactory messageSplitterFactory = new MessageSplitterFactory();
-        this.messageSplitters = messageSplitterFactory.buildMessageSplitters(httpConnectorConfig.originalsStrings(), jexlEngine, httpConnectorConfig.getList(MESSAGE_SPLITTER_IDS));
+        this.messageSplitters = messageSplitterFactory.buildMessageSplitters(originalsStrings, jexlEngine, httpConnectorConfig.getList(MESSAGE_SPLITTER_IDS));
 
         //HttpRequestMappers
         HttpRequestMapperFactory httpRequestMapperFactory = new HttpRequestMapperFactory();
@@ -107,7 +103,7 @@ public class HttpTask<C extends HttpClient<R,S>,R, S> implements Task<C,HttpConf
                 httpConnectorConfig.getDefaultBodyExpression(),
                 httpConnectorConfig.getDefaultHeadersExpression());
         this.httpRequestMappers = httpRequestMapperFactory.buildCustomHttpRequestMappers(
-                httpConnectorConfig.originalsStrings(),
+                originalsStrings,
                 jexlEngine,
                 httpConnectorConfig.getList(HTTP_REQUEST_MAPPER_IDS)
         );
@@ -121,7 +117,7 @@ public class HttpTask<C extends HttpClient<R,S>,R, S> implements Task<C,HttpConf
                 httpClientFactory,
                 executorService,
                 httpConnectorConfig.getConfigurationIds(),
-                httpConnectorConfig.originalsStrings(), meterRegistry
+                originalsStrings, meterRegistry
         );
         //wrap configurations in HttpConfiguration
         this.configurations = httpClientConfigurations.entrySet().stream()
@@ -182,45 +178,6 @@ public class HttpTask<C extends HttpClient<R,S>,R, S> implements Task<C,HttpConf
                             return httpExchange;
                         }
                 );
-    }
-
-    private static void bindMetrics(Map<String,String> config, MeterRegistry meterRegistry, ExecutorService myExecutorService) {
-        boolean bindExecutorServiceMetrics = Boolean.parseBoolean(config.get(METER_REGISTRY_BIND_METRICS_EXECUTOR_SERVICE));
-        if (bindExecutorServiceMetrics) {
-            new ExecutorServiceMetrics(myExecutorService, "HttpSinkTask", Lists.newArrayList()).bindTo(meterRegistry);
-        }
-        boolean bindJvmMemoryMetrics = Boolean.parseBoolean(config.get(METER_REGISTRY_BIND_METRICS_JVM_MEMORY));
-        if (bindJvmMemoryMetrics) {
-            new JvmMemoryMetrics().bindTo(meterRegistry);
-        }
-        boolean bindJvmThreadMetrics = Boolean.parseBoolean(config.get(METER_REGISTRY_BIND_METRICS_JVM_THREAD));
-        if (bindJvmThreadMetrics) {
-            new JvmThreadMetrics().bindTo(meterRegistry);
-        }
-        boolean bindJvmInfoMetrics = Boolean.parseBoolean(config.get(METER_REGISTRY_BIND_METRICS_JVM_INFO));
-        if (bindJvmInfoMetrics) {
-            new JvmInfoMetrics().bindTo(meterRegistry);
-        }
-        boolean bindJvmGcMetrics = Boolean.parseBoolean(config.get(METER_REGISTRY_BIND_METRICS_JVM_GC));
-        if (bindJvmGcMetrics) {
-            try (JvmGcMetrics gcMetrics = new JvmGcMetrics()) {
-                gcMetrics.bindTo(meterRegistry);
-            }
-        }
-        boolean bindJVMClassLoaderMetrics = Boolean.parseBoolean(config.get(METER_REGISTRY_BIND_METRICS_JVM_CLASSLOADER));
-        if (bindJVMClassLoaderMetrics) {
-            new ClassLoaderMetrics().bindTo(meterRegistry);
-        }
-        boolean bindJVMProcessorMetrics = Boolean.parseBoolean(config.get(METER_REGISTRY_BIND_METRICS_JVM_PROCESSOR));
-        if (bindJVMProcessorMetrics) {
-            new ProcessorMetrics().bindTo(meterRegistry);
-        }
-        boolean bindLogbackMetrics = Boolean.parseBoolean(config.get(METER_REGISTRY_BIND_METRICS_LOGBACK));
-        if (bindLogbackMetrics) {
-            try (LogbackMetrics logbackMetrics = new LogbackMetrics()) {
-                logbackMetrics.bindTo(meterRegistry);
-            }
-        }
     }
 
 
