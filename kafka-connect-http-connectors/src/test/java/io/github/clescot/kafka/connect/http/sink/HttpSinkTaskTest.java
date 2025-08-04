@@ -913,38 +913,42 @@ public class HttpSinkTaskTest {
                 //init sinkRecord
                 List<SinkRecord> records = Lists.newArrayList();
                 List<Header> headers = Lists.newArrayList();
-                String value1="        {\n" +
-                        "          \"url\": \"http://localhost:PORT/path1\",\n" +
-                        "          \"headers\": {\n" +
-                        "            \"X-request-id\": [\n" +
-                        "              \"aaaa-4466666-111\"\n" +
-                        "            ],\n" +
-                        "            \"X-correlation-id\": [\n" +
-                        "              \"sfds-55-77\"\n" +
-                        "            ]\n" +
-                        "          },\n" +
-                        "          \"method\": \"POST\",\n" +
-                        "          \"bodyAsString\": \"stuff1\",\n" +
-                        "          \"bodyType\": \"STRING\"\n" +
-                        "        }\n";
+                String value1= """
+                                {
+                                  "url": "http://localhost:PORT/path1",
+                                  "headers": {
+                                    "X-request-id": [
+                                      "aaaa-4466666-111"
+                                    ],
+                                    "X-correlation-id": [
+                                      "sfds-55-77"
+                                    ]
+                                  },
+                                  "method": "POST",
+                                  "bodyAsString": "stuff1",
+                                  "bodyType": "STRING"
+                                }
+                        """;
                 SinkRecord sinkRecord1 = new SinkRecord("myTopic", 0, Schema.STRING_SCHEMA, "key", Schema.STRING_SCHEMA,
                         value1.replaceFirst("PORT",""+wmRuntimeInfo.getHttpPort()),
                         -1, System.currentTimeMillis(), TimestampType.CREATE_TIME, headers);
                 records.add(sinkRecord1);
-                String value2="        {\n" +
-                        "          \"url\": \"http://localhost:PORT/path1\",\n" +
-                        "          \"headers\": {\n" +
-                        "            \"X-request-id\": [\n" +
-                        "              \"aaaa-4466666-111\"\n" +
-                        "            ],\n" +
-                        "            \"X-correlation-id\": [\n" +
-                        "              \"sfds-55-77\"\n" +
-                        "            ]\n" +
-                        "          },\n" +
-                        "          \"method\": \"POST\",\n" +
-                        "          \"bodyAsString\": \"stuff2\",\n" +
-                        "          \"bodyType\": \"STRING\"\n" +
-                        "        }\n";
+                String value2= """
+       {
+          "url": "http://localhost:PORT/path1",
+          "headers": {
+            "X-request-id": [
+              "aaaa-4466666-111"
+            ],
+            "X-correlation-id": [
+              "sfds-55-77"
+            ]
+          },
+          "method": "POST",
+          "bodyAsString": "stuff2",
+          "bodyType": "STRING"
+        }
+""";
                 SinkRecord sinkRecord2 = new SinkRecord("myTopic", 0, Schema.STRING_SCHEMA, "key", Schema.STRING_SCHEMA,
                         value2.replaceFirst("PORT",""+wmRuntimeInfo.getHttpPort()) ,
                         -1, System.currentTimeMillis(), TimestampType.CREATE_TIME, headers);
