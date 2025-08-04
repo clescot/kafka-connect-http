@@ -40,7 +40,6 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static io.github.clescot.kafka.connect.Configuration.DEFAULT_CONFIGURATION_ID;
 import static io.github.clescot.kafka.connect.http.client.HttpClientConfigurationFactory.buildConfigurations;
 import static io.github.clescot.kafka.connect.http.sink.HttpConfigDefinition.*;
 
@@ -194,12 +193,6 @@ public class HttpTask<C extends HttpClient<R,S>,R, S> implements Task<C,HttpConf
         HttpTask.meterRegistry = null;
     }
 
-    public HttpConfiguration<C, R, S> getDefaultConfiguration() {
-        if( configurations != null && !configurations.isEmpty()) {
-            return configurations.get(DEFAULT_CONFIGURATION_ID);
-        }
-        return null;
-    }
 
     /**
      * @param customFixedThreadPoolSize max thread pool size for the executorService.
