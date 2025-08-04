@@ -14,16 +14,8 @@ import java.util.Queue;
  * It implements the BackgroundEventHandler interface to process events received from an SSE source,
  * and put them into a Queue.
  */
-public class SseBackgroundEventHandler implements BackgroundEventHandler {
+public record SseBackgroundEventHandler(Queue<SseEvent> queue, URI uri) implements BackgroundEventHandler {
     private static final Logger LOGGER = LoggerFactory.getLogger(SseBackgroundEventHandler.class);
-    private final Queue<SseEvent> queue;
-    private final URI uri;
-
-    public SseBackgroundEventHandler(Queue<SseEvent> queue, URI uri) {
-        this.queue = queue;
-        this.uri = uri;
-        LOGGER.debug("MyBackgroundEventHandler initialized with queue: {}", queue);
-    }
 
     @Override
     public void onOpen() throws Exception {
@@ -37,7 +29,7 @@ public class SseBackgroundEventHandler implements BackgroundEventHandler {
 
     @Override
     public void onMessage(String event, MessageEvent messageEvent) throws Exception {
-        LOGGER.debug("Event  received type : {}, message:{}", event,messageEvent);
+        LOGGER.debug("Event  received type : {}, message:{}", event, messageEvent);
         SseEvent sseEvent = new SseEvent(
                 messageEvent.getLastEventId(),
                 messageEvent.getEventName(),
@@ -54,13 +46,5 @@ public class SseBackgroundEventHandler implements BackgroundEventHandler {
     @Override
     public void onError(Throwable t) {
         LOGGER.error("Error in EventSource: {}", t.getMessage(), t);
-    }
-
-    public Queue<SseEvent> getQueue() {
-        return queue;
-    }
-
-    public URI getUri() {
-        return uri;
     }
 }
