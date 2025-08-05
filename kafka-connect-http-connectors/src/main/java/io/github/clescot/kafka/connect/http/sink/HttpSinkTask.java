@@ -3,6 +3,8 @@ package io.github.clescot.kafka.connect.http.sink;
 import com.google.common.base.Preconditions;
 import io.github.clescot.kafka.connect.VersionUtils;
 import io.github.clescot.kafka.connect.http.HttpTask;
+import io.github.clescot.kafka.connect.http.MessageSplitter;
+import io.github.clescot.kafka.connect.http.MessageSplitterFactory;
 import io.github.clescot.kafka.connect.http.client.HttpClient;
 import io.github.clescot.kafka.connect.http.client.HttpClientFactory;
 import io.github.clescot.kafka.connect.http.client.HttpConfiguration;
@@ -11,12 +13,18 @@ import io.github.clescot.kafka.connect.http.core.HttpExchange;
 import io.github.clescot.kafka.connect.http.core.HttpRequest;
 import io.github.clescot.kafka.connect.http.core.queue.KafkaRecord;
 import io.github.clescot.kafka.connect.http.mapper.HttpRequestMapper;
+import io.github.clescot.kafka.connect.http.mapper.HttpRequestMapperFactory;
 import io.github.clescot.kafka.connect.http.sink.publish.KafkaProducer;
 import io.github.clescot.kafka.connect.http.sink.publish.PublishConfigurer;
 import io.github.clescot.kafka.connect.http.sink.publish.PublishMode;
+import org.apache.commons.jexl3.JexlBuilder;
+import org.apache.commons.jexl3.JexlEngine;
+import org.apache.commons.jexl3.JexlFeatures;
+import org.apache.commons.jexl3.introspection.JexlPermissions;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.clients.producer.RecordMetadata;
+import org.apache.kafka.connect.connector.ConnectRecord;
 import org.apache.kafka.connect.sink.ErrantRecordReporter;
 import org.apache.kafka.connect.sink.SinkRecord;
 import org.apache.kafka.connect.sink.SinkTask;
@@ -24,16 +32,17 @@ import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.Collection;
-import java.util.List;
-import java.util.Map;
-import java.util.Queue;
+import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.function.BiFunction;
 import java.util.function.Function;
+import java.util.stream.Stream;
+
+import static io.github.clescot.kafka.connect.http.sink.HttpConfigDefinition.HTTP_REQUEST_MAPPER_IDS;
+import static io.github.clescot.kafka.connect.http.sink.HttpConfigDefinition.MESSAGE_SPLITTER_IDS;
 
 /**
  * HttpSinkTask is a Kafka Connect SinkTask that processes SinkRecords,
@@ -65,6 +74,9 @@ public abstract class HttpSinkTask<C extends HttpClient<R, S>, R, S> extends Sin
     private final KafkaProducer<String, Object> producer;
     private PublishMode publishMode;
     private HttpConnectorConfig httpConnectorConfig;
+    private List<MessageSplitter<SinkRecord>> messageSplitters;
+    private HttpRequestMapper defaultHttpRequestMapper;
+    private List<HttpRequestMapper> httpRequestMappers;
 
     @SuppressWarnings("java:S5993")
     public HttpSinkTask(HttpClientFactory<C, R, S> httpClientFactory, KafkaProducer<String, Object> producer) {
@@ -115,8 +127,29 @@ public abstract class HttpSinkTask<C extends HttpClient<R, S>, R, S> extends Sin
             default:
                 LOGGER.debug("NONE publish mode");
         }
+        JexlEngine jexlEngine = buildJexlEngine();
 
-        httpTask = new HttpTask<>(httpConnectorConfig, httpClientFactory, producer, FROM_STRING_PART_TO_SINK_RECORD_FUNCTION);
+        //HttpRequestMappers
+        HttpRequestMapperFactory httpRequestMapperFactory = new HttpRequestMapperFactory();
+        this.defaultHttpRequestMapper = httpRequestMapperFactory.buildDefaultHttpRequestMapper(
+                jexlEngine,
+                httpConnectorConfig.getDefaultRequestMapperMode(),
+                httpConnectorConfig.getDefaultUrlExpression(),
+                httpConnectorConfig.getDefaultMethodExpression(),
+                httpConnectorConfig.getDefaultBodyTypeExpression(),
+                httpConnectorConfig.getDefaultBodyExpression(),
+                httpConnectorConfig.getDefaultHeadersExpression());
+        this.httpRequestMappers = httpRequestMapperFactory.buildCustomHttpRequestMappers(
+                httpConnectorConfig.originalsStrings(),
+                jexlEngine,
+                httpConnectorConfig.getList(HTTP_REQUEST_MAPPER_IDS)
+        );
+
+        //message splitters
+        MessageSplitterFactory<SinkRecord> messageSplitterFactory = new MessageSplitterFactory<>(FROM_STRING_PART_TO_SINK_RECORD_FUNCTION);
+
+        this.messageSplitters = messageSplitterFactory.buildMessageSplitters(httpConnectorConfig.originalsStrings(), jexlEngine, httpConnectorConfig.getList(MESSAGE_SPLITTER_IDS));
+        httpTask = new HttpTask<>(httpConnectorConfig, httpClientFactory);
 
     }
 
@@ -130,7 +163,7 @@ public abstract class HttpSinkTask<C extends HttpClient<R, S>, R, S> extends Sin
             return;
         }
         Preconditions.checkNotNull(httpTask, "httpTask is null. 'start' method must be called once before put");
-        List<Pair<SinkRecord, HttpRequest>> preparedRequests = httpTask.prepareRequests(records);
+        List<Pair<SinkRecord, HttpRequest>> preparedRequests = prepareRequests(records);
         //List<SinkRecord>-> SinkRecord
         List<CompletableFuture<HttpExchange>> completableFutures = preparedRequests.stream()
                 .map(this::callAndPublish)
@@ -138,6 +171,19 @@ public abstract class HttpSinkTask<C extends HttpClient<R, S>, R, S> extends Sin
         List<HttpExchange> httpExchanges = completableFutures.stream().map(CompletableFuture::join).toList();
         LOGGER.debug("HttpExchanges created :'{}'", httpExchanges.size());
 
+    }
+
+
+
+    private static JexlEngine buildJexlEngine() {
+        // Restricted permissions to a safe set but with URI allowed
+        JexlPermissions permissions = new JexlPermissions.ClassPermissions(SinkRecord.class, ConnectRecord.class, HttpRequest.class);
+        // Create the engine
+        JexlFeatures features = new JexlFeatures()
+                .loops(false)
+                .sideEffectGlobal(false)
+                .sideEffect(false);
+        return new JexlBuilder().features(features).permissions(permissions).create();
     }
 
     public CompletableFuture<HttpExchange> callAndPublish(Pair<SinkRecord, HttpRequest> pair) {
@@ -165,8 +211,58 @@ public abstract class HttpSinkTask<C extends HttpClient<R, S>, R, S> extends Sin
 
     }
 
+    private List<SinkRecord> splitMessage(SinkRecord sinkRecord) {
+        Optional<MessageSplitter<SinkRecord>> splitterFound = messageSplitters.stream()
+                .filter(messageSplitter -> messageSplitter.matches(sinkRecord)).findFirst();
+        //splitter
+        List<SinkRecord> results;
+        if (splitterFound.isPresent()) {
+            results = splitterFound.get().split(sinkRecord);
+        } else {
+            results = List.of(sinkRecord);
+        }
+        return results;
+    }
 
 
+
+    private @NotNull Pair<SinkRecord, HttpRequest> toHttpRequests(SinkRecord sinkRecord) {
+        HttpRequestMapper httpRequestMapper = httpRequestMappers.stream()
+                .filter(mapper -> mapper.matches(sinkRecord))
+                .findFirst()
+                .orElse(defaultHttpRequestMapper);
+
+        //build HttpRequest
+        HttpRequest httpRequest = httpRequestMapper.map(sinkRecord);
+
+        return Pair.of(sinkRecord, httpRequest);
+    }
+
+    @SuppressWarnings("java:S3864")
+    public List<Pair<SinkRecord, HttpRequest>> prepareRequests(Collection<SinkRecord> records) {
+        //we submit futures to the pool
+        Stream<SinkRecord> stream = records.stream();
+        //split SinkRecord messages, and convert them to HttpRequest
+        List<Pair<SinkRecord, HttpRequest>> requests = stream
+                .filter(sinkRecord -> sinkRecord.value() != null)
+                .peek(this::debugConnectRecord)
+                .map(this::splitMessage)
+                .flatMap(List::stream)
+                .map(this::toHttpRequests)
+                .toList();
+
+        return httpTask.groupRequests(requests);
+
+    }
+
+    private void debugConnectRecord(ConnectRecord<SinkRecord> sinkRecord) {
+        Object value = sinkRecord.value();
+        if (value != null) {
+            Class<?> valueClass = value.getClass();
+            LOGGER.debug("valueClass is '{}'", valueClass.getName());
+            LOGGER.debug("value Schema from SinkRecord is '{}'", sinkRecord.valueSchema());
+        }
+    }
 
     private void publishInProducerMode(HttpExchange httpExchange,
                                        String producerContent,
@@ -265,7 +361,7 @@ public abstract class HttpSinkTask<C extends HttpClient<R, S>, R, S> extends Sin
 
 
     protected HttpRequestMapper getDefaultHttpRequestMapper() {
-        return this.httpTask.getDefaultHttpRequestMapper();
+        return this.defaultHttpRequestMapper;
     }
 
     public void setQueue(Queue<KafkaRecord> queue) {
