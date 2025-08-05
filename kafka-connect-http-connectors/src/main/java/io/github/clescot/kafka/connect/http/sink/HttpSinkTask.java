@@ -12,7 +12,6 @@ import io.github.clescot.kafka.connect.http.core.queue.KafkaRecord;
 import io.github.clescot.kafka.connect.http.mapper.HttpRequestMapper;
 import io.github.clescot.kafka.connect.http.sink.publish.KafkaProducer;
 import org.apache.commons.lang3.tuple.Pair;
-import org.apache.kafka.connect.connector.ConnectRecord;
 import org.apache.kafka.connect.sink.ErrantRecordReporter;
 import org.apache.kafka.connect.sink.SinkRecord;
 import org.apache.kafka.connect.sink.SinkTask;
@@ -26,6 +25,7 @@ import java.util.Queue;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
+import java.util.function.BiFunction;
 
 /**
  * HttpSinkTask is a Kafka Connect SinkTask that processes SinkRecords,
@@ -36,14 +36,25 @@ import java.util.concurrent.Future;
  * @param <S> type of the native HttpResponse
  */
 public abstract class HttpSinkTask<C extends HttpClient<R, S>, R, S> extends SinkTask {
+    public static final BiFunction<SinkRecord, String, SinkRecord> FROM_STRING_PART_TO_SINK_RECORD_FUNCTION = (sinkRecord, string) -> new SinkRecord(
+            sinkRecord.topic(),
+            sinkRecord.kafkaPartition(),
+            sinkRecord.keySchema(),
+            sinkRecord.key(),
+            sinkRecord.valueSchema(),
+            string,
+            sinkRecord.kafkaOffset(),
+            sinkRecord.timestamp(),
+            sinkRecord.timestampType()
+    );
     private static final Logger LOGGER = LoggerFactory.getLogger(HttpSinkTask.class);
 
     private static final VersionUtils VERSION_UTILS = new VersionUtils();
     private final HttpClientFactory<C, R, S> httpClientFactory;
     private ErrantRecordReporter errantRecordReporter;
 
-    private HttpTask<C, R, S> httpTask;
-    private KafkaProducer<String, Object> producer;
+    private HttpTask<SinkRecord,C, R, S> httpTask;
+    private final KafkaProducer<String, Object> producer;
 
 
 
@@ -75,8 +86,10 @@ public abstract class HttpSinkTask<C extends HttpClient<R, S>, R, S> extends Sin
             LOGGER.warn("errantRecordReporter has been added to Kafka Connect since 2.6.0 release. you should upgrade the Kafka Connect Runtime shortly.");
             errantRecordReporter = null;
         }
-        httpTask = new HttpTask<>(settings, httpClientFactory, producer);
-
+        //from String part created by the MessageSplitter to SinkRecord
+        //this is used to create a new SinkRecord with the same metadata as the original SinkRecord,
+        //but with the body replaced by the String part created by the MessageSplitter
+        httpTask = new HttpTask<>(settings, httpClientFactory, producer, FROM_STRING_PART_TO_SINK_RECORD_FUNCTION);
 
     }
 
@@ -90,7 +103,7 @@ public abstract class HttpSinkTask<C extends HttpClient<R, S>, R, S> extends Sin
             return;
         }
         Preconditions.checkNotNull(httpTask, "httpTask is null. 'start' method must be called once before put");
-        List<Pair<ConnectRecord, HttpRequest>> preparedRequests = httpTask.prepareRequests(records);
+        List<Pair<SinkRecord, HttpRequest>> preparedRequests = httpTask.prepareRequests(records);
         //List<SinkRecord>-> SinkRecord
         List<CompletableFuture<HttpExchange>> completableFutures = preparedRequests.stream()
                 .map(this::callAndPublish)
@@ -100,7 +113,7 @@ public abstract class HttpSinkTask<C extends HttpClient<R, S>, R, S> extends Sin
 
     }
 
-    public CompletableFuture<HttpExchange> callAndPublish(Pair<ConnectRecord, HttpRequest> pair) {
+    public CompletableFuture<HttpExchange> callAndPublish(Pair<SinkRecord, HttpRequest> pair) {
 
         return httpTask.call(pair.getRight())
                 .thenApply(
@@ -110,7 +123,7 @@ public abstract class HttpSinkTask<C extends HttpClient<R, S>, R, S> extends Sin
                     LOGGER.error(throwable.getMessage());
                     if (errantRecordReporter != null) {
                         // Send errant record to error reporter
-                        Future<Void> future = errantRecordReporter.report((SinkRecord) pair.getLeft(), throwable);
+                        Future<Void> future = errantRecordReporter.report(pair.getLeft(), throwable);
                         // Optionally wait until the failure's been recorded in Kafka
                         try {
                             future.get();
@@ -145,7 +158,7 @@ public abstract class HttpSinkTask<C extends HttpClient<R, S>, R, S> extends Sin
         return httpTask.getConfigurations();
     }
 
-    public HttpTask<C, R, S> getHttpTask() {
+    public HttpTask<SinkRecord,C, R, S> getHttpTask() {
         return httpTask;
     }
 

@@ -86,6 +86,6 @@ public class HttpInMemoryQueueSourceTask extends SourceTask {
 
     @Override
     public void stop() {
-
+        //nothing to stop
     }
 }

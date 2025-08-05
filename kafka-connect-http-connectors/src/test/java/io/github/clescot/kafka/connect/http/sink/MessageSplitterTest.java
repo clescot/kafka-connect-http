@@ -13,42 +13,44 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
+import static io.github.clescot.kafka.connect.http.sink.HttpSinkTask.FROM_STRING_PART_TO_SINK_RECORD_FUNCTION;
+
 class MessageSplitterTest {
     @Nested
     class Constructor {
 
         @Test
         void test_with_null_params(){
-            Assertions.assertThrows(NullPointerException.class,()->new MessageSplitter(null,null,null,null,0));
+            Assertions.assertThrows(NullPointerException.class,()->new MessageSplitter(FROM_STRING_PART_TO_SINK_RECORD_FUNCTION,null,null,null,null,0));
         }
 
         @Test
         void test_with_null_id(){
             JexlEngine jexlEngine = buildJexlEngine();
-            Assertions.assertThrows(NullPointerException.class,()->new MessageSplitter(null,jexlEngine,"","\\n",0));
+            Assertions.assertThrows(NullPointerException.class,()->new MessageSplitter(FROM_STRING_PART_TO_SINK_RECORD_FUNCTION,null,jexlEngine,"","\\n",0));
         }
 
         @Test
         void test_with_null_matching_expression(){
             JexlEngine jexlEngine = buildJexlEngine();
-            Assertions.assertThrows(NullPointerException.class,()->new MessageSplitter("config1",jexlEngine,null,"\\n",0));
+            Assertions.assertThrows(NullPointerException.class,()->new MessageSplitter(FROM_STRING_PART_TO_SINK_RECORD_FUNCTION,"config1",jexlEngine,null,"\\n",0));
         }
 
         @Test
         void test_with_null_jexl_engine(){
-            Assertions.assertThrows(NullPointerException.class,()->new MessageSplitter("myid",null,"message.splitter.myid.matcher","\\n",0));
+            Assertions.assertThrows(NullPointerException.class,()->new MessageSplitter(FROM_STRING_PART_TO_SINK_RECORD_FUNCTION,"myid",null,"message.splitter.myid.matcher","\\n",0));
         }
 
         @Test
         void test_with_null_split_pattern(){
             JexlEngine jexlEngine = buildJexlEngine();
-            Assertions.assertThrows(NullPointerException.class,()->new MessageSplitter("myid",jexlEngine,"message.splitter.myid.matcher",null,0));
+            Assertions.assertThrows(NullPointerException.class,()->new MessageSplitter(FROM_STRING_PART_TO_SINK_RECORD_FUNCTION,"myid",jexlEngine,"message.splitter.myid.matcher",null,0));
         }
 
         @Test
         void test_with_no_split_limit(){
             JexlEngine jexlEngine = buildJexlEngine();
-            Assertions.assertDoesNotThrow(()->new MessageSplitter("myid",jexlEngine,"message.splitter.myid.matcher","\\n",0));
+            Assertions.assertDoesNotThrow(()->new MessageSplitter(FROM_STRING_PART_TO_SINK_RECORD_FUNCTION,"myid",jexlEngine,"message.splitter.myid.matcher","\\n",0));
         }
 
 

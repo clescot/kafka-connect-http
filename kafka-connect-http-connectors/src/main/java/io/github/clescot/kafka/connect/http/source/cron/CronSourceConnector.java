@@ -12,7 +12,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 /**
  * CronSourceConnector is a Kafka Connect Source Connector that triggers HTTP requests based on a cron schedule.

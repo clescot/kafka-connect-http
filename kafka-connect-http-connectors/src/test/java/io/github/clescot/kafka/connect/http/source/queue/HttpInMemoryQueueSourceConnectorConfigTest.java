@@ -2,6 +2,7 @@ package io.github.clescot.kafka.connect.http.source.queue;
 
 import com.google.common.collect.Maps;
 import org.apache.kafka.common.config.ConfigException;
+import org.jspecify.annotations.Nullable;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
@@ -19,8 +20,9 @@ class HttpInMemoryQueueSourceConnectorConfigTest {
     }
     @Test
     void test_empty_map(){
+        HashMap<@Nullable Object, @Nullable Object> emptySettings = Maps.newHashMap();
         Assertions.assertThrows(ConfigException.class,()->
-        new HttpSourceConnectorConfig(Maps.newHashMap()));
+        new HttpSourceConnectorConfig(emptySettings));
     }
 
     @Test

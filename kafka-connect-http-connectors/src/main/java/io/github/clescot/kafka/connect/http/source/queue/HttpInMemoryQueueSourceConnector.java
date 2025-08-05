@@ -34,7 +34,7 @@ public class HttpInMemoryQueueSourceConnector extends SourceConnector {
 
     @Override
     public void stop() {
-
+        //nothing to stop
     }
 
     @Override

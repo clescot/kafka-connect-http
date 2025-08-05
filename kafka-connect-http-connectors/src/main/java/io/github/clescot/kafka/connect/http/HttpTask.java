@@ -16,10 +16,6 @@ import io.github.clescot.kafka.connect.http.sink.HttpConnectorConfig;
 import io.github.clescot.kafka.connect.http.sink.publish.KafkaProducer;
 import io.github.clescot.kafka.connect.http.sink.publish.PublishConfigurer;
 import io.github.clescot.kafka.connect.http.sink.publish.PublishMode;
-import io.micrometer.core.instrument.MeterRegistry;
-import io.micrometer.core.instrument.binder.jvm.*;
-import io.micrometer.core.instrument.binder.logging.LogbackMetrics;
-import io.micrometer.core.instrument.binder.system.ProcessorMetrics;
 import io.micrometer.core.instrument.composite.CompositeMeterRegistry;
 import org.apache.commons.jexl3.JexlBuilder;
 import org.apache.commons.jexl3.JexlEngine;
@@ -40,22 +36,22 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static io.github.clescot.kafka.connect.Configuration.DEFAULT_CONFIGURATION_ID;
-import static io.github.clescot.kafka.connect.http.client.HttpClientConfigDefinition.CONFIGURATION_IDS;
 import static io.github.clescot.kafka.connect.http.client.HttpClientConfigurationFactory.buildConfigurations;
 import static io.github.clescot.kafka.connect.http.sink.HttpConfigDefinition.*;
 
 /**
- *
+ * @param <T> type of the incoming Record, which can be SinkRecord or SourceRecord.
  * @param <C> client type, which is a subclass of HttpClient
  * @param <R> native HttpRequest
  * @param <S> native HttpResponse
  */
-public class HttpTask<C extends HttpClient<R,S>,R, S> implements Task<C,HttpConfiguration<C,R,S>,HttpRequest, HttpResponse> {
+@SuppressWarnings("java:S3740")//we don't want to use the generic of ConnectRecord, to handle both SinkRecord and SourceRecord
+public class HttpTask<T extends ConnectRecord<T>,C extends HttpClient<R,S>,R, S> implements Task<C,HttpConfiguration<C,R,S>,HttpRequest, HttpResponse> {
 
 
     private static final Logger LOGGER = LoggerFactory.getLogger(HttpTask.class);
@@ -70,12 +66,13 @@ public class HttpTask<C extends HttpClient<R,S>,R, S> implements Task<C,HttpConf
     private List<HttpRequestMapper> httpRequestMappers;
 
     private ExecutorService executorService;
-    private List<MessageSplitter> messageSplitters;
-    private List<RequestGrouper> requestGroupers;
+    private List<MessageSplitter<T>> messageSplitters;
+    private List<RequestGrouper<T>> requestGroupers;
 
     public HttpTask(Map<String, String> settings,
                     HttpClientFactory<C, R, S> httpClientFactory,
-                    KafkaProducer<String, Object> producer) {
+                    KafkaProducer<String, Object> producer,
+                    BiFunction<T,String,T> fromStringPartToRecordFunction) {
         this.producer = producer;
 
         Preconditions.checkNotNull(settings, "settings cannot be null");
@@ -87,16 +84,15 @@ public class HttpTask<C extends HttpClient<R,S>,R, S> implements Task<C,HttpConf
         customFixedThreadPoolSize.ifPresent(integer -> this.executorService = buildExecutorService(integer));
 
         //build meterRegistry
-        MeterRegistryFactory meterRegistryFactory = new MeterRegistryFactory();
-        setMeterRegistry(meterRegistryFactory.buildMeterRegistry(httpConnectorConfig.originalsStrings()));
-
-        //build httpRequestMappers
+        Map<String, String> originalsStrings = httpConnectorConfig.originalsStrings();
+        meterRegistry = buildMeterRegistry(originalsStrings);
+        bindMetrics(originalsStrings,meterRegistry, executorService);
 
         JexlEngine jexlEngine = buildJexlEngine();
 
         //message splitters
-        MessageSplitterFactory messageSplitterFactory = new MessageSplitterFactory();
-        this.messageSplitters = messageSplitterFactory.buildMessageSplitters(httpConnectorConfig.originalsStrings(), jexlEngine, httpConnectorConfig.getList(MESSAGE_SPLITTER_IDS));
+        MessageSplitterFactory<T> messageSplitterFactory = new MessageSplitterFactory<>(fromStringPartToRecordFunction);
+        this.messageSplitters = messageSplitterFactory.buildMessageSplitters(originalsStrings, jexlEngine, httpConnectorConfig.getList(MESSAGE_SPLITTER_IDS));
 
         //HttpRequestMappers
         HttpRequestMapperFactory httpRequestMapperFactory = new HttpRequestMapperFactory();
@@ -109,7 +105,7 @@ public class HttpTask<C extends HttpClient<R,S>,R, S> implements Task<C,HttpConf
                 httpConnectorConfig.getDefaultBodyExpression(),
                 httpConnectorConfig.getDefaultHeadersExpression());
         this.httpRequestMappers = httpRequestMapperFactory.buildCustomHttpRequestMappers(
-                httpConnectorConfig.originalsStrings(),
+                originalsStrings,
                 jexlEngine,
                 httpConnectorConfig.getList(HTTP_REQUEST_MAPPER_IDS)
         );
@@ -123,7 +119,7 @@ public class HttpTask<C extends HttpClient<R,S>,R, S> implements Task<C,HttpConf
                 httpClientFactory,
                 executorService,
                 httpConnectorConfig.getConfigurationIds(),
-                httpConnectorConfig.originalsStrings(), meterRegistry
+                originalsStrings, meterRegistry
         );
         //wrap configurations in HttpConfiguration
         this.configurations = httpClientConfigurations.entrySet().stream()
@@ -186,45 +182,6 @@ public class HttpTask<C extends HttpClient<R,S>,R, S> implements Task<C,HttpConf
                 );
     }
 
-    private static void bindMetrics(Map<String,String> config, MeterRegistry meterRegistry, ExecutorService myExecutorService) {
-        boolean bindExecutorServiceMetrics = Boolean.parseBoolean(config.get(METER_REGISTRY_BIND_METRICS_EXECUTOR_SERVICE));
-        if (bindExecutorServiceMetrics) {
-            new ExecutorServiceMetrics(myExecutorService, "HttpSinkTask", Lists.newArrayList()).bindTo(meterRegistry);
-        }
-        boolean bindJvmMemoryMetrics = Boolean.parseBoolean(config.get(METER_REGISTRY_BIND_METRICS_JVM_MEMORY));
-        if (bindJvmMemoryMetrics) {
-            new JvmMemoryMetrics().bindTo(meterRegistry);
-        }
-        boolean bindJvmThreadMetrics = Boolean.parseBoolean(config.get(METER_REGISTRY_BIND_METRICS_JVM_THREAD));
-        if (bindJvmThreadMetrics) {
-            new JvmThreadMetrics().bindTo(meterRegistry);
-        }
-        boolean bindJvmInfoMetrics = Boolean.parseBoolean(config.get(METER_REGISTRY_BIND_METRICS_JVM_INFO));
-        if (bindJvmInfoMetrics) {
-            new JvmInfoMetrics().bindTo(meterRegistry);
-        }
-        boolean bindJvmGcMetrics = Boolean.parseBoolean(config.get(METER_REGISTRY_BIND_METRICS_JVM_GC));
-        if (bindJvmGcMetrics) {
-            try (JvmGcMetrics gcMetrics = new JvmGcMetrics()) {
-                gcMetrics.bindTo(meterRegistry);
-            }
-        }
-        boolean bindJVMClassLoaderMetrics = Boolean.parseBoolean(config.get(METER_REGISTRY_BIND_METRICS_JVM_CLASSLOADER));
-        if (bindJVMClassLoaderMetrics) {
-            new ClassLoaderMetrics().bindTo(meterRegistry);
-        }
-        boolean bindJVMProcessorMetrics = Boolean.parseBoolean(config.get(METER_REGISTRY_BIND_METRICS_JVM_PROCESSOR));
-        if (bindJVMProcessorMetrics) {
-            new ProcessorMetrics().bindTo(meterRegistry);
-        }
-        boolean bindLogbackMetrics = Boolean.parseBoolean(config.get(METER_REGISTRY_BIND_METRICS_LOGBACK));
-        if (bindLogbackMetrics) {
-            try (LogbackMetrics logbackMetrics = new LogbackMetrics()) {
-                logbackMetrics.bindTo(meterRegistry);
-            }
-        }
-    }
-
 
     @Override
     public Map<String,HttpConfiguration<C,R, S>> getConfigurations() {
@@ -239,12 +196,6 @@ public class HttpTask<C extends HttpClient<R,S>,R, S> implements Task<C,HttpConf
         HttpTask.meterRegistry = null;
     }
 
-    public HttpConfiguration<C, R, S> getDefaultConfiguration() {
-        if( configurations != null && !configurations.isEmpty()) {
-            return configurations.get(DEFAULT_CONFIGURATION_ID);
-        }
-        return null;
-    }
 
     /**
      * @param customFixedThreadPoolSize max thread pool size for the executorService.
@@ -254,9 +205,11 @@ public class HttpTask<C extends HttpClient<R,S>,R, S> implements Task<C,HttpConf
         return Executors.newFixedThreadPool(customFixedThreadPoolSize);
     }
 
-    private List<Pair<ConnectRecord, HttpRequest>> groupRequests(List<Pair<ConnectRecord, HttpRequest>> pairList) {
+    private List<Pair<T, HttpRequest>> groupRequests(List<Pair<T, HttpRequest>> pairList) {
         if (requestGroupers != null && !requestGroupers.isEmpty()) {
-            return requestGroupers.stream().map(requestGrouper -> requestGrouper.group(pairList)).reduce(Lists.newArrayList(), (l, r) -> {
+            return requestGroupers.stream()
+                    .map(requestGrouper -> requestGrouper.group(pairList))
+                    .reduce(Lists.newArrayList(), (l, r) -> {
                 l.addAll(r);
                 return l;
             });
@@ -265,11 +218,11 @@ public class HttpTask<C extends HttpClient<R,S>,R, S> implements Task<C,HttpConf
         }
     }
 
-    private List<ConnectRecord> splitMessage(ConnectRecord sinkRecord) {
-        Optional<MessageSplitter> splitterFound = messageSplitters.stream()
+    private List<T> splitMessage(T sinkRecord) {
+        Optional<MessageSplitter<T>> splitterFound = messageSplitters.stream()
                 .filter(messageSplitter -> messageSplitter.matches(sinkRecord)).findFirst();
         //splitter
-        List<ConnectRecord> results;
+        List<T> results;
         if (splitterFound.isPresent()) {
             results = splitterFound.get().split(sinkRecord);
         } else {
@@ -278,7 +231,7 @@ public class HttpTask<C extends HttpClient<R,S>,R, S> implements Task<C,HttpConf
         return results;
     }
 
-    private @NotNull Pair<ConnectRecord, HttpRequest> toHttpRequests(ConnectRecord sinkRecord) {
+    private @NotNull Pair<T, HttpRequest> toHttpRequests(T sinkRecord) {
         HttpRequestMapper httpRequestMapper = httpRequestMappers.stream()
                 .filter(mapper -> mapper.matches(sinkRecord))
                 .findFirst()
@@ -413,11 +366,12 @@ public class HttpTask<C extends HttpClient<R,S>,R, S> implements Task<C,HttpConf
         }
     }
 
-    public List<Pair<ConnectRecord, HttpRequest>> prepareRequests(Collection<? extends ConnectRecord> records) {
+    @SuppressWarnings("java:S3864")
+    public List<Pair<T, HttpRequest>> prepareRequests(Collection<T> records) {
         //we submit futures to the pool
-        Stream<? extends ConnectRecord> stream = records.stream();
+        Stream<T> stream = records.stream();
         //split SinkRecord messages, and convert them to HttpRequest
-        List<Pair<ConnectRecord, HttpRequest>> requests = stream
+        List<Pair<T, HttpRequest>> requests = stream
                 .filter(sinkRecord -> sinkRecord.value() != null)
                 .peek(this::debugConnectRecord)
                 .map(this::splitMessage)
@@ -425,12 +379,11 @@ public class HttpTask<C extends HttpClient<R,S>,R, S> implements Task<C,HttpConf
                 .map(this::toHttpRequests)
                 .toList();
 
-        List<Pair<ConnectRecord, HttpRequest>> groupedRequests = groupRequests(requests);
-        return groupedRequests;
+        return groupRequests(requests);
 
     }
 
-    private void debugConnectRecord(ConnectRecord sinkRecord) {
+    private void debugConnectRecord(ConnectRecord<T> sinkRecord) {
         Object value = sinkRecord.value();
         if (value != null) {
             Class<?> valueClass = value.getClass();

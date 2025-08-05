@@ -1,7 +1,6 @@
 package io.github.clescot.kafka.connect.sse.client.okhttp;
 
 import com.google.common.collect.Maps;
-import org.apache.kafka.common.config.ConfigException;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 

@@ -13,8 +13,6 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.time.OffsetDateTime;
 import java.time.ZoneId;
@@ -33,22 +31,21 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 class HttpInMemoryQueueSourceTaskTest {
     private HttpInMemoryQueueSourceTask wsSourceTask;
-    private final static Logger LOGGER = LoggerFactory.getLogger(HttpInMemoryQueueSourceTaskTest.class);
 
     @BeforeEach
-    public void setup() {
+    void setup() {
         wsSourceTask = new HttpInMemoryQueueSourceTask();
     }
 
     @AfterEach
-    public void tearsDown() {
+    void tearsDown() {
         Queue<KafkaRecord> queue = QueueFactory.getQueue();
         queue.clear();
     }
 
     @Test
     void test_start_with_null_settings() {
-        HttpInMemoryQueueSourceTask wsSourceTask = new HttpInMemoryQueueSourceTask();
+        wsSourceTask = new HttpInMemoryQueueSourceTask();
 
         Assertions.assertThrows(NullPointerException.class, () -> wsSourceTask.start(null));
     }

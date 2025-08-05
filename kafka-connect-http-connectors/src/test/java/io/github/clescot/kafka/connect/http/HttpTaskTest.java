@@ -24,6 +24,7 @@ import io.micrometer.jmx.JmxMeterRegistry;
 import okhttp3.Request;
 import okhttp3.Response;
 import org.apache.kafka.common.config.AbstractConfig;
+import org.apache.kafka.connect.sink.SinkRecord;
 import org.assertj.core.util.Sets;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.BeforeEach;
@@ -71,7 +72,7 @@ class HttpTaskTest {
 
     @Nested
     class CallWithRetryPolicy {
-        private HttpTask<OkHttpClient,Request,Response> httpTask;
+        private HttpTask<SinkRecord,OkHttpClient,Request,Response> httpTask;
 
         @BeforeEach
         public void setUp(){

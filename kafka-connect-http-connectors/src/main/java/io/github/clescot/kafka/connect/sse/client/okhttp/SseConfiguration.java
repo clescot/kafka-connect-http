@@ -38,7 +38,7 @@ public class SseConfiguration implements Configuration<OkHttpClient, HttpRequest
                             HttpClientConfiguration<OkHttpClient, Request, Response> httpClientConfiguration,
                             Map<String, String> settings
     ) {
-        Preconditions.checkNotNull(configurationId,"configurationId must not be null.");
+        Preconditions.checkNotNull(configurationId, "configurationId must not be null.");
         Preconditions.checkArgument(!configurationId.isEmpty(), "configurationId must not be empty.");
         Preconditions.checkNotNull(httpClientConfiguration, "httpClientConfiguration must not be null.");
         this.configurationId = configurationId;
@@ -113,9 +113,9 @@ public class SseConfiguration implements Configuration<OkHttpClient, HttpRequest
         this.backgroundEventSource = new BackgroundEventSource.Builder(backgroundEventHandler,
                 new EventSource.Builder(connectStrategy
                 )
-                        .streamEventData(false)
-                        .retryDelayStrategy(retryDelayStrategy)
-                        .errorStrategy(errorStrategy)
+                .streamEventData(false)
+                .retryDelayStrategy(retryDelayStrategy)
+                .errorStrategy(errorStrategy)
         ).build();
         connected = true;
         return backgroundEventSource;

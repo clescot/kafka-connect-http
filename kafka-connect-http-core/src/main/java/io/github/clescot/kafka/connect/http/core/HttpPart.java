@@ -28,11 +28,12 @@ public class HttpPart implements Cloneable, Serializable {
     public static final String APPLICATION_JSON = "application/json";
     public static final String APPLICATION_OCTET_STREAM = "application/octet-stream";
     public static final String CONTENT_TYPE = "Content-Type";
+    public static final byte[] EMPTY_BYTE_ARRAY = new byte[0];
     private URI fileUri;
     private HttpPart.BodyType bodyType;
     private Map<String, List<String>> headers = Maps.newHashMap();
     private String contentAsString;
-    private String contentAsByteArray;
+    private String contentAsByteArray="";
     //Map.Entry<parameterName,Map.Entry<parameterValue,Optional<File>>
     private Map.Entry<String, File> contentAsFormEntry;
     public static final int VERSION = 2;
@@ -151,11 +152,12 @@ public class HttpPart implements Cloneable, Serializable {
         return contentAsFormEntry;
     }
 
+    @JsonInclude(Include.NON_EMPTY)
     public byte[] getContentAsByteArray() {
         if (contentAsByteArray != null) {
             return Base64.getMimeDecoder().decode(contentAsByteArray);
         }
-        return null;
+        return EMPTY_BYTE_ARRAY;
     }
 
     public Map<String, List<String>> getHeaders() {
@@ -165,7 +167,7 @@ public class HttpPart implements Cloneable, Serializable {
     public void setHeaders(Map<String, List<String>> headers) {
         Preconditions.checkArgument(headers.keySet().stream().allMatch(key ->
                         "Content-Disposition".equalsIgnoreCase(key) ||
-                                "Content-Type".equalsIgnoreCase(key) ||
+                                CONTENT_TYPE.equalsIgnoreCase(key) ||
                                 "Content-Transfer-Encoding".equalsIgnoreCase(key)),
                 "all headers key in a multipart request must be 'Content-Disposition','Content-Type', " +
                         "or 'Content-Transfer-Encoding'. current Headers key of this part are : "
@@ -244,6 +246,8 @@ public class HttpPart implements Cloneable, Serializable {
         }
         if (getContentAsByteArray()!=null) {
             clone.setContentAsByteArray(getContentAsByteArray());
+        }else{
+            clone.setContentAsByteArray(EMPTY_BYTE_ARRAY);
         }
         clone.bodyType = getBodyType();
         return clone;

@@ -34,16 +34,17 @@ class HttpPartTest {
             objectMapper.registerModule(new JavaTimeModule());
 
             HttpPart httpPart = new HttpPart("test".getBytes(StandardCharsets.UTF_8));
-            String expectedHttpPart =
-                    "{\n" +
-                    "  \"bodyType\": \"BYTE_ARRAY\",\n" +
-                    "  \"headers\": {\n" +
-                    "    \"Content-Type\": [\n" +
-                    "      \"application/octet-stream\"\n" +
-                    "    ]\n" +
-                    "  },\n" +
-                    "  \"contentAsByteArray\": \"dGVzdA==\"\n" +
-                    "}";
+            String expectedHttpPart = """
+                    {
+                      "bodyType": "BYTE_ARRAY",
+                      "headers": {
+                        "Content-Type": [
+                          "application/octet-stream"
+                        ]
+                      },
+                      "contentAsByteArray": "dGVzdA=="
+                    }
+                    """;
             String serializedHttpPart = objectMapper.writeValueAsString(httpPart);
             JSONAssert.assertEquals(expectedHttpPart, serializedHttpPart,true);
         }
@@ -55,15 +56,16 @@ class HttpPartTest {
             headers.put("Content-Type",List.of("application/json"));
             HttpPart httpPart = new HttpPart(headers, "test".getBytes(StandardCharsets.UTF_8));
             String expectedHttpPart =
-                    "{\n" +
-                    "  \"bodyType\": \"BYTE_ARRAY\",\n" +
-                    "  \"headers\": {\n" +
-                    "    \"Content-Type\": [\n" +
-                    "      \"application/json\"\n" +
-                    "    ]\n" +
-                    "  },\n" +
-                    "  \"contentAsByteArray\": \"dGVzdA==\"\n" +
-                    "}";
+                    """
+                    {
+                      "bodyType": "BYTE_ARRAY",
+                      "headers": {
+                        "Content-Type": [
+                          "application/json"
+                        ]
+                      },
+                      "contentAsByteArray": "dGVzdA=="
+                    }""";
             String serializedHttpPart = objectMapper.writeValueAsString(httpPart);
             JSONAssert.assertEquals(expectedHttpPart, serializedHttpPart,true);
         }
@@ -74,15 +76,16 @@ class HttpPartTest {
 
             HttpPart httpPart = new HttpPart("test");
             String expectedHttpPart =
-                    "{\n" +
-                    "  \"bodyType\": \"STRING\",\n" +
-                    "  \"headers\": {\n" +
-                    "    \"Content-Type\": [\n" +
-                    "      \"application/json\"\n" +
-                    "    ]\n" +
-                    "  },\n" +
-                    "  \"contentAsString\": \"test\"\n" +
-                    "}";
+                    """
+                    {
+                      "bodyType": "STRING",
+                      "headers": {
+                        "Content-Type": [
+                          "application/json"
+                        ]
+                      },
+                      "contentAsString": "test"
+                    }""";
             String serializedHttpPart = objectMapper.writeValueAsString(httpPart);
             JSONAssert.assertEquals(expectedHttpPart, serializedHttpPart,true);
         }
@@ -94,15 +97,16 @@ class HttpPartTest {
             headers.put("Content-Type",List.of("application/toto"));
             HttpPart httpPart = new HttpPart(headers, "test");
             String expectedHttpPart =
-                    "{\n" +
-                    "  \"bodyType\": \"STRING\",\n" +
-                    "  \"headers\": {\n" +
-                    "    \"Content-Type\": [\n" +
-                    "      \"application/toto\"\n" +
-                    "    ]\n" +
-                    "  },\n" +
-                    "  \"contentAsString\": \"test\"\n" +
-                    "}";
+                    """
+                    {
+                      "bodyType": "STRING",
+                      "headers": {
+                        "Content-Type": [
+                          "application/toto"
+                        ]
+                      },
+                      "contentAsString": "test"
+                    }""";
             String serializedHttpPart = objectMapper.writeValueAsString(httpPart);
             JSONAssert.assertEquals(expectedHttpPart, serializedHttpPart,true);
         }
@@ -117,15 +121,17 @@ class HttpPartTest {
             ObjectMapper objectMapper = new ObjectMapper();
             objectMapper.registerModule(new JavaTimeModule());
             String serializedHttpPart =
-                    "{\n" +
-                    "  \"bodyType\": \"BYTE_ARRAY\",\n" +
-                    "  \"headers\": {\n" +
-                    "    \"Content-Type\": [\n" +
-                    "      \"application/octet-stream\"\n" +
-                    "    ]\n" +
-                    "  },\n" +
-                    "  \"contentAsByteArray\": \"dGVzdA==\"\n" +
-                    "}";
+                    """
+                    {
+                      "bodyType": "BYTE_ARRAY",
+                      "headers": {
+                        "Content-Type": [
+                          "application/octet-stream"
+                        ]
+                      },
+                      "contentAsByteArray": "dGVzdA=="
+                    }
+                    """;
             HttpPart httpPart = objectMapper.readValue(serializedHttpPart,HttpPart.class);
             assertThat(httpPart).isEqualTo(new HttpPart("test".getBytes(StandardCharsets.UTF_8)));
         }
@@ -273,10 +279,10 @@ class HttpPartTest {
         void test_clone_content_as_byte_array() throws CloneNotSupportedException {
             HttpPart httpPart = new HttpPart("test".getBytes(StandardCharsets.UTF_8));
             HttpPart clonedHttpPart = (HttpPart) httpPart.clone();
-            assertThat(clonedHttpPart).isEqualTo(httpPart);
-            assertThat(clonedHttpPart).isEqualTo(httpPart);
-            assertThat(clonedHttpPart).isNotSameAs(httpPart);
-            assertThat(clonedHttpPart.hashCode()).isEqualTo(httpPart.hashCode());
+            assertThat(clonedHttpPart)
+                    .isEqualTo(httpPart)
+                    .isNotSameAs(httpPart)
+                    .hasSameHashCodeAs(httpPart);
             assertThat(clonedHttpPart.getContentType()).isEqualTo(httpPart.getContentType());
             assertThat(clonedHttpPart.getBodyType()).isEqualTo(httpPart.getBodyType());
         }
@@ -287,9 +293,10 @@ class HttpPartTest {
             headers.put("Content-Type",List.of("application/json"));
             HttpPart httpPart = new HttpPart(headers,"filename",new File("src/test/resources/upload.txt"));
             HttpPart clonedHttpPart = (HttpPart) httpPart.clone();
-            assertThat(clonedHttpPart.hashCode()).isEqualTo(httpPart.hashCode());
-            assertThat(clonedHttpPart).isEqualTo(httpPart);
-            assertThat(clonedHttpPart).isNotSameAs(httpPart);
+            assertThat(clonedHttpPart)
+                    .hasSameHashCodeAs(httpPart)
+                    .isEqualTo(httpPart)
+                    .isNotSameAs(httpPart);
             assertThat(clonedHttpPart.getContentType()).isEqualTo(httpPart.getContentType());
             assertThat(clonedHttpPart.getBodyType()).isEqualTo(httpPart.getBodyType());
         }
@@ -302,9 +309,10 @@ class HttpPartTest {
             Assertions.assertNotNull(uploadUrl);
             HttpPart httpPart = new HttpPart(headers,"filename",uploadUrl.toURI());
             HttpPart clonedHttpPart = (HttpPart) httpPart.clone();
-            assertThat(clonedHttpPart.hashCode()).isEqualTo(httpPart.hashCode());
-            assertThat(clonedHttpPart).isEqualTo(httpPart);
-            assertThat(clonedHttpPart).isNotSameAs(httpPart);
+            assertThat(clonedHttpPart)
+                    .hasSameHashCodeAs(httpPart)
+                    .isEqualTo(httpPart)
+                    .isNotSameAs(httpPart);
             assertThat(clonedHttpPart.getContentType()).isEqualTo(httpPart.getContentType());
             assertThat(clonedHttpPart.getBodyType()).isEqualTo(httpPart.getBodyType());
         }
@@ -312,9 +320,9 @@ class HttpPartTest {
         void test_clone_content_as_string() throws CloneNotSupportedException {
             HttpPart httpPart = new HttpPart("test");
             HttpPart clonedHttpPart = (HttpPart) httpPart.clone();
-            assertThat(clonedHttpPart.hashCode()).isEqualTo(httpPart.hashCode());
-            assertThat(clonedHttpPart).isEqualTo(httpPart);
-            assertThat(clonedHttpPart).isNotSameAs(httpPart);
+            assertThat(clonedHttpPart).hasSameHashCodeAs(httpPart)
+                    .isEqualTo(httpPart)
+                    .isNotSameAs(httpPart);
             assertThat(clonedHttpPart.getContentType()).isEqualTo(httpPart.getContentType());
             assertThat(clonedHttpPart.getBodyType()).isEqualTo(httpPart.getBodyType());
         }
@@ -325,9 +333,10 @@ class HttpPartTest {
             headers.put("Content-Type",List.of("application/json"));
             httpPart.setHeaders(headers);
             HttpPart clonedHttpPart = (HttpPart) httpPart.clone();
-            assertThat(clonedHttpPart.hashCode()).isEqualTo(httpPart.hashCode());
-            assertThat(clonedHttpPart).isEqualTo(httpPart);
-            assertThat(clonedHttpPart).isNotSameAs(httpPart);
+            assertThat(clonedHttpPart)
+                    .hasSameHashCodeAs(httpPart)
+                    .isEqualTo(httpPart)
+                    .isNotSameAs(httpPart);
             assertThat(clonedHttpPart.getContentType()).isEqualTo(httpPart.getContentType());
             assertThat(clonedHttpPart.getBodyType()).isEqualTo(httpPart.getBodyType());
         }
@@ -340,14 +349,14 @@ class HttpPartTest {
         void test_to_string_content_as_byte_array() {
             HttpPart httpPart = new HttpPart("test".getBytes(StandardCharsets.UTF_8));
             String expected = "HttpPart{bodyType:\"BYTE_ARRAY\", headers:{Content-Type=[application/octet-stream]}, \"contentAsString\":null\", \"contentAsByteArray\":\"dGVzdA==\", \"contentAsForm\":\"null\", \"fileUri\":\"null\"}";
-            assertThat(httpPart.toString()).isEqualTo(expected);
+            assertThat(httpPart).hasToString(expected);
         }
 
         @Test
         void test_to_string_content_as_string() {
             HttpPart httpPart = new HttpPart("test");
-            String expected = "HttpPart{bodyType:\"STRING\", headers:{Content-Type=[application/json]}, \"contentAsString\":test\", \"contentAsByteArray\":\"null\", \"contentAsForm\":\"null\", \"fileUri\":\"null\"}";
-            assertThat(httpPart.toString()).isEqualTo(expected);
+            String expected = "HttpPart{bodyType:\"STRING\", headers:{Content-Type=[application/json]}, \"contentAsString\":test\", \"contentAsByteArray\":\"\", \"contentAsForm\":\"null\", \"fileUri\":\"null\"}";
+            assertThat(httpPart).hasToString(expected);
         }
     }
 
