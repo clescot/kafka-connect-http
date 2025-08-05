@@ -13,7 +13,7 @@ import java.util.List;
 import java.util.function.BiFunction;
 
 /**
- * MessageSplitter is used to split a message based on a pattern.
+ * MessageSplitter is used to split a ConnectRecord based on a pattern.
  * It uses JEXL expressions to determine if a SinkRecord matches the splitter's criteria.
  * If it matches, it splits the message body according to the specified pattern and limit.
  */
@@ -55,10 +55,10 @@ public class MessageSplitter<T extends ConnectRecord<T>> {
         return splitPattern;
     }
 
-    public boolean matches(T sinkRecord) {
+    public boolean matches(T connectRecord) {
         // populate the context
         JexlContext context = new MapContext();
-        context.set(SINK_RECORD, sinkRecord);
+        context.set(SINK_RECORD, connectRecord);
         return (boolean) jexlMatchingExpression.evaluate(context);
     }
 
