@@ -93,7 +93,7 @@ public class HttpExchangeTest {
                     OffsetDateTime.now(),
                     new AtomicInteger(2),
                     SUCCESS);
-            assertThat(httpExchange).isNotEqualTo(null);
+            assertThat(httpExchange).isNotNull();
         }
 
         @Test

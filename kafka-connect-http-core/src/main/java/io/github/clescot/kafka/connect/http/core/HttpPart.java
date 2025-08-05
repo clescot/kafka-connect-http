@@ -167,7 +167,7 @@ public class HttpPart implements Cloneable, Serializable {
     public void setHeaders(Map<String, List<String>> headers) {
         Preconditions.checkArgument(headers.keySet().stream().allMatch(key ->
                         "Content-Disposition".equalsIgnoreCase(key) ||
-                                "Content-Type".equalsIgnoreCase(key) ||
+                                CONTENT_TYPE.equalsIgnoreCase(key) ||
                                 "Content-Transfer-Encoding".equalsIgnoreCase(key)),
                 "all headers key in a multipart request must be 'Content-Disposition','Content-Type', " +
                         "or 'Content-Transfer-Encoding'. current Headers key of this part are : "

@@ -38,7 +38,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 class HttpHttpClientConfigurationTest {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(HttpHttpClientConfigurationTest.class);
     private final ExecutorService executorService = Executors.newFixedThreadPool(2);
     private static final String DUMMY_BODY = "stuff";
     private static final String DUMMY_URL = "http://www." + DUMMY_BODY + ".com";
@@ -252,7 +251,6 @@ class HttpHttpClientConfigurationTest {
     @Nested
     class AddSuccessStatusToHttpExchangeFunction {
         private final HttpRequest.Method dummyMethod = HttpRequest.Method.POST;
-        private static final String DUMMY_BODY_TYPE = "STRING";
 
         private final ExecutorService executorService = Executors.newFixedThreadPool(2);
 

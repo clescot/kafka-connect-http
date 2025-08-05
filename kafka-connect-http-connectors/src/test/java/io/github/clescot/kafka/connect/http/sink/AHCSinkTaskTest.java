@@ -14,7 +14,8 @@ class AHCSinkTaskTest {
 
     @Test
     void test_constructor_with_mock_producer(){
-        MockProducer<String,Object> mockProducer = new MockProducer<>();
-        Assertions.assertDoesNotThrow(()-> new AHCSinkTask(mockProducer));
+        try (MockProducer<String, Object> mockProducer = new MockProducer<>()) {
+            Assertions.assertDoesNotThrow(() -> new AHCSinkTask(mockProducer));
+        }
     }
 }

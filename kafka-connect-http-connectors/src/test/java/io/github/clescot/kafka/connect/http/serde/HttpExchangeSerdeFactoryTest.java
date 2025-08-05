@@ -44,7 +44,7 @@ class HttpExchangeSerdeFactoryTest {
     class BuildSerde{
         private HttpExchangeSerdeFactory httpExchangeSerdeFactory;
         @BeforeEach
-        public void setup(){
+        void setup(){
             SchemaRegistryClient schemaRegistryClient = new MockSchemaRegistryClient();
             HashMap<String, Object> serdeConfig = Maps.newHashMap();
             serdeConfig.put("schema.registry.url","http://fake.com");
