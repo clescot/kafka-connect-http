@@ -43,6 +43,7 @@ import static io.github.clescot.kafka.connect.http.sink.HttpConfigDefinition.*;
  * Each configuration owns an Http Client instance.
  */
 public class HttpClientConfiguration<C extends HttpClient<R,S>,R,S> implements Configuration<C,HttpRequest> {
+    public static final VersionUtils VERSION_UTILS = new VersionUtils();
     private static final Logger LOGGER = LoggerFactory.getLogger(HttpClientConfiguration.class);
     public static final String HAS_BEEN_SET = " has been set.";
     public static final String SHA_1_PRNG = "SHA1PRNG";
@@ -131,8 +132,7 @@ public class HttpClientConfiguration<C extends HttpClient<R,S>,R,S> implements C
         if (USER_AGENT_HTTP_CLIENT_DEFAULT_MODE.equalsIgnoreCase(activateUserAgentHeaderToHttpRequestFunction)) {
             LOGGER.trace("userAgentHeaderToHttpRequestFunction : 'http_client' configured. No need to activate UserAgentInterceptor");
         }else if(USER_AGENT_PROJECT_MODE.equalsIgnoreCase(activateUserAgentHeaderToHttpRequestFunction)){
-            VersionUtils versionUtils = new VersionUtils();
-            String projectUserAgent = "Mozilla/5.0 (compatible;kafka-connect-http/"+ versionUtils.getVersion() +"; "+httpClient.getEngineId()+"; https://github.com/clescot/kafka-connect-http)";
+            String projectUserAgent = "Mozilla/5.0 (compatible;kafka-connect-http/"+ VERSION_UTILS.getVersion() +"; "+httpClient.getEngineId()+"; https://github.com/clescot/kafka-connect-http)";
             this.addUserAgentHeaderToHttpRequestFunction = new AddUserAgentHeaderToHttpRequestFunction(Lists.newArrayList(projectUserAgent), random);
             enrichRequestFunctions.add(addUserAgentHeaderToHttpRequestFunction);
         }else if(USER_AGENT_CUSTOM_MODE.equalsIgnoreCase(activateUserAgentHeaderToHttpRequestFunction)){
