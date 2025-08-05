@@ -225,14 +225,6 @@ public class HttpTask<T extends ConnectRecord<T>,C extends HttpClient<R,S>,R, S>
     }
 
 
-
-
-    public static synchronized void setMeterRegistry(CompositeMeterRegistry compositeMeterRegistry) {
-        if (meterRegistry == null) {
-            meterRegistry = compositeMeterRegistry;
-        }
-    }
-
     public static synchronized void clearMeterRegistry() {
         meterRegistry = null;
     }
@@ -247,11 +239,6 @@ public class HttpTask<T extends ConnectRecord<T>,C extends HttpClient<R,S>,R, S>
                 .sideEffect(false);
         return new JexlBuilder().features(features).permissions(permissions).create();
     }
-
-    public HttpConnectorConfig getHttpSinkConnectorConfig() {
-        return httpConnectorConfig;
-    }
-
 
 
     public void stop() {
