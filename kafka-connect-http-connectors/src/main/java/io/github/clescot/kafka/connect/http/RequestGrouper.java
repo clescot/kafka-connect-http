@@ -3,7 +3,6 @@ package io.github.clescot.kafka.connect.http;
 import com.google.common.collect.Lists;
 import io.github.clescot.kafka.connect.http.core.HttpRequest;
 import org.apache.commons.lang3.tuple.Pair;
-import org.apache.kafka.connect.connector.ConnectRecord;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -15,7 +14,7 @@ import java.util.function.Predicate;
  * It aggregates the body of matching requests and returns a list of aggregated requests.
  * Non-matching requests are returned as they are.
  */
-public class RequestGrouper<T extends ConnectRecord<T>> {
+public class RequestGrouper<T> {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(RequestGrouper.class);
     private final String id;

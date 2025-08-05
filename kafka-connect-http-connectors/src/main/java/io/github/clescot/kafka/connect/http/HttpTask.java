@@ -13,7 +13,6 @@ import io.github.clescot.kafka.connect.http.core.HttpResponse;
 import io.github.clescot.kafka.connect.http.sink.HttpConnectorConfig;
 import io.micrometer.core.instrument.composite.CompositeMeterRegistry;
 import org.apache.commons.lang3.tuple.Pair;
-import org.apache.kafka.connect.connector.ConnectRecord;
 import org.apache.kafka.connect.errors.ConnectException;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
@@ -33,13 +32,13 @@ import static io.github.clescot.kafka.connect.http.sink.HttpConfigDefinition.HTT
 import static io.github.clescot.kafka.connect.http.sink.HttpConfigDefinition.REQUEST_GROUPER_IDS;
 
 /**
- * @param <T> type of the incoming Record, which can be SinkRecord or SourceRecord.
+ * @param <T> type of the incoming Record.
  * @param <C> client type, which is a subclass of HttpClient
  * @param <R> native HttpRequest
  * @param <S> native HttpResponse
  */
 @SuppressWarnings("java:S3740")//we don't want to use the generic of ConnectRecord, to handle both SinkRecord and SourceRecord
-public class HttpTask<T extends ConnectRecord<T>,C extends HttpClient<R,S>,R, S> implements Task<C,HttpConfiguration<C,R,S>,HttpRequest, HttpResponse> {
+public class HttpTask<T,C extends HttpClient<R,S>,R, S> implements Task<C,HttpConfiguration<C,R,S>,HttpRequest, HttpResponse> {
 
 
     private static final Logger LOGGER = LoggerFactory.getLogger(HttpTask.class);
@@ -66,9 +65,6 @@ public class HttpTask<T extends ConnectRecord<T>,C extends HttpClient<R,S>,R, S>
         Map<String, String> originalsStrings = httpConnectorConfig.originalsStrings();
         meterRegistry = buildMeterRegistry(originalsStrings);
         bindMetrics(originalsStrings,meterRegistry, executorService);
-
-
-
 
         //request groupers
         RequestGrouperFactory requestGrouperFactory = new RequestGrouperFactory();
@@ -151,6 +147,11 @@ public class HttpTask<T extends ConnectRecord<T>,C extends HttpClient<R,S>,R, S>
         return Executors.newFixedThreadPool(customFixedThreadPoolSize);
     }
 
+    /**
+     * Group the requests using the requestGroupers.
+     * @param pairList
+     * @return
+     */
     public List<Pair<T, HttpRequest>> groupRequests(List<Pair<T, HttpRequest>> pairList) {
         if (requestGroupers != null && !requestGroupers.isEmpty()) {
             return requestGroupers.stream()
@@ -165,12 +166,9 @@ public class HttpTask<T extends ConnectRecord<T>,C extends HttpClient<R,S>,R, S>
     }
 
 
-
-
     public static synchronized void clearMeterRegistry() {
         meterRegistry = null;
     }
-
 
 
     public void stop() {
