@@ -103,13 +103,15 @@ class HttpRequestTest {
             headers.put("X-request-id", Lists.newArrayList("aaaa-4466666-111"));
             httpRequest.setHeaders(headers);
 
-            String expectedHttpRequest = "{\n" +
-                    "  \"url\": \"http://www.stuff.com\",\n" +
-                    "  \"headers\":{\"X-request-id\":[\"aaaa-4466666-111\"],\"X-correlation-id\":[\"sfds-55-77\"]},\n" +
-                    "  \"method\": \"GET\",\n" +
-                    "  \"bodyAsString\": \"stuff\",\n" +
-                    "  \"bodyType\": \"STRING\"\n" +
-                    "}";
+            String expectedHttpRequest = """
+                    {
+                      "url": "http://www.stuff.com",
+                      "headers":{"X-request-id":["aaaa-4466666-111"],"X-correlation-id":["sfds-55-77"]},
+                      "method": "GET",
+                      "bodyAsString": "stuff",
+                      "bodyType": "STRING"
+                    }
+                    """;
 
             String serializedHttpRequest = objectMapper.writeValueAsString(httpRequest);
             JSONAssert.assertEquals(expectedHttpRequest, serializedHttpRequest, true);
@@ -134,17 +136,19 @@ class HttpRequestTest {
             httpRequest.setHeaders(headers);
             httpRequest.setBodyAsByteArray(DUMMY_BODY_AS_STRING.getBytes(StandardCharsets.UTF_8));
 
-            String expectedHttpRequest = "{\n" +
-                    "  \"url\" : \"http://www.stuff.com\",\n" +
-                    "  \"headers\" : {\n" +
-                    "    \"X-request-id\" : [ \"aaaa-4466666-111\" ],\n" +
-                    "    \"X-correlation-id\" : [ \"sfds-55-77\" ],\n" +
-                    "    \"Content-Type\" : [ \"application/octet-stream\" ]\n" +
-                    "  },\n" +
-                    "  \"method\" : \"POST\",\n" +
-                    "  \"bodyAsByteArray\":\"c3R1ZmY=\"," +
-                    "  \"bodyType\" : \"BYTE_ARRAY\"\n" +
-                    "}";
+            String expectedHttpRequest = """
+                    {
+                      "url" : "http://www.stuff.com",
+                      "headers" : {
+                        "X-request-id" : [ "aaaa-4466666-111" ],
+                        "X-correlation-id" : [ "sfds-55-77" ],
+                        "Content-Type" : [ "application/octet-stream" ]
+                      },
+                      "method" : "POST",
+                      "bodyAsByteArray":"c3R1ZmY=",
+                      "bodyType" : "BYTE_ARRAY"
+                    }
+                    """;
 
             String serializedHttpRequest = objectMapper.writeValueAsString(httpRequest);
             JSONAssert.assertEquals(expectedHttpRequest, serializedHttpRequest, true);
@@ -234,13 +238,15 @@ class HttpRequestTest {
             headers.put("X-request-id", Lists.newArrayList("aaaa-4466666-111"));
             expectedHttpRequest.setHeaders(headers);
             expectedHttpRequest.setBodyAsString(DUMMY_BODY_AS_STRING);
-            String httpRequestAsString = "{\n" +
-                    "  \"url\": \"http://www.stuff.com\",\n" +
-                    "  \"headers\":{\"X-request-id\":[\"aaaa-4466666-111\"],\"X-correlation-id\":[\"sfds-55-77\"]},\n" +
-                    "  \"method\": \"GET\",\n" +
-                    "\"bodyType\":\"STRING\", " +
-                    "\"bodyAsString\":\"stuff\" " +
-                    "}";
+            String httpRequestAsString = """
+                    {
+                      "url": "http://www.stuff.com",
+                      "headers":{"X-request-id":["aaaa-4466666-111"],"X-correlation-id":["sfds-55-77"]},
+                      "method": "GET",
+                    "bodyType":"STRING",\s
+                    "bodyAsString":"stuff"\s
+                    }
+                    """;
 
             HttpRequest parsedHttpRequest = objectMapper.readValue(httpRequestAsString, HttpRequest.class);
             assertThat(parsedHttpRequest).isEqualTo(expectedHttpRequest);
@@ -261,13 +267,15 @@ class HttpRequestTest {
             headers.put("Content-Type", Lists.newArrayList("application/octet-stream"));
             expectedHttpRequest.setHeaders(headers);
 
-            String httpRequestAsString = "{\n" +
-                    "  \"url\": \"http://www.stuff.com\",\n" +
-                    "  \"headers\":{\"X-request-id\":[\"aaaa-4466666-111\"],\"X-correlation-id\":[\"sfds-55-77\"]},\n" +
-                    "  \"method\": \"POST\",\n" +
-                    "  \"bodyAsByteArray\": \"c3R1ZmY=\",\n" +
-                    "  \"bodyType\": \"BYTE_ARRAY\"\n" +
-                    "}";
+            String httpRequestAsString = """
+                    {
+                      "url": "http://www.stuff.com",
+                      "headers":{"X-request-id":["aaaa-4466666-111"],"X-correlation-id":["sfds-55-77"]},
+                      "method": "POST",
+                      "bodyAsByteArray": "c3R1ZmY=",
+                      "bodyType": "BYTE_ARRAY"
+                    }
+                    """;
 
             HttpRequest parsedHttpRequest = objectMapper.readValue(httpRequestAsString, HttpRequest.class);
             assertThat(parsedHttpRequest).isEqualTo(expectedHttpRequest);
