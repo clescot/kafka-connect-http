@@ -3,17 +3,13 @@ package io.github.clescot.kafka.connect.http;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import io.github.clescot.kafka.connect.Task;
-import io.github.clescot.kafka.connect.http.client.HttpClient;
-import io.github.clescot.kafka.connect.http.client.HttpClientConfiguration;
-import io.github.clescot.kafka.connect.http.client.HttpClientFactory;
-import io.github.clescot.kafka.connect.http.client.HttpConfiguration;
+import io.github.clescot.kafka.connect.http.client.*;
 import io.github.clescot.kafka.connect.http.core.HttpExchange;
 import io.github.clescot.kafka.connect.http.core.HttpRequest;
 import io.github.clescot.kafka.connect.http.core.HttpResponse;
 import io.github.clescot.kafka.connect.http.sink.HttpConnectorConfig;
 import io.micrometer.core.instrument.composite.CompositeMeterRegistry;
 import org.apache.commons.lang3.tuple.Pair;
-import org.apache.kafka.connect.errors.ConnectException;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -183,7 +179,7 @@ public class HttpTask<T,C extends HttpClient<R,S>,R, S> implements Task<C,HttpCo
                 }
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
-                throw new ConnectException(e);
+                throw new HttpException(e);
             }
             LOGGER.info("executor is shutdown : '{}'", executorService.isShutdown());
             LOGGER.info("executor tasks are terminated : '{}'", executorService.isTerminated());
