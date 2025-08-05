@@ -27,12 +27,12 @@ public class MessageSplitter<T extends ConnectRecord> {
     private final JexlExpression jexlMatchingExpression;
     private final BiFunction<T,String,T> fromStringPartToRecordFunction;
 
-    public MessageSplitter(String id,
+    public MessageSplitter(
+                           BiFunction<T,String,T> fromStringPartToRecordFunction, String id,
                            JexlEngine jexlEngine,
                            String matchingExpression,
                            String splitPattern,
-                           int splitLimit,
-                           BiFunction<T,String,T> fromStringPartToRecordFunction) {
+                           int splitLimit) {
         this.fromStringPartToRecordFunction = fromStringPartToRecordFunction;
         Preconditions.checkNotNull(id,"id is required");
         this.id = id;

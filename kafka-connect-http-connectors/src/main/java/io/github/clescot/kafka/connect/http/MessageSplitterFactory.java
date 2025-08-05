@@ -31,7 +31,7 @@ public class MessageSplitterFactory<T extends ConnectRecord> {
                 splitLimit = Integer.parseInt(limit);
             }
             String matchingExpression = settings.get("matcher");
-            MessageSplitter<T> requestSplitter = new MessageSplitter<>(splitterId,jexlEngine,matchingExpression,splitPattern,splitLimit, fromStringPartToRecordFunction);
+            MessageSplitter<T> requestSplitter = new MessageSplitter<>(fromStringPartToRecordFunction,splitterId,jexlEngine,matchingExpression,splitPattern,splitLimit);
             requestSplitterList.add(requestSplitter);
         }
         return requestSplitterList;
