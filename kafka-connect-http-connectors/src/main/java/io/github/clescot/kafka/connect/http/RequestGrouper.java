@@ -15,7 +15,7 @@ import java.util.function.Predicate;
  * It aggregates the body of matching requests and returns a list of aggregated requests.
  * Non-matching requests are returned as they are.
  */
-public class RequestGrouper<T extends ConnectRecord> {
+public class RequestGrouper<T extends ConnectRecord<T>> {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(RequestGrouper.class);
     private final String id;
