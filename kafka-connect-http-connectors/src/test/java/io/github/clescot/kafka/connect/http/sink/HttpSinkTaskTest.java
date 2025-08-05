@@ -118,7 +118,7 @@ public class HttpSinkTaskTest {
 
 
     @BeforeEach
-    public void setUp() {
+    void setUp() {
         QueueFactory.clearRegistrations();
         MockitoAnnotations.openMocks(this);
         okHttpSinkTask.initialize(sinkTaskContext);
@@ -126,7 +126,7 @@ public class HttpSinkTaskTest {
     }
 
     @AfterEach
-    public void tearsDown() {
+    void tearsDown() {
         wmHttp.resetAll();
         HttpTask.removeCompositeMeterRegistry();
     }

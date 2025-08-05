@@ -14,6 +14,9 @@ import java.nio.file.Paths;
 
 public class SchemaLoader {
     private static final Logger LOGGER = LoggerFactory.getLogger(SchemaLoader.class);
+
+    private SchemaLoader() {}
+
     private static String loadSchema(String schemaPath) throws IOException, URISyntaxException {
         try {
             URL url = SchemaLoader.class.getResource(schemaPath);

@@ -11,8 +11,9 @@ class VersionUtilsTest {
     public void test_get_version(){
         VersionUtils versionUtils = new VersionUtils();
         String version = versionUtils.getVersion();
-        assertThat(version).isNotNull();
-        assertThat(version).isNotEqualTo("0.0.0");
+        assertThat(version)
+                .isNotNull()
+                .isNotEqualTo("0.0.0");
     }
 
 }

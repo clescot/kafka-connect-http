@@ -305,9 +305,10 @@ class OkHttpClientTest {
             String contentDisposition3 = headers3.get("Content-Disposition");
             assertThat(contentDisposition3).contains("form-data; name=\"part3\"; filename=\"upload.txt\"");
             String part3Content = getPartContent(part3AsString);
-            assertThat(part3Content).isEqualTo("my content to upload\n" +
-                    "test1\n" +
-                    "test2");
+            assertThat(part3Content).isEqualTo("""
+                    my content to upload
+                    test1
+                    test2""");
         }
 
         @NotNull
@@ -316,7 +317,7 @@ class OkHttpClientTest {
                     .stream()
                     .filter(s -> !s.isEmpty())
                     .filter(s -> !s.equals("--\r\n"))
-                    .collect(Collectors.toList());
+                    .toList();
         }
 
         private String getPartContent(String headersAndContentAsString) {
@@ -1336,7 +1337,6 @@ class OkHttpClientTest {
                     );
 
 
-            Random random = getFixedRandom();
             OkHttpClient client = factory.build(config, null, new Random(), null, null, getCompositeMeterRegistry());
 
             HttpExchange httpExchange1 = client.call(httpRequest, new AtomicInteger(1)).get();
@@ -1896,7 +1896,7 @@ class OkHttpClientTest {
 
 
         @AfterEach
-        public void afterEach() {
+        void afterEach() {
             wmHttp.resetAll();
             QueueFactory.clearRegistrations();
         }

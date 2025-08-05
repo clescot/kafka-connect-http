@@ -15,7 +15,6 @@ import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 class LoggingInterceptorTest {
-    private final Logger LOGGER = LoggerFactory.getLogger(LoggingInterceptorTest.class);
     @Mock
     Interceptor.Chain chain;
     @Mock
@@ -29,11 +28,12 @@ class LoggingInterceptorTest {
         //given
         when(chain.request()).thenReturn(request);
         String connectionAsString=
-                "\"Connection{stuff.com:443,\" \n" +
-                "  proxy=\"none\" \n" +
-                "  hostAddress=241.212.235.23\" \n" +
-                "  cipherSuite=\"none\" \n" +
-                "  protocol=http/1.1}\"";
+                """
+                "Connection{stuff.com:443,"\s
+                  proxy="none"\s
+                  hostAddress=241.212.235.23"\s
+                  cipherSuite="none"\s
+                  protocol=http/1.1}\"""";
         when(connection.toString()).thenReturn(connectionAsString);
         when(chain.connection()).thenReturn(connection);
         when(chain.proceed(request)).thenReturn(response);

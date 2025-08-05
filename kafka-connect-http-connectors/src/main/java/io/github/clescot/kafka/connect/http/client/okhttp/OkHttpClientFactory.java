@@ -55,6 +55,7 @@ public class OkHttpClientFactory implements HttpClientFactory<OkHttpClient,Reque
     public static final String DEFAULT_IN_MEMORY_DIRECTORY_CACHE_PATH = "/kafka-connect-http-cache";
     @SuppressWarnings("java:S1075")
     public static final String DEFAULT_FILE_DIRECTORY_CACHE_PATH = "/tmp/kafka-connect-http-cache";
+    public static final String METER_REGISTRY_MUST_NOT_BE_NULL = "MeterRegistry must not be null.";
     private @NotNull TrustManagerFactory trustManagerFactory;
     private static ConnectionPool sharedConnectionPool;
 
@@ -66,7 +67,7 @@ public class OkHttpClientFactory implements HttpClientFactory<OkHttpClient,Reque
                                                ProxySelector proxySelector,
                                                CompositeMeterRegistry meterRegistry) {
         Preconditions.checkNotNull(random, "Random must not be null.");
-        Preconditions.checkNotNull(meterRegistry, "MeterRegistry must not be null.");
+        Preconditions.checkNotNull(meterRegistry, METER_REGISTRY_MUST_NOT_BE_NULL);
         okhttp3.OkHttpClient internalOkHttpClient = buildOkHttpClient(config, executorService, random, proxy, proxySelector, meterRegistry);
         OkHttpClient okHttpClient = new OkHttpClient(config, internalOkHttpClient);
         okHttpClient.setTrustManagerFactory(trustManagerFactory);
@@ -80,7 +81,7 @@ public class OkHttpClientFactory implements HttpClientFactory<OkHttpClient,Reque
                                                               ProxySelector proxySelector,
                                                    CompositeMeterRegistry meterRegistry) {
         Preconditions.checkNotNull(random, "Random must not be null.");
-        Preconditions.checkNotNull(meterRegistry, "MeterRegistry must not be null.");
+        Preconditions.checkNotNull(meterRegistry, METER_REGISTRY_MUST_NOT_BE_NULL);
         okhttp3.OkHttpClient.Builder httpClientBuilder = new okhttp3.OkHttpClient.Builder();
         if (executorService != null) {
             Dispatcher dispatcher = new Dispatcher(executorService);
@@ -147,10 +148,10 @@ public class OkHttpClientFactory implements HttpClientFactory<OkHttpClient,Reque
                                 throw new IllegalArgumentException(e);
                             }
                         })
-                        .collect(Collectors.toList());
+                        .toList();
             }else {
                 LOGGER.debug("no bootstrap DNS set. use system DNS");
-            };
+            }
             boolean includeipv6 = true;
             if(config.containsKey(OKHTTP_DOH_INCLUDE_IPV6)){
                 includeipv6 = Boolean.parseBoolean((String) config.get(OKHTTP_DOH_INCLUDE_IPV6));
@@ -189,7 +190,7 @@ public class OkHttpClientFactory implements HttpClientFactory<OkHttpClient,Reque
     }
 
     private static void configureEvents(Map<String, Object> config, CompositeMeterRegistry meterRegistry, okhttp3.OkHttpClient.Builder httpClientBuilder) {
-        Preconditions.checkNotNull(meterRegistry, "MeterRegistry must not be null.");
+        Preconditions.checkNotNull(meterRegistry, METER_REGISTRY_MUST_NOT_BE_NULL);
         if (!meterRegistry.getRegistries().isEmpty()) {
             List<String> tags = Lists.newArrayList();
             tags.add(HttpClientConfiguration.CONFIGURATION_ID);

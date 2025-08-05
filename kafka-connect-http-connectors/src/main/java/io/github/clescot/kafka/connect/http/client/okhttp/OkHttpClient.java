@@ -29,6 +29,7 @@ import java.util.stream.Collectors;
 public class OkHttpClient extends AbstractHttpClient<Request, Response> {
 
 
+    public static final String APPLICATION_OCTET_STREAM = "application/octet-stream";
     private final okhttp3.OkHttpClient client;
     private static final Logger LOGGER = LoggerFactory.getLogger(OkHttpClient.class);
 
@@ -149,14 +150,14 @@ public class OkHttpClient extends AbstractHttpClient<Request, Response> {
                     Map.Entry<String, File> contentAsFormEntry = httpPart.getContentAsFormEntry();
                     String fileName = contentAsFormEntry.getKey();
                     File file = contentAsFormEntry.getValue();
-                    requestBody = RequestBody.create(file, MediaType.parse("application/octet-stream"));
+                    requestBody = RequestBody.create(file, MediaType.parse(APPLICATION_OCTET_STREAM));
                     multipartBuilder.addFormDataPart(parameterName, fileName, requestBody);
                     break;
                 //HttpPart is <fileUri>
                 case FORM_DATA_AS_REFERENCE:
                     Map.Entry<String, File> formEntry = httpPart.getContentAsFormEntry();
                     File fileAsReference = new File(httpPart.getFileUri());
-                    requestBody = RequestBody.create(fileAsReference, MediaType.parse("application/octet-stream"));
+                    requestBody = RequestBody.create(fileAsReference, MediaType.parse(APPLICATION_OCTET_STREAM));
                     multipartBuilder.addFormDataPart(parameterName, formEntry.getKey(), requestBody);
                     break;
                 //HttpPart is <string,byte[]>
@@ -205,14 +206,13 @@ public class OkHttpClient extends AbstractHttpClient<Request, Response> {
         RequestBody requestBody;
         String encoded = Base64.getEncoder().encodeToString(bodyAsByteArray);
         //use the contentType set in HttpRequest. if not set, use application/octet-stream
-        requestBody = RequestBody.create(encoded, MediaType.parse(Optional.ofNullable(contentType).orElse("application/octet-stream")));
+        requestBody = RequestBody.create(encoded, MediaType.parse(Optional.ofNullable(contentType).orElse(APPLICATION_OCTET_STREAM)));
         return requestBody;
     }
 
 
     @Override
     public HttpResponse buildResponse(HttpResponseBuilder httpResponseBuilder, Response response) {
-        HttpResponse httpResponse;
         try {
             Protocol protocol = response.protocol();
             if (LOGGER.isTraceEnabled()) {

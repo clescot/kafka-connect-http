@@ -84,7 +84,7 @@ class JEXLHttpRequestMapperTest {
 
         private SinkRecord sinkRecord;
         @BeforeEach
-        public void setup() {
+        void setup() {
             List<Header> headers = Lists.newArrayList();
             sinkRecord = new SinkRecord("myTopic",
                     0,
@@ -120,13 +120,9 @@ class JEXLHttpRequestMapperTest {
     @Nested
     class Map {
 
-        private static final String DUMMY_BODY = "stuff";
-        private static final String DUMMY_URL = "http://www." + DUMMY_BODY + ".com";
-        private static final String DUMMY_METHOD = "POST";
-        private static final String DUMMY_BODY_TYPE = "STRING";
         private SinkRecord sinkRecord;
         @BeforeEach
-        public void setup() {
+        void setup() {
             List<Header> headers = Lists.newArrayList();
             sinkRecord = new SinkRecord("myTopic",
                     0,

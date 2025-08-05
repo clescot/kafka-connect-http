@@ -11,14 +11,13 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
 import java.util.function.BiFunction;
-import java.util.stream.Collectors;
 
 /**
  * MessageSplitter is used to split a message based on a pattern.
  * It uses JEXL expressions to determine if a SinkRecord matches the splitter's criteria.
  * If it matches, it splits the message body according to the specified pattern and limit.
  */
-public class MessageSplitter<T extends ConnectRecord> {
+public class MessageSplitter<T extends ConnectRecord<T>> {
 
     private final String id;
     private final String splitPattern;
@@ -82,7 +81,7 @@ public class MessageSplitter<T extends ConnectRecord> {
             List<String> list = split(body);
             return list.stream()
                     .map(part-> fromStringPartToRecordFunction.apply(connectRecord,part))
-                    .collect(Collectors.toList());
+                    .toList();
         }else{
             return List.of(connectRecord);
         }

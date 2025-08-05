@@ -75,7 +75,7 @@ class HttpTaskTest {
         private HttpTask<SinkRecord,OkHttpClient,Request,Response> httpTask;
 
         @BeforeEach
-        public void setUp(){
+        void setUp(){
             Map<String,String> configs = Maps.newHashMap();
             AbstractConfig config = new HttpConnectorConfig(configs);
 

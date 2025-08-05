@@ -25,7 +25,7 @@ public class URIRegexProxySelector extends ProxySelector {
 
     @Override
     public List<Proxy> select(URI uri) {
-        return proxies.stream().filter(pair -> pair.getLeft().test(uri)).map(ImmutablePair::getRight).collect(Collectors.toList());
+        return proxies.stream().filter(pair -> pair.getLeft().test(uri)).map(ImmutablePair::getRight).toList();
     }
 
     @Override
