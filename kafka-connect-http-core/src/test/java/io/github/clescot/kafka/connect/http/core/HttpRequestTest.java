@@ -309,17 +309,17 @@ class HttpRequestTest {
             jsonSchemaSerializerConfig.put(KafkaJsonSchemaSerializerConfig.FAIL_UNKNOWN_PROPERTIES, "" + failUnknownProperties);
 
 
-            KafkaJsonSchemaSerializer<HttpRequest> serializer = new KafkaJsonSchemaSerializer<>(schemaRegistryClient, jsonSchemaSerializerConfig);
+            KafkaJsonSchemaSerializer<HttpRequest> mySerializer = new KafkaJsonSchemaSerializer<>(schemaRegistryClient, jsonSchemaSerializerConfig);
 
 
-            byte[] bytes = serializer.serialize(DUMMY_TOPIC, httpRequest);
+            byte[] bytes = mySerializer.serialize(DUMMY_TOPIC, httpRequest);
             System.out.println("bytesAsString:" + new String(bytes, StandardCharsets.UTF_8));
 
             //like in kafka connect Sink connector, convert byte[] to struct
             Map<String, String> jsonSchemaDeserializerConfig = Maps.newHashMap();
             jsonSchemaDeserializerConfig.put(KafkaJsonSchemaDeserializerConfig.SCHEMA_REGISTRY_URL_CONFIG, "mock://stuff.com");
-            KafkaJsonSchemaDeserializer<HttpRequest> deserializer = new KafkaJsonSchemaDeserializer<>(schemaRegistryClient, jsonSchemaDeserializerConfig, HttpRequest.class);
-            HttpRequest deserializedHttpRequest = deserializer.deserialize(DUMMY_TOPIC, bytes);
+            KafkaJsonSchemaDeserializer<HttpRequest> myDeserializer = new KafkaJsonSchemaDeserializer<>(schemaRegistryClient, jsonSchemaDeserializerConfig, HttpRequest.class);
+            HttpRequest deserializedHttpRequest = myDeserializer.deserialize(DUMMY_TOPIC, bytes);
             assertThat(deserializedHttpRequest).isEqualTo(httpRequest);
         }
 
@@ -352,17 +352,17 @@ class HttpRequestTest {
             jsonSchemaSerializerConfig.put(KafkaJsonSchemaSerializerConfig.FAIL_UNKNOWN_PROPERTIES, "" + failUnknownProperties);
 
 
-            KafkaJsonSchemaSerializer<HttpRequest> serializer = new KafkaJsonSchemaSerializer<>(schemaRegistryClient, jsonSchemaSerializerConfig);
+            KafkaJsonSchemaSerializer<HttpRequest> mySerializer = new KafkaJsonSchemaSerializer<>(schemaRegistryClient, jsonSchemaSerializerConfig);
 
 
-            byte[] bytes = serializer.serialize(DUMMY_TOPIC, httpRequest);
+            byte[] bytes = mySerializer.serialize(DUMMY_TOPIC, httpRequest);
             System.out.println("bytesArray:" + Arrays.toString(bytes));
 
             //like in kafka connect Sink connector, convert byte[] to struct
             Map<String, String> jsonSchemaDeserializerConfig = Maps.newHashMap();
             jsonSchemaDeserializerConfig.put(KafkaJsonSchemaDeserializerConfig.SCHEMA_REGISTRY_URL_CONFIG, "mock://stuff.com");
-            KafkaJsonSchemaDeserializer<HttpRequest> deserializer = new KafkaJsonSchemaDeserializer<>(schemaRegistryClient, jsonSchemaDeserializerConfig, HttpRequest.class);
-            HttpRequest deserializedHttpRequest = deserializer.deserialize(DUMMY_TOPIC, bytes);
+            KafkaJsonSchemaDeserializer<HttpRequest> myDeserializer = new KafkaJsonSchemaDeserializer<>(schemaRegistryClient, jsonSchemaDeserializerConfig, HttpRequest.class);
+            HttpRequest deserializedHttpRequest = myDeserializer.deserialize(DUMMY_TOPIC, bytes);
             assertThat(deserializedHttpRequest).isEqualTo(httpRequest);
         }
 
@@ -427,11 +427,11 @@ class HttpRequestTest {
             jsonSchemaSerializerConfig.put(KafkaJsonSchemaSerializerConfig.WRITE_DATES_AS_ISO8601, "true");
             jsonSchemaSerializerConfig.put(KafkaJsonSchemaSerializerConfig.ONEOF_FOR_NULLABLES, "" + useOneOfForNullables);
             jsonSchemaSerializerConfig.put(KafkaJsonSchemaSerializerConfig.FAIL_UNKNOWN_PROPERTIES, "" + failUnknownProperties);
-            KafkaJsonSchemaSerializer<HttpRequest> serializer = new KafkaJsonSchemaSerializer<>(schemaRegistryClient, jsonSchemaSerializerConfig);
+            KafkaJsonSchemaSerializer<HttpRequest> mySerializer = new KafkaJsonSchemaSerializer<>(schemaRegistryClient, jsonSchemaSerializerConfig);
 
             //when
             //serialize http as byte[]
-            byte[] bytes = serializer.serialize(DUMMY_TOPIC, httpRequest);
+            byte[] bytes = mySerializer.serialize(DUMMY_TOPIC, httpRequest);
 
             System.out.println("bytesAsString:" + new String(bytes, StandardCharsets.UTF_8));
 
@@ -440,9 +440,9 @@ class HttpRequestTest {
             jsonSchemaDeSerializerConfig.put(KafkaJsonSchemaDeserializerConfig.SCHEMA_REGISTRY_URL_CONFIG, "mock://stuff.com");
             jsonSchemaDeSerializerConfig.put(KafkaJsonSchemaDeserializerConfig.JSON_VALUE_TYPE, HttpRequest.class.getName());
             jsonSchemaDeSerializerConfig.put(KafkaJsonSchemaDeserializerConfig.FAIL_UNKNOWN_PROPERTIES, "" + failUnknownProperties);
-            KafkaJsonSchemaDeserializer<HttpRequest> deserializer = new KafkaJsonSchemaDeserializer<>(schemaRegistryClient, jsonSchemaDeSerializerConfig, HttpRequest.class);
+            KafkaJsonSchemaDeserializer<HttpRequest> myDeserializer = new KafkaJsonSchemaDeserializer<>(schemaRegistryClient, jsonSchemaDeSerializerConfig, HttpRequest.class);
 
-            HttpRequest deserializedRequest = deserializer.deserialize(DUMMY_TOPIC, bytes);
+            HttpRequest deserializedRequest = myDeserializer.deserialize(DUMMY_TOPIC, bytes);
 
             //then
             assertThat(deserializedRequest).isEqualTo(httpRequest);
@@ -512,11 +512,11 @@ class HttpRequestTest {
             jsonSchemaSerializerConfig.put(KafkaJsonSchemaSerializerConfig.WRITE_DATES_AS_ISO8601, "true");
             jsonSchemaSerializerConfig.put(KafkaJsonSchemaSerializerConfig.ONEOF_FOR_NULLABLES, "" + useOneOfForNullables);
             jsonSchemaSerializerConfig.put(KafkaJsonSchemaSerializerConfig.FAIL_UNKNOWN_PROPERTIES, "" + failUnknownProperties);
-            KafkaJsonSchemaSerializer<HttpRequest> serializer = new KafkaJsonSchemaSerializer<>(schemaRegistryClient, jsonSchemaSerializerConfig);
+            KafkaJsonSchemaSerializer<HttpRequest> mySerializer = new KafkaJsonSchemaSerializer<>(schemaRegistryClient, jsonSchemaSerializerConfig);
 
             //when
             //serialize http as byte[]
-            byte[] bytes = serializer.serialize(DUMMY_TOPIC, httpRequest);
+            byte[] bytes = mySerializer.serialize(DUMMY_TOPIC, httpRequest);
 
             System.out.println("bytesAsString:" + new String(bytes, StandardCharsets.UTF_8));
 
@@ -526,9 +526,9 @@ class HttpRequestTest {
             jsonSchemaDeSerializerConfig.put(KafkaJsonSchemaDeserializerConfig.SCHEMA_REGISTRY_URL_CONFIG, "mock://stuff.com");
             jsonSchemaDeSerializerConfig.put(KafkaJsonSchemaDeserializerConfig.JSON_VALUE_TYPE, HttpRequest.class.getName());
             jsonSchemaDeSerializerConfig.put(KafkaJsonSchemaDeserializerConfig.FAIL_UNKNOWN_PROPERTIES, "" + failUnknownProperties);
-            KafkaJsonSchemaDeserializer<HttpRequest> deserializer = new KafkaJsonSchemaDeserializer<>(schemaRegistryClient, jsonSchemaDeSerializerConfig, HttpRequest.class);
+            KafkaJsonSchemaDeserializer<HttpRequest> myDeserializer = new KafkaJsonSchemaDeserializer<>(schemaRegistryClient, jsonSchemaDeSerializerConfig, HttpRequest.class);
 
-            HttpRequest deserializedRequest = deserializer.deserialize(DUMMY_TOPIC, bytes);
+            HttpRequest deserializedRequest = myDeserializer.deserialize(DUMMY_TOPIC, bytes);
 
             //then
             assertThat(deserializedRequest).isEqualTo(httpRequest);
@@ -568,11 +568,11 @@ class HttpRequestTest {
             jsonSchemaSerializerConfig.put(KafkaJsonSchemaSerializerConfig.WRITE_DATES_AS_ISO8601, "true");
             jsonSchemaSerializerConfig.put(KafkaJsonSchemaSerializerConfig.ONEOF_FOR_NULLABLES, "" + useOneOfForNullables);
             jsonSchemaSerializerConfig.put(KafkaJsonSchemaSerializerConfig.FAIL_UNKNOWN_PROPERTIES, "" + failUnknownProperties);
-            KafkaJsonSchemaSerializer<HttpRequest> serializer = new KafkaJsonSchemaSerializer<>(schemaRegistryClient, jsonSchemaSerializerConfig);
+            KafkaJsonSchemaSerializer<HttpRequest> mySerializer = new KafkaJsonSchemaSerializer<>(schemaRegistryClient, jsonSchemaSerializerConfig);
 
             //when
             //serialize http as byte[]
-            byte[] bytes = serializer.serialize(DUMMY_TOPIC, httpRequest);
+            byte[] bytes = mySerializer.serialize(DUMMY_TOPIC, httpRequest);
 
             System.out.println("bytesAsString:" + new String(bytes, StandardCharsets.UTF_8));
 
@@ -582,9 +582,9 @@ class HttpRequestTest {
             jsonSchemaDeSerializerConfig.put(KafkaJsonSchemaDeserializerConfig.SCHEMA_REGISTRY_URL_CONFIG, "mock://stuff.com");
             jsonSchemaDeSerializerConfig.put(KafkaJsonSchemaDeserializerConfig.JSON_VALUE_TYPE, HttpRequest.class.getName());
             jsonSchemaDeSerializerConfig.put(KafkaJsonSchemaDeserializerConfig.FAIL_UNKNOWN_PROPERTIES, "" + failUnknownProperties);
-            KafkaJsonSchemaDeserializer<HttpRequest> deserializer = new KafkaJsonSchemaDeserializer<>(schemaRegistryClient, jsonSchemaDeSerializerConfig, HttpRequest.class);
+            KafkaJsonSchemaDeserializer<HttpRequest> myDeserializer = new KafkaJsonSchemaDeserializer<>(schemaRegistryClient, jsonSchemaDeSerializerConfig, HttpRequest.class);
 
-            HttpRequest deserializedRequest = deserializer.deserialize(DUMMY_TOPIC, bytes);
+            HttpRequest deserializedRequest = myDeserializer.deserialize(DUMMY_TOPIC, bytes);
 
             //then
             assertThat(deserializedRequest).isEqualTo(httpRequest);
@@ -693,8 +693,13 @@ class HttpRequestTest {
             assertThat(httpRequest.getUrl()).isEqualTo(dummyUrl);
             assertThat(httpRequest.getMethod()).isEqualTo(dummyMethod);
             Map<String,HttpPart> httpParts = httpRequest.getParts();
-            assertThat(httpParts).hasSameSizeAs(parts);
-            assertThat(httpParts).contains(Map.entry("part1",part1),Map.entry("part2", part2), Map.entry("part3",part3));
+            assertThat(httpParts)
+                    .hasSameSizeAs(parts)
+                    .contains(
+                            Map.entry("part1",part1),
+                            Map.entry("part2", part2),
+                            Map.entry("part3",part3)
+                    );
         }
     }
 
@@ -758,7 +763,7 @@ class HttpRequestTest {
             httpRequest.setHeaders(headers);
 
             //when
-            assertThat(httpRequest).isNotEqualTo(null);
+            assertThat(httpRequest).isNotNull();
         }
 
         @Test
@@ -795,8 +800,9 @@ class HttpRequestTest {
             httpRequest.setHeaders(headers);
 
             //when
-            assertThat(httpRequest).isEqualTo(httpRequest);
-            assertThat(httpRequest.hashCode()).isEqualTo(httpRequest.hashCode());
+            assertThat(httpRequest)
+                    .isEqualTo(httpRequest)
+                    .hasSameHashCodeAs(httpRequest);
         }
 
         @Test
@@ -821,8 +827,9 @@ class HttpRequestTest {
             httpRequest2.setHeaders(headers);
 
             //when
-            assertThat(httpRequest1).isEqualTo(httpRequest2);
-            assertThat(httpRequest1.hashCode()).isEqualTo(httpRequest2.hashCode());
+            assertThat(httpRequest1)
+                    .isEqualTo(httpRequest2)
+                    .hasSameHashCodeAs(httpRequest2);
 
         }
 
@@ -848,8 +855,9 @@ class HttpRequestTest {
             httpRequest2.setHeaders(headers);
 
             //when
-            assertThat(httpRequest1).isEqualTo(httpRequest2);
-            assertThat(httpRequest1.hashCode()).isEqualTo(httpRequest2.hashCode());
+            assertThat(httpRequest1)
+                    .isEqualTo(httpRequest2)
+                    .hasSameHashCodeAs(httpRequest2);
 
         }
     }
@@ -866,7 +874,7 @@ class HttpRequestTest {
             //when
             long headersLength = httpRequest.getHeadersLength();
             //then
-            assertThat(headersLength).isEqualTo(0);
+            assertThat(headersLength).isZero();
         }
 
         @Test
@@ -896,18 +904,6 @@ class HttpRequestTest {
                             key3.length()+value3.length());
         }
 
-        @Test
-        void test_get_headers_length_without_headers() {
-            //given
-            HttpRequest httpRequest = new HttpRequest(
-                    "http://www.stuff.com",
-                    HttpRequest.Method.GET
-            );
-            //when
-            long headersLength = httpRequest.getHeadersLength();
-            //then
-            assertThat(headersLength).isEqualTo(0);
-        }
     }
 
     @Nested
@@ -1038,7 +1034,7 @@ class HttpRequestTest {
             //when
             long length = httpRequest.getLength();
             //then
-            assertThat(length).isEqualTo(0);
+            assertThat(length).isZero();
         }
 
         @Test
@@ -1136,10 +1132,10 @@ class HttpRequestTest {
             //when
             String toString = httpRequest.toString();
             //then
-            assertThat(toString).contains("url='http://www.stuff.com'");
-            assertThat(toString).contains("method=GET");
-            assertThat(toString).contains("bodyType=STRING");
-            assertThat(toString).contains("bodyAsString='" + DUMMY_BODY_AS_STRING+"'");
+            assertThat(toString).contains("url='http://www.stuff.com'")
+                    .contains("method=GET")
+                    .contains("bodyType=STRING")
+                    .contains("bodyAsString='" + DUMMY_BODY_AS_STRING+"'");
         }
 
         @Test
@@ -1158,9 +1154,10 @@ class HttpRequestTest {
             //when
             String toString = httpRequest.toString();
             //then
-            assertThat(toString).contains("url='http://www.stuff.com'");
-            assertThat(toString).contains("method=GET");
-            assertThat(toString).contains("bodyType=BYTE_ARRAY");
+            assertThat(toString)
+                    .contains("url='http://www.stuff.com'")
+                    .contains("method=GET")
+                    .contains("bodyType=BYTE_ARRAY");
         }
     }
 
@@ -1214,7 +1211,7 @@ class HttpRequestTest {
             //when
             long contentLength = httpRequest.getBodyContentLength();
             //then
-            assertThat(contentLength).isEqualTo(0L);
+            assertThat(contentLength).isZero();
         }
 
         @Test
@@ -1240,8 +1237,8 @@ class HttpRequestTest {
             //when
             long contentLength = httpRequest.getBodyContentLength();
             //then
-            assertThat(contentLength).isGreaterThan(0L); //depends on the form encoding
-            assertThat(contentLength).isEqualTo(key1.length()+value1.length()+key2.length()+value2.length()); //depends on the form encoding
+            assertThat(contentLength).isGreaterThan(0L) //depends on the form encoding
+                                     .isEqualTo(key1.length()+value1.length()+key2.length()+value2.length()); //depends on the form encoding
         }
 
         @Test
@@ -1267,8 +1264,9 @@ class HttpRequestTest {
             //when
             long contentLength = httpRequest.getBodyContentLength();
             //then
-            assertThat(contentLength).isGreaterThan(0L);
-            assertThat(contentLength).isEqualTo(part1.getBodyContentLength() + part2.getBodyContentLength() + part3.getBodyContentLength());
+            assertThat(contentLength)
+                    .isGreaterThan(0L)
+                    .isEqualTo(part1.getBodyContentLength() + part2.getBodyContentLength() + part3.getBodyContentLength());
         }
     }
 }
