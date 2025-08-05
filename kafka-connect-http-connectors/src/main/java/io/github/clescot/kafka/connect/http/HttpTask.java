@@ -58,7 +58,6 @@ public class HttpTask<T extends ConnectRecord<T>,C extends HttpClient<R,S>,R, S>
 
     private final Map<String,HttpConfiguration<C,R, S>> configurations;
     private static CompositeMeterRegistry meterRegistry;
-    private HttpConnectorConfig httpConnectorConfig;
     private KafkaProducer<String, Object> producer;
     private HttpRequestMapper defaultHttpRequestMapper;
     private List<HttpRequestMapper> httpRequestMappers;
@@ -72,7 +71,6 @@ public class HttpTask<T extends ConnectRecord<T>,C extends HttpClient<R,S>,R, S>
                     KafkaProducer<String, Object> producer,
                     BiFunction<T,String,T> fromStringPartToRecordFunction) {
         this.producer = producer;
-        this.httpConnectorConfig = httpConnectorConfig;
 
         //build executorService
         Optional<Integer> customFixedThreadPoolSize = Optional.ofNullable(httpConnectorConfig.getInt(HTTP_CLIENT_ASYNC_FIXED_THREAD_POOL_SIZE));
