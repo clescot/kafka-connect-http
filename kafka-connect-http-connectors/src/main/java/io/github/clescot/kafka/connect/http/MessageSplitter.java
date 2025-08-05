@@ -27,7 +27,9 @@ public class MessageSplitter<T extends ConnectRecord> {
     private final JexlExpression jexlMatchingExpression;
 
     public MessageSplitter(String id,
-                           JexlEngine jexlEngine, String matchingExpression, String splitPattern,
+                           JexlEngine jexlEngine,
+                           String matchingExpression,
+                           String splitPattern,
                            int splitLimit) {
         Preconditions.checkNotNull(id,"id is required");
         this.id = id;
