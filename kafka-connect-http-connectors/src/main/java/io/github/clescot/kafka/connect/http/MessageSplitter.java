@@ -75,6 +75,7 @@ public class MessageSplitter<T extends ConnectRecord> {
         if(value!=null && value.getClass().isAssignableFrom(String.class)){
             String body = (String)value;
             List<String> list = split(body);
+            //TODO fix the type cast
             return (List<T>) list.stream().map(content-> (ConnectRecord)new SinkRecord(
                     connectRecord.topic(),
                     connectRecord.kafkaPartition(),
