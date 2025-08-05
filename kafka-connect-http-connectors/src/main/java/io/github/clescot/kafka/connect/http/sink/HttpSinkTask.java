@@ -189,9 +189,7 @@ public abstract class HttpSinkTask<C extends HttpClient<R, S>, R, S> extends Sin
     public CompletableFuture<HttpExchange> callAndPublish(Pair<SinkRecord, HttpRequest> pair) {
 
         return httpTask.call(pair.getRight())
-                .thenApply(
-                        publish()
-                )
+                .thenApply(publish())
                 .exceptionally(throwable -> {
                     LOGGER.error(throwable.getMessage());
                     if (errantRecordReporter != null) {
@@ -207,8 +205,6 @@ public abstract class HttpSinkTask<C extends HttpClient<R, S>, R, S> extends Sin
                     }
                     return null;
                 });
-
-
     }
 
     private List<SinkRecord> splitMessage(SinkRecord sinkRecord) {
