@@ -11,7 +11,6 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
 import java.util.function.BiFunction;
-import java.util.stream.Collectors;
 
 /**
  * MessageSplitter is used to split a message based on a pattern.

@@ -18,7 +18,6 @@ import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 class InetAddressInterceptorTest {
-    private final Logger LOGGER = LoggerFactory.getLogger(InetAddressInterceptorTest.class);
 
     @Mock
     Interceptor.Chain chain;

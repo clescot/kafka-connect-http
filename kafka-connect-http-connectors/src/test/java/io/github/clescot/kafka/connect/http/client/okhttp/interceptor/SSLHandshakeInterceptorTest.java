@@ -21,7 +21,6 @@ import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 class SSLHandshakeInterceptorTest {
-    private final Logger LOGGER = LoggerFactory.getLogger(SSLHandshakeInterceptorTest.class);
     @Mock
     Interceptor.Chain chain;
     @Mock

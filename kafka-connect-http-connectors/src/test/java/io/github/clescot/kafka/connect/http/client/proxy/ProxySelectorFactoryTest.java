@@ -38,19 +38,19 @@ class ProxySelectorFactoryTest {
     @Nested
     class TestBuild {
         @Test
-        public void test_null_arguments() {
+        void test_null_arguments() {
             ProxySelectorFactory proxySelectorFactory = new ProxySelectorFactory();
             Assertions.assertThrows(NullPointerException.class,()->proxySelectorFactory.build(null,null));
         }
 
         @Test
-        public void test_empty_config_map() {
+        void test_empty_config_map() {
             ProxySelectorFactory proxySelectorFactory = new ProxySelectorFactory();
             Assertions.assertThrows(IllegalArgumentException.class,()->proxySelectorFactory.build(Maps.newHashMap(), new Random()));
         }
 
         @Test
-        public void test_proxyselector_algorithm_set_to_uriregex_with_hostname_but_no_regex() {
+        void test_proxyselector_algorithm_set_to_uriregex_with_hostname_but_no_regex() {
             ProxySelectorFactory proxySelectorFactory = new ProxySelectorFactory();
             HashMap<String, Object> config = Maps.newHashMap();
             config.put(PROXY_SELECTOR_ALGORITHM,"uriregex");
@@ -58,7 +58,7 @@ class ProxySelectorFactoryTest {
             Assertions.assertThrows(NullPointerException.class,()->proxySelectorFactory.build(config, new Random()));
         }
         @Test
-        public void test_proxyselector_algorithm_set_to_uriregex_with_hostname_and_regex() {
+        void test_proxyselector_algorithm_set_to_uriregex_with_hostname_and_regex() {
             ProxySelectorFactory proxySelectorFactory = new ProxySelectorFactory();
             HashMap<String, Object> config = Maps.newHashMap();
             config.put(PROXY_SELECTOR_ALGORITHM,"uriregex");
@@ -70,7 +70,7 @@ class ProxySelectorFactoryTest {
             assertThat(URIRegexProxySelector.class).isAssignableFrom(proxySelector.getClass());
         }
         @Test
-        public void test_proxyselector_algorithm_set_to_uriregex_with_hostname_and_regex_with_non_proxy_hosts() throws URISyntaxException {
+        void test_proxyselector_algorithm_set_to_uriregex_with_hostname_and_regex_with_non_proxy_hosts() throws URISyntaxException {
             ProxySelectorFactory proxySelectorFactory = new ProxySelectorFactory();
             HashMap<String, Object> config = Maps.newHashMap();
             config.put(PROXY_SELECTOR_ALGORITHM,"uriregex");
@@ -87,7 +87,7 @@ class ProxySelectorFactoryTest {
             assertThat(proxies).hasSize(1);
             Proxy proxy = proxies.get(0);
             assertThat(proxy.type()).isEqualTo(Proxy.Type.HTTP);
-            assertThat(proxy.address().toString()).isEqualTo("/"+getIP()+":"+wmHttp.getPort());
+            assertThat(proxy.address()).hasToString("/"+getIP()+":"+wmHttp.getPort());
 
             //non proxy url
             List<Proxy> proxies2 = proxySelector.select(new URI("https://test.net/stuff"));
@@ -97,7 +97,7 @@ class ProxySelectorFactoryTest {
         }
 
         @Test
-        public void test_proxyselector_algorithm_set_to_weightedrandom() {
+        void test_proxyselector_algorithm_set_to_weightedrandom() {
             ProxySelectorFactory proxySelectorFactory = new ProxySelectorFactory();
             HashMap<String, Object> config = Maps.newHashMap();
             config.put(PROXY_SELECTOR_ALGORITHM,"weightedrandom");
@@ -109,7 +109,7 @@ class ProxySelectorFactoryTest {
         }
 
         @Test
-        public void test_proxyselector_algorithm_set_to_hosthash() {
+        void test_proxyselector_algorithm_set_to_hosthash() {
             ProxySelectorFactory proxySelectorFactory = new ProxySelectorFactory();
             HashMap<String, Object> config = Maps.newHashMap();
             config.put(PROXY_SELECTOR_ALGORITHM,"hosthash");
@@ -120,7 +120,7 @@ class ProxySelectorFactoryTest {
         }
 
         @Test
-        public void test_proxyselector_algorithm_set_to_random() {
+        void test_proxyselector_algorithm_set_to_random() {
             ProxySelectorFactory proxySelectorFactory = new ProxySelectorFactory();
             HashMap<String, Object> config = Maps.newHashMap();
             config.put(PROXY_SELECTOR_ALGORITHM,"random");
@@ -130,7 +130,7 @@ class ProxySelectorFactoryTest {
             assertThat(RandomProxySelector.class).isAssignableFrom(proxySelector.getClass());
         }
         @Test
-        public void test_proxyselector_algorithm_set_to_round_robin() {
+        void test_proxyselector_algorithm_set_to_round_robin() {
             ProxySelectorFactory proxySelectorFactory = new ProxySelectorFactory();
             HashMap<String, Object> config = Maps.newHashMap();
             config.put(PROXY_SELECTOR_ALGORITHM,"roundrobin");

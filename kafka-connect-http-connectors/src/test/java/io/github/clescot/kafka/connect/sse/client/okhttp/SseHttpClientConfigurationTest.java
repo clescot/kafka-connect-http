@@ -101,6 +101,6 @@ class SseHttpClientConfigurationTest {
                 """.strip());
         client.stop();
         assertThat(client.isConnected()).isFalse();
-        assertThat(eventQueue.size()).isZero();
+        assertThat(eventQueue).isEmpty();
     }
 }

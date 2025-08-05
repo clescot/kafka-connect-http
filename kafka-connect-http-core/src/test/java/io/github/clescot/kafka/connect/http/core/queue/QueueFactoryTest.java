@@ -13,7 +13,7 @@ class QueueFactoryTest {
 
 
     @Test
-    public void test_get_queue_without_queue_name(){
+    void test_get_queue_without_queue_name(){
         Queue<KafkaRecord> queue = QueueFactory.getQueue();
         assertThat(queue).isNotNull();
         Queue<KafkaRecord> queue2 = QueueFactory.getQueue();
@@ -21,7 +21,7 @@ class QueueFactoryTest {
     }
 
     @Test
-    public void test_get_queue_with_queue_name(){
+    void test_get_queue_with_queue_name(){
         Queue<KafkaRecord> queue = QueueFactory.getQueue(DEFAULT_QUEUE_NAME);
         assertThat(queue).isNotNull();
         Queue<KafkaRecord> queue2 = QueueFactory.getQueue();
@@ -31,26 +31,27 @@ class QueueFactoryTest {
         Queue<KafkaRecord> queue4 = QueueFactory.getQueue("dummy");
         assertThat(queue3).isSameAs(queue4);
         Queue<KafkaRecord> queue5 = QueueFactory.getQueue("dummy2");
-        assertThat(queue5).isNotSameAs(queue4);
-        assertThat(queue5).isNotSameAs(queue);
+        assertThat(queue5)
+                .isNotSameAs(queue4)
+                .isNotSameAs(queue);
     }
 
 
     @Test
-    public void test_registerConsumerForQueue(){
+    void test_registerConsumerForQueue(){
         QueueFactory.registerConsumerForQueue("test");
         assertThat(QueueFactory.hasAConsumer("test",200, 2000, 500)).isTrue();
     }
 
     @Test
-    public void test_registerConsumerForQueue_with_null_value(){
+    void test_registerConsumerForQueue_with_null_value(){
         Assertions.assertThrows(NullPointerException.class,()->
                 QueueFactory.registerConsumerForQueue(null)
                 );
     }
 
     @Test
-    public void test_registerConsumerForQueue_with_an_empty_value(){
+    void test_registerConsumerForQueue_with_an_empty_value(){
         Assertions.assertThrows(IllegalArgumentException.class,()->
                 QueueFactory.registerConsumerForQueue("")
                 );
@@ -58,7 +59,7 @@ class QueueFactoryTest {
 
 
     @Test
-    public void test_clear_registrations(){
+    void test_clear_registrations(){
         //given
         String queueName = "test";
         QueueFactory.registerConsumerForQueue(queueName);
@@ -71,7 +72,7 @@ class QueueFactoryTest {
 
 
     @Test
-    public void test_has_not_a_queue_name_with_timeout(){
+    void test_has_not_a_queue_name_with_timeout(){
         String queueName = "test";
         //given
         QueueFactory.getQueue(queueName);
@@ -82,7 +83,7 @@ class QueueFactoryTest {
     }
 
     @Test
-    public void test_has_a_queue_name_with_timeout(){
+    void test_has_a_queue_name_with_timeout(){
         String queueName = "test";
         //given
         QueueFactory.getQueue(queueName);
@@ -94,7 +95,7 @@ class QueueFactoryTest {
     }
 
     @AfterEach
-    public void tearsDown(){
+    void tearsDown(){
         QueueFactory.clearRegistrations();
     }
 }

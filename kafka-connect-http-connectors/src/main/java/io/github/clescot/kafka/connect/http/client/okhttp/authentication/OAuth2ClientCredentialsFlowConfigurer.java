@@ -12,7 +12,6 @@ import static io.github.clescot.kafka.connect.http.client.HttpClientConfigDefini
 
 public class OAuth2ClientCredentialsFlowConfigurer implements AuthenticationConfigurer {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(OAuth2ClientCredentialsFlowConfigurer.class);
     private final OkHttpClient okHttpClient;
 
     public OAuth2ClientCredentialsFlowConfigurer(OkHttpClient okHttpClient) {

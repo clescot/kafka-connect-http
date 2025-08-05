@@ -26,8 +26,8 @@ import static io.github.clescot.kafka.connect.http.client.HttpClientConfigDefini
 import static org.assertj.core.api.Assertions.assertThat;
 
 @Testcontainers
-public class ITSseSourceTaskTest {
-    private final static Logger LOGGER = LoggerFactory.getLogger(ITSseSourceTaskTest.class);
+class ITSseSourceTaskTest {
+    private static final Logger LOGGER = LoggerFactory.getLogger(ITSseSourceTaskTest.class);
     @Container
     public GenericContainer sseServerContainer = new GenericContainer(DockerImageName.parse("jmalloc/echo-server:v0.3.7"))
             .withExposedPorts(8080)

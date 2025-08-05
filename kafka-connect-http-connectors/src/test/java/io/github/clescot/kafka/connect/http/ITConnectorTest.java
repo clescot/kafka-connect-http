@@ -201,7 +201,7 @@ public class ITConnectorTest {
             .build();
 
     @BeforeAll
-    public static void startContainers() throws IOException {
+    static void startContainers() throws IOException {
         hostName = InetAddress.getLocalHost().getHostName();
 
         //start containers
@@ -321,7 +321,7 @@ public class ITConnectorTest {
 
 
     @AfterEach
-    public void afterEach() {
+    void afterEach() {
         wmHttp.resetAll();
         wmHttps.resetAll();
         connectContainer.deleteAllConnectors();
