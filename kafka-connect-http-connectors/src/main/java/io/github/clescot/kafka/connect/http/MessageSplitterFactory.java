@@ -11,7 +11,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.function.BiFunction;
 
-public class MessageSplitterFactory<T extends ConnectRecord> {
+public class MessageSplitterFactory<T extends ConnectRecord<T>> {
     public static final String MESSAGE_SPLITTER = "message.splitter.";
     private final BiFunction<T, String, T> fromStringPartToRecordFunction;
 
