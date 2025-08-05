@@ -51,7 +51,7 @@ import static io.github.clescot.kafka.connect.http.sink.HttpConfigDefinition.*;
  * @param <S> native HttpResponse
  */
 @SuppressWarnings("java:S3740")//we don't want to use the generic of ConnectRecord, to handle both SinkRecord and SourceRecord
-public class HttpTask<T extends ConnectRecord,C extends HttpClient<R,S>,R, S> implements Task<C,HttpConfiguration<C,R,S>,HttpRequest, HttpResponse> {
+public class HttpTask<T extends ConnectRecord<T>,C extends HttpClient<R,S>,R, S> implements Task<C,HttpConfiguration<C,R,S>,HttpRequest, HttpResponse> {
 
 
     private static final Logger LOGGER = LoggerFactory.getLogger(HttpTask.class);
@@ -67,7 +67,7 @@ public class HttpTask<T extends ConnectRecord,C extends HttpClient<R,S>,R, S> im
 
     private ExecutorService executorService;
     private List<MessageSplitter<T>> messageSplitters;
-    private List<RequestGrouper> requestGroupers;
+    private List<RequestGrouper<T>> requestGroupers;
 
     public HttpTask(Map<String, String> settings,
                     HttpClientFactory<C, R, S> httpClientFactory,
@@ -383,7 +383,7 @@ public class HttpTask<T extends ConnectRecord,C extends HttpClient<R,S>,R, S> im
 
     }
 
-    private void debugConnectRecord(ConnectRecord sinkRecord) {
+    private void debugConnectRecord(ConnectRecord<T> sinkRecord) {
         Object value = sinkRecord.value();
         if (value != null) {
             Class<?> valueClass = value.getClass();
