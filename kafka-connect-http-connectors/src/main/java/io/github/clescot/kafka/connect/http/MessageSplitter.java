@@ -7,10 +7,10 @@ import org.apache.commons.jexl3.JexlEngine;
 import org.apache.commons.jexl3.JexlExpression;
 import org.apache.commons.jexl3.MapContext;
 import org.apache.kafka.connect.connector.ConnectRecord;
-import org.apache.kafka.connect.sink.SinkRecord;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
+import java.util.function.BiFunction;
 import java.util.stream.Collectors;
 
 /**
@@ -25,12 +25,15 @@ public class MessageSplitter<T extends ConnectRecord> {
     private final int splitLimit;
     public static final String SINK_RECORD = "sinkRecord";
     private final JexlExpression jexlMatchingExpression;
+    private final BiFunction<T,String,T> fromStringPartToRecordFunction;
 
     public MessageSplitter(String id,
                            JexlEngine jexlEngine,
                            String matchingExpression,
                            String splitPattern,
-                           int splitLimit) {
+                           int splitLimit,
+                           BiFunction<T,String,T> fromStringPartToRecordFunction) {
+        this.fromStringPartToRecordFunction = fromStringPartToRecordFunction;
         Preconditions.checkNotNull(id,"id is required");
         this.id = id;
 
@@ -77,18 +80,9 @@ public class MessageSplitter<T extends ConnectRecord> {
         if(value!=null && value.getClass().isAssignableFrom(String.class)){
             String body = (String)value;
             List<String> list = split(body);
-            //TODO fix the type cast
-            return (List<T>) list.stream().map(content-> (ConnectRecord)new SinkRecord(
-                    connectRecord.topic(),
-                    connectRecord.kafkaPartition(),
-                    connectRecord.keySchema(),
-                    connectRecord.key(),
-                    connectRecord.valueSchema(),
-                    content,
-                    -1,
-                    connectRecord.timestamp(),
-                    null,
-                    connectRecord.headers())).collect(Collectors.toList());
+            return list.stream()
+                    .map(part-> fromStringPartToRecordFunction.apply(connectRecord,part))
+                    .collect(Collectors.toList());
         }else{
             return List.of(connectRecord);
         }

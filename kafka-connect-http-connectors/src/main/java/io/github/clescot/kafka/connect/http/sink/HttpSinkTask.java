@@ -25,6 +25,7 @@ import java.util.Queue;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
+import java.util.function.BiFunction;
 
 /**
  * HttpSinkTask is a Kafka Connect SinkTask that processes SinkRecords,
@@ -35,6 +36,17 @@ import java.util.concurrent.Future;
  * @param <S> type of the native HttpResponse
  */
 public abstract class HttpSinkTask<C extends HttpClient<R, S>, R, S> extends SinkTask {
+    public static final BiFunction<SinkRecord, String, SinkRecord> FROM_STRING_PART_TO_SINK_RECORD_FUNCTION = (sinkRecord, string) -> new SinkRecord(
+            sinkRecord.topic(),
+            sinkRecord.kafkaPartition(),
+            sinkRecord.keySchema(),
+            sinkRecord.key(),
+            sinkRecord.valueSchema(),
+            string,
+            sinkRecord.kafkaOffset(),
+            sinkRecord.timestamp(),
+            sinkRecord.timestampType()
+    );
     private static final Logger LOGGER = LoggerFactory.getLogger(HttpSinkTask.class);
 
     private static final VersionUtils VERSION_UTILS = new VersionUtils();
@@ -74,8 +86,10 @@ public abstract class HttpSinkTask<C extends HttpClient<R, S>, R, S> extends Sin
             LOGGER.warn("errantRecordReporter has been added to Kafka Connect since 2.6.0 release. you should upgrade the Kafka Connect Runtime shortly.");
             errantRecordReporter = null;
         }
-        httpTask = new HttpTask<>(settings, httpClientFactory, producer);
-
+        //from String part created by the MessageSplitter to SinkRecord
+        //this is used to create a new SinkRecord with the same metadata as the original SinkRecord,
+        //but with the body replaced by the String part created by the MessageSplitter
+        httpTask = new HttpTask<>(settings, httpClientFactory, producer, FROM_STRING_PART_TO_SINK_RECORD_FUNCTION);
 
     }
 

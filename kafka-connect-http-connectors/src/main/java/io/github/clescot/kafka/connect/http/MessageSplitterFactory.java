@@ -9,10 +9,17 @@ import org.apache.kafka.connect.connector.ConnectRecord;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.function.BiFunction;
 
-public class MessageSplitterFactory {
+public class MessageSplitterFactory<T extends ConnectRecord> {
     public static final String MESSAGE_SPLITTER = "message.splitter.";
-    public <T extends ConnectRecord> List<MessageSplitter<T>> buildMessageSplitters(Map<String, String> config, JexlEngine jexlEngine, List<String> messageSplitterIds) {
+    private final BiFunction<T, String, T> fromStringPartToRecordFunction;
+
+    public MessageSplitterFactory(BiFunction<T,String,T> fromStringPartToRecordFunction) {
+        this.fromStringPartToRecordFunction = fromStringPartToRecordFunction;
+    }
+
+    public  List<MessageSplitter<T>> buildMessageSplitters(Map<String, String> config, JexlEngine jexlEngine, List<String> messageSplitterIds) {
         List<MessageSplitter<T>> requestSplitterList = Lists.newArrayList();
         for (String splitterId : Optional.ofNullable(messageSplitterIds).orElse(Lists.newArrayList())) {
             Map<String, String> settings = MapUtils.getMapWithPrefix(config,MESSAGE_SPLITTER + splitterId + ".");
@@ -24,7 +31,7 @@ public class MessageSplitterFactory {
                 splitLimit = Integer.parseInt(limit);
             }
             String matchingExpression = settings.get("matcher");
-            MessageSplitter<T> requestSplitter = new MessageSplitter<>(splitterId,jexlEngine,matchingExpression,splitPattern,splitLimit);
+            MessageSplitter<T> requestSplitter = new MessageSplitter<>(splitterId,jexlEngine,matchingExpression,splitPattern,splitLimit, fromStringPartToRecordFunction);
             requestSplitterList.add(requestSplitter);
         }
         return requestSplitterList;

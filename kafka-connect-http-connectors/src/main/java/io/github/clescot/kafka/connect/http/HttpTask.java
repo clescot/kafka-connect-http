@@ -36,6 +36,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -70,7 +71,8 @@ public class HttpTask<T extends ConnectRecord,C extends HttpClient<R,S>,R, S> im
 
     public HttpTask(Map<String, String> settings,
                     HttpClientFactory<C, R, S> httpClientFactory,
-                    KafkaProducer<String, Object> producer) {
+                    KafkaProducer<String, Object> producer,
+                    BiFunction<T,String,T> fromStringPartToRecordFunction) {
         this.producer = producer;
 
         Preconditions.checkNotNull(settings, "settings cannot be null");
@@ -89,7 +91,7 @@ public class HttpTask<T extends ConnectRecord,C extends HttpClient<R,S>,R, S> im
         JexlEngine jexlEngine = buildJexlEngine();
 
         //message splitters
-        MessageSplitterFactory messageSplitterFactory = new MessageSplitterFactory();
+        MessageSplitterFactory<T> messageSplitterFactory = new MessageSplitterFactory<>(fromStringPartToRecordFunction);
         this.messageSplitters = messageSplitterFactory.buildMessageSplitters(originalsStrings, jexlEngine, httpConnectorConfig.getList(MESSAGE_SPLITTER_IDS));
 
         //HttpRequestMappers
@@ -205,7 +207,9 @@ public class HttpTask<T extends ConnectRecord,C extends HttpClient<R,S>,R, S> im
 
     private List<Pair<T, HttpRequest>> groupRequests(List<Pair<T, HttpRequest>> pairList) {
         if (requestGroupers != null && !requestGroupers.isEmpty()) {
-            return requestGroupers.stream().map(requestGrouper -> requestGrouper.group(pairList)).reduce(Lists.newArrayList(), (l, r) -> {
+            return requestGroupers.stream()
+                    .map(requestGrouper -> requestGrouper.group(pairList))
+                    .reduce(Lists.newArrayList(), (l, r) -> {
                 l.addAll(r);
                 return l;
             });
