@@ -55,9 +55,9 @@ public class HttpTask<T extends ConnectRecord<T>,C extends HttpClient<R,S>,R, S>
 
 
     private static final Logger LOGGER = LoggerFactory.getLogger(HttpTask.class);
-    private PublishMode publishMode;
+    
 
-    private Queue<KafkaRecord> queue;
+
     private final Map<String,HttpConfiguration<C,R, S>> configurations;
     private static CompositeMeterRegistry meterRegistry;
     private HttpConnectorConfig httpConnectorConfig;
@@ -69,15 +69,12 @@ public class HttpTask<T extends ConnectRecord<T>,C extends HttpClient<R,S>,R, S>
     private List<MessageSplitter<T>> messageSplitters;
     private List<RequestGrouper<T>> requestGroupers;
 
-    public HttpTask(Map<String, String> settings,
+    public HttpTask(HttpConnectorConfig httpConnectorConfig,
                     HttpClientFactory<C, R, S> httpClientFactory,
                     KafkaProducer<String, Object> producer,
                     BiFunction<T,String,T> fromStringPartToRecordFunction) {
         this.producer = producer;
-
-        Preconditions.checkNotNull(settings, "settings cannot be null");
-        HttpConfigDefinition httpConfigDefinition = new HttpConfigDefinition(settings);
-        this.httpConnectorConfig = new HttpConnectorConfig(httpConfigDefinition.config(), settings);
+        this.httpConnectorConfig = httpConnectorConfig;
 
         //build executorService
         Optional<Integer> customFixedThreadPoolSize = Optional.ofNullable(httpConnectorConfig.getInt(HTTP_CLIENT_ASYNC_FIXED_THREAD_POOL_SIZE));
@@ -133,21 +130,7 @@ public class HttpTask<T extends ConnectRecord<T>,C extends HttpClient<R,S>,R, S>
                                 Map.Entry::getKey,
                                 Map.Entry::getValue)
                 );
-        //configure publishMode
-        this.publishMode = httpConnectorConfig.getPublishMode();
-        LOGGER.debug("publishMode: {}", publishMode);
-        PublishConfigurer publishConfigurer = PublishConfigurer.build();
-        switch (publishMode) {
-            case PRODUCER:
-                publishConfigurer.configureProducerPublishMode(httpConnectorConfig, producer);
-                break;
-            case IN_MEMORY_QUEUE:
-                this.queue = publishConfigurer.configureInMemoryQueue(httpConnectorConfig);
-                break;
-            case NONE:
-            default:
-                LOGGER.debug("NONE publish mode");
-        }
+
     }
 
     public HttpTask(Map<String,String> config,
@@ -244,73 +227,7 @@ public class HttpTask<T extends ConnectRecord<T>,C extends HttpClient<R,S>,R, S>
     }
 
 
-    @NotNull
-    public Function<HttpExchange, HttpExchange> publish() throws HttpException {
-        return httpExchange -> {
-            //publish eventually to 'in memory' queue
-            if (PublishMode.IN_MEMORY_QUEUE.equals(publishMode)) {
-                publishInInMemoryQueueMode(httpExchange, this.httpConnectorConfig.getQueueName());
-            } else if (PublishMode.PRODUCER.equals(publishMode)) {
-                publishInProducerMode(httpExchange, this.httpConnectorConfig.getProducerContent(),
-                        this.httpConnectorConfig.getProducerSuccessTopic(),
-                        this.httpConnectorConfig.getProducerErrorTopic());
-            } else {
-                LOGGER.debug("publish.mode : 'NONE' http exchange NOT published :'{}'", httpExchange);
-            }
-            return httpExchange;
-        };
-    }
 
-    private void publishInInMemoryQueueMode(HttpExchange httpExchange, String queueName) {
-        LOGGER.debug("publish.mode : 'IN_MEMORY_QUEUE': http exchange published to queue '{}':{}", queueName, httpExchange);
-        boolean offer = queue.offer(mapToRecord(httpExchange));
-        if (!offer) {
-            LOGGER.error("sinkRecord  not added to the 'in memory' queue:{}",
-                    queueName
-            );
-        }
-    }
-
-    @NotNull
-    private KafkaRecord mapToRecord(HttpExchange httpExchange) {
-        return new KafkaRecord(null, null, null, httpExchange);
-    }
-
-    private void publishInProducerMode(HttpExchange httpExchange,
-                                       String producerContent,
-                                       String producerSuccessTopic,
-                                       String producerErrorTopic) {
-        LOGGER.debug("publish.mode : 'PRODUCER' : HttpExchange success will be published at topic : '{}'", producerSuccessTopic);
-        LOGGER.debug("publish.mode : 'PRODUCER' : HttpExchange error will be published at topic : '{}'", producerErrorTopic);
-        String targetTopic = httpExchange.isSuccess() ? producerSuccessTopic : producerErrorTopic;
-        ProducerRecord<String, Object> myRecord = mapToRecord(httpExchange, producerContent, targetTopic);
-        LOGGER.trace("before send to {}", targetTopic);
-        RecordMetadata recordMetadata;
-        try {
-            recordMetadata = this.producer.send(myRecord).get(3, TimeUnit.SECONDS);
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            throw new HttpException(e);
-        } catch (Exception e) {
-            throw new HttpException(e);
-        }
-        long offset = recordMetadata.offset();
-        int partition = recordMetadata.partition();
-        long timestamp = recordMetadata.timestamp();
-        String topic = recordMetadata.topic();
-        LOGGER.debug("✉✉ record sent ✉✉ : topic:{},partition:{},offset:{},timestamp:{}", topic, partition, offset, timestamp);
-    }
-
-    @NotNull
-    private ProducerRecord<String, Object> mapToRecord(HttpExchange httpExchange, String producerContent, String targetTopic) {
-        ProducerRecord<String, Object> myRecord;
-        if ("response".equalsIgnoreCase(producerContent)) {
-            myRecord = new ProducerRecord<>(targetTopic, httpExchange.getHttpResponse());
-        } else {
-            myRecord = new ProducerRecord<>(targetTopic, httpExchange);
-        }
-        return myRecord;
-    }
 
     public static synchronized void setMeterRegistry(CompositeMeterRegistry compositeMeterRegistry) {
         if (meterRegistry == null) {
@@ -337,9 +254,7 @@ public class HttpTask<T extends ConnectRecord<T>,C extends HttpClient<R,S>,R, S>
         return httpConnectorConfig;
     }
 
-    public void setQueue(Queue<KafkaRecord> queue) {
-        this.queue = queue;
-    }
+
 
     public void stop() {
         if (executorService != null) {
