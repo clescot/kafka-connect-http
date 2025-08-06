@@ -9,7 +9,6 @@ import io.github.clescot.kafka.connect.Client;
 import io.github.clescot.kafka.connect.http.core.HttpExchange;
 import io.github.clescot.kafka.connect.http.core.HttpRequest;
 import io.github.clescot.kafka.connect.http.core.HttpResponse;
-import io.github.clescot.kafka.connect.http.core.HttpResponseBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -106,8 +105,8 @@ public interface HttpClient<R, S>  extends Client {
             response = nativeCall(request);
 
         Preconditions.checkNotNull(response, "response is null");
-        HttpResponseBuilder httpResponseBuilder = new HttpResponseBuilder(getStatusMessageLimit(),getHeadersLimit(), getBodyLimit());
-        return response.thenApply(res->buildResponse(httpResponseBuilder,res))
+
+        return response.thenApply(this::buildResponse)
                 .thenApply(myResponse -> {
                             directStopWatch.stop();
                             rateLimitedStopWatch.stop();
@@ -147,7 +146,7 @@ public interface HttpClient<R, S>  extends Client {
      * @return HttpResponse
      */
 
-    HttpResponse buildResponse(HttpResponseBuilder httpResponseBuilder,S response);
+    HttpResponse buildResponse(S response);
 
     /**
      * raw native HttpRequest call.

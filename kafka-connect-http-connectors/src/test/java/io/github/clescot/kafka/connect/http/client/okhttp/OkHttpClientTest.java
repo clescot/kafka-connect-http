@@ -14,6 +14,7 @@ import io.github.clescot.kafka.connect.http.client.DummyX509Certificate;
 import io.github.clescot.kafka.connect.http.client.HttpClientFactory;
 import io.github.clescot.kafka.connect.http.client.proxy.URIRegexProxySelector;
 import io.github.clescot.kafka.connect.http.core.*;
+import io.github.clescot.kafka.connect.http.core.MediaType;
 import io.github.clescot.kafka.connect.http.core.queue.QueueFactory;
 import io.micrometer.core.instrument.Clock;
 import io.micrometer.core.instrument.MeterRegistry;
@@ -70,9 +71,8 @@ class OkHttpClientTest {
     public static final String UNAUTHORIZED_STATE = "Unauthorized";
     public static final String PROXY_AUTHENTICATION_REQUIRED_STATE = "Proxy_Authentication_Required";
     public static final String CONTENT_TYPE = "Content-Type";
-    public static final String APPLICATION_JSON = "application/json";
 
-    private final Logger LOGGER = LoggerFactory.getLogger(OkHttpClientTest.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(OkHttpClientTest.class);
     private final OkHttpClientFactory factory = new OkHttpClientFactory();
     @RegisterExtension
     static WireMockExtension wmHttp;
@@ -146,6 +146,7 @@ class OkHttpClientTest {
             assertThat(request.method()).isEqualTo(httpRequest.getMethod().name());
             RequestBody body = request.body();
             final Buffer buffer = new Buffer();
+            Assertions.assertNotNull(body);
             body.writeTo(buffer);
             assertThat(buffer.readUtf8()).isEqualTo(httpRequest.getBodyAsString());
         }
@@ -169,6 +170,7 @@ class OkHttpClientTest {
             assertThat(request.method()).isEqualTo(httpRequest.getMethod().name());
             RequestBody body = request.body();
             final Buffer buffer = new Buffer();
+            Assertions.assertNotNull(body);
             body.writeTo(buffer);
             String actual = buffer.readUtf8();
             byte[] decoded = Base64.getDecoder().decode(actual);
@@ -198,6 +200,7 @@ class OkHttpClientTest {
             assertThat(request.method()).isEqualTo(httpRequest.getMethod().name());
             RequestBody body = request.body();
             final Buffer buffer = new Buffer();
+            Assertions.assertNotNull(body);
             body.writeTo(buffer);
             String actual = buffer.readUtf8();
             Map<String, String> keyValues = Splitter.on("&").withKeyValueSeparator("=").split(actual);
@@ -220,7 +223,7 @@ class OkHttpClientTest {
             parts.put("part2", httpPart2);
             Map<String, List<String>> headers = Maps.newHashMap();
             headers.put("Content-Type", Lists.newArrayList("multipart/form-data; boundary=+++"));
-            HttpRequest httpRequest = new HttpRequest("http://dummy.com/", HttpRequest.Method.POST, headers, HttpRequest.BodyType.MULTIPART, parts);
+            HttpRequest httpRequest = new HttpRequest("http://dummy.com/", HttpRequest.Method.POST, headers, BodyType.MULTIPART, parts);
 
             //given
             Request request = client.buildNativeRequest(httpRequest);
@@ -231,6 +234,7 @@ class OkHttpClientTest {
             assertThat(request.method()).isEqualTo(httpRequest.getMethod().name());
             RequestBody body = request.body();
             final Buffer buffer = new Buffer();
+            Assertions.assertNotNull(body);
             body.writeTo(buffer);
             String actual = buffer.readUtf8();
             String boundary = httpRequest.getBoundary();
@@ -266,6 +270,7 @@ class OkHttpClientTest {
 
             //content as file
             URL fileUrl = Thread.currentThread().getContextClassLoader().getResource("upload.txt");
+            Assertions.assertNotNull(fileUrl);
             File file = new File(fileUrl.toURI());
             HttpPart httpPart3 = new HttpPart("upload.txt", file);
             parts.put("part3", httpPart3);
@@ -273,7 +278,7 @@ class OkHttpClientTest {
 
             Map<String, List<String>> headers = Maps.newHashMap();
             headers.put("Content-Type", Lists.newArrayList("multipart/form-data; boundary=+++"));
-            HttpRequest httpRequest = new HttpRequest("http://dummy.com/", HttpRequest.Method.POST, headers, HttpRequest.BodyType.MULTIPART, parts);
+            HttpRequest httpRequest = new HttpRequest("http://dummy.com/", HttpRequest.Method.POST, headers, BodyType.MULTIPART, parts);
 
             //given
             Request request = client.buildNativeRequest(httpRequest);
@@ -284,6 +289,7 @@ class OkHttpClientTest {
             assertThat(request.method()).isEqualTo(httpRequest.getMethod().name());
             RequestBody body = request.body();
             final Buffer buffer = new Buffer();
+            Assertions.assertNotNull(body);
             body.writeTo(buffer);
             String actual = buffer.readUtf8();
             String boundary = httpRequest.getBoundary();
@@ -367,7 +373,7 @@ class OkHttpClientTest {
     @Nested
     class BuildResponse {
         @Test
-        void test_build_response() {
+        void test_build_string_response() {
 
             //given
             HashMap<String, Object> config = Maps.newHashMap();
@@ -381,7 +387,7 @@ class OkHttpClientTest {
             Response.Builder builder = new Response.Builder();
             Headers headers = new Headers.Builder()
                     .add("key1", "value1")
-                    .add(CONTENT_TYPE, APPLICATION_JSON)
+                    .add(CONTENT_TYPE, MediaType.APPLICATION_JSON)
                     .build();
             builder.headers(headers);
             builder.request(request);
@@ -390,20 +396,110 @@ class OkHttpClientTest {
             String responseContent = "blabla";
             Buffer buffer = new Buffer();
             buffer.write(responseContent.getBytes(StandardCharsets.UTF_8));
-            ResponseBody responseBody = new RealResponseBody(APPLICATION_JSON, responseContent.length(), buffer);
+            ResponseBody responseBody = new RealResponseBody(MediaType.APPLICATION_JSON, responseContent.length(), buffer);
             builder.body(responseBody);
             builder.protocol(Protocol.HTTP_1_1);
             Response response = builder.build();
-            HttpResponseBuilder httpResponseBuilder = new HttpResponseBuilder(1024, 8000, 100_000);
             //when
-            HttpResponse httpResponse = client.buildResponse(httpResponseBuilder, response);
+            HttpResponse httpResponse = client.buildResponse(response);
 
             //then
             LOGGER.debug("response:{}", response);
-            assertThat(response.code()).isEqualTo(httpResponse.getStatusCode());
-            assertThat(response.message()).isEqualTo(httpResponse.getStatusMessage());
-            assertThat(response.header("key1")).isEqualTo(httpResponse.getHeaders().get("key1").get(0));
-            assertThat(response.header(CONTENT_TYPE)).isEqualTo(httpResponse.getHeaders().get(CONTENT_TYPE).get(0));
+            assertThat(httpResponse.getStatusCode()).isEqualTo(response.code());
+            assertThat(httpResponse.getStatusMessage()).isEqualTo(response.message());
+            assertThat(httpResponse.getHeaders().get("key1").get(0)).isEqualTo(response.header("key1"));
+            assertThat(httpResponse.getHeaders().get(CONTENT_TYPE).get(0)).isEqualTo(response.header(CONTENT_TYPE));
+            assertThat(httpResponse.getBodyType()).isEqualTo(BodyType.STRING);
+            assertThat(httpResponse.getBodyAsString()).isEqualTo(responseContent);
+            assertThat(httpResponse.getBodyAsByteArray()).isEmpty();
+            assertThat(httpResponse.getBodyAsForm()).isEmpty();
+        }
+
+        @Test
+        void test_build_byte_array_response() {
+
+            //given
+            HashMap<String, Object> config = Maps.newHashMap();
+            config.put(CONFIGURATION_ID, "default");
+            OkHttpClient client = factory.build(config, null, new Random(), null, null, getCompositeMeterRegistry());
+
+            HttpRequest httpRequest = new HttpRequest("http://dummy.com/", HttpRequest.Method.POST);
+            httpRequest.setBodyAsString("stuff");
+            Request request = client.buildNativeRequest(httpRequest);
+
+            Response.Builder builder = new Response.Builder();
+            Headers headers = new Headers.Builder()
+                    .add("key1", "value1")
+                    .add(CONTENT_TYPE, MediaType.APPLICATION_OCTET_STREAM)
+                    .build();
+            builder.headers(headers);
+            builder.request(request);
+            builder.code(200);
+            builder.message("OK");
+            String responseContent = "blabla";
+            Buffer buffer = new Buffer();
+            buffer.write(responseContent.getBytes(StandardCharsets.UTF_8));
+            ResponseBody responseBody = new RealResponseBody(MediaType.APPLICATION_OCTET_STREAM, responseContent.length(), buffer);
+            builder.body(responseBody);
+            builder.protocol(Protocol.HTTP_1_1);
+            Response response = builder.build();
+            //when
+            HttpResponse httpResponse = client.buildResponse(response);
+
+            //then
+            LOGGER.debug("response:{}", response);
+            assertThat(httpResponse.getStatusCode()).isEqualTo(response.code());
+            assertThat(httpResponse.getStatusMessage()).isEqualTo(response.message());
+            assertThat(httpResponse.getHeaders().get("key1").get(0)).isEqualTo(response.header("key1"));
+            assertThat(httpResponse.getHeaders().get(CONTENT_TYPE).get(0)).isEqualTo(response.header(CONTENT_TYPE));
+            assertThat(httpResponse.getBodyType()).isEqualTo(BodyType.BYTE_ARRAY);
+            assertThat(httpResponse.getBodyAsByteArray()).isEqualTo(responseContent.getBytes(StandardCharsets.UTF_8));
+            assertThat(httpResponse.getBodyAsString()).isEmpty();
+            assertThat(httpResponse.getBodyAsForm()).isEmpty();
+
+        }
+
+        @Test
+        void test_build_form_response() {
+
+            //given
+            HashMap<String, Object> config = Maps.newHashMap();
+            config.put(CONFIGURATION_ID, "default");
+            OkHttpClient client = factory.build(config, null, new Random(), null, null, getCompositeMeterRegistry());
+
+            HttpRequest httpRequest = new HttpRequest("http://dummy.com/", HttpRequest.Method.POST);
+            httpRequest.setBodyAsString("stuff");
+            Request request = client.buildNativeRequest(httpRequest);
+
+            Response.Builder builder = new Response.Builder();
+            Headers headers = new Headers.Builder()
+                    .add("key1", "value1")
+                    .add(CONTENT_TYPE, MediaType.APPLICATION_X_WWW_FORM_URLENCODED)
+                    .build();
+            builder.headers(headers);
+            builder.request(request);
+            builder.code(200);
+            builder.message("OK");
+            String responseContent = "key1=value1&key2=value2&key3=value3";
+            Buffer buffer = new Buffer();
+            buffer.write(responseContent.getBytes(StandardCharsets.UTF_8));
+            ResponseBody responseBody = new RealResponseBody(MediaType.APPLICATION_X_WWW_FORM_URLENCODED, responseContent.length(), buffer);
+            builder.body(responseBody);
+            builder.protocol(Protocol.HTTP_1_1);
+            Response response = builder.build();
+            //when
+            HttpResponse httpResponse = client.buildResponse(response);
+
+            //then
+            LOGGER.debug("response:{}", response);
+            assertThat(httpResponse.getStatusCode()).isEqualTo(response.code());
+            assertThat(httpResponse.getStatusMessage()).isEqualTo(response.message());
+            assertThat(httpResponse.getHeaders().get("key1").get(0)).isEqualTo(response.header("key1"));
+            assertThat(httpResponse.getHeaders().get(CONTENT_TYPE).get(0)).isEqualTo(response.header(CONTENT_TYPE));
+            assertThat(httpResponse.getBodyType()).isEqualTo(BodyType.FORM);
+            assertThat(httpResponse.getBodyAsByteArray()).isEmpty();
+            assertThat(httpResponse.getBodyAsString()).isEmpty();
+            assertThat(httpResponse.getBodyAsForm()).isEqualTo(Map.of("key1", "value1", "key2", "value2", "key3", "value3"));
 
         }
 
@@ -413,7 +509,7 @@ class OkHttpClientTest {
             //given
             HashMap<String, Object> config = Maps.newHashMap();
             config.put(CONFIGURATION_ID, "default");
-            config.put(CONFIG_DEFAULT_HTTP_RESPONSE_MESSAGE_STATUS_LIMIT, 4);
+            config.put(HTTP_RESPONSE_MESSAGE_STATUS_LIMIT, "4");
             OkHttpClient client = factory.build(config, null, new Random(), null, null, getCompositeMeterRegistry());
 
             HttpRequest httpRequest = new HttpRequest("http://dummy.com/", HttpRequest.Method.POST);
@@ -423,7 +519,7 @@ class OkHttpClientTest {
             Response.Builder builder = new Response.Builder();
             Headers headers = new Headers.Builder()
                     .add("key1", "value1")
-                    .add(CONTENT_TYPE, APPLICATION_JSON)
+                    .add(CONTENT_TYPE, MediaType.APPLICATION_JSON)
                     .build();
             builder.headers(headers);
             builder.request(request);
@@ -432,20 +528,19 @@ class OkHttpClientTest {
             String responseContent = "blabla";
             Buffer buffer = new Buffer();
             buffer.write(responseContent.getBytes(StandardCharsets.UTF_8));
-            ResponseBody responseBody = new RealResponseBody(APPLICATION_JSON, responseContent.length(), buffer);
+            ResponseBody responseBody = new RealResponseBody(MediaType.APPLICATION_JSON, responseContent.length(), buffer);
             builder.body(responseBody);
             builder.protocol(Protocol.HTTP_1_1);
             Response response = builder.build();
-            HttpResponseBuilder httpResponseBuilder = new HttpResponseBuilder(4, 8000, 100_000);
             //when
-            HttpResponse httpResponse = client.buildResponse(httpResponseBuilder, response);
+            HttpResponse httpResponse = client.buildResponse(response);
 
             //then
             LOGGER.debug("response:{}", response);
-            assertThat(response.code()).isEqualTo(httpResponse.getStatusCode());
+            assertThat(httpResponse.getStatusCode()).isEqualTo(response.code());
             assertThat(httpResponse.getStatusMessage()).isEqualTo("OK!!");
-            assertThat(response.header("key1")).isEqualTo(httpResponse.getHeaders().get("key1").get(0));
-            assertThat(response.header(CONTENT_TYPE)).isEqualTo(httpResponse.getHeaders().get(CONTENT_TYPE).get(0));
+            assertThat(httpResponse.getHeaders().get("key1").get(0)).isEqualTo(response.header("key1"));
+            assertThat(httpResponse.getHeaders().get(CONTENT_TYPE).get(0)).isEqualTo(response.header(CONTENT_TYPE));
 
         }
 
@@ -465,7 +560,7 @@ class OkHttpClientTest {
             Response.Builder builder = new Response.Builder();
             Headers headers = new Headers.Builder()
                     .add("key1", "value1")
-                    .add(CONTENT_TYPE, APPLICATION_JSON)
+                    .add(CONTENT_TYPE, MediaType.APPLICATION_JSON)
                     .build();
             builder.headers(headers);
             builder.request(request);
@@ -474,21 +569,20 @@ class OkHttpClientTest {
             String responseContent = "blabla78965555";
             Buffer buffer = new Buffer();
             buffer.write(responseContent.getBytes(StandardCharsets.UTF_8));
-            ResponseBody responseBody = new RealResponseBody(APPLICATION_JSON, responseContent.length(), buffer);
+            ResponseBody responseBody = new RealResponseBody(MediaType.APPLICATION_JSON, responseContent.length(), buffer);
             builder.body(responseBody);
             builder.protocol(Protocol.HTTP_1_1);
             Response response = builder.build();
-            HttpResponseBuilder httpResponseBuilder = new HttpResponseBuilder(Integer.MAX_VALUE, 8000, 10);
             //when
-            HttpResponse httpResponse = client.buildResponse(httpResponseBuilder, response);
+            HttpResponse httpResponse = client.buildResponse(response);
 
             //then
             LOGGER.debug("response:{}", response);
-            assertThat(response.code()).isEqualTo(httpResponse.getStatusCode());
+            assertThat(httpResponse.getStatusCode()).isEqualTo(response.code());
             assertThat(httpResponse.getStatusMessage()).isEqualTo("OK!!!!!!!");
-            assertThat(httpResponse.getBodyAsString()).isEqualTo("blabla7896");
-            assertThat(response.header("key1")).isEqualTo(httpResponse.getHeaders().get("key1").get(0));
-            assertThat(response.header(CONTENT_TYPE)).isEqualTo(httpResponse.getHeaders().get(CONTENT_TYPE).get(0));
+            assertThat(httpResponse.getBodyAsString()).isEqualTo("blabla78965555");
+            assertThat(httpResponse.getHeaders().get("key1").get(0)).isEqualTo(response.header("key1"));
+            assertThat(httpResponse.getHeaders().get(CONTENT_TYPE).get(0)).isEqualTo(response.header(CONTENT_TYPE));
 
         }
 
@@ -499,7 +593,7 @@ class OkHttpClientTest {
             //given
             HashMap<String, Object> config = Maps.newHashMap();
             config.put(CONFIGURATION_ID, "default");
-            config.put(CONFIG_DEFAULT_HTTP_RESPONSE_BODY_LIMIT, 10);
+            config.put(HTTP_RESPONSE_BODY_LIMIT, "10");
             OkHttpClient client = factory.build(config, null, new Random(), null, null, getCompositeMeterRegistry());
 
             HttpRequest httpRequest = new HttpRequest("http://dummy.com/", HttpRequest.Method.POST);
@@ -509,7 +603,7 @@ class OkHttpClientTest {
             Response.Builder builder = new Response.Builder();
             Headers headers = new Headers.Builder()
                     .add("key1", "value1")
-                    .add(CONTENT_TYPE, APPLICATION_JSON)
+                    .add(CONTENT_TYPE, MediaType.APPLICATION_JSON)
                     .build();
             builder.headers(headers);
             builder.request(request);
@@ -518,22 +612,137 @@ class OkHttpClientTest {
             String responseContent = "blabla78965555";
             Buffer buffer = new Buffer();
             buffer.write(responseContent.getBytes(StandardCharsets.UTF_8));
-            ResponseBody responseBody = new RealResponseBody(APPLICATION_JSON, responseContent.length(), buffer);
+            ResponseBody responseBody = new RealResponseBody(MediaType.APPLICATION_JSON, responseContent.length(), buffer);
             builder.body(responseBody);
             builder.protocol(Protocol.HTTP_1_1);
             Response response = builder.build();
-            HttpResponseBuilder httpResponseBuilder = new HttpResponseBuilder(Integer.MAX_VALUE, 8000, 10);
             //when
-            HttpResponse httpResponse = client.buildResponse(httpResponseBuilder, response);
+            HttpResponse httpResponse = client.buildResponse(response);
 
             //then
             LOGGER.debug("response:{}", response);
-            assertThat(response.code()).isEqualTo(httpResponse.getStatusCode());
+            assertThat(httpResponse.getStatusCode()).isEqualTo(response.code());
             assertThat(httpResponse.getStatusMessage()).isEqualTo("OK!!!!!!!");
             assertThat(httpResponse.getBodyAsString()).isEqualTo("blabla7896");
-            assertThat(response.header("key1")).isEqualTo(httpResponse.getHeaders().get("key1").get(0));
-            assertThat(response.header(CONTENT_TYPE)).isEqualTo(httpResponse.getHeaders().get(CONTENT_TYPE).get(0));
+            assertThat(httpResponse.getHeaders().get("key1").get(0)).isEqualTo(response.header("key1"));
+            assertThat(httpResponse.getHeaders().get(CONTENT_TYPE).get(0)).isEqualTo(response.header(CONTENT_TYPE));
 
+        }
+        @Test
+        void test_build_response_with_multipart_inline() throws IOException {
+
+            //given
+            HashMap<String, Object> config = Maps.newHashMap();
+            config.put(CONFIGURATION_ID, "default");
+            config.put(HTTP_RESPONSE_BODY_LIMIT, "10");
+            OkHttpClient client = factory.build(config, null, new Random(), null, null, getCompositeMeterRegistry());
+
+            HttpRequest httpRequest = new HttpRequest("http://dummy.com/", HttpRequest.Method.POST);
+            httpRequest.setBodyAsString("stuff");
+            Request request = client.buildNativeRequest(httpRequest);
+
+            Response.Builder builder = new Response.Builder();
+            Headers headers = new Headers.Builder()
+                    .add("key1", "value1")
+                    .add(CONTENT_TYPE, MediaType.MULTIPART_FORM_DATA)
+                    .build();
+            builder.headers(headers);
+            builder.request(request);
+            builder.code(200);
+            builder.message("OK!!!!!!!");
+            final Buffer buffer = new Buffer();
+            new MultipartBody.Builder("---123")
+                    .setType(MultipartBody.MIXED)
+                    .addPart(
+                            Headers.of("Content-Disposition", "inline; filename=\"example.txt\""),
+                            RequestBody.create("Ceci est un exemple de contenu texte inclus en ligne.", okhttp3.MediaType.parse("text/plain"))
+                    )
+                    .addPart(
+                            Headers.of("Content-Disposition", "inline; filename=\"example.json\""),
+                            RequestBody.create("{\"name\": \"Example\", \"value\": 123}", okhttp3.MediaType.parse("application/json"))
+                    )
+                    .build().writeTo(buffer);
+            String multipartAsString = buffer.readUtf8();
+            ResponseBody responseBody = ResponseBody.create(multipartAsString, okhttp3.MediaType.parse("multipart/form-data; boundary=---123"));
+            builder.body(responseBody);
+            builder.protocol(Protocol.HTTP_1_1);
+            Response response = builder.build();
+            //when
+            HttpResponse httpResponse = client.buildResponse(response);
+
+            //then
+            LOGGER.debug("response:{}", response);
+            assertThat(httpResponse.getStatusCode()).isEqualTo(response.code());
+            assertThat(httpResponse.getStatusMessage()).isEqualTo("OK!!!!!!!");
+            assertThat(httpResponse.getHeaders().get("key1").get(0)).isEqualTo(response.header("key1"));
+            assertThat(httpResponse.getHeaders().get(CONTENT_TYPE).get(0)).isEqualTo(response.header(CONTENT_TYPE));
+            Map<String, HttpPart> parts = httpResponse.getParts();
+            assertThat(parts).hasSize(2);
+            HttpPart inline1 = parts.get("inline1");
+            assertThat(inline1.getContentType()).isEqualTo("text/plain; charset=utf-8");
+            assertThat(inline1.getContentAsString()).isEqualTo("Ceci est un exemple de contenu texte inclus en ligne.");
+            HttpPart inline2 = parts.get("inline2");
+            assertThat(inline2.getContentType()).isEqualTo("application/json; charset=utf-8");
+            assertThat(inline2.getContentAsString()).isEqualTo("{\"name\": \"Example\", \"value\": 123}");
+        }
+
+        @Test
+        void test_build_response_with_multipart_inline_and_attachment() throws IOException {
+
+            //given
+            HashMap<String, Object> config = Maps.newHashMap();
+            config.put(CONFIGURATION_ID, "default");
+            config.put(HTTP_RESPONSE_BODY_LIMIT, "10");
+            OkHttpClient client = factory.build(config, null, new Random(), null, null, getCompositeMeterRegistry());
+
+            HttpRequest httpRequest = new HttpRequest("http://dummy.com/", HttpRequest.Method.POST);
+            httpRequest.setBodyAsString("stuff");
+            Request request = client.buildNativeRequest(httpRequest);
+
+            Response.Builder builder = new Response.Builder();
+            Headers headers = new Headers.Builder()
+                    .add("key1", "value1")
+                    .add(CONTENT_TYPE, MediaType.MULTIPART_FORM_DATA)
+                    .build();
+            builder.headers(headers);
+            builder.request(request);
+            builder.code(200);
+            builder.message("OK!!!!!!!");
+            final Buffer buffer = new Buffer();
+            String attachmentContent = "stuff";
+            new MultipartBody.Builder("---123")
+                    .setType(MultipartBody.MIXED)
+                    .addPart(
+                            Headers.of("Content-Disposition", "attachment; filename=\"example.txt\""),
+                            RequestBody.create(attachmentContent, okhttp3.MediaType.parse("text/plain"))
+                    )
+                    .addPart(
+                            Headers.of("Content-Disposition", "inline; filename=\"example.json\""),
+                            RequestBody.create("{\"name\": \"Example\", \"value\": 123}", okhttp3.MediaType.parse("application/json"))
+                    )
+                    .build().writeTo(buffer);
+            String multipartAsString = buffer.readUtf8();
+            ResponseBody responseBody = ResponseBody.create(multipartAsString, okhttp3.MediaType.parse("multipart/form-data; boundary=---123"));
+            builder.body(responseBody);
+            builder.protocol(Protocol.HTTP_1_1);
+            Response response = builder.build();
+            //when
+            HttpResponse httpResponse = client.buildResponse(response);
+
+            //then
+            LOGGER.debug("response:{}", response);
+            assertThat(httpResponse.getStatusCode()).isEqualTo(response.code());
+            assertThat(httpResponse.getStatusMessage()).isEqualTo("OK!!!!!!!");
+            assertThat(httpResponse.getHeaders().get("key1").get(0)).isEqualTo(response.header("key1"));
+            assertThat(httpResponse.getHeaders().get(CONTENT_TYPE).get(0)).isEqualTo(response.header(CONTENT_TYPE));
+            Map<String, HttpPart> parts = httpResponse.getParts();
+            assertThat(parts).hasSize(2);
+            HttpPart attachment = parts.get("example.txt");
+            assertThat(attachment.getContentType()).isEqualTo("text/plain; charset=utf-8");
+            assertThat(attachment.getContentAsByteArray()).isEqualTo(attachmentContent.getBytes(StandardCharsets.UTF_8));
+            HttpPart inline1 = parts.get("inline1");
+            assertThat(inline1.getContentType()).isEqualTo("application/json; charset=utf-8");
+            assertThat(inline1.getContentAsString()).isEqualTo("{\"name\": \"Example\", \"value\": 123}");
         }
 
 
@@ -1912,7 +2121,9 @@ class OkHttpClientTest {
             Map<String, Object> config = Maps.newHashMap();
             config.put(CONFIGURATION_ID, "default");
             config.put(OKHTTP_DOH_ACTIVATE, "true");
-            Assertions.assertThrows(IllegalStateException.class, () -> factory.build(config, null, new Random(), null, null, getCompositeMeterRegistry()));
+            CompositeMeterRegistry compositeMeterRegistry = getCompositeMeterRegistry();
+            Random random = new Random();
+            Assertions.assertThrows(IllegalStateException.class, () -> factory.build(config, null, random, null, null, compositeMeterRegistry));
         }
 
         @Test
@@ -1922,7 +2133,9 @@ class OkHttpClientTest {
             config.put(CONFIGURATION_ID, "default");
             config.put(OKHTTP_DOH_ACTIVATE, "true");
             config.put(OKHTTP_DOH_BOOTSTRAP_DNS_HOSTS, Lists.newArrayList("1.1.1.2", "1.0.0.2"));
-            Assertions.assertThrows(IllegalStateException.class, () -> factory.build(config, null, new Random(), null, null, getCompositeMeterRegistry()));
+            CompositeMeterRegistry compositeMeterRegistry = getCompositeMeterRegistry();
+            Random random = new Random();
+            Assertions.assertThrows(IllegalStateException.class, () -> factory.build(config, null, random, null, null, compositeMeterRegistry));
         }
 
         @Test
@@ -1933,7 +2146,8 @@ class OkHttpClientTest {
             config.put(OKHTTP_DOH_ACTIVATE, "true");
             config.put(OKHTTP_DOH_URL, "https://cloudflare-dns.com/dns-query");
             config.put(OKHTTP_DOH_BOOTSTRAP_DNS_HOSTS, Lists.newArrayList("1.1.1.2", "1.0.0.2"));
-            OkHttpClient client = factory.build(config, null, new Random(), null, null, getCompositeMeterRegistry());
+            Random random = new Random();
+            OkHttpClient client = factory.build(config, null, random, null, null, getCompositeMeterRegistry());
 
             HttpRequest httpRequest = new HttpRequest(
                     "https://www.google.com",
@@ -2095,7 +2309,9 @@ class OkHttpClientTest {
             config.put(OKHTTP_DOH_ACTIVATE, "true");
             config.put(OKHTTP_DOH_URL, "https://cloudflare-dns.com/dns-query");
             config.put(OKHTTP_DOH_BOOTSTRAP_DNS_HOSTS, Lists.newArrayList("aaaaaa", "bbbbbb"));
-            Assertions.assertThrows(IllegalArgumentException.class, () -> factory.build(config, null, new Random(), null, null, getCompositeMeterRegistry()));
+            Random random = new Random();
+            CompositeMeterRegistry compositeMeterRegistry = getCompositeMeterRegistry();
+            Assertions.assertThrows(IllegalArgumentException.class, () -> factory.build(config, null, random, null, null, compositeMeterRegistry));
 
         }
 
@@ -2106,7 +2322,8 @@ class OkHttpClientTest {
             config.put(CONFIGURATION_ID, "default");
             config.put(OKHTTP_DOH_ACTIVATE, "true");
             config.put(OKHTTP_DOH_URL, "https://yahoo.com");
-            Assertions.assertDoesNotThrow(() -> factory.build(config, null, new Random(), null, null, getCompositeMeterRegistry()));
+            Random random = new Random();
+            Assertions.assertDoesNotThrow(() -> factory.build(config, null,random, null, null, getCompositeMeterRegistry()));
 
 
         }
@@ -2255,7 +2472,7 @@ class OkHttpClientTest {
             config2.put("okhttp.connection.pool.keep.alive.duration", 1000);
 
 
-            OkHttpClient client2 = factory.build(config, null, new Random(), null, null, getCompositeMeterRegistry());
+            OkHttpClient client2 = factory.build(config2, null, new Random(), null, null, getCompositeMeterRegistry());
             String baseUrl = "http://" + getIP() + ":" + wmRuntimeInfo.getHttpPort();
             String url = baseUrl + "/ping";
             HashMap<String, List<String>> headers = Maps.newHashMap();

@@ -11,16 +11,15 @@ import org.apache.kafka.connect.data.Struct;
 
 import java.io.Serial;
 import java.io.Serializable;
-import java.util.Base64;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
+import java.util.*;
+
+import static io.github.clescot.kafka.connect.http.core.MediaType.APPLICATION_OCTET_STREAM;
+import static io.github.clescot.kafka.connect.http.core.MediaType.APPLICATION_X_WWW_FORM_URLENCODED;
 
 public class HttpResponse implements Cloneable, Serializable {
     @Serial
     private static final long serialVersionUID = 1L;
     public static final Integer VERSION = 2;
-    public static final String CONTENT_TYPE = "Content-Type";
 
     public static final String STATUS_CODE = "statusCode";
     public static final String STATUS_MESSAGE = "statusMessage";
@@ -31,6 +30,9 @@ public class HttpResponse implements Cloneable, Serializable {
     public static final String BODY_AS_BYTE_ARRAY = "bodyAsByteArray";
     public static final String BODY_AS_FORM = "bodyAsForm";
     public static final String PARTS = "parts";
+    private Integer statusMessageLimit = Integer.MAX_VALUE;
+    private Integer headersLimit = Integer.MAX_VALUE;
+    private Integer bodyLimit = Integer.MAX_VALUE;
 
     public static final Schema SCHEMA = SchemaBuilder
             .struct()
@@ -59,7 +61,7 @@ public class HttpResponse implements Cloneable, Serializable {
     //byte array is base64 encoded as a String, as JSON is a text format not binary
     private String bodyAsByteArray = "";
     @JsonProperty(defaultValue = "STRING")
-    private HttpResponse.BodyType bodyType = HttpResponse.BodyType.STRING;
+    private BodyType bodyType = BodyType.STRING;
     @JsonProperty
     private String protocol = "";
     @JsonProperty
@@ -74,9 +76,28 @@ public class HttpResponse implements Cloneable, Serializable {
     }
 
     public HttpResponse(Integer statusCode, String statusMessage) {
+        this(statusCode, statusMessage, null, null, null);
+    }
+
+    public HttpResponse(Integer statusCode, String statusMessage, Integer statusMessageLimit, Integer headersLimit, Integer bodyLimit) {
         Preconditions.checkArgument(statusCode > 0, "status code must be a positive integer");
         this.statusCode = statusCode;
-        this.statusMessage = statusMessage;
+        if (headersLimit != null) {
+            this.headersLimit = Math.max(0, headersLimit);
+        }
+
+        if (statusMessageLimit != null) {
+            this.statusMessageLimit = Math.max(0, statusMessageLimit);
+        }
+        if (statusMessage != null && statusMessageLimit!=null) {
+            this.statusMessage = statusMessage.substring(0, Math.min(statusMessage.length(), statusMessageLimit));
+        }else{
+            this.statusMessage = statusMessage;
+        }
+
+        if (bodyLimit != null) {
+            this.bodyLimit = Math.max(0, bodyLimit);
+        }
     }
 
     public Map<String, List<String>> getHeaders() {
@@ -95,6 +116,22 @@ public class HttpResponse implements Cloneable, Serializable {
         return bodyAsString;
     }
 
+    @JsonIgnore
+    public List<String> getContentType() {
+        return headers.get(MediaType.KEY);
+    }
+
+
+    public void setContentType(String contentType) {
+        if (contentType != null && !contentType.isEmpty()) {
+            headers.put(MediaType.KEY, Lists.newArrayList(contentType));
+            bodyType = BodyType.getBodyType(contentType);
+        } else {
+            headers.remove(MediaType.KEY);
+            bodyType = BodyType.STRING;
+        }
+    }
+
 
     public Map<String, HttpPart> getParts() {
         return parts;
@@ -102,8 +139,8 @@ public class HttpResponse implements Cloneable, Serializable {
 
     public void setParts(Map<String, HttpPart> parts) {
         this.parts = parts;
-        if(parts!=null && !parts.isEmpty()) {
-            bodyType = HttpResponse.BodyType.MULTIPART;
+        if (parts != null && !parts.isEmpty()) {
+            bodyType = BodyType.MULTIPART;
         }
     }
 
@@ -113,18 +150,66 @@ public class HttpResponse implements Cloneable, Serializable {
     }
 
     public void setHeaders(Map<String, List<String>> headers) {
-        this.headers = headers;
+        Map<String, List<String>> headersWithLimit = Maps.newHashMap();
+        if (headers != null) {
+            int headersSize = 0;
+            for (Map.Entry<String, List<String>> next : headers.entrySet()) {
+                int keyLength = next.getKey().length();
+                if (headersSize + keyLength < headersLimit) {
+                    headersSize += keyLength;
+                    Iterator<String> valuesIterator = next.getValue().iterator();
+                    List<String> valuesWithLimit = Lists.newArrayList();
+                    while (valuesIterator.hasNext()) {
+                        String myValue = valuesIterator.next();
+                        if (headersSize + myValue.length() < headersLimit) {
+                            headersSize += myValue.length();
+                            valuesWithLimit.add(myValue);
+                        } else {
+                            break;
+                        }
+                    }
+                    if (headersSize < headersLimit) {
+                        headersWithLimit.put(next.getKey(), valuesWithLimit);
+                    } else {
+                        break;
+                    }
+                }
+            }
+        }
+        this.headers = headersWithLimit;
     }
 
     public void setBodyAsString(String bodyAsString) {
-        this.bodyAsString = bodyAsString;
+        if (bodyAsString != null) {
+            this.bodyAsString = bodyAsString.substring(0, Math.min(bodyAsString.length(), bodyLimit));
+            this.bodyType = BodyType.STRING;
+        }
+    }
+
+    public void setBodyAsByteArray(byte[] content) {
+        if(content==null){
+            this.bodyAsByteArray = "";
+            return;
+        }
+        Preconditions.checkArgument(bodyLimit >= content.length, "bodyAsByteArray length exceeds bodyLimit");
+
+        if (content != null && content.length > 0) {
+            this.bodyAsByteArray = Base64.getEncoder().encodeToString(content);
+            this.bodyType = BodyType.BYTE_ARRAY;
+
+            //if no Content-Type is set, we set the default application/octet-stream
+            if (this.headers != null && doesNotContainHeader(MediaType.KEY)) {
+                this.headers.put(MediaType.KEY, Lists.newArrayList(APPLICATION_OCTET_STREAM));
+            }
+        }
+
     }
 
     public void setBodyAsForm(Map<String, String> form) {
         this.bodyAsForm = form;
-        bodyType = HttpResponse.BodyType.FORM;
-        if (form != null && !form.isEmpty() && headers != null && doesNotContainHeader(CONTENT_TYPE)) {
-            headers.put(CONTENT_TYPE, Lists.newArrayList("application/x-www-form-urlencoded"));
+        bodyType = BodyType.FORM;
+        if (form != null && !form.isEmpty() && headers != null && doesNotContainHeader(MediaType.KEY)) {
+            headers.put(MediaType.KEY, Lists.newArrayList(APPLICATION_X_WWW_FORM_URLENCODED));
         }
     }
 
@@ -144,24 +229,13 @@ public class HttpResponse implements Cloneable, Serializable {
         this.statusMessage = statusMessage;
     }
 
-    public void setBodyAsByteArray(byte[] content) {
-        if (content != null && content.length > 0) {
-            bodyAsByteArray = Base64.getEncoder().encodeToString(content);
-            bodyType = HttpResponse.BodyType.BYTE_ARRAY;
-
-            //if no Content-Type is set, we set the default application/octet-stream
-            if (headers != null && doesNotContainHeader(CONTENT_TYPE)) {
-                headers.put(CONTENT_TYPE, Lists.newArrayList("application/octet-stream"));
-            }
-        }
-    }
 
     @JsonIgnore
     public byte[] getBodyAsByteArray() {
         if (bodyAsByteArray != null && !bodyAsByteArray.isEmpty()) {
             return Base64.getDecoder().decode(bodyAsByteArray);
         }
-        return null;
+        return new byte[0];
     }
 
     public BodyType getBodyType() {
@@ -201,6 +275,7 @@ public class HttpResponse implements Cloneable, Serializable {
         }
         return getBodyContentLengthFromBodyType();
     }
+
     private long getBodyContentLengthFromBodyType() {
         if (BodyType.STRING == bodyType) {
             return bodyAsString.getBytes().length;
@@ -211,9 +286,9 @@ public class HttpResponse implements Cloneable, Serializable {
                     bodyAsForm
                             .entrySet()
                             .stream()
-                            .filter(pair->pair.getValue()!=null)
-                            .map(pair->pair.getKey().length()+pair.getValue().length())
-                            .reduce(Integer::sum).orElse(0): 0;
+                            .filter(pair -> pair.getValue() != null)
+                            .map(pair -> pair.getKey().length() + pair.getValue().length())
+                            .reduce(Integer::sum).orElse(0) : 0;
         } else if (BodyType.MULTIPART == bodyType) {
             return parts.values().stream().mapToLong(HttpPart::getBodyContentLength).sum();
         }
@@ -226,16 +301,16 @@ public class HttpResponse implements Cloneable, Serializable {
         if (o == null || getClass() != o.getClass()) return false;
         HttpResponse that = (HttpResponse) o;
         return
-            statusCode.equals(that.statusCode) &&
-            statusMessage.equals(that.statusMessage) &&
-            protocol.equals(that.protocol) &&
-            bodyType == that.bodyType &&
-            Objects.equals(headers, that.headers) &&
-            bodyAsString.equals(that.bodyAsString) &&
-            Objects.equals(bodyAsByteArray, that.bodyAsByteArray) &&
-            Objects.equals(bodyAsForm, that.bodyAsForm) &&
-            Objects.deepEquals(parts, that.parts)
-            ;
+                statusCode.equals(that.statusCode) &&
+                        statusMessage.equals(that.statusMessage) &&
+                        protocol.equals(that.protocol) &&
+                        bodyType == that.bodyType &&
+                        Objects.equals(headers, that.headers) &&
+                        bodyAsString.equals(that.bodyAsString) &&
+                        Objects.equals(bodyAsByteArray, that.bodyAsByteArray) &&
+                        Objects.equals(bodyAsForm, that.bodyAsForm) &&
+                        Objects.deepEquals(parts, that.parts)
+                ;
     }
 
     @Override
@@ -293,15 +368,4 @@ public class HttpResponse implements Cloneable, Serializable {
         }
     }
 
-    public enum BodyType {
-        STRING,
-        BYTE_ARRAY,
-        FORM,
-        MULTIPART;
-
-        @Override
-        public String toString() {
-            return name();
-        }
-    }
 }

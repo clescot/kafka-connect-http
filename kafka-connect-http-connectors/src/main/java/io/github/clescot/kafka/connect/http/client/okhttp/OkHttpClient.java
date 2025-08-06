@@ -6,12 +6,10 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import io.github.clescot.kafka.connect.http.client.AbstractHttpClient;
 import io.github.clescot.kafka.connect.http.client.HttpException;
-import io.github.clescot.kafka.connect.http.core.HttpPart;
-import io.github.clescot.kafka.connect.http.core.HttpRequest;
-import io.github.clescot.kafka.connect.http.core.HttpResponse;
-import io.github.clescot.kafka.connect.http.core.HttpResponseBuilder;
+import io.github.clescot.kafka.connect.http.core.*;
 import kotlin.Pair;
 import okhttp3.*;
+import okhttp3.MediaType;
 import okhttp3.internal.http.HttpMethod;
 import okio.Buffer;
 import org.apache.commons.lang3.exception.ExceptionUtils;
@@ -26,10 +24,11 @@ import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 
+import static io.github.clescot.kafka.connect.http.core.MediaType.APPLICATION_OCTET_STREAM;
+
 public class OkHttpClient extends AbstractHttpClient<Request, Response> {
 
 
-    public static final String APPLICATION_OCTET_STREAM = "application/octet-stream";
     private final okhttp3.OkHttpClient client;
     private static final Logger LOGGER = LoggerFactory.getLogger(OkHttpClient.class);
 
@@ -68,7 +67,7 @@ public class OkHttpClient extends AbstractHttpClient<Request, Response> {
 
     @Override
     public HttpRequest buildRequest(Request nativeRequest) {
-        HttpRequest request = new HttpRequest(nativeRequest.url().toString(), HttpRequest.Method.valueOf(nativeRequest.method()), nativeRequest.headers().toMultimap(), HttpRequest.BodyType.STRING);
+        HttpRequest request = new HttpRequest(nativeRequest.url().toString(), HttpRequest.Method.valueOf(nativeRequest.method()), nativeRequest.headers().toMultimap(), BodyType.STRING);
         if (nativeRequest.body() != null) {
             final Buffer buffer = new Buffer();
             try {
@@ -127,7 +126,7 @@ public class OkHttpClient extends AbstractHttpClient<Request, Response> {
     @NotNull
     private RequestBody getMultiPartRequestBody(HttpRequest httpRequest, String firstContentType) {
         RequestBody requestBody;
-        //HttpRequest.BodyType = MULTIPART
+        //BodyType = MULTIPART
         Map<String, HttpPart> bodyAsMultipart = httpRequest.getParts();
         String boundary = null;
         if (firstContentType != null && firstContentType.contains("boundary=")) {
@@ -137,7 +136,7 @@ public class OkHttpClient extends AbstractHttpClient<Request, Response> {
             }
         }
         MultipartBody.Builder multipartBuilder = new MultipartBody.Builder(MoreObjects.firstNonNull(boundary, MoreObjects.firstNonNull(boundary, "---")));
-        multipartBuilder.setType(MediaType.parse("multipart/form-data"));
+        multipartBuilder.setType(MediaType.parse(io.github.clescot.kafka.connect.http.core.MediaType.MULTIPART_FORM_DATA));
         for (Map.Entry<String, HttpPart> entry : bodyAsMultipart.entrySet()) {
             RequestBody partRequestBody;
             String parameterName = entry.getKey();
@@ -180,7 +179,7 @@ public class OkHttpClient extends AbstractHttpClient<Request, Response> {
 
     private Map<String, List<String>> filterHeaders(Map<String, List<String>> headers) {
         return headers != null ? headers.entrySet().stream()
-                .filter(entry -> !entry.getKey().equalsIgnoreCase("Content-Type"))
+                .filter(entry -> !entry.getKey().equalsIgnoreCase(io.github.clescot.kafka.connect.http.core.MediaType.KEY))
                 .collect(
                         Collectors.toMap(
                                 Map.Entry::getKey,
@@ -211,24 +210,53 @@ public class OkHttpClient extends AbstractHttpClient<Request, Response> {
     }
 
 
+    private Map<String, String> fromNativeBodyToForm(ResponseBody responseBody) {
+        Map<String, String> form = Maps.newHashMap();
+        try {
+            if (responseBody != null) {
+                String bodyString = responseBody.string();
+                String[] pairs = bodyString.split("&");
+                for (String pair : pairs) {
+                    String[] keyValue = pair.split("=");
+                    if (keyValue.length == 2) {
+                        form.put(keyValue[0], keyValue[1]);
+                    }
+                }
+            }
+        } catch (IOException e) {
+            throw new HttpException(e);
+        }
+        return form;
+    }
+
     @Override
-    public HttpResponse buildResponse(HttpResponseBuilder httpResponseBuilder, Response response) {
+    public HttpResponse buildResponse(Response response) {
+        HttpResponse httpResponse = new HttpResponse(response.code(), response.message(), getStatusMessageLimit(), getHeadersLimit(), getBodyLimit());
         try {
             Protocol protocol = response.protocol();
             if (LOGGER.isTraceEnabled()) {
                 LOGGER.trace("native response :'{}'", response);
                 LOGGER.trace("protocol: '{}',cache-control: '{}',handshake: '{}',challenges: '{}'", protocol, response.cacheControl(), response.handshake(), response.challenges());
             }
-            httpResponseBuilder.setStatus(response.code(), response.message());
-            // handle more bodyType for HttpResponse :
-            //TODO https://github.com/clescot/kafka-connect-http/issues/784
-            //TODO https://github.com/clescot/kafka-connect-http/issues/785
-            //TODO https://github.com/clescot/kafka-connect-http/issues/786
-            if (response.body() != null) {
-                httpResponseBuilder.setBodyAsString(response.body().string());
+
+            String contentType = response.header(io.github.clescot.kafka.connect.http.core.MediaType.KEY);
+            if (contentType != null && !contentType.isEmpty()) {
+                httpResponse.setContentType(contentType);
+            } else {
+                //default content type
+                httpResponse.setContentType(io.github.clescot.kafka.connect.http.core.MediaType.APPLICATION_JSON);
             }
+            ResponseBody body = response.body();
+            switch (httpResponse.getBodyType()) {
+                case BYTE_ARRAY -> httpResponse.setBodyAsByteArray(body.bytes());
+                case FORM -> httpResponse.setBodyAsForm(fromNativeBodyToForm(body));
+                case MULTIPART -> httpResponse.setParts(fromResponseBodyToParts(body));
+                case STRING -> httpResponse.setBodyAsString(body.string());
+            }
+
+
             if (protocol != null) {
-                httpResponseBuilder.setProtocol(protocol.name());
+                httpResponse.setProtocol(protocol.name());
             }
             Headers headers = response.headers();
             Iterator<Pair<String, String>> iterator = headers.iterator();
@@ -237,11 +265,48 @@ public class OkHttpClient extends AbstractHttpClient<Request, Response> {
                 Pair<String, String> header = iterator.next();
                 responseHeaders.put(header.getFirst(), Lists.newArrayList(header.getSecond()));
             }
-            httpResponseBuilder.setHeaders(responseHeaders);
+            httpResponse.setHeaders(responseHeaders);
         } catch (IOException e) {
             throw new HttpException(e);
         }
-        return httpResponseBuilder.toHttpResponse();
+        return httpResponse;
+    }
+
+    private Map<String, HttpPart> fromResponseBodyToParts(ResponseBody body) {
+
+        Map<String, HttpPart> parts = Maps.newHashMap();
+        try {
+            if (body != null) {
+                MultipartReader multipartReader = new MultipartReader(body);
+                MultipartReader.Part part;
+                int inlinePartCount = 0;
+                while ((part = multipartReader.nextPart()) != null) {
+                    Headers headers = part.headers();
+                    String contentDisposition = headers.get(HttpPart.CONTENT_DISPOSITION);
+                    if (contentDisposition == null || contentDisposition.isBlank()) {
+                        LOGGER.warn("Content-Disposition header is missing or empty for part. Skipping this part.");
+                        continue;
+                    }
+                    String[] contentDispositionParts = contentDisposition.split(";");
+                    String dispositionType = contentDispositionParts[0].trim();
+                    Map<String, List<String>> headersMultimap = headers.toMultimap();
+                    if(dispositionType.equalsIgnoreCase("inline")){
+
+                        String partValue = part.body().readUtf8();
+                        HttpPart httpPart = new HttpPart(headersMultimap,partValue);
+                        inlinePartCount++;
+                        parts.put("inline"+inlinePartCount, httpPart);
+                    } else if (dispositionType.equalsIgnoreCase("attachment")) {
+                        String fileName = contentDispositionParts[1].trim().replace("filename=", "").replace("\"", "");
+                        HttpPart httpPart = new HttpPart(headersMultimap,part.body().readByteArray());
+                        parts.put(fileName, httpPart);
+                    }
+                }
+            }
+        } catch (IOException e) {
+            throw new HttpException(e);
+        }
+        return parts;
     }
 
     @Override

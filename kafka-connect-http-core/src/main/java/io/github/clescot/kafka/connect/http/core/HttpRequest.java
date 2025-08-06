@@ -22,6 +22,7 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import static com.fasterxml.jackson.annotation.JsonInclude.Include;
+import static io.github.clescot.kafka.connect.http.core.MediaType.APPLICATION_X_WWW_FORM_URLENCODED;
 
 @JsonInclude(Include.NON_EMPTY)
 public class HttpRequest implements Cloneable, Serializable {
@@ -39,7 +40,7 @@ public class HttpRequest implements Cloneable, Serializable {
     public static final String PARTS = "parts";
 
     public static final int VERSION = 2;
-    public static final String CONTENT_TYPE = "Content-Type";
+
     private static final Pattern BOUNDARY = Pattern.compile(".*; boundary=(.*)");
 
     //request
@@ -168,7 +169,7 @@ public class HttpRequest implements Cloneable, Serializable {
         if (headersFromPart != null && !headersFromPart.isEmpty()) {
             return headersFromPart.keySet().stream()
                     .filter(key -> !key.equalsIgnoreCase("Content-Disposition"))
-                    .filter(key -> !key.equalsIgnoreCase(CONTENT_TYPE))
+                    .filter(key -> !key.equalsIgnoreCase(MediaType.KEY))
                     .filter(key -> !key.equalsIgnoreCase("Content-Transfer-Encoding"))
                     .findAny().isEmpty();
 
@@ -206,10 +207,10 @@ public class HttpRequest implements Cloneable, Serializable {
     @JsonIgnore
     public String getContentType() {
         if (headers != null
-                && headers.containsKey(CONTENT_TYPE)
-                && headers.get(CONTENT_TYPE) != null
-                && !headers.get(CONTENT_TYPE).isEmpty()) {
-            return headers.get(CONTENT_TYPE).get(0);
+                && headers.containsKey(MediaType.KEY)
+                && headers.get(MediaType.KEY) != null
+                && !headers.get(MediaType.KEY).isEmpty()) {
+            return headers.get(MediaType.KEY).get(0);
         }
         return null;
     }
@@ -228,7 +229,7 @@ public class HttpRequest implements Cloneable, Serializable {
     }
 
     public void setContentType(String contentType) {
-        headers.put(CONTENT_TYPE, Lists.newArrayList(contentType));
+        headers.put(MediaType.KEY, Lists.newArrayList(contentType));
     }
 
     public Map<String, List<String>> getHeaders() {
@@ -325,8 +326,8 @@ public class HttpRequest implements Cloneable, Serializable {
             bodyType = BodyType.BYTE_ARRAY;
 
             //if no Content-Type is set, we set the default application/octet-stream
-            if (headers != null && doesNotContainHeader(CONTENT_TYPE)) {
-                headers.put(CONTENT_TYPE, Lists.newArrayList("application/octet-stream"));
+            if (headers != null && doesNotContainHeader(MediaType.KEY)) {
+                headers.put(MediaType.KEY, Lists.newArrayList(MediaType.APPLICATION_OCTET_STREAM));
             }
         }
     }
@@ -367,8 +368,8 @@ public class HttpRequest implements Cloneable, Serializable {
     public void setBodyAsForm(Map<String, String> form) {
         this.bodyAsForm = form;
         bodyType = BodyType.FORM;
-        if (form!=null && !form.isEmpty() && headers != null && doesNotContainHeader(CONTENT_TYPE)) {
-            headers.put(CONTENT_TYPE, Lists.newArrayList("application/x-www-form-urlencoded"));
+        if (form!=null && !form.isEmpty() && headers != null && doesNotContainHeader(MediaType.KEY)) {
+            headers.put(MediaType.KEY, Lists.newArrayList(APPLICATION_X_WWW_FORM_URLENCODED));
         }
     }
 
@@ -401,17 +402,7 @@ public class HttpRequest implements Cloneable, Serializable {
         }
     }
 
-    public enum BodyType {
-        STRING,
-        BYTE_ARRAY,
-        FORM,
-        MULTIPART;
 
-        @Override
-        public String toString() {
-            return name();
-        }
-    }
 
     public enum Method {
         CONNECT,

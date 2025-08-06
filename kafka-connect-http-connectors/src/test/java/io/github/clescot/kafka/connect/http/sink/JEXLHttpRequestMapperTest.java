@@ -1,6 +1,7 @@
 package io.github.clescot.kafka.connect.http.sink;
 
 import com.google.common.collect.Lists;
+import io.github.clescot.kafka.connect.http.core.BodyType;
 import io.github.clescot.kafka.connect.http.core.HttpRequest;
 import io.github.clescot.kafka.connect.http.mapper.JEXLHttpRequestMapper;
 import org.apache.commons.jexl3.JexlBuilder;
@@ -145,7 +146,7 @@ class JEXLHttpRequestMapperTest {
             HttpRequest httpRequest = httpRequestMapper.map(sinkRecord);
             assertThat(httpRequest.getUrl()).isEqualTo("http://url.com");
             assertThat(httpRequest.getMethod()).isEqualTo(HttpRequest.Method.GET);
-            assertThat(httpRequest.getBodyType()).isEqualTo(HttpRequest.BodyType.STRING);
+            assertThat(httpRequest.getBodyType()).isEqualTo(BodyType.STRING);
         }
         @Test
         void test_url_as_variable(){
@@ -155,7 +156,7 @@ class JEXLHttpRequestMapperTest {
             HttpRequest httpRequest = httpRequestMapper.map(sinkRecord);
             assertThat(httpRequest.getUrl()).isEqualTo("http://test.com");
             assertThat(httpRequest.getMethod().name()).isEqualTo("GET");
-            assertThat(httpRequest.getBodyType()).isEqualTo(HttpRequest.BodyType.STRING);
+            assertThat(httpRequest.getBodyType()).isEqualTo(BodyType.STRING);
         }
         @Test
         void test_with_all_variables(){
@@ -165,7 +166,7 @@ class JEXLHttpRequestMapperTest {
                     "sinkRecord.topic()=='myTopic'",
                     "sinkRecord.value()",
                     "'GET'",
-                    "'"+ HttpRequest.BodyType.STRING +"'",
+                    "'"+ BodyType.STRING +"'",
                     "'content'",
                     "{'test1':['value1','value2',...]}"
             );
@@ -174,7 +175,7 @@ class JEXLHttpRequestMapperTest {
             HttpRequest httpRequest = httpRequestMapper.map(sinkRecord);
             assertThat(httpRequest.getUrl()).isEqualTo("http://test.com");
             assertThat(httpRequest.getMethod()).isEqualTo(HttpRequest.Method.GET);
-            assertThat(httpRequest.getBodyType()).isEqualTo(HttpRequest.BodyType.STRING);
+            assertThat(httpRequest.getBodyType()).isEqualTo(BodyType.STRING);
             java.util.Map<String, List<String>> httpRequestHeaders = httpRequest.getHeaders();
             assertThat(httpRequestHeaders.get("test1")).isEqualTo(Lists.newArrayList("value1","value2"));
         }
@@ -225,7 +226,7 @@ class JEXLHttpRequestMapperTest {
             HttpRequest httpRequest = jexlHttpRequestMapper.map(mySinkRecord);
             assertThat(httpRequest.getUrl()).isEqualTo("http://test.com");
             assertThat(httpRequest.getMethod()).isEqualTo(HttpRequest.Method.PUT);
-            assertThat(httpRequest.getBodyType()).isEqualTo(HttpRequest.BodyType.STRING);
+            assertThat(httpRequest.getBodyType()).isEqualTo(BodyType.STRING);
             assertThat(httpRequest.getBodyAsString()).isEqualTo("mybodycontent");
         }
 
