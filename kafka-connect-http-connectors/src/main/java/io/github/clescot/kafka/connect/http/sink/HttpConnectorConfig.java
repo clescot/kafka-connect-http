@@ -4,6 +4,7 @@ import com.google.common.base.Joiner;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
+import io.github.clescot.kafka.connect.http.core.BodyType;
 import io.github.clescot.kafka.connect.http.core.HttpRequest;
 import io.github.clescot.kafka.connect.http.core.queue.ConfigConstants;
 import io.github.clescot.kafka.connect.http.core.queue.QueueFactory;
@@ -187,7 +188,7 @@ public class HttpConnectorConfig extends AbstractConfig {
         this.defaultRequestMapperMode = Optional.of(MapperMode.valueOf(getString(DEFAULT_REQUEST_MAPPER_PREFIX + REQUEST_MAPPER_DEFAULT_MODE))).orElse(MapperMode.DIRECT);
         this.defaultUrlExpression = getString(DEFAULT_REQUEST_MAPPER_PREFIX + REQUEST_MAPPER_DEFAULT_URL_EXPRESSION);
         this.defaultMethodExpression = getString(DEFAULT_REQUEST_MAPPER_PREFIX + REQUEST_MAPPER_DEFAULT_METHOD_EXPRESSION);
-        this.defaultBodyTypeExpression = Optional.ofNullable(getString(DEFAULT_REQUEST_MAPPER_PREFIX + REQUEST_MAPPER_DEFAULT_BODYTYPE_EXPRESSION)).orElse("'" + HttpRequest.BodyType.STRING + "'");
+        this.defaultBodyTypeExpression = Optional.ofNullable(getString(DEFAULT_REQUEST_MAPPER_PREFIX + REQUEST_MAPPER_DEFAULT_BODYTYPE_EXPRESSION)).orElse("'" + BodyType.STRING + "'");
         this.defaultBodyExpression = getString(DEFAULT_REQUEST_MAPPER_PREFIX + REQUEST_MAPPER_DEFAULT_BODY_EXPRESSION);
         this.defaultHeadersExpression = getString(DEFAULT_REQUEST_MAPPER_PREFIX + REQUEST_MAPPER_DEFAULT_HEADERS_EXPRESSION);
         this.httpRequestMapperIds = Optional.ofNullable(getList(HTTP_REQUEST_MAPPER_IDS)).orElse(Lists.newArrayList());

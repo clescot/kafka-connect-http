@@ -16,8 +16,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
-import static io.github.clescot.kafka.connect.http.core.ContentType.APPLICATION_OCTET_STREAM;
-import static io.github.clescot.kafka.connect.http.core.ContentType.APPLICATION_X_WWW_FORM_URLENCODED;
+import static io.github.clescot.kafka.connect.http.core.MediaType.APPLICATION_OCTET_STREAM;
+import static io.github.clescot.kafka.connect.http.core.MediaType.APPLICATION_X_WWW_FORM_URLENCODED;
 
 public class HttpResponse implements Cloneable, Serializable {
     @Serial
@@ -61,7 +61,7 @@ public class HttpResponse implements Cloneable, Serializable {
     //byte array is base64 encoded as a String, as JSON is a text format not binary
     private String bodyAsByteArray = "";
     @JsonProperty(defaultValue = "STRING")
-    private HttpResponse.BodyType bodyType = HttpResponse.BodyType.STRING;
+    private BodyType bodyType = BodyType.STRING;
     @JsonProperty
     private String protocol = "";
     @JsonProperty
@@ -105,7 +105,7 @@ public class HttpResponse implements Cloneable, Serializable {
     public void setParts(Map<String, HttpPart> parts) {
         this.parts = parts;
         if(parts!=null && !parts.isEmpty()) {
-            bodyType = HttpResponse.BodyType.MULTIPART;
+            bodyType = BodyType.MULTIPART;
         }
     }
 
@@ -124,9 +124,9 @@ public class HttpResponse implements Cloneable, Serializable {
 
     public void setBodyAsForm(Map<String, String> form) {
         this.bodyAsForm = form;
-        bodyType = HttpResponse.BodyType.FORM;
-        if (form != null && !form.isEmpty() && headers != null && doesNotContainHeader(ContentType.KEY)) {
-            headers.put(ContentType.KEY, Lists.newArrayList(APPLICATION_X_WWW_FORM_URLENCODED));
+        bodyType = BodyType.FORM;
+        if (form != null && !form.isEmpty() && headers != null && doesNotContainHeader(MediaType.KEY)) {
+            headers.put(MediaType.KEY, Lists.newArrayList(APPLICATION_X_WWW_FORM_URLENCODED));
         }
     }
 
@@ -149,11 +149,11 @@ public class HttpResponse implements Cloneable, Serializable {
     public void setBodyAsByteArray(byte[] content) {
         if (content != null && content.length > 0) {
             bodyAsByteArray = Base64.getEncoder().encodeToString(content);
-            bodyType = HttpResponse.BodyType.BYTE_ARRAY;
+            bodyType = BodyType.BYTE_ARRAY;
 
             //if no Content-Type is set, we set the default application/octet-stream
-            if (headers != null && doesNotContainHeader(ContentType.KEY)) {
-                headers.put(ContentType.KEY, Lists.newArrayList(APPLICATION_OCTET_STREAM));
+            if (headers != null && doesNotContainHeader(MediaType.KEY)) {
+                headers.put(MediaType.KEY, Lists.newArrayList(APPLICATION_OCTET_STREAM));
             }
         }
     }
@@ -295,15 +295,4 @@ public class HttpResponse implements Cloneable, Serializable {
         }
     }
 
-    public enum BodyType {
-        STRING,
-        BYTE_ARRAY,
-        FORM,
-        MULTIPART;
-
-        @Override
-        public String toString() {
-            return name();
-        }
-    }
 }

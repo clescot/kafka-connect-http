@@ -6,12 +6,10 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import io.github.clescot.kafka.connect.http.client.AbstractHttpClient;
 import io.github.clescot.kafka.connect.http.client.HttpException;
-import io.github.clescot.kafka.connect.http.core.HttpPart;
-import io.github.clescot.kafka.connect.http.core.HttpRequest;
-import io.github.clescot.kafka.connect.http.core.HttpResponse;
-import io.github.clescot.kafka.connect.http.core.HttpResponseBuilder;
+import io.github.clescot.kafka.connect.http.core.*;
 import kotlin.Pair;
 import okhttp3.*;
+import okhttp3.MediaType;
 import okhttp3.internal.http.HttpMethod;
 import okio.Buffer;
 import org.apache.commons.lang3.exception.ExceptionUtils;
@@ -26,7 +24,7 @@ import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 
-import static io.github.clescot.kafka.connect.http.core.ContentType.APPLICATION_OCTET_STREAM;
+import static io.github.clescot.kafka.connect.http.core.MediaType.APPLICATION_OCTET_STREAM;
 
 public class OkHttpClient extends AbstractHttpClient<Request, Response> {
 
@@ -69,7 +67,7 @@ public class OkHttpClient extends AbstractHttpClient<Request, Response> {
 
     @Override
     public HttpRequest buildRequest(Request nativeRequest) {
-        HttpRequest request = new HttpRequest(nativeRequest.url().toString(), HttpRequest.Method.valueOf(nativeRequest.method()), nativeRequest.headers().toMultimap(), HttpRequest.BodyType.STRING);
+        HttpRequest request = new HttpRequest(nativeRequest.url().toString(), HttpRequest.Method.valueOf(nativeRequest.method()), nativeRequest.headers().toMultimap(), BodyType.STRING);
         if (nativeRequest.body() != null) {
             final Buffer buffer = new Buffer();
             try {
@@ -128,7 +126,7 @@ public class OkHttpClient extends AbstractHttpClient<Request, Response> {
     @NotNull
     private RequestBody getMultiPartRequestBody(HttpRequest httpRequest, String firstContentType) {
         RequestBody requestBody;
-        //HttpRequest.BodyType = MULTIPART
+        //BodyType = MULTIPART
         Map<String, HttpPart> bodyAsMultipart = httpRequest.getParts();
         String boundary = null;
         if (firstContentType != null && firstContentType.contains("boundary=")) {

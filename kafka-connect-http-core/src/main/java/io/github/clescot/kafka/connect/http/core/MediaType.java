@@ -1,8 +1,8 @@
 package io.github.clescot.kafka.connect.http.core;
 
-public class ContentType {
+public class MediaType {
 
-    private ContentType(){}
+    private MediaType(){}
     public static final String KEY = "Content-Type";
     public static final String APPLICATION_X_WWW_FORM_URLENCODED = "application/x-www-form-urlencoded";
     public static final String APPLICATION_JSON = "application/json";

@@ -220,7 +220,7 @@ class OkHttpClientTest {
             parts.put("part2", httpPart2);
             Map<String, List<String>> headers = Maps.newHashMap();
             headers.put("Content-Type", Lists.newArrayList("multipart/form-data; boundary=+++"));
-            HttpRequest httpRequest = new HttpRequest("http://dummy.com/", HttpRequest.Method.POST, headers, HttpRequest.BodyType.MULTIPART, parts);
+            HttpRequest httpRequest = new HttpRequest("http://dummy.com/", HttpRequest.Method.POST, headers, BodyType.MULTIPART, parts);
 
             //given
             Request request = client.buildNativeRequest(httpRequest);
@@ -273,7 +273,7 @@ class OkHttpClientTest {
 
             Map<String, List<String>> headers = Maps.newHashMap();
             headers.put("Content-Type", Lists.newArrayList("multipart/form-data; boundary=+++"));
-            HttpRequest httpRequest = new HttpRequest("http://dummy.com/", HttpRequest.Method.POST, headers, HttpRequest.BodyType.MULTIPART, parts);
+            HttpRequest httpRequest = new HttpRequest("http://dummy.com/", HttpRequest.Method.POST, headers, BodyType.MULTIPART, parts);
 
             //given
             Request request = client.buildNativeRequest(httpRequest);

@@ -35,7 +35,7 @@ import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
 
-import static io.github.clescot.kafka.connect.http.core.ContentType.APPLICATION_X_WWW_FORM_URLENCODED;
+import static io.github.clescot.kafka.connect.http.core.MediaType.APPLICATION_X_WWW_FORM_URLENCODED;
 import static io.github.clescot.kafka.connect.http.core.HttpRequest.BODY_AS_BYTE_ARRAY;
 import static io.github.clescot.kafka.connect.http.core.SchemaLoader.*;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -165,7 +165,7 @@ class HttpRequestTest {
             //build httpRequest
             HttpRequest httpRequest = new HttpRequest(
                     "http://www.stuff.com",
-                    HttpRequest.Method.POST, headers, HttpRequest.BodyType.MULTIPART
+                    HttpRequest.Method.POST, headers, BodyType.MULTIPART
             );
             Map<String,HttpPart> httpParts = Maps.newHashMap();
             HttpPart part1 = new HttpPart("part1".getBytes(StandardCharsets.UTF_8));
@@ -196,7 +196,7 @@ class HttpRequestTest {
             //build httpRequest
             HttpRequest httpRequest = new HttpRequest(
                     "http://www.stuff.com",
-                    HttpRequest.Method.POST, headers, HttpRequest.BodyType.MULTIPART
+                    HttpRequest.Method.POST, headers, BodyType.MULTIPART
             );
             Map<String,HttpPart> httpParts = Maps.newHashMap();
             URL resourceURL = Thread.currentThread().getContextClassLoader().getResource("upload.txt");

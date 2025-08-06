@@ -10,6 +10,7 @@ import io.confluent.kafka.schemaregistry.client.SchemaRegistryClient;
 import io.confluent.kafka.schemaregistry.client.rest.exceptions.RestClientException;
 import io.confluent.kafka.schemaregistry.json.JsonSchema;
 import io.confluent.kafka.schemaregistry.json.JsonSchemaProvider;
+import io.github.clescot.kafka.connect.http.core.BodyType;
 import io.github.clescot.kafka.connect.http.core.HttpPart;
 import io.github.clescot.kafka.connect.http.core.HttpRequest;
 import io.github.clescot.kafka.connect.http.mapper.DirectHttpRequestMapper;
@@ -190,7 +191,7 @@ class DirectHttpRequestMapperTest {
         HttpPart httpPart = new HttpPart("stuff");
         Map<String, HttpPart> parts = Maps.newHashMap();
         parts.put("part1", httpPart);
-        return new HttpRequest(url, DUMMY_METHOD,headers, HttpRequest.BodyType.MULTIPART, parts);
+        return new HttpRequest(url, DUMMY_METHOD,headers, BodyType.MULTIPART, parts);
     }
 
     private String getDummyHttpRequestAsString() {

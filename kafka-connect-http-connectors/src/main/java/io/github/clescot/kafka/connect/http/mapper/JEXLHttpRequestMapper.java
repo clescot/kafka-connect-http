@@ -2,6 +2,7 @@ package io.github.clescot.kafka.connect.http.mapper;
 
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Maps;
+import io.github.clescot.kafka.connect.http.core.BodyType;
 import io.github.clescot.kafka.connect.http.core.HttpRequest;
 import org.apache.commons.jexl3.JexlContext;
 import org.apache.commons.jexl3.JexlEngine;
@@ -69,7 +70,7 @@ public class JEXLHttpRequestMapper extends AbstractHttpRequestMapper {
         }else {
             bodyTypeAsString="STRING";
         }
-        HttpRequest.BodyType bodyType = HttpRequest.BodyType.valueOf(bodyTypeAsString);
+        BodyType bodyType = BodyType.valueOf(bodyTypeAsString);
         String content = jexlBodyExpression.isPresent()?jexlBodyExpression.map(jexlExpression -> (String) jexlExpression.evaluate(context)).orElse(null):null;
         HttpRequest httpRequest = new HttpRequest(url,method);
         switch (bodyType){
