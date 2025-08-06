@@ -301,8 +301,6 @@ public class OkHttpClient extends AbstractHttpClient<Request, Response> {
                         HttpPart httpPart = new HttpPart(headersMultimap,part.body().readByteArray());
                         parts.put(fileName, httpPart);
                     }
-
-
                 }
             }
         } catch (IOException e) {
