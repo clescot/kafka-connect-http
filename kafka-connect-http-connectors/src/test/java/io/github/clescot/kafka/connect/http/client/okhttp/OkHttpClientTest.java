@@ -72,7 +72,7 @@ class OkHttpClientTest {
     public static final String CONTENT_TYPE = "Content-Type";
     public static final String APPLICATION_JSON = "application/json";
 
-    private final Logger LOGGER = LoggerFactory.getLogger(OkHttpClientTest.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(OkHttpClientTest.class);
     private final OkHttpClientFactory factory = new OkHttpClientFactory();
     @RegisterExtension
     static WireMockExtension wmHttp;
@@ -146,6 +146,7 @@ class OkHttpClientTest {
             assertThat(request.method()).isEqualTo(httpRequest.getMethod().name());
             RequestBody body = request.body();
             final Buffer buffer = new Buffer();
+            Assertions.assertNotNull(body);
             body.writeTo(buffer);
             assertThat(buffer.readUtf8()).isEqualTo(httpRequest.getBodyAsString());
         }
@@ -169,6 +170,7 @@ class OkHttpClientTest {
             assertThat(request.method()).isEqualTo(httpRequest.getMethod().name());
             RequestBody body = request.body();
             final Buffer buffer = new Buffer();
+            Assertions.assertNotNull(body);
             body.writeTo(buffer);
             String actual = buffer.readUtf8();
             byte[] decoded = Base64.getDecoder().decode(actual);
@@ -198,6 +200,7 @@ class OkHttpClientTest {
             assertThat(request.method()).isEqualTo(httpRequest.getMethod().name());
             RequestBody body = request.body();
             final Buffer buffer = new Buffer();
+            Assertions.assertNotNull(body);
             body.writeTo(buffer);
             String actual = buffer.readUtf8();
             Map<String, String> keyValues = Splitter.on("&").withKeyValueSeparator("=").split(actual);
@@ -231,6 +234,7 @@ class OkHttpClientTest {
             assertThat(request.method()).isEqualTo(httpRequest.getMethod().name());
             RequestBody body = request.body();
             final Buffer buffer = new Buffer();
+            Assertions.assertNotNull(body);
             body.writeTo(buffer);
             String actual = buffer.readUtf8();
             String boundary = httpRequest.getBoundary();
@@ -266,6 +270,7 @@ class OkHttpClientTest {
 
             //content as file
             URL fileUrl = Thread.currentThread().getContextClassLoader().getResource("upload.txt");
+            Assertions.assertNotNull(fileUrl);
             File file = new File(fileUrl.toURI());
             HttpPart httpPart3 = new HttpPart("upload.txt", file);
             parts.put("part3", httpPart3);
@@ -284,6 +289,7 @@ class OkHttpClientTest {
             assertThat(request.method()).isEqualTo(httpRequest.getMethod().name());
             RequestBody body = request.body();
             final Buffer buffer = new Buffer();
+            Assertions.assertNotNull(body);
             body.writeTo(buffer);
             String actual = buffer.readUtf8();
             String boundary = httpRequest.getBoundary();
@@ -1908,7 +1914,9 @@ class OkHttpClientTest {
             Map<String, Object> config = Maps.newHashMap();
             config.put(CONFIGURATION_ID, "default");
             config.put(OKHTTP_DOH_ACTIVATE, "true");
-            Assertions.assertThrows(IllegalStateException.class, () -> factory.build(config, null, new Random(), null, null, getCompositeMeterRegistry()));
+            CompositeMeterRegistry compositeMeterRegistry = getCompositeMeterRegistry();
+            Random random = new Random();
+            Assertions.assertThrows(IllegalStateException.class, () -> factory.build(config, null, random, null, null, compositeMeterRegistry));
         }
 
         @Test
@@ -1918,7 +1926,9 @@ class OkHttpClientTest {
             config.put(CONFIGURATION_ID, "default");
             config.put(OKHTTP_DOH_ACTIVATE, "true");
             config.put(OKHTTP_DOH_BOOTSTRAP_DNS_HOSTS, Lists.newArrayList("1.1.1.2", "1.0.0.2"));
-            Assertions.assertThrows(IllegalStateException.class, () -> factory.build(config, null, new Random(), null, null, getCompositeMeterRegistry()));
+            CompositeMeterRegistry compositeMeterRegistry = getCompositeMeterRegistry();
+            Random random = new Random();
+            Assertions.assertThrows(IllegalStateException.class, () -> factory.build(config, null, random, null, null, compositeMeterRegistry));
         }
 
         @Test
@@ -1929,7 +1939,8 @@ class OkHttpClientTest {
             config.put(OKHTTP_DOH_ACTIVATE, "true");
             config.put(OKHTTP_DOH_URL, "https://cloudflare-dns.com/dns-query");
             config.put(OKHTTP_DOH_BOOTSTRAP_DNS_HOSTS, Lists.newArrayList("1.1.1.2", "1.0.0.2"));
-            OkHttpClient client = factory.build(config, null, new Random(), null, null, getCompositeMeterRegistry());
+            Random random = new Random();
+            OkHttpClient client = factory.build(config, null, random, null, null, getCompositeMeterRegistry());
 
             HttpRequest httpRequest = new HttpRequest(
                     "https://www.google.com",
@@ -2091,7 +2102,9 @@ class OkHttpClientTest {
             config.put(OKHTTP_DOH_ACTIVATE, "true");
             config.put(OKHTTP_DOH_URL, "https://cloudflare-dns.com/dns-query");
             config.put(OKHTTP_DOH_BOOTSTRAP_DNS_HOSTS, Lists.newArrayList("aaaaaa", "bbbbbb"));
-            Assertions.assertThrows(IllegalArgumentException.class, () -> factory.build(config, null, new Random(), null, null, getCompositeMeterRegistry()));
+            Random random = new Random();
+            CompositeMeterRegistry compositeMeterRegistry = getCompositeMeterRegistry();
+            Assertions.assertThrows(IllegalArgumentException.class, () -> factory.build(config, null, random, null, null, compositeMeterRegistry));
 
         }
 
@@ -2102,7 +2115,8 @@ class OkHttpClientTest {
             config.put(CONFIGURATION_ID, "default");
             config.put(OKHTTP_DOH_ACTIVATE, "true");
             config.put(OKHTTP_DOH_URL, "https://yahoo.com");
-            Assertions.assertDoesNotThrow(() -> factory.build(config, null, new Random(), null, null, getCompositeMeterRegistry()));
+            Random random = new Random();
+            Assertions.assertDoesNotThrow(() -> factory.build(config, null,random, null, null, getCompositeMeterRegistry()));
 
 
         }
@@ -2251,7 +2265,7 @@ class OkHttpClientTest {
             config2.put("okhttp.connection.pool.keep.alive.duration", 1000);
 
 
-            OkHttpClient client2 = factory.build(config, null, new Random(), null, null, getCompositeMeterRegistry());
+            OkHttpClient client2 = factory.build(config2, null, new Random(), null, null, getCompositeMeterRegistry());
             String baseUrl = "http://" + getIP() + ":" + wmRuntimeInfo.getHttpPort();
             String url = baseUrl + "/ping";
             HashMap<String, List<String>> headers = Maps.newHashMap();
