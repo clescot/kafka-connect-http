@@ -220,7 +220,10 @@ public class OkHttpClient extends AbstractHttpClient<Request, Response> {
                 LOGGER.trace("protocol: '{}',cache-control: '{}',handshake: '{}',challenges: '{}'", protocol, response.cacheControl(), response.handshake(), response.challenges());
             }
             httpResponseBuilder.setStatus(response.code(), response.message());
-            //TODO handle more bodyType for HttpResponse
+            // handle more bodyType for HttpResponse :
+            //TODO https://github.com/clescot/kafka-connect-http/issues/784
+            //TODO https://github.com/clescot/kafka-connect-http/issues/785
+            //TODO https://github.com/clescot/kafka-connect-http/issues/786
             if (response.body() != null) {
                 httpResponseBuilder.setBodyAsString(response.body().string());
             }
