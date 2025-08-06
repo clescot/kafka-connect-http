@@ -136,7 +136,7 @@ public class OkHttpClient extends AbstractHttpClient<Request, Response> {
             }
         }
         MultipartBody.Builder multipartBuilder = new MultipartBody.Builder(MoreObjects.firstNonNull(boundary, MoreObjects.firstNonNull(boundary, "---")));
-        multipartBuilder.setType(MediaType.parse("multipart/form-data"));
+        multipartBuilder.setType(MediaType.parse(io.github.clescot.kafka.connect.http.core.MediaType.MULTIPART));
         for (Map.Entry<String, HttpPart> entry : bodyAsMultipart.entrySet()) {
             RequestBody partRequestBody;
             String parameterName = entry.getKey();
@@ -179,7 +179,7 @@ public class OkHttpClient extends AbstractHttpClient<Request, Response> {
 
     private Map<String, List<String>> filterHeaders(Map<String, List<String>> headers) {
         return headers != null ? headers.entrySet().stream()
-                .filter(entry -> !entry.getKey().equalsIgnoreCase("Content-Type"))
+                .filter(entry -> !entry.getKey().equalsIgnoreCase(io.github.clescot.kafka.connect.http.core.MediaType.KEY))
                 .collect(
                         Collectors.toMap(
                                 Map.Entry::getKey,
