@@ -629,7 +629,7 @@ class OkHttpClientTest {
 
         }
         @Test
-        void test_build_response_with_multipart() throws IOException {
+        void test_build_response_with_multipart_inline() throws IOException {
 
             //given
             HashMap<String, Object> config = Maps.newHashMap();
@@ -684,6 +684,65 @@ class OkHttpClientTest {
             HttpPart inline2 = parts.get("inline2");
             assertThat(inline2.getContentType()).isEqualTo("application/json; charset=utf-8");
             assertThat(inline2.getContentAsString()).isEqualTo("{\"name\": \"Example\", \"value\": 123}");
+        }
+
+        @Test
+        void test_build_response_with_multipart_inline_and_attachment() throws IOException {
+
+            //given
+            HashMap<String, Object> config = Maps.newHashMap();
+            config.put(CONFIGURATION_ID, "default");
+            config.put(HTTP_RESPONSE_BODY_LIMIT, "10");
+            OkHttpClient client = factory.build(config, null, new Random(), null, null, getCompositeMeterRegistry());
+
+            HttpRequest httpRequest = new HttpRequest("http://dummy.com/", HttpRequest.Method.POST);
+            httpRequest.setBodyAsString("stuff");
+            Request request = client.buildNativeRequest(httpRequest);
+
+            Response.Builder builder = new Response.Builder();
+            Headers headers = new Headers.Builder()
+                    .add("key1", "value1")
+                    .add(CONTENT_TYPE, MediaType.MULTIPART_FORM_DATA)
+                    .build();
+            builder.headers(headers);
+            builder.request(request);
+            builder.code(200);
+            builder.message("OK!!!!!!!");
+            final Buffer buffer = new Buffer();
+            String attachmentContent = "stuff";
+            new MultipartBody.Builder("---123")
+                    .setType(MultipartBody.MIXED)
+                    .addPart(
+                            Headers.of("Content-Disposition", "attachment; filename=\"example.txt\""),
+                            RequestBody.create(attachmentContent, okhttp3.MediaType.parse("text/plain"))
+                    )
+                    .addPart(
+                            Headers.of("Content-Disposition", "inline; filename=\"example.json\""),
+                            RequestBody.create("{\"name\": \"Example\", \"value\": 123}", okhttp3.MediaType.parse("application/json"))
+                    )
+                    .build().writeTo(buffer);
+            String multipartAsString = buffer.readUtf8();
+            ResponseBody responseBody = ResponseBody.create(multipartAsString, okhttp3.MediaType.parse("multipart/form-data; boundary=---123"));
+            builder.body(responseBody);
+            builder.protocol(Protocol.HTTP_1_1);
+            Response response = builder.build();
+            //when
+            HttpResponse httpResponse = client.buildResponse(response);
+
+            //then
+            LOGGER.debug("response:{}", response);
+            assertThat(httpResponse.getStatusCode()).isEqualTo(response.code());
+            assertThat(httpResponse.getStatusMessage()).isEqualTo("OK!!!!!!!");
+            assertThat(httpResponse.getHeaders().get("key1").get(0)).isEqualTo(response.header("key1"));
+            assertThat(httpResponse.getHeaders().get(CONTENT_TYPE).get(0)).isEqualTo(response.header(CONTENT_TYPE));
+            Map<String, HttpPart> parts = httpResponse.getParts();
+            assertThat(parts).hasSize(2);
+            HttpPart attachment = parts.get("example.txt");
+            assertThat(attachment.getContentType()).isEqualTo("text/plain; charset=utf-8");
+            assertThat(attachment.getContentAsByteArray()).isEqualTo(attachmentContent.getBytes(StandardCharsets.UTF_8));
+            HttpPart inline1 = parts.get("inline1");
+            assertThat(inline1.getContentType()).isEqualTo("application/json; charset=utf-8");
+            assertThat(inline1.getContentAsString()).isEqualTo("{\"name\": \"Example\", \"value\": 123}");
         }
 
 

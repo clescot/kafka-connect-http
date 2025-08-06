@@ -289,16 +289,16 @@ public class OkHttpClient extends AbstractHttpClient<Request, Response> {
                     }
                     String[] contentDispositionParts = contentDisposition.split(";");
                     String dispositionType = contentDispositionParts[0].trim();
-
+                    Map<String, List<String>> headersMultimap = headers.toMultimap();
                     if(dispositionType.equalsIgnoreCase("inline")){
-                        Map<String, List<String>> headersMultimap = headers.toMultimap();
+
                         String partValue = part.body().readUtf8();
                         HttpPart httpPart = new HttpPart(headersMultimap,partValue);
                         inlinePartCount++;
                         parts.put("inline"+inlinePartCount, httpPart);
                     } else if (dispositionType.equalsIgnoreCase("attachment")) {
                         String fileName = contentDispositionParts[1].trim().replace("filename=", "").replace("\"", "");
-                        HttpPart httpPart = new HttpPart(part.body().readByteArray());
+                        HttpPart httpPart = new HttpPart(headersMultimap,part.body().readByteArray());
                         parts.put(fileName, httpPart);
                     }
 
