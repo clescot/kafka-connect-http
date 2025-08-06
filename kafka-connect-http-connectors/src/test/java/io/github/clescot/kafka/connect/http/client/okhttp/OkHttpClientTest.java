@@ -394,9 +394,9 @@ class OkHttpClientTest {
             builder.body(responseBody);
             builder.protocol(Protocol.HTTP_1_1);
             Response response = builder.build();
-            HttpResponseBuilder httpResponseBuilder = new HttpResponseBuilder(1024, 8000, 100_000);
+//            HttpResponseBuilder httpResponseBuilder = new HttpResponseBuilder(1024, 8000, 100_000);
             //when
-            HttpResponse httpResponse = client.buildResponse(httpResponseBuilder, response);
+            HttpResponse httpResponse = client.buildResponse(response);
 
             //then
             LOGGER.debug("response:{}", response);
@@ -413,7 +413,7 @@ class OkHttpClientTest {
             //given
             HashMap<String, Object> config = Maps.newHashMap();
             config.put(CONFIGURATION_ID, "default");
-            config.put(CONFIG_DEFAULT_HTTP_RESPONSE_MESSAGE_STATUS_LIMIT, 4);
+            config.put(HTTP_RESPONSE_MESSAGE_STATUS_LIMIT, "4");
             OkHttpClient client = factory.build(config, null, new Random(), null, null, getCompositeMeterRegistry());
 
             HttpRequest httpRequest = new HttpRequest("http://dummy.com/", HttpRequest.Method.POST);
@@ -436,9 +436,8 @@ class OkHttpClientTest {
             builder.body(responseBody);
             builder.protocol(Protocol.HTTP_1_1);
             Response response = builder.build();
-            HttpResponseBuilder httpResponseBuilder = new HttpResponseBuilder(4, 8000, 100_000);
             //when
-            HttpResponse httpResponse = client.buildResponse(httpResponseBuilder, response);
+            HttpResponse httpResponse = client.buildResponse(response);
 
             //then
             LOGGER.debug("response:{}", response);
@@ -478,15 +477,15 @@ class OkHttpClientTest {
             builder.body(responseBody);
             builder.protocol(Protocol.HTTP_1_1);
             Response response = builder.build();
-            HttpResponseBuilder httpResponseBuilder = new HttpResponseBuilder(Integer.MAX_VALUE, 8000, 10);
+//            HttpResponseBuilder httpResponseBuilder = new HttpResponseBuilder(Integer.MAX_VALUE, 8000, 10);
             //when
-            HttpResponse httpResponse = client.buildResponse(httpResponseBuilder, response);
+            HttpResponse httpResponse = client.buildResponse(response);
 
             //then
             LOGGER.debug("response:{}", response);
             assertThat(response.code()).isEqualTo(httpResponse.getStatusCode());
             assertThat(httpResponse.getStatusMessage()).isEqualTo("OK!!!!!!!");
-            assertThat(httpResponse.getBodyAsString()).isEqualTo("blabla7896");
+            assertThat(httpResponse.getBodyAsString()).isEqualTo("blabla78965555");
             assertThat(response.header("key1")).isEqualTo(httpResponse.getHeaders().get("key1").get(0));
             assertThat(response.header(CONTENT_TYPE)).isEqualTo(httpResponse.getHeaders().get(CONTENT_TYPE).get(0));
 
@@ -499,7 +498,7 @@ class OkHttpClientTest {
             //given
             HashMap<String, Object> config = Maps.newHashMap();
             config.put(CONFIGURATION_ID, "default");
-            config.put(CONFIG_DEFAULT_HTTP_RESPONSE_BODY_LIMIT, 10);
+            config.put(HTTP_RESPONSE_BODY_LIMIT, "10");
             OkHttpClient client = factory.build(config, null, new Random(), null, null, getCompositeMeterRegistry());
 
             HttpRequest httpRequest = new HttpRequest("http://dummy.com/", HttpRequest.Method.POST);
@@ -522,9 +521,8 @@ class OkHttpClientTest {
             builder.body(responseBody);
             builder.protocol(Protocol.HTTP_1_1);
             Response response = builder.build();
-            HttpResponseBuilder httpResponseBuilder = new HttpResponseBuilder(Integer.MAX_VALUE, 8000, 10);
             //when
-            HttpResponse httpResponse = client.buildResponse(httpResponseBuilder, response);
+            HttpResponse httpResponse = client.buildResponse(response);
 
             //then
             LOGGER.debug("response:{}", response);

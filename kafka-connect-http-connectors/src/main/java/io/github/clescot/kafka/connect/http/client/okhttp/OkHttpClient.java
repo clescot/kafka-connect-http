@@ -24,9 +24,7 @@ import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 
-import static io.github.clescot.kafka.connect.http.core.BodyType.BYTE_ARRAY;
 import static io.github.clescot.kafka.connect.http.core.MediaType.APPLICATION_OCTET_STREAM;
-import static io.github.clescot.kafka.connect.http.core.MediaType.MULTIPART;
 
 public class OkHttpClient extends AbstractHttpClient<Request, Response> {
 
@@ -213,26 +211,27 @@ public class OkHttpClient extends AbstractHttpClient<Request, Response> {
 
 
     @Override
-    public HttpResponse buildResponse(HttpResponseBuilder httpResponseBuilder, Response response) {
+    public HttpResponse buildResponse(Response response) {
+        HttpResponse httpResponse = new HttpResponse(response.code(), response.message(),getStatusMessageLimit(),getHeadersLimit(),getBodyLimit());
         try {
             Protocol protocol = response.protocol();
             if (LOGGER.isTraceEnabled()) {
                 LOGGER.trace("native response :'{}'", response);
                 LOGGER.trace("protocol: '{}',cache-control: '{}',handshake: '{}',challenges: '{}'", protocol, response.cacheControl(), response.handshake(), response.challenges());
             }
-            httpResponseBuilder.setStatus(response.code(), response.message());
+
             String contentType = response.header(io.github.clescot.kafka.connect.http.core.MediaType.KEY);
             if (contentType != null && !contentType.isEmpty()) {
-                httpResponseBuilder.setContentType(contentType);
+                httpResponse.setContentType(contentType);
             } else {
                 //default content type
-                httpResponseBuilder.setContentType(io.github.clescot.kafka.connect.http.core.MediaType.APPLICATION_JSON);
+                httpResponse.setContentType(io.github.clescot.kafka.connect.http.core.MediaType.APPLICATION_JSON);
             }
-            BodyType bodyType = BodyType.getBodyType(httpResponseBuilder.getContentType());
+            BodyType bodyType = BodyType.getBodyType((httpResponse.getContentType()!=null && !httpResponse.getContentType().isEmpty() )? httpResponse.getContentType().get(0) : "");
             ResponseBody body = response.body();
             switch (bodyType){
-                case BYTE_ARRAY -> httpResponseBuilder.setBodyAsByteArray(body.bytes());
-                case MULTIPART,FORM,STRING -> httpResponseBuilder.setBodyAsString(body.string());
+                case BYTE_ARRAY -> httpResponse.setBodyAsByteArray(body.bytes());
+                case MULTIPART,FORM,STRING -> httpResponse.setBodyAsString(body.string());
             }
             // handle more bodyType for HttpResponse :
             //TODO https://github.com/clescot/kafka-connect-http/issues/784
@@ -240,7 +239,7 @@ public class OkHttpClient extends AbstractHttpClient<Request, Response> {
             //TODO https://github.com/clescot/kafka-connect-http/issues/786
 
             if (protocol != null) {
-                httpResponseBuilder.setProtocol(protocol.name());
+                httpResponse.setProtocol(protocol.name());
             }
             Headers headers = response.headers();
             Iterator<Pair<String, String>> iterator = headers.iterator();
@@ -249,11 +248,11 @@ public class OkHttpClient extends AbstractHttpClient<Request, Response> {
                 Pair<String, String> header = iterator.next();
                 responseHeaders.put(header.getFirst(), Lists.newArrayList(header.getSecond()));
             }
-            httpResponseBuilder.setHeaders(responseHeaders);
+            httpResponse.setHeaders(responseHeaders);
         } catch (IOException e) {
             throw new HttpException(e);
         }
-        return httpResponseBuilder.toHttpResponse();
+        return httpResponse;
     }
 
     @Override
