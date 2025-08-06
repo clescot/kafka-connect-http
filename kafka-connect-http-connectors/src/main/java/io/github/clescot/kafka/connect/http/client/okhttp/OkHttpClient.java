@@ -210,6 +210,25 @@ public class OkHttpClient extends AbstractHttpClient<Request, Response> {
     }
 
 
+    private Map<String,String> fromNativeBodyToForm(ResponseBody responseBody){
+        Map<String, String> form = Maps.newHashMap();
+        try {
+            if (responseBody != null) {
+                String bodyString = responseBody.string();
+                String[] pairs = bodyString.split("&");
+                for (String pair : pairs) {
+                    String[] keyValue = pair.split("=");
+                    if (keyValue.length == 2) {
+                        form.put(keyValue[0], keyValue[1]);
+                    }
+                }
+            }
+        } catch (IOException e) {
+            throw new HttpException(e);
+        }
+        return form;
+    }
+
     @Override
     public HttpResponse buildResponse(Response response) {
         HttpResponse httpResponse = new HttpResponse(response.code(), response.message(),getStatusMessageLimit(),getHeadersLimit(),getBodyLimit());
@@ -227,18 +246,15 @@ public class OkHttpClient extends AbstractHttpClient<Request, Response> {
                 //default content type
                 httpResponse.setContentType(io.github.clescot.kafka.connect.http.core.MediaType.APPLICATION_JSON);
             }
-            BodyType bodyType = BodyType.getBodyType((httpResponse.getContentType()!=null && !httpResponse.getContentType().isEmpty() )? httpResponse.getContentType().get(0) : "");
             ResponseBody body = response.body();
-            switch (bodyType){
+            switch (httpResponse.getBodyType()){
                 case BYTE_ARRAY -> httpResponse.setBodyAsByteArray(body.bytes());
-                case MULTIPART -> throw new IllegalStateException();
-                case FORM-> throw new IllegalStateException();
+                case FORM -> httpResponse.setBodyAsForm(fromNativeBodyToForm(body));
+                //TODO https://github.com/clescot/kafka-connect-http/issues/786
+                case MULTIPART-> throw new IllegalStateException();
                 case STRING -> httpResponse.setBodyAsString(body.string());
             }
-            // handle more bodyType for HttpResponse :
-            //TODO https://github.com/clescot/kafka-connect-http/issues/784
-            //TODO https://github.com/clescot/kafka-connect-http/issues/785
-            //TODO https://github.com/clescot/kafka-connect-http/issues/786
+
 
             if (protocol != null) {
                 httpResponse.setProtocol(protocol.name());

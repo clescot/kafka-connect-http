@@ -361,6 +361,7 @@ class HttpResponseTest {
                     "Hello World".getBytes(StandardCharsets.UTF_8).length +
                     httpResponse.getHeadersLength()
             );
+            assertThat(httpResponse.getBodyAsString()).isEqualTo("Hello World");
         }
 
         @Test
@@ -371,6 +372,7 @@ class HttpResponseTest {
                     "Hello World".getBytes(StandardCharsets.UTF_8).length +
                     httpResponse.getHeadersLength()
             );
+            assertThat(httpResponse.getBodyAsByteArray()).isEqualTo("Hello World".getBytes(StandardCharsets.UTF_8));
         }
 
         @Test

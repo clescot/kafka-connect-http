@@ -188,18 +188,18 @@ public class HttpResponse implements Cloneable, Serializable {
 
     public void setBodyAsByteArray(byte[] content) {
         if(content==null){
-            bodyAsByteArray = "";
+            this.bodyAsByteArray = "";
             return;
         }
         Preconditions.checkArgument(bodyLimit >= content.length, "bodyAsByteArray length exceeds bodyLimit");
 
         if (content != null && content.length > 0) {
-            bodyAsByteArray = Base64.getEncoder().encodeToString(content);
-            bodyType = BodyType.BYTE_ARRAY;
+            this.bodyAsByteArray = Base64.getEncoder().encodeToString(content);
+            this.bodyType = BodyType.BYTE_ARRAY;
 
             //if no Content-Type is set, we set the default application/octet-stream
-            if (headers != null && doesNotContainHeader(MediaType.KEY)) {
-                headers.put(MediaType.KEY, Lists.newArrayList(APPLICATION_OCTET_STREAM));
+            if (this.headers != null && doesNotContainHeader(MediaType.KEY)) {
+                this.headers.put(MediaType.KEY, Lists.newArrayList(APPLICATION_OCTET_STREAM));
             }
         }
 
@@ -235,7 +235,7 @@ public class HttpResponse implements Cloneable, Serializable {
         if (bodyAsByteArray != null && !bodyAsByteArray.isEmpty()) {
             return Base64.getDecoder().decode(bodyAsByteArray);
         }
-        return null;
+        return new byte[0];
     }
 
     public BodyType getBodyType() {
