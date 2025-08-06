@@ -4,6 +4,7 @@ import com.google.common.collect.Maps;
 import io.github.clescot.kafka.connect.http.core.HttpExchange;
 import io.github.clescot.kafka.connect.http.core.HttpRequest;
 import io.github.clescot.kafka.connect.http.core.HttpResponse;
+import io.github.clescot.kafka.connect.http.core.queue.ConfigConstants;
 import io.github.clescot.kafka.connect.http.core.queue.KafkaRecord;
 import io.github.clescot.kafka.connect.http.core.queue.QueueFactory;
 import org.apache.kafka.common.config.ConfigException;
@@ -16,10 +17,7 @@ import org.junit.jupiter.api.Test;
 
 import java.time.OffsetDateTime;
 import java.time.ZoneId;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Queue;
+import java.util.*;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -72,18 +70,21 @@ class HttpInMemoryQueueSourceTaskTest {
 
     @Test
     void poll() throws ExecutionException, InterruptedException {
-        wsSourceTask.start(getNominalConfig());
-        Queue<KafkaRecord> queue = QueueFactory.getQueue();
+        Map<String, String> nominalConfig = getNominalConfig();
+        String queueName = UUID.randomUUID().toString();
+        nominalConfig.put(ConfigConstants.QUEUE_NAME, queueName);
+        wsSourceTask.start(nominalConfig);
+        Queue<KafkaRecord> queue = QueueFactory.getQueue(queueName);
         ExecutorService exService = Executors.newFixedThreadPool(3);
         long expectedNumberOfSuccessfulMessages = 50L;
         long expectedNumberOfFailureMessages = 30L;
-        QueueProducer queueProducer = new QueueProducer(QueueFactory.getQueue(), expectedNumberOfSuccessfulMessages, expectedNumberOfFailureMessages);
+        QueueProducer queueProducer = new QueueProducer(QueueFactory.getQueue(queueName), expectedNumberOfSuccessfulMessages, expectedNumberOfFailureMessages);
         exService.submit(queueProducer).get();
 
         List<SourceRecord> sourceRecords = wsSourceTask.poll();
-        long successfulMessagesCount = sourceRecords.stream().filter(sourceRecord -> sourceRecord.topic().equals(getNominalConfig().get(SUCCESS_TOPIC))).count();
+        long successfulMessagesCount = sourceRecords.stream().filter(sourceRecord -> sourceRecord.topic().equals(nominalConfig.get(SUCCESS_TOPIC))).count();
         assertThat(successfulMessagesCount).isEqualTo(expectedNumberOfSuccessfulMessages);
-        long errorMessagesCount = sourceRecords.stream().filter(sourceRecord -> sourceRecord.topic().equals(getNominalConfig().get(ERROR_TOPIC))).count();
+        long errorMessagesCount = sourceRecords.stream().filter(sourceRecord -> sourceRecord.topic().equals(nominalConfig.get(ERROR_TOPIC))).count();
         assertThat(errorMessagesCount).isEqualTo(expectedNumberOfFailureMessages);
         //we have consumed all messages
         assertThat(queue).isEmpty();
@@ -91,8 +92,11 @@ class HttpInMemoryQueueSourceTaskTest {
 
     @Test
     void test_success() {
-        wsSourceTask.start(getNominalConfig());
-        Queue<KafkaRecord> queue = QueueFactory.getQueue();
+        Map<String, String> nominalConfig = getNominalConfig();
+        String queueName = UUID.randomUUID().toString();
+        nominalConfig.put(ConfigConstants.QUEUE_NAME, queueName);
+        wsSourceTask.start(nominalConfig);
+        Queue<KafkaRecord> queue = QueueFactory.getQueue(queueName);
         HttpRequest httpRequest = new HttpRequest(
                 "http://www.dummy.com",
                 HttpRequest.Method.GET
@@ -119,8 +123,11 @@ class HttpInMemoryQueueSourceTaskTest {
 
     @Test
     void test_error() {
-        wsSourceTask.start(getNominalConfig());
-        Queue<KafkaRecord> queue = QueueFactory.getQueue();
+        String queueName = UUID.randomUUID().toString();
+        Map<String, String> nominalConfig = getNominalConfig();
+        nominalConfig.put(ConfigConstants.QUEUE_NAME, queueName);
+        wsSourceTask.start(nominalConfig);
+        Queue<KafkaRecord> queue = QueueFactory.getQueue(queueName);
         HttpRequest httpRequest = new HttpRequest(
                 "http://www.dummy.com",
                 HttpRequest.Method.GET
@@ -137,9 +144,9 @@ class HttpInMemoryQueueSourceTaskTest {
                 false);
         queue.offer(QueueProducer.toKafkaRecord(httpExchange));
         List<SourceRecord> sourceRecords = wsSourceTask.poll();
-        long successfulMessagesCount = sourceRecords.stream().filter(sourceRecord -> sourceRecord.topic().equals(getNominalConfig().get(SUCCESS_TOPIC))).count();
+        long successfulMessagesCount = sourceRecords.stream().filter(sourceRecord -> sourceRecord.topic().equals(nominalConfig.get(SUCCESS_TOPIC))).count();
         assertThat(successfulMessagesCount).isZero();
-        long errorMessagesCount = sourceRecords.stream().filter(sourceRecord -> sourceRecord.topic().equals(getNominalConfig().get(ERROR_TOPIC))).count();
+        long errorMessagesCount = sourceRecords.stream().filter(sourceRecord -> sourceRecord.topic().equals(nominalConfig.get(ERROR_TOPIC))).count();
         assertThat(errorMessagesCount).isEqualTo(1);
         //we have consumed all messages
         assertThat(queue).isEmpty();
