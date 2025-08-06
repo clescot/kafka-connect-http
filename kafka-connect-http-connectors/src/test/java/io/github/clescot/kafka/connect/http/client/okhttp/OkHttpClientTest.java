@@ -394,7 +394,6 @@ class OkHttpClientTest {
             builder.body(responseBody);
             builder.protocol(Protocol.HTTP_1_1);
             Response response = builder.build();
-//            HttpResponseBuilder httpResponseBuilder = new HttpResponseBuilder(1024, 8000, 100_000);
             //when
             HttpResponse httpResponse = client.buildResponse(response);
 
@@ -477,7 +476,6 @@ class OkHttpClientTest {
             builder.body(responseBody);
             builder.protocol(Protocol.HTTP_1_1);
             Response response = builder.build();
-//            HttpResponseBuilder httpResponseBuilder = new HttpResponseBuilder(Integer.MAX_VALUE, 8000, 10);
             //when
             HttpResponse httpResponse = client.buildResponse(response);
 

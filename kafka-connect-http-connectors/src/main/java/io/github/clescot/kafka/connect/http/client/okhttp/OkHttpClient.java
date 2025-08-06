@@ -231,7 +231,9 @@ public class OkHttpClient extends AbstractHttpClient<Request, Response> {
             ResponseBody body = response.body();
             switch (bodyType){
                 case BYTE_ARRAY -> httpResponse.setBodyAsByteArray(body.bytes());
-                case MULTIPART,FORM,STRING -> httpResponse.setBodyAsString(body.string());
+                case MULTIPART -> throw new IllegalStateException();
+                case FORM-> throw new IllegalStateException();
+                case STRING -> httpResponse.setBodyAsString(body.string());
             }
             // handle more bodyType for HttpResponse :
             //TODO https://github.com/clescot/kafka-connect-http/issues/784
