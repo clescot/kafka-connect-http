@@ -30,6 +30,7 @@ public class HttpPart implements Cloneable, Serializable {
 
 
     public static final byte[] EMPTY_BYTE_ARRAY = new byte[0];
+    public static final String CONTENT_DISPOSITION = "Content-Disposition";
     private URI fileUri;
     private HttpPart.BodyType bodyType;
     private Map<String, List<String>> headers = Maps.newHashMap();
@@ -167,7 +168,7 @@ public class HttpPart implements Cloneable, Serializable {
 
     public void setHeaders(Map<String, List<String>> headers) {
         Preconditions.checkArgument(headers.keySet().stream().allMatch(key ->
-                        "Content-Disposition".equalsIgnoreCase(key) ||
+                        CONTENT_DISPOSITION.equalsIgnoreCase(key) ||
                                 MediaType.KEY.equalsIgnoreCase(key) ||
                                 "Content-Transfer-Encoding".equalsIgnoreCase(key)),
                 "all headers key in a multipart request must be 'Content-Disposition','Content-Type', " +

@@ -277,17 +277,31 @@ public class OkHttpClient extends AbstractHttpClient<Request, Response> {
         Map<String, HttpPart> parts = Maps.newHashMap();
         try {
             if (body != null) {
-                String bodyString = body.string();
-                String[] partStrings = bodyString.split("&");
-                for (String partString : partStrings) {
-                    String[] keyValue = partString.split("=");
-                    if (keyValue.length == 2) {
-                        String key = keyValue[0];
-                        String value = keyValue[1];
-                        // Assuming value is a file path or a string
-                        HttpPart httpPart = new HttpPart(value);
-                        parts.put(key, httpPart);
+                MultipartReader multipartReader = new MultipartReader(body);
+                MultipartReader.Part part;
+                int inlinePartCount = 0;
+                while ((part = multipartReader.nextPart()) != null) {
+                    Headers headers = part.headers();
+                    String contentDisposition = headers.get(HttpPart.CONTENT_DISPOSITION);
+                    if (contentDisposition == null || contentDisposition.isBlank()) {
+                        LOGGER.warn("Content-Disposition header is missing or empty for part. Skipping this part.");
+                        continue;
                     }
+                    String[] contentDispositionParts = contentDisposition.split(";");
+                    String dispositionType = contentDispositionParts[0].trim();
+
+                    if(dispositionType.equalsIgnoreCase("inline")){
+                        String partValue = part.body().readUtf8();
+                        HttpPart httpPart = new HttpPart(partValue);
+                        inlinePartCount++;
+                        parts.put("inline"+inlinePartCount, httpPart);
+                    } else if (dispositionType.equalsIgnoreCase("attachment")) {
+                        String fileName = contentDispositionParts[1].trim().replace("filename=", "").replace("\"", "");
+                        HttpPart httpPart = new HttpPart(part.body().readByteArray());
+                        parts.put(fileName, httpPart);
+                    }
+
+
                 }
             }
         } catch (IOException e) {
