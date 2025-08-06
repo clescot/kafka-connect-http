@@ -136,7 +136,7 @@ public class OkHttpClient extends AbstractHttpClient<Request, Response> {
             }
         }
         MultipartBody.Builder multipartBuilder = new MultipartBody.Builder(MoreObjects.firstNonNull(boundary, MoreObjects.firstNonNull(boundary, "---")));
-        multipartBuilder.setType(MediaType.parse(io.github.clescot.kafka.connect.http.core.MediaType.MULTIPART));
+        multipartBuilder.setType(MediaType.parse(io.github.clescot.kafka.connect.http.core.MediaType.MULTIPART_FORM_DATA));
         for (Map.Entry<String, HttpPart> entry : bodyAsMultipart.entrySet()) {
             RequestBody partRequestBody;
             String parameterName = entry.getKey();
@@ -291,8 +291,9 @@ public class OkHttpClient extends AbstractHttpClient<Request, Response> {
                     String dispositionType = contentDispositionParts[0].trim();
 
                     if(dispositionType.equalsIgnoreCase("inline")){
+                        Map<String, List<String>> headersMultimap = headers.toMultimap();
                         String partValue = part.body().readUtf8();
-                        HttpPart httpPart = new HttpPart(partValue);
+                        HttpPart httpPart = new HttpPart(headersMultimap,partValue);
                         inlinePartCount++;
                         parts.put("inline"+inlinePartCount, httpPart);
                     } else if (dispositionType.equalsIgnoreCase("attachment")) {

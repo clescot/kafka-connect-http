@@ -21,7 +21,7 @@ public enum BodyType {
             return BodyType.FORM;
         } else if (contentType.startsWith(MediaType.APPLICATION_OCTET_STREAM)) {
             return BodyType.BYTE_ARRAY;
-        } else if (contentType.startsWith(MediaType.MULTIPART)) {
+        } else if (contentType.startsWith(MediaType.MULTIPART_FORM_DATA)) {
             return BodyType.MULTIPART;
         }
         return BodyType.STRING;
