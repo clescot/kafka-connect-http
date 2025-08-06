@@ -120,6 +120,7 @@ public class HttpResponse implements Cloneable, Serializable {
 
     public void setBodyAsString(String bodyAsString) {
         this.bodyAsString = bodyAsString;
+        this.bodyType = BodyType.STRING;
     }
 
     public void setBodyAsForm(Map<String, String> form) {
