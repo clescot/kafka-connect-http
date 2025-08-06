@@ -261,8 +261,7 @@ public class HttpPart implements Cloneable, Serializable {
                 return contentAsString != null ? contentAsString.length() : 0;
             case BYTE_ARRAY:
                 return contentAsByteArray != null ? getContentAsByteArray().length : 0;
-            case FORM_DATA:
-            case FORM_DATA_AS_REFERENCE:
+            case FORM_DATA,FORM_DATA_AS_REFERENCE:
                 return contentAsFormEntry != null && contentAsFormEntry.getValue() != null ? contentAsFormEntry.getValue().length() : 0;
             default:
                 return 0;
