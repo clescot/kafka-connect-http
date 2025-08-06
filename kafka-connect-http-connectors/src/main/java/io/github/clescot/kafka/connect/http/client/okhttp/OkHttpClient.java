@@ -210,7 +210,7 @@ public class OkHttpClient extends AbstractHttpClient<Request, Response> {
     }
 
 
-    private Map<String,String> fromNativeBodyToForm(ResponseBody responseBody){
+    private Map<String, String> fromNativeBodyToForm(ResponseBody responseBody) {
         Map<String, String> form = Maps.newHashMap();
         try {
             if (responseBody != null) {
@@ -231,7 +231,7 @@ public class OkHttpClient extends AbstractHttpClient<Request, Response> {
 
     @Override
     public HttpResponse buildResponse(Response response) {
-        HttpResponse httpResponse = new HttpResponse(response.code(), response.message(),getStatusMessageLimit(),getHeadersLimit(),getBodyLimit());
+        HttpResponse httpResponse = new HttpResponse(response.code(), response.message(), getStatusMessageLimit(), getHeadersLimit(), getBodyLimit());
         try {
             Protocol protocol = response.protocol();
             if (LOGGER.isTraceEnabled()) {
@@ -247,11 +247,10 @@ public class OkHttpClient extends AbstractHttpClient<Request, Response> {
                 httpResponse.setContentType(io.github.clescot.kafka.connect.http.core.MediaType.APPLICATION_JSON);
             }
             ResponseBody body = response.body();
-            switch (httpResponse.getBodyType()){
+            switch (httpResponse.getBodyType()) {
                 case BYTE_ARRAY -> httpResponse.setBodyAsByteArray(body.bytes());
                 case FORM -> httpResponse.setBodyAsForm(fromNativeBodyToForm(body));
-                //TODO https://github.com/clescot/kafka-connect-http/issues/786
-                case MULTIPART-> throw new IllegalStateException();
+                case MULTIPART -> httpResponse.setParts(fromResponseBodyToParts(body));
                 case STRING -> httpResponse.setBodyAsString(body.string());
             }
 
@@ -271,6 +270,30 @@ public class OkHttpClient extends AbstractHttpClient<Request, Response> {
             throw new HttpException(e);
         }
         return httpResponse;
+    }
+
+    private Map<String, HttpPart> fromResponseBodyToParts(ResponseBody body) {
+
+        Map<String, HttpPart> parts = Maps.newHashMap();
+        try {
+            if (body != null) {
+                String bodyString = body.string();
+                String[] partStrings = bodyString.split("&");
+                for (String partString : partStrings) {
+                    String[] keyValue = partString.split("=");
+                    if (keyValue.length == 2) {
+                        String key = keyValue[0];
+                        String value = keyValue[1];
+                        // Assuming value is a file path or a string
+                        HttpPart httpPart = new HttpPart(value);
+                        parts.put(key, httpPart);
+                    }
+                }
+            }
+        } catch (IOException e) {
+            throw new HttpException(e);
+        }
+        return parts;
     }
 
     @Override
