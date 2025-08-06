@@ -16,11 +16,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
+import static io.github.clescot.kafka.connect.http.core.ContentType.APPLICATION_OCTET_STREAM;
+import static io.github.clescot.kafka.connect.http.core.ContentType.APPLICATION_X_WWW_FORM_URLENCODED;
+
 public class HttpResponse implements Cloneable, Serializable {
     @Serial
     private static final long serialVersionUID = 1L;
     public static final Integer VERSION = 2;
-    public static final String CONTENT_TYPE = "Content-Type";
 
     public static final String STATUS_CODE = "statusCode";
     public static final String STATUS_MESSAGE = "statusMessage";
@@ -123,8 +125,8 @@ public class HttpResponse implements Cloneable, Serializable {
     public void setBodyAsForm(Map<String, String> form) {
         this.bodyAsForm = form;
         bodyType = HttpResponse.BodyType.FORM;
-        if (form != null && !form.isEmpty() && headers != null && doesNotContainHeader(CONTENT_TYPE)) {
-            headers.put(CONTENT_TYPE, Lists.newArrayList("application/x-www-form-urlencoded"));
+        if (form != null && !form.isEmpty() && headers != null && doesNotContainHeader(ContentType.KEY)) {
+            headers.put(ContentType.KEY, Lists.newArrayList(APPLICATION_X_WWW_FORM_URLENCODED));
         }
     }
 
@@ -150,8 +152,8 @@ public class HttpResponse implements Cloneable, Serializable {
             bodyType = HttpResponse.BodyType.BYTE_ARRAY;
 
             //if no Content-Type is set, we set the default application/octet-stream
-            if (headers != null && doesNotContainHeader(CONTENT_TYPE)) {
-                headers.put(CONTENT_TYPE, Lists.newArrayList("application/octet-stream"));
+            if (headers != null && doesNotContainHeader(ContentType.KEY)) {
+                headers.put(ContentType.KEY, Lists.newArrayList(APPLICATION_OCTET_STREAM));
             }
         }
     }

@@ -16,6 +16,7 @@ import java.net.URI;
 import java.util.*;
 
 import static com.fasterxml.jackson.annotation.JsonInclude.Include;
+import static io.github.clescot.kafka.connect.http.core.ContentType.*;
 import static io.github.clescot.kafka.connect.http.core.HttpPart.BodyType.FORM_DATA;
 
 /**
@@ -24,10 +25,10 @@ import static io.github.clescot.kafka.connect.http.core.HttpPart.BodyType.FORM_D
 @JsonInclude(Include.NON_NULL)
 public class HttpPart implements Cloneable, Serializable {
     private static final long serialVersionUID = 1L;
-    public static final String APPLICATION_X_WWW_FORM_URLENCODED = "application/x-www-form-urlencoded";
-    public static final String APPLICATION_JSON = "application/json";
-    public static final String APPLICATION_OCTET_STREAM = "application/octet-stream";
-    public static final String CONTENT_TYPE = "Content-Type";
+
+
+
+
     public static final byte[] EMPTY_BYTE_ARRAY = new byte[0];
     private URI fileUri;
     private HttpPart.BodyType bodyType;
@@ -72,7 +73,7 @@ public class HttpPart implements Cloneable, Serializable {
 
     //content as byte array without headers
     public HttpPart(byte[] contentAsByteArray) {
-        this(Map.of(CONTENT_TYPE, Lists.newArrayList(APPLICATION_OCTET_STREAM)), contentAsByteArray);
+        this(Map.of(ContentType.KEY, Lists.newArrayList(APPLICATION_OCTET_STREAM)), contentAsByteArray);
     }
 
     //content as form data with plain file content
@@ -84,7 +85,7 @@ public class HttpPart implements Cloneable, Serializable {
 
     //content as form data with plain file content without headers
     public HttpPart(String fileName,File file) {
-        this(Map.of(CONTENT_TYPE, Lists.newArrayList(APPLICATION_X_WWW_FORM_URLENCODED)),fileName,file);
+        this(Map.of(ContentType.KEY, Lists.newArrayList(APPLICATION_X_WWW_FORM_URLENCODED)),fileName,file);
     }
 
     //content as form data with file content as a reference
@@ -98,7 +99,7 @@ public class HttpPart implements Cloneable, Serializable {
 
     //content as form data with file content as a reference without headers
     public HttpPart(String fileName, URI fileUri) {
-        this(Map.of(CONTENT_TYPE, Lists.newArrayList(APPLICATION_X_WWW_FORM_URLENCODED)),  fileName, fileUri);
+        this(Map.of(ContentType.KEY, Lists.newArrayList(APPLICATION_X_WWW_FORM_URLENCODED)),  fileName, fileUri);
     }
 
     //content as string
@@ -109,7 +110,7 @@ public class HttpPart implements Cloneable, Serializable {
     }
     //content as string without headers
     public HttpPart(String contentAsString) {
-        this(Map.of(CONTENT_TYPE, Lists.newArrayList(APPLICATION_JSON)), contentAsString);
+        this(Map.of(ContentType.KEY, Lists.newArrayList(APPLICATION_JSON)), contentAsString);
     }
 
     //for serialization
@@ -167,7 +168,7 @@ public class HttpPart implements Cloneable, Serializable {
     public void setHeaders(Map<String, List<String>> headers) {
         Preconditions.checkArgument(headers.keySet().stream().allMatch(key ->
                         "Content-Disposition".equalsIgnoreCase(key) ||
-                                CONTENT_TYPE.equalsIgnoreCase(key) ||
+                                ContentType.KEY.equalsIgnoreCase(key) ||
                                 "Content-Transfer-Encoding".equalsIgnoreCase(key)),
                 "all headers key in a multipart request must be 'Content-Disposition','Content-Type', " +
                         "or 'Content-Transfer-Encoding'. current Headers key of this part are : "
@@ -178,9 +179,9 @@ public class HttpPart implements Cloneable, Serializable {
     @JsonIgnore
     public String getContentType() {
         if (headers != null
-                && headers.containsKey(CONTENT_TYPE)
-                && headers.get(CONTENT_TYPE) != null
-                && !headers.get(CONTENT_TYPE).isEmpty()) {
+                && headers.containsKey(ContentType.KEY)
+                && headers.get(ContentType.KEY) != null
+                && !headers.get(ContentType.KEY).isEmpty()) {
             return headers.get("Content-Type").get(0);
         }
         return null;

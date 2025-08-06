@@ -26,10 +26,11 @@ import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 
+import static io.github.clescot.kafka.connect.http.core.ContentType.APPLICATION_OCTET_STREAM;
+
 public class OkHttpClient extends AbstractHttpClient<Request, Response> {
 
 
-    public static final String APPLICATION_OCTET_STREAM = "application/octet-stream";
     private final okhttp3.OkHttpClient client;
     private static final Logger LOGGER = LoggerFactory.getLogger(OkHttpClient.class);
 
