@@ -21,10 +21,7 @@ import org.slf4j.MDC;
 import javax.net.ssl.*;
 import java.io.File;
 import java.io.IOException;
-import java.net.InetAddress;
-import java.net.Proxy;
-import java.net.ProxySelector;
-import java.net.UnknownHostException;
+import java.net.*;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.security.SecureRandom;
@@ -83,6 +80,7 @@ public class OkHttpClientFactory implements HttpClientFactory<OkHttpClient,Reque
         Preconditions.checkNotNull(random, "Random must not be null.");
         Preconditions.checkNotNull(meterRegistry, METER_REGISTRY_MUST_NOT_BE_NULL);
         okhttp3.OkHttpClient.Builder httpClientBuilder = new okhttp3.OkHttpClient.Builder();
+
         if (executorService != null) {
             Dispatcher dispatcher = new Dispatcher(executorService);
             httpClientBuilder.dispatcher(dispatcher);
@@ -336,6 +334,15 @@ public class OkHttpClientFactory implements HttpClientFactory<OkHttpClient,Reque
             connectionPool = new ConnectionPool(maxIdleConnections, keepAliveDuration, TimeUnit.MILLISECONDS);
         }
         return connectionPool;
+    }
+
+    //need to be called to construct a client for each VuId
+    private void configureCookieJar(Map<String, Object> config, okhttp3.OkHttpClient.Builder httpClientBuilder) {
+            CookieStore cookieStore = null;
+            CookiePolicy cookiePolicy = CookiePolicy.ACCEPT_ALL;
+            CookieManager cookieManager = new CookieManager(cookieStore,cookiePolicy);
+            CookieJar cookieJar = new OkHttpCookieJar(cookieManager);
+            httpClientBuilder.cookieJar(cookieJar);
     }
 
 
