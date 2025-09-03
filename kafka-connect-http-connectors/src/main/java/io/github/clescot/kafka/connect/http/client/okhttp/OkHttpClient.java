@@ -10,6 +10,7 @@ import io.github.clescot.kafka.connect.http.core.*;
 import kotlin.Pair;
 import okhttp3.*;
 import okhttp3.MediaType;
+import okhttp3.Request;
 import okhttp3.internal.http.HttpMethod;
 import okio.Buffer;
 import org.apache.commons.lang3.exception.ExceptionUtils;

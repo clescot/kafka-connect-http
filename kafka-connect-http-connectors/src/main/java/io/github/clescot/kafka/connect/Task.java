@@ -3,6 +3,7 @@ package io.github.clescot.kafka.connect;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
 import io.github.clescot.kafka.connect.http.MeterRegistryFactory;
+import io.github.clescot.kafka.connect.http.core.Request;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.binder.jvm.*;
 import io.micrometer.core.instrument.binder.logging.LogbackMetrics;
@@ -23,7 +24,7 @@ import static io.github.clescot.kafka.connect.http.sink.HttpConfigDefinition.*;
  * @param <R> the type of request
  * @param <S> the type of response
  */
-public interface Task<C extends Client,F extends Configuration<C,R>,R,S> {
+public interface Task<C extends Client,F extends Configuration<C,R>,R extends Request,S> {
 
 
     /**

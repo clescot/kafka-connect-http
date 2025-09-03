@@ -25,7 +25,7 @@ import static com.fasterxml.jackson.annotation.JsonInclude.Include;
 import static io.github.clescot.kafka.connect.http.core.MediaType.APPLICATION_X_WWW_FORM_URLENCODED;
 
 @JsonInclude(Include.NON_EMPTY)
-public class HttpRequest implements Cloneable, Serializable {
+public class HttpRequest implements Request,Cloneable, Serializable {
     @Serial
     private static final long serialVersionUID = 1L;
 
