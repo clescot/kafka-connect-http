@@ -34,7 +34,7 @@
         <url>https://github.com/clescot/kafka-connect-http/issues</url>
     </issueManagement>
     <properties>
-        <assertj.version>3.27.3</assertj.version>
+        <assertj.version>3.27.4</assertj.version>
         <awaitility.version>4.3.0</awaitility.version>
         <async.http.client.version>2.12.4</async.http.client.version>
         <commons-text.version>1.14.0</commons-text.version>
