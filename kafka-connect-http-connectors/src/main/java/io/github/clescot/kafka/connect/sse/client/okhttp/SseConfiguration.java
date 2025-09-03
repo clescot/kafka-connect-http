@@ -18,7 +18,9 @@ import java.util.Map;
 import java.util.Queue;
 import java.util.concurrent.TimeUnit;
 
-
+/**
+ * Configuration for SSE client using OkHttp.
+ */
 public class SseConfiguration implements Configuration<OkHttpClient, HttpRequest> {
     private final String configurationId;
     private final HttpClientConfiguration<OkHttpClient, Request, Response> httpClientConfiguration;
@@ -152,6 +154,11 @@ public class SseConfiguration implements Configuration<OkHttpClient, HttpRequest
     @Override
     public boolean matches(HttpRequest request) {
         return false;
+    }
+
+    @Override
+    public String getId() {
+        return httpClientConfiguration.getId();
     }
 
     @Override

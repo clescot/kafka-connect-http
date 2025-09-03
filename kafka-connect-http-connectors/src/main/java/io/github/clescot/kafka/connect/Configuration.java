@@ -26,5 +26,12 @@ public interface Configuration<C extends Client, R> {
      *
      * @return the configuration ID
      */
+    String getId();
+
+    /**
+     * Gets the client associated with this configuration.
+     *
+     * @return the client
+     */
     C getClient();
 }

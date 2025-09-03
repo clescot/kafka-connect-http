@@ -108,7 +108,7 @@ public class HttpTask<T,C extends HttpClient<R,S>,R, S> implements Task<C,HttpCo
     public CompletableFuture<HttpExchange> call(@NotNull HttpRequest httpRequest) {
         HttpConfiguration<C,R, S> foundConfiguration = selectConfiguration(httpRequest);
         if (LOGGER.isTraceEnabled()) {
-            LOGGER.trace("configuration:{}", foundConfiguration);
+            LOGGER.trace("configuration found:{}", foundConfiguration.getId());
         }
         //handle Request and Response
         return foundConfiguration.call(httpRequest)

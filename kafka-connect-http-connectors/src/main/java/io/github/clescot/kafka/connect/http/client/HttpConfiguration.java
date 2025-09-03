@@ -21,6 +21,13 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+/**
+ * Configuration holding an HttpClient and its configuration.
+ * It is able to execute the HTTP call with retry if needed.
+ * @param <C> type of the HttpClient
+ * @param <R> native HttpRequest
+ * @param <S> native HttpResponse
+ */
 public class HttpConfiguration<C extends HttpClient<R, S>, R, S> implements Configuration<C,HttpRequest> {
     private static final Logger LOGGER = LoggerFactory.getLogger(HttpConfiguration.class);
 
@@ -126,6 +133,11 @@ public class HttpConfiguration<C extends HttpClient<R, S>, R, S> implements Conf
     @Override
     public boolean matches(HttpRequest httpRequest) {
         return this.httpClientConfiguration.matches(httpRequest);
+    }
+
+    @Override
+    public String getId() {
+        return this.httpClientConfiguration.getId();
     }
 
     @Override
