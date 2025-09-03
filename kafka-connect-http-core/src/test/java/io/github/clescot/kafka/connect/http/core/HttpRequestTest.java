@@ -123,6 +123,53 @@ class HttpRequestTest {
         }
 
         @Test
+        void test_serialization_with_attributes() throws JsonProcessingException, JSONException {
+            ObjectMapper objectMapper = new ObjectMapper();
+            objectMapper.registerModule(new JavaTimeModule());
+            HttpRequest httpRequest = new HttpRequest(
+                    "http://www.stuff.com",
+                    HttpRequest.Method.GET
+            );
+            Map<String, String> attributes = Maps.newHashMap();
+            attributes.put("attr1","value1");
+            attributes.put("attr2","value2");
+            httpRequest.setAttributes(attributes);
+            httpRequest.setBodyAsString(DUMMY_BODY_AS_STRING);
+            Map<String, List<String>> headers = Maps.newHashMap();
+            headers.put("X-correlation-id", Lists.newArrayList("sfds-55-77"));
+            headers.put("X-request-id", Lists.newArrayList("aaaa-4466666-111"));
+            httpRequest.setHeaders(headers);
+
+            String expectedHttpRequest = """
+                    {
+                      "url": "http://www.stuff.com",
+                      "headers": {
+                        "X-request-id": [
+                          "aaaa-4466666-111"
+                        ],
+                        "X-correlation-id": [
+                          "sfds-55-77"
+                        ]
+                      },
+                      "method": "GET",
+                      "attributes": {
+                        "attr2": "value2",
+                        "attr1": "value1"
+                      },
+                      "bodyAsString": "stuff",
+                      "bodyType": "STRING"
+                    }
+                    """;
+
+            String serializedHttpRequest = objectMapper.writeValueAsString(httpRequest);
+            JSONAssert.assertEquals(expectedHttpRequest, serializedHttpRequest, true);
+            byte[] serializedRequest = serializer.serialize(REQUEST_TOPIC, httpRequest);
+            assertThat(serializedRequest).isNotEmpty();
+            HttpRequest deserializedRequest = deserializer.deserialize(RESPONSE_TOPIC, serializedRequest);
+            assertThat(deserializedRequest).isEqualTo(httpRequest);
+        }
+
+        @Test
         void test_serialization_with_byte_array() throws JsonProcessingException, JSONException {
             ObjectMapper objectMapper = new ObjectMapper();
             objectMapper.registerModule(new JavaTimeModule());
@@ -271,6 +318,37 @@ class HttpRequestTest {
             String httpRequestAsString = """
                     {
                       "url": "http://www.stuff.com",
+                      "headers":{"X-request-id":["aaaa-4466666-111"],"X-correlation-id":["sfds-55-77"]},
+                      "method": "POST",
+                      "bodyAsByteArray": "c3R1ZmY=",
+                      "bodyType": "BYTE_ARRAY"
+                    }
+                    """;
+
+            HttpRequest parsedHttpRequest = objectMapper.readValue(httpRequestAsString, HttpRequest.class);
+            assertThat(parsedHttpRequest).isEqualTo(expectedHttpRequest);
+        }
+
+        @Test
+        void test_deserialization_with_byte_array_and_attributes() throws JsonProcessingException {
+            ObjectMapper objectMapper = new ObjectMapper();
+            objectMapper.registerModule(new JavaTimeModule());
+            HttpRequest expectedHttpRequest = new HttpRequest(
+                    "http://www.stuff.com",
+                    HttpRequest.Method.POST
+            );
+            expectedHttpRequest.setAttributes(Map.of("attr1","value1","attr2","value2"));
+            expectedHttpRequest.setBodyAsByteArray(DUMMY_BODY_AS_STRING.getBytes(StandardCharsets.UTF_8));
+            Map<String, List<String>> headers = Maps.newHashMap();
+            headers.put("X-correlation-id", Lists.newArrayList("sfds-55-77"));
+            headers.put("X-request-id", Lists.newArrayList("aaaa-4466666-111"));
+            headers.put("Content-Type", Lists.newArrayList("application/octet-stream"));
+            expectedHttpRequest.setHeaders(headers);
+
+            String httpRequestAsString = """
+                    {
+                      "url": "http://www.stuff.com",
+                      "attributes":{"attr1":"value1","attr2":"value2"},
                       "headers":{"X-request-id":["aaaa-4466666-111"],"X-correlation-id":["sfds-55-77"]},
                       "method": "POST",
                       "bodyAsByteArray": "c3R1ZmY=",
@@ -726,6 +804,67 @@ class HttpRequestTest {
         }
 
         @Test
+        void test_clone_with_body_as_string_and_attributes() {
+            //given
+            HttpRequest httpRequest = new HttpRequest(
+                    "http://www.stuff.com",
+                    HttpRequest.Method.GET
+            );
+            HashMap<String, String> attributes = Maps.newHashMap();
+            attributes.put("attr1","value1");
+            attributes.put("attr2","value2");
+            httpRequest.setAttributes(attributes);
+            httpRequest.setBodyAsString(DUMMY_BODY_AS_STRING);
+            Map<String, List<String>> headers = Maps.newHashMap();
+            headers.put("X-stuff", Lists.newArrayList("m-y-value"));
+            headers.put("X-correlation-id", Lists.newArrayList("44-999-33-dd"));
+            headers.put("X-request-id", Lists.newArrayList("11-999-ff-777"));
+            httpRequest.setHeaders(headers);
+            //when
+            HttpRequest clonedHttpRequest = (HttpRequest) httpRequest.clone();
+            //then
+            assertThat(clonedHttpRequest).isEqualTo(httpRequest);
+        }
+
+        @Test
+        void test_clone_with_body_as_string_and_attributes_with_different_object() {
+            //given
+            HttpRequest httpRequest = new HttpRequest(
+                    "http://www.stuff.com",
+                    HttpRequest.Method.GET
+            );
+            HashMap<String, String> attributes = Maps.newHashMap();
+            attributes.put("attr1","value1");
+            attributes.put("attr2","value2");
+            httpRequest.setAttributes(attributes);
+            httpRequest.setBodyAsString(DUMMY_BODY_AS_STRING);
+            Map<String, List<String>> headers = Maps.newHashMap();
+            headers.put("X-stuff", Lists.newArrayList("m-y-value"));
+            headers.put("X-correlation-id", Lists.newArrayList("44-999-33-dd"));
+            headers.put("X-request-id", Lists.newArrayList("11-999-ff-777"));
+            httpRequest.setHeaders(headers);
+            //when
+            HttpRequest clonedHttpRequest = (HttpRequest) httpRequest.clone();
+            //then
+            HttpRequest httpRequest2 = new HttpRequest(
+                    "http://www.stuff.com",
+                    HttpRequest.Method.GET
+            );
+            HashMap<String, String> attributes2 = Maps.newHashMap();
+            attributes2.put("attr1","value1");
+            //atttributes2 attr2 has different value
+            attributes2.put("attr2","value3");
+            httpRequest2.setAttributes(attributes2);
+            httpRequest2.setBodyAsString(DUMMY_BODY_AS_STRING);
+            Map<String, List<String>> headers2 = Maps.newHashMap();
+            headers2.put("X-stuff", Lists.newArrayList("m-y-value"));
+            headers2.put("X-correlation-id", Lists.newArrayList("44-999-33-dd"));
+            headers2.put("X-request-id", Lists.newArrayList("11-999-ff-777"));
+            httpRequest2.setHeaders(headers2);
+            assertThat(clonedHttpRequest).isNotEqualTo(httpRequest2);
+        }
+
+        @Test
         void test_clone_with_body_as_byte_array() {
             //given
             HttpRequest httpRequest = new HttpRequest(
@@ -1134,6 +1273,32 @@ class HttpRequestTest {
             String toString = httpRequest.toString();
             //then
             assertThat(toString).contains("url='http://www.stuff.com'")
+                    .contains("method=GET")
+                    .contains("bodyType=STRING")
+                    .contains("bodyAsString='" + DUMMY_BODY_AS_STRING+"'");
+        }
+        @Test
+        void test_to_string_with_body_as_string_and_attributes() {
+            //given
+            HttpRequest httpRequest = new HttpRequest(
+                    "http://www.stuff.com",
+                    HttpRequest.Method.GET
+            );
+            httpRequest.setBodyAsString(DUMMY_BODY_AS_STRING);
+            Map<String, List<String>> headers = Maps.newHashMap();
+            headers.put("X-stuff", Lists.newArrayList("m-y-value"));
+            headers.put("X-correlation-id", Lists.newArrayList("44-999-33-dd"));
+            headers.put("X-request-id", Lists.newArrayList("11-999-ff-777"));
+            Map<String,String> attributes = Maps.newHashMap();
+            attributes.put("attr1","value1");
+            attributes.put("attr2","value2");
+            httpRequest.setAttributes(attributes);
+            httpRequest.setHeaders(headers);
+            //when
+            String toString = httpRequest.toString();
+            //then
+            assertThat(toString).contains("url='http://www.stuff.com'")
+                    .contains("attributes='{attr2=value2, attr1=value1}'")
                     .contains("method=GET")
                     .contains("bodyType=STRING")
                     .contains("bodyAsString='" + DUMMY_BODY_AS_STRING+"'");
