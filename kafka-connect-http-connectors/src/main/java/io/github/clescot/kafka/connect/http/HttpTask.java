@@ -3,7 +3,6 @@ package io.github.clescot.kafka.connect.http;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import io.github.clescot.kafka.connect.RequestTask;
-import io.github.clescot.kafka.connect.Task;
 import io.github.clescot.kafka.connect.http.client.*;
 import io.github.clescot.kafka.connect.http.core.HttpExchange;
 import io.github.clescot.kafka.connect.http.core.HttpRequest;

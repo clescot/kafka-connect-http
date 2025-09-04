@@ -5,7 +5,8 @@ import com.google.common.base.Preconditions;
 import com.google.common.collect.Maps;
 import dev.failsafe.RateLimiter;
 import dev.failsafe.RateLimiterConfig;
-import io.github.clescot.kafka.connect.http.core.Exchange;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.time.Duration;
 import java.time.temporal.ChronoUnit;
@@ -18,7 +19,7 @@ import static io.github.clescot.kafka.connect.http.sink.HttpConfigDefinition.*;
 import static io.github.clescot.kafka.connect.http.sink.HttpConfigDefinition.RATE_LIMITER_SCOPE;
 
 public abstract class  AbstractClient<E> implements Client<E> {
-
+    Logger LOGGER = LoggerFactory.getLogger(AbstractClient.class);
     private static final Map<String, RateLimiter> SHARED_RATE_LIMITERS = Maps.newHashMap();
     private Optional<RateLimiter<E>> rateLimiter = Optional.empty();
     protected Map<String, Object> config;
@@ -87,5 +88,30 @@ public abstract class  AbstractClient<E> implements Client<E> {
 
     protected Map<String, Object> getConfig() {
         return config;
+    }
+
+    @Override
+    public String getPermitsPerExecution(){
+        return (String) config.getOrDefault(RATE_LIMITER_PERMITS_PER_EXECUTION, DEFAULT_RATE_LIMITER_ONE_PERMIT_PER_CALL);
+    }
+
+
+    public String rateLimiterToString(){
+        StringBuilder result = new StringBuilder("{");
+
+        String rateLimiterMaxExecutions = (String) config.get(RATE_LIMITER_MAX_EXECUTIONS);
+        if(rateLimiterMaxExecutions!=null){
+            result.append("rateLimiterMaxExecutions:'").append(rateLimiterMaxExecutions).append("'");
+        }
+        String rateLimiterPeriodInMs = (String) config.get(RATE_LIMITER_PERIOD_IN_MS);
+        if(rateLimiterPeriodInMs!=null){
+            result.append(",rateLimiterPeriodInMs:'").append(rateLimiterPeriodInMs).append("'");
+        }
+        String rateLimiterScope = (String) config.get(RATE_LIMITER_SCOPE);
+        if(rateLimiterScope!=null){
+            result.append(",rateLimiterScope:'").append(rateLimiterScope).append("'");
+        }
+        result.append("}");
+        return result.toString();
     }
 }

@@ -155,7 +155,6 @@ public interface HttpClient<NR, NS>  extends RequestResponseClient<HttpRequest,N
 
     Integer getBodyLimit();
 
-    String getPermitsPerExecution();
 
     void setBodyLimit(Integer bodyLimit);
 

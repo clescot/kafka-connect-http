@@ -67,10 +67,7 @@ public abstract class AbstractHttpClient<NR,NS> extends AbstractClient<HttpExcha
         return headersLimit;
     }
 
-    @Override
-    public String getPermitsPerExecution(){
-        return (String) config.getOrDefault(RATE_LIMITER_PERMITS_PER_EXECUTION, DEFAULT_RATE_LIMITER_ONE_PERMIT_PER_CALL);
-    }
+
     @Override
     public void setHeadersLimit(Integer headersLimit) {
         this.headersLimit = headersLimit;
@@ -85,8 +82,6 @@ public abstract class AbstractHttpClient<NR,NS> extends AbstractClient<HttpExcha
     public void setBodyLimit(Integer bodyLimit) {
         this.bodyLimit = bodyLimit;
     }
-
-
 
     @Override
     public TrustManagerFactory getTrustManagerFactory() {
@@ -106,27 +101,6 @@ public abstract class AbstractHttpClient<NR,NS> extends AbstractClient<HttpExcha
                 ", trustManagerFactory=" + trustManagerFactory +
                 '}';
     }
-
-    private String rateLimiterToString(){
-        StringBuilder result = new StringBuilder("{");
-
-        String rateLimiterMaxExecutions = (String) config.get(RATE_LIMITER_MAX_EXECUTIONS);
-        if(rateLimiterMaxExecutions!=null){
-            result.append("rateLimiterMaxExecutions:'").append(rateLimiterMaxExecutions).append("'");
-        }
-        String rateLimiterPeriodInMs = (String) config.get(RATE_LIMITER_PERIOD_IN_MS);
-        if(rateLimiterPeriodInMs!=null){
-            result.append(",rateLimiterPeriodInMs:'").append(rateLimiterPeriodInMs).append("'");
-        }
-        String rateLimiterScope = (String) config.get(RATE_LIMITER_SCOPE);
-        if(rateLimiterScope!=null){
-            result.append(",rateLimiterScope:'").append(rateLimiterScope).append("'");
-        }
-        result.append("}");
-        return result.toString();
-    }
-
-
 
 
 
