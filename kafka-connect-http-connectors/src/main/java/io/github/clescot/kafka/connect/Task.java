@@ -9,6 +9,8 @@ import io.micrometer.core.instrument.binder.jvm.*;
 import io.micrometer.core.instrument.binder.logging.LogbackMetrics;
 import io.micrometer.core.instrument.binder.system.ProcessorMetrics;
 import io.micrometer.core.instrument.composite.CompositeMeterRegistry;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
@@ -24,7 +26,7 @@ import static io.github.clescot.kafka.connect.http.sink.HttpConfigDefinition.*;
  * @param <R> the type of request
  */
 public interface Task<C extends Client,F extends Configuration<C,R>,R extends Request> {
-
+    Logger LOGGER = LoggerFactory.getLogger(Task.class);
     Map<String,F> getConfigurations();
 
 

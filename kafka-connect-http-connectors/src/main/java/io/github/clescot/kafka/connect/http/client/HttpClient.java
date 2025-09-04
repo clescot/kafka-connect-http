@@ -66,9 +66,6 @@ public interface HttpClient<NR, NS>  extends RequestResponseClient<HttpRequest,N
                 .build();
     }
 
-
-
-
     default CompletableFuture<HttpExchange> call(HttpRequest httpRequest, AtomicInteger attempts) throws HttpException {
 
         Stopwatch rateLimitedStopWatch = Stopwatch.createStarted();
@@ -161,8 +158,6 @@ public interface HttpClient<NR, NS>  extends RequestResponseClient<HttpRequest,N
     String getPermitsPerExecution();
 
     void setBodyLimit(Integer bodyLimit);
-
-    void setRateLimiter(RateLimiter<HttpExchange> rateLimiter);
 
     TrustManagerFactory getTrustManagerFactory();
 

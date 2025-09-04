@@ -1,13 +1,23 @@
 package io.github.clescot.kafka.connect;
 
 import dev.failsafe.RateLimiter;
-import io.github.clescot.kafka.connect.http.core.HttpExchange;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.Optional;
 
-public interface Client {
+public interface Client<E> {
+    Logger LOGGER = LoggerFactory.getLogger(Client.class);
+
 
     String getEngineId();
 
-    Optional<RateLimiter<HttpExchange>> getRateLimiter();
+    void setRateLimiter(RateLimiter<E> rateLimiter);
+
+
+    Optional<RateLimiter<E>> getRateLimiter();
+
+
+
+
 }

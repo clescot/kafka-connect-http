@@ -10,7 +10,7 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
 @SuppressWarnings("java:S119")
-public interface RequestResponseClient<R extends Request, NR, S extends Response, NS, E extends Exchange> extends RequestClient<R, NR>, ResponseClient<S, NS> {
+public interface RequestResponseClient<R extends Request, NR, S extends Response, NS, E extends Exchange> extends RequestClient<R, NR,E>, ResponseClient<S, NS,E> {
 
 
     E buildExchange(R httpRequest,
