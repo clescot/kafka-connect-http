@@ -25,7 +25,7 @@ import java.util.stream.Collectors;
 import static io.github.clescot.kafka.connect.http.client.HttpClientConfigDefinition.CONFIGURATION_IDS;
 
 
-public class SseTask implements Task<OkHttpClient, SseConfiguration, HttpRequest, SseEvent> {
+public class SseTask implements Task<OkHttpClient, SseConfiguration, HttpRequest> {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(SseTask.class);
     private static CompositeMeterRegistry meterRegistry;

@@ -22,9 +22,8 @@ import static io.github.clescot.kafka.connect.http.sink.HttpConfigDefinition.*;
  * @param <C> the type of client used to make requests
  * @param <F> the type of the configuration for the client
  * @param <R> the type of request
- * @param <S> the type of response
  */
-public interface Task<C extends Client,F extends Configuration<C,R>,R extends Request,S> {
+public interface Task<C extends Client,F extends Configuration<C,R>,R extends Request> {
 
 
     /**
