@@ -19,7 +19,6 @@ public abstract class AbstractHttpClient<NR,NS> extends AbstractClient<HttpExcha
     public static final String DEFAULT_HTTP_RESPONSE_HEADERS_LIMIT = "10000";
     public static final String DEFAULT_HTTP_RESPONSE_BODY_LIMIT = "100000";
 
-    private Optional<RateLimiter<HttpExchange>> rateLimiter = Optional.empty();
     protected TrustManagerFactory trustManagerFactory;
 
     private Integer statusMessageLimit;
