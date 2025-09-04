@@ -5,7 +5,8 @@ import com.google.common.base.Stopwatch;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import dev.failsafe.RateLimiter;
-import io.github.clescot.kafka.connect.Client;
+import io.github.clescot.kafka.connect.RequestClient;
+import io.github.clescot.kafka.connect.ResponseClient;
 import io.github.clescot.kafka.connect.http.core.HttpExchange;
 import io.github.clescot.kafka.connect.http.core.HttpRequest;
 import io.github.clescot.kafka.connect.http.core.HttpResponse;
@@ -26,10 +27,10 @@ import static io.github.clescot.kafka.connect.http.sink.HttpConfigDefinition.RAT
 
 /**
  * execute the HTTP call.
- * @param <R> native HttpRequest
- * @param <S> native HttpResponse
+ * @param <NR> native HttpRequest
+ * @param <NS> native HttpResponse
  */
-public interface HttpClient<R, S>  extends Client {
+public interface HttpClient<NR, NS>  extends RequestClient<HttpRequest, NR>, ResponseClient<HttpResponse,NS> {
     boolean FAILURE = false;
     int SERVER_ERROR_STATUS_CODE = 500;
     String UTC_ZONE_ID = "UTC";
@@ -64,25 +65,14 @@ public interface HttpClient<R, S>  extends Client {
     }
 
 
-    /**
-     * convert an {@link HttpRequest} into a native (from the implementation) request.
-     *
-     * @param httpRequest http request to build.
-     * @return native request.
-     */
-    R buildNativeRequest(HttpRequest httpRequest);
-
-
-    HttpRequest buildRequest(R nativeRequest);
-
 
 
     default CompletableFuture<HttpExchange> call(HttpRequest httpRequest, AtomicInteger attempts) throws HttpException {
 
         Stopwatch rateLimitedStopWatch = Stopwatch.createStarted();
-        CompletableFuture<S> response;
+        CompletableFuture<NS> response;
         LOGGER.debug("httpRequest: {}", httpRequest);
-        R request = buildNativeRequest(httpRequest);
+        NR request = buildNativeRequest(httpRequest);
         LOGGER.debug("native request: {}", request);
         OffsetDateTime now = OffsetDateTime.now(ZoneId.of(UTC_ZONE_ID));
         try {
@@ -137,23 +127,12 @@ public interface HttpClient<R, S>  extends Client {
         }
     }
 
-
-
-    /**
-     * convert a native response (from the implementation) to an {@link HttpResponse}.
-     *
-     * @param response native response
-     * @return HttpResponse
-     */
-
-    HttpResponse buildResponse(S response);
-
     /**
      * raw native HttpRequest call.
      * @param request native HttpRequest
      * @return CompletableFuture of a native HttpResponse.
      */
-    CompletableFuture<S> nativeCall(R request);
+    CompletableFuture<NS> nativeCall(NR request);
 
 
     Integer getStatusMessageLimit();
