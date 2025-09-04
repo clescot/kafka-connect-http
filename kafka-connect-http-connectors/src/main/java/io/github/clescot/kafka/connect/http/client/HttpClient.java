@@ -137,6 +137,8 @@ public interface HttpClient<NR, NS>  extends RequestResponseClient<HttpRequest,N
         }
     }
 
+    HttpClient<NR, NS> customizeForUser(String vuId,HttpClient<NR, NS> genericClient);
+
 
     Integer getStatusMessageLimit();
 

@@ -5,6 +5,7 @@ import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import io.github.clescot.kafka.connect.http.client.AbstractHttpClient;
+import io.github.clescot.kafka.connect.http.client.HttpClient;
 import io.github.clescot.kafka.connect.http.client.HttpException;
 import io.github.clescot.kafka.connect.http.core.*;
 import kotlin.Pair;
@@ -340,5 +341,11 @@ public class OkHttpClient extends AbstractHttpClient<Request, Response> {
     @Override
     public okhttp3.OkHttpClient getInternalClient() {
         return client;
+    }
+
+    @Override
+    public HttpClient<Request, Response> customizeForUser(String vuId, HttpClient<Request, Response> genericClient) {
+
+        return null;
     }
 }

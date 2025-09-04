@@ -101,6 +101,9 @@ public abstract class AbstractHttpClient<NR,NS> extends AbstractClient<HttpExcha
                 '}';
     }
 
-
+    @Override
+    public HttpClient<NR, NS> customizeForUser(String vuId,HttpClient<NR, NS> genericClient){
+        return genericClient;
+    }
 
 }
