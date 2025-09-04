@@ -6,7 +6,6 @@ import io.github.clescot.kafka.connect.Task;
 import io.github.clescot.kafka.connect.http.client.*;
 import io.github.clescot.kafka.connect.http.core.HttpExchange;
 import io.github.clescot.kafka.connect.http.core.HttpRequest;
-import io.github.clescot.kafka.connect.http.core.HttpResponse;
 import io.github.clescot.kafka.connect.http.sink.HttpConnectorConfig;
 import io.micrometer.core.instrument.composite.CompositeMeterRegistry;
 import org.apache.commons.lang3.tuple.Pair;
@@ -30,18 +29,20 @@ import static io.github.clescot.kafka.connect.http.sink.HttpConfigDefinition.REQ
 /**
  * @param <T> type of the incoming Record.
  * @param <C> client type, which is a subclass of HttpClient
- * @param <R> native HttpRequest
- * @param <S> native HttpResponse
+ * @param <NR> native HttpRequest
+ * @param <NS> native HttpResponse
  */
-@SuppressWarnings("java:S3740")//we don't want to use the generic of ConnectRecord, to handle both SinkRecord and SourceRecord
-public class HttpTask<T,C extends HttpClient<R,S>,R, S> implements Task<C,HttpConfiguration<C,R,S>,HttpRequest> {
+@SuppressWarnings({"java:S3740","java:S119"})
+//we don't want to use the generic of ConnectRecord, to handle both SinkRecord and SourceRecord
+//we use NR and NS to avoid confusion with the R and S of HttpClient
+public class HttpTask<T,C extends HttpClient<NR, NS>, NR, NS> implements Task<C,HttpConfiguration<C, NR, NS>,HttpRequest> {
 
 
     private static final Logger LOGGER = LoggerFactory.getLogger(HttpTask.class);
     
 
 
-    private final Map<String,HttpConfiguration<C,R, S>> configurations;
+    private final Map<String,HttpConfiguration<C, NR, NS>> configurations;
     private static CompositeMeterRegistry meterRegistry;
 
 
@@ -51,7 +52,7 @@ public class HttpTask<T,C extends HttpClient<R,S>,R, S> implements Task<C,HttpCo
     private List<RequestGrouper<T>> requestGroupers;
 
     public HttpTask(HttpConnectorConfig httpConnectorConfig,
-                    HttpClientFactory<C, R, S> httpClientFactory) {
+                    HttpClientFactory<C, NR, NS> httpClientFactory) {
 
         //build executorService
         Optional<Integer> customFixedThreadPoolSize = Optional.ofNullable(httpConnectorConfig.getInt(HTTP_CLIENT_ASYNC_FIXED_THREAD_POOL_SIZE));
@@ -67,7 +68,7 @@ public class HttpTask<T,C extends HttpClient<R,S>,R, S> implements Task<C,HttpCo
         this.requestGroupers = requestGrouperFactory.buildRequestGroupers(httpConnectorConfig, httpConnectorConfig.getList(REQUEST_GROUPER_IDS));
 
         //configurations
-        Map<String,HttpClientConfiguration<C, R, S>> httpClientConfigurations = buildConfigurations(
+        Map<String,HttpClientConfiguration<C, NR, NS>> httpClientConfigurations = buildConfigurations(
                 httpClientFactory,
                 executorService,
                 httpConnectorConfig.getConfigurationIds(),
@@ -81,7 +82,7 @@ public class HttpTask<T,C extends HttpClient<R,S>,R, S> implements Task<C,HttpCo
                         )
                 )
                 .collect(
-                        Collectors.<Map.Entry<String, HttpConfiguration<C,R,S>>, String, HttpConfiguration<C, R, S>>toMap(
+                        Collectors.<Map.Entry<String, HttpConfiguration<C, NR, NS>>, String, HttpConfiguration<C, NR, NS>>toMap(
                                 Map.Entry::getKey,
                                 Map.Entry::getValue)
                 );
@@ -89,7 +90,7 @@ public class HttpTask<T,C extends HttpClient<R,S>,R, S> implements Task<C,HttpCo
     }
 
     public HttpTask(Map<String,String> config,
-                    Map<String,HttpConfiguration<C,R, S>> configurations,
+                    Map<String,HttpConfiguration<C, NR, NS>> configurations,
                     CompositeMeterRegistry meterRegistry) {
 
         if (HttpTask.meterRegistry == null) {
@@ -106,7 +107,7 @@ public class HttpTask<T,C extends HttpClient<R,S>,R, S> implements Task<C,HttpCo
      * @return a future of the HttpExchange (complete request and response informations).
      */
     public CompletableFuture<HttpExchange> call(@NotNull HttpRequest httpRequest) {
-        HttpConfiguration<C,R, S> foundConfiguration = selectConfiguration(httpRequest);
+        HttpConfiguration<C, NR, NS> foundConfiguration = selectConfiguration(httpRequest);
         if (LOGGER.isTraceEnabled()) {
             LOGGER.trace("configuration found:{}", foundConfiguration.getId());
         }
@@ -122,7 +123,7 @@ public class HttpTask<T,C extends HttpClient<R,S>,R, S> implements Task<C,HttpCo
 
 
     @Override
-    public Map<String,HttpConfiguration<C,R, S>> getConfigurations() {
+    public Map<String,HttpConfiguration<C, NR, NS>> getConfigurations() {
         return Optional.ofNullable(configurations).orElse(Maps.newHashMap());
     }
 

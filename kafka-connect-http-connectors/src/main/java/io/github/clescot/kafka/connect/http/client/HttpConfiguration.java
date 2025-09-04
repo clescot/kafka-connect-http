@@ -25,15 +25,17 @@ import java.util.regex.Pattern;
  * Configuration holding an HttpClient and its configuration.
  * It is able to execute the HTTP call with retry if needed.
  * @param <C> type of the HttpClient
- * @param <R> native HttpRequest
- * @param <S> native HttpResponse
+ * @param <NR> native HttpRequest
+ * @param <NS> native HttpResponse
  */
-public class HttpConfiguration<C extends HttpClient<R, S>, R, S> implements Configuration<C,HttpRequest> {
+@SuppressWarnings("java:S119")
+//we don't want to use the generic of ConnectRecord, to handle both SinkRecord and SourceRecord
+public class HttpConfiguration<C extends HttpClient<NR, NS>, NR, NS> implements Configuration<C,HttpRequest> {
     private static final Logger LOGGER = LoggerFactory.getLogger(HttpConfiguration.class);
 
-    private final HttpClientConfiguration<C, R, S> httpClientConfiguration;
+    private final HttpClientConfiguration<C, NR, NS> httpClientConfiguration;
 
-    public HttpConfiguration(HttpClientConfiguration<C, R, S> httpClientConfiguration) {
+    public HttpConfiguration(HttpClientConfiguration<C, NR, NS> httpClientConfiguration) {
         this.httpClientConfiguration = httpClientConfiguration;
     }
 
@@ -145,7 +147,7 @@ public class HttpConfiguration<C extends HttpClient<R, S>, R, S> implements Conf
         return this.httpClientConfiguration.getClient();
     }
 
-    public HttpClientConfiguration<C, R, S> getConfiguration() {
+    public HttpClientConfiguration<C, NR, NS> getConfiguration() {
         return httpClientConfiguration;
     }
 }
