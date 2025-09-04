@@ -12,7 +12,7 @@ import java.util.Objects;
 import java.util.concurrent.atomic.AtomicInteger;
 
 
-public class HttpExchange implements Cloneable, Serializable {
+public class HttpExchange implements Exchange,Cloneable, Serializable {
     @Serial
     private static final long serialVersionUID = 1L;
     public static final int HTTP_EXCHANGE_VERSION = 2;

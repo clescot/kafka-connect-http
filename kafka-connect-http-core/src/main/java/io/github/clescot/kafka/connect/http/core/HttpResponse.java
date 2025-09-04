@@ -16,7 +16,7 @@ import java.util.*;
 import static io.github.clescot.kafka.connect.http.core.MediaType.APPLICATION_OCTET_STREAM;
 import static io.github.clescot.kafka.connect.http.core.MediaType.APPLICATION_X_WWW_FORM_URLENCODED;
 
-public class HttpResponse implements Cloneable, Serializable {
+public class HttpResponse implements Response, Cloneable, Serializable {
     @Serial
     private static final long serialVersionUID = 1L;
     public static final Integer VERSION = 2;
@@ -30,6 +30,7 @@ public class HttpResponse implements Cloneable, Serializable {
     public static final String BODY_AS_BYTE_ARRAY = "bodyAsByteArray";
     public static final String BODY_AS_FORM = "bodyAsForm";
     public static final String PARTS = "parts";
+    public static final String ATTRIBUTES = "attributes";
     private Integer statusMessageLimit = Integer.MAX_VALUE;
     private Integer headersLimit = Integer.MAX_VALUE;
     private Integer bodyLimit = Integer.MAX_VALUE;
@@ -47,6 +48,7 @@ public class HttpResponse implements Cloneable, Serializable {
             .field(BODY_AS_FORM, SchemaBuilder.map(Schema.STRING_SCHEMA, Schema.STRING_SCHEMA).optional().schema())
             .field(BODY_AS_STRING, Schema.OPTIONAL_STRING_SCHEMA)
             .field(PARTS, SchemaBuilder.array(HttpPart.SCHEMA).optional().schema())
+            .field(ATTRIBUTES, SchemaBuilder.map(Schema.STRING_SCHEMA,Schema.STRING_SCHEMA).optional().schema())
             .schema();
 
     @JsonProperty(required = true)
@@ -68,6 +70,8 @@ public class HttpResponse implements Cloneable, Serializable {
     private Map<String, HttpPart> parts = Maps.newHashMap();
     @JsonProperty
     private Map<String, List<String>> headers = Maps.newHashMap();
+    @JsonProperty
+    private Map<String,String> attributes = Maps.newHashMap();
 
     /**
      * only for json deserialization
@@ -303,6 +307,7 @@ public class HttpResponse implements Cloneable, Serializable {
         return
                 statusCode.equals(that.statusCode) &&
                         statusMessage.equals(that.statusMessage) &&
+                        attributes.equals(that.attributes) &&
                         protocol.equals(that.protocol) &&
                         bodyType == that.bodyType &&
                         Objects.equals(headers, that.headers) &&
@@ -315,13 +320,14 @@ public class HttpResponse implements Cloneable, Serializable {
 
     @Override
     public int hashCode() {
-        return Objects.hash(statusCode, statusMessage, protocol, bodyType, bodyAsString, headers, bodyAsByteArray);
+        return Objects.hash(statusCode, attributes,statusMessage, protocol, bodyType, bodyAsString, headers, bodyAsByteArray);
     }
 
     @Override
     public String toString() {
         return "HttpResponse{" +
-                "statusCode=" + statusCode +
+                "attributes=" + attributes +
+                ", statusCode=" + statusCode + '\'' +
                 ", statusMessage='" + statusMessage + '\'' +
                 ", protocol='" + protocol + '\'' +
                 ", headers=" + headers +
@@ -340,6 +346,7 @@ public class HttpResponse implements Cloneable, Serializable {
                 .put(BODY_TYPE, this.getBodyType().toString())
                 .put(BODY_AS_BYTE_ARRAY, this.bodyAsByteArray)
                 .put(BODY_AS_STRING, this.getBodyAsString())
+                .put(ATTRIBUTES, this.getAttributes())
                 ;
     }
 
@@ -368,4 +375,8 @@ public class HttpResponse implements Cloneable, Serializable {
         }
     }
 
+    @Override
+    public Map<String, String> getAttributes() {
+        return attributes;
+    }
 }

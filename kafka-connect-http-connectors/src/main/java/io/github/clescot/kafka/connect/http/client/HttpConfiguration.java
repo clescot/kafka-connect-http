@@ -86,7 +86,7 @@ public class HttpConfiguration<C extends HttpClient<NR, NS>, NR, NS> implements 
         } catch (Exception exception) {
             LOGGER.error("Failed to call web service after {} retries with error({}). message:{} ", attempts, exception,
                     exception.getMessage());
-            HttpExchange httpExchange = getClient().buildHttpExchange(
+            HttpExchange httpExchange = getClient().buildExchange(
                     httpRequest,
                     new HttpResponse(HttpClient.SERVER_ERROR_STATUS_CODE, String.valueOf(exception.getMessage())),
                     Stopwatch.createUnstarted(), OffsetDateTime.now(ZoneId.of(HttpClient.UTC_ZONE_ID)),

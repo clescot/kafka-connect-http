@@ -4,7 +4,6 @@ import com.google.common.base.Stopwatch;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import io.github.clescot.kafka.connect.http.client.DummyX509Certificate;
-import io.github.clescot.kafka.connect.http.client.HttpClient;
 import io.github.clescot.kafka.connect.http.client.HttpClientFactory;
 import io.github.clescot.kafka.connect.http.core.HttpExchange;
 import io.github.clescot.kafka.connect.http.core.HttpRequest;
@@ -62,7 +61,7 @@ class AHCHttpClientTest {
         Map<String, Object> config = Maps.newHashMap();
         config.put(CONFIGURATION_ID,"default");
         org.junit.jupiter.api.Assertions.assertThrows(NullPointerException.class, () ->
-                httpClient.buildHttpExchange(null,
+                httpClient.buildExchange((HttpRequest) null,
                         null,
                         Stopwatch.createUnstarted(),
                         OffsetDateTime.now(ZoneId.of(AHCHttpClient.UTC_ZONE_ID)),
@@ -77,7 +76,7 @@ class AHCHttpClientTest {
         Map<String, Object> config = Maps.newHashMap();
         config.put(CONFIGURATION_ID,"default");
         org.junit.jupiter.api.Assertions.assertThrows(NullPointerException.class, () ->
-                httpClient.buildHttpExchange(null,
+                httpClient.buildExchange(null,
                         getDummyHttpResponse(200),
                         Stopwatch.createUnstarted(),
                         OffsetDateTime.now(ZoneId.of(AHCHttpClient.UTC_ZONE_ID)),
@@ -89,7 +88,7 @@ class AHCHttpClientTest {
     void build_HttpExchange_test_response_code_is_lower_than_0() {
         Map<String, Object> config = Maps.newHashMap();
         config.put(CONFIGURATION_ID,"default");
-        org.junit.jupiter.api.Assertions.assertThrows(IllegalArgumentException.class, () -> httpClient.buildHttpExchange(getDummyHttpRequest(),
+        org.junit.jupiter.api.Assertions.assertThrows(IllegalArgumentException.class, () -> httpClient.buildExchange(getDummyHttpRequest(),
                 getDummyHttpResponse(-12),
                 Stopwatch.createUnstarted(),
                 OffsetDateTime.now(ZoneId.of(AHCHttpClient.UTC_ZONE_ID)),
@@ -103,7 +102,7 @@ class AHCHttpClientTest {
 
         Map<String, Object> config = Maps.newHashMap();
         config.put(CONFIGURATION_ID,"default");
-        HttpExchange httpExchange = httpClient.buildHttpExchange(getDummyHttpRequest(),
+        HttpExchange httpExchange = httpClient.buildExchange(getDummyHttpRequest(),
                 getDummyHttpResponse(200),
                 Stopwatch.createUnstarted(),
                 OffsetDateTime.now(ZoneId.of(AHCHttpClient.UTC_ZONE_ID)),

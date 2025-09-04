@@ -1,7 +1,9 @@
 package io.github.clescot.kafka.connect;
 
 
-public interface ResponseClient<S,NS> extends Client{
+import io.github.clescot.kafka.connect.http.core.Response;
+@SuppressWarnings("java:S119")
+public interface ResponseClient<S extends Response,NS> extends Client{
 
     /**
      * convert a native response (from the implementation) to a Response.
