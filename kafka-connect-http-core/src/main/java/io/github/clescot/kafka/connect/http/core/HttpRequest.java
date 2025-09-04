@@ -304,6 +304,7 @@ public class HttpRequest implements Request,Cloneable, Serializable {
     public Struct toStruct() {
         return new Struct(SCHEMA)
                 .put(URL, this.getUrl())
+                .put(ATTRIBUTES, this.getAttributes())
                 .put(HEADERS, this.getHeaders())
                 .put(METHOD, this.getMethod().name())
                 .put(BODY_TYPE, this.getBodyType().name())

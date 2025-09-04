@@ -5,6 +5,7 @@ package io.github.clescot.kafka.connect;
  * @param <R> request
  * @param <NR> native request
  */
+@SuppressWarnings("java:S119")
 public interface RequestClient<R,NR> extends Client{
     /**
      * convert an Request into a native request.

@@ -6,6 +6,7 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import dev.failsafe.RateLimiter;
 import io.github.clescot.kafka.connect.RequestClient;
+import io.github.clescot.kafka.connect.RequestResponseClient;
 import io.github.clescot.kafka.connect.ResponseClient;
 import io.github.clescot.kafka.connect.http.core.HttpExchange;
 import io.github.clescot.kafka.connect.http.core.HttpRequest;
@@ -30,7 +31,7 @@ import static io.github.clescot.kafka.connect.http.sink.HttpConfigDefinition.RAT
  * @param <NR> native HttpRequest
  * @param <NS> native HttpResponse
  */
-public interface HttpClient<NR, NS>  extends RequestClient<HttpRequest, NR>, ResponseClient<HttpResponse,NS> {
+public interface HttpClient<NR, NS>  extends RequestResponseClient<NR,NS> {
     boolean FAILURE = false;
     int SERVER_ERROR_STATUS_CODE = 500;
     String UTC_ZONE_ID = "UTC";
@@ -42,7 +43,7 @@ public interface HttpClient<NR, NS>  extends RequestClient<HttpRequest, NR>, Res
     String THROWABLE_MESSAGE = "throwable.message";
 
 
-    static HttpExchange buildHttpExchange(HttpRequest httpRequest,
+    default HttpExchange buildHttpExchange(HttpRequest httpRequest,
                                            HttpResponse httpResponse,
                                            Stopwatch stopwatch,
                                            OffsetDateTime now,
@@ -150,8 +151,6 @@ public interface HttpClient<NR, NS>  extends RequestClient<HttpRequest, NR>, Res
     void setBodyLimit(Integer bodyLimit);
 
     void setRateLimiter(RateLimiter<HttpExchange> rateLimiter);
-
-    Optional<RateLimiter<HttpExchange>> getRateLimiter();
 
     TrustManagerFactory getTrustManagerFactory();
 

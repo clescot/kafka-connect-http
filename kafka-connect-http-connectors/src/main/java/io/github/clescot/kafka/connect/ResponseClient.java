@@ -1,6 +1,5 @@
 package io.github.clescot.kafka.connect;
 
-import io.github.clescot.kafka.connect.http.core.HttpResponse;
 
 public interface ResponseClient<S,NS> extends Client{
 

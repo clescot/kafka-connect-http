@@ -28,7 +28,7 @@ class SseEventTest {
                 assertEquals("message", event.getType());
                 assertEquals("Hello, World!", event.getData());
                 String serializedEvent = objectMapper.writeValueAsString(event);
-                assertThat(serializedEvent).isEqualTo("{\"id\":\"1\",\"type\":\"message\",\"data\":\"Hello, World!\"}");
+                assertThat(serializedEvent).isEqualTo("{\"attributes\":{},\"id\":\"1\",\"type\":\"message\",\"data\":\"Hello, World!\"}");
             }
         }
 
@@ -83,14 +83,14 @@ class SseEventTest {
         @Test
         void shouldReturnCorrectToString() {
             SseEvent event = new SseEvent("1", "message", "Hello, World!");
-            String expected = "SseEvent{id='1', type='message', data='Hello, World!'}";
+            String expected = "SseEvent{id='1', attributes='{}', type='message', data='Hello, World!'}";
             assertEquals(expected, event.toString());
         }
 
         @Test
         void shouldReturnCorrectJson() {
             SseEvent event = new SseEvent("1", "message", "Hello, World!");
-            String expectedJson = "{\"id\":\"1\",\"type\":\"message\",\"data\":\"Hello, World!\"}";
+            String expectedJson = "{\"id\":\"1\",\"attributes\":\"{}\",\"type\":\"message\",\"data\":\"Hello, World!\"}";
             assertEquals(expectedJson, event.toJson());
         }
     }
