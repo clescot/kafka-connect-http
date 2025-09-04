@@ -13,13 +13,24 @@ import static io.github.clescot.kafka.connect.http.core.Request.VU_ID;
 public interface RequestTask<C extends Client,F extends Configuration<C,R>,R extends Request,E> extends Task<C,F,R>{
 
 
+    /**
+     * Calls the service with the provided request.
+     * @param request the request to be sent
+     * @return a CompletableFuture representing the asynchronous operation, containing the response
+     */
     CompletableFuture<E> call(@NotNull R request);
 
 
     Map<String,F> getUserConfigurations();
 
 
-
+    /**
+     * Allows to customize a configuration for a specific user.
+     * By default, it returns the provided configuration without any modification.
+     * @param userId
+     * @param configuration
+     * @return
+     */
     default F getConfigurationForUser(String userId, F configuration) {
         return configuration;
     }
