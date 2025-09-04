@@ -2,6 +2,7 @@ package io.github.clescot.kafka.connect.http;
 
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
+import io.github.clescot.kafka.connect.RequestTask;
 import io.github.clescot.kafka.connect.Task;
 import io.github.clescot.kafka.connect.http.client.*;
 import io.github.clescot.kafka.connect.http.core.HttpExchange;
@@ -35,7 +36,7 @@ import static io.github.clescot.kafka.connect.http.sink.HttpConfigDefinition.REQ
 @SuppressWarnings({"java:S3740","java:S119"})
 //we don't want to use the generic of ConnectRecord, to handle both SinkRecord and SourceRecord
 //we use NR and NS to avoid confusion with the R and S of HttpClient
-public class HttpTask<T,C extends HttpClient<NR, NS>, NR, NS> implements Task<C,HttpConfiguration<C, NR, NS>,HttpRequest> {
+public class HttpTask<T,C extends HttpClient<NR, NS>, NR, NS> implements RequestTask<C,HttpConfiguration<C, NR, NS>,HttpRequest,HttpExchange> {
 
 
     private static final Logger LOGGER = LoggerFactory.getLogger(HttpTask.class);
@@ -106,6 +107,7 @@ public class HttpTask<T,C extends HttpClient<NR, NS>, NR, NS> implements Task<C,
      * @param httpRequest http request
      * @return a future of the HttpExchange (complete request and response informations).
      */
+    @Override
     public CompletableFuture<HttpExchange> call(@NotNull HttpRequest httpRequest) {
         HttpConfiguration<C, NR, NS> foundConfiguration = selectConfiguration(httpRequest);
         if (LOGGER.isTraceEnabled()) {
