@@ -137,13 +137,6 @@ public interface HttpClient<NR, NS>  extends RequestResponseClient<HttpRequest,N
         }
     }
 
-    /**
-     * raw native HttpRequest call.
-     * @param request native HttpRequest
-     * @return CompletableFuture of a native HttpResponse.
-     */
-    CompletableFuture<NS> nativeCall(NR request);
-
 
     Integer getStatusMessageLimit();
 

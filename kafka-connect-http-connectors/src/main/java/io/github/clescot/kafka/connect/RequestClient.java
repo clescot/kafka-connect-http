@@ -2,6 +2,8 @@ package io.github.clescot.kafka.connect;
 
 import io.github.clescot.kafka.connect.http.core.Request;
 
+import java.util.concurrent.CompletableFuture;
+
 /**
  *  A client interface that handles requests and native requests.
  * @param <R> request
@@ -20,4 +22,10 @@ public interface RequestClient<R extends Request,NR,E> extends Client<E>{
 
     R buildRequest(NR nativeRequest);
 
+    /**
+     * raw native HttpRequest call.
+     * @param request native HttpRequest
+     * @return Void or a CompletableFuture of a native HttpResponse.
+     */
+    CompletableFuture<?> nativeCall(NR request);
 }
