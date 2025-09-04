@@ -1,6 +1,7 @@
 package io.github.clescot.kafka.connect.sse.core;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import io.github.clescot.kafka.connect.http.core.Response;
 import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.data.SchemaBuilder;
 import org.apache.kafka.connect.data.Struct;
@@ -13,7 +14,7 @@ import java.util.Objects;
  * Represents a Server-Sent Event (SSE) with an ID, type, and data.
  * This class is serializable and can be cloned.
  */
-public class SseEvent implements Cloneable, Serializable {
+public class SseEvent implements Response,Cloneable, Serializable {
     @Serial
     private static final long serialVersionUID = 1L;
     @JsonProperty

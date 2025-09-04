@@ -44,6 +44,7 @@ public class HttpTask<T,C extends HttpClient<NR, NS>, NR, NS> implements Request
 
 
     private final Map<String,HttpConfiguration<C, NR, NS>> configurations;
+    private Map<String,HttpConfiguration<C, NR, NS>> userConfigurations = Maps.newHashMap();
     private static CompositeMeterRegistry meterRegistry;
 
 
@@ -51,6 +52,7 @@ public class HttpTask<T,C extends HttpClient<NR, NS>, NR, NS> implements Request
     private ExecutorService executorService;
 
     private List<RequestGrouper<T>> requestGroupers;
+
 
     public HttpTask(HttpConnectorConfig httpConnectorConfig,
                     HttpClientFactory<C, NR, NS> httpClientFactory) {
@@ -121,6 +123,17 @@ public class HttpTask<T,C extends HttpClient<NR, NS>, NR, NS> implements Request
                             return httpExchange;
                         }
                 );
+    }
+
+    @Override
+    public Map<String, HttpConfiguration<C, NR, NS>> getUserConfigurations() {
+        return userConfigurations;
+    }
+
+    @Override
+    public HttpConfiguration<C, NR, NS> getConfigurationForUser(String userId, HttpConfiguration<C, NR, NS> configuration) {
+        //TODO we could customize the configuration for the userId
+        return configuration;
     }
 
 
