@@ -21,6 +21,7 @@ import org.asynchttpclient.filter.ResponseFilter;
 import org.asynchttpclient.netty.channel.ConnectionSemaphoreFactory;
 import org.asynchttpclient.proxy.ProxyServerSelector;
 
+import java.time.Duration;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -29,6 +30,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ThreadFactory;
 import java.util.function.Consumer;
 
+import static java.lang.Long.getLong;
 import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.*;
 
 public class PropertyBasedASyncHttpClientConfig implements AsyncHttpClientConfig {
@@ -88,28 +90,28 @@ public class PropertyBasedASyncHttpClientConfig implements AsyncHttpClientConfig
     }
 
     @Override
-    public int getConnectTimeout() {
-        return getInt(ASYNC_CLIENT_CONFIG_ROOT + CONNECTION_TIMEOUT_CONFIG,defaultConnectTimeout());
+    public Duration getConnectTimeout() {
+        return Duration.ofMillis(getLong(ASYNC_CLIENT_CONFIG_ROOT + CONNECTION_TIMEOUT_CONFIG,defaultConnectTimeout().toMillis()));
     }
 
     @Override
-    public int getReadTimeout() {
-        return getInt(ASYNC_CLIENT_CONFIG_ROOT + READ_TIMEOUT_CONFIG,defaultReadTimeout());
+    public Duration getReadTimeout() {
+        return Duration.ofMillis(getLong(ASYNC_CLIENT_CONFIG_ROOT + READ_TIMEOUT_CONFIG,defaultReadTimeout().toMillis()));
     }
 
     @Override
-    public int getPooledConnectionIdleTimeout() {
-        return getInt(ASYNC_CLIENT_CONFIG_ROOT + POOLED_CONNECTION_IDLE_TIMEOUT_CONFIG,defaultPooledConnectionIdleTimeout());
+    public Duration getPooledConnectionIdleTimeout() {
+        return Duration.ofMillis(getLong(ASYNC_CLIENT_CONFIG_ROOT + POOLED_CONNECTION_IDLE_TIMEOUT_CONFIG,defaultPooledConnectionIdleTimeout().toMillis()));
     }
 
     @Override
-    public int getConnectionPoolCleanerPeriod() {
-        return getInt(ASYNC_CLIENT_CONFIG_ROOT + CONNECTION_POOL_CLEANER_PERIOD_CONFIG,defaultConnectionPoolCleanerPeriod());
+    public Duration getConnectionPoolCleanerPeriod() {
+        return Duration.ofMillis(getLong(ASYNC_CLIENT_CONFIG_ROOT + CONNECTION_POOL_CLEANER_PERIOD_CONFIG,defaultConnectionPoolCleanerPeriod().toMillis()));
     }
 
     @Override
-    public int getRequestTimeout() {
-        return getInt(ASYNC_CLIENT_CONFIG_ROOT + REQUEST_TIMEOUT_CONFIG,defaultRequestTimeout());
+    public Duration getRequestTimeout() {
+        return Duration.ofMillis(getLong(ASYNC_CLIENT_CONFIG_ROOT + REQUEST_TIMEOUT_CONFIG,defaultRequestTimeout().toMillis()));
     }
 
     @Override
@@ -135,6 +137,11 @@ public class PropertyBasedASyncHttpClientConfig implements AsyncHttpClientConfig
     @Override
     public boolean isCompressionEnforced() {
         return getBoolean(ASYNC_CLIENT_CONFIG_ROOT + COMPRESSION_ENFORCED_CONFIG,defaultCompressionEnforced());
+    }
+
+    @Override
+    public boolean isEnableAutomaticDecompression() {
+        return false;
     }
 
     @Override
@@ -203,8 +210,8 @@ public class PropertyBasedASyncHttpClientConfig implements AsyncHttpClientConfig
     }
 
     @Override
-    public int getConnectionTtl() {
-        return getInt(ASYNC_CLIENT_CONFIG_ROOT + CONNECTION_TTL_CONFIG,defaultConnectionTtl());
+    public Duration getConnectionTtl() {
+        return Duration.ofMillis(getLong(ASYNC_CLIENT_CONFIG_ROOT + CONNECTION_TTL_CONFIG,defaultConnectionTtl().toMillis()));
     }
 
     @Override
@@ -303,13 +310,13 @@ public class PropertyBasedASyncHttpClientConfig implements AsyncHttpClientConfig
     }
 
     @Override
-    public int getShutdownQuietPeriod() {
-        return getInt(ASYNC_CLIENT_CONFIG_ROOT + SHUTDOWN_QUIET_PERIOD_CONFIG,defaultShutdownQuietPeriod());
+    public Duration getShutdownQuietPeriod() {
+        return Duration.ofMillis(getLong(ASYNC_CLIENT_CONFIG_ROOT + SHUTDOWN_QUIET_PERIOD_CONFIG,defaultShutdownQuietPeriod().toMillis()));
     }
 
     @Override
-    public int getShutdownTimeout() {
-        return getInt(ASYNC_CLIENT_CONFIG_ROOT + SHUTDOWN_TIMEOUT_CONFIG,defaultShutdownTimeout());
+    public Duration getShutdownTimeout() {
+        return Duration.ofMillis(getLong(ASYNC_CLIENT_CONFIG_ROOT + SHUTDOWN_TIMEOUT_CONFIG,defaultShutdownTimeout().toMillis()));
     }
 
     @Override
@@ -325,6 +332,11 @@ public class PropertyBasedASyncHttpClientConfig implements AsyncHttpClientConfig
     @Override
     public boolean isUseNativeTransport() {
         return getBoolean(ASYNC_CLIENT_CONFIG_ROOT + USE_NATIVE_TRANSPORT_CONFIG,defaultUseNativeTransport());
+    }
+
+    @Override
+    public boolean isUseOnlyEpollNativeTransport() {
+        return false;
     }
 
     @Override

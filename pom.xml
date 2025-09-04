@@ -36,7 +36,7 @@
     <properties>
         <assertj.version>3.27.4</assertj.version>
         <awaitility.version>4.3.0</awaitility.version>
-        <async.http.client.version>2.12.4</async.http.client.version>
+        <async.http.client.version>3.0.2</async.http.client.version>
         <commons-text.version>1.14.0</commons-text.version>
         <connect-json.version>4.0.0</connect-json.version>
         <debezium.version>2.7.4.Final</debezium.version>
@@ -148,11 +148,7 @@
                 <artifactId>async-http-client</artifactId>
                 <version>${async.http.client.version}</version>
             </dependency>
-            <dependency>
-                <groupId>org.asynchttpclient</groupId>
-                <artifactId>async-http-client-extras-guava</artifactId>
-                <version>${async.http.client.version}</version>
-            </dependency>
+
             <dependency>
                 <groupId>com.squareup.okhttp3</groupId>
                 <artifactId>okhttp</artifactId>

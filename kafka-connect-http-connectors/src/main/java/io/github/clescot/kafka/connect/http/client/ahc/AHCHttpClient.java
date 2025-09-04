@@ -20,7 +20,6 @@ import org.asynchttpclient.channel.DefaultKeepAliveStrategy;
 import org.asynchttpclient.channel.KeepAliveStrategy;
 import org.asynchttpclient.cookie.CookieStore;
 import org.asynchttpclient.cookie.ThreadSafeCookieStore;
-import org.asynchttpclient.extras.guava.RateLimitedThrottleRequestFilter;
 import org.asynchttpclient.netty.channel.ConnectionSemaphoreFactory;
 import org.asynchttpclient.netty.channel.DefaultConnectionSemaphoreFactory;
 import org.asynchttpclient.proxy.ProxyServer;
@@ -32,6 +31,7 @@ import javax.net.ssl.SSLException;
 import javax.net.ssl.TrustManagerFactory;
 import java.lang.reflect.InvocationTargetException;
 import java.nio.charset.Charset;
+import java.time.Duration;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
@@ -150,13 +150,13 @@ public class AHCHttpClient extends AbstractHttpClient<Request, Response> {
         int requestTimeoutInMillis;
         if (httpHeaders.get(WS_REQUEST_TIMEOUT_IN_MS) != null) {
             requestTimeoutInMillis = Integer.parseInt(httpHeaders.get(WS_REQUEST_TIMEOUT_IN_MS).get(0));
-            requestBuilder.setRequestTimeout(requestTimeoutInMillis);
+            requestBuilder.setRequestTimeout(Duration.ofMillis(requestTimeoutInMillis));
         }
 
         int readTimeoutInMillis;
         if (httpHeaders.get(WS_READ_TIMEOUT_IN_MS) != null) {
             readTimeoutInMillis = Integer.parseInt(httpHeaders.get(WS_READ_TIMEOUT_IN_MS).get(0));
-            requestBuilder.setReadTimeout(readTimeoutInMillis);
+            requestBuilder.setReadTimeout(Duration.ofMillis(readTimeoutInMillis));
         }
         return requestBuilder.build();
     }
@@ -264,7 +264,6 @@ public class AHCHttpClient extends AbstractHttpClient<Request, Response> {
         int maxConnections = Integer.parseInt(config.getOrDefault(HTTP_MAX_CONNECTIONS, "3").toString());
         double rateLimitPerSecond = Double.parseDouble(config.getOrDefault(HTTP_RATE_LIMIT_PER_SECOND, "3").toString());
         int maxWaitMs = Integer.parseInt(config.getOrDefault(HTTP_MAX_WAIT_MS, "500").toString());
-        propertyBasedASyncHttpClientConfig.setRequestFilters(Lists.newArrayList(new RateLimitedThrottleRequestFilter(maxConnections, rateLimitPerSecond, maxWaitMs)));
 
         String defaultKeepAliveStrategyClassName = config.getOrDefault(KEEP_ALIVE_STRATEGY_CLASS, "org.asynchttpclient.channel.DefaultKeepAliveStrategy").toString();
 
