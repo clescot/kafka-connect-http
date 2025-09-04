@@ -86,11 +86,4 @@ public interface Task<C extends Client,F extends Configuration<C,R>,R extends Re
     }
 
 
-    // This class is a placeholder for the Task class.
-    // It can be extended to implement specific task functionality.
-
-    // The generic types R and S can be used to represent request and response types respectively.
-    // This allows for flexibility in defining the types of requests and responses handled by the task.
-
-    // Additional methods and properties can be added as needed to implement specific task behavior.
 }
