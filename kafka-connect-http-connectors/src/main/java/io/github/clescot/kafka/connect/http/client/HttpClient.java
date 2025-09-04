@@ -47,7 +47,8 @@ public interface HttpClient<NR, NS>  extends RequestResponseClient<HttpRequest,N
                                        Stopwatch stopwatch,
                                        OffsetDateTime now,
                                        AtomicInteger attempts,
-                                       boolean success) {
+                                       boolean success,
+                                       Map<String,String> attributes) {
         Preconditions.checkNotNull(httpRequest, "'httpRequest' is null");
         return HttpExchange.Builder.anHttpExchange()
                 //request
@@ -61,6 +62,7 @@ public interface HttpClient<NR, NS>  extends RequestResponseClient<HttpRequest,N
                 .at(now)
                 .withAttempts(attempts)
                 .withSuccess(success)
+                .withAttributes(attributes != null && !attributes.isEmpty() ? attributes : Maps.newHashMap())
                 .build();
     }
 
@@ -119,7 +121,8 @@ public interface HttpClient<NR, NS>  extends RequestResponseClient<HttpRequest,N
                             waitingTime,
                             overallElapsedTime
                     );
-                    return buildExchange(httpRequest, myResponse, directStopWatch, now, attempts, responseStatusCode < 400 ? SUCCESS : FAILURE);
+                    return buildExchange(httpRequest, myResponse, directStopWatch, now, attempts, responseStatusCode < 400 ? SUCCESS : FAILURE,
+                            Maps.newHashMap());
                         }
                 ).exceptionally((throwable-> {
                     HttpResponse httpResponse = new HttpResponse(400,throwable.getMessage());
@@ -128,7 +131,8 @@ public interface HttpClient<NR, NS>  extends RequestResponseClient<HttpRequest,N
                     responseHeaders.put(THROWABLE_MESSAGE, Lists.newArrayList(throwable.getCause().getMessage()));
                     httpResponse.setHeaders(responseHeaders);
                     LOGGER.error(throwable.toString());
-                    return buildExchange(httpRequest, httpResponse, rateLimitedStopWatch, now, attempts,FAILURE);
+                    return buildExchange(httpRequest, httpResponse, rateLimitedStopWatch, now, attempts,FAILURE,
+                            Maps.newHashMap());
                 }));
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();

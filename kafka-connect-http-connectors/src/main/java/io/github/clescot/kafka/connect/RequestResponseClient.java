@@ -6,6 +6,7 @@ import io.github.clescot.kafka.connect.http.core.Request;
 import io.github.clescot.kafka.connect.http.core.Response;
 
 import java.time.OffsetDateTime;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
 @SuppressWarnings("java:S119")
@@ -17,5 +18,6 @@ public interface RequestResponseClient<R extends Request, NR, S extends Response
                     Stopwatch stopwatch,
                     OffsetDateTime now,
                     AtomicInteger attempts,
-                    boolean success);
+                    boolean success,
+                    Map<String,String> attributes);
 }

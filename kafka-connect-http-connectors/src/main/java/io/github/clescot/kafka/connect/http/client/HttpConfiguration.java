@@ -1,6 +1,7 @@
 package io.github.clescot.kafka.connect.http.client;
 
 import com.google.common.base.Stopwatch;
+import com.google.common.collect.Maps;
 import dev.failsafe.Failsafe;
 import dev.failsafe.FailsafeExecutor;
 import dev.failsafe.RetryPolicy;
@@ -91,7 +92,8 @@ public class HttpConfiguration<C extends HttpClient<NR, NS>, NR, NS> implements 
                     new HttpResponse(HttpClient.SERVER_ERROR_STATUS_CODE, String.valueOf(exception.getMessage())),
                     Stopwatch.createUnstarted(), OffsetDateTime.now(ZoneId.of(HttpClient.UTC_ZONE_ID)),
                     attempts,
-                    HttpClient.FAILURE);
+                    HttpClient.FAILURE,
+                    Maps.newHashMap());
             return CompletableFuture.supplyAsync(() -> httpExchange);
         }
     }

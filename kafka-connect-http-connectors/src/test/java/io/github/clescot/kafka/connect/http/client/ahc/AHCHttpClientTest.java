@@ -66,7 +66,8 @@ class AHCHttpClientTest {
                         Stopwatch.createUnstarted(),
                         OffsetDateTime.now(ZoneId.of(AHCHttpClient.UTC_ZONE_ID)),
                         new AtomicInteger(2),
-                        SUCCESS
+                        SUCCESS,
+                        Maps.newHashMap()
                 ));
     }
 
@@ -81,7 +82,8 @@ class AHCHttpClientTest {
                         Stopwatch.createUnstarted(),
                         OffsetDateTime.now(ZoneId.of(AHCHttpClient.UTC_ZONE_ID)),
                         new AtomicInteger(2),
-                        SUCCESS));
+                        SUCCESS,
+                        Maps.newHashMap()));
     }
 
     @Test
@@ -93,7 +95,8 @@ class AHCHttpClientTest {
                 Stopwatch.createUnstarted(),
                 OffsetDateTime.now(ZoneId.of(AHCHttpClient.UTC_ZONE_ID)),
                 new AtomicInteger(2),
-                SUCCESS));
+                SUCCESS,
+                Maps.newHashMap()));
     }
 
 
@@ -107,7 +110,8 @@ class AHCHttpClientTest {
                 Stopwatch.createUnstarted(),
                 OffsetDateTime.now(ZoneId.of(AHCHttpClient.UTC_ZONE_ID)),
                 new AtomicInteger(2),
-                SUCCESS);
+                SUCCESS,
+                Maps.newHashMap());
         assertThat(httpExchange).isNotNull();
     }
 
