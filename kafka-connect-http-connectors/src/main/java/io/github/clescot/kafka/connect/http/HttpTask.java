@@ -92,18 +92,6 @@ public class HttpTask<T,C extends HttpClient<NR, NS>, NR, NS> implements Request
 
     }
 
-    public HttpTask(Map<String,String> config,
-                    Map<String,HttpConfiguration<C, NR, NS>> configurations,
-                    CompositeMeterRegistry meterRegistry) {
-
-        if (HttpTask.meterRegistry == null) {
-            HttpTask.meterRegistry = meterRegistry;
-        }
-        //bind metrics to MeterRegistry and ExecutorService
-        bindMetrics(config, meterRegistry, executorService);
-        this.configurations = configurations;
-    }
-
     /**
      * get the Configuration matching the HttpRequest, and do the Http call with a retry policy.
      * @param httpRequest http request
