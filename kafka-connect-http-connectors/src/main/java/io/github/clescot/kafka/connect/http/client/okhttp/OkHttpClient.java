@@ -344,8 +344,7 @@ public class OkHttpClient extends AbstractHttpClient<Request, Response> {
     }
 
     @Override
-    public HttpClient<Request, Response> customizeForUser(String vuId, HttpClient<Request, Response> genericClient) {
-
-        return null;
+    public HttpClient<Request, Response> customizeForUser(String vuId) {
+        return this;
     }
 }

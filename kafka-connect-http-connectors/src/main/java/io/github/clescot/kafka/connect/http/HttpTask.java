@@ -133,6 +133,7 @@ public class HttpTask<T,C extends HttpClient<NR, NS>, NR, NS> implements Request
     public HttpConfiguration<C, NR, NS> getConfigurationForUser(String userId, HttpConfiguration<C, NR, NS> configuration) {
         //TODO we could customize the configuration for the userId
         C client = configuration.getClient();
+        HttpClient<NR, NS> customized = client.customizeForUser(userId);
 
         return configuration;
     }
