@@ -10,6 +10,13 @@ import java.util.concurrent.CompletableFuture;
 
 import static io.github.clescot.kafka.connect.http.core.Request.VU_ID;
 
+/**
+ * A task that handles requests and produces responses.
+ * @param <C> the type of Client
+ * @param <F> the type of Configuration
+ * @param <R> the type of Request
+ * @param <E> the type of Exchange/Response
+ */
 public interface RequestTask<C extends Client,F extends Configuration<C,R>,R extends Request,E> extends Task<C,F,R>{
 
 
@@ -21,6 +28,11 @@ public interface RequestTask<C extends Client,F extends Configuration<C,R>,R ext
     CompletableFuture<E> call(@NotNull R request);
 
 
+    /**
+     * Returns a map of user-specific configurations.
+     * The key is a combination of user ID and configuration ID.
+     * @return a map of user-specific configurations
+     */
     Map<String,F> getUserConfigurations();
 
 
