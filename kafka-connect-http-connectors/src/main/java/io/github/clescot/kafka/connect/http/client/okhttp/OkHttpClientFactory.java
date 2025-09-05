@@ -335,14 +335,6 @@ public class OkHttpClientFactory implements HttpClientFactory<OkHttpClient,Reque
         return connectionPool;
     }
 
-    //need to be called to construct a client for each VuId
-    private void configureCookieJar(Map<String, Object> config, okhttp3.OkHttpClient.Builder httpClientBuilder) {
-            CookieStore cookieStore = null;
-            CookiePolicy cookiePolicy = CookiePolicy.ACCEPT_ALL;
-            CookieManager cookieManager = new CookieManager(cookieStore,cookiePolicy);
-            CookieJar cookieJar = new OkHttpCookieJar(cookieManager);
-            httpClientBuilder.cookieJar(cookieJar);
-    }
 
 
     private void configureCache(Map<String, Object> config, okhttp3.OkHttpClient.Builder httpClientBuilder, CompositeMeterRegistry meterRegistry) {

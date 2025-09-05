@@ -23,6 +23,9 @@ import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.CookieManager;
+import java.net.CookiePolicy;
+import java.net.CookieStore;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
@@ -345,6 +348,21 @@ public class OkHttpClient extends AbstractHttpClient<Request, Response> {
 
     @Override
     public HttpClient<Request, Response> customizeForUser(String vuId) {
-        return this;
+        return new OkHttpClient(getConfig(), customizeOkHttpClientForUser(vuId,client));
     }
+
+
+    private okhttp3.OkHttpClient customizeOkHttpClientForUser(String vuId,okhttp3.OkHttpClient client) {
+        okhttp3.OkHttpClient.Builder builder = client.newBuilder();
+        CookieStore cookieStore = null;//an internal InMemoryCookieStore() will be used if null
+        CookiePolicy cookiePolicy = CookiePolicy.ACCEPT_ALL;
+        CookieManager cookieManager = new CookieManager(cookieStore,cookiePolicy);
+        CookieJar cookieJar = new OkHttpCookieJar(cookieManager);
+        builder.cookieJar(cookieJar);
+        //we could customize the client for the user here
+        return builder.build();
+    }
+
+
+
 }
