@@ -1,4 +1,4 @@
-package io.github.clescot.kafka.connect.http;
+package io.github.clescot.kafka.connect.http.client;
 
 import com.github.tomakehurst.wiremock.client.WireMock;
 import com.github.tomakehurst.wiremock.core.Options;
@@ -9,8 +9,6 @@ import com.github.tomakehurst.wiremock.junit5.WireMockRuntimeInfo;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import io.github.clescot.kafka.connect.MapUtils;
-import io.github.clescot.kafka.connect.http.client.HttpClientConfiguration;
-import io.github.clescot.kafka.connect.http.client.HttpConfiguration;
 import io.github.clescot.kafka.connect.http.client.okhttp.OkHttpClient;
 import io.github.clescot.kafka.connect.http.client.okhttp.OkHttpClientFactory;
 import io.github.clescot.kafka.connect.http.core.HttpExchange;
@@ -24,7 +22,6 @@ import io.micrometer.jmx.JmxMeterRegistry;
 import okhttp3.Request;
 import okhttp3.Response;
 import org.apache.kafka.common.config.AbstractConfig;
-import org.apache.kafka.connect.sink.SinkRecord;
 import org.assertj.core.util.Sets;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.BeforeEach;
@@ -48,7 +45,7 @@ import static io.github.clescot.kafka.connect.http.sink.HttpConfigDefinition.DEF
 import static org.assertj.core.api.Assertions.assertThat;
 
 @Execution(ExecutionMode.SAME_THREAD)
-class HttpTaskTest {
+class HttpConfigurationTest {
     private static final HttpRequest.Method DUMMY_METHOD = HttpRequest.Method.POST;
     private static final ExecutorService executorService = Executors.newFixedThreadPool(2);
     public static final String AUTHORIZED_STATE = "Authorized";
@@ -72,7 +69,6 @@ class HttpTaskTest {
 
     @Nested
     class CallWithRetryPolicy {
-        private HttpTask<SinkRecord,OkHttpClient,Request,Response> httpTask;
 
         @BeforeEach
         void setUp(){
@@ -87,9 +83,6 @@ class HttpTaskTest {
             HttpConfiguration<OkHttpClient, Request, Response> httpConfiguration = new HttpConfiguration<>(test);
             Map<String, HttpConfiguration<OkHttpClient, Request, Response>> map = Maps.newHashMap();
             map.put(DEFAULT_CONFIGURATION_ID, httpConfiguration);
-            httpTask = new HttpTask<>(config.originalsStrings(),
-                    map,
-                    compositeMeterRegistry);
         }
 
         @Test
