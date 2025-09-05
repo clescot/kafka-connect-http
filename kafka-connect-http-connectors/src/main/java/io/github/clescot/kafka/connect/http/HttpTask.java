@@ -27,6 +27,7 @@ import static io.github.clescot.kafka.connect.http.sink.HttpConfigDefinition.HTT
 import static io.github.clescot.kafka.connect.http.sink.HttpConfigDefinition.REQUEST_GROUPER_IDS;
 
 /**
+ *
  * @param <T> type of the incoming Record.
  * @param <C> client type, which is a subclass of HttpClient
  * @param <NR> native HttpRequest

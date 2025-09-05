@@ -1,6 +1,5 @@
 package io.github.clescot.kafka.connect.http.client;
 
-import dev.failsafe.RateLimiter;
 import io.github.clescot.kafka.connect.AbstractClient;
 import io.github.clescot.kafka.connect.http.core.HttpExchange;
 import org.slf4j.Logger;

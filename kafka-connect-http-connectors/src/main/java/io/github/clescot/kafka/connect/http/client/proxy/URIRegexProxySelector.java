@@ -11,7 +11,6 @@ import java.net.SocketAddress;
 import java.net.URI;
 import java.util.List;
 import java.util.function.Predicate;
-import java.util.stream.Collectors;
 
 public class URIRegexProxySelector extends ProxySelector {
 

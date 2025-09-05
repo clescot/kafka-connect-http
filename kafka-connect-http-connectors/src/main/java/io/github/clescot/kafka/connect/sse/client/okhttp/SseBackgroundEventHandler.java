@@ -1,19 +1,15 @@
 package io.github.clescot.kafka.connect.sse.client.okhttp;
 
-import com.google.common.collect.Maps;
 import com.launchdarkly.eventsource.MessageEvent;
 import com.launchdarkly.eventsource.background.BackgroundEventHandler;
-import dev.failsafe.RateLimiter;
 import io.github.clescot.kafka.connect.AbstractClient;
 import io.github.clescot.kafka.connect.ResponseClient;
-import io.github.clescot.kafka.connect.http.core.HttpExchange;
 import io.github.clescot.kafka.connect.sse.core.SseEvent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.net.URI;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Queue;
 
 import static io.github.clescot.kafka.connect.http.client.HttpClientConfiguration.CONFIGURATION_ID;

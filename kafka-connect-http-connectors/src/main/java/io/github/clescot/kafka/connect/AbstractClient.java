@@ -16,7 +16,6 @@ import java.util.Optional;
 import static io.github.clescot.kafka.connect.http.client.HttpClientConfiguration.CONFIGURATION_ID;
 import static io.github.clescot.kafka.connect.http.client.HttpClientConfiguration.STATIC_SCOPE;
 import static io.github.clescot.kafka.connect.http.sink.HttpConfigDefinition.*;
-import static io.github.clescot.kafka.connect.http.sink.HttpConfigDefinition.RATE_LIMITER_SCOPE;
 
 public abstract class  AbstractClient<E> implements Client<E> {
     Logger LOGGER = LoggerFactory.getLogger(AbstractClient.class);

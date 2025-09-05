@@ -3,8 +3,6 @@ package io.github.clescot.kafka.connect.http.client.okhttp.authentication;
 import com.google.common.base.Preconditions;
 import okhttp3.Authenticator;
 import okhttp3.OkHttpClient;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.util.Map;
 
