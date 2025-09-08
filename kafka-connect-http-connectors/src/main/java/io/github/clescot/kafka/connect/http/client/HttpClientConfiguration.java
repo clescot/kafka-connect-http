@@ -62,9 +62,9 @@ public class HttpClientConfiguration<C extends HttpClient<R,S>,R,S> implements C
     private final Pattern defaultSuccessPattern = Pattern.compile(CONFIG_DEFAULT_DEFAULT_SUCCESS_RESPONSE_CODE_REGEX);
 
 
-    private final AddStaticHeadersToHttpRequestFunction addStaticHeadersToHttpRequestFunction;
-    private final AddMissingRequestIdHeaderToHttpRequestFunction addMissingRequestIdHeaderToHttpRequestFunction;
-    private final AddMissingCorrelationIdHeaderToHttpRequestFunction addMissingCorrelationIdHeaderToHttpRequestFunction;
+    private AddStaticHeadersToHttpRequestFunction addStaticHeadersToHttpRequestFunction;
+    private AddMissingRequestIdHeaderToHttpRequestFunction addMissingRequestIdHeaderToHttpRequestFunction;
+    private AddMissingCorrelationIdHeaderToHttpRequestFunction addMissingCorrelationIdHeaderToHttpRequestFunction;
     private AddSuccessStatusToHttpExchangeFunction addSuccessStatusToHttpExchangeFunction;
     private AddUserAgentHeaderToHttpRequestFunction addUserAgentHeaderToHttpRequestFunction;
 
@@ -98,6 +98,44 @@ public class HttpClientConfiguration<C extends HttpClient<R,S>,R,S> implements C
         Random random = getRandom(settings);
 
         this.httpClient = httpClientFactory.buildHttpClient(settings, executorService, meterRegistry, random);
+
+
+        //enrich exchange
+        //success response code regex
+        Pattern successResponseCodeRegex;
+        if (settings.containsKey(SUCCESS_RESPONSE_CODE_REGEX)) {
+            successResponseCodeRegex = Pattern.compile((String) settings.get(SUCCESS_RESPONSE_CODE_REGEX));
+        } else {
+            successResponseCodeRegex = defaultSuccessPattern;
+        }
+        this.addSuccessStatusToHttpExchangeFunction = new AddSuccessStatusToHttpExchangeFunction(successResponseCodeRegex);
+
+
+        //retry policy
+        //retry response code regex
+        if (settings.containsKey(RETRY_RESPONSE_CODE_REGEX)) {
+            this.retryResponseCodeRegex = Pattern.compile((String) settings.get(RETRY_RESPONSE_CODE_REGEX));
+        }
+
+        if (settings.containsKey(RETRIES)) {
+            Integer retries = Integer.parseInt((String) settings.get(RETRIES));
+            Long retryDelayInMs = Long.parseLong((String) Optional.ofNullable(settings.get(RETRY_DELAY_IN_MS)).orElse(""+DEFAULT_RETRY_DELAY_IN_MS_VALUE));
+            Preconditions.checkNotNull(retryDelayInMs, RETRIES + HAS_BEEN_SET + RETRY_DELAY_IN_MS + MUST_BE_SET_TOO);
+            Long retryMaxDelayInMs = Long.parseLong((String) Optional.ofNullable(settings.get(RETRY_MAX_DELAY_IN_MS)).orElse(""+DEFAULT_RETRY_MAX_DELAY_IN_MS_VALUE));
+            Preconditions.checkNotNull(retryDelayInMs, RETRIES + HAS_BEEN_SET + RETRY_MAX_DELAY_IN_MS + MUST_BE_SET_TOO);
+            Double retryDelayFactor = Double.parseDouble((String) Optional.ofNullable(settings.get(RETRY_DELAY_FACTOR)).orElse(""+DEFAULT_RETRY_DELAY_FACTOR_VALUE));
+            Preconditions.checkNotNull(retryDelayInMs, RETRIES + HAS_BEEN_SET + RETRY_DELAY_FACTOR + MUST_BE_SET_TOO);
+            Long retryJitterInMs = Long.parseLong((String) Optional.ofNullable(settings.get(RETRY_JITTER_IN_MS)).orElse(""+DEFAULT_RETRY_JITTER_IN_MS_VALUE));
+            Preconditions.checkNotNull(retryDelayInMs, RETRIES + HAS_BEEN_SET + RETRY_JITTER_IN_MS + MUST_BE_SET_TOO);
+            this.retryPolicy = buildRetryPolicy(retries, retryDelayInMs, retryMaxDelayInMs, retryDelayFactor, retryJitterInMs);
+        }else{
+            LOGGER.trace("configuration '{}' :retry policy is not configured",this.getId());
+        }
+        this.enrichRequestFunction = buildEnrichRequestFunction(random);
+
+    }
+
+    public Function<HttpRequest,HttpRequest> buildEnrichRequestFunction(Random random) {
 
         //enrich request
         List<Function<HttpRequest,HttpRequest>> enrichRequestFunctions = Lists.newArrayList();
@@ -144,40 +182,7 @@ public class HttpClientConfiguration<C extends HttpClient<R,S>,R,S> implements C
             LOGGER.trace("user agent interceptor : '{}' configured. No need to activate UserAgentInterceptor",activateUserAgentHeaderToHttpRequestFunction);
         }
 
-        enrichRequestFunction = enrichRequestFunctions.stream().reduce(Function.identity(), Function::andThen);
-
-        //enrich exchange
-        //success response code regex
-        Pattern successResponseCodeRegex;
-        if (settings.containsKey(SUCCESS_RESPONSE_CODE_REGEX)) {
-            successResponseCodeRegex = Pattern.compile((String) settings.get(SUCCESS_RESPONSE_CODE_REGEX));
-        } else {
-            successResponseCodeRegex = defaultSuccessPattern;
-        }
-        this.addSuccessStatusToHttpExchangeFunction = new AddSuccessStatusToHttpExchangeFunction(successResponseCodeRegex);
-
-
-        //retry policy
-        //retry response code regex
-        if (settings.containsKey(RETRY_RESPONSE_CODE_REGEX)) {
-            this.retryResponseCodeRegex = Pattern.compile((String) settings.get(RETRY_RESPONSE_CODE_REGEX));
-        }
-
-        if (settings.containsKey(RETRIES)) {
-            Integer retries = Integer.parseInt((String) settings.get(RETRIES));
-            Long retryDelayInMs = Long.parseLong((String) Optional.ofNullable(settings.get(RETRY_DELAY_IN_MS)).orElse(""+DEFAULT_RETRY_DELAY_IN_MS_VALUE));
-            Preconditions.checkNotNull(retryDelayInMs, RETRIES + HAS_BEEN_SET + RETRY_DELAY_IN_MS + MUST_BE_SET_TOO);
-            Long retryMaxDelayInMs = Long.parseLong((String) Optional.ofNullable(settings.get(RETRY_MAX_DELAY_IN_MS)).orElse(""+DEFAULT_RETRY_MAX_DELAY_IN_MS_VALUE));
-            Preconditions.checkNotNull(retryDelayInMs, RETRIES + HAS_BEEN_SET + RETRY_MAX_DELAY_IN_MS + MUST_BE_SET_TOO);
-            Double retryDelayFactor = Double.parseDouble((String) Optional.ofNullable(settings.get(RETRY_DELAY_FACTOR)).orElse(""+DEFAULT_RETRY_DELAY_FACTOR_VALUE));
-            Preconditions.checkNotNull(retryDelayInMs, RETRIES + HAS_BEEN_SET + RETRY_DELAY_FACTOR + MUST_BE_SET_TOO);
-            Long retryJitterInMs = Long.parseLong((String) Optional.ofNullable(settings.get(RETRY_JITTER_IN_MS)).orElse(""+DEFAULT_RETRY_JITTER_IN_MS_VALUE));
-            Preconditions.checkNotNull(retryDelayInMs, RETRIES + HAS_BEEN_SET + RETRY_JITTER_IN_MS + MUST_BE_SET_TOO);
-            this.retryPolicy = buildRetryPolicy(retries, retryDelayInMs, retryMaxDelayInMs, retryDelayFactor, retryJitterInMs);
-        }else{
-            LOGGER.trace("configuration '{}' :retry policy is not configured",this.getId());
-        }
-
+        return enrichRequestFunctions.stream().reduce(Function.identity(), Function::andThen);
     }
 
     public Function<HttpRequest, HttpRequest> getEnrichRequestFunction() {
