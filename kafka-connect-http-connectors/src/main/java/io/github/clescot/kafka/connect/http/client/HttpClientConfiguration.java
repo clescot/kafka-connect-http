@@ -4,7 +4,6 @@ import com.google.common.base.Preconditions;
 import com.google.common.collect.Maps;
 import dev.failsafe.RetryPolicy;
 import io.github.clescot.kafka.connect.Configuration;
-import io.github.clescot.kafka.connect.RequestTask;
 import io.github.clescot.kafka.connect.VersionUtils;
 import io.github.clescot.kafka.connect.http.client.config.HttpRequestPredicateBuilder;
 import io.github.clescot.kafka.connect.http.core.HttpExchange;
@@ -16,9 +15,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.function.Predicate;
 import java.util.regex.Pattern;
-
-import static io.github.clescot.kafka.connect.http.client.config.HttpRequestPredicateBuilder.*;
-import static io.github.clescot.kafka.connect.http.sink.HttpConfigDefinition.*;
 
 /**
  * Configuration of the {@link HttpClient}, specific to some websites according to the configured <span class="strong">predicate</span>.
@@ -56,7 +52,7 @@ public class HttpClientConfiguration<C extends HttpClient<R,S>,R,S> implements C
     //http client
     private C httpClient;
     public final String id;
-    private final Map<String, Object> settings;
+    private final Map<String, String> settings;
 
 
     public HttpClientConfiguration(String id,
@@ -118,62 +114,12 @@ public class HttpClientConfiguration<C extends HttpClient<R,S>,R,S> implements C
 
 
 
-    private String predicateToString() {
-        StringBuilder result = new StringBuilder("{");
-        String urlRegex = (String) settings.get(URL_REGEX);
-        if(urlRegex!=null) {
-            result.append("urlRegex:'").append(urlRegex).append("'");
-        }
-        String methodRegex = (String) settings.get(METHOD_REGEX);
-        if(methodRegex!=null) {
-            result.append(",methodRegex:").append(methodRegex).append("'");
-        }
-        String bodytypeRegex = (String) settings.get(BODYTYPE_REGEX);
-        if(bodytypeRegex!=null) {
-            result.append(",bodytypeRegex:").append(bodytypeRegex).append("'");
-        }
-        String headerKeyRegex = (String) settings.get(HEADER_KEY_REGEX);
-        if(headerKeyRegex!=null) {
-            result.append(",headerKeyRegex:").append(headerKeyRegex).append("'");
-        }
-        result.append("}");
-        return result.toString();
-    }
 
-    private String retryPolicyToString(){
-        StringBuilder result = new StringBuilder("{");
-        if(retryResponseCodeRegex!=null){
-            result.append("retryResponseCodeRegex:'").append(retryResponseCodeRegex).append("'");
-        }
-        String retries = (String) settings.get(RETRIES);
-        if(retries!=null){
-            result.append(", retries:'").append(retries).append("'");
-        }
-        String retryDelayInMs = (String) settings.get(RETRY_DELAY_IN_MS);
-        if(retryDelayInMs!=null){
-            result.append(", retryDelayInMs:'").append(retryDelayInMs).append("'");
-        }
-        String maxRetryDelayInMs = (String) settings.get(RETRY_MAX_DELAY_IN_MS);
-        if(maxRetryDelayInMs!=null){
-            result.append(", maxRetryDelayInMs:'").append(maxRetryDelayInMs).append("'");
-        }
-        String retryDelayFactor = (String) settings.get(RETRY_DELAY_FACTOR);
-        if(retryDelayFactor!=null){
-            result.append(", retryDelayFactor:'").append(retryDelayFactor).append("'");
-        }
-        String retryjitterInMs = (String) settings.get(RETRY_JITTER_IN_MS);
-        if(retryjitterInMs!=null){
-            result.append(", retryjitterInMs:'").append(retryjitterInMs).append("'");
-        }
-        result.append("}");
-        return result.toString();
-    }
+
     @Override
     public String toString() {
         return "Configuration{" +
                 "id='" + id +
-                "', predicate='" + predicateToString() +
-                "', retryPolicy='" + retryPolicyToString() +
                 "', httpClient='" + httpClient +
                 '}';
     }

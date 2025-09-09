@@ -24,8 +24,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 import static io.github.clescot.kafka.connect.http.client.HttpClientConfigurationFactory.buildConfigurations;
-import static io.github.clescot.kafka.connect.http.sink.HttpConfigDefinition.HTTP_CLIENT_ASYNC_FIXED_THREAD_POOL_SIZE;
-import static io.github.clescot.kafka.connect.http.sink.HttpConfigDefinition.REQUEST_GROUPER_IDS;
+import static io.github.clescot.kafka.connect.http.sink.HttpConfigDefinition.*;
 
 /**
  *
@@ -54,7 +53,7 @@ public class HttpTask<T,C extends HttpClient<NR, NS>, NR, NS> implements Request
     private ExecutorService executorService;
 
     private List<RequestGrouper<T>> requestGroupers;
-
+    private Map<String, String> settings;
 
     public HttpTask(HttpConnectorConfig httpConnectorConfig,
                     HttpClientFactory<C, NR, NS> httpClientFactory) {
@@ -64,9 +63,9 @@ public class HttpTask<T,C extends HttpClient<NR, NS>, NR, NS> implements Request
         customFixedThreadPoolSize.ifPresent(integer -> this.executorService = buildExecutorService(integer));
 
         //build meterRegistry
-        Map<String, String> originalsStrings = httpConnectorConfig.originalsStrings();
-        meterRegistry = buildMeterRegistry(originalsStrings);
-        bindMetrics(originalsStrings,meterRegistry, executorService);
+        settings = httpConnectorConfig.originalsStrings();
+        meterRegistry = buildMeterRegistry(settings);
+        bindMetrics(settings,meterRegistry, executorService);
 
         //request groupers
         RequestGrouperFactory requestGrouperFactory = new RequestGrouperFactory();
@@ -77,14 +76,14 @@ public class HttpTask<T,C extends HttpClient<NR, NS>, NR, NS> implements Request
                 httpClientFactory,
                 executorService,
                 httpConnectorConfig.getConfigurationIds(),
-                originalsStrings, meterRegistry,
+                settings, meterRegistry,
                 retryPolicy
         );
         //wrap configurations in HttpConfiguration
         this.configurations = httpClientConfigurations.entrySet().stream()
                 .map(
                         entry->Map.entry(entry.getKey(),
-                        new HttpConfiguration<>(entry.getKey(),entry.getValue(),executorService,originalsStrings)
+                        new HttpConfiguration<>(entry.getKey(),entry.getValue(),executorService,settings)
                         )
                 )
                 .collect(
@@ -200,4 +199,42 @@ public class HttpTask<T,C extends HttpClient<NR, NS>, NR, NS> implements Request
         LOGGER.info("HttpTask stopped");
     }
 
+    private String retryPolicyToString(){
+        StringBuilder result = new StringBuilder("{");
+
+        String retries = settings.get(RETRIES);
+        if(retries!=null){
+            result.append(", retries:'").append(retries).append("'");
+        }
+        String retryDelayInMs = settings.get(RETRY_DELAY_IN_MS);
+        if(retryDelayInMs!=null){
+            result.append(", retryDelayInMs:'").append(retryDelayInMs).append("'");
+        }
+        String maxRetryDelayInMs = settings.get(RETRY_MAX_DELAY_IN_MS);
+        if(maxRetryDelayInMs!=null){
+            result.append(", maxRetryDelayInMs:'").append(maxRetryDelayInMs).append("'");
+        }
+        String retryDelayFactor = settings.get(RETRY_DELAY_FACTOR);
+        if(retryDelayFactor!=null){
+            result.append(", retryDelayFactor:'").append(retryDelayFactor).append("'");
+        }
+        String retryjitterInMs = settings.get(RETRY_JITTER_IN_MS);
+        if(retryjitterInMs!=null){
+            result.append(", retryjitterInMs:'").append(retryjitterInMs).append("'");
+        }
+        result.append("}");
+        return result.toString();
+    }
+
+    @Override
+    public String toString() {
+        return "HttpTask{" +
+                "configurations=" + configurations +
+                ", retryPolicy=" + retryPolicyToString() +
+                ", userConfigurations=" + userConfigurations +
+                ", executorService=" + executorService +
+                ", requestGroupers=" + requestGroupers +
+                ", settings=" + settings +
+                '}';
+    }
 }

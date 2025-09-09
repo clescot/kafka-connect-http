@@ -6,6 +6,7 @@ import dev.failsafe.Failsafe;
 import dev.failsafe.FailsafeExecutor;
 import dev.failsafe.RetryPolicy;
 import io.github.clescot.kafka.connect.Configuration;
+import io.github.clescot.kafka.connect.http.client.config.HttpRequestPredicateBuilder;
 import io.github.clescot.kafka.connect.http.core.HttpExchange;
 import io.github.clescot.kafka.connect.http.core.HttpRequest;
 import io.github.clescot.kafka.connect.http.core.HttpResponse;
@@ -21,9 +22,12 @@ import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Predicate;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import static io.github.clescot.kafka.connect.http.client.config.HttpRequestPredicateBuilder.*;
+import static io.github.clescot.kafka.connect.http.client.config.HttpRequestPredicateBuilder.HEADER_KEY_REGEX;
 import static io.github.clescot.kafka.connect.http.sink.HttpConfigDefinition.DEFAULT_DEFAULT_RETRY_RESPONSE_CODE_REGEX;
 import static io.github.clescot.kafka.connect.http.sink.HttpConfigDefinition.RETRY_RESPONSE_CODE_REGEX;
 
@@ -41,8 +45,11 @@ public class HttpConfiguration<C extends HttpClient<NR, NS>, NR, NS> implements 
 
     private final HttpClientConfiguration<C, NR, NS> httpClientConfiguration;
     private final ExecutorService executorService;
+    @NotNull
+    private final Map<String, String> settings;
     private final Pattern retryResponseCodeRegex;
-    private String id;
+    private final String id;
+    private final Predicate<HttpRequest> predicate;
 
     public HttpConfiguration(String id,
                              HttpClientConfiguration<C, NR, NS> httpClientConfiguration,
@@ -50,6 +57,7 @@ public class HttpConfiguration<C extends HttpClient<NR, NS>, NR, NS> implements 
         this.id = id;
         this.httpClientConfiguration = httpClientConfiguration;
         this.executorService = executorService;
+        this.settings = settings;
         //retry policy
         //retry response code regex
         if (settings.containsKey(RETRY_RESPONSE_CODE_REGEX)) {
@@ -57,12 +65,47 @@ public class HttpConfiguration<C extends HttpClient<NR, NS>, NR, NS> implements 
         }else {
             this.retryResponseCodeRegex = Pattern.compile(DEFAULT_DEFAULT_RETRY_RESPONSE_CODE_REGEX);
         }
+
+        this.predicate = HttpRequestPredicateBuilder.build().buildPredicate(settings);
     }
 
     public Pattern getRetryResponseCodeRegex() {
         return retryResponseCodeRegex;
     }
 
+    private String predicateToString() {
+        StringBuilder result = new StringBuilder("{");
+        String urlRegex = settings.get(URL_REGEX);
+        if(urlRegex!=null) {
+            result.append("urlRegex:'").append(urlRegex).append("'");
+        }
+        String methodRegex = settings.get(METHOD_REGEX);
+        if(methodRegex!=null) {
+            result.append(",methodRegex:").append(methodRegex).append("'");
+        }
+        String bodytypeRegex = settings.get(BODYTYPE_REGEX);
+        if(bodytypeRegex!=null) {
+            result.append(",bodytypeRegex:").append(bodytypeRegex).append("'");
+        }
+        String headerKeyRegex = settings.get(HEADER_KEY_REGEX);
+        if(headerKeyRegex!=null) {
+            result.append(",headerKeyRegex:").append(headerKeyRegex).append("'");
+        }
+        result.append("}");
+        return result.toString();
+    }
+
+    @Override
+    public String toString() {
+        return "HttpConfiguration{" +
+                "httpClientConfiguration=" + httpClientConfiguration +
+                ", executorService=" + executorService +
+                ", settings=" + settings +
+                ", retryResponseCodeRegex=" + retryResponseCodeRegex +
+                ", id='" + id + '\'' +
+                ", predicate=" + predicateToString() +
+                '}';
+    }
 
     /**
      *  - enrich request
