@@ -45,6 +45,7 @@ public class HttpConfiguration<C extends HttpClient<NR, NS>, NR, NS> implements 
 
     private final HttpClientConfiguration<C, NR, NS> httpClientConfiguration;
     private final ExecutorService executorService;
+    private final RetryPolicy<HttpExchange> retryPolicy;
     @NotNull
     private final Map<String, String> settings;
     private final Pattern retryResponseCodeRegex;
@@ -53,12 +54,14 @@ public class HttpConfiguration<C extends HttpClient<NR, NS>, NR, NS> implements 
 
     public HttpConfiguration(String id,
                              HttpClientConfiguration<C, NR, NS> httpClientConfiguration,
-                             ExecutorService executorService, Map<String, String> settings) {
+                             ExecutorService executorService,
+                             RetryPolicy<HttpExchange> retryPolicy,
+                             Map<String, String> settings) {
         this.id = id;
         this.httpClientConfiguration = httpClientConfiguration;
         this.executorService = executorService;
+        this.retryPolicy = retryPolicy;
         this.settings = settings;
-        //retry policy
         //retry response code regex
         if (settings.containsKey(RETRY_RESPONSE_CODE_REGEX)) {
             this.retryResponseCodeRegex = Pattern.compile(settings.get(RETRY_RESPONSE_CODE_REGEX));

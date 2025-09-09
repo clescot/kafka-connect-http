@@ -83,7 +83,12 @@ public class HttpTask<T,C extends HttpClient<NR, NS>, NR, NS> implements Request
         this.configurations = httpClientConfigurations.entrySet().stream()
                 .map(
                         entry->Map.entry(entry.getKey(),
-                        new HttpConfiguration<>(entry.getKey(),entry.getValue(),executorService,settings)
+                        new HttpConfiguration<>(
+                                entry.getKey(),
+                                entry.getValue(),
+                                executorService,
+                                retryPolicy,
+                                settings)
                         )
                 )
                 .collect(
