@@ -31,13 +31,13 @@ public class DigestAuthenticationConfigurer implements AuthenticationConfigurer{
     }
 
     @Override
-    public Authenticator configureAuthenticator(Map<String, Object> config) {
+    public Authenticator configureAuthenticator(Map<String, String> config) {
         //Digest Authentication
         DigestAuthenticator digestAuthenticator = null;
-        if (config.containsKey(HTTP_CLIENT_AUTHENTICATION_DIGEST_ACTIVATE) && Boolean.TRUE.equals(config.get(HTTP_CLIENT_AUTHENTICATION_DIGEST_ACTIVATE))) {
-            String username = (String) config.get(HTTP_CLIENT_AUTHENTICATION_DIGEST_USERNAME);
+        if (config.containsKey(HTTP_CLIENT_AUTHENTICATION_DIGEST_ACTIVATE) && Boolean.TRUE.equals(Boolean.parseBoolean(config.get(HTTP_CLIENT_AUTHENTICATION_DIGEST_ACTIVATE)))) {
+            String username = config.get(HTTP_CLIENT_AUTHENTICATION_DIGEST_USERNAME);
             Preconditions.checkNotNull(username,"'"+HTTP_CLIENT_AUTHENTICATION_DIGEST_USERNAME+"' is null");
-            String password = (String) config.get(HTTP_CLIENT_AUTHENTICATION_DIGEST_PASSWORD);
+            String password = config.get(HTTP_CLIENT_AUTHENTICATION_DIGEST_PASSWORD);
             Preconditions.checkNotNull(password,"'"+HTTP_CLIENT_AUTHENTICATION_DIGEST_PASSWORD+"' is null");
             com.burgstaller.okhttp.digest.Credentials credentials = new com.burgstaller.okhttp.digest.Credentials(username, password);
             //digest charset

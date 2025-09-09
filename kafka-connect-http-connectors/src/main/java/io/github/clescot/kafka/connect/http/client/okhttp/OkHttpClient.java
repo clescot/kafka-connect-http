@@ -39,7 +39,7 @@ public class OkHttpClient extends AbstractHttpClient<Request, Response> {
     private static final Logger LOGGER = LoggerFactory.getLogger(OkHttpClient.class);
 
 
-    public OkHttpClient(Map<String, Object> config,
+    public OkHttpClient(Map<String, String> config,
                         okhttp3.OkHttpClient client,
                         Random random) {
         super(config, random);

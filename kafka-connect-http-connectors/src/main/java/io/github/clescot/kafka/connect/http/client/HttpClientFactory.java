@@ -42,24 +42,25 @@ public interface HttpClientFactory<C extends HttpClient<R,S>,R,S> {
     String DEFAULT_SSL_PROTOCOL = "SSL";
     String IS_NOT_SET = " is not set";
 
-    C build(Map<String, Object> config,
+    C build(Map<String, String> config,
                               ExecutorService executorService,
                               Random random,
                               Proxy proxy,
                               ProxySelector proxySelector, CompositeMeterRegistry meterRegistry);
 
-    default C buildHttpClient(Map<String, Object> config,
-                                                  ExecutorService executorService,
-                                                  CompositeMeterRegistry meterRegistry, Random random) {
+    default C buildHttpClient(Map<String, String> config,
+                              ExecutorService executorService,
+                              CompositeMeterRegistry meterRegistry,
+                              Random random) {
         Preconditions.checkNotNull(random, "Random must not be null.");
         Preconditions.checkNotNull(meterRegistry, "MeterRegistry must not be null.");
         //get proxy
         Proxy proxy = null;
         if (config.containsKey(PROXY_HTTP_CLIENT_HOSTNAME)) {
-            String proxyHostName = (String) config.get(PROXY_HTTP_CLIENT_HOSTNAME);
-            int proxyPort = (Integer) config.get(PROXY_HTTP_CLIENT_PORT);
+            String proxyHostName = config.get(PROXY_HTTP_CLIENT_HOSTNAME);
+            int proxyPort = Integer.parseInt(config.get(PROXY_HTTP_CLIENT_PORT));
             SocketAddress socketAddress = new InetSocketAddress(proxyHostName, proxyPort);
-            String proxyTypeLabel = (String) Optional.ofNullable(config.get(PROXY_HTTP_CLIENT_TYPE)).orElse("HTTP");
+            String proxyTypeLabel = Optional.ofNullable(config.get(PROXY_HTTP_CLIENT_TYPE)).orElse("HTTP");
             Proxy.Type proxyType = Proxy.Type.valueOf(proxyTypeLabel);
             proxy = new Proxy(proxyType, socketAddress);
         }
@@ -74,15 +75,15 @@ public interface HttpClientFactory<C extends HttpClient<R,S>,R,S> {
     }
 
 
-    default Optional<KeyManagerFactory> getKeyManagerFactory(Map<String, Object> config) {
+    default Optional<KeyManagerFactory> getKeyManagerFactory(Map<String, String> config) {
         if (config.containsKey(HTTP_CLIENT_SSL_KEYSTORE_PATH)
                 && config.containsKey(HTTP_CLIENT_SSL_KEYSTORE_PASSWORD)) {
             return Optional.of(
                     getKeyManagerFactory(
-                            config.get(HTTP_CLIENT_SSL_KEYSTORE_PATH).toString(),
-                            config.get(HTTP_CLIENT_SSL_KEYSTORE_PASSWORD).toString().toCharArray(),
-                            config.get(HTTP_CLIENT_SSL_KEYSTORE_TYPE).toString(),
-                            config.get(HTTP_CLIENT_SSL_KEYSTORE_ALGORITHM).toString()));
+                            config.get(HTTP_CLIENT_SSL_KEYSTORE_PATH),
+                            config.get(HTTP_CLIENT_SSL_KEYSTORE_PASSWORD).toCharArray(),
+                            config.get(HTTP_CLIENT_SSL_KEYSTORE_TYPE),
+                            config.get(HTTP_CLIENT_SSL_KEYSTORE_ALGORITHM)));
         }
         return Optional.empty();
     }
@@ -141,21 +142,21 @@ public interface HttpClientFactory<C extends HttpClient<R,S>,R,S> {
         return trustManagerFactory;
     }
 
-    static TrustManagerFactory getTrustManagerFactory(Map<String,Object> config){
+    static TrustManagerFactory getTrustManagerFactory(Map<String,String> config){
         if(config.containsKey(HTTP_CLIENT_SSL_TRUSTSTORE_ALWAYS_TRUST)&& Boolean.parseBoolean(config.get(HTTP_CLIENT_SSL_TRUSTSTORE_ALWAYS_TRUST).toString())){
             LOGGER.warn("/!\\ activating 'always trust any certificate' feature : remote SSL certificates will always be granted. Use this feature at your own risk ! ");
             return new AlwaysTrustManagerFactory();
         }else {
-            String trustStorePath = (String) config.get(HTTP_CLIENT_SSL_TRUSTSTORE_PATH);
+            String trustStorePath = config.get(HTTP_CLIENT_SSL_TRUSTSTORE_PATH);
             Preconditions.checkNotNull(trustStorePath, CONFIG_HTTP_CLIENT_SSL_TRUSTSTORE_PATH + IS_NOT_SET);
 
-            String truststorePassword = (String) config.get(HTTP_CLIENT_SSL_TRUSTSTORE_PASSWORD);
+            String truststorePassword = config.get(HTTP_CLIENT_SSL_TRUSTSTORE_PASSWORD);
             Preconditions.checkNotNull(truststorePassword, CONFIG_HTTP_CLIENT_SSL_TRUSTSTORE_PASSWORD + IS_NOT_SET);
 
-            String trustStoreType = (String) config.get(HTTP_CLIENT_SSL_TRUSTSTORE_TYPE);
+            String trustStoreType = config.get(HTTP_CLIENT_SSL_TRUSTSTORE_TYPE);
             Preconditions.checkNotNull(trustStoreType, CONFIG_HTTP_CLIENT_SSL_TRUSTSTORE_TYPE + IS_NOT_SET);
 
-            String truststoreAlgorithm = (String) config.get(HTTP_CLIENT_SSL_TRUSTSTORE_ALGORITHM);
+            String truststoreAlgorithm = config.get(HTTP_CLIENT_SSL_TRUSTSTORE_ALGORITHM);
             Preconditions.checkNotNull(truststoreAlgorithm, HTTP_CLIENT_SSL_TRUSTSTORE_ALGORITHM + IS_NOT_SET);
 
             return getTrustManagerFactory(
@@ -167,7 +168,7 @@ public interface HttpClientFactory<C extends HttpClient<R,S>,R,S> {
     }
 
 
-    static Optional<TrustManagerFactory> buildTrustManagerFactory(Map<String, Object> config) {
+    static Optional<TrustManagerFactory> buildTrustManagerFactory(Map<String, String> config) {
         if ((config.containsKey(HTTP_CLIENT_SSL_TRUSTSTORE_PATH)
                 && config.containsKey(HTTP_CLIENT_SSL_TRUSTSTORE_PASSWORD))||config.containsKey(HTTP_CLIENT_SSL_TRUSTSTORE_ALWAYS_TRUST)) {
 

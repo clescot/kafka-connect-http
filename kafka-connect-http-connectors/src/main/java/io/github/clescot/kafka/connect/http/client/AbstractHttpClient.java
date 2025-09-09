@@ -41,24 +41,24 @@ public abstract class AbstractHttpClient<NR,NS> extends AbstractClient<HttpExcha
 
     //rate limiter
 
-    protected AbstractHttpClient(Map<String, Object> config,Random random) {
+    protected AbstractHttpClient(Map<String, String> config,Random random) {
        super(config);
 
         //httpResponse
         //messageStatus limit
 
-        int httpResponseMessageStatusLimit = Integer.parseInt(Optional.ofNullable((String)config.get(HTTP_RESPONSE_MESSAGE_STATUS_LIMIT)).orElse(DEFAULT_HTTP_RESPONSE_MESSAGE_STATUS_LIMIT));
+        int httpResponseMessageStatusLimit = Integer.parseInt(Optional.ofNullable(config.get(HTTP_RESPONSE_MESSAGE_STATUS_LIMIT)).orElse(DEFAULT_HTTP_RESPONSE_MESSAGE_STATUS_LIMIT));
         if(httpResponseMessageStatusLimit>0) {
             setStatusMessageLimit(httpResponseMessageStatusLimit);
         }
 
-        int httpResponseHeadersLimit = Integer.parseInt(Optional.ofNullable((String)config.get(HTTP_RESPONSE_HEADERS_LIMIT)).orElse(DEFAULT_HTTP_RESPONSE_HEADERS_LIMIT));
+        int httpResponseHeadersLimit = Integer.parseInt(Optional.ofNullable(config.get(HTTP_RESPONSE_HEADERS_LIMIT)).orElse(DEFAULT_HTTP_RESPONSE_HEADERS_LIMIT));
         if(httpResponseHeadersLimit>0) {
             setHeadersLimit(httpResponseHeadersLimit);
         }
 
         //body limit
-        int httpResponseBodyLimit = Integer.parseInt(Optional.ofNullable((String)config.get(HTTP_RESPONSE_BODY_LIMIT)).orElse(DEFAULT_HTTP_RESPONSE_BODY_LIMIT));
+        int httpResponseBodyLimit = Integer.parseInt(Optional.ofNullable(config.get(HTTP_RESPONSE_BODY_LIMIT)).orElse(DEFAULT_HTTP_RESPONSE_BODY_LIMIT));
         if(httpResponseBodyLimit>0) {
             setBodyLimit(httpResponseBodyLimit);
         }
@@ -72,17 +72,17 @@ public abstract class AbstractHttpClient<NR,NS> extends AbstractClient<HttpExcha
         return enrichRequestFunction;
     }
 
-    private Function<HttpRequest,HttpRequest> buildEnrichRequestFunction(Map<String,Object> settings, Random random) {
+    private Function<HttpRequest,HttpRequest> buildEnrichRequestFunction(Map<String,String> settings, Random random) {
 
         //enrich request
         List<Function<HttpRequest,HttpRequest>> enrichRequestFunctions = Lists.newArrayList();
         //build addStaticHeadersFunction
-        Optional<String> staticHeaderParam = Optional.ofNullable((String) settings.get(STATIC_REQUEST_HEADER_NAMES));
+        Optional<String> staticHeaderParam = Optional.ofNullable(settings.get(STATIC_REQUEST_HEADER_NAMES));
         Map<String, List<String>> staticRequestHeaders = Maps.newHashMap();
         if (staticHeaderParam.isPresent()) {
             String[] staticRequestHeaderNames = staticHeaderParam.get().split(",");
             for (String headerName : staticRequestHeaderNames) {
-                String value = (String) settings.get(STATIC_REQUEST_HEADER_PREFIX + headerName);
+                String value = settings.get(STATIC_REQUEST_HEADER_PREFIX + headerName);
                 Preconditions.checkNotNull(value, "'" + headerName + "' is not configured as a parameter.");
                 ArrayList<String> values = Lists.newArrayList(value);
                 staticRequestHeaders.put(headerName, values);
@@ -92,15 +92,15 @@ public abstract class AbstractHttpClient<NR,NS> extends AbstractClient<HttpExcha
         enrichRequestFunctions.add(new AddStaticHeadersToHttpRequestFunction(staticRequestHeaders));
 
         //AddMissingRequestIdHeaderToHttpRequestFunction
-        boolean generateMissingRequestId = Boolean.parseBoolean((String) settings.get(GENERATE_MISSING_REQUEST_ID));
+        boolean generateMissingRequestId = Boolean.parseBoolean(settings.get(GENERATE_MISSING_REQUEST_ID));
         enrichRequestFunctions.add( new AddMissingRequestIdHeaderToHttpRequestFunction(generateMissingRequestId));
 
         //AddMissingCorrelationIdHeaderToHttpRequestFunction
-        boolean generateMissingCorrelationId = Boolean.parseBoolean((String) settings.get(GENERATE_MISSING_CORRELATION_ID));
+        boolean generateMissingCorrelationId = Boolean.parseBoolean(settings.get(GENERATE_MISSING_CORRELATION_ID));
         enrichRequestFunctions.add(new AddMissingCorrelationIdHeaderToHttpRequestFunction(generateMissingCorrelationId));
 
         //activateUserAgentHeaderToHttpRequestFunction
-        String activateUserAgentHeaderToHttpRequestFunction = (String) settings.getOrDefault(USER_AGENT_OVERRIDE, USER_AGENT_HTTP_CLIENT_DEFAULT_MODE);
+        String activateUserAgentHeaderToHttpRequestFunction = settings.getOrDefault(USER_AGENT_OVERRIDE, USER_AGENT_HTTP_CLIENT_DEFAULT_MODE);
         if (USER_AGENT_HTTP_CLIENT_DEFAULT_MODE.equalsIgnoreCase(activateUserAgentHeaderToHttpRequestFunction)) {
             LOGGER.trace("userAgentHeaderToHttpRequestFunction : 'http_client' configured. No need to activate UserAgentInterceptor");
         }else if(USER_AGENT_PROJECT_MODE.equalsIgnoreCase(activateUserAgentHeaderToHttpRequestFunction)){

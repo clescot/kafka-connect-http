@@ -43,7 +43,7 @@ public class OAuth2ClientCredentialsFlowAuthenticator implements CachingAuthenti
 
     public OAuth2ClientCredentialsFlowAuthenticator(OkHttpClient okHttpClient,
                                                     String wellKnownUrl,
-                                                    Map<String, Object> config,
+                                                    Map<String, String> config,
                                                     @jakarta.annotation.Nullable String... scopes) {
         this.okHttpClient = okHttpClient;
         Preconditions.checkNotNull(okHttpClient, "okHttpClient is null");
@@ -109,7 +109,7 @@ public class OAuth2ClientCredentialsFlowAuthenticator implements CachingAuthenti
     }
 
 
-    private ClientAuthentication buildClientAuthentication(Map<String, Object> config, URI tokenEndpointUri) {
+    private ClientAuthentication buildClientAuthentication(Map<String, String> config, URI tokenEndpointUri) {
 
         Object clientAuthenticationmethod = Optional.ofNullable(config.get(HTTP_CLIENT_AUTHENTICATION_OAUTH2_CLIENT_CREDENTIALS_FLOW_CLIENT_AUTHENTICATION_METHOD)).orElse("client_secret_basic");
         ClientAuthenticationMethod clientAuthenticationMethod = ClientAuthenticationMethod.parse(clientAuthenticationmethod.toString());
@@ -168,13 +168,13 @@ public class OAuth2ClientCredentialsFlowAuthenticator implements CachingAuthenti
         return clientAuth;
     }
 
-    private String getClientId(Map<String, Object> config) {
+    private String getClientId(Map<String, String> config) {
         Object clientIdObject = config.get(HTTP_CLIENT_AUTHENTICATION_OAUTH2_CLIENT_CREDENTIALS_FLOW_CLIENT_ID);
         Preconditions.checkNotNull(clientIdObject, HTTP_CLIENT_AUTHENTICATION_OAUTH2_CLIENT_CREDENTIALS_FLOW_CLIENT_ID + " is null");
         return clientIdObject.toString();
     }
 
-    private String getClientSecret(Map<String, Object> config) {
+    private String getClientSecret(Map<String, String> config) {
         Object clientSecretObject = config.get(HTTP_CLIENT_AUTHENTICATION_OAUTH2_CLIENT_CREDENTIALS_FLOW_CLIENT_SECRET);
         Preconditions.checkNotNull(clientSecretObject, HTTP_CLIENT_AUTHENTICATION_OAUTH2_CLIENT_CREDENTIALS_FLOW_CLIENT_SECRET + " is null");
         return clientSecretObject.toString();

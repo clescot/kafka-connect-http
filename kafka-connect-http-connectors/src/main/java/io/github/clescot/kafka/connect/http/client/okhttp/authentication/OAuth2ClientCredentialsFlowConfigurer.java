@@ -28,7 +28,7 @@ public class OAuth2ClientCredentialsFlowConfigurer implements AuthenticationConf
     }
 
     @Override
-    public Authenticator configureAuthenticator(Map<String, Object> config) {
+    public Authenticator configureAuthenticator(Map<String, String> config) {
         Authenticator authenticator = null;
         Preconditions.checkNotNull(config, "config map is null");
         if (config.containsKey(HTTP_CLIENT_AUTHENTICATION_OAUTH2_CLIENT_CREDENTIALS_FLOW_ACTIVATE)

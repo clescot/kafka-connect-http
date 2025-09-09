@@ -29,8 +29,8 @@ class BasicAuthenticationConfigurerTest {
     @Test
     void test_configure_authenticator_with_nominal_case(){
         AuthenticationConfigurer authenticationConfigurer = new BasicAuthenticationConfigurer();
-        HashMap<String, Object> config = Maps.newHashMap();
-        config.put(HTTP_CLIENT_AUTHENTICATION_BASIC_ACTIVATE,Boolean.TRUE);
+        HashMap<String, String> config = Maps.newHashMap();
+        config.put(HTTP_CLIENT_AUTHENTICATION_BASIC_ACTIVATE,Boolean.TRUE.toString());
         config.put(HTTP_CLIENT_AUTHENTICATION_BASIC_USERNAME,"myUser");
         config.put(HTTP_CLIENT_AUTHENTICATION_BASIC_PASSWORD,"myPassword");
         Authenticator authenticator = authenticationConfigurer.configureAuthenticator(config);
@@ -42,8 +42,8 @@ class BasicAuthenticationConfigurerTest {
     @Test
     void test_configure_authenticator_with_defined_charset(){
         AuthenticationConfigurer authenticationConfigurer = new BasicAuthenticationConfigurer();
-        HashMap<String, Object> config = Maps.newHashMap();
-        config.put(HTTP_CLIENT_AUTHENTICATION_BASIC_ACTIVATE,Boolean.TRUE);
+        HashMap<String, String> config = Maps.newHashMap();
+        config.put(HTTP_CLIENT_AUTHENTICATION_BASIC_ACTIVATE,Boolean.TRUE.toString());
         config.put(HTTP_CLIENT_AUTHENTICATION_BASIC_USERNAME,"myUser");
         config.put(HTTP_CLIENT_AUTHENTICATION_BASIC_PASSWORD,"myPassword");
         config.put(HTTP_CLIENT_AUTHENTICATION_BASIC_CHARSET,"UTF-8");
@@ -56,8 +56,8 @@ class BasicAuthenticationConfigurerTest {
     @Test
     void test_configure_authenticator_with_unknown_charset(){
         AuthenticationConfigurer authenticationConfigurer = new BasicAuthenticationConfigurer();
-        HashMap<String, Object> config = Maps.newHashMap();
-        config.put(HTTP_CLIENT_AUTHENTICATION_BASIC_ACTIVATE,Boolean.TRUE);
+        HashMap<String, String> config = Maps.newHashMap();
+        config.put(HTTP_CLIENT_AUTHENTICATION_BASIC_ACTIVATE,Boolean.TRUE.toString());
         config.put(HTTP_CLIENT_AUTHENTICATION_BASIC_USERNAME,"myUser");
         config.put(HTTP_CLIENT_AUTHENTICATION_BASIC_PASSWORD,"myPassword");
         config.put(HTTP_CLIENT_AUTHENTICATION_BASIC_CHARSET,"ddqd");
@@ -67,8 +67,8 @@ class BasicAuthenticationConfigurerTest {
     @Test
     void test_configure_authenticator_with_missing_username(){
         AuthenticationConfigurer authenticationConfigurer = new BasicAuthenticationConfigurer();
-        HashMap<String, Object> config = Maps.newHashMap();
-        config.put(HTTP_CLIENT_AUTHENTICATION_BASIC_ACTIVATE,Boolean.TRUE);
+        HashMap<String, String> config = Maps.newHashMap();
+        config.put(HTTP_CLIENT_AUTHENTICATION_BASIC_ACTIVATE,Boolean.TRUE.toString());
         config.put(HTTP_CLIENT_AUTHENTICATION_BASIC_PASSWORD,"myPassword");
         Assertions.assertThrows(NullPointerException.class,()->authenticationConfigurer.configureAuthenticator(config));
     }
@@ -76,8 +76,8 @@ class BasicAuthenticationConfigurerTest {
     @Test
     void test_configure_authenticator_with_missing_password(){
         AuthenticationConfigurer authenticationConfigurer = new BasicAuthenticationConfigurer();
-        HashMap<String, Object> config = Maps.newHashMap();
-        config.put(HTTP_CLIENT_AUTHENTICATION_BASIC_ACTIVATE,Boolean.TRUE);
+        HashMap<String, String> config = Maps.newHashMap();
+        config.put(HTTP_CLIENT_AUTHENTICATION_BASIC_ACTIVATE,Boolean.TRUE.toString());
         config.put(HTTP_CLIENT_AUTHENTICATION_BASIC_USERNAME,"myUser");
         Assertions.assertThrows(NullPointerException.class,()->authenticationConfigurer.configureAuthenticator(config));
     }

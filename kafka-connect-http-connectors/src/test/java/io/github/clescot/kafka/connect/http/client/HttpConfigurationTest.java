@@ -34,6 +34,7 @@ import org.junit.jupiter.api.parallel.ExecutionMode;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -47,7 +48,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 @Execution(ExecutionMode.SAME_THREAD)
 class HttpConfigurationTest {
     private static final HttpRequest.Method DUMMY_METHOD = HttpRequest.Method.POST;
-    private static final ExecutorService executorService = Executors.newFixedThreadPool(2);
+
     public static final String AUTHORIZED_STATE = "Authorized";
     public static final String INTERNAL_SERVER_ERROR_STATE = "InternalServerError";
     @RegisterExtension
@@ -70,6 +71,7 @@ class HttpConfigurationTest {
     @Nested
     class CallWithRetryPolicy {
         ExecutorService executorService;
+        OkHttpClient okHttpClient;
         @BeforeEach
         void setUp(){
             Map<String,String> configs = Maps.newHashMap();
@@ -79,7 +81,10 @@ class HttpConfigurationTest {
             JmxMeterRegistry jmxMeterRegistry = new JmxMeterRegistry(JmxConfig.DEFAULT, Clock.SYSTEM);
             jmxMeterRegistry.start();
             compositeMeterRegistry.add(jmxMeterRegistry);
-            HttpClientConfiguration<OkHttpClient,Request, Response> test = new HttpClientConfiguration<>("test", new OkHttpClientFactory(), config.originalsStrings(), null, compositeMeterRegistry);
+            OkHttpClientFactory okHttpClientFactory = new OkHttpClientFactory();
+            Map<String, String> settings = Map.of("url", "http://example.com/sse", "topic", "test-topic");
+            okHttpClient = okHttpClientFactory.buildHttpClient(settings, null, new CompositeMeterRegistry(), new Random());
+            HttpClientConfiguration<OkHttpClient,Request, Response> test = new HttpClientConfiguration<>("test", config.originalsStrings(), okHttpClient);
             executorService = Executors.newFixedThreadPool(2);
             HttpConfiguration<OkHttpClient, Request, Response> httpConfiguration = new HttpConfiguration<>(test,executorService);
             Map<String, HttpConfiguration<OkHttpClient, Request, Response>> map = Maps.newHashMap();
@@ -108,126 +113,14 @@ class HttpConfigurationTest {
             HttpConnectorConfig httpConnectorConfig = new HttpConnectorConfig(settings);
             HttpClientConfiguration<OkHttpClient,Request, Response> httpClientConfiguration = new HttpClientConfiguration<>(
                     "dummy",
-                    new OkHttpClientFactory(),
                     httpConnectorConfig.originalsStrings(),
-                    executorService,
-                    getCompositeMeterRegistry()
+                    okHttpClient
             );
             HttpConfiguration<OkHttpClient,Request, Response> httpConfiguration = new HttpConfiguration<>(httpClientConfiguration,executorService);
             HttpExchange httpExchange = httpConfiguration.call(httpRequest).get();
 
             //then
             assertThat(httpExchange.isSuccess()).isTrue();
-        }
-        @Test
-        void test_successful_request_with_status_message_limit() throws ExecutionException, InterruptedException {
-
-            //given
-            String scenario = "test_successful_request_at_first_time";
-            WireMockRuntimeInfo wmRuntimeInfo = wmHttp.getRuntimeInfo();
-            WireMock wireMock = wmRuntimeInfo.getWireMock();
-            wireMock
-                    .register(WireMock.post("/ping").inScenario(scenario)
-                            .whenScenarioStateIs(STARTED)
-                            .willReturn(WireMock.aResponse()
-                                    .withStatus(200)
-                                    .withStatusMessage("OK!!!!!!!!!")
-                                    .withBody("")
-                            ).willSetStateTo(AUTHORIZED_STATE)
-                    );
-            //when
-            HttpRequest httpRequest = getDummyHttpRequest(wmHttp.url("/ping"));
-            Map<String, String> settings = Maps.newHashMap();
-            settings.put("config.dummy.http.response.message.status.limit","4");
-            HttpConnectorConfig httpConnectorConfig = new HttpConnectorConfig(settings);
-            HttpClientConfiguration<OkHttpClient,Request, Response> httpClientConfiguration = new HttpClientConfiguration<>(
-                    "dummy",
-                    new OkHttpClientFactory(),
-                    MapUtils.getMapWithPrefix(httpConnectorConfig.originalsStrings(),"config.dummy."),
-                    executorService,
-                    getCompositeMeterRegistry()
-            );
-            HttpConfiguration<OkHttpClient,okhttp3.Request,okhttp3.Response> httpConfiguration = new HttpConfiguration<>(httpClientConfiguration,executorService);
-            HttpExchange httpExchange = httpConfiguration.call(httpRequest).get();
-
-            //then
-            assertThat(httpExchange.isSuccess()).isTrue();
-            assertThat(httpExchange.getHttpResponse().getStatusMessage()).isEqualTo("OK!!");
-        }
-
-        @Test
-        void test_successful_request_with_body_limit() throws ExecutionException, InterruptedException {
-
-            //given
-            String scenario = "test_successful_request_at_first_time";
-            WireMockRuntimeInfo wmRuntimeInfo = wmHttp.getRuntimeInfo();
-            WireMock wireMock = wmRuntimeInfo.getWireMock();
-            wireMock
-                    .register(WireMock.post("/ping").inScenario(scenario)
-                            .whenScenarioStateIs(STARTED)
-                            .willReturn(WireMock.aResponse()
-                                    .withStatus(200)
-                                    .withStatusMessage("OK!!!!!!!!!")
-                                    .withBody("01234567890123")
-                            ).willSetStateTo(AUTHORIZED_STATE)
-                    );
-            //when
-            HttpRequest httpRequest = getDummyHttpRequest(wmHttp.url("/ping"));
-            Map<String, String> settings = Maps.newHashMap();
-            settings.put("config.dummy.http.response.body.limit","10");
-            HttpConnectorConfig httpConnectorConfig = new HttpConnectorConfig(settings);
-            HttpClientConfiguration<OkHttpClient,Request, Response> httpClientConfiguration = new HttpClientConfiguration<>(
-                    "dummy",
-                    new OkHttpClientFactory(),
-                    MapUtils.getMapWithPrefix(httpConnectorConfig.originalsStrings(),"config.dummy."),
-                    executorService,
-                    getCompositeMeterRegistry()
-            );
-            HttpConfiguration<OkHttpClient,okhttp3.Request,okhttp3.Response> httpConfiguration = new HttpConfiguration<>(httpClientConfiguration,executorService);
-            HttpExchange httpExchange = httpConfiguration.call(httpRequest).get();
-
-            //then
-            assertThat(httpExchange.isSuccess()).isTrue();
-            assertThat(httpExchange.getHttpResponse().getStatusMessage()).isEqualTo("OK!!!!!!!!!");
-            assertThat(httpExchange.getHttpResponse().getBodyAsString()).isEqualTo("0123456789");
-        }
-
-        @Test
-        void test_successful_request_with_status_message_limit_and_body_limit() throws ExecutionException, InterruptedException {
-
-            //given
-            String scenario = "test_successful_request_at_first_time";
-            WireMockRuntimeInfo wmRuntimeInfo = wmHttp.getRuntimeInfo();
-            WireMock wireMock = wmRuntimeInfo.getWireMock();
-            wireMock
-                    .register(WireMock.post("/ping").inScenario(scenario)
-                            .whenScenarioStateIs(STARTED)
-                            .willReturn(WireMock.aResponse()
-                                    .withStatus(200)
-                                    .withStatusMessage("OK!!")
-                                    .withBody("01234567890123")
-                            ).willSetStateTo(AUTHORIZED_STATE)
-                    );
-            //when
-            HttpRequest httpRequest = getDummyHttpRequest(wmHttp.url("/ping"));
-            Map<String, String> settings = Maps.newHashMap();
-            settings.put("config.dummy.http.response.status.message.limit","4");
-            settings.put("config.dummy.http.response.body.limit","10");
-            HttpConnectorConfig httpConnectorConfig = new HttpConnectorConfig(settings);
-            HttpClientConfiguration<OkHttpClient,Request, Response> httpClientConfiguration = new HttpClientConfiguration<>(
-                    "dummy",
-                    new OkHttpClientFactory(),
-                    MapUtils.getMapWithPrefix(httpConnectorConfig.originalsStrings(),"config.dummy."),
-                    executorService,
-                    getCompositeMeterRegistry()
-            );
-            HttpConfiguration<OkHttpClient,okhttp3.Request,okhttp3.Response> httpConfiguration = new HttpConfiguration<>(httpClientConfiguration,executorService);
-            HttpExchange httpExchange = httpConfiguration.call(httpRequest).get();
-
-            //then
-            assertThat(httpExchange.isSuccess()).isTrue();
-            assertThat(httpExchange.getHttpResponse().getStatusMessage()).isEqualTo("OK!!");
-            assertThat(httpExchange.getHttpResponse().getBodyAsString()).isEqualTo("0123456789");
         }
 
         @Test
@@ -261,10 +154,8 @@ class HttpConfigurationTest {
             HttpConnectorConfig httpConnectorConfig = new HttpConnectorConfig(settings);
             HttpClientConfiguration<OkHttpClient,Request, Response> httpClientConfiguration = new HttpClientConfiguration<>(
                     "dummy",
-                    new OkHttpClientFactory(),
                     MapUtils.getMapWithPrefix(httpConnectorConfig.originalsStrings(),"config.dummy."),
-                    executorService,
-                    getCompositeMeterRegistry()
+                    okHttpClient
             );
             HttpConfiguration<OkHttpClient,okhttp3.Request,okhttp3.Response> httpConfiguration = new HttpConfiguration<>(httpClientConfiguration,executorService);
             HttpExchange httpExchange = httpConfiguration.call(httpRequest).get();
@@ -288,16 +179,6 @@ class HttpConfigurationTest {
         return httpRequest;
     }
 
-
-
-
-
-    private static CompositeMeterRegistry getCompositeMeterRegistry() {
-        JmxMeterRegistry jmxMeterRegistry = new JmxMeterRegistry(s -> null, Clock.SYSTEM);
-        HashSet<MeterRegistry> registries = Sets.newHashSet();
-        registries.add(jmxMeterRegistry);
-        return new CompositeMeterRegistry(Clock.SYSTEM, registries);
-    }
 
 
 

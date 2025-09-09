@@ -6,17 +6,20 @@ import dev.failsafe.RetryPolicy;
 import io.github.clescot.kafka.connect.MapUtils;
 import io.github.clescot.kafka.connect.http.core.HttpExchange;
 import io.micrometer.core.instrument.composite.CompositeMeterRegistry;
+import org.jetbrains.annotations.NotNull;
 
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.security.NoSuchAlgorithmException;
+import java.security.SecureRandom;
+import java.util.*;
 import java.util.concurrent.ExecutorService;
 import java.util.regex.Pattern;
 
 import static io.github.clescot.kafka.connect.Configuration.DEFAULT_CONFIGURATION_ID;
+import static io.github.clescot.kafka.connect.http.client.HttpClientConfigDefinition.*;
+import static io.github.clescot.kafka.connect.http.client.HttpClientConfigDefinition.HTTP_CLIENT_UNSECURE_RANDOM_SEED;
 
 public class HttpClientConfigurationFactory {
-
+    public static final String SHA_1_PRNG = "SHA1PRNG";
 
     private HttpClientConfigurationFactory() {
     }
@@ -35,8 +38,12 @@ public class HttpClientConfigurationFactory {
         Optional<RetryPolicy<HttpExchange>> defaultRetryPolicy = Optional.empty();
         Optional<Pattern> defaultRetryResponseCodeRegex = Optional.empty();
         for (String configId : configurationIds) {
-
-            HttpClientConfiguration<C, R, S> httpClientConfiguration = new HttpClientConfiguration<>(configId, httpClientFactory,  MapUtils.getMapWithPrefix(originals,"config." + configId + "."), executorService, meterRegistry);
+            Map<String, String> config = Maps.newHashMap(MapUtils.getMapWithPrefix(originals, "config." + configId + "."));
+            HashMap<String, String> settings = Maps.newHashMap(config);
+            settings.put("configuration.id", configId);
+            Random random = getRandom(settings);
+            C httpClient = httpClientFactory.buildHttpClient(settings, executorService, meterRegistry, random);
+            HttpClientConfiguration<C, R, S> httpClientConfiguration = new HttpClientConfiguration<>(configId,config,httpClient);
             if (httpClientConfiguration.getClient() == null && !httpClientConfigurations.isEmpty() && defaultHttpClientConfiguration != null) {
                 httpClientConfiguration.setHttpClient(defaultHttpClientConfiguration.getClient());
             }
@@ -62,6 +69,32 @@ public class HttpClientConfigurationFactory {
             httpClientConfigurations.put(configId,httpClientConfiguration);
         }
         return httpClientConfigurations;
+    }
+
+    @java.lang.SuppressWarnings({"java:S2119","java:S2245"})
+    @NotNull
+    public static Random getRandom(Map<String, String> config) {
+        Random random;
+
+        try {
+            if(config.containsKey(HTTP_CLIENT_SECURE_RANDOM_ACTIVATE)&&Boolean.parseBoolean(config.get(HTTP_CLIENT_SECURE_RANDOM_ACTIVATE))){
+                String rngAlgorithm = SHA_1_PRNG;
+                if (config.containsKey(HTTP_CLIENT_SECURE_RANDOM_PRNG_ALGORITHM)) {
+                    rngAlgorithm = config.get(HTTP_CLIENT_SECURE_RANDOM_PRNG_ALGORITHM);
+                }
+                random = SecureRandom.getInstance(rngAlgorithm);
+            }else {
+                if(config.containsKey(HTTP_CLIENT_UNSECURE_RANDOM_SEED)){
+                    long seed = Long.parseLong(config.get(HTTP_CLIENT_UNSECURE_RANDOM_SEED));
+                    random = new Random(seed);
+                }else {
+                    random = new Random();
+                }
+            }
+        } catch (NoSuchAlgorithmException e) {
+            throw new HttpException(e);
+        }
+        return random;
     }
 
 }

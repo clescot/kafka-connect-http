@@ -19,26 +19,25 @@ import static io.github.clescot.kafka.connect.http.sink.HttpConfigDefinition.*;
 
 public abstract class  AbstractClient<E> implements Client<E> {
     Logger LOGGER = LoggerFactory.getLogger(AbstractClient.class);
-    private static final Map<String, RateLimiter> SHARED_RATE_LIMITERS = Maps.newHashMap();
+    public static final Map<String, RateLimiter> SHARED_RATE_LIMITERS = Maps.newHashMap();
     private Optional<RateLimiter<E>> rateLimiter = Optional.empty();
-    protected Map<String, Object> config;
+    protected Map<String, String> config;
     protected String configurationId;
 
-    public AbstractClient(Map<String, Object> config) {
+    public AbstractClient(Map<String, String> config) {
         this.config = config;
-        configurationId = (String) config.get(CONFIGURATION_ID);
-        Preconditions.checkNotNull(configurationId, "configuration must have an id : '" + CONFIGURATION_ID + "' is not set in the configuration map");
+        configurationId = Optional.ofNullable(config.get(CONFIGURATION_ID)).orElse(Configuration.DEFAULT_CONFIGURATION_ID);
         setRateLimiter(buildRateLimiter(config, configurationId));
     }
 
-    public RateLimiter<E> buildRateLimiter(Map<String, Object> configMap, String configurationId) {
+    public RateLimiter<E> buildRateLimiter(Map<String, String> configMap, String configurationId) {
         RateLimiter<E> myRateLimiter = null;
         if (configMap.containsKey(RATE_LIMITER_MAX_EXECUTIONS)) {
-            long maxExecutions = Long.parseLong((String) configMap.get(RATE_LIMITER_MAX_EXECUTIONS));
+            long maxExecutions = Long.parseLong(configMap.get(RATE_LIMITER_MAX_EXECUTIONS));
             LOGGER.trace("configuration '{}' : maxExecutions :{}", configurationId, maxExecutions);
-            long periodInMs = Long.parseLong(Optional.ofNullable((String) configMap.get(RATE_LIMITER_PERIOD_IN_MS)).orElse(1000 + ""));
+            long periodInMs = Long.parseLong(Optional.ofNullable(configMap.get(RATE_LIMITER_PERIOD_IN_MS)).orElse(1000 + ""));
             LOGGER.trace("configuration '{}' : periodInMs :{}", configurationId, periodInMs);
-            if (configMap.containsKey(RATE_LIMITER_SCOPE) && STATIC_SCOPE.equalsIgnoreCase((String) configMap.get(RATE_LIMITER_SCOPE))) {
+            if (configMap.containsKey(RATE_LIMITER_SCOPE) && STATIC_SCOPE.equalsIgnoreCase(configMap.get(RATE_LIMITER_SCOPE))) {
                 LOGGER.trace("configuration '{}' : rateLimiter scope is 'static'", configurationId);
                 Optional<RateLimiter<E>> sharedRateLimiter = Optional.ofNullable(SHARED_RATE_LIMITERS.get(configurationId));
                 if (sharedRateLimiter.isPresent()) {
@@ -85,32 +84,34 @@ public abstract class  AbstractClient<E> implements Client<E> {
         return this.rateLimiter;
     }
 
-    protected Map<String, Object> getConfig() {
+    protected Map<String, String> getConfig() {
         return config;
     }
 
     @Override
     public String getPermitsPerExecution(){
-        return (String) config.getOrDefault(RATE_LIMITER_PERMITS_PER_EXECUTION, DEFAULT_RATE_LIMITER_ONE_PERMIT_PER_CALL);
+        return config.getOrDefault(RATE_LIMITER_PERMITS_PER_EXECUTION, DEFAULT_RATE_LIMITER_ONE_PERMIT_PER_CALL);
     }
 
 
     public String rateLimiterToString(){
         StringBuilder result = new StringBuilder("{");
 
-        String rateLimiterMaxExecutions = (String) config.get(RATE_LIMITER_MAX_EXECUTIONS);
+        String rateLimiterMaxExecutions = config.get(RATE_LIMITER_MAX_EXECUTIONS);
         if(rateLimiterMaxExecutions!=null){
             result.append("rateLimiterMaxExecutions:'").append(rateLimiterMaxExecutions).append("'");
         }
-        String rateLimiterPeriodInMs = (String) config.get(RATE_LIMITER_PERIOD_IN_MS);
+        String rateLimiterPeriodInMs = config.get(RATE_LIMITER_PERIOD_IN_MS);
         if(rateLimiterPeriodInMs!=null){
             result.append(",rateLimiterPeriodInMs:'").append(rateLimiterPeriodInMs).append("'");
         }
-        String rateLimiterScope = (String) config.get(RATE_LIMITER_SCOPE);
+        String rateLimiterScope = config.get(RATE_LIMITER_SCOPE);
         if(rateLimiterScope!=null){
             result.append(",rateLimiterScope:'").append(rateLimiterScope).append("'");
         }
         result.append("}");
         return result.toString();
     }
+
+
 }

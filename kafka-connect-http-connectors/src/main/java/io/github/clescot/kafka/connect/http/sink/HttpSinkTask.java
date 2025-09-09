@@ -29,6 +29,7 @@ import org.apache.kafka.connect.sink.ErrantRecordReporter;
 import org.apache.kafka.connect.sink.SinkRecord;
 import org.apache.kafka.connect.sink.SinkTask;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -157,10 +158,17 @@ public abstract class HttpSinkTask<C extends HttpClient<R, S>, R, S> extends Sin
     @Override
     @SuppressWarnings("java:S3864")
     public void put(Collection<SinkRecord> records) {
+        List<HttpExchange> httpExchanges = putWithExchanges(records);
+        if (httpExchanges == null) return;
+        LOGGER.debug("HttpExchanges created :'{}'", httpExchanges.size());
+
+    }
+
+    public @Nullable List<HttpExchange> putWithExchanges(Collection<SinkRecord> records) {
         Preconditions.checkNotNull(records, "records collection to be processed is null");
         if (records.isEmpty()) {
             LOGGER.debug("no records");
-            return;
+            return null;
         }
         Preconditions.checkNotNull(httpTask, "httpTask is null. 'start' method must be called once before put");
         List<Pair<SinkRecord, HttpRequest>> preparedRequests = prepareRequests(records);
@@ -169,10 +177,8 @@ public abstract class HttpSinkTask<C extends HttpClient<R, S>, R, S> extends Sin
                 .map(this::callAndPublish)
                 .toList();
         List<HttpExchange> httpExchanges = completableFutures.stream().map(CompletableFuture::join).toList();
-        LOGGER.debug("HttpExchanges created :'{}'", httpExchanges.size());
-
+        return httpExchanges;
     }
-
 
 
     private static JexlEngine buildJexlEngine() {

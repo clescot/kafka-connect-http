@@ -23,7 +23,7 @@ public class AHCHttpClientFactory implements HttpClientFactory<AHCHttpClient,Req
 
 
     @Override
-    public AHCHttpClient build(Map<String, Object> config,
+    public AHCHttpClient build(Map<String, String> config,
                                ExecutorService executorService,
                                Random random,
                                Proxy proxy,

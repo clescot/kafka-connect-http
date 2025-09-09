@@ -47,7 +47,7 @@ public class SseTask implements Task<OkHttpClient, SseConfiguration, HttpRequest
                 ).entrySet().stream()
                 .map(config -> Maps.immutableEntry(
                         config.getKey(),
-                        new SseConfiguration(config.getKey(), config.getValue(), MapUtils.getMapWithPrefix(mySettings, "config." + config.getKey() + "."))
+                        new SseConfiguration(config.getKey(), config.getValue().getClient(), MapUtils.getMapWithPrefix(mySettings, "config." + config.getKey() + "."))
                 )).collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
 
         //build meterRegistry

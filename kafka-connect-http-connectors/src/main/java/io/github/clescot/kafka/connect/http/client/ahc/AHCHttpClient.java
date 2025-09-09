@@ -84,12 +84,12 @@ public class AHCHttpClient extends AbstractHttpClient<Request, Response> {
 
     private final HttpClientAsyncCompletionHandler asyncCompletionHandler = new HttpClientAsyncCompletionHandler();
 
-    public AHCHttpClient(Map<String, Object> config,Random random) {
+    public AHCHttpClient(Map<String, String> config,Random random) {
         super(config,random);
         this.asyncHttpClient = getAsyncHttpClient(config);
     }
     //for tests only
-    protected AHCHttpClient(AsyncHttpClient asyncHttpClient,Map<String, Object> config,Random random) {
+    protected AHCHttpClient(AsyncHttpClient asyncHttpClient,Map<String, String> config,Random random) {
         super(config,random);
         this.asyncHttpClient =asyncHttpClient;
     }
@@ -252,7 +252,7 @@ public class AHCHttpClient extends AbstractHttpClient<Request, Response> {
         httpResponse.setHeaders(responseHeaders);
         return httpResponse;
     }
-    private AsyncHttpClient getAsyncHttpClient(Map<String, Object> config) {
+    private AsyncHttpClient getAsyncHttpClient(Map<String, String> config) {
         AsyncHttpClient asyncClient;
         Map<String, String> asyncConfig = config.entrySet().stream().filter(entry -> entry.getKey().startsWith(ASYN_HTTP_CONFIG_PREFIX))
                 .map(k->Map.entry(k.getKey(),k.getValue().toString()))

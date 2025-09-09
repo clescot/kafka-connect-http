@@ -11,5 +11,5 @@ public interface AuthenticationConfigurer {
 
     boolean needCache();
 
-    Authenticator configureAuthenticator(Map<String, Object> config);
+    Authenticator configureAuthenticator(Map<String, String> config);
 }

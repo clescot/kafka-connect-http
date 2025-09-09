@@ -1,29 +1,25 @@
 package io.github.clescot.kafka.connect.http.client;
 
 import com.google.common.base.Preconditions;
-import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import dev.failsafe.RetryPolicy;
 import io.github.clescot.kafka.connect.Configuration;
 import io.github.clescot.kafka.connect.VersionUtils;
-import io.github.clescot.kafka.connect.http.client.config.*;
+import io.github.clescot.kafka.connect.http.client.config.AddSuccessStatusToHttpExchangeFunction;
+import io.github.clescot.kafka.connect.http.client.config.HttpRequestPredicateBuilder;
 import io.github.clescot.kafka.connect.http.core.HttpExchange;
 import io.github.clescot.kafka.connect.http.core.HttpRequest;
 import io.micrometer.core.instrument.composite.CompositeMeterRegistry;
-import org.apache.commons.lang3.StringUtils;
-import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.security.NoSuchAlgorithmException;
-import java.security.SecureRandom;
 import java.time.Duration;
-import java.util.*;
+import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.ExecutorService;
 import java.util.function.Predicate;
 import java.util.regex.Pattern;
 
-import static io.github.clescot.kafka.connect.http.client.HttpClientConfigDefinition.*;
 import static io.github.clescot.kafka.connect.http.client.config.HttpRequestPredicateBuilder.*;
 import static io.github.clescot.kafka.connect.http.sink.HttpConfigDefinition.*;
 
@@ -45,7 +41,7 @@ public class HttpClientConfiguration<C extends HttpClient<R,S>,R,S> implements C
     public static final VersionUtils VERSION_UTILS = new VersionUtils();
     private static final Logger LOGGER = LoggerFactory.getLogger(HttpClientConfiguration.class);
     public static final String HAS_BEEN_SET = " has been set.";
-    public static final String SHA_1_PRNG = "SHA1PRNG";
+
     public static final String MUST_BE_SET_TOO = " must be set too.";
     public static final String CONFIGURATION_ID = "configuration.id";
 
@@ -71,24 +67,18 @@ public class HttpClientConfiguration<C extends HttpClient<R,S>,R,S> implements C
 
 
     public HttpClientConfiguration(String id,
-                                   HttpClientFactory<C,R,S> httpClientFactory,
                                    Map<String,String> config,
-                                   ExecutorService executorService,
-                                   CompositeMeterRegistry meterRegistry) {
+                                   C httpClient) {
         this.id = id;
         Preconditions.checkNotNull(id, "id must not be null");
         Preconditions.checkNotNull(config, "httpSinkConnectorConfig must not be null");
-        Preconditions.checkNotNull(httpClientFactory,"httpClientFactory must not be null");
 
         //configuration id prefix is not present in the resulting configMap
         this.settings = Maps.newHashMap(config);
         settings.put(CONFIGURATION_ID, id);
         //main predicate
         this.predicate = HttpRequestPredicateBuilder.build().buildPredicate(settings);
-
-        Random random = getRandom(settings);
-
-        this.httpClient = httpClientFactory.buildHttpClient(settings, executorService, meterRegistry, random);
+        this.httpClient = httpClient;
 
 
         //enrich exchange
@@ -130,31 +120,7 @@ public class HttpClientConfiguration<C extends HttpClient<R,S>,R,S> implements C
     }
 
 
-    @java.lang.SuppressWarnings({"java:S2119","java:S2245"})
-    @NotNull
-    private Random getRandom(Map<String, Object> config) {
-        Random random;
 
-        try {
-        if(config.containsKey(HTTP_CLIENT_SECURE_RANDOM_ACTIVATE)&&(boolean)config.get(HTTP_CLIENT_SECURE_RANDOM_ACTIVATE)){
-            String rngAlgorithm = SHA_1_PRNG;
-            if (config.containsKey(HTTP_CLIENT_SECURE_RANDOM_PRNG_ALGORITHM)) {
-                rngAlgorithm = (String) config.get(HTTP_CLIENT_SECURE_RANDOM_PRNG_ALGORITHM);
-            }
-            random = SecureRandom.getInstance(rngAlgorithm);
-        }else {
-            if(config.containsKey(HTTP_CLIENT_UNSECURE_RANDOM_SEED)){
-                long seed = (long) config.get(HTTP_CLIENT_UNSECURE_RANDOM_SEED);
-                random = new Random(seed);
-            }else {
-                random = new Random();
-            }
-        }
-        } catch (NoSuchAlgorithmException e) {
-            throw new HttpException(e);
-        }
-        return random;
-    }
 
     @Override
     public C getClient() {

@@ -51,7 +51,7 @@ class AHCHttpClientTest {
     @BeforeEach
     void setUp() {
         asyncHttpClient = Mockito.mock(AsyncHttpClient.class);
-        HashMap<String, Object> config = Maps.newHashMap();
+        HashMap<String, String> config = Maps.newHashMap();
         config.put(CONFIGURATION_ID,"default");
         httpClient = new AHCHttpClient(asyncHttpClient, config,new Random());
     }
@@ -147,7 +147,7 @@ class AHCHttpClientTest {
         Mockito.when(listenerObject.get()).thenReturn(response);
         Mockito.when(asyncHttpClient.executeRequest(ArgumentMatchers.any(Request.class))).thenReturn(listener);
         Mockito.when(asyncHttpClient.executeRequest(ArgumentMatchers.any(Request.class), ArgumentMatchers.any())).thenReturn(listenerObject);
-        Map<String, Object> config = Maps.newHashMap();
+        Map<String, String> config = Maps.newHashMap();
         config.put(CONFIGURATION_ID,"default");
         AHCHttpClient httpClient = new AHCHttpClient(asyncHttpClient,config,new Random());
 
@@ -182,7 +182,7 @@ class AHCHttpClientTest {
         when(asyncHttpClient.executeRequest(ArgumentMatchers.any(Request.class))).thenReturn(listener);
         when(asyncHttpClient.executeRequest(ArgumentMatchers.any(Request.class), ArgumentMatchers.any())).thenReturn(listenerObject);
         when(listenerObject.toCompletableFuture()).thenReturn(CompletableFuture.supplyAsync(() -> response));
-        Map<String, Object> config = Maps.newHashMap();
+        Map<String, String> config = Maps.newHashMap();
         config.put(CONFIGURATION_ID,"default");
         AHCHttpClient httpClient = new AHCHttpClient(asyncHttpClient,config,new Random());
         //when
@@ -211,7 +211,7 @@ class AHCHttpClientTest {
         when(asyncHttpClient.executeRequest(ArgumentMatchers.any(Request.class), ArgumentMatchers.any())).thenReturn(listenerObject);
         when(listener.toCompletableFuture()).thenReturn(CompletableFuture.supplyAsync(() -> response));
         when(listenerObject.toCompletableFuture()).thenReturn(CompletableFuture.supplyAsync(() -> response));
-        Map<String, Object> config = Maps.newHashMap();
+        Map<String, String> config = Maps.newHashMap();
         config.put(CONFIGURATION_ID,"default");
         AHCHttpClient httpClient = new AHCHttpClient(asyncHttpClient,config,new Random());
 
@@ -242,7 +242,7 @@ class AHCHttpClientTest {
         when(asyncHttpClient.executeRequest(ArgumentMatchers.any(Request.class))).thenReturn(listener);
         when(asyncHttpClient.executeRequest(ArgumentMatchers.any(Request.class), ArgumentMatchers.any())).thenReturn(listenerObject);
         when(listenerObject.toCompletableFuture()).thenReturn(CompletableFuture.supplyAsync(() -> response));
-        Map<String, Object> config = Maps.newHashMap();
+        Map<String, String> config = Maps.newHashMap();
         config.put(CONFIGURATION_ID,"default");
         AHCHttpClient httpClient = new AHCHttpClient(asyncHttpClient,config,new Random());
         //when
@@ -255,7 +255,7 @@ class AHCHttpClientTest {
     void test_build_http_request_nominal_case() {
         //given
         AsyncHttpClient asyncHttpClient = Mockito.mock(AsyncHttpClient.class);
-        Map<String, Object> config = Maps.newHashMap();
+        Map<String, String> config = Maps.newHashMap();
         config.put(CONFIGURATION_ID,"default");
         AHCHttpClient httpClient = new AHCHttpClient(asyncHttpClient,config,new Random());
 
@@ -293,7 +293,7 @@ class AHCHttpClientTest {
         //given
         String truststorePath = Thread.currentThread().getContextClassLoader().getResource(HttpSinkTaskTest.CLIENT_TRUSTSTORE_JKS_FILENAME).getPath();
         String password = HttpSinkTaskTest.CLIENT_TRUSTSTORE_JKS_PASSWORD;
-        Map<String, Object> config = Maps.newHashMap();
+        Map<String, String> config = Maps.newHashMap();
         config.put(HTTP_CLIENT_SSL_TRUSTSTORE_PATH, truststorePath);
         config.put(HTTP_CLIENT_SSL_TRUSTSTORE_PASSWORD, password);
         config.put(HTTP_CLIENT_SSL_TRUSTSTORE_TYPE, HttpSinkTaskTest.JKS_STORE_TYPE);
@@ -309,7 +309,7 @@ class AHCHttpClientTest {
     void test_getTrustManagerFactory_always_trust() {
 
         //given
-        Map<String, Object> config = Maps.newHashMap();
+        Map<String, String> config = Maps.newHashMap();
         config.put(HTTP_CLIENT_SSL_TRUSTSTORE_ALWAYS_TRUST, "true");
         //when
         TrustManagerFactory trustManagerFactory = HttpClientFactory.getTrustManagerFactory(config);
@@ -328,7 +328,7 @@ class AHCHttpClientTest {
     void test_getTrustManagerFactory_always_trust_set_to_false() {
 
         //given
-        Map<String, Object> config = Maps.newHashMap();
+        Map<String, String> config = Maps.newHashMap();
         config.put(HTTP_CLIENT_SSL_TRUSTSTORE_ALWAYS_TRUST, "false");
         String truststorePath = Thread.currentThread().getContextClassLoader().getResource(HttpSinkTaskTest.CLIENT_TRUSTSTORE_JKS_FILENAME).getPath();
         config.put(HTTP_CLIENT_SSL_TRUSTSTORE_PATH, truststorePath);

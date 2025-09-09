@@ -10,9 +10,13 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import io.confluent.kafka.serializers.KafkaJsonSerializer;
+import io.github.clescot.kafka.connect.MapUtils;
 import io.github.clescot.kafka.connect.http.HttpTask;
+import io.github.clescot.kafka.connect.http.client.HttpClientConfiguration;
+import io.github.clescot.kafka.connect.http.client.HttpConfiguration;
 import io.github.clescot.kafka.connect.http.client.ahc.AHCHttpClient;
 import io.github.clescot.kafka.connect.http.client.okhttp.OkHttpClient;
+import io.github.clescot.kafka.connect.http.client.okhttp.OkHttpClientFactory;
 import io.github.clescot.kafka.connect.http.client.ssl.AlwaysTrustManagerFactory;
 import io.github.clescot.kafka.connect.http.core.HttpExchange;
 import io.github.clescot.kafka.connect.http.core.HttpRequest;
@@ -29,6 +33,8 @@ import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.composite.CompositeMeterRegistry;
 import io.micrometer.jmx.JmxMeterRegistry;
 import io.micrometer.prometheusmetrics.PrometheusMeterRegistry;
+import okhttp3.Request;
+import okhttp3.Response;
 import org.apache.kafka.clients.producer.MockProducer;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.clients.producer.RoundRobinPartitioner;
@@ -42,6 +48,7 @@ import org.apache.kafka.connect.header.Header;
 import org.apache.kafka.connect.sink.ErrantRecordReporter;
 import org.apache.kafka.connect.sink.SinkRecord;
 import org.apache.kafka.connect.sink.SinkTaskContext;
+import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.extension.RegisterExtension;
 import org.junit.jupiter.api.parallel.Execution;
@@ -59,8 +66,7 @@ import java.nio.file.Paths;
 import java.time.OffsetDateTime;
 import java.time.ZoneId;
 import java.util.*;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.*;
@@ -89,7 +95,8 @@ public class HttpSinkTaskTest {
     public static final String BEARER_TOKEN = "Bearer BQDzs98uhifaGayk8H9tCTRozufhFmgV_HKMCnnDdMTdz1FcOo3sdj8OZJ_azo96LRdLI9_1uJOCXxbGZme11KCb6ZxTuCt8B5FxEeECb1kO_-UDuf8";
     public static final String BEARER_TOKEN_2 = "Bearer BQDzs98uhifaGayk8H9tCTRozufhFmgV_AAAAAAAAdz1FcOo3sdj8OZJ_BBBBBBBBBBB_1uJOCXxbGZme11KCb6ZxTuCt8B5FxEeECb1kO_-UDuf8";
     public static final String OK = "OK";
-
+    public static final String AUTHORIZED_STATE = "Authorized";
+    private static final ExecutorService executorService = Executors.newFixedThreadPool(2);
 
     @Mock
     ErrantRecordReporter errantRecordReporter;
@@ -244,6 +251,7 @@ public class HttpSinkTaskTest {
             });
         }
     }
+
     @Nested
     class StartWithCustomConfigurations {
         @Test
@@ -3394,4 +3402,14 @@ public class HttpSinkTaskTest {
         return random.nextInt(high - low) + low;
     }
 
+    @NotNull
+    private static HttpRequest getDummyHttpRequest(String url) {
+        HttpRequest httpRequest = new HttpRequest(url, DUMMY_METHOD);
+        Map<String, List<String>> headers = Maps.newHashMap();
+        headers.put("Content-Type", Lists.newArrayList("application/json"));
+        httpRequest.setHeaders(headers);
+        httpRequest.setBodyAsString("stuff");
+        httpRequest.setBodyAsForm(Maps.newHashMap());
+        return httpRequest;
+    }
 }
