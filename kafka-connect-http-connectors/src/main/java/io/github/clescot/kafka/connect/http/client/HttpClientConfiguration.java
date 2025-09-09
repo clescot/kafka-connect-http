@@ -72,16 +72,6 @@ public class HttpClientConfiguration<C extends HttpClient<R,S>,R,S> implements C
         //main predicate
         this.predicate = HttpRequestPredicateBuilder.build().buildPredicate(settings);
         this.httpClient = httpClient;
-
-
-        //retry policy
-        //retry response code regex
-        if (settings.containsKey(RETRY_RESPONSE_CODE_REGEX)) {
-            this.retryResponseCodeRegex = Pattern.compile((String) settings.get(RETRY_RESPONSE_CODE_REGEX));
-        }else {
-            this.retryResponseCodeRegex = Pattern.compile(DEFAULT_DEFAULT_RETRY_RESPONSE_CODE_REGEX);
-        }
-
         this.retryPolicy = retryPolicy;
 
     }

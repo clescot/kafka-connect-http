@@ -16,12 +16,16 @@ import org.slf4j.LoggerFactory;
 import java.time.OffsetDateTime;
 import java.time.ZoneId;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
+import static io.github.clescot.kafka.connect.http.sink.HttpConfigDefinition.DEFAULT_DEFAULT_RETRY_RESPONSE_CODE_REGEX;
+import static io.github.clescot.kafka.connect.http.sink.HttpConfigDefinition.RETRY_RESPONSE_CODE_REGEX;
 
 /**
  * Configuration holding an HttpClient and its configuration.
@@ -37,12 +41,25 @@ public class HttpConfiguration<C extends HttpClient<NR, NS>, NR, NS> implements 
 
     private final HttpClientConfiguration<C, NR, NS> httpClientConfiguration;
     private final ExecutorService executorService;
+    private final Pattern retryResponseCodeRegex;
 
     public HttpConfiguration(HttpClientConfiguration<C, NR, NS> httpClientConfiguration,
-                             ExecutorService executorService) {
+                             ExecutorService executorService, Map<String, String> settings) {
         this.httpClientConfiguration = httpClientConfiguration;
         this.executorService = executorService;
+        //retry policy
+        //retry response code regex
+        if (settings.containsKey(RETRY_RESPONSE_CODE_REGEX)) {
+            this.retryResponseCodeRegex = Pattern.compile(settings.get(RETRY_RESPONSE_CODE_REGEX));
+        }else {
+            this.retryResponseCodeRegex = Pattern.compile(DEFAULT_DEFAULT_RETRY_RESPONSE_CODE_REGEX);
+        }
     }
+
+    public Pattern getRetryResponseCodeRegex() {
+        return retryResponseCodeRegex;
+    }
+
 
     /**
      *  - enrich request
@@ -120,7 +137,7 @@ public class HttpConfiguration<C extends HttpClient<NR, NS>, NR, NS> implements 
     }
 
     protected boolean retryNeeded(HttpResponse httpResponse) {
-        Optional<Pattern> myRetryResponseCodeRegex = this.httpClientConfiguration.getRetryResponseCodeRegex();
+        Optional<Pattern> myRetryResponseCodeRegex = Optional.ofNullable(getRetryResponseCodeRegex());
         if (myRetryResponseCodeRegex.isPresent()) {
             Pattern retryPattern = myRetryResponseCodeRegex.get();
             Matcher matcher = retryPattern.matcher("" + httpResponse.getStatusCode());
