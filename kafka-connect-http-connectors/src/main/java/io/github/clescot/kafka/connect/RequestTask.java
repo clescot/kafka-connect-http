@@ -1,14 +1,19 @@
 package io.github.clescot.kafka.connect;
 
 import com.google.common.base.Preconditions;
+import dev.failsafe.RetryPolicy;
+import io.github.clescot.kafka.connect.http.client.HttpException;
+import io.github.clescot.kafka.connect.http.core.HttpExchange;
 import io.github.clescot.kafka.connect.http.core.Request;
 import org.jetbrains.annotations.NotNull;
 
+import java.time.Duration;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 
 import static io.github.clescot.kafka.connect.http.core.Request.VU_ID;
+import static io.github.clescot.kafka.connect.http.sink.HttpConfigDefinition.*;
 
 /**
  * A task that handles requests and produces responses.
@@ -19,7 +24,9 @@ import static io.github.clescot.kafka.connect.http.core.Request.VU_ID;
  */
 public interface RequestTask<C extends Client,F extends Configuration<C,R>,R extends Request,E> extends Task<C,F,R>{
 
+    String HAS_BEEN_SET = " has been set.";
 
+    String MUST_BE_SET_TOO = " must be set too.";
     /**
      * Calls the service with the provided request.
      * @param request the request to be sent
@@ -73,6 +80,45 @@ public interface RequestTask<C extends Client,F extends Configuration<C,R>,R ext
             getUserConfigurations().put(configurationForUserId,getConfigurationForUser(vuId,matchingConfiguration));
         }
         return matchingConfiguration;
+    }
+
+    default RetryPolicy<E> buildRetryPolicy(Map<String,String> settings){
+        RetryPolicy<E> retryPolicy = null;
+        if (settings.containsKey(RETRIES)) {
+            Integer retries = Integer.parseInt(settings.get(RETRIES));
+            Long retryDelayInMs = Long.parseLong(Optional.ofNullable(settings.get(RETRY_DELAY_IN_MS)).orElse(""+DEFAULT_RETRY_DELAY_IN_MS_VALUE));
+            Preconditions.checkNotNull(retryDelayInMs, RETRIES + HAS_BEEN_SET + RETRY_DELAY_IN_MS + MUST_BE_SET_TOO);
+            Long retryMaxDelayInMs = Long.parseLong(Optional.ofNullable(settings.get(RETRY_MAX_DELAY_IN_MS)).orElse(""+DEFAULT_RETRY_MAX_DELAY_IN_MS_VALUE));
+            Preconditions.checkNotNull(retryDelayInMs, RETRIES + HAS_BEEN_SET + RETRY_MAX_DELAY_IN_MS + MUST_BE_SET_TOO);
+            Double retryDelayFactor = Double.parseDouble(Optional.ofNullable(settings.get(RETRY_DELAY_FACTOR)).orElse(""+DEFAULT_RETRY_DELAY_FACTOR_VALUE));
+            Preconditions.checkNotNull(retryDelayInMs, RETRIES + HAS_BEEN_SET + RETRY_DELAY_FACTOR + MUST_BE_SET_TOO);
+            Long retryJitterInMs = Long.parseLong(Optional.ofNullable(settings.get(RETRY_JITTER_IN_MS)).orElse(""+DEFAULT_RETRY_JITTER_IN_MS_VALUE));
+            Preconditions.checkNotNull(retryDelayInMs, RETRIES + HAS_BEEN_SET + RETRY_JITTER_IN_MS + MUST_BE_SET_TOO);
+             retryPolicy = buildRetryPolicy(retries, retryDelayInMs, retryMaxDelayInMs, retryDelayFactor, retryJitterInMs);
+        }else{
+            LOGGER.trace("retry policy is not configured");
+        }
+        return retryPolicy;
+    }
+
+    private RetryPolicy<E> buildRetryPolicy(Integer retries,
+                                                       Long retryDelayInMs,
+                                                       Long retryMaxDelayInMs,
+                                                       Double retryDelayFactor,
+                                                       Long retryJitterInMs) {
+        //noinspection LoggingPlaceholderCountMatchesArgumentCount
+        return RetryPolicy.<E>builder()
+                //we retry only if the error comes from the WS server (server-side technical error)
+                .handle(HttpException.class)
+                .withBackoff(Duration.ofMillis(retryDelayInMs), Duration.ofMillis(retryMaxDelayInMs), retryDelayFactor)
+                .withJitter(Duration.ofMillis(retryJitterInMs))
+                .withMaxRetries(retries)
+                .onAbort(listener -> LOGGER.warn("Retry  aborted after elapsed attempt time:'{}' attempts:'{}',result:'{}', failure:'{}'", listener.getElapsedAttemptTime(), listener.getAttemptCount(), listener.getResult(), listener.getException()))
+                .onRetriesExceeded(listener -> LOGGER.warn("Retries exceeded  elapsed attempt time:'{}', attempts:'{}', call result:'{}', failure:'{}'",listener.getElapsedAttemptTime(), listener.getAttemptCount(),listener.getResult(), listener.getException()))
+                .onRetry(listener -> LOGGER.trace("Retry  call result:'{}', failure:'{}'", listener.getLastResult(), listener.getLastException()))
+                .onFailure(listener -> LOGGER.warn("call failed ! result:'{}',exception:'{}'", listener.getResult(), listener.getException()))
+                .onAbort(listener -> LOGGER.warn("call aborted ! result:'{}',exception:'{}'", listener.getResult(), listener.getException()))
+                .build();
     }
 
 }

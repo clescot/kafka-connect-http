@@ -43,8 +43,9 @@ public class SseTask implements Task<OkHttpClient, SseConfiguration, HttpRequest
                         null,
                         configurationIdList,
                         settings,
-                        new CompositeMeterRegistry()
-                ).entrySet().stream()
+                        new CompositeMeterRegistry(),
+                        null)
+                .entrySet().stream()
                 .map(config -> Maps.immutableEntry(
                         config.getKey(),
                         new SseConfiguration(config.getKey(), config.getValue().getClient(), MapUtils.getMapWithPrefix(mySettings, "config." + config.getKey() + "."))

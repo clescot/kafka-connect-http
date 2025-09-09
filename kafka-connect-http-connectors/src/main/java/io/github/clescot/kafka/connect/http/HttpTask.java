@@ -2,6 +2,7 @@ package io.github.clescot.kafka.connect.http;
 
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
+import dev.failsafe.RetryPolicy;
 import io.github.clescot.kafka.connect.RequestTask;
 import io.github.clescot.kafka.connect.http.client.*;
 import io.github.clescot.kafka.connect.http.core.HttpExchange;
@@ -44,6 +45,7 @@ public class HttpTask<T,C extends HttpClient<NR, NS>, NR, NS> implements Request
 
 
     private final Map<String,HttpConfiguration<C, NR, NS>> configurations;
+    private final RetryPolicy<HttpExchange> retryPolicy;
     private Map<String,HttpConfiguration<C, NR, NS>> userConfigurations = Maps.newHashMap();
     private static CompositeMeterRegistry meterRegistry;
 
@@ -69,13 +71,14 @@ public class HttpTask<T,C extends HttpClient<NR, NS>, NR, NS> implements Request
         //request groupers
         RequestGrouperFactory requestGrouperFactory = new RequestGrouperFactory();
         this.requestGroupers = requestGrouperFactory.buildRequestGroupers(httpConnectorConfig, httpConnectorConfig.getList(REQUEST_GROUPER_IDS));
-
+        this.retryPolicy = buildRetryPolicy(httpConnectorConfig.originalsStrings());
         //configurations
         Map<String,HttpClientConfiguration<C, NR, NS>> httpClientConfigurations = buildConfigurations(
                 httpClientFactory,
                 executorService,
                 httpConnectorConfig.getConfigurationIds(),
-                originalsStrings, meterRegistry
+                originalsStrings, meterRegistry,
+                retryPolicy
         );
         //wrap configurations in HttpConfiguration
         this.configurations = httpClientConfigurations.entrySet().stream()

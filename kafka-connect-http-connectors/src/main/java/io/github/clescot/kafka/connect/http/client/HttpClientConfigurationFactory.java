@@ -28,8 +28,8 @@ public class HttpClientConfigurationFactory {
             HttpClientFactory<C, R, S> httpClientFactory,
             ExecutorService executorService,
             List<String> configIdList,
-            Map<String, String> originals, CompositeMeterRegistry meterRegistry
-    ) {
+            Map<String, String> originals, CompositeMeterRegistry meterRegistry,
+            RetryPolicy<HttpExchange> retryPolicy) {
         Map<String,HttpClientConfiguration<C, R, S>> httpClientConfigurations = Maps.newHashMap();
         List<String> configurationIds = Lists.newArrayList();
         Optional<List<String>> ids = Optional.ofNullable(configIdList);
@@ -43,7 +43,7 @@ public class HttpClientConfigurationFactory {
             settings.put("configuration.id", configId);
             Random random = getRandom(settings);
             C httpClient = httpClientFactory.buildHttpClient(settings, executorService, meterRegistry, random);
-            HttpClientConfiguration<C, R, S> httpClientConfiguration = new HttpClientConfiguration<>(configId,config,httpClient);
+            HttpClientConfiguration<C, R, S> httpClientConfiguration = new HttpClientConfiguration<>(configId,config,httpClient,retryPolicy);
             if (httpClientConfiguration.getClient() == null && !httpClientConfigurations.isEmpty() && defaultHttpClientConfiguration != null) {
                 httpClientConfiguration.setHttpClient(defaultHttpClientConfiguration.getClient());
             }

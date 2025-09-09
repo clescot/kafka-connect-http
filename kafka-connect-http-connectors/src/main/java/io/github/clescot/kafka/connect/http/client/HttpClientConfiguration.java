@@ -4,19 +4,16 @@ import com.google.common.base.Preconditions;
 import com.google.common.collect.Maps;
 import dev.failsafe.RetryPolicy;
 import io.github.clescot.kafka.connect.Configuration;
+import io.github.clescot.kafka.connect.RequestTask;
 import io.github.clescot.kafka.connect.VersionUtils;
-import io.github.clescot.kafka.connect.http.client.config.AddSuccessStatusToHttpExchangeFunction;
 import io.github.clescot.kafka.connect.http.client.config.HttpRequestPredicateBuilder;
 import io.github.clescot.kafka.connect.http.core.HttpExchange;
 import io.github.clescot.kafka.connect.http.core.HttpRequest;
-import io.micrometer.core.instrument.composite.CompositeMeterRegistry;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.time.Duration;
 import java.util.Map;
 import java.util.Optional;
-import java.util.concurrent.ExecutorService;
 import java.util.function.Predicate;
 import java.util.regex.Pattern;
 
@@ -40,9 +37,7 @@ import static io.github.clescot.kafka.connect.http.sink.HttpConfigDefinition.*;
 public class HttpClientConfiguration<C extends HttpClient<R,S>,R,S> implements Configuration<C,HttpRequest> {
     public static final VersionUtils VERSION_UTILS = new VersionUtils();
     private static final Logger LOGGER = LoggerFactory.getLogger(HttpClientConfiguration.class);
-    public static final String HAS_BEEN_SET = " has been set.";
 
-    public static final String MUST_BE_SET_TOO = " must be set too.";
     public static final String CONFIGURATION_ID = "configuration.id";
 
 
@@ -66,7 +61,7 @@ public class HttpClientConfiguration<C extends HttpClient<R,S>,R,S> implements C
 
     public HttpClientConfiguration(String id,
                                    Map<String,String> config,
-                                   C httpClient) {
+                                   C httpClient, RetryPolicy<HttpExchange> retryPolicy) {
         this.id = id;
         Preconditions.checkNotNull(id, "id must not be null");
         Preconditions.checkNotNull(config, "httpSinkConnectorConfig must not be null");
@@ -83,22 +78,11 @@ public class HttpClientConfiguration<C extends HttpClient<R,S>,R,S> implements C
         //retry response code regex
         if (settings.containsKey(RETRY_RESPONSE_CODE_REGEX)) {
             this.retryResponseCodeRegex = Pattern.compile((String) settings.get(RETRY_RESPONSE_CODE_REGEX));
+        }else {
+            this.retryResponseCodeRegex = Pattern.compile(DEFAULT_DEFAULT_RETRY_RESPONSE_CODE_REGEX);
         }
 
-        if (settings.containsKey(RETRIES)) {
-            Integer retries = Integer.parseInt((String) settings.get(RETRIES));
-            Long retryDelayInMs = Long.parseLong((String) Optional.ofNullable(settings.get(RETRY_DELAY_IN_MS)).orElse(""+DEFAULT_RETRY_DELAY_IN_MS_VALUE));
-            Preconditions.checkNotNull(retryDelayInMs, RETRIES + HAS_BEEN_SET + RETRY_DELAY_IN_MS + MUST_BE_SET_TOO);
-            Long retryMaxDelayInMs = Long.parseLong((String) Optional.ofNullable(settings.get(RETRY_MAX_DELAY_IN_MS)).orElse(""+DEFAULT_RETRY_MAX_DELAY_IN_MS_VALUE));
-            Preconditions.checkNotNull(retryDelayInMs, RETRIES + HAS_BEEN_SET + RETRY_MAX_DELAY_IN_MS + MUST_BE_SET_TOO);
-            Double retryDelayFactor = Double.parseDouble((String) Optional.ofNullable(settings.get(RETRY_DELAY_FACTOR)).orElse(""+DEFAULT_RETRY_DELAY_FACTOR_VALUE));
-            Preconditions.checkNotNull(retryDelayInMs, RETRIES + HAS_BEEN_SET + RETRY_DELAY_FACTOR + MUST_BE_SET_TOO);
-            Long retryJitterInMs = Long.parseLong((String) Optional.ofNullable(settings.get(RETRY_JITTER_IN_MS)).orElse(""+DEFAULT_RETRY_JITTER_IN_MS_VALUE));
-            Preconditions.checkNotNull(retryDelayInMs, RETRIES + HAS_BEEN_SET + RETRY_JITTER_IN_MS + MUST_BE_SET_TOO);
-            this.retryPolicy = buildRetryPolicy(retries, retryDelayInMs, retryMaxDelayInMs, retryDelayFactor, retryJitterInMs);
-        }else{
-            LOGGER.trace("configuration '{}' :retry policy is not configured",this.getId());
-        }
+        this.retryPolicy = retryPolicy;
 
     }
 
@@ -131,25 +115,7 @@ public class HttpClientConfiguration<C extends HttpClient<R,S>,R,S> implements C
         return Optional.ofNullable(retryResponseCodeRegex);
     }
 
-    private RetryPolicy<HttpExchange> buildRetryPolicy(Integer retries,
-                                                       Long retryDelayInMs,
-                                                       Long retryMaxDelayInMs,
-                                                       Double retryDelayFactor,
-                                                       Long retryJitterInMs) {
-        //noinspection LoggingPlaceholderCountMatchesArgumentCount
-        return RetryPolicy.<HttpExchange>builder()
-                //we retry only if the error comes from the WS server (server-side technical error)
-                .handle(HttpException.class)
-                .withBackoff(Duration.ofMillis(retryDelayInMs), Duration.ofMillis(retryMaxDelayInMs), retryDelayFactor)
-                .withJitter(Duration.ofMillis(retryJitterInMs))
-                .withMaxRetries(retries)
-                .onAbort(listener -> LOGGER.warn("Retry  aborted after elapsed attempt time:'{}' attempts:'{}',result:'{}', failure:'{}'", listener.getElapsedAttemptTime(), listener.getAttemptCount(), listener.getResult(), listener.getException()))
-                .onRetriesExceeded(listener -> LOGGER.warn("Retries exceeded  elapsed attempt time:'{}', attempts:'{}', call result:'{}', failure:'{}'",listener.getElapsedAttemptTime(), listener.getAttemptCount(),listener.getResult(), listener.getException()))
-                .onRetry(listener -> LOGGER.trace("Retry  call result:'{}', failure:'{}'", listener.getLastResult(), listener.getLastException()))
-                .onFailure(listener -> LOGGER.warn("call failed ! result:'{}',exception:'{}'", listener.getResult(), listener.getException()))
-                .onAbort(listener -> LOGGER.warn("call aborted ! result:'{}',exception:'{}'", listener.getResult(), listener.getException()))
-                .build();
-    }
+
 
     public boolean matches(HttpRequest httpRequest) {
         return this.predicate.test(httpRequest);

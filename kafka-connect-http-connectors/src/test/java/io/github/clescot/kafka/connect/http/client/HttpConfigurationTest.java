@@ -8,21 +8,21 @@ import com.github.tomakehurst.wiremock.junit5.WireMockExtension;
 import com.github.tomakehurst.wiremock.junit5.WireMockRuntimeInfo;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
+import dev.failsafe.RetryPolicy;
 import io.github.clescot.kafka.connect.MapUtils;
+import io.github.clescot.kafka.connect.http.HttpTask;
 import io.github.clescot.kafka.connect.http.client.okhttp.OkHttpClient;
 import io.github.clescot.kafka.connect.http.client.okhttp.OkHttpClientFactory;
 import io.github.clescot.kafka.connect.http.core.HttpExchange;
 import io.github.clescot.kafka.connect.http.core.HttpRequest;
 import io.github.clescot.kafka.connect.http.sink.HttpConnectorConfig;
 import io.micrometer.core.instrument.Clock;
-import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.composite.CompositeMeterRegistry;
 import io.micrometer.jmx.JmxConfig;
 import io.micrometer.jmx.JmxMeterRegistry;
 import okhttp3.Request;
 import okhttp3.Response;
 import org.apache.kafka.common.config.AbstractConfig;
-import org.assertj.core.util.Sets;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
@@ -31,7 +31,6 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 import org.junit.jupiter.api.parallel.Execution;
 import org.junit.jupiter.api.parallel.ExecutionMode;
 
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
@@ -84,7 +83,7 @@ class HttpConfigurationTest {
             OkHttpClientFactory okHttpClientFactory = new OkHttpClientFactory();
             Map<String, String> settings = Map.of("url", "http://example.com/sse", "topic", "test-topic");
             okHttpClient = okHttpClientFactory.buildHttpClient(settings, null, new CompositeMeterRegistry(), new Random());
-            HttpClientConfiguration<OkHttpClient,Request, Response> test = new HttpClientConfiguration<>("test", config.originalsStrings(), okHttpClient);
+            HttpClientConfiguration<OkHttpClient,Request, Response> test = new HttpClientConfiguration<>("test", config.originalsStrings(), okHttpClient, null);
             executorService = Executors.newFixedThreadPool(2);
             HttpConfiguration<OkHttpClient, Request, Response> httpConfiguration = new HttpConfiguration<>(test,executorService);
             Map<String, HttpConfiguration<OkHttpClient, Request, Response>> map = Maps.newHashMap();
@@ -114,8 +113,8 @@ class HttpConfigurationTest {
             HttpClientConfiguration<OkHttpClient,Request, Response> httpClientConfiguration = new HttpClientConfiguration<>(
                     "dummy",
                     httpConnectorConfig.originalsStrings(),
-                    okHttpClient
-            );
+                    okHttpClient,
+                    null);
             HttpConfiguration<OkHttpClient,Request, Response> httpConfiguration = new HttpConfiguration<>(httpClientConfiguration,executorService);
             HttpExchange httpExchange = httpConfiguration.call(httpRequest).get();
 
@@ -149,14 +148,17 @@ class HttpConfigurationTest {
             //when
             HttpRequest httpRequest = getDummyHttpRequest(wmHttp.url("/ping"));
             Map<String, String> settings = Maps.newHashMap();
-            settings.put("config.dummy.retry.policy.retries","2");
-            settings.put("config.dummy.retry.policy.response.code.regex",DEFAULT_DEFAULT_RETRY_RESPONSE_CODE_REGEX);
+            settings.put("retry.policy.retries","2");
+            settings.put("retry.policy.response.code.regex",DEFAULT_DEFAULT_RETRY_RESPONSE_CODE_REGEX);
             HttpConnectorConfig httpConnectorConfig = new HttpConnectorConfig(settings);
+            HttpTask httpTask = new HttpTask(httpConnectorConfig,new OkHttpClientFactory());
+
+            RetryPolicy<HttpExchange> retryPolicy = httpTask.buildRetryPolicy(httpConnectorConfig.originalsStrings());
             HttpClientConfiguration<OkHttpClient,Request, Response> httpClientConfiguration = new HttpClientConfiguration<>(
                     "dummy",
                     MapUtils.getMapWithPrefix(httpConnectorConfig.originalsStrings(),"config.dummy."),
-                    okHttpClient
-            );
+                    okHttpClient,
+                    retryPolicy);
             HttpConfiguration<OkHttpClient,okhttp3.Request,okhttp3.Response> httpConfiguration = new HttpConfiguration<>(httpClientConfiguration,executorService);
             HttpExchange httpExchange = httpConfiguration.call(httpRequest).get();
 
