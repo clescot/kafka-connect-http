@@ -131,11 +131,11 @@ public class HttpClientConfiguration<C extends HttpClient<R,S>,R,S> implements C
         }else{
             LOGGER.trace("configuration '{}' :retry policy is not configured",this.getId());
         }
-        this.enrichRequestFunction = buildEnrichRequestFunction(random);
+        this.enrichRequestFunction = buildEnrichRequestFunction(settings,random);
 
     }
 
-    public Function<HttpRequest,HttpRequest> buildEnrichRequestFunction(Random random) {
+    public Function<HttpRequest,HttpRequest> buildEnrichRequestFunction(Map<String,Object> settings,Random random) {
 
         //enrich request
         List<Function<HttpRequest,HttpRequest>> enrichRequestFunctions = Lists.newArrayList();
