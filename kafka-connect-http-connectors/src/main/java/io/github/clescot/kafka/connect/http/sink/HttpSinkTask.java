@@ -158,13 +158,13 @@ public abstract class HttpSinkTask<C extends HttpClient<R, S>, R, S> extends Sin
     @Override
     @SuppressWarnings("java:S3864")
     public void put(Collection<SinkRecord> records) {
-        List<HttpExchange> httpExchanges = putWithExchanges(records);
+        List<HttpExchange> httpExchanges = putAndGetExchanges(records);
         if (httpExchanges == null) return;
         LOGGER.debug("HttpExchanges created :'{}'", httpExchanges.size());
 
     }
 
-    public @Nullable List<HttpExchange> putWithExchanges(Collection<SinkRecord> records) {
+    public @Nullable List<HttpExchange> putAndGetExchanges(Collection<SinkRecord> records) {
         Preconditions.checkNotNull(records, "records collection to be processed is null");
         if (records.isEmpty()) {
             LOGGER.debug("no records");
@@ -176,8 +176,7 @@ public abstract class HttpSinkTask<C extends HttpClient<R, S>, R, S> extends Sin
         List<CompletableFuture<HttpExchange>> completableFutures = preparedRequests.stream()
                 .map(this::callAndPublish)
                 .toList();
-        List<HttpExchange> httpExchanges = completableFutures.stream().map(CompletableFuture::join).toList();
-        return httpExchanges;
+        return completableFutures.stream().map(CompletableFuture::join).toList();
     }
 
 
