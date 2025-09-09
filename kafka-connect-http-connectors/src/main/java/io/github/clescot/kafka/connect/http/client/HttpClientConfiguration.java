@@ -49,7 +49,7 @@ public class HttpClientConfiguration<C extends HttpClient<R,S>,R,S> implements C
     private final Predicate<HttpRequest> predicate;
 
 
-    public static final String STATIC_SCOPE = "static";
+
 
     //enrich
     private final Pattern defaultSuccessPattern = Pattern.compile(CONFIG_DEFAULT_DEFAULT_SUCCESS_RESPONSE_CODE_REGEX);

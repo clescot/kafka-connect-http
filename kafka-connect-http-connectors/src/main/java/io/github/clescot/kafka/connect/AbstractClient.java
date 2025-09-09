@@ -14,10 +14,10 @@ import java.util.Map;
 import java.util.Optional;
 
 import static io.github.clescot.kafka.connect.http.client.HttpClientConfiguration.CONFIGURATION_ID;
-import static io.github.clescot.kafka.connect.http.client.HttpClientConfiguration.STATIC_SCOPE;
 import static io.github.clescot.kafka.connect.http.sink.HttpConfigDefinition.*;
 
 public abstract class  AbstractClient<E> implements Client<E> {
+    public static final String STATIC_SCOPE = "static";
     Logger LOGGER = LoggerFactory.getLogger(AbstractClient.class);
     public static final Map<String, RateLimiter> SHARED_RATE_LIMITERS = Maps.newHashMap();
     private Optional<RateLimiter<E>> rateLimiter = Optional.empty();
