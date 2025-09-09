@@ -98,6 +98,10 @@ public class HttpConfiguration<C extends HttpClient<NR, NS>, NR, NS> implements 
         return result.toString();
     }
 
+    public RetryPolicy<HttpExchange> getRetryPolicy() {
+        return retryPolicy;
+    }
+
     @Override
     public String toString() {
         return "HttpConfiguration{" +
@@ -138,7 +142,7 @@ public class HttpConfiguration<C extends HttpClient<NR, NS>, NR, NS> implements 
      * @return CompletableFuture of the HttpExchange (describing the request and response).
      */
     public CompletableFuture<HttpExchange> call(@NotNull HttpRequest httpRequest) {
-        Optional<RetryPolicy<HttpExchange>> retryPolicyForCall = this.httpClientConfiguration.getRetryPolicy();
+        Optional<RetryPolicy<HttpExchange>> retryPolicyForCall = Optional.ofNullable(getRetryPolicy());
         AtomicInteger attempts = new AtomicInteger();
         try {
 
