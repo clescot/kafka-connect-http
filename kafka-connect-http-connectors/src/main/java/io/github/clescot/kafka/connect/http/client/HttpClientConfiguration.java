@@ -61,12 +61,7 @@ public class HttpClientConfiguration<C extends HttpClient<R,S>,R,S> implements C
     //enrich
     private final Pattern defaultSuccessPattern = Pattern.compile(CONFIG_DEFAULT_DEFAULT_SUCCESS_RESPONSE_CODE_REGEX);
 
-
-    private AddStaticHeadersToHttpRequestFunction addStaticHeadersToHttpRequestFunction;
-    private AddMissingRequestIdHeaderToHttpRequestFunction addMissingRequestIdHeaderToHttpRequestFunction;
-    private AddMissingCorrelationIdHeaderToHttpRequestFunction addMissingCorrelationIdHeaderToHttpRequestFunction;
     private AddSuccessStatusToHttpExchangeFunction addSuccessStatusToHttpExchangeFunction;
-    private AddUserAgentHeaderToHttpRequestFunction addUserAgentHeaderToHttpRequestFunction;
 
     //retry policy
     private Pattern retryResponseCodeRegex;
@@ -78,6 +73,8 @@ public class HttpClientConfiguration<C extends HttpClient<R,S>,R,S> implements C
     private final ExecutorService executorService;
     private final Map<String, Object> settings;
     private final Function<HttpRequest, HttpRequest> enrichRequestFunction;
+
+
     public HttpClientConfiguration(String id,
                                    HttpClientFactory<C,R,S> httpClientFactory,
                                    Map<String,String> config,
@@ -152,18 +149,15 @@ public class HttpClientConfiguration<C extends HttpClient<R,S>,R,S> implements C
                 LOGGER.debug("static header {}:{}", headerName, values);
             }
         }
-        this.addStaticHeadersToHttpRequestFunction = new AddStaticHeadersToHttpRequestFunction(staticRequestHeaders);
-        enrichRequestFunctions.add(addStaticHeadersToHttpRequestFunction);
+        enrichRequestFunctions.add(new AddStaticHeadersToHttpRequestFunction(staticRequestHeaders));
 
         //AddMissingRequestIdHeaderToHttpRequestFunction
         boolean generateMissingRequestId = Boolean.parseBoolean((String) settings.get(GENERATE_MISSING_REQUEST_ID));
-        this.addMissingRequestIdHeaderToHttpRequestFunction = new AddMissingRequestIdHeaderToHttpRequestFunction(generateMissingRequestId);
-        enrichRequestFunctions.add(addMissingRequestIdHeaderToHttpRequestFunction);
+        enrichRequestFunctions.add( new AddMissingRequestIdHeaderToHttpRequestFunction(generateMissingRequestId));
 
         //AddMissingCorrelationIdHeaderToHttpRequestFunction
         boolean generateMissingCorrelationId = Boolean.parseBoolean((String) settings.get(GENERATE_MISSING_CORRELATION_ID));
-        this.addMissingCorrelationIdHeaderToHttpRequestFunction = new AddMissingCorrelationIdHeaderToHttpRequestFunction(generateMissingCorrelationId);
-        enrichRequestFunctions.add(addMissingCorrelationIdHeaderToHttpRequestFunction);
+        enrichRequestFunctions.add(new AddMissingCorrelationIdHeaderToHttpRequestFunction(generateMissingCorrelationId));
 
         //activateUserAgentHeaderToHttpRequestFunction
         String activateUserAgentHeaderToHttpRequestFunction = (String) settings.getOrDefault(USER_AGENT_OVERRIDE, USER_AGENT_HTTP_CLIENT_DEFAULT_MODE);
@@ -171,13 +165,11 @@ public class HttpClientConfiguration<C extends HttpClient<R,S>,R,S> implements C
             LOGGER.trace("userAgentHeaderToHttpRequestFunction : 'http_client' configured. No need to activate UserAgentInterceptor");
         }else if(USER_AGENT_PROJECT_MODE.equalsIgnoreCase(activateUserAgentHeaderToHttpRequestFunction)){
             String projectUserAgent = "Mozilla/5.0 (compatible;kafka-connect-http/"+ VERSION_UTILS.getVersion() +"; "+httpClient.getEngineId()+"; https://github.com/clescot/kafka-connect-http)";
-            this.addUserAgentHeaderToHttpRequestFunction = new AddUserAgentHeaderToHttpRequestFunction(Lists.newArrayList(projectUserAgent), random);
-            enrichRequestFunctions.add(addUserAgentHeaderToHttpRequestFunction);
+            enrichRequestFunctions.add(new AddUserAgentHeaderToHttpRequestFunction(Lists.newArrayList(projectUserAgent), random));
         }else if(USER_AGENT_CUSTOM_MODE.equalsIgnoreCase(activateUserAgentHeaderToHttpRequestFunction)){
             String userAgentValuesAsString = settings.getOrDefault(USER_AGENT_CUSTOM_VALUES, StringUtils.EMPTY).toString();
             List<String> userAgentValues = Arrays.asList(userAgentValuesAsString.split("\\|"));
-            this.addUserAgentHeaderToHttpRequestFunction = new AddUserAgentHeaderToHttpRequestFunction(userAgentValues, random);
-            enrichRequestFunctions.add(addUserAgentHeaderToHttpRequestFunction);
+            enrichRequestFunctions.add(new AddUserAgentHeaderToHttpRequestFunction(userAgentValues, random));
         }else{
             LOGGER.trace("user agent interceptor : '{}' configured. No need to activate UserAgentInterceptor",activateUserAgentHeaderToHttpRequestFunction);
         }
