@@ -23,7 +23,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
-import static io.github.clescot.kafka.connect.http.client.HttpClientConfigurationFactory.buildConfigurations;
+import static io.github.clescot.kafka.connect.http.client.HttpClientFactory.buildConfigurations;
 import static io.github.clescot.kafka.connect.http.sink.HttpConfigDefinition.*;
 
 /**
@@ -72,12 +72,12 @@ public class HttpTask<T,C extends HttpClient<NR, NS>, NR, NS> implements Request
         this.requestGroupers = requestGrouperFactory.buildRequestGroupers(httpConnectorConfig, httpConnectorConfig.getList(REQUEST_GROUPER_IDS));
         this.retryPolicy = buildRetryPolicy(httpConnectorConfig.originalsStrings());
         //configurations
-        Map<String,HttpClientConfiguration<C, NR, NS>> httpClientConfigurations = buildConfigurations(
+        Map<String,C> httpClientConfigurations = buildConfigurations(
                 httpClientFactory,
                 executorService,
                 httpConnectorConfig.getConfigurationIds(),
-                settings, meterRegistry,
-                retryPolicy
+                settings,
+                meterRegistry
         );
         //wrap configurations in HttpConfiguration
         this.configurations = httpClientConfigurations.entrySet().stream()
@@ -85,7 +85,7 @@ public class HttpTask<T,C extends HttpClient<NR, NS>, NR, NS> implements Request
                         entry->Map.entry(entry.getKey(),
                         new HttpConfiguration<>(
                                 entry.getKey(),
-                                entry.getValue().getClient(),
+                                entry.getValue(),
                                 executorService,
                                 retryPolicy,
                                 settings)

@@ -20,7 +20,7 @@ import java.util.Random;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
 
-import static io.github.clescot.kafka.connect.http.client.HttpClientConfigurationFactory.getRandom;
+import static io.github.clescot.kafka.connect.http.client.HttpClientFactory.getRandom;
 
 
 /**
@@ -69,12 +69,6 @@ public class SseConfiguration implements Configuration<OkHttpClient, HttpRequest
                                                          HttpClientFactory<OkHttpClient, Request, Response> httpClientFactory) {
         Random random = getRandom(mySettings);
         OkHttpClient httpClient = httpClientFactory.buildHttpClient(mySettings, executorService, meterRegistry, random);
-//        HttpClientConfiguration<OkHttpClient, Request, Response> httpClientConfiguration = new HttpClientConfiguration<>(
-//                configurationId,
-//                new OkHttpClientFactory(),
-//                mySettings,
-//                null,
-//                new CompositeMeterRegistry());
         return new SseConfiguration(configurationId, httpClient, mySettings);
     }
 
