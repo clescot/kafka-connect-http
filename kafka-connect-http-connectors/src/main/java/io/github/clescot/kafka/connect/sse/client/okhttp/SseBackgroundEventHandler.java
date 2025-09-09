@@ -12,7 +12,7 @@ import java.net.URI;
 import java.util.Map;
 import java.util.Queue;
 
-import static io.github.clescot.kafka.connect.http.client.HttpClientConfiguration.CONFIGURATION_ID;
+import static io.github.clescot.kafka.connect.http.client.HttpClientFactory.CONFIGURATION_ID;
 
 /**
  * SseBackgroundEventHandler is responsible for handling Server-Sent Events (SSE) in the background.

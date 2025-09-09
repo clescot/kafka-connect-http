@@ -49,7 +49,7 @@ public interface HttpClientFactory<C extends HttpClient<R, S>, R, S> {
     String DEFAULT_SSL_PROTOCOL = "SSL";
     String IS_NOT_SET = " is not set";
     Pattern defaultSuccessPattern = Pattern.compile(CONFIG_DEFAULT_DEFAULT_SUCCESS_RESPONSE_CODE_REGEX);
-
+    String CONFIGURATION_ID = "configuration.id";
     C build(Map<String, String> config,
             ExecutorService executorService,
             Random random,

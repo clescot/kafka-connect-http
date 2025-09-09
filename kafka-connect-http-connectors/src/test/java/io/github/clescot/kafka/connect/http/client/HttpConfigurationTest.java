@@ -83,7 +83,6 @@ class HttpConfigurationTest {
             OkHttpClientFactory okHttpClientFactory = new OkHttpClientFactory();
             Map<String, String> settings = Map.of("url", "http://example.com/sse", "topic", "test-topic");
             okHttpClient = okHttpClientFactory.buildHttpClient(settings, null, new CompositeMeterRegistry(), new Random());
-            HttpClientConfiguration<OkHttpClient,Request, Response> test = new HttpClientConfiguration<>("test", config.originalsStrings(), okHttpClient, null);
             executorService = Executors.newFixedThreadPool(2);
             HttpConfiguration<OkHttpClient, Request, Response> httpConfiguration = new HttpConfiguration<>("test",okHttpClient,executorService, null,settings);
             Map<String, HttpConfiguration<OkHttpClient, Request, Response>> map = Maps.newHashMap();
@@ -109,13 +108,7 @@ class HttpConfigurationTest {
             //when
             HttpRequest httpRequest = getDummyHttpRequest(wmHttp.url("/ping"));
             Map<String, String> settings = Maps.newHashMap();
-            HttpConnectorConfig httpConnectorConfig = new HttpConnectorConfig(settings);
             String dummy = "dummy";
-            HttpClientConfiguration<OkHttpClient,Request, Response> httpClientConfiguration = new HttpClientConfiguration<>(
-                    dummy,
-                    httpConnectorConfig.originalsStrings(),
-                    okHttpClient,
-                    null);
             HttpConfiguration<OkHttpClient,Request, Response> httpConfiguration = new HttpConfiguration<>(dummy,okHttpClient,executorService,null, settings);
             HttpExchange httpExchange = httpConfiguration.call(httpRequest).get();
 
@@ -156,11 +149,6 @@ class HttpConfigurationTest {
 
             RetryPolicy<HttpExchange> retryPolicy = httpTask.buildRetryPolicy(httpConnectorConfig.originalsStrings());
             String dummy = "dummy";
-            HttpClientConfiguration<OkHttpClient,Request, Response> httpClientConfiguration = new HttpClientConfiguration<>(
-                    dummy,
-                    MapUtils.getMapWithPrefix(httpConnectorConfig.originalsStrings(),"config.dummy."),
-                    okHttpClient,
-                    retryPolicy);
             HttpConfiguration<OkHttpClient,okhttp3.Request,okhttp3.Response> httpConfiguration = new HttpConfiguration<>(dummy,okHttpClient,executorService, retryPolicy,settings);
             HttpExchange httpExchange = httpConfiguration.call(httpRequest).get();
 

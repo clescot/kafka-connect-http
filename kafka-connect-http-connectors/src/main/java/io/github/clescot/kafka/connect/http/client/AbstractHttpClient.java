@@ -4,6 +4,7 @@ import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import io.github.clescot.kafka.connect.AbstractClient;
+import io.github.clescot.kafka.connect.VersionUtils;
 import io.github.clescot.kafka.connect.http.client.config.*;
 import io.github.clescot.kafka.connect.http.core.HttpExchange;
 import io.github.clescot.kafka.connect.http.core.HttpRequest;
@@ -16,10 +17,10 @@ import java.util.*;
 import java.util.function.Function;
 import java.util.regex.Pattern;
 
-import static io.github.clescot.kafka.connect.http.client.HttpClientConfiguration.VERSION_UTILS;
 import static io.github.clescot.kafka.connect.http.sink.HttpConfigDefinition.*;
 
 public abstract class AbstractHttpClient<NR,NS> extends AbstractClient<HttpExchange> implements HttpClient<NR,NS> {
+    public static final VersionUtils VERSION_UTILS = new VersionUtils();
     private static final Logger LOGGER = LoggerFactory.getLogger(AbstractHttpClient.class);
 
     public static final String DEFAULT_HTTP_RESPONSE_MESSAGE_STATUS_LIMIT = "1024";

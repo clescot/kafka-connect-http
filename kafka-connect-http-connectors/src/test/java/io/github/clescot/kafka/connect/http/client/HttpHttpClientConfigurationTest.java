@@ -84,11 +84,7 @@ class HttpHttpClientConfigurationTest {
             settings.put(USER_AGENT_OVERRIDE, "custom");
             settings.put(USER_AGENT_CUSTOM_VALUES, "custom_ua");
             okHttpClient = okHttpClientFactory.buildHttpClient(settings, null, new CompositeMeterRegistry(), new Random());
-            HttpClientConfiguration<OkHttpClient, Request, Response> httpClientConfiguration = new HttpClientConfiguration<>(
-                    configId,
-                    MapUtils.getMapWithPrefix(new HttpConnectorConfig(settings).originalsStrings(), "config.dummy."),
-                    okHttpClient,
-                    null);
+
             HttpRequest httpRequest = getDummyHttpRequest();
             HttpConfiguration<OkHttpClient, okhttp3.Request, okhttp3.Response> httpConfiguration = new HttpConfiguration<>(configId,okHttpClient, executorService, null,settings);
             HttpRequest enrichedHttpRequest = httpConfiguration.enrich(httpRequest);
@@ -109,11 +105,6 @@ class HttpHttpClientConfigurationTest {
             settings.put(USER_AGENT_CUSTOM_VALUES, "custom_ua");
             settings.put(GENERATE_MISSING_REQUEST_ID, "true");
             okHttpClient = okHttpClientFactory.buildHttpClient(settings, null, new CompositeMeterRegistry(), new Random());
-            HttpClientConfiguration<OkHttpClient, Request, Response> httpClientConfiguration = new HttpClientConfiguration<>(
-                    configId,
-                    MapUtils.getMapWithPrefix(new HttpConnectorConfig(settings).originalsStrings(), "config.dummy."),
-                    okHttpClient,
-                    null);
             HttpRequest httpRequest = getDummyHttpRequest();
             HttpConfiguration<OkHttpClient, okhttp3.Request, okhttp3.Response> httpConfiguration = new HttpConfiguration<>(configId,okHttpClient, executorService, null,settings);
             HttpRequest enrichedHttpRequest = httpConfiguration.enrich(httpRequest);
@@ -133,10 +124,6 @@ class HttpHttpClientConfigurationTest {
             settings.put(USER_AGENT_CUSTOM_VALUES, "custom_ua");
             settings.put(GENERATE_MISSING_CORRELATION_ID, "true");
             okHttpClient = okHttpClientFactory.buildHttpClient(settings, null, new CompositeMeterRegistry(), new Random());
-            HttpClientConfiguration<OkHttpClient, Request, Response> httpClientConfiguration = new HttpClientConfiguration<>(configId,
-                    MapUtils.getMapWithPrefix(new HttpConnectorConfig(settings).originalsStrings(), "config.dummy."),
-                    okHttpClient,
-                    null);
             HttpRequest httpRequest = getDummyHttpRequest();
             HttpConfiguration<OkHttpClient, okhttp3.Request, okhttp3.Response> httpConfiguration = new HttpConfiguration<>(configId,okHttpClient, executorService, null,settings);
             HttpRequest enrichedHttpRequest = httpConfiguration.enrich(httpRequest);
@@ -156,10 +143,6 @@ class HttpHttpClientConfigurationTest {
             settings.put(USER_AGENT_OVERRIDE, "custom");
             settings.put(USER_AGENT_CUSTOM_VALUES, "custom_ua");
             okHttpClient = okHttpClientFactory.buildHttpClient(settings, null, new CompositeMeterRegistry(), new Random());
-            HttpClientConfiguration<OkHttpClient, Request, Response> httpClientConfiguration = new HttpClientConfiguration<>(configId,
-                    MapUtils.getMapWithPrefix(new HttpConnectorConfig(settings).originalsStrings(), "config.dummy."),
-                    okHttpClient,
-                    null);
             //given
             HttpRequest httpRequest = getDummyHttpRequest();
             HttpConfiguration<OkHttpClient, okhttp3.Request, okhttp3.Response> httpConfiguration = new HttpConfiguration<>(configId,okHttpClient, executorService, null,settings);
@@ -183,9 +166,6 @@ class HttpHttpClientConfigurationTest {
             settings.put(USER_AGENT_CUSTOM_VALUES, "custom_1|custom_2|custom_3");
             okHttpClient = okHttpClientFactory.buildHttpClient(settings, null, new CompositeMeterRegistry(), new Random());
 
-            HttpClientConfiguration<OkHttpClient, Request, Response> httpClientConfiguration = new HttpClientConfiguration<>(configId,
-                    MapUtils.getMapWithPrefix(new HttpConnectorConfig(settings).originalsStrings(), "config.dummy."),
-                    okHttpClient, null);
             HttpRequest httpRequest = getDummyHttpRequest();
             HttpConfiguration<OkHttpClient, okhttp3.Request, okhttp3.Response> httpConfiguration = new HttpConfiguration<>(configId,okHttpClient, executorService, null,settings);
             HttpRequest enrichedHttpRequest = httpConfiguration.enrich(httpRequest);
@@ -202,10 +182,6 @@ class HttpHttpClientConfigurationTest {
             settings.put("config.dummy." + USER_AGENT_OVERRIDE, "custom");
             settings.put("config.dummy." + USER_AGENT_CUSTOM_VALUES, "custom_1|custom_2|custom_3");
             String configId = "dummy";
-            HttpClientConfiguration<OkHttpClient, Request, Response> httpClientConfiguration = new HttpClientConfiguration<>(configId,
-                    MapUtils.getMapWithPrefix(new HttpConnectorConfig(settings).originalsStrings(), "config.dummy."),
-                    okHttpClient,
-                    null);
             HttpRequest httpRequest = getDummyHttpRequest();
             httpRequest.getHeaders().put("User-Agent", Lists.newArrayList("already"));
             HttpConfiguration<OkHttpClient, okhttp3.Request, okhttp3.Response> httpConfiguration = new HttpConfiguration<>(configId,okHttpClient, executorService, null,settings);
@@ -222,10 +198,6 @@ class HttpHttpClientConfigurationTest {
             Map<String, String> settings = Maps.newHashMap();
             settings.put("config.dummy." + USER_AGENT_OVERRIDE, "http_client");
             String configId = "dummy";
-            HttpClientConfiguration<OkHttpClient, Request, Response> httpClientConfiguration = new HttpClientConfiguration<>(configId,
-                    MapUtils.getMapWithPrefix(new HttpConnectorConfig(settings).originalsStrings(), "config.dummy."),
-                    okHttpClient,
-                    null);
             HttpRequest httpRequest = getDummyHttpRequest();
             HttpConfiguration<OkHttpClient, okhttp3.Request, okhttp3.Response> httpConfiguration = new HttpConfiguration<>(configId,okHttpClient, executorService, null,settings);
             HttpRequest enrichedHttpRequest = httpConfiguration.enrich(httpRequest);
@@ -248,10 +220,6 @@ class HttpHttpClientConfigurationTest {
             settings.put("configuration.id", configId);
             settings.put(USER_AGENT_OVERRIDE, "project");
             okHttpClient = okHttpClientFactory.buildHttpClient(settings, null, new CompositeMeterRegistry(), new Random());
-            HttpClientConfiguration<OkHttpClient, Request, Response> httpClientConfiguration = new HttpClientConfiguration<>(configId,
-                    MapUtils.getMapWithPrefix(new HttpConnectorConfig(settings).originalsStrings(), "config.dummy."),
-                    okHttpClient,
-                    null);
             HttpRequest httpRequest = getDummyHttpRequest();
             HttpConfiguration<OkHttpClient, okhttp3.Request, okhttp3.Response> httpConfiguration = new HttpConfiguration<>(configId,okHttpClient, executorService, null,settings);
             HttpRequest enrichedHttpRequest = httpConfiguration.enrich(httpRequest);
@@ -273,10 +241,6 @@ class HttpHttpClientConfigurationTest {
             Map<String, String> settings = Maps.newHashMap();
             settings.put("config.dummy." + SUCCESS_RESPONSE_CODE_REGEX, "^2[0-9][0-9]$");
             String configId = "dummy";
-            HttpClientConfiguration<OkHttpClient, Request, Response> httpClientConfiguration = new HttpClientConfiguration<>(configId,
-                    MapUtils.getMapWithPrefix(new HttpConnectorConfig(settings).originalsStrings(), "config.dummy."),
-                    okHttpClient,
-                    null);
             HttpExchange httpExchange = getDummyHttpExchange();
             HttpConfiguration<OkHttpClient, okhttp3.Request, okhttp3.Response> httpConfiguration = new HttpConfiguration<>(configId,okHttpClient, executorService, null,settings);
             boolean success = httpConfiguration.enrichHttpExchange(httpExchange).isSuccess();
@@ -293,10 +257,6 @@ class HttpHttpClientConfigurationTest {
             String configId = "dummy";
             settings.put("configuration.id", configId);
             okHttpClient = okHttpClientFactory.buildHttpClient(settings, null, new CompositeMeterRegistry(), new Random());
-            HttpClientConfiguration<OkHttpClient, Request, Response> httpClientConfiguration = new HttpClientConfiguration<>(configId,
-                    MapUtils.getMapWithPrefix(new HttpConnectorConfig(settings).originalsStrings(), "config.dummy."),
-                    okHttpClient,
-                    null);
             HttpExchange httpExchange = getDummyHttpExchange();
             HttpConfiguration<OkHttpClient, okhttp3.Request, okhttp3.Response> httpConfiguration = new HttpConfiguration<>(configId,okHttpClient, executorService, null,settings);
             boolean success = httpConfiguration.enrichHttpExchange(httpExchange).isSuccess();
@@ -318,10 +278,6 @@ class HttpHttpClientConfigurationTest {
             Map<String, String> settings = Maps.newHashMap();
             settings.put("config.dummy." + SUCCESS_RESPONSE_CODE_REGEX, "^2[0-9][0-9]$");
             String configId = "dummy";
-            HttpClientConfiguration<OkHttpClient, Request, Response> httpClientConfiguration = new HttpClientConfiguration<>(configId,
-                    MapUtils.getMapWithPrefix(new HttpConnectorConfig(settings).originalsStrings(), "config.dummy."),
-                    okHttpClient,
-                    null);
             HttpExchange httpExchange = getDummyHttpExchange();
             HttpConfiguration<OkHttpClient, okhttp3.Request, okhttp3.Response> httpConfiguration = new HttpConfiguration<>(configId,okHttpClient, executorService, null,settings);
             boolean success = httpConfiguration.enrichHttpExchange(httpExchange).isSuccess();
@@ -346,11 +302,6 @@ class HttpHttpClientConfigurationTest {
             String configId = "dummy";
             settings.put("configuration.id", configId);
             okHttpClient = okHttpClientFactory.buildHttpClient(settings, null, new CompositeMeterRegistry(), new Random());
-            HttpClientConfiguration<OkHttpClient, Request, Response> httpClientConfiguration = new HttpClientConfiguration<>(
-                    configId,
-                    MapUtils.getMapWithPrefix(new HttpConnectorConfig(settings).originalsStrings(), "config.dummy."),
-                    okHttpClient,
-                    null);
             HttpExchange httpExchange = getDummyHttpExchange();
             HttpConfiguration<OkHttpClient, okhttp3.Request, okhttp3.Response> httpConfiguration = new HttpConfiguration<>(configId,okHttpClient, executorService, null,settings);
             boolean success = httpConfiguration.enrichHttpExchange(httpExchange).isSuccess();
@@ -387,10 +338,6 @@ class HttpHttpClientConfigurationTest {
             Map<String, String> settings = Maps.newHashMap();
             settings.put("config.dummy." + RETRY_RESPONSE_CODE_REGEX, "^5[0-9][0-9]$");
             String configId = "dummy";
-            HttpClientConfiguration<OkHttpClient, Request, Response> httpClientConfiguration = new HttpClientConfiguration<>(configId,
-                    MapUtils.getMapWithPrefix(new HttpConnectorConfig(settings).originalsStrings(), "config.dummy."),
-                okHttpClient,
-                    null);
             HttpResponse httpResponse = new HttpResponse(500, "Internal Server Error");
             HttpConfiguration<OkHttpClient, okhttp3.Request, okhttp3.Response> httpConfiguration = new HttpConfiguration<>(configId,okHttpClient, executorService, null,settings);
             boolean retryNeeded = httpConfiguration.retryNeeded(httpResponse);
@@ -402,8 +349,6 @@ class HttpHttpClientConfigurationTest {
             Map<String, String> settings = Maps.newHashMap();
             settings.put("httpclient.dummy." + RETRY_RESPONSE_CODE_REGEX, "^5[0-9][0-9]$");
             String configId = "dummy";
-            HttpClientConfiguration<OkHttpClient, Request, Response> httpClientConfiguration = new HttpClientConfiguration<>(configId,
-                    MapUtils.getMapWithPrefix(new HttpConnectorConfig(settings).originalsStrings(), "config.dummy."),okHttpClient, null);
             HttpResponse httpResponse = new HttpResponse(400, "Internal Server Error");
             HttpConfiguration<OkHttpClient, okhttp3.Request, okhttp3.Response> httpConfiguration = new HttpConfiguration<>(configId,okHttpClient, executorService, null,settings);
             boolean retryNeeded = httpConfiguration.retryNeeded(httpResponse);
@@ -415,9 +360,6 @@ class HttpHttpClientConfigurationTest {
             Map<String, String> settings = Maps.newHashMap();
             settings.put("httpclient.dummy." + RETRY_RESPONSE_CODE_REGEX, "^5[0-9][0-9]$");
             String configId = "dummy";
-            HttpClientConfiguration<OkHttpClient, Request, Response> httpClientConfiguration = new HttpClientConfiguration<>(configId,
-                    MapUtils.getMapWithPrefix(new HttpConnectorConfig(settings).originalsStrings(), "config.dummy."),
-                    okHttpClient, null);
             HttpResponse httpResponse = new HttpResponse(200, "Internal Server Error");
             HttpConfiguration<OkHttpClient, okhttp3.Request, okhttp3.Response> httpConfiguration = new HttpConfiguration<>(configId,okHttpClient, executorService,null, settings);
             boolean retryNeeded = httpConfiguration.retryNeeded(httpResponse);
@@ -432,8 +374,6 @@ class HttpHttpClientConfigurationTest {
             settings.put(CONFIG_DEFAULT_RETRY_RESPONSE_CODE_REGEX, "^[1-5][0-9][0-9]$");
             Map<String, String> configSettings = MapUtils.getMapWithPrefix(new HttpConnectorConfig(settings).originalsStrings(), "config.dummy.");
             String configId = "dummy";
-            HttpClientConfiguration<OkHttpClient, Request, Response> httpClientConfiguration = new HttpClientConfiguration<>(configId,
-                    configSettings, okHttpClient, null);
             HttpResponse httpResponse = new HttpResponse(200, "Internal Server Error");
             HttpConfiguration<OkHttpClient, okhttp3.Request, okhttp3.Response> httpConfiguration = new HttpConfiguration<>(configId,okHttpClient, executorService, null,configSettings);
             boolean retryNeeded = httpConfiguration.retryNeeded(httpResponse);

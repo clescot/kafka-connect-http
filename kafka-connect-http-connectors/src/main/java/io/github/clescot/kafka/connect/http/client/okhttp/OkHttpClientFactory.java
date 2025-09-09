@@ -3,7 +3,6 @@ package io.github.clescot.kafka.connect.http.client.okhttp;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
 import com.google.common.jimfs.Jimfs;
-import io.github.clescot.kafka.connect.http.client.HttpClientConfiguration;
 import io.github.clescot.kafka.connect.http.client.HttpClientFactory;
 import io.github.clescot.kafka.connect.http.client.HttpException;
 import io.github.clescot.kafka.connect.http.client.okhttp.authentication.*;
@@ -190,8 +189,8 @@ public class OkHttpClientFactory implements HttpClientFactory<OkHttpClient,Reque
         Preconditions.checkNotNull(meterRegistry, METER_REGISTRY_MUST_NOT_BE_NULL);
         if (!meterRegistry.getRegistries().isEmpty()) {
             List<String> tags = Lists.newArrayList();
-            tags.add(HttpClientConfiguration.CONFIGURATION_ID);
-            tags.add(config.get(HttpClientConfiguration.CONFIGURATION_ID) != null ? config.get(HttpClientConfiguration.CONFIGURATION_ID) : DEFAULT_CONFIGURATION_ID);
+            tags.add(HttpClientFactory.CONFIGURATION_ID);
+            tags.add(config.get(HttpClientFactory.CONFIGURATION_ID) != null ? config.get(HttpClientFactory.CONFIGURATION_ID) : DEFAULT_CONFIGURATION_ID);
             String connectorName = MDC.get(CONNECTOR_NAME);
             if (connectorName != null) {
                 tags.add(CONNECTOR_NAME);

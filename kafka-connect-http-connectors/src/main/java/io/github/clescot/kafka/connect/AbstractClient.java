@@ -13,7 +13,7 @@ import java.time.temporal.ChronoUnit;
 import java.util.Map;
 import java.util.Optional;
 
-import static io.github.clescot.kafka.connect.http.client.HttpClientConfiguration.CONFIGURATION_ID;
+import static io.github.clescot.kafka.connect.http.client.HttpClientFactory.CONFIGURATION_ID;
 import static io.github.clescot.kafka.connect.http.sink.HttpConfigDefinition.*;
 
 public abstract class  AbstractClient<E> implements Client<E> {
