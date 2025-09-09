@@ -398,6 +398,13 @@ public class HttpRequest implements Request,Cloneable, Serializable {
         this.attributes = attributes;
     }
 
+    public void addAttribute(String key, String value) {
+        if(attributes==null){
+            attributes = Maps.newHashMap();
+        }
+        attributes.put(key,value);
+    }
+
     @Override
     public Object clone() {
         try {

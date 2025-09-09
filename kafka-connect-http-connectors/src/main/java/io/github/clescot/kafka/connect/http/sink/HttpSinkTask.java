@@ -42,6 +42,7 @@ import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.stream.Stream;
 
+import static io.github.clescot.kafka.connect.http.core.Request.VU_ID;
 import static io.github.clescot.kafka.connect.http.sink.HttpConfigDefinition.HTTP_REQUEST_MAPPER_IDS;
 import static io.github.clescot.kafka.connect.http.sink.HttpConfigDefinition.MESSAGE_SPLITTER_IDS;
 
@@ -78,11 +79,12 @@ public abstract class HttpSinkTask<C extends HttpClient<R, S>, R, S> extends Sin
     private List<MessageSplitter<SinkRecord>> messageSplitters;
     private HttpRequestMapper defaultHttpRequestMapper;
     private List<HttpRequestMapper> httpRequestMappers;
-
+    private String vuId;
     @SuppressWarnings("java:S5993")
     public HttpSinkTask(HttpClientFactory<C, R, S> httpClientFactory, KafkaProducer<String, Object> producer) {
         this.httpClientFactory = httpClientFactory;
         this.producer = producer;
+        this.vuId = UUID.randomUUID().toString();
     }
 
 
@@ -250,6 +252,13 @@ public abstract class HttpSinkTask<C extends HttpClient<R, S>, R, S> extends Sin
                 .map(this::splitMessage)
                 .flatMap(List::stream)
                 .map(this::toHttpRequests)
+                //add VU_ID attribute to the request
+                //each task has its own VU_ID
+                .map(pair-> {
+                    //add VU_ID attribute to the request
+                    pair.getRight().addAttribute(VU_ID, this.vuId);
+                    return Pair.of(pair.getLeft(), pair.getRight());
+                })
                 .toList();
 
         return httpTask.groupRequests(requests);
