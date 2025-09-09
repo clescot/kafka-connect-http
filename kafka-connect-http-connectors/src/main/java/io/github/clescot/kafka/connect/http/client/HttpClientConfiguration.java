@@ -51,8 +51,7 @@ public class HttpClientConfiguration<C extends HttpClient<R,S>,R,S> implements C
 
 
 
-    //enrich
-    private final Pattern defaultSuccessPattern = Pattern.compile(CONFIG_DEFAULT_DEFAULT_SUCCESS_RESPONSE_CODE_REGEX);
+
 
 
     //retry policy
@@ -102,10 +101,6 @@ public class HttpClientConfiguration<C extends HttpClient<R,S>,R,S> implements C
         }
 
     }
-
-
-
-
 
     @Override
     public C getClient() {
@@ -222,7 +217,6 @@ public class HttpClientConfiguration<C extends HttpClient<R,S>,R,S> implements C
         return "Configuration{" +
                 "id='" + id +
                 "', predicate='" + predicateToString() +
-                "', defaultSuccessPattern='" + defaultSuccessPattern +
                 "', retryPolicy='" + retryPolicyToString() +
                 "', httpClient='" + httpClient +
                 '}';
