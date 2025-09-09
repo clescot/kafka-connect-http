@@ -42,9 +42,12 @@ public class HttpConfiguration<C extends HttpClient<NR, NS>, NR, NS> implements 
     private final HttpClientConfiguration<C, NR, NS> httpClientConfiguration;
     private final ExecutorService executorService;
     private final Pattern retryResponseCodeRegex;
+    private String id;
 
-    public HttpConfiguration(HttpClientConfiguration<C, NR, NS> httpClientConfiguration,
+    public HttpConfiguration(String id,
+                             HttpClientConfiguration<C, NR, NS> httpClientConfiguration,
                              ExecutorService executorService, Map<String, String> settings) {
+        this.id = id;
         this.httpClientConfiguration = httpClientConfiguration;
         this.executorService = executorService;
         //retry policy
@@ -163,7 +166,7 @@ public class HttpConfiguration<C extends HttpClient<NR, NS>, NR, NS> implements 
 
     @Override
     public String getId() {
-        return this.httpClientConfiguration.getId();
+        return this.id;
     }
 
     @Override
