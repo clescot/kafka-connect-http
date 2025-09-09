@@ -136,7 +136,8 @@ public class HttpConfiguration<C extends HttpClient<NR, NS>, NR, NS> implements 
 
 
     protected HttpExchange enrichHttpExchange(HttpExchange httpExchange) {
-        return this.httpClientConfiguration.getAddSuccessStatusToHttpExchangeFunction().apply(httpExchange);
+        C client = this.getClient();
+        return client.getAddSuccessStatusToHttpExchangeFunction().apply(httpExchange);
     }
     @Override
     public boolean matches(HttpRequest httpRequest) {

@@ -15,6 +15,7 @@ import io.github.clescot.kafka.connect.http.HttpTask;
 import io.github.clescot.kafka.connect.http.client.HttpClientConfiguration;
 import io.github.clescot.kafka.connect.http.client.HttpConfiguration;
 import io.github.clescot.kafka.connect.http.client.ahc.AHCHttpClient;
+import io.github.clescot.kafka.connect.http.client.config.AddSuccessStatusToHttpExchangeFunction;
 import io.github.clescot.kafka.connect.http.client.okhttp.OkHttpClient;
 import io.github.clescot.kafka.connect.http.client.okhttp.OkHttpClientFactory;
 import io.github.clescot.kafka.connect.http.client.ssl.AlwaysTrustManagerFactory;
@@ -72,6 +73,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import static com.github.tomakehurst.wiremock.client.WireMock.*;
 import static com.github.tomakehurst.wiremock.stubbing.Scenario.STARTED;
 import static io.github.clescot.kafka.connect.http.client.HttpClientConfigDefinition.*;
+import static io.github.clescot.kafka.connect.http.client.HttpClientFactory.defaultSuccessPattern;
 import static io.github.clescot.kafka.connect.http.client.config.HttpRequestPredicateBuilder.URL_REGEX;
 import static io.github.clescot.kafka.connect.http.mapper.HttpRequestMapperFactory.JEXL_ALWAYS_MATCHES;
 import static io.github.clescot.kafka.connect.http.sink.HttpConfigDefinition.*;
@@ -535,6 +537,7 @@ public class HttpSinkTaskTest {
             HttpExchange dummyHttpExchange = getHttpExchange();
             when(httpClient.call(any(HttpRequest.class), any(AtomicInteger.class))).thenReturn(CompletableFuture.supplyAsync(() -> dummyHttpExchange));
             when(httpClient.getEnrichRequestFunction()).thenReturn(request->request);
+            when(httpClient.getAddSuccessStatusToHttpExchangeFunction()).thenReturn(new AddSuccessStatusToHttpExchangeFunction(defaultSuccessPattern));
             myOkHttpSinkTask.getDefaultConfiguration().getConfiguration().setHttpClient(httpClient);
 
             List<SinkRecord> records = Lists.newArrayList();
@@ -564,6 +567,7 @@ public class HttpSinkTaskTest {
             HttpExchange dummyHttpExchange = getHttpExchange();
             when(httpClient.call(any(HttpRequest.class), any(AtomicInteger.class))).thenReturn(CompletableFuture.supplyAsync(() -> dummyHttpExchange));
             when(httpClient.getEnrichRequestFunction()).thenReturn(request->request);
+            when(httpClient.getAddSuccessStatusToHttpExchangeFunction()).thenReturn(new AddSuccessStatusToHttpExchangeFunction(defaultSuccessPattern));
             ahcSinkTask.getDefaultConfiguration().getConfiguration().setHttpClient(httpClient);
             Queue<KafkaRecord> queue = mock(Queue.class);
             ahcSinkTask.setQueue(queue);

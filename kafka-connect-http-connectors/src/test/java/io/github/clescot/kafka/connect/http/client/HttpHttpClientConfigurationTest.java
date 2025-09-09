@@ -277,10 +277,15 @@ class HttpHttpClientConfigurationTest {
 
         @Test
         void test_is_not_success_with_200_by_configuration() {
-            Map<String, String> config = Maps.newHashMap();
-            config.put("config.dummy." + SUCCESS_RESPONSE_CODE_REGEX, "^1[0-9][0-9]$");
+            OkHttpClientFactory okHttpClientFactory = new OkHttpClientFactory();
+            Map<String, String> settings = Maps.newHashMap();
+            settings.put(SUCCESS_RESPONSE_CODE_REGEX, "^1[0-9][0-9]$");
+            settings.put("url", "http://example.com/sse");
+            settings.put("topic", "test-topic");
+            settings.put("configuration.id", "dummy");
+            okHttpClient = okHttpClientFactory.buildHttpClient(settings, null, new CompositeMeterRegistry(), new Random());
             HttpClientConfiguration<OkHttpClient, Request, Response> httpClientConfiguration = new HttpClientConfiguration<>("dummy",
-                    MapUtils.getMapWithPrefix(new HttpConnectorConfig(config).originalsStrings(), "config.dummy."),
+                    MapUtils.getMapWithPrefix(new HttpConnectorConfig(settings).originalsStrings(), "config.dummy."),
                     okHttpClient
             );
             HttpExchange httpExchange = getDummyHttpExchange();
@@ -323,11 +328,16 @@ class HttpHttpClientConfigurationTest {
 
         @Test
         void test_is_not_success_with_200_by_configuration() {
-            Map<String, String> config = Maps.newHashMap();
-            config.put("config.dummy." + SUCCESS_RESPONSE_CODE_REGEX, "^1[0-9][0-9]$");
+            OkHttpClientFactory okHttpClientFactory = new OkHttpClientFactory();
+            Map<String, String> settings = Maps.newHashMap();
+            settings.put(SUCCESS_RESPONSE_CODE_REGEX, "^1[0-9][0-9]$");
+            settings.put("url", "http://example.com/sse");
+            settings.put("topic", "test-topic");
+            settings.put("configuration.id", "dummy");
+            okHttpClient = okHttpClientFactory.buildHttpClient(settings, null, new CompositeMeterRegistry(), new Random());
             HttpClientConfiguration<OkHttpClient, Request, Response> httpClientConfiguration = new HttpClientConfiguration<>(
                     "dummy",
-                    MapUtils.getMapWithPrefix(new HttpConnectorConfig(config).originalsStrings(), "config.dummy."),
+                    MapUtils.getMapWithPrefix(new HttpConnectorConfig(settings).originalsStrings(), "config.dummy."),
                     okHttpClient
             );
             HttpExchange httpExchange = getDummyHttpExchange();

@@ -54,7 +54,6 @@ public class HttpClientConfiguration<C extends HttpClient<R,S>,R,S> implements C
     //enrich
     private final Pattern defaultSuccessPattern = Pattern.compile(CONFIG_DEFAULT_DEFAULT_SUCCESS_RESPONSE_CODE_REGEX);
 
-    private AddSuccessStatusToHttpExchangeFunction addSuccessStatusToHttpExchangeFunction;
 
     //retry policy
     private Pattern retryResponseCodeRegex;
@@ -81,17 +80,6 @@ public class HttpClientConfiguration<C extends HttpClient<R,S>,R,S> implements C
         this.httpClient = httpClient;
 
 
-        //enrich exchange
-        //success response code regex
-        Pattern successResponseCodeRegex;
-        if (settings.containsKey(SUCCESS_RESPONSE_CODE_REGEX)) {
-            successResponseCodeRegex = Pattern.compile((String) settings.get(SUCCESS_RESPONSE_CODE_REGEX));
-        } else {
-            successResponseCodeRegex = defaultSuccessPattern;
-        }
-        this.addSuccessStatusToHttpExchangeFunction = new AddSuccessStatusToHttpExchangeFunction(successResponseCodeRegex);
-
-
         //retry policy
         //retry response code regex
         if (settings.containsKey(RETRY_RESPONSE_CODE_REGEX)) {
@@ -115,9 +103,6 @@ public class HttpClientConfiguration<C extends HttpClient<R,S>,R,S> implements C
 
     }
 
-    public AddSuccessStatusToHttpExchangeFunction getAddSuccessStatusToHttpExchangeFunction() {
-        return addSuccessStatusToHttpExchangeFunction;
-    }
 
 
 
@@ -129,10 +114,6 @@ public class HttpClientConfiguration<C extends HttpClient<R,S>,R,S> implements C
 
     public void setHttpClient(C httpClient) {
         this.httpClient = httpClient;
-    }
-
-    public void setSuccessResponseCodeRegex(Pattern successResponseCodeRegex) {
-        this.addSuccessStatusToHttpExchangeFunction = new AddSuccessStatusToHttpExchangeFunction(successResponseCodeRegex);
     }
 
     public void setRetryResponseCodeRegex(Pattern retryResponseCodeRegex) {
@@ -150,9 +131,6 @@ public class HttpClientConfiguration<C extends HttpClient<R,S>,R,S> implements C
         return Optional.ofNullable(retryPolicy);
     }
 
-    public Pattern getSuccessResponseCodeRegex() {
-        return addSuccessStatusToHttpExchangeFunction.getSuccessResponseCodeRegex();
-    }
 
     public Optional<Pattern> getRetryResponseCodeRegex() {
         return Optional.ofNullable(retryResponseCodeRegex);

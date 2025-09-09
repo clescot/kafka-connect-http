@@ -53,10 +53,6 @@ public class HttpClientConfigurationFactory {
             if (httpClientConfiguration.getRetryPolicy().isEmpty() && defaultRetryPolicy.isPresent()) {
                 httpClientConfiguration.setRetryPolicy(defaultRetryPolicy.get());
             }
-            //we reuse the default success response code regex if not set
-            if (defaultHttpClientConfiguration != null) {
-                httpClientConfiguration.setSuccessResponseCodeRegex(defaultHttpClientConfiguration.getSuccessResponseCodeRegex());
-            }
 
             if (httpClientConfiguration.getRetryResponseCodeRegex().isEmpty() && defaultRetryResponseCodeRegex.isPresent()) {
                 httpClientConfiguration.setRetryResponseCodeRegex(defaultRetryResponseCodeRegex.get());

@@ -1,6 +1,7 @@
 package io.github.clescot.kafka.connect.http.client;
 
 import com.google.common.base.Preconditions;
+import io.github.clescot.kafka.connect.http.client.config.AddSuccessStatusToHttpExchangeFunction;
 import io.github.clescot.kafka.connect.http.client.proxy.ProxySelectorFactory;
 import io.github.clescot.kafka.connect.http.client.ssl.AlwaysTrustManagerFactory;
 import io.micrometer.core.instrument.composite.CompositeMeterRegistry;
@@ -27,8 +28,11 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Random;
 import java.util.concurrent.ExecutorService;
+import java.util.regex.Pattern;
 
 import static io.github.clescot.kafka.connect.http.client.HttpClientConfigDefinition.*;
+import static io.github.clescot.kafka.connect.http.sink.HttpConfigDefinition.CONFIG_DEFAULT_DEFAULT_SUCCESS_RESPONSE_CODE_REGEX;
+import static io.github.clescot.kafka.connect.http.sink.HttpConfigDefinition.SUCCESS_RESPONSE_CODE_REGEX;
 
 /**
  * Factory to build a HttpClient.
@@ -41,12 +45,14 @@ public interface HttpClientFactory<C extends HttpClient<R,S>,R,S> {
     Logger LOGGER = LoggerFactory.getLogger(HttpClientFactory.class);
     String DEFAULT_SSL_PROTOCOL = "SSL";
     String IS_NOT_SET = " is not set";
+    Pattern defaultSuccessPattern = Pattern.compile(CONFIG_DEFAULT_DEFAULT_SUCCESS_RESPONSE_CODE_REGEX);
 
     C build(Map<String, String> config,
-                              ExecutorService executorService,
-                              Random random,
-                              Proxy proxy,
-                              ProxySelector proxySelector, CompositeMeterRegistry meterRegistry);
+            ExecutorService executorService,
+            Random random,
+            Proxy proxy,
+            ProxySelector proxySelector,
+            CompositeMeterRegistry meterRegistry);
 
     default C buildHttpClient(Map<String, String> config,
                               ExecutorService executorService,
@@ -71,7 +77,20 @@ public interface HttpClientFactory<C extends HttpClient<R,S>,R,S> {
             proxySelector = proxySelectorFactory.build(config, random);
         }
 
-        return build(config, executorService, random, proxy, proxySelector, meterRegistry);
+
+        //enrich exchange
+        //success response code regex
+        Pattern successResponseCodeRegex;
+        if (config.containsKey(SUCCESS_RESPONSE_CODE_REGEX)) {
+            successResponseCodeRegex = Pattern.compile(config.get(SUCCESS_RESPONSE_CODE_REGEX));
+        } else {
+            successResponseCodeRegex = defaultSuccessPattern;
+        }
+
+
+        C httpClient = build(config, executorService, random, proxy, proxySelector, meterRegistry);
+        httpClient.setAddSuccessStatusToHttpExchangeFunction(successResponseCodeRegex);
+        return httpClient;
     }
 
 

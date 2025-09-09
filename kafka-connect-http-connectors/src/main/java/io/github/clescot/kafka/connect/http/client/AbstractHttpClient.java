@@ -4,10 +4,7 @@ import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import io.github.clescot.kafka.connect.AbstractClient;
-import io.github.clescot.kafka.connect.http.client.config.AddMissingCorrelationIdHeaderToHttpRequestFunction;
-import io.github.clescot.kafka.connect.http.client.config.AddMissingRequestIdHeaderToHttpRequestFunction;
-import io.github.clescot.kafka.connect.http.client.config.AddStaticHeadersToHttpRequestFunction;
-import io.github.clescot.kafka.connect.http.client.config.AddUserAgentHeaderToHttpRequestFunction;
+import io.github.clescot.kafka.connect.http.client.config.*;
 import io.github.clescot.kafka.connect.http.core.HttpExchange;
 import io.github.clescot.kafka.connect.http.core.HttpRequest;
 import org.apache.commons.lang3.StringUtils;
@@ -17,6 +14,7 @@ import org.slf4j.LoggerFactory;
 import javax.net.ssl.TrustManagerFactory;
 import java.util.*;
 import java.util.function.Function;
+import java.util.regex.Pattern;
 
 import static io.github.clescot.kafka.connect.http.client.HttpClientConfiguration.VERSION_UTILS;
 import static io.github.clescot.kafka.connect.http.sink.HttpConfigDefinition.*;
@@ -28,6 +26,7 @@ public abstract class AbstractHttpClient<NR,NS> extends AbstractClient<HttpExcha
     public static final String DEFAULT_HTTP_RESPONSE_HEADERS_LIMIT = "10000";
     public static final String DEFAULT_HTTP_RESPONSE_BODY_LIMIT = "100000";
     protected final Random random;
+    protected AddSuccessStatusToHttpExchangeFunction addSuccessStatusToHttpExchangeFunction;
 
     protected TrustManagerFactory trustManagerFactory;
 
@@ -172,4 +171,13 @@ public abstract class AbstractHttpClient<NR,NS> extends AbstractClient<HttpExcha
         return this;
     }
 
+    @Override
+    public void setAddSuccessStatusToHttpExchangeFunction(Pattern pattern) {
+        this.addSuccessStatusToHttpExchangeFunction = new AddSuccessStatusToHttpExchangeFunction(pattern);
+    }
+
+    @Override
+    public AddSuccessStatusToHttpExchangeFunction getAddSuccessStatusToHttpExchangeFunction() {
+        return addSuccessStatusToHttpExchangeFunction;
+    }
 }

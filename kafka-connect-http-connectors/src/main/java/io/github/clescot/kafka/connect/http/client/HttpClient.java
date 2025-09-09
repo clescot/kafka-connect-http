@@ -6,6 +6,7 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import dev.failsafe.RateLimiter;
 import io.github.clescot.kafka.connect.RequestResponseClient;
+import io.github.clescot.kafka.connect.http.client.config.AddSuccessStatusToHttpExchangeFunction;
 import io.github.clescot.kafka.connect.http.core.HttpExchange;
 import io.github.clescot.kafka.connect.http.core.HttpRequest;
 import io.github.clescot.kafka.connect.http.core.HttpResponse;
@@ -22,6 +23,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
+import java.util.regex.Pattern;
 
 import static io.github.clescot.kafka.connect.http.sink.HttpConfigDefinition.RATE_LIMITER_REQUEST_LENGTH_PER_CALL;
 
@@ -160,4 +162,8 @@ public interface HttpClient<NR, NS>  extends RequestResponseClient<HttpRequest,N
 
 
     void setTrustManagerFactory(TrustManagerFactory trustManagerFactory);
+
+    void setAddSuccessStatusToHttpExchangeFunction(Pattern addSuccessStatusToHttpExchangeFunction);
+
+    AddSuccessStatusToHttpExchangeFunction getAddSuccessStatusToHttpExchangeFunction();
 }
