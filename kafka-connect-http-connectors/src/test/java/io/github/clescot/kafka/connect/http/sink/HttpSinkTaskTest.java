@@ -370,32 +370,7 @@ public class HttpSinkTaskTest {
         }
 
 
-        @Test
-        void test_put_add_static_headers_with_value_as_string() {
-            //given
-            Map<String, String> settings = Maps.newHashMap();
-            settings.put(DEFAULT_CONFIGURATION_PREFIX + STATIC_REQUEST_HEADER_NAMES, "param1,param2");
-            settings.put(DEFAULT_CONFIGURATION_PREFIX + STATIC_REQUEST_HEADER_PREFIX + "param1", "value1");
-            settings.put(DEFAULT_CONFIGURATION_PREFIX + STATIC_REQUEST_HEADER_PREFIX + "param2", "value2");
-            okHttpSinkTask.start(settings);
-            OkHttpClient httpClient = Mockito.mock(OkHttpClient.class);
-            HttpExchange dummyHttpExchange = getHttpExchange();
-            when(httpClient.call(any(HttpRequest.class), any(AtomicInteger.class))).thenReturn(CompletableFuture.supplyAsync(() -> dummyHttpExchange));
-            okHttpSinkTask.getDefaultConfiguration().getConfiguration().setHttpClient(httpClient);
-            List<SinkRecord> records = Lists.newArrayList();
-            List<Header> headers = Lists.newArrayList();
-            SinkRecord sinkRecord = new SinkRecord("myTopic", 0, Schema.STRING_SCHEMA, "key", Schema.STRING_SCHEMA, getDummyHttpRequestAsString(), -1, System.currentTimeMillis(), TimestampType.CREATE_TIME, headers);
-            records.add(sinkRecord);
-            //when
-            okHttpSinkTask.put(records);
-            ArgumentCaptor<HttpRequest> captor = ArgumentCaptor.forClass(HttpRequest.class);
-            verify(httpClient, times(1)).call(captor.capture(), any(AtomicInteger.class));
-            HttpRequest enhancedRecordBeforeHttpCall = captor.getValue();
-            //then
-            assertThat(enhancedRecordBeforeHttpCall.getHeaders()).hasSize(sinkRecord.headers().size() + okHttpSinkTask.getDefaultConfiguration().getConfiguration().getAddStaticHeadersFunction().getStaticHeaders().size());
-            assertThat(enhancedRecordBeforeHttpCall.getHeaders()).contains(Map.entry("param1", Lists.newArrayList("value1")));
-            assertThat(enhancedRecordBeforeHttpCall.getHeaders()).contains(Map.entry("param2", Lists.newArrayList("value2")));
-        }
+
 
         @Test
         void test_put_nominal_case_with_value_as_string() {

@@ -289,17 +289,6 @@ public class HttpClientConfiguration<C extends HttpClient<R,S>,R,S> implements C
     }
 
 
-    public AddStaticHeadersToHttpRequestFunction getAddStaticHeadersFunction() {
-        return addStaticHeadersToHttpRequestFunction;
-    }
-
-    public AddMissingRequestIdHeaderToHttpRequestFunction getAddTrackingHeadersFunction() {
-        return addMissingRequestIdHeaderToHttpRequestFunction;
-    }
-
-    public AddUserAgentHeaderToHttpRequestFunction getAddUserAgentHeaderToHttpRequestFunction() {
-        return addUserAgentHeaderToHttpRequestFunction;
-    }
 
     private String predicateToString() {
         StringBuilder result = new StringBuilder("{");
@@ -357,10 +346,6 @@ public class HttpClientConfiguration<C extends HttpClient<R,S>,R,S> implements C
                 "id='" + id +
                 "', predicate='" + predicateToString() +
                 "', defaultSuccessPattern='" + defaultSuccessPattern +
-                "', addStaticHeadersToHttpRequestFunction='" + addStaticHeadersToHttpRequestFunction +
-                "', addMissingRequestIdHeaderToHttpRequestFunction='" + addMissingRequestIdHeaderToHttpRequestFunction +
-                "', addMissingCorrelationIdHeaderToHttpRequestFunction='" + addMissingCorrelationIdHeaderToHttpRequestFunction +
-                "', addSuccessStatusToHttpExchangeFunction='" + addSuccessStatusToHttpExchangeFunction +
                 "', retryPolicy='" + retryPolicyToString() +
                 "', httpClient='" + httpClient +
                 '}';
