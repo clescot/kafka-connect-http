@@ -204,7 +204,7 @@ public class HttpConfiguration<C extends HttpClient<NR, NS>, NR, NS> implements 
     }
     @Override
     public boolean matches(HttpRequest httpRequest) {
-        return this.httpClientConfiguration.matches(httpRequest);
+        return this.predicate.test(httpRequest);
     }
 
     @Override
