@@ -84,13 +84,13 @@ public class AHCHttpClient extends AbstractHttpClient<Request, Response> {
 
     private final HttpClientAsyncCompletionHandler asyncCompletionHandler = new HttpClientAsyncCompletionHandler();
 
-    public AHCHttpClient(Map<String, Object> config) {
-        super(config);
+    public AHCHttpClient(Map<String, Object> config,Random random) {
+        super(config,random);
         this.asyncHttpClient = getAsyncHttpClient(config);
     }
     //for tests only
-    protected AHCHttpClient(AsyncHttpClient asyncHttpClient,Map<String, Object> config) {
-        super(config);
+    protected AHCHttpClient(AsyncHttpClient asyncHttpClient,Map<String, Object> config,Random random) {
+        super(config,random);
         this.asyncHttpClient =asyncHttpClient;
     }
 

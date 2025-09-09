@@ -29,7 +29,7 @@ public class AHCHttpClientFactory implements HttpClientFactory<AHCHttpClient,Req
                                Proxy proxy,
                                ProxySelector proxySelector, CompositeMeterRegistry meterRegistry) {
         //executorService is not used for AHC : we cannot set an executorService nor a thread pool to AHC
-        return new AHCHttpClient(config);
+        return new AHCHttpClient(config,random);
     }
 
 }

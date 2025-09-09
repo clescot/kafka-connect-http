@@ -65,7 +65,7 @@ public class OkHttpClientFactory implements HttpClientFactory<OkHttpClient,Reque
         Preconditions.checkNotNull(random, "Random must not be null.");
         Preconditions.checkNotNull(meterRegistry, METER_REGISTRY_MUST_NOT_BE_NULL);
         okhttp3.OkHttpClient internalOkHttpClient = buildOkHttpClient(config, executorService, random, proxy, proxySelector, meterRegistry);
-        OkHttpClient okHttpClient = new OkHttpClient(config, internalOkHttpClient);
+        OkHttpClient okHttpClient = new OkHttpClient(config, internalOkHttpClient,random);
         okHttpClient.setTrustManagerFactory(trustManagerFactory);
         return okHttpClient;
     }

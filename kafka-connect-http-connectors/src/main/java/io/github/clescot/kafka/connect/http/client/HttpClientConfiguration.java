@@ -49,9 +49,7 @@ public class HttpClientConfiguration<C extends HttpClient<R,S>,R,S> implements C
     public static final String SHA_1_PRNG = "SHA1PRNG";
     public static final String MUST_BE_SET_TOO = " must be set too.";
     public static final String CONFIGURATION_ID = "configuration.id";
-    public static final String USER_AGENT_HTTP_CLIENT_DEFAULT_MODE = "http_client";
-    public static final String USER_AGENT_PROJECT_MODE = "project";
-    public static final String USER_AGENT_CUSTOM_MODE = "custom";
+
 
     private final Predicate<HttpRequest> predicate;
 
@@ -72,7 +70,6 @@ public class HttpClientConfiguration<C extends HttpClient<R,S>,R,S> implements C
     public final String id;
     private final ExecutorService executorService;
     private final Map<String, Object> settings;
-    private final Function<HttpRequest, HttpRequest> enrichRequestFunction;
 
 
     public HttpClientConfiguration(String id,
@@ -128,57 +125,7 @@ public class HttpClientConfiguration<C extends HttpClient<R,S>,R,S> implements C
         }else{
             LOGGER.trace("configuration '{}' :retry policy is not configured",this.getId());
         }
-        this.enrichRequestFunction = buildEnrichRequestFunction(settings,random);
 
-    }
-
-    private Function<HttpRequest,HttpRequest> buildEnrichRequestFunction(Map<String,Object> settings,Random random) {
-
-        //enrich request
-        List<Function<HttpRequest,HttpRequest>> enrichRequestFunctions = Lists.newArrayList();
-        //build addStaticHeadersFunction
-        Optional<String> staticHeaderParam = Optional.ofNullable((String) settings.get(STATIC_REQUEST_HEADER_NAMES));
-        Map<String, List<String>> staticRequestHeaders = Maps.newHashMap();
-        if (staticHeaderParam.isPresent()) {
-            String[] staticRequestHeaderNames = staticHeaderParam.get().split(",");
-            for (String headerName : staticRequestHeaderNames) {
-                String value = (String) settings.get(STATIC_REQUEST_HEADER_PREFIX + headerName);
-                Preconditions.checkNotNull(value, "'" + headerName + "' is not configured as a parameter.");
-                ArrayList<String> values = Lists.newArrayList(value);
-                staticRequestHeaders.put(headerName, values);
-                LOGGER.debug("static header {}:{}", headerName, values);
-            }
-        }
-        enrichRequestFunctions.add(new AddStaticHeadersToHttpRequestFunction(staticRequestHeaders));
-
-        //AddMissingRequestIdHeaderToHttpRequestFunction
-        boolean generateMissingRequestId = Boolean.parseBoolean((String) settings.get(GENERATE_MISSING_REQUEST_ID));
-        enrichRequestFunctions.add( new AddMissingRequestIdHeaderToHttpRequestFunction(generateMissingRequestId));
-
-        //AddMissingCorrelationIdHeaderToHttpRequestFunction
-        boolean generateMissingCorrelationId = Boolean.parseBoolean((String) settings.get(GENERATE_MISSING_CORRELATION_ID));
-        enrichRequestFunctions.add(new AddMissingCorrelationIdHeaderToHttpRequestFunction(generateMissingCorrelationId));
-
-        //activateUserAgentHeaderToHttpRequestFunction
-        String activateUserAgentHeaderToHttpRequestFunction = (String) settings.getOrDefault(USER_AGENT_OVERRIDE, USER_AGENT_HTTP_CLIENT_DEFAULT_MODE);
-        if (USER_AGENT_HTTP_CLIENT_DEFAULT_MODE.equalsIgnoreCase(activateUserAgentHeaderToHttpRequestFunction)) {
-            LOGGER.trace("userAgentHeaderToHttpRequestFunction : 'http_client' configured. No need to activate UserAgentInterceptor");
-        }else if(USER_AGENT_PROJECT_MODE.equalsIgnoreCase(activateUserAgentHeaderToHttpRequestFunction)){
-            String projectUserAgent = "Mozilla/5.0 (compatible;kafka-connect-http/"+ VERSION_UTILS.getVersion() +"; "+httpClient.getEngineId()+"; https://github.com/clescot/kafka-connect-http)";
-            enrichRequestFunctions.add(new AddUserAgentHeaderToHttpRequestFunction(Lists.newArrayList(projectUserAgent), random));
-        }else if(USER_AGENT_CUSTOM_MODE.equalsIgnoreCase(activateUserAgentHeaderToHttpRequestFunction)){
-            String userAgentValuesAsString = settings.getOrDefault(USER_AGENT_CUSTOM_VALUES, StringUtils.EMPTY).toString();
-            List<String> userAgentValues = Arrays.asList(userAgentValuesAsString.split("\\|"));
-            enrichRequestFunctions.add(new AddUserAgentHeaderToHttpRequestFunction(userAgentValues, random));
-        }else{
-            LOGGER.trace("user agent interceptor : '{}' configured. No need to activate UserAgentInterceptor",activateUserAgentHeaderToHttpRequestFunction);
-        }
-
-        return enrichRequestFunctions.stream().reduce(Function.identity(), Function::andThen);
-    }
-
-    public Function<HttpRequest, HttpRequest> getEnrichRequestFunction() {
-        return enrichRequestFunction;
     }
 
     public AddSuccessStatusToHttpExchangeFunction getAddSuccessStatusToHttpExchangeFunction() {

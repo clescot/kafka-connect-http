@@ -40,8 +40,10 @@ public class OkHttpClient extends AbstractHttpClient<Request, Response> {
 
 
     public OkHttpClient(Map<String, Object> config,
-                        okhttp3.OkHttpClient client) {
-        super(config);
+                        okhttp3.OkHttpClient client,
+                        Random random) {
+        super(config, random);
+        Preconditions.checkNotNull(client, "okhttp3.OkHttpClient must not be null");
         this.client = client;
     }
 
@@ -348,7 +350,7 @@ public class OkHttpClient extends AbstractHttpClient<Request, Response> {
 
     @Override
     public HttpClient<Request, Response> customizeForUser(String vuId) {
-        return new OkHttpClient(getConfig(), customizeOkHttpClientForUser(vuId,client));
+        return new OkHttpClient(getConfig(), customizeOkHttpClientForUser(vuId,client),random);
     }
 
 

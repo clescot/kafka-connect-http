@@ -30,6 +30,7 @@ import java.time.ZoneId;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -52,7 +53,7 @@ class AHCHttpClientTest {
         asyncHttpClient = Mockito.mock(AsyncHttpClient.class);
         HashMap<String, Object> config = Maps.newHashMap();
         config.put(CONFIGURATION_ID,"default");
-        httpClient = new AHCHttpClient(asyncHttpClient, config);
+        httpClient = new AHCHttpClient(asyncHttpClient, config,new Random());
     }
 
 
@@ -148,7 +149,7 @@ class AHCHttpClientTest {
         Mockito.when(asyncHttpClient.executeRequest(ArgumentMatchers.any(Request.class), ArgumentMatchers.any())).thenReturn(listenerObject);
         Map<String, Object> config = Maps.newHashMap();
         config.put(CONFIGURATION_ID,"default");
-        AHCHttpClient httpClient = new AHCHttpClient(asyncHttpClient,config);
+        AHCHttpClient httpClient = new AHCHttpClient(asyncHttpClient,config,new Random());
 
         //when
         httpClient.call(getDummyHttpRequest(), new AtomicInteger(2))
@@ -183,7 +184,7 @@ class AHCHttpClientTest {
         when(listenerObject.toCompletableFuture()).thenReturn(CompletableFuture.supplyAsync(() -> response));
         Map<String, Object> config = Maps.newHashMap();
         config.put(CONFIGURATION_ID,"default");
-        AHCHttpClient httpClient = new AHCHttpClient(asyncHttpClient,config);
+        AHCHttpClient httpClient = new AHCHttpClient(asyncHttpClient,config,new Random());
         //when
         httpClient.call(getDummyHttpRequest(), new AtomicInteger(2))
                 .thenAccept(exchange -> {
@@ -212,7 +213,7 @@ class AHCHttpClientTest {
         when(listenerObject.toCompletableFuture()).thenReturn(CompletableFuture.supplyAsync(() -> response));
         Map<String, Object> config = Maps.newHashMap();
         config.put(CONFIGURATION_ID,"default");
-        AHCHttpClient httpClient = new AHCHttpClient(asyncHttpClient,config);
+        AHCHttpClient httpClient = new AHCHttpClient(asyncHttpClient,config,new Random());
 
         //when
         httpClient.call(getDummyHttpRequest(), new AtomicInteger(2)).thenAccept(
@@ -243,7 +244,7 @@ class AHCHttpClientTest {
         when(listenerObject.toCompletableFuture()).thenReturn(CompletableFuture.supplyAsync(() -> response));
         Map<String, Object> config = Maps.newHashMap();
         config.put(CONFIGURATION_ID,"default");
-        AHCHttpClient httpClient = new AHCHttpClient(asyncHttpClient,config);
+        AHCHttpClient httpClient = new AHCHttpClient(asyncHttpClient,config,new Random());
         //when
         httpClient.call(getDummyHttpRequest(), new AtomicInteger(2))
                 .thenAccept(httpExchange -> assertThat(httpExchange).isNotNull())
@@ -256,7 +257,7 @@ class AHCHttpClientTest {
         AsyncHttpClient asyncHttpClient = Mockito.mock(AsyncHttpClient.class);
         Map<String, Object> config = Maps.newHashMap();
         config.put(CONFIGURATION_ID,"default");
-        AHCHttpClient httpClient = new AHCHttpClient(asyncHttpClient,config);
+        AHCHttpClient httpClient = new AHCHttpClient(asyncHttpClient,config,new Random());
 
         //when
         HttpRequest httpRequest = getDummyHttpRequest();

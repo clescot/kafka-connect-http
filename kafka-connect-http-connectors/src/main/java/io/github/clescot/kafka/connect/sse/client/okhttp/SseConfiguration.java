@@ -110,7 +110,7 @@ public class SseConfiguration implements Configuration<OkHttpClient, HttpRequest
                 .httpClient(this.httpClientConfiguration.getClient().getInternalClient())
                 .requestTransformer(input -> {
                     HttpRequest httpRequest = this.httpClientConfiguration.getClient().buildRequest(input);
-                    return this.httpClientConfiguration.getClient().buildNativeRequest(this.httpClientConfiguration.getEnrichRequestFunction().apply(httpRequest));
+                    return this.httpClientConfiguration.getClient().buildNativeRequest(this.httpClientConfiguration.getClient().getEnrichRequestFunction().apply(httpRequest));
                 });
         this.backgroundEventSource = new BackgroundEventSource.Builder(backgroundEventHandler,
                 new EventSource.Builder(connectStrategy

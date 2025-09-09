@@ -127,7 +127,7 @@ public class HttpConfiguration<C extends HttpClient<NR, NS>, NR, NS> implements 
     }
 
     protected HttpRequest enrich(HttpRequest httpRequest) {
-        return this.httpClientConfiguration.getEnrichRequestFunction().apply(httpRequest);
+        return this.httpClientConfiguration.getClient().getEnrichRequestFunction().apply(httpRequest);
     }
 
 

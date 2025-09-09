@@ -256,6 +256,7 @@ public class HttpSinkTaskTest {
                 okHttpSinkTask.start(settings);
                 OkHttpClient httpClient = Mockito.mock(OkHttpClient.class);
                 when(httpClient.call(any(HttpRequest.class), any(AtomicInteger.class))).thenReturn(CompletableFuture.supplyAsync(() -> getHttpExchange("https://toto.com",HttpRequest.Method.GET,200)));
+                when(httpClient.getEnrichRequestFunction()).thenReturn(request->request);
                 okHttpSinkTask.getDefaultConfiguration().getConfiguration().setHttpClient(httpClient);
                 Collection<SinkRecord> records = Lists.newArrayList();
                 SinkRecord myRecord = new SinkRecord("myTopic",0, Schema.STRING_SCHEMA,"key",Schema.STRING_SCHEMA,getHttpRequestAsString("https://toto.com",HttpRequest.Method.GET),0L);
@@ -382,6 +383,7 @@ public class HttpSinkTaskTest {
             AHCHttpClient httpClient = Mockito.mock(AHCHttpClient.class);
             HttpExchange dummyHttpExchange = getHttpExchange();
             when(httpClient.call(any(HttpRequest.class), any(AtomicInteger.class))).thenReturn(CompletableFuture.supplyAsync(() -> dummyHttpExchange));
+            when(httpClient.getEnrichRequestFunction()).thenReturn(request->request);
             ahcSinkTask.getDefaultConfiguration().getConfiguration().setHttpClient(httpClient);
 
             //init sinkRecord
@@ -415,6 +417,7 @@ public class HttpSinkTaskTest {
             AHCHttpClient httpClient = Mockito.mock(AHCHttpClient.class);
             HttpExchange dummyHttpExchange = getHttpExchange();
             when(httpClient.call(any(HttpRequest.class), any(AtomicInteger.class))).thenReturn(CompletableFuture.supplyAsync(() -> dummyHttpExchange));
+            when(httpClient.getEnrichRequestFunction()).thenReturn(request->request);
             ahcSinkTask.getDefaultConfiguration().getConfiguration().setHttpClient(httpClient);
 
             //init sinkRecord
@@ -484,6 +487,7 @@ public class HttpSinkTaskTest {
             AHCHttpClient httpClient = Mockito.mock(AHCHttpClient.class);
             HttpExchange dummyHttpExchange = getHttpExchange();
             when(httpClient.call(any(HttpRequest.class), any(AtomicInteger.class))).thenReturn(CompletableFuture.supplyAsync(() -> dummyHttpExchange));
+            when(httpClient.getEnrichRequestFunction()).thenReturn(request->request);
             ahcSinkTask.getDefaultConfiguration().getConfiguration().setHttpClient(httpClient);
             Queue<KafkaRecord> queue = mock(Queue.class);
             ahcSinkTask.setQueue(queue);
@@ -522,6 +526,7 @@ public class HttpSinkTaskTest {
             OkHttpClient httpClient = Mockito.mock(OkHttpClient.class);
             HttpExchange dummyHttpExchange = getHttpExchange();
             when(httpClient.call(any(HttpRequest.class), any(AtomicInteger.class))).thenReturn(CompletableFuture.supplyAsync(() -> dummyHttpExchange));
+            when(httpClient.getEnrichRequestFunction()).thenReturn(request->request);
             myOkHttpSinkTask.getDefaultConfiguration().getConfiguration().setHttpClient(httpClient);
 
             List<SinkRecord> records = Lists.newArrayList();
@@ -550,6 +555,7 @@ public class HttpSinkTaskTest {
             AHCHttpClient httpClient = Mockito.mock(AHCHttpClient.class);
             HttpExchange dummyHttpExchange = getHttpExchange();
             when(httpClient.call(any(HttpRequest.class), any(AtomicInteger.class))).thenReturn(CompletableFuture.supplyAsync(() -> dummyHttpExchange));
+            when(httpClient.getEnrichRequestFunction()).thenReturn(request->request);
             ahcSinkTask.getDefaultConfiguration().getConfiguration().setHttpClient(httpClient);
             Queue<KafkaRecord> queue = mock(Queue.class);
             ahcSinkTask.setQueue(queue);
