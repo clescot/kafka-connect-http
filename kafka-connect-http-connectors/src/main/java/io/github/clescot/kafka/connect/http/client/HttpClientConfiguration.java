@@ -132,7 +132,7 @@ public class HttpClientConfiguration<C extends HttpClient<R,S>,R,S> implements C
 
     }
 
-    public Function<HttpRequest,HttpRequest> buildEnrichRequestFunction(Map<String,Object> settings,Random random) {
+    private Function<HttpRequest,HttpRequest> buildEnrichRequestFunction(Map<String,Object> settings,Random random) {
 
         //enrich request
         List<Function<HttpRequest,HttpRequest>> enrichRequestFunctions = Lists.newArrayList();
