@@ -69,7 +69,7 @@ class HttpConfigurationTest {
 
     @Nested
     class CallWithRetryPolicy {
-
+        ExecutorService executorService;
         @BeforeEach
         void setUp(){
             Map<String,String> configs = Maps.newHashMap();
@@ -80,7 +80,8 @@ class HttpConfigurationTest {
             jmxMeterRegistry.start();
             compositeMeterRegistry.add(jmxMeterRegistry);
             HttpClientConfiguration<OkHttpClient,Request, Response> test = new HttpClientConfiguration<>("test", new OkHttpClientFactory(), config.originalsStrings(), null, compositeMeterRegistry);
-            HttpConfiguration<OkHttpClient, Request, Response> httpConfiguration = new HttpConfiguration<>(test);
+            executorService = Executors.newFixedThreadPool(2);
+            HttpConfiguration<OkHttpClient, Request, Response> httpConfiguration = new HttpConfiguration<>(test,executorService);
             Map<String, HttpConfiguration<OkHttpClient, Request, Response>> map = Maps.newHashMap();
             map.put(DEFAULT_CONFIGURATION_ID, httpConfiguration);
         }
@@ -112,7 +113,7 @@ class HttpConfigurationTest {
                     executorService,
                     getCompositeMeterRegistry()
             );
-            HttpConfiguration<OkHttpClient,Request, Response> httpConfiguration = new HttpConfiguration<>(httpClientConfiguration);
+            HttpConfiguration<OkHttpClient,Request, Response> httpConfiguration = new HttpConfiguration<>(httpClientConfiguration,executorService);
             HttpExchange httpExchange = httpConfiguration.call(httpRequest).get();
 
             //then
@@ -146,7 +147,7 @@ class HttpConfigurationTest {
                     executorService,
                     getCompositeMeterRegistry()
             );
-            HttpConfiguration<OkHttpClient,okhttp3.Request,okhttp3.Response> httpConfiguration = new HttpConfiguration<>(httpClientConfiguration);
+            HttpConfiguration<OkHttpClient,okhttp3.Request,okhttp3.Response> httpConfiguration = new HttpConfiguration<>(httpClientConfiguration,executorService);
             HttpExchange httpExchange = httpConfiguration.call(httpRequest).get();
 
             //then
@@ -182,7 +183,7 @@ class HttpConfigurationTest {
                     executorService,
                     getCompositeMeterRegistry()
             );
-            HttpConfiguration<OkHttpClient,okhttp3.Request,okhttp3.Response> httpConfiguration = new HttpConfiguration<>(httpClientConfiguration);
+            HttpConfiguration<OkHttpClient,okhttp3.Request,okhttp3.Response> httpConfiguration = new HttpConfiguration<>(httpClientConfiguration,executorService);
             HttpExchange httpExchange = httpConfiguration.call(httpRequest).get();
 
             //then
@@ -220,7 +221,7 @@ class HttpConfigurationTest {
                     executorService,
                     getCompositeMeterRegistry()
             );
-            HttpConfiguration<OkHttpClient,okhttp3.Request,okhttp3.Response> httpConfiguration = new HttpConfiguration<>(httpClientConfiguration);
+            HttpConfiguration<OkHttpClient,okhttp3.Request,okhttp3.Response> httpConfiguration = new HttpConfiguration<>(httpClientConfiguration,executorService);
             HttpExchange httpExchange = httpConfiguration.call(httpRequest).get();
 
             //then
@@ -265,7 +266,7 @@ class HttpConfigurationTest {
                     executorService,
                     getCompositeMeterRegistry()
             );
-            HttpConfiguration<OkHttpClient,okhttp3.Request,okhttp3.Response> httpConfiguration = new HttpConfiguration<>(httpClientConfiguration);
+            HttpConfiguration<OkHttpClient,okhttp3.Request,okhttp3.Response> httpConfiguration = new HttpConfiguration<>(httpClientConfiguration,executorService);
             HttpExchange httpExchange = httpConfiguration.call(httpRequest).get();
 
             //then

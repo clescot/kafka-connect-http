@@ -20,7 +20,6 @@ import java.security.SecureRandom;
 import java.time.Duration;
 import java.util.*;
 import java.util.concurrent.ExecutorService;
-import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.regex.Pattern;
 
@@ -68,7 +67,6 @@ public class HttpClientConfiguration<C extends HttpClient<R,S>,R,S> implements C
     //http client
     private C httpClient;
     public final String id;
-    private final ExecutorService executorService;
     private final Map<String, Object> settings;
 
 
@@ -78,7 +76,6 @@ public class HttpClientConfiguration<C extends HttpClient<R,S>,R,S> implements C
                                    ExecutorService executorService,
                                    CompositeMeterRegistry meterRegistry) {
         this.id = id;
-        this.executorService = executorService;
         Preconditions.checkNotNull(id, "id must not be null");
         Preconditions.checkNotNull(config, "httpSinkConnectorConfig must not be null");
         Preconditions.checkNotNull(httpClientFactory,"httpClientFactory must not be null");
@@ -132,9 +129,6 @@ public class HttpClientConfiguration<C extends HttpClient<R,S>,R,S> implements C
         return addSuccessStatusToHttpExchangeFunction;
     }
 
-    public ExecutorService getExecutorService() {
-        return executorService;
-    }
 
     @java.lang.SuppressWarnings({"java:S2119","java:S2245"})
     @NotNull

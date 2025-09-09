@@ -18,6 +18,7 @@ import java.time.ZoneId;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -35,9 +36,12 @@ public class HttpConfiguration<C extends HttpClient<NR, NS>, NR, NS> implements 
     private static final Logger LOGGER = LoggerFactory.getLogger(HttpConfiguration.class);
 
     private final HttpClientConfiguration<C, NR, NS> httpClientConfiguration;
+    private final ExecutorService executorService;
 
-    public HttpConfiguration(HttpClientConfiguration<C, NR, NS> httpClientConfiguration) {
+    public HttpConfiguration(HttpClientConfiguration<C, NR, NS> httpClientConfiguration,
+                             ExecutorService executorService) {
         this.httpClientConfiguration = httpClientConfiguration;
+        this.executorService = executorService;
     }
 
     /**
@@ -75,8 +79,8 @@ public class HttpConfiguration<C extends HttpClient<NR, NS>, NR, NS> implements 
             if (retryPolicyForCall.isPresent()) {
                 RetryPolicy<HttpExchange> myRetryPolicy = retryPolicyForCall.get();
                 FailsafeExecutor<HttpExchange> failsafeExecutor = Failsafe.with(List.of(myRetryPolicy));
-                if (this.httpClientConfiguration.getExecutorService() != null) {
-                    failsafeExecutor = failsafeExecutor.with(this.httpClientConfiguration.getExecutorService());
+                if (this.executorService != null) {
+                    failsafeExecutor = failsafeExecutor.with(this.executorService);
                 }
                 return failsafeExecutor
                         .getStageAsync(ctx -> callAndEnrich(httpRequest, attempts)
