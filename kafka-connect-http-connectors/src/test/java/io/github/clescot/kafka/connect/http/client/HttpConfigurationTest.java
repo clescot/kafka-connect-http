@@ -85,7 +85,7 @@ class HttpConfigurationTest {
             okHttpClient = okHttpClientFactory.buildHttpClient(settings, null, new CompositeMeterRegistry(), new Random());
             HttpClientConfiguration<OkHttpClient,Request, Response> test = new HttpClientConfiguration<>("test", config.originalsStrings(), okHttpClient, null);
             executorService = Executors.newFixedThreadPool(2);
-            HttpConfiguration<OkHttpClient, Request, Response> httpConfiguration = new HttpConfiguration<>("test",test,executorService, null,settings);
+            HttpConfiguration<OkHttpClient, Request, Response> httpConfiguration = new HttpConfiguration<>("test",okHttpClient,executorService, null,settings);
             Map<String, HttpConfiguration<OkHttpClient, Request, Response>> map = Maps.newHashMap();
             map.put(DEFAULT_CONFIGURATION_ID, httpConfiguration);
         }
@@ -116,7 +116,7 @@ class HttpConfigurationTest {
                     httpConnectorConfig.originalsStrings(),
                     okHttpClient,
                     null);
-            HttpConfiguration<OkHttpClient,Request, Response> httpConfiguration = new HttpConfiguration<>(dummy,httpClientConfiguration,executorService,null, settings);
+            HttpConfiguration<OkHttpClient,Request, Response> httpConfiguration = new HttpConfiguration<>(dummy,okHttpClient,executorService,null, settings);
             HttpExchange httpExchange = httpConfiguration.call(httpRequest).get();
 
             //then
@@ -161,7 +161,7 @@ class HttpConfigurationTest {
                     MapUtils.getMapWithPrefix(httpConnectorConfig.originalsStrings(),"config.dummy."),
                     okHttpClient,
                     retryPolicy);
-            HttpConfiguration<OkHttpClient,okhttp3.Request,okhttp3.Response> httpConfiguration = new HttpConfiguration<>(dummy,httpClientConfiguration,executorService, retryPolicy,settings);
+            HttpConfiguration<OkHttpClient,okhttp3.Request,okhttp3.Response> httpConfiguration = new HttpConfiguration<>(dummy,okHttpClient,executorService, retryPolicy,settings);
             HttpExchange httpExchange = httpConfiguration.call(httpRequest).get();
 
             //then

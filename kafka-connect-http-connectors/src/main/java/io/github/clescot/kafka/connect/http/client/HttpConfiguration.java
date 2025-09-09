@@ -43,7 +43,7 @@ import static io.github.clescot.kafka.connect.http.sink.HttpConfigDefinition.RET
 public class HttpConfiguration<C extends HttpClient<NR, NS>, NR, NS> implements Configuration<C,HttpRequest> {
     private static final Logger LOGGER = LoggerFactory.getLogger(HttpConfiguration.class);
 
-    private final HttpClientConfiguration<C, NR, NS> httpClientConfiguration;
+    private C client;
     private final ExecutorService executorService;
     private final RetryPolicy<HttpExchange> retryPolicy;
     @NotNull
@@ -53,12 +53,12 @@ public class HttpConfiguration<C extends HttpClient<NR, NS>, NR, NS> implements 
     private final Predicate<HttpRequest> predicate;
 
     public HttpConfiguration(String id,
-                             HttpClientConfiguration<C, NR, NS> httpClientConfiguration,
+                             C client,
                              ExecutorService executorService,
                              RetryPolicy<HttpExchange> retryPolicy,
                              Map<String, String> settings) {
         this.id = id;
-        this.httpClientConfiguration = httpClientConfiguration;
+        this.client = client;
         this.executorService = executorService;
         this.retryPolicy = retryPolicy;
         this.settings = settings;
@@ -105,7 +105,7 @@ public class HttpConfiguration<C extends HttpClient<NR, NS>, NR, NS> implements 
     @Override
     public String toString() {
         return "HttpConfiguration{" +
-                "httpClientConfiguration=" + httpClientConfiguration +
+                "httpClientConfiguration=" + client +
                 ", executorService=" + executorService +
                 ", settings=" + settings +
                 ", retryResponseCodeRegex=" + retryResponseCodeRegex +
@@ -131,7 +131,7 @@ public class HttpConfiguration<C extends HttpClient<NR, NS>, NR, NS> implements 
         if (LOGGER.isTraceEnabled()) {
             LOGGER.trace("after enrichment:{}", enrichedHttpRequest);
         }
-        CompletableFuture<HttpExchange> completableFuture = this.httpClientConfiguration.getClient().call(enrichedHttpRequest, attempts);
+        CompletableFuture<HttpExchange> completableFuture = this.client.call(enrichedHttpRequest, attempts);
         return completableFuture
                 .thenApply(this::enrichHttpExchange);
 
@@ -201,7 +201,7 @@ public class HttpConfiguration<C extends HttpClient<NR, NS>, NR, NS> implements 
     }
 
     protected HttpRequest enrich(HttpRequest httpRequest) {
-        return this.httpClientConfiguration.getClient().getEnrichRequestFunction().apply(httpRequest);
+        return this.client.getEnrichRequestFunction().apply(httpRequest);
     }
 
 
@@ -221,10 +221,14 @@ public class HttpConfiguration<C extends HttpClient<NR, NS>, NR, NS> implements 
 
     @Override
     public C getClient() {
-        return this.httpClientConfiguration.getClient();
+        return this.client;
     }
 
-    public HttpClientConfiguration<C, NR, NS> getConfiguration() {
-        return httpClientConfiguration;
+    public void setHttpClient(C client) {
+        if (this.client == null) {
+            throw new IllegalStateException("client is null, cannot set it");
+        }
+        this.client = client;
     }
+
 }

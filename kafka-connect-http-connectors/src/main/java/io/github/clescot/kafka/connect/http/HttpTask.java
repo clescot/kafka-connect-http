@@ -85,7 +85,7 @@ public class HttpTask<T,C extends HttpClient<NR, NS>, NR, NS> implements Request
                         entry->Map.entry(entry.getKey(),
                         new HttpConfiguration<>(
                                 entry.getKey(),
-                                entry.getValue(),
+                                entry.getValue().getClient(),
                                 executorService,
                                 retryPolicy,
                                 settings)
