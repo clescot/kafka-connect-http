@@ -28,7 +28,7 @@ public class AuthenticationsConfigurer {
         this.authenticationConfigurers = authenticationConfigurers;
     }
 
-    public okhttp3.OkHttpClient.Builder configure(Map<String, Object> config, okhttp3.OkHttpClient.Builder httpClientBuilder) {
+    public okhttp3.OkHttpClient.Builder configure(Map<String, String> config, okhttp3.OkHttpClient.Builder httpClientBuilder) {
         final Map<String, CachingAuthenticator> authCache = new ConcurrentHashMap<>();
 
         //authentication
@@ -39,7 +39,7 @@ public class AuthenticationsConfigurer {
         }
 
         //proxy authentication
-        Map<String, Object> proxyConfig = config.entrySet().stream()
+        Map<String, String> proxyConfig = config.entrySet().stream()
                 .filter(entry -> entry.getKey().startsWith(PROXY_PREFIX))
                 .map(entry -> Map.entry(entry.getKey().substring(PROXY_PREFIX.length()), entry.getValue()))
                 .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
@@ -56,7 +56,7 @@ public class AuthenticationsConfigurer {
     }
 
     @Nullable
-    protected Authenticator getAuthenticatorDecorator(Map<String, Object> config, Map<String, CachingAuthenticator> authCache, boolean proxy) {
+    protected Authenticator getAuthenticatorDecorator(Map<String, String> config, Map<String, CachingAuthenticator> authCache, boolean proxy) {
 
         // note that all auth schemes should be registered as lowercase!
         DispatchingAuthenticator.Builder authenticatorBuilder = new DispatchingAuthenticator.Builder();

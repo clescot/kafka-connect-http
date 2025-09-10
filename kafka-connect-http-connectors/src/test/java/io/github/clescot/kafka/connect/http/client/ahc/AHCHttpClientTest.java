@@ -4,7 +4,6 @@ import com.google.common.base.Stopwatch;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import io.github.clescot.kafka.connect.http.client.DummyX509Certificate;
-import io.github.clescot.kafka.connect.http.client.HttpClient;
 import io.github.clescot.kafka.connect.http.client.HttpClientFactory;
 import io.github.clescot.kafka.connect.http.core.HttpExchange;
 import io.github.clescot.kafka.connect.http.core.HttpRequest;
@@ -31,12 +30,13 @@ import java.time.ZoneId;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static io.github.clescot.kafka.connect.http.client.HttpClientConfigDefinition.*;
-import static io.github.clescot.kafka.connect.http.client.HttpClientConfiguration.CONFIGURATION_ID;
+import static io.github.clescot.kafka.connect.http.client.HttpClientFactory.CONFIGURATION_ID;
 import static io.github.clescot.kafka.connect.http.client.ahc.AHCHttpClient.SUCCESS;
 import static io.github.clescot.kafka.connect.http.client.config.AddMissingCorrelationIdHeaderToHttpRequestFunction.HEADER_X_CORRELATION_ID;
 import static io.github.clescot.kafka.connect.http.client.config.AddMissingRequestIdHeaderToHttpRequestFunction.HEADER_X_REQUEST_ID;
@@ -46,23 +46,29 @@ import static org.mockito.Mockito.when;
 class AHCHttpClientTest {
 
     private AsyncHttpClient asyncHttpClient;
+    private AHCHttpClient httpClient;
 
     @BeforeEach
     void setUp() {
         asyncHttpClient = Mockito.mock(AsyncHttpClient.class);
+        HashMap<String, String> config = Maps.newHashMap();
+        config.put(CONFIGURATION_ID,"default");
+        httpClient = new AHCHttpClient(asyncHttpClient, config,new Random());
     }
+
 
     @Test
     void build_HttpExchange_test_all_null() {
         Map<String, Object> config = Maps.newHashMap();
         config.put(CONFIGURATION_ID,"default");
         org.junit.jupiter.api.Assertions.assertThrows(NullPointerException.class, () ->
-                HttpClient.buildHttpExchange(null,
+                httpClient.buildExchange((HttpRequest) null,
                         null,
                         Stopwatch.createUnstarted(),
                         OffsetDateTime.now(ZoneId.of(AHCHttpClient.UTC_ZONE_ID)),
                         new AtomicInteger(2),
-                        SUCCESS
+                        SUCCESS,
+                        Maps.newHashMap()
                 ));
     }
 
@@ -72,24 +78,26 @@ class AHCHttpClientTest {
         Map<String, Object> config = Maps.newHashMap();
         config.put(CONFIGURATION_ID,"default");
         org.junit.jupiter.api.Assertions.assertThrows(NullPointerException.class, () ->
-                HttpClient.buildHttpExchange(null,
+                httpClient.buildExchange(null,
                         getDummyHttpResponse(200),
                         Stopwatch.createUnstarted(),
                         OffsetDateTime.now(ZoneId.of(AHCHttpClient.UTC_ZONE_ID)),
                         new AtomicInteger(2),
-                        SUCCESS));
+                        SUCCESS,
+                        Maps.newHashMap()));
     }
 
     @Test
     void build_HttpExchange_test_response_code_is_lower_than_0() {
         Map<String, Object> config = Maps.newHashMap();
         config.put(CONFIGURATION_ID,"default");
-        org.junit.jupiter.api.Assertions.assertThrows(IllegalArgumentException.class, () -> HttpClient.buildHttpExchange(getDummyHttpRequest(),
+        org.junit.jupiter.api.Assertions.assertThrows(IllegalArgumentException.class, () -> httpClient.buildExchange(getDummyHttpRequest(),
                 getDummyHttpResponse(-12),
                 Stopwatch.createUnstarted(),
                 OffsetDateTime.now(ZoneId.of(AHCHttpClient.UTC_ZONE_ID)),
                 new AtomicInteger(2),
-                SUCCESS));
+                SUCCESS,
+                Maps.newHashMap()));
     }
 
 
@@ -98,12 +106,13 @@ class AHCHttpClientTest {
 
         Map<String, Object> config = Maps.newHashMap();
         config.put(CONFIGURATION_ID,"default");
-        HttpExchange httpExchange = HttpClient.buildHttpExchange(getDummyHttpRequest(),
+        HttpExchange httpExchange = httpClient.buildExchange(getDummyHttpRequest(),
                 getDummyHttpResponse(200),
                 Stopwatch.createUnstarted(),
                 OffsetDateTime.now(ZoneId.of(AHCHttpClient.UTC_ZONE_ID)),
                 new AtomicInteger(2),
-                SUCCESS);
+                SUCCESS,
+                Maps.newHashMap());
         assertThat(httpExchange).isNotNull();
     }
 
@@ -138,9 +147,9 @@ class AHCHttpClientTest {
         Mockito.when(listenerObject.get()).thenReturn(response);
         Mockito.when(asyncHttpClient.executeRequest(ArgumentMatchers.any(Request.class))).thenReturn(listener);
         Mockito.when(asyncHttpClient.executeRequest(ArgumentMatchers.any(Request.class), ArgumentMatchers.any())).thenReturn(listenerObject);
-        Map<String, Object> config = Maps.newHashMap();
+        Map<String, String> config = Maps.newHashMap();
         config.put(CONFIGURATION_ID,"default");
-        AHCHttpClient httpClient = new AHCHttpClient(asyncHttpClient,config);
+        AHCHttpClient httpClient = new AHCHttpClient(asyncHttpClient,config,new Random());
 
         //when
         httpClient.call(getDummyHttpRequest(), new AtomicInteger(2))
@@ -173,9 +182,9 @@ class AHCHttpClientTest {
         when(asyncHttpClient.executeRequest(ArgumentMatchers.any(Request.class))).thenReturn(listener);
         when(asyncHttpClient.executeRequest(ArgumentMatchers.any(Request.class), ArgumentMatchers.any())).thenReturn(listenerObject);
         when(listenerObject.toCompletableFuture()).thenReturn(CompletableFuture.supplyAsync(() -> response));
-        Map<String, Object> config = Maps.newHashMap();
+        Map<String, String> config = Maps.newHashMap();
         config.put(CONFIGURATION_ID,"default");
-        AHCHttpClient httpClient = new AHCHttpClient(asyncHttpClient,config);
+        AHCHttpClient httpClient = new AHCHttpClient(asyncHttpClient,config,new Random());
         //when
         httpClient.call(getDummyHttpRequest(), new AtomicInteger(2))
                 .thenAccept(exchange -> {
@@ -202,9 +211,9 @@ class AHCHttpClientTest {
         when(asyncHttpClient.executeRequest(ArgumentMatchers.any(Request.class), ArgumentMatchers.any())).thenReturn(listenerObject);
         when(listener.toCompletableFuture()).thenReturn(CompletableFuture.supplyAsync(() -> response));
         when(listenerObject.toCompletableFuture()).thenReturn(CompletableFuture.supplyAsync(() -> response));
-        Map<String, Object> config = Maps.newHashMap();
+        Map<String, String> config = Maps.newHashMap();
         config.put(CONFIGURATION_ID,"default");
-        AHCHttpClient httpClient = new AHCHttpClient(asyncHttpClient,config);
+        AHCHttpClient httpClient = new AHCHttpClient(asyncHttpClient,config,new Random());
 
         //when
         httpClient.call(getDummyHttpRequest(), new AtomicInteger(2)).thenAccept(
@@ -233,9 +242,9 @@ class AHCHttpClientTest {
         when(asyncHttpClient.executeRequest(ArgumentMatchers.any(Request.class))).thenReturn(listener);
         when(asyncHttpClient.executeRequest(ArgumentMatchers.any(Request.class), ArgumentMatchers.any())).thenReturn(listenerObject);
         when(listenerObject.toCompletableFuture()).thenReturn(CompletableFuture.supplyAsync(() -> response));
-        Map<String, Object> config = Maps.newHashMap();
+        Map<String, String> config = Maps.newHashMap();
         config.put(CONFIGURATION_ID,"default");
-        AHCHttpClient httpClient = new AHCHttpClient(asyncHttpClient,config);
+        AHCHttpClient httpClient = new AHCHttpClient(asyncHttpClient,config,new Random());
         //when
         httpClient.call(getDummyHttpRequest(), new AtomicInteger(2))
                 .thenAccept(httpExchange -> assertThat(httpExchange).isNotNull())
@@ -246,9 +255,9 @@ class AHCHttpClientTest {
     void test_build_http_request_nominal_case() {
         //given
         AsyncHttpClient asyncHttpClient = Mockito.mock(AsyncHttpClient.class);
-        Map<String, Object> config = Maps.newHashMap();
+        Map<String, String> config = Maps.newHashMap();
         config.put(CONFIGURATION_ID,"default");
-        AHCHttpClient httpClient = new AHCHttpClient(asyncHttpClient,config);
+        AHCHttpClient httpClient = new AHCHttpClient(asyncHttpClient,config,new Random());
 
         //when
         HttpRequest httpRequest = getDummyHttpRequest();
@@ -284,7 +293,7 @@ class AHCHttpClientTest {
         //given
         String truststorePath = Thread.currentThread().getContextClassLoader().getResource(HttpSinkTaskTest.CLIENT_TRUSTSTORE_JKS_FILENAME).getPath();
         String password = HttpSinkTaskTest.CLIENT_TRUSTSTORE_JKS_PASSWORD;
-        Map<String, Object> config = Maps.newHashMap();
+        Map<String, String> config = Maps.newHashMap();
         config.put(HTTP_CLIENT_SSL_TRUSTSTORE_PATH, truststorePath);
         config.put(HTTP_CLIENT_SSL_TRUSTSTORE_PASSWORD, password);
         config.put(HTTP_CLIENT_SSL_TRUSTSTORE_TYPE, HttpSinkTaskTest.JKS_STORE_TYPE);
@@ -300,7 +309,7 @@ class AHCHttpClientTest {
     void test_getTrustManagerFactory_always_trust() {
 
         //given
-        Map<String, Object> config = Maps.newHashMap();
+        Map<String, String> config = Maps.newHashMap();
         config.put(HTTP_CLIENT_SSL_TRUSTSTORE_ALWAYS_TRUST, "true");
         //when
         TrustManagerFactory trustManagerFactory = HttpClientFactory.getTrustManagerFactory(config);
@@ -319,7 +328,7 @@ class AHCHttpClientTest {
     void test_getTrustManagerFactory_always_trust_set_to_false() {
 
         //given
-        Map<String, Object> config = Maps.newHashMap();
+        Map<String, String> config = Maps.newHashMap();
         config.put(HTTP_CLIENT_SSL_TRUSTSTORE_ALWAYS_TRUST, "false");
         String truststorePath = Thread.currentThread().getContextClassLoader().getResource(HttpSinkTaskTest.CLIENT_TRUSTSTORE_JKS_FILENAME).getPath();
         config.put(HTTP_CLIENT_SSL_TRUSTSTORE_PATH, truststorePath);

@@ -25,7 +25,7 @@ import static com.fasterxml.jackson.annotation.JsonInclude.Include;
 import static io.github.clescot.kafka.connect.http.core.MediaType.APPLICATION_X_WWW_FORM_URLENCODED;
 
 @JsonInclude(Include.NON_EMPTY)
-public class HttpRequest implements Cloneable, Serializable {
+public class HttpRequest implements Request,Cloneable, Serializable {
     @Serial
     private static final long serialVersionUID = 1L;
 
@@ -38,6 +38,7 @@ public class HttpRequest implements Cloneable, Serializable {
     public static final String BODY_AS_BYTE_ARRAY = "bodyAsByteArray";
     public static final String BODY_AS_FORM = "bodyAsForm";
     public static final String PARTS = "parts";
+    public static final String ATTRIBUTES = "attributes";
 
     public static final int VERSION = 2;
 
@@ -50,7 +51,8 @@ public class HttpRequest implements Cloneable, Serializable {
     private Map<String, List<String>> headers = Maps.newHashMap();
     @JsonProperty(defaultValue = "GET")
     private HttpRequest.Method method;
-
+    @JsonProperty
+    private Map<String,String> attributes = Maps.newHashMap();
     //regular body
     @JsonProperty
     private Map<String, String> bodyAsForm = Maps.newHashMap();
@@ -77,6 +79,7 @@ public class HttpRequest implements Cloneable, Serializable {
             .field(BODY_AS_FORM, SchemaBuilder.map(Schema.STRING_SCHEMA, Schema.STRING_SCHEMA).optional().schema())
             .field(BODY_AS_STRING, Schema.OPTIONAL_STRING_SCHEMA)
             .field(PARTS, SchemaBuilder.map(Schema.STRING_SCHEMA,HttpPart.SCHEMA).optional().schema())
+            .field(ATTRIBUTES, SchemaBuilder.map(Schema.STRING_SCHEMA,Schema.STRING_SCHEMA).optional().schema())
             .schema();
 
     /**
@@ -267,6 +270,7 @@ public class HttpRequest implements Cloneable, Serializable {
         if (o == null || getClass() != o.getClass()) return false;
         HttpRequest that = (HttpRequest) o;
         return url.equals(that.url)
+                && attributes!=null && attributes.equals(that.attributes)
                 && Objects.equals(headers, that.headers)
                 && method.equals(that.method)
                 && bodyType == that.bodyType
@@ -279,12 +283,13 @@ public class HttpRequest implements Cloneable, Serializable {
 
     @Override
     public int hashCode() {
-        return Objects.hash(url, headers, method, parts, bodyAsByteArray, bodyAsForm, bodyAsString,bodyType);
+        return Objects.hash(url, attributes,headers, method, parts, bodyAsByteArray, bodyAsForm, bodyAsString,bodyType);
     }
 
     @Override
     public String toString() {
         return "HttpRequest{" +
+                "  attributes='" + attributes + '\'' +
                 "  url='" + url + '\'' +
                 ", headers=" + headers +
                 ", method=" + method +
@@ -299,6 +304,7 @@ public class HttpRequest implements Cloneable, Serializable {
     public Struct toStruct() {
         return new Struct(SCHEMA)
                 .put(URL, this.getUrl())
+                .put(ATTRIBUTES, this.getAttributes())
                 .put(HEADERS, this.getHeaders())
                 .put(METHOD, this.getMethod().name())
                 .put(BODY_TYPE, this.getBodyType().name())
@@ -382,6 +388,21 @@ public class HttpRequest implements Cloneable, Serializable {
     @JsonIgnore
     public Map<String, String> getBodyAsForm() {
         return bodyAsForm;
+    }
+
+    public Map<String, String> getAttributes() {
+        return attributes;
+    }
+
+    public void setAttributes(Map<String, String> attributes) {
+        this.attributes = attributes;
+    }
+
+    public void addAttribute(String key, String value) {
+        if(attributes==null){
+            attributes = Maps.newHashMap();
+        }
+        attributes.put(key,value);
     }
 
     @Override

@@ -16,8 +16,8 @@ import java.net.URI;
 import java.util.*;
 
 import static com.fasterxml.jackson.annotation.JsonInclude.Include;
-import static io.github.clescot.kafka.connect.http.core.MediaType.*;
 import static io.github.clescot.kafka.connect.http.core.HttpPart.BodyType.FORM_DATA;
+import static io.github.clescot.kafka.connect.http.core.MediaType.*;
 
 /**
  * part of a multipart request.

@@ -29,8 +29,8 @@ class DigestAuthenticationConfigurerTest {
     @Test
     void test_configure_authenticator_nominal_case(){
         AuthenticationConfigurer authenticationConfigurer = new DigestAuthenticationConfigurer(new Random());
-        Map<String,Object> config = Maps.newHashMap();
-        config.put(HTTP_CLIENT_AUTHENTICATION_DIGEST_ACTIVATE,Boolean.TRUE);
+        Map<String,String> config = Maps.newHashMap();
+        config.put(HTTP_CLIENT_AUTHENTICATION_DIGEST_ACTIVATE,Boolean.TRUE.toString());
         config.put(HTTP_CLIENT_AUTHENTICATION_DIGEST_USERNAME,"myUser");
         config.put(HTTP_CLIENT_AUTHENTICATION_DIGEST_PASSWORD,"stuff");
         Authenticator authenticator = authenticationConfigurer.configureAuthenticator(config);
@@ -41,8 +41,8 @@ class DigestAuthenticationConfigurerTest {
     @Test
     void test_configure_authenticator_with_defined_charset(){
         AuthenticationConfigurer authenticationConfigurer = new DigestAuthenticationConfigurer(new Random());
-        Map<String,Object> config = Maps.newHashMap();
-        config.put(HTTP_CLIENT_AUTHENTICATION_DIGEST_ACTIVATE,Boolean.TRUE);
+        Map<String,String> config = Maps.newHashMap();
+        config.put(HTTP_CLIENT_AUTHENTICATION_DIGEST_ACTIVATE,Boolean.TRUE.toString());
         config.put(HTTP_CLIENT_AUTHENTICATION_DIGEST_USERNAME,"myUser");
         config.put(HTTP_CLIENT_AUTHENTICATION_DIGEST_PASSWORD,"stuff");
         config.put(HTTP_CLIENT_AUTHENTICATION_DIGEST_CHARSET,"UTF-8");
@@ -55,8 +55,8 @@ class DigestAuthenticationConfigurerTest {
     @Test
     void test_configure_authenticator_with_undefined_charset(){
         AuthenticationConfigurer authenticationConfigurer = new DigestAuthenticationConfigurer(new Random());
-        Map<String,Object> config = Maps.newHashMap();
-        config.put(HTTP_CLIENT_AUTHENTICATION_DIGEST_ACTIVATE,Boolean.TRUE);
+        Map<String,String> config = Maps.newHashMap();
+        config.put(HTTP_CLIENT_AUTHENTICATION_DIGEST_ACTIVATE,Boolean.TRUE.toString());
         config.put(HTTP_CLIENT_AUTHENTICATION_DIGEST_USERNAME,"myUser");
         config.put(HTTP_CLIENT_AUTHENTICATION_DIGEST_PASSWORD,"stuff");
         config.put(HTTP_CLIENT_AUTHENTICATION_DIGEST_CHARSET,"ddd");
@@ -66,16 +66,16 @@ class DigestAuthenticationConfigurerTest {
     @Test
     void test_configure_authenticator_missing_username(){
         AuthenticationConfigurer authenticationConfigurer = new DigestAuthenticationConfigurer(new Random());
-        Map<String,Object> config = Maps.newHashMap();
-        config.put(HTTP_CLIENT_AUTHENTICATION_DIGEST_ACTIVATE,Boolean.TRUE);
+        Map<String,String> config = Maps.newHashMap();
+        config.put(HTTP_CLIENT_AUTHENTICATION_DIGEST_ACTIVATE,Boolean.TRUE.toString());
         config.put(HTTP_CLIENT_AUTHENTICATION_DIGEST_PASSWORD,"stuff");
         Assertions.assertThrows(NullPointerException.class,()->authenticationConfigurer.configureAuthenticator(config));
     }
     @Test
     void test_configure_authenticator_missing_password(){
         AuthenticationConfigurer authenticationConfigurer = new DigestAuthenticationConfigurer(new Random());
-        Map<String,Object> config = Maps.newHashMap();
-        config.put(HTTP_CLIENT_AUTHENTICATION_DIGEST_ACTIVATE,Boolean.TRUE);
+        Map<String,String> config = Maps.newHashMap();
+        config.put(HTTP_CLIENT_AUTHENTICATION_DIGEST_ACTIVATE,Boolean.TRUE.toString());
         config.put(HTTP_CLIENT_AUTHENTICATION_DIGEST_USERNAME,"myUser");
         Assertions.assertThrows(NullPointerException.class,()->authenticationConfigurer.configureAuthenticator(config));
     }
@@ -89,7 +89,7 @@ class DigestAuthenticationConfigurerTest {
     @Test
     void test_configure_with_empty_map(){
         AuthenticationConfigurer authenticationConfigurer = new DigestAuthenticationConfigurer(new Random());
-        Map<String,Object> config = Maps.newHashMap();
+        Map<String,String> config = Maps.newHashMap();
         Authenticator authenticator = authenticationConfigurer.configureAuthenticator(config);
         assertThat(authenticator).isNull();
     }

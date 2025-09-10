@@ -34,9 +34,9 @@
         <url>https://github.com/clescot/kafka-connect-http/issues</url>
     </issueManagement>
     <properties>
-        <assertj.version>3.27.3</assertj.version>
+        <assertj.version>3.27.4</assertj.version>
         <awaitility.version>4.3.0</awaitility.version>
-        <async.http.client.version>2.12.4</async.http.client.version>
+        <async.http.client.version>3.0.2</async.http.client.version>
         <commons-text.version>1.14.0</commons-text.version>
         <connect-json.version>4.0.0</connect-json.version>
         <debezium.version>2.7.4.Final</debezium.version>
@@ -44,7 +44,7 @@
         <confluent.platform.version>8.0.0</confluent.platform.version>
         <failsafe.version>3.3.2</failsafe.version>
         <guava.version>33.4.8-jre</guava.version>
-        <jackson.version>2.19.2</jackson.version>
+        <jackson.version>2.20.0</jackson.version>
         <jacoco.version>0.8.12</jacoco.version>
         <json.assert.version>1.5.3</json.assert.version>
         <junit.version>5.13.4</junit.version>
@@ -54,8 +54,8 @@
         <maven.compiler.target>17</maven.compiler.target>
         <maven.plugin.validation>VERBOSE</maven.plugin.validation>
         <mock-oauth2-server.version>2.2.1</mock-oauth2-server.version>
-        <mockito.version>5.18.0</mockito.version>
-        <micrometer.version>1.15.2</micrometer.version>
+        <mockito.version>5.19.0</mockito.version>
+        <micrometer.version>1.15.3</micrometer.version>
         <okhttp.version>5.1.0</okhttp.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
@@ -148,11 +148,7 @@
                 <artifactId>async-http-client</artifactId>
                 <version>${async.http.client.version}</version>
             </dependency>
-            <dependency>
-                <groupId>org.asynchttpclient</groupId>
-                <artifactId>async-http-client-extras-guava</artifactId>
-                <version>${async.http.client.version}</version>
-            </dependency>
+
             <dependency>
                 <groupId>com.squareup.okhttp3</groupId>
                 <artifactId>okhttp</artifactId>
@@ -289,7 +285,7 @@
                 <plugin>
                     <groupId>org.sonarsource.scanner.maven</groupId>
                     <artifactId>sonar-maven-plugin</artifactId>
-                    <version>5.1.0.4751</version>
+                    <version>5.2.0.4988</version>
                 </plugin>
             </plugins>
         </pluginManagement>
@@ -328,7 +324,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-javadoc-plugin</artifactId>
-                <version>3.11.2</version>
+                <version>3.11.3</version>
                 <executions>
                     <execution>
                         <id>attach-javadoc</id>

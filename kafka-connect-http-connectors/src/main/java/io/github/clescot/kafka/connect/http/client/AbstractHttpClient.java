@@ -1,66 +1,120 @@
 package io.github.clescot.kafka.connect.http.client;
 
-import com.google.common.base.Joiner;
 import com.google.common.base.Preconditions;
+import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
-import dev.failsafe.RateLimiter;
-import dev.failsafe.RateLimiterConfig;
+import io.github.clescot.kafka.connect.AbstractClient;
+import io.github.clescot.kafka.connect.VersionUtils;
+import io.github.clescot.kafka.connect.http.client.config.*;
 import io.github.clescot.kafka.connect.http.core.HttpExchange;
+import io.github.clescot.kafka.connect.http.core.HttpRequest;
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.net.ssl.TrustManagerFactory;
-import java.time.Duration;
-import java.time.temporal.ChronoUnit;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
+import java.util.function.Function;
+import java.util.regex.Pattern;
 
-import static io.github.clescot.kafka.connect.http.client.HttpClientConfiguration.CONFIGURATION_ID;
-import static io.github.clescot.kafka.connect.http.client.HttpClientConfiguration.STATIC_SCOPE;
 import static io.github.clescot.kafka.connect.http.sink.HttpConfigDefinition.*;
 
-public abstract class AbstractHttpClient<R,S> implements HttpClient<R,S> {
+public abstract class AbstractHttpClient<NR,NS> extends AbstractClient<HttpExchange> implements HttpClient<NR,NS> {
+    public static final VersionUtils VERSION_UTILS = new VersionUtils();
     private static final Logger LOGGER = LoggerFactory.getLogger(AbstractHttpClient.class);
 
     public static final String DEFAULT_HTTP_RESPONSE_MESSAGE_STATUS_LIMIT = "1024";
     public static final String DEFAULT_HTTP_RESPONSE_HEADERS_LIMIT = "10000";
     public static final String DEFAULT_HTTP_RESPONSE_BODY_LIMIT = "100000";
-    protected Map<String, Object> config;
-    private Optional<RateLimiter<HttpExchange>> rateLimiter = Optional.empty();
+    protected final Random random;
+    protected AddSuccessStatusToHttpExchangeFunction addSuccessStatusToHttpExchangeFunction;
+
     protected TrustManagerFactory trustManagerFactory;
-    protected String configurationId;
+
     private Integer statusMessageLimit;
     private Integer headersLimit;
     private Integer bodyLimit;
+    public static final String USER_AGENT_HTTP_CLIENT_DEFAULT_MODE = "http_client";
+    public static final String USER_AGENT_PROJECT_MODE = "project";
+    public static final String USER_AGENT_CUSTOM_MODE = "custom";
+    private final Function<HttpRequest, HttpRequest> enrichRequestFunction;
 
     //rate limiter
-    private static final Map<String, RateLimiter<HttpExchange>> sharedRateLimiters = Maps.newHashMap();
 
-    protected AbstractHttpClient(Map<String, Object> config) {
-        this.config = config;
-        configurationId = (String) config.get(CONFIGURATION_ID);
-        Preconditions.checkNotNull(configurationId,"configuration must have an id : '"+CONFIGURATION_ID+"' is not set in the configuration map");
-        setRateLimiter(buildRateLimiter(config));
+    protected AbstractHttpClient(Map<String, String> config,Random random) {
+       super(config);
 
         //httpResponse
         //messageStatus limit
 
-        int httpResponseMessageStatusLimit = Integer.parseInt(Optional.ofNullable((String)config.get(HTTP_RESPONSE_MESSAGE_STATUS_LIMIT)).orElse(DEFAULT_HTTP_RESPONSE_MESSAGE_STATUS_LIMIT));
+        int httpResponseMessageStatusLimit = Integer.parseInt(Optional.ofNullable(config.get(HTTP_RESPONSE_MESSAGE_STATUS_LIMIT)).orElse(DEFAULT_HTTP_RESPONSE_MESSAGE_STATUS_LIMIT));
         if(httpResponseMessageStatusLimit>0) {
             setStatusMessageLimit(httpResponseMessageStatusLimit);
         }
 
-        int httpResponseHeadersLimit = Integer.parseInt(Optional.ofNullable((String)config.get(HTTP_RESPONSE_HEADERS_LIMIT)).orElse(DEFAULT_HTTP_RESPONSE_HEADERS_LIMIT));
+        int httpResponseHeadersLimit = Integer.parseInt(Optional.ofNullable(config.get(HTTP_RESPONSE_HEADERS_LIMIT)).orElse(DEFAULT_HTTP_RESPONSE_HEADERS_LIMIT));
         if(httpResponseHeadersLimit>0) {
             setHeadersLimit(httpResponseHeadersLimit);
         }
 
         //body limit
-        int httpResponseBodyLimit = Integer.parseInt(Optional.ofNullable((String)config.get(HTTP_RESPONSE_BODY_LIMIT)).orElse(DEFAULT_HTTP_RESPONSE_BODY_LIMIT));
+        int httpResponseBodyLimit = Integer.parseInt(Optional.ofNullable(config.get(HTTP_RESPONSE_BODY_LIMIT)).orElse(DEFAULT_HTTP_RESPONSE_BODY_LIMIT));
         if(httpResponseBodyLimit>0) {
             setBodyLimit(httpResponseBodyLimit);
         }
+        this.enrichRequestFunction = buildEnrichRequestFunction(config,random);
+        this.random = random;
+    }
 
+
+    @Override
+    public Function<HttpRequest, HttpRequest> getEnrichRequestFunction() {
+        return enrichRequestFunction;
+    }
+
+    private Function<HttpRequest,HttpRequest> buildEnrichRequestFunction(Map<String,String> settings, Random random) {
+
+        //enrich request
+        List<Function<HttpRequest,HttpRequest>> enrichRequestFunctions = Lists.newArrayList();
+        //build addStaticHeadersFunction
+        Optional<String> staticHeaderParam = Optional.ofNullable(settings.get(STATIC_REQUEST_HEADER_NAMES));
+        Map<String, List<String>> staticRequestHeaders = Maps.newHashMap();
+        if (staticHeaderParam.isPresent()) {
+            String[] staticRequestHeaderNames = staticHeaderParam.get().split(",");
+            for (String headerName : staticRequestHeaderNames) {
+                String value = settings.get(STATIC_REQUEST_HEADER_PREFIX + headerName);
+                Preconditions.checkNotNull(value, "'" + headerName + "' is not configured as a parameter.");
+                ArrayList<String> values = Lists.newArrayList(value);
+                staticRequestHeaders.put(headerName, values);
+                LOGGER.debug("static header {}:{}", headerName, values);
+            }
+        }
+        enrichRequestFunctions.add(new AddStaticHeadersToHttpRequestFunction(staticRequestHeaders));
+
+        //AddMissingRequestIdHeaderToHttpRequestFunction
+        boolean generateMissingRequestId = Boolean.parseBoolean(settings.get(GENERATE_MISSING_REQUEST_ID));
+        enrichRequestFunctions.add( new AddMissingRequestIdHeaderToHttpRequestFunction(generateMissingRequestId));
+
+        //AddMissingCorrelationIdHeaderToHttpRequestFunction
+        boolean generateMissingCorrelationId = Boolean.parseBoolean(settings.get(GENERATE_MISSING_CORRELATION_ID));
+        enrichRequestFunctions.add(new AddMissingCorrelationIdHeaderToHttpRequestFunction(generateMissingCorrelationId));
+
+        //activateUserAgentHeaderToHttpRequestFunction
+        String activateUserAgentHeaderToHttpRequestFunction = settings.getOrDefault(USER_AGENT_OVERRIDE, USER_AGENT_HTTP_CLIENT_DEFAULT_MODE);
+        if (USER_AGENT_HTTP_CLIENT_DEFAULT_MODE.equalsIgnoreCase(activateUserAgentHeaderToHttpRequestFunction)) {
+            LOGGER.trace("userAgentHeaderToHttpRequestFunction : 'http_client' configured. No need to activate UserAgentInterceptor");
+        }else if(USER_AGENT_PROJECT_MODE.equalsIgnoreCase(activateUserAgentHeaderToHttpRequestFunction)){
+            String projectUserAgent = "Mozilla/5.0 (compatible;kafka-connect-http/"+ VERSION_UTILS.getVersion() +"; "+this.getEngineId()+"; https://github.com/clescot/kafka-connect-http)";
+            enrichRequestFunctions.add(new AddUserAgentHeaderToHttpRequestFunction(Lists.newArrayList(projectUserAgent), random));
+        }else if(USER_AGENT_CUSTOM_MODE.equalsIgnoreCase(activateUserAgentHeaderToHttpRequestFunction)){
+            String userAgentValuesAsString = settings.getOrDefault(USER_AGENT_CUSTOM_VALUES, StringUtils.EMPTY).toString();
+            List<String> userAgentValues = Arrays.asList(userAgentValuesAsString.split("\\|"));
+            enrichRequestFunctions.add(new AddUserAgentHeaderToHttpRequestFunction(userAgentValues, random));
+        }else{
+            LOGGER.trace("user agent interceptor : '{}' configured. No need to activate UserAgentInterceptor",activateUserAgentHeaderToHttpRequestFunction);
+        }
+
+        return enrichRequestFunctions.stream().reduce(Function.identity(), Function::andThen);
     }
 
     @Override
@@ -78,10 +132,7 @@ public abstract class AbstractHttpClient<R,S> implements HttpClient<R,S> {
         return headersLimit;
     }
 
-    @Override
-    public String getPermitsPerExecution(){
-        return (String) config.getOrDefault(RATE_LIMITER_PERMITS_PER_EXECUTION, DEFAULT_RATE_LIMITER_ONE_PERMIT_PER_CALL);
-    }
+
     @Override
     public void setHeadersLimit(Integer headersLimit) {
         this.headersLimit = headersLimit;
@@ -96,21 +147,6 @@ public abstract class AbstractHttpClient<R,S> implements HttpClient<R,S> {
     public void setBodyLimit(Integer bodyLimit) {
         this.bodyLimit = bodyLimit;
     }
-
-
-
-
-
-    @Override
-    public void setRateLimiter(RateLimiter<HttpExchange> rateLimiter) {
-        this.rateLimiter = Optional.ofNullable(rateLimiter);
-    }
-
-    @Override
-    public Optional<RateLimiter<HttpExchange>> getRateLimiter() {
-        return this.rateLimiter;
-    }
-
 
     @Override
     public TrustManagerFactory getTrustManagerFactory() {
@@ -131,61 +167,18 @@ public abstract class AbstractHttpClient<R,S> implements HttpClient<R,S> {
                 '}';
     }
 
-    private String rateLimiterToString(){
-        StringBuilder result = new StringBuilder("{");
-
-        String rateLimiterMaxExecutions = (String) config.get(RATE_LIMITER_MAX_EXECUTIONS);
-        if(rateLimiterMaxExecutions!=null){
-            result.append("rateLimiterMaxExecutions:'").append(rateLimiterMaxExecutions).append("'");
-        }
-        String rateLimiterPeriodInMs = (String) config.get(RATE_LIMITER_PERIOD_IN_MS);
-        if(rateLimiterPeriodInMs!=null){
-            result.append(",rateLimiterPeriodInMs:'").append(rateLimiterPeriodInMs).append("'");
-        }
-        String rateLimiterScope = (String) config.get(RATE_LIMITER_SCOPE);
-        if(rateLimiterScope!=null){
-            result.append(",rateLimiterScope:'").append(rateLimiterScope).append("'");
-        }
-        result.append("}");
-        return result.toString();
+    @Override
+    public HttpClient<NR, NS> customizeForUser(String vuId){
+        return this;
     }
 
-    private RateLimiter<HttpExchange> buildRateLimiter(Map<String, Object> configMap) {
-        RateLimiter<HttpExchange> myRateLimiter = null;
-        if (configMap.containsKey(RATE_LIMITER_MAX_EXECUTIONS)) {
-            long maxExecutions = Long.parseLong((String) configMap.get(RATE_LIMITER_MAX_EXECUTIONS));
-            LOGGER.trace("configuration '{}' : maxExecutions :{}",configurationId,maxExecutions);
-            long periodInMs = Long.parseLong(Optional.ofNullable((String) configMap.get(RATE_LIMITER_PERIOD_IN_MS)).orElse(1000 + ""));
-            LOGGER.trace("configuration '{}' : periodInMs :{}",configurationId,periodInMs);
-            if (configMap.containsKey(RATE_LIMITER_SCOPE) && STATIC_SCOPE.equalsIgnoreCase((String) configMap.get(RATE_LIMITER_SCOPE))) {
-                LOGGER.trace("configuration '{}' : rateLimiter scope is 'static'",configurationId);
-                Optional<RateLimiter<HttpExchange>> sharedRateLimiter = Optional.ofNullable(sharedRateLimiters.get(configurationId));
-                if (sharedRateLimiter.isPresent()) {
-                    myRateLimiter = sharedRateLimiter.get();
-                    LOGGER.trace("configuration '{}' : rate limiter is already shared",configurationId);
-                } else {
-                    myRateLimiter = RateLimiter.<HttpExchange>smoothBuilder(maxExecutions, Duration.of(periodInMs, ChronoUnit.MILLIS)).build();
-                    registerRateLimiter(configurationId, myRateLimiter);
-                }
-            } else {
-                myRateLimiter = RateLimiter.<HttpExchange>smoothBuilder(maxExecutions, Duration.of(periodInMs, ChronoUnit.MILLIS)).build();
-            }
-            RateLimiterConfig<HttpExchange> rateLimiterConfig = myRateLimiter.getConfig();
-            LOGGER.trace("configuration '{}' rate limiter configured : 'maxRate:{},maxPermits{},period:{},maxWaitTime:{}'",configurationId,rateLimiterConfig.getMaxRate(),rateLimiterConfig.getMaxPermits(),rateLimiterConfig.getPeriod(),rateLimiterConfig.getMaxWaitTime());
-        }else{
-            if(LOGGER.isTraceEnabled()) {
-                LOGGER.trace("configuration '{}' : rate limiter is not configured", configurationId);
-                LOGGER.trace(Joiner.on(",\n").withKeyValueSeparator("=").join(configMap.entrySet()));
-            }
-        }
-        return myRateLimiter;
+    @Override
+    public void setAddSuccessStatusToHttpExchangeFunction(Pattern pattern) {
+        this.addSuccessStatusToHttpExchangeFunction = new AddSuccessStatusToHttpExchangeFunction(pattern);
     }
 
-
-    public static void registerRateLimiter(String configurationId, RateLimiter<HttpExchange> rateLimiter) {
-        Preconditions.checkNotNull(configurationId, "we cannot register a rateLimiter for a 'null' configurationId");
-        Preconditions.checkNotNull(rateLimiter, "we cannot register a 'null' rate limiter for the configurationId " + configurationId);
-        LOGGER.info("registration of a shared rateLimiter for the configurationId '{}'", configurationId);
-        sharedRateLimiters.put(configurationId, rateLimiter);
+    @Override
+    public AddSuccessStatusToHttpExchangeFunction getAddSuccessStatusToHttpExchangeFunction() {
+        return addSuccessStatusToHttpExchangeFunction;
     }
 }

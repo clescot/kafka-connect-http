@@ -2,7 +2,8 @@ package io.github.clescot.kafka.connect;
 
 
 /**
- * Interface for a configuration that matches a request and provides a client.
+ * Interface for a configuration.
+ * Configuration matches a request, configure and provides a client.
  *
  * @param <C> the type of the client
  * @param <R> the type of the request
@@ -26,5 +27,14 @@ public interface Configuration<C extends Client, R> {
      *
      * @return the configuration ID
      */
+    String getId();
+
+    /**
+     * Gets the client associated with this configuration.
+     *
+     * @return the client
+     */
     C getClient();
+
+    void setClient(C client);
 }

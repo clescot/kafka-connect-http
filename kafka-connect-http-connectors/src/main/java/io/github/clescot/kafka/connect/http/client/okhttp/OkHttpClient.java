@@ -5,11 +5,14 @@ import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import io.github.clescot.kafka.connect.http.client.AbstractHttpClient;
+import io.github.clescot.kafka.connect.http.client.HttpClient;
 import io.github.clescot.kafka.connect.http.client.HttpException;
-import io.github.clescot.kafka.connect.http.core.*;
+import io.github.clescot.kafka.connect.http.core.BodyType;
+import io.github.clescot.kafka.connect.http.core.HttpPart;
+import io.github.clescot.kafka.connect.http.core.HttpRequest;
+import io.github.clescot.kafka.connect.http.core.HttpResponse;
 import kotlin.Pair;
 import okhttp3.*;
-import okhttp3.MediaType;
 import okhttp3.internal.http.HttpMethod;
 import okio.Buffer;
 import org.apache.commons.lang3.exception.ExceptionUtils;
@@ -20,6 +23,9 @@ import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.CookieManager;
+import java.net.CookiePolicy;
+import java.net.CookieStore;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
@@ -33,9 +39,11 @@ public class OkHttpClient extends AbstractHttpClient<Request, Response> {
     private static final Logger LOGGER = LoggerFactory.getLogger(OkHttpClient.class);
 
 
-    public OkHttpClient(Map<String, Object> config,
-                        okhttp3.OkHttpClient client) {
-        super(config);
+    public OkHttpClient(Map<String, String> config,
+                        okhttp3.OkHttpClient client,
+                        Random random) {
+        super(config, random);
+        Preconditions.checkNotNull(client, "okhttp3.OkHttpClient must not be null");
         this.client = client;
     }
 
@@ -332,11 +340,48 @@ public class OkHttpClient extends AbstractHttpClient<Request, Response> {
         return "okhttp";
     }
 
+    public CookieJar getCookieJar() {
+        return client.cookieJar();
+    }
+
     /**
      * @return {@link okhttp3.OkHttpClient}
      */
     @Override
     public okhttp3.OkHttpClient getInternalClient() {
         return client;
+    }
+
+    /**
+     * customize the HttpClient for the user.
+     * @param vuId
+     * @return
+     */
+    @Override
+    public HttpClient<Request, Response> customizeForUser(String vuId) {
+        return new OkHttpClient(getConfig(), customizeOkHttpClientForUser(vuId,client),random);
+    }
+
+
+    /**
+     * customize the okhttp client for the user.
+     * @param vuId
+     * @param client
+     * @return
+     */
+    private okhttp3.OkHttpClient customizeOkHttpClientForUser(String vuId,okhttp3.OkHttpClient client) {
+        okhttp3.OkHttpClient.Builder builder = client.newBuilder();
+        CookieStore cookieStore = null;//an internal InMemoryCookieStore() will be used if null
+        CookiePolicy cookiePolicy = CookiePolicy.ACCEPT_ALL;
+        CookieManager cookieManager = new CookieManager(cookieStore,cookiePolicy);
+        CookieJar cookieJar = new OkHttpCookieJar(cookieManager);
+        builder.cookieJar(cookieJar);
+        //we could customize the client for the user here
+        return builder.build();
+    }
+
+    @Override
+    protected Object clone() throws CloneNotSupportedException {
+        return super.clone();
     }
 }

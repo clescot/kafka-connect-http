@@ -52,7 +52,7 @@ class ProxySelectorFactoryTest {
         @Test
         void test_proxyselector_algorithm_set_to_uriregex_with_hostname_but_no_regex() {
             ProxySelectorFactory proxySelectorFactory = new ProxySelectorFactory();
-            HashMap<String, Object> config = Maps.newHashMap();
+            HashMap<String, String> config = Maps.newHashMap();
             config.put(PROXY_SELECTOR_ALGORITHM,"uriregex");
             config.put(PROXYSELECTOR_PREFIX + HTTP_CLIENT_PREFIX +"0.hostname","http://dummy\\.com:9999");
             Assertions.assertThrows(NullPointerException.class,()->proxySelectorFactory.build(config, new Random()));
@@ -60,10 +60,10 @@ class ProxySelectorFactoryTest {
         @Test
         void test_proxyselector_algorithm_set_to_uriregex_with_hostname_and_regex() {
             ProxySelectorFactory proxySelectorFactory = new ProxySelectorFactory();
-            HashMap<String, Object> config = Maps.newHashMap();
+            HashMap<String, String> config = Maps.newHashMap();
             config.put(PROXY_SELECTOR_ALGORITHM,"uriregex");
             config.put(PROXYSELECTOR_PREFIX + HTTP_CLIENT_PREFIX +"0.hostname",getIP());
-            config.put(PROXYSELECTOR_PREFIX + HTTP_CLIENT_PREFIX +"0.port",wmHttp.getPort());
+            config.put(PROXYSELECTOR_PREFIX + HTTP_CLIENT_PREFIX +"0.port",""+wmHttp.getPort());
             config.put(PROXYSELECTOR_PREFIX + HTTP_CLIENT_PREFIX +"0.type", "HTTP");
             config.put(PROXYSELECTOR_PREFIX + HTTP_CLIENT_PREFIX +"0.uri.regex","http://dummy\\.com.*");
             ProxySelector proxySelector = proxySelectorFactory.build(config, new Random());
@@ -72,10 +72,10 @@ class ProxySelectorFactoryTest {
         @Test
         void test_proxyselector_algorithm_set_to_uriregex_with_hostname_and_regex_with_non_proxy_hosts() throws URISyntaxException {
             ProxySelectorFactory proxySelectorFactory = new ProxySelectorFactory();
-            HashMap<String, Object> config = Maps.newHashMap();
+            HashMap<String, String> config = Maps.newHashMap();
             config.put(PROXY_SELECTOR_ALGORITHM,"uriregex");
             config.put(PROXYSELECTOR_PREFIX + HTTP_CLIENT_PREFIX +"0.hostname",getIP());
-            config.put(PROXYSELECTOR_PREFIX + HTTP_CLIENT_PREFIX +"0.port",wmHttp.getPort());
+            config.put(PROXYSELECTOR_PREFIX + HTTP_CLIENT_PREFIX +"0.port",""+wmHttp.getPort());
             config.put(PROXYSELECTOR_PREFIX + HTTP_CLIENT_PREFIX +"0.type", "HTTP");
             config.put(PROXYSELECTOR_PREFIX + HTTP_CLIENT_PREFIX +"0.uri.regex","http://dummy\\.com.*");
             config.put(PROXY_SELECTOR_HTTP_CLIENT_NON_PROXY_HOSTS_URI_REGEX,"http(s?):\\/\\/test\\.net.*");
@@ -99,11 +99,11 @@ class ProxySelectorFactoryTest {
         @Test
         void test_proxyselector_algorithm_set_to_weightedrandom() {
             ProxySelectorFactory proxySelectorFactory = new ProxySelectorFactory();
-            HashMap<String, Object> config = Maps.newHashMap();
+            HashMap<String, String> config = Maps.newHashMap();
             config.put(PROXY_SELECTOR_ALGORITHM,"weightedrandom");
             config.put(PROXYSELECTOR_PREFIX + HTTP_CLIENT_PREFIX +"0.hostname",getIP());
-            config.put(PROXYSELECTOR_PREFIX + HTTP_CLIENT_PREFIX +"0.port",wmHttp.getPort());
-            config.put(PROXYSELECTOR_PREFIX + HTTP_CLIENT_PREFIX +"0.weight",20);
+            config.put(PROXYSELECTOR_PREFIX + HTTP_CLIENT_PREFIX +"0.port",""+wmHttp.getPort());
+            config.put(PROXYSELECTOR_PREFIX + HTTP_CLIENT_PREFIX +"0.weight","20");
             ProxySelector proxySelector = proxySelectorFactory.build(config, new Random());
             assertThat(WeightedRandomProxySelector.class).isAssignableFrom(proxySelector.getClass());
         }
@@ -111,10 +111,10 @@ class ProxySelectorFactoryTest {
         @Test
         void test_proxyselector_algorithm_set_to_hosthash() {
             ProxySelectorFactory proxySelectorFactory = new ProxySelectorFactory();
-            HashMap<String, Object> config = Maps.newHashMap();
+            HashMap<String, String> config = Maps.newHashMap();
             config.put(PROXY_SELECTOR_ALGORITHM,"hosthash");
             config.put(PROXYSELECTOR_PREFIX + HTTP_CLIENT_PREFIX +"0.hostname",getIP());
-            config.put(PROXYSELECTOR_PREFIX + HTTP_CLIENT_PREFIX +"0.port",wmHttp.getPort());
+            config.put(PROXYSELECTOR_PREFIX + HTTP_CLIENT_PREFIX +"0.port",""+wmHttp.getPort());
             ProxySelector proxySelector = proxySelectorFactory.build(config, new Random());
             assertThat(HostHashProxySelector.class).isAssignableFrom(proxySelector.getClass());
         }
@@ -122,20 +122,20 @@ class ProxySelectorFactoryTest {
         @Test
         void test_proxyselector_algorithm_set_to_random() {
             ProxySelectorFactory proxySelectorFactory = new ProxySelectorFactory();
-            HashMap<String, Object> config = Maps.newHashMap();
+            HashMap<String, String> config = Maps.newHashMap();
             config.put(PROXY_SELECTOR_ALGORITHM,"random");
             config.put(PROXYSELECTOR_PREFIX + HTTP_CLIENT_PREFIX +"0.hostname",getIP());
-            config.put(PROXYSELECTOR_PREFIX + HTTP_CLIENT_PREFIX +"0.port",wmHttp.getPort());
+            config.put(PROXYSELECTOR_PREFIX + HTTP_CLIENT_PREFIX +"0.port",""+wmHttp.getPort());
             ProxySelector proxySelector = proxySelectorFactory.build(config, new Random());
             assertThat(RandomProxySelector.class).isAssignableFrom(proxySelector.getClass());
         }
         @Test
         void test_proxyselector_algorithm_set_to_round_robin() {
             ProxySelectorFactory proxySelectorFactory = new ProxySelectorFactory();
-            HashMap<String, Object> config = Maps.newHashMap();
+            HashMap<String, String> config = Maps.newHashMap();
             config.put(PROXY_SELECTOR_ALGORITHM,"roundrobin");
             config.put(PROXYSELECTOR_PREFIX + HTTP_CLIENT_PREFIX +"0.hostname",getIP());
-            config.put(PROXYSELECTOR_PREFIX + HTTP_CLIENT_PREFIX +"0.port",wmHttp.getPort());
+            config.put(PROXYSELECTOR_PREFIX + HTTP_CLIENT_PREFIX +"0.port",""+wmHttp.getPort());
             ProxySelector proxySelector = proxySelectorFactory.build(config, new Random());
             assertThat(RoundRobinProxySelector.class).isAssignableFrom(proxySelector.getClass());
         }

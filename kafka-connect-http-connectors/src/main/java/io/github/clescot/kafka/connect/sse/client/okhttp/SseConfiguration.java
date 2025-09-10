@@ -4,9 +4,8 @@ import com.google.common.base.Preconditions;
 import com.launchdarkly.eventsource.*;
 import com.launchdarkly.eventsource.background.BackgroundEventSource;
 import io.github.clescot.kafka.connect.Configuration;
-import io.github.clescot.kafka.connect.http.client.HttpClientConfiguration;
+import io.github.clescot.kafka.connect.http.client.HttpClientFactory;
 import io.github.clescot.kafka.connect.http.client.okhttp.OkHttpClient;
-import io.github.clescot.kafka.connect.http.client.okhttp.OkHttpClientFactory;
 import io.github.clescot.kafka.connect.http.core.HttpRequest;
 import io.github.clescot.kafka.connect.sse.core.SseEvent;
 import io.micrometer.core.instrument.composite.CompositeMeterRegistry;
@@ -16,15 +15,23 @@ import okhttp3.Response;
 import java.net.URI;
 import java.util.Map;
 import java.util.Queue;
+import java.util.Random;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
 
+import static io.github.clescot.kafka.connect.http.client.HttpClientFactory.getRandom;
 
+
+/**
+ * Configuration for SSE client using OkHttp.
+ */
 public class SseConfiguration implements Configuration<OkHttpClient, HttpRequest> {
     private final String configurationId;
-    private final HttpClientConfiguration<OkHttpClient, Request, Response> httpClientConfiguration;
+    private OkHttpClient httpClient;
     private final Map<String, String> settings;
     private final URI uri;
     private final String topic;
+    private final String id;
     private boolean connected = false;
     private boolean started = false;
     private SseBackgroundEventHandler backgroundEventHandler;
@@ -35,32 +42,33 @@ public class SseConfiguration implements Configuration<OkHttpClient, HttpRequest
     private ErrorStrategy errorStrategy;
 
     public SseConfiguration(String configurationId,
-                            HttpClientConfiguration<OkHttpClient, Request, Response> httpClientConfiguration,
+                            OkHttpClient httpClient,
                             Map<String, String> settings
     ) {
         Preconditions.checkNotNull(configurationId, "configurationId must not be null.");
         Preconditions.checkArgument(!configurationId.isEmpty(), "configurationId must not be empty.");
-        Preconditions.checkNotNull(httpClientConfiguration, "httpClientConfiguration must not be null.");
+        Preconditions.checkNotNull(httpClient, "httpClient must not be null.");
         this.configurationId = configurationId;
-        this.httpClientConfiguration = httpClientConfiguration;
+        this.httpClient = httpClient;
         this.settings = settings;
         Preconditions.checkNotNull(settings, "settings must not be null or empty.");
         Preconditions.checkArgument(!settings.isEmpty(), "settings must not be null or empty.");
         String url = settings.get(SseConfigDefinition.URL);
+        this.id = configurationId;
         Preconditions.checkNotNull(url, "'url' must not be null or empty.");
         this.uri = URI.create(url);
         this.topic = settings.get(SseConfigDefinition.TOPIC);
         Preconditions.checkNotNull(topic, "'topic' must not be null or empty.");
     }
 
-    public static SseConfiguration buildSseConfiguration(String configurationId, Map<String, String> mySettings) {
-        HttpClientConfiguration<OkHttpClient, Request, Response> httpClientConfiguration = new HttpClientConfiguration<>(
-                configurationId,
-                new OkHttpClientFactory(),
-                mySettings,
-                null,
-                new CompositeMeterRegistry());
-        return new SseConfiguration(configurationId, httpClientConfiguration, mySettings);
+    public static SseConfiguration buildSseConfiguration(String configurationId,
+                                                         Map<String, String> mySettings,
+                                                         ExecutorService executorService,
+                                                         CompositeMeterRegistry meterRegistry,
+                                                         HttpClientFactory<OkHttpClient, Request, Response> httpClientFactory) {
+        Random random = getRandom(mySettings);
+        OkHttpClient httpClient = httpClientFactory.buildHttpClient(mySettings, executorService, meterRegistry, random);
+        return new SseConfiguration(configurationId, httpClient, mySettings);
     }
 
     public BackgroundEventSource connect(Queue<SseEvent> queue) {
@@ -105,17 +113,17 @@ public class SseConfiguration implements Configuration<OkHttpClient, HttpRequest
         }
         this.backgroundEventHandler = new SseBackgroundEventHandler(queue, uri);
         this.connectStrategy = ConnectStrategy.http(uri)
-                .httpClient(this.httpClientConfiguration.getClient().getInternalClient())
+                .httpClient(this.httpClient.getInternalClient())
                 .requestTransformer(input -> {
-                    HttpRequest httpRequest = this.httpClientConfiguration.getClient().buildRequest(input);
-                    return this.httpClientConfiguration.getClient().buildNativeRequest(this.httpClientConfiguration.getEnrichRequestFunction().apply(httpRequest));
+                    HttpRequest httpRequest = this.httpClient.buildRequest(input);
+                    return this.httpClient.buildNativeRequest(this.httpClient.getEnrichRequestFunction().apply(httpRequest));
                 });
         this.backgroundEventSource = new BackgroundEventSource.Builder(backgroundEventHandler,
                 new EventSource.Builder(connectStrategy
                 )
-                .streamEventData(false)
-                .retryDelayStrategy(retryDelayStrategy)
-                .errorStrategy(errorStrategy)
+                        .streamEventData(false)
+                        .retryDelayStrategy(retryDelayStrategy)
+                        .errorStrategy(errorStrategy)
         ).build();
         connected = true;
         return backgroundEventSource;
@@ -155,8 +163,18 @@ public class SseConfiguration implements Configuration<OkHttpClient, HttpRequest
     }
 
     @Override
+    public String getId() {
+        return id;
+    }
+
+    @Override
     public OkHttpClient getClient() {
-        return httpClientConfiguration.getClient();
+        return httpClient;
+    }
+
+    @Override
+    public void setClient(OkHttpClient client) {
+        this.httpClient = client;
     }
 
     public Queue<SseEvent> getQueue() {

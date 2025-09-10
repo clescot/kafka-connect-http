@@ -10,6 +10,8 @@ import com.google.common.base.Stopwatch;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.io.Resources;
+import io.github.clescot.kafka.connect.AbstractClient;
+import io.github.clescot.kafka.connect.Client;
 import io.github.clescot.kafka.connect.http.client.DummyX509Certificate;
 import io.github.clescot.kafka.connect.http.client.HttpClientFactory;
 import io.github.clescot.kafka.connect.http.client.proxy.URIRegexProxySelector;
@@ -21,6 +23,8 @@ import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.composite.CompositeMeterRegistry;
 import io.micrometer.jmx.JmxMeterRegistry;
 import okhttp3.*;
+import okhttp3.Request;
+import okhttp3.Response;
 import okhttp3.internal.http.RealResponseBody;
 import okio.Buffer;
 import org.apache.commons.lang3.tuple.ImmutablePair;
@@ -55,10 +59,11 @@ import java.util.stream.Collectors;
 import static com.github.tomakehurst.wiremock.client.WireMock.containing;
 import static com.github.tomakehurst.wiremock.client.WireMock.equalTo;
 import static com.github.tomakehurst.wiremock.stubbing.Scenario.STARTED;
+import static io.github.clescot.kafka.connect.AbstractClient.SHARED_RATE_LIMITERS;
 import static io.github.clescot.kafka.connect.http.client.HttpClient.THROWABLE_CLASS;
 import static io.github.clescot.kafka.connect.http.client.HttpClient.THROWABLE_MESSAGE;
 import static io.github.clescot.kafka.connect.http.client.HttpClientConfigDefinition.*;
-import static io.github.clescot.kafka.connect.http.client.HttpClientConfiguration.CONFIGURATION_ID;
+import static io.github.clescot.kafka.connect.http.client.HttpClientFactory.CONFIGURATION_ID;
 import static io.github.clescot.kafka.connect.http.sink.HttpConfigDefinition.*;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
@@ -108,7 +113,7 @@ class OkHttpClientTest {
         void test_build_POST_request_with_body_as_string() throws IOException {
 
             //given
-            HashMap<String, Object> config = Maps.newHashMap();
+            HashMap<String, String> config = Maps.newHashMap();
             config.put(CONFIGURATION_ID, "default");
             OkHttpClient client = factory.build(config, null, new Random(), null, null, getCompositeMeterRegistry());
             HttpRequest httpRequest = new HttpRequest("http://dummy.com/", HttpRequest.Method.POST);
@@ -131,7 +136,7 @@ class OkHttpClientTest {
         void test_build_PUT_request_with_body_as_string() throws IOException {
 
             //given
-            HashMap<String, Object> config = Maps.newHashMap();
+            HashMap<String, String> config = Maps.newHashMap();
             config.put(CONFIGURATION_ID, "default");
             OkHttpClient client = factory.build(config, null, new Random(), null, null, getCompositeMeterRegistry());
             HttpRequest httpRequest = new HttpRequest("http://dummy.com/", HttpRequest.Method.PUT);
@@ -155,7 +160,7 @@ class OkHttpClientTest {
         void test_build_PUT_request_with_body_as_byte_array() throws IOException {
 
             //given
-            HashMap<String, Object> config = Maps.newHashMap();
+            HashMap<String, String> config = Maps.newHashMap();
             config.put(CONFIGURATION_ID, "default");
             OkHttpClient client = factory.build(config, null, new Random(), null, null, getCompositeMeterRegistry());
             HttpRequest httpRequest = new HttpRequest("http://dummy.com/", HttpRequest.Method.PUT);
@@ -181,7 +186,7 @@ class OkHttpClientTest {
         void test_build_POST_request_with_body_as_form() throws IOException {
 
             //given
-            HashMap<String, Object> config = Maps.newHashMap();
+            HashMap<String, String> config = Maps.newHashMap();
             config.put(CONFIGURATION_ID, "default");
             OkHttpClient client = factory.build(config, null, new Random(), null, null, getCompositeMeterRegistry());
             HttpRequest httpRequest = new HttpRequest("http://dummy.com/", HttpRequest.Method.POST);
@@ -211,7 +216,7 @@ class OkHttpClientTest {
         void test_build_POST_request_with_body_as_multipart() throws IOException {
 
             //given
-            HashMap<String, Object> config = Maps.newHashMap();
+            HashMap<String, String> config = Maps.newHashMap();
             config.put(CONFIGURATION_ID, "default");
             OkHttpClient client = factory.build(config, null, new Random(), null, null, getCompositeMeterRegistry());
             Map<String, HttpPart> parts = Maps.newHashMap();
@@ -253,7 +258,7 @@ class OkHttpClientTest {
         void test_build_POST_request_with_body_as_multipart_with_file_upload() throws IOException, URISyntaxException {
 
             //given
-            HashMap<String, Object> config = Maps.newHashMap();
+            HashMap<String, String> config = Maps.newHashMap();
             config.put(CONFIGURATION_ID, "default");
             OkHttpClient client = factory.build(config, null, new Random(), null, null, getCompositeMeterRegistry());
             Map<String, HttpPart> parts = Maps.newHashMap();
@@ -347,7 +352,7 @@ class OkHttpClientTest {
         void test_build_GET_request_with_body_as_string() {
 
             //given
-            HashMap<String, Object> config = Maps.newHashMap();
+            HashMap<String, String> config = Maps.newHashMap();
             config.put(CONFIGURATION_ID, "default");
             OkHttpClient client = factory.build(config, null, new Random(), null, null, getCompositeMeterRegistry());
             HttpRequest httpRequest = new HttpRequest("http://dummy.com/", HttpRequest.Method.GET);
@@ -376,7 +381,7 @@ class OkHttpClientTest {
         void test_build_string_response() {
 
             //given
-            HashMap<String, Object> config = Maps.newHashMap();
+            HashMap<String, String> config = Maps.newHashMap();
             config.put(CONFIGURATION_ID, "default");
             OkHttpClient client = factory.build(config, null, new Random(), null, null, getCompositeMeterRegistry());
 
@@ -419,7 +424,7 @@ class OkHttpClientTest {
         void test_build_byte_array_response() {
 
             //given
-            HashMap<String, Object> config = Maps.newHashMap();
+            HashMap<String, String> config = Maps.newHashMap();
             config.put(CONFIGURATION_ID, "default");
             OkHttpClient client = factory.build(config, null, new Random(), null, null, getCompositeMeterRegistry());
 
@@ -463,7 +468,7 @@ class OkHttpClientTest {
         void test_build_form_response() {
 
             //given
-            HashMap<String, Object> config = Maps.newHashMap();
+            HashMap<String, String> config = Maps.newHashMap();
             config.put(CONFIGURATION_ID, "default");
             OkHttpClient client = factory.build(config, null, new Random(), null, null, getCompositeMeterRegistry());
 
@@ -507,7 +512,7 @@ class OkHttpClientTest {
         void test_build_response_with_status_message_limit() {
 
             //given
-            HashMap<String, Object> config = Maps.newHashMap();
+            HashMap<String, String> config = Maps.newHashMap();
             config.put(CONFIGURATION_ID, "default");
             config.put(HTTP_RESPONSE_MESSAGE_STATUS_LIMIT, "4");
             OkHttpClient client = factory.build(config, null, new Random(), null, null, getCompositeMeterRegistry());
@@ -548,9 +553,9 @@ class OkHttpClientTest {
         void test_build_response_with_headers_limit() {
 
             //given
-            HashMap<String, Object> config = Maps.newHashMap();
+            HashMap<String, String> config = Maps.newHashMap();
             config.put(CONFIGURATION_ID, "default");
-            config.put(CONFIG_DEFAULT_HTTP_RESPONSE_HEADERS_LIMIT_DOC, 20);
+            config.put(CONFIG_DEFAULT_HTTP_RESPONSE_HEADERS_LIMIT_DOC, "20");
             OkHttpClient client = factory.build(config, null, new Random(), null, null, getCompositeMeterRegistry());
 
             HttpRequest httpRequest = new HttpRequest("http://dummy.com/", HttpRequest.Method.POST);
@@ -591,7 +596,7 @@ class OkHttpClientTest {
         void test_build_response_with_body_limit() {
 
             //given
-            HashMap<String, Object> config = Maps.newHashMap();
+            HashMap<String, String> config = Maps.newHashMap();
             config.put(CONFIGURATION_ID, "default");
             config.put(HTTP_RESPONSE_BODY_LIMIT, "10");
             OkHttpClient client = factory.build(config, null, new Random(), null, null, getCompositeMeterRegistry());
@@ -632,7 +637,7 @@ class OkHttpClientTest {
         void test_build_response_with_multipart_inline() throws IOException {
 
             //given
-            HashMap<String, Object> config = Maps.newHashMap();
+            HashMap<String, String> config = Maps.newHashMap();
             config.put(CONFIGURATION_ID, "default");
             config.put(HTTP_RESPONSE_BODY_LIMIT, "10");
             OkHttpClient client = factory.build(config, null, new Random(), null, null, getCompositeMeterRegistry());
@@ -690,7 +695,7 @@ class OkHttpClientTest {
         void test_build_response_with_multipart_inline_and_attachment() throws IOException {
 
             //given
-            HashMap<String, Object> config = Maps.newHashMap();
+            HashMap<String, String> config = Maps.newHashMap();
             config.put(CONFIGURATION_ID, "default");
             config.put(HTTP_RESPONSE_BODY_LIMIT, "10");
             OkHttpClient client = factory.build(config, null, new Random(), null, null, getCompositeMeterRegistry());
@@ -752,7 +757,7 @@ class OkHttpClientTest {
     class Cache {
         @Test
         void test_activated_cache_with_file_type() {
-            HashMap<String, Object> config = Maps.newHashMap();
+            HashMap<String, String> config = Maps.newHashMap();
             config.put(CONFIGURATION_ID, "default");
             config.put(OKHTTP_CACHE_ACTIVATE, "true");
             org.junit.jupiter.api.Assertions.assertDoesNotThrow(() -> factory.build(config, null, new Random(), null, null, getCompositeMeterRegistry()));
@@ -760,7 +765,7 @@ class OkHttpClientTest {
 
         @Test
         void test_activated_cache_with_file_type_and_max_entries() {
-            HashMap<String, Object> config = Maps.newHashMap();
+            HashMap<String, String> config = Maps.newHashMap();
             config.put(CONFIGURATION_ID, "default");
             config.put(OKHTTP_CACHE_ACTIVATE, "true");
             config.put(OKHTTP_CACHE_MAX_SIZE, "50000");
@@ -770,7 +775,7 @@ class OkHttpClientTest {
 
         @Test
         void test_activated_cache_with_file_type_and_max_entries_and_location() {
-            HashMap<String, Object> config = Maps.newHashMap();
+            HashMap<String, String> config = Maps.newHashMap();
             config.put(CONFIGURATION_ID, "default");
             config.put(OKHTTP_CACHE_ACTIVATE, "true");
             config.put(OKHTTP_CACHE_MAX_SIZE, "50000");
@@ -780,7 +785,7 @@ class OkHttpClientTest {
 
         @Test
         void test_activated_cache_with_inmemory_type() {
-            HashMap<String, Object> config = Maps.newHashMap();
+            HashMap<String, String> config = Maps.newHashMap();
             config.put(CONFIGURATION_ID, "default");
             config.put(OKHTTP_CACHE_ACTIVATE, "true");
             config.put(OKHTTP_CACHE_TYPE, "inmemory");
@@ -789,7 +794,7 @@ class OkHttpClientTest {
 
         @Test
         void test_inactivated_cache() {
-            HashMap<String, Object> config = Maps.newHashMap();
+            HashMap<String, String> config = Maps.newHashMap();
             config.put(CONFIGURATION_ID, "default");
             config.put(OKHTTP_CACHE_ACTIVATE, "false");
             org.junit.jupiter.api.Assertions.assertDoesNotThrow(() -> factory.build(config, null, new Random(), null, null, getCompositeMeterRegistry()));
@@ -797,7 +802,7 @@ class OkHttpClientTest {
 
         @Test
         void test_no_cache() {
-            HashMap<String, Object> config = Maps.newHashMap();
+            HashMap<String, String> config = Maps.newHashMap();
             config.put(CONFIGURATION_ID, "default");
             org.junit.jupiter.api.Assertions.assertDoesNotThrow(() -> factory.build(config, null, new Random(), null, null, getCompositeMeterRegistry()));
         }
@@ -827,7 +832,7 @@ class OkHttpClientTest {
 
 
             //build http client
-            HashMap<String, Object> config = Maps.newHashMap();
+            HashMap<String, String> config = Maps.newHashMap();
             config.put(CONFIGURATION_ID, "default");
             config.put("rate.limiter.max.executions", "1");
             OkHttpClient client = factory.build(config, null, new Random(), null, null, getCompositeMeterRegistry());
@@ -872,7 +877,7 @@ class OkHttpClientTest {
             long length = httpRequest.getLength();
 
             //build http client
-            HashMap<String, Object> config = Maps.newHashMap();
+            HashMap<String, String> config = Maps.newHashMap();
             config.put(CONFIGURATION_ID, "default");
             config.put("rate.limiter.max.executions", "" + length);
             config.put("rate.limiter.permits.per.execution", RATE_LIMITER_REQUEST_LENGTH_PER_CALL);
@@ -919,7 +924,7 @@ class OkHttpClientTest {
             long length = httpRequest.getLength();
 
             //build http client
-            HashMap<String, Object> config = Maps.newHashMap();
+            HashMap<String, String> config = Maps.newHashMap();
             config.put(CONFIGURATION_ID, "default");
             config.put("rate.limiter.max.executions", "" + length * 2);
             config.put("rate.limiter.permits.per.execution", RATE_LIMITER_REQUEST_LENGTH_PER_CALL);
@@ -965,7 +970,7 @@ class OkHttpClientTest {
             HttpRequest httpRequest = getHttpRequest(wmRuntimeInfo);
 
             //build http client
-            HashMap<String, Object> config = Maps.newHashMap();
+            HashMap<String, String> config = Maps.newHashMap();
             config.put(CONFIGURATION_ID, "default");
             config.put("rate.limiter.max.executions", "1");
             config.put("rate.limiter.permits.per.execution", DEFAULT_RATE_LIMITER_ONE_PERMIT_PER_CALL);
@@ -1010,7 +1015,7 @@ class OkHttpClientTest {
 
 
             //build http client
-            HashMap<String, Object> config = Maps.newHashMap();
+            HashMap<String, String> config = Maps.newHashMap();
             config.put(CONFIGURATION_ID, "default");
             config.put("dummy.config", "1");
 
@@ -1036,7 +1041,7 @@ class OkHttpClientTest {
         @DisplayName("test with shared rate limiter")
         void test_with_shared_rate_limiter() throws ExecutionException, InterruptedException {
 
-
+            SHARED_RATE_LIMITERS.clear();
             //given
             //scenario
             String scenario = "activating logging interceptor";
@@ -1054,14 +1059,14 @@ class OkHttpClientTest {
 
 
             //build http client
-            HashMap<String, Object> config = Maps.newHashMap();
+            HashMap<String, String> config = Maps.newHashMap();
             config.put(CONFIGURATION_ID, "default");
             config.put("rate.limiter.max.executions", "1");
             config.put("rate.limiter.scope", "static");
 
             OkHttpClient client1 = factory.build(config, null, new Random(), null, null, getCompositeMeterRegistry());
             OkHttpClient client2 = factory.build(config, null, new Random(), null, null, getCompositeMeterRegistry());
-
+            assertThat(client1.getRateLimiter()).containsSame(client2.getRateLimiter().get());
             HttpRequest httpRequest = getHttpRequest(wmRuntimeInfo);
             Stopwatch stopwatch = Stopwatch.createStarted();
             List<HttpExchange> exchanges = Lists.newArrayList();
@@ -1104,7 +1109,7 @@ class OkHttpClientTest {
 
 
             //build http client
-            HashMap<String, Object> config = Maps.newHashMap();
+            HashMap<String, String> config = Maps.newHashMap();
             config.put(CONFIGURATION_ID, "default");
             config.put("rate.limiter.max.executions", "1");
 
@@ -1160,7 +1165,7 @@ class OkHttpClientTest {
             WireMockRuntimeInfo wmRuntimeInfo = wmHttp.getRuntimeInfo();
             WireMock wireMock = wmRuntimeInfo.getWireMock();
 
-            HashMap<String, Object> config = Maps.newHashMap();
+            HashMap<String, String> config = Maps.newHashMap();
             config.put(CONFIGURATION_ID, "default");
             OkHttpClient client = factory.build(config, null, new Random(), null, null, getCompositeMeterRegistry());
 
@@ -1201,7 +1206,7 @@ class OkHttpClientTest {
             WireMockRuntimeInfo wmRuntimeInfo = wmHttp.getRuntimeInfo();
             WireMock wireMock = wmRuntimeInfo.getWireMock();
 
-            HashMap<String, Object> config = Maps.newHashMap();
+            HashMap<String, String> config = Maps.newHashMap();
             config.put(CONFIGURATION_ID, "default");
             config.put(CONFIG_DEFAULT_OKHTTP_INTERCEPTOR_LOGGING_ACTIVATE, "true");
             OkHttpClient client = factory.build(config, null, new Random(), null, null, getCompositeMeterRegistry());
@@ -1252,9 +1257,9 @@ class OkHttpClientTest {
             WireMockRuntimeInfo wmRuntimeInfo = wmHttp.getRuntimeInfo();
             WireMock wireMock = wmRuntimeInfo.getWireMock();
 
-            HashMap<String, Object> config = Maps.newHashMap();
+            HashMap<String, String> config = Maps.newHashMap();
             config.put(CONFIGURATION_ID, "default");
-            config.put("httpclient.authentication.basic.activate", true);
+            config.put("httpclient.authentication.basic.activate", Boolean.TRUE.toString());
             config.put("httpclient.authentication.basic.username", username);
             config.put("httpclient.authentication.basic.password", password);
 
@@ -1329,9 +1334,9 @@ class OkHttpClientTest {
             WireMockRuntimeInfo wmRuntimeInfo = wmHttp.getRuntimeInfo();
             WireMock wireMock = wmRuntimeInfo.getWireMock();
 
-            HashMap<String, Object> config = Maps.newHashMap();
+            HashMap<String, String> config = Maps.newHashMap();
             config.put(CONFIGURATION_ID, "default");
-            config.put("httpclient.authentication.digest.activate", true);
+            config.put("httpclient.authentication.digest.activate", Boolean.TRUE.toString());
             config.put("httpclient.authentication.digest.username", username);
             config.put("httpclient.authentication.digest.password", password);
             Random random = getFixedRandom();
@@ -1462,9 +1467,9 @@ class OkHttpClientTest {
             String httpBaseUrl = wmRuntimeInfo.getHttpBaseUrl();
             String wellKnownUrl = httpBaseUrl + "/.well-known/openid-configuration";
 
-            HashMap<String, Object> config = Maps.newHashMap();
+            HashMap<String, String> config = Maps.newHashMap();
             config.put(CONFIGURATION_ID, "default");
-            config.put(HTTP_CLIENT_AUTHENTICATION_OAUTH2_CLIENT_CREDENTIALS_FLOW_ACTIVATE, true);
+            config.put(HTTP_CLIENT_AUTHENTICATION_OAUTH2_CLIENT_CREDENTIALS_FLOW_ACTIVATE, Boolean.TRUE.toString());
             config.put(HTTP_CLIENT_AUTHENTICATION_OAUTH2_CLIENT_CREDENTIALS_FLOW_WELL_KNOWN_URL, wellKnownUrl);
             config.put(HTTP_CLIENT_AUTHENTICATION_OAUTH2_CLIENT_CREDENTIALS_FLOW_CLIENT_ID, clientId);
             config.put(HTTP_CLIENT_AUTHENTICATION_OAUTH2_CLIENT_CREDENTIALS_FLOW_CLIENT_SECRET, clientSecret);
@@ -1590,7 +1595,7 @@ class OkHttpClientTest {
             String baseUrl = "http://" + "dummy.com" + ":22222";
             String url = baseUrl + "/ping";
 
-            HashMap<String, Object> config = Maps.newHashMap();
+            HashMap<String, String> config = Maps.newHashMap();
             config.put(CONFIGURATION_ID, "default");
             Proxy proxy = new Proxy(Proxy.Type.HTTP, new InetSocketAddress(getIP(), wmRuntimeInfo.getHttpPort()));
 
@@ -1639,9 +1644,9 @@ class OkHttpClientTest {
             String baseUrl = "http://" + "dummy.com" + ":22222";
             String url = baseUrl + "/ping";
 
-            HashMap<String, Object> config = Maps.newHashMap();
+            HashMap<String, String> config = Maps.newHashMap();
             config.put(CONFIGURATION_ID, "default");
-            config.put(HTTP_CLIENT_PROXY_AUTHENTICATION_BASIC_ACTIVATE, true);
+            config.put(HTTP_CLIENT_PROXY_AUTHENTICATION_BASIC_ACTIVATE, Boolean.TRUE.toString());
             String username = "user1";
             config.put(HTTP_CLIENT_PROXY_AUTHENTICATION_BASIC_USERNAME, username);
             String password = "password1";
@@ -1719,15 +1724,15 @@ class OkHttpClientTest {
             String baseUrl = "http://" + getIP() + ":" + wmHttp.getPort();
             String url = baseUrl + "/ping";
 
-            HashMap<String, Object> config = Maps.newHashMap();
+            HashMap<String, String> config = Maps.newHashMap();
             config.put(CONFIGURATION_ID, "default");
-            config.put(HTTP_CLIENT_PROXY_AUTHENTICATION_BASIC_ACTIVATE, true);
+            config.put(HTTP_CLIENT_PROXY_AUTHENTICATION_BASIC_ACTIVATE, Boolean.TRUE.toString());
             String proxyUsername = "proxyuser1";
             config.put(HTTP_CLIENT_PROXY_AUTHENTICATION_BASIC_USERNAME, proxyUsername);
             String proxyPassword = "proxypassword1";
             config.put(HTTP_CLIENT_PROXY_AUTHENTICATION_BASIC_PASSWORD, proxyPassword);
 
-            config.put("httpclient.authentication.basic.activate", true);
+            config.put("httpclient.authentication.basic.activate", Boolean.TRUE.toString());
             String username = "user1";
             String password = "password1";
             config.put("httpclient.authentication.basic.username", username);
@@ -1821,15 +1826,15 @@ class OkHttpClientTest {
             String baseUrl = "http://" + getIP() + ":" + wmHttp.getPort();
             String url = baseUrl + "/ping";
 
-            HashMap<String, Object> config = Maps.newHashMap();
+            HashMap<String, String> config = Maps.newHashMap();
             config.put(CONFIGURATION_ID, "default");
-            config.put(HTTP_CLIENT_PROXY_AUTHENTICATION_DIGEST_ACTIVATE, true);
+            config.put(HTTP_CLIENT_PROXY_AUTHENTICATION_DIGEST_ACTIVATE, Boolean.TRUE.toString());
             String proxyUsername = "proxyuser1";
             config.put(HTTP_CLIENT_PROXY_AUTHENTICATION_DIGEST_USERNAME, proxyUsername);
             String proxyPassword = "proxypassword1";
             config.put(HTTP_CLIENT_PROXY_AUTHENTICATION_DIGEST_PASSWORD, proxyPassword);
 
-            config.put("httpclient.authentication.digest.activate", true);
+            config.put("httpclient.authentication.digest.activate", Boolean.TRUE.toString());
             String username = "user1";
             String password = "password1";
             config.put("httpclient.authentication.digest.username", username);
@@ -2000,7 +2005,7 @@ class OkHttpClientTest {
             String baseUrl = "http://" + "dummy.com" + ":22222";
             String url = baseUrl + "/ping";
 
-            HashMap<String, Object> config = Maps.newHashMap();
+            HashMap<String, String> config = Maps.newHashMap();
             config.put(CONFIGURATION_ID, "default");
 
             List<ImmutablePair<Predicate<URI>, Proxy>> proxies = Lists.newArrayList();
@@ -2052,7 +2057,7 @@ class OkHttpClientTest {
             String baseUrl = "http://" + "dummy.com" + ":22222";
             String url = baseUrl + "/ping";
 
-            HashMap<String, Object> config = Maps.newHashMap();
+            HashMap<String, String> config = Maps.newHashMap();
             config.put(CONFIGURATION_ID, "default");
 
 
@@ -2118,7 +2123,7 @@ class OkHttpClientTest {
         @Test
         void test_only_activate_doh_without_bootstrap_dns_and_url() {
             //given
-            Map<String, Object> config = Maps.newHashMap();
+            Map<String, String> config = Maps.newHashMap();
             config.put(CONFIGURATION_ID, "default");
             config.put(OKHTTP_DOH_ACTIVATE, "true");
             CompositeMeterRegistry compositeMeterRegistry = getCompositeMeterRegistry();
@@ -2129,10 +2134,10 @@ class OkHttpClientTest {
         @Test
         void test_only_activate_doh_and_url() {
             //given
-            Map<String, Object> config = Maps.newHashMap();
+            Map<String, String> config = Maps.newHashMap();
             config.put(CONFIGURATION_ID, "default");
             config.put(OKHTTP_DOH_ACTIVATE, "true");
-            config.put(OKHTTP_DOH_BOOTSTRAP_DNS_HOSTS, Lists.newArrayList("1.1.1.2", "1.0.0.2"));
+            config.put(OKHTTP_DOH_BOOTSTRAP_DNS_HOSTS,  "1.1.1.2,1.0.0.2");
             CompositeMeterRegistry compositeMeterRegistry = getCompositeMeterRegistry();
             Random random = new Random();
             Assertions.assertThrows(IllegalStateException.class, () -> factory.build(config, null, random, null, null, compositeMeterRegistry));
@@ -2141,11 +2146,11 @@ class OkHttpClientTest {
         @Test
         void test_activate_doh_and_set_url_with_bootstrap_dns() throws ExecutionException, InterruptedException {
             //given
-            Map<String, Object> config = Maps.newHashMap();
+            Map<String, String> config = Maps.newHashMap();
             config.put(CONFIGURATION_ID, "default");
             config.put(OKHTTP_DOH_ACTIVATE, "true");
             config.put(OKHTTP_DOH_URL, "https://cloudflare-dns.com/dns-query");
-            config.put(OKHTTP_DOH_BOOTSTRAP_DNS_HOSTS, Lists.newArrayList("1.1.1.2", "1.0.0.2"));
+            config.put(OKHTTP_DOH_BOOTSTRAP_DNS_HOSTS,  "1.1.1.2,1.0.0.2");
             Random random = new Random();
             OkHttpClient client = factory.build(config, null, random, null, null, getCompositeMeterRegistry());
 
@@ -2161,11 +2166,11 @@ class OkHttpClientTest {
         @Test
         void test_activate_doh_and_set_url_with_bootstrap_dns_and_ipv6_activated() throws ExecutionException, InterruptedException {
             //given
-            Map<String, Object> config = Maps.newHashMap();
+            Map<String, String> config = Maps.newHashMap();
             config.put(CONFIGURATION_ID, "default");
             config.put(OKHTTP_DOH_ACTIVATE, "true");
             config.put(OKHTTP_DOH_URL, "https://cloudflare-dns.com/dns-query");
-            config.put(OKHTTP_DOH_BOOTSTRAP_DNS_HOSTS, Lists.newArrayList("1.1.1.2", "1.0.0.2"));
+            config.put(OKHTTP_DOH_BOOTSTRAP_DNS_HOSTS, "1.1.1.2,1.0.0.2");
             config.put(OKHTTP_DOH_INCLUDE_IPV6, "true");
             OkHttpClient client = factory.build(config, null, new Random(), null, null, getCompositeMeterRegistry());
 
@@ -2181,12 +2186,12 @@ class OkHttpClientTest {
         @Test
         void test_activate_doh_and_set_url_with_bootstrap_dns_and_post_method() throws ExecutionException, InterruptedException {
             //given
-            Map<String, Object> config = Maps.newHashMap();
+            Map<String, String> config = Maps.newHashMap();
             config.put(CONFIGURATION_ID, "default");
             config.put(OKHTTP_DOH_ACTIVATE, "true");
             config.put(OKHTTP_DOH_URL, "https://cloudflare-dns.com/dns-query");
             config.put(OKHTTP_DOH_USE_POST_METHOD, "true");
-            config.put(OKHTTP_DOH_BOOTSTRAP_DNS_HOSTS, Lists.newArrayList("1.1.1.2", "1.0.0.2"));
+            config.put(OKHTTP_DOH_BOOTSTRAP_DNS_HOSTS,  "1.1.1.2,1.0.0.2");
             OkHttpClient client = factory.build(config, null, new Random(), null, null, getCompositeMeterRegistry());
 
             HttpRequest httpRequest = new HttpRequest(
@@ -2201,12 +2206,12 @@ class OkHttpClientTest {
         @Test
         void test_activate_doh_and_set_url_with_bootstrap_dns_and_does_not_resolve_public_addresses() throws ExecutionException, InterruptedException {
             //given
-            Map<String, Object> config = Maps.newHashMap();
+            Map<String, String> config = Maps.newHashMap();
             config.put(CONFIGURATION_ID, "default");
             config.put(OKHTTP_DOH_ACTIVATE, "true");
             config.put(OKHTTP_DOH_RESOLVE_PUBLIC_ADDRESSES, "false");
             config.put(OKHTTP_DOH_URL, "https://cloudflare-dns.com/dns-query");
-            config.put(OKHTTP_DOH_BOOTSTRAP_DNS_HOSTS, Lists.newArrayList("1.1.1.2", "1.0.0.2"));
+            config.put(OKHTTP_DOH_BOOTSTRAP_DNS_HOSTS,  "1.1.1.2,1.0.0.2");
             OkHttpClient client = factory.build(config, null, new Random(), null, null, getCompositeMeterRegistry());
 
             HttpRequest httpRequest = new HttpRequest(
@@ -2224,12 +2229,12 @@ class OkHttpClientTest {
         @Test
         void test_activate_doh_and_set_url_with_bootstrap_dns_and_does_not_resolve_private_addresses() throws ExecutionException, InterruptedException {
             //given
-            Map<String, Object> config = Maps.newHashMap();
+            Map<String, String> config = Maps.newHashMap();
             config.put(CONFIGURATION_ID, "default");
             config.put(OKHTTP_DOH_ACTIVATE, "true");
             config.put(OKHTTP_DOH_RESOLVE_PRIVATE_ADDRESSES, "false");
             config.put(OKHTTP_DOH_URL, "https://cloudflare-dns.com/dns-query");
-            config.put(OKHTTP_DOH_BOOTSTRAP_DNS_HOSTS, Lists.newArrayList("1.1.1.2", "1.0.0.2"));
+            config.put(OKHTTP_DOH_BOOTSTRAP_DNS_HOSTS,  "1.1.1.2,1.0.0.2");
             OkHttpClient client = factory.build(config, null, new Random(), null, null, getCompositeMeterRegistry());
 
             HttpRequest httpRequest = new HttpRequest(
@@ -2262,7 +2267,7 @@ class OkHttpClientTest {
             );
 
 
-            Map<String, Object> config = Maps.newHashMap();
+            Map<String, String> config = Maps.newHashMap();
             config.put(CONFIGURATION_ID, "default");
             config.put(OKHTTP_DOH_ACTIVATE, "true");
             config.put(OKHTTP_DOH_RESOLVE_PRIVATE_ADDRESSES, "true");
@@ -2282,11 +2287,11 @@ class OkHttpClientTest {
         @Test
         void test_activate_doh_and_set_url_with_bootstrap_dns_and_does_not_resolve_private_addresses_by_default() throws ExecutionException, InterruptedException {
             //given
-            Map<String, Object> config = Maps.newHashMap();
+            Map<String, String> config = Maps.newHashMap();
             config.put(CONFIGURATION_ID, "default");
             config.put(OKHTTP_DOH_ACTIVATE, "true");
             config.put(OKHTTP_DOH_URL, "https://cloudflare-dns.com/dns-query");
-            config.put(OKHTTP_DOH_BOOTSTRAP_DNS_HOSTS, Lists.newArrayList("1.1.1.2", "1.0.0.2"));
+            config.put(OKHTTP_DOH_BOOTSTRAP_DNS_HOSTS,  "1.1.1.2,1.0.0.2");
             OkHttpClient client = factory.build(config, null, new Random(), null, null, getCompositeMeterRegistry());
 
             HttpRequest httpRequest = new HttpRequest(
@@ -2304,11 +2309,11 @@ class OkHttpClientTest {
         @Test
         void test_activate_doh_and_set_url_with_dumb_bootstrap_dns() {
             //given
-            Map<String, Object> config = Maps.newHashMap();
+            Map<String, String> config = Maps.newHashMap();
             config.put(CONFIGURATION_ID, "default");
             config.put(OKHTTP_DOH_ACTIVATE, "true");
             config.put(OKHTTP_DOH_URL, "https://cloudflare-dns.com/dns-query");
-            config.put(OKHTTP_DOH_BOOTSTRAP_DNS_HOSTS, Lists.newArrayList("aaaaaa", "bbbbbb"));
+            config.put(OKHTTP_DOH_BOOTSTRAP_DNS_HOSTS, "aaaaaa,bbbbbb");
             Random random = new Random();
             CompositeMeterRegistry compositeMeterRegistry = getCompositeMeterRegistry();
             Assertions.assertThrows(IllegalArgumentException.class, () -> factory.build(config, null, random, null, null, compositeMeterRegistry));
@@ -2318,7 +2323,7 @@ class OkHttpClientTest {
         @Test
         void test_activate_doh_and_set_url_but_no_system_dns() {
             //given
-            Map<String, Object> config = Maps.newHashMap();
+            Map<String, String> config = Maps.newHashMap();
             config.put(CONFIGURATION_ID, "default");
             config.put(OKHTTP_DOH_ACTIVATE, "true");
             config.put(OKHTTP_DOH_URL, "https://yahoo.com");
@@ -2336,7 +2341,7 @@ class OkHttpClientTest {
         void test_getTrustManagerFactory_always_trust_with_boolean_value_as_string() {
 
             //given
-            Map<String, Object> config = Maps.newHashMap();
+            Map<String, String> config = Maps.newHashMap();
             config.put(HTTP_CLIENT_SSL_TRUSTSTORE_ALWAYS_TRUST, "true");
             //when
             TrustManagerFactory trustManagerFactory = HttpClientFactory.getTrustManagerFactory(config);
@@ -2356,7 +2361,7 @@ class OkHttpClientTest {
 
             //given
             String bodyResponse = "{\"result\":\"pong\"}";
-            Map<String, Object> config = Maps.newHashMap();
+            Map<String, String> config = Maps.newHashMap();
             config.put(CONFIGURATION_ID, "default");
             config.put(HTTP_CLIENT_SSL_TRUSTSTORE_ALWAYS_TRUST, "true");
             config.put(OKHTTP_SSL_SKIP_HOSTNAME_VERIFICATION, "true");
@@ -2407,10 +2412,10 @@ class OkHttpClientTest {
             WireMockRuntimeInfo wmRuntimeInfo = wmHttp.getRuntimeInfo();
             WireMock wireMock = wmRuntimeInfo.getWireMock();
 
-            HashMap<String, Object> config = Maps.newHashMap();
+            HashMap<String, String> config = Maps.newHashMap();
             config.put(CONFIGURATION_ID, "default");
-            config.put("okhttp.connection.pool.max.idle.connections", 10);
-            config.put("okhttp.connection.pool.keep.alive.duration", 1000);
+            config.put("okhttp.connection.pool.max.idle.connections", "10");
+            config.put("okhttp.connection.pool.keep.alive.duration", "1000");
 
 
             OkHttpClient client = factory.build(config, null, new Random(), null, null, getCompositeMeterRegistry());
@@ -2457,19 +2462,19 @@ class OkHttpClientTest {
             WireMockRuntimeInfo wmRuntimeInfo = wmHttp.getRuntimeInfo();
             WireMock wireMock = wmRuntimeInfo.getWireMock();
 
-            HashMap<String, Object> config = Maps.newHashMap();
+            HashMap<String, String> config = Maps.newHashMap();
             config.put(CONFIGURATION_ID, "default");
             config.put("okhttp.connection.pool.scope", "static");
-            config.put("okhttp.connection.pool.max.idle.connections", 10);
-            config.put("okhttp.connection.pool.keep.alive.duration", 1000);
+            config.put("okhttp.connection.pool.max.idle.connections", "10");
+            config.put("okhttp.connection.pool.keep.alive.duration", "1000");
 
             OkHttpClient client = factory.build(config, null, new Random(), null, null, getCompositeMeterRegistry());
 
-            HashMap<String, Object> config2 = Maps.newHashMap();
+            HashMap<String, String> config2 = Maps.newHashMap();
             config2.put(CONFIGURATION_ID, "default");
             config2.put("okhttp.connection.pool.scope", "static");
-            config2.put("okhttp.connection.pool.max.idle.connections", 10);
-            config2.put("okhttp.connection.pool.keep.alive.duration", 1000);
+            config2.put("okhttp.connection.pool.max.idle.connections", "10");
+            config2.put("okhttp.connection.pool.keep.alive.duration", "1000");
 
 
             OkHttpClient client2 = factory.build(config2, null, new Random(), null, null, getCompositeMeterRegistry());

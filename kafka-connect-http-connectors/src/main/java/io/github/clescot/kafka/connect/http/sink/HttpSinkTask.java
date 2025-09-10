@@ -29,6 +29,7 @@ import org.apache.kafka.connect.sink.ErrantRecordReporter;
 import org.apache.kafka.connect.sink.SinkRecord;
 import org.apache.kafka.connect.sink.SinkTask;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -41,6 +42,7 @@ import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.stream.Stream;
 
+import static io.github.clescot.kafka.connect.http.core.Request.VU_ID;
 import static io.github.clescot.kafka.connect.http.sink.HttpConfigDefinition.HTTP_REQUEST_MAPPER_IDS;
 import static io.github.clescot.kafka.connect.http.sink.HttpConfigDefinition.MESSAGE_SPLITTER_IDS;
 
@@ -77,11 +79,12 @@ public abstract class HttpSinkTask<C extends HttpClient<R, S>, R, S> extends Sin
     private List<MessageSplitter<SinkRecord>> messageSplitters;
     private HttpRequestMapper defaultHttpRequestMapper;
     private List<HttpRequestMapper> httpRequestMappers;
-
+    private String vuId;
     @SuppressWarnings("java:S5993")
     public HttpSinkTask(HttpClientFactory<C, R, S> httpClientFactory, KafkaProducer<String, Object> producer) {
         this.httpClientFactory = httpClientFactory;
         this.producer = producer;
+        this.vuId = UUID.randomUUID().toString();
     }
 
 
@@ -157,10 +160,17 @@ public abstract class HttpSinkTask<C extends HttpClient<R, S>, R, S> extends Sin
     @Override
     @SuppressWarnings("java:S3864")
     public void put(Collection<SinkRecord> records) {
+        List<HttpExchange> httpExchanges = putAndGetExchanges(records);
+        if (httpExchanges == null) return;
+        LOGGER.debug("HttpExchanges created :'{}'", httpExchanges.size());
+
+    }
+
+    public @Nullable List<HttpExchange> putAndGetExchanges(Collection<SinkRecord> records) {
         Preconditions.checkNotNull(records, "records collection to be processed is null");
         if (records.isEmpty()) {
             LOGGER.debug("no records");
-            return;
+            return null;
         }
         Preconditions.checkNotNull(httpTask, "httpTask is null. 'start' method must be called once before put");
         List<Pair<SinkRecord, HttpRequest>> preparedRequests = prepareRequests(records);
@@ -168,11 +178,8 @@ public abstract class HttpSinkTask<C extends HttpClient<R, S>, R, S> extends Sin
         List<CompletableFuture<HttpExchange>> completableFutures = preparedRequests.stream()
                 .map(this::callAndPublish)
                 .toList();
-        List<HttpExchange> httpExchanges = completableFutures.stream().map(CompletableFuture::join).toList();
-        LOGGER.debug("HttpExchanges created :'{}'", httpExchanges.size());
-
+        return completableFutures.stream().map(CompletableFuture::join).toList();
     }
-
 
 
     private static JexlEngine buildJexlEngine() {
@@ -245,6 +252,13 @@ public abstract class HttpSinkTask<C extends HttpClient<R, S>, R, S> extends Sin
                 .map(this::splitMessage)
                 .flatMap(List::stream)
                 .map(this::toHttpRequests)
+                //add VU_ID attribute to the request
+                //each task has its own VU_ID
+                .map(pair-> {
+                    //add VU_ID attribute to the request
+                    pair.getRight().addAttribute(VU_ID, this.vuId);
+                    return Pair.of(pair.getLeft(), pair.getRight());
+                })
                 .toList();
 
         return httpTask.groupRequests(requests);

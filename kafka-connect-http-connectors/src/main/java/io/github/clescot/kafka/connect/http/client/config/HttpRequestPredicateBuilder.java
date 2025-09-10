@@ -22,25 +22,25 @@ public class HttpRequestPredicateBuilder {
         return new HttpRequestPredicateBuilder();
     }
 
-    public Predicate<HttpRequest> buildPredicate(Map<String, Object> configMap) {
+    public Predicate<HttpRequest> buildPredicate(Map<String, String> configMap) {
         Predicate<HttpRequest> predicate = httpRequest -> true;
         if (configMap.containsKey(URL_REGEX)) {
-            String urlRegex = (String) configMap.get(URL_REGEX);
+            String urlRegex = configMap.get(URL_REGEX);
             Pattern urlPattern = Pattern.compile(urlRegex);
             predicate = predicate.and(httpRequest -> urlPattern.matcher(httpRequest.getUrl()).matches());
         }
         if (configMap.containsKey(METHOD_REGEX)) {
-            String methodRegex = (String) configMap.get(METHOD_REGEX);
+            String methodRegex = configMap.get(METHOD_REGEX);
             Pattern methodPattern = Pattern.compile(methodRegex);
             predicate = predicate.and(httpRequest -> methodPattern.matcher(httpRequest.getMethod().name()).matches());
         }
         if (configMap.containsKey(BODYTYPE_REGEX)) {
-            String bodytypeRegex = (String) configMap.get(BODYTYPE_REGEX);
+            String bodytypeRegex = configMap.get(BODYTYPE_REGEX);
             Pattern bodytypePattern = Pattern.compile(bodytypeRegex);
             predicate = predicate.and(httpRequest -> bodytypePattern.matcher(httpRequest.getBodyType().name()).matches());
         }
         if (configMap.containsKey(HEADER_KEY_REGEX)) {
-            String headerKeyRegex = (String) configMap.get(HEADER_KEY_REGEX);
+            String headerKeyRegex = configMap.get(HEADER_KEY_REGEX);
             Pattern headerKeyPattern = Pattern.compile(headerKeyRegex);
             Predicate<HttpRequest> headerKeyPredicate = httpRequest -> httpRequest
                     .getHeaders()
@@ -52,7 +52,7 @@ public class HttpRequestPredicateBuilder {
                                 && entry.getValue() != null
                                 && !entry.getValue().isEmpty()
                                 && configMap.containsKey(HEADER_VALUE_REGEX)) {
-                            String headerValue = (String) configMap.get(HEADER_VALUE_REGEX);
+                            String headerValue = configMap.get(HEADER_VALUE_REGEX);
                             Pattern headerValuePattern = Pattern.compile(headerValue);
                             return headerValuePattern.matcher(entry.getValue().get(0)).matches();
                         } else {

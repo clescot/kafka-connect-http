@@ -3,7 +3,6 @@ package io.github.clescot.kafka.connect.http.client.okhttp;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
 import com.google.common.jimfs.Jimfs;
-import io.github.clescot.kafka.connect.http.client.HttpClientConfiguration;
 import io.github.clescot.kafka.connect.http.client.HttpClientFactory;
 import io.github.clescot.kafka.connect.http.client.HttpException;
 import io.github.clescot.kafka.connect.http.client.okhttp.authentication.*;
@@ -28,13 +27,9 @@ import java.net.UnknownHostException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.security.SecureRandom;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Random;
+import java.util.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
-import java.util.stream.Collectors;
 
 import static io.github.clescot.kafka.connect.Configuration.DEFAULT_CONFIGURATION_ID;
 import static io.github.clescot.kafka.connect.http.client.HttpClientConfigDefinition.*;
@@ -60,7 +55,7 @@ public class OkHttpClientFactory implements HttpClientFactory<OkHttpClient,Reque
     private static ConnectionPool sharedConnectionPool;
 
     @Override
-    public OkHttpClient build(Map<String, Object> config,
+    public OkHttpClient build(Map<String, String> config,
                                                ExecutorService executorService,
                                                Random random,
                                                Proxy proxy,
@@ -69,12 +64,12 @@ public class OkHttpClientFactory implements HttpClientFactory<OkHttpClient,Reque
         Preconditions.checkNotNull(random, "Random must not be null.");
         Preconditions.checkNotNull(meterRegistry, METER_REGISTRY_MUST_NOT_BE_NULL);
         okhttp3.OkHttpClient internalOkHttpClient = buildOkHttpClient(config, executorService, random, proxy, proxySelector, meterRegistry);
-        OkHttpClient okHttpClient = new OkHttpClient(config, internalOkHttpClient);
+        OkHttpClient okHttpClient = new OkHttpClient(config, internalOkHttpClient,random);
         okHttpClient.setTrustManagerFactory(trustManagerFactory);
         return okHttpClient;
     }
 
-    private okhttp3.OkHttpClient buildOkHttpClient(Map<String, Object> config,
+    private okhttp3.OkHttpClient buildOkHttpClient(Map<String, String> config,
                                                               ExecutorService executorService,
                                                               Random random,
                                                               Proxy proxy,
@@ -83,6 +78,7 @@ public class OkHttpClientFactory implements HttpClientFactory<OkHttpClient,Reque
         Preconditions.checkNotNull(random, "Random must not be null.");
         Preconditions.checkNotNull(meterRegistry, METER_REGISTRY_MUST_NOT_BE_NULL);
         okhttp3.OkHttpClient.Builder httpClientBuilder = new okhttp3.OkHttpClient.Builder();
+
         if (executorService != null) {
             Dispatcher dispatcher = new Dispatcher(executorService);
             httpClientBuilder.dispatcher(dispatcher);
@@ -135,11 +131,11 @@ public class OkHttpClientFactory implements HttpClientFactory<OkHttpClient,Reque
         return httpClientBuilder.build();
     }
 
-    private void configureDnsOverHttps(Map<String, Object> config, okhttp3.OkHttpClient.Builder httpClientBuilder) {
-        if (config.containsKey(OKHTTP_DOH_ACTIVATE)&&Boolean.parseBoolean((String) config.get(OKHTTP_DOH_ACTIVATE))) {
+    private void configureDnsOverHttps(Map<String, String> config, okhttp3.OkHttpClient.Builder httpClientBuilder) {
+        if (config.containsKey(OKHTTP_DOH_ACTIVATE)&&Boolean.parseBoolean(config.get(OKHTTP_DOH_ACTIVATE))) {
             List<InetAddress> bootstrapDnsHosts = null;
             if(config.containsKey(OKHTTP_DOH_BOOTSTRAP_DNS_HOSTS)){
-                bootstrapDnsHosts = ((List<String>)config.get(OKHTTP_DOH_BOOTSTRAP_DNS_HOSTS))
+                bootstrapDnsHosts = (Arrays.asList(config.get(OKHTTP_DOH_BOOTSTRAP_DNS_HOSTS).split(",")))
                         .stream()
                         .map(host->{
                             try {
@@ -158,22 +154,22 @@ public class OkHttpClientFactory implements HttpClientFactory<OkHttpClient,Reque
             }
             boolean usePostMethod = false;
             if(config.containsKey(OKHTTP_DOH_USE_POST_METHOD)){
-                usePostMethod = Boolean.parseBoolean((String) config.get(OKHTTP_DOH_USE_POST_METHOD));
+                usePostMethod = Boolean.parseBoolean(config.get(OKHTTP_DOH_USE_POST_METHOD));
             }
             boolean resolvePrivateAddresses = false;
             if(config.containsKey(OKHTTP_DOH_RESOLVE_PRIVATE_ADDRESSES)){
-                resolvePrivateAddresses = Boolean.parseBoolean((String) config.get(OKHTTP_DOH_RESOLVE_PRIVATE_ADDRESSES));
+                resolvePrivateAddresses = Boolean.parseBoolean(config.get(OKHTTP_DOH_RESOLVE_PRIVATE_ADDRESSES));
             }
 
             boolean resolvePublicAddresses = true;
             if(config.containsKey(OKHTTP_DOH_RESOLVE_PUBLIC_ADDRESSES)){
-                resolvePublicAddresses = Boolean.parseBoolean((String) config.get(OKHTTP_DOH_RESOLVE_PUBLIC_ADDRESSES));
+                resolvePublicAddresses = Boolean.parseBoolean(config.get(OKHTTP_DOH_RESOLVE_PUBLIC_ADDRESSES));
             }
             HttpUrl url;
             if(!config.containsKey(OKHTTP_DOH_URL)) {
                 throw new IllegalStateException("DNS Over HTTP (DoH) is activated but DoH's URL is not set.");
             }else{
-                url = HttpUrl.parse((String) config.get(OKHTTP_DOH_URL));
+                url = HttpUrl.parse(config.get(OKHTTP_DOH_URL));
             }
 
             okhttp3.OkHttpClient bootstrapClient = httpClientBuilder.build();
@@ -189,12 +185,12 @@ public class OkHttpClientFactory implements HttpClientFactory<OkHttpClient,Reque
         }
     }
 
-    private static void configureEvents(Map<String, Object> config, CompositeMeterRegistry meterRegistry, okhttp3.OkHttpClient.Builder httpClientBuilder) {
+    private static void configureEvents(Map<String, String> config, CompositeMeterRegistry meterRegistry, okhttp3.OkHttpClient.Builder httpClientBuilder) {
         Preconditions.checkNotNull(meterRegistry, METER_REGISTRY_MUST_NOT_BE_NULL);
         if (!meterRegistry.getRegistries().isEmpty()) {
             List<String> tags = Lists.newArrayList();
-            tags.add(HttpClientConfiguration.CONFIGURATION_ID);
-            tags.add(config.get(HttpClientConfiguration.CONFIGURATION_ID) != null ? (String) config.get(HttpClientConfiguration.CONFIGURATION_ID) : DEFAULT_CONFIGURATION_ID);
+            tags.add(HttpClientFactory.CONFIGURATION_ID);
+            tags.add(config.get(HttpClientFactory.CONFIGURATION_ID) != null ? config.get(HttpClientFactory.CONFIGURATION_ID) : DEFAULT_CONFIGURATION_ID);
             String connectorName = MDC.get(CONNECTOR_NAME);
             if (connectorName != null) {
                 tags.add(CONNECTOR_NAME);
@@ -207,32 +203,32 @@ public class OkHttpClientFactory implements HttpClientFactory<OkHttpClient,Reque
                 tags.add(connectorTask);
             }
 
-            boolean includeLegacyHostTag = Boolean.parseBoolean((String) config.getOrDefault(METER_REGISTRY_TAG_INCLUDE_LEGACY_HOST, FALSE));
-            boolean includeUrlPath = Boolean.parseBoolean((String) config.getOrDefault(METER_REGISTRY_TAG_INCLUDE_URL_PATH, FALSE));
+            boolean includeLegacyHostTag = Boolean.parseBoolean(config.getOrDefault(METER_REGISTRY_TAG_INCLUDE_LEGACY_HOST, FALSE));
+            boolean includeUrlPath = Boolean.parseBoolean(config.getOrDefault(METER_REGISTRY_TAG_INCLUDE_URL_PATH, FALSE));
             httpClientBuilder.eventListenerFactory(new AdvancedEventListenerFactory(meterRegistry, includeLegacyHostTag, includeUrlPath
                     , tags.toArray(new String[0])
             ));
         }
     }
 
-    private static void configureInterceptors(Map<String, Object> config,okhttp3.OkHttpClient.Builder httpClientBuilder) {
-        boolean activateLoggingInterceptor = Boolean.parseBoolean((String) config.getOrDefault(CONFIG_DEFAULT_OKHTTP_INTERCEPTOR_LOGGING_ACTIVATE, TRUE));
+    private static void configureInterceptors(Map<String, String> config,okhttp3.OkHttpClient.Builder httpClientBuilder) {
+        boolean activateLoggingInterceptor = Boolean.parseBoolean(config.getOrDefault(CONFIG_DEFAULT_OKHTTP_INTERCEPTOR_LOGGING_ACTIVATE, TRUE));
         if (activateLoggingInterceptor) {
             httpClientBuilder.addNetworkInterceptor(new LoggingInterceptor());
         }
-        boolean activateInetAddressInterceptor = Boolean.parseBoolean((String) config.getOrDefault(CONFIG_DEFAULT_OKHTTP_INTERCEPTOR_INET_ADDRESS_ACTIVATE, FALSE));
+        boolean activateInetAddressInterceptor = Boolean.parseBoolean(config.getOrDefault(CONFIG_DEFAULT_OKHTTP_INTERCEPTOR_INET_ADDRESS_ACTIVATE, FALSE));
         if (activateInetAddressInterceptor) {
             httpClientBuilder.addNetworkInterceptor(new InetAddressInterceptor());
         }
-        boolean activateSslHandshakeInterceptor = Boolean.parseBoolean((String) config.getOrDefault(CONFIG_DEFAULT_OKHTTP_INTERCEPTOR_SSL_HANDSHAKE_ACTIVATE, FALSE));
+        boolean activateSslHandshakeInterceptor = Boolean.parseBoolean(config.getOrDefault(CONFIG_DEFAULT_OKHTTP_INTERCEPTOR_SSL_HANDSHAKE_ACTIVATE, FALSE));
         if (activateSslHandshakeInterceptor) {
             httpClientBuilder.addNetworkInterceptor(new SSLHandshakeInterceptor());
         }
     }
 
-    private void configureProtocols(Map<String, Object> config, okhttp3.OkHttpClient.Builder httpClientBuilder) {
+    private void configureProtocols(Map<String, String> config, okhttp3.OkHttpClient.Builder httpClientBuilder) {
         if (config.containsKey(OKHTTP_PROTOCOLS)) {
-            String protocolNames = config.get(OKHTTP_PROTOCOLS).toString();
+            String protocolNames = config.get(OKHTTP_PROTOCOLS);
             List<Protocol> protocols = Lists.newArrayList();
             List<String> strings = Lists.newArrayList(protocolNames.split(PROTOCOL_SEPARATOR));
             for (String protocolName : strings) {
@@ -243,50 +239,50 @@ public class OkHttpClientFactory implements HttpClientFactory<OkHttpClient,Reque
         }
     }
 
-    private void configureConnection(Map<String, Object> config, okhttp3.OkHttpClient.Builder httpClientBuilder) {
+    private void configureConnection(Map<String, String> config, okhttp3.OkHttpClient.Builder httpClientBuilder) {
         //call timeout
         if (config.containsKey(OKHTTP_CALL_TIMEOUT)) {
-            int callTimeout = (Integer) config.get(OKHTTP_CALL_TIMEOUT);
+            int callTimeout = Integer.parseInt(config.get(OKHTTP_CALL_TIMEOUT));
             httpClientBuilder.callTimeout(callTimeout, TimeUnit.MILLISECONDS);
         }
 
         //connect timeout
         if (config.containsKey(OKHTTP_CONNECT_TIMEOUT)) {
-            int connectTimeout = Integer.parseInt(config.get(OKHTTP_CONNECT_TIMEOUT).toString());
+            int connectTimeout = Integer.parseInt(config.get(OKHTTP_CONNECT_TIMEOUT));
             httpClientBuilder.connectTimeout(connectTimeout, TimeUnit.MILLISECONDS);
         }
 
         //read timeout
         if (config.containsKey(OKHTTP_READ_TIMEOUT)) {
-            int readTimeout = Integer.parseInt(config.get(OKHTTP_READ_TIMEOUT).toString());
+            int readTimeout = Integer.parseInt(config.get(OKHTTP_READ_TIMEOUT));
             httpClientBuilder.readTimeout(readTimeout, TimeUnit.MILLISECONDS);
         }
 
         //write timeout
         if (config.containsKey(OKHTTP_WRITE_TIMEOUT)) {
-            int writeTimeout = Integer.parseInt(config.get(OKHTTP_WRITE_TIMEOUT).toString());
+            int writeTimeout = Integer.parseInt(config.get(OKHTTP_WRITE_TIMEOUT));
             httpClientBuilder.writeTimeout(writeTimeout, TimeUnit.MILLISECONDS);
         }
 
         //follow redirects
         if (config.containsKey(OKHTTP_FOLLOW_REDIRECT)) {
-            httpClientBuilder.followRedirects(Boolean.parseBoolean(config.get(OKHTTP_FOLLOW_REDIRECT).toString()));
+            httpClientBuilder.followRedirects(Boolean.parseBoolean(config.get(OKHTTP_FOLLOW_REDIRECT)));
         }
 
         //follow https redirects
         if (config.containsKey(OKHTTP_FOLLOW_SSL_REDIRECT)) {
-            httpClientBuilder.followSslRedirects(Boolean.parseBoolean(config.get(OKHTTP_FOLLOW_SSL_REDIRECT).toString()));
+            httpClientBuilder.followSslRedirects(Boolean.parseBoolean(config.get(OKHTTP_FOLLOW_SSL_REDIRECT)));
         }
 
         //retry on connection failure
         if (config.containsKey(OKHTTP_RETRY_ON_CONNECTION_FAILURE)) {
-            httpClientBuilder.retryOnConnectionFailure(Boolean.parseBoolean(config.get(OKHTTP_RETRY_ON_CONNECTION_FAILURE).toString()));
+            httpClientBuilder.retryOnConnectionFailure(Boolean.parseBoolean(config.get(OKHTTP_RETRY_ON_CONNECTION_FAILURE)));
         }
 
     }
 
     @SuppressWarnings("java:S5527")
-    private void configureSSL(Map<String, Object> config, okhttp3.OkHttpClient.Builder httpClientBuilder, SecureRandom random) {
+    private void configureSSL(Map<String,String> config, okhttp3.OkHttpClient.Builder httpClientBuilder, SecureRandom random) {
         //KeyManager/trustManager/SSLSocketFactory
         Optional<KeyManagerFactory> keyManagerFactoryOption = getKeyManagerFactory(config);
         Optional<TrustManagerFactory> trustManagerFactoryOption = HttpClientFactory.buildTrustManagerFactory(config);
@@ -310,7 +306,7 @@ public class OkHttpClientFactory implements HttpClientFactory<OkHttpClient,Reque
         }
     }
 
-    private void configureConnectionPool(Map<String, Object> config, okhttp3.OkHttpClient.Builder httpClientBuilder) {
+    private void configureConnectionPool(Map<String, String> config, okhttp3.OkHttpClient.Builder httpClientBuilder) {
         String connectionPoolScope = config.getOrDefault(OKHTTP_CONNECTION_POOL_SCOPE, "instance").toString();
         ConnectionPool connectionPool = null;
         if ("static".equalsIgnoreCase(connectionPoolScope)) {
@@ -329,7 +325,7 @@ public class OkHttpClientFactory implements HttpClientFactory<OkHttpClient,Reque
         }
 
     }
-    private static ConnectionPool buildConnectionPool(Map<String, Object> config, ConnectionPool connectionPool) {
+    private static ConnectionPool buildConnectionPool(Map<String, String> config, ConnectionPool connectionPool) {
         int maxIdleConnections = Integer.parseInt(config.getOrDefault(OKHTTP_CONNECTION_POOL_MAX_IDLE_CONNECTIONS, "0").toString());
         long keepAliveDuration = Long.parseLong(config.getOrDefault(OKHTTP_CONNECTION_POOL_KEEP_ALIVE_DURATION, "0").toString());
         if (maxIdleConnections > 0 && keepAliveDuration > 0) {
@@ -339,7 +335,8 @@ public class OkHttpClientFactory implements HttpClientFactory<OkHttpClient,Reque
     }
 
 
-    private void configureCache(Map<String, Object> config, okhttp3.OkHttpClient.Builder httpClientBuilder, CompositeMeterRegistry meterRegistry) {
+
+    private void configureCache(Map<String, String> config, okhttp3.OkHttpClient.Builder httpClientBuilder, CompositeMeterRegistry meterRegistry) {
         if (config.containsKey(OKHTTP_CACHE_ACTIVATE)) {
             String cacheType = config.getOrDefault(OKHTTP_CACHE_TYPE, FILE_CACHE_TYPE).toString();
             String defaultDirectoryPath;

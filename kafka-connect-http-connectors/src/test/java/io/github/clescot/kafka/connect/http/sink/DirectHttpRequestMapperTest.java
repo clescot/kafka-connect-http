@@ -35,8 +35,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
-import java.net.DatagramSocket;
-import java.net.InetAddress;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -166,15 +164,6 @@ class DirectHttpRequestMapperTest {
         }
     }
 
-
-    private String getIP() {
-        try (DatagramSocket datagramSocket = new DatagramSocket()) {
-            datagramSocket.connect(InetAddress.getByName("8.8.8.8"), 12345);
-            return datagramSocket.getLocalAddress().getHostAddress();
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-    }
 
     private Struct getDummyHttpRequestAsStruct(String url) {
         HttpRequest httpRequest = getDummyHttpRequest(url);

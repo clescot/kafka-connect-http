@@ -5,7 +5,7 @@ import com.google.common.collect.Maps;
 import com.launchdarkly.eventsource.background.BackgroundEventSource;
 import io.github.clescot.kafka.connect.MapUtils;
 import io.github.clescot.kafka.connect.Task;
-import io.github.clescot.kafka.connect.http.client.HttpClientConfigurationFactory;
+import io.github.clescot.kafka.connect.http.client.HttpClientFactory;
 import io.github.clescot.kafka.connect.http.client.okhttp.OkHttpClient;
 import io.github.clescot.kafka.connect.http.client.okhttp.OkHttpClientFactory;
 import io.github.clescot.kafka.connect.http.core.HttpRequest;
@@ -25,7 +25,7 @@ import java.util.stream.Collectors;
 import static io.github.clescot.kafka.connect.http.client.HttpClientConfigDefinition.CONFIGURATION_IDS;
 
 
-public class SseTask implements Task<OkHttpClient, SseConfiguration, HttpRequest, SseEvent> {
+public class SseTask implements Task<OkHttpClient, SseConfiguration, HttpRequest> {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(SseTask.class);
     private static CompositeMeterRegistry meterRegistry;
@@ -38,13 +38,15 @@ public class SseTask implements Task<OkHttpClient, SseConfiguration, HttpRequest
         String configurationIds = Optional.ofNullable(settings.get(CONFIGURATION_IDS)).orElseThrow(()-> new IllegalArgumentException("Configuration IDs must be provided in the settings."));
         List<String> configurationIdList = List.of(configurationIds.split(","));
         Preconditions.checkArgument(!configurationIds.isEmpty(), "Configuration IDs must not be empty.");
-        this.sseConfigurations = HttpClientConfigurationFactory.buildConfigurations(
-                        new OkHttpClientFactory(),
+        OkHttpClientFactory httpClientFactory = new OkHttpClientFactory();
+        this.sseConfigurations = HttpClientFactory.buildConfigurations(
+                        httpClientFactory,
                         null,
                         configurationIdList,
                         settings,
                         new CompositeMeterRegistry()
-                ).entrySet().stream()
+                        )
+                .entrySet().stream()
                 .map(config -> Maps.immutableEntry(
                         config.getKey(),
                         new SseConfiguration(config.getKey(), config.getValue(), MapUtils.getMapWithPrefix(mySettings, "config." + config.getKey() + "."))

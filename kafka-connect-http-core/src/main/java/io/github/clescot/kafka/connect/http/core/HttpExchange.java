@@ -1,5 +1,7 @@
 package io.github.clescot.kafka.connect.http.core;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.google.common.collect.Maps;
 import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.data.SchemaBuilder;
 import org.apache.kafka.connect.data.Struct;
@@ -8,11 +10,12 @@ import java.io.Serial;
 import java.io.Serializable;
 import java.time.OffsetDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicInteger;
 
 
-public class HttpExchange implements Cloneable, Serializable {
+public class HttpExchange implements Exchange,Cloneable, Serializable {
     @Serial
     private static final long serialVersionUID = 1L;
     public static final int HTTP_EXCHANGE_VERSION = 2;
@@ -21,6 +24,7 @@ public class HttpExchange implements Cloneable, Serializable {
     public static final String ATTEMPTS = "attempts";
     public static final String HTTP_REQUEST = "httpRequest";
     public static final String HTTP_RESPONSE = "httpResponse";
+    public static final String ATTRIBUTES = "attributes";
     public static final Schema SCHEMA = SchemaBuilder
             .struct()
             .name(HttpExchange.class.getName())
@@ -33,6 +37,7 @@ public class HttpExchange implements Cloneable, Serializable {
             .field(HTTP_REQUEST, HttpRequest.SCHEMA)
             // response
             .field(HTTP_RESPONSE, HttpResponse.SCHEMA)
+            .field(ATTRIBUTES, SchemaBuilder.map(Schema.STRING_SCHEMA,Schema.STRING_SCHEMA).optional().schema())
             .schema();
 
     private Long durationInMillis;
@@ -41,6 +46,8 @@ public class HttpExchange implements Cloneable, Serializable {
     private boolean success;
     private HttpResponse httpResponse;
     private HttpRequest httpRequest;
+    @JsonProperty
+    private Map<String,String> attributes = Maps.newHashMap();
 
     protected HttpExchange() {
     }
@@ -113,6 +120,7 @@ public class HttpExchange implements Cloneable, Serializable {
     public String toString() {
         return "HttpExchange{" +
                 "durationInMillis=" + durationInMillis +
+                ", attributes=" + attributes +
                 ", moment=" + moment +
                 ", attempts=" + attempts +
                 ", success=" + success +
@@ -124,6 +132,7 @@ public class HttpExchange implements Cloneable, Serializable {
     public Struct toStruct(){
         Struct struct = new Struct(SCHEMA);
         struct.put(DURATION_IN_MILLIS,this.getDurationInMillis());
+        struct.put(ATTRIBUTES,this.getAttributes());
         struct.put(MOMENT,this.getMoment().format(DateTimeFormatter.ISO_ZONED_DATE_TIME));
         struct.put(ATTEMPTS,this.attempts.intValue());
         //request fields
@@ -138,6 +147,7 @@ public class HttpExchange implements Cloneable, Serializable {
     public Object clone() {
         try {
             HttpExchange clone = (HttpExchange) super.clone();
+            clone.setAttributes(this.attributes);
             clone.setDurationInMillis(this.durationInMillis);
             clone.setMoment(this.moment);
             clone.setAttempts(new AtomicInteger(this.attempts.get()));
@@ -150,6 +160,14 @@ public class HttpExchange implements Cloneable, Serializable {
         }
     }
 
+    @Override
+    public Map<String, String> getAttributes() {
+        return attributes;
+    }
+
+    public void setAttributes(Map<String, String> attributes) {
+        this.attributes = attributes;
+    }
 
     public static final class Builder {
         private Long durationInMillis;
@@ -159,6 +177,7 @@ public class HttpExchange implements Cloneable, Serializable {
         private boolean success;
         private HttpRequest httpRequest;
         private HttpResponse httpResponse;
+        private Map<String, String> attributes;
 
         private Builder() {
         }
@@ -184,6 +203,12 @@ public class HttpExchange implements Cloneable, Serializable {
             return this;
         }
 
+        public Builder withAttributes(Map<String,String> attributes) {
+            this.attributes = attributes;
+            return this;
+        }
+
+
 
         public Builder withDuration(Long durationInMillis) {
             this.durationInMillis = durationInMillis;
@@ -201,7 +226,7 @@ public class HttpExchange implements Cloneable, Serializable {
         }
 
         public HttpExchange build() {
-            return new HttpExchange(
+            HttpExchange httpExchange = new HttpExchange(
                     httpRequest,
                     httpResponse,
                     durationInMillis,
@@ -209,6 +234,8 @@ public class HttpExchange implements Cloneable, Serializable {
                     attempts,
                     success
             );
+            httpExchange.setAttributes(attributes);
+            return httpExchange;
         }
     }
 
@@ -218,6 +245,7 @@ public class HttpExchange implements Cloneable, Serializable {
         if (!(o instanceof HttpExchange that)) return false;
         return success == that.success
                 && Objects.equals(durationInMillis, that.durationInMillis)
+                && attributes.equals(that.attributes)
                 && Objects.equals(moment, that.moment)
                 && Objects.equals(attempts.get(), that.attempts.get())
                 && Objects.equals(httpResponse, that.httpResponse)
@@ -226,6 +254,6 @@ public class HttpExchange implements Cloneable, Serializable {
 
     @Override
     public int hashCode() {
-        return Objects.hash(durationInMillis, moment, attempts, success, httpResponse, httpRequest);
+        return Objects.hash(durationInMillis,attributes, moment, attempts, success, httpResponse, httpRequest);
     }
 }

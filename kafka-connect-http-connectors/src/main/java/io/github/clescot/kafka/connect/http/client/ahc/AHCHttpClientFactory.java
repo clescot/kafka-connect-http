@@ -23,13 +23,13 @@ public class AHCHttpClientFactory implements HttpClientFactory<AHCHttpClient,Req
 
 
     @Override
-    public AHCHttpClient build(Map<String, Object> config,
+    public AHCHttpClient build(Map<String, String> config,
                                ExecutorService executorService,
                                Random random,
                                Proxy proxy,
                                ProxySelector proxySelector, CompositeMeterRegistry meterRegistry) {
         //executorService is not used for AHC : we cannot set an executorService nor a thread pool to AHC
-        return new AHCHttpClient(config);
+        return new AHCHttpClient(config,random);
     }
 
 }

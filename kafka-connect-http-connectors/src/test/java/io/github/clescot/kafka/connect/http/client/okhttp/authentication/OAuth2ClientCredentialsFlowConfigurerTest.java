@@ -88,8 +88,8 @@ class OAuth2ClientCredentialsFlowConfigurerTest {
     @Test
     void test_configure_nominal_case(){
         AuthenticationConfigurer authenticationConfigurer = new OAuth2ClientCredentialsFlowConfigurer(new OkHttpClient());
-        Map<String,Object> config = Maps.newHashMap();
-        config.put(HTTP_CLIENT_AUTHENTICATION_OAUTH2_CLIENT_CREDENTIALS_FLOW_ACTIVATE,Boolean.TRUE);
+        Map<String,String> config = Maps.newHashMap();
+        config.put(HTTP_CLIENT_AUTHENTICATION_OAUTH2_CLIENT_CREDENTIALS_FLOW_ACTIVATE,Boolean.TRUE.toString());
         config.put(HTTP_CLIENT_AUTHENTICATION_OAUTH2_CLIENT_CREDENTIALS_FLOW_WELL_KNOWN_URL,httpBaseUrl+"/.well-known/openid-configuration");
         config.put(HTTP_CLIENT_AUTHENTICATION_OAUTH2_CLIENT_CREDENTIALS_FLOW_CLIENT_ID,"1234");
         config.put(HTTP_CLIENT_AUTHENTICATION_OAUTH2_CLIENT_CREDENTIALS_FLOW_CLIENT_SECRET,"secret!1234");
@@ -103,8 +103,8 @@ class OAuth2ClientCredentialsFlowConfigurerTest {
     @Test
     void test_configure_with_scopes(){
         AuthenticationConfigurer authenticationConfigurer = new OAuth2ClientCredentialsFlowConfigurer(new OkHttpClient());
-        Map<String,Object> config = Maps.newHashMap();
-        config.put(HTTP_CLIENT_AUTHENTICATION_OAUTH2_CLIENT_CREDENTIALS_FLOW_ACTIVATE,Boolean.TRUE);
+        Map<String,String> config = Maps.newHashMap();
+        config.put(HTTP_CLIENT_AUTHENTICATION_OAUTH2_CLIENT_CREDENTIALS_FLOW_ACTIVATE,Boolean.TRUE.toString());
         config.put(HTTP_CLIENT_AUTHENTICATION_OAUTH2_CLIENT_CREDENTIALS_FLOW_WELL_KNOWN_URL,httpBaseUrl+"/.well-known/openid-configuration");
         config.put(HTTP_CLIENT_AUTHENTICATION_OAUTH2_CLIENT_CREDENTIALS_FLOW_CLIENT_ID,"1234");
         config.put(HTTP_CLIENT_AUTHENTICATION_OAUTH2_CLIENT_CREDENTIALS_FLOW_CLIENT_SECRET,"secret!1234");
@@ -119,8 +119,8 @@ class OAuth2ClientCredentialsFlowConfigurerTest {
     @Test
     void test_configure_with_some_scopes(){
         AuthenticationConfigurer authenticationConfigurer = new OAuth2ClientCredentialsFlowConfigurer(new OkHttpClient());
-        Map<String,Object> config = Maps.newHashMap();
-        config.put(HTTP_CLIENT_AUTHENTICATION_OAUTH2_CLIENT_CREDENTIALS_FLOW_ACTIVATE,Boolean.TRUE);
+        Map<String,String> config = Maps.newHashMap();
+        config.put(HTTP_CLIENT_AUTHENTICATION_OAUTH2_CLIENT_CREDENTIALS_FLOW_ACTIVATE,Boolean.TRUE.toString());
         config.put(HTTP_CLIENT_AUTHENTICATION_OAUTH2_CLIENT_CREDENTIALS_FLOW_WELL_KNOWN_URL,httpBaseUrl+"/.well-known/openid-configuration");
         config.put(HTTP_CLIENT_AUTHENTICATION_OAUTH2_CLIENT_CREDENTIALS_FLOW_CLIENT_ID,"1234");
         config.put(HTTP_CLIENT_AUTHENTICATION_OAUTH2_CLIENT_CREDENTIALS_FLOW_CLIENT_SECRET,"secret!1234");
@@ -135,8 +135,8 @@ class OAuth2ClientCredentialsFlowConfigurerTest {
     @Test
     void test_configure_with_one_unknown_scope(){
         AuthenticationConfigurer authenticationConfigurer = new OAuth2ClientCredentialsFlowConfigurer(new OkHttpClient());
-        Map<String,Object> config = Maps.newHashMap();
-        config.put(HTTP_CLIENT_AUTHENTICATION_OAUTH2_CLIENT_CREDENTIALS_FLOW_ACTIVATE,Boolean.TRUE);
+        Map<String,String> config = Maps.newHashMap();
+        config.put(HTTP_CLIENT_AUTHENTICATION_OAUTH2_CLIENT_CREDENTIALS_FLOW_ACTIVATE,Boolean.TRUE.toString());
         config.put(HTTP_CLIENT_AUTHENTICATION_OAUTH2_CLIENT_CREDENTIALS_FLOW_WELL_KNOWN_URL,httpBaseUrl+"/.well-known/openid-configuration");
         config.put(HTTP_CLIENT_AUTHENTICATION_OAUTH2_CLIENT_CREDENTIALS_FLOW_CLIENT_ID,"1234");
         config.put(HTTP_CLIENT_AUTHENTICATION_OAUTH2_CLIENT_CREDENTIALS_FLOW_CLIENT_SECRET,"secret!1234");
@@ -148,8 +148,8 @@ class OAuth2ClientCredentialsFlowConfigurerTest {
     @Test
     void test_configure_with_missing_well_known_url(){
         AuthenticationConfigurer authenticationConfigurer = new OAuth2ClientCredentialsFlowConfigurer(new OkHttpClient());
-        Map<String,Object> config = Maps.newHashMap();
-        config.put(HTTP_CLIENT_AUTHENTICATION_OAUTH2_CLIENT_CREDENTIALS_FLOW_ACTIVATE,Boolean.TRUE);
+        Map<String,String> config = Maps.newHashMap();
+        config.put(HTTP_CLIENT_AUTHENTICATION_OAUTH2_CLIENT_CREDENTIALS_FLOW_ACTIVATE,Boolean.TRUE.toString());
         config.put(HTTP_CLIENT_AUTHENTICATION_OAUTH2_CLIENT_CREDENTIALS_FLOW_CLIENT_ID,"1234");
         config.put(HTTP_CLIENT_AUTHENTICATION_OAUTH2_CLIENT_CREDENTIALS_FLOW_CLIENT_SECRET,"secret!1234");
         config.put(HTTP_CLIENT_AUTHENTICATION_OAUTH2_CLIENT_CREDENTIALS_FLOW_CLIENT_AUTHENTICATION_METHOD,"client_secret_basic");
@@ -159,8 +159,8 @@ class OAuth2ClientCredentialsFlowConfigurerTest {
     @Test
     void test_configure_with_missing_client_id(){
         AuthenticationConfigurer authenticationConfigurer = new OAuth2ClientCredentialsFlowConfigurer(new OkHttpClient());
-        Map<String,Object> config = Maps.newHashMap();
-        config.put(HTTP_CLIENT_AUTHENTICATION_OAUTH2_CLIENT_CREDENTIALS_FLOW_ACTIVATE,Boolean.TRUE);
+        Map<String,String> config = Maps.newHashMap();
+        config.put(HTTP_CLIENT_AUTHENTICATION_OAUTH2_CLIENT_CREDENTIALS_FLOW_ACTIVATE,Boolean.TRUE.toString());
         config.put(HTTP_CLIENT_AUTHENTICATION_OAUTH2_CLIENT_CREDENTIALS_FLOW_WELL_KNOWN_URL,httpBaseUrl+"/.well-known/openid-configuration");
         config.put(HTTP_CLIENT_AUTHENTICATION_OAUTH2_CLIENT_CREDENTIALS_FLOW_CLIENT_SECRET,"secret!1234");
         config.put(HTTP_CLIENT_AUTHENTICATION_OAUTH2_CLIENT_CREDENTIALS_FLOW_CLIENT_AUTHENTICATION_METHOD,"client_secret_basic");
@@ -170,8 +170,8 @@ class OAuth2ClientCredentialsFlowConfigurerTest {
     @Test
     void test_configure_with_missing_client_secret(){
         AuthenticationConfigurer authenticationConfigurer = new OAuth2ClientCredentialsFlowConfigurer(new OkHttpClient());
-        Map<String,Object> config = Maps.newHashMap();
-        config.put(HTTP_CLIENT_AUTHENTICATION_OAUTH2_CLIENT_CREDENTIALS_FLOW_ACTIVATE,Boolean.TRUE);
+        Map<String,String> config = Maps.newHashMap();
+        config.put(HTTP_CLIENT_AUTHENTICATION_OAUTH2_CLIENT_CREDENTIALS_FLOW_ACTIVATE,Boolean.TRUE.toString());
         config.put(HTTP_CLIENT_AUTHENTICATION_OAUTH2_CLIENT_CREDENTIALS_FLOW_WELL_KNOWN_URL,httpBaseUrl+"/.well-known/openid-configuration");
         config.put(HTTP_CLIENT_AUTHENTICATION_OAUTH2_CLIENT_CREDENTIALS_FLOW_CLIENT_ID,"1234");
         config.put(HTTP_CLIENT_AUTHENTICATION_OAUTH2_CLIENT_CREDENTIALS_FLOW_CLIENT_AUTHENTICATION_METHOD,"client_secret_basic");
@@ -183,7 +183,7 @@ class OAuth2ClientCredentialsFlowConfigurerTest {
     @Test
     void test_configure_with_empty_map(){
         AuthenticationConfigurer authenticationConfigurer = new OAuth2ClientCredentialsFlowConfigurer(new OkHttpClient());
-        Map<String,Object> config = Maps.newHashMap();
+        Map<String,String> config = Maps.newHashMap();
         Authenticator authenticator = authenticationConfigurer.configureAuthenticator(config);
         assertThat(authenticator)
                 .isNull();

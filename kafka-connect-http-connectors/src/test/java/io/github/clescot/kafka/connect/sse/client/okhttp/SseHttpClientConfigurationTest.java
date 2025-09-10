@@ -8,8 +8,10 @@ import com.github.tomakehurst.wiremock.junit5.WireMockExtension;
 import com.github.tomakehurst.wiremock.junit5.WireMockRuntimeInfo;
 import com.google.common.collect.Maps;
 import io.github.clescot.kafka.connect.Configuration;
+import io.github.clescot.kafka.connect.http.client.okhttp.OkHttpClientFactory;
 import io.github.clescot.kafka.connect.http.core.queue.QueueFactory;
 import io.github.clescot.kafka.connect.sse.core.SseEvent;
+import io.micrometer.core.instrument.composite.CompositeMeterRegistry;
 import org.awaitility.Awaitility;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
@@ -17,6 +19,7 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 import java.util.Map;
 import java.util.Queue;
 import java.util.UUID;
+import java.util.concurrent.ExecutorService;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.okForContentType;
 import static com.github.tomakehurst.wiremock.stubbing.Scenario.STARTED;
@@ -71,7 +74,8 @@ class SseHttpClientConfigurationTest {
         Map<String,String> settings = Maps.newHashMap();
         settings.put("url", wmHttp.url("/events"));
         settings.put("topic", "test-topic");
-        SseConfiguration client = buildSseConfiguration(Configuration.DEFAULT_CONFIGURATION_ID, settings);
+        ExecutorService service = java.util.concurrent.Executors.newSingleThreadExecutor();
+        SseConfiguration client = buildSseConfiguration(Configuration.DEFAULT_CONFIGURATION_ID, settings,service,new CompositeMeterRegistry(),new OkHttpClientFactory());
 
         // Connect to the SSE endpoint
 

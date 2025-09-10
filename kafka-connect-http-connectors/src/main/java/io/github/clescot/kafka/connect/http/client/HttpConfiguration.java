@@ -1,10 +1,13 @@
 package io.github.clescot.kafka.connect.http.client;
 
 import com.google.common.base.Stopwatch;
+import com.google.common.collect.Maps;
 import dev.failsafe.Failsafe;
 import dev.failsafe.FailsafeExecutor;
 import dev.failsafe.RetryPolicy;
 import io.github.clescot.kafka.connect.Configuration;
+import io.github.clescot.kafka.connect.http.client.config.AddSuccessStatusToHttpExchangeFunction;
+import io.github.clescot.kafka.connect.http.client.config.HttpRequestPredicateBuilder;
 import io.github.clescot.kafka.connect.http.core.HttpExchange;
 import io.github.clescot.kafka.connect.http.core.HttpRequest;
 import io.github.clescot.kafka.connect.http.core.HttpResponse;
@@ -15,19 +18,114 @@ import org.slf4j.LoggerFactory;
 import java.time.OffsetDateTime;
 import java.time.ZoneId;
 import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Predicate;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-public class HttpConfiguration<C extends HttpClient<R, S>, R, S> implements Configuration<C,HttpRequest> {
+import static io.github.clescot.kafka.connect.http.client.config.HttpRequestPredicateBuilder.*;
+import static io.github.clescot.kafka.connect.http.client.config.HttpRequestPredicateBuilder.HEADER_KEY_REGEX;
+import static io.github.clescot.kafka.connect.http.sink.HttpConfigDefinition.DEFAULT_DEFAULT_RETRY_RESPONSE_CODE_REGEX;
+import static io.github.clescot.kafka.connect.http.sink.HttpConfigDefinition.RETRY_RESPONSE_CODE_REGEX;
+
+/**
+ * Configuration holding an HttpClient and its configuration.
+ * It is able to execute the HTTP call with retry if needed.
+ * @param <C> type of the HttpClient
+ * @param <NR> native HttpRequest
+ * @param <NS> native HttpResponse
+ */
+@SuppressWarnings("java:S119")
+//we don't want to use the generic of ConnectRecord, to handle both SinkRecord and SourceRecord
+public class HttpConfiguration<C extends HttpClient<NR, NS>, NR, NS> implements Configuration<C,HttpRequest>,Cloneable {
     private static final Logger LOGGER = LoggerFactory.getLogger(HttpConfiguration.class);
 
-    private final HttpClientConfiguration<C, R, S> httpClientConfiguration;
+    private C client;
+    private final ExecutorService executorService;
+    private final RetryPolicy<HttpExchange> retryPolicy;
+    @NotNull
+    private final Map<String, String> settings;
+    private final Pattern retryResponseCodeRegex;
+    private final String id;
+    private final Predicate<HttpRequest> predicate;
 
-    public HttpConfiguration(HttpClientConfiguration<C, R, S> httpClientConfiguration) {
-        this.httpClientConfiguration = httpClientConfiguration;
+    public HttpConfiguration(String id,
+                             C client,
+                             ExecutorService executorService,
+                             RetryPolicy<HttpExchange> retryPolicy,
+                             Map<String, String> settings) {
+        this.id = id;
+        this.client = client;
+        this.executorService = executorService;
+        this.retryPolicy = retryPolicy;
+        this.settings = settings;
+        //retry response code regex
+        if (settings.containsKey(RETRY_RESPONSE_CODE_REGEX)) {
+            this.retryResponseCodeRegex = Pattern.compile(settings.get(RETRY_RESPONSE_CODE_REGEX));
+        }else {
+            this.retryResponseCodeRegex = Pattern.compile(DEFAULT_DEFAULT_RETRY_RESPONSE_CODE_REGEX);
+        }
+
+        this.predicate = HttpRequestPredicateBuilder.build().buildPredicate(settings);
+    }
+
+    public Pattern getRetryResponseCodeRegex() {
+        return retryResponseCodeRegex;
+    }
+
+    private String predicateToString() {
+        StringBuilder result = new StringBuilder("{");
+        String urlRegex = settings.get(URL_REGEX);
+        if(urlRegex!=null) {
+            result.append("urlRegex:'").append(urlRegex).append("'");
+        }
+        String methodRegex = settings.get(METHOD_REGEX);
+        if(methodRegex!=null) {
+            result.append(",methodRegex:").append(methodRegex).append("'");
+        }
+        String bodytypeRegex = settings.get(BODYTYPE_REGEX);
+        if(bodytypeRegex!=null) {
+            result.append(",bodytypeRegex:").append(bodytypeRegex).append("'");
+        }
+        String headerKeyRegex = settings.get(HEADER_KEY_REGEX);
+        if(headerKeyRegex!=null) {
+            result.append(",headerKeyRegex:").append(headerKeyRegex).append("'");
+        }
+        result.append("}");
+        return result.toString();
+    }
+
+    public RetryPolicy<HttpExchange> getRetryPolicy() {
+        return retryPolicy;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (o == null || getClass() != o.getClass()) return false;
+        HttpConfiguration<?, ?, ?> that = (HttpConfiguration<?, ?, ?>) o;
+        return Objects.equals(getClient(), that.getClient()) && Objects.equals(executorService, that.executorService) && Objects.equals(getRetryPolicy(), that.getRetryPolicy()) && Objects.equals(settings, that.settings) && Objects.equals(getRetryResponseCodeRegex().pattern(), that.getRetryResponseCodeRegex().pattern()) && Objects.equals(getId(), that.getId()) && Objects.equals(predicate, that.predicate);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(getClient(), executorService, getRetryPolicy(), settings, getRetryResponseCodeRegex(), getId(), predicate);
+    }
+
+    @Override
+    public String toString() {
+        return "HttpConfiguration{" +
+                "httpClientConfiguration=" + client +
+                ", executorService=" + executorService +
+                ", settings=" + settings +
+                ", retryResponseCodeRegex=" + retryResponseCodeRegex +
+                ", id='" + id + '\'' +
+                ", predicate=" + predicateToString() +
+                '}';
     }
 
     /**
@@ -47,7 +145,7 @@ public class HttpConfiguration<C extends HttpClient<R, S>, R, S> implements Conf
         if (LOGGER.isTraceEnabled()) {
             LOGGER.trace("after enrichment:{}", enrichedHttpRequest);
         }
-        CompletableFuture<HttpExchange> completableFuture = this.httpClientConfiguration.getClient().call(enrichedHttpRequest, attempts);
+        CompletableFuture<HttpExchange> completableFuture = this.client.call(enrichedHttpRequest, attempts);
         return completableFuture
                 .thenApply(this::enrichHttpExchange);
 
@@ -58,15 +156,15 @@ public class HttpConfiguration<C extends HttpClient<R, S>, R, S> implements Conf
      * @return CompletableFuture of the HttpExchange (describing the request and response).
      */
     public CompletableFuture<HttpExchange> call(@NotNull HttpRequest httpRequest) {
-        Optional<RetryPolicy<HttpExchange>> retryPolicyForCall = this.httpClientConfiguration.getRetryPolicy();
+        Optional<RetryPolicy<HttpExchange>> retryPolicyForCall = Optional.ofNullable(getRetryPolicy());
         AtomicInteger attempts = new AtomicInteger();
         try {
 
             if (retryPolicyForCall.isPresent()) {
                 RetryPolicy<HttpExchange> myRetryPolicy = retryPolicyForCall.get();
                 FailsafeExecutor<HttpExchange> failsafeExecutor = Failsafe.with(List.of(myRetryPolicy));
-                if (this.httpClientConfiguration.getExecutorService() != null) {
-                    failsafeExecutor = failsafeExecutor.with(this.httpClientConfiguration.getExecutorService());
+                if (this.executorService != null) {
+                    failsafeExecutor = failsafeExecutor.with(this.executorService);
                 }
                 return failsafeExecutor
                         .getStageAsync(ctx -> callAndEnrich(httpRequest, attempts)
@@ -77,12 +175,13 @@ public class HttpConfiguration<C extends HttpClient<R, S>, R, S> implements Conf
         } catch (Exception exception) {
             LOGGER.error("Failed to call web service after {} retries with error({}). message:{} ", attempts, exception,
                     exception.getMessage());
-            HttpExchange httpExchange = HttpClient.buildHttpExchange(
+            HttpExchange httpExchange = getClient().buildExchange(
                     httpRequest,
                     new HttpResponse(HttpClient.SERVER_ERROR_STATUS_CODE, String.valueOf(exception.getMessage())),
                     Stopwatch.createUnstarted(), OffsetDateTime.now(ZoneId.of(HttpClient.UTC_ZONE_ID)),
                     attempts,
-                    HttpClient.FAILURE);
+                    HttpClient.FAILURE,
+                    Maps.newHashMap());
             return CompletableFuture.supplyAsync(() -> httpExchange);
         }
     }
@@ -105,7 +204,7 @@ public class HttpConfiguration<C extends HttpClient<R, S>, R, S> implements Conf
     }
 
     protected boolean retryNeeded(HttpResponse httpResponse) {
-        Optional<Pattern> myRetryResponseCodeRegex = this.httpClientConfiguration.getRetryResponseCodeRegex();
+        Optional<Pattern> myRetryResponseCodeRegex = Optional.ofNullable(getRetryResponseCodeRegex());
         if (myRetryResponseCodeRegex.isPresent()) {
             Pattern retryPattern = myRetryResponseCodeRegex.get();
             Matcher matcher = retryPattern.matcher("" + httpResponse.getStatusCode());
@@ -116,24 +215,41 @@ public class HttpConfiguration<C extends HttpClient<R, S>, R, S> implements Conf
     }
 
     protected HttpRequest enrich(HttpRequest httpRequest) {
-        return this.httpClientConfiguration.getEnrichRequestFunction().apply(httpRequest);
+        return this.client.getEnrichRequestFunction().apply(httpRequest);
     }
 
 
     protected HttpExchange enrichHttpExchange(HttpExchange httpExchange) {
-        return this.httpClientConfiguration.getAddSuccessStatusToHttpExchangeFunction().apply(httpExchange);
+        C client = this.getClient();
+        AddSuccessStatusToHttpExchangeFunction addSuccessStatusToHttpExchangeFunction = client.getAddSuccessStatusToHttpExchangeFunction();
+        return addSuccessStatusToHttpExchangeFunction!=null?addSuccessStatusToHttpExchangeFunction.apply(httpExchange):httpExchange;
     }
     @Override
     public boolean matches(HttpRequest httpRequest) {
-        return this.httpClientConfiguration.matches(httpRequest);
+        return this.predicate.test(httpRequest);
+    }
+
+    @Override
+    public String getId() {
+        return this.id;
     }
 
     @Override
     public C getClient() {
-        return this.httpClientConfiguration.getClient();
+        return this.client;
     }
 
-    public HttpClientConfiguration<C, R, S> getConfiguration() {
-        return httpClientConfiguration;
+    @Override
+    public void setClient(C client) {
+        if (this.client == null) {
+            throw new IllegalStateException("client is null, cannot set it");
+        }
+        this.client = client;
+    }
+
+    @Override
+    public Object clone() throws CloneNotSupportedException {
+        HttpConfiguration<C, NR, NS> httpConfiguration = new HttpConfiguration<>(this.id, this.client, this.executorService, this.retryPolicy, Maps.newHashMap(this.settings));
+        return httpConfiguration;
     }
 }

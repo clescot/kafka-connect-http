@@ -5,7 +5,8 @@ import com.google.common.base.Stopwatch;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import dev.failsafe.RateLimiter;
-import io.github.clescot.kafka.connect.Client;
+import io.github.clescot.kafka.connect.RequestResponseClient;
+import io.github.clescot.kafka.connect.http.client.config.AddSuccessStatusToHttpExchangeFunction;
 import io.github.clescot.kafka.connect.http.core.HttpExchange;
 import io.github.clescot.kafka.connect.http.core.HttpRequest;
 import io.github.clescot.kafka.connect.http.core.HttpResponse;
@@ -21,15 +22,18 @@ import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Function;
+import java.util.regex.Pattern;
 
 import static io.github.clescot.kafka.connect.http.sink.HttpConfigDefinition.RATE_LIMITER_REQUEST_LENGTH_PER_CALL;
 
 /**
  * execute the HTTP call.
- * @param <R> native HttpRequest
- * @param <S> native HttpResponse
+ * @param <NR> native HttpRequest
+ * @param <NS> native HttpResponse
  */
-public interface HttpClient<R, S>  extends Client {
+@SuppressWarnings({"java:S119"})
+public interface HttpClient<NR, NS>  extends RequestResponseClient<HttpRequest,NR,HttpResponse,NS,HttpExchange>,Cloneable {
     boolean FAILURE = false;
     int SERVER_ERROR_STATUS_CODE = 500;
     String UTC_ZONE_ID = "UTC";
@@ -41,12 +45,13 @@ public interface HttpClient<R, S>  extends Client {
     String THROWABLE_MESSAGE = "throwable.message";
 
 
-    static HttpExchange buildHttpExchange(HttpRequest httpRequest,
-                                           HttpResponse httpResponse,
-                                           Stopwatch stopwatch,
-                                           OffsetDateTime now,
-                                           AtomicInteger attempts,
-                                           boolean success) {
+    default HttpExchange buildExchange(HttpRequest httpRequest,
+                                       HttpResponse httpResponse,
+                                       Stopwatch stopwatch,
+                                       OffsetDateTime now,
+                                       AtomicInteger attempts,
+                                       boolean success,
+                                       Map<String,String> attributes) {
         Preconditions.checkNotNull(httpRequest, "'httpRequest' is null");
         return HttpExchange.Builder.anHttpExchange()
                 //request
@@ -60,29 +65,16 @@ public interface HttpClient<R, S>  extends Client {
                 .at(now)
                 .withAttempts(attempts)
                 .withSuccess(success)
+                .withAttributes(attributes != null && !attributes.isEmpty() ? attributes : Maps.newHashMap())
                 .build();
     }
-
-
-    /**
-     * convert an {@link HttpRequest} into a native (from the implementation) request.
-     *
-     * @param httpRequest http request to build.
-     * @return native request.
-     */
-    R buildNativeRequest(HttpRequest httpRequest);
-
-
-    HttpRequest buildRequest(R nativeRequest);
-
-
 
     default CompletableFuture<HttpExchange> call(HttpRequest httpRequest, AtomicInteger attempts) throws HttpException {
 
         Stopwatch rateLimitedStopWatch = Stopwatch.createStarted();
-        CompletableFuture<S> response;
+        CompletableFuture<NS> response;
         LOGGER.debug("httpRequest: {}", httpRequest);
-        R request = buildNativeRequest(httpRequest);
+        NR request = buildNativeRequest(httpRequest);
         LOGGER.debug("native request: {}", request);
         OffsetDateTime now = OffsetDateTime.now(ZoneId.of(UTC_ZONE_ID));
         try {
@@ -119,8 +111,18 @@ public interface HttpClient<R, S>  extends Client {
                     //elapsed time contains rate limiting waiting time + + local code execution time + network time + remote server-side execution time
                     long overallElapsedTime = rateLimitedStopWatch.elapsed(TimeUnit.MILLISECONDS);
                     long waitingTime = overallElapsedTime - directElaspedTime;
-                    LOGGER.info("[{}] {} {} : {} '{}' (direct : '{}' ms, waiting time :'{}'ms overall : '{}' ms)",Thread.currentThread().getId(),httpRequest.getMethod(),httpRequest.getUrl(),responseStatusCode,responseStatusMessage, directElaspedTime,waitingTime,overallElapsedTime);
-                    return buildHttpExchange(httpRequest, myResponse, directStopWatch, now, attempts, responseStatusCode < 400 ? SUCCESS : FAILURE);
+                    LOGGER.info("[{}] {} {} : {} '{}' (direct : '{}' ms, waiting time :'{}'ms overall : '{}' ms)",
+                            Thread.currentThread().getId(),
+                            httpRequest.getMethod(),
+                            httpRequest.getUrl(),
+                            responseStatusCode,
+                            responseStatusMessage,
+                            directElaspedTime,
+                            waitingTime,
+                            overallElapsedTime
+                    );
+                    return buildExchange(httpRequest, myResponse, directStopWatch, now, attempts, responseStatusCode < 400 ? SUCCESS : FAILURE,
+                            Maps.newHashMap());
                         }
                 ).exceptionally((throwable-> {
                     HttpResponse httpResponse = new HttpResponse(400,throwable.getMessage());
@@ -129,7 +131,8 @@ public interface HttpClient<R, S>  extends Client {
                     responseHeaders.put(THROWABLE_MESSAGE, Lists.newArrayList(throwable.getCause().getMessage()));
                     httpResponse.setHeaders(responseHeaders);
                     LOGGER.error(throwable.toString());
-                    return buildHttpExchange(httpRequest, httpResponse, rateLimitedStopWatch, now, attempts,FAILURE);
+                    return buildExchange(httpRequest, httpResponse, rateLimitedStopWatch, now, attempts,FAILURE,
+                            Maps.newHashMap());
                 }));
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
@@ -137,24 +140,10 @@ public interface HttpClient<R, S>  extends Client {
         }
     }
 
+    HttpClient<NR, NS> customizeForUser(String vuId);
 
 
-    /**
-     * convert a native response (from the implementation) to an {@link HttpResponse}.
-     *
-     * @param response native response
-     * @return HttpResponse
-     */
-
-    HttpResponse buildResponse(S response);
-
-    /**
-     * raw native HttpRequest call.
-     * @param request native HttpRequest
-     * @return CompletableFuture of a native HttpResponse.
-     */
-    CompletableFuture<S> nativeCall(R request);
-
+    Function<HttpRequest, HttpRequest> getEnrichRequestFunction();
 
     Integer getStatusMessageLimit();
 
@@ -166,16 +155,15 @@ public interface HttpClient<R, S>  extends Client {
 
     Integer getBodyLimit();
 
-    String getPermitsPerExecution();
 
     void setBodyLimit(Integer bodyLimit);
-
-    void setRateLimiter(RateLimiter<HttpExchange> rateLimiter);
-
-    Optional<RateLimiter<HttpExchange>> getRateLimiter();
 
     TrustManagerFactory getTrustManagerFactory();
 
 
     void setTrustManagerFactory(TrustManagerFactory trustManagerFactory);
+
+    void setAddSuccessStatusToHttpExchangeFunction(Pattern addSuccessStatusToHttpExchangeFunction);
+
+    AddSuccessStatusToHttpExchangeFunction getAddSuccessStatusToHttpExchangeFunction();
 }

@@ -244,7 +244,7 @@ class OAuth2ClientCredentialsFlowAuthenticatorTest {
 
         @Test
         void test_constructor_with_missing_ok_http_client() {
-            Map<String,Object> config = Maps.newHashMap();
+            Map<String,String> config = Maps.newHashMap();
             config.put(HTTP_CLIENT_AUTHENTICATION_OAUTH2_CLIENT_CREDENTIALS_FLOW_CLIENT_ID,CLIENT_ID);
             config.put(HTTP_CLIENT_AUTHENTICATION_OAUTH2_CLIENT_CREDENTIALS_FLOW_CLIENT_SECRET,CLIENT_SECRET);
             Assertions.assertThrows(NullPointerException.class, () -> new OAuth2ClientCredentialsFlowAuthenticator(
@@ -253,7 +253,7 @@ class OAuth2ClientCredentialsFlowAuthenticatorTest {
 
         @Test
         void test_constructor_with_missing_well_known_url() {
-            Map<String,Object> config = Maps.newHashMap();
+            Map<String,String> config = Maps.newHashMap();
             config.put(HTTP_CLIENT_AUTHENTICATION_OAUTH2_CLIENT_CREDENTIALS_FLOW_CLIENT_ID,CLIENT_ID);
             config.put(HTTP_CLIENT_AUTHENTICATION_OAUTH2_CLIENT_CREDENTIALS_FLOW_CLIENT_SECRET,CLIENT_SECRET);
             OkHttpClient okHttpClient = new OkHttpClient();
@@ -263,7 +263,7 @@ class OAuth2ClientCredentialsFlowAuthenticatorTest {
 
         @Test
         void test_constructor_with_missing_well_client_id() {
-            Map<String,Object> config = Maps.newHashMap();
+            Map<String,String> config = Maps.newHashMap();
             config.put(HTTP_CLIENT_AUTHENTICATION_OAUTH2_CLIENT_CREDENTIALS_FLOW_CLIENT_ID,CLIENT_ID);
             OkHttpClient okHttpClient = new OkHttpClient();
             Assertions.assertThrows(NullPointerException.class, () -> new OAuth2ClientCredentialsFlowAuthenticator(
@@ -272,7 +272,7 @@ class OAuth2ClientCredentialsFlowAuthenticatorTest {
 
         @Test
         void test_constructor_with_missing_well_client_secret() {
-            Map<String,Object> config = Maps.newHashMap();
+            Map<String,String> config = Maps.newHashMap();
             config.put(HTTP_CLIENT_AUTHENTICATION_OAUTH2_CLIENT_CREDENTIALS_FLOW_CLIENT_ID,CLIENT_ID);
             OkHttpClient okHttpClient = new OkHttpClient();
             Assertions.assertThrows(NullPointerException.class, () -> new OAuth2ClientCredentialsFlowAuthenticator(
@@ -281,7 +281,7 @@ class OAuth2ClientCredentialsFlowAuthenticatorTest {
 
         @Test
         void test_constructor_nominal_case() {
-            Map<String,Object> config = Maps.newHashMap();
+            Map<String,String> config = Maps.newHashMap();
             config.put(HTTP_CLIENT_AUTHENTICATION_OAUTH2_CLIENT_CREDENTIALS_FLOW_CLIENT_ID,CLIENT_ID);
             config.put(HTTP_CLIENT_AUTHENTICATION_OAUTH2_CLIENT_CREDENTIALS_FLOW_CLIENT_SECRET,CLIENT_SECRET);
             OAuth2ClientCredentialsFlowAuthenticator authenticator = new OAuth2ClientCredentialsFlowAuthenticator(
@@ -293,7 +293,7 @@ class OAuth2ClientCredentialsFlowAuthenticatorTest {
 
         @Test
         void test_constructor_nominal_case_with_known_scopes() {
-            Map<String,Object> config = Maps.newHashMap();
+            Map<String,String> config = Maps.newHashMap();
             config.put(HTTP_CLIENT_AUTHENTICATION_OAUTH2_CLIENT_CREDENTIALS_FLOW_CLIENT_ID,CLIENT_ID);
             config.put(HTTP_CLIENT_AUTHENTICATION_OAUTH2_CLIENT_CREDENTIALS_FLOW_CLIENT_SECRET,CLIENT_SECRET);
             OAuth2ClientCredentialsFlowAuthenticator authenticator = new OAuth2ClientCredentialsFlowAuthenticator(
@@ -305,7 +305,7 @@ class OAuth2ClientCredentialsFlowAuthenticatorTest {
 
         @Test
         void test_constructor_nominal_case_with_unknown_scopes() {
-            Map<String,Object> config = Maps.newHashMap();
+            Map<String,String> config = Maps.newHashMap();
             config.put(HTTP_CLIENT_AUTHENTICATION_OAUTH2_CLIENT_CREDENTIALS_FLOW_CLIENT_ID,CLIENT_ID);
             config.put(HTTP_CLIENT_AUTHENTICATION_OAUTH2_CLIENT_CREDENTIALS_FLOW_CLIENT_SECRET,CLIENT_SECRET);
             OkHttpClient okHttpClient = new OkHttpClient();
@@ -315,7 +315,7 @@ class OAuth2ClientCredentialsFlowAuthenticatorTest {
 
         @Test
         void test_constructor_without_basic_auth() {
-            Map<String,Object> config = Maps.newHashMap();
+            Map<String,String> config = Maps.newHashMap();
             config.put(HTTP_CLIENT_AUTHENTICATION_OAUTH2_CLIENT_CREDENTIALS_FLOW_CLIENT_ID,CLIENT_ID);
             config.put(HTTP_CLIENT_AUTHENTICATION_OAUTH2_CLIENT_CREDENTIALS_FLOW_CLIENT_SECRET,CLIENT_SECRET);
             OkHttpClient okHttpClient = new OkHttpClient();
@@ -325,7 +325,7 @@ class OAuth2ClientCredentialsFlowAuthenticatorTest {
 
         @Test
         void test_constructor_with_unknown_client_authentication() {
-            Map<String,Object> config = Maps.newHashMap();
+            Map<String,String> config = Maps.newHashMap();
             config.put(HTTP_CLIENT_AUTHENTICATION_OAUTH2_CLIENT_CREDENTIALS_FLOW_CLIENT_ID,CLIENT_ID);
             config.put(HTTP_CLIENT_AUTHENTICATION_OAUTH2_CLIENT_CREDENTIALS_FLOW_CLIENT_SECRET,CLIENT_SECRET);
             config.put(HTTP_CLIENT_AUTHENTICATION_OAUTH2_CLIENT_CREDENTIALS_FLOW_CLIENT_AUTHENTICATION_METHOD,"dummy");
@@ -340,7 +340,7 @@ class OAuth2ClientCredentialsFlowAuthenticatorTest {
     class Authenticate{
         @Test
         void test_authenticate_nominal_case_with_default_client_authentication() throws IOException {
-            Map<String,Object> config = Maps.newHashMap();
+            Map<String,String> config = Maps.newHashMap();
             config.put(HTTP_CLIENT_AUTHENTICATION_OAUTH2_CLIENT_CREDENTIALS_FLOW_CLIENT_ID,CLIENT_ID);
             config.put(HTTP_CLIENT_AUTHENTICATION_OAUTH2_CLIENT_CREDENTIALS_FLOW_CLIENT_SECRET,CLIENT_SECRET);
             Authenticator authenticator = new OAuth2ClientCredentialsFlowAuthenticator(
@@ -356,7 +356,7 @@ class OAuth2ClientCredentialsFlowAuthenticatorTest {
         }
         @Test
         void test_authenticate_nominal_case_with_basic_client_authentication() throws IOException {
-            Map<String,Object> config = Maps.newHashMap();
+            Map<String,String> config = Maps.newHashMap();
             config.put(HTTP_CLIENT_AUTHENTICATION_OAUTH2_CLIENT_CREDENTIALS_FLOW_CLIENT_ID,CLIENT_ID);
             config.put(HTTP_CLIENT_AUTHENTICATION_OAUTH2_CLIENT_CREDENTIALS_FLOW_CLIENT_SECRET,CLIENT_SECRET);
             config.put(HTTP_CLIENT_AUTHENTICATION_OAUTH2_CLIENT_CREDENTIALS_FLOW_CLIENT_AUTHENTICATION_METHOD,"client_secret_basic");
@@ -374,7 +374,7 @@ class OAuth2ClientCredentialsFlowAuthenticatorTest {
         }
         @Test
         void test_authenticate_nominal_case_with_post_client_authentication() throws IOException {
-            Map<String,Object> config = Maps.newHashMap();
+            Map<String,String> config = Maps.newHashMap();
             config.put(HTTP_CLIENT_AUTHENTICATION_OAUTH2_CLIENT_CREDENTIALS_FLOW_CLIENT_ID,CLIENT_ID);
             config.put(HTTP_CLIENT_AUTHENTICATION_OAUTH2_CLIENT_CREDENTIALS_FLOW_CLIENT_SECRET,CLIENT_SECRET);
             config.put(HTTP_CLIENT_AUTHENTICATION_OAUTH2_CLIENT_CREDENTIALS_FLOW_CLIENT_AUTHENTICATION_METHOD,"client_secret_post");
@@ -394,7 +394,7 @@ class OAuth2ClientCredentialsFlowAuthenticatorTest {
 
         @Test
         void test_authenticate_nominal_case_with_client_secret_jwt_client_authentication() throws IOException {
-            Map<String,Object> config = Maps.newHashMap();
+            Map<String,String> config = Maps.newHashMap();
             config.put(HTTP_CLIENT_AUTHENTICATION_OAUTH2_CLIENT_CREDENTIALS_FLOW_CLIENT_ID,CLIENT_ID);
             config.put(HTTP_CLIENT_AUTHENTICATION_OAUTH2_CLIENT_CREDENTIALS_FLOW_CLIENT_SECRET,CLIENT_SECRET);
             config.put(HTTP_CLIENT_AUTHENTICATION_OAUTH2_CLIENT_CREDENTIALS_FLOW_CLIENT_AUTHENTICATION_METHOD,"client_secret_jwt");
@@ -414,7 +414,7 @@ class OAuth2ClientCredentialsFlowAuthenticatorTest {
 
         @Test
         void test_authenticate_with_bad_well_known_content() {
-            Map<String,Object> config = Maps.newHashMap();
+            Map<String,String> config = Maps.newHashMap();
             config.put(HTTP_CLIENT_AUTHENTICATION_OAUTH2_CLIENT_CREDENTIALS_FLOW_CLIENT_ID,CLIENT_ID);
             config.put(HTTP_CLIENT_AUTHENTICATION_OAUTH2_CLIENT_CREDENTIALS_FLOW_CLIENT_SECRET,CLIENT_SECRET);
             OkHttpClient okHttpClient = new OkHttpClient();
@@ -424,7 +424,7 @@ class OAuth2ClientCredentialsFlowAuthenticatorTest {
 
         @Test
         void test_authenticate_with_bad_token_in_well_known_content() throws IOException {
-            Map<String,Object> config = Maps.newHashMap();
+            Map<String,String> config = Maps.newHashMap();
             config.put(HTTP_CLIENT_AUTHENTICATION_OAUTH2_CLIENT_CREDENTIALS_FLOW_CLIENT_ID,CLIENT_ID);
             config.put(HTTP_CLIENT_AUTHENTICATION_OAUTH2_CLIENT_CREDENTIALS_FLOW_CLIENT_SECRET,CLIENT_SECRET);
             config.put(HTTP_CLIENT_AUTHENTICATION_OAUTH2_CLIENT_CREDENTIALS_FLOW_CLIENT_AUTHENTICATION_METHOD,"client_secret_basic");
@@ -442,7 +442,7 @@ class OAuth2ClientCredentialsFlowAuthenticatorTest {
         }
         @Test
         void test_authenticate_with_bad_response_token_in_well_known_content() throws IOException {
-            Map<String,Object> config = Maps.newHashMap();
+            Map<String,String> config = Maps.newHashMap();
             config.put(HTTP_CLIENT_AUTHENTICATION_OAUTH2_CLIENT_CREDENTIALS_FLOW_CLIENT_ID,CLIENT_ID);
             config.put(HTTP_CLIENT_AUTHENTICATION_OAUTH2_CLIENT_CREDENTIALS_FLOW_CLIENT_SECRET,CLIENT_SECRET);
             config.put(HTTP_CLIENT_AUTHENTICATION_OAUTH2_CLIENT_CREDENTIALS_FLOW_CLIENT_AUTHENTICATION_METHOD,"client_secret_post");
@@ -461,7 +461,7 @@ class OAuth2ClientCredentialsFlowAuthenticatorTest {
 
         @Test
         void test_authenticate_with_state_nominal_case() throws IOException {
-            Map<String,Object> config = Maps.newHashMap();
+            Map<String,String> config = Maps.newHashMap();
             config.put(HTTP_CLIENT_AUTHENTICATION_OAUTH2_CLIENT_CREDENTIALS_FLOW_CLIENT_ID,CLIENT_ID);
             config.put(HTTP_CLIENT_AUTHENTICATION_OAUTH2_CLIENT_CREDENTIALS_FLOW_CLIENT_SECRET,CLIENT_SECRET);
             config.put(HTTP_CLIENT_AUTHENTICATION_OAUTH2_CLIENT_CREDENTIALS_FLOW_CLIENT_AUTHENTICATION_METHOD,"client_secret_basic");

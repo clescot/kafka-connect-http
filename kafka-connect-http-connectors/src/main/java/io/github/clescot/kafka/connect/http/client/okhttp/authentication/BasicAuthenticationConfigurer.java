@@ -23,14 +23,14 @@ public class BasicAuthenticationConfigurer implements AuthenticationConfigurer{
     }
 
     @Override
-    public Authenticator configureAuthenticator(Map<String, Object> config) {
+    public Authenticator configureAuthenticator(Map<String, String> config) {
         Preconditions.checkNotNull(config,"config map is null");
         //Basic authentication
         BasicAuthenticator basicAuthenticator = null;
-        if (config.containsKey(HTTP_CLIENT_AUTHENTICATION_BASIC_ACTIVATE) && Boolean.TRUE.equals(config.get(HTTP_CLIENT_AUTHENTICATION_BASIC_ACTIVATE))) {
-            String username = (String) config.get(HTTP_CLIENT_AUTHENTICATION_BASIC_USERNAME);
+        if (config.containsKey(HTTP_CLIENT_AUTHENTICATION_BASIC_ACTIVATE) && Boolean.TRUE.equals(Boolean.parseBoolean(config.get(HTTP_CLIENT_AUTHENTICATION_BASIC_ACTIVATE)))) {
+            String username = config.get(HTTP_CLIENT_AUTHENTICATION_BASIC_USERNAME);
             Preconditions.checkNotNull(username,HTTP_CLIENT_AUTHENTICATION_BASIC_USERNAME+" must be set");
-            String password = (String) config.get(HTTP_CLIENT_AUTHENTICATION_BASIC_PASSWORD);
+            String password = config.get(HTTP_CLIENT_AUTHENTICATION_BASIC_PASSWORD);
             Preconditions.checkNotNull(password,HTTP_CLIENT_AUTHENTICATION_BASIC_PASSWORD+" must be set");
             com.burgstaller.okhttp.digest.Credentials credentials = new com.burgstaller.okhttp.digest.Credentials(username, password);
 
