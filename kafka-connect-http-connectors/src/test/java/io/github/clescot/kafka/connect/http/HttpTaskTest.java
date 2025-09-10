@@ -18,6 +18,7 @@ import io.github.clescot.kafka.connect.http.sink.HttpConnectorConfig;
 import okhttp3.Cookie;
 import okhttp3.CookieJar;
 import okhttp3.HttpUrl;
+import org.apache.kafka.connect.sink.SinkRecord;
 import org.junit.experimental.runners.Enclosed;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Nested;
@@ -128,10 +129,10 @@ public class HttpTaskTest {
             Map<String,String> settings = Maps.newHashMap();
             HttpConfigDefinition httpConfigDefinition = new HttpConfigDefinition(settings);
             HttpConnectorConfig httpConnectorConfig = new HttpConnectorConfig(httpConfigDefinition.config(), settings);
-            HttpTask httpTask = new HttpTask(httpConnectorConfig,new OkHttpClientFactory());
+            HttpTask<SinkRecord,OkHttpClient, okhttp3.Request,okhttp3.Response> httpTask = new HttpTask<>(httpConnectorConfig,new OkHttpClientFactory());
 
             HttpRequest httpRequest =  getDummyHttpRequest("http://"+getIP()+":"+wmRuntimeInfo.getHttpPort()+"/ping");
-            HttpExchange httpExchange = (HttpExchange) httpTask.call(httpRequest).get();
+            HttpExchange httpExchange = httpTask.call(httpRequest).get();
             assertThat(httpExchange).isNotNull();
             assertThat(httpExchange.getHttpRequest()).isNotNull();
             assertThat(httpExchange.getHttpResponse()).isNotNull();
