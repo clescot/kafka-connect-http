@@ -340,6 +340,10 @@ public class OkHttpClient extends AbstractHttpClient<Request, Response> {
         return "okhttp";
     }
 
+    public CookieJar getCookieJar() {
+        return client.cookieJar();
+    }
+
     /**
      * @return {@link okhttp3.OkHttpClient}
      */

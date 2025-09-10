@@ -6,13 +6,18 @@ import com.github.tomakehurst.wiremock.core.WireMockConfiguration;
 import com.github.tomakehurst.wiremock.junit5.WireMockExtension;
 import com.github.tomakehurst.wiremock.junit5.WireMockRuntimeInfo;
 import com.google.common.collect.Lists;
+import io.github.clescot.kafka.connect.Client;
 import io.github.clescot.kafka.connect.Configuration;
+import io.github.clescot.kafka.connect.http.client.okhttp.OkHttpClient;
 import io.github.clescot.kafka.connect.http.client.okhttp.OkHttpClientFactory;
 import io.github.clescot.kafka.connect.http.core.HttpExchange;
 import io.github.clescot.kafka.connect.http.core.HttpRequest;
 import io.github.clescot.kafka.connect.http.core.Request;
 import io.github.clescot.kafka.connect.http.sink.HttpConfigDefinition;
 import io.github.clescot.kafka.connect.http.sink.HttpConnectorConfig;
+import okhttp3.Cookie;
+import okhttp3.CookieJar;
+import okhttp3.HttpUrl;
 import org.junit.experimental.runners.Enclosed;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Nested;
@@ -71,6 +76,7 @@ public class HttpTaskTest {
                     .register(WireMock.post("/ping")
                             .willReturn(WireMock.aResponse()
                                     .withHeader("Content-Type", "application/json")
+                                    .withHeader("Set-Cookie", "cat=tabby; Max-Age=86400")
                                     .withBody(bodyResponse)
                                     .withStatus(200)
                                     .withStatusMessage(OK)
@@ -90,8 +96,71 @@ public class HttpTaskTest {
 
         }
 
+        @Test
+        void test_two_calls() throws ExecutionException, InterruptedException {
+            //given
+            WireMockRuntimeInfo wmRuntimeInfo = wmHttp.getRuntimeInfo();
+            WireMock wireMock = wmRuntimeInfo.getWireMock();
+            String bodyResponse = "{\"result\":\"pong\"}";
+            wireMock
+                    .register(WireMock.post("/ping")
+                            .willReturn(WireMock.aResponse()
+                                    .withHeader("Content-Type", "application/json")
+                                    .withHeader("Set-Cookie", "cat=tabby; Max-Age=86400")
+                                    .withBody(bodyResponse)
+                                    .withStatus(200)
+                                    .withStatusMessage(OK)
+                                    .withFixedDelay(1000)
+                            )
+                    );
+            wireMock
+                    .register(WireMock.post("/ping2")
+                            .withHeader("Cookie", WireMock.equalTo("cat=tabby"))
+                            .willReturn(WireMock.aResponse()
+                                    .withHeader("Content-Type", "application/json")
+                                    .withHeader("Set-Cookie", "cat=secondCall; Max-Age=86400")
+                                    .withBody(bodyResponse)
+                                    .withStatus(201)
+                                    .withStatusMessage(OK)
+                                    .withFixedDelay(1000)
+                            )
+                    );
+            Map<String,String> settings = Maps.newHashMap();
+            HttpConfigDefinition httpConfigDefinition = new HttpConfigDefinition(settings);
+            HttpConnectorConfig httpConnectorConfig = new HttpConnectorConfig(httpConfigDefinition.config(), settings);
+            HttpTask httpTask = new HttpTask(httpConnectorConfig,new OkHttpClientFactory());
+
+            HttpRequest httpRequest =  getDummyHttpRequest("http://"+getIP()+":"+wmRuntimeInfo.getHttpPort()+"/ping");
+            HttpExchange httpExchange = (HttpExchange) httpTask.call(httpRequest).get();
+            assertThat(httpExchange).isNotNull();
+            assertThat(httpExchange.getHttpRequest()).isNotNull();
+            assertThat(httpExchange.getHttpResponse()).isNotNull();
+            List<Cookie> cookies = getCookies(httpTask, httpRequest);
+            assertThat(cookies).hasSize(1);
+            Cookie firstCookie = cookies.get(0);
+            assertThat(firstCookie.name()).isEqualTo("cat");
+            assertThat(firstCookie.value()).isEqualTo("tabby");
+
+
+            HttpRequest httpRequest2 =  getDummyHttpRequest("http://"+getIP()+":"+wmRuntimeInfo.getHttpPort()+"/ping2");
+            HttpExchange httpExchange2 = (HttpExchange) httpTask.call(httpRequest2).get();
+            assertThat(httpExchange2).isNotNull();
+            List<Cookie> cookies2 = getCookies(httpTask, httpRequest2);
+            assertThat(cookies2).hasSize(1);
+            Cookie firstCookie2 = cookies2.get(0);
+            assertThat(firstCookie2.name()).isEqualTo("cat");
+            assertThat(firstCookie2.value()).isEqualTo("secondCall");
+
+
+        }
+
     }
 
+    private List<Cookie> getCookies(HttpTask httpTask, HttpRequest httpRequest) {
+        OkHttpClient client = (OkHttpClient) httpTask.selectConfiguration(httpRequest).getClient();
+        HttpUrl url = client.buildNativeRequest(httpRequest).url();
+        return client.getCookieJar().loadForRequest(url);
+    }
 
     @Nested
     class SelectionConfiguration{
