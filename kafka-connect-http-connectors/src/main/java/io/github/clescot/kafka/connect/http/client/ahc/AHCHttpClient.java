@@ -350,4 +350,9 @@ public class AHCHttpClient extends AbstractHttpClient<Request, Response> {
     public AsyncHttpClient getInternalClient() {
         return asyncHttpClient;
     }
+
+    @Override
+    protected Object clone() throws CloneNotSupportedException {
+        return super.clone();
+    }
 }

@@ -33,7 +33,7 @@ import static io.github.clescot.kafka.connect.http.sink.HttpConfigDefinition.RAT
  * @param <NS> native HttpResponse
  */
 @SuppressWarnings({"java:S119"})
-public interface HttpClient<NR, NS>  extends RequestResponseClient<HttpRequest,NR,HttpResponse,NS,HttpExchange> {
+public interface HttpClient<NR, NS>  extends RequestResponseClient<HttpRequest,NR,HttpResponse,NS,HttpExchange>,Cloneable {
     boolean FAILURE = false;
     int SERVER_ERROR_STATUS_CODE = 500;
     String UTC_ZONE_ID = "UTC";

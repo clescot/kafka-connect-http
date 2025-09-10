@@ -6,6 +6,7 @@ import dev.failsafe.Failsafe;
 import dev.failsafe.FailsafeExecutor;
 import dev.failsafe.RetryPolicy;
 import io.github.clescot.kafka.connect.Configuration;
+import io.github.clescot.kafka.connect.http.client.config.AddSuccessStatusToHttpExchangeFunction;
 import io.github.clescot.kafka.connect.http.client.config.HttpRequestPredicateBuilder;
 import io.github.clescot.kafka.connect.http.core.HttpExchange;
 import io.github.clescot.kafka.connect.http.core.HttpRequest;
@@ -18,6 +19,7 @@ import java.time.OffsetDateTime;
 import java.time.ZoneId;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
@@ -40,7 +42,7 @@ import static io.github.clescot.kafka.connect.http.sink.HttpConfigDefinition.RET
  */
 @SuppressWarnings("java:S119")
 //we don't want to use the generic of ConnectRecord, to handle both SinkRecord and SourceRecord
-public class HttpConfiguration<C extends HttpClient<NR, NS>, NR, NS> implements Configuration<C,HttpRequest> {
+public class HttpConfiguration<C extends HttpClient<NR, NS>, NR, NS> implements Configuration<C,HttpRequest>,Cloneable {
     private static final Logger LOGGER = LoggerFactory.getLogger(HttpConfiguration.class);
 
     private C client;
@@ -100,6 +102,18 @@ public class HttpConfiguration<C extends HttpClient<NR, NS>, NR, NS> implements 
 
     public RetryPolicy<HttpExchange> getRetryPolicy() {
         return retryPolicy;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (o == null || getClass() != o.getClass()) return false;
+        HttpConfiguration<?, ?, ?> that = (HttpConfiguration<?, ?, ?>) o;
+        return Objects.equals(getClient(), that.getClient()) && Objects.equals(executorService, that.executorService) && Objects.equals(getRetryPolicy(), that.getRetryPolicy()) && Objects.equals(settings, that.settings) && Objects.equals(getRetryResponseCodeRegex().pattern(), that.getRetryResponseCodeRegex().pattern()) && Objects.equals(getId(), that.getId()) && Objects.equals(predicate, that.predicate);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(getClient(), executorService, getRetryPolicy(), settings, getRetryResponseCodeRegex(), getId(), predicate);
     }
 
     @Override
@@ -207,7 +221,8 @@ public class HttpConfiguration<C extends HttpClient<NR, NS>, NR, NS> implements 
 
     protected HttpExchange enrichHttpExchange(HttpExchange httpExchange) {
         C client = this.getClient();
-        return client.getAddSuccessStatusToHttpExchangeFunction().apply(httpExchange);
+        AddSuccessStatusToHttpExchangeFunction addSuccessStatusToHttpExchangeFunction = client.getAddSuccessStatusToHttpExchangeFunction();
+        return addSuccessStatusToHttpExchangeFunction!=null?addSuccessStatusToHttpExchangeFunction.apply(httpExchange):httpExchange;
     }
     @Override
     public boolean matches(HttpRequest httpRequest) {
@@ -224,11 +239,17 @@ public class HttpConfiguration<C extends HttpClient<NR, NS>, NR, NS> implements 
         return this.client;
     }
 
-    public void setHttpClient(C client) {
+    @Override
+    public void setClient(C client) {
         if (this.client == null) {
             throw new IllegalStateException("client is null, cannot set it");
         }
         this.client = client;
     }
 
+    @Override
+    public Object clone() throws CloneNotSupportedException {
+        HttpConfiguration<C, NR, NS> httpConfiguration = new HttpConfiguration<>(this.id, this.client, this.executorService, this.retryPolicy, Maps.newHashMap(this.settings));
+        return httpConfiguration;
+    }
 }

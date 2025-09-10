@@ -74,12 +74,15 @@ public interface RequestTask<C extends Client,F extends Configuration<C,R>,R ext
                 .findFirst().orElse(configuration);//default configuration
         String configurationId = matchingConfiguration.getId();
         String configurationForUserId = vuId+"-"+configurationId;
+        F configurationForUser;
         if(getUserConfigurations().containsKey(configurationForUserId)){
-            return getUserConfigurations().get(configurationForUserId);
+            configurationForUser = getUserConfigurations().get(configurationForUserId);
+
         }else{
-            getUserConfigurations().put(configurationForUserId,getConfigurationForUser(vuId,matchingConfiguration));
+            configurationForUser = getConfigurationForUser(vuId, matchingConfiguration);
+            getUserConfigurations().put(configurationForUserId, configurationForUser);
         }
-        return matchingConfiguration;
+        return configurationForUser;
     }
 
     default RetryPolicy<E> buildRetryPolicy(Map<String,String> settings){

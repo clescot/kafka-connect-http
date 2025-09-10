@@ -27,7 +27,7 @@ import static io.github.clescot.kafka.connect.http.client.HttpClientFactory.getR
  */
 public class SseConfiguration implements Configuration<OkHttpClient, HttpRequest> {
     private final String configurationId;
-    private final OkHttpClient httpClient;
+    private OkHttpClient httpClient;
     private final Map<String, String> settings;
     private final URI uri;
     private final String topic;
@@ -170,6 +170,11 @@ public class SseConfiguration implements Configuration<OkHttpClient, HttpRequest
     @Override
     public OkHttpClient getClient() {
         return httpClient;
+    }
+
+    @Override
+    public void setClient(OkHttpClient client) {
+        this.httpClient = client;
     }
 
     public Queue<SseEvent> getQueue() {

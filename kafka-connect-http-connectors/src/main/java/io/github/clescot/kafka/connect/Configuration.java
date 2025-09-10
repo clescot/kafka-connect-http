@@ -35,4 +35,6 @@ public interface Configuration<C extends Client, R> {
      * @return the client
      */
     C getClient();
+
+    void setClient(C client);
 }

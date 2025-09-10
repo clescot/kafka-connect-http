@@ -365,6 +365,8 @@ public class OkHttpClient extends AbstractHttpClient<Request, Response> {
         return builder.build();
     }
 
-
-
+    @Override
+    protected Object clone() throws CloneNotSupportedException {
+        return super.clone();
+    }
 }

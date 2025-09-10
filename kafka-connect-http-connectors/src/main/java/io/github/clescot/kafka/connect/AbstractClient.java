@@ -11,6 +11,7 @@ import org.slf4j.LoggerFactory;
 import java.time.Duration;
 import java.time.temporal.ChronoUnit;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 
 import static io.github.clescot.kafka.connect.http.client.HttpClientFactory.CONFIGURATION_ID;
@@ -28,6 +29,19 @@ public abstract class  AbstractClient<E> implements Client<E> {
         this.config = config;
         configurationId = Optional.ofNullable(config.get(CONFIGURATION_ID)).orElse(Configuration.DEFAULT_CONFIGURATION_ID);
         setRateLimiter(buildRateLimiter(config, configurationId));
+    }
+
+
+    @Override
+    public boolean equals(Object o) {
+        if (o == null || getClass() != o.getClass()) return false;
+        AbstractClient<?> that = (AbstractClient<?>) o;
+        return getConfig().equals(that.getConfig());
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hashCode(getConfig());
     }
 
     public RateLimiter<E> buildRateLimiter(Map<String, String> configMap, String configurationId) {
