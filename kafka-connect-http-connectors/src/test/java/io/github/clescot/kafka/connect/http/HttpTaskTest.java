@@ -2,12 +2,15 @@ package io.github.clescot.kafka.connect.http;
 
 
 import com.github.tomakehurst.wiremock.client.WireMock;
+import com.github.tomakehurst.wiremock.core.Options;
 import com.github.tomakehurst.wiremock.core.WireMockConfiguration;
+import com.github.tomakehurst.wiremock.http.trafficlistener.ConsoleNotifyingWiremockNetworkTrafficListener;
 import com.github.tomakehurst.wiremock.junit5.WireMockExtension;
 import com.github.tomakehurst.wiremock.junit5.WireMockRuntimeInfo;
 import com.google.common.collect.Lists;
-import io.github.clescot.kafka.connect.Client;
 import io.github.clescot.kafka.connect.Configuration;
+import io.github.clescot.kafka.connect.http.client.HttpClient;
+import io.github.clescot.kafka.connect.http.client.HttpConfiguration;
 import io.github.clescot.kafka.connect.http.client.okhttp.OkHttpClient;
 import io.github.clescot.kafka.connect.http.client.okhttp.OkHttpClientFactory;
 import io.github.clescot.kafka.connect.http.core.HttpExchange;
@@ -16,7 +19,6 @@ import io.github.clescot.kafka.connect.http.core.Request;
 import io.github.clescot.kafka.connect.http.sink.HttpConfigDefinition;
 import io.github.clescot.kafka.connect.http.sink.HttpConnectorConfig;
 import okhttp3.Cookie;
-import okhttp3.CookieJar;
 import okhttp3.HttpUrl;
 import org.apache.kafka.connect.sink.SinkRecord;
 import org.junit.experimental.runners.Enclosed;
@@ -34,28 +36,18 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
 
+import static io.github.clescot.kafka.connect.http.SocketUtils.awaitUntilPortIsOpen;
 import static org.assertj.core.api.Assertions.assertThat;
 
 @RunWith(Enclosed.class)
 public class HttpTaskTest {
     public static final String OK = "OK";
-    private static final String DUMMY_BODY_TYPE = "STRING";
-    @RegisterExtension
-    static WireMockExtension wmHttp = WireMockExtension.newInstance()
-            .options(
-                    WireMockConfiguration.wireMockConfig()
-                            .dynamicPort()
-            )
-            .build();
+
+    private static final String IP = getIP();
 
 
-    @AfterEach
-    void tearsDown() {
-        wmHttp.resetAll();
-        HttpTask.removeCompositeMeterRegistry();
-    }
 
-    private String getIP() {
+    private static String getIP() {
         try (DatagramSocket datagramSocket = new DatagramSocket()) {
             datagramSocket.connect(InetAddress.getByName("8.8.8.8"), 12345);
             return datagramSocket.getLocalAddress().getHostAddress();
@@ -66,15 +58,33 @@ public class HttpTaskTest {
 
     @Nested
     class Call {
+        @RegisterExtension
+        WireMockExtension wmHttp = WireMockExtension.newInstance()
+                .options(
+                        WireMockConfiguration.wireMockConfig()
+                                .dynamicPort()
+                                .networkTrafficListener(new ConsoleNotifyingWiremockNetworkTrafficListener())
+                                .useChunkedTransferEncoding(Options.ChunkedEncodingPolicy.NEVER)
+                )
+                .build();
+
+        @AfterEach
+        void tearsDown() {
+            wmHttp.resetMappings();
+            wmHttp.resetRequests();
+            HttpTask.removeCompositeMeterRegistry();
+        }
 
         @Test
         void test_nominal_case() throws ExecutionException, InterruptedException {
             //given
             WireMockRuntimeInfo wmRuntimeInfo = wmHttp.getRuntimeInfo();
             WireMock wireMock = wmRuntimeInfo.getWireMock();
+            int httpPort = wmRuntimeInfo.getHttpPort();
+            awaitUntilPortIsOpen(IP,httpPort,10);
             String bodyResponse = "{\"result\":\"pong\"}";
             wireMock
-                    .register(WireMock.post("/ping")
+                    .register(WireMock.post("/ping1")
                             .willReturn(WireMock.aResponse()
                                     .withHeader("Content-Type", "application/json")
                                     .withHeader("Set-Cookie", "cat=tabby; Max-Age=86400")
@@ -89,7 +99,7 @@ public class HttpTaskTest {
             HttpConnectorConfig httpConnectorConfig = new HttpConnectorConfig(httpConfigDefinition.config(), settings);
             HttpTask httpTask = new HttpTask(httpConnectorConfig,new OkHttpClientFactory());
 
-            HttpRequest httpRequest =  getDummyHttpRequest("http://"+getIP()+":"+wmRuntimeInfo.getHttpPort()+"/ping");
+            HttpRequest httpRequest =  getDummyHttpRequest("http://"+IP+":"+ httpPort +"/ping1","1");
             HttpExchange httpExchange = (HttpExchange) httpTask.call(httpRequest).get();
             assertThat(httpExchange).isNotNull();
             assertThat(httpExchange.getHttpRequest()).isNotNull();
@@ -102,9 +112,11 @@ public class HttpTaskTest {
             //given
             WireMockRuntimeInfo wmRuntimeInfo = wmHttp.getRuntimeInfo();
             WireMock wireMock = wmRuntimeInfo.getWireMock();
+            int httpPort = wmRuntimeInfo.getHttpPort();
+
             String bodyResponse = "{\"result\":\"pong\"}";
             wireMock
-                    .register(WireMock.post("/ping")
+                    .register(WireMock.post("/ping2")
                             .willReturn(WireMock.aResponse()
                                     .withHeader("Content-Type", "application/json")
                                     .withHeader("Set-Cookie", "cat=tabby; Max-Age=86400")
@@ -115,8 +127,7 @@ public class HttpTaskTest {
                             )
                     );
             wireMock
-                    .register(WireMock.post("/ping2")
-                            .withHeader("Cookie", WireMock.equalTo("cat=tabby"))
+                    .register(WireMock.post("/ping3")
                             .willReturn(WireMock.aResponse()
                                     .withHeader("Content-Type", "application/json")
                                     .withHeader("Set-Cookie", "cat=secondCall; Max-Age=86400")
@@ -126,12 +137,15 @@ public class HttpTaskTest {
                                     .withFixedDelay(1000)
                             )
                     );
+            awaitUntilPortIsOpen(IP,httpPort,10);
             Map<String,String> settings = Maps.newHashMap();
             HttpConfigDefinition httpConfigDefinition = new HttpConfigDefinition(settings);
             HttpConnectorConfig httpConnectorConfig = new HttpConnectorConfig(httpConfigDefinition.config(), settings);
             HttpTask<SinkRecord,OkHttpClient, okhttp3.Request,okhttp3.Response> httpTask = new HttpTask<>(httpConnectorConfig,new OkHttpClientFactory());
 
-            HttpRequest httpRequest =  getDummyHttpRequest("http://"+getIP()+":"+wmRuntimeInfo.getHttpPort()+"/ping");
+
+            String vuid = "2";
+            HttpRequest httpRequest =  getDummyHttpRequest("http://"+ IP +":"+ httpPort +"/ping2", vuid);
             HttpExchange httpExchange = httpTask.call(httpRequest).get();
             assertThat(httpExchange).isNotNull();
             assertThat(httpExchange.getHttpRequest()).isNotNull();
@@ -143,8 +157,8 @@ public class HttpTaskTest {
             assertThat(firstCookie.value()).isEqualTo("tabby");
 
 
-            HttpRequest httpRequest2 =  getDummyHttpRequest("http://"+getIP()+":"+wmRuntimeInfo.getHttpPort()+"/ping2");
-            HttpExchange httpExchange2 = (HttpExchange) httpTask.call(httpRequest2).get();
+            HttpRequest httpRequest2 =  getDummyHttpRequest("http://"+IP+":"+ httpPort +"/ping3", vuid);
+            HttpExchange httpExchange2 = httpTask.call(httpRequest2).get();
             assertThat(httpExchange2).isNotNull();
             List<Cookie> cookies2 = getCookies(httpTask, httpRequest2);
             assertThat(cookies2).hasSize(1);
@@ -158,14 +172,27 @@ public class HttpTaskTest {
     }
 
     private List<Cookie> getCookies(HttpTask httpTask, HttpRequest httpRequest) {
-        OkHttpClient client = (OkHttpClient) httpTask.selectConfiguration(httpRequest).getClient();
+        HttpConfiguration configuration =  (HttpConfiguration) httpTask.selectConfiguration(httpRequest);
+        OkHttpClient client = (OkHttpClient) configuration.getClient();
         HttpUrl url = client.buildNativeRequest(httpRequest).url();
         return client.getCookieJar().loadForRequest(url);
     }
 
     @Nested
     class SelectionConfiguration{
+        @RegisterExtension
+        static WireMockExtension wmHttp = WireMockExtension.newInstance()
+                .options(
+                        WireMockConfiguration.wireMockConfig()
+                                .dynamicPort()
+                )
+                .build();
 
+        @AfterEach
+        void tearsDown() {
+            wmHttp.resetAll();
+            HttpTask.removeCompositeMeterRegistry();
+        }
         @Test
         void test_when_two_request_have_different_vu_id_then_two_different_configuration_instances_are_selected() {
             //given
@@ -176,7 +203,7 @@ public class HttpTaskTest {
             HttpConnectorConfig httpConnectorConfig = new HttpConnectorConfig(httpConfigDefinition.config(), settings);
             HttpTask httpTask = new HttpTask(httpConnectorConfig, new OkHttpClientFactory());
 
-            HttpRequest httpRequest = getDummyHttpRequest("http://127.0.0.1:" + wmRuntimeInfo.getHttpPort() + "/path2");
+            HttpRequest httpRequest = getDummyHttpRequest("http://"+IP+":" + wmRuntimeInfo.getHttpPort() + "/path2","3");
             httpRequest.addAttribute(Request.VU_ID,"1");
             Configuration configuration = httpTask.selectConfiguration(httpRequest);
 
@@ -189,11 +216,12 @@ public class HttpTaskTest {
         }
 
     }
-    static HttpRequest getDummyHttpRequest(String url) {
+    static HttpRequest getDummyHttpRequest(String url,String vuId) {
         HttpRequest httpRequest = new HttpRequest(url, HttpRequest.Method.POST);
         Map<String, List<String>> headers = com.google.common.collect.Maps.newHashMap();
         headers.put("Content-Type", Lists.newArrayList("application/json"));
         httpRequest.setHeaders(headers);
+        httpRequest.addAttribute(Request.VU_ID,vuId);
         httpRequest.setBodyAsString("stuff");
         httpRequest.setBodyAsForm(com.google.common.collect.Maps.newHashMap());
         return httpRequest;
