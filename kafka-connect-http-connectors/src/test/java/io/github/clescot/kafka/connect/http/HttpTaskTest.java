@@ -62,6 +62,9 @@ public class HttpTaskTest {
 
             HttpRequest httpRequest =  getDummyHttpRequest("http://127.0.0.1:"+wmRuntimeInfo.getHttpPort()+"/path2");
             HttpExchange httpExchange = (HttpExchange) httpTask.call(httpRequest).get();
+            assertThat(httpExchange).isNotNull();
+            assertThat(httpExchange.getHttpRequest()).isNotNull();
+            assertThat(httpExchange.getHttpResponse()).isNotNull();
 
         }
 
