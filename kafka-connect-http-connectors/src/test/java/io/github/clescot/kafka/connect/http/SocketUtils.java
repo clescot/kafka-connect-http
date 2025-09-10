@@ -25,7 +25,7 @@ public class SocketUtils {
     private static boolean available(String host,int port) {
         Socket s = null;
         try {
-            s = new Socket("localhost", port);
+            s = new Socket(host, port);
             return true;
         } catch (IOException e) {
             return false;
