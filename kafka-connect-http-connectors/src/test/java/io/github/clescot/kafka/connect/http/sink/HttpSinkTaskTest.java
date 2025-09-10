@@ -388,6 +388,7 @@ public class HttpSinkTaskTest {
             HttpExchange dummyHttpExchange = getHttpExchange();
             when(httpClient.call(any(HttpRequest.class), any(AtomicInteger.class))).thenReturn(CompletableFuture.supplyAsync(() -> dummyHttpExchange));
             when(httpClient.getEnrichRequestFunction()).thenReturn(request->request);
+            when(httpClient.customizeForUser(anyString())).thenReturn(httpClient);
             ahcSinkTask.getDefaultConfiguration().setClient(httpClient);
 
             //init sinkRecord
@@ -422,6 +423,7 @@ public class HttpSinkTaskTest {
             HttpExchange dummyHttpExchange = getHttpExchange();
             when(httpClient.call(any(HttpRequest.class), any(AtomicInteger.class))).thenReturn(CompletableFuture.supplyAsync(() -> dummyHttpExchange));
             when(httpClient.getEnrichRequestFunction()).thenReturn(request->request);
+            when(httpClient.customizeForUser(anyString())).thenReturn(httpClient);
             ahcSinkTask.getDefaultConfiguration().setClient(httpClient);
 
             //init sinkRecord
@@ -492,6 +494,7 @@ public class HttpSinkTaskTest {
             HttpExchange dummyHttpExchange = getHttpExchange();
             when(httpClient.call(any(HttpRequest.class), any(AtomicInteger.class))).thenReturn(CompletableFuture.supplyAsync(() -> dummyHttpExchange));
             when(httpClient.getEnrichRequestFunction()).thenReturn(request->request);
+            when(httpClient.customizeForUser(anyString())).thenReturn(httpClient);
             ahcSinkTask.getDefaultConfiguration().setClient(httpClient);
             Queue<KafkaRecord> queue = mock(Queue.class);
             ahcSinkTask.setQueue(queue);
@@ -531,6 +534,7 @@ public class HttpSinkTaskTest {
             HttpExchange dummyHttpExchange = getHttpExchange();
             when(httpClient.call(any(HttpRequest.class), any(AtomicInteger.class))).thenReturn(CompletableFuture.supplyAsync(() -> dummyHttpExchange));
             when(httpClient.getEnrichRequestFunction()).thenReturn(request->request);
+            when(httpClient.customizeForUser(anyString())).thenReturn(httpClient);
             when(httpClient.getAddSuccessStatusToHttpExchangeFunction()).thenReturn(new AddSuccessStatusToHttpExchangeFunction(defaultSuccessPattern));
             myOkHttpSinkTask.getDefaultConfiguration().setClient(httpClient);
 
@@ -561,6 +565,7 @@ public class HttpSinkTaskTest {
             HttpExchange dummyHttpExchange = getHttpExchange();
             when(httpClient.call(any(HttpRequest.class), any(AtomicInteger.class))).thenReturn(CompletableFuture.supplyAsync(() -> dummyHttpExchange));
             when(httpClient.getEnrichRequestFunction()).thenReturn(request->request);
+            when(httpClient.customizeForUser(anyString())).thenReturn(httpClient);
             when(httpClient.getAddSuccessStatusToHttpExchangeFunction()).thenReturn(new AddSuccessStatusToHttpExchangeFunction(defaultSuccessPattern));
             ahcSinkTask.getDefaultConfiguration().setClient(httpClient);
             Queue<KafkaRecord> queue = mock(Queue.class);
