@@ -352,12 +352,23 @@ public class OkHttpClient extends AbstractHttpClient<Request, Response> {
         return client;
     }
 
+    /**
+     * customize the HttpClient for the user.
+     * @param vuId
+     * @return
+     */
     @Override
     public HttpClient<Request, Response> customizeForUser(String vuId) {
         return new OkHttpClient(getConfig(), customizeOkHttpClientForUser(vuId,client),random);
     }
 
 
+    /**
+     * customize the okhttp client for the user.
+     * @param vuId
+     * @param client
+     * @return
+     */
     private okhttp3.OkHttpClient customizeOkHttpClientForUser(String vuId,okhttp3.OkHttpClient client) {
         okhttp3.OkHttpClient.Builder builder = client.newBuilder();
         CookieStore cookieStore = null;//an internal InMemoryCookieStore() will be used if null
