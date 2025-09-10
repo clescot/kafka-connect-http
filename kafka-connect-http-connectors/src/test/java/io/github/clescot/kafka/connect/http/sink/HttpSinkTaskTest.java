@@ -67,6 +67,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.*;
 import static com.github.tomakehurst.wiremock.stubbing.Scenario.STARTED;
+import static io.github.clescot.kafka.connect.http.SocketUtils.getRandomPort;
 import static io.github.clescot.kafka.connect.http.client.HttpClientConfigDefinition.*;
 import static io.github.clescot.kafka.connect.http.client.HttpClientFactory.defaultSuccessPattern;
 import static io.github.clescot.kafka.connect.http.client.config.HttpRequestPredicateBuilder.URL_REGEX;
@@ -3392,12 +3393,6 @@ public class HttpSinkTaskTest {
                 "}";
     }
 
-    private int getRandomPort() {
-        Random random = new Random();
-        int low = 49152;
-        int high = 65535;
-        return random.nextInt(high - low) + low;
-    }
 
     @NotNull
     private static HttpRequest getDummyHttpRequest(String url) {
