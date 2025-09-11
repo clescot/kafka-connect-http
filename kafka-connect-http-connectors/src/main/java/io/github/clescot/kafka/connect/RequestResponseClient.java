@@ -31,9 +31,9 @@ public interface RequestResponseClient<R extends Request, NR, S extends Response
                     Map<String,String> attributes);
 
     /**
-     * raw native HttpRequest call.
-     * @param request native HttpRequest
-     * @return CompletableFuture of a native HttpResponse.
+     * raw native Request call.
+     * @param request native Request
+     * @return CompletableFuture of a native Response.
      */
     CompletableFuture<NS> nativeCall(NR request);
 }
