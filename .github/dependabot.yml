@@ -14,15 +14,6 @@ updates:
       interval: daily
       time: '04:00'
     open-pull-requests-limit: 10
-    groups:
-#      dev-deps:
-#        dependency-type: "development"
-#        exclude-patterns:
-#          - "mock-oauth2-server"
-#      prod-deps:
-#        dependency-type: "production"
-#        exclude-patterns:
-#          - "mock-oauth2-server"
     ignore:
       - dependency-name: "io.debezium:debezium-testing-testcontainers"
         versions: [ ">=2.7.4" ]
