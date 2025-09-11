@@ -45,19 +45,19 @@ public interface HttpClient<NR, NS>  extends RequestResponseClient<HttpRequest,N
     String THROWABLE_MESSAGE = "throwable.message";
 
 
-    default HttpExchange buildExchange(HttpRequest httpRequest,
-                                       HttpResponse httpResponse,
+    default HttpExchange buildExchange(HttpRequest request,
+                                       HttpResponse response,
                                        Stopwatch stopwatch,
                                        OffsetDateTime now,
                                        AtomicInteger attempts,
                                        boolean success,
                                        Map<String,String> attributes) {
-        Preconditions.checkNotNull(httpRequest, "'httpRequest' is null");
+        Preconditions.checkNotNull(request, "'httpRequest' is null");
         return HttpExchange.Builder.anHttpExchange()
                 //request
-                .withHttpRequest(httpRequest)
+                .withHttpRequest(request)
                 //response
-                .withHttpResponse(httpResponse)
+                .withHttpResponse(response)
                 //technical metadata
                 //time elapsed during http call
                 .withDuration(stopwatch.elapsed(TimeUnit.MILLISECONDS))

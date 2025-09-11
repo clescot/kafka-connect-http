@@ -10,12 +10,20 @@ import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicInteger;
 
+/**
+ * A client that can handle both request and response.
+ * @param <R> request type
+ * @param <NR> native request type
+ * @param <S> response type
+ * @param <NS> native response type
+ * @param <E> exchange type
+ */
 @SuppressWarnings("java:S119")
 public interface RequestResponseClient<R extends Request, NR, S extends Response, NS, E extends Exchange> extends RequestClient<R, NR,E>, ResponseClient<S, NS,E> {
 
 
-    E buildExchange(R httpRequest,
-                    S httpResponse,
+    E buildExchange(R request,
+                    S response,
                     Stopwatch stopwatch,
                     OffsetDateTime now,
                     AtomicInteger attempts,
