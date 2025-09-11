@@ -82,7 +82,7 @@ public class OkHttpClient extends AbstractHttpClient<Request, Response> {
                 nativeRequest.body().writeTo(buffer);
                 request.setBodyAsString(buffer.readUtf8());
             } catch (IOException e) {
-                throw new RuntimeException(e);
+                throw new HttpException(e);
             }
         }
         return request;
