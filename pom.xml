@@ -55,7 +55,7 @@
         <maven.plugin.validation>VERBOSE</maven.plugin.validation>
         <mock-oauth2-server.version>2.2.1</mock-oauth2-server.version>
         <mockito.version>5.19.0</mockito.version>
-        <micrometer.version>1.15.3</micrometer.version>
+        <micrometer.version>1.15.4</micrometer.version>
         <okhttp.version>5.1.0</okhttp.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
