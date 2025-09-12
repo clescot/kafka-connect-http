@@ -6,7 +6,7 @@
     <url>https://github.com/clescot/kafka-connect-http</url>
     <groupId>io.github.clescot</groupId>
     <artifactId>kafka-connect-http</artifactId>
-    <version>0.8.73-SNAPSHOT</version>
+    <version>0.8.76-SNAPSHOT</version>
     <licenses>
         <license>
             <name>Apache License, Version 2.0</name>
@@ -40,7 +40,7 @@
         <commons-text.version>1.14.0</commons-text.version>
         <connect-json.version>4.0.0</connect-json.version>
         <debezium.version>2.7.4.Final</debezium.version>
-        <kafka.version>4.0.0</kafka.version>
+        <kafka.version>4.1.0</kafka.version>
         <confluent.platform.version>8.0.0</confluent.platform.version>
         <failsafe.version>3.3.2</failsafe.version>
         <guava.version>33.4.8-jre</guava.version>
@@ -53,9 +53,9 @@
         <maven.compiler.source>17</maven.compiler.source>
         <maven.compiler.target>17</maven.compiler.target>
         <maven.plugin.validation>VERBOSE</maven.plugin.validation>
-        <mock-oauth2-server.version>2.2.1</mock-oauth2-server.version>
+        <mock-oauth2-server.version>2.3.0</mock-oauth2-server.version>
         <mockito.version>5.19.0</mockito.version>
-        <micrometer.version>1.15.3</micrometer.version>
+        <micrometer.version>1.15.4</micrometer.version>
         <okhttp.version>5.1.0</okhttp.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
