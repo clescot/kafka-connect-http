@@ -244,29 +244,6 @@ public class AdvancedEventListener extends EventListener {
         return Integer.toString(response.code());
     }
 
-    //call events
-    @Override
-    public void callStart(Call call) {
-        callState.put(call, new AdvancedEventListener.CallState(registry.config().clock().monotonicTime(), call.request()));
-    }
-
-    @Override
-    public void callFailed(Call call, IOException e) {
-        AdvancedEventListener.CallState state = callState.remove(call);
-        if (state != null) {
-            state.exception = e;
-            time(state, OKHTTP_REQUEST_METRIC_NAME, OKHTTP_REQUEST_METRIC_DESCRIPTION);
-        }
-    }
-
-    @Override
-    public void callEnd(Call call) {
-        AdvancedEventListener.CallState state = callState.remove(call);
-        if (state != null) {
-            time(state, OKHTTP_REQUEST_METRIC_NAME, OKHTTP_REQUEST_METRIC_DESCRIPTION);
-        }
-    }
-
     @Override
     public void canceled(@NotNull Call call) {
 
@@ -312,9 +289,40 @@ public class AdvancedEventListener extends EventListener {
         }
     }
 
+
+    //call events
+    @Override
+    public void callStart(Call call) {
+        callState.put(call, new AdvancedEventListener.CallState(registry.config().clock().monotonicTime(), call.request()));
+    }
+
+    @Override
+    public void callFailed(Call call, IOException e) {
+        AdvancedEventListener.CallState state = callState.remove(call);
+        if (state != null) {
+            state.exception = e;
+            long duration = time(state, OKHTTP_REQUEST_METRIC_NAME, OKHTTP_REQUEST_METRIC_DESCRIPTION);
+            TimingData timingData = call.request().tag(TimingData.class);
+            timingData.setTotalDurationNs(duration);
+        }
+    }
+
+    @Override
+    public void callEnd(Call call) {
+        AdvancedEventListener.CallState state = callState.remove(call);
+        if (state != null) {
+            long duration = time(state, OKHTTP_REQUEST_METRIC_NAME, OKHTTP_REQUEST_METRIC_DESCRIPTION);
+            TimingData timingData = call.request().tag(TimingData.class);
+            timingData.setTotalDurationNs(duration);
+        }
+    }
+
+
+
     @Override
     public void satisfactionFailure(@NotNull Call call, @NotNull Response response) {
         //TODO add counter or DistributionSummary ?
+        // add timing ?
         super.satisfactionFailure(call, response);
     }
 
@@ -323,12 +331,16 @@ public class AdvancedEventListener extends EventListener {
         AdvancedEventListener.CallState stateHeaders = requestHeadersCallState.remove(call);
         if (stateHeaders != null) {
             stateHeaders.exception = ioe;
-            time(stateHeaders, OKHTTP_REQUEST_HEADERS_METRIC_NAME, OKHTTP_REQUEST_HEADERS_METRIC_DESCRIPTION);
+            long duration = time(stateHeaders, OKHTTP_REQUEST_HEADERS_METRIC_NAME, OKHTTP_REQUEST_HEADERS_METRIC_DESCRIPTION);
+            TimingData timingData = call.request().tag(TimingData.class);
+            timingData.setRequestHeadersDurationNs(duration);
         }
         AdvancedEventListener.CallState stateBody = requestBodyCallState.remove(call);
         if (stateBody != null) {
             stateBody.exception = ioe;
-            time(stateBody, OKHTTP_REQUEST_BODY_METRIC_NAME, OKHTTP_REQUEST_BODY_METRIC_DESCRIPTION);
+            long duration = time(stateBody, OKHTTP_REQUEST_BODY_METRIC_NAME, OKHTTP_REQUEST_BODY_METRIC_DESCRIPTION);
+            TimingData timingData = call.request().tag(TimingData.class);
+            timingData.setRequestBodyDurationNs(duration);
         }
     }
 
@@ -337,12 +349,16 @@ public class AdvancedEventListener extends EventListener {
         AdvancedEventListener.CallState stateHeaders = responseHeadersCallState.remove(call);
         if (stateHeaders != null) {
             stateHeaders.exception = ioe;
-            time(stateHeaders, OKHTTP_RESPONSE_HEADERS_METRIC_NAME, OKHTTP_RESPONSE_HEADERS_METRIC_DESCRIPTION);
+            long duration = time(stateHeaders, OKHTTP_RESPONSE_HEADERS_METRIC_NAME, OKHTTP_RESPONSE_HEADERS_METRIC_DESCRIPTION);
+            TimingData timingData = call.request().tag(TimingData.class);
+            timingData.setResponseHeadersDurationNs(duration);
         }
         AdvancedEventListener.CallState stateBody = responseBodyCallState.remove(call);
         if (stateBody != null) {
             stateBody.exception = ioe;
-            time(stateBody, OKHTTP_RESPONSE_BODY_METRIC_NAME, OKHTTP_RESPONSE_BODY_METRIC_DESCRIPTION);
+            long duration = time(stateBody, OKHTTP_RESPONSE_BODY_METRIC_NAME, OKHTTP_RESPONSE_BODY_METRIC_DESCRIPTION);
+            TimingData timingData = call.request().tag(TimingData.class);
+            timingData.setResponseBodyDurationNs(duration);
         }
     }
 
@@ -382,7 +398,9 @@ public class AdvancedEventListener extends EventListener {
     public void connectEnd(@NotNull Call call, @NotNull InetSocketAddress inetSocketAddress, @NotNull Proxy proxy, @org.jetbrains.annotations.Nullable Protocol protocol) {
         AdvancedEventListener.CallState state = socketFromConnectionCallState.remove(call);
         if (state != null) {
-            time(state, OKHTTP_SOCKET_CONNECTION_METRIC_NAME, OKHTTP_SOCKET_CONNECTION_METRIC_DESCRIPTION);
+            long duration = time(state, OKHTTP_SOCKET_CONNECTION_METRIC_NAME, OKHTTP_SOCKET_CONNECTION_METRIC_DESCRIPTION);
+            TimingData timingData = call.request().tag(TimingData.class);
+            timingData.setConnectingDurationNs(duration);
         }
     }
 
@@ -391,7 +409,9 @@ public class AdvancedEventListener extends EventListener {
         AdvancedEventListener.CallState state = socketFromConnectionCallState.remove(call);
         if (state != null) {
             state.exception = ioe;
-            time(state, OKHTTP_SOCKET_CONNECTION_METRIC_NAME, OKHTTP_SOCKET_CONNECTION_METRIC_DESCRIPTION);
+            long duration = time(state, OKHTTP_SOCKET_CONNECTION_METRIC_NAME, OKHTTP_SOCKET_CONNECTION_METRIC_DESCRIPTION);
+            TimingData timingData = call.request().tag(TimingData.class);
+            timingData.setConnectingDurationNs(duration);
         }
     }
 
@@ -412,11 +432,16 @@ public class AdvancedEventListener extends EventListener {
         if (state != null) {
             long duration = time(state, OKHTTP_POOL_CONNECTION_METRIC_NAME, OKHTTP_POOL_CONNECTION_METRIC_DESCRIPTION);
             TimingData timingData = call.request().tag(TimingData.class);
-            timingData.setConnectDurationNs(duration);
+            timingData.setConnectedDurationNs(duration);
         }
     }
 
     //dns events
+    @Override
+    public void dnsStart(@NotNull Call call, @NotNull String domainName) {
+        dnsCallState.put(call, new AdvancedEventListener.CallState(registry.config().clock().monotonicTime(), call.request()));
+    }
+
     @Override
     public void dnsEnd(@NotNull Call call, @NotNull String domainName, @NotNull List<InetAddress> inetAddressList) {
         AdvancedEventListener.CallState state = dnsCallState.remove(call);
@@ -427,12 +452,12 @@ public class AdvancedEventListener extends EventListener {
         }
     }
 
+    //proxy events
     @Override
-    public void dnsStart(@NotNull Call call, @NotNull String domainName) {
-        dnsCallState.put(call, new AdvancedEventListener.CallState(registry.config().clock().monotonicTime(), call.request()));
+    public void proxySelectStart(@NotNull Call call, @NotNull HttpUrl url) {
+        proxySelectCallState.put(call, new AdvancedEventListener.CallState(registry.config().clock().monotonicTime(), call.request()));
     }
 
-    //proxy events
     @Override
     public void proxySelectEnd(@NotNull Call call, @NotNull HttpUrl url, @NotNull List<Proxy> proxies) {
         AdvancedEventListener.CallState state = proxySelectCallState.remove(call);
@@ -443,23 +468,20 @@ public class AdvancedEventListener extends EventListener {
         }
     }
 
+    //request body events
     @Override
-    public void proxySelectStart(@NotNull Call call, @NotNull HttpUrl url) {
-        proxySelectCallState.put(call, new AdvancedEventListener.CallState(registry.config().clock().monotonicTime(), call.request()));
+    public void requestBodyStart(@NotNull Call call) {
+        requestBodyCallState.put(call, new AdvancedEventListener.CallState(registry.config().clock().monotonicTime(), call.request()));
     }
 
-    //request body events
     @Override
     public void requestBodyEnd(@NotNull Call call, long byteCount) {
         AdvancedEventListener.CallState state = requestBodyCallState.remove(call);
         if (state != null) {
-            time(state, OKHTTP_REQUEST_BODY_METRIC_NAME, OKHTTP_REQUEST_BODY_METRIC_DESCRIPTION);
+            long duration = time(state, OKHTTP_REQUEST_BODY_METRIC_NAME, OKHTTP_REQUEST_BODY_METRIC_DESCRIPTION);
+            TimingData timingData = call.request().tag(TimingData.class);
+            timingData.setRequestBodyDurationNs(duration);
         }
-    }
-
-    @Override
-    public void requestBodyStart(@NotNull Call call) {
-        requestBodyCallState.put(call, new AdvancedEventListener.CallState(registry.config().clock().monotonicTime(), call.request()));
     }
 
 
@@ -467,29 +489,33 @@ public class AdvancedEventListener extends EventListener {
 
     //request header events
     @Override
-    public void requestHeadersEnd(@NotNull Call call, @NotNull Request request) {
-        AdvancedEventListener.CallState state = requestHeadersCallState.remove(call);
-        if (state != null) {
-            time(state, OKHTTP_REQUEST_HEADERS_METRIC_NAME, OKHTTP_REQUEST_HEADERS_METRIC_DESCRIPTION);
-        }
-    }
-
-    @Override
     public void requestHeadersStart(@NotNull Call call) {
         requestHeadersCallState.put(call, new AdvancedEventListener.CallState(registry.config().clock().monotonicTime(), call.request()));
     }
+
+    @Override
+    public void requestHeadersEnd(@NotNull Call call, @NotNull Request request) {
+        AdvancedEventListener.CallState state = requestHeadersCallState.remove(call);
+        if (state != null) {
+            long duration = time(state, OKHTTP_REQUEST_HEADERS_METRIC_NAME, OKHTTP_REQUEST_HEADERS_METRIC_DESCRIPTION);
+            TimingData timingData = call.request().tag(TimingData.class);
+            timingData.setRequestHeadersDurationNs(duration);
+        }
+    }
     //response body events
+    @Override
+    public void responseBodyStart(@NotNull Call call) {
+        responseBodyCallState.put(call, new AdvancedEventListener.CallState(registry.config().clock().monotonicTime(), call.request()));
+    }
+
     @Override
     public void responseBodyEnd(@NotNull Call call, long byteCount) {
         AdvancedEventListener.CallState state = responseBodyCallState.remove(call);
         if (state != null) {
-            time(state, OKHTTP_RESPONSE_BODY_METRIC_NAME, OKHTTP_RESPONSE_BODY_METRIC_DESCRIPTION);
+            long duration = time(state, OKHTTP_RESPONSE_BODY_METRIC_NAME, OKHTTP_RESPONSE_BODY_METRIC_DESCRIPTION);
+            TimingData timingData = call.request().tag(TimingData.class);
+            timingData.setResponseBodyDurationNs(duration);
         }
-    }
-
-    @Override
-    public void responseBodyStart(@NotNull Call call) {
-        responseBodyCallState.put(call, new AdvancedEventListener.CallState(registry.config().clock().monotonicTime(), call.request()));
     }
 
 
@@ -504,7 +530,9 @@ public class AdvancedEventListener extends EventListener {
         AdvancedEventListener.CallState state = responseHeadersCallState.remove(call);
         if (state != null) {
             state.response = response;
-            time(state, OKHTTP_RESPONSE_HEADERS_METRIC_NAME, OKHTTP_RESPONSE_HEADERS_METRIC_DESCRIPTION);
+            long duration = time(state, OKHTTP_RESPONSE_HEADERS_METRIC_NAME, OKHTTP_RESPONSE_HEADERS_METRIC_DESCRIPTION);
+            TimingData timingData = call.request().tag(TimingData.class);
+            timingData.setResponseHeadersDurationNs(duration);
         }
     }
 
@@ -519,7 +547,9 @@ public class AdvancedEventListener extends EventListener {
     public void secureConnectEnd(@NotNull Call call, @org.jetbrains.annotations.Nullable Handshake handshake) {
         AdvancedEventListener.CallState state = responseHeadersCallState.remove(call);
         if (state != null) {
-            time(state, OKHTTP_SECURE_CONNECT_METRIC_NAME, OKHTTP_SECURE_CONNECT_METRIC_DESCRIPTION);
+            long duration = time(state, OKHTTP_SECURE_CONNECT_METRIC_NAME, OKHTTP_SECURE_CONNECT_METRIC_DESCRIPTION);
+            TimingData timingData = call.request().tag(TimingData.class);
+            timingData.setSecureConnectingDurationNs(duration);
         }
     }
 
