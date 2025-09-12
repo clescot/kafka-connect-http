@@ -1,6 +1,7 @@
 package io.github.clescot.kafka.connect.http.client.okhttp.event;
 
 
+import io.github.clescot.kafka.connect.http.client.TimingData;
 import io.micrometer.common.lang.NonNullApi;
 import io.micrometer.common.lang.NonNullFields;
 import io.micrometer.common.lang.Nullable;
@@ -150,41 +151,20 @@ public class AdvancedEventListener extends EventListener {
         return new AdvancedEventListener.Builder(registry);
     }
 
-    @Override
-    public void callStart(Call call) {
-        callState.put(call, new AdvancedEventListener.CallState(registry.config().clock().monotonicTime(), call.request()));
-    }
-
-    @Override
-    public void callFailed(Call call, IOException e) {
-        AdvancedEventListener.CallState state = callState.remove(call);
-        if (state != null) {
-            state.exception = e;
-            time(state, OKHTTP_REQUEST_METRIC_NAME, OKHTTP_REQUEST_METRIC_DESCRIPTION);
-        }
-    }
-
-    @Override
-    public void callEnd(Call call) {
-        AdvancedEventListener.CallState state = callState.remove(call);
-        if (state != null) {
-            time(state, OKHTTP_REQUEST_METRIC_NAME, OKHTTP_REQUEST_METRIC_DESCRIPTION);
-        }
-    }
-
-
     // VisibleForTesting
-    void time(AdvancedEventListener.CallState state, String metricName, String description) {
+    long time(CallState state, String metricName, String description) {
         Request request = state.request;
         boolean requestAvailable = request != null;
 
         Iterable<Tag> tags = getTags(state, requestAvailable, request);
 
+        long duration = registry.config().clock().monotonicTime() - state.startTime;
         Timer.builder(metricName)
                 .tags(tags)
                 .description(description)
                 .register(registry)
-                .record(registry.config().clock().monotonicTime() - state.startTime, TimeUnit.NANOSECONDS);
+                .record(duration, TimeUnit.NANOSECONDS);
+        return duration;
     }
 
     @NotNull
@@ -264,34 +244,27 @@ public class AdvancedEventListener extends EventListener {
         return Integer.toString(response.code());
     }
 
+    //call events
     @Override
-    public void cacheConditionalHit(@NotNull Call call, @NotNull Response cachedResponse) {
-        CallState myCallState = new CallState(0L, call.request());
-        io.micrometer.core.instrument.Counter.builder("okhttp.cache.conditionalhits")
-                .tags(getTags(myCallState))
-                .description("counter of cache conditional hits")
-                .register(registry)
-                .increment();
+    public void callStart(Call call) {
+        callState.put(call, new AdvancedEventListener.CallState(registry.config().clock().monotonicTime(), call.request()));
     }
 
     @Override
-    public void cacheHit(@NotNull Call call, @NotNull Response response) {
-        CallState myCallState = new CallState(0L, call.request());
-        io.micrometer.core.instrument.Counter.builder("okhttp.cache.hits")
-                .tags(getTags(myCallState))
-                .description("counter of cache hits")
-                .register(registry)
-                .increment();
+    public void callFailed(Call call, IOException e) {
+        AdvancedEventListener.CallState state = callState.remove(call);
+        if (state != null) {
+            state.exception = e;
+            time(state, OKHTTP_REQUEST_METRIC_NAME, OKHTTP_REQUEST_METRIC_DESCRIPTION);
+        }
     }
 
     @Override
-    public void cacheMiss(@NotNull Call call) {
-        CallState myCallState = new CallState(0L, call.request());
-        io.micrometer.core.instrument.Counter.builder("okhttp.cache.misses")
-                .tags(getTags(myCallState))
-                .description("counter of cache misses")
-                .register(registry)
-                .increment();
+    public void callEnd(Call call) {
+        AdvancedEventListener.CallState state = callState.remove(call);
+        if (state != null) {
+            time(state, OKHTTP_REQUEST_METRIC_NAME, OKHTTP_REQUEST_METRIC_DESCRIPTION);
+        }
     }
 
     @Override
@@ -340,6 +313,72 @@ public class AdvancedEventListener extends EventListener {
     }
 
     @Override
+    public void satisfactionFailure(@NotNull Call call, @NotNull Response response) {
+        //TODO add counter or DistributionSummary ?
+        super.satisfactionFailure(call, response);
+    }
+
+    @Override
+    public void requestFailed(@NotNull Call call, @NotNull IOException ioe) {
+        AdvancedEventListener.CallState stateHeaders = requestHeadersCallState.remove(call);
+        if (stateHeaders != null) {
+            stateHeaders.exception = ioe;
+            time(stateHeaders, OKHTTP_REQUEST_HEADERS_METRIC_NAME, OKHTTP_REQUEST_HEADERS_METRIC_DESCRIPTION);
+        }
+        AdvancedEventListener.CallState stateBody = requestBodyCallState.remove(call);
+        if (stateBody != null) {
+            stateBody.exception = ioe;
+            time(stateBody, OKHTTP_REQUEST_BODY_METRIC_NAME, OKHTTP_REQUEST_BODY_METRIC_DESCRIPTION);
+        }
+    }
+
+    @Override
+    public void responseFailed(@NotNull Call call, @NotNull IOException ioe) {
+        AdvancedEventListener.CallState stateHeaders = responseHeadersCallState.remove(call);
+        if (stateHeaders != null) {
+            stateHeaders.exception = ioe;
+            time(stateHeaders, OKHTTP_RESPONSE_HEADERS_METRIC_NAME, OKHTTP_RESPONSE_HEADERS_METRIC_DESCRIPTION);
+        }
+        AdvancedEventListener.CallState stateBody = responseBodyCallState.remove(call);
+        if (stateBody != null) {
+            stateBody.exception = ioe;
+            time(stateBody, OKHTTP_RESPONSE_BODY_METRIC_NAME, OKHTTP_RESPONSE_BODY_METRIC_DESCRIPTION);
+        }
+    }
+
+    //cache events
+    @Override
+    public void cacheConditionalHit(@NotNull Call call, @NotNull Response cachedResponse) {
+        CallState myCallState = new CallState(0L, call.request());
+        io.micrometer.core.instrument.Counter.builder("okhttp.cache.conditionalhits")
+                .tags(getTags(myCallState))
+                .description("counter of cache conditional hits")
+                .register(registry)
+                .increment();
+    }
+
+    @Override
+    public void cacheHit(@NotNull Call call, @NotNull Response response) {
+        CallState myCallState = new CallState(0L, call.request());
+        io.micrometer.core.instrument.Counter.builder("okhttp.cache.hits")
+                .tags(getTags(myCallState))
+                .description("counter of cache hits")
+                .register(registry)
+                .increment();
+    }
+
+    @Override
+    public void cacheMiss(@NotNull Call call) {
+        CallState myCallState = new CallState(0L, call.request());
+        io.micrometer.core.instrument.Counter.builder("okhttp.cache.misses")
+                .tags(getTags(myCallState))
+                .description("counter of cache misses")
+                .register(registry)
+                .increment();
+    }
+
+   //connect events
+    @Override
     public void connectEnd(@NotNull Call call, @NotNull InetSocketAddress inetSocketAddress, @NotNull Proxy proxy, @org.jetbrains.annotations.Nullable Protocol protocol) {
         AdvancedEventListener.CallState state = socketFromConnectionCallState.remove(call);
         if (state != null) {
@@ -361,6 +400,7 @@ public class AdvancedEventListener extends EventListener {
         socketFromConnectionCallState.put(call, new AdvancedEventListener.CallState(registry.config().clock().monotonicTime(), call.request()));
     }
 
+    //connection events
     @Override
     public void connectionAcquired(@NotNull Call call, @NotNull Connection connection) {
         connectionFromPoolCallState.put(call, new AdvancedEventListener.CallState(registry.config().clock().monotonicTime(), call.request()));
@@ -370,15 +410,20 @@ public class AdvancedEventListener extends EventListener {
     public void connectionReleased(@NotNull Call call, @NotNull Connection connection) {
         AdvancedEventListener.CallState state = connectionFromPoolCallState.remove(call);
         if (state != null) {
-            time(state, OKHTTP_POOL_CONNECTION_METRIC_NAME, OKHTTP_POOL_CONNECTION_METRIC_DESCRIPTION);
+            long duration = time(state, OKHTTP_POOL_CONNECTION_METRIC_NAME, OKHTTP_POOL_CONNECTION_METRIC_DESCRIPTION);
+            TimingData timingData = call.request().tag(TimingData.class);
+            timingData.setConnectDurationNs(duration);
         }
     }
 
+    //dns events
     @Override
     public void dnsEnd(@NotNull Call call, @NotNull String domainName, @NotNull List<InetAddress> inetAddressList) {
         AdvancedEventListener.CallState state = dnsCallState.remove(call);
         if (state != null) {
-            time(state, OKHTTP_DNS_METRIC_NAME, OKHTTP_DNS_METRIC_DESCRIPTION);
+            long duration = time(state, OKHTTP_DNS_METRIC_NAME, OKHTTP_DNS_METRIC_DESCRIPTION);
+            TimingData timingData = call.request().tag(TimingData.class);
+            timingData.setDnsDurationNs(duration);
         }
     }
 
@@ -387,11 +432,14 @@ public class AdvancedEventListener extends EventListener {
         dnsCallState.put(call, new AdvancedEventListener.CallState(registry.config().clock().monotonicTime(), call.request()));
     }
 
+    //proxy events
     @Override
     public void proxySelectEnd(@NotNull Call call, @NotNull HttpUrl url, @NotNull List<Proxy> proxies) {
         AdvancedEventListener.CallState state = proxySelectCallState.remove(call);
         if (state != null) {
-            time(state, OKHTTP_PROXY_SELECT_METRIC_NAME, OKHTTP_PROXY_SELECT_METRIC_DESCRIPTION);
+            long duration = time(state, OKHTTP_PROXY_SELECT_METRIC_NAME, OKHTTP_PROXY_SELECT_METRIC_DESCRIPTION);
+            TimingData timingData = call.request().tag(TimingData.class);
+            timingData.setProxySelectDurationNs(duration);
         }
     }
 
@@ -400,6 +448,7 @@ public class AdvancedEventListener extends EventListener {
         proxySelectCallState.put(call, new AdvancedEventListener.CallState(registry.config().clock().monotonicTime(), call.request()));
     }
 
+    //request body events
     @Override
     public void requestBodyEnd(@NotNull Call call, long byteCount) {
         AdvancedEventListener.CallState state = requestBodyCallState.remove(call);
@@ -413,20 +462,10 @@ public class AdvancedEventListener extends EventListener {
         requestBodyCallState.put(call, new AdvancedEventListener.CallState(registry.config().clock().monotonicTime(), call.request()));
     }
 
-    @Override
-    public void requestFailed(@NotNull Call call, @NotNull IOException ioe) {
-        AdvancedEventListener.CallState stateHeaders = requestHeadersCallState.remove(call);
-        if (stateHeaders != null) {
-            stateHeaders.exception = ioe;
-            time(stateHeaders, OKHTTP_REQUEST_HEADERS_METRIC_NAME, OKHTTP_REQUEST_HEADERS_METRIC_DESCRIPTION);
-        }
-        AdvancedEventListener.CallState stateBody = requestBodyCallState.remove(call);
-        if (stateBody != null) {
-            stateBody.exception = ioe;
-            time(stateBody, OKHTTP_REQUEST_BODY_METRIC_NAME, OKHTTP_REQUEST_BODY_METRIC_DESCRIPTION);
-        }
-    }
 
+
+
+    //request header events
     @Override
     public void requestHeadersEnd(@NotNull Call call, @NotNull Request request) {
         AdvancedEventListener.CallState state = requestHeadersCallState.remove(call);
@@ -439,7 +478,7 @@ public class AdvancedEventListener extends EventListener {
     public void requestHeadersStart(@NotNull Call call) {
         requestHeadersCallState.put(call, new AdvancedEventListener.CallState(registry.config().clock().monotonicTime(), call.request()));
     }
-
+    //response body events
     @Override
     public void responseBodyEnd(@NotNull Call call, long byteCount) {
         AdvancedEventListener.CallState state = responseBodyCallState.remove(call);
@@ -453,20 +492,8 @@ public class AdvancedEventListener extends EventListener {
         responseBodyCallState.put(call, new AdvancedEventListener.CallState(registry.config().clock().monotonicTime(), call.request()));
     }
 
-    @Override
-    public void responseFailed(@NotNull Call call, @NotNull IOException ioe) {
-        AdvancedEventListener.CallState stateHeaders = responseHeadersCallState.remove(call);
-        if (stateHeaders != null) {
-            stateHeaders.exception = ioe;
-            time(stateHeaders, OKHTTP_RESPONSE_HEADERS_METRIC_NAME, OKHTTP_RESPONSE_HEADERS_METRIC_DESCRIPTION);
-        }
-        AdvancedEventListener.CallState stateBody = responseBodyCallState.remove(call);
-        if (stateBody != null) {
-            stateBody.exception = ioe;
-            time(stateBody, OKHTTP_RESPONSE_BODY_METRIC_NAME, OKHTTP_RESPONSE_BODY_METRIC_DESCRIPTION);
-        }
-    }
 
+    //response header events
     @Override
     public void responseHeadersStart(@NotNull Call call) {
         responseHeadersCallState.put(call, new AdvancedEventListener.CallState(registry.config().clock().monotonicTime(), call.request()));
@@ -481,12 +508,8 @@ public class AdvancedEventListener extends EventListener {
         }
     }
 
-    @Override
-    public void satisfactionFailure(@NotNull Call call, @NotNull Response response) {
-        //TODO add counter or DistributionSummary ?
-        super.satisfactionFailure(call, response);
-    }
 
+    //secure connect events
     @Override
     public void secureConnectStart(@NotNull Call call) {
         secureConnectCallState.put(call, new AdvancedEventListener.CallState(registry.config().clock().monotonicTime(), call.request()));
