@@ -303,7 +303,9 @@ public class AdvancedEventListener extends EventListener {
             state.exception = e;
             long duration = time(state, OKHTTP_REQUEST_METRIC_NAME, OKHTTP_REQUEST_METRIC_DESCRIPTION);
             TimingData timingData = call.request().tag(TimingData.class);
-            timingData.setTotalDurationNs(duration);
+            if (timingData!=null) {
+                timingData.setTotalDurationNs(duration);
+            }
         }
     }
 
@@ -313,7 +315,9 @@ public class AdvancedEventListener extends EventListener {
         if (state != null) {
             long duration = time(state, OKHTTP_REQUEST_METRIC_NAME, OKHTTP_REQUEST_METRIC_DESCRIPTION);
             TimingData timingData = call.request().tag(TimingData.class);
-            timingData.setTotalDurationNs(duration);
+            if(timingData!=null) {
+                timingData.setTotalDurationNs(duration);
+            }
         }
     }
 
@@ -333,14 +337,18 @@ public class AdvancedEventListener extends EventListener {
             stateHeaders.exception = ioe;
             long duration = time(stateHeaders, OKHTTP_REQUEST_HEADERS_METRIC_NAME, OKHTTP_REQUEST_HEADERS_METRIC_DESCRIPTION);
             TimingData timingData = call.request().tag(TimingData.class);
-            timingData.setRequestHeadersDurationNs(duration);
+            if (timingData!=null) {
+                timingData.setRequestHeadersDurationNs(duration);
+            }
         }
         AdvancedEventListener.CallState stateBody = requestBodyCallState.remove(call);
         if (stateBody != null) {
             stateBody.exception = ioe;
             long duration = time(stateBody, OKHTTP_REQUEST_BODY_METRIC_NAME, OKHTTP_REQUEST_BODY_METRIC_DESCRIPTION);
             TimingData timingData = call.request().tag(TimingData.class);
-            timingData.setRequestBodyDurationNs(duration);
+            if (timingData!=null) {
+                timingData.setRequestBodyDurationNs(duration);
+            }
         }
     }
 
@@ -351,14 +359,18 @@ public class AdvancedEventListener extends EventListener {
             stateHeaders.exception = ioe;
             long duration = time(stateHeaders, OKHTTP_RESPONSE_HEADERS_METRIC_NAME, OKHTTP_RESPONSE_HEADERS_METRIC_DESCRIPTION);
             TimingData timingData = call.request().tag(TimingData.class);
-            timingData.setResponseHeadersDurationNs(duration);
+            if (timingData!=null) {
+                timingData.setResponseHeadersDurationNs(duration);
+            }
         }
         AdvancedEventListener.CallState stateBody = responseBodyCallState.remove(call);
         if (stateBody != null) {
             stateBody.exception = ioe;
             long duration = time(stateBody, OKHTTP_RESPONSE_BODY_METRIC_NAME, OKHTTP_RESPONSE_BODY_METRIC_DESCRIPTION);
             TimingData timingData = call.request().tag(TimingData.class);
-            timingData.setResponseBodyDurationNs(duration);
+            if (timingData!=null) {
+                timingData.setResponseBodyDurationNs(duration);
+            }
         }
     }
 
@@ -400,7 +412,9 @@ public class AdvancedEventListener extends EventListener {
         if (state != null) {
             long duration = time(state, OKHTTP_SOCKET_CONNECTION_METRIC_NAME, OKHTTP_SOCKET_CONNECTION_METRIC_DESCRIPTION);
             TimingData timingData = call.request().tag(TimingData.class);
-            timingData.setConnectingDurationNs(duration);
+            if (timingData!=null) {
+                timingData.setConnectingDurationNs(duration);
+            }
         }
     }
 
@@ -411,7 +425,9 @@ public class AdvancedEventListener extends EventListener {
             state.exception = ioe;
             long duration = time(state, OKHTTP_SOCKET_CONNECTION_METRIC_NAME, OKHTTP_SOCKET_CONNECTION_METRIC_DESCRIPTION);
             TimingData timingData = call.request().tag(TimingData.class);
-            timingData.setConnectingDurationNs(duration);
+            if (timingData!=null) {
+                timingData.setConnectingDurationNs(duration);
+            }
         }
     }
 
@@ -432,7 +448,9 @@ public class AdvancedEventListener extends EventListener {
         if (state != null) {
             long duration = time(state, OKHTTP_POOL_CONNECTION_METRIC_NAME, OKHTTP_POOL_CONNECTION_METRIC_DESCRIPTION);
             TimingData timingData = call.request().tag(TimingData.class);
-            timingData.setConnectedDurationNs(duration);
+            if (timingData!=null) {
+                timingData.setConnectedDurationNs(duration);
+            }
         }
     }
 
@@ -448,7 +466,9 @@ public class AdvancedEventListener extends EventListener {
         if (state != null) {
             long duration = time(state, OKHTTP_DNS_METRIC_NAME, OKHTTP_DNS_METRIC_DESCRIPTION);
             TimingData timingData = call.request().tag(TimingData.class);
-            timingData.setDnsDurationNs(duration);
+            if(timingData!=null) {
+                timingData.setDnsDurationNs(duration);
+            }
         }
     }
 
@@ -464,7 +484,9 @@ public class AdvancedEventListener extends EventListener {
         if (state != null) {
             long duration = time(state, OKHTTP_PROXY_SELECT_METRIC_NAME, OKHTTP_PROXY_SELECT_METRIC_DESCRIPTION);
             TimingData timingData = call.request().tag(TimingData.class);
-            timingData.setProxySelectDurationNs(duration);
+            if (timingData!=null) {
+                timingData.setProxySelectDurationNs(duration);
+            }
         }
     }
 
@@ -480,7 +502,9 @@ public class AdvancedEventListener extends EventListener {
         if (state != null) {
             long duration = time(state, OKHTTP_REQUEST_BODY_METRIC_NAME, OKHTTP_REQUEST_BODY_METRIC_DESCRIPTION);
             TimingData timingData = call.request().tag(TimingData.class);
-            timingData.setRequestBodyDurationNs(duration);
+            if (timingData!=null) {
+                timingData.setRequestBodyDurationNs(duration);
+            }
         }
     }
 
@@ -499,7 +523,9 @@ public class AdvancedEventListener extends EventListener {
         if (state != null) {
             long duration = time(state, OKHTTP_REQUEST_HEADERS_METRIC_NAME, OKHTTP_REQUEST_HEADERS_METRIC_DESCRIPTION);
             TimingData timingData = call.request().tag(TimingData.class);
-            timingData.setRequestHeadersDurationNs(duration);
+            if (timingData!=null) {
+                timingData.setRequestHeadersDurationNs(duration);
+            }
         }
     }
     //response body events
@@ -514,7 +540,9 @@ public class AdvancedEventListener extends EventListener {
         if (state != null) {
             long duration = time(state, OKHTTP_RESPONSE_BODY_METRIC_NAME, OKHTTP_RESPONSE_BODY_METRIC_DESCRIPTION);
             TimingData timingData = call.request().tag(TimingData.class);
-            timingData.setResponseBodyDurationNs(duration);
+            if (timingData!=null) {
+                timingData.setResponseBodyDurationNs(duration);
+            }
         }
     }
 
@@ -532,7 +560,9 @@ public class AdvancedEventListener extends EventListener {
             state.response = response;
             long duration = time(state, OKHTTP_RESPONSE_HEADERS_METRIC_NAME, OKHTTP_RESPONSE_HEADERS_METRIC_DESCRIPTION);
             TimingData timingData = call.request().tag(TimingData.class);
-            timingData.setResponseHeadersDurationNs(duration);
+            if (timingData!=null) {
+                timingData.setResponseHeadersDurationNs(duration);
+            }
         }
     }
 
@@ -549,7 +579,9 @@ public class AdvancedEventListener extends EventListener {
         if (state != null) {
             long duration = time(state, OKHTTP_SECURE_CONNECT_METRIC_NAME, OKHTTP_SECURE_CONNECT_METRIC_DESCRIPTION);
             TimingData timingData = call.request().tag(TimingData.class);
-            timingData.setSecureConnectingDurationNs(duration);
+            if (timingData!=null) {
+                timingData.setSecureConnectingDurationNs(duration);
+            }
         }
     }
 

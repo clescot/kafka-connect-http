@@ -171,7 +171,7 @@ public class OkHttpClientFactory implements HttpClientFactory<OkHttpClient,Reque
             }else{
                 url = HttpUrl.parse(config.get(OKHTTP_DOH_URL));
             }
-
+            Preconditions.checkNotNull(url, "DoH URL is null.");
             okhttp3.OkHttpClient bootstrapClient = httpClientBuilder.build();
             DnsOverHttps dnsOverHttps = new DnsOverHttps.Builder().client(bootstrapClient)
                     .bootstrapDnsHosts(bootstrapDnsHosts)
