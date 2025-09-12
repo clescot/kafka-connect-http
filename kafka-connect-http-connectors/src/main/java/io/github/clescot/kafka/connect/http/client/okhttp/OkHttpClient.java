@@ -279,6 +279,8 @@ public class OkHttpClient extends AbstractHttpClient<Request, Response> {
                 responseHeaders.put(header.getFirst(), Lists.newArrayList(header.getSecond()));
             }
             httpResponse.setHeaders(responseHeaders);
+
+            //TODO fill here HttpExchange with TimingData
         } catch (IOException e) {
             throw new HttpException(e);
         }
