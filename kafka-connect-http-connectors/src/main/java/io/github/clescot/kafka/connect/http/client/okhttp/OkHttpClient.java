@@ -7,6 +7,7 @@ import com.google.common.collect.Maps;
 import io.github.clescot.kafka.connect.http.client.AbstractHttpClient;
 import io.github.clescot.kafka.connect.http.client.HttpClient;
 import io.github.clescot.kafka.connect.http.client.HttpException;
+import io.github.clescot.kafka.connect.http.client.TimingData;
 import io.github.clescot.kafka.connect.http.core.BodyType;
 import io.github.clescot.kafka.connect.http.core.HttpPart;
 import io.github.clescot.kafka.connect.http.core.HttpRequest;
@@ -67,9 +68,13 @@ public class OkHttpClient extends AbstractHttpClient<Request, Response> {
         if (contentType != null && !contentType.isEmpty()) {
             firstContentType = contentType.get(0);
         }
+        //method
         String method = httpRequest.getMethod().name();
         RequestBody requestBody = getRequestBody(httpRequest, method, firstContentType);
         builder.method(method, requestBody);
+
+        //timing data
+        builder.tag(TimingData.class, new TimingData());
         return builder.build();
     }
 
