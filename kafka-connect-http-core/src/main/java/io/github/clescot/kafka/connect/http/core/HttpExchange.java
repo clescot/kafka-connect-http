@@ -181,8 +181,8 @@ public class HttpExchange implements Exchange,Cloneable, Serializable {
         private boolean success;
         private HttpRequest httpRequest;
         private HttpResponse httpResponse;
-        private Map<String, String> attributes;
-        private Map<String, Long> timings;
+        private Map<String, String> attributes = Maps.newHashMap();
+        private Map<String, Long> timings = Maps.newHashMap();
 
         private Builder() {
         }
@@ -254,6 +254,7 @@ public class HttpExchange implements Exchange,Cloneable, Serializable {
                     success
             );
             httpExchange.setAttributes(attributes);
+            httpExchange.setTimings(timings);
             return httpExchange;
         }
     }

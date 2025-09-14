@@ -377,7 +377,7 @@ public class OkHttpClient extends AbstractHttpClient<Request, Response> {
 
             return timings;
         }
-        return Map.of();
+        return Maps.newHashMap();
     }
 
     /**

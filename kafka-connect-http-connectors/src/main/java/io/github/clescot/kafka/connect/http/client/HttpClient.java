@@ -127,9 +127,10 @@ public interface HttpClient<NR, NS>  extends RequestResponseClient<HttpRequest,N
                             waitingTime,
                             overallElapsedTime
                     );
-                    return buildExchange(httpRequest, myResponse, directStopWatch, now, attempts, responseStatusCode < 400 ? SUCCESS : FAILURE,
+                    HttpExchange httpExchange = buildExchange(httpRequest, myResponse, directStopWatch, now, attempts, responseStatusCode < 400 ? SUCCESS : FAILURE,
                             Maps.newHashMap(),
                             timings);
+                    return httpExchange;
                         }
                 ).exceptionally((throwable-> {
                     HttpResponse httpResponse = new HttpResponse(400,throwable.getMessage());
