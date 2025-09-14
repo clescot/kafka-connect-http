@@ -19,25 +19,27 @@ public class HttpExchange implements Exchange,Cloneable, Serializable {
     @Serial
     private static final long serialVersionUID = 1L;
     public static final int HTTP_EXCHANGE_VERSION = 2;
-    public static final String DURATION_IN_MILLIS = "durationInMillis";
-    public static final String MOMENT = "moment";
-    public static final String ATTEMPTS = "attempts";
-    public static final String HTTP_REQUEST = "httpRequest";
-    public static final String HTTP_RESPONSE = "httpResponse";
-    public static final String ATTRIBUTES = "attributes";
+    public static final String DURATION_IN_MILLIS_KEY = "durationInMillis";
+    public static final String MOMENT_KEY = "moment";
+    public static final String ATTEMPTS_KEY = "attempts";
+    public static final String HTTP_REQUEST_KEY = "httpRequest";
+    public static final String HTTP_RESPONSE_KEY = "httpResponse";
+    public static final String ATTRIBUTES_KEY = "attributes";
+    private static final String TIMINGS_KEY = "timings";
     public static final Schema SCHEMA = SchemaBuilder
             .struct()
             .name(HttpExchange.class.getName())
             .version(HTTP_EXCHANGE_VERSION)
             //metadata fields
-            .field(DURATION_IN_MILLIS, Schema.INT64_SCHEMA)
-            .field(MOMENT, Schema.STRING_SCHEMA)
-            .field(ATTEMPTS, Schema.INT32_SCHEMA)
+            .field(DURATION_IN_MILLIS_KEY, Schema.INT64_SCHEMA)
+            .field(MOMENT_KEY, Schema.STRING_SCHEMA)
+            .field(ATTEMPTS_KEY, Schema.INT32_SCHEMA)
             //request
-            .field(HTTP_REQUEST, HttpRequest.SCHEMA)
+            .field(HTTP_REQUEST_KEY, HttpRequest.SCHEMA)
             // response
-            .field(HTTP_RESPONSE, HttpResponse.SCHEMA)
-            .field(ATTRIBUTES, SchemaBuilder.map(Schema.STRING_SCHEMA,Schema.STRING_SCHEMA).optional().schema())
+            .field(HTTP_RESPONSE_KEY, HttpResponse.SCHEMA)
+            .field(ATTRIBUTES_KEY, SchemaBuilder.map(Schema.STRING_SCHEMA,Schema.STRING_SCHEMA).optional().schema())
+            .field(TIMINGS_KEY,SchemaBuilder.map(Schema.STRING_SCHEMA,Schema.OPTIONAL_INT64_SCHEMA).optional().schema())
             .schema();
 
     private Long durationInMillis;
@@ -48,6 +50,7 @@ public class HttpExchange implements Exchange,Cloneable, Serializable {
     private HttpRequest httpRequest;
     @JsonProperty
     private Map<String,String> attributes = Maps.newHashMap();
+    private Map<String,Long> timings = Maps.newHashMap();
 
     protected HttpExchange() {
     }
@@ -116,6 +119,14 @@ public class HttpExchange implements Exchange,Cloneable, Serializable {
         this.httpRequest = httpRequest;
     }
 
+    public Map<String, Long> getTimings() {
+        return timings;
+    }
+
+    public void setTimings(Map<String, Long> timings) {
+        this.timings = timings;
+    }
+
     @Override
     public String toString() {
         return "HttpExchange{" +
@@ -126,38 +137,31 @@ public class HttpExchange implements Exchange,Cloneable, Serializable {
                 ", success=" + success +
                 ", httpRequest=" + httpRequest +
                 ", httpResponse=" + httpResponse +
+                ", timings=" + timings +
                 '}';
     }
 
     public Struct toStruct(){
         Struct struct = new Struct(SCHEMA);
-        struct.put(DURATION_IN_MILLIS,this.getDurationInMillis());
-        struct.put(ATTRIBUTES,this.getAttributes());
-        struct.put(MOMENT,this.getMoment().format(DateTimeFormatter.ISO_ZONED_DATE_TIME));
-        struct.put(ATTEMPTS,this.attempts.intValue());
+        struct.put(DURATION_IN_MILLIS_KEY,this.getDurationInMillis());
+        struct.put(ATTRIBUTES_KEY,this.getAttributes());
+        struct.put(MOMENT_KEY,this.getMoment().format(DateTimeFormatter.ISO_ZONED_DATE_TIME));
+        struct.put(ATTEMPTS_KEY,this.attempts.intValue());
         //request fields
-        struct.put(HTTP_REQUEST, this.httpRequest.toStruct());
+        struct.put(HTTP_REQUEST_KEY, this.httpRequest.toStruct());
         // response fields
-        struct.put(HTTP_RESPONSE, this.httpResponse.toStruct());
+        struct.put(HTTP_RESPONSE_KEY, this.httpResponse.toStruct());
+        struct.put(TIMINGS_KEY,this.getTimings());
         return struct;
 
     }
 
     @Override
     public Object clone() {
-        try {
-            HttpExchange clone = (HttpExchange) super.clone();
+            HttpExchange clone = new HttpExchange(httpRequest, httpResponse, durationInMillis, moment, attempts, success);
             clone.setAttributes(this.attributes);
-            clone.setDurationInMillis(this.durationInMillis);
-            clone.setMoment(this.moment);
-            clone.setAttempts(new AtomicInteger(this.attempts.get()));
-            clone.setHttpResponse((HttpResponse) this.httpResponse.clone());
-            clone.setHttpRequest((HttpRequest) this.httpRequest.clone());
-            clone.setSuccess(this.success);
+            clone.setTimings(this.timings);
             return clone;
-        } catch (CloneNotSupportedException e) {
-            throw new AssertionError();
-        }
     }
 
     @Override
@@ -178,6 +182,7 @@ public class HttpExchange implements Exchange,Cloneable, Serializable {
         private HttpRequest httpRequest;
         private HttpResponse httpResponse;
         private Map<String, String> attributes;
+        private Map<String, Long> timings;
 
         private Builder() {
         }
@@ -203,11 +208,25 @@ public class HttpExchange implements Exchange,Cloneable, Serializable {
             return this;
         }
 
+        public Builder withAttribute(String key,String value) {
+            this.attributes.put(key, value);
+            return this;
+        }
+
         public Builder withAttributes(Map<String,String> attributes) {
             this.attributes = attributes;
             return this;
         }
 
+        public Builder withTimings(Map<String,Long> timings) {
+            this.timings = timings;
+            return this;
+        }
+
+        public Builder withTiming(String key,long value) {
+            this.timings.put(key, value);
+            return this;
+        }
 
 
         public Builder withDuration(Long durationInMillis) {
