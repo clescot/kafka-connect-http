@@ -165,7 +165,7 @@ public class HttpResponse implements Response, Cloneable, Serializable {
                     List<String> valuesWithLimit = Lists.newArrayList();
                     while (valuesIterator.hasNext()) {
                         String myValue = valuesIterator.next();
-                        if (headersSize + myValue.length() < headersLimit) {
+                        if (myValue!=null && headersSize + myValue.length() < headersLimit) {
                             headersSize += myValue.length();
                             valuesWithLimit.add(myValue);
                         } else {

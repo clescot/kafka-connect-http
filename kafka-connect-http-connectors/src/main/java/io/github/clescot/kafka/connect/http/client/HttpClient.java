@@ -51,7 +51,8 @@ public interface HttpClient<NR, NS>  extends RequestResponseClient<HttpRequest,N
                                        OffsetDateTime now,
                                        AtomicInteger attempts,
                                        boolean success,
-                                       Map<String,String> attributes) {
+                                       Map<String,String> attributes,
+                                       Map<String,Long> timings) {
         Preconditions.checkNotNull(request, "'httpRequest' is null");
         return HttpExchange.Builder.anHttpExchange()
                 //request
@@ -66,6 +67,7 @@ public interface HttpClient<NR, NS>  extends RequestResponseClient<HttpRequest,N
                 .withAttempts(attempts)
                 .withSuccess(success)
                 .withAttributes(attributes != null && !attributes.isEmpty() ? attributes : Maps.newHashMap())
+                .withTimings(timings)
                 .build();
     }
 
@@ -95,7 +97,8 @@ public interface HttpClient<NR, NS>  extends RequestResponseClient<HttpRequest,N
             }
             Stopwatch directStopWatch = Stopwatch.createStarted();
             response = nativeCall(request);
-
+            Map<String,Long> timings = getTimings(request,response);
+            LOGGER.debug("timings : {}",timings);
         Preconditions.checkNotNull(response, "response is null");
 
         return response.thenApply(this::buildResponse)
@@ -107,22 +110,26 @@ public interface HttpClient<NR, NS>  extends RequestResponseClient<HttpRequest,N
                             }
                     Integer responseStatusCode = myResponse.getStatusCode();
                     String responseStatusMessage = myResponse.getStatusMessage();
-                    long directElaspedTime = directStopWatch.elapsed(TimeUnit.MILLISECONDS);
-                    //elapsed time contains rate limiting waiting time + + local code execution time + network time + remote server-side execution time
+                    long directElapsedTime = directStopWatch.elapsed(TimeUnit.MILLISECONDS);
+                    timings.put("directElapsedTime",directElapsedTime);
+                    //elapsed time contains rate limiting waiting time + local code execution time + network time + remote server-side execution time
                     long overallElapsedTime = rateLimitedStopWatch.elapsed(TimeUnit.MILLISECONDS);
-                    long waitingTime = overallElapsedTime - directElaspedTime;
+                    timings.put("overallElapsedTime",overallElapsedTime);
+                    long waitingTime = overallElapsedTime - directElapsedTime;
+                    timings.put("waitingTime",waitingTime);
                     LOGGER.info("[{}] {} {} : {} '{}' (direct : '{}' ms, waiting time :'{}'ms overall : '{}' ms)",
                             Thread.currentThread().getId(),
                             httpRequest.getMethod(),
                             httpRequest.getUrl(),
                             responseStatusCode,
                             responseStatusMessage,
-                            directElaspedTime,
+                            directElapsedTime,
                             waitingTime,
                             overallElapsedTime
                     );
                     return buildExchange(httpRequest, myResponse, directStopWatch, now, attempts, responseStatusCode < 400 ? SUCCESS : FAILURE,
-                            Maps.newHashMap());
+                            Maps.newHashMap(),
+                            timings);
                         }
                 ).exceptionally((throwable-> {
                     HttpResponse httpResponse = new HttpResponse(400,throwable.getMessage());
@@ -132,13 +139,16 @@ public interface HttpClient<NR, NS>  extends RequestResponseClient<HttpRequest,N
                     httpResponse.setHeaders(responseHeaders);
                     LOGGER.error(throwable.toString());
                     return buildExchange(httpRequest, httpResponse, rateLimitedStopWatch, now, attempts,FAILURE,
-                            Maps.newHashMap());
+                            Maps.newHashMap(),
+                            timings);
                 }));
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             throw new HttpException(e);
         }
     }
+
+    Map<String, Long> getTimings(NR request, CompletableFuture<NS> response);
 
     HttpClient<NR, NS> customizeForUser(String vuId);
 

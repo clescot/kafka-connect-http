@@ -181,6 +181,7 @@ public class HttpConfiguration<C extends HttpClient<NR, NS>, NR, NS> implements 
                     Stopwatch.createUnstarted(), OffsetDateTime.now(ZoneId.of(HttpClient.UTC_ZONE_ID)),
                     attempts,
                     HttpClient.FAILURE,
+                    Maps.newHashMap(),
                     Maps.newHashMap());
             return CompletableFuture.supplyAsync(() -> httpExchange);
         }

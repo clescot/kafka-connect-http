@@ -68,6 +68,7 @@ class AHCHttpClientTest {
                         OffsetDateTime.now(ZoneId.of(AHCHttpClient.UTC_ZONE_ID)),
                         new AtomicInteger(2),
                         SUCCESS,
+                        Maps.newHashMap(),
                         Maps.newHashMap()
                 ));
     }
@@ -84,6 +85,7 @@ class AHCHttpClientTest {
                         OffsetDateTime.now(ZoneId.of(AHCHttpClient.UTC_ZONE_ID)),
                         new AtomicInteger(2),
                         SUCCESS,
+                        Maps.newHashMap(),
                         Maps.newHashMap()));
     }
 
@@ -97,6 +99,7 @@ class AHCHttpClientTest {
                 OffsetDateTime.now(ZoneId.of(AHCHttpClient.UTC_ZONE_ID)),
                 new AtomicInteger(2),
                 SUCCESS,
+                Maps.newHashMap(),
                 Maps.newHashMap()));
     }
 
@@ -112,6 +115,7 @@ class AHCHttpClientTest {
                 OffsetDateTime.now(ZoneId.of(AHCHttpClient.UTC_ZONE_ID)),
                 new AtomicInteger(2),
                 SUCCESS,
+                Maps.newHashMap(),
                 Maps.newHashMap());
         assertThat(httpExchange).isNotNull();
     }
