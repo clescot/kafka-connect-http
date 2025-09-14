@@ -364,16 +364,19 @@ public class OkHttpClient extends AbstractHttpClient<Request, Response> {
         TimingData timingData = request.tag(TimingData.class);
         if (timingData != null) {
             Map<String,Long> timings = Maps.newHashMap();
-            timings.put("dns", timingData.getDnsDurationNs()/1000);
-            timings.put("connecting", timingData.getConnectingDurationNs()/1000);
-            timings.put("connected", timingData.getConnectedDurationNs()/1000);
-            timings.put("secureConnecting", timingData.getSecureConnectingDurationNs()/1000);
-            timings.put("proxySelection", timingData.getProxySelectionDurationNs()/1000);
-            timings.put("requestHeaders", timingData.getRequestHeadersDurationNs()/1000);
-            timings.put("requestBody", timingData.getRequestBodyDurationNs()/1000);
-            timings.put("responseHeaders", timingData.getResponseHeadersDurationNs()/1000);
-            timings.put("responseBody", timingData.getResponseBodyDurationNs()/1000);
-            timings.put("total", timingData.getTotalDurationNs()/1000);
+            //convert ns to ms
+            //if a timing is not available, its value will be 0
+            //all timings are in ms
+            timings.put("dns", timingData.getDnsDurationNs()/1000_000);
+            timings.put("connecting", timingData.getConnectingDurationNs()/1000_000);
+            timings.put("connected", timingData.getConnectedDurationNs()/1000_000);
+            timings.put("secureConnecting", timingData.getSecureConnectingDurationNs()/1000_000);
+            timings.put("proxySelection", timingData.getProxySelectionDurationNs()/1000_000);
+            timings.put("requestHeaders", timingData.getRequestHeadersDurationNs()/1000_000);
+            timings.put("requestBody", timingData.getRequestBodyDurationNs()/1000_000);
+            timings.put("responseHeaders", timingData.getResponseHeadersDurationNs()/1000_000);
+            timings.put("responseBody", timingData.getResponseBodyDurationNs()/1000_000);
+            timings.put("total", timingData.getTotalDurationNs()/1000_000);
 
             return timings;
         }

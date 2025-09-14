@@ -97,8 +97,7 @@ public interface HttpClient<NR, NS>  extends RequestResponseClient<HttpRequest,N
             }
             Stopwatch directStopWatch = Stopwatch.createStarted();
             response = nativeCall(request);
-            Map<String,Long> timings = getTimings(request,response);
-            LOGGER.debug("timings : {}",timings);
+
         Preconditions.checkNotNull(response, "response is null");
 
         return response.thenApply(this::buildResponse)
@@ -108,6 +107,8 @@ public interface HttpClient<NR, NS>  extends RequestResponseClient<HttpRequest,N
                             if(LOGGER.isTraceEnabled()) {
                                 LOGGER.trace("httpResponse: {}", myResponse);
                             }
+                    Map<String,Long> timings = getTimings(request,response);
+                    LOGGER.debug("timings : {}",timings);
                     Integer responseStatusCode = myResponse.getStatusCode();
                     String responseStatusMessage = myResponse.getStatusMessage();
                     long directElapsedTime = directStopWatch.elapsed(TimeUnit.MILLISECONDS);
@@ -141,7 +142,7 @@ public interface HttpClient<NR, NS>  extends RequestResponseClient<HttpRequest,N
                     LOGGER.error(throwable.toString());
                     return buildExchange(httpRequest, httpResponse, rateLimitedStopWatch, now, attempts,FAILURE,
                             Maps.newHashMap(),
-                            timings);
+                            Maps.newHashMap());
                 }));
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
