@@ -367,11 +367,11 @@ public class OkHttpClient extends AbstractHttpClient<Request, Response> {
             //convert ns to ms
             //if a timing is not available, its value will be 0
             //all timings are in ms
-            timings.put("dns", timingData.getDnsDurationNs()/1000_000);
-            timings.put("connecting", timingData.getConnectingDurationNs()/1000_000);
-            timings.put("connected", timingData.getConnectedDurationNs()/1000_000);
-            timings.put("secureConnecting", timingData.getSecureConnectingDurationNs()/1000_000);
-            timings.put("proxySelection", timingData.getProxySelectionDurationNs()/1000_000);
+            timings.put("dns", timingData.getDnsDurationNs()/1000_000);//har:timings dns
+            timings.put("connecting", timingData.getConnectingDurationNs()/1000_000);//har:timings connect = proxy + dns + secureConnecting(ssl)
+            timings.put("connected", timingData.getConnectedDurationNs()/1000_000); //har:timings send(requestHeaders+requestBody) + wait + receive(responseHeaders+responseBody) = total - connecting
+            timings.put("secureConnecting", timingData.getSecureConnectingDurationNs()/1000_000);//har:timings ssl
+            timings.put("proxySelection", timingData.getProxySelectionDurationNs()/1000_000);//
             timings.put("requestHeaders", timingData.getRequestHeadersDurationNs()/1000_000);
             timings.put("requestBody", timingData.getRequestBodyDurationNs()/1000_000);
             timings.put("responseHeaders", timingData.getResponseHeadersDurationNs()/1000_000);
