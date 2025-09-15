@@ -81,6 +81,13 @@ public class OkHttpClientFactory implements HttpClientFactory<OkHttpClient,Reque
 
         if (executorService != null) {
             Dispatcher dispatcher = new Dispatcher(executorService);
+            if(config.containsKey(OKHTTP_DISPATCHER_MAX_REQUESTS)){
+                dispatcher.setMaxRequests(Integer.parseInt(config.get(OKHTTP_DISPATCHER_MAX_REQUESTS)));
+            }
+
+            if(config.containsKey(OKHTTP_DISPATCHER_MAX_REQUESTS_PER_HOST)){
+                dispatcher.setMaxRequestsPerHost(Integer.parseInt(config.get(OKHTTP_DISPATCHER_MAX_REQUESTS_PER_HOST)));
+            }
             httpClientBuilder.dispatcher(dispatcher);
         }
 

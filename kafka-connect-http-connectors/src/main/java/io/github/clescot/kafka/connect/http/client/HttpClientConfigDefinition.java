@@ -160,6 +160,14 @@ public class HttpClientConfigDefinition {
     public static final String CONFIG_DEFAULT_OKHTTP_CONNECTION_POOL_SCOPE = DEFAULT_CONFIGURATION_PREFIX + OKHTTP_CONNECTION_POOL_SCOPE;
     public static final String CONFIG_DEFAULT_OKHTTP_CONNECTION_POOL_SCOPE_DOC = "scope of the '" + CONFIG_DEFAULT_OKHTTP_CONNECTION_POOL_SCOPE + "' parameter. can be either 'instance' (i.e a connection pool per configuration in the connector instance),  or 'static' (a connection pool shared with all connectors instances in the same Java Virtual Machine).";
 
+    public static final String OKHTTP_DISPATCHER_MAX_REQUESTS = OKHTTP_PREFIX + "dispatcher.max.requests";
+    public static final String CONFIG_DEFAULT_OKKHTTP_DISPATCHER_MAX_REQUESTS = DEFAULT_CONFIGURATION_PREFIX + OKHTTP_DISPATCHER_MAX_REQUESTS;
+    public static final String CONFIG_DEFAULT_OKKHTTP_DISPATCHER_MAX_REQUESTS_DOC="maximum number of requests to execute concurrently. Default is 64.";
+
+    public static final String OKHTTP_DISPATCHER_MAX_REQUESTS_PER_HOST = OKHTTP_PREFIX + "dispatcher.max.requests.per.host";
+    public static final String CONFIG_DEFAULT_OKHTTP_DISPATCHER_MAX_REQUESTS_PER_HOST = DEFAULT_CONFIGURATION_PREFIX + OKHTTP_DISPATCHER_MAX_REQUESTS_PER_HOST;
+    public static final String CONFIG_DEFAULT_OKHTTP_DISPATCHER_MAX_REQUESTS_PER_HOST_DOC = "maximum number of requests for each host to execute concurrently. Default is 5.";
+
     public static final String OKHTTP_CONNECTION_POOL_MAX_IDLE_CONNECTIONS = OKHTTP_PREFIX + "connection.pool.max.idle.connections";
     public static final String CONFIG_DEFAULT_OKHTTP_CONNECTION_POOL_MAX_IDLE_CONNECTIONS = DEFAULT_CONFIGURATION_PREFIX + OKHTTP_CONNECTION_POOL_MAX_IDLE_CONNECTIONS;
     public static final String CONFIG_DEFAULT_OKHTTP_CONNECTION_POOL_MAX_IDLE_CONNECTIONS_DOC = "amount of connections to keep idle, to avoid the connection creation time when needed. Default is 0 (no connection pool)";
@@ -454,6 +462,10 @@ public class HttpClientConfigDefinition {
                 .define(prefix + OKHTTP_CONNECTION_POOL_SCOPE, ConfigDef.Type.INT, 0, ConfigDef.Importance.LOW, CONFIG_DEFAULT_OKHTTP_CONNECTION_POOL_SCOPE_DOC)
                 .define(prefix + OKHTTP_CONNECTION_POOL_MAX_IDLE_CONNECTIONS, ConfigDef.Type.INT, 0, ConfigDef.Importance.MEDIUM, CONFIG_DEFAULT_OKHTTP_CONNECTION_POOL_MAX_IDLE_CONNECTIONS_DOC)
                 .define(prefix + OKHTTP_CONNECTION_POOL_KEEP_ALIVE_DURATION, ConfigDef.Type.LONG, 0, ConfigDef.Importance.MEDIUM, CONFIG_DEFAULT_OKHTTP_CONNECTION_POOL_KEEP_ALIVE_DURATION_DOC)
+
+                //dispatcher
+                .define(prefix + OKHTTP_DISPATCHER_MAX_REQUESTS, ConfigDef.Type.INT, 64, ConfigDef.Importance.LOW, CONFIG_DEFAULT_OKKHTTP_DISPATCHER_MAX_REQUESTS_DOC)
+                .define(prefix + OKHTTP_DISPATCHER_MAX_REQUESTS_PER_HOST, ConfigDef.Type.INT, 5, ConfigDef.Importance.LOW, CONFIG_DEFAULT_OKHTTP_DISPATCHER_MAX_REQUESTS_PER_HOST_DOC)
 
                 //follow redirect
                 .define(prefix + OKHTTP_FOLLOW_REDIRECT, ConfigDef.Type.STRING, TRUE, ConfigDef.Importance.LOW, CONFIG_DEFAULT_OKHTTP_FOLLOW_REDIRECT_DOC)
