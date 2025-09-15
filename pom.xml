@@ -38,7 +38,7 @@
         <awaitility.version>4.3.0</awaitility.version>
         <async.http.client.version>3.0.2</async.http.client.version>
         <commons-text.version>1.14.0</commons-text.version>
-        <connect-json.version>4.0.0</connect-json.version>
+        <connect-json.version>4.1.0</connect-json.version>
         <debezium.version>2.7.4.Final</debezium.version>
         <kafka.version>4.1.0</kafka.version>
         <confluent.platform.version>8.0.0</confluent.platform.version>
