@@ -2,6 +2,7 @@ package io.github.clescot.kafka.connect.http.core;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.collect.Maps;
+import de.sstoehr.harreader.model.HarEntry;
 import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.data.SchemaBuilder;
 import org.apache.kafka.connect.data.Struct;
@@ -154,6 +155,21 @@ public class HttpExchange implements Exchange,Cloneable, Serializable {
         struct.put(TIMINGS_KEY,this.getTimings());
         return struct;
 
+    }
+    public HarEntry toHarEntry(){
+        HarEntry harEntry = new HarEntry();
+        HarEntry.HarEntryBuilder harEntryBuilder = HarEntry.builder();
+        harEntryBuilder.time(this.getDurationInMillis().intValue());
+        harEntryBuilder.request(this.getHttpRequest().toHarRequest(this.getHttpResponse().getProtocol()));
+        harEntryBuilder.response(this.getHttpResponse().toHarResponse());
+        //harEntryBuilder.comment()
+        //harEntryBuilder.additional()
+        //harEntryBuilder.connection()
+        //harEntryBuilder.cache()
+        //harEntryBuilder.pageref()
+        //harEntryBuilder.serverIPAddress()
+        //harEntryBuilder.timings()
+        return harEntry;
     }
 
     @Override
