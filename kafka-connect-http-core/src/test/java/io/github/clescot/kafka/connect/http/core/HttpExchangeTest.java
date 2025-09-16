@@ -4,6 +4,7 @@ package io.github.clescot.kafka.connect.http.core;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import de.sstoehr.harreader.model.Har;
+import de.sstoehr.harreader.model.HarEntry;
 import io.confluent.kafka.schemaregistry.ParsedSchema;
 import io.confluent.kafka.schemaregistry.client.MockSchemaRegistryClient;
 import io.confluent.kafka.schemaregistry.client.rest.exceptions.RestClientException;
@@ -103,6 +104,55 @@ public class HttpExchangeTest {
             assertThat(har.log().creator().version()).isNotEmpty();
         }
     }
+
+    @Nested
+    class ToHarEntry{
+        @Test
+        void test_to_har_entry() {
+            HttpExchange httpExchange = new HttpExchange(
+                    getDummyHttpRequest(),
+                    getDummyHttpResponse(200),
+                    100,
+                    OffsetDateTime.now(ZoneId.of("UTC")),
+                    new AtomicInteger(2),
+                    SUCCESS);
+            HarEntry harEntry = httpExchange.toHarEntry();
+            assertThat(harEntry).isNotNull();
+            assertThat(harEntry.request()).isNotNull();
+            assertThat(harEntry.response()).isNotNull();
+            assertThat(harEntry.timings()).isNotNull();
+            assertThat(harEntry.startedDateTime()).isNotNull();
+            assertThat(harEntry.time()).isEqualTo(100L);
+        }
+
+    }
+
+    @Nested
+    class FromHarEntry{
+        @Test
+        void test_from_har_entry() {
+            HttpExchange httpExchange = new HttpExchange(
+                    getDummyHttpRequest(),
+                    getDummyHttpResponse(200),
+                    100,
+                    OffsetDateTime.now(ZoneId.of("UTC")),
+                    new AtomicInteger(1),
+                    SUCCESS);
+            HarEntry harEntry = httpExchange.toHarEntry();
+            HttpExchange fromHarEntry = HttpExchange.fromHarEntry(harEntry);
+            assertThat(fromHarEntry).isNotNull();
+            assertThat(fromHarEntry).isEqualTo(httpExchange);
+            assertThat(fromHarEntry.getHttpRequest()).isEqualTo(httpExchange.getHttpRequest());
+            assertThat(fromHarEntry.getHttpResponse()).isEqualTo(httpExchange.getHttpResponse());
+            assertThat(fromHarEntry.getDurationInMillis()).isEqualTo(httpExchange.getDurationInMillis());
+            assertThat(fromHarEntry.getMoment().format(DateTimeFormatter.ISO_ZONED_DATE_TIME))
+                    .isEqualTo(httpExchange.getMoment().format(DateTimeFormatter.ISO_ZONED_DATE_TIME));
+            assertThat(fromHarEntry.getAttempts().get()).isEqualTo(httpExchange.getAttempts().get());
+            assertThat(fromHarEntry.isSuccess()).isEqualTo(httpExchange.isSuccess());
+        }
+
+    }
+
     @Nested
     class TestEqualsAndHashcode {
         @Test

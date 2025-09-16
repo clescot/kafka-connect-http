@@ -1,5 +1,6 @@
 package io.github.clescot.kafka.connect.http.core;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.base.Strings;
 import com.google.common.collect.Maps;
@@ -196,36 +197,61 @@ public class HttpExchange implements Exchange,Cloneable, Serializable {
             if (harTiming.additional() != null) {
                 Map<String, Object> additionalTimings = harTiming.additional();
                 if (additionalTimings.containsKey(CONNECTED_TIMING_KEY)) {
-                    timings.put(CONNECTED_TIMING_KEY, ((Number) additionalTimings.get(CONNECTED_TIMING_KEY)).longValue());
+                    Number number = (Number) additionalTimings.get(CONNECTED_TIMING_KEY);
+                    if(number!=null) {
+                        timings.put(CONNECTED_TIMING_KEY, number.longValue());
+                    }
                 }
                 if (additionalTimings.containsKey(PROXY_SELECTION_TIMING_KEY)) {
-                    timings.put(PROXY_SELECTION_TIMING_KEY, ((Number) additionalTimings.get(PROXY_SELECTION_TIMING_KEY)).longValue());
+                    Number number = (Number) additionalTimings.get(PROXY_SELECTION_TIMING_KEY);
+                    if(number!=null) {
+                        timings.put(PROXY_SELECTION_TIMING_KEY, number.longValue());
+                    }
                 }
                 if (additionalTimings.containsKey(REQUEST_HEADERS_TIMING_KEY)) {
-                    timings.put(REQUEST_HEADERS_TIMING_KEY, ((Number) additionalTimings.get(REQUEST_HEADERS_TIMING_KEY)).longValue());
+                    Number number = (Number) additionalTimings.get(REQUEST_HEADERS_TIMING_KEY);
+                    if (number!=null) {
+                        timings.put(REQUEST_HEADERS_TIMING_KEY, number.longValue());
+                    }
                 }
                 if (additionalTimings.containsKey(REQUEST_BODY_TIMING_KEY)) {
-                    timings.put(REQUEST_BODY_TIMING_KEY, ((Number) additionalTimings.get(REQUEST_BODY_TIMING_KEY)).longValue());
+                    Number number = (Number) additionalTimings.get(REQUEST_BODY_TIMING_KEY);
+                    if(number!=null) {
+                        timings.put(REQUEST_BODY_TIMING_KEY, number.longValue());
+                    }
                 }
                 if (additionalTimings.containsKey(RESPONSE_HEADERS_TIMING_KEY)) {
-                    timings.put(RESPONSE_HEADERS_TIMING_KEY, ((Number) additionalTimings.get(RESPONSE_HEADERS_TIMING_KEY)).longValue());
+                    Number number = (Number) additionalTimings.get(RESPONSE_HEADERS_TIMING_KEY);
+                    if(number!=null) {
+                        timings.put(RESPONSE_HEADERS_TIMING_KEY, number.longValue());
+                    }
                 }
                 if (additionalTimings.containsKey(RESPONSE_BODY_TIMING_KEY)) {
-                    timings.put(RESPONSE_BODY_TIMING_KEY, ((Number) additionalTimings.get(RESPONSE_BODY_TIMING_KEY)).longValue());
+                    Number number = (Number) additionalTimings.get(RESPONSE_BODY_TIMING_KEY);
+                    if(number!=null) {
+                        timings.put(RESPONSE_BODY_TIMING_KEY, number.longValue());
+                    }
                 }
                 if (additionalTimings.containsKey(DIRECT_ELAPSED_TIME_TIMING_KEY)) {
-                    timings.put(DIRECT_ELAPSED_TIME_TIMING_KEY, ((Number) additionalTimings.get(DIRECT_ELAPSED_TIME_TIMING_KEY)).longValue());
+                    Number number = (Number) additionalTimings.get(DIRECT_ELAPSED_TIME_TIMING_KEY);
+                    if(number!=null) {
+                        timings.put(DIRECT_ELAPSED_TIME_TIMING_KEY, number.longValue());
+                    }
                 }
             }
         }
         return httpExchange;
     }
 
+    @JsonIgnore
     public HarEntry toHarEntry(){
         return toHarEntry(1,null,null,null);
     }
+
+    @JsonIgnore
     public HarEntry toHarEntry(int pageIndex,String connection,String serverIPAddress,String comment){
         HarEntry.HarEntryBuilder harEntryBuilder = HarEntry.builder();
+        harEntryBuilder.startedDateTime(this.getMoment().toZonedDateTime());
         harEntryBuilder.time(this.getDurationInMillis().intValue());
         harEntryBuilder.request(this.getHttpRequest().toHarRequest(this.getHttpResponse().getProtocol()));
         harEntryBuilder.response(this.getHttpResponse().toHarResponse());
