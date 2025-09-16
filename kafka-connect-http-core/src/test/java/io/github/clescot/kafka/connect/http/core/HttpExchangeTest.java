@@ -3,6 +3,7 @@ package io.github.clescot.kafka.connect.http.core;
 
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
+import de.sstoehr.harreader.model.Har;
 import io.confluent.kafka.schemaregistry.ParsedSchema;
 import io.confluent.kafka.schemaregistry.client.MockSchemaRegistryClient;
 import io.confluent.kafka.schemaregistry.client.rest.exceptions.RestClientException;
@@ -82,6 +83,26 @@ public class HttpExchangeTest {
 
     }
 
+    @Nested
+    class ToHar{
+        @Test
+        void test_to_har() {
+            HttpExchange httpExchange = new HttpExchange(
+                    getDummyHttpRequest(),
+                    getDummyHttpResponse(200),
+                    100,
+                    OffsetDateTime.now(ZoneId.of("UTC")),
+                    new AtomicInteger(2),
+                    SUCCESS);
+            Har har = HttpExchange.toHar(httpExchange);
+            assertThat(har).isNotNull();
+            assertThat(har.log().entries()).isNotEmpty();
+            assertThat(har.log().browser().name()).isNotEmpty();
+            assertThat(har.log().browser().version()).isNotEmpty();
+            assertThat(har.log().creator().name()).isNotEmpty();
+            assertThat(har.log().creator().version()).isNotEmpty();
+        }
+    }
     @Nested
     class TestEqualsAndHashcode {
         @Test

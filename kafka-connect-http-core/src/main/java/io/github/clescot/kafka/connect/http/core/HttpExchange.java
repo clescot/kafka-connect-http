@@ -1,6 +1,7 @@
 package io.github.clescot.kafka.connect.http.core;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.google.common.base.Strings;
 import com.google.common.collect.Maps;
 import de.sstoehr.harreader.model.*;
 import org.apache.kafka.connect.data.Schema;
@@ -10,6 +11,7 @@ import org.apache.kafka.connect.data.Struct;
 import java.io.Serial;
 import java.io.Serializable;
 import java.time.OffsetDateTime;
+import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Map;
 import java.util.Objects;
@@ -220,33 +222,66 @@ public class HttpExchange implements Exchange,Cloneable, Serializable {
     }
 
     public HarEntry toHarEntry(){
+        return toHarEntry(1,null,null,null);
+    }
+    public HarEntry toHarEntry(int pageIndex,String connection,String serverIPAddress,String comment){
         HarEntry.HarEntryBuilder harEntryBuilder = HarEntry.builder();
         harEntryBuilder.time(this.getDurationInMillis().intValue());
         harEntryBuilder.request(this.getHttpRequest().toHarRequest(this.getHttpResponse().getProtocol()));
         harEntryBuilder.response(this.getHttpResponse().toHarResponse());
-        //harEntryBuilder.comment()
+        if(!Strings.isNullOrEmpty(comment)) {
+            harEntryBuilder.comment(comment);
+        }
         //harEntryBuilder.additional()
-        //harEntryBuilder.connection()
+        if(!Strings.isNullOrEmpty(connection)) {
+            harEntryBuilder.connection(connection);
+        }
         //harEntryBuilder.cache()
-        //harEntryBuilder.pageref()
-        //harEntryBuilder.serverIPAddress()
+        harEntryBuilder.pageref("page_"+pageIndex);
+        if(!Strings.isNullOrEmpty(serverIPAddress)){
+            harEntryBuilder.serverIPAddress(serverIPAddress);
+        }
+        HarTiming harTiming = getHarTiming();
+        harEntryBuilder.timings(harTiming);
+        return harEntryBuilder.build();
+    }
+
+    private HarTiming getHarTiming() {
         HarTiming.HarTimingBuilder harTimingBuilder = HarTiming.builder();
-        harTimingBuilder.dns(timings.get(DNS_TIMING_KEY));
-        harTimingBuilder.connect(timings.get(CONNECTING_TIMING_KEY));
-        harTimingBuilder.ssl(timings.get(SECURE_CONNECTING_TIMING_KEY));
-        harTimingBuilder.send(timings.get(REQUEST_HEADERS_TIMING_KEY)+timings.get(REQUEST_BODY_TIMING_KEY));
+        Long dns = timings.get(DNS_TIMING_KEY);
+        if (dns != null) {
+            harTimingBuilder.dns(dns);
+        }
+        Long connecting = timings.get(CONNECTING_TIMING_KEY);
+        if(connecting!=null) {
+            harTimingBuilder.connect(connecting);
+        }
+        Long ssl = timings.get(SECURE_CONNECTING_TIMING_KEY);
+        if(ssl!=null) {
+            harTimingBuilder.ssl(ssl);
+        }
+
+        Long requestHeaders = timings.get(REQUEST_HEADERS_TIMING_KEY);
+        Long requestBody = timings.get(REQUEST_BODY_TIMING_KEY);
+        harTimingBuilder.send((requestHeaders!=null?requestHeaders:0)+(requestBody!=null?requestBody:0));
         Long blocked = timings.get(BLOCKED_TIMING_KEY);
         if(blocked==null){
             blocked=0L;
         }
         harTimingBuilder.blocked(blocked);
-        harTimingBuilder.waitTime(timings.get(WAITING_TIME_TIMING_KEY));
-        harTimingBuilder.receive(timings.get(RECEIVE_TIMING_KEY));
+        Long waitTime = timings.get(WAITING_TIME_TIMING_KEY);
+        if(waitTime!=null) {
+            harTimingBuilder.waitTime(waitTime);
+        }
+        Long receive = timings.get(RECEIVE_TIMING_KEY);
+        if(receive!=null) {
+            harTimingBuilder.receive(receive);
+        }
         Map<String,Object> additionalTimings = Maps.newHashMap();
         additionalTimings.put(CONNECTED_TIMING_KEY,timings.get(CONNECTED_TIMING_KEY));
         additionalTimings.put(PROXY_SELECTION_TIMING_KEY,timings.get(PROXY_SELECTION_TIMING_KEY));
-        additionalTimings.put(REQUEST_HEADERS_TIMING_KEY,timings.get(REQUEST_HEADERS_TIMING_KEY));
-        additionalTimings.put(REQUEST_BODY_TIMING_KEY,timings.get(REQUEST_BODY_TIMING_KEY));
+        additionalTimings.put(REQUEST_HEADERS_TIMING_KEY, requestHeaders);
+        additionalTimings.put(REQUEST_BODY_TIMING_KEY, requestBody);
         additionalTimings.put(RESPONSE_HEADERS_TIMING_KEY,timings.get(RESPONSE_HEADERS_TIMING_KEY));
         additionalTimings.put(RESPONSE_BODY_TIMING_KEY,timings.get(RESPONSE_BODY_TIMING_KEY));
         additionalTimings.put(DIRECT_ELAPSED_TIME_TIMING_KEY,timings.get(DIRECT_ELAPSED_TIME_TIMING_KEY));
@@ -254,8 +289,7 @@ public class HttpExchange implements Exchange,Cloneable, Serializable {
 
         harTimingBuilder.additional(additionalTimings);
         HarTiming harTiming = harTimingBuilder.build();
-        harEntryBuilder.timings(harTiming);
-        return harEntryBuilder.build();
+        return harTiming;
     }
 
 
@@ -271,13 +305,25 @@ public class HttpExchange implements Exchange,Cloneable, Serializable {
         creatorBrowserBuilder.version(VERSION);
         harLogBuilder.browser(creatorBrowserBuilder.build());
 
+
+
         //creator
         HarCreatorBrowser.HarCreatorBrowserBuilder creatorBuilder = HarCreatorBrowser.builder();
         creatorBuilder.name(KAFKA_CONNECT_HTTP);
         creatorBuilder.version(VERSION);
         harLogBuilder.creator(creatorBuilder.build());
-        for (HttpExchange exchange : exchanges) {
-            harLogBuilder.entry(exchange.toHarEntry());
+        for (int i=0;i<exchanges.length;i++) {
+            HttpExchange exchange = exchanges[i];
+            harLogBuilder.entry(exchange.toHarEntry(i+1,null,null,null));
+            HarPage.HarPageBuilder harPageBuilder = HarPage.builder();
+            harPageBuilder.id("page_" + (i + 1));
+            //harPageBuilder.title("page_" + (i + 1));
+            harPageBuilder.startedDateTime(ZonedDateTime.ofInstant(exchange.getMoment().toInstant(), exchange.getMoment().getOffset()));
+//          HarPageTiming.HarPageTimingBuilder harPageTimingBuilder = HarPageTiming.builder();
+//          harPageTimingBuilder.onContentLoad(0);
+//          harPageTimingBuilder.onLoad(0);
+            HarPage harPage = harPageBuilder.build();
+            harLogBuilder.page(harPage);
         }
         harBuilder.log(harLogBuilder.build());
 
