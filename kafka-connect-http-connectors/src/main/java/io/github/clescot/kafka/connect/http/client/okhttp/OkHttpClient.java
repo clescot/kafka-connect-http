@@ -27,6 +27,8 @@ import java.io.IOException;
 import java.net.CookieManager;
 import java.net.CookiePolicy;
 import java.net.CookieStore;
+import java.security.Principal;
+import java.security.cert.Certificate;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
@@ -283,20 +285,24 @@ public class OkHttpClient extends AbstractHttpClient<Request, Response> {
             httpResponse.setHeaders(responseHeaders);
             if(handshake!=null) {
                 CipherSuite cipherSuite = handshake.cipherSuite();
-                if(handshake.localPrincipal()!=null) {
-                    String localPrincipalName = handshake.localPrincipal().getName();
+                Principal localPrincipal = handshake.localPrincipal();
+                if(localPrincipal !=null) {
+                    String localPrincipalName = localPrincipal.getName();
                     LOGGER.trace("local principal: {}", localPrincipalName);
                 }
-                if(handshake.peerPrincipal()!=null) {
-                    String peerPrincipalName = handshake.peerPrincipal().getName();
+                Principal peerPrincipal = handshake.peerPrincipal();
+                if(peerPrincipal !=null) {
+                    String peerPrincipalName = peerPrincipal.getName();
                     LOGGER.trace("peer principal: {}", peerPrincipalName);
                 }
-                if(handshake.peerCertificates()!=null) {
-                    List<String> peerCertificates = handshake.peerCertificates().stream().map(Object::toString).collect(Collectors.toList());
+                List<Certificate> peeredCertificates = handshake.peerCertificates();
+                if(peeredCertificates !=null) {
+                    List<String> peerCertificates = peeredCertificates.stream().map(Object::toString).toList();
                     LOGGER.trace("peer certificates size:{}", peerCertificates.size());
                 }
-                if(handshake.localCertificates()!=null) {
-                    List<String> localCertificates = handshake.localCertificates().stream().map(Object::toString).collect(Collectors.toList());
+                List<Certificate> localedCertificates = handshake.localCertificates();
+                if(localedCertificates !=null) {
+                    List<String> localCertificates = localedCertificates.stream().map(Object::toString).toList();
                     LOGGER.trace("local certificates size:{}", localCertificates.size());
                 }
                 TlsVersion tlsVersion = handshake.tlsVersion();
