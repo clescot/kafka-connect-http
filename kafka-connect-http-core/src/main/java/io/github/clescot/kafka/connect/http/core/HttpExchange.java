@@ -14,6 +14,7 @@ import java.io.Serializable;
 import java.time.OffsetDateTime;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -186,6 +187,7 @@ public class HttpExchange implements Exchange,Cloneable, Serializable {
         boolean success = httpResponse.getStatusCode()>=200 && httpResponse.getStatusCode()<300;
         HttpExchange httpExchange = new HttpExchange(httpRequest,httpResponse,durationInMillis,moment,attempts,success);
         Map<String,Long> timings = Maps.newHashMap();
+        httpExchange.setTimings(timings);
         if(harEntry.timings()!=null) {
             HarTiming harTiming = harEntry.timings();
             timings.put(DNS_TIMING_KEY, harTiming.dns());
@@ -318,6 +320,14 @@ public class HttpExchange implements Exchange,Cloneable, Serializable {
         return harTiming;
     }
 
+    public static List<HttpExchange> fromHar(Har har){
+        Objects.requireNonNull(har,"'har' is null");
+        Objects.requireNonNull(har.log(),"'har.log' is null");
+        Objects.requireNonNull(har.log().entries(),"'har.log.entries' is null");
+        return har.log().entries().stream()
+                .map(HttpExchange::fromHarEntry)
+                .toList();
+    }
 
     public static Har toHar(HttpExchange... exchanges){
 

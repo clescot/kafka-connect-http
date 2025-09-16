@@ -87,7 +87,6 @@ public class HttpResponse implements Response, Cloneable, Serializable {
     }
 
     public HttpResponse(Integer statusCode, String statusMessage, Integer statusMessageLimit, Integer headersLimit, Integer bodyLimit) {
-        Preconditions.checkArgument(statusCode > 0, "status code must be a positive integer");
         this.statusCode = statusCode;
         if (headersLimit != null) {
             this.headersLimit = Math.max(0, headersLimit);
