@@ -44,6 +44,21 @@ public class HttpExchange implements Exchange,Cloneable, Serializable {
             .field(ATTRIBUTES_KEY, SchemaBuilder.map(Schema.STRING_SCHEMA,Schema.STRING_SCHEMA).optional().schema())
             .field(TIMINGS_KEY,SchemaBuilder.map(Schema.STRING_SCHEMA,Schema.OPTIONAL_INT64_SCHEMA).optional().schema())
             .schema();
+    public static final String RESPONSE_HEADERS_TIMING_KEY = "responseHeaders";
+    public static final String RESPONSE_BODY_TIMING_KEY = "responseBody";
+    public static final String DIRECT_ELAPSED_TIME_TIMING_KEY = "directElapsedTime";
+    public static final String OVERALL_ELAPSED_TIME_TIMING_KEY = "overallElapsedTime";
+    public static final String REQUEST_BODY_TIMING_KEY = "requestBody";
+    public static final String REQUEST_HEADERS_TIMING_KEY = "requestHeaders";
+    public static final String PROXY_SELECTION_TIMING_KEY = "proxySelection";
+    public static final String CONNECTED_TIMING_KEY = "connected";
+    public static final String RECEIVE_TIMING_KEY = "receive";
+    public static final String WAITING_TIME_TIMING_KEY = "waitingTime";
+    public static final String BLOCKED_TIMING_KEY = "blocked";
+    public static final String SECURE_CONNECTING_TIMING_KEY = "secureConnecting";
+    public static final String CONNECTING_TIMING_KEY = "connecting";
+    public static final String DNS_TIMING_KEY = "dns";
+    public static final String KAFKA_CONNECT_HTTP = "kafka-connect-http";
 
     private Long durationInMillis;
     private OffsetDateTime moment;
@@ -158,6 +173,52 @@ public class HttpExchange implements Exchange,Cloneable, Serializable {
         return struct;
 
     }
+
+    public static HttpExchange fromHarEntry(HarEntry harEntry){
+        HttpRequest httpRequest = HttpRequest.fromHarRequest(harEntry.request());
+        HttpResponse httpResponse = HttpResponse.fromHarResponse(harEntry.response());
+        long durationInMillis = harEntry.time().longValue();
+        OffsetDateTime moment = harEntry.startedDateTime().toOffsetDateTime();
+        AtomicInteger attempts = new AtomicInteger(1);
+        boolean success = httpResponse.getStatusCode()>=200 && httpResponse.getStatusCode()<300;
+        HttpExchange httpExchange = new HttpExchange(httpRequest,httpResponse,durationInMillis,moment,attempts,success);
+        Map<String,Long> timings = Maps.newHashMap();
+        if(harEntry.timings()!=null) {
+            HarTiming harTiming = harEntry.timings();
+            timings.put(DNS_TIMING_KEY, harTiming.dns());
+            timings.put(CONNECTING_TIMING_KEY, harTiming.connect());
+            timings.put(SECURE_CONNECTING_TIMING_KEY, harTiming.ssl());
+            timings.put(REQUEST_HEADERS_TIMING_KEY, harTiming.send());
+            timings.put(WAITING_TIME_TIMING_KEY, harTiming.waitTime());
+            timings.put(RECEIVE_TIMING_KEY, harTiming.receive());
+            if (harTiming.additional() != null) {
+                Map<String, Object> additionalTimings = harTiming.additional();
+                if (additionalTimings.containsKey(CONNECTED_TIMING_KEY)) {
+                    timings.put(CONNECTED_TIMING_KEY, ((Number) additionalTimings.get(CONNECTED_TIMING_KEY)).longValue());
+                }
+                if (additionalTimings.containsKey(PROXY_SELECTION_TIMING_KEY)) {
+                    timings.put(PROXY_SELECTION_TIMING_KEY, ((Number) additionalTimings.get(PROXY_SELECTION_TIMING_KEY)).longValue());
+                }
+                if (additionalTimings.containsKey(REQUEST_HEADERS_TIMING_KEY)) {
+                    timings.put(REQUEST_HEADERS_TIMING_KEY, ((Number) additionalTimings.get(REQUEST_HEADERS_TIMING_KEY)).longValue());
+                }
+                if (additionalTimings.containsKey(REQUEST_BODY_TIMING_KEY)) {
+                    timings.put(REQUEST_BODY_TIMING_KEY, ((Number) additionalTimings.get(REQUEST_BODY_TIMING_KEY)).longValue());
+                }
+                if (additionalTimings.containsKey(RESPONSE_HEADERS_TIMING_KEY)) {
+                    timings.put(RESPONSE_HEADERS_TIMING_KEY, ((Number) additionalTimings.get(RESPONSE_HEADERS_TIMING_KEY)).longValue());
+                }
+                if (additionalTimings.containsKey(RESPONSE_BODY_TIMING_KEY)) {
+                    timings.put(RESPONSE_BODY_TIMING_KEY, ((Number) additionalTimings.get(RESPONSE_BODY_TIMING_KEY)).longValue());
+                }
+                if (additionalTimings.containsKey(DIRECT_ELAPSED_TIME_TIMING_KEY)) {
+                    timings.put(DIRECT_ELAPSED_TIME_TIMING_KEY, ((Number) additionalTimings.get(DIRECT_ELAPSED_TIME_TIMING_KEY)).longValue());
+                }
+            }
+        }
+        return httpExchange;
+    }
+
     public HarEntry toHarEntry(){
         HarEntry.HarEntryBuilder harEntryBuilder = HarEntry.builder();
         harEntryBuilder.time(this.getDurationInMillis().intValue());
@@ -170,26 +231,26 @@ public class HttpExchange implements Exchange,Cloneable, Serializable {
         //harEntryBuilder.pageref()
         //harEntryBuilder.serverIPAddress()
         HarTiming.HarTimingBuilder harTimingBuilder = HarTiming.builder();
-        harTimingBuilder.dns(timings.get("dns"));
-        harTimingBuilder.connect(timings.get("connecting"));
-        harTimingBuilder.ssl(timings.get("secureConnecting"));
-        harTimingBuilder.send(timings.get("requestHeaders")+timings.get("requestBody"));
-        Long blocked = timings.get("blocked");
+        harTimingBuilder.dns(timings.get(DNS_TIMING_KEY));
+        harTimingBuilder.connect(timings.get(CONNECTING_TIMING_KEY));
+        harTimingBuilder.ssl(timings.get(SECURE_CONNECTING_TIMING_KEY));
+        harTimingBuilder.send(timings.get(REQUEST_HEADERS_TIMING_KEY)+timings.get(REQUEST_BODY_TIMING_KEY));
+        Long blocked = timings.get(BLOCKED_TIMING_KEY);
         if(blocked==null){
             blocked=0L;
         }
         harTimingBuilder.blocked(blocked);
-        harTimingBuilder.waitTime(timings.get("waitingTime"));
-        harTimingBuilder.receive(timings.get("receive"));
+        harTimingBuilder.waitTime(timings.get(WAITING_TIME_TIMING_KEY));
+        harTimingBuilder.receive(timings.get(RECEIVE_TIMING_KEY));
         Map<String,Object> additionalTimings = Maps.newHashMap();
-        additionalTimings.put("connected",timings.get("connected"));
-        additionalTimings.put("proxySelection",timings.get("proxySelection"));
-        additionalTimings.put("requestHeaders",timings.get("requestHeaders"));
-        additionalTimings.put("requestBody",timings.get("requestBody"));
-        additionalTimings.put("responseHeaders",timings.get("responseHeaders"));
-        additionalTimings.put("responseBody",timings.get("responseBody"));
-        additionalTimings.put("directElapsedTime",timings.get("directElapsedTime"));
-        additionalTimings.put("overallElapsedTime",timings.get("overallElapsedTime"));
+        additionalTimings.put(CONNECTED_TIMING_KEY,timings.get(CONNECTED_TIMING_KEY));
+        additionalTimings.put(PROXY_SELECTION_TIMING_KEY,timings.get(PROXY_SELECTION_TIMING_KEY));
+        additionalTimings.put(REQUEST_HEADERS_TIMING_KEY,timings.get(REQUEST_HEADERS_TIMING_KEY));
+        additionalTimings.put(REQUEST_BODY_TIMING_KEY,timings.get(REQUEST_BODY_TIMING_KEY));
+        additionalTimings.put(RESPONSE_HEADERS_TIMING_KEY,timings.get(RESPONSE_HEADERS_TIMING_KEY));
+        additionalTimings.put(RESPONSE_BODY_TIMING_KEY,timings.get(RESPONSE_BODY_TIMING_KEY));
+        additionalTimings.put(DIRECT_ELAPSED_TIME_TIMING_KEY,timings.get(DIRECT_ELAPSED_TIME_TIMING_KEY));
+        additionalTimings.put(OVERALL_ELAPSED_TIME_TIMING_KEY,timings.get(OVERALL_ELAPSED_TIME_TIMING_KEY));
 
         harTimingBuilder.additional(additionalTimings);
         HarTiming harTiming = harTimingBuilder.build();
@@ -206,13 +267,13 @@ public class HttpExchange implements Exchange,Cloneable, Serializable {
 
         //browser
         HarCreatorBrowser.HarCreatorBrowserBuilder creatorBrowserBuilder = HarCreatorBrowser.builder();
-        creatorBrowserBuilder.name("kafka-connect-http");
+        creatorBrowserBuilder.name(KAFKA_CONNECT_HTTP);
         creatorBrowserBuilder.version(VERSION);
         harLogBuilder.browser(creatorBrowserBuilder.build());
 
         //creator
         HarCreatorBrowser.HarCreatorBrowserBuilder creatorBuilder = HarCreatorBrowser.builder();
-        creatorBuilder.name("kafka-connect-http");
+        creatorBuilder.name(KAFKA_CONNECT_HTTP);
         creatorBuilder.version(VERSION);
         harLogBuilder.creator(creatorBuilder.build());
         for (HttpExchange exchange : exchanges) {
