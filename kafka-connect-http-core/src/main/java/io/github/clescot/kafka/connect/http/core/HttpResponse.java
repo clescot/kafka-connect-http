@@ -383,6 +383,33 @@ public class HttpResponse implements Response, Cloneable, Serializable {
         return attributes;
     }
 
+    public static HttpResponse fromHarResponse(HarResponse response){
+        HttpResponse httpResponse = new HttpResponse(response.status(), response.statusText());
+        httpResponse.setProtocol(response.httpVersion());
+        if(response.headers()!=null){
+            Map<String, List<String>> headers = Maps.newHashMap();
+            for(HarHeader harHeader:response.headers()){
+                if(!headers.containsKey(harHeader.name())){
+                    headers.put(harHeader.name(), Lists.newArrayList(harHeader.value()));
+                }else{
+                    headers.get(harHeader.name()).add(harHeader.value());
+                }
+            }
+            httpResponse.setHeaders(headers);
+        }
+        if(response.content()!=null){
+            if(response.content().text()!=null){
+                if("base64".equalsIgnoreCase(response.content().encoding())){
+                    httpResponse.setBodyAsByteArray(Base64.getDecoder().decode(response.content().text()));
+                }else{
+                    httpResponse.setBodyAsString(response.content().text());
+                }
+            }
+        }
+        return httpResponse;
+
+    }
+
     public HarResponse toHarResponse() {
         HarResponse.HarResponseBuilder harResponseBuilder = HarResponse.builder();
         harResponseBuilder.status(this.getStatusCode());
