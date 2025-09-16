@@ -247,9 +247,11 @@ public class OkHttpClient extends AbstractHttpClient<Request, Response> {
         HttpResponse httpResponse = new HttpResponse(response.code(), response.message(), getStatusMessageLimit(), getHeadersLimit(), getBodyLimit());
         try {
             Protocol protocol = response.protocol();
+            Handshake handshake = response.handshake();
+
             if (LOGGER.isTraceEnabled()) {
                 LOGGER.trace("native response :'{}'", response);
-                LOGGER.trace("protocol: '{}',cache-control: '{}',handshake: '{}',challenges: '{}'", protocol, response.cacheControl(), response.handshake(), response.challenges());
+                LOGGER.trace("protocol: '{}',cache-control: '{}',handshake: '{}',challenges: '{}'", protocol, response.cacheControl(), handshake, response.challenges());
             }
 
             String contentType = response.header(io.github.clescot.kafka.connect.http.core.MediaType.KEY);
@@ -279,8 +281,26 @@ public class OkHttpClient extends AbstractHttpClient<Request, Response> {
                 responseHeaders.put(header.getFirst(), Lists.newArrayList(header.getSecond()));
             }
             httpResponse.setHeaders(responseHeaders);
-
-            //TODO fill here HttpExchange with TimingData
+            if(handshake!=null) {
+                CipherSuite cipherSuite = handshake.cipherSuite();
+                if(handshake.localPrincipal()!=null) {
+                    String localPrincipalName = handshake.localPrincipal().getName();
+                }
+                if(handshake.peerPrincipal()!=null) {
+                    String peerPrincipalName = handshake.peerPrincipal().getName();
+                }
+                if(handshake.peerCertificates()!=null) {
+                    List<String> peerCertificates = handshake.peerCertificates().stream().map(Object::toString).collect(Collectors.toList());
+                }
+                if(handshake.localCertificates()!=null) {
+                    List<String> localCertificates = handshake.localCertificates().stream().map(Object::toString).collect(Collectors.toList());
+                }
+                TlsVersion tlsVersion = handshake.tlsVersion();
+                if(tlsVersion!=null){
+                String tlsVersionName = tlsVersion.name();
+                String tlsVersionJavaName = tlsVersion.javaName();
+                }
+            }
         } catch (IOException e) {
             throw new HttpException(e);
         }
