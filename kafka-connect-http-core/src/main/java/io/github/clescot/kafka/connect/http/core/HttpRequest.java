@@ -424,6 +424,43 @@ public class HttpRequest implements Request,Cloneable, Serializable {
         }
     }
 
+    public static HttpRequest fromHarRequest(HarRequest harRequest) {
+        Preconditions.checkNotNull(harRequest, "harRequest is required");
+        Preconditions.checkNotNull(harRequest.url(), "url is required");
+        Preconditions.checkNotNull(harRequest.method(), "method is required");
+        HttpRequest httpRequest = new HttpRequest(harRequest.url(),Method.valueOf(harRequest.httpMethod().name().toUpperCase()));
+        if (harRequest.headers() != null && !harRequest.headers().isEmpty()) {
+            Map<String, List<String>> headers = new HashMap<>();
+            for (HarHeader harHeader : harRequest.headers()) {
+                Map.Entry<String, ArrayList<String>> entry = Map.entry(harHeader.name(), Lists.newArrayList(harHeader.value()));
+                if (headers.containsKey(entry.getKey())) {
+                    headers.get(entry.getKey()).addAll(entry.getValue());
+                } else {
+                    headers.put(entry.getKey(), entry.getValue());
+                }
+            }
+        } else {
+            httpRequest.headers = Maps.newHashMap();
+        }
+
+        if (harRequest.postData() != null) {
+            if (harRequest.postData().text() != null) {
+                httpRequest.setBodyAsString(harRequest.postData().text());
+            } else if (harRequest.postData().params() != null && !harRequest.postData().params().isEmpty()) {
+                Map<String, String> form = Maps.newHashMap();
+                for (HarPostDataParam param : harRequest.postData().params()) {
+                    form.put(param.name(), param.value());
+                }
+                httpRequest.bodyAsForm = form;
+                httpRequest.bodyType = BodyType.FORM;
+            }
+            if (harRequest.postData().mimeType() != null) {
+                httpRequest.setContentType(harRequest.postData().mimeType());
+            }
+        }
+        return httpRequest;
+    }
+
     public HarRequest toHarRequest(String protocol) {
         HarRequest.HarRequestBuilder harRequestBuilder = HarRequest.builder();
         harRequestBuilder.url(this.getUrl());
