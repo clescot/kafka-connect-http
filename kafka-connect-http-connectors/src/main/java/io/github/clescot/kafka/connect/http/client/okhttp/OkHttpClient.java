@@ -285,6 +285,9 @@ public class OkHttpClient extends AbstractHttpClient<Request, Response> {
             httpResponse.setHeaders(responseHeaders);
             if(handshake!=null) {
                 CipherSuite cipherSuite = handshake.cipherSuite();
+                if(cipherSuite!=null) {
+                   LOGGER.trace("cipher suite java name: {}", cipherSuite.javaName());
+                }
                 Principal localPrincipal = handshake.localPrincipal();
                 if(localPrincipal !=null) {
                     String localPrincipalName = localPrincipal.getName();

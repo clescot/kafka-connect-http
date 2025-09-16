@@ -1,4 +1,4 @@
-package io.github.clescot.kafka.connect;
+package io.github.clescot.kafka.connect.http.core;
 
 import org.apache.kafka.connect.errors.ConnectException;
 

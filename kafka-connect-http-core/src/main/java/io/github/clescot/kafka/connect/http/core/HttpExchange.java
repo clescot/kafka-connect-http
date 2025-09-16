@@ -2,7 +2,7 @@ package io.github.clescot.kafka.connect.http.core;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.collect.Maps;
-import de.sstoehr.harreader.model.HarEntry;
+import de.sstoehr.harreader.model.*;
 import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.data.SchemaBuilder;
 import org.apache.kafka.connect.data.Struct;
@@ -52,6 +52,8 @@ public class HttpExchange implements Exchange,Cloneable, Serializable {
     @JsonProperty
     private Map<String,String> attributes = Maps.newHashMap();
     private Map<String,Long> timings = Maps.newHashMap();
+    private static final VersionUtils VERSION_UTILS = new VersionUtils();
+    private static final String VERSION = VERSION_UTILS.getVersion();
 
     protected HttpExchange() {
     }
@@ -168,8 +170,45 @@ public class HttpExchange implements Exchange,Cloneable, Serializable {
         //harEntryBuilder.cache()
         //harEntryBuilder.pageref()
         //harEntryBuilder.serverIPAddress()
+        HarTiming.HarTimingBuilder harTimingBuilder = HarTiming.builder();
+        harTimingBuilder.dns(timings.get("dns"));
+        harTimingBuilder.connect(timings.get("connect"));
+        harTimingBuilder.ssl(timings.get("ssl"));
+        harTimingBuilder.send(timings.get("send"));
+        harTimingBuilder.blocked(timings.get("blocked"));
+        harTimingBuilder.waitTime(timings.get("wait"));
+        harTimingBuilder.receive(timings.get("receive"));
+        Map<String,Object> additionalTimings = Maps.newHashMap();
+        harTimingBuilder.additional(additionalTimings);
+        harEntryBuilder.timings(harTimingBuilder.build());
         //harEntryBuilder.timings()
         return harEntry;
+    }
+
+
+    public static Har toHar(HttpExchange... exchanges){
+
+        Har.HarBuilder harBuilder = Har.builder();
+        HarLog.HarLogBuilder harLogBuilder = HarLog.builder();
+        harLogBuilder.version("1.2");
+
+        //browser
+        HarCreatorBrowser.HarCreatorBrowserBuilder creatorBrowserBuilder = HarCreatorBrowser.builder();
+        creatorBrowserBuilder.name("kafka-connect-http");
+        creatorBrowserBuilder.version(VERSION);
+        harLogBuilder.browser(creatorBrowserBuilder.build());
+
+        //creator
+        HarCreatorBrowser.HarCreatorBrowserBuilder creatorBuilder = HarCreatorBrowser.builder();
+        creatorBuilder.name("kafka-connect-http");
+        creatorBuilder.version(VERSION);
+        harLogBuilder.creator(creatorBuilder.build());
+        for (HttpExchange exchange : exchanges) {
+            harLogBuilder.entry(exchange.toHarEntry());
+        }
+        harBuilder.log(harLogBuilder.build());
+
+        return harBuilder.build();
     }
 
     @Override

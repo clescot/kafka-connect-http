@@ -2,7 +2,7 @@ package io.github.clescot.kafka.connect.http.sink;
 
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Maps;
-import io.github.clescot.kafka.connect.VersionUtils;
+import io.github.clescot.kafka.connect.http.core.VersionUtils;
 import org.apache.kafka.common.config.ConfigDef;
 import org.apache.kafka.connect.connector.Task;
 import org.apache.kafka.connect.sink.SinkConnector;

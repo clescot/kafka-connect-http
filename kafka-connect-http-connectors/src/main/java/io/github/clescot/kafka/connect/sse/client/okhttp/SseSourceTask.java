@@ -3,7 +3,7 @@ package io.github.clescot.kafka.connect.sse.client.okhttp;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
-import io.github.clescot.kafka.connect.VersionUtils;
+import io.github.clescot.kafka.connect.http.core.VersionUtils;
 import io.github.clescot.kafka.connect.sse.core.SseEvent;
 import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.source.SourceRecord;
