@@ -285,20 +285,26 @@ public class OkHttpClient extends AbstractHttpClient<Request, Response> {
                 CipherSuite cipherSuite = handshake.cipherSuite();
                 if(handshake.localPrincipal()!=null) {
                     String localPrincipalName = handshake.localPrincipal().getName();
+                    LOGGER.trace("local principal: {}", localPrincipalName);
                 }
                 if(handshake.peerPrincipal()!=null) {
                     String peerPrincipalName = handshake.peerPrincipal().getName();
+                    LOGGER.trace("peer principal: {}", peerPrincipalName);
                 }
                 if(handshake.peerCertificates()!=null) {
                     List<String> peerCertificates = handshake.peerCertificates().stream().map(Object::toString).collect(Collectors.toList());
+                    LOGGER.trace("peer certificates size:{}", peerCertificates.size());
                 }
                 if(handshake.localCertificates()!=null) {
                     List<String> localCertificates = handshake.localCertificates().stream().map(Object::toString).collect(Collectors.toList());
+                    LOGGER.trace("local certificates size:{}", localCertificates.size());
                 }
                 TlsVersion tlsVersion = handshake.tlsVersion();
                 if(tlsVersion!=null){
                 String tlsVersionName = tlsVersion.name();
+                LOGGER.trace("tls version: {}", tlsVersionName);
                 String tlsVersionJavaName = tlsVersion.javaName();
+                LOGGER.trace("tls version java name: {}", tlsVersionJavaName);
                 }
             }
         } catch (IOException e) {
