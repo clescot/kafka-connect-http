@@ -12,9 +12,10 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import static io.github.clescot.kafka.connect.http.core.VersionUtils.VERSION;
+
 public class SseSourceConnector extends SourceConnector {
 
-    private static final VersionUtils VERSION_UTILS = new VersionUtils();
     private SseConnectorConfig sseConnectorConfig;
     private Map<String, String> props;
 
@@ -58,6 +59,6 @@ public class SseSourceConnector extends SourceConnector {
 
     @Override
     public String version() {
-        return VERSION_UTILS.getVersion();
+        return VERSION;
     }
 }

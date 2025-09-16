@@ -48,6 +48,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.github.tomakehurst.wiremock.stubbing.Scenario.STARTED;
 import static io.github.clescot.kafka.connect.Configuration.DEFAULT_CONFIGURATION_ID;
+import static io.github.clescot.kafka.connect.http.core.VersionUtils.VERSION;
 import static io.github.clescot.kafka.connect.http.sink.HttpConfigDefinition.*;
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -340,7 +341,6 @@ class HttpConfigurationTest {
     @Nested
     class TestEnrichHttpRequest {
         private final ExecutorService executorService = Executors.newFixedThreadPool(2);
-        private final VersionUtils versionUtils = new VersionUtils();
 
 
         @Test
@@ -497,7 +497,7 @@ class HttpConfigurationTest {
             HttpConfiguration<OkHttpClient, okhttp3.Request, okhttp3.Response> httpConfiguration = new HttpConfiguration<>(configId,okHttpClient, executorService, null,settings);
             HttpRequest enrichedHttpRequest = httpConfiguration.enrich(httpRequest);
             Map<String, List<String>> headers = enrichedHttpRequest.getHeaders();
-            assertThat(headers).containsEntry("User-Agent", Lists.newArrayList("Mozilla/5.0 (compatible;kafka-connect-http/" + versionUtils.getVersion() + "; okhttp; https://github.com/clescot/kafka-connect-http)"));
+            assertThat(headers).containsEntry("User-Agent", Lists.newArrayList("Mozilla/5.0 (compatible;kafka-connect-http/" + VERSION + "; okhttp; https://github.com/clescot/kafka-connect-http)"));
 
         }
 

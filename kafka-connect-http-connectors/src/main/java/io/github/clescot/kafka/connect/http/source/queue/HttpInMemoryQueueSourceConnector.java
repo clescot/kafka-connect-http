@@ -9,8 +9,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import static io.github.clescot.kafka.connect.http.core.VersionUtils.VERSION;
+
 public class HttpInMemoryQueueSourceConnector extends SourceConnector {
-    private static final VersionUtils VERSION_UTILS = new VersionUtils();
     private HttpSourceConnectorConfig httpSourceConnectorConfig;
     @Override
     public void start(Map<String, String> props) {
@@ -44,6 +45,6 @@ public class HttpInMemoryQueueSourceConnector extends SourceConnector {
 
     @Override
     public String version() {
-        return VERSION_UTILS.getVersion();
+        return VERSION;
     }
 }

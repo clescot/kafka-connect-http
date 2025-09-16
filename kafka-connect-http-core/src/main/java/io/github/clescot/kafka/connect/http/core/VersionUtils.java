@@ -7,6 +7,9 @@ import java.util.Properties;
 
 public class VersionUtils {
 
+    private final static VersionUtils INSTANCE = new VersionUtils();
+    public final static String VERSION = INSTANCE.getVersion();
+    private VersionUtils(){}
 
     public String getVersion(){
         final Properties properties = new Properties();

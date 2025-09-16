@@ -16,6 +16,7 @@ import org.quartz.impl.StdSchedulerFactory;
 
 import java.util.*;
 
+import static io.github.clescot.kafka.connect.http.core.VersionUtils.VERSION;
 import static io.github.clescot.kafka.connect.http.source.cron.HttpCronJob.*;
 import static org.quartz.CronScheduleBuilder.cronSchedule;
 import static org.quartz.JobBuilder.newJob;
@@ -23,7 +24,6 @@ import static org.quartz.TriggerBuilder.newTrigger;
 
 public class HttpCronSourceTask extends SourceTask {
 
-    private static final VersionUtils VERSION_UTILS = new VersionUtils();
     public static final String JOB_PREFIX = "job.";
     private Scheduler scheduler;
     private Queue<HttpRequest> queue;
@@ -32,7 +32,7 @@ public class HttpCronSourceTask extends SourceTask {
 
     @Override
     public String version() {
-        return VERSION_UTILS.getVersion();
+        return VERSION;
     }
 
     @Override

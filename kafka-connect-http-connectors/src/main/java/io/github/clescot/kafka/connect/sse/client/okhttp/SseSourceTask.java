@@ -16,14 +16,15 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Queue;
 
+import static io.github.clescot.kafka.connect.http.core.VersionUtils.VERSION;
+
 public class SseSourceTask extends SourceTask {
-    private static final VersionUtils VERSION_UTILS = new VersionUtils();
     private static final Logger LOGGER = LoggerFactory.getLogger(SseSourceTask.class);
     private SseTask sseTask;
 
     @Override
     public String version() {
-        return VERSION_UTILS.getVersion();
+        return VERSION;
     }
 
     @Override

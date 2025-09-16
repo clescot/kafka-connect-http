@@ -15,6 +15,8 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import static io.github.clescot.kafka.connect.http.core.VersionUtils.VERSION;
+
 
 public class HttpExchange implements Exchange,Cloneable, Serializable {
     @Serial
@@ -52,8 +54,6 @@ public class HttpExchange implements Exchange,Cloneable, Serializable {
     @JsonProperty
     private Map<String,String> attributes = Maps.newHashMap();
     private Map<String,Long> timings = Maps.newHashMap();
-    private static final VersionUtils VERSION_UTILS = new VersionUtils();
-    private static final String VERSION = VERSION_UTILS.getVersion();
 
     protected HttpExchange() {
     }

@@ -87,6 +87,7 @@ import static io.confluent.kafka.serializers.json.KafkaJsonSchemaDeserializerCon
 import static io.confluent.kafka.serializers.json.KafkaJsonSchemaDeserializerConfig.JSON_VALUE_TYPE;
 import static io.confluent.kafka.serializers.json.KafkaJsonSchemaSerializerConfig.*;
 import static io.github.clescot.kafka.connect.http.client.HttpClientConfigDefinition.*;
+import static io.github.clescot.kafka.connect.http.core.HttpRequest.VERSION;
 import static io.github.clescot.kafka.connect.http.sink.HttpConfigDefinition.*;
 import static io.github.clescot.kafka.connect.http.sink.SinkConfigDefinition.PUBLISH_MODE;
 import static java.util.concurrent.TimeUnit.SECONDS;
@@ -109,7 +110,6 @@ public class ITConnectorTest {
     public static final String CLIENT_TRUSTSTORE_JKS_FILENAME = "client_truststore.jks";
     public static final String CLIENT_TRUSTSTORE_JKS_PASSWORD = "Secret123!";
     private static final ObjectMapper MAPPER = new ObjectMapper().registerModule(new JavaTimeModule());
-    private static final VersionUtils VERSION_UTILS = new VersionUtils();
     @Container
     public static KafkaContainer kafkaContainer = new KafkaContainer(DockerImageName.parse("confluentinc/cp-kafka:" + CONFLUENT_VERSION))
             .withKraft()
@@ -131,7 +131,7 @@ public class ITConnectorTest {
 
 
     @Container
-    public static DebeziumContainer connectContainer = new DebeziumContainer("clescot/kafka-connect-http:" + VERSION_UTILS.getVersion())
+    public static DebeziumContainer connectContainer = new DebeziumContainer("clescot/kafka-connect-http:" + VERSION)
             .withFileSystemBind("target/http-connector", "/usr/local/share/kafka/plugins")
             .withLogConsumer(new Slf4jLogConsumer(LOGGER))
             .withNetwork(NETWORK)

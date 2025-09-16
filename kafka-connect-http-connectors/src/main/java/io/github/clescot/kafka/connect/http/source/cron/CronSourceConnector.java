@@ -13,13 +13,14 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import static io.github.clescot.kafka.connect.http.core.VersionUtils.VERSION;
+
 /**
  * CronSourceConnector is a Kafka Connect Source Connector that triggers HTTP requests based on a cron schedule.
  * It uses Quartz Scheduler to manage the scheduling of HTTP requests.
  */
 public class CronSourceConnector extends SourceConnector {
 
-    private static final VersionUtils VERSION_UTILS = new VersionUtils();
     private HttpCronSourceConnectorConfig httpCronSourceConnectorConfig;
     @Override
     public void start(Map<String, String> props) {
@@ -68,6 +69,6 @@ public class CronSourceConnector extends SourceConnector {
 
     @Override
     public String version() {
-        return VERSION_UTILS.getVersion();
+        return VERSION;
     }
 }
