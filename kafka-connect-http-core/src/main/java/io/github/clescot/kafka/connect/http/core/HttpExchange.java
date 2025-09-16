@@ -159,7 +159,6 @@ public class HttpExchange implements Exchange,Cloneable, Serializable {
 
     }
     public HarEntry toHarEntry(){
-        HarEntry harEntry = new HarEntry();
         HarEntry.HarEntryBuilder harEntryBuilder = HarEntry.builder();
         harEntryBuilder.time(this.getDurationInMillis().intValue());
         harEntryBuilder.request(this.getHttpRequest().toHarRequest(this.getHttpResponse().getProtocol()));
@@ -172,17 +171,30 @@ public class HttpExchange implements Exchange,Cloneable, Serializable {
         //harEntryBuilder.serverIPAddress()
         HarTiming.HarTimingBuilder harTimingBuilder = HarTiming.builder();
         harTimingBuilder.dns(timings.get("dns"));
-        harTimingBuilder.connect(timings.get("connect"));
-        harTimingBuilder.ssl(timings.get("ssl"));
-        harTimingBuilder.send(timings.get("send"));
-        harTimingBuilder.blocked(timings.get("blocked"));
-        harTimingBuilder.waitTime(timings.get("wait"));
+        harTimingBuilder.connect(timings.get("connecting"));
+        harTimingBuilder.ssl(timings.get("secureConnecting"));
+        harTimingBuilder.send(timings.get("requestHeaders")+timings.get("requestBody"));
+        Long blocked = timings.get("blocked");
+        if(blocked==null){
+            blocked=0L;
+        }
+        harTimingBuilder.blocked(blocked);
+        harTimingBuilder.waitTime(timings.get("waitingTime"));
         harTimingBuilder.receive(timings.get("receive"));
         Map<String,Object> additionalTimings = Maps.newHashMap();
+        additionalTimings.put("connected",timings.get("connected"));
+        additionalTimings.put("proxySelection",timings.get("proxySelection"));
+        additionalTimings.put("requestHeaders",timings.get("requestHeaders"));
+        additionalTimings.put("requestBody",timings.get("requestBody"));
+        additionalTimings.put("responseHeaders",timings.get("responseHeaders"));
+        additionalTimings.put("responseBody",timings.get("responseBody"));
+        additionalTimings.put("directElapsedTime",timings.get("directElapsedTime"));
+        additionalTimings.put("overallElapsedTime",timings.get("overallElapsedTime"));
+
         harTimingBuilder.additional(additionalTimings);
-        harEntryBuilder.timings(harTimingBuilder.build());
-        //harEntryBuilder.timings()
-        return harEntry;
+        HarTiming harTiming = harTimingBuilder.build();
+        harEntryBuilder.timings(harTiming);
+        return harEntryBuilder.build();
     }
 
 

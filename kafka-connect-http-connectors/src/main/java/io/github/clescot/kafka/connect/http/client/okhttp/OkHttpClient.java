@@ -412,7 +412,6 @@ public class OkHttpClient extends AbstractHttpClient<Request, Response> {
             timings.put("responseHeaders", timingData.getResponseHeadersDurationNs()/1000_000);
             timings.put("responseBody", timingData.getResponseBodyDurationNs()/1000_000);
             timings.put("total", timingData.getTotalDurationNs()/1000_000);
-
             return timings;
         }
         return Maps.newHashMap();
