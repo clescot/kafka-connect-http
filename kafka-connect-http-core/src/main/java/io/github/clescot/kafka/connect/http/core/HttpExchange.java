@@ -63,6 +63,7 @@ public class HttpExchange implements Exchange,Cloneable, Serializable {
     public static final String CONNECTING_TIMING_KEY = "connecting";
     public static final String DNS_TIMING_KEY = "dns";
     public static final String KAFKA_CONNECT_HTTP = "kafka-connect-http";
+    public static final int NOT_APPLICABLE = -1;
 
     private Long durationInMillis;
     private OffsetDateTime moment;
@@ -355,8 +356,8 @@ public class HttpExchange implements Exchange,Cloneable, Serializable {
             harPageBuilder.startedDateTime(ZonedDateTime.ofInstant(exchange.getMoment().toInstant(), exchange.getMoment().getOffset()));
           HarPageTiming.HarPageTimingBuilder harPageTimingBuilder = HarPageTiming.builder();
           //okhttp does not load nor render the page, so we set contentLoad and onLoad to -1
-          harPageTimingBuilder.onContentLoad(-1);
-          harPageTimingBuilder.onLoad(-1);
+          harPageTimingBuilder.onContentLoad(NOT_APPLICABLE);
+          harPageTimingBuilder.onLoad(NOT_APPLICABLE);
             HarPage harPage = harPageBuilder.build();
             harLogBuilder.page(harPage);
         }
