@@ -341,8 +341,6 @@ public class HttpExchange implements Exchange,Cloneable, Serializable {
         creatorBrowserBuilder.version(VERSION);
         harLogBuilder.browser(creatorBrowserBuilder.build());
 
-
-
         //creator
         HarCreatorBrowser.HarCreatorBrowserBuilder creatorBuilder = HarCreatorBrowser.builder();
         creatorBuilder.name(KAFKA_CONNECT_HTTP);
@@ -353,11 +351,12 @@ public class HttpExchange implements Exchange,Cloneable, Serializable {
             harLogBuilder.entry(exchange.toHarEntry(i+1,null,null,null));
             HarPage.HarPageBuilder harPageBuilder = HarPage.builder();
             harPageBuilder.id("page_" + (i + 1));
-            //harPageBuilder.title("page_" + (i + 1));
+            //harPageBuilder.title("page_" + (i + 1)); // we don't have a title in HttpExchange
             harPageBuilder.startedDateTime(ZonedDateTime.ofInstant(exchange.getMoment().toInstant(), exchange.getMoment().getOffset()));
-//          HarPageTiming.HarPageTimingBuilder harPageTimingBuilder = HarPageTiming.builder();
-//          harPageTimingBuilder.onContentLoad(0);
-//          harPageTimingBuilder.onLoad(0);
+          HarPageTiming.HarPageTimingBuilder harPageTimingBuilder = HarPageTiming.builder();
+          //okhttp does not load nor render the page, so we set contentLoad and onLoad to -1
+          harPageTimingBuilder.onContentLoad(-1);
+          harPageTimingBuilder.onLoad(-1);
             HarPage harPage = harPageBuilder.build();
             harLogBuilder.page(harPage);
         }
@@ -477,6 +476,7 @@ public class HttpExchange implements Exchange,Cloneable, Serializable {
                 && Objects.equals(durationInMillis, that.durationInMillis)
                 && attributes.equals(that.attributes)
                 && Objects.equals(moment, that.moment)
+                && Objects.equals(timings, that.timings)
                 && Objects.equals(attempts.get(), that.attempts.get())
                 && Objects.equals(httpResponse, that.httpResponse)
                 && Objects.equals(httpRequest, that.httpRequest);
@@ -484,6 +484,6 @@ public class HttpExchange implements Exchange,Cloneable, Serializable {
 
     @Override
     public int hashCode() {
-        return Objects.hash(durationInMillis,attributes, moment, attempts, success, httpResponse, httpRequest);
+        return Objects.hash(durationInMillis,attributes, timings,moment, attempts, success, httpResponse, httpRequest);
     }
 }
