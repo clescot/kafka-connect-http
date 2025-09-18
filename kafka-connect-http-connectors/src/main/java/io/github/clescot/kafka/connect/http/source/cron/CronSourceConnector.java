@@ -7,6 +7,8 @@ import org.apache.kafka.common.config.ConfigDef;
 import org.apache.kafka.connect.connector.Task;
 import org.apache.kafka.connect.source.SourceConnector;
 import org.apache.kafka.connect.util.ConnectorUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -20,11 +22,11 @@ import static io.github.clescot.kafka.connect.http.core.VersionUtils.VERSION;
  * It uses Quartz Scheduler to manage the scheduling of HTTP requests.
  */
 public class CronSourceConnector extends SourceConnector {
-
+    private static final Logger LOGGER = LoggerFactory.getLogger(CronSourceConnector.class);
     private HttpCronSourceConnectorConfig httpCronSourceConnectorConfig;
     @Override
     public void start(Map<String, String> props) {
-        this.httpCronSourceConnectorConfig = new HttpCronSourceConnectorConfig(config(),props);
+        this.httpCronSourceConnectorConfig = new HttpCronSourceConnectorConfig(config(),props,LOGGER.isDebugEnabled());
     }
 
     @Override
