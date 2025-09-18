@@ -18,11 +18,11 @@ public class HttpCronSourceConnectorConfig extends AbstractConfig {
 
 
     public HttpCronSourceConnectorConfig(Map<?, ?> originals) {
-        this(HttpCronSourceConfigDefinition.config(), originals,LOGGER.isDebugEnabled());
+        this(HttpCronSourceConfigDefinition.config(), originals);
     }
 
-    public HttpCronSourceConnectorConfig(ConfigDef configDef, Map<?, ?> originals,boolean doLog){
-        super(configDef,originals,doLog);
+    public HttpCronSourceConnectorConfig(ConfigDef configDef, Map<?, ?> originals){
+        super(configDef,originals,LOGGER.isDebugEnabled());
         this.topic = Optional.ofNullable(getString(HttpCronSourceConfigDefinition.TOPIC)).orElseThrow(()-> new IllegalArgumentException(HttpCronSourceConfigDefinition.TOPIC + CANNOT_BE_FOUND_IN_MAP_CONFIGURATION));
         this.jobIds  = getList(HttpCronSourceConfigDefinition.JOBS);
     }

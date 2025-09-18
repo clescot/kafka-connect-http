@@ -26,7 +26,7 @@ public class CronSourceConnector extends SourceConnector {
     private HttpCronSourceConnectorConfig httpCronSourceConnectorConfig;
     @Override
     public void start(Map<String, String> props) {
-        this.httpCronSourceConnectorConfig = new HttpCronSourceConnectorConfig(config(),props,LOGGER.isDebugEnabled());
+        this.httpCronSourceConnectorConfig = new HttpCronSourceConnectorConfig(config(),props);
     }
 
     @Override
