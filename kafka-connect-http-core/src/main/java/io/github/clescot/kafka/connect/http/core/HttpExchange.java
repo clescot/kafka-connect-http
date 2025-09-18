@@ -57,13 +57,15 @@ public class HttpExchange implements Exchange,Cloneable, Serializable {
     public static final String PROXY_SELECTION_TIMING_KEY = "proxySelection";
     public static final String CONNECTED_TIMING_KEY = "connected";
     public static final String RECEIVE_TIMING_KEY = "receive";
-    public static final String WAITING_TIME_TIMING_KEY = "waitingTime";
+    public static final String RATE_LIMITING_WAITING_TIME_TIMING_KEY = "rateLimitingWaitingTime";
+    public static final String REMOTE_WAITING_TIME_TIMING_KEY = "waitingTime";
     public static final String BLOCKED_TIMING_KEY = "blocked";
     public static final String SECURE_CONNECTING_TIMING_KEY = "secureConnecting";
     public static final String CONNECTING_TIMING_KEY = "connecting";
     public static final String DNS_TIMING_KEY = "dns";
     public static final String KAFKA_CONNECT_HTTP = "kafka-connect-http";
     public static final int NOT_APPLICABLE = -1;
+    public static final String HAR_LOG_VERSION = "1.2";
 
     private Long durationInMillis;
     private OffsetDateTime moment;
@@ -191,12 +193,41 @@ public class HttpExchange implements Exchange,Cloneable, Serializable {
         httpExchange.setTimings(timings);
         if(harEntry.timings()!=null) {
             HarTiming harTiming = harEntry.timings();
-            timings.put(DNS_TIMING_KEY, harTiming.dns());
-            timings.put(CONNECTING_TIMING_KEY, harTiming.connect());
-            timings.put(SECURE_CONNECTING_TIMING_KEY, harTiming.ssl());
-            timings.put(REQUEST_HEADERS_TIMING_KEY, harTiming.send());
-            timings.put(WAITING_TIME_TIMING_KEY, harTiming.waitTime());
-            timings.put(RECEIVE_TIMING_KEY, harTiming.receive());
+            Long dns = harTiming.dns();
+            if(dns==null){
+                dns = -1L;
+            }
+            timings.put(DNS_TIMING_KEY, dns);
+
+            Long connect = harTiming.connect();
+            if(connect==null){
+                connect = -1L;
+            }
+            timings.put(CONNECTING_TIMING_KEY, connect);
+
+
+            Long ssl = harTiming.ssl();
+            if(ssl==null){
+                ssl = -1L;
+            }
+            timings.put(SECURE_CONNECTING_TIMING_KEY, ssl);
+            Long send = harTiming.send();
+            if(send==null){
+                send = -1L;
+            }
+            timings.put(REQUEST_HEADERS_TIMING_KEY, send);
+
+            Long value = harTiming.waitTime();
+            if(value==null){
+                value = -1L;
+            }
+            timings.put(REMOTE_WAITING_TIME_TIMING_KEY, value);
+
+            Long receive = harTiming.receive();
+            if(receive==null){
+                receive = -1L;
+            }
+            timings.put(RECEIVE_TIMING_KEY, receive);
             if (harTiming.additional() != null) {
                 Map<String, Object> additionalTimings = harTiming.additional();
                 if (additionalTimings.containsKey(CONNECTED_TIMING_KEY)) {
@@ -215,6 +246,8 @@ public class HttpExchange implements Exchange,Cloneable, Serializable {
                     Number number = (Number) additionalTimings.get(REQUEST_HEADERS_TIMING_KEY);
                     if (number!=null) {
                         timings.put(REQUEST_HEADERS_TIMING_KEY, number.longValue());
+                    }else{
+                        timings.put(REQUEST_HEADERS_TIMING_KEY, -1L);
                     }
                 }
                 if (additionalTimings.containsKey(REQUEST_BODY_TIMING_KEY)) {
@@ -294,31 +327,57 @@ public class HttpExchange implements Exchange,Cloneable, Serializable {
         Long requestBody = timings.get(REQUEST_BODY_TIMING_KEY);
         harTimingBuilder.send((requestHeaders!=null?requestHeaders:0)+(requestBody!=null?requestBody:0));
         Long blocked = timings.get(BLOCKED_TIMING_KEY);
-        if(blocked==null){
-            blocked=0L;
+        if(blocked!=null){
+            harTimingBuilder.blocked(blocked);
         }
-        harTimingBuilder.blocked(blocked);
-        Long waitTime = timings.get(WAITING_TIME_TIMING_KEY);
+        Long waitTime = timings.get(REMOTE_WAITING_TIME_TIMING_KEY);
         if(waitTime!=null) {
             harTimingBuilder.waitTime(waitTime);
         }
         Long receive = timings.get(RECEIVE_TIMING_KEY);
         if(receive!=null) {
             harTimingBuilder.receive(receive);
+        }else{
+            harTimingBuilder.receive(-1L);
         }
         Map<String,Object> additionalTimings = Maps.newHashMap();
-        additionalTimings.put(CONNECTED_TIMING_KEY,timings.get(CONNECTED_TIMING_KEY));
-        additionalTimings.put(PROXY_SELECTION_TIMING_KEY,timings.get(PROXY_SELECTION_TIMING_KEY));
-        additionalTimings.put(REQUEST_HEADERS_TIMING_KEY, requestHeaders);
-        additionalTimings.put(REQUEST_BODY_TIMING_KEY, requestBody);
-        additionalTimings.put(RESPONSE_HEADERS_TIMING_KEY,timings.get(RESPONSE_HEADERS_TIMING_KEY));
-        additionalTimings.put(RESPONSE_BODY_TIMING_KEY,timings.get(RESPONSE_BODY_TIMING_KEY));
-        additionalTimings.put(DIRECT_ELAPSED_TIME_TIMING_KEY,timings.get(DIRECT_ELAPSED_TIME_TIMING_KEY));
-        additionalTimings.put(OVERALL_ELAPSED_TIME_TIMING_KEY,timings.get(OVERALL_ELAPSED_TIME_TIMING_KEY));
+        Long connected = timings.get(CONNECTED_TIMING_KEY);
+        if(connected!=null) {
+            additionalTimings.put(CONNECTED_TIMING_KEY, connected);
+        }
+        Long proxySelection = timings.get(PROXY_SELECTION_TIMING_KEY);
+        if(proxySelection!=null) {
+            additionalTimings.put(PROXY_SELECTION_TIMING_KEY, proxySelection);
+        }
+        if(requestHeaders!=null) {
+            additionalTimings.put(REQUEST_HEADERS_TIMING_KEY, requestHeaders);
+        }
+        if(requestBody!=null) {
+            additionalTimings.put(REQUEST_BODY_TIMING_KEY, requestBody);
+        }
+        Long responseHeaders = timings.get(RESPONSE_HEADERS_TIMING_KEY);
+        if(responseHeaders!=null){
+            additionalTimings.put(RESPONSE_HEADERS_TIMING_KEY, responseHeaders);
+        }
+        Long responseBody = timings.get(RESPONSE_BODY_TIMING_KEY);
+        if(responseBody!=null){
+        additionalTimings.put(RESPONSE_BODY_TIMING_KEY, responseBody);
+        }
+        Long directElaped = timings.get(DIRECT_ELAPSED_TIME_TIMING_KEY);
+        if(directElaped!=null) {
+            additionalTimings.put(DIRECT_ELAPSED_TIME_TIMING_KEY, directElaped);
+        }
+        Long overallElapsed = timings.get(OVERALL_ELAPSED_TIME_TIMING_KEY);
+        if(overallElapsed==null){
+            additionalTimings.put(OVERALL_ELAPSED_TIME_TIMING_KEY, overallElapsed);
+        }
+        Long ratelimitingWaitingTime = timings.get(RATE_LIMITING_WAITING_TIME_TIMING_KEY);
+        if(ratelimitingWaitingTime!=null) {
+            additionalTimings.put(RATE_LIMITING_WAITING_TIME_TIMING_KEY, ratelimitingWaitingTime);
+        }
 
         harTimingBuilder.additional(additionalTimings);
-        HarTiming harTiming = harTimingBuilder.build();
-        return harTiming;
+        return harTimingBuilder.build();
     }
 
     public static List<HttpExchange> fromHar(Har har){
@@ -334,7 +393,7 @@ public class HttpExchange implements Exchange,Cloneable, Serializable {
 
         Har.HarBuilder harBuilder = Har.builder();
         HarLog.HarLogBuilder harLogBuilder = HarLog.builder();
-        harLogBuilder.version("1.2");
+        harLogBuilder.version(HAR_LOG_VERSION);
 
         //browser
         HarCreatorBrowser.HarCreatorBrowserBuilder creatorBrowserBuilder = HarCreatorBrowser.builder();
