@@ -116,16 +116,16 @@ public interface HttpClient<NR, NS>  extends RequestResponseClient<HttpRequest,N
                     //elapsed time contains rate limiting waiting time + local code execution time + network time + remote server-side execution time
                     long overallElapsedTime = rateLimitedStopWatch.elapsed(TimeUnit.MILLISECONDS);
                     timings.put("overallElapsedTime",overallElapsedTime);
-                    long waitingTime = overallElapsedTime - directElapsedTime;
-                    timings.put("waitingTime",waitingTime);
-                    LOGGER.info("[{}] {} {} : {} '{}' (direct : '{}' ms, waiting time :'{}'ms overall : '{}' ms)",
+                    long rateLimitingWaitingTime = overallElapsedTime - directElapsedTime;
+                    timings.put("rateLimitingWaitingTime",rateLimitingWaitingTime);
+                    LOGGER.info("[{}] {} {} : {} '{}' (direct : '{}' ms, rate limiting waiting time :'{}'ms overall : '{}' ms)",
                             Thread.currentThread().getId(),
                             httpRequest.getMethod(),
                             httpRequest.getUrl(),
                             responseStatusCode,
                             responseStatusMessage,
                             directElapsedTime,
-                            waitingTime,
+                            rateLimitingWaitingTime,
                             overallElapsedTime
                     );
                     return buildExchange(httpRequest, myResponse, directStopWatch, now, attempts, responseStatusCode < 400 ? SUCCESS : FAILURE,
