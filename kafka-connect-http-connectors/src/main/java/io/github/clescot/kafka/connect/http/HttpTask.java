@@ -127,7 +127,7 @@ public class HttpTask<T,C extends HttpClient<NR, NS>, NR, NS> implements Request
 
     @Override
     public HttpConfiguration<C, NR, NS> getConfigurationForUser(String userId, HttpConfiguration<C, NR, NS> configuration) {
-        HttpConfiguration<C,NR,NS> clone = null;
+        HttpConfiguration<C,NR,NS> clone;
         try {
             clone = (HttpConfiguration) configuration.clone();
             C client = clone.getClient();
