@@ -149,8 +149,6 @@ public interface HttpClient<NR, NS>  extends RequestResponseClient<HttpRequest,N
         }
     }
 
-    Map<String, Long> getTimings(NR request, CompletableFuture<NS> response);
-
     HttpClient<NR, NS> customizeForUser(String vuId);
 
 

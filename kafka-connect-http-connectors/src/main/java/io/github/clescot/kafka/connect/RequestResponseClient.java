@@ -37,4 +37,6 @@ public interface RequestResponseClient<R extends Request, NR, S extends Response
      * @return CompletableFuture of a native Response.
      */
     CompletableFuture<NS> nativeCall(NR request);
+
+    Map<String, Long> getTimings(NR request, CompletableFuture<NS> response);
 }

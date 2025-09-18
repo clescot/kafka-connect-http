@@ -194,83 +194,75 @@ public class HttpExchange implements Exchange,Cloneable, Serializable {
         if(harEntry.timings()!=null) {
             HarTiming harTiming = harEntry.timings();
             Long dns = harTiming.dns();
-            if(dns==null){
-                dns = -1L;
+            if(dns!=null && dns>-1){
+                timings.put(DNS_TIMING_KEY, dns);
             }
-            timings.put(DNS_TIMING_KEY, dns);
 
             Long connect = harTiming.connect();
-            if(connect==null){
-                connect = -1L;
+            if(connect!=null && dns>-1){
+                timings.put(CONNECTING_TIMING_KEY, connect);
             }
-            timings.put(CONNECTING_TIMING_KEY, connect);
 
 
             Long ssl = harTiming.ssl();
-            if(ssl==null){
-                ssl = -1L;
+            if(ssl!=null && dns>-1){
+                timings.put(SECURE_CONNECTING_TIMING_KEY, ssl);
             }
-            timings.put(SECURE_CONNECTING_TIMING_KEY, ssl);
             Long send = harTiming.send();
-            if(send==null){
-                send = -1L;
+            if(send!=null && dns>-1){
+                timings.put(REQUEST_HEADERS_TIMING_KEY, send);
             }
-            timings.put(REQUEST_HEADERS_TIMING_KEY, send);
 
             Long value = harTiming.waitTime();
-            if(value==null){
-                value = -1L;
+            if(value!=null && dns>-1){
+                timings.put(REMOTE_WAITING_TIME_TIMING_KEY, value);
             }
-            timings.put(REMOTE_WAITING_TIME_TIMING_KEY, value);
 
             Long receive = harTiming.receive();
-            if(receive==null){
-                receive = -1L;
+            if(receive!=null && dns>-1){
+                timings.put(RECEIVE_TIMING_KEY, receive);
             }
-            timings.put(RECEIVE_TIMING_KEY, receive);
             if (harTiming.additional() != null) {
                 Map<String, Object> additionalTimings = harTiming.additional();
                 if (additionalTimings.containsKey(CONNECTED_TIMING_KEY)) {
                     Number number = (Number) additionalTimings.get(CONNECTED_TIMING_KEY);
-                    if(number!=null) {
+                    if(number!=null && dns>-1) {
                         timings.put(CONNECTED_TIMING_KEY, number.longValue());
                     }
                 }
                 if (additionalTimings.containsKey(PROXY_SELECTION_TIMING_KEY)) {
                     Number number = (Number) additionalTimings.get(PROXY_SELECTION_TIMING_KEY);
-                    if(number!=null) {
+                    if(number!=null && dns>-1) {
                         timings.put(PROXY_SELECTION_TIMING_KEY, number.longValue());
                     }
                 }
                 if (additionalTimings.containsKey(REQUEST_HEADERS_TIMING_KEY)) {
                     Number number = (Number) additionalTimings.get(REQUEST_HEADERS_TIMING_KEY);
-                    if (number!=null) {
+                    if (number!=null && dns>-1) {
                         timings.put(REQUEST_HEADERS_TIMING_KEY, number.longValue());
-                    }else{
-                        timings.put(REQUEST_HEADERS_TIMING_KEY, -1L);
                     }
                 }
                 if (additionalTimings.containsKey(REQUEST_BODY_TIMING_KEY)) {
                     Number number = (Number) additionalTimings.get(REQUEST_BODY_TIMING_KEY);
-                    if(number!=null) {
+                    if(number!=null && dns>-1) {
                         timings.put(REQUEST_BODY_TIMING_KEY, number.longValue());
                     }
                 }
                 if (additionalTimings.containsKey(RESPONSE_HEADERS_TIMING_KEY)) {
                     Number number = (Number) additionalTimings.get(RESPONSE_HEADERS_TIMING_KEY);
-                    if(number!=null) {
+                    if(number!=null && dns>-1) {
                         timings.put(RESPONSE_HEADERS_TIMING_KEY, number.longValue());
                     }
                 }
                 if (additionalTimings.containsKey(RESPONSE_BODY_TIMING_KEY)) {
                     Number number = (Number) additionalTimings.get(RESPONSE_BODY_TIMING_KEY);
-                    if(number!=null) {
+                    if(number!=null && dns>-1) {
                         timings.put(RESPONSE_BODY_TIMING_KEY, number.longValue());
                     }
                 }
                 if (additionalTimings.containsKey(DIRECT_ELAPSED_TIME_TIMING_KEY)) {
                     Number number = (Number) additionalTimings.get(DIRECT_ELAPSED_TIME_TIMING_KEY);
-                    if(number!=null) {
+                    if(number!=null && dns>-1) {
                         timings.put(DIRECT_ELAPSED_TIME_TIMING_KEY, number.longValue());
                     }
                 }
@@ -325,7 +317,10 @@ public class HttpExchange implements Exchange,Cloneable, Serializable {
 
         Long requestHeaders = timings.get(REQUEST_HEADERS_TIMING_KEY);
         Long requestBody = timings.get(REQUEST_BODY_TIMING_KEY);
-        harTimingBuilder.send((requestHeaders!=null?requestHeaders:0)+(requestBody!=null?requestBody:0));
+        long send = (requestHeaders != null ? requestHeaders : 0) + (requestBody != null ? requestBody : 0);
+        if(send!=0L){
+            harTimingBuilder.send(send);
+        }
         Long blocked = timings.get(BLOCKED_TIMING_KEY);
         if(blocked!=null){
             harTimingBuilder.blocked(blocked);
@@ -337,8 +332,6 @@ public class HttpExchange implements Exchange,Cloneable, Serializable {
         Long receive = timings.get(RECEIVE_TIMING_KEY);
         if(receive!=null) {
             harTimingBuilder.receive(receive);
-        }else{
-            harTimingBuilder.receive(-1L);
         }
         Map<String,Object> additionalTimings = Maps.newHashMap();
         Long connected = timings.get(CONNECTED_TIMING_KEY);
@@ -368,7 +361,7 @@ public class HttpExchange implements Exchange,Cloneable, Serializable {
             additionalTimings.put(DIRECT_ELAPSED_TIME_TIMING_KEY, directElaped);
         }
         Long overallElapsed = timings.get(OVERALL_ELAPSED_TIME_TIMING_KEY);
-        if(overallElapsed==null){
+        if(overallElapsed!=null){
             additionalTimings.put(OVERALL_ELAPSED_TIME_TIMING_KEY, overallElapsed);
         }
         Long ratelimitingWaitingTime = timings.get(RATE_LIMITING_WAITING_TIME_TIMING_KEY);
