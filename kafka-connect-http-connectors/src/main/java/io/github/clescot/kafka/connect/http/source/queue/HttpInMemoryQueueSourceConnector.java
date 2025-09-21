@@ -1,6 +1,6 @@
 package io.github.clescot.kafka.connect.http.source.queue;
 
-import io.github.clescot.kafka.connect.VersionUtils;
+import io.github.clescot.kafka.connect.http.core.VersionUtils;
 import org.apache.kafka.common.config.ConfigDef;
 import org.apache.kafka.connect.connector.Task;
 import org.apache.kafka.connect.source.SourceConnector;
@@ -9,8 +9,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import static io.github.clescot.kafka.connect.http.core.VersionUtils.VERSION;
+
 public class HttpInMemoryQueueSourceConnector extends SourceConnector {
-    private static final VersionUtils VERSION_UTILS = new VersionUtils();
     private HttpSourceConnectorConfig httpSourceConnectorConfig;
     @Override
     public void start(Map<String, String> props) {
@@ -44,6 +45,6 @@ public class HttpInMemoryQueueSourceConnector extends SourceConnector {
 
     @Override
     public String version() {
-        return VERSION_UTILS.getVersion();
+        return VERSION;
     }
 }

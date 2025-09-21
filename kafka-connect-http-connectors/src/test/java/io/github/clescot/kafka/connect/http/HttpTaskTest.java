@@ -8,6 +8,7 @@ import com.github.tomakehurst.wiremock.http.trafficlistener.ConsoleNotifyingWire
 import com.github.tomakehurst.wiremock.junit5.WireMockExtension;
 import com.github.tomakehurst.wiremock.junit5.WireMockRuntimeInfo;
 import com.google.common.collect.Lists;
+import de.sstoehr.harreader.model.Har;
 import io.github.clescot.kafka.connect.Configuration;
 import io.github.clescot.kafka.connect.http.client.HttpClient;
 import io.github.clescot.kafka.connect.http.client.HttpConfiguration;
@@ -104,7 +105,8 @@ public class HttpTaskTest {
             assertThat(httpExchange).isNotNull();
             assertThat(httpExchange.getHttpRequest()).isNotNull();
             assertThat(httpExchange.getHttpResponse()).isNotNull();
-
+            Har har = HttpExchange.toHar(httpExchange);
+            assertThat(har).isNotNull();
         }
 
         @Test

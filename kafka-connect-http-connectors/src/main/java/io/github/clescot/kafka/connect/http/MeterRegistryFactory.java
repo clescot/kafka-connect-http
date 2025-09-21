@@ -3,6 +3,7 @@ package io.github.clescot.kafka.connect.http;
 import io.github.clescot.kafka.connect.http.client.HttpException;
 import io.micrometer.core.instrument.Clock;
 import io.micrometer.core.instrument.composite.CompositeMeterRegistry;
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import io.micrometer.jmx.JmxConfig;
 import io.micrometer.jmx.JmxMeterRegistry;
 import io.micrometer.prometheusmetrics.PrometheusConfig;
@@ -43,6 +44,9 @@ public class MeterRegistryFactory {
                 throw new HttpException(e);
             }
             compositeMeterRegistry.add(prometheusMeterRegistry);
+        }
+        if(!activateJMX && !activatePrometheus){
+            compositeMeterRegistry.add(new SimpleMeterRegistry());
         }
         return compositeMeterRegistry;
     }

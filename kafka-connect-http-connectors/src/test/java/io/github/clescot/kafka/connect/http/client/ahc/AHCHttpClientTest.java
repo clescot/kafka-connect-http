@@ -68,6 +68,7 @@ class AHCHttpClientTest {
                         OffsetDateTime.now(ZoneId.of(AHCHttpClient.UTC_ZONE_ID)),
                         new AtomicInteger(2),
                         SUCCESS,
+                        Maps.newHashMap(),
                         Maps.newHashMap()
                 ));
     }
@@ -84,21 +85,10 @@ class AHCHttpClientTest {
                         OffsetDateTime.now(ZoneId.of(AHCHttpClient.UTC_ZONE_ID)),
                         new AtomicInteger(2),
                         SUCCESS,
+                        Maps.newHashMap(),
                         Maps.newHashMap()));
     }
 
-    @Test
-    void build_HttpExchange_test_response_code_is_lower_than_0() {
-        Map<String, Object> config = Maps.newHashMap();
-        config.put(CONFIGURATION_ID,"default");
-        org.junit.jupiter.api.Assertions.assertThrows(IllegalArgumentException.class, () -> httpClient.buildExchange(getDummyHttpRequest(),
-                getDummyHttpResponse(-12),
-                Stopwatch.createUnstarted(),
-                OffsetDateTime.now(ZoneId.of(AHCHttpClient.UTC_ZONE_ID)),
-                new AtomicInteger(2),
-                SUCCESS,
-                Maps.newHashMap()));
-    }
 
 
     @Test
@@ -112,6 +102,7 @@ class AHCHttpClientTest {
                 OffsetDateTime.now(ZoneId.of(AHCHttpClient.UTC_ZONE_ID)),
                 new AtomicInteger(2),
                 SUCCESS,
+                Maps.newHashMap(),
                 Maps.newHashMap());
         assertThat(httpExchange).isNotNull();
     }

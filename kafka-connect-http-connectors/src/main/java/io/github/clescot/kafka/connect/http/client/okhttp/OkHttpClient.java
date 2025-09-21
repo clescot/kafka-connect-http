@@ -7,6 +7,7 @@ import com.google.common.collect.Maps;
 import io.github.clescot.kafka.connect.http.client.AbstractHttpClient;
 import io.github.clescot.kafka.connect.http.client.HttpClient;
 import io.github.clescot.kafka.connect.http.client.HttpException;
+import io.github.clescot.kafka.connect.http.client.TimingData;
 import io.github.clescot.kafka.connect.http.core.BodyType;
 import io.github.clescot.kafka.connect.http.core.HttpPart;
 import io.github.clescot.kafka.connect.http.core.HttpRequest;
@@ -26,6 +27,8 @@ import java.io.IOException;
 import java.net.CookieManager;
 import java.net.CookiePolicy;
 import java.net.CookieStore;
+import java.security.Principal;
+import java.security.cert.Certificate;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
@@ -67,9 +70,13 @@ public class OkHttpClient extends AbstractHttpClient<Request, Response> {
         if (contentType != null && !contentType.isEmpty()) {
             firstContentType = contentType.get(0);
         }
+        //method
         String method = httpRequest.getMethod().name();
         RequestBody requestBody = getRequestBody(httpRequest, method, firstContentType);
         builder.method(method, requestBody);
+
+        //timing data
+        builder.tag(TimingData.class, new TimingData());
         return builder.build();
     }
 
@@ -82,7 +89,7 @@ public class OkHttpClient extends AbstractHttpClient<Request, Response> {
                 nativeRequest.body().writeTo(buffer);
                 request.setBodyAsString(buffer.readUtf8());
             } catch (IOException e) {
-                throw new RuntimeException(e);
+                throw new HttpException(e);
             }
         }
         return request;
@@ -242,9 +249,11 @@ public class OkHttpClient extends AbstractHttpClient<Request, Response> {
         HttpResponse httpResponse = new HttpResponse(response.code(), response.message(), getStatusMessageLimit(), getHeadersLimit(), getBodyLimit());
         try {
             Protocol protocol = response.protocol();
+            Handshake handshake = response.handshake();
+
             if (LOGGER.isTraceEnabled()) {
                 LOGGER.trace("native response :'{}'", response);
-                LOGGER.trace("protocol: '{}',cache-control: '{}',handshake: '{}',challenges: '{}'", protocol, response.cacheControl(), response.handshake(), response.challenges());
+                LOGGER.trace("protocol: '{}',cache-control: '{}',handshake: '{}',challenges: '{}'", protocol, response.cacheControl(), handshake, response.challenges());
             }
 
             String contentType = response.header(io.github.clescot.kafka.connect.http.core.MediaType.KEY);
@@ -274,6 +283,39 @@ public class OkHttpClient extends AbstractHttpClient<Request, Response> {
                 responseHeaders.put(header.getFirst(), Lists.newArrayList(header.getSecond()));
             }
             httpResponse.setHeaders(responseHeaders);
+            if(handshake!=null) {
+                CipherSuite cipherSuite = handshake.cipherSuite();
+                if(cipherSuite!=null) {
+                   LOGGER.trace("cipher suite java name: {}", cipherSuite.javaName());
+                }
+                Principal localPrincipal = handshake.localPrincipal();
+                if(localPrincipal !=null) {
+                    String localPrincipalName = localPrincipal.getName();
+                    LOGGER.trace("local principal: {}", localPrincipalName);
+                }
+                Principal peerPrincipal = handshake.peerPrincipal();
+                if(peerPrincipal !=null) {
+                    String peerPrincipalName = peerPrincipal.getName();
+                    LOGGER.trace("peer principal: {}", peerPrincipalName);
+                }
+                List<Certificate> peeredCertificates = handshake.peerCertificates();
+                if(peeredCertificates !=null) {
+                    List<String> peerCertificates = peeredCertificates.stream().map(Object::toString).toList();
+                    LOGGER.trace("peer certificates size:{}", peerCertificates.size());
+                }
+                List<Certificate> localedCertificates = handshake.localCertificates();
+                if(localedCertificates !=null) {
+                    List<String> localCertificates = localedCertificates.stream().map(Object::toString).toList();
+                    LOGGER.trace("local certificates size:{}", localCertificates.size());
+                }
+                TlsVersion tlsVersion = handshake.tlsVersion();
+                if(tlsVersion!=null){
+                String tlsVersionName = tlsVersion.name();
+                LOGGER.trace("tls version: {}", tlsVersionName);
+                String tlsVersionJavaName = tlsVersion.javaName();
+                LOGGER.trace("tls version java name: {}", tlsVersionJavaName);
+                }
+            }
         } catch (IOException e) {
             throw new HttpException(e);
         }
@@ -350,6 +392,29 @@ public class OkHttpClient extends AbstractHttpClient<Request, Response> {
     @Override
     public okhttp3.OkHttpClient getInternalClient() {
         return client;
+    }
+
+    @Override
+    public Map<String, Long> getTimings(Request request, CompletableFuture<Response> response) {
+        TimingData timingData = request.tag(TimingData.class);
+        if (timingData != null) {
+            Map<String,Long> timings = Maps.newHashMap();
+            //convert ns to ms
+            //if a timing is not available, its value will be 0
+            //all timings are in ms
+            timings.put("dns", timingData.getDnsDurationNs()/1000_000);//har:timings dns
+            timings.put("connecting", timingData.getConnectingDurationNs()/1000_000);//har:timings connect = proxy + dns + secureConnecting(ssl)
+            timings.put("connected", timingData.getConnectedDurationNs()/1000_000); //har:timings send(requestHeaders+requestBody) + wait + receive(responseHeaders+responseBody) = total - connecting
+            timings.put("secureConnecting", timingData.getSecureConnectingDurationNs()/1000_000);//har:timings ssl
+            timings.put("proxySelection", timingData.getProxySelectionDurationNs()/1000_000);//
+            timings.put("requestHeaders", timingData.getRequestHeadersDurationNs()/1000_000);
+            timings.put("requestBody", timingData.getRequestBodyDurationNs()/1000_000);
+            timings.put("responseHeaders", timingData.getResponseHeadersDurationNs()/1000_000);
+            timings.put("responseBody", timingData.getResponseBodyDurationNs()/1000_000);
+            timings.put("total", timingData.getTotalDurationNs()/1000_000);
+            return timings;
+        }
+        return Maps.newHashMap();
     }
 
     /**

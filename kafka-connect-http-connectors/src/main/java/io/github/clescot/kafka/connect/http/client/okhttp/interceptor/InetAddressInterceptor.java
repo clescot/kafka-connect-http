@@ -27,22 +27,37 @@ public class InetAddressInterceptor implements Interceptor {
         Connection connection = chain.connection();
         if(connection!=null) {
             try (Socket socket = connection.socket()) {
+                //remote inet address
                 InetAddress inetAddress = socket.getInetAddress();
 
                 Headers.Builder okHeadersBuilder = new Headers.Builder();
                 okHeadersBuilder.addAll(response.headers());
 
-                String hostAddress = inetAddress.getHostAddress();
-                LOGGER.debug("hostAddress: '{}'", hostAddress);
-                okHeadersBuilder.add("X-Host-Address", hostAddress);
+                //IP address
+                if(inetAddress!=null) {
+                    String hostAddress = inetAddress.getHostAddress();
+                    LOGGER.debug("hostAddress: '{}'", hostAddress);
+                    okHeadersBuilder.add("X-Host-Address", hostAddress);
 
-                String hostName = inetAddress.getHostName();
-                LOGGER.debug("hostName:'{}'", hostName);
-                okHeadersBuilder.add("X-Host-Name", hostName);
+                    String hostName = inetAddress.getHostName();
+                    LOGGER.debug("hostName:'{}'", hostName);
+                    okHeadersBuilder.add("X-Host-Name", hostName);
 
-                String canonicalHostName = inetAddress.getCanonicalHostName();
-                LOGGER.debug("canonicalHostName: '{}'", canonicalHostName);
-                okHeadersBuilder.add("X-Canonical-Host-Name", canonicalHostName);
+                    String canonicalHostName = inetAddress.getCanonicalHostName();
+                    LOGGER.debug("canonicalHostName: '{}'", canonicalHostName);
+                    okHeadersBuilder.add("X-Canonical-Host-Name", canonicalHostName);
+                }
+
+                //local address
+                InetAddress localAddress = socket.getLocalAddress();
+
+                int localPort = socket.getLocalPort();
+                boolean keepAlive = socket.getKeepAlive();
+                boolean oobInline = socket.getOOBInline();
+                int remotePort = socket.getPort();
+                int soTimeout = socket.getSoTimeout();
+                boolean tcpNoDelay = socket.getTcpNoDelay();
+                int trafficClass = socket.getTrafficClass();
 
                 Response.Builder builder = new Response.Builder(response);
                 builder.headers(okHeadersBuilder.build());

@@ -3,6 +3,10 @@ package io.github.clescot.kafka.connect.http.core;
 
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
+import de.sstoehr.harreader.HarReader;
+import de.sstoehr.harreader.HarReaderException;
+import de.sstoehr.harreader.model.Har;
+import de.sstoehr.harreader.model.HarEntry;
 import io.confluent.kafka.schemaregistry.ParsedSchema;
 import io.confluent.kafka.schemaregistry.client.MockSchemaRegistryClient;
 import io.confluent.kafka.schemaregistry.client.rest.exceptions.RestClientException;
@@ -18,10 +22,14 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
+import java.io.File;
 import java.io.IOException;
+import java.net.URISyntaxException;
+import java.net.URL;
 import java.time.OffsetDateTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -79,6 +87,112 @@ public class HttpExchangeTest {
         jsonSchemaDeserializerConfig.put(KafkaJsonSchemaDeserializerConfig.FAIL_INVALID_SCHEMA,"true");
         jsonSchemaDeserializerConfig.put(KafkaJsonSchemaDeserializerConfig.FAIL_UNKNOWN_PROPERTIES,""+true);
         deserializer = new KafkaJsonSchemaDeserializer<>(schemaRegistryClient,jsonSchemaDeserializerConfig, HttpExchange.class);
+
+    }
+
+    @Nested
+    class FromHar{
+        @Test
+        void test_from_har() throws URISyntaxException, HarReaderException {
+            HarReader harReader = new HarReader();
+            URL resourceFree = Thread.currentThread().getContextClassLoader().getResource("free.fr.har");
+            Har har = harReader.readFromFile(new File(resourceFree.toURI()));
+            List<HttpExchange> fromHar = HttpExchange.fromHar(har);
+            assertThat(fromHar).isNotNull();
+            assertThat(fromHar).isNotEmpty();
+            assertThat(fromHar.size()).isEqualTo(har.log().entries().size());
+            for (int i = 0; i < fromHar.size(); i++) {
+                HttpExchange httpExchange = fromHar.get(i);
+                HarEntry harEntry = har.log().entries().get(i);
+                assertThat(httpExchange.getDurationInMillis().intValue()).isEqualTo(harEntry.time());
+                assertThat(httpExchange.getHttpRequest().getMethod().name()).isEqualTo(harEntry.request().method());
+                assertThat(httpExchange.getHttpRequest().getUrl()).isEqualTo(harEntry.request().url());
+                assertThat(httpExchange.getHttpResponse().getStatusCode()).isEqualTo(harEntry.response().status());
+            }
+            URL resourceYahoo = Thread.currentThread().getContextClassLoader().getResource("yahoo.com.har");
+            Har harYahoo = harReader.readFromFile(new File(resourceYahoo.toURI()));
+            List<HttpExchange> fromHarYahoo = HttpExchange.fromHar(harYahoo);
+            assertThat(fromHarYahoo).isNotNull();
+            assertThat(fromHarYahoo).isNotEmpty();
+            assertThat(fromHarYahoo.size()).isEqualTo(harYahoo.log().entries().size());
+            for (int i = 0; i < fromHarYahoo.size(); i++) {
+                HttpExchange httpExchange = fromHar.get(i);
+                HarEntry harEntry = har.log().entries().get(i);
+                assertThat(httpExchange.getDurationInMillis().intValue()).isEqualTo(harEntry.time());
+                assertThat(httpExchange.getHttpRequest().getMethod().name()).isEqualTo(harEntry.request().method());
+                assertThat(httpExchange.getHttpRequest().getUrl()).isEqualTo(harEntry.request().url());
+                assertThat(httpExchange.getHttpResponse().getStatusCode()).isEqualTo(harEntry.response().status());
+            }
+
+        }
+    }
+
+    @Nested
+    class ToHar{
+        @Test
+        void test_to_har() {
+            HttpExchange httpExchange = new HttpExchange(
+                    getDummyHttpRequest(),
+                    getDummyHttpResponse(200),
+                    100,
+                    OffsetDateTime.now(ZoneId.of("UTC")),
+                    new AtomicInteger(2),
+                    SUCCESS);
+            Har har = HttpExchange.toHar(httpExchange);
+            assertThat(har).isNotNull();
+            assertThat(har.log().entries()).isNotEmpty();
+            assertThat(har.log().browser().name()).isNotEmpty();
+            assertThat(har.log().browser().version()).isNotEmpty();
+            assertThat(har.log().creator().name()).isNotEmpty();
+            assertThat(har.log().creator().version()).isNotEmpty();
+        }
+    }
+
+    @Nested
+    class ToHarEntry{
+        @Test
+        void test_to_har_entry() {
+            HttpExchange httpExchange = new HttpExchange(
+                    getDummyHttpRequest(),
+                    getDummyHttpResponse(200),
+                    100,
+                    OffsetDateTime.now(ZoneId.of("UTC")),
+                    new AtomicInteger(2),
+                    SUCCESS);
+            HarEntry harEntry = httpExchange.toHarEntry();
+            assertThat(harEntry).isNotNull();
+            assertThat(harEntry.request()).isNotNull();
+            assertThat(harEntry.response()).isNotNull();
+            assertThat(harEntry.timings()).isNotNull();
+            assertThat(harEntry.startedDateTime()).isNotNull();
+            assertThat(harEntry.time()).isEqualTo(100L);
+        }
+
+    }
+
+    @Nested
+    class FromHarEntry{
+        @Test
+        void test_from_har_entry() {
+            HttpExchange httpExchange = new HttpExchange(
+                    getDummyHttpRequest(),
+                    getDummyHttpResponse(200),
+                    100,
+                    OffsetDateTime.now(ZoneId.of("UTC")),
+                    new AtomicInteger(1),
+                    SUCCESS);
+            HarEntry harEntry = httpExchange.toHarEntry();
+            HttpExchange fromHarEntry = HttpExchange.fromHarEntry(harEntry);
+            assertThat(fromHarEntry).isNotNull();
+            assertThat(fromHarEntry).isEqualTo(httpExchange);
+            assertThat(fromHarEntry.getHttpRequest()).isEqualTo(httpExchange.getHttpRequest());
+            assertThat(fromHarEntry.getHttpResponse()).isEqualTo(httpExchange.getHttpResponse());
+            assertThat(fromHarEntry.getDurationInMillis()).isEqualTo(httpExchange.getDurationInMillis());
+            assertThat(fromHarEntry.getMoment().format(DateTimeFormatter.ISO_ZONED_DATE_TIME))
+                    .isEqualTo(httpExchange.getMoment().format(DateTimeFormatter.ISO_ZONED_DATE_TIME));
+            assertThat(fromHarEntry.getAttempts().get()).isEqualTo(httpExchange.getAttempts().get());
+            assertThat(fromHarEntry.isSuccess()).isEqualTo(httpExchange.isSuccess());
+        }
 
     }
 

@@ -3,7 +3,7 @@ package io.github.clescot.kafka.connect.http.source.queue;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
-import io.github.clescot.kafka.connect.VersionUtils;
+import io.github.clescot.kafka.connect.http.core.VersionUtils;
 import io.github.clescot.kafka.connect.http.core.HttpExchange;
 import io.github.clescot.kafka.connect.http.core.HttpResponse;
 import io.github.clescot.kafka.connect.http.core.queue.KafkaRecord;
@@ -18,18 +18,19 @@ import java.util.List;
 import java.util.Map;
 import java.util.Queue;
 
+import static io.github.clescot.kafka.connect.http.core.VersionUtils.VERSION;
+
 public class HttpInMemoryQueueSourceTask extends SourceTask {
 
     private Queue<KafkaRecord> queue;
     private String queueName;
     private HttpSourceConnectorConfig sourceConfig;
     private static final Logger LOGGER = LoggerFactory.getLogger(HttpInMemoryQueueSourceTask.class);
-    private static final VersionUtils VERSION_UTILS = new VersionUtils();
 
 
     @Override
     public String version() {
-        return VERSION_UTILS.getVersion();
+        return VERSION;
     }
 
     @Override

@@ -2,9 +2,12 @@ package io.github.clescot.kafka.connect.http.core;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.google.common.base.Joiner;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
+import de.sstoehr.harreader.model.HarHeader;
+import de.sstoehr.harreader.model.HarResponse;
 import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.data.SchemaBuilder;
 import org.apache.kafka.connect.data.Struct;
@@ -48,7 +51,7 @@ public class HttpResponse implements Response, Cloneable, Serializable {
             .field(BODY_AS_FORM, SchemaBuilder.map(Schema.STRING_SCHEMA, Schema.STRING_SCHEMA).optional().schema())
             .field(BODY_AS_STRING, Schema.OPTIONAL_STRING_SCHEMA)
             .field(PARTS, SchemaBuilder.array(HttpPart.SCHEMA).optional().schema())
-            .field(ATTRIBUTES, SchemaBuilder.map(Schema.STRING_SCHEMA,Schema.STRING_SCHEMA).optional().schema())
+            .field(ATTRIBUTES, SchemaBuilder.map(Schema.STRING_SCHEMA, Schema.STRING_SCHEMA).optional().schema())
             .schema();
 
     @JsonProperty(required = true)
@@ -71,7 +74,7 @@ public class HttpResponse implements Response, Cloneable, Serializable {
     @JsonProperty
     private Map<String, List<String>> headers = Maps.newHashMap();
     @JsonProperty
-    private Map<String,String> attributes = Maps.newHashMap();
+    private Map<String, String> attributes = Maps.newHashMap();
 
     /**
      * only for json deserialization
@@ -84,7 +87,6 @@ public class HttpResponse implements Response, Cloneable, Serializable {
     }
 
     public HttpResponse(Integer statusCode, String statusMessage, Integer statusMessageLimit, Integer headersLimit, Integer bodyLimit) {
-        Preconditions.checkArgument(statusCode > 0, "status code must be a positive integer");
         this.statusCode = statusCode;
         if (headersLimit != null) {
             this.headersLimit = Math.max(0, headersLimit);
@@ -93,9 +95,9 @@ public class HttpResponse implements Response, Cloneable, Serializable {
         if (statusMessageLimit != null) {
             this.statusMessageLimit = Math.max(0, statusMessageLimit);
         }
-        if (statusMessage != null && statusMessageLimit!=null) {
+        if (statusMessage != null && statusMessageLimit != null) {
             this.statusMessage = statusMessage.substring(0, Math.min(statusMessage.length(), statusMessageLimit));
-        }else{
+        } else {
             this.statusMessage = statusMessage;
         }
 
@@ -165,7 +167,7 @@ public class HttpResponse implements Response, Cloneable, Serializable {
                     List<String> valuesWithLimit = Lists.newArrayList();
                     while (valuesIterator.hasNext()) {
                         String myValue = valuesIterator.next();
-                        if (headersSize + myValue.length() < headersLimit) {
+                        if (myValue != null && headersSize + myValue.length() < headersLimit) {
                             headersSize += myValue.length();
                             valuesWithLimit.add(myValue);
                         } else {
@@ -191,7 +193,7 @@ public class HttpResponse implements Response, Cloneable, Serializable {
     }
 
     public void setBodyAsByteArray(byte[] content) {
-        if(content==null){
+        if (content == null) {
             this.bodyAsByteArray = "";
             return;
         }
@@ -320,7 +322,7 @@ public class HttpResponse implements Response, Cloneable, Serializable {
 
     @Override
     public int hashCode() {
-        return Objects.hash(statusCode, attributes,statusMessage, protocol, bodyType, bodyAsString, headers, bodyAsByteArray);
+        return Objects.hash(statusCode, attributes, statusMessage, protocol, bodyType, bodyAsString, headers, bodyAsByteArray);
     }
 
     @Override
@@ -378,5 +380,56 @@ public class HttpResponse implements Response, Cloneable, Serializable {
     @Override
     public Map<String, String> getAttributes() {
         return attributes;
+    }
+
+    public static HttpResponse fromHarResponse(HarResponse response){
+        HttpResponse httpResponse = new HttpResponse(response.status(), response.statusText());
+        httpResponse.setProtocol(response.httpVersion());
+        if(response.headers()!=null){
+            Map<String, List<String>> headers = Maps.newHashMap();
+            for(HarHeader harHeader:response.headers()){
+                if(!headers.containsKey(harHeader.name())){
+                    headers.put(harHeader.name(), Lists.newArrayList(harHeader.value()));
+                }else{
+                    headers.get(harHeader.name()).add(harHeader.value());
+                }
+            }
+            httpResponse.setHeaders(headers);
+        }
+        if(response.content()!=null){
+            if(response.content().text()!=null){
+                if("base64".equalsIgnoreCase(response.content().encoding())){
+                    httpResponse.setBodyAsByteArray(Base64.getDecoder().decode(response.content().text()));
+                }else{
+                    httpResponse.setBodyAsString(response.content().text());
+                }
+            }
+        }
+        return httpResponse;
+
+    }
+
+    public HarResponse toHarResponse() {
+        HarResponse.HarResponseBuilder harResponseBuilder = HarResponse.builder();
+        harResponseBuilder.status(this.getStatusCode());
+        harResponseBuilder.statusText(this.getStatusMessage());
+        harResponseBuilder.httpVersion(this.getProtocol());
+        if (this.getHeaders() != null) {
+            List<HarHeader> harHeaders = this.getHeaders().entrySet().stream().map(
+                    entry -> {
+                        HarHeader.HarHeaderBuilder harHeader = HarHeader.builder();
+                        harHeader.name(entry.getKey());
+                        harHeader.value(Joiner.on("; ").join(entry.getValue()));
+                        return harHeader.build();
+                    }).toList();
+            harResponseBuilder.headers(harHeaders);
+        }
+        harResponseBuilder.content(de.sstoehr.harreader.model.HarContent.builder()
+                .size(this.getBodyContentLength())
+                .mimeType(this.getContentType() != null && !this.getContentType().isEmpty() ? this.getContentType().get(0) : "")
+                .text(this.getBodyAsString())
+                .encoding(this.bodyType == BodyType.BYTE_ARRAY ? "base64" : null)
+                .build());
+        return harResponseBuilder.build();
     }
 }

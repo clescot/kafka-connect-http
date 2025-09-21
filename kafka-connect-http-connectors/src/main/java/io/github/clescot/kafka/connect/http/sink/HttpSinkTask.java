@@ -1,7 +1,7 @@
 package io.github.clescot.kafka.connect.http.sink;
 
 import com.google.common.base.Preconditions;
-import io.github.clescot.kafka.connect.VersionUtils;
+import io.github.clescot.kafka.connect.http.core.VersionUtils;
 import io.github.clescot.kafka.connect.http.HttpTask;
 import io.github.clescot.kafka.connect.http.MessageSplitter;
 import io.github.clescot.kafka.connect.http.MessageSplitterFactory;
@@ -43,6 +43,7 @@ import java.util.function.Function;
 import java.util.stream.Stream;
 
 import static io.github.clescot.kafka.connect.http.core.Request.VU_ID;
+import static io.github.clescot.kafka.connect.http.core.VersionUtils.VERSION;
 import static io.github.clescot.kafka.connect.http.sink.HttpConfigDefinition.HTTP_REQUEST_MAPPER_IDS;
 import static io.github.clescot.kafka.connect.http.sink.HttpConfigDefinition.MESSAGE_SPLITTER_IDS;
 
@@ -67,7 +68,6 @@ public abstract class HttpSinkTask<C extends HttpClient<R, S>, R, S> extends Sin
             sinkRecord.timestampType()
     );
     private static final Logger LOGGER = LoggerFactory.getLogger(HttpSinkTask.class);
-    private static final VersionUtils VERSION_UTILS = new VersionUtils();
     private final HttpClientFactory<C, R, S> httpClientFactory;
     private Queue<KafkaRecord> queue;
     private ErrantRecordReporter errantRecordReporter;
@@ -90,7 +90,7 @@ public abstract class HttpSinkTask<C extends HttpClient<R, S>, R, S> extends Sin
 
     @Override
     public String version() {
-        return VERSION_UTILS.getVersion();
+        return VERSION;
     }
 
 

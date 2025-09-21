@@ -22,7 +22,7 @@ public class HttpCronSourceConnectorConfig extends AbstractConfig {
     }
 
     public HttpCronSourceConnectorConfig(ConfigDef configDef, Map<?, ?> originals){
-        super(configDef,originals);
+        super(configDef,originals,LOGGER.isDebugEnabled());
         this.topic = Optional.ofNullable(getString(HttpCronSourceConfigDefinition.TOPIC)).orElseThrow(()-> new IllegalArgumentException(HttpCronSourceConfigDefinition.TOPIC + CANNOT_BE_FOUND_IN_MAP_CONFIGURATION));
         this.jobIds  = getList(HttpCronSourceConfigDefinition.JOBS);
     }

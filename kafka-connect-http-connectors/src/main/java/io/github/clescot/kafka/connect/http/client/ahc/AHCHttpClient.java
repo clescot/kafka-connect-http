@@ -81,7 +81,7 @@ public class AHCHttpClient extends AbstractHttpClient<Request, Response> {
     private static final String NETTY_TIMER = ASYN_HTTP_CONFIG_PREFIX + "netty.timer";
     private static final String BYTE_BUFFER_ALLOCATOR = ASYN_HTTP_CONFIG_PREFIX + "byte.buffer.allocator";
     private final AsyncHttpClient asyncHttpClient;
-
+    private Map<String,Long> timings = Maps.newHashMap();
     private final HttpClientAsyncCompletionHandler asyncCompletionHandler = new HttpClientAsyncCompletionHandler();
 
     public AHCHttpClient(Map<String, String> config,Random random) {
@@ -354,5 +354,10 @@ public class AHCHttpClient extends AbstractHttpClient<Request, Response> {
     @Override
     protected Object clone() throws CloneNotSupportedException {
         return super.clone();
+    }
+
+    @Override
+    public Map<String, Long> getTimings(Request request, CompletableFuture<Response> response) {
+        return timings;
     }
 }

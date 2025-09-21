@@ -2,24 +2,27 @@ package io.github.clescot.kafka.connect.http.source.cron;
 
 import com.google.common.base.Preconditions;
 import io.github.clescot.kafka.connect.MapUtils;
-import io.github.clescot.kafka.connect.VersionUtils;
+import io.github.clescot.kafka.connect.http.core.VersionUtils;
 import org.apache.kafka.common.config.ConfigDef;
 import org.apache.kafka.connect.connector.Task;
 import org.apache.kafka.connect.source.SourceConnector;
 import org.apache.kafka.connect.util.ConnectorUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import static io.github.clescot.kafka.connect.http.core.VersionUtils.VERSION;
+
 /**
  * CronSourceConnector is a Kafka Connect Source Connector that triggers HTTP requests based on a cron schedule.
  * It uses Quartz Scheduler to manage the scheduling of HTTP requests.
  */
 public class CronSourceConnector extends SourceConnector {
-
-    private static final VersionUtils VERSION_UTILS = new VersionUtils();
+    private static final Logger LOGGER = LoggerFactory.getLogger(CronSourceConnector.class);
     private HttpCronSourceConnectorConfig httpCronSourceConnectorConfig;
     @Override
     public void start(Map<String, String> props) {
@@ -68,6 +71,6 @@ public class CronSourceConnector extends SourceConnector {
 
     @Override
     public String version() {
-        return VERSION_UTILS.getVersion();
+        return VERSION;
     }
 }

@@ -2,7 +2,7 @@ package io.github.clescot.kafka.connect.http.sink;
 
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Maps;
-import io.github.clescot.kafka.connect.VersionUtils;
+import io.github.clescot.kafka.connect.http.core.VersionUtils;
 import org.apache.kafka.common.config.ConfigDef;
 import org.apache.kafka.connect.connector.Task;
 import org.apache.kafka.connect.sink.SinkConnector;
@@ -16,13 +16,13 @@ import java.util.Optional;
 
 import static io.github.clescot.kafka.connect.Configuration.DEFAULT_CONFIGURATION_ID;
 import static io.github.clescot.kafka.connect.http.client.HttpClientConfigDefinition.*;
+import static io.github.clescot.kafka.connect.http.core.VersionUtils.VERSION;
 
 
 public class HttpSinkConnector extends SinkConnector {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(HttpSinkConnector.class);
     private HttpConnectorConfig httpConnectorConfig;
-    private static final VersionUtils VERSION_UTILS = new VersionUtils();
     private Map<String, String> settings;
 
     @Override
@@ -76,6 +76,6 @@ public class HttpSinkConnector extends SinkConnector {
 
     @Override
     public String version() {
-        return VERSION_UTILS.getVersion();
+        return VERSION;
     }
 }

@@ -7,6 +7,7 @@ import com.google.common.base.MoreObjects;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
+import de.sstoehr.harreader.model.*;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.data.SchemaBuilder;
@@ -423,6 +424,109 @@ public class HttpRequest implements Request,Cloneable, Serializable {
         }
     }
 
+    public static HttpRequest fromHarRequest(HarRequest harRequest) {
+        Preconditions.checkNotNull(harRequest, "harRequest is required");
+        Preconditions.checkNotNull(harRequest.url(), "url is required");
+        Preconditions.checkNotNull(harRequest.method(), "method is required");
+        HttpRequest httpRequest = new HttpRequest(harRequest.url(),Method.valueOf(harRequest.httpMethod().name().toUpperCase()));
+        if (harRequest.headers() != null && !harRequest.headers().isEmpty()) {
+            Map<String, List<String>> headers = new HashMap<>();
+            for (HarHeader harHeader : harRequest.headers()) {
+                Map.Entry<String, ArrayList<String>> entry = Map.entry(harHeader.name(), Lists.newArrayList(harHeader.value()));
+                if (headers.containsKey(entry.getKey())) {
+                    headers.get(entry.getKey()).addAll(entry.getValue());
+                } else {
+                    headers.put(entry.getKey(), entry.getValue());
+                }
+            }
+        } else {
+            httpRequest.headers = Maps.newHashMap();
+        }
+
+        if (harRequest.postData() != null) {
+            if (harRequest.postData().text() != null) {
+                httpRequest.setBodyAsString(harRequest.postData().text());
+            } else if (harRequest.postData().params() != null && !harRequest.postData().params().isEmpty()) {
+                Map<String, String> form = Maps.newHashMap();
+                for (HarPostDataParam param : harRequest.postData().params()) {
+                    form.put(param.name(), param.value());
+                }
+                httpRequest.bodyAsForm = form;
+                httpRequest.bodyType = BodyType.FORM;
+            }
+            if (harRequest.postData().mimeType() != null) {
+                httpRequest.setContentType(harRequest.postData().mimeType());
+            }
+        }
+        return httpRequest;
+    }
+
+    public HarRequest toHarRequest(String protocol) {
+        HarRequest.HarRequestBuilder harRequestBuilder = HarRequest.builder();
+        harRequestBuilder.url(this.getUrl());
+        harRequestBuilder.method(this.getMethod().name());
+        if (this.getHeaders() != null && !this.getHeaders().isEmpty()) {
+            harRequestBuilder.headers(this.getHeaders().entrySet().stream()
+                    .map(entry ->
+                                    HarHeader.builder()
+                                            .name(entry.getKey())
+                                            .value(String.join(";", entry.getValue()))
+                                            .build()
+                            )
+                    .toList());
+        }
+        harRequestBuilder.headersSize(this.getHeadersLength());
+        harRequestBuilder.bodySize(this.getBodyContentLength());
+        harRequestBuilder.httpVersion(protocol);
+        if (BodyType.STRING == bodyType) {
+            harRequestBuilder.postData(HarPostData.builder()
+                    .mimeType(this.getContentType())
+                    .text(this.getBodyAsString())
+                    .build());
+        } else if (BodyType.BYTE_ARRAY == bodyType) {
+            harRequestBuilder.postData(HarPostData.builder()
+                    .mimeType(this.getContentType())
+                    .text(this.bodyAsByteArray)
+                    .build());
+        } else if (BodyType.FORM == bodyType) {
+            if (this.getBodyAsForm() != null && !this.getBodyAsForm().isEmpty()) {
+                harRequestBuilder.postData(HarPostData.builder()
+                        .mimeType(this.getContentType())
+                        .params(
+                                this.getBodyAsForm().entrySet().stream()
+                                        .map(entry ->
+                                                HarPostDataParam.builder()
+                                                        .name(entry.getKey())
+                                                        .value(entry.getValue())
+                                                        .build()
+                                        ).toList()
+                        )
+                        .build());
+            }
+        } else if (BodyType.MULTIPART == bodyType) {
+            if (this.getParts() != null && !this.getParts().isEmpty()) {
+                List<HarPostDataParam> postDataParams = Lists.newArrayList();
+                for (Map.Entry<String, HttpPart> entry : this.getParts().entrySet()) {
+                    HttpPart httpPart = entry.getValue();
+                    HarPostDataParam.HarPostDataParamBuilder harPostDataParamBuilder = HarPostDataParam.builder();
+                    harPostDataParamBuilder.name(entry.getKey());
+                    harPostDataParamBuilder.fileName(httpPart.getFileUri().toString());
+                    harPostDataParamBuilder.contentType(httpPart.getContentType());
+                    if (httpPart.getContentAsString() != null) {
+                        harPostDataParamBuilder.value(httpPart.getContentAsString());
+                    } else if (httpPart.getContentAsByteArray() != null) {
+                        harPostDataParamBuilder.value(Base64.getEncoder().encodeToString(httpPart.getContentAsByteArray()));
+                    }
+                    postDataParams.add(harPostDataParamBuilder.build());
+                }
+                harRequestBuilder.postData(HarPostData.builder()
+                        .mimeType(this.getContentType())
+                        .params(postDataParams)
+                        .build());
+            }
+        }
+        return harRequestBuilder.build();
+    }
 
 
     public enum Method {
