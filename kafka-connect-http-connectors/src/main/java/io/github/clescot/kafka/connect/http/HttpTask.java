@@ -45,7 +45,7 @@ public class HttpTask<T,C extends HttpClient<NR, NS>, NR, NS> implements Request
 
     private final Map<String,HttpConfiguration<C, NR, NS>> configurations;
     private final RetryPolicy<HttpExchange> retryPolicy;
-    private Map<String,HttpConfiguration<C, NR, NS>> userConfigurations = Maps.newHashMap();
+    private final Map<String,HttpConfiguration<C, NR, NS>> userConfigurations = Maps.newHashMap();
     private static CompositeMeterRegistry meterRegistry;
 
 
