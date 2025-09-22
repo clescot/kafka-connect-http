@@ -13,6 +13,7 @@ import com.google.common.io.Resources;
 import io.github.clescot.kafka.connect.AbstractClient;
 import io.github.clescot.kafka.connect.Client;
 import io.github.clescot.kafka.connect.http.client.DummyX509Certificate;
+import io.github.clescot.kafka.connect.http.client.HttpClient;
 import io.github.clescot.kafka.connect.http.client.HttpClientFactory;
 import io.github.clescot.kafka.connect.http.client.proxy.URIRegexProxySelector;
 import io.github.clescot.kafka.connect.http.core.*;
@@ -633,6 +634,7 @@ class OkHttpClientTest {
             assertThat(httpResponse.getHeaders().get(CONTENT_TYPE).get(0)).isEqualTo(response.header(CONTENT_TYPE));
 
         }
+
         @Test
         void test_build_response_with_multipart_inline() throws IOException {
 
@@ -2137,7 +2139,7 @@ class OkHttpClientTest {
             Map<String, String> config = Maps.newHashMap();
             config.put(CONFIGURATION_ID, "default");
             config.put(OKHTTP_DOH_ACTIVATE, "true");
-            config.put(OKHTTP_DOH_BOOTSTRAP_DNS_HOSTS,  "1.1.1.2,1.0.0.2");
+            config.put(OKHTTP_DOH_BOOTSTRAP_DNS_HOSTS, "1.1.1.2,1.0.0.2");
             CompositeMeterRegistry compositeMeterRegistry = getCompositeMeterRegistry();
             Random random = new Random();
             Assertions.assertThrows(IllegalStateException.class, () -> factory.build(config, null, random, null, null, compositeMeterRegistry));
@@ -2150,7 +2152,7 @@ class OkHttpClientTest {
             config.put(CONFIGURATION_ID, "default");
             config.put(OKHTTP_DOH_ACTIVATE, "true");
             config.put(OKHTTP_DOH_URL, "https://cloudflare-dns.com/dns-query");
-            config.put(OKHTTP_DOH_BOOTSTRAP_DNS_HOSTS,  "1.1.1.2,1.0.0.2");
+            config.put(OKHTTP_DOH_BOOTSTRAP_DNS_HOSTS, "1.1.1.2,1.0.0.2");
             Random random = new Random();
             OkHttpClient client = factory.build(config, null, random, null, null, getCompositeMeterRegistry());
 
@@ -2191,7 +2193,7 @@ class OkHttpClientTest {
             config.put(OKHTTP_DOH_ACTIVATE, "true");
             config.put(OKHTTP_DOH_URL, "https://cloudflare-dns.com/dns-query");
             config.put(OKHTTP_DOH_USE_POST_METHOD, "true");
-            config.put(OKHTTP_DOH_BOOTSTRAP_DNS_HOSTS,  "1.1.1.2,1.0.0.2");
+            config.put(OKHTTP_DOH_BOOTSTRAP_DNS_HOSTS, "1.1.1.2,1.0.0.2");
             OkHttpClient client = factory.build(config, null, new Random(), null, null, getCompositeMeterRegistry());
 
             HttpRequest httpRequest = new HttpRequest(
@@ -2211,7 +2213,7 @@ class OkHttpClientTest {
             config.put(OKHTTP_DOH_ACTIVATE, "true");
             config.put(OKHTTP_DOH_RESOLVE_PUBLIC_ADDRESSES, "false");
             config.put(OKHTTP_DOH_URL, "https://cloudflare-dns.com/dns-query");
-            config.put(OKHTTP_DOH_BOOTSTRAP_DNS_HOSTS,  "1.1.1.2,1.0.0.2");
+            config.put(OKHTTP_DOH_BOOTSTRAP_DNS_HOSTS, "1.1.1.2,1.0.0.2");
             OkHttpClient client = factory.build(config, null, new Random(), null, null, getCompositeMeterRegistry());
 
             HttpRequest httpRequest = new HttpRequest(
@@ -2234,7 +2236,7 @@ class OkHttpClientTest {
             config.put(OKHTTP_DOH_ACTIVATE, "true");
             config.put(OKHTTP_DOH_RESOLVE_PRIVATE_ADDRESSES, "false");
             config.put(OKHTTP_DOH_URL, "https://cloudflare-dns.com/dns-query");
-            config.put(OKHTTP_DOH_BOOTSTRAP_DNS_HOSTS,  "1.1.1.2,1.0.0.2");
+            config.put(OKHTTP_DOH_BOOTSTRAP_DNS_HOSTS, "1.1.1.2,1.0.0.2");
             OkHttpClient client = factory.build(config, null, new Random(), null, null, getCompositeMeterRegistry());
 
             HttpRequest httpRequest = new HttpRequest(
@@ -2291,7 +2293,7 @@ class OkHttpClientTest {
             config.put(CONFIGURATION_ID, "default");
             config.put(OKHTTP_DOH_ACTIVATE, "true");
             config.put(OKHTTP_DOH_URL, "https://cloudflare-dns.com/dns-query");
-            config.put(OKHTTP_DOH_BOOTSTRAP_DNS_HOSTS,  "1.1.1.2,1.0.0.2");
+            config.put(OKHTTP_DOH_BOOTSTRAP_DNS_HOSTS, "1.1.1.2,1.0.0.2");
             OkHttpClient client = factory.build(config, null, new Random(), null, null, getCompositeMeterRegistry());
 
             HttpRequest httpRequest = new HttpRequest(
@@ -2328,7 +2330,7 @@ class OkHttpClientTest {
             config.put(OKHTTP_DOH_ACTIVATE, "true");
             config.put(OKHTTP_DOH_URL, "https://yahoo.com");
             Random random = new Random();
-            Assertions.assertDoesNotThrow(() -> factory.build(config, null,random, null, null, getCompositeMeterRegistry()));
+            Assertions.assertDoesNotThrow(() -> factory.build(config, null, random, null, null, getCompositeMeterRegistry()));
 
 
         }
@@ -2513,5 +2515,29 @@ class OkHttpClientTest {
 
             assertThat(client.getInternalClient().connectionPool()).isEqualTo(client2.getInternalClient().connectionPool());
         }
+    }
+
+
+    @Nested
+    class TestCustomizeForUser {
+
+        @Test
+        void test_two_times_same_user(){
+            Map<String, String> config = Maps.newHashMap();
+            OkHttpClient client = factory.build(config, null, new Random(), null, null, getCompositeMeterRegistry());
+            HttpClient<Request, Response> client1 = client.customizeForUser("1");
+            HttpClient<Request, Response> client2 = client.customizeForUser("1");
+            assertThat(client1).isSameAs(client2);
+        }
+
+        @Test
+        void test_for_two_different_users() {
+            Map<String, String> config = Maps.newHashMap();
+            OkHttpClient client = factory.build(config, null, new Random(), null, null, getCompositeMeterRegistry());
+            HttpClient<Request, Response> client1 = client.customizeForUser("1");
+            HttpClient<Request, Response> client2 = client.customizeForUser("2");
+            assertThat(client1).isNotSameAs(client2);
+        }
+
     }
 }

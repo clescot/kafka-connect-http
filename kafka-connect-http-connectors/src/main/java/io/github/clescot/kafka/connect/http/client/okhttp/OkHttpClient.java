@@ -22,6 +22,7 @@ import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.naming.directory.Attribute;
 import java.io.File;
 import java.io.IOException;
 import java.net.CookieManager;
@@ -40,6 +41,7 @@ public class OkHttpClient extends AbstractHttpClient<Request, Response> {
 
     private final okhttp3.OkHttpClient client;
     private static final Logger LOGGER = LoggerFactory.getLogger(OkHttpClient.class);
+    private final Map<String, OkHttpClient> clients = Maps.newHashMap();
 
 
     public OkHttpClient(Map<String, String> config,
@@ -424,7 +426,13 @@ public class OkHttpClient extends AbstractHttpClient<Request, Response> {
      */
     @Override
     public HttpClient<Request, Response> customizeForUser(String vuId) {
-        return new OkHttpClient(getConfig(), customizeOkHttpClientForUser(vuId,client),random);
+        if(!clients.containsKey(vuId)){
+            OkHttpClient okHttpClient = new OkHttpClient(getConfig(), customizeOkHttpClientForUser(vuId, client), random);
+            clients.put(vuId,okHttpClient);
+            return okHttpClient;
+        }else{
+            return clients.get(vuId);
+        }
     }
 
 
