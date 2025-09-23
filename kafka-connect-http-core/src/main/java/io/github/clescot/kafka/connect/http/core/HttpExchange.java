@@ -8,6 +8,7 @@ import de.sstoehr.harreader.model.*;
 import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.data.SchemaBuilder;
 import org.apache.kafka.connect.data.Struct;
+import org.jetbrains.annotations.NotNull;
 
 import java.io.Serial;
 import java.io.Serializable;
@@ -385,20 +386,7 @@ public class HttpExchange implements Exchange,Cloneable, Serializable {
     public static Har toHar(HttpExchange... exchanges){
 
         Har.HarBuilder harBuilder = Har.builder();
-        HarLog.HarLogBuilder harLogBuilder = HarLog.builder();
-        harLogBuilder.version(HAR_LOG_VERSION);
-
-        //browser
-        HarCreatorBrowser.HarCreatorBrowserBuilder creatorBrowserBuilder = HarCreatorBrowser.builder();
-        creatorBrowserBuilder.name(KAFKA_CONNECT_HTTP);
-        creatorBrowserBuilder.version(VERSION);
-        harLogBuilder.browser(creatorBrowserBuilder.build());
-
-        //creator
-        HarCreatorBrowser.HarCreatorBrowserBuilder creatorBuilder = HarCreatorBrowser.builder();
-        creatorBuilder.name(KAFKA_CONNECT_HTTP);
-        creatorBuilder.version(VERSION);
-        harLogBuilder.creator(creatorBuilder.build());
+        HarLog.HarLogBuilder harLogBuilder = getHarLogBuilder();
         for (int i=0;i<exchanges.length;i++) {
             HttpExchange exchange = exchanges[i];
             harLogBuilder.entry(exchange.toHarEntry(i+1,null,null,null));
@@ -416,6 +404,24 @@ public class HttpExchange implements Exchange,Cloneable, Serializable {
         harBuilder.log(harLogBuilder.build());
 
         return harBuilder.build();
+    }
+
+    private static @NotNull HarLog.HarLogBuilder getHarLogBuilder() {
+        HarLog.HarLogBuilder harLogBuilder = HarLog.builder();
+        harLogBuilder.version(HAR_LOG_VERSION);
+
+        //browser
+        HarCreatorBrowser.HarCreatorBrowserBuilder creatorBrowserBuilder = HarCreatorBrowser.builder();
+        creatorBrowserBuilder.name(KAFKA_CONNECT_HTTP);
+        creatorBrowserBuilder.version(VERSION);
+        harLogBuilder.browser(creatorBrowserBuilder.build());
+
+        //creator
+        HarCreatorBrowser.HarCreatorBrowserBuilder creatorBuilder = HarCreatorBrowser.builder();
+        creatorBuilder.name(KAFKA_CONNECT_HTTP);
+        creatorBuilder.version(VERSION);
+        harLogBuilder.creator(creatorBuilder.build());
+        return harLogBuilder;
     }
 
     @Override
