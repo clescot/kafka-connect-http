@@ -22,7 +22,6 @@ import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.naming.directory.Attribute;
 import java.io.File;
 import java.io.IOException;
 import java.net.CookieManager;
@@ -95,6 +94,19 @@ public class OkHttpClient extends AbstractHttpClient<Request, Response> {
             }
         }
         return request;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (o == null || getClass() != o.getClass()) return false;
+        if (!super.equals(o)) return false;
+        OkHttpClient that = (OkHttpClient) o;
+        return Objects.equals(client, that.client);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(super.hashCode(), client);
     }
 
     @Nullable

@@ -10,8 +10,6 @@ import com.google.common.base.Stopwatch;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.io.Resources;
-import io.github.clescot.kafka.connect.AbstractClient;
-import io.github.clescot.kafka.connect.Client;
 import io.github.clescot.kafka.connect.http.client.DummyX509Certificate;
 import io.github.clescot.kafka.connect.http.client.HttpClient;
 import io.github.clescot.kafka.connect.http.client.HttpClientFactory;
