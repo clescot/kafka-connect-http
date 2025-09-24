@@ -307,14 +307,14 @@ public class OkHttpClientFactory implements HttpClientFactory<OkHttpClient,Reque
                     httpClientBuilder.sslSocketFactory(ssl, (X509TrustManager) trustManagers[0]);
                 }
             }
-            if (config.containsKey(OKHTTP_SSL_SKIP_HOSTNAME_VERIFICATION) && Boolean.parseBoolean(config.get(OKHTTP_SSL_SKIP_HOSTNAME_VERIFICATION).toString())) {
+            if (config.containsKey(OKHTTP_SSL_SKIP_HOSTNAME_VERIFICATION) && Boolean.parseBoolean(config.get(OKHTTP_SSL_SKIP_HOSTNAME_VERIFICATION))) {
                 httpClientBuilder.hostnameVerifier((hostname, session) -> true);
             }
         }
     }
 
     private void configureConnectionPool(Map<String, String> config, okhttp3.OkHttpClient.Builder httpClientBuilder) {
-        String connectionPoolScope = config.getOrDefault(OKHTTP_CONNECTION_POOL_SCOPE, "instance").toString();
+        String connectionPoolScope = config.getOrDefault(OKHTTP_CONNECTION_POOL_SCOPE, "instance");
         ConnectionPool connectionPool = null;
         if ("static".equalsIgnoreCase(connectionPoolScope)) {
             if (getSharedConnectionPool() == null) {
@@ -333,8 +333,8 @@ public class OkHttpClientFactory implements HttpClientFactory<OkHttpClient,Reque
 
     }
     private static ConnectionPool buildConnectionPool(Map<String, String> config, ConnectionPool connectionPool) {
-        int maxIdleConnections = Integer.parseInt(config.getOrDefault(OKHTTP_CONNECTION_POOL_MAX_IDLE_CONNECTIONS, "0").toString());
-        long keepAliveDuration = Long.parseLong(config.getOrDefault(OKHTTP_CONNECTION_POOL_KEEP_ALIVE_DURATION, "0").toString());
+        int maxIdleConnections = Integer.parseInt(config.getOrDefault(OKHTTP_CONNECTION_POOL_MAX_IDLE_CONNECTIONS, "0"));
+        long keepAliveDuration = Long.parseLong(config.getOrDefault(OKHTTP_CONNECTION_POOL_KEEP_ALIVE_DURATION, "0"));
         if (maxIdleConnections > 0 && keepAliveDuration > 0) {
             connectionPool = new ConnectionPool(maxIdleConnections, keepAliveDuration, TimeUnit.MILLISECONDS);
         }
@@ -345,7 +345,7 @@ public class OkHttpClientFactory implements HttpClientFactory<OkHttpClient,Reque
 
     private void configureCache(Map<String, String> config, okhttp3.OkHttpClient.Builder httpClientBuilder, CompositeMeterRegistry meterRegistry) {
         if (config.containsKey(OKHTTP_CACHE_ACTIVATE)) {
-            String cacheType = config.getOrDefault(OKHTTP_CACHE_TYPE, FILE_CACHE_TYPE).toString();
+            String cacheType = config.getOrDefault(OKHTTP_CACHE_TYPE, FILE_CACHE_TYPE);
             String defaultDirectoryPath;
             if (IN_MEMORY_CACHE_TYPE.equalsIgnoreCase(cacheType)) {
                 defaultDirectoryPath = DEFAULT_IN_MEMORY_DIRECTORY_CACHE_PATH;
@@ -353,7 +353,7 @@ public class OkHttpClientFactory implements HttpClientFactory<OkHttpClient,Reque
                 defaultDirectoryPath = DEFAULT_FILE_DIRECTORY_CACHE_PATH;
             }
 
-            String directoryPath = config.getOrDefault(OKHTTP_CACHE_DIRECTORY_PATH, defaultDirectoryPath).toString();
+            String directoryPath = config.getOrDefault(OKHTTP_CACHE_DIRECTORY_PATH, defaultDirectoryPath);
 
             if (IN_MEMORY_CACHE_TYPE.equalsIgnoreCase(cacheType)) {
                 try (java.nio.file.FileSystem fs = Jimfs.newFileSystem(com.google.common.jimfs.Configuration.unix())) {
@@ -365,7 +365,7 @@ public class OkHttpClientFactory implements HttpClientFactory<OkHttpClient,Reque
             }
 
             File cacheDirectory = new File(directoryPath);
-            long maxSize = Long.parseLong(config.getOrDefault(OKHTTP_CACHE_MAX_SIZE, DEFAULT_MAX_CACHE_ENTRIES).toString());
+            long maxSize = Long.parseLong(config.getOrDefault(OKHTTP_CACHE_MAX_SIZE, DEFAULT_MAX_CACHE_ENTRIES));
             Cache cache = new Cache(cacheDirectory, maxSize);
             httpClientBuilder.cache(cache);
 

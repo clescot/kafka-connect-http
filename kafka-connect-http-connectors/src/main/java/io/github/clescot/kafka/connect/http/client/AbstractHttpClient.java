@@ -4,7 +4,6 @@ import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import io.github.clescot.kafka.connect.AbstractClient;
-import io.github.clescot.kafka.connect.http.core.VersionUtils;
 import io.github.clescot.kafka.connect.http.client.config.*;
 import io.github.clescot.kafka.connect.http.core.HttpExchange;
 import io.github.clescot.kafka.connect.http.core.HttpRequest;

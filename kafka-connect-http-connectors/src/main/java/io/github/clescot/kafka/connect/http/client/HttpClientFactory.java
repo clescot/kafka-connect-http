@@ -4,7 +4,6 @@ import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import io.github.clescot.kafka.connect.MapUtils;
-import io.github.clescot.kafka.connect.http.client.config.AddSuccessStatusToHttpExchangeFunction;
 import io.github.clescot.kafka.connect.http.client.proxy.ProxySelectorFactory;
 import io.github.clescot.kafka.connect.http.client.ssl.AlwaysTrustManagerFactory;
 import io.micrometer.core.instrument.composite.CompositeMeterRegistry;
@@ -165,7 +164,7 @@ public interface HttpClientFactory<C extends HttpClient<R, S>, R, S> {
     }
 
     static TrustManagerFactory getTrustManagerFactory(Map<String, String> config) {
-        if (config.containsKey(HTTP_CLIENT_SSL_TRUSTSTORE_ALWAYS_TRUST) && Boolean.parseBoolean(config.get(HTTP_CLIENT_SSL_TRUSTSTORE_ALWAYS_TRUST).toString())) {
+        if (config.containsKey(HTTP_CLIENT_SSL_TRUSTSTORE_ALWAYS_TRUST) && Boolean.parseBoolean(config.get(HTTP_CLIENT_SSL_TRUSTSTORE_ALWAYS_TRUST))) {
             LOGGER.warn("/!\\ activating 'always trust any certificate' feature : remote SSL certificates will always be granted. Use this feature at your own risk ! ");
             return new AlwaysTrustManagerFactory();
         } else {

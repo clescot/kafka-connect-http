@@ -48,6 +48,11 @@ public class RequestGrouper<T> {
         return this.predicate.test(httpRequest);
     }
 
+    /**
+     *
+     * @param entries
+     * @return
+     */
     public List<Pair<T, HttpRequest>> group(List<Pair<T, HttpRequest>> entries){
 
         if(entries==null || entries.isEmpty()){

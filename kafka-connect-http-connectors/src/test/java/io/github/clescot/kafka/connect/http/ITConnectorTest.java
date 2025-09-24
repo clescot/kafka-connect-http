@@ -25,7 +25,6 @@ import io.confluent.kafka.serializers.json.KafkaJsonSchemaSerializerConfig;
 import io.debezium.testing.testcontainers.Connector;
 import io.debezium.testing.testcontainers.ConnectorConfiguration;
 import io.debezium.testing.testcontainers.DebeziumContainer;
-import io.github.clescot.kafka.connect.http.core.VersionUtils;
 import io.github.clescot.kafka.connect.http.core.HttpExchange;
 import io.github.clescot.kafka.connect.http.core.HttpRequest;
 import io.github.clescot.kafka.connect.http.core.queue.QueueFactory;

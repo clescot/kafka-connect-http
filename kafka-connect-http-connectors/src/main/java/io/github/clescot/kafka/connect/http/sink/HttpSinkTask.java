@@ -1,7 +1,6 @@
 package io.github.clescot.kafka.connect.http.sink;
 
 import com.google.common.base.Preconditions;
-import io.github.clescot.kafka.connect.http.core.VersionUtils;
 import io.github.clescot.kafka.connect.http.HttpTask;
 import io.github.clescot.kafka.connect.http.MessageSplitter;
 import io.github.clescot.kafka.connect.http.MessageSplitterFactory;

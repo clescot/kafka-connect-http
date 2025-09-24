@@ -29,7 +29,6 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import static io.github.clescot.kafka.connect.http.client.config.HttpRequestPredicateBuilder.*;
-import static io.github.clescot.kafka.connect.http.client.config.HttpRequestPredicateBuilder.HEADER_KEY_REGEX;
 import static io.github.clescot.kafka.connect.http.sink.HttpConfigDefinition.DEFAULT_DEFAULT_RETRY_RESPONSE_CODE_REGEX;
 import static io.github.clescot.kafka.connect.http.sink.HttpConfigDefinition.RETRY_RESPONSE_CODE_REGEX;
 
