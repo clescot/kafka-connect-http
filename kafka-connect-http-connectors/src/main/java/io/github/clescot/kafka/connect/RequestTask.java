@@ -3,7 +3,6 @@ package io.github.clescot.kafka.connect;
 import com.google.common.base.Preconditions;
 import dev.failsafe.RetryPolicy;
 import io.github.clescot.kafka.connect.http.client.HttpException;
-import io.github.clescot.kafka.connect.http.core.HttpExchange;
 import io.github.clescot.kafka.connect.http.core.Request;
 import org.jetbrains.annotations.NotNull;
 
