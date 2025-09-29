@@ -52,7 +52,7 @@ public interface HttpClient<NR, NS> extends RequestResponseClient<HttpRequest, N
                                        OffsetDateTime now,
                                        AtomicInteger attempts,
                                        boolean success,
-                                       Map<String, String> attributes,
+                                       Map<String, Object> attributes,
                                        Map<String, Long> timings) {
         Preconditions.checkNotNull(request, "'httpRequest' is null");
         return HttpExchange.Builder.anHttpExchange()

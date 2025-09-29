@@ -28,7 +28,7 @@ public interface RequestResponseClient<R extends Request, NR, S extends Response
                     OffsetDateTime now,
                     AtomicInteger attempts,
                     boolean success,
-                    Map<String,String> attributes,
+                    Map<String,Object> attributes,
                     Map<String,Long> timings);
 
     /**

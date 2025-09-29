@@ -56,7 +56,7 @@ public class HttpRequest implements Request,Cloneable, Serializable {
     @JsonProperty(defaultValue = "GET")
     private HttpRequest.Method method;
     @JsonProperty
-    private Map<String,String> attributes = Maps.newHashMap();
+    private Map<String,Object> attributes = Maps.newHashMap();
     //regular body
     @JsonProperty
     private Map<String, String> bodyAsForm = Maps.newHashMap();
@@ -394,11 +394,11 @@ public class HttpRequest implements Request,Cloneable, Serializable {
         return bodyAsForm;
     }
 
-    public Map<String, String> getAttributes() {
+    public Map<String, Object> getAttributes() {
         return attributes;
     }
 
-    public void setAttributes(Map<String, String> attributes) {
+    public void setAttributes(Map<String, Object> attributes) {
         this.attributes = attributes;
     }
 

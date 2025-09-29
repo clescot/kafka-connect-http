@@ -75,7 +75,7 @@ public class HttpExchange implements Exchange<HttpRequest,HttpResponse>,Cloneabl
     private HttpResponse httpResponse;
     private HttpRequest httpRequest;
     @JsonProperty
-    private Map<String,String> attributes = Maps.newHashMap();
+    private Map<String,Object> attributes = Maps.newHashMap();
     private Map<String,Long> timings = Maps.newHashMap();
 
     protected HttpExchange() {
@@ -435,11 +435,11 @@ public class HttpExchange implements Exchange<HttpRequest,HttpResponse>,Cloneabl
     }
 
     @Override
-    public Map<String, String> getAttributes() {
+    public Map<String, Object> getAttributes() {
         return attributes;
     }
 
-    public void setAttributes(Map<String, String> attributes) {
+    public void setAttributes(Map<String, Object> attributes) {
         this.attributes = attributes;
     }
 
@@ -451,7 +451,7 @@ public class HttpExchange implements Exchange<HttpRequest,HttpResponse>,Cloneabl
         private boolean success;
         private HttpRequest httpRequest;
         private HttpResponse httpResponse;
-        private Map<String, String> attributes = Maps.newHashMap();
+        private Map<String, Object> attributes = Maps.newHashMap();
         private Map<String, Long> timings = Maps.newHashMap();
 
         private Builder() {
@@ -483,7 +483,7 @@ public class HttpExchange implements Exchange<HttpRequest,HttpResponse>,Cloneabl
             return this;
         }
 
-        public Builder withAttributes(Map<String,String> attributes) {
+        public Builder withAttributes(Map<String,Object> attributes) {
             this.attributes = attributes;
             return this;
         }

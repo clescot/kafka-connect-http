@@ -20,7 +20,7 @@ public class SseEvent implements Response,Cloneable, Serializable {
     @Serial
     private static final long serialVersionUID = 1L;
     @JsonProperty
-    private Map<String,String> attributes = Maps.newHashMap();
+    private Map<String,Object> attributes = Maps.newHashMap();
 
     @JsonProperty
     private String id;
@@ -72,7 +72,7 @@ public class SseEvent implements Response,Cloneable, Serializable {
     }
 
     @Override
-    public Map<String, String> getAttributes() {
+    public Map<String, Object> getAttributes() {
         return attributes;
     }
 
@@ -88,7 +88,7 @@ public class SseEvent implements Response,Cloneable, Serializable {
         this.data = data;
     }
 
-    protected void setAttributes(Map<String, String> attributes) {
+    protected void setAttributes(Map<String, Object> attributes) {
         this.attributes = attributes;
     }
 

@@ -64,7 +64,7 @@ public interface RequestTask<C extends Client,F extends Configuration<C,R>,R ext
         Preconditions.checkNotNull(request, "Request must not be null.");
         Map<String,F> configurations = getConfigurations();
         Preconditions.checkArgument(!configurations.isEmpty(), "Configurations list must not be null or empty.");
-        String vuId = Optional.ofNullable(request.getAttributes().get(VU_ID)).orElse(Request.DEFAULT_VU_ID);
+        String vuId = Optional.ofNullable(request.getAttributes().get(VU_ID).toString()).orElse(Request.DEFAULT_VU_ID);
         //is there a matching configuration against the request ?
         F configuration = getDefaultConfiguration();
         F matchingConfiguration = configurations
