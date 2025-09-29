@@ -102,8 +102,8 @@ public class HttpTaskTest {
             HttpRequest httpRequest =  getDummyHttpRequest("http://"+IP+":"+ httpPort +"/ping1","1");
             HttpExchange httpExchange = (HttpExchange) httpTask.call(httpRequest).get();
             assertThat(httpExchange).isNotNull();
-            assertThat(httpExchange.getHttpRequest()).isNotNull();
-            assertThat(httpExchange.getHttpResponse()).isNotNull();
+            assertThat(httpExchange.getRequest()).isNotNull();
+            assertThat(httpExchange.getResponse()).isNotNull();
             Har har = HttpExchange.toHar(httpExchange);
             assertThat(har).isNotNull();
         }
@@ -149,8 +149,8 @@ public class HttpTaskTest {
             HttpRequest httpRequest =  getDummyHttpRequest("http://"+ IP +":"+ httpPort +"/ping2", vuid);
             HttpExchange httpExchange = httpTask.call(httpRequest).get();
             assertThat(httpExchange).isNotNull();
-            assertThat(httpExchange.getHttpRequest()).isNotNull();
-            assertThat(httpExchange.getHttpResponse()).isNotNull();
+            assertThat(httpExchange.getRequest()).isNotNull();
+            assertThat(httpExchange.getResponse()).isNotNull();
             List<Cookie> cookies = getCookies(httpTask, httpRequest);
             assertThat(cookies).hasSize(1);
             Cookie firstCookie = cookies.get(0);

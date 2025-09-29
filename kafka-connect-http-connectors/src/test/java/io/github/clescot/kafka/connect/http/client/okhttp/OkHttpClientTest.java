@@ -843,7 +843,7 @@ class OkHttpClientTest {
             //call web service
             for (int i = 0; i < 10; i++) {
                 HttpExchange httpExchange1 = client.call(httpRequest, new AtomicInteger(1)).get();
-                assertThat(httpExchange1.getHttpResponse().getStatusCode()).isEqualTo(200);
+                assertThat(httpExchange1.getResponse().getStatusCode()).isEqualTo(200);
                 exchanges.add(httpExchange1);
             }
             stopwatch.stop();
@@ -890,7 +890,7 @@ class OkHttpClientTest {
             //call web service
             for (int i = 0; i < 10; i++) {
                 HttpExchange httpExchange1 = client.call(httpRequest, new AtomicInteger(1)).get();
-                assertThat(httpExchange1.getHttpResponse().getStatusCode()).isEqualTo(200);
+                assertThat(httpExchange1.getResponse().getStatusCode()).isEqualTo(200);
                 exchanges.add(httpExchange1);
             }
             stopwatch.stop();
@@ -937,7 +937,7 @@ class OkHttpClientTest {
             //call web service
             for (int i = 0; i < 10; i++) {
                 HttpExchange httpExchange1 = client.call(httpRequest, new AtomicInteger(1)).get();
-                assertThat(httpExchange1.getHttpResponse().getStatusCode()).isEqualTo(200);
+                assertThat(httpExchange1.getResponse().getStatusCode()).isEqualTo(200);
                 exchanges.add(httpExchange1);
             }
             stopwatch.stop();
@@ -982,7 +982,7 @@ class OkHttpClientTest {
             //call web service
             for (int i = 0; i < 10; i++) {
                 HttpExchange httpExchange1 = client.call(httpRequest, new AtomicInteger(1)).get();
-                assertThat(httpExchange1.getHttpResponse().getStatusCode()).isEqualTo(200);
+                assertThat(httpExchange1.getResponse().getStatusCode()).isEqualTo(200);
                 exchanges.add(httpExchange1);
             }
             stopwatch.stop();
@@ -1026,7 +1026,7 @@ class OkHttpClientTest {
             //call web service
             for (int i = 0; i < 10; i++) {
                 HttpExchange httpExchange1 = client.call(httpRequest, new AtomicInteger(1)).get();
-                assertThat(httpExchange1.getHttpResponse().getStatusCode()).isEqualTo(200);
+                assertThat(httpExchange1.getResponse().getStatusCode()).isEqualTo(200);
                 exchanges.add(httpExchange1);
             }
             stopwatch.stop();
@@ -1073,10 +1073,10 @@ class OkHttpClientTest {
             //call web service
             for (int i = 0; i < 5; i++) {
                 HttpExchange httpExchange1 = client1.call(httpRequest, new AtomicInteger(1)).get();
-                assertThat(httpExchange1.getHttpResponse().getStatusCode()).isEqualTo(200);
+                assertThat(httpExchange1.getResponse().getStatusCode()).isEqualTo(200);
                 exchanges.add(httpExchange1);
                 HttpExchange httpExchange2 = client2.call(httpRequest, new AtomicInteger(1)).get();
-                assertThat(httpExchange2.getHttpResponse().getStatusCode()).isEqualTo(200);
+                assertThat(httpExchange2.getResponse().getStatusCode()).isEqualTo(200);
                 exchanges.add(httpExchange2);
             }
             stopwatch.stop();
@@ -1122,10 +1122,10 @@ class OkHttpClientTest {
             //call web service
             for (int i = 0; i < 5; i++) {
                 HttpExchange httpExchange1 = client1.call(httpRequest, new AtomicInteger(1)).get();
-                assertThat(httpExchange1.getHttpResponse().getStatusCode()).isEqualTo(200);
+                assertThat(httpExchange1.getResponse().getStatusCode()).isEqualTo(200);
                 exchanges.add(httpExchange1);
                 HttpExchange httpExchange2 = client2.call(httpRequest, new AtomicInteger(1)).get();
-                assertThat(httpExchange2.getHttpResponse().getStatusCode()).isEqualTo(200);
+                assertThat(httpExchange2.getResponse().getStatusCode()).isEqualTo(200);
                 exchanges.add(httpExchange2);
             }
             stopwatch.stop();
@@ -1196,7 +1196,7 @@ class OkHttpClientTest {
                     );
 
             HttpExchange httpExchange1 = client.call(httpRequest, new AtomicInteger(1)).get();
-            assertThat(httpExchange1.getHttpResponse().getStatusCode()).isEqualTo(200);
+            assertThat(httpExchange1.getResponse().getStatusCode()).isEqualTo(200);
         }
 
         @Test
@@ -1237,7 +1237,7 @@ class OkHttpClientTest {
                     );
 
             HttpExchange httpExchange1 = client.call(httpRequest, new AtomicInteger(1)).get();
-            assertThat(httpExchange1.getHttpResponse().getStatusCode()).isEqualTo(200);
+            assertThat(httpExchange1.getResponse().getStatusCode()).isEqualTo(200);
 
 
         }
@@ -1319,9 +1319,9 @@ class OkHttpClientTest {
 
 
             HttpExchange httpExchange1 = client.call(httpRequest, new AtomicInteger(1)).get();
-            assertThat(httpExchange1.getHttpResponse().getStatusCode()).isEqualTo(200);
+            assertThat(httpExchange1.getResponse().getStatusCode()).isEqualTo(200);
             HttpExchange httpExchange2 = client.call(httpRequest, new AtomicInteger(1)).get();
-            assertThat(httpExchange2.getHttpResponse().getStatusCode()).isEqualTo(200);
+            assertThat(httpExchange2.getResponse().getStatusCode()).isEqualTo(200);
         }
 
         @Test
@@ -1446,10 +1446,10 @@ class OkHttpClientTest {
 
 
             HttpExchange httpExchange1 = client.call(httpRequest, new AtomicInteger(1)).get();
-            assertThat(httpExchange1.getHttpResponse().getStatusCode()).isEqualTo(200);
+            assertThat(httpExchange1.getResponse().getStatusCode()).isEqualTo(200);
 
             HttpExchange httpExchange2 = client.call(httpRequest2, new AtomicInteger(1)).get();
-            assertThat(httpExchange2.getHttpResponse().getStatusCode()).isEqualTo(200);
+            assertThat(httpExchange2.getResponse().getStatusCode()).isEqualTo(200);
 
         }
 
@@ -1554,7 +1554,7 @@ class OkHttpClientTest {
             OkHttpClient client = factory.build(config, null, new Random(), null, null, getCompositeMeterRegistry());
 
             HttpExchange httpExchange1 = client.call(httpRequest, new AtomicInteger(1)).get();
-            assertThat(httpExchange1.getHttpResponse().getStatusCode()).isEqualTo(200);
+            assertThat(httpExchange1.getResponse().getStatusCode()).isEqualTo(200);
 
         }
 
@@ -1627,9 +1627,9 @@ class OkHttpClientTest {
                     );
 
             HttpExchange httpExchange1 = client.call(httpRequest, new AtomicInteger(1)).get();
-            assertThat(httpExchange1.getHttpResponse().getStatusCode()).isEqualTo(200);
+            assertThat(httpExchange1.getResponse().getStatusCode()).isEqualTo(200);
             HttpExchange httpExchange2 = client.call(httpRequest, new AtomicInteger(1)).get();
-            assertThat(httpExchange2.getHttpResponse().getStatusCode()).isEqualTo(200);
+            assertThat(httpExchange2.getResponse().getStatusCode()).isEqualTo(200);
 
         }
 
@@ -1706,9 +1706,9 @@ class OkHttpClientTest {
                     );
 
             HttpExchange httpExchange1 = client.call(httpRequest, new AtomicInteger(1)).get();
-            assertThat(httpExchange1.getHttpResponse().getStatusCode()).isEqualTo(200);
+            assertThat(httpExchange1.getResponse().getStatusCode()).isEqualTo(200);
             HttpExchange httpExchange2 = client.call(httpRequest, new AtomicInteger(1)).get();
-            assertThat(httpExchange2.getHttpResponse().getStatusCode()).isEqualTo(200);
+            assertThat(httpExchange2.getResponse().getStatusCode()).isEqualTo(200);
 
         }
 
@@ -1809,9 +1809,9 @@ class OkHttpClientTest {
                     );
 
             HttpExchange httpExchange1 = client.call(httpRequest, new AtomicInteger(1)).get();
-            assertThat(httpExchange1.getHttpResponse().getStatusCode()).isEqualTo(200);
+            assertThat(httpExchange1.getResponse().getStatusCode()).isEqualTo(200);
             HttpExchange httpExchange2 = client.call(httpRequest, new AtomicInteger(1)).get();
-            assertThat(httpExchange2.getHttpResponse().getStatusCode()).isEqualTo(200);
+            assertThat(httpExchange2.getResponse().getStatusCode()).isEqualTo(200);
 
         }
 
@@ -1985,9 +1985,9 @@ class OkHttpClientTest {
                     );
 
             HttpExchange httpExchange1 = client.call(httpRequest, new AtomicInteger(1)).get();
-            assertThat(httpExchange1.getHttpResponse().getStatusCode()).isEqualTo(200);
+            assertThat(httpExchange1.getResponse().getStatusCode()).isEqualTo(200);
             HttpExchange httpExchange2 = client.call(httpRequest, new AtomicInteger(1)).get();
-            assertThat(httpExchange2.getHttpResponse().getStatusCode()).isEqualTo(200);
+            assertThat(httpExchange2.getResponse().getStatusCode()).isEqualTo(200);
 
         }
 
@@ -2042,9 +2042,9 @@ class OkHttpClientTest {
                     );
 
             HttpExchange httpExchange1 = client.call(httpRequest, new AtomicInteger(1)).get();
-            assertThat(httpExchange1.getHttpResponse().getStatusCode()).isEqualTo(200);
+            assertThat(httpExchange1.getResponse().getStatusCode()).isEqualTo(200);
             HttpExchange httpExchange2 = client.call(httpRequest, new AtomicInteger(1)).get();
-            assertThat(httpExchange2.getHttpResponse().getStatusCode()).isEqualTo(200);
+            assertThat(httpExchange2.getResponse().getStatusCode()).isEqualTo(200);
         }
 
         @Test
@@ -2103,9 +2103,9 @@ class OkHttpClientTest {
                     );
 
             HttpExchange httpExchange1 = client.call(httpRequest, new AtomicInteger(1)).get();
-            assertThat(httpExchange1.getHttpResponse().getStatusCode()).isEqualTo(200);
+            assertThat(httpExchange1.getResponse().getStatusCode()).isEqualTo(200);
             HttpExchange httpExchange2 = client.call(httpRequest, new AtomicInteger(1)).get();
-            assertThat(httpExchange2.getHttpResponse().getStatusCode()).isEqualTo(200);
+            assertThat(httpExchange2.getResponse().getStatusCode()).isEqualTo(200);
         }
 
 
@@ -2159,7 +2159,7 @@ class OkHttpClientTest {
                     HttpRequest.Method.GET
             );
             HttpExchange httpExchange = client.call(httpRequest, new AtomicInteger(1)).get();
-            HttpResponse httpResponse = httpExchange.getHttpResponse();
+            HttpResponse httpResponse = httpExchange.getResponse();
             assertThat(httpResponse.getStatusCode()).isEqualTo(200);
         }
 
@@ -2179,7 +2179,7 @@ class OkHttpClientTest {
                     HttpRequest.Method.GET
             );
             HttpExchange httpExchange = client.call(httpRequest, new AtomicInteger(1)).get();
-            HttpResponse httpResponse = httpExchange.getHttpResponse();
+            HttpResponse httpResponse = httpExchange.getResponse();
             assertThat(httpResponse.getStatusCode()).isEqualTo(200);
         }
 
@@ -2199,7 +2199,7 @@ class OkHttpClientTest {
                     HttpRequest.Method.GET
             );
             HttpExchange httpExchange = client.call(httpRequest, new AtomicInteger(1)).get();
-            HttpResponse httpResponse = httpExchange.getHttpResponse();
+            HttpResponse httpResponse = httpExchange.getResponse();
             assertThat(httpResponse.getStatusCode()).isEqualTo(200);
         }
 
@@ -2219,7 +2219,7 @@ class OkHttpClientTest {
                     HttpRequest.Method.GET
             );
             HttpExchange httpExchange = client.call(httpRequest, new AtomicInteger(1)).get();
-            HttpResponse httpResponse = httpExchange.getHttpResponse();
+            HttpResponse httpResponse = httpExchange.getResponse();
             assertThat(httpResponse.getStatusCode()).isEqualTo(400);
             Map<String, List<String>> responseHeaders = httpResponse.getHeaders();
             assertThat(responseHeaders.get(THROWABLE_CLASS)).contains("java.net.UnknownHostException");
@@ -2242,7 +2242,7 @@ class OkHttpClientTest {
                     HttpRequest.Method.GET
             );
             HttpExchange httpExchange = client.call(httpRequest, new AtomicInteger(1)).get();
-            HttpResponse httpResponse = httpExchange.getHttpResponse();
+            HttpResponse httpResponse = httpExchange.getResponse();
             assertThat(httpResponse.getStatusCode()).isEqualTo(400);
             Map<String, List<String>> responseHeaders = httpResponse.getHeaders();
             assertThat(responseHeaders.get(THROWABLE_CLASS)).contains("java.net.UnknownHostException");
@@ -2279,7 +2279,7 @@ class OkHttpClientTest {
                     HttpRequest.Method.GET
             );
             HttpExchange httpExchange = client.call(httpRequest, new AtomicInteger(1)).get();
-            HttpResponse httpResponse = httpExchange.getHttpResponse();
+            HttpResponse httpResponse = httpExchange.getResponse();
             assertThat(httpResponse.getStatusCode()).isEqualTo(200);
         }
 
@@ -2299,7 +2299,7 @@ class OkHttpClientTest {
                     HttpRequest.Method.GET
             );
             HttpExchange httpExchange = client.call(httpRequest, new AtomicInteger(1)).get();
-            HttpResponse httpResponse = httpExchange.getHttpResponse();
+            HttpResponse httpResponse = httpExchange.getResponse();
             assertThat(httpResponse.getStatusCode()).isEqualTo(400);
             Map<String, List<String>> responseHeaders = httpResponse.getHeaders();
             assertThat(responseHeaders.get(THROWABLE_CLASS)).contains("java.net.UnknownHostException");
@@ -2394,9 +2394,9 @@ class OkHttpClientTest {
 
             //when
             HttpExchange httpExchange1 = client.call(httpRequest, new AtomicInteger(1)).get();
-            assertThat(httpExchange1.getHttpResponse().getStatusCode()).isEqualTo(200);
+            assertThat(httpExchange1.getResponse().getStatusCode()).isEqualTo(200);
             HttpExchange httpExchange2 = client.call(httpRequest, new AtomicInteger(1)).get();
-            assertThat(httpExchange2.getHttpResponse().getStatusCode()).isEqualTo(200);
+            assertThat(httpExchange2.getResponse().getStatusCode()).isEqualTo(200);
 
 
         }
@@ -2446,10 +2446,10 @@ class OkHttpClientTest {
 
             //when
             HttpExchange httpExchange1 = client.call(httpRequest, new AtomicInteger(1)).get();
-            assertThat(httpExchange1.getHttpResponse().getStatusCode()).isEqualTo(200);
+            assertThat(httpExchange1.getResponse().getStatusCode()).isEqualTo(200);
             HttpExchange httpExchange2 = client.call(httpRequest, new AtomicInteger(1)).get();
             //then
-            assertThat(httpExchange2.getHttpResponse().getStatusCode()).isEqualTo(200);
+            assertThat(httpExchange2.getResponse().getStatusCode()).isEqualTo(200);
 
         }
 
@@ -2503,13 +2503,13 @@ class OkHttpClientTest {
                     );
 
             HttpExchange httpExchange1 = client.call(httpRequest, new AtomicInteger(1)).get();
-            assertThat(httpExchange1.getHttpResponse().getStatusCode()).isEqualTo(200);
+            assertThat(httpExchange1.getResponse().getStatusCode()).isEqualTo(200);
             HttpExchange httpExchange2 = client.call(httpRequest, new AtomicInteger(1)).get();
-            assertThat(httpExchange2.getHttpResponse().getStatusCode()).isEqualTo(200);
+            assertThat(httpExchange2.getResponse().getStatusCode()).isEqualTo(200);
             HttpExchange httpExchange3 = client2.call(httpRequest, new AtomicInteger(1)).get();
-            assertThat(httpExchange3.getHttpResponse().getStatusCode()).isEqualTo(200);
+            assertThat(httpExchange3.getResponse().getStatusCode()).isEqualTo(200);
             HttpExchange httpExchange4 = client2.call(httpRequest, new AtomicInteger(1)).get();
-            assertThat(httpExchange4.getHttpResponse().getStatusCode()).isEqualTo(200);
+            assertThat(httpExchange4.getResponse().getStatusCode()).isEqualTo(200);
 
             assertThat(client.getInternalClient().connectionPool()).isEqualTo(client2.getInternalClient().connectionPool());
         }

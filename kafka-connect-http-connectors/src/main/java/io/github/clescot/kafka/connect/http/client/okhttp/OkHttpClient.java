@@ -40,7 +40,7 @@ public class OkHttpClient extends AbstractHttpClient<Request, Response> {
 
     private final okhttp3.OkHttpClient client;
     private static final Logger LOGGER = LoggerFactory.getLogger(OkHttpClient.class);
-    private final Map<String, OkHttpClient> clients = Maps.newHashMap();
+    private final Map<String, OkHttpClient> clientsPerVuId = Maps.newHashMap();
 
 
     public OkHttpClient(Map<String, String> config,
@@ -101,7 +101,7 @@ public class OkHttpClient extends AbstractHttpClient<Request, Response> {
         if (o == null || getClass() != o.getClass()) return false;
         if (!super.equals(o)) return false;
         OkHttpClient that = (OkHttpClient) o;
-        return Objects.equals(client, that.client);
+        return Objects.equals(this.getConfig(), that.getConfig());
     }
 
     @Override
@@ -438,12 +438,12 @@ public class OkHttpClient extends AbstractHttpClient<Request, Response> {
      */
     @Override
     public HttpClient<Request, Response> customizeForUser(String vuId) {
-        if(!clients.containsKey(vuId)){
+        if(!clientsPerVuId.containsKey(vuId)){
             OkHttpClient okHttpClient = new OkHttpClient(getConfig(), customizeOkHttpClientForUser(vuId, client), random);
-            clients.put(vuId,okHttpClient);
+            clientsPerVuId.put(vuId,okHttpClient);
             return okHttpClient;
         }else{
-            return clients.get(vuId);
+            return clientsPerVuId.get(vuId);
         }
     }
 

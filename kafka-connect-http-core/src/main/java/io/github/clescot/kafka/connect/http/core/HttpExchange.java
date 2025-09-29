@@ -23,7 +23,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import static io.github.clescot.kafka.connect.http.core.VersionUtils.VERSION;
 
 
-public class HttpExchange implements Exchange,Cloneable, Serializable {
+public class HttpExchange implements Exchange<HttpRequest,HttpResponse>,Cloneable, Serializable {
     @Serial
     private static final long serialVersionUID = 1L;
     public static final int HTTP_EXCHANGE_VERSION = 2;
@@ -117,11 +117,13 @@ public class HttpExchange implements Exchange,Cloneable, Serializable {
         this.success = success;
     }
 
-    public HttpRequest getHttpRequest() {
+    @Override
+    public HttpRequest getRequest() {
         return httpRequest;
     }
 
-    public HttpResponse getHttpResponse() {
+    @Override
+    public HttpResponse getResponse() {
         return httpResponse;
     }
 
@@ -137,11 +139,11 @@ public class HttpExchange implements Exchange,Cloneable, Serializable {
         this.attempts = attempts;
     }
 
-    protected void setHttpResponse(HttpResponse httpResponse) {
+    protected void setResponse(HttpResponse httpResponse) {
         this.httpResponse = httpResponse;
     }
 
-    protected void setHttpRequest(HttpRequest httpRequest) {
+    protected void setRequest(HttpRequest httpRequest) {
         this.httpRequest = httpRequest;
     }
 
@@ -161,8 +163,8 @@ public class HttpExchange implements Exchange,Cloneable, Serializable {
                 ", moment=" + moment +
                 ", attempts=" + attempts +
                 ", success=" + success +
-                ", httpRequest=" + httpRequest +
-                ", httpResponse=" + httpResponse +
+                ", request=" + httpRequest +
+                ", response=" + httpResponse +
                 ", timings=" + timings +
                 '}';
     }
@@ -282,8 +284,8 @@ public class HttpExchange implements Exchange,Cloneable, Serializable {
         HarEntry.HarEntryBuilder harEntryBuilder = HarEntry.builder();
         harEntryBuilder.startedDateTime(this.getMoment().toZonedDateTime());
         harEntryBuilder.time(this.getDurationInMillis().intValue());
-        harEntryBuilder.request(this.getHttpRequest().toHarRequest(this.getHttpResponse().getProtocol()));
-        harEntryBuilder.response(this.getHttpResponse().toHarResponse());
+        harEntryBuilder.request(this.getRequest().toHarRequest(this.getResponse().getProtocol()));
+        harEntryBuilder.response(this.getResponse().toHarResponse());
         if(!Strings.isNullOrEmpty(comment)) {
             harEntryBuilder.comment(comment);
         }

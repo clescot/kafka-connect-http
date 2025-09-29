@@ -308,7 +308,7 @@ public abstract class HttpSinkTask<C extends HttpClient<R, S>, R, S> extends Sin
     private ProducerRecord<String, Object> mapToRecord(HttpExchange httpExchange, String producerContent, String targetTopic) {
         ProducerRecord<String, Object> myRecord;
         if ("response".equalsIgnoreCase(producerContent)) {
-            myRecord = new ProducerRecord<>(targetTopic, httpExchange.getHttpResponse());
+            myRecord = new ProducerRecord<>(targetTopic, httpExchange.getResponse());
         } else {
             myRecord = new ProducerRecord<>(targetTopic, httpExchange);
         }

@@ -22,7 +22,7 @@ public class AddSuccessStatusToHttpExchangeFunction implements UnaryOperator<Htt
 
     protected boolean isSuccess(HttpExchange httpExchange) {
         Pattern pattern = this.getSuccessResponseCodeRegex();
-        boolean success = pattern.matcher(httpExchange.getHttpResponse().getStatusCode() + "").matches();
+        boolean success = pattern.matcher(httpExchange.getResponse().getStatusCode() + "").matches();
         return success;
     }
 

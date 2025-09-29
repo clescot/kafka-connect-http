@@ -65,7 +65,7 @@ public class HttpInMemoryQueueSourceTask extends SourceTask {
 
         Struct struct;
         if("response".equalsIgnoreCase(sourceConfig.getContent())){
-            HttpResponse httpResponse = httpExchange.getHttpResponse();
+            HttpResponse httpResponse = httpExchange.getResponse();
             struct = httpResponse.toStruct();
         }else {
             struct = httpExchange.toStruct();

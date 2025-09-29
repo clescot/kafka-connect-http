@@ -194,9 +194,9 @@ public class HttpConfiguration<C extends HttpClient<NR, NS>, NR, NS> implements 
      */
     private HttpExchange handleRetry(HttpExchange httpExchange) {
         //we don't retry success HTTP Exchange
-        boolean responseCodeImpliesRetry = retryNeeded(httpExchange.getHttpResponse());
+        boolean responseCodeImpliesRetry = retryNeeded(httpExchange.getResponse());
         LOGGER.debug("httpExchange success :'{}'", httpExchange.isSuccess());
-        LOGGER.debug("response code('{}') implies retry:'{}'", httpExchange.getHttpResponse().getStatusCode(), responseCodeImpliesRetry);
+        LOGGER.debug("response code('{}') implies retry:'{}'", httpExchange.getResponse().getStatusCode(), responseCodeImpliesRetry);
         if (!httpExchange.isSuccess() && responseCodeImpliesRetry) {
             throw new HttpException(httpExchange, "retry needed");
         }

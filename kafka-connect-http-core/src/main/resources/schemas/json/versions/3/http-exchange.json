@@ -18,10 +18,10 @@
     "success": {
       "type": "boolean"
     },
-    "httpResponse": {
+    "response": {
       "$ref": "https://raw.githubusercontent.com/clescot/kafka-connect-http/master/kafka-connect-http-core/src/main/resources/schemas/json/versions/2/http-response.json"
     },
-    "httpRequest": {
+    "request": {
       "$ref": "https://raw.githubusercontent.com/clescot/kafka-connect-http/master/kafka-connect-http-core/src/main/resources/schemas/json/versions/2/http-request.json"
     }
   },
@@ -29,8 +29,8 @@
     "moment",
     "attempts",
     "success",
-    "httpRequest",
-    "httpResponse"
+    "request",
+    "response"
   ]
 
 }
