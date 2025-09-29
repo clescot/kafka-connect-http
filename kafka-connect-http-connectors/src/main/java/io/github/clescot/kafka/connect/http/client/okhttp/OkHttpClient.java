@@ -461,9 +461,6 @@ public class OkHttpClient extends AbstractHttpClient<Request, Response> {
         CookieManager cookieManager = new CookieManager(cookieStore,cookiePolicy);
         CookieJar cookieJar = new OkHttpCookieJar(cookieManager);
         builder.cookieJar(cookieJar);
-        //TODO handle option for no cookies, or method not called and reuse same Http Client ?
-        //builder.cookieJar(CookieJar.NO_COOKIES);
-        //we could customize the client for the user here
         return builder.build();
     }
 

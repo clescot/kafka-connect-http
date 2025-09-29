@@ -78,6 +78,7 @@ public interface RequestTask<C extends Client,F extends Configuration<C,R>,R ext
             configurationForUser = getUserConfigurations().get(configurationForUserId);
 
         }else{
+            //TODO handle option for no cookies
             configurationForUser = getConfigurationForUser(vuId, matchingConfiguration);
             getUserConfigurations().put(configurationForUserId, configurationForUser);
         }
