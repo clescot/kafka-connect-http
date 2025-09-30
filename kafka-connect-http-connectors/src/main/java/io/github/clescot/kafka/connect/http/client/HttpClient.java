@@ -14,6 +14,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.net.ssl.TrustManagerFactory;
+import java.net.CookiePolicy;
 import java.time.OffsetDateTime;
 import java.time.ZoneId;
 import java.util.List;
@@ -156,6 +157,8 @@ public interface HttpClient<NR, NS> extends RequestResponseClient<HttpRequest, N
 
     HttpClient<NR, NS> customizeForUser(String vuId);
 
+    CookiePolicy getCookiePolicy();
+
     Function<HttpRequest, HttpRequest> getEnrichRequestFunction();
 
     Integer getStatusMessageLimit();
@@ -169,8 +172,6 @@ public interface HttpClient<NR, NS> extends RequestResponseClient<HttpRequest, N
     Integer getBodyLimit();
 
     void setBodyLimit(Integer bodyLimit);
-
-    boolean isCookieEnabled();
 
     TrustManagerFactory getTrustManagerFactory();
 
