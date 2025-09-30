@@ -59,6 +59,7 @@ import static com.github.tomakehurst.wiremock.client.WireMock.containing;
 import static com.github.tomakehurst.wiremock.client.WireMock.equalTo;
 import static com.github.tomakehurst.wiremock.stubbing.Scenario.STARTED;
 import static io.github.clescot.kafka.connect.AbstractClient.SHARED_RATE_LIMITERS;
+import static io.github.clescot.kafka.connect.http.client.AbstractHttpClient.ACCEPT_NONE;
 import static io.github.clescot.kafka.connect.http.client.HttpClient.THROWABLE_CLASS;
 import static io.github.clescot.kafka.connect.http.client.HttpClient.THROWABLE_MESSAGE;
 import static io.github.clescot.kafka.connect.http.client.HttpClientConfigDefinition.*;
@@ -2534,6 +2535,18 @@ class OkHttpClientTest {
             OkHttpClient client = factory.build(config, null, new Random(), null, null, getCompositeMeterRegistry());
             HttpClient<Request, Response> client1 = client.customizeForUser("1");
             HttpClient<Request, Response> client2 = client.customizeForUser("2");
+            assertThat(client1).isNotSameAs(client2);
+        }
+
+        @Test
+        void test_for_two_different_users_with_cookie_policy_set_to_none() {
+            Map<String, String> config = Maps.newHashMap();
+            config.put(HTTP_COOKIE_POLICY,ACCEPT_NONE);
+            OkHttpClient client = factory.build(config, null, new Random(), null, null, getCompositeMeterRegistry());
+            HttpClient<Request, Response> client1 = client.customizeForUser("1");
+            assertThat(client1.getCookiePolicy()).isEqualTo(CookiePolicy.ACCEPT_NONE);
+            HttpClient<Request, Response> client2 = client.customizeForUser("2");
+            assertThat(client2.getCookiePolicy()).isEqualTo(CookiePolicy.ACCEPT_NONE);
             assertThat(client1).isNotSameAs(client2);
         }
 

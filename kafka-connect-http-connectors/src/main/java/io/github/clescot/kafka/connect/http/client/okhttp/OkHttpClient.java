@@ -438,9 +438,7 @@ public class OkHttpClient extends AbstractHttpClient<Request, Response> {
      */
     @Override
     public HttpClient<Request, Response> customizeForUser(String vuId) {
-        if(!this.isCookieEnabled()){
-            return this;
-        }
+
         if(!clientsPerVuId.containsKey(vuId)){
             OkHttpClient okHttpClient = new OkHttpClient(getConfig(), customizeOkHttpClientForUser(vuId, client), random);
             clientsPerVuId.put(vuId,okHttpClient);
@@ -460,7 +458,7 @@ public class OkHttpClient extends AbstractHttpClient<Request, Response> {
     private okhttp3.OkHttpClient customizeOkHttpClientForUser(String vuId,okhttp3.OkHttpClient client) {
         okhttp3.OkHttpClient.Builder builder = client.newBuilder();
         CookieStore cookieStore = null;//an internal InMemoryCookieStore() will be used if null
-        CookiePolicy cookiePolicy = CookiePolicy.ACCEPT_ALL;
+        CookiePolicy cookiePolicy = getCookiePolicy();
         CookieManager cookieManager = new CookieManager(cookieStore,cookiePolicy);
         CookieJar cookieJar = new OkHttpCookieJar(cookieManager);
         builder.cookieJar(cookieJar);
