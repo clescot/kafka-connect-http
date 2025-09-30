@@ -37,7 +37,7 @@ public abstract class AbstractHttpClient<NR,NS> extends AbstractClient<HttpExcha
     public static final String USER_AGENT_PROJECT_MODE = "project";
     public static final String USER_AGENT_CUSTOM_MODE = "custom";
     private final Function<HttpRequest, HttpRequest> enrichRequestFunction;
-
+    private final boolean cookieEnabled;
     //rate limiter
 
     protected AbstractHttpClient(Map<String, String> config,Random random) {
@@ -63,8 +63,14 @@ public abstract class AbstractHttpClient<NR,NS> extends AbstractClient<HttpExcha
         }
         this.enrichRequestFunction = buildEnrichRequestFunction(config,random);
         this.random = random;
+
+        this.cookieEnabled = Boolean.parseBoolean(Optional.ofNullable(config.get("")).orElse("true"));
     }
 
+    @Override
+    public boolean isCookieEnabled() {
+        return cookieEnabled;
+    }
 
     @Override
     public Function<HttpRequest, HttpRequest> getEnrichRequestFunction() {

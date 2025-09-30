@@ -138,7 +138,7 @@ public class HttpTask<T,C extends HttpClient<NR, NS>, NR, NS> implements Request
             clone.setClient(customized);
 
         } catch (CloneNotSupportedException e) {
-            throw new RuntimeException(e);
+            throw new HttpException(e);
         }
         return clone;
     }

@@ -45,7 +45,6 @@ public interface HttpClient<NR, NS> extends RequestResponseClient<HttpRequest, N
     String THROWABLE_CLASS = "throwable.class";
     String THROWABLE_MESSAGE = "throwable.message";
 
-
     default HttpExchange buildExchange(HttpRequest request,
                                        HttpResponse response,
                                        Stopwatch stopwatch,
@@ -157,7 +156,6 @@ public interface HttpClient<NR, NS> extends RequestResponseClient<HttpRequest, N
 
     HttpClient<NR, NS> customizeForUser(String vuId);
 
-
     Function<HttpRequest, HttpRequest> getEnrichRequestFunction();
 
     Integer getStatusMessageLimit();
@@ -170,11 +168,11 @@ public interface HttpClient<NR, NS> extends RequestResponseClient<HttpRequest, N
 
     Integer getBodyLimit();
 
-
     void setBodyLimit(Integer bodyLimit);
 
-    TrustManagerFactory getTrustManagerFactory();
+    boolean isCookieEnabled();
 
+    TrustManagerFactory getTrustManagerFactory();
 
     void setTrustManagerFactory(TrustManagerFactory trustManagerFactory);
 

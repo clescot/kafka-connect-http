@@ -438,6 +438,9 @@ public class OkHttpClient extends AbstractHttpClient<Request, Response> {
      */
     @Override
     public HttpClient<Request, Response> customizeForUser(String vuId) {
+        if(!this.isCookieEnabled()){
+            return this;
+        }
         if(!clientsPerVuId.containsKey(vuId)){
             OkHttpClient okHttpClient = new OkHttpClient(getConfig(), customizeOkHttpClientForUser(vuId, client), random);
             clientsPerVuId.put(vuId,okHttpClient);
