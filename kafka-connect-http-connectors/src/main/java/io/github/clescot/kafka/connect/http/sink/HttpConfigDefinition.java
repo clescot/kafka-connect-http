@@ -316,7 +316,7 @@ public class HttpConfigDefinition {
         String prefix = "config." + configurationName + ".";
         ConfigDef configDef1 = configDef//http client implementation settings
                 //cookie policy settings
-                .define(prefix + SUCCESS_RESPONSE_CODE_REGEX, ConfigDef.Type.STRING, CONFIG_DEFAULT_HTTP_COOKIE_POLICY, ConfigDef.Importance.LOW, CONFIG_DEFAULT_HTTP_COOKIE_POLICY_DOC)
+                .define(prefix + HTTP_COOKIE_POLICY, ConfigDef.Type.STRING, CONFIG_DEFAULT_HTTP_COOKIE_POLICY, ConfigDef.Importance.LOW, CONFIG_DEFAULT_HTTP_COOKIE_POLICY_DOC)
                 //retry settings
                 .define(prefix + SUCCESS_RESPONSE_CODE_REGEX, ConfigDef.Type.STRING, CONFIG_DEFAULT_DEFAULT_SUCCESS_RESPONSE_CODE_REGEX, ConfigDef.Importance.LOW, CONFIG_DEFAULT_SUCCESS_RESPONSE_CODE_REGEX_DOC)
                 .define(prefix + RETRY_RESPONSE_CODE_REGEX, ConfigDef.Type.STRING, DEFAULT_DEFAULT_RETRY_RESPONSE_CODE_REGEX, ConfigDef.Importance.LOW, DEFAULT_RETRY_RESPONSE_CODE_REGEX_DOC)
