@@ -451,6 +451,7 @@ public class OkHttpClient extends AbstractHttpClient<Request, Response> {
 
     /**
      * customize the okhttp client for the user.
+     * create a CookieJar dedicated to the user, and bound it to a okhttp instance, with the configuration.
      * @param vuId
      * @param client
      * @return

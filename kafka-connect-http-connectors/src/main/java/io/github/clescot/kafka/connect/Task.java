@@ -27,6 +27,12 @@ import static io.github.clescot.kafka.connect.http.sink.HttpConfigDefinition.*;
  */
 public interface Task<C extends Client,F extends Configuration<C,R>,R extends Request> {
     Logger LOGGER = LoggerFactory.getLogger(Task.class);
+
+    /**
+     * get configurations.
+     * scope is application.
+     * @return
+     */
     Map<String,F> getConfigurations();
 
 
