@@ -3,7 +3,6 @@ package io.github.clescot.kafka.connect;
 import com.google.common.base.Preconditions;
 import dev.failsafe.RetryPolicy;
 import io.github.clescot.kafka.connect.http.client.HttpException;
-import io.github.clescot.kafka.connect.http.core.HttpExchange;
 import io.github.clescot.kafka.connect.http.core.Request;
 import org.jetbrains.annotations.NotNull;
 
@@ -65,7 +64,7 @@ public interface RequestTask<C extends Client,F extends Configuration<C,R>,R ext
         Preconditions.checkNotNull(request, "Request must not be null.");
         Map<String,F> configurations = getConfigurations();
         Preconditions.checkArgument(!configurations.isEmpty(), "Configurations list must not be null or empty.");
-        String vuId = Optional.ofNullable(request.getAttributes().get(VU_ID)).orElse(Request.DEFAULT_VU_ID);
+        String vuId = Optional.ofNullable(request.getAttributes().get(VU_ID).toString()).orElse(Request.DEFAULT_VU_ID);
         //is there a matching configuration against the request ?
         F configuration = getDefaultConfiguration();
         F matchingConfiguration = configurations
@@ -77,7 +76,6 @@ public interface RequestTask<C extends Client,F extends Configuration<C,R>,R ext
         F configurationForUser;
         if(getUserConfigurations().containsKey(configurationForUserId)){
             configurationForUser = getUserConfigurations().get(configurationForUserId);
-
         }else{
             configurationForUser = getConfigurationForUser(vuId, matchingConfiguration);
             getUserConfigurations().put(configurationForUserId, configurationForUser);

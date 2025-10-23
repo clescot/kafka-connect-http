@@ -10,7 +10,6 @@ import com.github.tomakehurst.wiremock.junit5.WireMockRuntimeInfo;
 import com.google.common.collect.Lists;
 import de.sstoehr.harreader.model.Har;
 import io.github.clescot.kafka.connect.Configuration;
-import io.github.clescot.kafka.connect.http.client.HttpClient;
 import io.github.clescot.kafka.connect.http.client.HttpConfiguration;
 import io.github.clescot.kafka.connect.http.client.okhttp.OkHttpClient;
 import io.github.clescot.kafka.connect.http.client.okhttp.OkHttpClientFactory;
@@ -46,7 +45,22 @@ public class HttpTaskTest {
 
     private static final String IP = getIP();
 
+    @RegisterExtension
+    WireMockExtension wmHttp = WireMockExtension.newInstance()
+            .options(
+                    WireMockConfiguration.wireMockConfig()
+                            .dynamicPort()
+                            .networkTrafficListener(new ConsoleNotifyingWiremockNetworkTrafficListener())
+                            .useChunkedTransferEncoding(Options.ChunkedEncodingPolicy.NEVER)
+            )
+            .build();
 
+    @AfterEach
+    void tearsDown() {
+        wmHttp.resetMappings();
+        wmHttp.resetRequests();
+        HttpTask.removeCompositeMeterRegistry();
+    }
 
     private static String getIP() {
         try (DatagramSocket datagramSocket = new DatagramSocket()) {
@@ -59,22 +73,7 @@ public class HttpTaskTest {
 
     @Nested
     class Call {
-        @RegisterExtension
-        WireMockExtension wmHttp = WireMockExtension.newInstance()
-                .options(
-                        WireMockConfiguration.wireMockConfig()
-                                .dynamicPort()
-                                .networkTrafficListener(new ConsoleNotifyingWiremockNetworkTrafficListener())
-                                .useChunkedTransferEncoding(Options.ChunkedEncodingPolicy.NEVER)
-                )
-                .build();
 
-        @AfterEach
-        void tearsDown() {
-            wmHttp.resetMappings();
-            wmHttp.resetRequests();
-            HttpTask.removeCompositeMeterRegistry();
-        }
 
         @Test
         void test_nominal_case() throws ExecutionException, InterruptedException {
@@ -103,8 +102,8 @@ public class HttpTaskTest {
             HttpRequest httpRequest =  getDummyHttpRequest("http://"+IP+":"+ httpPort +"/ping1","1");
             HttpExchange httpExchange = (HttpExchange) httpTask.call(httpRequest).get();
             assertThat(httpExchange).isNotNull();
-            assertThat(httpExchange.getHttpRequest()).isNotNull();
-            assertThat(httpExchange.getHttpResponse()).isNotNull();
+            assertThat(httpExchange.getRequest()).isNotNull();
+            assertThat(httpExchange.getResponse()).isNotNull();
             Har har = HttpExchange.toHar(httpExchange);
             assertThat(har).isNotNull();
         }
@@ -150,8 +149,8 @@ public class HttpTaskTest {
             HttpRequest httpRequest =  getDummyHttpRequest("http://"+ IP +":"+ httpPort +"/ping2", vuid);
             HttpExchange httpExchange = httpTask.call(httpRequest).get();
             assertThat(httpExchange).isNotNull();
-            assertThat(httpExchange.getHttpRequest()).isNotNull();
-            assertThat(httpExchange.getHttpResponse()).isNotNull();
+            assertThat(httpExchange.getRequest()).isNotNull();
+            assertThat(httpExchange.getResponse()).isNotNull();
             List<Cookie> cookies = getCookies(httpTask, httpRequest);
             assertThat(cookies).hasSize(1);
             Cookie firstCookie = cookies.get(0);

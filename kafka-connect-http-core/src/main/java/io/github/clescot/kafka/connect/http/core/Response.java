@@ -4,5 +4,5 @@ import java.util.Map;
 
 public interface Response {
 
-    Map<String, String> getAttributes();
+    Map<String, Object> getAttributes();
 }

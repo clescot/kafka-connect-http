@@ -148,9 +148,9 @@ class AHCHttpClientTest {
                         exchange -> {
                             //then
                             assertThat(exchange).isNotNull();
-                            assertThat(exchange.getHttpRequest().getUrl()).isEqualTo("http://localhost:8089");
-                            assertThat(exchange.getHttpResponse().getStatusCode()).isEqualTo(statusCode);
-                            assertThat(exchange.getHttpResponse().getStatusMessage()).isEqualTo(statusMessage);
+                            assertThat(exchange.getRequest().getUrl()).isEqualTo("http://localhost:8089");
+                            assertThat(exchange.getResponse().getStatusCode()).isEqualTo(statusCode);
+                            assertThat(exchange.getResponse().getStatusMessage()).isEqualTo(statusMessage);
                         }
                 ).get();
     }

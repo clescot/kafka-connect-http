@@ -10,9 +10,8 @@ import com.google.common.base.Stopwatch;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.io.Resources;
-import io.github.clescot.kafka.connect.AbstractClient;
-import io.github.clescot.kafka.connect.Client;
 import io.github.clescot.kafka.connect.http.client.DummyX509Certificate;
+import io.github.clescot.kafka.connect.http.client.HttpClient;
 import io.github.clescot.kafka.connect.http.client.HttpClientFactory;
 import io.github.clescot.kafka.connect.http.client.proxy.URIRegexProxySelector;
 import io.github.clescot.kafka.connect.http.core.*;
@@ -60,6 +59,7 @@ import static com.github.tomakehurst.wiremock.client.WireMock.containing;
 import static com.github.tomakehurst.wiremock.client.WireMock.equalTo;
 import static com.github.tomakehurst.wiremock.stubbing.Scenario.STARTED;
 import static io.github.clescot.kafka.connect.AbstractClient.SHARED_RATE_LIMITERS;
+import static io.github.clescot.kafka.connect.http.client.AbstractHttpClient.ACCEPT_NONE;
 import static io.github.clescot.kafka.connect.http.client.HttpClient.THROWABLE_CLASS;
 import static io.github.clescot.kafka.connect.http.client.HttpClient.THROWABLE_MESSAGE;
 import static io.github.clescot.kafka.connect.http.client.HttpClientConfigDefinition.*;
@@ -633,6 +633,7 @@ class OkHttpClientTest {
             assertThat(httpResponse.getHeaders().get(CONTENT_TYPE).get(0)).isEqualTo(response.header(CONTENT_TYPE));
 
         }
+
         @Test
         void test_build_response_with_multipart_inline() throws IOException {
 
@@ -843,7 +844,7 @@ class OkHttpClientTest {
             //call web service
             for (int i = 0; i < 10; i++) {
                 HttpExchange httpExchange1 = client.call(httpRequest, new AtomicInteger(1)).get();
-                assertThat(httpExchange1.getHttpResponse().getStatusCode()).isEqualTo(200);
+                assertThat(httpExchange1.getResponse().getStatusCode()).isEqualTo(200);
                 exchanges.add(httpExchange1);
             }
             stopwatch.stop();
@@ -890,7 +891,7 @@ class OkHttpClientTest {
             //call web service
             for (int i = 0; i < 10; i++) {
                 HttpExchange httpExchange1 = client.call(httpRequest, new AtomicInteger(1)).get();
-                assertThat(httpExchange1.getHttpResponse().getStatusCode()).isEqualTo(200);
+                assertThat(httpExchange1.getResponse().getStatusCode()).isEqualTo(200);
                 exchanges.add(httpExchange1);
             }
             stopwatch.stop();
@@ -937,7 +938,7 @@ class OkHttpClientTest {
             //call web service
             for (int i = 0; i < 10; i++) {
                 HttpExchange httpExchange1 = client.call(httpRequest, new AtomicInteger(1)).get();
-                assertThat(httpExchange1.getHttpResponse().getStatusCode()).isEqualTo(200);
+                assertThat(httpExchange1.getResponse().getStatusCode()).isEqualTo(200);
                 exchanges.add(httpExchange1);
             }
             stopwatch.stop();
@@ -982,7 +983,7 @@ class OkHttpClientTest {
             //call web service
             for (int i = 0; i < 10; i++) {
                 HttpExchange httpExchange1 = client.call(httpRequest, new AtomicInteger(1)).get();
-                assertThat(httpExchange1.getHttpResponse().getStatusCode()).isEqualTo(200);
+                assertThat(httpExchange1.getResponse().getStatusCode()).isEqualTo(200);
                 exchanges.add(httpExchange1);
             }
             stopwatch.stop();
@@ -1026,7 +1027,7 @@ class OkHttpClientTest {
             //call web service
             for (int i = 0; i < 10; i++) {
                 HttpExchange httpExchange1 = client.call(httpRequest, new AtomicInteger(1)).get();
-                assertThat(httpExchange1.getHttpResponse().getStatusCode()).isEqualTo(200);
+                assertThat(httpExchange1.getResponse().getStatusCode()).isEqualTo(200);
                 exchanges.add(httpExchange1);
             }
             stopwatch.stop();
@@ -1073,10 +1074,10 @@ class OkHttpClientTest {
             //call web service
             for (int i = 0; i < 5; i++) {
                 HttpExchange httpExchange1 = client1.call(httpRequest, new AtomicInteger(1)).get();
-                assertThat(httpExchange1.getHttpResponse().getStatusCode()).isEqualTo(200);
+                assertThat(httpExchange1.getResponse().getStatusCode()).isEqualTo(200);
                 exchanges.add(httpExchange1);
                 HttpExchange httpExchange2 = client2.call(httpRequest, new AtomicInteger(1)).get();
-                assertThat(httpExchange2.getHttpResponse().getStatusCode()).isEqualTo(200);
+                assertThat(httpExchange2.getResponse().getStatusCode()).isEqualTo(200);
                 exchanges.add(httpExchange2);
             }
             stopwatch.stop();
@@ -1122,10 +1123,10 @@ class OkHttpClientTest {
             //call web service
             for (int i = 0; i < 5; i++) {
                 HttpExchange httpExchange1 = client1.call(httpRequest, new AtomicInteger(1)).get();
-                assertThat(httpExchange1.getHttpResponse().getStatusCode()).isEqualTo(200);
+                assertThat(httpExchange1.getResponse().getStatusCode()).isEqualTo(200);
                 exchanges.add(httpExchange1);
                 HttpExchange httpExchange2 = client2.call(httpRequest, new AtomicInteger(1)).get();
-                assertThat(httpExchange2.getHttpResponse().getStatusCode()).isEqualTo(200);
+                assertThat(httpExchange2.getResponse().getStatusCode()).isEqualTo(200);
                 exchanges.add(httpExchange2);
             }
             stopwatch.stop();
@@ -1196,7 +1197,7 @@ class OkHttpClientTest {
                     );
 
             HttpExchange httpExchange1 = client.call(httpRequest, new AtomicInteger(1)).get();
-            assertThat(httpExchange1.getHttpResponse().getStatusCode()).isEqualTo(200);
+            assertThat(httpExchange1.getResponse().getStatusCode()).isEqualTo(200);
         }
 
         @Test
@@ -1237,7 +1238,7 @@ class OkHttpClientTest {
                     );
 
             HttpExchange httpExchange1 = client.call(httpRequest, new AtomicInteger(1)).get();
-            assertThat(httpExchange1.getHttpResponse().getStatusCode()).isEqualTo(200);
+            assertThat(httpExchange1.getResponse().getStatusCode()).isEqualTo(200);
 
 
         }
@@ -1319,9 +1320,9 @@ class OkHttpClientTest {
 
 
             HttpExchange httpExchange1 = client.call(httpRequest, new AtomicInteger(1)).get();
-            assertThat(httpExchange1.getHttpResponse().getStatusCode()).isEqualTo(200);
+            assertThat(httpExchange1.getResponse().getStatusCode()).isEqualTo(200);
             HttpExchange httpExchange2 = client.call(httpRequest, new AtomicInteger(1)).get();
-            assertThat(httpExchange2.getHttpResponse().getStatusCode()).isEqualTo(200);
+            assertThat(httpExchange2.getResponse().getStatusCode()).isEqualTo(200);
         }
 
         @Test
@@ -1446,10 +1447,10 @@ class OkHttpClientTest {
 
 
             HttpExchange httpExchange1 = client.call(httpRequest, new AtomicInteger(1)).get();
-            assertThat(httpExchange1.getHttpResponse().getStatusCode()).isEqualTo(200);
+            assertThat(httpExchange1.getResponse().getStatusCode()).isEqualTo(200);
 
             HttpExchange httpExchange2 = client.call(httpRequest2, new AtomicInteger(1)).get();
-            assertThat(httpExchange2.getHttpResponse().getStatusCode()).isEqualTo(200);
+            assertThat(httpExchange2.getResponse().getStatusCode()).isEqualTo(200);
 
         }
 
@@ -1554,7 +1555,7 @@ class OkHttpClientTest {
             OkHttpClient client = factory.build(config, null, new Random(), null, null, getCompositeMeterRegistry());
 
             HttpExchange httpExchange1 = client.call(httpRequest, new AtomicInteger(1)).get();
-            assertThat(httpExchange1.getHttpResponse().getStatusCode()).isEqualTo(200);
+            assertThat(httpExchange1.getResponse().getStatusCode()).isEqualTo(200);
 
         }
 
@@ -1627,9 +1628,9 @@ class OkHttpClientTest {
                     );
 
             HttpExchange httpExchange1 = client.call(httpRequest, new AtomicInteger(1)).get();
-            assertThat(httpExchange1.getHttpResponse().getStatusCode()).isEqualTo(200);
+            assertThat(httpExchange1.getResponse().getStatusCode()).isEqualTo(200);
             HttpExchange httpExchange2 = client.call(httpRequest, new AtomicInteger(1)).get();
-            assertThat(httpExchange2.getHttpResponse().getStatusCode()).isEqualTo(200);
+            assertThat(httpExchange2.getResponse().getStatusCode()).isEqualTo(200);
 
         }
 
@@ -1706,9 +1707,9 @@ class OkHttpClientTest {
                     );
 
             HttpExchange httpExchange1 = client.call(httpRequest, new AtomicInteger(1)).get();
-            assertThat(httpExchange1.getHttpResponse().getStatusCode()).isEqualTo(200);
+            assertThat(httpExchange1.getResponse().getStatusCode()).isEqualTo(200);
             HttpExchange httpExchange2 = client.call(httpRequest, new AtomicInteger(1)).get();
-            assertThat(httpExchange2.getHttpResponse().getStatusCode()).isEqualTo(200);
+            assertThat(httpExchange2.getResponse().getStatusCode()).isEqualTo(200);
 
         }
 
@@ -1809,9 +1810,9 @@ class OkHttpClientTest {
                     );
 
             HttpExchange httpExchange1 = client.call(httpRequest, new AtomicInteger(1)).get();
-            assertThat(httpExchange1.getHttpResponse().getStatusCode()).isEqualTo(200);
+            assertThat(httpExchange1.getResponse().getStatusCode()).isEqualTo(200);
             HttpExchange httpExchange2 = client.call(httpRequest, new AtomicInteger(1)).get();
-            assertThat(httpExchange2.getHttpResponse().getStatusCode()).isEqualTo(200);
+            assertThat(httpExchange2.getResponse().getStatusCode()).isEqualTo(200);
 
         }
 
@@ -1985,9 +1986,9 @@ class OkHttpClientTest {
                     );
 
             HttpExchange httpExchange1 = client.call(httpRequest, new AtomicInteger(1)).get();
-            assertThat(httpExchange1.getHttpResponse().getStatusCode()).isEqualTo(200);
+            assertThat(httpExchange1.getResponse().getStatusCode()).isEqualTo(200);
             HttpExchange httpExchange2 = client.call(httpRequest, new AtomicInteger(1)).get();
-            assertThat(httpExchange2.getHttpResponse().getStatusCode()).isEqualTo(200);
+            assertThat(httpExchange2.getResponse().getStatusCode()).isEqualTo(200);
 
         }
 
@@ -2042,9 +2043,9 @@ class OkHttpClientTest {
                     );
 
             HttpExchange httpExchange1 = client.call(httpRequest, new AtomicInteger(1)).get();
-            assertThat(httpExchange1.getHttpResponse().getStatusCode()).isEqualTo(200);
+            assertThat(httpExchange1.getResponse().getStatusCode()).isEqualTo(200);
             HttpExchange httpExchange2 = client.call(httpRequest, new AtomicInteger(1)).get();
-            assertThat(httpExchange2.getHttpResponse().getStatusCode()).isEqualTo(200);
+            assertThat(httpExchange2.getResponse().getStatusCode()).isEqualTo(200);
         }
 
         @Test
@@ -2103,9 +2104,9 @@ class OkHttpClientTest {
                     );
 
             HttpExchange httpExchange1 = client.call(httpRequest, new AtomicInteger(1)).get();
-            assertThat(httpExchange1.getHttpResponse().getStatusCode()).isEqualTo(200);
+            assertThat(httpExchange1.getResponse().getStatusCode()).isEqualTo(200);
             HttpExchange httpExchange2 = client.call(httpRequest, new AtomicInteger(1)).get();
-            assertThat(httpExchange2.getHttpResponse().getStatusCode()).isEqualTo(200);
+            assertThat(httpExchange2.getResponse().getStatusCode()).isEqualTo(200);
         }
 
 
@@ -2137,7 +2138,7 @@ class OkHttpClientTest {
             Map<String, String> config = Maps.newHashMap();
             config.put(CONFIGURATION_ID, "default");
             config.put(OKHTTP_DOH_ACTIVATE, "true");
-            config.put(OKHTTP_DOH_BOOTSTRAP_DNS_HOSTS,  "1.1.1.2,1.0.0.2");
+            config.put(OKHTTP_DOH_BOOTSTRAP_DNS_HOSTS, "1.1.1.2,1.0.0.2");
             CompositeMeterRegistry compositeMeterRegistry = getCompositeMeterRegistry();
             Random random = new Random();
             Assertions.assertThrows(IllegalStateException.class, () -> factory.build(config, null, random, null, null, compositeMeterRegistry));
@@ -2150,7 +2151,7 @@ class OkHttpClientTest {
             config.put(CONFIGURATION_ID, "default");
             config.put(OKHTTP_DOH_ACTIVATE, "true");
             config.put(OKHTTP_DOH_URL, "https://cloudflare-dns.com/dns-query");
-            config.put(OKHTTP_DOH_BOOTSTRAP_DNS_HOSTS,  "1.1.1.2,1.0.0.2");
+            config.put(OKHTTP_DOH_BOOTSTRAP_DNS_HOSTS, "1.1.1.2,1.0.0.2");
             Random random = new Random();
             OkHttpClient client = factory.build(config, null, random, null, null, getCompositeMeterRegistry());
 
@@ -2159,7 +2160,7 @@ class OkHttpClientTest {
                     HttpRequest.Method.GET
             );
             HttpExchange httpExchange = client.call(httpRequest, new AtomicInteger(1)).get();
-            HttpResponse httpResponse = httpExchange.getHttpResponse();
+            HttpResponse httpResponse = httpExchange.getResponse();
             assertThat(httpResponse.getStatusCode()).isEqualTo(200);
         }
 
@@ -2179,7 +2180,7 @@ class OkHttpClientTest {
                     HttpRequest.Method.GET
             );
             HttpExchange httpExchange = client.call(httpRequest, new AtomicInteger(1)).get();
-            HttpResponse httpResponse = httpExchange.getHttpResponse();
+            HttpResponse httpResponse = httpExchange.getResponse();
             assertThat(httpResponse.getStatusCode()).isEqualTo(200);
         }
 
@@ -2191,7 +2192,7 @@ class OkHttpClientTest {
             config.put(OKHTTP_DOH_ACTIVATE, "true");
             config.put(OKHTTP_DOH_URL, "https://cloudflare-dns.com/dns-query");
             config.put(OKHTTP_DOH_USE_POST_METHOD, "true");
-            config.put(OKHTTP_DOH_BOOTSTRAP_DNS_HOSTS,  "1.1.1.2,1.0.0.2");
+            config.put(OKHTTP_DOH_BOOTSTRAP_DNS_HOSTS, "1.1.1.2,1.0.0.2");
             OkHttpClient client = factory.build(config, null, new Random(), null, null, getCompositeMeterRegistry());
 
             HttpRequest httpRequest = new HttpRequest(
@@ -2199,7 +2200,7 @@ class OkHttpClientTest {
                     HttpRequest.Method.GET
             );
             HttpExchange httpExchange = client.call(httpRequest, new AtomicInteger(1)).get();
-            HttpResponse httpResponse = httpExchange.getHttpResponse();
+            HttpResponse httpResponse = httpExchange.getResponse();
             assertThat(httpResponse.getStatusCode()).isEqualTo(200);
         }
 
@@ -2211,7 +2212,7 @@ class OkHttpClientTest {
             config.put(OKHTTP_DOH_ACTIVATE, "true");
             config.put(OKHTTP_DOH_RESOLVE_PUBLIC_ADDRESSES, "false");
             config.put(OKHTTP_DOH_URL, "https://cloudflare-dns.com/dns-query");
-            config.put(OKHTTP_DOH_BOOTSTRAP_DNS_HOSTS,  "1.1.1.2,1.0.0.2");
+            config.put(OKHTTP_DOH_BOOTSTRAP_DNS_HOSTS, "1.1.1.2,1.0.0.2");
             OkHttpClient client = factory.build(config, null, new Random(), null, null, getCompositeMeterRegistry());
 
             HttpRequest httpRequest = new HttpRequest(
@@ -2219,7 +2220,7 @@ class OkHttpClientTest {
                     HttpRequest.Method.GET
             );
             HttpExchange httpExchange = client.call(httpRequest, new AtomicInteger(1)).get();
-            HttpResponse httpResponse = httpExchange.getHttpResponse();
+            HttpResponse httpResponse = httpExchange.getResponse();
             assertThat(httpResponse.getStatusCode()).isEqualTo(400);
             Map<String, List<String>> responseHeaders = httpResponse.getHeaders();
             assertThat(responseHeaders.get(THROWABLE_CLASS)).contains("java.net.UnknownHostException");
@@ -2234,7 +2235,7 @@ class OkHttpClientTest {
             config.put(OKHTTP_DOH_ACTIVATE, "true");
             config.put(OKHTTP_DOH_RESOLVE_PRIVATE_ADDRESSES, "false");
             config.put(OKHTTP_DOH_URL, "https://cloudflare-dns.com/dns-query");
-            config.put(OKHTTP_DOH_BOOTSTRAP_DNS_HOSTS,  "1.1.1.2,1.0.0.2");
+            config.put(OKHTTP_DOH_BOOTSTRAP_DNS_HOSTS, "1.1.1.2,1.0.0.2");
             OkHttpClient client = factory.build(config, null, new Random(), null, null, getCompositeMeterRegistry());
 
             HttpRequest httpRequest = new HttpRequest(
@@ -2242,7 +2243,7 @@ class OkHttpClientTest {
                     HttpRequest.Method.GET
             );
             HttpExchange httpExchange = client.call(httpRequest, new AtomicInteger(1)).get();
-            HttpResponse httpResponse = httpExchange.getHttpResponse();
+            HttpResponse httpResponse = httpExchange.getResponse();
             assertThat(httpResponse.getStatusCode()).isEqualTo(400);
             Map<String, List<String>> responseHeaders = httpResponse.getHeaders();
             assertThat(responseHeaders.get(THROWABLE_CLASS)).contains("java.net.UnknownHostException");
@@ -2279,7 +2280,7 @@ class OkHttpClientTest {
                     HttpRequest.Method.GET
             );
             HttpExchange httpExchange = client.call(httpRequest, new AtomicInteger(1)).get();
-            HttpResponse httpResponse = httpExchange.getHttpResponse();
+            HttpResponse httpResponse = httpExchange.getResponse();
             assertThat(httpResponse.getStatusCode()).isEqualTo(200);
         }
 
@@ -2291,7 +2292,7 @@ class OkHttpClientTest {
             config.put(CONFIGURATION_ID, "default");
             config.put(OKHTTP_DOH_ACTIVATE, "true");
             config.put(OKHTTP_DOH_URL, "https://cloudflare-dns.com/dns-query");
-            config.put(OKHTTP_DOH_BOOTSTRAP_DNS_HOSTS,  "1.1.1.2,1.0.0.2");
+            config.put(OKHTTP_DOH_BOOTSTRAP_DNS_HOSTS, "1.1.1.2,1.0.0.2");
             OkHttpClient client = factory.build(config, null, new Random(), null, null, getCompositeMeterRegistry());
 
             HttpRequest httpRequest = new HttpRequest(
@@ -2299,7 +2300,7 @@ class OkHttpClientTest {
                     HttpRequest.Method.GET
             );
             HttpExchange httpExchange = client.call(httpRequest, new AtomicInteger(1)).get();
-            HttpResponse httpResponse = httpExchange.getHttpResponse();
+            HttpResponse httpResponse = httpExchange.getResponse();
             assertThat(httpResponse.getStatusCode()).isEqualTo(400);
             Map<String, List<String>> responseHeaders = httpResponse.getHeaders();
             assertThat(responseHeaders.get(THROWABLE_CLASS)).contains("java.net.UnknownHostException");
@@ -2328,7 +2329,7 @@ class OkHttpClientTest {
             config.put(OKHTTP_DOH_ACTIVATE, "true");
             config.put(OKHTTP_DOH_URL, "https://yahoo.com");
             Random random = new Random();
-            Assertions.assertDoesNotThrow(() -> factory.build(config, null,random, null, null, getCompositeMeterRegistry()));
+            Assertions.assertDoesNotThrow(() -> factory.build(config, null, random, null, null, getCompositeMeterRegistry()));
 
 
         }
@@ -2394,9 +2395,9 @@ class OkHttpClientTest {
 
             //when
             HttpExchange httpExchange1 = client.call(httpRequest, new AtomicInteger(1)).get();
-            assertThat(httpExchange1.getHttpResponse().getStatusCode()).isEqualTo(200);
+            assertThat(httpExchange1.getResponse().getStatusCode()).isEqualTo(200);
             HttpExchange httpExchange2 = client.call(httpRequest, new AtomicInteger(1)).get();
-            assertThat(httpExchange2.getHttpResponse().getStatusCode()).isEqualTo(200);
+            assertThat(httpExchange2.getResponse().getStatusCode()).isEqualTo(200);
 
 
         }
@@ -2446,10 +2447,10 @@ class OkHttpClientTest {
 
             //when
             HttpExchange httpExchange1 = client.call(httpRequest, new AtomicInteger(1)).get();
-            assertThat(httpExchange1.getHttpResponse().getStatusCode()).isEqualTo(200);
+            assertThat(httpExchange1.getResponse().getStatusCode()).isEqualTo(200);
             HttpExchange httpExchange2 = client.call(httpRequest, new AtomicInteger(1)).get();
             //then
-            assertThat(httpExchange2.getHttpResponse().getStatusCode()).isEqualTo(200);
+            assertThat(httpExchange2.getResponse().getStatusCode()).isEqualTo(200);
 
         }
 
@@ -2503,15 +2504,51 @@ class OkHttpClientTest {
                     );
 
             HttpExchange httpExchange1 = client.call(httpRequest, new AtomicInteger(1)).get();
-            assertThat(httpExchange1.getHttpResponse().getStatusCode()).isEqualTo(200);
+            assertThat(httpExchange1.getResponse().getStatusCode()).isEqualTo(200);
             HttpExchange httpExchange2 = client.call(httpRequest, new AtomicInteger(1)).get();
-            assertThat(httpExchange2.getHttpResponse().getStatusCode()).isEqualTo(200);
+            assertThat(httpExchange2.getResponse().getStatusCode()).isEqualTo(200);
             HttpExchange httpExchange3 = client2.call(httpRequest, new AtomicInteger(1)).get();
-            assertThat(httpExchange3.getHttpResponse().getStatusCode()).isEqualTo(200);
+            assertThat(httpExchange3.getResponse().getStatusCode()).isEqualTo(200);
             HttpExchange httpExchange4 = client2.call(httpRequest, new AtomicInteger(1)).get();
-            assertThat(httpExchange4.getHttpResponse().getStatusCode()).isEqualTo(200);
+            assertThat(httpExchange4.getResponse().getStatusCode()).isEqualTo(200);
 
             assertThat(client.getInternalClient().connectionPool()).isEqualTo(client2.getInternalClient().connectionPool());
         }
+    }
+
+
+    @Nested
+    class TestCustomizeForUser {
+
+        @Test
+        void test_two_times_same_user(){
+            Map<String, String> config = Maps.newHashMap();
+            OkHttpClient client = factory.build(config, null, new Random(), null, null, getCompositeMeterRegistry());
+            HttpClient<Request, Response> client1 = client.customizeForUser("1");
+            HttpClient<Request, Response> client2 = client.customizeForUser("1");
+            assertThat(client1).isSameAs(client2);
+        }
+
+        @Test
+        void test_for_two_different_users() {
+            Map<String, String> config = Maps.newHashMap();
+            OkHttpClient client = factory.build(config, null, new Random(), null, null, getCompositeMeterRegistry());
+            HttpClient<Request, Response> client1 = client.customizeForUser("1");
+            HttpClient<Request, Response> client2 = client.customizeForUser("2");
+            assertThat(client1).isNotSameAs(client2);
+        }
+
+        @Test
+        void test_for_two_different_users_with_cookie_policy_set_to_none() {
+            Map<String, String> config = Maps.newHashMap();
+            config.put(HTTP_COOKIE_POLICY,ACCEPT_NONE);
+            OkHttpClient client = factory.build(config, null, new Random(), null, null, getCompositeMeterRegistry());
+            HttpClient<Request, Response> client1 = client.customizeForUser("1");
+            assertThat(client1.getCookiePolicy()).isEqualTo(CookiePolicy.ACCEPT_NONE);
+            HttpClient<Request, Response> client2 = client.customizeForUser("2");
+            assertThat(client2.getCookiePolicy()).isEqualTo(CookiePolicy.ACCEPT_NONE);
+            assertThat(client1).isNotSameAs(client2);
+        }
+
     }
 }

@@ -1,7 +1,6 @@
 package io.github.clescot.kafka.connect.http.sink;
 
 import com.google.common.base.Preconditions;
-import io.github.clescot.kafka.connect.http.core.VersionUtils;
 import io.github.clescot.kafka.connect.http.HttpTask;
 import io.github.clescot.kafka.connect.http.MessageSplitter;
 import io.github.clescot.kafka.connect.http.MessageSplitterFactory;
@@ -309,7 +308,7 @@ public abstract class HttpSinkTask<C extends HttpClient<R, S>, R, S> extends Sin
     private ProducerRecord<String, Object> mapToRecord(HttpExchange httpExchange, String producerContent, String targetTopic) {
         ProducerRecord<String, Object> myRecord;
         if ("response".equalsIgnoreCase(producerContent)) {
-            myRecord = new ProducerRecord<>(targetTopic, httpExchange.getHttpResponse());
+            myRecord = new ProducerRecord<>(targetTopic, httpExchange.getResponse());
         } else {
             myRecord = new ProducerRecord<>(targetTopic, httpExchange);
         }

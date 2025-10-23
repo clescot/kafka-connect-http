@@ -95,6 +95,12 @@ public class HttpConfigDefinition {
     public static final String REQUEST_MAPPER_DEFAULT_SPLIT_LIMIT_DOC = "the number of times the pattern is applied, according to the split function from the java.util.regex.Pattern class (https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/regex/Pattern.html). can be positive, zero, or negative.";
 
 
+
+    //message status limit
+    public static final String HTTP_COOKIE_POLICY = HTTP_CLIENT_PREFIX + "cookie.policy";
+    public static final String CONFIG_DEFAULT_HTTP_COOKIE_POLICY = DEFAULT_CONFIGURATION_PREFIX + HTTP_COOKIE_POLICY;
+    public static final String CONFIG_DEFAULT_HTTP_COOKIE_POLICY_DOC = "define the cookie policy. accepted values are 'ACCEPT_NONE','ACCEPT_ORIGINAL_SERVER', or 'ACCEPT_ALL' (the default value)";
+
     //retry policy
     public static final String RETRY_POLICY_PREFIX = "retry.policy.";
 
@@ -309,6 +315,8 @@ public class HttpConfigDefinition {
     private ConfigDef appendConfigurationConfigDef(ConfigDef configDef, String configurationName) {
         String prefix = "config." + configurationName + ".";
         ConfigDef configDef1 = configDef//http client implementation settings
+                //cookie policy settings
+                .define(prefix + HTTP_COOKIE_POLICY, ConfigDef.Type.STRING, CONFIG_DEFAULT_HTTP_COOKIE_POLICY, ConfigDef.Importance.LOW, CONFIG_DEFAULT_HTTP_COOKIE_POLICY_DOC)
                 //retry settings
                 .define(prefix + SUCCESS_RESPONSE_CODE_REGEX, ConfigDef.Type.STRING, CONFIG_DEFAULT_DEFAULT_SUCCESS_RESPONSE_CODE_REGEX, ConfigDef.Importance.LOW, CONFIG_DEFAULT_SUCCESS_RESPONSE_CODE_REGEX_DOC)
                 .define(prefix + RETRY_RESPONSE_CODE_REGEX, ConfigDef.Type.STRING, DEFAULT_DEFAULT_RETRY_RESPONSE_CODE_REGEX, ConfigDef.Importance.LOW, DEFAULT_RETRY_RESPONSE_CODE_REGEX_DOC)

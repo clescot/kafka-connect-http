@@ -8,6 +8,7 @@ import de.sstoehr.harreader.model.*;
 import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.data.SchemaBuilder;
 import org.apache.kafka.connect.data.Struct;
+import org.jetbrains.annotations.NotNull;
 
 import java.io.Serial;
 import java.io.Serializable;
@@ -22,7 +23,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import static io.github.clescot.kafka.connect.http.core.VersionUtils.VERSION;
 
 
-public class HttpExchange implements Exchange,Cloneable, Serializable {
+public class HttpExchange implements Exchange<HttpRequest,HttpResponse>,Cloneable, Serializable {
     @Serial
     private static final long serialVersionUID = 1L;
     public static final int HTTP_EXCHANGE_VERSION = 2;
@@ -74,7 +75,7 @@ public class HttpExchange implements Exchange,Cloneable, Serializable {
     private HttpResponse httpResponse;
     private HttpRequest httpRequest;
     @JsonProperty
-    private Map<String,String> attributes = Maps.newHashMap();
+    private Map<String,Object> attributes = Maps.newHashMap();
     private Map<String,Long> timings = Maps.newHashMap();
 
     protected HttpExchange() {
@@ -116,11 +117,13 @@ public class HttpExchange implements Exchange,Cloneable, Serializable {
         this.success = success;
     }
 
-    public HttpRequest getHttpRequest() {
+    @Override
+    public HttpRequest getRequest() {
         return httpRequest;
     }
 
-    public HttpResponse getHttpResponse() {
+    @Override
+    public HttpResponse getResponse() {
         return httpResponse;
     }
 
@@ -136,11 +139,11 @@ public class HttpExchange implements Exchange,Cloneable, Serializable {
         this.attempts = attempts;
     }
 
-    protected void setHttpResponse(HttpResponse httpResponse) {
+    protected void setResponse(HttpResponse httpResponse) {
         this.httpResponse = httpResponse;
     }
 
-    protected void setHttpRequest(HttpRequest httpRequest) {
+    protected void setRequest(HttpRequest httpRequest) {
         this.httpRequest = httpRequest;
     }
 
@@ -160,8 +163,8 @@ public class HttpExchange implements Exchange,Cloneable, Serializable {
                 ", moment=" + moment +
                 ", attempts=" + attempts +
                 ", success=" + success +
-                ", httpRequest=" + httpRequest +
-                ", httpResponse=" + httpResponse +
+                ", request=" + httpRequest +
+                ", response=" + httpResponse +
                 ", timings=" + timings +
                 '}';
     }
@@ -281,8 +284,8 @@ public class HttpExchange implements Exchange,Cloneable, Serializable {
         HarEntry.HarEntryBuilder harEntryBuilder = HarEntry.builder();
         harEntryBuilder.startedDateTime(this.getMoment().toZonedDateTime());
         harEntryBuilder.time(this.getDurationInMillis().intValue());
-        harEntryBuilder.request(this.getHttpRequest().toHarRequest(this.getHttpResponse().getProtocol()));
-        harEntryBuilder.response(this.getHttpResponse().toHarResponse());
+        harEntryBuilder.request(this.getRequest().toHarRequest(this.getResponse().getProtocol()));
+        harEntryBuilder.response(this.getResponse().toHarResponse());
         if(!Strings.isNullOrEmpty(comment)) {
             harEntryBuilder.comment(comment);
         }
@@ -385,20 +388,7 @@ public class HttpExchange implements Exchange,Cloneable, Serializable {
     public static Har toHar(HttpExchange... exchanges){
 
         Har.HarBuilder harBuilder = Har.builder();
-        HarLog.HarLogBuilder harLogBuilder = HarLog.builder();
-        harLogBuilder.version(HAR_LOG_VERSION);
-
-        //browser
-        HarCreatorBrowser.HarCreatorBrowserBuilder creatorBrowserBuilder = HarCreatorBrowser.builder();
-        creatorBrowserBuilder.name(KAFKA_CONNECT_HTTP);
-        creatorBrowserBuilder.version(VERSION);
-        harLogBuilder.browser(creatorBrowserBuilder.build());
-
-        //creator
-        HarCreatorBrowser.HarCreatorBrowserBuilder creatorBuilder = HarCreatorBrowser.builder();
-        creatorBuilder.name(KAFKA_CONNECT_HTTP);
-        creatorBuilder.version(VERSION);
-        harLogBuilder.creator(creatorBuilder.build());
+        HarLog.HarLogBuilder harLogBuilder = getHarLogBuilder();
         for (int i=0;i<exchanges.length;i++) {
             HttpExchange exchange = exchanges[i];
             harLogBuilder.entry(exchange.toHarEntry(i+1,null,null,null));
@@ -418,6 +408,24 @@ public class HttpExchange implements Exchange,Cloneable, Serializable {
         return harBuilder.build();
     }
 
+    private static @NotNull HarLog.HarLogBuilder getHarLogBuilder() {
+        HarLog.HarLogBuilder harLogBuilder = HarLog.builder();
+        harLogBuilder.version(HAR_LOG_VERSION);
+
+        //browser
+        HarCreatorBrowser.HarCreatorBrowserBuilder creatorBrowserBuilder = HarCreatorBrowser.builder();
+        creatorBrowserBuilder.name(KAFKA_CONNECT_HTTP);
+        creatorBrowserBuilder.version(VERSION);
+        harLogBuilder.browser(creatorBrowserBuilder.build());
+
+        //creator
+        HarCreatorBrowser.HarCreatorBrowserBuilder creatorBuilder = HarCreatorBrowser.builder();
+        creatorBuilder.name(KAFKA_CONNECT_HTTP);
+        creatorBuilder.version(VERSION);
+        harLogBuilder.creator(creatorBuilder.build());
+        return harLogBuilder;
+    }
+
     @Override
     public Object clone() {
             HttpExchange clone = new HttpExchange(httpRequest, httpResponse, durationInMillis, moment, attempts, success);
@@ -427,11 +435,11 @@ public class HttpExchange implements Exchange,Cloneable, Serializable {
     }
 
     @Override
-    public Map<String, String> getAttributes() {
+    public Map<String, Object> getAttributes() {
         return attributes;
     }
 
-    public void setAttributes(Map<String, String> attributes) {
+    public void setAttributes(Map<String, Object> attributes) {
         this.attributes = attributes;
     }
 
@@ -443,7 +451,7 @@ public class HttpExchange implements Exchange,Cloneable, Serializable {
         private boolean success;
         private HttpRequest httpRequest;
         private HttpResponse httpResponse;
-        private Map<String, String> attributes = Maps.newHashMap();
+        private Map<String, Object> attributes = Maps.newHashMap();
         private Map<String, Long> timings = Maps.newHashMap();
 
         private Builder() {
@@ -475,7 +483,7 @@ public class HttpExchange implements Exchange,Cloneable, Serializable {
             return this;
         }
 
-        public Builder withAttributes(Map<String,String> attributes) {
+        public Builder withAttributes(Map<String,Object> attributes) {
             this.attributes = attributes;
             return this;
         }

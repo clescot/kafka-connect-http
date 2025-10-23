@@ -14,6 +14,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.net.ssl.TrustManagerFactory;
+import java.net.CookiePolicy;
 import java.time.OffsetDateTime;
 import java.time.ZoneId;
 import java.util.List;
@@ -45,14 +46,13 @@ public interface HttpClient<NR, NS> extends RequestResponseClient<HttpRequest, N
     String THROWABLE_CLASS = "throwable.class";
     String THROWABLE_MESSAGE = "throwable.message";
 
-
     default HttpExchange buildExchange(HttpRequest request,
                                        HttpResponse response,
                                        Stopwatch stopwatch,
                                        OffsetDateTime now,
                                        AtomicInteger attempts,
                                        boolean success,
-                                       Map<String, String> attributes,
+                                       Map<String, Object> attributes,
                                        Map<String, Long> timings) {
         Preconditions.checkNotNull(request, "'httpRequest' is null");
         return HttpExchange.Builder.anHttpExchange()
@@ -157,6 +157,7 @@ public interface HttpClient<NR, NS> extends RequestResponseClient<HttpRequest, N
 
     HttpClient<NR, NS> customizeForUser(String vuId);
 
+    CookiePolicy getCookiePolicy();
 
     Function<HttpRequest, HttpRequest> getEnrichRequestFunction();
 
@@ -170,11 +171,9 @@ public interface HttpClient<NR, NS> extends RequestResponseClient<HttpRequest, N
 
     Integer getBodyLimit();
 
-
     void setBodyLimit(Integer bodyLimit);
 
     TrustManagerFactory getTrustManagerFactory();
-
 
     void setTrustManagerFactory(TrustManagerFactory trustManagerFactory);
 

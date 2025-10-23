@@ -40,6 +40,7 @@ public class OkHttpClient extends AbstractHttpClient<Request, Response> {
 
     private final okhttp3.OkHttpClient client;
     private static final Logger LOGGER = LoggerFactory.getLogger(OkHttpClient.class);
+    private final Map<String, OkHttpClient> clientsPerVuId = Maps.newHashMap();
 
 
     public OkHttpClient(Map<String, String> config,
@@ -93,6 +94,19 @@ public class OkHttpClient extends AbstractHttpClient<Request, Response> {
             }
         }
         return request;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (o == null || getClass() != o.getClass()) return false;
+        if (!super.equals(o)) return false;
+        OkHttpClient that = (OkHttpClient) o;
+        return Objects.equals(this.getConfig(), that.getConfig());
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(super.hashCode(), client);
     }
 
     @Nullable
@@ -424,12 +438,20 @@ public class OkHttpClient extends AbstractHttpClient<Request, Response> {
      */
     @Override
     public HttpClient<Request, Response> customizeForUser(String vuId) {
-        return new OkHttpClient(getConfig(), customizeOkHttpClientForUser(vuId,client),random);
+
+        if(!clientsPerVuId.containsKey(vuId)){
+            OkHttpClient okHttpClient = new OkHttpClient(getConfig(), customizeOkHttpClientForUser(vuId, client), random);
+            clientsPerVuId.put(vuId,okHttpClient);
+            return okHttpClient;
+        }else{
+            return clientsPerVuId.get(vuId);
+        }
     }
 
 
     /**
      * customize the okhttp client for the user.
+     * create a CookieJar dedicated to the user, and bound it to a okhttp instance, with the configuration.
      * @param vuId
      * @param client
      * @return
@@ -437,11 +459,10 @@ public class OkHttpClient extends AbstractHttpClient<Request, Response> {
     private okhttp3.OkHttpClient customizeOkHttpClientForUser(String vuId,okhttp3.OkHttpClient client) {
         okhttp3.OkHttpClient.Builder builder = client.newBuilder();
         CookieStore cookieStore = null;//an internal InMemoryCookieStore() will be used if null
-        CookiePolicy cookiePolicy = CookiePolicy.ACCEPT_ALL;
+        CookiePolicy cookiePolicy = getCookiePolicy();
         CookieManager cookieManager = new CookieManager(cookieStore,cookiePolicy);
         CookieJar cookieJar = new OkHttpCookieJar(cookieManager);
         builder.cookieJar(cookieJar);
-        //we could customize the client for the user here
         return builder.build();
     }
 

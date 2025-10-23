@@ -48,6 +48,12 @@ public class RequestGrouper<T> {
         return this.predicate.test(httpRequest);
     }
 
+    /**
+     *
+     * @param entries if records are aggregated, the return aggregated pair from the list is linked with the record from the first request
+     * aggregated.
+     * @return
+     */
     public List<Pair<T, HttpRequest>> group(List<Pair<T, HttpRequest>> entries){
 
         if(entries==null || entries.isEmpty()){
@@ -59,12 +65,15 @@ public class RequestGrouper<T> {
         int consumed = 0;
         StringBuilder builder = new StringBuilder(aggregatedBody);
         boolean interrupted=false;
+
         List<Pair<T, HttpRequest>> matchingEntries = entries.stream()
                 .filter(pair-> this.matches(pair.getRight()))
                 .toList();
+
         List<Pair<T, HttpRequest>> nonMatchingEntries = entries.stream()
                 .filter(pair-> !this.matches(pair.getRight()))
                 .toList();
+
         for (int i = 0; i < matchingEntries.size(); i++) {
             Pair<T, HttpRequest> myEntry = matchingEntries.get(i);
             String part = myEntry.getRight().getBodyAsString();

@@ -98,7 +98,7 @@ public abstract class  AbstractClient<E> implements Client<E> {
         return this.rateLimiter;
     }
 
-    protected Map<String, String> getConfig() {
+    public Map<String, String> getConfig() {
         return config;
     }
 

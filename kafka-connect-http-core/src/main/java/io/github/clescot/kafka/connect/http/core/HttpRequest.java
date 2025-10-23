@@ -7,7 +7,10 @@ import com.google.common.base.MoreObjects;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
-import de.sstoehr.harreader.model.*;
+import de.sstoehr.harreader.model.HarHeader;
+import de.sstoehr.harreader.model.HarPostData;
+import de.sstoehr.harreader.model.HarPostDataParam;
+import de.sstoehr.harreader.model.HarRequest;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.data.SchemaBuilder;
@@ -53,7 +56,7 @@ public class HttpRequest implements Request,Cloneable, Serializable {
     @JsonProperty(defaultValue = "GET")
     private HttpRequest.Method method;
     @JsonProperty
-    private Map<String,String> attributes = Maps.newHashMap();
+    private Map<String,Object> attributes = Maps.newHashMap();
     //regular body
     @JsonProperty
     private Map<String, String> bodyAsForm = Maps.newHashMap();
@@ -391,11 +394,11 @@ public class HttpRequest implements Request,Cloneable, Serializable {
         return bodyAsForm;
     }
 
-    public Map<String, String> getAttributes() {
+    public Map<String, Object> getAttributes() {
         return attributes;
     }
 
-    public void setAttributes(Map<String, String> attributes) {
+    public void setAttributes(Map<String, Object> attributes) {
         this.attributes = attributes;
     }
 

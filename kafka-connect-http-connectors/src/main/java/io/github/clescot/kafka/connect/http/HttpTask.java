@@ -4,7 +4,10 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import dev.failsafe.RetryPolicy;
 import io.github.clescot.kafka.connect.RequestTask;
-import io.github.clescot.kafka.connect.http.client.*;
+import io.github.clescot.kafka.connect.http.client.HttpClient;
+import io.github.clescot.kafka.connect.http.client.HttpClientFactory;
+import io.github.clescot.kafka.connect.http.client.HttpConfiguration;
+import io.github.clescot.kafka.connect.http.client.HttpException;
 import io.github.clescot.kafka.connect.http.core.HttpExchange;
 import io.github.clescot.kafka.connect.http.core.HttpRequest;
 import io.github.clescot.kafka.connect.http.sink.HttpConnectorConfig;
@@ -45,7 +48,7 @@ public class HttpTask<T,C extends HttpClient<NR, NS>, NR, NS> implements Request
 
     private final Map<String,HttpConfiguration<C, NR, NS>> configurations;
     private final RetryPolicy<HttpExchange> retryPolicy;
-    private Map<String,HttpConfiguration<C, NR, NS>> userConfigurations = Maps.newHashMap();
+    private final Map<String,HttpConfiguration<C, NR, NS>> userConfigurations = Maps.newHashMap();
     private static CompositeMeterRegistry meterRegistry;
 
 
@@ -135,7 +138,7 @@ public class HttpTask<T,C extends HttpClient<NR, NS>, NR, NS> implements Request
             clone.setClient(customized);
 
         } catch (CloneNotSupportedException e) {
-            throw new RuntimeException(e);
+            throw new HttpException(e);
         }
         return clone;
     }

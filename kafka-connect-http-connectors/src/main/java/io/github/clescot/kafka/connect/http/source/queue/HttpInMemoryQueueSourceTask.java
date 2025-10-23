@@ -3,7 +3,6 @@ package io.github.clescot.kafka.connect.http.source.queue;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
-import io.github.clescot.kafka.connect.http.core.VersionUtils;
 import io.github.clescot.kafka.connect.http.core.HttpExchange;
 import io.github.clescot.kafka.connect.http.core.HttpResponse;
 import io.github.clescot.kafka.connect.http.core.queue.KafkaRecord;
@@ -66,7 +65,7 @@ public class HttpInMemoryQueueSourceTask extends SourceTask {
 
         Struct struct;
         if("response".equalsIgnoreCase(sourceConfig.getContent())){
-            HttpResponse httpResponse = httpExchange.getHttpResponse();
+            HttpResponse httpResponse = httpExchange.getResponse();
             struct = httpResponse.toStruct();
         }else {
             struct = httpExchange.toStruct();

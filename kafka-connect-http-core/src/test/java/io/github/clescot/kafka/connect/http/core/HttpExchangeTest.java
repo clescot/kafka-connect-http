@@ -105,9 +105,9 @@ public class HttpExchangeTest {
                 HttpExchange httpExchange = fromHar.get(i);
                 HarEntry harEntry = har.log().entries().get(i);
                 assertThat(httpExchange.getDurationInMillis().intValue()).isEqualTo(harEntry.time());
-                assertThat(httpExchange.getHttpRequest().getMethod().name()).isEqualTo(harEntry.request().method());
-                assertThat(httpExchange.getHttpRequest().getUrl()).isEqualTo(harEntry.request().url());
-                assertThat(httpExchange.getHttpResponse().getStatusCode()).isEqualTo(harEntry.response().status());
+                assertThat(httpExchange.getRequest().getMethod().name()).isEqualTo(harEntry.request().method());
+                assertThat(httpExchange.getRequest().getUrl()).isEqualTo(harEntry.request().url());
+                assertThat(httpExchange.getResponse().getStatusCode()).isEqualTo(harEntry.response().status());
             }
             URL resourceYahoo = Thread.currentThread().getContextClassLoader().getResource("yahoo.com.har");
             Har harYahoo = harReader.readFromFile(new File(resourceYahoo.toURI()));
@@ -119,9 +119,9 @@ public class HttpExchangeTest {
                 HttpExchange httpExchange = fromHar.get(i);
                 HarEntry harEntry = har.log().entries().get(i);
                 assertThat(httpExchange.getDurationInMillis().intValue()).isEqualTo(harEntry.time());
-                assertThat(httpExchange.getHttpRequest().getMethod().name()).isEqualTo(harEntry.request().method());
-                assertThat(httpExchange.getHttpRequest().getUrl()).isEqualTo(harEntry.request().url());
-                assertThat(httpExchange.getHttpResponse().getStatusCode()).isEqualTo(harEntry.response().status());
+                assertThat(httpExchange.getRequest().getMethod().name()).isEqualTo(harEntry.request().method());
+                assertThat(httpExchange.getRequest().getUrl()).isEqualTo(harEntry.request().url());
+                assertThat(httpExchange.getResponse().getStatusCode()).isEqualTo(harEntry.response().status());
             }
 
         }
@@ -185,8 +185,8 @@ public class HttpExchangeTest {
             HttpExchange fromHarEntry = HttpExchange.fromHarEntry(harEntry);
             assertThat(fromHarEntry).isNotNull();
             assertThat(fromHarEntry).isEqualTo(httpExchange);
-            assertThat(fromHarEntry.getHttpRequest()).isEqualTo(httpExchange.getHttpRequest());
-            assertThat(fromHarEntry.getHttpResponse()).isEqualTo(httpExchange.getHttpResponse());
+            assertThat(fromHarEntry.getRequest()).isEqualTo(httpExchange.getRequest());
+            assertThat(fromHarEntry.getResponse()).isEqualTo(httpExchange.getResponse());
             assertThat(fromHarEntry.getDurationInMillis()).isEqualTo(httpExchange.getDurationInMillis());
             assertThat(fromHarEntry.getMoment().format(DateTimeFormatter.ISO_ZONED_DATE_TIME))
                     .isEqualTo(httpExchange.getMoment().format(DateTimeFormatter.ISO_ZONED_DATE_TIME));
@@ -311,8 +311,8 @@ public class HttpExchangeTest {
                     new AtomicInteger(2),
                     SUCCESS
             );
-            assertThat(httpExchange.getHttpResponse().getBodyAsString()).isEqualTo(responseBody);
-            assertThat(httpExchange.getHttpResponse().getStatusCode()).isEqualTo(statusCode);
+            assertThat(httpExchange.getResponse().getBodyAsString()).isEqualTo(responseBody);
+            assertThat(httpExchange.getResponse().getStatusCode()).isEqualTo(statusCode);
         }
 
         @Test
@@ -357,8 +357,8 @@ public class HttpExchangeTest {
             byte[] bytes = serializer.serialize(DUMMY_TOPIC, httpExchange);
             assertThat(bytes).isNotEmpty();
             HttpExchange deserializedHttpExchange = deserializer.deserialize(DUMMY_TOPIC, bytes);
-            assertThat(deserializedHttpExchange.getHttpRequest()).isEqualTo(httpExchange.getHttpRequest());
-            assertThat(deserializedHttpExchange.getHttpResponse()).isEqualTo(httpExchange.getHttpResponse());
+            assertThat(deserializedHttpExchange.getRequest()).isEqualTo(httpExchange.getRequest());
+            assertThat(deserializedHttpExchange.getResponse()).isEqualTo(httpExchange.getResponse());
             assertThat(deserializedHttpExchange).isEqualTo(httpExchange);
         }
     }
@@ -376,8 +376,8 @@ public class HttpExchangeTest {
                     SUCCESS);
             HttpExchange clone = (HttpExchange) httpExchange.clone();
             assertThat(clone).isEqualTo(httpExchange);
-            assertThat(clone.getHttpRequest()).isEqualTo(httpExchange.getHttpRequest());
-            assertThat(clone.getHttpResponse()).isEqualTo(httpExchange.getHttpResponse());
+            assertThat(clone.getRequest()).isEqualTo(httpExchange.getRequest());
+            assertThat(clone.getResponse()).isEqualTo(httpExchange.getResponse());
         }
     }
 

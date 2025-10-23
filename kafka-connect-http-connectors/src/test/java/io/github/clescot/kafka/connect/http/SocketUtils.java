@@ -1,6 +1,5 @@
 package io.github.clescot.kafka.connect.http;
 
-import org.awaitility.Awaitility;
 
 import java.io.IOException;
 import java.net.Socket;

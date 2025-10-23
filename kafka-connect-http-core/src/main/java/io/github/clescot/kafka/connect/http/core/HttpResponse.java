@@ -74,7 +74,7 @@ public class HttpResponse implements Response, Cloneable, Serializable {
     @JsonProperty
     private Map<String, List<String>> headers = Maps.newHashMap();
     @JsonProperty
-    private Map<String, String> attributes = Maps.newHashMap();
+    private Map<String, Object> attributes = Maps.newHashMap();
 
     /**
      * only for json deserialization
@@ -378,7 +378,7 @@ public class HttpResponse implements Response, Cloneable, Serializable {
     }
 
     @Override
-    public Map<String, String> getAttributes() {
+    public Map<String, Object> getAttributes() {
         return attributes;
     }
 

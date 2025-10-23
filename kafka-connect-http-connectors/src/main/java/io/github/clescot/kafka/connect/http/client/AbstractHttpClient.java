@@ -4,7 +4,6 @@ import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import io.github.clescot.kafka.connect.AbstractClient;
-import io.github.clescot.kafka.connect.http.core.VersionUtils;
 import io.github.clescot.kafka.connect.http.client.config.*;
 import io.github.clescot.kafka.connect.http.core.HttpExchange;
 import io.github.clescot.kafka.connect.http.core.HttpRequest;
@@ -13,6 +12,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.net.ssl.TrustManagerFactory;
+import java.net.CookiePolicy;
 import java.util.*;
 import java.util.function.Function;
 import java.util.regex.Pattern;
@@ -26,6 +26,9 @@ public abstract class AbstractHttpClient<NR,NS> extends AbstractClient<HttpExcha
     public static final String DEFAULT_HTTP_RESPONSE_MESSAGE_STATUS_LIMIT = "1024";
     public static final String DEFAULT_HTTP_RESPONSE_HEADERS_LIMIT = "10000";
     public static final String DEFAULT_HTTP_RESPONSE_BODY_LIMIT = "100000";
+    public static final String ACCEPT_ALL = "ACCEPT_ALL";
+    public static final String ACCEPT_ORIGINAL_SERVER = "ACCEPT_ORIGINAL_SERVER";
+    public static final String ACCEPT_NONE = "ACCEPT_NONE";
     protected final Random random;
     protected AddSuccessStatusToHttpExchangeFunction addSuccessStatusToHttpExchangeFunction;
 
@@ -38,7 +41,7 @@ public abstract class AbstractHttpClient<NR,NS> extends AbstractClient<HttpExcha
     public static final String USER_AGENT_PROJECT_MODE = "project";
     public static final String USER_AGENT_CUSTOM_MODE = "custom";
     private final Function<HttpRequest, HttpRequest> enrichRequestFunction;
-
+    private final CookiePolicy cookiePolicy;
     //rate limiter
 
     protected AbstractHttpClient(Map<String, String> config,Random random) {
@@ -64,8 +67,18 @@ public abstract class AbstractHttpClient<NR,NS> extends AbstractClient<HttpExcha
         }
         this.enrichRequestFunction = buildEnrichRequestFunction(config,random);
         this.random = random;
+        String cookiePolicyAsString = Optional.ofNullable(config.get(HTTP_COOKIE_POLICY)).orElse(ACCEPT_ALL);
+        this.cookiePolicy = switch (cookiePolicyAsString){
+            case ACCEPT_NONE -> CookiePolicy.ACCEPT_NONE;
+            case ACCEPT_ORIGINAL_SERVER -> CookiePolicy.ACCEPT_ORIGINAL_SERVER;
+            default -> CookiePolicy.ACCEPT_ALL;
+        };
     }
 
+    @Override
+    public CookiePolicy getCookiePolicy() {
+        return cookiePolicy;
+    }
 
     @Override
     public Function<HttpRequest, HttpRequest> getEnrichRequestFunction() {

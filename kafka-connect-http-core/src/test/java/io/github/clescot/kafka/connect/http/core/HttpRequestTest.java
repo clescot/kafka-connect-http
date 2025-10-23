@@ -130,7 +130,7 @@ class HttpRequestTest {
                     "http://www.stuff.com",
                     HttpRequest.Method.GET
             );
-            Map<String, String> attributes = Maps.newHashMap();
+            Map<String, Object> attributes = Maps.newHashMap();
             attributes.put("attr1","value1");
             attributes.put("attr2","value2");
             httpRequest.setAttributes(attributes);
@@ -810,7 +810,7 @@ class HttpRequestTest {
                     "http://www.stuff.com",
                     HttpRequest.Method.GET
             );
-            HashMap<String, String> attributes = Maps.newHashMap();
+            HashMap<String, Object> attributes = Maps.newHashMap();
             attributes.put("attr1","value1");
             attributes.put("attr2","value2");
             httpRequest.setAttributes(attributes);
@@ -833,7 +833,7 @@ class HttpRequestTest {
                     "http://www.stuff.com",
                     HttpRequest.Method.GET
             );
-            HashMap<String, String> attributes = Maps.newHashMap();
+            HashMap<String, Object> attributes = Maps.newHashMap();
             attributes.put("attr1","value1");
             attributes.put("attr2","value2");
             httpRequest.setAttributes(attributes);
@@ -850,7 +850,7 @@ class HttpRequestTest {
                     "http://www.stuff.com",
                     HttpRequest.Method.GET
             );
-            HashMap<String, String> attributes2 = Maps.newHashMap();
+            HashMap<String, Object> attributes2 = Maps.newHashMap();
             attributes2.put("attr1","value1");
             //atttributes2 attr2 has different value
             attributes2.put("attr2","value3");
@@ -1289,7 +1289,7 @@ class HttpRequestTest {
             headers.put("X-stuff", Lists.newArrayList("m-y-value"));
             headers.put("X-correlation-id", Lists.newArrayList("44-999-33-dd"));
             headers.put("X-request-id", Lists.newArrayList("11-999-ff-777"));
-            Map<String,String> attributes = Maps.newHashMap();
+            Map<String,Object> attributes = Maps.newHashMap();
             attributes.put("attr1","value1");
             attributes.put("attr2","value2");
             httpRequest.setAttributes(attributes);
