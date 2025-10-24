@@ -7,6 +7,7 @@ import com.github.tomakehurst.wiremock.http.trafficlistener.ConsoleNotifyingWire
 import com.github.tomakehurst.wiremock.junit5.WireMockExtension;
 import com.github.tomakehurst.wiremock.junit5.WireMockRuntimeInfo;
 import com.google.common.collect.Maps;
+import io.github.clescot.kafka.connect.http.core.queue.QueueFactory;
 import io.github.clescot.kafka.connect.sse.core.SseEvent;
 import org.awaitility.Awaitility;
 import org.junit.jupiter.api.*;
@@ -142,6 +143,8 @@ class SseSourceTaskTest {
         WireMockRuntimeInfo wmRuntimeInfo;
         @BeforeEach
         void setup() {
+            QueueFactory.clearRegistrations();
+            QueueFactory.clearQueueMap();
             sseSourceTask = new SseSourceTask();
             var url1 = "/events1";
             var url2 = "/events2";
