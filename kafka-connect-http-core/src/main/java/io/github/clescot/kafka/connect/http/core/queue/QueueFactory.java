@@ -74,6 +74,9 @@ public class QueueFactory {
     public static void clearRegistrations() {
         consumers.clear();
     }
+    public static void clearQueueMap() {
+        queueMap.clear();
+    }
 
 
 }

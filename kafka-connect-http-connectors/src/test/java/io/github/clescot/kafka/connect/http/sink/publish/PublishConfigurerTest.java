@@ -13,6 +13,7 @@ import org.apache.kafka.common.Node;
 import org.apache.kafka.common.PartitionInfo;
 import org.apache.kafka.common.serialization.StringSerializer;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
@@ -151,6 +152,11 @@ class PublishConfigurerTest {
     @Nested
     class ConfigureInMemoryQueue{
 
+        @BeforeEach
+        void setup(){
+            QueueFactory.clearRegistrations();
+            QueueFactory.clearQueueMap();
+        }
         @Test
         void test_null(){
             PublishConfigurer publishConfigurer = PublishConfigurer.build();
