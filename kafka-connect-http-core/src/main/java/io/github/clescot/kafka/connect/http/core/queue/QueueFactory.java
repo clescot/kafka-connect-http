@@ -14,6 +14,8 @@ import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.TimeUnit;
 
+import static java.time.temporal.ChronoUnit.MILLIS;
+
 public class QueueFactory {
     public static final String DEFAULT_QUEUE_NAME = "default";
     private static final Logger LOGGER = LoggerFactory.getLogger(QueueFactory.class);
@@ -58,7 +60,7 @@ public class QueueFactory {
                     .pollInterval(pollInterval,TimeUnit.MILLISECONDS)
                     .conditionEvaluationListener(
                             new ConditionEvaluationLogger(
-                                    string -> LOGGER.info("awaiting a registered consumer (Source Connector) listening on the queue : '{}'", queueName)
+                                    string -> LOGGER.info("awaiting (at max '{}' ms  a registered consumer (Source Connector) listening on the queue : '{}'",maxWaitTimeDuration.get(MILLIS), queueName)
                                     , TimeUnit.SECONDS))
                     //we are waiting at most 'maxWaitTimeDuration' before throwing a timeout exception
                     .atMost(maxWaitTimeDuration)

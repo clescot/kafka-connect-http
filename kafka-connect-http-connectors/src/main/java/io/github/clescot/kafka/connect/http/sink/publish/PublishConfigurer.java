@@ -98,6 +98,7 @@ public class PublishConfigurer {
     public Queue<KafkaRecord> configureInMemoryQueue(HttpConnectorConfig connectorConfig) {
         Preconditions.checkNotNull(connectorConfig,"connectorConfig is required but 'null'");
         String queueName = connectorConfig.getQueueName();
+        LOGGER.debug("we are looking for a queue named :{}",queueName);
         Queue<KafkaRecord> queue = QueueFactory.getQueue(queueName);
         Preconditions.checkArgument(QueueFactory.hasAConsumer(
                 queueName,
