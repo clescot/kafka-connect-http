@@ -157,7 +157,7 @@ public class OkHttpClientFactory implements HttpClientFactory<OkHttpClient,Reque
             }
             boolean includeipv6 = true;
             if(config.containsKey(OKHTTP_DOH_INCLUDE_IPV6)){
-                includeipv6 = Boolean.parseBoolean((String) config.get(OKHTTP_DOH_INCLUDE_IPV6));
+                includeipv6 = Boolean.parseBoolean(config.get(OKHTTP_DOH_INCLUDE_IPV6));
             }
             boolean usePostMethod = false;
             if(config.containsKey(OKHTTP_DOH_USE_POST_METHOD)){
