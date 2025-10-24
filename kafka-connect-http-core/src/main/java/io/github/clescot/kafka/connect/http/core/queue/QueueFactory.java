@@ -60,7 +60,7 @@ public class QueueFactory {
                     .pollInterval(pollInterval,TimeUnit.MILLISECONDS)
                     .conditionEvaluationListener(
                             new ConditionEvaluationLogger(
-                                    string -> LOGGER.info("awaiting (at max '{}' ms  a registered consumer (Source Connector) listening on the queue : '{}'",maxWaitTimeDuration.get(MILLIS), queueName)
+                                    string -> LOGGER.info("awaiting (at max '{}' ms  a registered consumer (Source Connector) listening on the queue : '{}'",maxWaitTimeInMilliSeconds, queueName)
                                     , TimeUnit.SECONDS))
                     //we are waiting at most 'maxWaitTimeDuration' before throwing a timeout exception
                     .atMost(maxWaitTimeDuration)
