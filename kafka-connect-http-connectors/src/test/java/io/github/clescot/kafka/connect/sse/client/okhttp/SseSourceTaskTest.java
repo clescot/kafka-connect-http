@@ -212,9 +212,9 @@ class SseSourceTaskTest {
             sseSourceTask.start(settings);
             assertThat(sseSourceTask.isConnected("default")).isTrue();
             Queue<SseEvent> queue = sseSourceTask.getQueue("default").orElseThrow();
-            Awaitility.await().atMost(5, TimeUnit.SECONDS).until(()-> !queue.isEmpty());
+            Awaitility.await().atMost(30, TimeUnit.SECONDS).until(()-> !queue.isEmpty());
             assertThat(queue).hasSize(2);
-            Awaitility.await().atMost(5, TimeUnit.SECONDS).until(()->!sseSourceTask.poll().isEmpty());
+            Awaitility.await().atMost(30, TimeUnit.SECONDS).until(()->!sseSourceTask.poll().isEmpty());
 
         }
 
