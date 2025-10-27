@@ -237,13 +237,14 @@ class SseSourceTaskTest {
         @Test
         void test_polling_with_connect_timeout_set() {
             Map<String, String> settings = Maps.newHashMap();
-            settings.put("config.ids", "default");
-            settings.put("config.default.topic", "test");
-            settings.put("config.default.url", wmRuntimeInfo.getHttpBaseUrl()+"/events1");
-            settings.put("config.default.okhttp.connect.timeout", "3000");
+            String queueName = "default1";
+            settings.put("config.ids", queueName);
+            settings.put("config."+queueName+".topic", "test");
+            settings.put("config."+queueName+".url", wmRuntimeInfo.getHttpBaseUrl()+"/events1");
+            settings.put("config."+queueName+".okhttp.connect.timeout", "3000");
             sseSourceTask.start(settings);
-            assertThat(sseSourceTask.isConnected("default")).isTrue();
-            Queue<SseEvent> queue = sseSourceTask.getQueue("default").orElseThrow();
+            assertThat(sseSourceTask.isConnected(queueName)).isTrue();
+            Queue<SseEvent> queue = sseSourceTask.getQueue(queueName).orElseThrow();
             Awaitility.await().atMost(20, TimeUnit.SECONDS).until(()-> !queue.isEmpty());
             assertThat(queue).hasSize(2);
             Awaitility.await().atMost(20, TimeUnit.SECONDS).until(()->!sseSourceTask.poll().isEmpty());
