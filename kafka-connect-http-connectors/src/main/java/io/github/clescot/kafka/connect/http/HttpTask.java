@@ -30,7 +30,7 @@ import static io.github.clescot.kafka.connect.http.client.HttpClientFactory.buil
 import static io.github.clescot.kafka.connect.http.sink.HttpConfigDefinition.*;
 
 /**
- *
+ * Task to send HTTP requests.
  * @param <T> type of the incoming Record.
  * @param <C> client type, which is a subclass of HttpClient
  * @param <NR> native HttpRequest
