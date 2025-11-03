@@ -221,7 +221,6 @@ public class HttpConfiguration<C extends HttpClient<NR, NS>, NR, NS> implements 
 
 
     protected HttpExchange enrichHttpExchange(HttpExchange httpExchange) {
-        C client = this.getClient();
         AddSuccessStatusToHttpExchangeFunction addSuccessStatusToHttpExchangeFunction = client.getAddSuccessStatusToHttpExchangeFunction();
         return addSuccessStatusToHttpExchangeFunction!=null?addSuccessStatusToHttpExchangeFunction.apply(httpExchange):httpExchange;
     }
@@ -250,7 +249,6 @@ public class HttpConfiguration<C extends HttpClient<NR, NS>, NR, NS> implements 
 
     @Override
     public Object clone() throws CloneNotSupportedException {
-        HttpConfiguration<C, NR, NS> httpConfiguration = new HttpConfiguration<>(this.id, this.client, this.executorService, this.retryPolicy, Maps.newHashMap(this.settings));
-        return httpConfiguration;
+        return new HttpConfiguration<>(this.id, this.client, this.executorService, this.retryPolicy, Maps.newHashMap(this.settings));
     }
 }
