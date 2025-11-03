@@ -158,7 +158,7 @@ public class HttpConfiguration<C extends HttpClient<NR, NS>, NR, NS> implements 
         Optional<RetryPolicy<HttpExchange>> retryPolicyForCall = Optional.ofNullable(getRetryPolicy());
         AtomicInteger attempts = new AtomicInteger();
         try {
-
+            //a RetryPolicy is set
             if (retryPolicyForCall.isPresent()) {
                 RetryPolicy<HttpExchange> myRetryPolicy = retryPolicyForCall.get();
                 FailsafeExecutor<HttpExchange> failsafeExecutor = Failsafe.with(List.of(myRetryPolicy));
@@ -169,6 +169,7 @@ public class HttpConfiguration<C extends HttpClient<NR, NS>, NR, NS> implements 
                         .getStageAsync(ctx -> callAndEnrich(httpRequest, attempts)
                                 .thenApply(this::handleRetry));
             } else {
+                //no RetryPolicy is set
                 return callAndEnrich(httpRequest, attempts);
             }
         } catch (Exception exception) {
