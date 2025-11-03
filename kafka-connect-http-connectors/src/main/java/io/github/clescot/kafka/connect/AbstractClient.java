@@ -20,7 +20,7 @@ import static io.github.clescot.kafka.connect.http.sink.HttpConfigDefinition.*;
 public abstract class  AbstractClient<E> implements Client<E> {
     public static final String STATIC_SCOPE = "static";
     public static final Logger LOGGER = LoggerFactory.getLogger(AbstractClient.class);
-    protected static final Map<String, RateLimiter> SHARED_RATE_LIMITERS = Maps.newHashMap();
+    public static final Map<String, RateLimiter> SHARED_RATE_LIMITERS = Maps.newHashMap();
     private Optional<RateLimiter<E>> rateLimiter = Optional.empty();
     protected Map<String, String> config;
     protected String configurationId;
