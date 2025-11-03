@@ -13,6 +13,7 @@ import com.google.common.io.Resources;
 import io.github.clescot.kafka.connect.http.client.DummyX509Certificate;
 import io.github.clescot.kafka.connect.http.client.HttpClient;
 import io.github.clescot.kafka.connect.http.client.HttpClientFactory;
+import io.github.clescot.kafka.connect.http.client.HttpException;
 import io.github.clescot.kafka.connect.http.client.proxy.URIRegexProxySelector;
 import io.github.clescot.kafka.connect.http.core.*;
 import io.github.clescot.kafka.connect.http.core.MediaType;
@@ -128,6 +129,7 @@ class OkHttpClientTest {
             assertThat(request.method()).isEqualTo(httpRequest.getMethod().name());
             RequestBody body = request.body();
             final Buffer buffer = new Buffer();
+            assert body != null;
             body.writeTo(buffer);
             assertThat(buffer.readUtf8()).isEqualTo(httpRequest.getBodyAsString());
         }
@@ -1067,7 +1069,7 @@ class OkHttpClientTest {
 
             OkHttpClient client1 = factory.build(config, null, new Random(), null, null, getCompositeMeterRegistry());
             OkHttpClient client2 = factory.build(config, null, new Random(), null, null, getCompositeMeterRegistry());
-            assertThat(client1.getRateLimiter()).containsSame(client2.getRateLimiter().get());
+            assertThat(client1.getRateLimiter()).containsSame(client2.getRateLimiter().orElseThrow(()-> new HttpException("rate limiter is not the same")));
             HttpRequest httpRequest = getHttpRequest(wmRuntimeInfo);
             Stopwatch stopwatch = Stopwatch.createStarted();
             List<HttpExchange> exchanges = Lists.newArrayList();

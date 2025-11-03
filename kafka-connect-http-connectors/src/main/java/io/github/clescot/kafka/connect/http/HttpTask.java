@@ -30,7 +30,7 @@ import static io.github.clescot.kafka.connect.http.client.HttpClientFactory.buil
 import static io.github.clescot.kafka.connect.http.sink.HttpConfigDefinition.*;
 
 /**
- *
+ * Task to send HTTP requests.
  * @param <T> type of the incoming Record.
  * @param <C> client type, which is a subclass of HttpClient
  * @param <NR> native HttpRequest
@@ -55,8 +55,8 @@ public class HttpTask<T,C extends HttpClient<NR, NS>, NR, NS> implements Request
 
     private ExecutorService executorService;
 
-    private List<RequestGrouper<T>> requestGroupers;
-    private Map<String, String> settings;
+    private final List<RequestGrouper<T>> requestGroupers;
+    private final Map<String, String> settings;
 
     public HttpTask(HttpConnectorConfig httpConnectorConfig,
                     HttpClientFactory<C, NR, NS> httpClientFactory) {
@@ -138,7 +138,7 @@ public class HttpTask<T,C extends HttpClient<NR, NS>, NR, NS> implements Request
             clone.setClient(customized);
 
         } catch (CloneNotSupportedException e) {
-            throw new HttpException(e);
+            throw new IllegalStateException(e);
         }
         return clone;
     }
@@ -168,8 +168,8 @@ public class HttpTask<T,C extends HttpClient<NR, NS>, NR, NS> implements Request
 
     /**
      * Group the requests using the requestGroupers.
-     * @param pairList
-     * @return
+     * @param pairList list of pairs (Record, HttpRequest)
+     * @return list of grouped pairs (Record, HttpRequest)
      */
     public List<Pair<T, HttpRequest>> groupRequests(List<Pair<T, HttpRequest>> pairList) {
         if (requestGroupers != null && !requestGroupers.isEmpty()) {
@@ -202,7 +202,7 @@ public class HttpTask<T,C extends HttpClient<NR, NS>, NR, NS> implements Request
                 }
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
-                throw new HttpException(e);
+                throw new IllegalStateException(e);
             }
             LOGGER.info("executor is shutdown : '{}'", executorService.isShutdown());
             LOGGER.info("executor tasks are terminated : '{}'", executorService.isTerminated());

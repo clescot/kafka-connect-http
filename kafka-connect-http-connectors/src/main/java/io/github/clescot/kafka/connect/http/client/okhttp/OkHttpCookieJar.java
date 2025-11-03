@@ -1,10 +1,13 @@
 package io.github.clescot.kafka.connect.http.client.okhttp;
 
+import com.google.common.base.Preconditions;
 import io.github.clescot.kafka.connect.http.client.HttpException;
 import okhttp3.Cookie;
 import okhttp3.CookieJar;
 import okhttp3.HttpUrl;
+import org.jetbrains.annotations.NotNull;
 
+import java.io.IOException;
 import java.net.CookieManager;
 import java.net.HttpCookie;
 import java.net.URI;
@@ -51,13 +54,13 @@ public class OkHttpCookieJar implements CookieJar {
 
             headers.put(SET_COOKIE, cookieHeaders);
             cookieManager.put(uri, headers);
-        } catch (Exception e) {
-            throw new HttpException(e);
+        } catch (IOException e) {
+            throw new IllegalStateException(e);
         }
     }
 
     @Override
-    public List<Cookie> loadForRequest(HttpUrl url) {
+    public List<Cookie> loadForRequest(@NotNull HttpUrl url) {
         try {
             URI uri = url.uri();
             Map<String, List<String>> headers = cookieManager.get(uri, new HashMap<>());
@@ -91,7 +94,7 @@ public class OkHttpCookieJar implements CookieJar {
             }
             return cookies;
         } catch (Exception e) {
-            throw new HttpException(e);
+            throw new IllegalStateException(e);
         }
     }
 }

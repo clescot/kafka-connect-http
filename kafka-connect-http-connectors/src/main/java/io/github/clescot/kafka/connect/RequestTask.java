@@ -3,6 +3,7 @@ package io.github.clescot.kafka.connect;
 import com.google.common.base.Preconditions;
 import dev.failsafe.RetryPolicy;
 import io.github.clescot.kafka.connect.http.client.HttpException;
+import io.github.clescot.kafka.connect.http.client.RetryException;
 import io.github.clescot.kafka.connect.http.core.Request;
 import org.jetbrains.annotations.NotNull;
 
@@ -110,7 +111,7 @@ public interface RequestTask<C extends Client,F extends Configuration<C,R>,R ext
         //noinspection LoggingPlaceholderCountMatchesArgumentCount
         return RetryPolicy.<E>builder()
                 //we retry only if the error comes from the WS server (server-side technical error)
-                .handle(HttpException.class)
+                .handle(RetryException.class)
                 .withBackoff(Duration.ofMillis(retryDelayInMs), Duration.ofMillis(retryMaxDelayInMs), retryDelayFactor)
                 .withJitter(Duration.ofMillis(retryJitterInMs))
                 .withMaxRetries(retries)

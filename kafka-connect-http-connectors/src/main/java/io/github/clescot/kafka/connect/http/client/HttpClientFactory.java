@@ -122,7 +122,7 @@ public interface HttpClientFactory<C extends HttpClient<R, S>, R, S> {
             String finalKeystoreType = Optional.ofNullable(keystoreType).orElse(KeyStore.getDefaultType());
             keyStore = KeyStore.getInstance(finalKeystoreType);
         } catch (NoSuchAlgorithmException | KeyStoreException e) {
-            throw new HttpException(e);
+            throw new IllegalArgumentException(e);
         }
 
         Path path = Path.of(keyStorePath);
@@ -132,7 +132,7 @@ public interface HttpClientFactory<C extends HttpClient<R, S>, R, S> {
             keyManagerFactory.init(keyStore, password);
         } catch (IOException | NoSuchAlgorithmException | CertificateException | KeyStoreException |
                  UnrecoverableKeyException e) {
-            throw new HttpException(e);
+            throw new IllegalStateException(e);
         }
         return keyManagerFactory;
     }
@@ -149,7 +149,7 @@ public interface HttpClientFactory<C extends HttpClient<R, S>, R, S> {
             String finalKeystoreType = Optional.ofNullable(keystoreType).orElse(KeyStore.getDefaultType());
             trustStore = KeyStore.getInstance(finalKeystoreType);
         } catch (NoSuchAlgorithmException | KeyStoreException e) {
-            throw new HttpException(e);
+            throw new IllegalArgumentException(e);
         }
 
         Path path = Path.of(trustStorePath);
@@ -158,7 +158,7 @@ public interface HttpClientFactory<C extends HttpClient<R, S>, R, S> {
             trustStore.load(inputStream, password);
             trustManagerFactory.init(trustStore);
         } catch (IOException | NoSuchAlgorithmException | CertificateException | KeyStoreException e) {
-            throw new HttpException(e);
+            throw new IllegalStateException(e);
         }
         return trustManagerFactory;
     }
@@ -213,7 +213,7 @@ public interface HttpClientFactory<C extends HttpClient<R, S>, R, S> {
             sslContext.init(keyManagerFactory != null ? keyManagerFactory.getKeyManagers() : null, trustManagerFactory != null ? trustManagerFactory.getTrustManagers() : null, random);
             return sslContext.getSocketFactory();
         } catch (NoSuchAlgorithmException | KeyManagementException e) {
-            throw new HttpException(e);
+            throw new IllegalArgumentException(e);
         }
     }
 
@@ -260,7 +260,7 @@ public interface HttpClientFactory<C extends HttpClient<R, S>, R, S> {
                 }
             }
         } catch (NoSuchAlgorithmException e) {
-            throw new HttpException(e);
+            throw new IllegalArgumentException(e);
         }
         return random;
     }

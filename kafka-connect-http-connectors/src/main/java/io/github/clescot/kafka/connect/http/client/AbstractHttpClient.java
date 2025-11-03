@@ -120,7 +120,7 @@ public abstract class AbstractHttpClient<NR,NS> extends AbstractClient<HttpExcha
             String projectUserAgent = "Mozilla/5.0 (compatible;kafka-connect-http/"+ VERSION +"; "+this.getEngineId()+"; https://github.com/clescot/kafka-connect-http)";
             enrichRequestFunctions.add(new AddUserAgentHeaderToHttpRequestFunction(Lists.newArrayList(projectUserAgent), random));
         }else if(USER_AGENT_CUSTOM_MODE.equalsIgnoreCase(activateUserAgentHeaderToHttpRequestFunction)){
-            String userAgentValuesAsString = settings.getOrDefault(USER_AGENT_CUSTOM_VALUES, StringUtils.EMPTY).toString();
+            String userAgentValuesAsString = settings.getOrDefault(USER_AGENT_CUSTOM_VALUES, StringUtils.EMPTY);
             List<String> userAgentValues = Arrays.asList(userAgentValuesAsString.split("\\|"));
             enrichRequestFunctions.add(new AddUserAgentHeaderToHttpRequestFunction(userAgentValues, random));
         }else{
@@ -193,5 +193,24 @@ public abstract class AbstractHttpClient<NR,NS> extends AbstractClient<HttpExcha
     @Override
     public AddSuccessStatusToHttpExchangeFunction getAddSuccessStatusToHttpExchangeFunction() {
         return addSuccessStatusToHttpExchangeFunction;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (o == null || getClass() != o.getClass()) return false;
+        if (!super.equals(o)) return false;
+
+        AbstractHttpClient<?, ?> that = (AbstractHttpClient<?, ?>) o;
+        return Objects.equals(getStatusMessageLimit(), that.getStatusMessageLimit()) && Objects.equals(getHeadersLimit(), that.getHeadersLimit()) && Objects.equals(getBodyLimit(), that.getBodyLimit()) && Objects.equals(getCookiePolicy(), that.getCookiePolicy());
+    }
+
+    @Override
+    public int hashCode() {
+        int result = super.hashCode();
+        result = 31 * result + Objects.hashCode(getStatusMessageLimit());
+        result = 31 * result + Objects.hashCode(getHeadersLimit());
+        result = 31 * result + Objects.hashCode(getBodyLimit());
+        result = 31 * result + Objects.hashCode(getCookiePolicy());
+        return result;
     }
 }

@@ -64,11 +64,7 @@ public class HttpConfiguration<C extends HttpClient<NR, NS>, NR, NS> implements 
         this.retryPolicy = retryPolicy;
         this.settings = settings;
         //retry response code regex
-        if (settings.containsKey(RETRY_RESPONSE_CODE_REGEX)) {
-            this.retryResponseCodeRegex = Pattern.compile(settings.get(RETRY_RESPONSE_CODE_REGEX));
-        }else {
-            this.retryResponseCodeRegex = Pattern.compile(DEFAULT_DEFAULT_RETRY_RESPONSE_CODE_REGEX);
-        }
+        this.retryResponseCodeRegex = Pattern.compile(settings.getOrDefault(RETRY_RESPONSE_CODE_REGEX, DEFAULT_DEFAULT_RETRY_RESPONSE_CODE_REGEX));
 
         this.predicate = HttpRequestPredicateBuilder.build().buildPredicate(settings);
     }
@@ -87,9 +83,9 @@ public class HttpConfiguration<C extends HttpClient<NR, NS>, NR, NS> implements 
         if(methodRegex!=null) {
             result.append(",methodRegex:").append(methodRegex).append("'");
         }
-        String bodytypeRegex = settings.get(BODYTYPE_REGEX);
-        if(bodytypeRegex!=null) {
-            result.append(",bodytypeRegex:").append(bodytypeRegex).append("'");
+        String bodyTypeRegex = settings.get(BODYTYPE_REGEX);
+        if(bodyTypeRegex!=null) {
+            result.append(",bodyTypeRegex:").append(bodyTypeRegex).append("'");
         }
         String headerKeyRegex = settings.get(HEADER_KEY_REGEX);
         if(headerKeyRegex!=null) {
@@ -158,7 +154,7 @@ public class HttpConfiguration<C extends HttpClient<NR, NS>, NR, NS> implements 
         Optional<RetryPolicy<HttpExchange>> retryPolicyForCall = Optional.ofNullable(getRetryPolicy());
         AtomicInteger attempts = new AtomicInteger();
         try {
-
+            //a RetryPolicy is set
             if (retryPolicyForCall.isPresent()) {
                 RetryPolicy<HttpExchange> myRetryPolicy = retryPolicyForCall.get();
                 FailsafeExecutor<HttpExchange> failsafeExecutor = Failsafe.with(List.of(myRetryPolicy));
@@ -169,6 +165,7 @@ public class HttpConfiguration<C extends HttpClient<NR, NS>, NR, NS> implements 
                         .getStageAsync(ctx -> callAndEnrich(httpRequest, attempts)
                                 .thenApply(this::handleRetry));
             } else {
+                //no RetryPolicy is set
                 return callAndEnrich(httpRequest, attempts);
             }
         } catch (Exception exception) {
@@ -193,12 +190,12 @@ public class HttpConfiguration<C extends HttpClient<NR, NS>, NR, NS> implements 
      * @return HttpExchange if no retry is needed
      */
     private HttpExchange handleRetry(HttpExchange httpExchange) {
-        //we don't retry success HTTP Exchange
+        //we don't retry successful HTTP Exchange
         boolean responseCodeImpliesRetry = retryNeeded(httpExchange.getResponse());
         LOGGER.debug("httpExchange success :'{}'", httpExchange.isSuccess());
         LOGGER.debug("response code('{}') implies retry:'{}'", httpExchange.getResponse().getStatusCode(), responseCodeImpliesRetry);
         if (!httpExchange.isSuccess() && responseCodeImpliesRetry) {
-            throw new HttpException(httpExchange, "retry needed");
+            throw new RetryException(httpExchange, "retry needed");
         }
         return httpExchange;
     }
@@ -220,7 +217,6 @@ public class HttpConfiguration<C extends HttpClient<NR, NS>, NR, NS> implements 
 
 
     protected HttpExchange enrichHttpExchange(HttpExchange httpExchange) {
-        C client = this.getClient();
         AddSuccessStatusToHttpExchangeFunction addSuccessStatusToHttpExchangeFunction = client.getAddSuccessStatusToHttpExchangeFunction();
         return addSuccessStatusToHttpExchangeFunction!=null?addSuccessStatusToHttpExchangeFunction.apply(httpExchange):httpExchange;
     }
@@ -249,7 +245,6 @@ public class HttpConfiguration<C extends HttpClient<NR, NS>, NR, NS> implements 
 
     @Override
     public Object clone() throws CloneNotSupportedException {
-        HttpConfiguration<C, NR, NS> httpConfiguration = new HttpConfiguration<>(this.id, this.client, this.executorService, this.retryPolicy, Maps.newHashMap(this.settings));
-        return httpConfiguration;
+        return new HttpConfiguration<>(this.id, this.client, this.executorService, this.retryPolicy, Maps.newHashMap(this.settings));
     }
 }

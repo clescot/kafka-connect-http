@@ -41,7 +41,7 @@ public class MeterRegistryFactory {
                         .registry(prometheusRegistry)
                         .buildAndStart();
             } catch (IOException e) {
-                throw new HttpException(e);
+                throw new IllegalStateException(e);
             }
             compositeMeterRegistry.add(prometheusMeterRegistry);
         }
