@@ -195,7 +195,7 @@ public class HttpConfiguration<C extends HttpClient<NR, NS>, NR, NS> implements 
         LOGGER.debug("httpExchange success :'{}'", httpExchange.isSuccess());
         LOGGER.debug("response code('{}') implies retry:'{}'", httpExchange.getResponse().getStatusCode(), responseCodeImpliesRetry);
         if (!httpExchange.isSuccess() && responseCodeImpliesRetry) {
-            throw new HttpException(httpExchange, "retry needed");
+            throw new RetryException(httpExchange, "retry needed");
         }
         return httpExchange;
     }

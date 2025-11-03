@@ -138,7 +138,7 @@ public class HttpTask<T,C extends HttpClient<NR, NS>, NR, NS> implements Request
             clone.setClient(customized);
 
         } catch (CloneNotSupportedException e) {
-            throw new HttpException(e);
+            throw new IllegalStateException(e);
         }
         return clone;
     }
@@ -202,7 +202,7 @@ public class HttpTask<T,C extends HttpClient<NR, NS>, NR, NS> implements Request
                 }
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
-                throw new HttpException(e);
+                throw new IllegalStateException(e);
             }
             LOGGER.info("executor is shutdown : '{}'", executorService.isShutdown());
             LOGGER.info("executor tasks are terminated : '{}'", executorService.isTerminated());

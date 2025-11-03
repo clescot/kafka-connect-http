@@ -72,7 +72,7 @@ public interface HttpClient<NR, NS> extends RequestResponseClient<HttpRequest, N
                 .build();
     }
 
-    default CompletableFuture<HttpExchange> call(HttpRequest httpRequest, AtomicInteger attempts) throws HttpException {
+    default CompletableFuture<HttpExchange> call(HttpRequest httpRequest, AtomicInteger attempts) throws RetryException,HttpException {
 
         Stopwatch rateLimitedStopWatch = null;
         CompletableFuture<NS> response;
@@ -151,7 +151,7 @@ public interface HttpClient<NR, NS> extends RequestResponseClient<HttpRequest, N
                     }));
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
-            throw new HttpException(e);
+            throw new IllegalStateException(e);
         }
     }
 

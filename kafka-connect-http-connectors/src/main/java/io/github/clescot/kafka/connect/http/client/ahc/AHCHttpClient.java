@@ -239,7 +239,7 @@ public class AHCHttpClient extends AbstractHttpClient<Request, Response> {
     private boolean isNotNullOrEmpty(String field) {
         return field != null && !field.isEmpty();
     }
-    public HttpResponse buildResponse(Response response) throws HttpException {
+    public HttpResponse buildResponse(Response response) {
         List<Map.Entry<String, String>> responseEntries = response.getHeaders() != null ? response.getHeaders().entries() : Lists.newArrayList();
         HttpResponse httpResponse = new HttpResponse(response.getStatusCode(), response.getStatusText());
         httpResponse.setBodyAsString(response.getResponseBody());
@@ -337,7 +337,7 @@ public class AHCHttpClient extends AbstractHttpClient<Request, Response> {
                 try {
                     nettySSLContext = SslContextBuilder.forClient().trustManager(trustManagerFactory.get()).build();
                 } catch (SSLException e) {
-                    throw new HttpException(e);
+                    throw new IllegalArgumentException(e);
                 }
                 propertyBasedASyncHttpClientConfig.setSslContext(nettySSLContext);
             }

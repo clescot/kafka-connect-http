@@ -54,7 +54,7 @@ public class OkHttpHTTPRequestSender implements HTTPRequestSender {
                 httpResponse.setBody(response.body().string());
             }
         } catch (IOException | ParseException e) {
-            throw new HttpException(e);
+            throw new IllegalStateException(e);
         }
         return httpResponse;
     }

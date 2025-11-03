@@ -90,7 +90,7 @@ public class OkHttpClient extends AbstractHttpClient<Request, Response> {
                 nativeRequest.body().writeTo(buffer);
                 request.setBodyAsString(buffer.readUtf8());
             } catch (IOException e) {
-                throw new HttpException(e);
+                throw new IllegalStateException(e);
             }
         }
         return request;
@@ -253,7 +253,7 @@ public class OkHttpClient extends AbstractHttpClient<Request, Response> {
                 }
             }
         } catch (IOException e) {
-            throw new HttpException(e);
+            throw new IllegalStateException(e);
         }
         return form;
     }
@@ -331,7 +331,7 @@ public class OkHttpClient extends AbstractHttpClient<Request, Response> {
                 }
             }
         } catch (IOException e) {
-            throw new HttpException(e);
+            throw new IllegalStateException(e);
         }
         return httpResponse;
     }
@@ -368,7 +368,7 @@ public class OkHttpClient extends AbstractHttpClient<Request, Response> {
                 }
             }
         } catch (IOException e) {
-            throw new HttpException(e);
+            throw new IllegalStateException(e);
         }
         return parts;
     }

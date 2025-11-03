@@ -360,7 +360,7 @@ public class OkHttpClientFactory implements HttpClientFactory<OkHttpClient,Reque
                     Path jimfsDirectory = fs.getPath(directoryPath);
                     Files.createDirectory(jimfsDirectory);
                 } catch (IOException e) {
-                    throw new HttpException(e);
+                    throw new IllegalArgumentException(e);
                 }
             }
 
