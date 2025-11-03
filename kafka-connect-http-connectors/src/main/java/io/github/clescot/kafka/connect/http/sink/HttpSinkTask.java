@@ -78,7 +78,7 @@ public abstract class HttpSinkTask<C extends HttpClient<R, S>, R, S> extends Sin
     private List<MessageSplitter<SinkRecord>> messageSplitters;
     private HttpRequestMapper defaultHttpRequestMapper;
     private List<HttpRequestMapper> httpRequestMappers;
-    private String vuId;
+    private final String vuId;
     @SuppressWarnings("java:S5993")
     public HttpSinkTask(HttpClientFactory<C, R, S> httpClientFactory, KafkaProducer<String, Object> producer) {
         this.httpClientFactory = httpClientFactory;
