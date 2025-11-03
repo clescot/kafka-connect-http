@@ -120,7 +120,7 @@ public abstract class AbstractHttpClient<NR,NS> extends AbstractClient<HttpExcha
             String projectUserAgent = "Mozilla/5.0 (compatible;kafka-connect-http/"+ VERSION +"; "+this.getEngineId()+"; https://github.com/clescot/kafka-connect-http)";
             enrichRequestFunctions.add(new AddUserAgentHeaderToHttpRequestFunction(Lists.newArrayList(projectUserAgent), random));
         }else if(USER_AGENT_CUSTOM_MODE.equalsIgnoreCase(activateUserAgentHeaderToHttpRequestFunction)){
-            String userAgentValuesAsString = settings.getOrDefault(USER_AGENT_CUSTOM_VALUES, StringUtils.EMPTY).toString();
+            String userAgentValuesAsString = settings.getOrDefault(USER_AGENT_CUSTOM_VALUES, StringUtils.EMPTY);
             List<String> userAgentValues = Arrays.asList(userAgentValuesAsString.split("\\|"));
             enrichRequestFunctions.add(new AddUserAgentHeaderToHttpRequestFunction(userAgentValues, random));
         }else{
