@@ -64,11 +64,7 @@ public class HttpConfiguration<C extends HttpClient<NR, NS>, NR, NS> implements 
         this.retryPolicy = retryPolicy;
         this.settings = settings;
         //retry response code regex
-        if (settings.containsKey(RETRY_RESPONSE_CODE_REGEX)) {
-            this.retryResponseCodeRegex = Pattern.compile(settings.get(RETRY_RESPONSE_CODE_REGEX));
-        }else {
-            this.retryResponseCodeRegex = Pattern.compile(DEFAULT_DEFAULT_RETRY_RESPONSE_CODE_REGEX);
-        }
+        this.retryResponseCodeRegex = Pattern.compile(settings.getOrDefault(RETRY_RESPONSE_CODE_REGEX, DEFAULT_DEFAULT_RETRY_RESPONSE_CODE_REGEX));
 
         this.predicate = HttpRequestPredicateBuilder.build().buildPredicate(settings);
     }
