@@ -83,9 +83,9 @@ public class HttpConfiguration<C extends HttpClient<NR, NS>, NR, NS> implements 
         if(methodRegex!=null) {
             result.append(",methodRegex:").append(methodRegex).append("'");
         }
-        String bodytypeRegex = settings.get(BODYTYPE_REGEX);
-        if(bodytypeRegex!=null) {
-            result.append(",bodytypeRegex:").append(bodytypeRegex).append("'");
+        String bodyTypeRegex = settings.get(BODYTYPE_REGEX);
+        if(bodyTypeRegex!=null) {
+            result.append(",bodyTypeRegex:").append(bodyTypeRegex).append("'");
         }
         String headerKeyRegex = settings.get(HEADER_KEY_REGEX);
         if(headerKeyRegex!=null) {
