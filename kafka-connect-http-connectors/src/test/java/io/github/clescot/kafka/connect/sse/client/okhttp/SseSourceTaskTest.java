@@ -76,9 +76,10 @@ class SseSourceTaskTest {
         @Test
         void test_settings_with_topic_and_url() {
             Map<String, String> settings = Maps.newHashMap();
-            settings.put("config.ids", "default");
-            settings.put("config.default.url", "http://localhost:8080/sse");
-            settings.put("config.default.topic", "dummy_topic");
+            String configurationId = "gggggg888";
+            settings.put("config.ids", configurationId);
+            settings.put("config."+configurationId+".url", "http://localhost:8080/sse");
+            settings.put("config."+configurationId+".topic", "dummy_topic");
             Assertions.assertDoesNotThrow(() -> sseSourceTask.start(settings));
         }
 
@@ -106,11 +107,12 @@ class SseSourceTaskTest {
         @Test
         void test_settings_with_static_request_header() {
             Map<String, String> settings = Maps.newHashMap();
-            settings.put("config.ids", "default");
-            settings.put("config.default.url", "http://localhost:8080/sse");
-            settings.put("config.default.topic", "dummy_topic");
-            settings.put("config.default.enrich.request.static.header.names", "auth1");
-            settings.put("config.default.enrich.request.static.header.auth1", "value1");
+            String configurationId = "dfddfddd44444";
+            settings.put("config.ids", configurationId);
+            settings.put("config."+configurationId+".url", "http://localhost:8080/sse");
+            settings.put("config."+configurationId+".topic", "dummy_topic");
+            settings.put("config."+configurationId+".enrich.request.static.header.names", "auth1");
+            settings.put("config."+configurationId+".enrich.request.static.header.auth1", "value1");
             Assertions.assertDoesNotThrow(() -> sseSourceTask.start(settings));
         }
 
@@ -221,14 +223,15 @@ class SseSourceTaskTest {
         @Test
         void test_polling_with_static_header() {
             Map<String, String> settings = Maps.newHashMap();
-            settings.put("config.ids", "default");
-            settings.put("config.default.topic", "test");
-            settings.put("config.default.url", wmRuntimeInfo.getHttpBaseUrl()+"/events2");
-            settings.put("config.default.enrich.request.static.header.names", "auth1");
-            settings.put("config.default.enrich.request.static.header.auth1", "value1");
+            String configurationId = "df646sd";
+            settings.put("config.ids", configurationId);
+            settings.put("config."+configurationId+".topic", "test");
+            settings.put("config."+configurationId+".url", wmRuntimeInfo.getHttpBaseUrl()+"/events2");
+            settings.put("config."+configurationId+".enrich.request.static.header.names", "auth1");
+            settings.put("config."+configurationId+".enrich.request.static.header.auth1", "value1");
             sseSourceTask.start(settings);
-            assertThat(sseSourceTask.isConnected("default")).isTrue();
-            Queue<SseEvent> queue = sseSourceTask.getQueue("default").orElseThrow();
+            assertThat(sseSourceTask.isConnected(configurationId)).isTrue();
+            Queue<SseEvent> queue = sseSourceTask.getQueue(configurationId).orElseThrow();
             Awaitility.await().atMost(5, TimeUnit.SECONDS).until(()-> !queue.isEmpty());
             assertThat(queue).hasSize(4);
             Awaitility.await().atMost(5, TimeUnit.SECONDS).until(()->!sseSourceTask.poll().isEmpty());
