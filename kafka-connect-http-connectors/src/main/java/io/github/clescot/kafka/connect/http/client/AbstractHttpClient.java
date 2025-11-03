@@ -194,4 +194,23 @@ public abstract class AbstractHttpClient<NR,NS> extends AbstractClient<HttpExcha
     public AddSuccessStatusToHttpExchangeFunction getAddSuccessStatusToHttpExchangeFunction() {
         return addSuccessStatusToHttpExchangeFunction;
     }
+
+    @Override
+    public boolean equals(Object o) {
+        if (o == null || getClass() != o.getClass()) return false;
+        if (!super.equals(o)) return false;
+
+        AbstractHttpClient<?, ?> that = (AbstractHttpClient<?, ?>) o;
+        return Objects.equals(getStatusMessageLimit(), that.getStatusMessageLimit()) && Objects.equals(getHeadersLimit(), that.getHeadersLimit()) && Objects.equals(getBodyLimit(), that.getBodyLimit()) && Objects.equals(getCookiePolicy(), that.getCookiePolicy());
+    }
+
+    @Override
+    public int hashCode() {
+        int result = super.hashCode();
+        result = 31 * result + Objects.hashCode(getStatusMessageLimit());
+        result = 31 * result + Objects.hashCode(getHeadersLimit());
+        result = 31 * result + Objects.hashCode(getBodyLimit());
+        result = 31 * result + Objects.hashCode(getCookiePolicy());
+        return result;
+    }
 }
