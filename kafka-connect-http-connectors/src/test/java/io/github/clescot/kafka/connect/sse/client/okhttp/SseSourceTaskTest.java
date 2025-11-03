@@ -208,12 +208,13 @@ class SseSourceTaskTest {
         @Test
         void test_polling_nominal_case() {
             Map<String, String> settings = Maps.newHashMap();
-            settings.put("config.ids", "default");
-            settings.put("config.default.topic", "test");
-            settings.put("config.default.url", wmRuntimeInfo.getHttpBaseUrl()+"/events1");
+            String configurationId = "poll1234";
+            settings.put("config.ids", configurationId);
+            settings.put("config."+configurationId+".topic", "test");
+            settings.put("config."+configurationId+".url", wmRuntimeInfo.getHttpBaseUrl()+"/events1");
             sseSourceTask.start(settings);
-            assertThat(sseSourceTask.isConnected("default")).isTrue();
-            Queue<SseEvent> queue = sseSourceTask.getQueue("default").orElseThrow();
+            assertThat(sseSourceTask.isConnected(configurationId)).isTrue();
+            Queue<SseEvent> queue = sseSourceTask.getQueue(configurationId).orElseThrow();
             Awaitility.await().atMost(30, TimeUnit.SECONDS).until(()-> !queue.isEmpty());
             assertThat(queue).hasSize(2);
             Awaitility.await().atMost(30, TimeUnit.SECONDS).until(()->!sseSourceTask.poll().isEmpty());
