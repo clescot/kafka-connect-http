@@ -51,6 +51,7 @@ public class HttpConfiguration<C extends HttpClient<NR, NS>, NR, NS> implements 
     public static final int INTERNAL_SERVER_ERROR = 503;
     public static final int TOO_MANY_REQUESTS = 429;
     public static final int MOVED_PERMANENTLY = 301;
+    public static final String UTC = "UTC";
 
     private C client;
     private final ExecutorService executorService;
@@ -224,65 +225,69 @@ public class HttpConfiguration<C extends HttpClient<NR, NS>, NR, NS> implements 
             Integer statusCode = httpResponse.getStatusCode();
             Map<String, List<String>> httpResponseHeaders = httpResponse.getHeaders();
             if(httpResponseHeaders.containsKey(RETRY_AFTER)||httpResponseHeaders.containsKey(X_RETRY_AFTER)){
-                String value = httpResponseHeaders.get(RETRY_AFTER)!=null?httpResponseHeaders.get(RETRY_AFTER).get(0):httpResponseHeaders.get(X_RETRY_AFTER).get(0);
-                LOGGER.debug("Retry-After or X-Retry-After header is present with value '{}', so delayed retry is needed",value);
-                //is it a date or an integer ?
-                long secondsToWait;
-                Instant until;
-                if(IS_INTEGER.matcher(value).matches()){
-                    secondsToWait = Integer.parseInt(value);
-                }else{
-                    try {
-                        until = LocalDateTime.parse(value, RFC_7231_FORMATTER).atZone(ZoneId.of("UTC")).toInstant();
-                    }catch (DateTimeParseException dtp){
-                        LOGGER.warn("Cannot parse Retry-After / X-Retry-After header value '{}' as a date with RFC7231 format, falling back to RFC1123 format",value);
-                        try {
-                            until = ZonedDateTime.parse(value, RFC_1123_FORMATTER).toInstant();
-                        } catch (DateTimeParseException dtp2){
-                            LOGGER.error("Cannot parse Retry-After / X-Retry-After header value '{}' as a date with RFC1123 format either, falling back to no retry",value);
-                            return false;
-                        }
-                    }
-                    secondsToWait = Instant.now().until(until, SECONDS);
-                    long retryDelayThreshold=60;
-                    if(secondsToWait>retryDelayThreshold){
-                        throw new TooLongRetryDelayException(secondsToWait,retryDelayThreshold);
-                    }else {
-                        try {
-                            Thread.sleep(secondsToWait*1000);
-                        } catch (InterruptedException e) {
-                            throw new RuntimeException(e);
-                        }
-                    }
-                }
-
-
-                switch (statusCode){
-                    case INTERNAL_SERVER_ERROR: {
-                        //503 Internal server error : server's resources are exhausted
-                        LOGGER.debug("Internal server error : server's resources are exhausted");
-                        break;
-                    }
-                    case TOO_MANY_REQUESTS: {
-                        //429 too many requests
-                        LOGGER.debug("quota is exhausted : too many requests");
-                        break;
-                    }
-                    case MOVED_PERMANENTLY:{
-                        // 301 Moved Permanently
-                        LOGGER.debug(" 301 Moved Permanently");
-                        break;
-                    }
-                    default:
-                        //unknown code
-                }
-                return false;
+                return handleRetryAfter(httpResponseHeaders, statusCode);
             }
             Matcher matcher = retryPattern.matcher("" + statusCode);
             return matcher.matches();
         } else {
             return false;
         }
+    }
+
+    private boolean handleRetryAfter(Map<String, List<String>> httpResponseHeaders, Integer statusCode) {
+        String value = httpResponseHeaders.get(RETRY_AFTER)!=null? httpResponseHeaders.get(RETRY_AFTER).getFirst(): httpResponseHeaders.get(X_RETRY_AFTER).getFirst();
+        LOGGER.debug("Retry-After or X-Retry-After header is present with value '{}', so delayed retry is needed",value);
+        //is it a date or an integer ?
+        long secondsToWait;
+        Instant until;
+        if(IS_INTEGER.matcher(value).matches()){
+            secondsToWait = Integer.parseInt(value);
+        }else{
+            try {
+                until = LocalDateTime.parse(value, RFC_7231_FORMATTER).atZone(ZoneId.of(UTC)).toInstant();
+            }catch (DateTimeParseException dtp){
+                LOGGER.warn("Cannot parse Retry-After / X-Retry-After header value '{}' as a date with RFC7231 format, falling back to RFC1123 format",value);
+                try {
+                    until = ZonedDateTime.parse(value, RFC_1123_FORMATTER).toInstant();
+                } catch (DateTimeParseException dtp2){
+                    LOGGER.error("Cannot parse Retry-After / X-Retry-After header value '{}' as a date with RFC1123 format either, falling back to no retry",value);
+                    return false;
+                }
+            }
+            secondsToWait = Instant.now().until(until, SECONDS);
+            long retryDelayThreshold=60;
+            if(secondsToWait>retryDelayThreshold){
+                throw new TooLongRetryDelayException(secondsToWait,retryDelayThreshold);
+            }else {
+                try {
+                    Thread.sleep(secondsToWait*1000);
+                } catch (InterruptedException e) {
+                    throw new RuntimeException(e);
+                }
+            }
+        }
+
+
+        switch (statusCode){
+            case INTERNAL_SERVER_ERROR: {
+                //503 Internal server error : server's resources are exhausted
+                LOGGER.debug("Internal server error : server's resources are exhausted");
+                break;
+            }
+            case TOO_MANY_REQUESTS: {
+                //429 too many requests
+                LOGGER.debug("quota is exhausted : too many requests");
+                break;
+            }
+            case MOVED_PERMANENTLY:{
+                // 301 Moved Permanently
+                LOGGER.debug(" 301 Moved Permanently");
+                break;
+            }
+            default:
+                //unknown code
+        }
+        return false;
     }
 
     protected HttpRequest enrich(HttpRequest httpRequest) {
