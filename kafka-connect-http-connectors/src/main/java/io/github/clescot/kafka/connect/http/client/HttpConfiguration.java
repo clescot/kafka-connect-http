@@ -232,6 +232,7 @@ public class HttpConfiguration<C extends HttpClient<NR, NS>, NR, NS> implements 
                         .onHalfOpen(context -> {
                             LOGGER.info("Circuit breaker for too long retry delay is now HALF-OPEN. Next call will test the connection.");
                             close = true;
+                            this.nextRetryInstant = null;
                         })
                         .onClose(context -> LOGGER.warn("Circuit breaker for too long retry delay is now CLOSED. Calls can be retried again."))
                         .build();
