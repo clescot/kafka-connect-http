@@ -1,16 +1,17 @@
 package io.github.clescot.kafka.connect.http.client;
 
 import com.google.common.base.Stopwatch;
-import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
-import dev.failsafe.*;
+import dev.failsafe.CircuitBreaker;
+import dev.failsafe.Failsafe;
+import dev.failsafe.FailsafeExecutor;
+import dev.failsafe.RetryPolicy;
 import io.github.clescot.kafka.connect.Configuration;
 import io.github.clescot.kafka.connect.http.client.config.AddSuccessStatusToHttpExchangeFunction;
 import io.github.clescot.kafka.connect.http.client.config.HttpRequestPredicateBuilder;
 import io.github.clescot.kafka.connect.http.core.HttpExchange;
 import io.github.clescot.kafka.connect.http.core.HttpRequest;
 import io.github.clescot.kafka.connect.http.core.HttpResponse;
-import org.awaitility.Awaitility;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -18,7 +19,6 @@ import org.slf4j.LoggerFactory;
 import java.time.*;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
-import java.time.temporal.TemporalUnit;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -174,6 +174,24 @@ public class HttpConfiguration<C extends HttpClient<NR, NS>, NR, NS> implements 
                         .withFailureThreshold(1)
                         //we reestablish the circuit after one successful call
                         .withSuccessThreshold(1)
+                        .withDelayFnOn(context -> {
+                            HttpExchange httpExchange = context.getLastResult();
+                            HttpResponse response = httpExchange.getResponse();
+
+                            Integer statusCode = response.getStatusCode();
+                            LOGGER.debug("status code:{}",statusCode);
+
+                            String retryAfterValue = getRetryAfterValue(response.getHeaders());
+                            LOGGER.debug("Retry-After Value:{}",retryAfterValue);
+
+                            long secondsToWait = getSecondsToWait(retryAfterValue);
+                            LOGGER.debug("seconds to wait:{}",secondsToWait);
+
+                            return Duration.of(secondsToWait, SECONDS);
+                        },TooLongRetryDelayException.class)
+                        .onOpen(context -> LOGGER.error("Circuit breaker for too long retry delay is now OPEN. Calls will not be retried anymore."))
+                        .onHalfOpen(context -> LOGGER.info("Circuit breaker for too long retry delay is now HALF-OPEN. Next call will test the connection."))
+                        .onClose(context -> LOGGER.warn("Circuit breaker for too long retry delay is now CLOSED. Calls can be retried again."))
                         .build();
                 FailsafeExecutor<HttpExchange> failsafeExecutor = Failsafe.with(myRetryPolicy, tooLongRetryDelayCircuitBreaker);
                 if (this.executorService != null) {
@@ -225,7 +243,7 @@ public class HttpConfiguration<C extends HttpClient<NR, NS>, NR, NS> implements 
             Integer statusCode = httpResponse.getStatusCode();
             Map<String, List<String>> httpResponseHeaders = httpResponse.getHeaders();
             if(httpResponseHeaders.containsKey(RETRY_AFTER)||httpResponseHeaders.containsKey(X_RETRY_AFTER)){
-                return handleRetryAfter(httpResponseHeaders, statusCode);
+                return openCircuitWithRetryAfterHeader(httpResponseHeaders, statusCode);
             }
             Matcher matcher = retryPattern.matcher("" + statusCode);
             return matcher.matches();
@@ -234,10 +252,9 @@ public class HttpConfiguration<C extends HttpClient<NR, NS>, NR, NS> implements 
         }
     }
 
-    private boolean handleRetryAfter(Map<String, List<String>> httpResponseHeaders, Integer statusCode) {
-        String value = httpResponseHeaders.get(RETRY_AFTER)!=null? httpResponseHeaders.get(RETRY_AFTER).getFirst(): httpResponseHeaders.get(X_RETRY_AFTER).getFirst();
-        LOGGER.debug("Retry-After or X-Retry-After header is present with value '{}', so delayed retry is needed",value);
+    private boolean openCircuitWithRetryAfterHeader(Map<String, List<String>> httpResponseHeaders, Integer statusCode) {
 
+        //log Response Status Code
         switch (statusCode){
             case INTERNAL_SERVER_ERROR: {
                 //503 Internal server error : server's resources are exhausted
@@ -257,7 +274,29 @@ public class HttpConfiguration<C extends HttpClient<NR, NS>, NR, NS> implements 
             default:
                 //unknown code
         }
+        String value = getRetryAfterValue(httpResponseHeaders);
+        if(value==null){
+            throw new IllegalStateException("there must be a 'Retry-After' or 'X-Retry-After' header" );
+        }
+        long secondsToWait = getSecondsToWait(value);
+        LOGGER.debug("Retry-After or X-Retry-After header is present with value '{}', so delayed retry is needed",value);
 
+        if (secondsToWait == 0L) return false;
+        long retryDelayThreshold=60;
+        if(secondsToWait>retryDelayThreshold){
+            throw new TooLongRetryDelayException(secondsToWait,retryDelayThreshold);
+        }else {
+            try {
+                //seconds to millis
+                Thread.sleep(secondsToWait*1000);
+                return true;
+            } catch (InterruptedException e) {
+                throw new HttpException(e);
+            }
+        }
+    }
+
+    private  long getSecondsToWait(String value) {
         //is it a date or an integer ?
         long secondsToWait;
         Instant until;
@@ -268,31 +307,22 @@ public class HttpConfiguration<C extends HttpClient<NR, NS>, NR, NS> implements 
             try {
                 until = LocalDateTime.parse(value, RFC_7231_FORMATTER).atZone(ZoneId.of(UTC)).toInstant();
             }catch (DateTimeParseException dtp){
-                LOGGER.warn("Cannot parse Retry-After / X-Retry-After header value '{}' as a date with RFC7231 format, falling back to RFC1123 format",value);
+                LOGGER.warn("Cannot parse Retry-After / X-Retry-After header value '{}' as a date with RFC7231 format, falling back to RFC1123 format", value);
                 try {
                     until = ZonedDateTime.parse(value, RFC_1123_FORMATTER).toInstant();
                 } catch (DateTimeParseException dtp2){
-                    LOGGER.error("Cannot parse Retry-After / X-Retry-After header value '{}' as a date with RFC1123 format either, falling back to no retry",value);
-                    return false;
+                    LOGGER.error("Cannot parse Retry-After / X-Retry-After header value '{}' as a date with RFC1123 format either, falling back retry", value);
+                    return 0L;
                 }
             }
             secondsToWait = Instant.now().until(until, SECONDS);
-            long retryDelayThreshold=60;
-            if(secondsToWait>retryDelayThreshold){
-                throw new TooLongRetryDelayException(secondsToWait,retryDelayThreshold);
-            }else {
-                try {
-                    Thread.sleep(secondsToWait*1000);
-                    return true;
-                } catch (InterruptedException e) {
-                    throw new RuntimeException(e);
-                }
-            }
+
         }
+        return secondsToWait;
+    }
 
-
-
-        return false;
+    private String getRetryAfterValue(Map<String, List<String>> httpResponseHeaders) {
+        return httpResponseHeaders.get(RETRY_AFTER) != null ? httpResponseHeaders.get(RETRY_AFTER).get(0) : (httpResponseHeaders.get(X_RETRY_AFTER)!=null?httpResponseHeaders.get(X_RETRY_AFTER).get(0):null);
     }
 
     protected HttpRequest enrich(HttpRequest httpRequest) {

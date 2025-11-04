@@ -2,8 +2,13 @@ package io.github.clescot.kafka.connect.http.client;
 
 public class TooLongRetryDelayException extends RuntimeException {
 
+    private long secondsToWait;
+    private long retryDelayThreshold;
+
     public TooLongRetryDelayException(long secondsToWait, long retryDelayThreshold) {
         super("The retry delay is too long: " + secondsToWait + " seconds. The threshold is " + retryDelayThreshold + " seconds.");
+        this.secondsToWait = secondsToWait;
+        this.retryDelayThreshold = retryDelayThreshold;
     }
 
     public TooLongRetryDelayException(String message) {
@@ -20,5 +25,13 @@ public class TooLongRetryDelayException extends RuntimeException {
 
     public TooLongRetryDelayException(String message, Throwable cause, boolean enableSuppression, boolean writableStackTrace) {
         super(message, cause, enableSuppression, writableStackTrace);
+    }
+
+    public long getSecondsToWait() {
+        return secondsToWait;
+    }
+
+    public long getRetryDelayThreshold() {
+        return retryDelayThreshold;
     }
 }
