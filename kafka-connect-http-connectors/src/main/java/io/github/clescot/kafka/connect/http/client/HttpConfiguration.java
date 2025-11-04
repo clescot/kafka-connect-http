@@ -32,8 +32,7 @@ import java.util.regex.Pattern;
 
 import static com.google.common.primitives.Longs.min;
 import static io.github.clescot.kafka.connect.http.client.config.HttpRequestPredicateBuilder.*;
-import static io.github.clescot.kafka.connect.http.sink.HttpConfigDefinition.DEFAULT_DEFAULT_RETRY_RESPONSE_CODE_REGEX;
-import static io.github.clescot.kafka.connect.http.sink.HttpConfigDefinition.RETRY_RESPONSE_CODE_REGEX;
+import static io.github.clescot.kafka.connect.http.sink.HttpConfigDefinition.*;
 import static java.time.temporal.ChronoUnit.SECONDS;
 
 /**
@@ -49,9 +48,6 @@ public class HttpConfiguration<C extends HttpClient<NR, NS>, NR, NS> implements 
     private static final Logger LOGGER = LoggerFactory.getLogger(HttpConfiguration.class);
     public static final String RETRY_AFTER = "Retry-After";
     public static final String X_RETRY_AFTER = "X-Retry-After";
-    public static final int INTERNAL_SERVER_ERROR = 503;
-    public static final int TOO_MANY_REQUESTS = 429;
-    public static final int MOVED_PERMANENTLY = 301;
     public static final String UTC = "UTC";
 
     private C client;
@@ -65,10 +61,14 @@ public class HttpConfiguration<C extends HttpClient<NR, NS>, NR, NS> implements 
     private static final Pattern IS_INTEGER = Pattern.compile("\\d+");
     private Pattern customStatusCodeCompatibleWithRetryAfterHeader;
 
+    public static final String USUAL_RETRY_AFTER_STATUS_CODES = "503|429|301";
     //cf https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Retry-After
-    private static final Pattern DEFAULT_STATUS_CODE_COMPATIBLE_WITH_RETRY_AFTER_HEADER = Pattern.compile("429|503|301");
-    private static final DateTimeFormatter RFC_7231_FORMATTER = DateTimeFormatter.ofPattern("EEE, dd MMM yyyy HH:mm:ss O");
+    //regex to match 503 (Internal Server Error), 429(Too Many Requests), 301(Moved Permanently) HTTP response status code
+    private static final Pattern DEFAULT_STATUS_CODE_COMPATIBLE_WITH_RETRY_AFTER_HEADER = Pattern.compile(USUAL_RETRY_AFTER_STATUS_CODES);
+    public static final String RFC_7231_PATTERN = "EEE, dd MMM yyyy HH:mm:ss O";
+    private static final DateTimeFormatter RFC_7231_FORMATTER = DateTimeFormatter.ofPattern(RFC_7231_PATTERN);
     private static final DateTimeFormatter RFC_1123_FORMATTER = DateTimeFormatter.RFC_1123_DATE_TIME;
+    private final long maxSecondsToWait;
     public HttpConfiguration(String id,
                              C client,
                              ExecutorService executorService,
@@ -83,6 +83,8 @@ public class HttpConfiguration<C extends HttpClient<NR, NS>, NR, NS> implements 
         this.retryResponseCodeRegex = Pattern.compile(settings.getOrDefault(RETRY_RESPONSE_CODE_REGEX, DEFAULT_DEFAULT_RETRY_RESPONSE_CODE_REGEX));
 
         this.predicate = HttpRequestPredicateBuilder.build().buildPredicate(settings);
+        //one day
+        maxSecondsToWait = Long.parseLong(settings.getOrDefault(RETRY_AFTER_MAX_DURATION_IN_SEC, DEFAULT_RETRY_AFTER_MAX_DURATION_IN_SEC));
     }
 
     public Pattern getRetryResponseCodeRegex() {
@@ -191,9 +193,7 @@ public class HttpConfiguration<C extends HttpClient<NR, NS>, NR, NS> implements 
 
                             long secondsToWait = getSecondsToWait(retryAfterValue);
                             LOGGER.debug("seconds to wait:{}",secondsToWait);
-                            //one day
-                            //TODO configure maxSecondsToWait
-                            long maxSecondsToWait = 86_400L;
+
                             return Duration.of( min(secondsToWait,maxSecondsToWait), SECONDS);
                         },TooLongRetryDelayException.class)
                         .onOpen(context -> LOGGER.error("Circuit breaker for too long retry delay is now OPEN. Calls will not be retried anymore."))
@@ -264,7 +264,7 @@ public class HttpConfiguration<C extends HttpClient<NR, NS>, NR, NS> implements 
      * and wait for the retry after header Duration to re-enable the client.
      * @param httpResponseHeaders map of response headers
      * @param statusCode HTTP's response status code
-     * @return
+     * @return true if the circuit must be opened (i.e the client must be disabled), false otherwise
      */
     private boolean openCircuitWithRetryAfterHeader(Map<String, List<String>> httpResponseHeaders, Integer statusCode) {
 
