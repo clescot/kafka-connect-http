@@ -237,9 +237,31 @@ public class HttpConfiguration<C extends HttpClient<NR, NS>, NR, NS> implements 
     private boolean handleRetryAfter(Map<String, List<String>> httpResponseHeaders, Integer statusCode) {
         String value = httpResponseHeaders.get(RETRY_AFTER)!=null? httpResponseHeaders.get(RETRY_AFTER).getFirst(): httpResponseHeaders.get(X_RETRY_AFTER).getFirst();
         LOGGER.debug("Retry-After or X-Retry-After header is present with value '{}', so delayed retry is needed",value);
+
+        switch (statusCode){
+            case INTERNAL_SERVER_ERROR: {
+                //503 Internal server error : server's resources are exhausted
+                LOGGER.debug("Internal server error : server's resources are exhausted");
+                break;
+            }
+            case TOO_MANY_REQUESTS: {
+                //429 too many requests
+                LOGGER.debug("quota is exhausted : too many requests");
+                break;
+            }
+            case MOVED_PERMANENTLY:{
+                // 301 Moved Permanently
+                LOGGER.debug(" 301 Moved Permanently");
+                break;
+            }
+            default:
+                //unknown code
+        }
+
         //is it a date or an integer ?
         long secondsToWait;
         Instant until;
+
         if(IS_INTEGER.matcher(value).matches()){
             secondsToWait = Integer.parseInt(value);
         }else{
@@ -261,6 +283,7 @@ public class HttpConfiguration<C extends HttpClient<NR, NS>, NR, NS> implements 
             }else {
                 try {
                     Thread.sleep(secondsToWait*1000);
+                    return true;
                 } catch (InterruptedException e) {
                     throw new RuntimeException(e);
                 }
@@ -268,25 +291,7 @@ public class HttpConfiguration<C extends HttpClient<NR, NS>, NR, NS> implements 
         }
 
 
-        switch (statusCode){
-            case INTERNAL_SERVER_ERROR: {
-                //503 Internal server error : server's resources are exhausted
-                LOGGER.debug("Internal server error : server's resources are exhausted");
-                break;
-            }
-            case TOO_MANY_REQUESTS: {
-                //429 too many requests
-                LOGGER.debug("quota is exhausted : too many requests");
-                break;
-            }
-            case MOVED_PERMANENTLY:{
-                // 301 Moved Permanently
-                LOGGER.debug(" 301 Moved Permanently");
-                break;
-            }
-            default:
-                //unknown code
-        }
+
         return false;
     }
 
