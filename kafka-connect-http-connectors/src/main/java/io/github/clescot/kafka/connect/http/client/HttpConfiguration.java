@@ -69,6 +69,7 @@ public class HttpConfiguration<C extends HttpClient<NR, NS>, NR, NS> implements 
     private static final DateTimeFormatter RFC_7231_FORMATTER = DateTimeFormatter.ofPattern(RFC_7231_PATTERN);
     private static final DateTimeFormatter RFC_1123_FORMATTER = DateTimeFormatter.RFC_1123_DATE_TIME;
     private final long maxSecondsToWait;
+    private final long retryDelayThreshold;
     public HttpConfiguration(String id,
                              C client,
                              ExecutorService executorService,
@@ -85,6 +86,7 @@ public class HttpConfiguration<C extends HttpClient<NR, NS>, NR, NS> implements 
         this.predicate = HttpRequestPredicateBuilder.build().buildPredicate(settings);
         //one day
         maxSecondsToWait = Long.parseLong(settings.getOrDefault(RETRY_AFTER_MAX_DURATION_IN_SEC, DEFAULT_RETRY_AFTER_MAX_DURATION_IN_SEC));
+        retryDelayThreshold = Long.parseLong(settings.getOrDefault(RETRY_DELAY_THRESHOLD_IN_SEC, DEFAULT_RETRY_DELAY_THRESHOLD_IN_SEC));
     }
 
     public Pattern getRetryResponseCodeRegex() {
@@ -280,8 +282,7 @@ public class HttpConfiguration<C extends HttpClient<NR, NS>, NR, NS> implements 
         LOGGER.debug("Retry-After or X-Retry-After header is present with value '{}', so delayed retry is needed",value);
 
         if (secondsToWait == 0L) return false;
-        //TODO configure retryDelayThreshold
-        long retryDelayThreshold=60;
+
         if(secondsToWait>retryDelayThreshold){
             throw new TooLongRetryDelayException(secondsToWait,retryDelayThreshold);
         }else {
