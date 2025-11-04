@@ -7,7 +7,6 @@ import io.github.clescot.kafka.connect.RequestTask;
 import io.github.clescot.kafka.connect.http.client.HttpClient;
 import io.github.clescot.kafka.connect.http.client.HttpClientFactory;
 import io.github.clescot.kafka.connect.http.client.HttpConfiguration;
-import io.github.clescot.kafka.connect.http.client.HttpException;
 import io.github.clescot.kafka.connect.http.core.HttpExchange;
 import io.github.clescot.kafka.connect.http.core.HttpRequest;
 import io.github.clescot.kafka.connect.http.sink.HttpConnectorConfig;
@@ -113,14 +112,18 @@ public class HttpTask<T,C extends HttpClient<NR, NS>, NR, NS> implements Request
         if (LOGGER.isTraceEnabled()) {
             LOGGER.trace("configuration found:{}", foundConfiguration.getId());
         }
-        //handle Request and Response
-        return foundConfiguration.call(httpRequest)
-                .thenApply(
-                        httpExchange -> {
-                            LOGGER.debug("HTTP exchange :{}", httpExchange);
-                            return httpExchange;
-                        }
-                );
+        if(foundConfiguration.isClose()) {
+            //handle Request and Response
+            return foundConfiguration.call(httpRequest)
+                    .thenApply(
+                            httpExchange -> {
+                                LOGGER.debug("HTTP exchange :{}", httpExchange);
+                                return httpExchange;
+                            }
+                    );
+        }else {
+            LOGGER.warn("configuration is not enabled.");
+        }
     }
 
     @Override

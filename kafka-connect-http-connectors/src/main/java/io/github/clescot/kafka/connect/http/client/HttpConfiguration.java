@@ -70,6 +70,9 @@ public class HttpConfiguration<C extends HttpClient<NR, NS>, NR, NS> implements 
     private static final DateTimeFormatter RFC_1123_FORMATTER = DateTimeFormatter.RFC_1123_DATE_TIME;
     private final long maxSecondsToWait;
     private final long retryDelayThreshold;
+    private boolean close = true;
+    private Instant nextRetryInstant;
+
     public HttpConfiguration(String id,
                              C client,
                              ExecutorService executorService,
@@ -144,6 +147,22 @@ public class HttpConfiguration<C extends HttpClient<NR, NS>, NR, NS> implements 
     }
 
     /**
+     * indicates if the client is closed (i.e enabled) due to circuit breaker opening.
+     * @return true if the client is closed.
+     */
+    public boolean isClose() {
+        return close;
+    }
+
+    public long getMaxSecondsToWait() {
+        return maxSecondsToWait;
+    }
+
+    public long getRetryDelayThreshold() {
+        return retryDelayThreshold;
+    }
+
+    /**
      *  - enrich request
      *  - execute the request
      * @param httpRequest HttpRequest to call
@@ -198,8 +217,22 @@ public class HttpConfiguration<C extends HttpClient<NR, NS>, NR, NS> implements 
 
                             return Duration.of( min(secondsToWait,maxSecondsToWait), SECONDS);
                         },TooLongRetryDelayException.class)
-                        .onOpen(context -> LOGGER.error("Circuit breaker for too long retry delay is now OPEN. Calls will not be retried anymore."))
-                        .onHalfOpen(context -> LOGGER.info("Circuit breaker for too long retry delay is now HALF-OPEN. Next call will test the connection."))
+                        .onFailure(context -> {
+                            Throwable failure = context.getException();
+                            if (failure instanceof TooLongRetryDelayException tooLongRetryDelayException) {
+                                LOGGER.error("Circuit breaker detected a too long retry delay of {} seconds exceeding the threshold of {} seconds. Opening the circuit.",
+                                        tooLongRetryDelayException.getSecondsToWait(), tooLongRetryDelayException.getRetryDelayThreshold());
+                                this.nextRetryInstant = tooLongRetryDelayException.getNextRetryInstant();
+                            }
+                        })
+                        .onOpen(context ->{
+                            LOGGER.error("Circuit breaker for too long retry delay is now OPEN. Calls will not be retried anymore.");
+                            close = false;
+                        })
+                        .onHalfOpen(context -> {
+                            LOGGER.info("Circuit breaker for too long retry delay is now HALF-OPEN. Next call will test the connection.");
+                            close = true;
+                        })
                         .onClose(context -> LOGGER.warn("Circuit breaker for too long retry delay is now CLOSED. Calls can be retried again."))
                         .build();
                 FailsafeExecutor<HttpExchange> failsafeExecutor = Failsafe.with(myRetryPolicy, tooLongRetryDelayCircuitBreaker);
