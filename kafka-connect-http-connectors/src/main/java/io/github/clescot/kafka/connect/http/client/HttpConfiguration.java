@@ -30,6 +30,7 @@ import java.util.function.Predicate;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import static com.google.common.primitives.Longs.min;
 import static io.github.clescot.kafka.connect.http.client.config.HttpRequestPredicateBuilder.*;
 import static io.github.clescot.kafka.connect.http.sink.HttpConfigDefinition.DEFAULT_DEFAULT_RETRY_RESPONSE_CODE_REGEX;
 import static io.github.clescot.kafka.connect.http.sink.HttpConfigDefinition.RETRY_RESPONSE_CODE_REGEX;
@@ -62,6 +63,10 @@ public class HttpConfiguration<C extends HttpClient<NR, NS>, NR, NS> implements 
     private final String id;
     private final Predicate<HttpRequest> predicate;
     private static final Pattern IS_INTEGER = Pattern.compile("\\d+");
+    private Pattern customStatusCodeCompatibleWithRetryAfterHeader;
+
+    //cf https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Retry-After
+    private static final Pattern DEFAULT_STATUS_CODE_COMPATIBLE_WITH_RETRY_AFTER_HEADER = Pattern.compile("429|503|301");
     private static final DateTimeFormatter RFC_7231_FORMATTER = DateTimeFormatter.ofPattern("EEE, dd MMM yyyy HH:mm:ss O");
     private static final DateTimeFormatter RFC_1123_FORMATTER = DateTimeFormatter.RFC_1123_DATE_TIME;
     public HttpConfiguration(String id,
@@ -186,8 +191,10 @@ public class HttpConfiguration<C extends HttpClient<NR, NS>, NR, NS> implements 
 
                             long secondsToWait = getSecondsToWait(retryAfterValue);
                             LOGGER.debug("seconds to wait:{}",secondsToWait);
-
-                            return Duration.of(secondsToWait, SECONDS);
+                            //one day
+                            //TODO configure maxSecondsToWait
+                            long maxSecondsToWait = 86_400L;
+                            return Duration.of( min(secondsToWait,maxSecondsToWait), SECONDS);
                         },TooLongRetryDelayException.class)
                         .onOpen(context -> LOGGER.error("Circuit breaker for too long retry delay is now OPEN. Calls will not be retried anymore."))
                         .onHalfOpen(context -> LOGGER.info("Circuit breaker for too long retry delay is now HALF-OPEN. Next call will test the connection."))
@@ -252,27 +259,18 @@ public class HttpConfiguration<C extends HttpClient<NR, NS>, NR, NS> implements 
         }
     }
 
+    /**
+     * when the response code is compatible with a retry after header, we can open the circuit (i.e disable the client),
+     * and wait for the retry after header Duration to re-enable the client.
+     * @param httpResponseHeaders map of response headers
+     * @param statusCode HTTP's response status code
+     * @return
+     */
     private boolean openCircuitWithRetryAfterHeader(Map<String, List<String>> httpResponseHeaders, Integer statusCode) {
 
-        //log Response Status Code
-        switch (statusCode){
-            case INTERNAL_SERVER_ERROR: {
-                //503 Internal server error : server's resources are exhausted
-                LOGGER.debug("Internal server error : server's resources are exhausted");
-                break;
-            }
-            case TOO_MANY_REQUESTS: {
-                //429 too many requests
-                LOGGER.debug("quota is exhausted : too many requests");
-                break;
-            }
-            case MOVED_PERMANENTLY:{
-                // 301 Moved Permanently
-                LOGGER.debug(" 301 Moved Permanently");
-                break;
-            }
-            default:
-                //unknown code
+        boolean statusCodeIsCompatibleWithRetryAfter = statusCodeIsCompatibleWithRetryAfter(statusCode);
+        if(!statusCodeIsCompatibleWithRetryAfter){
+            return false;
         }
         String value = getRetryAfterValue(httpResponseHeaders);
         if(value==null){
@@ -282,6 +280,7 @@ public class HttpConfiguration<C extends HttpClient<NR, NS>, NR, NS> implements 
         LOGGER.debug("Retry-After or X-Retry-After header is present with value '{}', so delayed retry is needed",value);
 
         if (secondsToWait == 0L) return false;
+        //TODO configure retryDelayThreshold
         long retryDelayThreshold=60;
         if(secondsToWait>retryDelayThreshold){
             throw new TooLongRetryDelayException(secondsToWait,retryDelayThreshold);
@@ -294,6 +293,13 @@ public class HttpConfiguration<C extends HttpClient<NR, NS>, NR, NS> implements 
                 throw new HttpException(e);
             }
         }
+    }
+
+    private boolean statusCodeIsCompatibleWithRetryAfter(Integer statusCode) {
+        Pattern pattern = customStatusCodeCompatibleWithRetryAfterHeader!=null?
+                customStatusCodeCompatibleWithRetryAfterHeader:
+                DEFAULT_STATUS_CODE_COMPATIBLE_WITH_RETRY_AFTER_HEADER;
+        return pattern.matcher(""+statusCode).matches();
     }
 
     private  long getSecondsToWait(String value) {
