@@ -98,6 +98,8 @@ public interface HttpClient<NR, NS> extends RequestResponseClient<HttpRequest, N
                 LOGGER.trace("no rate limiter is configured");
             }
             Stopwatch directStopWatch = Stopwatch.createStarted();
+
+            //real call is executed here
             response = nativeCall(request);
 
             Preconditions.checkNotNull(response, "response is null");
