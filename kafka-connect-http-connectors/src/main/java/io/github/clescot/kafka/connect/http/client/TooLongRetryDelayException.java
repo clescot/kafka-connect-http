@@ -6,13 +6,20 @@ public class TooLongRetryDelayException extends RuntimeException {
 
     private final long secondsToWait;
     private final long retryDelayThreshold;
+    private final int httpStatusCode;
+    private final String httpStatusMessage;
     private final Instant nextRetryInstant;
 
-    public TooLongRetryDelayException(long secondsToWait, long retryDelayThreshold) {
+    public TooLongRetryDelayException(long secondsToWait,
+                                      long retryDelayThreshold,
+                                      int httpStatusCode,
+                                      String httpStatusMessage) {
         super("The retry delay is too long: " + secondsToWait + " seconds. The threshold is " + retryDelayThreshold + " seconds.");
         this.secondsToWait = secondsToWait;
         nextRetryInstant = Instant.now().plusSeconds(secondsToWait);
         this.retryDelayThreshold = retryDelayThreshold;
+        this.httpStatusCode = httpStatusCode;
+        this.httpStatusMessage = httpStatusMessage;
     }
 
 
@@ -25,5 +32,13 @@ public class TooLongRetryDelayException extends RuntimeException {
 
     public long getRetryDelayThreshold() {
         return retryDelayThreshold;
+    }
+
+    public int getHttpStatusCode() {
+        return httpStatusCode;
+    }
+
+    public String getHttpStatusMessage() {
+        return httpStatusMessage;
     }
 }

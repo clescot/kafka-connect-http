@@ -1,5 +1,6 @@
 package io.github.clescot.kafka.connect.http;
 
+import com.google.common.base.Stopwatch;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import dev.failsafe.RetryPolicy;
@@ -9,6 +10,7 @@ import io.github.clescot.kafka.connect.http.client.HttpClientFactory;
 import io.github.clescot.kafka.connect.http.client.HttpConfiguration;
 import io.github.clescot.kafka.connect.http.core.HttpExchange;
 import io.github.clescot.kafka.connect.http.core.HttpRequest;
+import io.github.clescot.kafka.connect.http.core.HttpResponse;
 import io.github.clescot.kafka.connect.http.sink.HttpConnectorConfig;
 import io.micrometer.core.instrument.composite.CompositeMeterRegistry;
 import org.apache.commons.lang3.tuple.Pair;
@@ -16,6 +18,9 @@ import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.time.OffsetDateTime;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -23,6 +28,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
 import static io.github.clescot.kafka.connect.http.client.HttpClientFactory.buildConfigurations;
@@ -56,6 +62,7 @@ public class HttpTask<T,C extends HttpClient<NR, NS>, NR, NS> implements Request
 
     private final List<RequestGrouper<T>> requestGroupers;
     private final Map<String, String> settings;
+    public static final DateTimeFormatter DATE_TIME_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 
     public HttpTask(HttpConnectorConfig httpConnectorConfig,
                     HttpClientFactory<C, NR, NS> httpClientFactory) {
@@ -122,7 +129,18 @@ public class HttpTask<T,C extends HttpClient<NR, NS>, NR, NS> implements Request
                             }
                     );
         }else {
-            LOGGER.warn("configuration is not enabled.");
+            AtomicInteger attempts = new AtomicInteger();
+            LOGGER.warn("configuration is not enabled. will be closed (i.e available) at {}",DATE_TIME_FORMATTER.format(foundConfiguration.getNextRetryInstant()));
+            HttpExchange httpExchange = foundConfiguration.getClient().buildExchange(
+                    httpRequest,
+                    new HttpResponse(HttpClient.SERVER_ERROR_STATUS_CODE, "configuration is disabled until " + DATE_TIME_FORMATTER.format(foundConfiguration.getNextRetryInstant())),
+                    Stopwatch.createUnstarted(),
+                    OffsetDateTime.now(ZoneId.of(HttpClient.UTC_ZONE_ID)),
+                    attempts,
+                    HttpClient.FAILURE,
+                    Maps.newHashMap(),
+                    Maps.newHashMap());
+            return CompletableFuture.supplyAsync(() -> httpExchange);
         }
     }
 

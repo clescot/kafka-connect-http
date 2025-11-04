@@ -247,13 +247,27 @@ public class HttpConfiguration<C extends HttpClient<NR, NS>, NR, NS> implements 
                 //no RetryPolicy is set
                 return callAndEnrich(httpRequest, attempts);
             }
+        } catch (TooLongRetryDelayException tooLongRetryDelayException) {
+            //Retry-After delay is too long
+            LOGGER.error("Failed to call web service after {} retries with error({}). message:{} ", attempts, tooLongRetryDelayException,
+                    tooLongRetryDelayException.getMessage());
+            HttpExchange httpExchange = getClient().buildExchange(
+                    httpRequest,
+                    new HttpResponse(tooLongRetryDelayException.getHttpStatusCode(), tooLongRetryDelayException.getHttpStatusMessage()),
+                    Stopwatch.createUnstarted(), OffsetDateTime.now(ZoneId.of(HttpClient.UTC_ZONE_ID)),
+                    attempts,
+                    HttpClient.FAILURE,
+                    Maps.newHashMap(),
+                    Maps.newHashMap());
+            return CompletableFuture.supplyAsync(() -> httpExchange);
         } catch (Exception exception) {
             LOGGER.error("Failed to call web service after {} retries with error({}). message:{} ", attempts, exception,
                     exception.getMessage());
             HttpExchange httpExchange = getClient().buildExchange(
                     httpRequest,
                     new HttpResponse(HttpClient.SERVER_ERROR_STATUS_CODE, String.valueOf(exception.getMessage())),
-                    Stopwatch.createUnstarted(), OffsetDateTime.now(ZoneId.of(HttpClient.UTC_ZONE_ID)),
+                    Stopwatch.createUnstarted(),
+                    OffsetDateTime.now(ZoneId.of(HttpClient.UTC_ZONE_ID)),
                     attempts,
                     HttpClient.FAILURE,
                     Maps.newHashMap(),
@@ -283,10 +297,10 @@ public class HttpConfiguration<C extends HttpClient<NR, NS>, NR, NS> implements 
         Optional<Pattern> myRetryResponseCodeRegex = Optional.ofNullable(getRetryResponseCodeRegex());
         if (myRetryResponseCodeRegex.isPresent()) {
             Pattern retryPattern = myRetryResponseCodeRegex.get();
-            Integer statusCode = httpResponse.getStatusCode();
+            int statusCode = httpResponse.getStatusCode();
             Map<String, List<String>> httpResponseHeaders = httpResponse.getHeaders();
             if(httpResponseHeaders.containsKey(RETRY_AFTER)||httpResponseHeaders.containsKey(X_RETRY_AFTER)){
-                return openCircuitWithRetryAfterHeader(httpResponseHeaders, statusCode);
+                return openCircuitWithRetryAfterHeader(httpResponseHeaders, statusCode,httpResponse.getStatusMessage());
             }
             Matcher matcher = retryPattern.matcher("" + statusCode);
             return matcher.matches();
@@ -298,11 +312,13 @@ public class HttpConfiguration<C extends HttpClient<NR, NS>, NR, NS> implements 
     /**
      * when the response code is compatible with a retry after header, we can open the circuit (i.e disable the client),
      * and wait for the retry after header Duration to re-enable the client.
+     *
      * @param httpResponseHeaders map of response headers
-     * @param statusCode HTTP's response status code
+     * @param statusCode          HTTP's response status code
+     * @param statusMessage
      * @return true if the circuit must be opened (i.e the client must be disabled), false otherwise
      */
-    private boolean openCircuitWithRetryAfterHeader(Map<String, List<String>> httpResponseHeaders, Integer statusCode) {
+    private boolean openCircuitWithRetryAfterHeader(Map<String, List<String>> httpResponseHeaders, int statusCode, String statusMessage) {
 
         boolean statusCodeIsCompatibleWithRetryAfter = statusCodeIsCompatibleWithRetryAfter(statusCode);
         if(!statusCodeIsCompatibleWithRetryAfter){
@@ -318,7 +334,7 @@ public class HttpConfiguration<C extends HttpClient<NR, NS>, NR, NS> implements 
         if (secondsToWait == 0L) return false;
 
         if(secondsToWait>retryDelayThreshold){
-            throw new TooLongRetryDelayException(secondsToWait,retryDelayThreshold);
+            throw new TooLongRetryDelayException(secondsToWait,retryDelayThreshold,statusCode,statusMessage);
         }else {
             try {
                 //seconds to millis
@@ -383,6 +399,10 @@ public class HttpConfiguration<C extends HttpClient<NR, NS>, NR, NS> implements 
     @Override
     public String getId() {
         return this.id;
+    }
+
+    public Instant getNextRetryInstant() {
+        return nextRetryInstant;
     }
 
     @Override
