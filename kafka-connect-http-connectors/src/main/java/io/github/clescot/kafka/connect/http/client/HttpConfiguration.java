@@ -70,7 +70,7 @@ public class HttpConfiguration<C extends HttpClient<NR, NS>, NR, NS> implements 
     private static final DateTimeFormatter RFC_1123_FORMATTER = DateTimeFormatter.RFC_1123_DATE_TIME;
     private final long maxSecondsToWait;
     private final long retryDelayThreshold;
-    private boolean close = true;
+    private boolean closed = true;
     private Instant nextRetryInstant;
 
     public HttpConfiguration(String id,
@@ -150,8 +150,8 @@ public class HttpConfiguration<C extends HttpClient<NR, NS>, NR, NS> implements 
      * indicates if the client is closed (i.e enabled) due to circuit breaker opening.
      * @return true if the client is closed.
      */
-    public boolean isClose() {
-        return close;
+    public boolean isClosed() {
+        return closed;
     }
 
     public long getMaxSecondsToWait() {
@@ -227,11 +227,11 @@ public class HttpConfiguration<C extends HttpClient<NR, NS>, NR, NS> implements 
                         })
                         .onOpen(context ->{
                             LOGGER.error("Circuit breaker for too long retry delay is now OPEN. Calls will not be retried anymore.");
-                            close = false;
+                            closed = false;
                         })
                         .onHalfOpen(context -> {
                             LOGGER.info("Circuit breaker for too long retry delay is now HALF-OPEN. Next call will test the connection.");
-                            close = true;
+                            closed = true;
                             this.nextRetryInstant = null;
                         })
                         .onClose(context -> LOGGER.warn("Circuit breaker for too long retry delay is now CLOSED. Calls can be retried again."))

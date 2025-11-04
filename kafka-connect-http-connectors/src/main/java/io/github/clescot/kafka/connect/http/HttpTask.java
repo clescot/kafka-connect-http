@@ -18,6 +18,7 @@ import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.time.Instant;
 import java.time.OffsetDateTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
@@ -108,6 +109,20 @@ public class HttpTask<T,C extends HttpClient<NR, NS>, NR, NS> implements Request
 
     }
 
+    public HttpConfiguration<C, NR, NS> getConfiguration(@NotNull HttpRequest httpRequest){
+        return selectConfiguration(httpRequest);
+    }
+
+    public boolean isClosed(@NotNull HttpRequest httpRequest){
+        HttpConfiguration<C, NR, NS> foundConfiguration = selectConfiguration(httpRequest);
+        return foundConfiguration.isClosed();
+    }
+
+    public Instant getNextRetryInstant(@NotNull HttpRequest httpRequest){
+        HttpConfiguration<C, NR, NS> foundConfiguration = selectConfiguration(httpRequest);
+        return foundConfiguration.getNextRetryInstant();
+    }
+
     /**
      * get the Configuration matching the HttpRequest, and do the Http call with a retry policy.
      * @param httpRequest http request
@@ -119,7 +134,7 @@ public class HttpTask<T,C extends HttpClient<NR, NS>, NR, NS> implements Request
         if (LOGGER.isTraceEnabled()) {
             LOGGER.trace("configuration found:{}", foundConfiguration.getId());
         }
-        if(foundConfiguration.isClose()) {
+        if(foundConfiguration.isClosed()) {
             //handle Request and Response
             return foundConfiguration.call(httpRequest)
                     .thenApply(
