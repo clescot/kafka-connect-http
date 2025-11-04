@@ -20,7 +20,7 @@ into a configured topic, which must be the topic listened by the HTTP Sink Conne
 * `job.job1.headers` : request's headers list (`Content-Type,If-Modified-Since,Accept-Language`)
 * `job.job1.header.Content-Type: application/json` 
 * `job.job1.header.If-Modified-Since: Mon, 18 Jul 2016 02:36:04 GMT` 
-* `job.job1.header.If-Modified-Since: Mon, 18 Jul 2016 02:36:04 GMT` 
+* `job.job1.header.Accept-Language: fr-CH, fr;q=0.9, en;q=0.8, de;q=0.7, *;q=0.5` 
 * `job.job1.header.Cache-Control: max-age=0`
 
 ## configuration example
