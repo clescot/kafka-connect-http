@@ -1,8 +1,10 @@
 package io.github.clescot.kafka.connect;
 
+import io.github.clescot.kafka.connect.http.client.RetryException;
 import io.github.clescot.kafka.connect.http.core.Request;
 
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  *  A client interface that handles requests and native requests.
@@ -28,4 +30,8 @@ public interface RequestClient<R extends Request,NR,E> extends Client<E>{
      * @return Void or a CompletableFuture of a native HttpResponse.
      */
     CompletableFuture<?> nativeCall(NR request);
+
+    CompletableFuture<?> call(R request, AtomicInteger attempts) throws RetryException;
+
+
 }
