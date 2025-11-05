@@ -196,46 +196,8 @@ public class HttpConfiguration<C extends HttpClient<NR, NS>, NR, NS> implements 
             //a RetryPolicy is set
             if (retryPolicyForCall.isPresent()) {
                 RetryPolicy<HttpExchange> myRetryPolicy = retryPolicyForCall.get();
-                CircuitBreaker<HttpExchange> tooLongRetryDelayCircuitBreaker = CircuitBreaker.<HttpExchange>builder()
-                        .handle(TooLongRetryDelayException.class)
-                        //we break circuit when 1 TooLongRetryDelayException occurs
-                        .withFailureThreshold(1)
-                        //we reestablish the circuit after one successful call
-                        .withSuccessThreshold(1)
-                        .withDelayFnOn(context -> {
-                            HttpExchange httpExchange = context.getLastResult();
-                            HttpResponse response = httpExchange.getResponse();
-
-                            Integer statusCode = response.getStatusCode();
-                            LOGGER.debug("status code:{}",statusCode);
-
-                            String retryAfterValue = getRetryAfterValue(response.getHeaders());
-                            LOGGER.debug("Retry-After Value:{}",retryAfterValue);
-
-                            long secondsToWait = getSecondsToWait(retryAfterValue);
-                            LOGGER.debug("seconds to wait:{}",secondsToWait);
-
-                            return Duration.of( min(secondsToWait,maxSecondsToWait), SECONDS);
-                        },TooLongRetryDelayException.class)
-                        .onFailure(context -> {
-                            Throwable failure = context.getException();
-                            if (failure instanceof TooLongRetryDelayException tooLongRetryDelayException) {
-                                LOGGER.error("Circuit breaker detected a too long retry delay of {} seconds exceeding the threshold of {} seconds. Opening the circuit.",
-                                        tooLongRetryDelayException.getSecondsToWait(), tooLongRetryDelayException.getRetryDelayThreshold());
-                                this.nextRetryInstant = tooLongRetryDelayException.getNextRetryInstant();
-                            }
-                        })
-                        .onOpen(context ->{
-                            LOGGER.error("Circuit breaker for too long retry delay is now OPEN. Calls will not be retried anymore.");
-                            closed = false;
-                        })
-                        .onHalfOpen(context -> {
-                            LOGGER.info("Circuit breaker for too long retry delay is now HALF-OPEN. Next call will test the connection.");
-                            closed = true;
-                            this.nextRetryInstant = null;
-                        })
-                        .onClose(context -> LOGGER.warn("Circuit breaker for too long retry delay is now CLOSED. Calls can be retried again."))
-                        .build();
+                CircuitBreaker<HttpExchange> tooLongRetryDelayCircuitBreaker = buildAfterRetryCircuitBreaker();
+                //compose policies
                 FailsafeExecutor<HttpExchange> failsafeExecutor = Failsafe.with(myRetryPolicy, tooLongRetryDelayCircuitBreaker);
                 if (this.executorService != null) {
                     failsafeExecutor = failsafeExecutor.with(this.executorService);
@@ -275,6 +237,50 @@ public class HttpConfiguration<C extends HttpClient<NR, NS>, NR, NS> implements 
             return CompletableFuture.supplyAsync(() -> httpExchange);
         }
     }
+
+    private CircuitBreaker<HttpExchange> buildAfterRetryCircuitBreaker() {
+        return CircuitBreaker.<HttpExchange>builder()
+                .handle(TooLongRetryDelayException.class)
+                //we break circuit when 1 TooLongRetryDelayException occurs
+                .withFailureThreshold(1)
+                //we reestablish the circuit after one successful call
+                .withSuccessThreshold(1)
+                .withDelayFnOn(context -> {
+                    HttpExchange httpExchange = context.getLastResult();
+                    HttpResponse response = httpExchange.getResponse();
+
+                    Integer statusCode = response.getStatusCode();
+                    LOGGER.debug("status code:{}",statusCode);
+
+                    String retryAfterValue = getRetryAfterValue(response.getHeaders());
+                    LOGGER.debug("Retry-After Value:{}",retryAfterValue);
+
+                    long secondsToWait = getSecondsToWait(retryAfterValue);
+                    LOGGER.debug("seconds to wait:{}",secondsToWait);
+
+                    return Duration.of( min(secondsToWait,maxSecondsToWait), SECONDS);
+                },TooLongRetryDelayException.class)
+                .onFailure(context -> {
+                    Throwable failure = context.getException();
+                    if (failure instanceof TooLongRetryDelayException tooLongRetryDelayException) {
+                        LOGGER.error("Circuit breaker detected a too long retry delay of {} seconds exceeding the threshold of {} seconds. Opening the circuit.",
+                                tooLongRetryDelayException.getSecondsToWait(), tooLongRetryDelayException.getRetryDelayThreshold());
+                        this.nextRetryInstant = tooLongRetryDelayException.getNextRetryInstant();
+                    }
+                })
+                .onOpen(context ->{
+                    LOGGER.error("Circuit breaker for too long retry delay is now OPEN. Calls will not be retried anymore.");
+                    closed = false;
+                })
+                .onHalfOpen(context -> {
+                    LOGGER.info("Circuit breaker for too long retry delay is now HALF-OPEN. Next call will test the connection.");
+                    closed = true;
+                    this.nextRetryInstant = null;
+                })
+                .onClose(context -> LOGGER.warn("Circuit breaker for too long retry delay is now CLOSED. Calls can be retried again."))
+                .build();
+    }
+
     /**
      * Handle the retry logic for the HttpExchange.
      * If the HttpExchange is successful, it returns the HttpExchange as is.

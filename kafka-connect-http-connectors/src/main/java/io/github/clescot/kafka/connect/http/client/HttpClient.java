@@ -81,22 +81,9 @@ public interface HttpClient<NR, NS> extends RequestResponseClient<HttpRequest, N
         LOGGER.debug("native request: {}", request);
         OffsetDateTime now = OffsetDateTime.now(ZoneId.of(UTC_ZONE_ID));
         try {
-            Optional<RateLimiter<HttpExchange>> limiter = getRateLimiter();
-            if (limiter.isPresent()) {
-                RateLimiter<HttpExchange> httpExchangeRateLimiter = limiter.get();
-                rateLimitedStopWatch = Stopwatch.createStarted();
-                String permitsPerExecution = getPermitsPerExecution();
-                if (RATE_LIMITER_REQUEST_LENGTH_PER_CALL.equals(permitsPerExecution)) {
-                    long length = httpRequest.getLength();
-                    httpExchangeRateLimiter.acquirePermits(Math.toIntExact(length));
-                    LOGGER.warn("{} permits acquired for request:'{}'", length, request);
-                } else {
-                    httpExchangeRateLimiter.acquirePermits(HttpClient.ONE_HTTP_REQUEST);
-                    LOGGER.warn("1 permit acquired for request:'{}'", request);
-                }
-            } else {
-                LOGGER.trace("no rate limiter is configured");
-            }
+            rateLimitCall(httpRequest, request);
+
+            rateLimitedStopWatch = Stopwatch.createStarted();
             Stopwatch directStopWatch = Stopwatch.createStarted();
 
             //real call is executed here
@@ -154,6 +141,24 @@ public interface HttpClient<NR, NS> extends RequestResponseClient<HttpRequest, N
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             throw new IllegalStateException(e);
+        }
+    }
+
+    private void rateLimitCall(HttpRequest httpRequest, NR request) throws InterruptedException {
+        Optional<RateLimiter<HttpExchange>> limiter = getRateLimiter();
+        if (limiter.isPresent()) {
+            RateLimiter<HttpExchange> httpExchangeRateLimiter = limiter.get();
+            String permitsPerExecution = getPermitsPerExecution();
+            if (RATE_LIMITER_REQUEST_LENGTH_PER_CALL.equals(permitsPerExecution)) {
+                long length = httpRequest.getLength();
+                httpExchangeRateLimiter.acquirePermits(Math.toIntExact(length));
+                LOGGER.warn("{} permits acquired for request:'{}'", length, request);
+            } else {
+                httpExchangeRateLimiter.acquirePermits(HttpClient.ONE_HTTP_REQUEST);
+                LOGGER.warn("1 permit acquired for request:'{}'", request);
+            }
+        } else {
+            LOGGER.trace("no rate limiter is configured");
         }
     }
 
