@@ -59,12 +59,11 @@ public class HttpConfiguration<C extends HttpClient<NR, NS>, NR, NS> implements 
     private final String id;
     private final Predicate<HttpRequest> predicate;
     private static final Pattern IS_INTEGER = Pattern.compile("\\d+");
-    private Pattern customStatusCodeCompatibleWithRetryAfterHeader;
+    private Pattern customStatusCodeForRetryAfterHeader;
 
     public static final String USUAL_RETRY_AFTER_STATUS_CODES = "503|429|301";
     //cf https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Retry-After
     //regex to match 503 (Internal Server Error), 429(Too Many Requests), 301(Moved Permanently) HTTP response status code
-    private static final Pattern DEFAULT_STATUS_CODE_COMPATIBLE_WITH_RETRY_AFTER_HEADER = Pattern.compile(USUAL_RETRY_AFTER_STATUS_CODES);
     public static final String RFC_7231_PATTERN = "EEE, dd MMM yyyy HH:mm:ss O";
     private static final DateTimeFormatter RFC_7231_FORMATTER = DateTimeFormatter.ofPattern(RFC_7231_PATTERN);
     private static final DateTimeFormatter RFC_1123_FORMATTER = DateTimeFormatter.RFC_1123_DATE_TIME;
@@ -87,9 +86,9 @@ public class HttpConfiguration<C extends HttpClient<NR, NS>, NR, NS> implements 
         this.retryResponseCodeRegex = Pattern.compile(settings.getOrDefault(RETRY_RESPONSE_CODE_REGEX, DEFAULT_DEFAULT_RETRY_RESPONSE_CODE_REGEX));
 
         this.predicate = HttpRequestPredicateBuilder.build().buildPredicate(settings);
-        //one day
         maxSecondsToWait = Long.parseLong(settings.getOrDefault(RETRY_AFTER_MAX_DURATION_IN_SEC, DEFAULT_RETRY_AFTER_MAX_DURATION_IN_SEC));
         retryDelayThreshold = Long.parseLong(settings.getOrDefault(RETRY_DELAY_THRESHOLD_IN_SEC, DEFAULT_RETRY_DELAY_THRESHOLD_IN_SEC));
+        customStatusCodeForRetryAfterHeader = Pattern.compile(settings.getOrDefault(CUSTOM_STATUS_CODE_FOR_RETRY_AFTER_HEADER, DEFAULT_CUSTOM_STATUS_CODE_FOR_RETRY_AFTER_HEADER));
     }
 
     public Pattern getRetryResponseCodeRegex() {
@@ -353,10 +352,7 @@ public class HttpConfiguration<C extends HttpClient<NR, NS>, NR, NS> implements 
     }
 
     private boolean statusCodeIsCompatibleWithRetryAfter(Integer statusCode) {
-        Pattern pattern = customStatusCodeCompatibleWithRetryAfterHeader!=null?
-                customStatusCodeCompatibleWithRetryAfterHeader:
-                DEFAULT_STATUS_CODE_COMPATIBLE_WITH_RETRY_AFTER_HEADER;
-        return pattern.matcher(""+statusCode).matches();
+        return customStatusCodeForRetryAfterHeader.matcher(""+statusCode).matches();
     }
 
     private  long getSecondsToWait(String value) {
