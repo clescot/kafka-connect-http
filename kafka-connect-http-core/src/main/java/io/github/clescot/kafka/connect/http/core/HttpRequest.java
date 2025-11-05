@@ -29,7 +29,7 @@ import static com.fasterxml.jackson.annotation.JsonInclude.Include;
 import static io.github.clescot.kafka.connect.http.core.MediaType.APPLICATION_X_WWW_FORM_URLENCODED;
 
 @JsonInclude(Include.NON_EMPTY)
-public class HttpRequest implements Request,Cloneable, Serializable {
+public class HttpRequest implements Request, Cloneable, Serializable {
     @Serial
     private static final long serialVersionUID = 1L;
 
@@ -56,7 +56,7 @@ public class HttpRequest implements Request,Cloneable, Serializable {
     @JsonProperty(defaultValue = "GET")
     private HttpRequest.Method method;
     @JsonProperty
-    private Map<String,Object> attributes = Maps.newHashMap();
+    private Map<String, Object> attributes = Maps.newHashMap();
     //regular body
     @JsonProperty
     private Map<String, String> bodyAsForm = Maps.newHashMap();
@@ -67,7 +67,7 @@ public class HttpRequest implements Request,Cloneable, Serializable {
     private String bodyAsByteArray = "";
 
     @JsonProperty
-    private Map<String,HttpPart> parts = Maps.newHashMap();
+    private Map<String, HttpPart> parts = Maps.newHashMap();
 
     @JsonProperty(defaultValue = "STRING")
     private BodyType bodyType;
@@ -82,8 +82,8 @@ public class HttpRequest implements Request,Cloneable, Serializable {
             .field(BODY_AS_BYTE_ARRAY, Schema.OPTIONAL_STRING_SCHEMA)
             .field(BODY_AS_FORM, SchemaBuilder.map(Schema.STRING_SCHEMA, Schema.STRING_SCHEMA).optional().schema())
             .field(BODY_AS_STRING, Schema.OPTIONAL_STRING_SCHEMA)
-            .field(PARTS, SchemaBuilder.map(Schema.STRING_SCHEMA,HttpPart.SCHEMA).optional().schema())
-            .field(ATTRIBUTES, SchemaBuilder.map(Schema.STRING_SCHEMA,Schema.STRING_SCHEMA).optional().schema())
+            .field(PARTS, SchemaBuilder.map(Schema.STRING_SCHEMA, HttpPart.SCHEMA).optional().schema())
+            .field(ATTRIBUTES, SchemaBuilder.map(Schema.STRING_SCHEMA, Schema.STRING_SCHEMA).optional().schema())
             .schema();
 
     /**
@@ -112,7 +112,7 @@ public class HttpRequest implements Request,Cloneable, Serializable {
                        HttpRequest.Method method,
                        Map<String, List<String>> headers,
                        BodyType bodyType,
-                       Map<String,HttpPart> parts) {
+                       Map<String, HttpPart> parts) {
         Preconditions.checkNotNull(url, "url is required");
         Preconditions.checkNotNull(bodyType, "bodyType is required");
         this.url = url;
@@ -132,8 +132,6 @@ public class HttpRequest implements Request,Cloneable, Serializable {
 
 
     }
-
-
 
 
     public HttpRequest(Struct requestAsstruct) {
@@ -156,12 +154,12 @@ public class HttpRequest implements Request,Cloneable, Serializable {
         this.bodyAsString = requestAsstruct.getString(BODY_AS_STRING);
         this.bodyAsForm = requestAsstruct.getMap(BODY_AS_FORM);
 
-        Map<String,Struct> structs = requestAsstruct.getMap(PARTS);
+        Map<String, Struct> structs = requestAsstruct.getMap(PARTS);
         if (structs != null) {
             //this is a multipart request
-            for (Map.Entry<String,Struct> entry : structs.entrySet()) {
+            for (Map.Entry<String, Struct> entry : structs.entrySet()) {
                 HttpPart httpPart = new HttpPart(entry.getValue());
-                parts.put(entry.getKey(),httpPart);
+                parts.put(entry.getKey(), httpPart);
                 if (!headersFromPartAreValid(httpPart)) {
                     LOGGER.warn("this is a multipart request. headers from part are not valid : there is at least one header that is not 'Content-Disposition', 'Content-Type' or 'Content-Transfer-Encoding'. clearing headers from this part");
                     httpPart.getHeaders().clear();
@@ -188,27 +186,27 @@ public class HttpRequest implements Request,Cloneable, Serializable {
         return bodyType;
     }
 
-    public Map<String,HttpPart> getParts() {
+    public Map<String, HttpPart> getParts() {
         return parts;
     }
 
-    public void setParts(Map<String,HttpPart> httpParts) {
+    public void setParts(Map<String, HttpPart> httpParts) {
         this.parts = httpParts;
         if (parts != null && !parts.isEmpty()) {
             this.bodyType = BodyType.MULTIPART;
-            if(StringUtils.isEmpty(getContentType())){
+            if (StringUtils.isEmpty(getContentType())) {
                 //default multipart Content-Type
                 setContentType("multipart/form-data; boundary=" + UUID.randomUUID());
             }
         }
     }
 
-    public void addPart(String name,HttpPart httpPart) {
-        if(parts.isEmpty() && StringUtils.isEmpty(getContentType())){
+    public void addPart(String name, HttpPart httpPart) {
+        if (parts.isEmpty() && StringUtils.isEmpty(getContentType())) {
             //default multipart Content-Type
             setContentType("multipart/form-data; boundary=" + UUID.randomUUID());
         }
-        parts.put(name,httpPart);
+        parts.put(name, httpPart);
     }
 
     @JsonIgnore
@@ -242,6 +240,7 @@ public class HttpRequest implements Request,Cloneable, Serializable {
     public Map<String, List<String>> getHeaders() {
         return headers;
     }
+
     @JsonIgnore
     public long getHeadersLength() {
         return headers.entrySet().stream()
@@ -274,7 +273,7 @@ public class HttpRequest implements Request,Cloneable, Serializable {
         if (o == null || getClass() != o.getClass()) return false;
         HttpRequest that = (HttpRequest) o;
         return url.equals(that.url)
-                && attributes!=null && attributes.equals(that.attributes)
+                && attributes != null && attributes.equals(that.attributes)
                 && Objects.equals(headers, that.headers)
                 && method.equals(that.method)
                 && bodyType == that.bodyType
@@ -287,7 +286,7 @@ public class HttpRequest implements Request,Cloneable, Serializable {
 
     @Override
     public int hashCode() {
-        return Objects.hash(url, attributes,headers, method, parts, bodyAsByteArray, bodyAsForm, bodyAsString,bodyType);
+        return Objects.hash(url, attributes, headers, method, parts, bodyAsByteArray, bodyAsForm, bodyAsString, bodyType);
     }
 
     @Override
@@ -319,7 +318,7 @@ public class HttpRequest implements Request,Cloneable, Serializable {
                         this.getParts().entrySet().stream()
                                 .collect(
                                         Collectors.toMap(Map.Entry::getKey,
-                                                entry->entry.getValue().toStruct())
+                                                entry -> entry.getValue().toStruct())
                                 )
                 )
                 ;
@@ -357,9 +356,9 @@ public class HttpRequest implements Request,Cloneable, Serializable {
                     bodyAsForm
                             .entrySet()
                             .stream()
-                            .filter(pair->pair.getValue()!=null)
-                            .map(pair->pair.getKey().length()+pair.getValue().length())
-                            .reduce(Integer::sum).orElse(0): 0;
+                            .filter(pair -> pair.getValue() != null)
+                            .map(pair -> pair.getKey().length() + pair.getValue().length())
+                            .reduce(Integer::sum).orElse(0) : 0;
         } else if (BodyType.MULTIPART == bodyType) {
             return parts.values().stream().mapToLong(HttpPart::getBodyContentLength).sum();
         }
@@ -378,7 +377,7 @@ public class HttpRequest implements Request,Cloneable, Serializable {
     public void setBodyAsForm(Map<String, String> form) {
         this.bodyAsForm = form;
         bodyType = BodyType.FORM;
-        if (form!=null && !form.isEmpty() && headers != null && doesNotContainHeader(MediaType.KEY)) {
+        if (form != null && !form.isEmpty() && headers != null && doesNotContainHeader(MediaType.KEY)) {
             headers.put(MediaType.KEY, Lists.newArrayList(APPLICATION_X_WWW_FORM_URLENCODED));
         }
     }
@@ -403,10 +402,10 @@ public class HttpRequest implements Request,Cloneable, Serializable {
     }
 
     public void addAttribute(String key, String value) {
-        if(attributes==null){
+        if (attributes == null) {
             attributes = Maps.newHashMap();
         }
-        attributes.put(key,value);
+        attributes.put(key, value);
     }
 
     @Override
@@ -431,7 +430,7 @@ public class HttpRequest implements Request,Cloneable, Serializable {
         Preconditions.checkNotNull(harRequest, "harRequest is required");
         Preconditions.checkNotNull(harRequest.url(), "url is required");
         Preconditions.checkNotNull(harRequest.method(), "method is required");
-        HttpRequest httpRequest = new HttpRequest(harRequest.url(),Method.valueOf(harRequest.httpMethod().name().toUpperCase()));
+        HttpRequest httpRequest = new HttpRequest(harRequest.url(), Method.valueOf(harRequest.httpMethod().name().toUpperCase()));
         if (harRequest.headers() != null && !harRequest.headers().isEmpty()) {
             Map<String, List<String>> headers = new HashMap<>();
             for (HarHeader harHeader : harRequest.headers()) {
@@ -471,11 +470,11 @@ public class HttpRequest implements Request,Cloneable, Serializable {
         if (this.getHeaders() != null && !this.getHeaders().isEmpty()) {
             harRequestBuilder.headers(this.getHeaders().entrySet().stream()
                     .map(entry ->
-                                    HarHeader.builder()
-                                            .name(entry.getKey())
-                                            .value(String.join(";", entry.getValue()))
-                                            .build()
-                            )
+                            HarHeader.builder()
+                                    .name(entry.getKey())
+                                    .value(String.join(";", entry.getValue()))
+                                    .build()
+                    )
                     .toList());
         }
         harRequestBuilder.headersSize(this.getHeadersLength());
