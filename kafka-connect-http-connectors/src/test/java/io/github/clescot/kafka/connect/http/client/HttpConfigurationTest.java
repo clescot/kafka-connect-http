@@ -200,7 +200,7 @@ class HttpConfigurationTest {
             String configId = "dummy";
             HttpExchange httpExchange = getDummyHttpExchange();
             HttpConfiguration<OkHttpClient, okhttp3.Request, okhttp3.Response> httpConfiguration = new HttpConfiguration<>(configId,okHttpClient, executorService, null,settings);
-            boolean success = httpConfiguration.enrichHttpExchange(httpExchange).isSuccess();
+            boolean success = httpConfiguration.enrichExchange(httpExchange).isSuccess();
             assertThat(success).isTrue();
         }
 
@@ -216,7 +216,7 @@ class HttpConfigurationTest {
             okHttpClient = okHttpClientFactory.buildHttpClient(settings, null, new CompositeMeterRegistry(), new Random());
             HttpExchange httpExchange = getDummyHttpExchange();
             HttpConfiguration<OkHttpClient, okhttp3.Request, okhttp3.Response> httpConfiguration = new HttpConfiguration<>(configId,okHttpClient, executorService, null,settings);
-            boolean success = httpConfiguration.enrichHttpExchange(httpExchange).isSuccess();
+            boolean success = httpConfiguration.enrichExchange(httpExchange).isSuccess();
             assertThat(success).isFalse();
         }
 
@@ -236,7 +236,7 @@ class HttpConfigurationTest {
             String configId = "dummy";
             HttpExchange httpExchange = getDummyHttpExchange();
             HttpConfiguration<OkHttpClient, okhttp3.Request, okhttp3.Response> httpConfiguration = new HttpConfiguration<>(configId,okHttpClient, executorService, null,settings);
-            boolean success = httpConfiguration.enrichHttpExchange(httpExchange).isSuccess();
+            boolean success = httpConfiguration.enrichExchange(httpExchange).isSuccess();
             assertThat(success).isTrue();
         }
 
@@ -260,7 +260,7 @@ class HttpConfigurationTest {
             okHttpClient = okHttpClientFactory.buildHttpClient(settings, null, new CompositeMeterRegistry(), new Random());
             HttpExchange httpExchange = getDummyHttpExchange();
             HttpConfiguration<OkHttpClient, okhttp3.Request, okhttp3.Response> httpConfiguration = new HttpConfiguration<>(configId,okHttpClient, executorService, null,settings);
-            boolean success = httpConfiguration.enrichHttpExchange(httpExchange).isSuccess();
+            boolean success = httpConfiguration.enrichExchange(httpExchange).isSuccess();
             assertThat(success).isFalse();
         }
 
@@ -367,7 +367,7 @@ class HttpConfigurationTest {
 
             HttpRequest httpRequest = getDummyHttpRequest();
             HttpConfiguration<OkHttpClient, okhttp3.Request, okhttp3.Response> httpConfiguration = new HttpConfiguration<>(configId,okHttpClient, executorService, null,settings);
-            HttpRequest enrichedHttpRequest = httpConfiguration.enrich(httpRequest);
+            HttpRequest enrichedHttpRequest = httpConfiguration.enrichRequest(httpRequest);
             Map<String, List<String>> headers = enrichedHttpRequest.getHeaders();
             assertThat(headers).containsEntry("X-Stuff-Id", Lists.newArrayList("12345"))
                     .containsEntry("X-Super-Option", Lists.newArrayList("ABC"));
@@ -387,7 +387,7 @@ class HttpConfigurationTest {
             okHttpClient = okHttpClientFactory.buildHttpClient(settings, null, new CompositeMeterRegistry(), new Random());
             HttpRequest httpRequest = getDummyHttpRequest();
             HttpConfiguration<OkHttpClient, okhttp3.Request, okhttp3.Response> httpConfiguration = new HttpConfiguration<>(configId,okHttpClient, executorService, null,settings);
-            HttpRequest enrichedHttpRequest = httpConfiguration.enrich(httpRequest);
+            HttpRequest enrichedHttpRequest = httpConfiguration.enrichRequest(httpRequest);
             Map<String, List<String>> headers = enrichedHttpRequest.getHeaders();
             assertThat(headers).containsKey("X-Request-ID");
         }
@@ -406,7 +406,7 @@ class HttpConfigurationTest {
             okHttpClient = okHttpClientFactory.buildHttpClient(settings, null, new CompositeMeterRegistry(), new Random());
             HttpRequest httpRequest = getDummyHttpRequest();
             HttpConfiguration<OkHttpClient, okhttp3.Request, okhttp3.Response> httpConfiguration = new HttpConfiguration<>(configId,okHttpClient, executorService, null,settings);
-            HttpRequest enrichedHttpRequest = httpConfiguration.enrich(httpRequest);
+            HttpRequest enrichedHttpRequest = httpConfiguration.enrichRequest(httpRequest);
             Map<String, List<String>> headers = enrichedHttpRequest.getHeaders();
             assertThat(headers).containsKey("X-Correlation-ID");
         }
@@ -426,7 +426,7 @@ class HttpConfigurationTest {
             //given
             HttpRequest httpRequest = getDummyHttpRequest();
             HttpConfiguration<OkHttpClient, okhttp3.Request, okhttp3.Response> httpConfiguration = new HttpConfiguration<>(configId,okHttpClient, executorService, null,settings);
-            HttpRequest enrichedHttpRequest = httpConfiguration.enrich(httpRequest);
+            HttpRequest enrichedHttpRequest = httpConfiguration.enrichRequest(httpRequest);
             Map<String, List<String>> headers = enrichedHttpRequest.getHeaders();
             assertThat(headers).containsEntry("User-Agent", Lists.newArrayList("custom_ua"));
         }
@@ -448,7 +448,7 @@ class HttpConfigurationTest {
 
             HttpRequest httpRequest = getDummyHttpRequest();
             HttpConfiguration<OkHttpClient, okhttp3.Request, okhttp3.Response> httpConfiguration = new HttpConfiguration<>(configId,okHttpClient, executorService, null,settings);
-            HttpRequest enrichedHttpRequest = httpConfiguration.enrich(httpRequest);
+            HttpRequest enrichedHttpRequest = httpConfiguration.enrichRequest(httpRequest);
             Map<String, List<String>> headers = enrichedHttpRequest.getHeaders();
             assertThat(headers.get("User-Agent")).isSubsetOf(Lists.newArrayList("custom_1", "custom_2", "custom_3"));
         }
@@ -465,7 +465,7 @@ class HttpConfigurationTest {
             HttpRequest httpRequest = getDummyHttpRequest();
             httpRequest.getHeaders().put("User-Agent", Lists.newArrayList("already"));
             HttpConfiguration<OkHttpClient, okhttp3.Request, okhttp3.Response> httpConfiguration = new HttpConfiguration<>(configId,okHttpClient, executorService, null,settings);
-            HttpRequest enrichedHttpRequest = httpConfiguration.enrich(httpRequest);
+            HttpRequest enrichedHttpRequest = httpConfiguration.enrichRequest(httpRequest);
             Map<String, List<String>> headers = enrichedHttpRequest.getHeaders();
             assertThat(headers.get("User-Agent").get(0)).isEqualTo("already");
         }
@@ -480,7 +480,7 @@ class HttpConfigurationTest {
             String configId = "dummy";
             HttpRequest httpRequest = getDummyHttpRequest();
             HttpConfiguration<OkHttpClient, okhttp3.Request, okhttp3.Response> httpConfiguration = new HttpConfiguration<>(configId,okHttpClient, executorService, null,settings);
-            HttpRequest enrichedHttpRequest = httpConfiguration.enrich(httpRequest);
+            HttpRequest enrichedHttpRequest = httpConfiguration.enrichRequest(httpRequest);
             Map<String, List<String>> headers = enrichedHttpRequest.getHeaders();
             //user-agent in this cas is set by the underlying http client implementation
             //after the enrichment phase in the configuration
@@ -502,7 +502,7 @@ class HttpConfigurationTest {
             okHttpClient = okHttpClientFactory.buildHttpClient(settings, null, new CompositeMeterRegistry(), new Random());
             HttpRequest httpRequest = getDummyHttpRequest();
             HttpConfiguration<OkHttpClient, okhttp3.Request, okhttp3.Response> httpConfiguration = new HttpConfiguration<>(configId,okHttpClient, executorService, null,settings);
-            HttpRequest enrichedHttpRequest = httpConfiguration.enrich(httpRequest);
+            HttpRequest enrichedHttpRequest = httpConfiguration.enrichRequest(httpRequest);
             Map<String, List<String>> headers = enrichedHttpRequest.getHeaders();
             assertThat(headers).containsEntry("User-Agent", Lists.newArrayList("Mozilla/5.0 (compatible;kafka-connect-http/" + VERSION + "; okhttp; https://github.com/clescot/kafka-connect-http)"));
 

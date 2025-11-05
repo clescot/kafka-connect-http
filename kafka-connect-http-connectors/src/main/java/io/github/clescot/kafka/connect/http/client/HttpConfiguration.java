@@ -98,10 +98,9 @@ public class HttpConfiguration<C extends HttpClient<NR, NS>, NR, NS> implements 
         //a RetryPolicy is set
         if (retryPolicyForCall.isPresent()) {
             RetryPolicy<HttpExchange> myRetryPolicy = retryPolicyForCall.get();
-            Pattern hostnamePattern = Pattern.compile(".*");
-            CircuitBreaker<HttpExchange> tooLongRetryDelayCircuitBreaker = buildAfterRetryCircuitBreaker(hostnamePattern);
+            CircuitBreaker<HttpExchange> circuitBreaker = buildCircuitBreaker();
             //compose policies
-            FailsafeExecutor<HttpExchange> failsafeExecutor = Failsafe.with(myRetryPolicy, tooLongRetryDelayCircuitBreaker);
+            FailsafeExecutor<HttpExchange> failsafeExecutor = Failsafe.with(myRetryPolicy, circuitBreaker);
             if (this.executorService != null) {
                 failsafeExecutor = failsafeExecutor.with(this.executorService);
             }
@@ -195,13 +194,13 @@ public class HttpConfiguration<C extends HttpClient<NR, NS>, NR, NS> implements 
         if (LOGGER.isTraceEnabled()) {
             LOGGER.trace("before enrichment:{}", httpRequest);
         }
-        HttpRequest enrichedHttpRequest = enrich(httpRequest);
+        HttpRequest enrichedHttpRequest = enrichRequest(httpRequest);
         if (LOGGER.isTraceEnabled()) {
             LOGGER.trace("after enrichment:{}", enrichedHttpRequest);
         }
         CompletableFuture<HttpExchange> completableFuture = this.client.call(enrichedHttpRequest, attempts);
         return completableFuture
-                .thenApply(this::enrichHttpExchange);
+                .thenApply(this::enrichExchange);
 
     }
     /**
@@ -248,13 +247,9 @@ public class HttpConfiguration<C extends HttpClient<NR, NS>, NR, NS> implements 
         }
     }
 
-    private CircuitBreaker<HttpExchange> buildAfterRetryCircuitBreaker(Pattern hostName) {
+    private CircuitBreaker<HttpExchange> buildCircuitBreaker() {
         return CircuitBreaker.<HttpExchange>builder()
-                .handleResultIf(httpExchange -> {
-                    boolean hostnameMatch = hostName.matcher(httpExchange.getRequest().toUrl().getHost()).matches();
-                    String retryAfterValue = getRetryAfterValue(httpExchange.getResponse().getHeaders());
-                    return hostnameMatch && retryAfterValue!=null;
-                })
+                .handleResultIf(httpExchange -> getRetryAfterValue(httpExchange.getResponse().getHeaders())!=null)
                 //we break circuit when 1 TooLongRetryDelayException occurs
                 .withFailureThreshold(1)
                 //we reestablish the circuit after one successful call
@@ -401,12 +396,12 @@ public class HttpConfiguration<C extends HttpClient<NR, NS>, NR, NS> implements 
         return httpResponseHeaders.get(RETRY_AFTER) != null ? httpResponseHeaders.get(RETRY_AFTER).get(0) : (httpResponseHeaders.get(X_RETRY_AFTER)!=null?httpResponseHeaders.get(X_RETRY_AFTER).get(0):null);
     }
 
-    protected HttpRequest enrich(HttpRequest httpRequest) {
+    protected HttpRequest enrichRequest(HttpRequest httpRequest) {
         return this.client.getEnrichRequestFunction().apply(httpRequest);
     }
 
 
-    protected HttpExchange enrichHttpExchange(HttpExchange httpExchange) {
+    protected HttpExchange enrichExchange(HttpExchange httpExchange) {
         AddSuccessStatusToHttpExchangeFunction addSuccessStatusToHttpExchangeFunction = client.getAddSuccessStatusToHttpExchangeFunction();
         return addSuccessStatusToHttpExchangeFunction!=null?addSuccessStatusToHttpExchangeFunction.apply(httpExchange):httpExchange;
     }
