@@ -74,16 +74,14 @@ public interface HttpClient<NR, NS> extends RequestResponseClient<HttpRequest, N
 
     default CompletableFuture<HttpExchange> call(HttpRequest httpRequest, AtomicInteger attempts) throws RetryException,HttpException {
 
-        Stopwatch rateLimitedStopWatch = null;
         CompletableFuture<NS> response;
         LOGGER.debug("httpRequest: {}", httpRequest);
         NR request = buildNativeRequest(httpRequest);
         LOGGER.debug("native request: {}", request);
         OffsetDateTime now = OffsetDateTime.now(ZoneId.of(UTC_ZONE_ID));
         try {
-            rateLimitCall(httpRequest, request);
 
-            rateLimitedStopWatch = Stopwatch.createStarted();
+            Stopwatch rateLimitedStopWatch = rateLimitCall(httpRequest);
             Stopwatch directStopWatch = Stopwatch.createStarted();
 
             //real call is executed here
@@ -91,12 +89,11 @@ public interface HttpClient<NR, NS> extends RequestResponseClient<HttpRequest, N
 
             Preconditions.checkNotNull(response, "response is null");
 
-            Stopwatch finalRateLimitedStopWatch = rateLimitedStopWatch;
             return response.thenApply(this::buildResponse)
                     .thenApply(myResponse -> {
                                 directStopWatch.stop();
-                                if (finalRateLimitedStopWatch != null) {
-                                    finalRateLimitedStopWatch.stop();
+                                if (rateLimitedStopWatch != null) {
+                                    rateLimitedStopWatch.stop();
                                 }
                                 if (LOGGER.isTraceEnabled()) {
                                     LOGGER.trace("httpResponse: {}", myResponse);
@@ -109,7 +106,7 @@ public interface HttpClient<NR, NS> extends RequestResponseClient<HttpRequest, N
                                 timings.put("directElapsedTime", directElapsedTime);
                                 //elapsed time contains rate limiting waiting time + local code execution time + network time + remote server-side execution time
                                 //if ratelimiting is not set, overallElapsedTime == directElaspedTime
-                                long overallElapsedTime = finalRateLimitedStopWatch!=null?finalRateLimitedStopWatch.elapsed(TimeUnit.MILLISECONDS):directElapsedTime;
+                                long overallElapsedTime = rateLimitedStopWatch!=null?rateLimitedStopWatch.elapsed(TimeUnit.MILLISECONDS):directElapsedTime;
                                 timings.put("overallElapsedTime", overallElapsedTime);
                                 long rateLimitingWaitingTime = overallElapsedTime - directElapsedTime;
                                 timings.put("rateLimitingWaitingTime", rateLimitingWaitingTime);
@@ -134,7 +131,7 @@ public interface HttpClient<NR, NS> extends RequestResponseClient<HttpRequest, N
                         responseHeaders.put(THROWABLE_MESSAGE, Lists.newArrayList(throwable.getCause().getMessage()));
                         httpResponse.setHeaders(responseHeaders);
                         LOGGER.error(throwable.toString());
-                        return buildExchange(httpRequest, httpResponse, finalRateLimitedStopWatch, now, attempts, FAILURE,
+                        return buildExchange(httpRequest, httpResponse, rateLimitedStopWatch, now, attempts, FAILURE,
                                 Maps.newHashMap(),
                                 Maps.newHashMap());
                     }));
@@ -144,22 +141,25 @@ public interface HttpClient<NR, NS> extends RequestResponseClient<HttpRequest, N
         }
     }
 
-    private void rateLimitCall(HttpRequest httpRequest, NR request) throws InterruptedException {
+    private Stopwatch rateLimitCall(HttpRequest httpRequest) throws InterruptedException {
         Optional<RateLimiter<HttpExchange>> limiter = getRateLimiter();
+        Stopwatch rateLimitedStopWatch = null;
         if (limiter.isPresent()) {
+            rateLimitedStopWatch = Stopwatch.createStarted();
             RateLimiter<HttpExchange> httpExchangeRateLimiter = limiter.get();
             String permitsPerExecution = getPermitsPerExecution();
             if (RATE_LIMITER_REQUEST_LENGTH_PER_CALL.equals(permitsPerExecution)) {
                 long length = httpRequest.getLength();
                 httpExchangeRateLimiter.acquirePermits(Math.toIntExact(length));
-                LOGGER.warn("{} permits acquired for request:'{}'", length, request);
+                LOGGER.warn("{} permits acquired for request:'{}'", length, httpRequest);
             } else {
                 httpExchangeRateLimiter.acquirePermits(HttpClient.ONE_HTTP_REQUEST);
-                LOGGER.warn("1 permit acquired for request:'{}'", request);
+                LOGGER.warn("1 permit acquired for request:'{}'", httpRequest);
             }
         } else {
             LOGGER.trace("no rate limiter is configured");
         }
+        return rateLimitedStopWatch;
     }
 
     HttpClient<NR, NS> customizeForUser(String vuId);
