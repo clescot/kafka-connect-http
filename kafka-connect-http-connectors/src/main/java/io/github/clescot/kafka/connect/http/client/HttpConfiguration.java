@@ -16,6 +16,8 @@ import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.time.*;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
@@ -214,7 +216,7 @@ public class HttpConfiguration<C extends HttpClient<NR, NS>, NR, NS> implements 
                     tooLongRetryDelayException.getMessage());
             HttpExchange httpExchange = getClient().buildExchange(
                     httpRequest,
-                    new HttpResponse(tooLongRetryDelayException.getHttpStatusCode(), tooLongRetryDelayException.getHttpStatusMessage()),
+                    tooLongRetryDelayException.getHttpExchange().getResponse(),
                     Stopwatch.createUnstarted(), OffsetDateTime.now(ZoneId.of(HttpClient.UTC_ZONE_ID)),
                     attempts,
                     HttpClient.FAILURE,
@@ -289,7 +291,7 @@ public class HttpConfiguration<C extends HttpClient<NR, NS>, NR, NS> implements 
      */
     private HttpExchange handleRetry(HttpExchange httpExchange) {
         //we don't retry successful HTTP Exchange
-        boolean responseCodeImpliesRetry = retryNeeded(httpExchange.getResponse());
+        boolean responseCodeImpliesRetry = retryNeeded(httpExchange);
         LOGGER.debug("httpExchange success :'{}'", httpExchange.isSuccess());
         LOGGER.debug("response code('{}') implies retry:'{}'", httpExchange.getResponse().getStatusCode(), responseCodeImpliesRetry);
         if (!httpExchange.isSuccess() && responseCodeImpliesRetry) {
@@ -298,14 +300,15 @@ public class HttpConfiguration<C extends HttpClient<NR, NS>, NR, NS> implements 
         return httpExchange;
     }
 
-    protected boolean retryNeeded(HttpResponse httpResponse) {
+    protected boolean retryNeeded(HttpExchange httpExchange) {
         Optional<Pattern> myRetryResponseCodeRegex = Optional.ofNullable(getRetryResponseCodeRegex());
         if (myRetryResponseCodeRegex.isPresent()) {
             Pattern retryPattern = myRetryResponseCodeRegex.get();
-            int statusCode = httpResponse.getStatusCode();
-            Map<String, List<String>> httpResponseHeaders = httpResponse.getHeaders();
+            HttpResponse response = httpExchange.getResponse();
+            int statusCode = response.getStatusCode();
+            Map<String, List<String>> httpResponseHeaders = response.getHeaders();
             if(httpResponseHeaders.containsKey(RETRY_AFTER)||httpResponseHeaders.containsKey(X_RETRY_AFTER)){
-                return openCircuitWithRetryAfterHeader(httpResponseHeaders, statusCode,httpResponse.getStatusMessage());
+                return openCircuitWithRetryAfterHeader(httpExchange);
             }
             Matcher matcher = retryPattern.matcher("" + statusCode);
             return matcher.matches();
@@ -318,18 +321,18 @@ public class HttpConfiguration<C extends HttpClient<NR, NS>, NR, NS> implements 
      * when the response code is compatible with a retry after header, we can open the circuit (i.e disable the client),
      * and wait for the retry after header Duration to re-enable the client.
      *
-     * @param httpResponseHeaders map of response headers
-     * @param statusCode          HTTP's response status code
-     * @param statusMessage
+     * @param httpExchange the exchange
      * @return true if the circuit must be opened (i.e the client must be disabled), false otherwise
      */
-    private boolean openCircuitWithRetryAfterHeader(Map<String, List<String>> httpResponseHeaders, int statusCode, String statusMessage) {
+    private boolean openCircuitWithRetryAfterHeader(HttpExchange httpExchange) {
 
+        HttpResponse response = httpExchange.getResponse();
+        Integer statusCode = response.getStatusCode();
         boolean statusCodeIsCompatibleWithRetryAfter = statusCodeIsCompatibleWithRetryAfter(statusCode);
         if(!statusCodeIsCompatibleWithRetryAfter){
             return false;
         }
-        String value = getRetryAfterValue(httpResponseHeaders);
+        String value = getRetryAfterValue(httpExchange.getResponse().getHeaders());
         if(value==null){
             throw new IllegalStateException("there must be a 'Retry-After' or 'X-Retry-After' header" );
         }
@@ -339,7 +342,7 @@ public class HttpConfiguration<C extends HttpClient<NR, NS>, NR, NS> implements 
         if (secondsToWait == 0L) return false;
 
         if(secondsToWait>retryDelayThreshold){
-            throw new TooLongRetryDelayException(secondsToWait,retryDelayThreshold,statusCode,statusMessage);
+            throw new TooLongRetryDelayException(httpExchange,secondsToWait,retryDelayThreshold);
         }else {
             try {
                 //seconds to millis
