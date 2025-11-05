@@ -8,4 +8,6 @@ public interface Request {
     String DEFAULT_VU_ID = "default";
 
     Map<String, Object> getAttributes();
+
+    long getLength();
 }

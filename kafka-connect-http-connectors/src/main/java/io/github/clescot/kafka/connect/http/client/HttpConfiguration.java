@@ -1,13 +1,11 @@
 package io.github.clescot.kafka.connect.http.client;
 
 import com.google.common.base.Stopwatch;
-import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import dev.failsafe.CircuitBreaker;
 import dev.failsafe.Failsafe;
 import dev.failsafe.FailsafeExecutor;
 import dev.failsafe.RetryPolicy;
-import dev.failsafe.function.CheckedPredicate;
 import io.github.clescot.kafka.connect.Configuration;
 import io.github.clescot.kafka.connect.http.client.config.AddSuccessStatusToHttpExchangeFunction;
 import io.github.clescot.kafka.connect.http.client.config.HttpRequestPredicateBuilder;
@@ -18,8 +16,6 @@ import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.net.MalformedURLException;
-import java.net.URL;
 import java.time.*;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
@@ -195,7 +191,7 @@ public class HttpConfiguration<C extends HttpClient<NR, NS>, NR, NS> implements 
      */
     private CompletableFuture<HttpExchange> callAndEnrich(HttpRequest httpRequest,
                                                           AtomicInteger attempts) {
-        attempts.addAndGet(HttpClient.ONE_HTTP_REQUEST);
+        attempts.addAndGet(HttpClient.ONE_REQUEST);
         if (LOGGER.isTraceEnabled()) {
             LOGGER.trace("before enrichment:{}", httpRequest);
         }

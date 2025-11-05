@@ -40,7 +40,7 @@ public interface HttpClient<NR, NS> extends RequestResponseClient<HttpRequest, N
     int SERVER_ERROR_STATUS_CODE = 500;
     String UTC_ZONE_ID = "UTC";
     boolean SUCCESS = true;
-    int ONE_HTTP_REQUEST = 1;
+
     Logger LOGGER = LoggerFactory.getLogger(HttpClient.class);
 
     String THROWABLE_CLASS = "throwable.class";
@@ -141,26 +141,7 @@ public interface HttpClient<NR, NS> extends RequestResponseClient<HttpRequest, N
         }
     }
 
-    private Stopwatch rateLimitCall(HttpRequest httpRequest) throws InterruptedException {
-        Optional<RateLimiter<HttpExchange>> limiter = getRateLimiter();
-        Stopwatch rateLimitedStopWatch = null;
-        if (limiter.isPresent()) {
-            rateLimitedStopWatch = Stopwatch.createStarted();
-            RateLimiter<HttpExchange> httpExchangeRateLimiter = limiter.get();
-            String permitsPerExecution = getPermitsPerExecution();
-            if (RATE_LIMITER_REQUEST_LENGTH_PER_CALL.equals(permitsPerExecution)) {
-                long length = httpRequest.getLength();
-                httpExchangeRateLimiter.acquirePermits(Math.toIntExact(length));
-                LOGGER.warn("{} permits acquired for request:'{}'", length, httpRequest);
-            } else {
-                httpExchangeRateLimiter.acquirePermits(HttpClient.ONE_HTTP_REQUEST);
-                LOGGER.warn("1 permit acquired for request:'{}'", httpRequest);
-            }
-        } else {
-            LOGGER.trace("no rate limiter is configured");
-        }
-        return rateLimitedStopWatch;
-    }
+
 
     HttpClient<NR, NS> customizeForUser(String vuId);
 
