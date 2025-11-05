@@ -7,6 +7,7 @@ import dev.failsafe.Failsafe;
 import dev.failsafe.FailsafeExecutor;
 import dev.failsafe.RetryPolicy;
 import io.github.clescot.kafka.connect.Configuration;
+import io.github.clescot.kafka.connect.RequestResponseClient;
 import io.github.clescot.kafka.connect.http.client.config.AddSuccessStatusToHttpExchangeFunction;
 import io.github.clescot.kafka.connect.http.client.config.HttpRequestPredicateBuilder;
 import io.github.clescot.kafka.connect.http.core.HttpExchange;
@@ -227,7 +228,7 @@ public class HttpConfiguration<C extends HttpClient<NR, NS>, NR, NS> implements 
             HttpExchange httpExchange = getClient().buildExchange(
                     httpRequest,
                     tooLongRetryDelayException.getHttpExchange().getResponse(),
-                    Stopwatch.createUnstarted(), OffsetDateTime.now(ZoneId.of(HttpClient.UTC_ZONE_ID)),
+                    Stopwatch.createUnstarted(), OffsetDateTime.now(ZoneId.of(RequestResponseClient.UTC_ZONE_ID)),
                     attempts,
                     Maps.newHashMap(),
                     Maps.newHashMap());
