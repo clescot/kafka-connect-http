@@ -115,7 +115,7 @@ public class HttpTask<T,C extends HttpClient<NR, NS>, NR, NS> implements Request
 
     public boolean isClosed(@NotNull HttpRequest httpRequest){
         HttpConfiguration<C, NR, NS> foundConfiguration = selectConfiguration(httpRequest);
-        return foundConfiguration.isClosed(httpRequest);
+        return foundConfiguration.isClosed();
     }
 
     public Instant getNextRetryInstant(@NotNull HttpRequest httpRequest){
@@ -134,7 +134,7 @@ public class HttpTask<T,C extends HttpClient<NR, NS>, NR, NS> implements Request
         if (LOGGER.isTraceEnabled()) {
             LOGGER.trace("configuration found:{}", foundConfiguration.getId());
         }
-        if(foundConfiguration.isClosed(httpRequest)) {
+        if(foundConfiguration.isClosed()) {
             //handle Request and Response
             return foundConfiguration.call(httpRequest)
                     .thenApply(

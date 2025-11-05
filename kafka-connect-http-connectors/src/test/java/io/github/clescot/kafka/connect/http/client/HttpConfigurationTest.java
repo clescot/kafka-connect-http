@@ -294,9 +294,11 @@ class HttpConfigurationTest {
             Map<String, String> settings = Maps.newHashMap();
             settings.put("config.dummy." + RETRY_RESPONSE_CODE_REGEX, "^5[0-9][0-9]$");
             String configId = "dummy";
+            HttpRequest httpRequest = getDummyHttpRequest();
             HttpResponse httpResponse = new HttpResponse(500, "Internal Server Error");
+            HttpExchange httpExchange = new HttpExchange(httpRequest,httpResponse,100L,OffsetDateTime.now(ZoneId.of("UTC")),new AtomicInteger(1),true);
             HttpConfiguration<OkHttpClient, okhttp3.Request, okhttp3.Response> httpConfiguration = new HttpConfiguration<>(configId,okHttpClient, executorService, null,settings);
-            boolean retryNeeded = httpConfiguration.retryNeeded(httpResponse);
+            boolean retryNeeded = httpConfiguration.retryNeeded(httpExchange);
             assertThat(retryNeeded).isTrue();
         }
 
@@ -305,9 +307,11 @@ class HttpConfigurationTest {
             Map<String, String> settings = Maps.newHashMap();
             settings.put("httpclient.dummy." + RETRY_RESPONSE_CODE_REGEX, "^5[0-9][0-9]$");
             String configId = "dummy";
+            HttpRequest httpRequest = getDummyHttpRequest();
             HttpResponse httpResponse = new HttpResponse(400, "Internal Server Error");
+            HttpExchange httpExchange = new HttpExchange(httpRequest,httpResponse,100L,OffsetDateTime.now(ZoneId.of("UTC")),new AtomicInteger(1),true);
             HttpConfiguration<OkHttpClient, okhttp3.Request, okhttp3.Response> httpConfiguration = new HttpConfiguration<>(configId,okHttpClient, executorService, null,settings);
-            boolean retryNeeded = httpConfiguration.retryNeeded(httpResponse);
+            boolean retryNeeded = httpConfiguration.retryNeeded(httpExchange);
             assertThat(retryNeeded).isFalse();
         }
 
@@ -316,9 +320,11 @@ class HttpConfigurationTest {
             Map<String, String> settings = Maps.newHashMap();
             settings.put("httpclient.dummy." + RETRY_RESPONSE_CODE_REGEX, "^5[0-9][0-9]$");
             String configId = "dummy";
+            HttpRequest httpRequest = getDummyHttpRequest();
             HttpResponse httpResponse = new HttpResponse(200, "Internal Server Error");
+            HttpExchange httpExchange = new HttpExchange(httpRequest,httpResponse,100L,OffsetDateTime.now(ZoneId.of("UTC")),new AtomicInteger(1),true);
             HttpConfiguration<OkHttpClient, okhttp3.Request, okhttp3.Response> httpConfiguration = new HttpConfiguration<>(configId,okHttpClient, executorService,null, settings);
-            boolean retryNeeded = httpConfiguration.retryNeeded(httpResponse);
+            boolean retryNeeded = httpConfiguration.retryNeeded(httpExchange);
             assertThat(retryNeeded).isFalse();
         }
 
@@ -330,9 +336,11 @@ class HttpConfigurationTest {
             settings.put(CONFIG_DEFAULT_RETRY_RESPONSE_CODE_REGEX, "^[1-5][0-9][0-9]$");
             Map<String, String> configSettings = MapUtils.getMapWithPrefix(new HttpConnectorConfig(settings).originalsStrings(), "config.dummy.");
             String configId = "dummy";
+            HttpRequest httpRequest = getDummyHttpRequest();
             HttpResponse httpResponse = new HttpResponse(200, "Internal Server Error");
+            HttpExchange httpExchange = new HttpExchange(httpRequest,httpResponse,100L,OffsetDateTime.now(ZoneId.of("UTC")),new AtomicInteger(1),true);
             HttpConfiguration<OkHttpClient, okhttp3.Request, okhttp3.Response> httpConfiguration = new HttpConfiguration<>(configId,okHttpClient, executorService, null,configSettings);
-            boolean retryNeeded = httpConfiguration.retryNeeded(httpResponse);
+            boolean retryNeeded = httpConfiguration.retryNeeded(httpExchange);
             assertThat(retryNeeded).isTrue();
         }
     }
