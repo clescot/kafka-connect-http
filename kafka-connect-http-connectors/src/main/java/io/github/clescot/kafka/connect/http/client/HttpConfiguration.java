@@ -1,11 +1,13 @@
 package io.github.clescot.kafka.connect.http.client;
 
 import com.google.common.base.Stopwatch;
+import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import dev.failsafe.CircuitBreaker;
 import dev.failsafe.Failsafe;
 import dev.failsafe.FailsafeExecutor;
 import dev.failsafe.RetryPolicy;
+import dev.failsafe.function.CheckedPredicate;
 import io.github.clescot.kafka.connect.Configuration;
 import io.github.clescot.kafka.connect.http.client.config.AddSuccessStatusToHttpExchangeFunction;
 import io.github.clescot.kafka.connect.http.client.config.HttpRequestPredicateBuilder;
@@ -73,6 +75,7 @@ public class HttpConfiguration<C extends HttpClient<NR, NS>, NR, NS> implements 
     private final long retryDelayThreshold;
     private boolean closed = true;
     private Instant nextRetryInstant;
+    private FailsafeExecutor<HttpExchange> failsafeExecutor;
 
     public HttpConfiguration(String id,
                              C client,
@@ -91,6 +94,26 @@ public class HttpConfiguration<C extends HttpClient<NR, NS>, NR, NS> implements 
         maxSecondsToWait = Long.parseLong(settings.getOrDefault(RETRY_AFTER_MAX_DURATION_IN_SEC, DEFAULT_RETRY_AFTER_MAX_DURATION_IN_SEC));
         retryDelayThreshold = Long.parseLong(settings.getOrDefault(RETRY_DELAY_THRESHOLD_IN_SEC, DEFAULT_RETRY_DELAY_THRESHOLD_IN_SEC));
         customStatusCodeForRetryAfterHeader = Pattern.compile(settings.getOrDefault(CUSTOM_STATUS_CODE_FOR_RETRY_AFTER_HEADER, DEFAULT_CUSTOM_STATUS_CODE_FOR_RETRY_AFTER_HEADER));
+        failsafeExecutor = buildFailsafeExecutor();
+    }
+
+    private FailsafeExecutor<HttpExchange> buildFailsafeExecutor() {
+        Optional<RetryPolicy<HttpExchange>> retryPolicyForCall = Optional.ofNullable(getRetryPolicy());
+        //a RetryPolicy is set
+        if (retryPolicyForCall.isPresent()) {
+            RetryPolicy<HttpExchange> myRetryPolicy = retryPolicyForCall.get();
+            Pattern hostnamePattern = Pattern.compile(".*");
+            CircuitBreaker<HttpExchange> tooLongRetryDelayCircuitBreaker = buildAfterRetryCircuitBreaker(hostnamePattern);
+            //compose policies
+            FailsafeExecutor<HttpExchange> failsafeExecutor = Failsafe.with(myRetryPolicy, tooLongRetryDelayCircuitBreaker);
+            if (this.executorService != null) {
+                failsafeExecutor = failsafeExecutor.with(this.executorService);
+            }
+            return failsafeExecutor;
+        } else {
+            //no RetryPolicy is set
+            return null;
+        }
     }
 
     public Pattern getRetryResponseCodeRegex() {
@@ -191,18 +214,10 @@ public class HttpConfiguration<C extends HttpClient<NR, NS>, NR, NS> implements 
      * @return CompletableFuture of the HttpExchange (describing the request and response).
      */
     public CompletableFuture<HttpExchange> call(@NotNull HttpRequest httpRequest) {
-        Optional<RetryPolicy<HttpExchange>> retryPolicyForCall = Optional.ofNullable(getRetryPolicy());
         AtomicInteger attempts = new AtomicInteger();
         try {
             //a RetryPolicy is set
-            if (retryPolicyForCall.isPresent()) {
-                RetryPolicy<HttpExchange> myRetryPolicy = retryPolicyForCall.get();
-                CircuitBreaker<HttpExchange> tooLongRetryDelayCircuitBreaker = buildAfterRetryCircuitBreaker();
-                //compose policies
-                FailsafeExecutor<HttpExchange> failsafeExecutor = Failsafe.with(myRetryPolicy, tooLongRetryDelayCircuitBreaker);
-                if (this.executorService != null) {
-                    failsafeExecutor = failsafeExecutor.with(this.executorService);
-                }
+            if (failsafeExecutor!=null) {
                 return failsafeExecutor
                         .getStageAsync(ctx -> callAndEnrich(httpRequest, attempts)
                                 .thenApply(this::handleRetry));
@@ -239,9 +254,13 @@ public class HttpConfiguration<C extends HttpClient<NR, NS>, NR, NS> implements 
         }
     }
 
-    private CircuitBreaker<HttpExchange> buildAfterRetryCircuitBreaker() {
+    private CircuitBreaker<HttpExchange> buildAfterRetryCircuitBreaker(Pattern hostName) {
         return CircuitBreaker.<HttpExchange>builder()
-                .handle(TooLongRetryDelayException.class)
+                .handleResultIf(httpExchange -> {
+                    boolean hostnameMatch = hostName.matcher(httpExchange.getRequest().toUrl().getHost()).matches();
+                    String retryAfterValue = getRetryAfterValue(httpExchange.getResponse().getHeaders());
+                    return hostnameMatch && retryAfterValue!=null;
+                })
                 //we break circuit when 1 TooLongRetryDelayException occurs
                 .withFailureThreshold(1)
                 //we reestablish the circuit after one successful call
@@ -261,13 +280,14 @@ public class HttpConfiguration<C extends HttpClient<NR, NS>, NR, NS> implements 
 
                     return Duration.of( min(secondsToWait,maxSecondsToWait), SECONDS);
                 },TooLongRetryDelayException.class)
-                .onFailure(context -> {
-                    Throwable failure = context.getException();
+                .handleIf(failure -> {
                     if (failure instanceof TooLongRetryDelayException tooLongRetryDelayException) {
                         LOGGER.error("Circuit breaker detected a too long retry delay of {} seconds exceeding the threshold of {} seconds. Opening the circuit.",
                                 tooLongRetryDelayException.getSecondsToWait(), tooLongRetryDelayException.getRetryDelayThreshold());
                         this.nextRetryInstant = tooLongRetryDelayException.getNextRetryInstant();
+                        return true;
                     }
+                    return false;
                 })
                 .onOpen(context ->{
                     LOGGER.error("Circuit breaker for too long retry delay is now OPEN. Calls will not be retried anymore.");
