@@ -2,6 +2,7 @@ package io.github.clescot.kafka.connect.http.sink;
 
 import com.google.common.base.Preconditions;
 import com.google.common.base.Stopwatch;
+import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import io.github.clescot.kafka.connect.http.HttpTask;
 import io.github.clescot.kafka.connect.http.MessageSplitter;
@@ -25,6 +26,8 @@ import org.apache.commons.jexl3.introspection.JexlPermissions;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.clients.producer.RecordMetadata;
+import org.apache.kafka.common.header.Header;
+import org.apache.kafka.common.header.internals.RecordHeader;
 import org.apache.kafka.connect.connector.ConnectRecord;
 import org.apache.kafka.connect.sink.ErrantRecordReporter;
 import org.apache.kafka.connect.sink.SinkRecord;
@@ -34,6 +37,7 @@ import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.time.Instant;
 import java.time.OffsetDateTime;
 import java.time.ZoneId;
 import java.util.*;
@@ -220,11 +224,12 @@ public abstract class HttpSinkTask<C extends HttpClient<R, S>, R, S> extends Sin
                         return null;
                     });
         }else {
-            publishToDeadLetterQueue(httpRequest);
+            String openedUntil = DATE_TIME_FORMATTER.format(httpTask.getNextRetryInstant(httpRequest));
+            publishToDeadLetterQueue(this.httpConnectorConfig.getProducerDlqTopic(),httpRequest,openedUntil);
             AtomicInteger attempts = new AtomicInteger();
             HttpExchange httpExchange = httpTask.getConfiguration(httpRequest).getClient().buildExchange(
                     httpRequest,
-                    new HttpResponse(HttpClient.SERVER_ERROR_STATUS_CODE, "configuration is disabled until " + DATE_TIME_FORMATTER.format(httpTask.getNextRetryInstant(httpRequest))),
+                    new HttpResponse(HttpClient.SERVER_ERROR_STATUS_CODE, "configuration is disabled until " + openedUntil),
                     Stopwatch.createUnstarted(),
                     OffsetDateTime.now(ZoneId.of(HttpClient.UTC_ZONE_ID)),
                     attempts,
@@ -235,9 +240,11 @@ public abstract class HttpSinkTask<C extends HttpClient<R, S>, R, S> extends Sin
         }
     }
 
-    private void publishToDeadLetterQueue(HttpRequest httpRequest) {
-        LOGGER.error("HttpRequest sent to dead letter queue because the task is opened (i.e disabled): '{}'", httpRequest);
-        //TODO implement DLQ for HttpRequest when Retry-After header is returned
+    private void publishToDeadLetterQueue(String dlqTopic, HttpRequest httpRequest, String openedUntil) {
+        LOGGER.error("HttpRequest sent to dead letter queue because the task is opened (i.e disabled) until '{}': '{}'",openedUntil, httpRequest);
+        List<Header> headers = Lists.newArrayList(new RecordHeader("openedUntil", openedUntil.getBytes()));
+        ProducerRecord<String, Object> myRecord = new ProducerRecord<>(dlqTopic,null, System.currentTimeMillis(),null,httpRequest, headers);
+        this.producer.send(myRecord);
     }
 
     private List<SinkRecord> splitMessage(SinkRecord sinkRecord) {

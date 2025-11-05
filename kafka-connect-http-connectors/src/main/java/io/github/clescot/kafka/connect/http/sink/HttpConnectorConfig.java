@@ -32,6 +32,7 @@ public class HttpConnectorConfig extends AbstractConfig {
     //publish mode set to 'producer'
     private final String producerBootstrapServers;
     private final String producerSuccessTopic;
+    private final String producerDlqTopic;
     private final String producerErrorTopic;
     private final String producerSchemaRegistryUrl;
     private final int producerSchemaRegistryCacheCapacity;
@@ -98,6 +99,7 @@ public class HttpConnectorConfig extends AbstractConfig {
     private final String defaultHeadersExpression;
     private final Boolean producerJsonIndentOutput;
 
+
     public HttpConnectorConfig(Map<String, String> originals) {
         this(new HttpConfigDefinition(originals).config(), originals);
     }
@@ -149,6 +151,7 @@ public class HttpConnectorConfig extends AbstractConfig {
         this.queueName = Optional.ofNullable(getString(ConfigConstants.QUEUE_NAME)).orElse(QueueFactory.DEFAULT_QUEUE_NAME);
         this.publishMode = PublishMode.valueOf(Optional.ofNullable(getString(PUBLISH_MODE)).orElse(PublishMode.NONE.name()));
         this.producerSuccessTopic = getString(PRODUCER_SUCCESS_TOPIC);
+        this.producerDlqTopic = getString(PRODUCER_DEAD_LETTER_QUEUE_TOPIC);
         this.producerErrorTopic = getString(PRODUCER_ERROR_TOPIC);
         if (QueueFactory.queueMapIsEmpty() && PublishMode.IN_MEMORY_QUEUE.name().equalsIgnoreCase(publishMode.name())) {
             LOGGER.warn("no pre-existing queue exists. this HttpSourceConnector has created a '{}' one. It needs to consume a queue filled with a SinkConnector. Ignore this message if a SinkConnector will be created after this one.", queueName);
@@ -320,6 +323,7 @@ public class HttpConnectorConfig extends AbstractConfig {
         return producerSuccessTopic;
     }
 
+
     public Integer getCustomFixedThreadpoolSize() {
         return customFixedThreadpoolSize;
     }
@@ -461,6 +465,10 @@ public class HttpConnectorConfig extends AbstractConfig {
         return messageSplitterIds;
     }
 
+    public String getProducerDlqTopic() {
+        return producerDlqTopic;
+    }
+
     @Override
     public String toString() {
         return "HttpSinkConnectorConfig{" +
@@ -468,6 +476,7 @@ public class HttpConnectorConfig extends AbstractConfig {
                 ", producerFormat='" + producerFormat + '\'' +
                 ", producerBootstrapServers='" + producerBootstrapServers + '\'' +
                 ", producerSuccessTopic='" + producerSuccessTopic + '\'' +
+                ", producerDlqTopic='" + producerDlqTopic + '\'' +
                 ", producerErrorTopic='" + producerErrorTopic + '\'' +
                 ", producerSchemaRegistryUrl='" + producerSchemaRegistryUrl + '\'' +
                 ", producerSchemaRegistryCacheCapacity=" + producerSchemaRegistryCacheCapacity +
@@ -536,11 +545,119 @@ public class HttpConnectorConfig extends AbstractConfig {
         if (!(o instanceof HttpConnectorConfig)) return false;
         if (!super.equals(o)) return false;
         HttpConnectorConfig that = (HttpConnectorConfig) o;
-        return producerSchemaRegistryCacheCapacity == that.producerSchemaRegistryCacheCapacity && producerSchemaRegistryautoRegister == that.producerSchemaRegistryautoRegister && producerJsonWriteDatesAs8601 == that.producerJsonWriteDatesAs8601 && producerJsonOneOfForNullables == that.producerJsonOneOfForNullables && producerJsonFailInvalidSchema == that.producerJsonFailInvalidSchema && producerJsonFailUnknownProperties == that.producerJsonFailUnknownProperties && meterRegistryExporterJmxActivate == that.meterRegistryExporterJmxActivate && meterRegistryExporterPrometheusActivate == that.meterRegistryExporterPrometheusActivate && meterRegistryExporterPrometheusPort == that.meterRegistryExporterPrometheusPort && meterRegistryBindMetricsExecutorService == that.meterRegistryBindMetricsExecutorService && meterRegistryBindMetricsJvmClassloader == that.meterRegistryBindMetricsJvmClassloader && meterRegistryBindMetricsJvmProcessor == that.meterRegistryBindMetricsJvmProcessor && meterRegistryBindMetricsJvmGc == that.meterRegistryBindMetricsJvmGc && meterRegistryBindMetricsJvmInfo == that.meterRegistryBindMetricsJvmInfo && meterRegistryBindMetricsJvmMemory == that.meterRegistryBindMetricsJvmMemory && meterRegistryBindMetricsJvmThread == that.meterRegistryBindMetricsJvmThread && meterRegistryBindMetricsLogback == that.meterRegistryBindMetricsLogback && meterRegistryTagIncludeLegacyHost == that.meterRegistryTagIncludeLegacyHost && meterRegistryTagIncludeUrlPath == that.meterRegistryTagIncludeUrlPath && generateMissingRequestId == that.generateMissingRequestId && generateMissingCorrelationId == that.generateMissingCorrelationId && maxWaitTimeRegistrationOfQueueConsumerInMs == that.maxWaitTimeRegistrationOfQueueConsumerInMs && pollDelayRegistrationOfQueueConsumerInMs == that.pollDelayRegistrationOfQueueConsumerInMs && pollIntervalRegistrationOfQueueConsumerInMs == that.pollIntervalRegistrationOfQueueConsumerInMs && Objects.equals(producerFormat, that.producerFormat) && Objects.equals(producerBootstrapServers, that.producerBootstrapServers) && Objects.equals(producerSuccessTopic, that.producerSuccessTopic) && Objects.equals(producerSchemaRegistryUrl, that.producerSchemaRegistryUrl) && Objects.equals(producerJsonSchemaSpecVersion, that.producerJsonSchemaSpecVersion) && Objects.equals(producerKeySubjectNameStrategy, that.producerKeySubjectNameStrategy) && Objects.equals(producerValueSubjectNameStrategy, that.producerValueSubjectNameStrategy) && Objects.equals(missingIdCacheTTLSec, that.missingIdCacheTTLSec) && Objects.equals(missingVersionCacheTTLSec, that.missingVersionCacheTTLSec) && Objects.equals(missingSchemaCacheTTLSec, that.missingSchemaCacheTTLSec) && Objects.equals(missingCacheSize, that.missingCacheSize) && Objects.equals(bearerAuthCacheExpiryBufferSeconds, that.bearerAuthCacheExpiryBufferSeconds) && Objects.equals(bearerAuthScopeClaimName, that.bearerAuthScopeClaimName) && Objects.equals(bearerAuthSubClaimName, that.bearerAuthSubClaimName) && Objects.equals(httpClientImplementation, that.httpClientImplementation) && Objects.equals(defaultSuccessResponseCodeRegex, that.defaultSuccessResponseCodeRegex) && Objects.equals(defaultRetryResponseCodeRegex, that.defaultRetryResponseCodeRegex) && Objects.equals(queueName, that.queueName) && publishMode == that.publishMode && Objects.equals(defaultRetries, that.defaultRetries) && Objects.equals(defaultRetryDelayInMs, that.defaultRetryDelayInMs) && Objects.equals(defaultRetryMaxDelayInMs, that.defaultRetryMaxDelayInMs) && Objects.equals(defaultRetryDelayFactor, that.defaultRetryDelayFactor) && Objects.equals(defaultRetryJitterInMs, that.defaultRetryJitterInMs) && Objects.equals(defaultRateLimiterMaxExecutions, that.defaultRateLimiterMaxExecutions) && Objects.equals(defaultRateLimiterScope, that.defaultRateLimiterScope) && Objects.equals(defaultRateLimiterPeriodInMs, that.defaultRateLimiterPeriodInMs) && Objects.equals(staticRequestHeaders, that.staticRequestHeaders) && Objects.equals(customFixedThreadpoolSize, that.customFixedThreadpoolSize) && Objects.equals(configurationIds, that.configurationIds);
+        return producerSchemaRegistryCacheCapacity == that.producerSchemaRegistryCacheCapacity
+                && producerSchemaRegistryautoRegister == that.producerSchemaRegistryautoRegister
+                && producerJsonWriteDatesAs8601 == that.producerJsonWriteDatesAs8601
+                && producerJsonOneOfForNullables == that.producerJsonOneOfForNullables
+                && producerJsonFailInvalidSchema == that.producerJsonFailInvalidSchema
+                && producerJsonFailUnknownProperties == that.producerJsonFailUnknownProperties
+                && meterRegistryExporterJmxActivate == that.meterRegistryExporterJmxActivate
+                && meterRegistryExporterPrometheusActivate == that.meterRegistryExporterPrometheusActivate
+                && meterRegistryExporterPrometheusPort == that.meterRegistryExporterPrometheusPort
+                && meterRegistryBindMetricsExecutorService == that.meterRegistryBindMetricsExecutorService
+                && meterRegistryBindMetricsJvmClassloader == that.meterRegistryBindMetricsJvmClassloader
+                && meterRegistryBindMetricsJvmProcessor == that.meterRegistryBindMetricsJvmProcessor
+                && meterRegistryBindMetricsJvmGc == that.meterRegistryBindMetricsJvmGc
+                && meterRegistryBindMetricsJvmInfo == that.meterRegistryBindMetricsJvmInfo
+                && meterRegistryBindMetricsJvmMemory == that.meterRegistryBindMetricsJvmMemory
+                && meterRegistryBindMetricsJvmThread == that.meterRegistryBindMetricsJvmThread
+                && meterRegistryBindMetricsLogback == that.meterRegistryBindMetricsLogback
+                && meterRegistryTagIncludeLegacyHost == that.meterRegistryTagIncludeLegacyHost
+                && meterRegistryTagIncludeUrlPath == that.meterRegistryTagIncludeUrlPath
+                && generateMissingRequestId == that.generateMissingRequestId
+                && generateMissingCorrelationId == that.generateMissingCorrelationId
+                && maxWaitTimeRegistrationOfQueueConsumerInMs == that.maxWaitTimeRegistrationOfQueueConsumerInMs
+                && pollDelayRegistrationOfQueueConsumerInMs == that.pollDelayRegistrationOfQueueConsumerInMs
+                && pollIntervalRegistrationOfQueueConsumerInMs == that.pollIntervalRegistrationOfQueueConsumerInMs
+                && Objects.equals(producerFormat, that.producerFormat)
+                && Objects.equals(producerBootstrapServers, that.producerBootstrapServers)
+                && Objects.equals(producerSuccessTopic, that.producerSuccessTopic)
+                && Objects.equals(producerDlqTopic, that.producerDlqTopic)
+                && Objects.equals(producerSchemaRegistryUrl, that.producerSchemaRegistryUrl)
+                && Objects.equals(producerJsonSchemaSpecVersion, that.producerJsonSchemaSpecVersion)
+                && Objects.equals(producerKeySubjectNameStrategy, that.producerKeySubjectNameStrategy)
+                && Objects.equals(producerValueSubjectNameStrategy, that.producerValueSubjectNameStrategy)
+                && Objects.equals(missingIdCacheTTLSec, that.missingIdCacheTTLSec)
+                && Objects.equals(missingVersionCacheTTLSec, that.missingVersionCacheTTLSec)
+                && Objects.equals(missingSchemaCacheTTLSec, that.missingSchemaCacheTTLSec)
+                && Objects.equals(missingCacheSize, that.missingCacheSize)
+                && Objects.equals(bearerAuthCacheExpiryBufferSeconds, that.bearerAuthCacheExpiryBufferSeconds)
+                && Objects.equals(bearerAuthScopeClaimName, that.bearerAuthScopeClaimName)
+                && Objects.equals(bearerAuthSubClaimName, that.bearerAuthSubClaimName)
+                && Objects.equals(httpClientImplementation, that.httpClientImplementation)
+                && Objects.equals(defaultSuccessResponseCodeRegex, that.defaultSuccessResponseCodeRegex)
+                && Objects.equals(defaultRetryResponseCodeRegex, that.defaultRetryResponseCodeRegex)
+                && Objects.equals(queueName, that.queueName)
+                && publishMode == that.publishMode
+                && Objects.equals(defaultRetries, that.defaultRetries)
+                && Objects.equals(defaultRetryDelayInMs, that.defaultRetryDelayInMs)
+                && Objects.equals(defaultRetryMaxDelayInMs, that.defaultRetryMaxDelayInMs)
+                && Objects.equals(defaultRetryDelayFactor, that.defaultRetryDelayFactor)
+                && Objects.equals(defaultRetryJitterInMs, that.defaultRetryJitterInMs)
+                && Objects.equals(defaultRateLimiterMaxExecutions, that.defaultRateLimiterMaxExecutions)
+                && Objects.equals(defaultRateLimiterScope, that.defaultRateLimiterScope)
+                && Objects.equals(defaultRateLimiterPeriodInMs, that.defaultRateLimiterPeriodInMs)
+                && Objects.equals(staticRequestHeaders, that.staticRequestHeaders)
+                && Objects.equals(customFixedThreadpoolSize, that.customFixedThreadpoolSize)
+                && Objects.equals(configurationIds, that.configurationIds);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(super.hashCode(), producerFormat, producerBootstrapServers, producerSuccessTopic, producerSchemaRegistryUrl, producerSchemaRegistryCacheCapacity, producerSchemaRegistryautoRegister, producerJsonSchemaSpecVersion, producerJsonWriteDatesAs8601, producerJsonOneOfForNullables, producerJsonFailInvalidSchema, producerJsonFailUnknownProperties, producerKeySubjectNameStrategy, producerValueSubjectNameStrategy, missingIdCacheTTLSec, missingVersionCacheTTLSec, missingSchemaCacheTTLSec, missingCacheSize, bearerAuthCacheExpiryBufferSeconds, bearerAuthScopeClaimName, bearerAuthSubClaimName, meterRegistryExporterJmxActivate, meterRegistryExporterPrometheusActivate, meterRegistryExporterPrometheusPort, meterRegistryBindMetricsExecutorService, meterRegistryBindMetricsJvmClassloader, meterRegistryBindMetricsJvmProcessor, meterRegistryBindMetricsJvmGc, meterRegistryBindMetricsJvmInfo, meterRegistryBindMetricsJvmMemory, meterRegistryBindMetricsJvmThread, meterRegistryBindMetricsLogback, meterRegistryTagIncludeLegacyHost, meterRegistryTagIncludeUrlPath, httpClientImplementation, defaultSuccessResponseCodeRegex, defaultRetryResponseCodeRegex, queueName, publishMode, defaultRetries, defaultRetryDelayInMs, defaultRetryMaxDelayInMs, defaultRetryDelayFactor, defaultRetryJitterInMs, defaultRateLimiterMaxExecutions, defaultRateLimiterScope, defaultRateLimiterPeriodInMs, staticRequestHeaders, generateMissingRequestId, generateMissingCorrelationId, maxWaitTimeRegistrationOfQueueConsumerInMs, pollDelayRegistrationOfQueueConsumerInMs, pollIntervalRegistrationOfQueueConsumerInMs, customFixedThreadpoolSize, configurationIds);
+        return Objects.hash(super.hashCode()
+        , producerFormat
+        , producerBootstrapServers
+        , producerSuccessTopic
+        , producerSchemaRegistryUrl
+        , producerSchemaRegistryCacheCapacity
+        , producerSchemaRegistryautoRegister
+        , producerJsonSchemaSpecVersion
+        , producerJsonWriteDatesAs8601
+        , producerJsonOneOfForNullables
+        , producerJsonFailInvalidSchema
+        , producerJsonFailUnknownProperties
+        , producerKeySubjectNameStrategy
+        , producerValueSubjectNameStrategy
+        , missingIdCacheTTLSec
+        , missingVersionCacheTTLSec
+        , missingSchemaCacheTTLSec
+        , missingCacheSize
+        , bearerAuthCacheExpiryBufferSeconds
+        , bearerAuthScopeClaimName
+        , bearerAuthSubClaimName
+        , meterRegistryExporterJmxActivate
+        , meterRegistryExporterPrometheusActivate
+        , meterRegistryExporterPrometheusPort
+        , meterRegistryBindMetricsExecutorService
+        , meterRegistryBindMetricsJvmClassloader
+        , meterRegistryBindMetricsJvmProcessor
+        , meterRegistryBindMetricsJvmGc
+        , meterRegistryBindMetricsJvmInfo
+        , meterRegistryBindMetricsJvmMemory
+        , meterRegistryBindMetricsJvmThread
+        , meterRegistryBindMetricsLogback
+        , meterRegistryTagIncludeLegacyHost
+        , meterRegistryTagIncludeUrlPath
+        , httpClientImplementation
+        , defaultSuccessResponseCodeRegex
+        , defaultRetryResponseCodeRegex
+        , queueName
+        , publishMode
+        , defaultRetries
+        , defaultRetryDelayInMs
+        , defaultRetryMaxDelayInMs
+        , defaultRetryDelayFactor
+        , defaultRetryJitterInMs
+        , defaultRateLimiterMaxExecutions
+        , defaultRateLimiterScope
+        , defaultRateLimiterPeriodInMs
+        , staticRequestHeaders
+        , generateMissingRequestId
+        , generateMissingCorrelationId
+        , maxWaitTimeRegistrationOfQueueConsumerInMs
+        , pollDelayRegistrationOfQueueConsumerInMs
+        , pollIntervalRegistrationOfQueueConsumerInMs
+        , customFixedThreadpoolSize
+        , configurationIds);
     }
 }

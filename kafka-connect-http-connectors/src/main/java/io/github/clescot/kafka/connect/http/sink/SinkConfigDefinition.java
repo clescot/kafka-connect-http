@@ -12,8 +12,12 @@ public class SinkConfigDefinition {
     public static final String PRODUCER_BOOTSTRAP_SERVERS = PRODUCER_PREFIX + "bootstrap.servers";
     public static final String PRODUCER_BOOTSTRAP_SERVERS_DOC = "low level producer bootstrap server adresse to publish";
     public static final String PRODUCER_SUCCESS_TOPIC = PRODUCER_PREFIX + "success.topic";
+    public static final String PRODUCER_DLQ_TOPIC = PRODUCER_PREFIX + "dlq.topic";
+    public static final String PRODUCER_DEAD_LETTER_QUEUE_TOPIC = PRODUCER_PREFIX + "dlq.topic";
     public static final String PRODUCER_ERROR_TOPIC = PRODUCER_PREFIX + "error.topic";
-    public static final String PRODUCER_TOPIC_DOC = "producer topic";
+    public static final String PRODUCER_SUCCESS_TOPIC_DOC = "producer topic when success";
+    public static final String PRODUCER_DLQ_TOPIC_DOC = "producer topic when retry delay is too long";
+    public static final String PRODUCER_ERROR_TOPIC_DOC = "producer topic when error";
     public static final String PRODUCER_FORMAT = PRODUCER_PREFIX + "format";
     public static final String PRODUCER_FORMAT_DOC = "can be either 'json', or 'string'; default to 'string'.";
     public static final String PRODUCER_FORMAT_JSON_PREFIX = PRODUCER_FORMAT + JSON_PREFIX;
@@ -57,6 +61,7 @@ public class SinkConfigDefinition {
     public static final String PRODUCER_BEARER_AUTH_SUB_CLAIM_NAME = PRODUCER_PREFIX + "bearer.auth.sub.claim.name";
     public static final String PRODUCER_BEARER_AUTH_SUB_CLAIM_NAME_DOC = "";
     public static final String PRODUCER_SUCCESS_DEFAULT_TOPIC = "http-success";
+    public static final String PRODUCER_DLQ_DEFAULT_TOPIC = "http-dlq";
     public static final String PRODUCER_ERROR_DEFAULT_TOPIC = "http-errors";
     //publish to in memory queue
     public static final String PUBLISH_MODE = "publish.mode";
@@ -83,8 +88,9 @@ public class SinkConfigDefinition {
                 //producer
                 //bootstrap servers
                 .define(PRODUCER_BOOTSTRAP_SERVERS, ConfigDef.Type.STRING, "", ConfigDef.Importance.MEDIUM, PRODUCER_BOOTSTRAP_SERVERS_DOC)
-                .define(PRODUCER_SUCCESS_TOPIC, ConfigDef.Type.STRING, PRODUCER_SUCCESS_DEFAULT_TOPIC, ConfigDef.Importance.MEDIUM, PRODUCER_TOPIC_DOC)
-                .define(PRODUCER_ERROR_TOPIC, ConfigDef.Type.STRING, PRODUCER_ERROR_DEFAULT_TOPIC, ConfigDef.Importance.MEDIUM, PRODUCER_TOPIC_DOC)
+                .define(PRODUCER_SUCCESS_TOPIC, ConfigDef.Type.STRING, PRODUCER_SUCCESS_DEFAULT_TOPIC, ConfigDef.Importance.MEDIUM, PRODUCER_SUCCESS_TOPIC_DOC)
+                .define(PRODUCER_DLQ_TOPIC, ConfigDef.Type.STRING, PRODUCER_DLQ_DEFAULT_TOPIC, ConfigDef.Importance.MEDIUM, PRODUCER_DLQ_TOPIC_DOC)
+                .define(PRODUCER_ERROR_TOPIC, ConfigDef.Type.STRING, PRODUCER_ERROR_DEFAULT_TOPIC, ConfigDef.Importance.MEDIUM, PRODUCER_ERROR_TOPIC_DOC)
                 .define(PRODUCER_KEY_SUBJECT_NAME_STRATEGY, ConfigDef.Type.STRING, "io.confluent.kafka.serializers.subject.TopicRecordNameStrategy", ConfigDef.Importance.MEDIUM, PRODUCER_KEY_SUBJECT_NAME_STRATEGY_DOC)
                 .define(PRODUCER_VALUE_SUBJECT_NAME_STRATEGY, ConfigDef.Type.STRING, "io.confluent.kafka.serializers.subject.TopicRecordNameStrategy", ConfigDef.Importance.MEDIUM, PRODUCER_VALUE_SUBJECT_NAME_STRATEGY_DOC)
                 .define(PRODUCER_MISSING_ID_CACHE_TTL_SEC, ConfigDef.Type.LONG, null, ConfigDef.Importance.LOW, PRODUCER_MISSING_ID_CACHE_TTL_SEC_DOC)
