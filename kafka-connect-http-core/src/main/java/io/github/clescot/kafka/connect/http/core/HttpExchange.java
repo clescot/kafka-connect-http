@@ -469,14 +469,10 @@ public class HttpExchange implements Exchange<HttpRequest,HttpResponse>,Cloneabl
 
         public Builder withHttpResponse(HttpResponse httpResponse) {
             this.httpResponse = httpResponse;
+            this.success = httpResponse.isSuccess();
             return this;
         }
 
-
-        public Builder withSuccess(boolean success) {
-            this.success = success;
-            return this;
-        }
 
         public Builder withAttribute(String key,String value) {
             this.attributes.put(key, value);

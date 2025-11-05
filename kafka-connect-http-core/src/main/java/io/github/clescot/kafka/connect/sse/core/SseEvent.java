@@ -1,5 +1,6 @@
 package io.github.clescot.kafka.connect.sse.core;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.collect.Maps;
 import io.github.clescot.kafka.connect.http.core.Response;
@@ -72,6 +73,12 @@ public class SseEvent implements Response,Cloneable, Serializable {
     }
 
     @Override
+    @JsonIgnore
+    public boolean isSuccess() {
+        return true;
+    }
+
+    @Override
     public Map<String, Object> getAttributes() {
         return attributes;
     }
@@ -139,6 +146,8 @@ public class SseEvent implements Response,Cloneable, Serializable {
                 .put(DATA, data)
                 ;
     }
+
+
 
 
 }

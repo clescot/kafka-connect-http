@@ -37,7 +37,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import static io.github.clescot.kafka.connect.http.client.HttpClientConfigDefinition.*;
 import static io.github.clescot.kafka.connect.http.client.HttpClientFactory.CONFIGURATION_ID;
-import static io.github.clescot.kafka.connect.http.client.ahc.AHCHttpClient.SUCCESS;
 import static io.github.clescot.kafka.connect.http.client.config.AddMissingCorrelationIdHeaderToHttpRequestFunction.HEADER_X_CORRELATION_ID;
 import static io.github.clescot.kafka.connect.http.client.config.AddMissingRequestIdHeaderToHttpRequestFunction.HEADER_X_REQUEST_ID;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -67,7 +66,6 @@ class AHCHttpClientTest {
                         Stopwatch.createUnstarted(),
                         OffsetDateTime.now(ZoneId.of(AHCHttpClient.UTC_ZONE_ID)),
                         new AtomicInteger(2),
-                        SUCCESS,
                         Maps.newHashMap(),
                         Maps.newHashMap()
                 ));
@@ -84,7 +82,6 @@ class AHCHttpClientTest {
                         Stopwatch.createUnstarted(),
                         OffsetDateTime.now(ZoneId.of(AHCHttpClient.UTC_ZONE_ID)),
                         new AtomicInteger(2),
-                        SUCCESS,
                         Maps.newHashMap(),
                         Maps.newHashMap()));
     }
@@ -101,7 +98,6 @@ class AHCHttpClientTest {
                 Stopwatch.createUnstarted(),
                 OffsetDateTime.now(ZoneId.of(AHCHttpClient.UTC_ZONE_ID)),
                 new AtomicInteger(2),
-                SUCCESS,
                 Maps.newHashMap(),
                 Maps.newHashMap());
         assertThat(httpExchange).isNotNull();

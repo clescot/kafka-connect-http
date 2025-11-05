@@ -37,7 +37,6 @@ import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.time.Instant;
 import java.time.OffsetDateTime;
 import java.time.ZoneId;
 import java.util.*;
@@ -233,7 +232,6 @@ public abstract class HttpSinkTask<C extends HttpClient<R, S>, R, S> extends Sin
                     Stopwatch.createUnstarted(),
                     OffsetDateTime.now(ZoneId.of(HttpClient.UTC_ZONE_ID)),
                     attempts,
-                    HttpClient.FAILURE,
                     Maps.newHashMap(),
                     Maps.newHashMap());
             return CompletableFuture.supplyAsync(() -> httpExchange);

@@ -114,6 +114,12 @@ public class HttpResponse implements Response, Cloneable, Serializable {
         return statusCode;
     }
 
+    @Override
+    @JsonIgnore
+    public boolean isSuccess() {
+        return statusCode != null && statusCode >= 200 && statusCode < 400;
+    }
+
     public String getStatusMessage() {
         return statusMessage;
     }
