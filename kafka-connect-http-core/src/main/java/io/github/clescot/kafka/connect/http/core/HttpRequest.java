@@ -20,6 +20,9 @@ import org.slf4j.LoggerFactory;
 
 import java.io.Serial;
 import java.io.Serializable;
+import java.net.MalformedURLException;
+import java.net.URI;
+import java.net.URL;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -180,6 +183,26 @@ public class HttpRequest implements Request, Cloneable, Serializable {
 
         }
         return true;
+    }
+
+    public URL toUrl() {
+        if (url != null) {
+            try {
+                return new URL(url);
+            } catch (MalformedURLException e) {
+                throw new RuntimeException(e);
+            }
+        } else {
+            return null;
+        }
+    }
+
+    public URI toUri() {
+        if (url != null) {
+            return URI.create(url);
+        } else {
+            return null;
+        }
     }
 
     public BodyType getBodyType() {
