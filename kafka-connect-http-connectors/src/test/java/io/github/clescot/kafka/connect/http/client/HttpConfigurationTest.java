@@ -86,13 +86,160 @@ class HttpConfigurationTest {
     }
 
     @Nested
+    class CallWhenRetryAfterHeaderIsPresent {
+        ExecutorService executorService;
+        OkHttpClient okHttpClient;
+        @BeforeEach
+        void setUp(){
+            CompositeMeterRegistry compositeMeterRegistry = new CompositeMeterRegistry();
+            JmxMeterRegistry jmxMeterRegistry = new JmxMeterRegistry(JmxConfig.DEFAULT, Clock.SYSTEM);
+            jmxMeterRegistry.start();
+            compositeMeterRegistry.add(jmxMeterRegistry);
+            OkHttpClientFactory okHttpClientFactory = new OkHttpClientFactory();
+            Map<String, String> settings = Map.of("url", "http://example.com/sse", "topic", "test-topic");
+            okHttpClient = okHttpClientFactory.buildHttpClient(settings, null, new CompositeMeterRegistry(), new Random());
+            executorService = Executors.newFixedThreadPool(2);
+            HttpConfiguration<OkHttpClient, Request, Response> httpConfiguration = new HttpConfiguration<>("test",okHttpClient,executorService, null,settings);
+            Map<String, HttpConfiguration<OkHttpClient, Request, Response>> map = Maps.newHashMap();
+            map.put(DEFAULT_CONFIGURATION_ID, httpConfiguration);
+        }
+
+
+        @Test
+        void test_successful_request_at_second_time_with_too_many_requests_and_retry_after_under_retry_threshold() throws ExecutionException, InterruptedException {
+
+            //given
+            String scenario = "test_successful_request_at_second_time";
+            WireMockRuntimeInfo wmRuntimeInfo = wmHttp.getRuntimeInfo();
+            WireMock wireMock = wmRuntimeInfo.getWireMock();
+            wireMock
+                    .register(WireMock.post("/ping").inScenario(scenario)
+                            .whenScenarioStateIs(STARTED)
+                            .willReturn(WireMock.aResponse()
+                                    .withStatus(429)
+                                    .withStatusMessage("Too Many Requests")
+                                    .withHeader("Retry-After", "10")
+                            ).willSetStateTo(INTERNAL_SERVER_ERROR_STATE)
+                    );
+            wireMock
+                    .register(WireMock.post("/ping").inScenario(scenario)
+                            .whenScenarioStateIs(INTERNAL_SERVER_ERROR_STATE)
+                            .willReturn(WireMock.aResponse()
+                                    .withStatus(200)
+                                    .withStatusMessage("OK")
+                            ).willSetStateTo(AUTHORIZED_STATE)
+                    );
+            //when
+            HttpRequest httpRequest = getDummyHttpRequest(wmHttp.url("/ping"));
+            Map<String, String> settings = Maps.newHashMap();
+            settings.put("retry.policy.retries","2");
+            settings.put("retry.policy.response.code.regex",DEFAULT_DEFAULT_RETRY_RESPONSE_CODE_REGEX);
+            HttpConnectorConfig httpConnectorConfig = new HttpConnectorConfig(settings);
+            HttpTask httpTask = new HttpTask(httpConnectorConfig,new OkHttpClientFactory());
+
+            RetryPolicy<HttpExchange> retryPolicy = httpTask.buildRetryPolicy(httpConnectorConfig.originalsStrings());
+            String dummy = "dummy";
+            HttpConfiguration<OkHttpClient,okhttp3.Request,okhttp3.Response> httpConfiguration = new HttpConfiguration<>(dummy,okHttpClient,executorService, retryPolicy,settings);
+            HttpExchange httpExchange = httpConfiguration.call(httpRequest).get();
+
+            //then
+            AtomicInteger attempts = httpExchange.getAttempts();
+            assertThat(attempts.get()).isEqualTo(2);
+            assertThat(httpExchange.isSuccess()).isTrue();
+        }
+
+        @Test
+        void test_successful_request_at_second_time_with_too_many_requests_and_x_retry_after_under_retry_threshold() throws ExecutionException, InterruptedException {
+
+            //given
+            String scenario = "test_successful_request_at_second_time";
+            WireMockRuntimeInfo wmRuntimeInfo = wmHttp.getRuntimeInfo();
+            WireMock wireMock = wmRuntimeInfo.getWireMock();
+            wireMock
+                    .register(WireMock.post("/ping").inScenario(scenario)
+                            .whenScenarioStateIs(STARTED)
+                            .willReturn(WireMock.aResponse()
+                                    .withStatus(429)
+                                    .withStatusMessage("Too Many Requests")
+                                    .withHeader("X-Retry-After", "10")
+                            ).willSetStateTo(INTERNAL_SERVER_ERROR_STATE)
+                    );
+            wireMock
+                    .register(WireMock.post("/ping").inScenario(scenario)
+                            .whenScenarioStateIs(INTERNAL_SERVER_ERROR_STATE)
+                            .willReturn(WireMock.aResponse()
+                                    .withStatus(200)
+                                    .withStatusMessage("OK")
+                            ).willSetStateTo(AUTHORIZED_STATE)
+                    );
+            //when
+            HttpRequest httpRequest = getDummyHttpRequest(wmHttp.url("/ping"));
+            Map<String, String> settings = Maps.newHashMap();
+            settings.put("retry.policy.retries","2");
+            settings.put("retry.policy.response.code.regex",DEFAULT_DEFAULT_RETRY_RESPONSE_CODE_REGEX);
+            HttpConnectorConfig httpConnectorConfig = new HttpConnectorConfig(settings);
+            HttpTask httpTask = new HttpTask(httpConnectorConfig,new OkHttpClientFactory());
+
+            RetryPolicy<HttpExchange> retryPolicy = httpTask.buildRetryPolicy(httpConnectorConfig.originalsStrings());
+            String dummy = "dummy";
+            HttpConfiguration<OkHttpClient,okhttp3.Request,okhttp3.Response> httpConfiguration = new HttpConfiguration<>(dummy,okHttpClient,executorService, retryPolicy,settings);
+            HttpExchange httpExchange = httpConfiguration.call(httpRequest).get();
+
+            //then
+            AtomicInteger attempts = httpExchange.getAttempts();
+            assertThat(attempts.get()).isEqualTo(2);
+            assertThat(httpExchange.isSuccess()).isTrue();
+        }
+        @Test
+        void test_successful_request_at_second_time_with_too_many_requests_and_x_retry_after_higher_than_retry_threshold() throws ExecutionException, InterruptedException {
+
+            //given
+            String scenario = "test_successful_request_at_second_time";
+            WireMockRuntimeInfo wmRuntimeInfo = wmHttp.getRuntimeInfo();
+            WireMock wireMock = wmRuntimeInfo.getWireMock();
+            wireMock
+                    .register(WireMock.post("/ping").inScenario(scenario)
+                            .whenScenarioStateIs(STARTED)
+                            .willReturn(WireMock.aResponse()
+                                    .withStatus(429)
+                                    .withStatusMessage("Too Many Requests")
+                                    .withHeader("X-Retry-After", "100")
+                            ).willSetStateTo(INTERNAL_SERVER_ERROR_STATE)
+                    );
+            wireMock
+                    .register(WireMock.post("/ping").inScenario(scenario)
+                            .whenScenarioStateIs(INTERNAL_SERVER_ERROR_STATE)
+                            .willReturn(WireMock.aResponse()
+                                    .withStatus(200)
+                                    .withStatusMessage("OK")
+                            ).willSetStateTo(AUTHORIZED_STATE)
+                    );
+            //when
+            HttpRequest httpRequest = getDummyHttpRequest(wmHttp.url("/ping"));
+            Map<String, String> settings = Maps.newHashMap();
+            settings.put("retry.policy.retries","2");
+            settings.put("retry.policy.response.code.regex",DEFAULT_DEFAULT_RETRY_RESPONSE_CODE_REGEX);
+            HttpConnectorConfig httpConnectorConfig = new HttpConnectorConfig(settings);
+            HttpTask httpTask = new HttpTask(httpConnectorConfig,new OkHttpClientFactory());
+
+            RetryPolicy<HttpExchange> retryPolicy = httpTask.buildRetryPolicy(httpConnectorConfig.originalsStrings());
+            String dummy = "dummy";
+            HttpConfiguration<OkHttpClient,okhttp3.Request,okhttp3.Response> httpConfiguration = new HttpConfiguration<>(dummy,okHttpClient,executorService, retryPolicy,settings);
+            HttpExchange httpExchange = httpConfiguration.call(httpRequest).get();
+
+            //then
+            AtomicInteger attempts = httpExchange.getAttempts();
+            assertThat(attempts.get()).isEqualTo(2);
+            assertThat(httpExchange.isSuccess()).isTrue();
+        }
+    }
+
+    @Nested
     class CallWithRetryPolicy {
         ExecutorService executorService;
         OkHttpClient okHttpClient;
         @BeforeEach
         void setUp(){
-            Map<String,String> configs = Maps.newHashMap();
-
             CompositeMeterRegistry compositeMeterRegistry = new CompositeMeterRegistry();
             JmxMeterRegistry jmxMeterRegistry = new JmxMeterRegistry(JmxConfig.DEFAULT, Clock.SYSTEM);
             jmxMeterRegistry.start();

@@ -1,6 +1,7 @@
 package io.github.clescot.kafka.connect.http.client;
 
 import com.google.common.base.MoreObjects;
+import com.google.common.base.Preconditions;
 import com.google.common.base.Stopwatch;
 import com.google.common.collect.Maps;
 import dev.failsafe.CircuitBreaker;
@@ -258,7 +259,10 @@ public class HttpConfiguration<C extends HttpClient<NR, NS>, NR, NS> implements 
                 //we reestablish the circuit after one successful call
                 .withSuccessThreshold(1)
                 .withDelayFnOn(context -> {
-                    HttpExchange httpExchange = context.getLastResult();
+                    Throwable lastException = context.getLastException();
+                    Preconditions.checkState(lastException instanceof TooLongRetryDelayException);
+                    TooLongRetryDelayException retryException = (TooLongRetryDelayException)lastException;
+                    HttpExchange httpExchange = retryException.getHttpExchange();
                     HttpResponse response = httpExchange.getResponse();
 
                     Integer statusCode = response.getStatusCode();
@@ -365,6 +369,7 @@ public class HttpConfiguration<C extends HttpClient<NR, NS>, NR, NS> implements 
             //delay is not too long to wait
             try {
                 //seconds to millis
+                LOGGER.info("Waiting '{}' seconds (below the retryDelayThreshold:'{}' seconds) before retrying the call", secondsToWait,retryDelayThreshold);
                 Thread.sleep(secondsToWait*1000);
                 return true;
             } catch (InterruptedException e) {
