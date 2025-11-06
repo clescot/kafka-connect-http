@@ -63,9 +63,8 @@ public class HttpConfiguration<C extends HttpClient<NR, NS>, NR, NS> implements 
     private final String id;
     private final Predicate<HttpRequest> predicate;
     private static final Pattern IS_INTEGER = Pattern.compile("\\d+");
-    private Pattern customStatusCodeForRetryAfterHeader;
+    private final Pattern customStatusCodeForRetryAfterHeader;
 
-    public static final String USUAL_RETRY_AFTER_STATUS_CODES = "503|429|301";
     //cf https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Retry-After
     //regex to match 503 (Internal Server Error), 429(Too Many Requests), 301(Moved Permanently) HTTP response status code
     public static final String RFC_7231_PATTERN = "EEE, dd MMM yyyy HH:mm:ss O";
