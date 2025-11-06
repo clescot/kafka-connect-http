@@ -1,5 +1,6 @@
 package io.github.clescot.kafka.connect.http.client;
 
+import com.google.common.base.MoreObjects;
 import com.google.common.base.Stopwatch;
 import com.google.common.collect.Maps;
 import dev.failsafe.CircuitBreaker;
@@ -50,6 +51,7 @@ public class HttpConfiguration<C extends HttpClient<NR, NS>, NR, NS> implements 
     public static final String RETRY_AFTER = "Retry-After";
     public static final String X_RETRY_AFTER = "X-Retry-After";
     public static final String UTC = "UTC";
+    public static final String ONE_HOUR = "3600";
 
     private C client;
     private final ExecutorService executorService;
@@ -72,7 +74,7 @@ public class HttpConfiguration<C extends HttpClient<NR, NS>, NR, NS> implements 
     private final long retryDelayThreshold;
     private boolean closed = true;
     private Instant nextRetryInstant;
-    private FailsafeExecutor<HttpExchange> failsafeExecutor;
+    private final FailsafeExecutor<HttpExchange> failsafeExecutor;
 
     public HttpConfiguration(String id,
                              C client,
@@ -265,7 +267,7 @@ public class HttpConfiguration<C extends HttpClient<NR, NS>, NR, NS> implements 
                     String retryAfterValue = getRetryAfterValue(response.getHeaders());
                     LOGGER.debug("Retry-After Value:{}",retryAfterValue);
 
-                    long secondsToWait = getSecondsToWait(retryAfterValue);
+                    long secondsToWait = getSecondsToWait(MoreObjects.firstNonNull(retryAfterValue, ONE_HOUR));
                     LOGGER.debug("seconds to wait:{}",secondsToWait);
 
                     return Duration.of( min(secondsToWait,maxSecondsToWait), SECONDS);
@@ -343,8 +345,14 @@ public class HttpConfiguration<C extends HttpClient<NR, NS>, NR, NS> implements 
             return false;
         }
         String value = getRetryAfterValue(httpExchange.getResponse().getHeaders());
-        if(value==null){
+        if(value==null && statusCode!=429){
             throw new IllegalStateException("there must be a 'Retry-After' or 'X-Retry-After' header" );
+        }
+        //status code 429 is clear : we need to retry after a delay, although if no delay is present in headers
+        if(value == null){
+            //TODO configure default delay when status code is 429 and no delay is present
+            LOGGER.debug("429 status code detected without Retry-After or X-Retry-After header, falling back to default retry value '{}' seconds",ONE_HOUR);
+            return true;
         }
         long secondsToWait = getSecondsToWait(value);
         LOGGER.debug("Retry-After or X-Retry-After header is present with value '{}', so delayed retry is needed",value);
@@ -354,6 +362,7 @@ public class HttpConfiguration<C extends HttpClient<NR, NS>, NR, NS> implements 
         if(secondsToWait>retryDelayThreshold){
             throw new TooLongRetryDelayException(httpExchange,secondsToWait,retryDelayThreshold);
         }else {
+            //delay is not too long to wait
             try {
                 //seconds to millis
                 Thread.sleep(secondsToWait*1000);
