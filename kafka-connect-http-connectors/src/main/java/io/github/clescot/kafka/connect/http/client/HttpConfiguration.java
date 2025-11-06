@@ -9,6 +9,7 @@ import dev.failsafe.Failsafe;
 import dev.failsafe.FailsafeExecutor;
 import dev.failsafe.RetryPolicy;
 import io.github.clescot.kafka.connect.Configuration;
+import io.github.clescot.kafka.connect.RequestClient;
 import io.github.clescot.kafka.connect.RequestResponseClient;
 import io.github.clescot.kafka.connect.http.client.config.AddSuccessStatusToHttpExchangeFunction;
 import io.github.clescot.kafka.connect.http.client.config.HttpRequestPredicateBuilder;
@@ -103,11 +104,11 @@ public class HttpConfiguration<C extends HttpClient<NR, NS>, NR, NS> implements 
             RetryPolicy<HttpExchange> myRetryPolicy = retryPolicyForCall.get();
             CircuitBreaker<HttpExchange> circuitBreaker = buildCircuitBreaker();
             //compose policies
-            FailsafeExecutor<HttpExchange> failsafeExecutor = Failsafe.with(myRetryPolicy, circuitBreaker);
+            FailsafeExecutor<HttpExchange> fsExecutor = Failsafe.with(myRetryPolicy, circuitBreaker);
             if (this.executorService != null) {
-                failsafeExecutor = failsafeExecutor.with(this.executorService);
+                fsExecutor = fsExecutor.with(this.executorService);
             }
-            return failsafeExecutor;
+            return fsExecutor;
         } else {
             //no RetryPolicy is set
             return null;
@@ -193,7 +194,7 @@ public class HttpConfiguration<C extends HttpClient<NR, NS>, NR, NS> implements 
      */
     private CompletableFuture<HttpExchange> callAndEnrich(HttpRequest httpRequest,
                                                           AtomicInteger attempts) {
-        attempts.addAndGet(HttpClient.ONE_REQUEST);
+        attempts.addAndGet(RequestClient.ONE_REQUEST);
         if (LOGGER.isTraceEnabled()) {
             LOGGER.trace("before enrichment:{}", httpRequest);
         }
@@ -242,7 +243,7 @@ public class HttpConfiguration<C extends HttpClient<NR, NS>, NR, NS> implements 
                     httpRequest,
                     new HttpResponse(HttpClient.SERVER_ERROR_STATUS_CODE, String.valueOf(exception.getMessage())),
                     Stopwatch.createUnstarted(),
-                    OffsetDateTime.now(ZoneId.of(HttpClient.UTC_ZONE_ID)),
+                    OffsetDateTime.now(ZoneId.of(RequestResponseClient.UTC_ZONE_ID)),
                     attempts,
                     Maps.newHashMap(),
                     Maps.newHashMap());
