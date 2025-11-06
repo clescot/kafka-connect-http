@@ -24,6 +24,7 @@ import io.micrometer.jmx.JmxConfig;
 import io.micrometer.jmx.JmxMeterRegistry;
 import okhttp3.Request;
 import okhttp3.Response;
+import org.apache.kafka.connect.sink.SinkRecord;
 import org.assertj.core.util.Sets;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.*;
@@ -132,7 +133,10 @@ class HttpConfigurationTest {
             settings.put("retry.policy.retries","2");
             settings.put("retry.policy.response.code.regex",DEFAULT_DEFAULT_RETRY_RESPONSE_CODE_REGEX);
             HttpConnectorConfig httpConnectorConfig = new HttpConnectorConfig(settings);
-            HttpTask httpTask = new HttpTask(httpConnectorConfig,new OkHttpClientFactory());
+            HttpTask<SinkRecord,OkHttpClient,okhttp3.Request,okhttp3.Response> httpTask = new HttpTask<>(
+                    httpConnectorConfig,
+                    new OkHttpClientFactory()
+            );
 
             RetryPolicy<HttpExchange> retryPolicy = httpTask.buildRetryPolicy(httpConnectorConfig.originalsStrings());
             String dummy = "dummy";
@@ -175,7 +179,7 @@ class HttpConfigurationTest {
             settings.put("retry.policy.retries","2");
             settings.put("retry.policy.response.code.regex",DEFAULT_DEFAULT_RETRY_RESPONSE_CODE_REGEX);
             HttpConnectorConfig httpConnectorConfig = new HttpConnectorConfig(settings);
-            HttpTask httpTask = new HttpTask(httpConnectorConfig,new OkHttpClientFactory());
+            HttpTask<SinkRecord,OkHttpClient,okhttp3.Request,okhttp3.Response> httpTask = new HttpTask<>(httpConnectorConfig,new OkHttpClientFactory());
 
             RetryPolicy<HttpExchange> retryPolicy = httpTask.buildRetryPolicy(httpConnectorConfig.originalsStrings());
             String dummy = "dummy";
@@ -216,7 +220,7 @@ class HttpConfigurationTest {
             settings.put("retry.policy.retries","2");
             settings.put("retry.policy.response.code.regex",DEFAULT_DEFAULT_RETRY_RESPONSE_CODE_REGEX);
             HttpConnectorConfig httpConnectorConfig = new HttpConnectorConfig(settings);
-            HttpTask httpTask = new HttpTask(httpConnectorConfig,new OkHttpClientFactory());
+            HttpTask<SinkRecord,OkHttpClient,okhttp3.Request,okhttp3.Response> httpTask = new HttpTask<>(httpConnectorConfig,new OkHttpClientFactory());
 
             RetryPolicy<HttpExchange> retryPolicy = httpTask.buildRetryPolicy(httpConnectorConfig.originalsStrings());
             String dummy = "dummy";
@@ -306,7 +310,7 @@ class HttpConfigurationTest {
             settings.put("retry.policy.retries","2");
             settings.put("retry.policy.response.code.regex",DEFAULT_DEFAULT_RETRY_RESPONSE_CODE_REGEX);
             HttpConnectorConfig httpConnectorConfig = new HttpConnectorConfig(settings);
-            HttpTask httpTask = new HttpTask(httpConnectorConfig,new OkHttpClientFactory());
+            HttpTask<SinkRecord,OkHttpClient,okhttp3.Request,okhttp3.Response> httpTask = new HttpTask<>(httpConnectorConfig,new OkHttpClientFactory());
 
             RetryPolicy<HttpExchange> retryPolicy = httpTask.buildRetryPolicy(httpConnectorConfig.originalsStrings());
             String dummy = "dummy";
