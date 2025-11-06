@@ -25,7 +25,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  * @param <E> exchange type
  */
 @SuppressWarnings("java:S119")
-public interface RequestResponseClient<R extends Request, NR, S extends Response, NS, E extends Exchange> extends RequestClient<R, NR,E>, ResponseClient<S, NS,E> {
+public interface RequestResponseClient<R extends Request, NR, S extends Response, NS, E extends Exchange<R,S>> extends RequestClient<R, NR,E>, ResponseClient<S, NS,E> {
     String UTC_ZONE_ID = "UTC";
     boolean SUCCESS = true;
     boolean FAILURE = false;
