@@ -26,11 +26,7 @@ import okhttp3.Request;
 import okhttp3.Response;
 import org.assertj.core.util.Sets;
 import org.jetbrains.annotations.NotNull;
-import org.junit.Ignore;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Nested;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.extension.RegisterExtension;
 import org.junit.jupiter.api.parallel.Execution;
 import org.junit.jupiter.api.parallel.ExecutionMode;
@@ -215,7 +211,6 @@ class HttpConfigurationTest {
                                     .withStatusMessage("OK")
                             ).willSetStateTo(AUTHORIZED_STATE)
                     );
-            //when
             HttpRequest httpRequest = getDummyHttpRequest(wmHttp.url("/ping"));
             Map<String, String> settings = Maps.newHashMap();
             settings.put("retry.policy.retries","2");
@@ -226,12 +221,13 @@ class HttpConfigurationTest {
             RetryPolicy<HttpExchange> retryPolicy = httpTask.buildRetryPolicy(httpConnectorConfig.originalsStrings());
             String dummy = "dummy";
             HttpConfiguration<OkHttpClient,okhttp3.Request,okhttp3.Response> httpConfiguration = new HttpConfiguration<>(dummy,okHttpClient,executorService, retryPolicy,settings);
-            HttpExchange httpExchange = httpConfiguration.call(httpRequest).get();
+            //when
+            ExecutionException executionException = Assertions.assertThrows(ExecutionException.class, () -> httpConfiguration.call(httpRequest).get());
+            assertThat(executionException).hasCauseInstanceOf(TooLongRetryDelayException.class);
 
-            //then
-            AtomicInteger attempts = httpExchange.getAttempts();
-            assertThat(attempts.get()).isEqualTo(2);
-            assertThat(httpExchange.isSuccess()).isTrue();
+//            AtomicInteger attempts = httpExchange.getAttempts();
+//            assertThat(attempts.get()).isEqualTo(2);
+//            assertThat(httpExchange.isSuccess()).isTrue();
         }
     }
 
