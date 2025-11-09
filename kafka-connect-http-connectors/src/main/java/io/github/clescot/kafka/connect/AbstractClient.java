@@ -44,7 +44,7 @@ public abstract class  AbstractClient<E> implements Client<E> {
         return Objects.hashCode(getConfig());
     }
 
-    public RateLimiter<E> buildRateLimiter(Map<String, String> configMap, String configurationId) {
+    private RateLimiter<E> buildRateLimiter(Map<String, String> configMap, String configurationId) {
         RateLimiter<E> myRateLimiter = null;
         if (configMap.containsKey(RATE_LIMITER_MAX_EXECUTIONS)) {
             long maxExecutions = Long.parseLong(configMap.get(RATE_LIMITER_MAX_EXECUTIONS));
