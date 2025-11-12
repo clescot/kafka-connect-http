@@ -229,9 +229,45 @@ class HttpConfigurationTest {
             ExecutionException executionException = Assertions.assertThrows(ExecutionException.class, () -> httpConfiguration.call(httpRequest).get());
             assertThat(executionException).hasCauseInstanceOf(TooLongRetryDelayException.class);
 
-//            AtomicInteger attempts = httpExchange.getAttempts();
-//            assertThat(attempts.get()).isEqualTo(2);
-//            assertThat(httpExchange.isSuccess()).isTrue();
+        }
+        @Test
+        void test_successful_request_at_second_time_with_too_many_requests_and_retry_after_higher_than_retry_threshold(){
+
+            //given
+            String scenario = "test_successful_request_at_second_time";
+            WireMockRuntimeInfo wmRuntimeInfo = wmHttp.getRuntimeInfo();
+            WireMock wireMock = wmRuntimeInfo.getWireMock();
+            wireMock
+                    .register(WireMock.post("/ping").inScenario(scenario)
+                            .whenScenarioStateIs(STARTED)
+                            .willReturn(WireMock.aResponse()
+                                    .withStatus(429)
+                                    .withStatusMessage("Too Many Requests")
+                                    .withHeader("X-Retry-After", "100")
+                            ).willSetStateTo(INTERNAL_SERVER_ERROR_STATE)
+                    );
+            wireMock
+                    .register(WireMock.post("/ping").inScenario(scenario)
+                            .whenScenarioStateIs(INTERNAL_SERVER_ERROR_STATE)
+                            .willReturn(WireMock.aResponse()
+                                    .withStatus(200)
+                                    .withStatusMessage("OK")
+                            ).willSetStateTo(AUTHORIZED_STATE)
+                    );
+            HttpRequest httpRequest = getDummyHttpRequest(wmHttp.url("/ping"));
+            Map<String, String> settings = Maps.newHashMap();
+            settings.put("retry.policy.retries","2");
+            settings.put("retry.policy.response.code.regex",DEFAULT_DEFAULT_RETRY_RESPONSE_CODE_REGEX);
+            HttpConnectorConfig httpConnectorConfig = new HttpConnectorConfig(settings);
+            HttpTask<SinkRecord,OkHttpClient,okhttp3.Request,okhttp3.Response> httpTask = new HttpTask<>(httpConnectorConfig,new OkHttpClientFactory());
+
+            RetryPolicy<HttpExchange> retryPolicy = httpTask.buildRetryPolicy(httpConnectorConfig.originalsStrings());
+            String dummy = "dummy";
+            HttpConfiguration<OkHttpClient,okhttp3.Request,okhttp3.Response> httpConfiguration = new HttpConfiguration<>(dummy,okHttpClient,executorService, retryPolicy,settings);
+            //when
+            ExecutionException executionException = Assertions.assertThrows(ExecutionException.class, () -> httpConfiguration.call(httpRequest).get());
+            assertThat(executionException).hasCauseInstanceOf(TooLongRetryDelayException.class);
+
         }
     }
 
