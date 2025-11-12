@@ -53,8 +53,6 @@ public class HttpConfiguration<C extends HttpClient<NR, NS>, NR, NS> implements 
     public static final String RETRY_AFTER = "Retry-After";
     public static final String X_RETRY_AFTER = "X-Retry-After";
     public static final String UTC = "UTC";
-    public static final String ONE_HOUR = "3600";
-
     private C client;
     private final ExecutorService executorService;
     private final RetryPolicy<HttpExchange> retryPolicy;
@@ -75,6 +73,7 @@ public class HttpConfiguration<C extends HttpClient<NR, NS>, NR, NS> implements 
     private final long retryDelayThreshold;
     private Instant nextRetryInstant;
     private final FailsafeExecutor<HttpExchange> failsafeExecutor;
+    private long defaultRetryAfterDelayInSeconds;
 
     public HttpConfiguration(String id,
                              C client,
@@ -93,6 +92,7 @@ public class HttpConfiguration<C extends HttpClient<NR, NS>, NR, NS> implements 
         maxSecondsToWait = Long.parseLong(settings.getOrDefault(RETRY_AFTER_MAX_DURATION_IN_SEC, DEFAULT_RETRY_AFTER_MAX_DURATION_IN_SEC));
         retryDelayThreshold = Long.parseLong(settings.getOrDefault(RETRY_DELAY_THRESHOLD_IN_SEC, DEFAULT_RETRY_DELAY_THRESHOLD_IN_SEC));
         customStatusCodeForRetryAfterHeader = Pattern.compile(settings.getOrDefault(CUSTOM_STATUS_CODE_FOR_RETRY_AFTER_HEADER, DEFAULT_CUSTOM_STATUS_CODE_FOR_RETRY_AFTER_HEADER));
+        defaultRetryAfterDelayInSeconds = Long.parseLong(settings.getOrDefault(DEFAULT_RETRY_DELAY_THRESHOLD_IN_SEC, DEFAULT_DEFAULT_RETRY_DELAY_IN_SEC));
         failsafeExecutor = buildFailsafeExecutor();
     }
 
@@ -278,7 +278,7 @@ public class HttpConfiguration<C extends HttpClient<NR, NS>, NR, NS> implements 
                     String retryAfterValue = getRetryAfterValue(response.getHeaders());
                     LOGGER.debug("Retry-After Value:{}",retryAfterValue);
 
-                    long secondsToWait = getSecondsToWait(MoreObjects.firstNonNull(retryAfterValue, ONE_HOUR));
+                    long secondsToWait = getSecondsToWait(MoreObjects.firstNonNull(retryAfterValue, DEFAULT_DEFAULT_RETRY_DELAY_IN_SEC));
                     LOGGER.debug("seconds to wait:{}",secondsToWait);
                     nextRetryInstant = Instant.now().plusSeconds(secondsToWait);
                     LOGGER.info("Circuit breaker opened for '{}' seconds, until '{}'",secondsToWait,nextRetryInstant);
@@ -358,7 +358,7 @@ public class HttpConfiguration<C extends HttpClient<NR, NS>, NR, NS> implements 
         //status code 429 is clear : we need to retry after a delay, although if no delay is present in headers
         if(value == null){
             //TODO configure default delay when status code is 429 and no delay is present
-            LOGGER.debug("429 status code detected without Retry-After or X-Retry-After header, falling back to default retry value '{}' seconds",ONE_HOUR);
+            LOGGER.debug("429 status code detected without Retry-After or X-Retry-After header, falling back to default retry value '{}' seconds",defaultRetryAfterDelayInSeconds);
             return true;
         }
         long secondsToWait = getSecondsToWait(value);
