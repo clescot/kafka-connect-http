@@ -9,11 +9,4 @@ public interface Client<E> {
 
     String getEngineId();
 
-    void setRateLimiter(RateLimiter<E> rateLimiter);
-
-    Optional<RateLimiter<E>> getRateLimiter();
-
-    String getPermitsPerExecution();
-
-
 }

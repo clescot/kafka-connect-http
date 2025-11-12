@@ -3,7 +3,7 @@ package io.github.clescot.kafka.connect.http.client;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
-import io.github.clescot.kafka.connect.AbstractClient;
+import io.github.clescot.kafka.connect.AbstractRequestClient;
 import io.github.clescot.kafka.connect.http.client.config.*;
 import io.github.clescot.kafka.connect.http.core.HttpExchange;
 import io.github.clescot.kafka.connect.http.core.HttpRequest;
@@ -20,7 +20,7 @@ import java.util.regex.Pattern;
 import static io.github.clescot.kafka.connect.http.core.VersionUtils.VERSION;
 import static io.github.clescot.kafka.connect.http.sink.HttpConfigDefinition.*;
 
-public abstract class AbstractHttpClient<NR,NS> extends AbstractClient<HttpExchange> implements HttpClient<NR,NS> {
+public abstract class AbstractHttpClient<NR,NS> extends AbstractRequestClient<HttpRequest,NR,HttpExchange> implements HttpClient<NR,NS> {
     private static final Logger LOGGER = LoggerFactory.getLogger(AbstractHttpClient.class);
 
     public static final String DEFAULT_HTTP_RESPONSE_MESSAGE_STATUS_LIMIT = "1024";
