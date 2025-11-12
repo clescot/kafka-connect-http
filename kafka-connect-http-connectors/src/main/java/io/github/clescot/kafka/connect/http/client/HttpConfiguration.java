@@ -316,6 +316,11 @@ public class HttpConfiguration<C extends HttpClient<NR, NS>, NR, NS> implements 
         return httpExchange;
     }
 
+    /**
+     * Check if the response code implies a retry.
+     * @param httpExchange HttpExchange to check
+     * @return true if the response code implies a retry
+     */
     protected boolean retryNeeded(HttpExchange httpExchange) {
         Optional<Pattern> myRetryResponseCodeRegex = Optional.ofNullable(getRetryResponseCodeRegex());
         if (myRetryResponseCodeRegex.isPresent()) {
@@ -344,6 +349,7 @@ public class HttpConfiguration<C extends HttpClient<NR, NS>, NR, NS> implements 
 
         HttpResponse response = httpExchange.getResponse();
         Integer statusCode = response.getStatusCode();
+        //503,429,301 ?
         boolean statusCodeIsCompatibleWithRetryAfter = statusCodeIsCompatibleWithRetryAfter(statusCode);
         if(!statusCodeIsCompatibleWithRetryAfter){
             return false;
@@ -382,6 +388,13 @@ public class HttpConfiguration<C extends HttpClient<NR, NS>, NR, NS> implements 
         return customStatusCodeForRetryAfterHeader.matcher(""+statusCode).matches();
     }
 
+    /**
+     * @param value the value of the Retry-After header
+     * @return the number of seconds to wait
+     *
+     * @param value the value of the Retry-After header
+     * @return the number of seconds to wait
+     */
     private  long getSecondsToWait(String value) {
         //is it a date or an integer ?
         long secondsToWait;
@@ -407,6 +420,12 @@ public class HttpConfiguration<C extends HttpClient<NR, NS>, NR, NS> implements 
         return secondsToWait;
     }
 
+    /**
+     *
+     * @see <a href="https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Retry-After">Retry-After</a>
+     * @param httpResponseHeaders
+     * @return
+     */
     private String getRetryAfterValue(Map<String, List<String>> httpResponseHeaders) {
         return httpResponseHeaders.get(RETRY_AFTER) != null ? httpResponseHeaders.get(RETRY_AFTER).get(0) : (httpResponseHeaders.get(X_RETRY_AFTER)!=null?httpResponseHeaders.get(X_RETRY_AFTER).get(0):null);
     }
