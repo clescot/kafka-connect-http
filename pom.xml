@@ -6,7 +6,7 @@
     <url>https://github.com/clescot/kafka-connect-http</url>
     <groupId>io.github.clescot</groupId>
     <artifactId>kafka-connect-http</artifactId>
-    <version>0.8.119-SNAPSHOT</version>
+    <version>0.8.121-SNAPSHOT</version>
     <licenses>
         <license>
             <name>Apache License, Version 2.0</name>
@@ -48,7 +48,7 @@
         <jacoco.version>0.8.12</jacoco.version>
         <json.assert.version>1.5.3</json.assert.version>
         <junit.version>6.0.1</junit.version>
-        <logback.version>1.5.20</logback.version>
+        <logback.version>1.5.21</logback.version>
         <maven.compiler.release>17</maven.compiler.release>
         <maven.compiler.source>17</maven.compiler.source>
         <maven.compiler.target>17</maven.compiler.target>
@@ -102,7 +102,7 @@
             <dependency>
                 <groupId>ch.qos.logback</groupId>
                 <artifactId>logback-classic</artifactId>
-                <version>1.5.20</version>
+                <version>1.5.21</version>
             </dependency>
 
             <dependency>
@@ -285,7 +285,7 @@
                 <plugin>
                     <groupId>org.sonarsource.scanner.maven</groupId>
                     <artifactId>sonar-maven-plugin</artifactId>
-                    <version>5.2.0.4988</version>
+                    <version>5.3.0.6276</version>
                 </plugin>
             </plugins>
         </pluginManagement>
