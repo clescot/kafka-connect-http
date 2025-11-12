@@ -277,6 +277,7 @@ public class HttpConfiguration<C extends HttpClient<NR, NS>, NR, NS> implements 
                     return Duration.of( min(secondsToWait,maxSecondsToWait), SECONDS);
                 },TooLongRetryDelayException.class)
                 .handleIf(failure -> {
+                    //TODO from exception to response header parsing
                     if (failure instanceof TooLongRetryDelayException tooLongRetryDelayException) {
                         LOGGER.error("Circuit breaker detected a too long retry delay of {} seconds exceeding the threshold of {} seconds. Opening the circuit.",
                                 tooLongRetryDelayException.getSecondsToWait(), tooLongRetryDelayException.getRetryDelayThreshold());
@@ -329,7 +330,7 @@ public class HttpConfiguration<C extends HttpClient<NR, NS>, NR, NS> implements 
             int statusCode = response.getStatusCode();
             Map<String, List<String>> httpResponseHeaders = response.getHeaders();
             if(httpResponseHeaders.containsKey(RETRY_AFTER)||httpResponseHeaders.containsKey(X_RETRY_AFTER)){
-                return openCircuitWithRetryAfterHeader(httpExchange);
+                return openCircuit(httpExchange);
             }
             Matcher matcher = retryPattern.matcher("" + statusCode);
             return matcher.matches();
@@ -342,10 +343,10 @@ public class HttpConfiguration<C extends HttpClient<NR, NS>, NR, NS> implements 
      * when the response code is compatible with a retry after header, we can open the circuit (i.e disable the client),
      * and wait for the retry after header Duration to re-enable the client.
      *
-     * @param httpExchange the exchange
+     * @param httpExchange the exchange with the response containing the retry after header
      * @return true if the circuit must be opened (i.e the client must be disabled), false otherwise
      */
-    private boolean openCircuitWithRetryAfterHeader(HttpExchange httpExchange) {
+    private boolean openCircuit(HttpExchange httpExchange) {
 
         HttpResponse response = httpExchange.getResponse();
         Integer statusCode = response.getStatusCode();
@@ -377,7 +378,7 @@ public class HttpConfiguration<C extends HttpClient<NR, NS>, NR, NS> implements 
                 //seconds to millis
                 LOGGER.info("Waiting '{}' seconds (below the retryDelayThreshold:'{}' seconds) before retrying the call", secondsToWait,retryDelayThreshold);
                 Thread.sleep(secondsToWait*1000);
-                return true;
+                return false;
             } catch (InterruptedException e) {
                 throw new HttpException(e);
             }
