@@ -253,7 +253,6 @@ public class HttpConfiguration<C extends HttpClient<NR, NS>, NR, NS> implements 
 
     private CircuitBreaker<HttpExchange> buildCircuitBreaker() {
         return CircuitBreaker.<HttpExchange>builder()
-                .handleResultIf(httpExchange -> getRetryAfterValue(httpExchange.getResponse().getHeaders())!=null)
                 //we break circuit when 1 TooLongRetryDelayException occurs
                 .withFailureThreshold(1)
                 //we reestablish the circuit after one successful call
@@ -276,16 +275,8 @@ public class HttpConfiguration<C extends HttpClient<NR, NS>, NR, NS> implements 
 
                     return Duration.of( min(secondsToWait,maxSecondsToWait), SECONDS);
                 },TooLongRetryDelayException.class)
-                .handleIf(failure -> {
-                    //TODO from exception to response header parsing
-                    if (failure instanceof TooLongRetryDelayException tooLongRetryDelayException) {
-                        LOGGER.error("Circuit breaker detected a too long retry delay of {} seconds exceeding the threshold of {} seconds. Opening the circuit.",
-                                tooLongRetryDelayException.getSecondsToWait(), tooLongRetryDelayException.getRetryDelayThreshold());
-                        this.nextRetryInstant = tooLongRetryDelayException.getNextRetryInstant();
-                        return true;
-                    }
-                    return false;
-                })
+                .handle(TooLongRetryDelayException.class)
+                .handleResultIf(this::openCircuit)
                 .onOpen(context ->{
                     LOGGER.error("Circuit breaker for too long retry delay is now OPEN. Calls will not be retried anymore.");
                     closed = false;
@@ -330,7 +321,7 @@ public class HttpConfiguration<C extends HttpClient<NR, NS>, NR, NS> implements 
             int statusCode = response.getStatusCode();
             Map<String, List<String>> httpResponseHeaders = response.getHeaders();
             if(httpResponseHeaders.containsKey(RETRY_AFTER)||httpResponseHeaders.containsKey(X_RETRY_AFTER)){
-                return openCircuit(httpExchange);
+                return !openCircuit(httpExchange);
             }
             Matcher matcher = retryPattern.matcher("" + statusCode);
             return matcher.matches();
