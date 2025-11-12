@@ -98,9 +98,7 @@ public interface RequestResponseClient<R extends Request, NR, S extends Response
                                         Maps.newHashMap(),
                                         timings);
                             }
-                    ).exceptionally((throwable -> {
-                        return getErrorResponse(request, attempts, throwable, rateLimitedStopWatch, now);
-                    }));
+                    ).exceptionally((throwable -> getErrorResponse(request, attempts, throwable, rateLimitedStopWatch, now)));
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             throw new IllegalStateException(e);
