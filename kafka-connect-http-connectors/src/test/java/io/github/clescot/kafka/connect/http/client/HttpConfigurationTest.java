@@ -26,12 +26,16 @@ import okhttp3.Request;
 import okhttp3.Response;
 import org.apache.kafka.connect.sink.SinkRecord;
 import org.assertj.core.util.Sets;
+import org.awaitility.Awaitility;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.extension.RegisterExtension;
 import org.junit.jupiter.api.parallel.Execution;
 import org.junit.jupiter.api.parallel.ExecutionMode;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
+import java.time.Duration;
 import java.time.OffsetDateTime;
 import java.time.ZoneId;
 import java.util.HashSet;
@@ -52,7 +56,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 @Execution(ExecutionMode.SAME_THREAD)
 class HttpConfigurationTest {
     private static final HttpRequest.Method DUMMY_METHOD = HttpRequest.Method.POST;
-
+    private static final Logger LOGGER = LoggerFactory.getLogger(HttpConfigurationTest.class);
     public static final String AUTHORIZED_STATE = "Authorized";
     public static final String INTERNAL_SERVER_ERROR_STATE = "InternalServerError";
     private static final String DUMMY_BODY = "stuff";
@@ -116,7 +120,7 @@ class HttpConfigurationTest {
                             .willReturn(WireMock.aResponse()
                                     .withStatus(429)
                                     .withStatusMessage("Too Many Requests")
-                                    .withHeader("Retry-After", "10")
+                                    .withHeader("Retry-After", "2")
                             ).willSetStateTo(INTERNAL_SERVER_ERROR_STATE)
                     );
             wireMock
@@ -162,7 +166,7 @@ class HttpConfigurationTest {
                             .willReturn(WireMock.aResponse()
                                     .withStatus(429)
                                     .withStatusMessage("Too Many Requests")
-                                    .withHeader("X-Retry-After", "10")
+                                    .withHeader("X-Retry-After", "2")
                             ).willSetStateTo(INTERNAL_SERVER_ERROR_STATE)
                     );
             wireMock
@@ -192,7 +196,7 @@ class HttpConfigurationTest {
             assertThat(httpExchange.isSuccess()).isTrue();
         }
         @Test
-        void test_successful_request_at_second_time_with_too_many_requests_and_x_retry_after_higher_than_retry_threshold(){
+        void test_unsuccessful_request_with_too_many_requests_and_x_retry_after_higher_than_retry_threshold() throws InterruptedException {
 
             //given
             String scenario = "test_successful_request_at_second_time";
@@ -204,7 +208,7 @@ class HttpConfigurationTest {
                             .willReturn(WireMock.aResponse()
                                     .withStatus(429)
                                     .withStatusMessage("Too Many Requests")
-                                    .withHeader("X-Retry-After", "100")
+                                    .withHeader("X-Retry-After", "62")
                             ).willSetStateTo(INTERNAL_SERVER_ERROR_STATE)
                     );
             wireMock
@@ -229,9 +233,13 @@ class HttpConfigurationTest {
             ExecutionException executionException = Assertions.assertThrows(ExecutionException.class, () -> httpConfiguration.call(httpRequest).get());
             assertThat(executionException).hasCauseInstanceOf(TooLongRetryDelayException.class);
 
+            assertThat(httpConfiguration.isOpen()).isTrue();
+            LOGGER.info("waiting at most 65 seconds for the circuit breaker to be closed");
+            Awaitility.await().atMost(Duration.ofSeconds(65)).until(httpConfiguration::isClosed);
+            assertThat(httpConfiguration.isOpen()).isFalse();
         }
         @Test
-        void test_successful_request_at_second_time_with_too_many_requests_and_retry_after_higher_than_retry_threshold(){
+        void test_successful_request_with_too_many_requests_and_retry_after_higher_than_retry_threshold() {
 
             //given
             String scenario = "test_successful_request_at_second_time";
@@ -243,7 +251,7 @@ class HttpConfigurationTest {
                             .willReturn(WireMock.aResponse()
                                     .withStatus(429)
                                     .withStatusMessage("Too Many Requests")
-                                    .withHeader("X-Retry-After", "100")
+                                    .withHeader("X-Retry-After", "62")
                             ).willSetStateTo(INTERNAL_SERVER_ERROR_STATE)
                     );
             wireMock
@@ -268,6 +276,10 @@ class HttpConfigurationTest {
             ExecutionException executionException = Assertions.assertThrows(ExecutionException.class, () -> httpConfiguration.call(httpRequest).get());
             assertThat(executionException).hasCauseInstanceOf(TooLongRetryDelayException.class);
 
+            assertThat(httpConfiguration.isOpen()).isTrue();
+            LOGGER.info("waiting at most 65 seconds for the circuit breaker to be closed");
+            Awaitility.await().atMost(Duration.ofSeconds(65)).until(httpConfiguration::isClosed);
+            assertThat(httpConfiguration.isClosed()).isTrue();
         }
     }
 

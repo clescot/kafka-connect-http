@@ -73,7 +73,6 @@ public class HttpConfiguration<C extends HttpClient<NR, NS>, NR, NS> implements 
     private static final DateTimeFormatter RFC_1123_FORMATTER = DateTimeFormatter.RFC_1123_DATE_TIME;
     private final long maxSecondsToWait;
     private final long retryDelayThreshold;
-    private boolean closed = true;
     private Instant nextRetryInstant;
     private final FailsafeExecutor<HttpExchange> failsafeExecutor;
 
@@ -170,12 +169,21 @@ public class HttpConfiguration<C extends HttpClient<NR, NS>, NR, NS> implements 
     }
 
     /**
-     * indicates if the client is closed (i.e enabled) due to circuit breaker opening.
+     * indicates if the client is closed (i.e enabled) due to circuit breaker.
      * @return true if the client is closed.
      */
     public boolean isClosed() {
-        return closed;
+        return nextRetryInstant==null ||nextRetryInstant.isBefore(Instant.now());
     }
+
+    /**
+     * indicates if the client is open (i.e disabled) due to circuit breaker opening.
+     * @return true if the client is open.
+     */
+    public boolean isOpen() {
+        return !isClosed();
+    }
+
 
     public long getMaxSecondsToWait() {
         return maxSecondsToWait;
@@ -272,18 +280,15 @@ public class HttpConfiguration<C extends HttpClient<NR, NS>, NR, NS> implements 
 
                     long secondsToWait = getSecondsToWait(MoreObjects.firstNonNull(retryAfterValue, ONE_HOUR));
                     LOGGER.debug("seconds to wait:{}",secondsToWait);
-
+                    nextRetryInstant = Instant.now().plusSeconds(secondsToWait);
+                    LOGGER.info("Circuit breaker opened for '{}' seconds, until '{}'",secondsToWait,nextRetryInstant);
                     return Duration.of( min(secondsToWait,maxSecondsToWait), SECONDS);
                 },TooLongRetryDelayException.class)
                 .handle(TooLongRetryDelayException.class)
                 .handleResultIf(this::openCircuit)
-                .onOpen(context ->{
-                    LOGGER.error("Circuit breaker for too long retry delay is now OPEN. Calls will not be retried anymore.");
-                    closed = false;
-                })
+                .onOpen(context -> LOGGER.error("Circuit breaker for too long retry delay is now OPEN. Calls will not be retried anymore."))
                 .onHalfOpen(context -> {
                     LOGGER.info("Circuit breaker for too long retry delay is now HALF-OPEN. Next call will test the connection.");
-                    closed = true;
                     this.nextRetryInstant = null;
                 })
                 .onClose(context -> LOGGER.warn("Circuit breaker for too long retry delay is now CLOSED. Calls can be retried again."))
