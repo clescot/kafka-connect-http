@@ -196,7 +196,7 @@ class HttpConfigurationTest {
             assertThat(httpExchange.isSuccess()).isTrue();
         }
         @Test
-        void test_unsuccessful_request_with_too_many_requests_and_x_retry_after_higher_than_retry_threshold() throws InterruptedException {
+        void test_unsuccessful_request_with_too_many_requests_and_x_retry_after_higher_than_retry_threshold() {
 
             //given
             String scenario = "test_successful_request_at_second_time";
