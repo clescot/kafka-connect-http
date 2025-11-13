@@ -35,7 +35,7 @@ import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
 
-import static io.github.clescot.kafka.connect.http.core.HttpRequest.BODY_AS_BYTE_ARRAY;
+import static io.github.clescot.kafka.connect.http.core.HttpRequest.BODY_AS_BYTE_ARRAY_FIELD;
 import static io.github.clescot.kafka.connect.http.core.MediaType.APPLICATION_X_WWW_FORM_URLENCODED;
 import static io.github.clescot.kafka.connect.http.core.SchemaLoader.*;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -731,8 +731,8 @@ class HttpRequestTest {
             httpRequestStruct.put("method", dummyMethod.name());
 
             String dummyBodyType = "BYTE_ARRAY";
-            httpRequestStruct.put(HttpRequest.BODY_TYPE, dummyBodyType);
-            httpRequestStruct.put(BODY_AS_BYTE_ARRAY, Base64.getEncoder().encodeToString(DUMMY_BODY_AS_STRING.getBytes(StandardCharsets.UTF_8)));
+            httpRequestStruct.put(HttpRequest.BODY_TYPE_FIELD, dummyBodyType);
+            httpRequestStruct.put(BODY_AS_BYTE_ARRAY_FIELD, Base64.getEncoder().encodeToString(DUMMY_BODY_AS_STRING.getBytes(StandardCharsets.UTF_8)));
 
             //when
             HttpRequest httpRequest = new HttpRequest(httpRequestStruct);
@@ -753,7 +753,7 @@ class HttpRequestTest {
             httpRequestStruct.put("method", dummyMethod.name());
 
             String dummyBodyType = "MULTIPART";
-            httpRequestStruct.put(HttpRequest.BODY_TYPE, dummyBodyType);
+            httpRequestStruct.put(HttpRequest.BODY_TYPE_FIELD, dummyBodyType);
 
             Map<String,Struct> parts = Maps.newHashMap();
             HttpPart part1 = new HttpPart("part1".getBytes(StandardCharsets.UTF_8));
@@ -763,7 +763,7 @@ class HttpRequestTest {
             HttpPart part3 = new HttpPart("part3".getBytes(StandardCharsets.UTF_8));
             parts.put("part3",part3.toStruct());
 
-            httpRequestStruct.put(HttpRequest.PARTS, parts);
+            httpRequestStruct.put(HttpRequest.PARTS_FIELD, parts);
 
             //when
             HttpRequest httpRequest = new HttpRequest(httpRequestStruct);

@@ -24,16 +24,16 @@ public class HttpResponse implements Response, Cloneable, Serializable {
     private static final long serialVersionUID = 1L;
     public static final Integer VERSION = 2;
 
-    public static final String STATUS_CODE = "statusCode";
-    public static final String STATUS_MESSAGE = "statusMessage";
-    public static final String PROTOCOL = "protocol";
-    public static final String HEADERS = "headers";
-    public static final String BODY_TYPE = "bodyType";
-    public static final String BODY_AS_STRING = "bodyAsString";
-    public static final String BODY_AS_BYTE_ARRAY = "bodyAsByteArray";
-    public static final String BODY_AS_FORM = "bodyAsForm";
-    public static final String PARTS = "parts";
-    public static final String ATTRIBUTES = "attributes";
+    public static final String STATUS_CODE_FIELD = "statusCode";
+    public static final String STATUS_MESSAGE_FIELD = "statusMessage";
+    public static final String PROTOCOL_FIELD = "protocol";
+    public static final String HEADERS_FIELD = "headers";
+    public static final String BODY_TYPE_FIELD = "bodyType";
+    public static final String BODY_AS_STRING_FIELD = "bodyAsString";
+    public static final String BODY_AS_BYTE_ARRAY_FIELD = "bodyAsByteArray";
+    public static final String BODY_AS_FORM_FIELD = "bodyAsForm";
+    public static final String PARTS_FIELD = "parts";
+    public static final String ATTRIBUTES_FIELD = "attributes";
     private Integer statusMessageLimit = Integer.MAX_VALUE;
     private Integer headersLimit = Integer.MAX_VALUE;
     private Integer bodyLimit = Integer.MAX_VALUE;
@@ -42,16 +42,16 @@ public class HttpResponse implements Response, Cloneable, Serializable {
             .struct()
             .name(HttpResponse.class.getName())
             .version(VERSION)
-            .field(STATUS_CODE, Schema.INT64_SCHEMA)
-            .field(STATUS_MESSAGE, Schema.STRING_SCHEMA)
-            .field(PROTOCOL, Schema.OPTIONAL_STRING_SCHEMA)
-            .field(HEADERS, SchemaBuilder.map(Schema.STRING_SCHEMA, SchemaBuilder.array(Schema.STRING_SCHEMA)).build())
-            .field(BODY_TYPE, Schema.STRING_SCHEMA)
-            .field(BODY_AS_BYTE_ARRAY, Schema.OPTIONAL_STRING_SCHEMA)
-            .field(BODY_AS_FORM, SchemaBuilder.map(Schema.STRING_SCHEMA, Schema.STRING_SCHEMA).optional().schema())
-            .field(BODY_AS_STRING, Schema.OPTIONAL_STRING_SCHEMA)
-            .field(PARTS, SchemaBuilder.array(HttpPart.SCHEMA).optional().schema())
-            .field(ATTRIBUTES, SchemaBuilder.map(Schema.STRING_SCHEMA, Schema.STRING_SCHEMA).optional().schema())
+            .field(STATUS_CODE_FIELD, Schema.INT64_SCHEMA)
+            .field(STATUS_MESSAGE_FIELD, Schema.STRING_SCHEMA)
+            .field(PROTOCOL_FIELD, Schema.OPTIONAL_STRING_SCHEMA)
+            .field(HEADERS_FIELD, SchemaBuilder.map(Schema.STRING_SCHEMA, SchemaBuilder.array(Schema.STRING_SCHEMA)).build())
+            .field(BODY_TYPE_FIELD, Schema.STRING_SCHEMA)
+            .field(BODY_AS_BYTE_ARRAY_FIELD, Schema.OPTIONAL_STRING_SCHEMA)
+            .field(BODY_AS_FORM_FIELD, SchemaBuilder.map(Schema.STRING_SCHEMA, Schema.STRING_SCHEMA).optional().schema())
+            .field(BODY_AS_STRING_FIELD, Schema.OPTIONAL_STRING_SCHEMA)
+            .field(PARTS_FIELD, SchemaBuilder.array(HttpPart.SCHEMA).optional().schema())
+            .field(ATTRIBUTES_FIELD, SchemaBuilder.map(Schema.STRING_SCHEMA, Schema.STRING_SCHEMA).optional().schema())
             .schema();
 
     @JsonProperty(required = true)
@@ -347,14 +347,14 @@ public class HttpResponse implements Response, Cloneable, Serializable {
 
     public Struct toStruct() {
         return new Struct(SCHEMA)
-                .put(STATUS_CODE, this.getStatusCode().longValue())
-                .put(STATUS_MESSAGE, this.getStatusMessage())
-                .put(PROTOCOL, this.getProtocol())
-                .put(HEADERS, this.getHeaders())
-                .put(BODY_TYPE, this.getBodyType().toString())
-                .put(BODY_AS_BYTE_ARRAY, this.bodyAsByteArray)
-                .put(BODY_AS_STRING, this.getBodyAsString())
-                .put(ATTRIBUTES, this.getAttributes())
+                .put(STATUS_CODE_FIELD, this.getStatusCode().longValue())
+                .put(STATUS_MESSAGE_FIELD, this.getStatusMessage())
+                .put(PROTOCOL_FIELD, this.getProtocol())
+                .put(HEADERS_FIELD, this.getHeaders())
+                .put(BODY_TYPE_FIELD, this.getBodyType().toString())
+                .put(BODY_AS_BYTE_ARRAY_FIELD, this.bodyAsByteArray)
+                .put(BODY_AS_STRING_FIELD, this.getBodyAsString())
+                .put(ATTRIBUTES_FIELD, this.getAttributes())
                 ;
     }
 
