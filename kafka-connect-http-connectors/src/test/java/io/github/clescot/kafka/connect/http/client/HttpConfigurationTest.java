@@ -202,13 +202,14 @@ class HttpConfigurationTest {
             String scenario = "test_successful_request_at_second_time";
             WireMockRuntimeInfo wmRuntimeInfo = wmHttp.getRuntimeInfo();
             WireMock wireMock = wmRuntimeInfo.getWireMock();
+            String retryAfter = "5";
             wireMock
                     .register(WireMock.post("/ping").inScenario(scenario)
                             .whenScenarioStateIs(STARTED)
                             .willReturn(WireMock.aResponse()
                                     .withStatus(429)
                                     .withStatusMessage("Too Many Requests")
-                                    .withHeader("X-Retry-After", "62")
+                                    .withHeader("X-Retry-After", retryAfter)
                             ).willSetStateTo(INTERNAL_SERVER_ERROR_STATE)
                     );
             wireMock
@@ -223,6 +224,7 @@ class HttpConfigurationTest {
             Map<String, String> settings = Maps.newHashMap();
             settings.put("retry.policy.retries","2");
             settings.put("retry.policy.response.code.regex",DEFAULT_DEFAULT_RETRY_RESPONSE_CODE_REGEX);
+            settings.put("retry.policy.retry.after.max.threshold.in.sec","3");
             HttpConnectorConfig httpConnectorConfig = new HttpConnectorConfig(settings);
             HttpTask<SinkRecord,OkHttpClient,okhttp3.Request,okhttp3.Response> httpTask = new HttpTask<>(httpConnectorConfig,new OkHttpClientFactory());
 
@@ -234,8 +236,8 @@ class HttpConfigurationTest {
             assertThat(executionException).hasCauseInstanceOf(TooLongRetryDelayException.class);
 
             assertThat(httpConfiguration.isOpen()).isTrue();
-            LOGGER.info("waiting at most 65 seconds for the circuit breaker to be closed");
-            Awaitility.await().atMost(Duration.ofSeconds(65)).until(httpConfiguration::isClosed);
+            LOGGER.info("waiting at most '{}' seconds for the circuit breaker to be closed",retryAfter);
+            Awaitility.await().atMost(Duration.ofSeconds(Long.parseLong(retryAfter)+5)).until(httpConfiguration::isClosed);
             assertThat(httpConfiguration.isOpen()).isFalse();
         }
         @Test
@@ -243,6 +245,7 @@ class HttpConfigurationTest {
 
             //given
             String scenario = "test_successful_request_at_second_time";
+            String retryAfter = "5";
             WireMockRuntimeInfo wmRuntimeInfo = wmHttp.getRuntimeInfo();
             WireMock wireMock = wmRuntimeInfo.getWireMock();
             wireMock
@@ -251,7 +254,7 @@ class HttpConfigurationTest {
                             .willReturn(WireMock.aResponse()
                                     .withStatus(429)
                                     .withStatusMessage("Too Many Requests")
-                                    .withHeader("X-Retry-After", "62")
+                                    .withHeader("X-Retry-After", retryAfter)
                             ).willSetStateTo(INTERNAL_SERVER_ERROR_STATE)
                     );
             wireMock
@@ -266,6 +269,7 @@ class HttpConfigurationTest {
             Map<String, String> settings = Maps.newHashMap();
             settings.put("retry.policy.retries","2");
             settings.put("retry.policy.response.code.regex",DEFAULT_DEFAULT_RETRY_RESPONSE_CODE_REGEX);
+            settings.put("retry.policy.retry.after.max.threshold.in.sec","3");
             HttpConnectorConfig httpConnectorConfig = new HttpConnectorConfig(settings);
             HttpTask<SinkRecord,OkHttpClient,okhttp3.Request,okhttp3.Response> httpTask = new HttpTask<>(httpConnectorConfig,new OkHttpClientFactory());
 
@@ -278,7 +282,7 @@ class HttpConfigurationTest {
 
             assertThat(httpConfiguration.isOpen()).isTrue();
             LOGGER.info("waiting at most 65 seconds for the circuit breaker to be closed");
-            Awaitility.await().atMost(Duration.ofSeconds(65)).until(httpConfiguration::isClosed);
+            Awaitility.await().atMost(Duration.ofSeconds(Long.parseLong(retryAfter)+5)).until(httpConfiguration::isClosed);
             assertThat(httpConfiguration.isClosed()).isTrue();
         }
     }
