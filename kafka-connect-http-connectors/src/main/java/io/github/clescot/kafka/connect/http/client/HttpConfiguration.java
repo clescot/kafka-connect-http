@@ -239,7 +239,8 @@ public class HttpConfiguration<C extends HttpClient<NR, NS>, NR, NS> implements 
             HttpExchange httpExchange = getClient().buildExchange(
                     httpRequest,
                     tooLongRetryDelayException.getHttpExchange().getResponse(),
-                    Stopwatch.createUnstarted(), OffsetDateTime.now(ZoneId.of(RequestResponseClient.UTC_ZONE_ID)),
+                    Stopwatch.createUnstarted(),
+                    OffsetDateTime.now(ZoneId.of(RequestResponseClient.UTC_ZONE_ID)),
                     attempts,
                     Maps.newHashMap(),
                     Maps.newHashMap());
@@ -285,7 +286,7 @@ public class HttpConfiguration<C extends HttpClient<NR, NS>, NR, NS> implements 
                     return Duration.of( min(secondsToWait,maxSecondsToWait), SECONDS);
                 },TooLongRetryDelayException.class)
                 .handle(TooLongRetryDelayException.class)
-                .handleResultIf(this::openCircuit)
+                .handleResultIf(result->circuitMustBeOpened(result)>0L)
                 .onOpen(context -> LOGGER.error("Circuit breaker for too long retry delay is now OPEN. Calls will not be retried anymore."))
                 .onHalfOpen(context -> {
                     LOGGER.info("Circuit breaker for too long retry delay is now HALF-OPEN. Next call will test the connection.");
@@ -302,7 +303,7 @@ public class HttpConfiguration<C extends HttpClient<NR, NS>, NR, NS> implements 
      * @param httpExchange HttpExchange to handle
      * @return HttpExchange if no retry is needed
      */
-    private HttpExchange handleRetry(HttpExchange httpExchange) {
+    private HttpExchange handleRetry(HttpExchange httpExchange) throws TooLongRetryDelayException{
         //we don't retry successful HTTP Exchange
         boolean responseCodeImpliesRetry = retryNeeded(httpExchange);
         LOGGER.debug("httpExchange success :'{}'", httpExchange.isSuccess());
@@ -318,7 +319,7 @@ public class HttpConfiguration<C extends HttpClient<NR, NS>, NR, NS> implements 
      * @param httpExchange HttpExchange to check
      * @return true if the response code implies a retry
      */
-    protected boolean retryNeeded(HttpExchange httpExchange) {
+    protected boolean retryNeeded(HttpExchange httpExchange) throws TooLongRetryDelayException{
         Optional<Pattern> myRetryResponseCodeRegex = Optional.ofNullable(getRetryResponseCodeRegex());
         if (myRetryResponseCodeRegex.isPresent()) {
             Pattern retryPattern = myRetryResponseCodeRegex.get();
@@ -326,7 +327,17 @@ public class HttpConfiguration<C extends HttpClient<NR, NS>, NR, NS> implements 
             int statusCode = response.getStatusCode();
             Map<String, List<String>> httpResponseHeaders = response.getHeaders();
             if(httpResponseHeaders.containsKey(RETRY_AFTER)||httpResponseHeaders.containsKey(X_RETRY_AFTER)){
-                return !openCircuit(httpExchange);
+                long secondToWait = circuitMustBeOpened(httpExchange);
+                if(secondToWait<retryDelayThreshold){
+                    try {
+                        Thread.sleep(secondToWait*1000);
+                        return true;
+                    } catch (InterruptedException e) {
+                        throw new RuntimeException(e);
+                    }
+                }else {
+                    throw new TooLongRetryDelayException(httpExchange,secondToWait,retryDelayThreshold);
+                }
             }
             Matcher matcher = retryPattern.matcher("" + statusCode);
             return matcher.matches();
@@ -342,42 +353,37 @@ public class HttpConfiguration<C extends HttpClient<NR, NS>, NR, NS> implements 
      * @param httpExchange the exchange with the response containing the retry after header
      * @return true if the circuit must be opened (i.e the client must be disabled), false otherwise
      */
-    private boolean openCircuit(HttpExchange httpExchange) {
+    private long circuitMustBeOpened(HttpExchange httpExchange) {
 
         HttpResponse response = httpExchange.getResponse();
         Integer statusCode = response.getStatusCode();
         //503,429,301 ?
         boolean statusCodeIsCompatibleWithRetryAfter = statusCodeIsCompatibleWithRetryAfter(statusCode);
         if(!statusCodeIsCompatibleWithRetryAfter){
-            return false;
+            return 0L;
         }
         String value = getRetryAfterValue(httpExchange.getResponse().getHeaders());
         if(value==null && statusCode!=429){
-            throw new IllegalStateException("there must be a 'Retry-After' or 'X-Retry-After' header" );
+            return 0L;
         }
         //status code 429 is clear : we need to retry after a delay, although if no delay is present in headers
         if(value == null){
             //TODO configure default delay when status code is 429 and no delay is present
             LOGGER.debug("429 status code detected without Retry-After or X-Retry-After header, falling back to default retry value '{}' seconds",defaultRetryAfterDelayInSeconds);
-            return true;
+            return defaultRetryAfterDelayInSeconds;
         }
         long secondsToWait = getSecondsToWait(value);
         LOGGER.debug("Retry-After or X-Retry-After header is present with value '{}', so delayed retry is needed",value);
 
-        if (secondsToWait == 0L) return false;
+        if (secondsToWait == 0L) return 0L;
 
         if(secondsToWait>retryDelayThreshold){
-            throw new TooLongRetryDelayException(httpExchange,secondsToWait,retryDelayThreshold);
+           return secondsToWait;
         }else {
             //delay is not too long to wait
-            try {
                 //seconds to millis
                 LOGGER.info("Waiting '{}' seconds (below the retryDelayThreshold:'{}' seconds) before retrying the call", secondsToWait,retryDelayThreshold);
-                Thread.sleep(secondsToWait*1000);
-                return false;
-            } catch (InterruptedException e) {
-                throw new HttpException(e);
-            }
+                return secondsToWait;
         }
     }
 
