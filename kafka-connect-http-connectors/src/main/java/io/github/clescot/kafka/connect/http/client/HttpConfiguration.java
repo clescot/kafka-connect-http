@@ -330,6 +330,7 @@ public class HttpConfiguration<C extends HttpClient<NR, NS>, NR, NS> implements 
                 long secondToWait = circuitMustBeOpened(httpExchange);
                 if(secondToWait<retryDelayThreshold){
                     try {
+                        LOGGER.info("Waiting '{}' seconds (below the retryDelayThreshold:'{}' seconds) before retrying the call",secondToWait,retryDelayThreshold);
                         Thread.sleep(secondToWait*1000);
                         return true;
                     } catch (InterruptedException e) {
@@ -351,7 +352,7 @@ public class HttpConfiguration<C extends HttpClient<NR, NS>, NR, NS> implements 
      * and wait for the retry after header Duration to re-enable the client.
      *
      * @param httpExchange the exchange with the response containing the retry after header
-     * @return true if the circuit must be opened (i.e the client must be disabled), false otherwise
+     * @return the number of seconds to wait before re-enabling the client, 0 if no need to open the circuit.
      */
     private long circuitMustBeOpened(HttpExchange httpExchange) {
 

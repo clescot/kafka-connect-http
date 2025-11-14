@@ -69,40 +69,42 @@ public interface RequestResponseClient<R extends Request, NR, S extends Response
             Preconditions.checkNotNull(nativeResponse, "response is null");
 
             return nativeResponse.thenApply(this::buildResponse)
-                    .thenApply(myResponse -> {
-                                directStopWatch.stop();
-                                if (rateLimitedStopWatch != null) {
-                                    rateLimitedStopWatch.stop();
-                                }
-                                if (LOGGER.isTraceEnabled()) {
-                                    LOGGER.trace("httpResponse: {}", myResponse);
-                                }
-                                Map<String, Long> timings = getTimings(nativeRequest, nativeResponse);
-                                LOGGER.debug("timings : {}", timings);
-                                long directElapsedTime = directStopWatch.elapsed(TimeUnit.MILLISECONDS);
-                                timings.put("directElapsedTime", directElapsedTime);
-                                //elapsed time contains rate limiting waiting time + local code execution time + network time + remote server-side execution time
-                                //if ratelimiting is not set, overallElapsedTime == directElaspedTime
-                                long overallElapsedTime = rateLimitedStopWatch!=null?rateLimitedStopWatch.elapsed(TimeUnit.MILLISECONDS):directElapsedTime;
-                                timings.put("overallElapsedTime", overallElapsedTime);
-                                long rateLimitingWaitingTime = overallElapsedTime - directElapsedTime;
-                                timings.put("rateLimitingWaitingTime", rateLimitingWaitingTime);
-                                LOGGER.info("[{}]  {} :  (direct : '{}' ms, rate limiting waiting time :'{}'ms overall : '{}' ms)",
-                                        Thread.currentThread().getId(),
-                                        request,
-                                        directElapsedTime,
-                                        rateLimitingWaitingTime,
-                                        overallElapsedTime
-                                );
-                                return buildExchange(request, myResponse, directStopWatch, now, attempts,
-                                        Maps.newHashMap(),
-                                        timings);
-                            }
-                    ).exceptionally((throwable -> getErrorResponse(request, attempts, throwable, rateLimitedStopWatch, now)));
+                    .thenApply(myResponse ->addTimings(request, attempts, myResponse, directStopWatch, rateLimitedStopWatch, nativeRequest, nativeResponse, now))
+                    .exceptionally((throwable -> getErrorResponse(request, attempts, throwable, rateLimitedStopWatch, now)));
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             throw new IllegalStateException(e);
         }
+    }
+
+    private E addTimings(R request, AtomicInteger attempts, S myResponse, Stopwatch directStopWatch, Stopwatch rateLimitedStopWatch, NR nativeRequest, CompletableFuture<NS> nativeResponse, OffsetDateTime now) {
+        directStopWatch.stop();
+        if (rateLimitedStopWatch != null) {
+            rateLimitedStopWatch.stop();
+        }
+        if (LOGGER.isTraceEnabled()) {
+            LOGGER.trace("httpResponse: {}", myResponse);
+        }
+        Map<String, Long> timings = getTimings(nativeRequest, nativeResponse);
+        LOGGER.debug("timings : {}", timings);
+        long directElapsedTime = directStopWatch.elapsed(TimeUnit.MILLISECONDS);
+        timings.put("directElapsedTime", directElapsedTime);
+        //elapsed time contains rate limiting waiting time + local code execution time + network time + remote server-side execution time
+        //if ratelimiting is not set, overallElapsedTime == directElaspedTime
+        long overallElapsedTime = rateLimitedStopWatch !=null? rateLimitedStopWatch.elapsed(TimeUnit.MILLISECONDS):directElapsedTime;
+        timings.put("overallElapsedTime", overallElapsedTime);
+        long rateLimitingWaitingTime = overallElapsedTime - directElapsedTime;
+        timings.put("rateLimitingWaitingTime", rateLimitingWaitingTime);
+        LOGGER.info("[{}]  {} :  (direct : '{}' ms, rate limiting waiting time :'{}'ms overall : '{}' ms)",
+                Thread.currentThread().getId(),
+                request,
+                directElapsedTime,
+                rateLimitingWaitingTime,
+                overallElapsedTime
+        );
+        return buildExchange(request, myResponse, directStopWatch, now, attempts,
+                Maps.newHashMap(),
+                timings);
     }
 
     E getErrorResponse(R request, AtomicInteger attempts, Throwable throwable, Stopwatch rateLimitedStopWatch, OffsetDateTime now);
