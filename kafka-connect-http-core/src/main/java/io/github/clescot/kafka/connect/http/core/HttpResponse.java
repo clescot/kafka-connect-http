@@ -16,10 +16,7 @@ import org.slf4j.LoggerFactory;
 
 import java.io.Serial;
 import java.io.Serializable;
-import java.time.Instant;
-import java.time.LocalDateTime;
-import java.time.ZoneId;
-import java.time.ZonedDateTime;
+import java.time.*;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.util.*;
@@ -170,6 +167,15 @@ public class HttpResponse implements Response, Cloneable, Serializable {
     @JsonIgnore
     public String getRetryAfterValue() {
         return getHeaders().get(RETRY_AFTER) != null ? getHeaders().get(RETRY_AFTER).get(0) : (getHeaders().get(X_RETRY_AFTER) != null ? getHeaders().get(X_RETRY_AFTER).get(0) : null);
+    }
+
+    @JsonIgnore
+    public Duration getRetryAfterDuration() {
+        String value = getRetryAfterValue();
+        if (value == null) {
+            return null;
+        }
+        return Duration.ofSeconds(getRetryAfterSecondsToWait(value));
     }
 
 
