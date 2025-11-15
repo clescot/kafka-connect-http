@@ -196,7 +196,7 @@ class HttpConfigurationTest {
             assertThat(httpExchange.isSuccess()).isTrue();
         }
         @Test
-        void test_unsuccessful_request_with_too_many_requests_and_x_retry_after_higher_than_retry_threshold() {
+        void test_unsuccessful_request_with_too_many_requests_and_x_retry_after_higher_than_retry_threshold() throws ExecutionException, InterruptedException {
 
             //given
             String scenario = "test_successful_request_at_second_time";
@@ -232,16 +232,14 @@ class HttpConfigurationTest {
             String dummy = "dummy";
             HttpConfiguration<OkHttpClient,okhttp3.Request,okhttp3.Response> httpConfiguration = new HttpConfiguration<>(dummy,okHttpClient,executorService, retryPolicy,settings);
             //when
-            ExecutionException executionException = Assertions.assertThrows(ExecutionException.class, () -> httpConfiguration.call(httpRequest).get());
-            assertThat(executionException).hasCauseInstanceOf(TooLongRetryDelayException.class);
-
+            HttpExchange httpExchange = httpConfiguration.call(httpRequest).get();
             assertThat(httpConfiguration.isOpen()).isTrue();
             LOGGER.info("waiting at most '{}' seconds for the circuit breaker to be closed",retryAfter);
             Awaitility.await().atMost(Duration.ofSeconds(Long.parseLong(retryAfter)+5)).until(httpConfiguration::isClosed);
             assertThat(httpConfiguration.isOpen()).isFalse();
         }
         @Test
-        void test_successful_request_with_too_many_requests_and_retry_after_higher_than_retry_threshold() {
+        void test_successful_request_with_too_many_requests_and_retry_after_higher_than_retry_threshold() throws ExecutionException, InterruptedException {
 
             //given
             String scenario = "test_successful_request_at_second_time";
@@ -277,8 +275,7 @@ class HttpConfigurationTest {
             String dummy = "dummy";
             HttpConfiguration<OkHttpClient,okhttp3.Request,okhttp3.Response> httpConfiguration = new HttpConfiguration<>(dummy,okHttpClient,executorService, retryPolicy,settings);
             //when
-            ExecutionException executionException = Assertions.assertThrows(ExecutionException.class, () -> httpConfiguration.call(httpRequest).get());
-            assertThat(executionException).hasCauseInstanceOf(TooLongRetryDelayException.class);
+            HttpExchange httpExchange = httpConfiguration.call(httpRequest).get();
 
             assertThat(httpConfiguration.isOpen()).isTrue();
             LOGGER.info("waiting at most 65 seconds for the circuit breaker to be closed");

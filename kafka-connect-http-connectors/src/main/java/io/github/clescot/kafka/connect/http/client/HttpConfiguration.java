@@ -277,12 +277,8 @@ public class HttpConfiguration<C extends HttpClient<NR, NS>, NR, NS> implements 
                 .withFailureThreshold(1)
                 //we reestablish the circuit after one successful call
                 .withSuccessThreshold(1)
-                .withDelayFnOn(context -> {
-                    Throwable lastException = context.getLastException();
-                    Preconditions.checkState(lastException instanceof TooLongRetryDelayException);
-                    TooLongRetryDelayException retryException = (TooLongRetryDelayException) lastException;
-                    HttpExchange httpExchange = retryException.getHttpExchange();
-                    HttpResponse response = httpExchange.getResponse();
+                .withDelayFn(context -> {
+                    HttpResponse response = context.getLastResult().getResponse();
 
                     Integer statusCode = response.getStatusCode();
                     LOGGER.debug("status code:{}", statusCode);
@@ -295,7 +291,7 @@ public class HttpConfiguration<C extends HttpClient<NR, NS>, NR, NS> implements 
                     nextRetryInstant = Instant.now().plusSeconds(secondsToWait);
                     LOGGER.info("Circuit breaker opened for '{}' seconds, until '{}'", secondsToWait, nextRetryInstant);
                     return Duration.of(min(secondsToWait, maxSecondsToWait), SECONDS);
-                }, TooLongRetryDelayException.class)
+                })
                 .handle(TooLongRetryDelayException.class)
                 .handleResultIf(result -> circuitMustBeOpened(result) > 0L)
                 .onOpen(context -> LOGGER.error("Circuit breaker for too long retry delay is now OPEN. Calls will not be retried anymore."))
@@ -350,7 +346,7 @@ public class HttpConfiguration<C extends HttpClient<NR, NS>, NR, NS> implements 
                         throw new RuntimeException(e);
                     }
                 } else {
-                    throw new TooLongRetryDelayException(httpExchange, secondToWait, retryDelayThreshold);
+                    return false;
                 }
             }
             Matcher matcher = retryPattern.matcher("" + statusCode);
@@ -382,7 +378,6 @@ public class HttpConfiguration<C extends HttpClient<NR, NS>, NR, NS> implements 
         }
         //status code 429 is clear : we need to retry after a delay, although if no delay is present in headers
         if (value == null) {
-            //TODO configure default delay when status code is 429 and no delay is present
             LOGGER.debug("429 status code detected without Retry-After or X-Retry-After header, falling back to default retry value '{}' seconds", defaultRetryAfterDelayInSeconds);
             return defaultRetryAfterDelayInSeconds;
         }
