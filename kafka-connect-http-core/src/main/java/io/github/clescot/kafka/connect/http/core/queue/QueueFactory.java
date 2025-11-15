@@ -14,8 +14,6 @@ import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.TimeUnit;
 
-import static java.time.temporal.ChronoUnit.MILLIS;
-
 public class QueueFactory {
     public static final String DEFAULT_QUEUE_NAME = "default";
     private static final Logger LOGGER = LoggerFactory.getLogger(QueueFactory.class);

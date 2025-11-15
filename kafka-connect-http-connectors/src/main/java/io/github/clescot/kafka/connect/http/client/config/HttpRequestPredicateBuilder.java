@@ -6,6 +6,10 @@ import java.util.Map;
 import java.util.function.Predicate;
 import java.util.regex.Pattern;
 
+/**
+ * Build a predicate for an HttpRequest from a map of configuration.
+ * The predicate is used to match a request with a configuration.
+ */
 public class HttpRequestPredicateBuilder {
     //predicate
     public static final String PREDICATE = "predicate.";

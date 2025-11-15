@@ -1,6 +1,5 @@
 package io.github.clescot.kafka.connect.http;
 
-import io.github.clescot.kafka.connect.http.client.HttpException;
 import io.micrometer.core.instrument.Clock;
 import io.micrometer.core.instrument.composite.CompositeMeterRegistry;
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;

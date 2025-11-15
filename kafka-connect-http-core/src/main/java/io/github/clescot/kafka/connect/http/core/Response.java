@@ -4,5 +4,7 @@ import java.util.Map;
 
 public interface Response {
 
+    boolean isSuccess();
+
     Map<String, Object> getAttributes();
 }

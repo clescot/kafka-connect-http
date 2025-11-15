@@ -16,6 +16,11 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 
+/**
+ * this class is used to map a sink record to an http request using JEXL expressions.
+ * The JEXL expressions are evaluated using the sink record as context.
+ * Each part of the http request can be evaluated with a JEXL expression.
+ */
 public class JEXLHttpRequestMapper extends AbstractHttpRequestMapper {
 
     public static final String SINK_RECORD = "sinkRecord";

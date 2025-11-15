@@ -13,7 +13,7 @@ class SseEventTest {
 
     @Nested
     class SerializationAndDeserialization {
-        private ObjectMapper objectMapper = new ObjectMapper();
+        private final ObjectMapper objectMapper = new ObjectMapper();
 
         @Nested
         class Serialization {

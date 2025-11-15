@@ -205,9 +205,9 @@ class HttpResponseTest {
             httpResponse.setBodyAsString("Hello World");
 
             var struct = httpResponse.toStruct();
-            assertThat(struct.getInt64(HttpResponse.STATUS_CODE)).isEqualTo(200);
-            assertThat(struct.getString(HttpResponse.STATUS_MESSAGE)).isEqualTo("OK");
-            assertThat(struct.getString(HttpResponse.BODY_AS_STRING)).isEqualTo("Hello World");
+            assertThat(struct.getInt64(HttpResponse.STATUS_CODE_FIELD)).isEqualTo(200);
+            assertThat(struct.getString(HttpResponse.STATUS_MESSAGE_FIELD)).isEqualTo("OK");
+            assertThat(struct.getString(HttpResponse.BODY_AS_STRING_FIELD)).isEqualTo("Hello World");
         }
 
         @Test
@@ -216,9 +216,9 @@ class HttpResponseTest {
             httpResponse.setBodyAsByteArray("Hello World".getBytes(StandardCharsets.UTF_8));
 
             var struct = httpResponse.toStruct();
-            assertThat(struct.getInt64(HttpResponse.STATUS_CODE)).isEqualTo(200);
-            assertThat(struct.getString(HttpResponse.STATUS_MESSAGE)).isEqualTo("OK");
-            assertThat(struct.getString(HttpResponse.BODY_AS_BYTE_ARRAY)).isEqualTo(Base64.getEncoder().encodeToString("Hello World".getBytes(StandardCharsets.UTF_8)));
+            assertThat(struct.getInt64(HttpResponse.STATUS_CODE_FIELD)).isEqualTo(200);
+            assertThat(struct.getString(HttpResponse.STATUS_MESSAGE_FIELD)).isEqualTo("OK");
+            assertThat(struct.getString(HttpResponse.BODY_AS_BYTE_ARRAY_FIELD)).isEqualTo(Base64.getEncoder().encodeToString("Hello World".getBytes(StandardCharsets.UTF_8)));
         }
     }
 

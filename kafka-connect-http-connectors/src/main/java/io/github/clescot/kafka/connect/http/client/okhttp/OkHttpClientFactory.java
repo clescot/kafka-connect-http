@@ -4,7 +4,6 @@ import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
 import com.google.common.jimfs.Jimfs;
 import io.github.clescot.kafka.connect.http.client.HttpClientFactory;
-import io.github.clescot.kafka.connect.http.client.HttpException;
 import io.github.clescot.kafka.connect.http.client.okhttp.authentication.*;
 import io.github.clescot.kafka.connect.http.client.okhttp.event.AdvancedEventListenerFactory;
 import io.github.clescot.kafka.connect.http.client.okhttp.interceptor.InetAddressInterceptor;

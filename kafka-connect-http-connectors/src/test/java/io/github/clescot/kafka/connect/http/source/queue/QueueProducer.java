@@ -83,7 +83,6 @@ public class QueueProducer implements Runnable {
                 //at which moment occurs the beginning of the http call
                 .at(OffsetDateTime.now(ZoneId.of(UTC_ZONE_ID)))
                 .withAttempts(new AtomicInteger(1))
-                .withSuccess(SUCCESS)
                 .build();
     }
 
@@ -105,7 +104,6 @@ public class QueueProducer implements Runnable {
                 //at which moment occurs the beginning of the http call
                 .at(OffsetDateTime.now(ZoneId.of(UTC_ZONE_ID)))
                 .withAttempts(new AtomicInteger(1))
-                .withSuccess(FAILURE)
                 .build();
     }
 }

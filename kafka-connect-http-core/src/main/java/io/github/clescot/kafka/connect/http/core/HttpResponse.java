@@ -11,29 +11,44 @@ import de.sstoehr.harreader.model.HarResponse;
 import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.data.SchemaBuilder;
 import org.apache.kafka.connect.data.Struct;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.Serial;
 import java.io.Serializable;
+import java.time.*;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
 import java.util.*;
+import java.util.regex.Pattern;
 
 import static io.github.clescot.kafka.connect.http.core.MediaType.APPLICATION_OCTET_STREAM;
 import static io.github.clescot.kafka.connect.http.core.MediaType.APPLICATION_X_WWW_FORM_URLENCODED;
+import static java.time.temporal.ChronoUnit.SECONDS;
 
 public class HttpResponse implements Response, Cloneable, Serializable {
     @Serial
     private static final long serialVersionUID = 1L;
+    private static final String UTC = "UTC";
+    private static final Pattern IS_INTEGER = Pattern.compile("\\d+");
     public static final Integer VERSION = 2;
-
-    public static final String STATUS_CODE = "statusCode";
-    public static final String STATUS_MESSAGE = "statusMessage";
-    public static final String PROTOCOL = "protocol";
-    public static final String HEADERS = "headers";
-    public static final String BODY_TYPE = "bodyType";
-    public static final String BODY_AS_STRING = "bodyAsString";
-    public static final String BODY_AS_BYTE_ARRAY = "bodyAsByteArray";
-    public static final String BODY_AS_FORM = "bodyAsForm";
-    public static final String PARTS = "parts";
-    public static final String ATTRIBUTES = "attributes";
+    public static final String RETRY_AFTER = "Retry-After";
+    public static final String X_RETRY_AFTER = "X-Retry-After";
+    public static final String STATUS_CODE_FIELD = "statusCode";
+    public static final String STATUS_MESSAGE_FIELD = "statusMessage";
+    public static final String PROTOCOL_FIELD = "protocol";
+    public static final String HEADERS_FIELD = "headers";
+    public static final String BODY_TYPE_FIELD = "bodyType";
+    public static final String BODY_AS_STRING_FIELD = "bodyAsString";
+    public static final String BODY_AS_BYTE_ARRAY_FIELD = "bodyAsByteArray";
+    public static final String BODY_AS_FORM_FIELD = "bodyAsForm";
+    public static final String PARTS_FIELD = "parts";
+    public static final String ATTRIBUTES_FIELD = "attributes";
+    //cf https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Retry-After
+    //regex to match 503 (Internal Server Error), 429(Too Many Requests), 301(Moved Permanently) HTTP response status code
+    public static final String RFC_7231_PATTERN = "EEE, dd MMM yyyy HH:mm:ss O";
+    private static final DateTimeFormatter RFC_7231_FORMATTER = DateTimeFormatter.ofPattern(RFC_7231_PATTERN);
+    private static final DateTimeFormatter RFC_1123_FORMATTER = DateTimeFormatter.RFC_1123_DATE_TIME;
     private Integer statusMessageLimit = Integer.MAX_VALUE;
     private Integer headersLimit = Integer.MAX_VALUE;
     private Integer bodyLimit = Integer.MAX_VALUE;
@@ -42,16 +57,16 @@ public class HttpResponse implements Response, Cloneable, Serializable {
             .struct()
             .name(HttpResponse.class.getName())
             .version(VERSION)
-            .field(STATUS_CODE, Schema.INT64_SCHEMA)
-            .field(STATUS_MESSAGE, Schema.STRING_SCHEMA)
-            .field(PROTOCOL, Schema.OPTIONAL_STRING_SCHEMA)
-            .field(HEADERS, SchemaBuilder.map(Schema.STRING_SCHEMA, SchemaBuilder.array(Schema.STRING_SCHEMA)).build())
-            .field(BODY_TYPE, Schema.STRING_SCHEMA)
-            .field(BODY_AS_BYTE_ARRAY, Schema.OPTIONAL_STRING_SCHEMA)
-            .field(BODY_AS_FORM, SchemaBuilder.map(Schema.STRING_SCHEMA, Schema.STRING_SCHEMA).optional().schema())
-            .field(BODY_AS_STRING, Schema.OPTIONAL_STRING_SCHEMA)
-            .field(PARTS, SchemaBuilder.array(HttpPart.SCHEMA).optional().schema())
-            .field(ATTRIBUTES, SchemaBuilder.map(Schema.STRING_SCHEMA, Schema.STRING_SCHEMA).optional().schema())
+            .field(STATUS_CODE_FIELD, Schema.INT64_SCHEMA)
+            .field(STATUS_MESSAGE_FIELD, Schema.STRING_SCHEMA)
+            .field(PROTOCOL_FIELD, Schema.OPTIONAL_STRING_SCHEMA)
+            .field(HEADERS_FIELD, SchemaBuilder.map(Schema.STRING_SCHEMA, SchemaBuilder.array(Schema.STRING_SCHEMA)).build())
+            .field(BODY_TYPE_FIELD, Schema.STRING_SCHEMA)
+            .field(BODY_AS_BYTE_ARRAY_FIELD, Schema.OPTIONAL_STRING_SCHEMA)
+            .field(BODY_AS_FORM_FIELD, SchemaBuilder.map(Schema.STRING_SCHEMA, Schema.STRING_SCHEMA).optional().schema())
+            .field(BODY_AS_STRING_FIELD, Schema.OPTIONAL_STRING_SCHEMA)
+            .field(PARTS_FIELD, SchemaBuilder.array(HttpPart.SCHEMA).optional().schema())
+            .field(ATTRIBUTES_FIELD, SchemaBuilder.map(Schema.STRING_SCHEMA, Schema.STRING_SCHEMA).optional().schema())
             .schema();
 
     @JsonProperty(required = true)
@@ -75,7 +90,7 @@ public class HttpResponse implements Response, Cloneable, Serializable {
     private Map<String, List<String>> headers = Maps.newHashMap();
     @JsonProperty
     private Map<String, Object> attributes = Maps.newHashMap();
-
+    private static final Logger LOGGER = LoggerFactory.getLogger(HttpResponse.class);
     /**
      * only for json deserialization
      */
@@ -114,6 +129,12 @@ public class HttpResponse implements Response, Cloneable, Serializable {
         return statusCode;
     }
 
+    @Override
+    @JsonIgnore
+    public boolean isSuccess() {
+        return statusCode != null && statusCode >= 200 && statusCode < 400;
+    }
+
     public String getStatusMessage() {
         return statusMessage;
     }
@@ -137,6 +158,58 @@ public class HttpResponse implements Response, Cloneable, Serializable {
             bodyType = BodyType.STRING;
         }
     }
+
+    /**
+     *
+     * @return the value of the Retry-After header, either Retry-After or X-Retry-After.
+     * @see <a href="https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Retry-After">Retry-After</a>
+     */
+    @JsonIgnore
+    public String getRetryAfterValue() {
+        return getHeaders().get(RETRY_AFTER) != null ? getHeaders().get(RETRY_AFTER).get(0) : (getHeaders().get(X_RETRY_AFTER) != null ? getHeaders().get(X_RETRY_AFTER).get(0) : null);
+    }
+
+    @JsonIgnore
+    public Duration getRetryAfterDuration() {
+        String value = getRetryAfterValue();
+        if (value == null) {
+            return null;
+        }
+        return Duration.ofSeconds(getRetryAfterSecondsToWait(value));
+    }
+
+
+    /**
+     * @param value the value of the Retry-After header
+     * @param value the value of the Retry-After header
+     * @return the number of seconds to wait
+     * @return the number of seconds to wait
+     */
+    public long getRetryAfterSecondsToWait(String value) {
+        //is it a date or an integer ?
+        long secondsToWait;
+        Instant until;
+
+        if (IS_INTEGER.matcher(value).matches()) {
+            secondsToWait = Integer.parseInt(value);
+        } else {
+            try {
+                until = LocalDateTime.parse(value, RFC_7231_FORMATTER).atZone(ZoneId.of(UTC)).toInstant();
+            } catch (DateTimeParseException dtp) {
+                LOGGER.warn("Cannot parse Retry-After / X-Retry-After header value '{}' as a date with RFC7231 format, falling back to RFC1123 format", value);
+                try {
+                    until = ZonedDateTime.parse(value, RFC_1123_FORMATTER).toInstant();
+                } catch (DateTimeParseException dtp2) {
+                    LOGGER.error("Cannot parse Retry-After / X-Retry-After header value '{}' as a date with RFC1123 format either, falling back retry", value);
+                    return 0L;
+                }
+            }
+            secondsToWait = Instant.now().until(until, SECONDS);
+
+        }
+        return secondsToWait;
+    }
+
 
 
     public Map<String, HttpPart> getParts() {
@@ -341,14 +414,14 @@ public class HttpResponse implements Response, Cloneable, Serializable {
 
     public Struct toStruct() {
         return new Struct(SCHEMA)
-                .put(STATUS_CODE, this.getStatusCode().longValue())
-                .put(STATUS_MESSAGE, this.getStatusMessage())
-                .put(PROTOCOL, this.getProtocol())
-                .put(HEADERS, this.getHeaders())
-                .put(BODY_TYPE, this.getBodyType().toString())
-                .put(BODY_AS_BYTE_ARRAY, this.bodyAsByteArray)
-                .put(BODY_AS_STRING, this.getBodyAsString())
-                .put(ATTRIBUTES, this.getAttributes())
+                .put(STATUS_CODE_FIELD, this.getStatusCode().longValue())
+                .put(STATUS_MESSAGE_FIELD, this.getStatusMessage())
+                .put(PROTOCOL_FIELD, this.getProtocol())
+                .put(HEADERS_FIELD, this.getHeaders())
+                .put(BODY_TYPE_FIELD, this.getBodyType().toString())
+                .put(BODY_AS_BYTE_ARRAY_FIELD, this.bodyAsByteArray)
+                .put(BODY_AS_STRING_FIELD, this.getBodyAsString())
+                .put(ATTRIBUTES_FIELD, this.getAttributes())
                 ;
     }
 

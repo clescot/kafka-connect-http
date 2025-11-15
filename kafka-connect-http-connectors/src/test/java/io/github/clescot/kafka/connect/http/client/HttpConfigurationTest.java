@@ -24,16 +24,18 @@ import io.micrometer.jmx.JmxConfig;
 import io.micrometer.jmx.JmxMeterRegistry;
 import okhttp3.Request;
 import okhttp3.Response;
+import org.apache.kafka.connect.sink.SinkRecord;
 import org.assertj.core.util.Sets;
+import org.awaitility.Awaitility;
 import org.jetbrains.annotations.NotNull;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Nested;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.extension.RegisterExtension;
 import org.junit.jupiter.api.parallel.Execution;
 import org.junit.jupiter.api.parallel.ExecutionMode;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
+import java.time.Duration;
 import java.time.OffsetDateTime;
 import java.time.ZoneId;
 import java.util.HashSet;
@@ -54,7 +56,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 @Execution(ExecutionMode.SAME_THREAD)
 class HttpConfigurationTest {
     private static final HttpRequest.Method DUMMY_METHOD = HttpRequest.Method.POST;
-
+    private static final Logger LOGGER = LoggerFactory.getLogger(HttpConfigurationTest.class);
     public static final String AUTHORIZED_STATE = "Authorized";
     public static final String INTERNAL_SERVER_ERROR_STATE = "InternalServerError";
     private static final String DUMMY_BODY = "stuff";
@@ -86,13 +88,208 @@ class HttpConfigurationTest {
     }
 
     @Nested
+    class CallWhenRetryAfterHeaderIsPresent {
+        ExecutorService executorService;
+        OkHttpClient okHttpClient;
+        @BeforeEach
+        void setUp(){
+            CompositeMeterRegistry compositeMeterRegistry = new CompositeMeterRegistry();
+            JmxMeterRegistry jmxMeterRegistry = new JmxMeterRegistry(JmxConfig.DEFAULT, Clock.SYSTEM);
+            jmxMeterRegistry.start();
+            compositeMeterRegistry.add(jmxMeterRegistry);
+            OkHttpClientFactory okHttpClientFactory = new OkHttpClientFactory();
+            Map<String, String> settings = Map.of("url", "http://example.com/sse", "topic", "test-topic");
+            okHttpClient = okHttpClientFactory.buildHttpClient(settings, null, new CompositeMeterRegistry(), new Random());
+            executorService = Executors.newFixedThreadPool(2);
+            HttpConfiguration<OkHttpClient, Request, Response> httpConfiguration = new HttpConfiguration<>("test",okHttpClient,executorService, null,settings);
+            Map<String, HttpConfiguration<OkHttpClient, Request, Response>> map = Maps.newHashMap();
+            map.put(DEFAULT_CONFIGURATION_ID, httpConfiguration);
+        }
+
+
+        @Test
+        void test_successful_request_at_second_time_with_too_many_requests_and_retry_after_under_retry_threshold() throws ExecutionException, InterruptedException {
+
+            //given
+            String scenario = "test_successful_request_at_second_time";
+            WireMockRuntimeInfo wmRuntimeInfo = wmHttp.getRuntimeInfo();
+            WireMock wireMock = wmRuntimeInfo.getWireMock();
+            wireMock
+                    .register(WireMock.post("/ping").inScenario(scenario)
+                            .whenScenarioStateIs(STARTED)
+                            .willReturn(WireMock.aResponse()
+                                    .withStatus(429)
+                                    .withStatusMessage("Too Many Requests")
+                                    .withHeader("Retry-After", "2")
+                            ).willSetStateTo(INTERNAL_SERVER_ERROR_STATE)
+                    );
+            wireMock
+                    .register(WireMock.post("/ping").inScenario(scenario)
+                            .whenScenarioStateIs(INTERNAL_SERVER_ERROR_STATE)
+                            .willReturn(WireMock.aResponse()
+                                    .withStatus(200)
+                                    .withStatusMessage("OK")
+                            ).willSetStateTo(AUTHORIZED_STATE)
+                    );
+            //when
+            HttpRequest httpRequest = getDummyHttpRequest(wmHttp.url("/ping"));
+            Map<String, String> settings = Maps.newHashMap();
+            settings.put("retry.policy.retries","2");
+            settings.put("retry.policy.response.code.regex",DEFAULT_DEFAULT_RETRY_RESPONSE_CODE_REGEX);
+            HttpConnectorConfig httpConnectorConfig = new HttpConnectorConfig(settings);
+            HttpTask<SinkRecord,OkHttpClient,okhttp3.Request,okhttp3.Response> httpTask = new HttpTask<>(
+                    httpConnectorConfig,
+                    new OkHttpClientFactory()
+            );
+
+            RetryPolicy<HttpExchange> retryPolicy = httpTask.buildRetryPolicy(httpConnectorConfig.originalsStrings());
+            String dummy = "dummy";
+            HttpConfiguration<OkHttpClient,okhttp3.Request,okhttp3.Response> httpConfiguration = new HttpConfiguration<>(dummy,okHttpClient,executorService, retryPolicy,settings);
+            HttpExchange httpExchange = httpConfiguration.call(httpRequest).get();
+
+            //then
+            AtomicInteger attempts = httpExchange.getAttempts();
+            assertThat(attempts.get()).isEqualTo(2);
+            assertThat(httpExchange.isSuccess()).isTrue();
+        }
+
+        @Test
+        void test_successful_request_at_second_time_with_too_many_requests_and_x_retry_after_under_retry_threshold() throws ExecutionException, InterruptedException {
+
+            //given
+            String scenario = "test_successful_request_at_second_time";
+            WireMockRuntimeInfo wmRuntimeInfo = wmHttp.getRuntimeInfo();
+            WireMock wireMock = wmRuntimeInfo.getWireMock();
+            wireMock
+                    .register(WireMock.post("/ping").inScenario(scenario)
+                            .whenScenarioStateIs(STARTED)
+                            .willReturn(WireMock.aResponse()
+                                    .withStatus(429)
+                                    .withStatusMessage("Too Many Requests")
+                                    .withHeader("X-Retry-After", "2")
+                            ).willSetStateTo(INTERNAL_SERVER_ERROR_STATE)
+                    );
+            wireMock
+                    .register(WireMock.post("/ping").inScenario(scenario)
+                            .whenScenarioStateIs(INTERNAL_SERVER_ERROR_STATE)
+                            .willReturn(WireMock.aResponse()
+                                    .withStatus(200)
+                                    .withStatusMessage("OK")
+                            ).willSetStateTo(AUTHORIZED_STATE)
+                    );
+            //when
+            HttpRequest httpRequest = getDummyHttpRequest(wmHttp.url("/ping"));
+            Map<String, String> settings = Maps.newHashMap();
+            settings.put("retry.policy.retries","2");
+            settings.put("retry.policy.response.code.regex",DEFAULT_DEFAULT_RETRY_RESPONSE_CODE_REGEX);
+            HttpConnectorConfig httpConnectorConfig = new HttpConnectorConfig(settings);
+            HttpTask<SinkRecord,OkHttpClient,okhttp3.Request,okhttp3.Response> httpTask = new HttpTask<>(httpConnectorConfig,new OkHttpClientFactory());
+
+            RetryPolicy<HttpExchange> retryPolicy = httpTask.buildRetryPolicy(httpConnectorConfig.originalsStrings());
+            String dummy = "dummy";
+            HttpConfiguration<OkHttpClient,okhttp3.Request,okhttp3.Response> httpConfiguration = new HttpConfiguration<>(dummy,okHttpClient,executorService, retryPolicy,settings);
+            HttpExchange httpExchange = httpConfiguration.call(httpRequest).get();
+
+            //then
+            AtomicInteger attempts = httpExchange.getAttempts();
+            assertThat(attempts.get()).isEqualTo(2);
+            assertThat(httpExchange.isSuccess()).isTrue();
+        }
+        @Test
+        void test_unsuccessful_request_with_too_many_requests_and_x_retry_after_higher_than_retry_threshold() throws ExecutionException, InterruptedException {
+
+            //given
+            String scenario = "test_successful_request_at_second_time";
+            WireMockRuntimeInfo wmRuntimeInfo = wmHttp.getRuntimeInfo();
+            WireMock wireMock = wmRuntimeInfo.getWireMock();
+            String retryAfter = "5";
+            wireMock
+                    .register(WireMock.post("/ping").inScenario(scenario)
+                            .whenScenarioStateIs(STARTED)
+                            .willReturn(WireMock.aResponse()
+                                    .withStatus(429)
+                                    .withStatusMessage("Too Many Requests")
+                                    .withHeader("X-Retry-After", retryAfter)
+                            ).willSetStateTo(INTERNAL_SERVER_ERROR_STATE)
+                    );
+            wireMock
+                    .register(WireMock.post("/ping").inScenario(scenario)
+                            .whenScenarioStateIs(INTERNAL_SERVER_ERROR_STATE)
+                            .willReturn(WireMock.aResponse()
+                                    .withStatus(200)
+                                    .withStatusMessage("OK")
+                            ).willSetStateTo(AUTHORIZED_STATE)
+                    );
+            HttpRequest httpRequest = getDummyHttpRequest(wmHttp.url("/ping"));
+            Map<String, String> settings = Maps.newHashMap();
+            settings.put("retry.policy.retries","2");
+            settings.put("retry.policy.response.code.regex",DEFAULT_DEFAULT_RETRY_RESPONSE_CODE_REGEX);
+            settings.put("retry.policy.retry.after.max.threshold.in.sec","3");
+            HttpConnectorConfig httpConnectorConfig = new HttpConnectorConfig(settings);
+            HttpTask<SinkRecord,OkHttpClient,okhttp3.Request,okhttp3.Response> httpTask = new HttpTask<>(httpConnectorConfig,new OkHttpClientFactory());
+
+            RetryPolicy<HttpExchange> retryPolicy = httpTask.buildRetryPolicy(httpConnectorConfig.originalsStrings());
+            String dummy = "dummy";
+            HttpConfiguration<OkHttpClient,okhttp3.Request,okhttp3.Response> httpConfiguration = new HttpConfiguration<>(dummy,okHttpClient,executorService, retryPolicy,settings);
+            //when
+            HttpExchange httpExchange = httpConfiguration.call(httpRequest).get();
+            assertThat(httpConfiguration.isOpen()).isTrue();
+            LOGGER.info("waiting at most '{}' seconds for the circuit breaker to be closed",retryAfter);
+            Awaitility.await().atMost(Duration.ofSeconds(Long.parseLong(retryAfter)+5)).until(httpConfiguration::isClosed);
+            assertThat(httpConfiguration.isOpen()).isFalse();
+        }
+        @Test
+        void test_successful_request_with_too_many_requests_and_retry_after_higher_than_retry_threshold() throws ExecutionException, InterruptedException {
+
+            //given
+            String scenario = "test_successful_request_at_second_time";
+            String retryAfter = "5";
+            WireMockRuntimeInfo wmRuntimeInfo = wmHttp.getRuntimeInfo();
+            WireMock wireMock = wmRuntimeInfo.getWireMock();
+            wireMock
+                    .register(WireMock.post("/ping").inScenario(scenario)
+                            .whenScenarioStateIs(STARTED)
+                            .willReturn(WireMock.aResponse()
+                                    .withStatus(429)
+                                    .withStatusMessage("Too Many Requests")
+                                    .withHeader("X-Retry-After", retryAfter)
+                            ).willSetStateTo(INTERNAL_SERVER_ERROR_STATE)
+                    );
+            wireMock
+                    .register(WireMock.post("/ping").inScenario(scenario)
+                            .whenScenarioStateIs(INTERNAL_SERVER_ERROR_STATE)
+                            .willReturn(WireMock.aResponse()
+                                    .withStatus(200)
+                                    .withStatusMessage("OK")
+                            ).willSetStateTo(AUTHORIZED_STATE)
+                    );
+            HttpRequest httpRequest = getDummyHttpRequest(wmHttp.url("/ping"));
+            Map<String, String> settings = Maps.newHashMap();
+            settings.put("retry.policy.retries","2");
+            settings.put("retry.policy.response.code.regex",DEFAULT_DEFAULT_RETRY_RESPONSE_CODE_REGEX);
+            settings.put("retry.policy.retry.after.max.threshold.in.sec","3");
+            HttpConnectorConfig httpConnectorConfig = new HttpConnectorConfig(settings);
+            HttpTask<SinkRecord,OkHttpClient,okhttp3.Request,okhttp3.Response> httpTask = new HttpTask<>(httpConnectorConfig,new OkHttpClientFactory());
+
+            RetryPolicy<HttpExchange> retryPolicy = httpTask.buildRetryPolicy(httpConnectorConfig.originalsStrings());
+            String dummy = "dummy";
+            HttpConfiguration<OkHttpClient,okhttp3.Request,okhttp3.Response> httpConfiguration = new HttpConfiguration<>(dummy,okHttpClient,executorService, retryPolicy,settings);
+            //when
+            HttpExchange httpExchange = httpConfiguration.call(httpRequest).get();
+
+            assertThat(httpConfiguration.isOpen()).isTrue();
+            LOGGER.info("waiting at most 65 seconds for the circuit breaker to be closed");
+            Awaitility.await().atMost(Duration.ofSeconds(Long.parseLong(retryAfter)+5)).until(httpConfiguration::isClosed);
+            assertThat(httpConfiguration.isClosed()).isTrue();
+        }
+    }
+
+    @Nested
     class CallWithRetryPolicy {
         ExecutorService executorService;
         OkHttpClient okHttpClient;
         @BeforeEach
         void setUp(){
-            Map<String,String> configs = Maps.newHashMap();
-
             CompositeMeterRegistry compositeMeterRegistry = new CompositeMeterRegistry();
             JmxMeterRegistry jmxMeterRegistry = new JmxMeterRegistry(JmxConfig.DEFAULT, Clock.SYSTEM);
             jmxMeterRegistry.start();
@@ -162,7 +359,7 @@ class HttpConfigurationTest {
             settings.put("retry.policy.retries","2");
             settings.put("retry.policy.response.code.regex",DEFAULT_DEFAULT_RETRY_RESPONSE_CODE_REGEX);
             HttpConnectorConfig httpConnectorConfig = new HttpConnectorConfig(settings);
-            HttpTask httpTask = new HttpTask(httpConnectorConfig,new OkHttpClientFactory());
+            HttpTask<SinkRecord,OkHttpClient,okhttp3.Request,okhttp3.Response> httpTask = new HttpTask<>(httpConnectorConfig,new OkHttpClientFactory());
 
             RetryPolicy<HttpExchange> retryPolicy = httpTask.buildRetryPolicy(httpConnectorConfig.originalsStrings());
             String dummy = "dummy";
@@ -200,7 +397,7 @@ class HttpConfigurationTest {
             String configId = "dummy";
             HttpExchange httpExchange = getDummyHttpExchange();
             HttpConfiguration<OkHttpClient, okhttp3.Request, okhttp3.Response> httpConfiguration = new HttpConfiguration<>(configId,okHttpClient, executorService, null,settings);
-            boolean success = httpConfiguration.enrichHttpExchange(httpExchange).isSuccess();
+            boolean success = httpConfiguration.enrichExchange(httpExchange).isSuccess();
             assertThat(success).isTrue();
         }
 
@@ -216,7 +413,7 @@ class HttpConfigurationTest {
             okHttpClient = okHttpClientFactory.buildHttpClient(settings, null, new CompositeMeterRegistry(), new Random());
             HttpExchange httpExchange = getDummyHttpExchange();
             HttpConfiguration<OkHttpClient, okhttp3.Request, okhttp3.Response> httpConfiguration = new HttpConfiguration<>(configId,okHttpClient, executorService, null,settings);
-            boolean success = httpConfiguration.enrichHttpExchange(httpExchange).isSuccess();
+            boolean success = httpConfiguration.enrichExchange(httpExchange).isSuccess();
             assertThat(success).isFalse();
         }
 
@@ -236,7 +433,7 @@ class HttpConfigurationTest {
             String configId = "dummy";
             HttpExchange httpExchange = getDummyHttpExchange();
             HttpConfiguration<OkHttpClient, okhttp3.Request, okhttp3.Response> httpConfiguration = new HttpConfiguration<>(configId,okHttpClient, executorService, null,settings);
-            boolean success = httpConfiguration.enrichHttpExchange(httpExchange).isSuccess();
+            boolean success = httpConfiguration.enrichExchange(httpExchange).isSuccess();
             assertThat(success).isTrue();
         }
 
@@ -260,7 +457,7 @@ class HttpConfigurationTest {
             okHttpClient = okHttpClientFactory.buildHttpClient(settings, null, new CompositeMeterRegistry(), new Random());
             HttpExchange httpExchange = getDummyHttpExchange();
             HttpConfiguration<OkHttpClient, okhttp3.Request, okhttp3.Response> httpConfiguration = new HttpConfiguration<>(configId,okHttpClient, executorService, null,settings);
-            boolean success = httpConfiguration.enrichHttpExchange(httpExchange).isSuccess();
+            boolean success = httpConfiguration.enrichExchange(httpExchange).isSuccess();
             assertThat(success).isFalse();
         }
 
@@ -294,9 +491,11 @@ class HttpConfigurationTest {
             Map<String, String> settings = Maps.newHashMap();
             settings.put("config.dummy." + RETRY_RESPONSE_CODE_REGEX, "^5[0-9][0-9]$");
             String configId = "dummy";
+            HttpRequest httpRequest = getDummyHttpRequest();
             HttpResponse httpResponse = new HttpResponse(500, "Internal Server Error");
+            HttpExchange httpExchange = new HttpExchange(httpRequest,httpResponse,100L,OffsetDateTime.now(ZoneId.of("UTC")),new AtomicInteger(1),true);
             HttpConfiguration<OkHttpClient, okhttp3.Request, okhttp3.Response> httpConfiguration = new HttpConfiguration<>(configId,okHttpClient, executorService, null,settings);
-            boolean retryNeeded = httpConfiguration.retryNeeded(httpResponse);
+            boolean retryNeeded = httpConfiguration.retryNeeded(httpExchange);
             assertThat(retryNeeded).isTrue();
         }
 
@@ -305,9 +504,11 @@ class HttpConfigurationTest {
             Map<String, String> settings = Maps.newHashMap();
             settings.put("httpclient.dummy." + RETRY_RESPONSE_CODE_REGEX, "^5[0-9][0-9]$");
             String configId = "dummy";
+            HttpRequest httpRequest = getDummyHttpRequest();
             HttpResponse httpResponse = new HttpResponse(400, "Internal Server Error");
+            HttpExchange httpExchange = new HttpExchange(httpRequest,httpResponse,100L,OffsetDateTime.now(ZoneId.of("UTC")),new AtomicInteger(1),true);
             HttpConfiguration<OkHttpClient, okhttp3.Request, okhttp3.Response> httpConfiguration = new HttpConfiguration<>(configId,okHttpClient, executorService, null,settings);
-            boolean retryNeeded = httpConfiguration.retryNeeded(httpResponse);
+            boolean retryNeeded = httpConfiguration.retryNeeded(httpExchange);
             assertThat(retryNeeded).isFalse();
         }
 
@@ -316,9 +517,11 @@ class HttpConfigurationTest {
             Map<String, String> settings = Maps.newHashMap();
             settings.put("httpclient.dummy." + RETRY_RESPONSE_CODE_REGEX, "^5[0-9][0-9]$");
             String configId = "dummy";
+            HttpRequest httpRequest = getDummyHttpRequest();
             HttpResponse httpResponse = new HttpResponse(200, "Internal Server Error");
+            HttpExchange httpExchange = new HttpExchange(httpRequest,httpResponse,100L,OffsetDateTime.now(ZoneId.of("UTC")),new AtomicInteger(1),true);
             HttpConfiguration<OkHttpClient, okhttp3.Request, okhttp3.Response> httpConfiguration = new HttpConfiguration<>(configId,okHttpClient, executorService,null, settings);
-            boolean retryNeeded = httpConfiguration.retryNeeded(httpResponse);
+            boolean retryNeeded = httpConfiguration.retryNeeded(httpExchange);
             assertThat(retryNeeded).isFalse();
         }
 
@@ -330,9 +533,11 @@ class HttpConfigurationTest {
             settings.put(CONFIG_DEFAULT_RETRY_RESPONSE_CODE_REGEX, "^[1-5][0-9][0-9]$");
             Map<String, String> configSettings = MapUtils.getMapWithPrefix(new HttpConnectorConfig(settings).originalsStrings(), "config.dummy.");
             String configId = "dummy";
+            HttpRequest httpRequest = getDummyHttpRequest();
             HttpResponse httpResponse = new HttpResponse(200, "Internal Server Error");
+            HttpExchange httpExchange = new HttpExchange(httpRequest,httpResponse,100L,OffsetDateTime.now(ZoneId.of("UTC")),new AtomicInteger(1),true);
             HttpConfiguration<OkHttpClient, okhttp3.Request, okhttp3.Response> httpConfiguration = new HttpConfiguration<>(configId,okHttpClient, executorService, null,configSettings);
-            boolean retryNeeded = httpConfiguration.retryNeeded(httpResponse);
+            boolean retryNeeded = httpConfiguration.retryNeeded(httpExchange);
             assertThat(retryNeeded).isTrue();
         }
     }
@@ -359,7 +564,7 @@ class HttpConfigurationTest {
 
             HttpRequest httpRequest = getDummyHttpRequest();
             HttpConfiguration<OkHttpClient, okhttp3.Request, okhttp3.Response> httpConfiguration = new HttpConfiguration<>(configId,okHttpClient, executorService, null,settings);
-            HttpRequest enrichedHttpRequest = httpConfiguration.enrich(httpRequest);
+            HttpRequest enrichedHttpRequest = httpConfiguration.enrichRequest(httpRequest);
             Map<String, List<String>> headers = enrichedHttpRequest.getHeaders();
             assertThat(headers).containsEntry("X-Stuff-Id", Lists.newArrayList("12345"))
                     .containsEntry("X-Super-Option", Lists.newArrayList("ABC"));
@@ -379,7 +584,7 @@ class HttpConfigurationTest {
             okHttpClient = okHttpClientFactory.buildHttpClient(settings, null, new CompositeMeterRegistry(), new Random());
             HttpRequest httpRequest = getDummyHttpRequest();
             HttpConfiguration<OkHttpClient, okhttp3.Request, okhttp3.Response> httpConfiguration = new HttpConfiguration<>(configId,okHttpClient, executorService, null,settings);
-            HttpRequest enrichedHttpRequest = httpConfiguration.enrich(httpRequest);
+            HttpRequest enrichedHttpRequest = httpConfiguration.enrichRequest(httpRequest);
             Map<String, List<String>> headers = enrichedHttpRequest.getHeaders();
             assertThat(headers).containsKey("X-Request-ID");
         }
@@ -398,7 +603,7 @@ class HttpConfigurationTest {
             okHttpClient = okHttpClientFactory.buildHttpClient(settings, null, new CompositeMeterRegistry(), new Random());
             HttpRequest httpRequest = getDummyHttpRequest();
             HttpConfiguration<OkHttpClient, okhttp3.Request, okhttp3.Response> httpConfiguration = new HttpConfiguration<>(configId,okHttpClient, executorService, null,settings);
-            HttpRequest enrichedHttpRequest = httpConfiguration.enrich(httpRequest);
+            HttpRequest enrichedHttpRequest = httpConfiguration.enrichRequest(httpRequest);
             Map<String, List<String>> headers = enrichedHttpRequest.getHeaders();
             assertThat(headers).containsKey("X-Correlation-ID");
         }
@@ -418,7 +623,7 @@ class HttpConfigurationTest {
             //given
             HttpRequest httpRequest = getDummyHttpRequest();
             HttpConfiguration<OkHttpClient, okhttp3.Request, okhttp3.Response> httpConfiguration = new HttpConfiguration<>(configId,okHttpClient, executorService, null,settings);
-            HttpRequest enrichedHttpRequest = httpConfiguration.enrich(httpRequest);
+            HttpRequest enrichedHttpRequest = httpConfiguration.enrichRequest(httpRequest);
             Map<String, List<String>> headers = enrichedHttpRequest.getHeaders();
             assertThat(headers).containsEntry("User-Agent", Lists.newArrayList("custom_ua"));
         }
@@ -440,7 +645,7 @@ class HttpConfigurationTest {
 
             HttpRequest httpRequest = getDummyHttpRequest();
             HttpConfiguration<OkHttpClient, okhttp3.Request, okhttp3.Response> httpConfiguration = new HttpConfiguration<>(configId,okHttpClient, executorService, null,settings);
-            HttpRequest enrichedHttpRequest = httpConfiguration.enrich(httpRequest);
+            HttpRequest enrichedHttpRequest = httpConfiguration.enrichRequest(httpRequest);
             Map<String, List<String>> headers = enrichedHttpRequest.getHeaders();
             assertThat(headers.get("User-Agent")).isSubsetOf(Lists.newArrayList("custom_1", "custom_2", "custom_3"));
         }
@@ -457,7 +662,7 @@ class HttpConfigurationTest {
             HttpRequest httpRequest = getDummyHttpRequest();
             httpRequest.getHeaders().put("User-Agent", Lists.newArrayList("already"));
             HttpConfiguration<OkHttpClient, okhttp3.Request, okhttp3.Response> httpConfiguration = new HttpConfiguration<>(configId,okHttpClient, executorService, null,settings);
-            HttpRequest enrichedHttpRequest = httpConfiguration.enrich(httpRequest);
+            HttpRequest enrichedHttpRequest = httpConfiguration.enrichRequest(httpRequest);
             Map<String, List<String>> headers = enrichedHttpRequest.getHeaders();
             assertThat(headers.get("User-Agent").get(0)).isEqualTo("already");
         }
@@ -472,7 +677,7 @@ class HttpConfigurationTest {
             String configId = "dummy";
             HttpRequest httpRequest = getDummyHttpRequest();
             HttpConfiguration<OkHttpClient, okhttp3.Request, okhttp3.Response> httpConfiguration = new HttpConfiguration<>(configId,okHttpClient, executorService, null,settings);
-            HttpRequest enrichedHttpRequest = httpConfiguration.enrich(httpRequest);
+            HttpRequest enrichedHttpRequest = httpConfiguration.enrichRequest(httpRequest);
             Map<String, List<String>> headers = enrichedHttpRequest.getHeaders();
             //user-agent in this cas is set by the underlying http client implementation
             //after the enrichment phase in the configuration
@@ -494,7 +699,7 @@ class HttpConfigurationTest {
             okHttpClient = okHttpClientFactory.buildHttpClient(settings, null, new CompositeMeterRegistry(), new Random());
             HttpRequest httpRequest = getDummyHttpRequest();
             HttpConfiguration<OkHttpClient, okhttp3.Request, okhttp3.Response> httpConfiguration = new HttpConfiguration<>(configId,okHttpClient, executorService, null,settings);
-            HttpRequest enrichedHttpRequest = httpConfiguration.enrich(httpRequest);
+            HttpRequest enrichedHttpRequest = httpConfiguration.enrichRequest(httpRequest);
             Map<String, List<String>> headers = enrichedHttpRequest.getHeaders();
             assertThat(headers).containsEntry("User-Agent", Lists.newArrayList("Mozilla/5.0 (compatible;kafka-connect-http/" + VERSION + "; okhttp; https://github.com/clescot/kafka-connect-http)"));
 

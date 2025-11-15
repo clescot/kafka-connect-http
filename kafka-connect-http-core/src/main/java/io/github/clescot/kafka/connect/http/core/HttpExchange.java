@@ -12,6 +12,8 @@ import org.jetbrains.annotations.NotNull;
 
 import java.io.Serial;
 import java.io.Serializable;
+import java.time.Duration;
+import java.time.Instant;
 import java.time.OffsetDateTime;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
@@ -77,6 +79,7 @@ public class HttpExchange implements Exchange<HttpRequest,HttpResponse>,Cloneabl
     @JsonProperty
     private Map<String,Object> attributes = Maps.newHashMap();
     private Map<String,Long> timings = Maps.newHashMap();
+
 
     protected HttpExchange() {
     }
@@ -274,6 +277,8 @@ public class HttpExchange implements Exchange<HttpRequest,HttpResponse>,Cloneabl
         return httpExchange;
     }
 
+
+
     @JsonIgnore
     public HarEntry toHarEntry(){
         return toHarEntry(1,null,null,null);
@@ -469,14 +474,10 @@ public class HttpExchange implements Exchange<HttpRequest,HttpResponse>,Cloneabl
 
         public Builder withHttpResponse(HttpResponse httpResponse) {
             this.httpResponse = httpResponse;
+            this.success = httpResponse.isSuccess();
             return this;
         }
 
-
-        public Builder withSuccess(boolean success) {
-            this.success = success;
-            return this;
-        }
 
         public Builder withAttribute(String key,String value) {
             this.attributes.put(key, value);

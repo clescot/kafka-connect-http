@@ -59,7 +59,7 @@ import java.util.stream.Collectors;
 import static com.github.tomakehurst.wiremock.client.WireMock.containing;
 import static com.github.tomakehurst.wiremock.client.WireMock.equalTo;
 import static com.github.tomakehurst.wiremock.stubbing.Scenario.STARTED;
-import static io.github.clescot.kafka.connect.AbstractClient.SHARED_RATE_LIMITERS;
+import static io.github.clescot.kafka.connect.RequestClient.SHARED_RATE_LIMITERS;
 import static io.github.clescot.kafka.connect.http.client.AbstractHttpClient.ACCEPT_NONE;
 import static io.github.clescot.kafka.connect.http.client.HttpClient.THROWABLE_CLASS;
 import static io.github.clescot.kafka.connect.http.client.HttpClient.THROWABLE_MESSAGE;

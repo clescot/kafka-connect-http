@@ -1,7 +1,5 @@
 package io.github.clescot.kafka.connect.http.client.okhttp;
 
-import com.google.common.base.Preconditions;
-import io.github.clescot.kafka.connect.http.client.HttpException;
 import okhttp3.Cookie;
 import okhttp3.CookieJar;
 import okhttp3.HttpUrl;

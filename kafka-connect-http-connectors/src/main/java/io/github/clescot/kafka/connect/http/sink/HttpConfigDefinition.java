@@ -94,8 +94,6 @@ public class HttpConfigDefinition {
     public static final String REQUEST_MAPPER_DEFAULT_SPLIT_LIMIT = "split.limit";
     public static final String REQUEST_MAPPER_DEFAULT_SPLIT_LIMIT_DOC = "the number of times the pattern is applied, according to the split function from the java.util.regex.Pattern class (https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/regex/Pattern.html). can be positive, zero, or negative.";
 
-
-
     //message status limit
     public static final String HTTP_COOKIE_POLICY = HTTP_CLIENT_PREFIX + "cookie.policy";
     public static final String CONFIG_DEFAULT_HTTP_COOKIE_POLICY = DEFAULT_CONFIGURATION_PREFIX + HTTP_COOKIE_POLICY;
@@ -132,6 +130,27 @@ public class HttpConfigDefinition {
     public static final String CONFIG_DEFAULT_RETRY_JITTER_IN_MS = DEFAULT_CONFIGURATION_PREFIX + RETRY_JITTER_IN_MS;
     public static final String CONFIG_DEFAULT_RETRY_JITTER_IN_MS_DOC = "if set with other default retry parameters, permit to define a default retry policy, which can be overriden in the httpRequest object. " +
             "Define max entropy to add, to prevent many retry policies instances with the same parameters, to flood servers at the same time";
+
+    //retry after settings
+    public static final String RETRY_AFTER_MAX_DURATION_IN_SEC = RETRY_POLICY_PREFIX + "retry.after.max.duration.in.sec";
+    public static final String CONFIG_DEFAULT_RETRY_AFTER_MAX_DURATION_IN_SEC = DEFAULT_CONFIGURATION_PREFIX + RETRY_AFTER_MAX_DURATION_IN_SEC;
+    public static final String CONFIG_DEFAULT_RETRY_AFTER_MAX_DURATION_IN_SEC_DOC = "maximum duration in second for a retry-after header";
+    public static final String DEFAULT_RETRY_AFTER_MAX_DURATION_IN_SEC = "86400";
+
+    public static final String RETRY_DELAY_THRESHOLD_IN_SEC = RETRY_POLICY_PREFIX + "retry.after.max.threshold.in.sec";
+    public static final String CONFIG_DEFAULT_RETRY_DELAY_THRESHOLD_IN_SEC = DEFAULT_CONFIGURATION_PREFIX + RETRY_AFTER_MAX_DURATION_IN_SEC;
+    public static final String CONFIG_DEFAULT_RETRY_DELAY_THRESHOLD_IN_SEC_DOC = "maximum delay threshold in second to consider retry-after header value. above this threshold, circuit breaker will be opened. under this threshold, a local wait will be done.";
+    public static final String DEFAULT_RETRY_DELAY_THRESHOLD_IN_SEC = "60";
+
+    public static final String DEFAULT_RETRY_DELAY_IN_SEC = RETRY_POLICY_PREFIX + "default.retry.after.delay.in.sec";
+    public static final String CONFIG_DEFAULT_DEFAULT_RETRY_DELAY_IN_SEC = DEFAULT_CONFIGURATION_PREFIX + RETRY_AFTER_MAX_DURATION_IN_SEC;
+    public static final String CONFIG_DEFAULT_DEFAULT_RETRY_DELAY_IN_SEC_DOC = "delay in second to use if retry-after header value is not set.";
+    public static final String DEFAULT_DEFAULT_RETRY_DELAY_IN_SEC = "3600";
+
+    public static final String CUSTOM_STATUS_CODE_FOR_RETRY_AFTER_HEADER = RETRY_POLICY_PREFIX + "retry.after.status.code";
+    public static final String CONFIG_DEFAULT_CUSTOM_STATUS_CODE_FOR_RETRY_AFTER_HEADER = DEFAULT_CONFIGURATION_PREFIX + RETRY_AFTER_MAX_DURATION_IN_SEC;
+    public static final String CONFIG_DEFAULT_CUSTOM_STATUS_CODE_FOR_RETRY_AFTER_HEADER_DOC = "maximum delay threshold in second to consider retry-after header value. above this threshold, circuit breaker will be opened. under this threshold, a local wait will be done.";
+    public static final String DEFAULT_CUSTOM_STATUS_CODE_FOR_RETRY_AFTER_HEADER = "503|429|301";
 
     //rate limiter
     public static final String DEFAULT_RATE_LIMITER_ONE_PERMIT_PER_CALL = "one";
@@ -317,6 +336,11 @@ public class HttpConfigDefinition {
         ConfigDef configDef1 = configDef//http client implementation settings
                 //cookie policy settings
                 .define(prefix + HTTP_COOKIE_POLICY, ConfigDef.Type.STRING, CONFIG_DEFAULT_HTTP_COOKIE_POLICY, ConfigDef.Importance.LOW, CONFIG_DEFAULT_HTTP_COOKIE_POLICY_DOC)
+                //retry after settings
+                .define(prefix + RETRY_AFTER_MAX_DURATION_IN_SEC,ConfigDef.Type.STRING, DEFAULT_RETRY_AFTER_MAX_DURATION_IN_SEC ,ConfigDef.Importance.LOW, CONFIG_DEFAULT_RETRY_AFTER_MAX_DURATION_IN_SEC_DOC)
+                .define(prefix + RETRY_DELAY_THRESHOLD_IN_SEC,ConfigDef.Type.STRING, DEFAULT_RETRY_DELAY_THRESHOLD_IN_SEC ,ConfigDef.Importance.LOW, CONFIG_DEFAULT_RETRY_DELAY_THRESHOLD_IN_SEC_DOC)
+                .define(prefix + DEFAULT_RETRY_DELAY_IN_SEC,ConfigDef.Type.STRING, DEFAULT_DEFAULT_RETRY_DELAY_IN_SEC ,ConfigDef.Importance.LOW, CONFIG_DEFAULT_DEFAULT_RETRY_DELAY_IN_SEC_DOC)
+                .define(prefix + CUSTOM_STATUS_CODE_FOR_RETRY_AFTER_HEADER,ConfigDef.Type.STRING, DEFAULT_CUSTOM_STATUS_CODE_FOR_RETRY_AFTER_HEADER ,ConfigDef.Importance.LOW, CONFIG_DEFAULT_RETRY_DELAY_THRESHOLD_IN_SEC_DOC)
                 //retry settings
                 .define(prefix + SUCCESS_RESPONSE_CODE_REGEX, ConfigDef.Type.STRING, CONFIG_DEFAULT_DEFAULT_SUCCESS_RESPONSE_CODE_REGEX, ConfigDef.Importance.LOW, CONFIG_DEFAULT_SUCCESS_RESPONSE_CODE_REGEX_DOC)
                 .define(prefix + RETRY_RESPONSE_CODE_REGEX, ConfigDef.Type.STRING, DEFAULT_DEFAULT_RETRY_RESPONSE_CODE_REGEX, ConfigDef.Importance.LOW, DEFAULT_RETRY_RESPONSE_CODE_REGEX_DOC)

@@ -1,15 +1,18 @@
 package io.github.clescot.kafka.connect.http.sink;
 
 import com.google.common.base.Preconditions;
+import com.google.common.base.Stopwatch;
+import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
 import io.github.clescot.kafka.connect.http.HttpTask;
 import io.github.clescot.kafka.connect.http.MessageSplitter;
 import io.github.clescot.kafka.connect.http.MessageSplitterFactory;
 import io.github.clescot.kafka.connect.http.client.HttpClient;
 import io.github.clescot.kafka.connect.http.client.HttpClientFactory;
 import io.github.clescot.kafka.connect.http.client.HttpConfiguration;
-import io.github.clescot.kafka.connect.http.client.HttpException;
 import io.github.clescot.kafka.connect.http.core.HttpExchange;
 import io.github.clescot.kafka.connect.http.core.HttpRequest;
+import io.github.clescot.kafka.connect.http.core.HttpResponse;
 import io.github.clescot.kafka.connect.http.core.queue.KafkaRecord;
 import io.github.clescot.kafka.connect.http.mapper.HttpRequestMapper;
 import io.github.clescot.kafka.connect.http.mapper.HttpRequestMapperFactory;
@@ -23,6 +26,8 @@ import org.apache.commons.jexl3.introspection.JexlPermissions;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.clients.producer.RecordMetadata;
+import org.apache.kafka.common.header.Header;
+import org.apache.kafka.common.header.internals.RecordHeader;
 import org.apache.kafka.connect.connector.ConnectRecord;
 import org.apache.kafka.connect.sink.ErrantRecordReporter;
 import org.apache.kafka.connect.sink.SinkRecord;
@@ -32,15 +37,19 @@ import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.time.OffsetDateTime;
+import java.time.ZoneId;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.stream.Stream;
 
+import static io.github.clescot.kafka.connect.http.HttpTask.DATE_TIME_FORMATTER;
 import static io.github.clescot.kafka.connect.http.core.Request.VU_ID;
 import static io.github.clescot.kafka.connect.http.core.VersionUtils.VERSION;
 import static io.github.clescot.kafka.connect.http.sink.HttpConfigDefinition.HTTP_REQUEST_MAPPER_IDS;
@@ -194,23 +203,46 @@ public abstract class HttpSinkTask<C extends HttpClient<R, S>, R, S> extends Sin
 
     public CompletableFuture<HttpExchange> callAndPublish(Pair<SinkRecord, HttpRequest> pair) {
 
-        return httpTask.call(pair.getRight())
-                .thenApply(publish())
-                .exceptionally(throwable -> {
-                    LOGGER.error(throwable.getMessage());
-                    if (errantRecordReporter != null) {
-                        // Send errant record to error reporter
-                        Future<Void> future = errantRecordReporter.report(pair.getLeft(), throwable);
-                        // Optionally wait until the failure's been recorded in Kafka
-                        try {
-                            future.get();
-                        } catch (InterruptedException | ExecutionException ex) {
-                            Thread.currentThread().interrupt();
-                            LOGGER.error(ex.getMessage());
+        HttpRequest httpRequest = pair.getRight();
+        if(httpTask.isClosed(httpRequest)) {
+            return httpTask.call(httpRequest)
+                    .thenApply(publish())
+                    .exceptionally(throwable -> {
+                        LOGGER.error(throwable.getMessage());
+                        if (errantRecordReporter != null) {
+                            // Send errant record to error reporter
+                            Future<Void> future = errantRecordReporter.report(pair.getLeft(), throwable);
+                            // Optionally wait until the failure's been recorded in Kafka
+                            try {
+                                future.get();
+                            } catch (InterruptedException | ExecutionException ex) {
+                                Thread.currentThread().interrupt();
+                                LOGGER.error(ex.getMessage());
+                            }
                         }
-                    }
-                    return null;
-                });
+                        return null;
+                    });
+        }else {
+            String openedUntil = DATE_TIME_FORMATTER.format(httpTask.getNextRetryInstant(httpRequest));
+            publishToDeadLetterQueue(this.httpConnectorConfig.getProducerDlqTopic(),httpRequest,openedUntil);
+            AtomicInteger attempts = new AtomicInteger();
+            HttpExchange httpExchange = httpTask.getConfiguration(httpRequest).getClient().buildExchange(
+                    httpRequest,
+                    new HttpResponse(HttpClient.SERVER_ERROR_STATUS_CODE, "configuration is disabled until " + openedUntil),
+                    Stopwatch.createUnstarted(),
+                    OffsetDateTime.now(ZoneId.of(HttpClient.UTC_ZONE_ID)),
+                    attempts,
+                    Maps.newHashMap(),
+                    Maps.newHashMap());
+            return CompletableFuture.supplyAsync(() -> httpExchange);
+        }
+    }
+
+    private void publishToDeadLetterQueue(String dlqTopic, HttpRequest httpRequest, String openedUntil) {
+        LOGGER.error("HttpRequest sent to dead letter queue because the task is opened (i.e disabled) until '{}': '{}'",openedUntil, httpRequest);
+        List<Header> headers = Lists.newArrayList(new RecordHeader("openedUntil", openedUntil.getBytes()));
+        ProducerRecord<String, Object> myRecord = new ProducerRecord<>(dlqTopic,null, System.currentTimeMillis(),null,httpRequest, headers);
+        this.producer.send(myRecord);
     }
 
     private List<SinkRecord> splitMessage(SinkRecord sinkRecord) {

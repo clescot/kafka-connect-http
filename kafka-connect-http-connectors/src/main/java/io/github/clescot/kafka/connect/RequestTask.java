@@ -2,7 +2,6 @@ package io.github.clescot.kafka.connect;
 
 import com.google.common.base.Preconditions;
 import dev.failsafe.RetryPolicy;
-import io.github.clescot.kafka.connect.http.client.HttpException;
 import io.github.clescot.kafka.connect.http.client.RetryException;
 import io.github.clescot.kafka.connect.http.core.Request;
 import org.jetbrains.annotations.NotNull;
@@ -22,7 +21,7 @@ import static io.github.clescot.kafka.connect.http.sink.HttpConfigDefinition.*;
  * @param <R> the type of Request
  * @param <E> the type of Exchange/Response
  */
-public interface RequestTask<C extends Client,F extends Configuration<C,R>,R extends Request,E> extends Task<C,F,R>{
+public interface RequestTask<C extends Client<E>,F extends Configuration<C,R>,R extends Request,E> extends Task<C,F,R>{
 
     String HAS_BEEN_SET = " has been set.";
 

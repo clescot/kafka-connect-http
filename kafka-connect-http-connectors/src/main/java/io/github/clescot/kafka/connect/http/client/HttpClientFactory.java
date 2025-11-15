@@ -80,6 +80,8 @@ public interface HttpClientFactory<C extends HttpClient<R, S>, R, S> {
         }
 
 
+        C httpClient = build(config, executorService, random, proxy, proxySelector, meterRegistry);
+
         //enrich exchange
         //success response code regex
         Pattern successResponseCodeRegex;
@@ -88,10 +90,9 @@ public interface HttpClientFactory<C extends HttpClient<R, S>, R, S> {
         } else {
             successResponseCodeRegex = defaultSuccessPattern;
         }
-
-
-        C httpClient = build(config, executorService, random, proxy, proxySelector, meterRegistry);
         httpClient.setAddSuccessStatusToHttpExchangeFunction(successResponseCodeRegex);
+
+
         return httpClient;
     }
 
