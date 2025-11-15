@@ -23,6 +23,7 @@ import java.io.Serializable;
 import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URL;
+import java.time.Instant;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -68,7 +69,7 @@ public class HttpRequest implements Request, Cloneable, Serializable {
     @JsonProperty
     //byte array is base64 encoded as as String, as JSON is a text format not binary
     private String bodyAsByteArray = "";
-
+    private Instant retryAfterInstant;
     @JsonProperty
     private Map<String, HttpPart> parts = Maps.newHashMap();
 
@@ -203,6 +204,21 @@ public class HttpRequest implements Request, Cloneable, Serializable {
         } else {
             return null;
         }
+    }
+
+
+    @JsonIgnore
+    public boolean needRetryAfterADelay(){
+        return this.retryAfterInstant!=null;
+    }
+
+    @JsonIgnore
+    public Instant getRetryAfterInstant(){
+        return this.retryAfterInstant;
+    }
+
+    public void setRetryAfterInstant(Instant retryAfterInstant) {
+        this.retryAfterInstant = retryAfterInstant;
     }
 
     public BodyType getBodyType() {

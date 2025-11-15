@@ -207,6 +207,14 @@ public abstract class HttpSinkTask<C extends HttpClient<R, S>, R, S> extends Sin
         if(httpTask.isClosed(httpRequest)) {
             return httpTask.call(httpRequest)
                     .thenApply(publish())
+                    .thenApply(exchange -> {
+                        if(exchange.getRequest().needRetryAfterADelay()&& exchange.getRequest().getRetryAfterInstant()!=null){
+                            LOGGER.debug("httpExchange '{}' need to be retried after a delay:'{}'",exchange,exchange.getRequest().getRetryAfterInstant());
+                            SinkRecord sinkRecord = pair.getLeft();
+                            errantRecordReporter.report(sinkRecord.newRecord(sinkRecord.topic(),sinkRecord.kafkaPartition(),sinkRecord.keySchema(),sinkRecord.key(),sinkRecord.valueSchema(),exchange.getRequest(),null), new Exception("Retry after a delay :"+exchange.getRequest().getRetryAfterInstant()));
+                        }
+                        return exchange;
+                    })
                     .exceptionally(throwable -> {
                         LOGGER.error(throwable.getMessage());
                         if (errantRecordReporter != null) {

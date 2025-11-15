@@ -286,7 +286,7 @@ public class HttpConfiguration<C extends HttpClient<NR, NS>, NR, NS> implements 
                     long secondsToWait = response.getRetryAfterSecondsToWait(MoreObjects.firstNonNull(retryAfterValue, DEFAULT_DEFAULT_RETRY_DELAY_IN_SEC));
                     LOGGER.debug("seconds to wait:{}", secondsToWait);
                     this.nextRetryInstant = Instant.now().plusSeconds(secondsToWait);
-                    httpExchange.setRetryAfterInstant(this.nextRetryInstant);
+                    httpExchange.getRequest().setRetryAfterInstant(this.nextRetryInstant);
                     LOGGER.info("Circuit breaker opened for '{}' seconds, until '{}'", secondsToWait, nextRetryInstant);
                     return Duration.of(min(secondsToWait, maxSecondsToWait), SECONDS);
                 })

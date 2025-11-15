@@ -79,7 +79,7 @@ public class HttpExchange implements Exchange<HttpRequest,HttpResponse>,Cloneabl
     @JsonProperty
     private Map<String,Object> attributes = Maps.newHashMap();
     private Map<String,Long> timings = Maps.newHashMap();
-    private Instant retryAfterInstant;
+
 
     protected HttpExchange() {
     }
@@ -277,19 +277,7 @@ public class HttpExchange implements Exchange<HttpRequest,HttpResponse>,Cloneabl
         return httpExchange;
     }
 
-    @JsonIgnore
-    public boolean needRetryAfterADelay(){
-        return this.retryAfterInstant!=null;
-    }
 
-    @JsonIgnore
-    public Instant getRetryAfterInstant(){
-        return this.retryAfterInstant;
-    }
-
-    public void setRetryAfterInstant(Instant retryAfterInstant) {
-        this.retryAfterInstant = retryAfterInstant;
-    }
 
     @JsonIgnore
     public HarEntry toHarEntry(){
