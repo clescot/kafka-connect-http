@@ -257,7 +257,9 @@ public class HttpConfiguration<C extends HttpClient<NR, NS>, NR, NS> implements 
                     Maps.newHashMap());
             return CompletableFuture.supplyAsync(() -> httpExchange);
         } catch (Exception exception) {
-            LOGGER.error("Failed to call web service after {} retries with error({}). message:{} ", attempts, exception,
+            LOGGER.error("Failed to call web service after {} retries with error({}). message:{} ",
+                    attempts,
+                    exception,
                     exception.getMessage());
             HttpExchange httpExchange = getClient().buildExchange(
                     httpRequest,
@@ -283,7 +285,7 @@ public class HttpConfiguration<C extends HttpClient<NR, NS>, NR, NS> implements 
                     Integer statusCode = response.getStatusCode();
                     LOGGER.debug("status code:{}", statusCode);
 
-                    String retryAfterValue = getRetryAfterValue(response.getHeaders());
+                    String retryAfterValue = response.getRetryAfterValue();
                     LOGGER.debug("Retry-After Value:{}", retryAfterValue);
 
                     long secondsToWait = getSecondsToWait(MoreObjects.firstNonNull(retryAfterValue, DEFAULT_DEFAULT_RETRY_DELAY_IN_SEC));
@@ -372,7 +374,7 @@ public class HttpConfiguration<C extends HttpClient<NR, NS>, NR, NS> implements 
         if (!statusCodeIsCompatibleWithRetryAfter) {
             return 0L;
         }
-        String value = getRetryAfterValue(httpExchange.getResponse().getHeaders());
+        String value = httpExchange.getResponse().getRetryAfterValue();
         if (value == null && statusCode != 429) {
             return 0L;
         }
@@ -431,15 +433,7 @@ public class HttpConfiguration<C extends HttpClient<NR, NS>, NR, NS> implements 
         return secondsToWait;
     }
 
-    /**
-     *
-     * @param httpResponseHeaders
-     * @return
-     * @see <a href="https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Retry-After">Retry-After</a>
-     */
-    private String getRetryAfterValue(Map<String, List<String>> httpResponseHeaders) {
-        return httpResponseHeaders.get(RETRY_AFTER) != null ? httpResponseHeaders.get(RETRY_AFTER).get(0) : (httpResponseHeaders.get(X_RETRY_AFTER) != null ? httpResponseHeaders.get(X_RETRY_AFTER).get(0) : null);
-    }
+
 
     protected HttpRequest enrichRequest(HttpRequest httpRequest) {
         return this.client.getEnrichRequestFunction().apply(httpRequest);

@@ -23,7 +23,8 @@ public class HttpResponse implements Response, Cloneable, Serializable {
     @Serial
     private static final long serialVersionUID = 1L;
     public static final Integer VERSION = 2;
-
+    public static final String RETRY_AFTER = "Retry-After";
+    public static final String X_RETRY_AFTER = "X-Retry-After";
     public static final String STATUS_CODE_FIELD = "statusCode";
     public static final String STATUS_MESSAGE_FIELD = "statusMessage";
     public static final String PROTOCOL_FIELD = "protocol";
@@ -143,6 +144,16 @@ public class HttpResponse implements Response, Cloneable, Serializable {
             bodyType = BodyType.STRING;
         }
     }
+
+    /**
+     *
+     * @return the value of the Retry-After header, either Retry-After or X-Retry-After.
+     * @see <a href="https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Retry-After">Retry-After</a>
+     */
+    public String getRetryAfterValue() {
+        return getHeaders().get(RETRY_AFTER) != null ? getHeaders().get(RETRY_AFTER).get(0) : (getHeaders().get(X_RETRY_AFTER) != null ? getHeaders().get(X_RETRY_AFTER).get(0) : null);
+    }
+
 
 
     public Map<String, HttpPart> getParts() {
