@@ -150,6 +150,7 @@ public class HttpResponse implements Response, Cloneable, Serializable {
      * @return the value of the Retry-After header, either Retry-After or X-Retry-After.
      * @see <a href="https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Retry-After">Retry-After</a>
      */
+    @JsonIgnore
     public String getRetryAfterValue() {
         return getHeaders().get(RETRY_AFTER) != null ? getHeaders().get(RETRY_AFTER).get(0) : (getHeaders().get(X_RETRY_AFTER) != null ? getHeaders().get(X_RETRY_AFTER).get(0) : null);
     }
