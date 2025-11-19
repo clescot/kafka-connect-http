@@ -6,7 +6,7 @@
     <parent>
         <groupId>io.github.clescot</groupId>
         <artifactId>kafka-connect-http</artifactId>
-        <version>0.8.129</version>
+        <version>0.8.130-SNAPSHOT</version>
     </parent>
     <artifactId>report-aggregate</artifactId>
     <dependencies>
