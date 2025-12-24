@@ -19,7 +19,6 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static io.github.clescot.kafka.connect.http.sink.HttpConfigDefinition.*;
-import static io.github.clescot.kafka.connect.http.sink.HttpConfigDefinition.RATE_LIMITER_SCOPE;
 
 /**
  *  A client interface that handles requests and native requests.
