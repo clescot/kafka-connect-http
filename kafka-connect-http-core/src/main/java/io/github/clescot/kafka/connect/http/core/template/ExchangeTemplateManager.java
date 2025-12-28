@@ -21,6 +21,24 @@ public class ExchangeTemplateManager {
     private final List<ExchangeTemplateProcessor> processorList = new ArrayList<>();
 
     /**
+     * Default constructor that registers all default processors.
+     */
+    public ExchangeTemplateManager() {
+        registerDefaultProcessors();
+    }
+
+    /**
+     * Constructor that allows specifying whether to register default processors.
+     * 
+     * @param registerDefaults true to register default processors, false otherwise
+     */
+    public ExchangeTemplateManager(boolean registerDefaults) {
+        if (registerDefaults) {
+            registerDefaultProcessors();
+        }
+    }
+
+    /**
      * Register a template processor.
      * 
      * @param processor the processor to register
@@ -102,6 +120,25 @@ public class ExchangeTemplateManager {
      */
     public Collection<ExchangeTemplateProcessor> getProcessors() {
         return Collections.unmodifiableCollection(processors.values());
+    }
+
+    /**
+     * Register default processors.
+     */
+    public void registerDefaultProcessors() {
+        // Register existing processors
+        registerProcessor(new JsonPathExchangeTemplateProcessor());
+        registerProcessor(new XPathExchangeTemplateProcessor());
+        registerProcessor(new RandomExchangeTemplateProcessor());
+        
+        // Register new processors
+        registerProcessor(new JmesPathExchangeTemplateProcessor());
+        registerProcessor(new RegexExchangeTemplateProcessor());
+        registerProcessor(new HeaderParameterTemplateProcessor());
+        registerProcessor(new DateTimeTemplateProcessor());
+        registerProcessor(new ConditionalTemplateProcessor());
+        registerProcessor(new HashingTemplateProcessor());
+        registerProcessor(new MathTemplateProcessor());
     }
 
     /**

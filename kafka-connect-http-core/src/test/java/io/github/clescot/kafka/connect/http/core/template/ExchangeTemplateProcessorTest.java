@@ -89,7 +89,7 @@ class ExchangeTemplateProcessorTest {
 
     @Test
     void testTemplateManager() {
-        ExchangeTemplateManager manager = new ExchangeTemplateManager();
+        ExchangeTemplateManager manager = new ExchangeTemplateManager(false);
         
         // Register processors
         manager.registerProcessor(new JsonPathExchangeTemplateProcessor());
