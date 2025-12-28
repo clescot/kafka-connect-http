@@ -12,14 +12,19 @@ import io.github.clescot.kafka.connect.RequestClient;
 import io.github.clescot.kafka.connect.RequestResponseClient;
 import io.github.clescot.kafka.connect.http.client.config.AddSuccessStatusToHttpExchangeFunction;
 import io.github.clescot.kafka.connect.http.client.config.HttpRequestPredicateBuilder;
+import io.github.clescot.kafka.connect.http.core.Exchange;
 import io.github.clescot.kafka.connect.http.core.HttpExchange;
 import io.github.clescot.kafka.connect.http.core.HttpRequest;
 import io.github.clescot.kafka.connect.http.core.HttpResponse;
+import io.github.clescot.kafka.connect.http.core.template.ExchangeTemplateManager;
+import io.github.clescot.kafka.connect.http.core.template.ExchangeTemplateProcessor;
+import io.github.clescot.kafka.connect.http.core.template.ExchangeTemplateProcessorFactory;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.time.Duration;
+import java.util.Collections;
 import java.time.Instant;
 import java.time.OffsetDateTime;
 import java.time.ZoneId;
@@ -69,6 +74,8 @@ public class HttpConfiguration<C extends HttpClient<NR, NS>, NR, NS> implements 
     private Instant nextRetryInstant;
     private final FailsafeExecutor<HttpExchange> failsafeExecutor;
     private final long defaultRetryAfterDelayInSeconds;
+    private ExchangeTemplateManager templateManager;
+    private String exchangeTemplate;
 
     public HttpConfiguration(String id,
                              C client,
@@ -89,6 +96,10 @@ public class HttpConfiguration<C extends HttpClient<NR, NS>, NR, NS> implements 
         customStatusCodeForRetryAfterHeader = Pattern.compile(settings.getOrDefault(CUSTOM_STATUS_CODE_FOR_RETRY_AFTER_HEADER, DEFAULT_CUSTOM_STATUS_CODE_FOR_RETRY_AFTER_HEADER));
         defaultRetryAfterDelayInSeconds = Long.parseLong(settings.getOrDefault(DEFAULT_RETRY_DELAY_THRESHOLD_IN_SEC, DEFAULT_DEFAULT_RETRY_DELAY_IN_SEC));
         failsafeExecutor = buildFailsafeExecutor();
+        
+        // Initialize template processing
+        this.exchangeTemplate = settings.getOrDefault("exchange.template", "");
+        this.templateManager = createTemplateManager(settings);
     }
 
     private FailsafeExecutor<HttpExchange> buildFailsafeExecutor() {
@@ -107,6 +118,31 @@ public class HttpConfiguration<C extends HttpClient<NR, NS>, NR, NS> implements 
             //no RetryPolicy is set
             return null;
         }
+    }
+
+    private ExchangeTemplateManager createTemplateManager(Map<String, String> settings) {
+        ExchangeTemplateManager manager = new ExchangeTemplateManager();
+        
+        // Register built-in processors
+        manager.registerProcessor(new io.github.clescot.kafka.connect.http.core.template.JsonPathExchangeTemplateProcessor());
+        manager.registerProcessor(new io.github.clescot.kafka.connect.http.core.template.RandomExchangeTemplateProcessor());
+        manager.registerProcessor(new io.github.clescot.kafka.connect.http.core.template.XPathExchangeTemplateProcessor());
+        
+        // Check for custom processor configuration
+        String customProcessors = settings.getOrDefault("exchange.template.processors", "");
+        if (!customProcessors.trim().isEmpty()) {
+            String[] processorNames = customProcessors.split(",");
+            for (String processorName : processorNames) {
+                try {
+                    ExchangeTemplateProcessor processor = new ExchangeTemplateProcessorFactory().createBuiltinProcessor(processorName.trim());
+                    manager.registerProcessor(processor);
+                } catch (Exception e) {
+                    LOGGER.warn("Failed to load custom processor '{}': {}", processorName.trim(), e.getMessage());
+                }
+            }
+        }
+        
+        return manager;
     }
 
     public Pattern getRetryResponseCodeRegex() {
@@ -406,8 +442,30 @@ public class HttpConfiguration<C extends HttpClient<NR, NS>, NR, NS> implements 
 
 
     protected HttpExchange enrichExchange(HttpExchange httpExchange) {
+        HttpExchange enrichedExchange = httpExchange;
+        
+        // Apply success status function if available
         AddSuccessStatusToHttpExchangeFunction addSuccessStatusToHttpExchangeFunction = client.getAddSuccessStatusToHttpExchangeFunction();
-        return addSuccessStatusToHttpExchangeFunction != null ? addSuccessStatusToHttpExchangeFunction.apply(httpExchange) : httpExchange;
+        if (addSuccessStatusToHttpExchangeFunction != null) {
+            enrichedExchange = addSuccessStatusToHttpExchangeFunction.apply(enrichedExchange);
+        }
+        
+        // Apply template processing if template is configured
+        if (exchangeTemplate != null && !exchangeTemplate.trim().isEmpty() && templateManager != null) {
+            try {
+                Exchange<?, ?> processedExchange = templateManager.processTemplate(enrichedExchange, exchangeTemplate, Collections.emptyMap());
+                if (processedExchange instanceof HttpExchange) {
+                    enrichedExchange = (HttpExchange) processedExchange;
+                    LOGGER.debug("Applied template processing to HttpExchange");
+                } else {
+                    LOGGER.warn("Template processing returned non-HttpExchange type: {}", processedExchange.getClass().getName());
+                }
+            } catch (Exception e) {
+                LOGGER.warn("Failed to apply template processing: {}", e.getMessage());
+            }
+        }
+        
+        return enrichedExchange;
     }
 
     @Override
@@ -435,6 +493,22 @@ public class HttpConfiguration<C extends HttpClient<NR, NS>, NR, NS> implements 
             throw new IllegalStateException("client is null, cannot set it");
         }
         this.client = client;
+    }
+
+    public String getExchangeTemplate() {
+        return exchangeTemplate;
+    }
+
+    public void setExchangeTemplate(String exchangeTemplate) {
+        this.exchangeTemplate = exchangeTemplate;
+    }
+
+    public ExchangeTemplateManager getTemplateManager() {
+        return templateManager;
+    }
+
+    public void setTemplateManager(ExchangeTemplateManager templateManager) {
+        this.templateManager = templateManager;
     }
 
     @Override

@@ -448,6 +448,92 @@ public class HttpExchange implements Exchange<HttpRequest,HttpResponse>,Cloneabl
         this.attributes = attributes;
     }
 
+    @Override
+    @JsonIgnore
+    public String getContentAsString() {
+        if (httpResponse != null && httpResponse.getBodyAsString() != null) {
+            return httpResponse.getBodyAsString();
+        }
+        if (httpRequest != null && httpRequest.getBodyAsString() != null) {
+            return httpRequest.getBodyAsString();
+        }
+        return "";
+    }
+
+    @Override
+    @JsonIgnore
+    public Map<String, Object> getMetadata() {
+        Map<String, Object> metadata = new java.util.HashMap<>();
+        if (httpRequest != null) {
+            metadata.put("request", createRequestMap(httpRequest));
+        }
+        if (httpResponse != null) {
+            metadata.put("response", createResponseMap(httpResponse));
+        }
+        metadata.put("durationInMillis", durationInMillis);
+        metadata.put("moment", moment != null ? moment.toString() : null);
+        metadata.put("attempts", attempts != null ? attempts.get() : null);
+        metadata.put("success", success);
+        return metadata;
+    }
+
+    @Override
+    @JsonIgnore
+    public Object getAttribute(String name) {
+        return attributes.get(name);
+    }
+
+    @Override
+    @JsonIgnore
+    public Exchange<HttpRequest, HttpResponse> withAttribute(String name, Object value) {
+        HttpExchange.Builder builder = HttpExchange.Builder.anHttpExchange()
+                .withHttpRequest(httpRequest)
+                .withHttpResponse(httpResponse)
+                .withDuration(durationInMillis)
+                .at(moment)
+                .withAttempts(attempts)
+                .withAttributes(new java.util.HashMap<>(attributes))
+                .withTimings(new java.util.HashMap<>(timings));
+        
+        // Add the new attribute
+        builder.withAttribute(name, value.toString());
+        
+        return builder.build();
+    }
+
+    /**
+     * Create a map representation of the request for metadata.
+     * 
+     * @param request the HTTP request
+     * @return map containing request information
+     */
+    private Map<String, Object> createRequestMap(HttpRequest request) {
+        Map<String, Object> requestMap = new java.util.HashMap<>();
+        requestMap.put("url", request.getUrl());
+        requestMap.put("method", request.getMethod() != null ? request.getMethod().name() : null);
+        requestMap.put("headers", request.getHeaders());
+        requestMap.put("body", request.getBodyAsString());
+        requestMap.put("attributes", request.getAttributes());
+        return requestMap;
+    }
+
+    /**
+     * Create a map representation of the response for metadata.
+     * 
+     * @param response the HTTP response
+     * @return map containing response information
+     */
+    private Map<String, Object> createResponseMap(HttpResponse response) {
+        Map<String, Object> responseMap = new java.util.HashMap<>();
+        responseMap.put("statusCode", response.getStatusCode());
+        responseMap.put("statusMessage", response.getStatusMessage());
+        responseMap.put("headers", response.getHeaders());
+        responseMap.put("body", response.getBodyAsString());
+        responseMap.put("contentType", response.getContentType() != null && !response.getContentType().isEmpty() 
+            ? response.getContentType().get(0) : "");
+        return responseMap;
+    }
+
     public static final class Builder {
         private Long durationInMillis;
         private OffsetDateTime moment;
@@ -479,8 +565,15 @@ public class HttpExchange implements Exchange<HttpRequest,HttpResponse>,Cloneabl
         }
 
 
-        public Builder withAttribute(String key,String value) {
-            this.attributes.put(key, value);
+        /**
+         * Add an attribute to the exchange.
+         * 
+         * @param key the attribute name
+         * @param value the attribute value (will be converted to string)
+         * @return this builder
+         */
+        public Builder withAttribute(String key, Object value) {
+            this.attributes.put(key, value.toString());
             return this;
         }
 
