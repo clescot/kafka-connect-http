@@ -12,6 +12,8 @@ import java.util.Map;
 public class TemplateConfigurationUtil {
     private static final Logger LOGGER = LoggerFactory.getLogger(TemplateConfigurationUtil.class);
 
+    private TemplateConfigurationUtil() {}
+
     /**
      * Creates a template manager configured with the given settings.
      * This method provides a consistent way to create template managers across different configuration types.
@@ -33,7 +35,9 @@ public class TemplateConfigurationUtil {
                 try {
                     ExchangeTemplateProcessor processor = new ExchangeTemplateProcessorFactory().createBuiltinProcessor(processorName.trim());
                     manager.registerProcessor(processor);
-                    LOGGER.info("Registered custom processor: {}", processorName.trim());
+                    if(LOGGER.isInfoEnabled()) {
+                        LOGGER.info("Registered custom processor: {}", processorName.trim());
+                    }
                 } catch (Exception e) {
                     LOGGER.warn("Failed to load custom processor '{}': {}", processorName.trim(), e.getMessage());
                 }
