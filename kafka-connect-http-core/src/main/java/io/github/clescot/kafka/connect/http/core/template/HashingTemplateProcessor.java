@@ -10,6 +10,8 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.Base64;
 import java.util.Map;
+import io.github.clescot.kafka.connect.http.core.Request;
+import io.github.clescot.kafka.connect.http.core.Response;
 
 /**
  * Hashing template processor for generating cryptographic hashes.
@@ -20,13 +22,13 @@ public class HashingTemplateProcessor implements ExchangeTemplateProcessor {
     private static final Logger log = LoggerFactory.getLogger(HashingTemplateProcessor.class);
     
     @Override
-    public Exchange<?, ?> process(@NotNull Exchange<?, ?> exchange, @NotNull String template, Map<String, Object> context) {
+    public <R extends Request, S extends Response> Exchange<R, S> process(@NotNull Exchange<R, S> exchange, @NotNull String template, Map<String, Object> context) {
         try {
             // Extract parts from template: ${hash:algorithm:input:attributeName}
             String[] parts = extractTemplateParts(template);
             if (parts.length < 2) {
                 log.warn("Invalid hash template format: {}", template);
-                return exchange;
+                return   exchange;
             }
             
             String algorithm = parts[0].toUpperCase();
@@ -37,18 +39,18 @@ public class HashingTemplateProcessor implements ExchangeTemplateProcessor {
             String inputValue = getInputValue(input, exchange);
             if (inputValue == null || inputValue.isEmpty()) {
                 log.debug("Empty input for hashing");
-                return exchange.withAttribute(attributeName, "");
+                return   exchange.withAttribute(attributeName, "");
             }
             
             // Generate hash
             String hash = generateHash(algorithm, inputValue);
             
             log.debug("Generated {} hash for input: {}", algorithm, hash);
-            return exchange.withAttribute(attributeName, hash);
+            return   exchange.withAttribute(attributeName, hash);
             
         } catch (Exception e) {
             log.warn("Failed to process hash template '{}': {}", template, e.getMessage());
-            return exchange;
+            return   exchange;
         }
     }
     

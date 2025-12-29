@@ -3,6 +3,7 @@ package io.github.clescot.kafka.connect.sse.client.okhttp;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
+import io.github.clescot.kafka.connect.http.core.HttpRequest;
 import io.github.clescot.kafka.connect.sse.core.SseEvent;
 import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.source.SourceRecord;
@@ -50,19 +51,29 @@ public class SseSourceTask extends SourceTask {
     private List<SourceRecord> poll(SseConfiguration sseConfiguration,Queue<SseEvent> queue){
         Preconditions.checkNotNull(queue, "queue must not be null.");
         List<SourceRecord> records = Lists.newArrayList();
+        
+        // Create a basic HTTP request for template processing context
+        // This represents the SSE connection request
+        HttpRequest httpRequest = new HttpRequest(sseConfiguration.getUri().toString());
+        
         while (queue.peek() != null) {
             SseEvent sseEvent = queue.poll();
             LOGGER.debug("Polled from queue: {} event: {} ", sseEvent, sseConfiguration.getConfigurationId());
-            Map<String, String> sourcePartition = sseEvent.getType()!=null?Map.of("type",sseEvent.getType()):Maps.newHashMap();
-            Map<String, String> sourceOffset = sseEvent.getId()!=null?Map.of("eventId", sseEvent.getId()):Maps.newHashMap();
+            
+            // Apply template processing to the SSE event
+            SseEvent processedEvent = sseConfiguration.processEventWithTemplate(sseEvent, httpRequest);
+            SseEvent eventToUse = (processedEvent != null) ? processedEvent : sseEvent;
+            
+            Map<String, String> sourcePartition = eventToUse.getType()!=null?Map.of("type",eventToUse.getType()):Maps.newHashMap();
+            Map<String, String> sourceOffset = eventToUse.getId()!=null?Map.of("eventId", eventToUse.getId()):Maps.newHashMap();
             SourceRecord sourceRecord = new SourceRecord(
                     sourcePartition,
                     sourceOffset,
                     sseConfiguration.getTopic(),
                     Schema.STRING_SCHEMA,
-                    sseEvent.getType(),
+                    eventToUse.getType(),
                     SseEvent.SCHEMA,
-                    sseEvent.toJson()
+                    eventToUse.toJson()
             );
             records.add(sourceRecord);
         }

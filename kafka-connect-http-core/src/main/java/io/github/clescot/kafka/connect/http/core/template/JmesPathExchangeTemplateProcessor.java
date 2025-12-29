@@ -13,6 +13,8 @@ import org.slf4j.LoggerFactory;
 import java.util.EnumSet;
 import java.util.Map;
 import java.util.Set;
+import io.github.clescot.kafka.connect.http.core.Request;
+import io.github.clescot.kafka.connect.http.core.Response;
 
 /**
  * JMESPath template processor for extracting data from JSON content using JMESPath expressions.
@@ -26,14 +28,14 @@ public class JmesPathExchangeTemplateProcessor implements ExchangeTemplateProces
             .options(EnumSet.of(Option.SUPPRESS_EXCEPTIONS, Option.ALWAYS_RETURN_LIST)).build();
     
     @Override
-    public Exchange<?, ?> process(@NotNull Exchange<?, ?> exchange, @NotNull String template, Map<String, Object> context) {
+    public <R extends Request, S extends Response> Exchange<R, S> process(@NotNull Exchange<R, S> exchange, @NotNull String template, Map<String, Object> context) {
         try {
             // Extract the JMESPath expression and attribute name from template
             // Template format: ${jmespath:expression:attributeName}
             String[] parts = extractTemplateParts(template);
             if (parts.length < 1) {
                 log.warn("Invalid JMESPath template format: {}", template);
-                return exchange;
+                return   exchange;
             }
             
             String jmesPathExpression = parts[0];
@@ -43,7 +45,7 @@ public class JmesPathExchangeTemplateProcessor implements ExchangeTemplateProces
             String content = exchange.getContentAsString();
             if (content == null || content.trim().isEmpty()) {
                 log.debug("No content available for JMESPath processing");
-                return exchange.withAttribute(attributeName, "");
+                return   exchange.withAttribute(attributeName, "");
             }
             
             // Parse content as JSON
@@ -56,11 +58,11 @@ public class JmesPathExchangeTemplateProcessor implements ExchangeTemplateProces
             String resultString = extractResultValue(result);
             
             log.debug("JMESPath expression '{}' evaluated to: {}", jmesPathExpression, resultString);
-            return exchange.withAttribute(attributeName, resultString);
+            return   exchange.withAttribute(attributeName, resultString);
             
         } catch (Exception e) {
             log.warn("Failed to process JMESPath template '{}': {}", template, e.getMessage());
-            return exchange;
+            return   exchange;
         }
     }
     

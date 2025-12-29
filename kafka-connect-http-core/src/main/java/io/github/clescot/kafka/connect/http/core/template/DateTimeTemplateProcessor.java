@@ -12,6 +12,8 @@ import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.util.Map;
+import io.github.clescot.kafka.connect.http.core.Request;
+import io.github.clescot.kafka.connect.http.core.Response;
 
 /**
  * Date/Time template processor for formatting and parsing dates and times.
@@ -22,13 +24,13 @@ public class DateTimeTemplateProcessor implements ExchangeTemplateProcessor {
     private static final Logger log = LoggerFactory.getLogger(DateTimeTemplateProcessor.class);
     
     @Override
-    public Exchange<?, ?> process(@NotNull Exchange<?, ?> exchange, @NotNull String template, Map<String, Object> context) {
+    public <R extends Request, S extends Response> Exchange<R, S> process(@NotNull Exchange<R, S> exchange, @NotNull String template, Map<String, Object> context) {
         try {
             // Extract parts from template: ${datetime:source:format:attributeName}
             String[] parts = extractTemplateParts(template);
             if (parts.length < 2) {
                 log.warn("Invalid datetime template format: {}", template);
-                return exchange;
+                return   exchange;
             }
             
             String source = parts[0];
@@ -88,11 +90,11 @@ public class DateTimeTemplateProcessor implements ExchangeTemplateProcessor {
             }
             
             log.debug("Formatted datetime '{}' with pattern '{}': {}", source, format, dateTimeString);
-            return exchange.withAttribute(attributeName, dateTimeString);
+            return   exchange.withAttribute(attributeName, dateTimeString);
             
         } catch (Exception e) {
             log.warn("Failed to process datetime template '{}': {}", template, e.getMessage());
-            return exchange;
+            return   exchange;
         }
     }
     

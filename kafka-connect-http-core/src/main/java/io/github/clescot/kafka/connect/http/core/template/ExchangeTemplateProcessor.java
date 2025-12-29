@@ -1,11 +1,11 @@
 package io.github.clescot.kafka.connect.http.core.template;
 
 import io.github.clescot.kafka.connect.http.core.Exchange;
-import io.github.clescot.kafka.connect.http.core.Request;
-import io.github.clescot.kafka.connect.http.core.Response;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Map;
+import io.github.clescot.kafka.connect.http.core.Request;
+import io.github.clescot.kafka.connect.http.core.Response;
 
 /**
  * Interface for processing Exchange templates with plugins.

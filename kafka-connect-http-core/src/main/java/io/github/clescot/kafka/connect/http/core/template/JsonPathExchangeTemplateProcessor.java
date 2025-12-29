@@ -18,6 +18,8 @@ import org.slf4j.LoggerFactory;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import io.github.clescot.kafka.connect.http.core.Request;
+import io.github.clescot.kafka.connect.http.core.Response;
 
 /**
  * JSONPath template processor for Exchange.
@@ -37,11 +39,11 @@ public class JsonPathExchangeTemplateProcessor implements ExchangeTemplateProces
             .build();
 
     @Override
-    public Exchange<?, ?> process(@NotNull Exchange<?, ?> exchange, @NotNull String template, Map<String, Object> context) {
+    public <R extends Request, S extends Response> Exchange<R, S> process(@NotNull Exchange<R, S> exchange, @NotNull String template, Map<String, Object> context) {
         LOGGER.debug("Processing template with JSONPath: {}", template);
         
         // Start with the original exchange
-        Exchange<?, ?> modifiedExchange = exchange;
+        Exchange<R, S> modifiedExchange = exchange;
         
         // Process the template to extract JSONPath expressions
         Matcher matcher = JSONPATH_PATTERN.matcher(template);

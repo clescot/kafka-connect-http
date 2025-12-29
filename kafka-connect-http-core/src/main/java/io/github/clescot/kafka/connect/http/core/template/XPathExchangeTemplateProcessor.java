@@ -18,6 +18,8 @@ import java.io.StringReader;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import io.github.clescot.kafka.connect.http.core.Request;
+import io.github.clescot.kafka.connect.http.core.Response;
 
 /**
  * XPath template processor for Exchange.
@@ -32,11 +34,11 @@ public class XPathExchangeTemplateProcessor implements ExchangeTemplateProcessor
     private static final XPathFactory XPATH_FACTORY = XPathFactory.newInstance();
 
     @Override
-    public Exchange<?, ?> process(@NotNull Exchange<?, ?> exchange, @NotNull String template, Map<String, Object> context) {
+    public <R extends Request, S extends Response> Exchange<R, S> process(@NotNull Exchange<R, S> exchange, @NotNull String template, Map<String, Object> context) {
         LOGGER.debug("Processing template with XPath: {}", template);
         
         // Start with the original exchange
-        Exchange<?, ?> modifiedExchange = exchange;
+        Exchange<R, S> modifiedExchange = exchange;
         
         // Process the template to extract XPath expressions
         Matcher matcher = XPATH_PATTERN.matcher(template);

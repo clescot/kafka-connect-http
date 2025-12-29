@@ -10,6 +10,8 @@ import org.slf4j.LoggerFactory;
 
 import java.util.List;
 import java.util.Map;
+import io.github.clescot.kafka.connect.http.core.Request;
+import io.github.clescot.kafka.connect.http.core.Response;
 
 /**
  * Header/Parameter template processor for accessing HTTP headers, query parameters, and cookies.
@@ -20,11 +22,11 @@ public class HeaderParameterTemplateProcessor implements ExchangeTemplateProcess
     private static final Logger log = LoggerFactory.getLogger(HeaderParameterTemplateProcessor.class);
     
     @Override
-    public Exchange<?, ?> process(@NotNull Exchange<?, ?> exchange, @NotNull String template, Map<String, Object> context) {
+    public <R extends Request, S extends Response> Exchange<R, S> process(@NotNull Exchange<R, S> exchange, @NotNull String template, Map<String, Object> context) {
         try {
             if (!(exchange instanceof HttpExchange)) {
                 log.warn("HeaderParameter processor only works with HttpExchange, got: {}", exchange.getClass().getName());
-                return exchange;
+                return   exchange;
             }
             
             HttpExchange httpExchange = (HttpExchange) exchange;
@@ -38,7 +40,7 @@ public class HeaderParameterTemplateProcessor implements ExchangeTemplateProcess
             String[] parts = extractTemplateParts(template);
             if (parts.length < 2) {
                 log.warn("Invalid header/param template format: {}", template);
-                return exchange;
+                return   exchange;
             }
             
             String type = parts[0];
@@ -59,15 +61,15 @@ public class HeaderParameterTemplateProcessor implements ExchangeTemplateProcess
                     break;
                 default:
                     log.warn("Unknown header/param type: {}", type);
-                    return exchange;
+                    return   exchange;
             }
             
             log.debug("{} '{}' = '{}'", type, name, value);
-            return exchange.withAttribute(attributeName, value);
+            return   exchange.withAttribute(attributeName, value);
             
         } catch (Exception e) {
             log.warn("Failed to process header/param template '{}': {}", template, e.getMessage());
-            return exchange;
+            return   exchange;
         }
     }
     

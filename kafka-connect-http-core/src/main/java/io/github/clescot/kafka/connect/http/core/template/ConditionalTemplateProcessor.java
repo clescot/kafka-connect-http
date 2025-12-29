@@ -7,6 +7,8 @@ import org.slf4j.LoggerFactory;
 
 import java.util.Map;
 import java.util.regex.Pattern;
+import io.github.clescot.kafka.connect.http.core.Request;
+import io.github.clescot.kafka.connect.http.core.Response;
 
 /**
  * Conditional template processor for implementing logic in templates.
@@ -17,12 +19,12 @@ public class ConditionalTemplateProcessor implements ExchangeTemplateProcessor {
     private static final Logger log = LoggerFactory.getLogger(ConditionalTemplateProcessor.class);
     
     @Override
-    public Exchange<?, ?> process(@NotNull Exchange<?, ?> exchange, @NotNull String template, Map<String, Object> context) {
+    public <R extends Request, S extends Response> Exchange<R, S> process(@NotNull Exchange<R, S> exchange, @NotNull String template, Map<String, Object> context) {
         try {
             String[] parts = extractTemplateParts(template);
             if (parts.length < 3) {
                 log.warn("Invalid conditional template format: {}", template);
-                return exchange;
+                return   exchange;
             }
             
             String condition = parts[0];
@@ -34,11 +36,11 @@ public class ConditionalTemplateProcessor implements ExchangeTemplateProcessor {
             String result = conditionResult ? trueValue : falseValue;
             
             log.debug("Condition '{}' evaluated to {}, result: {}", condition, conditionResult, result);
-            return exchange.withAttribute(attributeName, result);
+            return   exchange.withAttribute(attributeName, result);
             
         } catch (Exception e) {
             log.warn("Failed to process conditional template '{}': {}", template, e.getMessage());
-            return exchange;
+            return   exchange;
         }
     }
     
@@ -75,7 +77,7 @@ public class ConditionalTemplateProcessor implements ExchangeTemplateProcessor {
         try {
             if (condition.equalsIgnoreCase("true") || condition.equalsIgnoreCase("yes")) return true;
             if (condition.equalsIgnoreCase("false") || condition.equalsIgnoreCase("no")) return false;
-            if (condition.startsWith("has:")) return exchange.getAttribute(condition.substring(4)) != null;
+            if (condition.startsWith("has:")) return   exchange.getAttribute(condition.substring(4)) != null;
             if (condition.startsWith("status:")) return evaluateStatusCondition(condition.substring(7), exchange);
             if (condition.contains(">") || condition.contains("<") || condition.contains("=") || condition.contains("!")) return evaluateComparison(condition, exchange);
             if (condition.startsWith("contains:") || condition.startsWith("matches:")) return evaluateStringCondition(condition, exchange);

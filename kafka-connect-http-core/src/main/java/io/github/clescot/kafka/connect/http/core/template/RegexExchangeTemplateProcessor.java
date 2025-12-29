@@ -9,6 +9,8 @@ import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
+import io.github.clescot.kafka.connect.http.core.Request;
+import io.github.clescot.kafka.connect.http.core.Response;
 
 /**
  * Regex template processor for extracting data from exchange content using regular expressions.
@@ -19,14 +21,14 @@ public class RegexExchangeTemplateProcessor implements ExchangeTemplateProcessor
     private static final Logger log = LoggerFactory.getLogger(RegexExchangeTemplateProcessor.class);
     
     @Override
-    public Exchange<?, ?> process(@NotNull Exchange<?, ?> exchange, @NotNull String template, Map<String, Object> context) {
+    public <R extends Request, S extends Response> Exchange<R, S> process(@NotNull Exchange<R, S> exchange, @NotNull String template, Map<String, Object> context) {
         try {
             // Extract regex pattern and attribute name from template
             // Template format: ${regex:pattern:attributeName}
             String[] parts = extractTemplateParts(template);
             if (parts.length < 2) {
                 log.warn("Invalid regex template format: {}", template);
-                return exchange;
+                return   exchange;
             }
             
             String regexPattern = parts[0];
@@ -36,7 +38,7 @@ public class RegexExchangeTemplateProcessor implements ExchangeTemplateProcessor
             String content = exchange.getContentAsString();
             if (content == null || content.trim().isEmpty()) {
                 log.debug("No content available for regex processing");
-                return exchange.withAttribute(attributeName, "");
+                return   exchange.withAttribute(attributeName, "");
             }
             
             // Compile and apply regex pattern
@@ -53,14 +55,14 @@ public class RegexExchangeTemplateProcessor implements ExchangeTemplateProcessor
                 log.debug("Regex pattern '{}' did not match any content", regexPattern);
             }
             
-            return exchange.withAttribute(attributeName, result);
+            return   exchange.withAttribute(attributeName, result);
             
         } catch (PatternSyntaxException e) {
             log.warn("Invalid regex pattern in template '{}': {}", template, e.getMessage());
-            return exchange;
+            return   exchange;
         } catch (Exception e) {
             log.warn("Failed to process regex template '{}': {}", template, e.getMessage());
-            return exchange;
+            return   exchange;
         }
     }
     

@@ -9,6 +9,8 @@ import org.slf4j.LoggerFactory;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import io.github.clescot.kafka.connect.http.core.Request;
+import io.github.clescot.kafka.connect.http.core.Response;
 
 /**
  * Random value generator template processor for Exchange.
@@ -22,11 +24,11 @@ public class RandomExchangeTemplateProcessor implements ExchangeTemplateProcesso
     private static final Random RANDOM = new Random();
 
     @Override
-    public Exchange<?, ?> process(@NotNull Exchange<?, ?> exchange, @NotNull String template, Map<String, Object> context) {
+    public <R extends Request, S extends Response> Exchange<R, S> process(@NotNull Exchange<R, S> exchange, @NotNull String template, Map<String, Object> context) {
         LOGGER.debug("Processing template with random values: {}", template);
         
         // Start with the original exchange
-        Exchange<?, ?> modifiedExchange = exchange;
+        Exchange<R, S> modifiedExchange = exchange;
         
         // Process the template to find random value expressions
         Matcher matcher = RANDOM_PATTERN.matcher(template);

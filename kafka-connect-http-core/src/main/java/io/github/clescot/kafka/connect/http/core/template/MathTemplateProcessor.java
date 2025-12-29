@@ -6,6 +6,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Map;
+import io.github.clescot.kafka.connect.http.core.Request;
+import io.github.clescot.kafka.connect.http.core.Response;
 
 /**
  * Math template processor for performing mathematical operations.
@@ -16,13 +18,13 @@ public class MathTemplateProcessor implements ExchangeTemplateProcessor {
     private static final Logger log = LoggerFactory.getLogger(MathTemplateProcessor.class);
     
     @Override
-    public Exchange<?, ?> process(@NotNull Exchange<?, ?> exchange, @NotNull String template, Map<String, Object> context) {
+    public <R extends Request, S extends Response> Exchange<R, S> process(@NotNull Exchange<R, S> exchange, @NotNull String template, Map<String, Object> context) {
         try {
             // Extract parts from template: ${math:expression:attributeName}
             String[] parts = extractTemplateParts(template);
             if (parts.length < 1) {
                 log.warn("Invalid math template format: {}", template);
-                return exchange;
+                return   exchange;
             }
             
             String expression = parts[0];
@@ -32,11 +34,11 @@ public class MathTemplateProcessor implements ExchangeTemplateProcessor {
             double result = evaluateMathExpression(expression, exchange);
             
             log.debug("Math expression '{}' evaluated to: {}", expression, result);
-            return exchange.withAttribute(attributeName, String.valueOf(result));
+            return   exchange.withAttribute(attributeName, String.valueOf(result));
             
         } catch (Exception e) {
             log.warn("Failed to process math template '{}': {}", template, e.getMessage());
-            return exchange;
+            return   exchange;
         }
     }
     
