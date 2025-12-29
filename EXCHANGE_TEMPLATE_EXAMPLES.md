@@ -202,6 +202,178 @@ When using template processing with SSE connectors, the exchange structure inclu
 exchange.template=${jsonpath:$.request.headers.X-API-Key} ${jsonpath:$.request.body.user.id}
 ```
 
+### Iterating Over Arrays
+
+The template system supports extracting and processing array data from exchanges.
+
+#### Extract All Array Elements
+
+```properties
+# Extract all items from an array in HTTP response
+exchange.template=${jsonpath:$.response.body.items[*].id}
+```
+
+This extracts all IDs from the items array and adds them as separate attributes.
+
+#### Extract Specific Array Elements
+
+```properties
+# Extract first and last elements from array
+exchange.template=${jsonpath:$.response.body.users[0].name} ${jsonpath:$.response.body.users[-1].name}
+```
+
+#### Extract Array Length
+
+```properties
+# Extract the length of an array
+exchange.template=${jsonpath:$.response.body.items.length()}
+```
+
+#### Extract Filtered Array Elements
+
+```properties
+# Extract only active users from array
+exchange.template=${jsonpath:$.response.body.users[?(@.active==true)].name}
+```
+
+#### Extract Array Slices
+
+```properties
+# Extract first 5 elements from array
+exchange.template=${jsonpath:$.response.body.logs[0:5].message}
+```
+
+### Processing Array Data in SSE Events
+
+```properties
+# Extract all event types from SSE event array
+exchange.template=${jsonpath:$.event.data.events[*].type}
+
+# Extract specific user IDs from nested array
+exchange.template=${jsonpath:$.event.data.user.orders[*].id}
+```
+
+### Advanced Array Processing with JMESPath
+
+```properties
+# Use JMESPath to transform array data
+exchange.template=${jmespath:response.body.items | [].{id: id, name: name}}
+
+# Filter and project array data
+exchange.template=${jmespath:response.body.users | [?age > 25].name}
+
+# Calculate statistics from array
+exchange.template=${jmespath:response.body.orders | length(@)} ${jmespath:response.body.orders | [].price | sum(@)}
+```
+
+## Array Processing Examples
+
+### HTTP Response with Array Data
+
+```properties
+# HTTP sink connector processing array response
+exchange.template=${jsonpath:$.response.body.products[*].id} ${jsonpath:$.response.body.products[*].name}
+exchange.template.processors=jsonpath
+```
+
+Given this HTTP response:
+```json
+{
+  "products": [
+    {"id": 1, "name": "Product A", "price": 10.99},
+    {"id": 2, "name": "Product B", "price": 20.50},
+    {"id": 3, "name": "Product C", "price": 15.75}
+  ]
+}
+```
+
+This template will extract all product IDs and names, creating attributes like:
+- `jsonpath_response_body_products_0_id`: `1`
+- `jsonpath_response_body_products_0_name`: `"Product A"`
+- `jsonpath_response_body_products_1_id`: `2`
+- `jsonpath_response_body_products_1_name`: `"Product B"`
+- etc.
+
+### SSE Event with Array Data
+
+```properties
+# SSE source connector processing array events
+exchange.template=${jsonpath:$.event.data.messages[*].content} ${jsonpath:$.event.data.messages[*].timestamp}
+exchange.template.processors=jsonpath
+```
+
+Given this SSE event data:
+```json
+{
+  "messages": [
+    {"content": "Hello", "timestamp": 1234567890, "user": "alice"},
+    {"content": "World", "timestamp": 1234567891, "user": "bob"}
+  ]
+}
+```
+
+This template will extract all message contents and timestamps.
+
+### Combining Array Processing with Other Processors
+
+```properties
+# Extract array data and add processing timestamp
+exchange.template=${jsonpath:$.event.data.items[*].id} ${datetime:now:yyyy-MM-dd HH:mm:ss}
+exchange.template.processors=jsonpath,datetime
+```
+
+### Array Processing with Conditional Logic
+
+```properties
+# Extract only high-value items from array
+exchange.template=${jsonpath:$.response.body.items[?(@.price > 50)].id}
+exchange.template.processors=jsonpath
+```
+
+## Array Processing Best Practices
+
+### 1. Limit Array Size for Performance
+
+```properties
+# Process only first 100 elements to avoid performance issues
+exchange.template=${jsonpath:$.response.body.largeArray[0:100].id}
+```
+
+### 2. Use Specific Paths for Clarity
+
+```properties
+# Be specific about array paths
+exchange.template=${jsonpath:$.response.body.data.items[*].productId}
+```
+
+### 3. Handle Empty Arrays Gracefully
+
+The template system handles empty arrays gracefully - no attributes are created if the array is empty.
+
+### 4. Combine with Other Processors
+
+```properties
+# Extract array data and add metadata
+exchange.template=${jsonpath:$.event.data.items[*].id} ${random.uuid} ${datetime:now}
+exchange.template.processors=jsonpath,random,datetime
+```
+
+### 5. Use JMESPath for Complex Transformations
+
+```properties
+# Use JMESPath for advanced array operations
+exchange.template=${jmespath:response.body.items | [].{id: id, category: category}}
+```
+
+## Common Template Patterns
+
+### Extracting Data from HTTP Requests
+
+```properties
+# Extract request headers and body
+exchange.template=${jsonpath:$.request.headers.X-API-Key} ${jsonpath:$.request.body.user.id}
+```
+
 ### Extracting Data from HTTP Responses
 
 ```properties
@@ -334,6 +506,24 @@ exchange.template.processors=jmespath
 - `$.store.book[*].author` - All authors
 - `$.store..price` - All prices (recursive)
 - `$..book[?(@.price < 10)]` - Books cheaper than $10
+
+### Array-Specific Examples
+
+- `$.users[*].name` - All user names (iterates over array)
+- `$.orders[0:5].id` - First 5 order IDs (array slice)
+- `$.products[?(@.price > 50)]` - Products over $50 (filter)
+- `$.items.length()` - Number of items in array
+- `$.data.events[*].{id: id, type: type}` - Project specific fields from array elements
+
+### Array Processing in Exchange Context
+
+For HTTP exchanges:
+- `$.response.body.items[*].id` - All item IDs from response
+- `$.request.body.users[*].email` - All user emails from request
+
+For SSE exchanges:
+- `$.event.data.messages[*].content` - All message contents
+- `$.event.data.orders[*].status` - All order statuses
 
 ## JMESPath Reference
 
