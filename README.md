@@ -15,10 +15,11 @@
 # 6. [HTTP Source connector settings (optional)](docs/http_source_connector_settings.md)
 # 7. [Cron Source connector settings (optional)](docs/cron_source_connector_settings.md)
 # 8. [Server Sent Events (SSE) Source connector settings (optional)](docs/sse_source_connector_settings.md)
-# 9. [incoming message format](docs/incoming_message_format.md)
-# 10. [request handling](docs/request_handling.md)
-# 11. [outcoming message format](docs/outcoming_message_format.md)
-# 12. [scalability](docs/scalability.md)
+# 9. [Exchange Template Customization](EXCHANGE_TEMPLATE_EXAMPLES.md)
+# 10. [incoming message format](docs/incoming_message_format.md)
+# 11. [request handling](docs/request_handling.md)
+# 12. [outcoming message format](docs/outcoming_message_format.md)
+# 13. [scalability](docs/scalability.md)
 
 
 

@@ -4,11 +4,19 @@ This document provides examples of how to customize Exchange output using the te
 
 ## Overview
 
-The template system allows you to customize HttpExchange output by:
+The template system allows you to customize Exchange output (HttpExchange, SseExchange, etc.) by:
 1. Extracting data using JSONPath expressions
 2. Extracting data using XPath expressions (for XML content)
-3. Generating random values
-4. Creating custom processors
+3. Extracting data using JMESPath expressions
+4. Extracting data using Regex patterns
+5. Generating random values
+6. Working with dates and times
+7. Applying conditional logic
+8. Creating hashes and digests
+9. Performing mathematical operations
+10. Creating custom processors
+
+The template system works with any Exchange implementation, including both HTTP and SSE configurations.
 
 ## Basic Configuration
 
@@ -19,7 +27,17 @@ To enable template processing, add the following to your connector configuration
 exchange.template=your_template_here
 
 # Optionally specify which processors to use (default includes all built-in processors)
-exchange.template.processors=jsonpath,random,xpath
+exchange.template.processors=jsonpath,random,xpath,jmespath,regex,headerparam,datetime,conditional,hash,math
+```
+
+The template system works with both HTTP and SSE configurations:
+
+```properties
+# For HTTP connectors
+exchange.template=${jsonpath:$.request.url} ${random.uuid}
+
+# For SSE connectors
+exchange.template=${jsonpath:$.event.data} ${datetime:now:yyyy-MM-dd HH:mm:ss}
 ```
 
 ## JSONPath Examples
@@ -54,6 +72,124 @@ exchange.template=${jsonpath:$.request.body.user.name} ${jsonpath:$.response.bod
 This extracts:
 - The user name from a nested JSON request body
 - The first item's ID from a response array
+
+## JMESPath Examples
+
+JMESPath provides a more powerful way to extract and transform JSON data.
+
+### Extract and Transform JSON Data
+
+```properties
+exchange.template=${jmespath:request.body | {user: name, id: userId}}
+```
+
+This extracts and transforms the request body JSON.
+
+### Filter and Project Data
+
+```properties
+exchange.template=${jmespath:response.body.orders[?status=='completed']}
+```
+
+This filters the response body to only include completed orders.
+
+## Regex Examples
+
+### Extract Data Using Regular Expressions
+
+```properties
+exchange.template=${regex:request.body:/user=([^&]+)/:1}
+```
+
+This extracts the first capture group from a regex match on the request body.
+
+### Extract Multiple Groups
+
+```properties
+exchange.template=${regex:request.url:/api/([^/]+)/([^/]+)/:1} ${regex:request.url:/api/([^/]+)/([^/]+)/:2}
+```
+
+This extracts multiple capture groups from the URL path.
+
+## DateTime Examples
+
+### Add Current Timestamp
+
+```properties
+exchange.template=${datetime:now:yyyy-MM-dd HH:mm:ss}
+```
+
+This adds the current timestamp to the exchange.
+
+### Format Specific Date
+
+```properties
+exchange.template=${datetime:2023-01-01:yyyy-MM-dd}
+```
+
+This formats a specific date.
+
+### Add Timestamp with Custom Format
+
+```properties
+exchange.template=ProcessedAt: ${datetime:now:yyyyMMdd-HHmmssSSS}
+```
+
+This adds a timestamp with a custom format.
+
+## Conditional Examples
+
+### Conditional Processing
+
+```properties
+exchange.template=${conditional:response.statusCode >= 200 && response.statusCode < 300:SUCCESS:FAILURE}
+```
+
+This adds a SUCCESS or FAILURE attribute based on the status code.
+
+### Complex Conditions
+
+```properties
+exchange.template=${conditional:request.method == 'GET' && response.statusCode == 200:READ_SUCCESS:OTHER}
+```
+
+This evaluates complex conditions.
+
+## Hash Examples
+
+### Create Hash of Request Body
+
+```properties
+exchange.template=RequestHash: ${hash:request.body:SHA-256}
+```
+
+This creates a SHA-256 hash of the request body.
+
+### Create MD5 Hash
+
+```properties
+exchange.template=ContentHash: ${hash:response.body:MD5}
+```
+
+This creates an MD5 hash of the response body.
+
+## Math Examples
+
+### Perform Mathematical Operations
+
+```properties
+exchange.template=Total: ${math:request.body.price * request.body.quantity}
+```
+
+This calculates the total price.
+
+### Complex Expressions
+
+```properties
+exchange.template=DiscountedPrice: ${math:request.body.price * (1 - request.body.discount)}
+```
+
+This calculates a discounted price.
 
 ## XPath Examples
 
@@ -158,6 +294,14 @@ ${jsonpath:expression}
 
 Where `expression` is a valid JSONPath expression that can navigate the exchange structure.
 
+### JMESPath Syntax
+
+```
+${jmespath:expression}
+```
+
+Where `expression` is a valid JMESPath expression for querying and transforming JSON data.
+
 ### XPath Syntax
 
 ```
@@ -165,6 +309,56 @@ ${xpath:expression}
 ```
 
 Where `expression` is a valid XPath expression that will be evaluated against XML content in requests or responses.
+
+### Regex Syntax
+
+```
+${regex:input:pattern:group}
+```
+
+Where:
+- `input` is the text to match against
+- `pattern` is the regular expression pattern
+- `group` is the capture group number (1, 2, 3, etc.)
+
+### DateTime Syntax
+
+```
+${datetime:input:format}
+```
+
+Where:
+- `input` can be `now` for current time or a specific date/time string
+- `format` is the output format using Java DateTimeFormatter patterns
+
+### Conditional Syntax
+
+```
+${conditional:condition:trueValue:falseValue}
+```
+
+Where:
+- `condition` is a boolean expression
+- `trueValue` is returned if condition is true
+- `falseValue` is returned if condition is false
+
+### Hash Syntax
+
+```
+${hash:input:algorithm}
+```
+
+Where:
+- `input` is the text to hash
+- `algorithm` is the hash algorithm (SHA-256, MD5, SHA-1, etc.)
+
+### Math Syntax
+
+```
+${math:expression}
+```
+
+Where `expression` is a mathematical expression that can reference exchange data.
 
 ### Random Syntax
 

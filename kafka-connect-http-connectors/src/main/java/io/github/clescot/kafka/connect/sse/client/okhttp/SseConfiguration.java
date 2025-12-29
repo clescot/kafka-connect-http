@@ -6,11 +6,17 @@ import com.launchdarkly.eventsource.background.BackgroundEventSource;
 import io.github.clescot.kafka.connect.Configuration;
 import io.github.clescot.kafka.connect.http.client.HttpClientFactory;
 import io.github.clescot.kafka.connect.http.client.okhttp.OkHttpClient;
+import io.github.clescot.kafka.connect.http.core.Exchange;
 import io.github.clescot.kafka.connect.http.core.HttpRequest;
+import io.github.clescot.kafka.connect.http.core.template.ExchangeTemplateManager;
+import io.github.clescot.kafka.connect.http.core.template.TemplateConfigurationUtil;
 import io.github.clescot.kafka.connect.sse.core.SseEvent;
+import io.github.clescot.kafka.connect.sse.core.SseExchange;
 import io.micrometer.core.instrument.composite.CompositeMeterRegistry;
 import okhttp3.Request;
 import okhttp3.Response;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.net.URI;
 import java.util.Map;
@@ -26,6 +32,7 @@ import static io.github.clescot.kafka.connect.http.client.HttpClientFactory.getR
  * Configuration for SSE client using OkHttp.
  */
 public class SseConfiguration implements Configuration<OkHttpClient, HttpRequest> {
+    private static final Logger LOGGER = LoggerFactory.getLogger(SseConfiguration.class);
     private final String configurationId;
     private OkHttpClient httpClient;
     private final Map<String, String> settings;
@@ -40,6 +47,8 @@ public class SseConfiguration implements Configuration<OkHttpClient, HttpRequest
     private HttpConnectStrategy connectStrategy;
     private DefaultRetryDelayStrategy retryDelayStrategy;
     private ErrorStrategy errorStrategy;
+    private ExchangeTemplateManager templateManager;
+    private String exchangeTemplate;
 
     public SseConfiguration(String configurationId,
                             OkHttpClient httpClient,
@@ -59,6 +68,10 @@ public class SseConfiguration implements Configuration<OkHttpClient, HttpRequest
         this.uri = URI.create(url);
         this.topic = settings.get(SseConfigDefinition.TOPIC);
         Preconditions.checkNotNull(topic, "'topic' must not be null or empty.");
+        
+        // Initialize template processing using shared utility
+        this.exchangeTemplate = TemplateConfigurationUtil.getExchangeTemplate(settings);
+        this.templateManager = TemplateConfigurationUtil.createTemplateManager(settings);
     }
 
     public static SseConfiguration buildSseConfiguration(String configurationId,
@@ -211,5 +224,110 @@ public class SseConfiguration implements Configuration<OkHttpClient, HttpRequest
 
     public ErrorStrategy getErrorStrategy() {
         return errorStrategy;
+    }
+
+    /**
+     * Gets the template manager for processing SSE events.
+     *
+     * @return the ExchangeTemplateManager
+     */
+    public ExchangeTemplateManager getTemplateManager() {
+        return templateManager;
+    }
+
+    /**
+     * Sets the template manager for processing SSE events.
+     *
+     * @param templateManager the ExchangeTemplateManager to set
+     */
+    public void setTemplateManager(ExchangeTemplateManager templateManager) {
+        this.templateManager = templateManager;
+    }
+
+    /**
+     * Gets the exchange template for processing SSE events.
+     *
+     * @return the exchange template
+     */
+    public String getExchangeTemplate() {
+        return exchangeTemplate;
+    }
+
+    /**
+     * Sets the exchange template for processing SSE events.
+     *
+     * @param exchangeTemplate the template to set
+     */
+    public void setExchangeTemplate(String exchangeTemplate) {
+        this.exchangeTemplate = exchangeTemplate;
+    }
+
+    /**
+     * Processes an SSE event using the configured template.
+     *
+     * @param sseEvent the SSE event to process
+     * @param httpRequest the HTTP request that initiated the SSE connection (can be null)
+     * @return the processed SSE event, or the original event if no template is configured or processing fails
+     */
+    public SseEvent processEventWithTemplate(SseEvent sseEvent, HttpRequest httpRequest) {
+        if (exchangeTemplate == null || exchangeTemplate.trim().isEmpty() || templateManager == null) {
+            return sseEvent;
+        }
+
+        try {
+            // Create an SseExchange for template processing
+            SseExchange sseExchange = new SseExchange(httpRequest, sseEvent);
+            
+            // Process the exchange using the template
+            Exchange<?, ?> processedExchange = templateManager.processTemplate(sseExchange, exchangeTemplate, Map.of());
+            
+            // If the processed exchange is an SseExchange, return its response
+            if (processedExchange instanceof SseExchange) {
+                SseExchange processedSseExchange = (SseExchange) processedExchange;
+                return processedSseExchange.getResponse();
+            } else {
+                // Log warning if the processor returned a different type of exchange
+                LOGGER.warn("Template processing returned non-SseExchange type: {}", processedExchange.getClass().getName());
+                return sseEvent;
+            }
+        } catch (Exception e) {
+            LOGGER.warn("Failed to apply template processing to SSE event: {}", e.getMessage());
+            return sseEvent;
+        }
+    }
+
+    /**
+     * Processes an SSE event using the configured template with additional context.
+     *
+     * @param sseEvent the SSE event to process
+     * @param httpRequest the HTTP request that initiated the SSE connection (can be null)
+     * @param context additional context for template processing
+     * @return the processed SSE event, or the original event if no template is configured or processing fails
+     */
+    public SseEvent processEventWithTemplate(SseEvent sseEvent, HttpRequest httpRequest, Map<String, Object> context) {
+        if (exchangeTemplate == null || exchangeTemplate.trim().isEmpty() || templateManager == null) {
+            return sseEvent;
+        }
+
+        try {
+            // Create an SseExchange for template processing with context
+            SseExchange sseExchange = new SseExchange(httpRequest, sseEvent, context);
+            
+            // Process the exchange using the template
+            Exchange<?, ?> processedExchange = templateManager.processTemplate(sseExchange, exchangeTemplate, context);
+            
+            // If the processed exchange is an SseExchange, return its response
+            if (processedExchange instanceof SseExchange) {
+                SseExchange processedSseExchange = (SseExchange) processedExchange;
+                return processedSseExchange.getResponse();
+            } else {
+                // Log warning if the processor returned a different type of exchange
+                LOGGER.warn("Template processing returned non-SseExchange type: {}", processedExchange.getClass().getName());
+                return sseEvent;
+            }
+        } catch (Exception e) {
+            LOGGER.warn("Failed to apply template processing to SSE event with context: {}", e.getMessage());
+            return sseEvent;
+        }
     }
 }
