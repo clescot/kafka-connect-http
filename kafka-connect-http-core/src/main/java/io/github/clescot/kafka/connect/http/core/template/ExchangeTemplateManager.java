@@ -1,7 +1,8 @@
 package io.github.clescot.kafka.connect.http.core.template;
 
 import io.github.clescot.kafka.connect.http.core.Exchange;
-import io.github.clescot.kafka.connect.http.core.HttpExchange;
+import io.github.clescot.kafka.connect.http.core.Request;
+import io.github.clescot.kafka.connect.http.core.Response;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -88,13 +89,13 @@ public class ExchangeTemplateManager {
      * @return the processed Exchange
      * @throws IllegalStateException if no processor can handle the template
      */
-    public Exchange<?, ?> processTemplate(@NotNull Exchange<?, ?> exchange, @NotNull String template, Map<String, Object> context) {
+    public <R extends Request,S extends Response> Exchange<R, S> processTemplate(@NotNull Exchange<R, S> exchange, @NotNull String template, Map<String, Object> context) {
         if (processorList.isEmpty()) {
             LOGGER.warn("No template processors registered, returning original exchange");
             return exchange;
         }
 
-        Exchange<?, ?> result = exchange;
+        Exchange<R, S> result = exchange;
         boolean processed = false;
 
         // Apply all processors that support this template

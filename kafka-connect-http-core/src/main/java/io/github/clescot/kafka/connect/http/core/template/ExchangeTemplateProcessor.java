@@ -1,7 +1,8 @@
 package io.github.clescot.kafka.connect.http.core.template;
 
 import io.github.clescot.kafka.connect.http.core.Exchange;
-import io.github.clescot.kafka.connect.http.core.HttpExchange;
+import io.github.clescot.kafka.connect.http.core.Request;
+import io.github.clescot.kafka.connect.http.core.Response;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Map;
@@ -21,7 +22,7 @@ public interface ExchangeTemplateProcessor {
      * @param context additional context data for template processing
      * @return the processed Exchange with customized output
      */
-    Exchange<?, ?> process(@NotNull Exchange<?, ?> exchange, @NotNull String template, Map<String, Object> context);
+    <R extends Request,S extends Response> Exchange<R, S> process(@NotNull Exchange<R, S> exchange, @NotNull String template, Map<String, Object> context);
 
     /**
      * Get the name/identifier of this processor.
