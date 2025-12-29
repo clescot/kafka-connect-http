@@ -1,14 +1,14 @@
 package io.github.clescot.kafka.connect.http.core.template;
 
 import io.github.clescot.kafka.connect.http.core.Exchange;
+import io.github.clescot.kafka.connect.http.core.Request;
+import io.github.clescot.kafka.connect.http.core.Response;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Map;
 import java.util.regex.Pattern;
-import io.github.clescot.kafka.connect.http.core.Request;
-import io.github.clescot.kafka.connect.http.core.Response;
 
 /**
  * Conditional template processor for implementing logic in templates.

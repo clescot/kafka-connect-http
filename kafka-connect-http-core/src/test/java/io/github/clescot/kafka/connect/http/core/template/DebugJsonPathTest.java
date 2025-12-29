@@ -16,8 +16,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static org.assertj.core.api.Assertions.assertThat;
-
 public class DebugJsonPathTest {
 
     @Test

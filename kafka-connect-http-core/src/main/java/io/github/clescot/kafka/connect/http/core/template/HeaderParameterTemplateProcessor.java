@@ -1,17 +1,12 @@
 package io.github.clescot.kafka.connect.http.core.template;
 
-import io.github.clescot.kafka.connect.http.core.Exchange;
-import io.github.clescot.kafka.connect.http.core.HttpExchange;
-import io.github.clescot.kafka.connect.http.core.HttpRequest;
-import io.github.clescot.kafka.connect.http.core.HttpResponse;
+import io.github.clescot.kafka.connect.http.core.*;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.List;
 import java.util.Map;
-import io.github.clescot.kafka.connect.http.core.Request;
-import io.github.clescot.kafka.connect.http.core.Response;
 
 /**
  * Header/Parameter template processor for accessing HTTP headers, query parameters, and cookies.

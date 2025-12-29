@@ -7,7 +7,6 @@ import io.github.clescot.kafka.connect.http.core.HttpResponse;
 import org.junit.jupiter.api.Test;
 
 import java.time.OffsetDateTime;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 

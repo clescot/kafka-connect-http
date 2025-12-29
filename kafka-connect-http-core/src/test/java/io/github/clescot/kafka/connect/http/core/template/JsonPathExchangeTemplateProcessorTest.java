@@ -2,9 +2,6 @@ package io.github.clescot.kafka.connect.http.core.template;
 
 import com.jayway.jsonpath.Configuration;
 import com.jayway.jsonpath.JsonPath;
-import com.jayway.jsonpath.Option;
-import com.jayway.jsonpath.spi.json.JacksonJsonNodeJsonProvider;
-import com.jayway.jsonpath.spi.mapper.JacksonMappingProvider;
 import org.junit.jupiter.api.Test;
 
 import java.util.HashMap;

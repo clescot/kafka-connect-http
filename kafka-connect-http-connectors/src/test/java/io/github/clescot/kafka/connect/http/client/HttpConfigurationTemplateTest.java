@@ -1,7 +1,6 @@
 package io.github.clescot.kafka.connect.http.client;
 
 import io.github.clescot.kafka.connect.http.client.okhttp.OkHttpClient;
-import io.github.clescot.kafka.connect.http.client.okhttp.OkHttpClientFactory;
 import io.github.clescot.kafka.connect.http.core.HttpExchange;
 import io.github.clescot.kafka.connect.http.core.HttpRequest;
 import io.github.clescot.kafka.connect.http.core.HttpResponse;
@@ -15,14 +14,10 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import java.time.OffsetDateTime;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyInt;
-import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 class HttpConfigurationTemplateTest {

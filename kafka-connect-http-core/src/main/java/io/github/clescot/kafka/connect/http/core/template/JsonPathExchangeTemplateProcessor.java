@@ -8,18 +8,16 @@ import com.jayway.jsonpath.Option;
 import com.jayway.jsonpath.spi.json.JacksonJsonNodeJsonProvider;
 import com.jayway.jsonpath.spi.mapper.JacksonMappingProvider;
 import io.github.clescot.kafka.connect.http.core.Exchange;
-import io.github.clescot.kafka.connect.http.core.HttpExchange;
-import io.github.clescot.kafka.connect.http.core.HttpRequest;
-import io.github.clescot.kafka.connect.http.core.HttpResponse;
+import io.github.clescot.kafka.connect.http.core.Request;
+import io.github.clescot.kafka.connect.http.core.Response;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.*;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import io.github.clescot.kafka.connect.http.core.Request;
-import io.github.clescot.kafka.connect.http.core.Response;
 
 /**
  * JSONPath template processor for Exchange.

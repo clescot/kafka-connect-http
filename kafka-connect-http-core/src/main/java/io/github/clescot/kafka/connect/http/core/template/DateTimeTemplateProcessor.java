@@ -1,19 +1,18 @@
 package io.github.clescot.kafka.connect.http.core.template;
 
 import io.github.clescot.kafka.connect.http.core.Exchange;
+import io.github.clescot.kafka.connect.http.core.Request;
+import io.github.clescot.kafka.connect.http.core.Response;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.time.Instant;
-import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.util.Map;
-import io.github.clescot.kafka.connect.http.core.Request;
-import io.github.clescot.kafka.connect.http.core.Response;
 
 /**
  * Date/Time template processor for formatting and parsing dates and times.

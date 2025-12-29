@@ -6,15 +6,14 @@ import com.jayway.jsonpath.Configuration;
 import com.jayway.jsonpath.JsonPath;
 import com.jayway.jsonpath.Option;
 import io.github.clescot.kafka.connect.http.core.Exchange;
+import io.github.clescot.kafka.connect.http.core.Request;
+import io.github.clescot.kafka.connect.http.core.Response;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.EnumSet;
 import java.util.Map;
-import java.util.Set;
-import io.github.clescot.kafka.connect.http.core.Request;
-import io.github.clescot.kafka.connect.http.core.Response;
 
 /**
  * JMESPath template processor for extracting data from JSON content using JMESPath expressions.

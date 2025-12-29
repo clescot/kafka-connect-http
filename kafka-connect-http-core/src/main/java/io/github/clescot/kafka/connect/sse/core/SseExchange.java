@@ -2,7 +2,6 @@ package io.github.clescot.kafka.connect.sse.core;
 
 import io.github.clescot.kafka.connect.http.core.Exchange;
 import io.github.clescot.kafka.connect.http.core.HttpRequest;
-import io.github.clescot.kafka.connect.http.core.Response;
 
 import java.util.HashMap;
 import java.util.Map;
