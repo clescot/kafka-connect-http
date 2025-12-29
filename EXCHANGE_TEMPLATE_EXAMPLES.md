@@ -266,6 +266,148 @@ exchange.template=${jmespath:response.body.users | [?age > 25].name}
 exchange.template=${jmespath:response.body.orders | length(@)} ${jmespath:response.body.orders | [].price | sum(@)}
 ```
 
+## Array Processing vs For Loops
+
+### Understanding the Approach
+
+The template system uses **declarative array processing** rather than traditional imperative `for` loops. This means you specify *what* data you want to extract, not *how* to iterate through it.
+
+#### What You Can Do ✅
+
+```properties
+# Extract all elements from array (declarative)
+exchange.template=${jsonpath:$.response.body.items[*].id}
+
+# Extract with filtering (declarative with condition)
+exchange.template=${jsonpath:$.response.body.items[?(@.price > 50)].name}
+
+# Extract with transformation (declarative mapping)
+exchange.template=${jmespath:response.body.items | [].{id: id, displayName: name}}
+```
+
+#### What You Can't Do ❌
+
+```properties
+# Traditional for loop syntax is not supported
+exchange.template=${for:item in $.response.body.items}${jsonpath:item.id}${endfor}
+
+# While loops are not supported
+exchange.template=${while:condition}${jsonpath:$.data}${endwhile}
+```
+
+### Why Declarative Processing?
+
+1. **Safety**: Prevents infinite loops and complex control flow in templates
+2. **Performance**: Optimized for bulk operations rather than element-by-element processing
+3. **Simplicity**: Focuses on what data you need, not how to get it
+4. **Consistency**: Works the same way across all processors and exchange types
+
+### When You Need Loop-Like Behavior
+
+#### 1. Extract All Array Elements
+
+```properties
+# This is the closest to a "for each" loop
+exchange.template=${jsonpath:$.response.body.users[*].id}
+```
+
+Given this data:
+```json
+{
+  "users": [
+    {"id": 1, "name": "Alice"},
+    {"id": 2, "name": "Bob"},
+    {"id": 3, "name": "Charlie"}
+  ]
+}
+```
+
+This creates attributes:
+- `jsonpath_response_body_users_0_id`: `1`
+- `jsonpath_response_body_users_1_id`: `2`
+- `jsonpath_response_body_users_2_id`: `3`
+
+#### 2. Extract with Index-Based Access
+
+```properties
+# Extract specific indices (like array[index] in a loop)
+exchange.template=${jsonpath:$.response.body.items[0].id} ${jsonpath:$.response.body.items[1].id}
+```
+
+#### 3. Extract with Range (Slice)
+
+```properties
+# Extract a range of elements (like a bounded loop)
+exchange.template=${jsonpath:$.response.body.logs[0:10].message}
+```
+
+#### 4. Extract with Filtering (Conditional Loop)
+
+```properties
+# Extract elements matching conditions (like loop with if)
+exchange.template=${jsonpath:$.response.body.products[?(@.active==true)].name}
+```
+
+#### 5. Complex Transformations with JMESPath
+
+```properties
+# Transform array data (like loop with mapping function)
+exchange.template=${jmespath:response.body.items | [].{id: id, displayName: name, formattedPrice: \"$\" & price}}
+```
+
+### Advanced Array Processing Patterns
+
+#### Pattern 1: Extract Multiple Fields from Array
+
+```properties
+# Extract both ID and name from all users
+exchange.template=${jsonpath:$.response.body.users[*].id} ${jsonpath:$.response.body.users[*].name}
+```
+
+#### Pattern 2: Nested Array Processing
+
+```properties
+# Process nested arrays
+exchange.template=${jsonpath:$.response.body.orders[*].items[*].productId}
+```
+
+#### Pattern 3: Array Length Calculation
+
+```properties
+# Get array length (like counting loop iterations)
+exchange.template=${jsonpath:$.response.body.items.length()}
+```
+
+#### Pattern 4: Combine Array Processing with Other Data
+
+```properties
+# Mix array data with scalar data
+exchange.template=${jsonpath:$.response.body.user.id} ${jsonpath:$.response.body.orders[*].status}
+```
+
+### Performance Considerations
+
+#### 1. Limit Array Size
+
+```properties
+# Process only what you need
+exchange.template=${jsonpath:$.response.body.largeArray[0:100].id}
+```
+
+#### 2. Use Specific Paths
+
+```properties
+# Be precise to avoid unnecessary processing
+exchange.template=${jsonpath:$.response.body.data.items[*].productId}
+```
+
+#### 3. Filter Early
+
+```properties
+# Filter before extracting to reduce processing
+exchange.template=${jsonpath:$.response.body.items[?(@.active==true)][0:50].id}
+```
+
 ## Array Processing Examples
 
 ### HTTP Response with Array Data
