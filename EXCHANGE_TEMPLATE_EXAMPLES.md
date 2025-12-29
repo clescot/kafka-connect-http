@@ -48,38 +48,30 @@ The HTTP connector supports template processing for both source and sink connect
 
 #### HTTP Sink Connector Example
 
-```properties
-# Basic HTTP sink with template processing
-name=http-sink-connector
-tasks.max=1
-connector.class=io.github.clescot.kafka.connect.http.sink.HttpSinkConnector
-
-# HTTP configuration
-http.request.url=http://api.example.com/webhook
-http.request.method=POST
-
-# Enable template processing to extract data from Kafka records
-exchange.template=${jsonpath:$.request.body.user.id} ${jsonpath:$.request.body.timestamp}
-exchange.template.processors=jsonpath,datetime
-
-# Topic configuration
-topics=user-events
+```json
+{
+   "name" : "http-sink-connector",
+   "tasks.max" : "1",
+   "connector.class" : "io.github.clescot.kafka.connect.http.sink.HttpSinkConnector",
+   "http.request.url" : "http://api.example.com/webhook",
+   "http.request.method" : "POST",
+   "exchange.template" : "${jsonpath:$.request.body.user.id} ${jsonpath:$.request.body.timestamp}",
+   "exchange.template.processors" : "jsonpath,datetime",
+   "topics" : "user-events"
+}
 ```
 
 #### HTTP Source Connector Example
 
-```properties
-# HTTP source connector with template processing
-tasks.max=1
-connector.class=io.github.clescot.kafka.connect.http.source.queue.HttpInMemoryQueueSourceConnector
-
-# Enable template processing for incoming HTTP requests
-exchange.template=${jsonpath:$.request.headers.X-Request-ID} ${datetime:now:yyyy-MM-dd HH:mm:ss}
-exchange.template.processors=jsonpath,datetime
-
-# Queue configuration
-queue.name=in-memory-queue
-topic=incoming-requests
+```json
+{
+   "tasks.max" : "1",
+   "connector.class" : "io.github.clescot.kafka.connect.http.source.queue.HttpInMemoryQueueSourceConnector",
+   "exchange.template" : "${jsonpath:$.request.headers.X-Request-ID} ${datetime:now:yyyy-MM-dd HH:mm:ss}",
+   "exchange.template.processors" : "jsonpath,datetime",
+   "queue.name" : "in-memory-queue",
+   "topic" : "incoming-requests"
+}
 ```
 
 ### SSE Connector Configuration
@@ -88,47 +80,36 @@ The SSE (Server-Sent Events) connector supports template processing for incoming
 
 #### Basic SSE Source Connector Example
 
-```properties
-# SSE source connector with template processing
-name=sse-source-connector
-tasks.max=1
-connector.class=io.github.clescot.kafka.connect.sse.client.okhttp.SseSourceConnector
-
-# SSE server configuration
-config.ids=sse-config
-config.sse-config.url=http://stream.example.com/events
-config.sse-config.topic=streaming-events
-
-# Enable template processing for SSE events
-exchange.template=${jsonpath:$.content}
-exchange.template.processors=jsonpath
-
-# Extract specific fields from SSE event data
-exchange.template=${jsonpath:$.event.data.user.id} ${jsonpath:$.event.data.timestamp}
+```json
+{
+   "name" : "sse-source-connector",
+   "tasks.max" : "1",
+   "connector.class" : "io.github.clescot.kafka.connect.sse.client.okhttp.SseSourceConnector",
+   "config.ids" : "sse-config",
+   "config.sse-config.url" : "http://stream.example.com/events",
+   "config.sse-config.topic" : "streaming-events",
+   "exchange.template" : "${jsonpath:$.content}",
+   "exchange.template.processors" : "jsonpath"
+}
 ```
 
 #### Advanced SSE Configuration with Multiple Processors
 
-```properties
-# Advanced SSE configuration with multiple processors
-name=advanced-sse-connector
-tasks.max=1
-connector.class=io.github.clescot.kafka.connect.sse.client.okhttp.SseSourceConnector
-
-# Multiple SSE configurations
-config.ids=config1,config2
-
-# First configuration - extract user data
-config.config1.url=http://api.example.com/user-events
-config.config1.topic=user-events
-config.config1.exchange.template=${jsonpath:$.event.data.user.id} ${jsonpath:$.event.data.user.name}
-config.config1.exchange.template.processors=jsonpath
-
-# Second configuration - extract system metrics with timestamp
-config.config2.url=http://api.example.com/system-metrics
-config.config2.topic=system-metrics
-config.config2.exchange.template=${jsonpath:$.event.data.cpu} ${jsonpath:$.event.data.memory} ${datetime:now:yyyy-MM-dd HH:mm:ss}
-config.config2.exchange.template.processors=jsonpath,datetime
+```json
+{
+   "name" : "advanced-sse-connector",
+   "tasks.max" : "1",
+   "connector.class" : "io.github.clescot.kafka.connect.sse.client.okhttp.SseSourceConnector",
+   "config.ids" : "config1,config2",
+   "config.config1.url" : "http://api.example.com/user-events",
+   "config.config1.topic" : "user-events",
+   "config.config1.exchange.template" : "${jsonpath:$.event.data.user.id} ${jsonpath:$.event.data.user.name}",
+   "config.config1.exchange.template.processors" : "jsonpath",
+   "config.config2.url" : "http://api.example.com/system-metrics",
+   "config.config2.topic" : "system-metrics",
+   "config.config2.exchange.template" : "${jsonpath:$.event.data.cpu} ${jsonpath:$.event.data.memory} ${datetime:now:yyyy-MM-dd HH:mm:ss}",
+   "config.config2.exchange.template.processors" : "jsonpath,datetime"
+}
 ```
 
 ## Understanding Exchange Structure
@@ -412,10 +393,15 @@ exchange.template=${jsonpath:$.response.body.items[?(@.active==true)][0:50].id}
 
 ### HTTP Response with Array Data
 
-```properties
-# HTTP sink connector processing array response
-exchange.template=${jsonpath:$.response.body.products[*].id} ${jsonpath:$.response.body.products[*].name}
-exchange.template.processors=jsonpath
+```json
+{
+   "name" : "http-array-connector",
+   "tasks.max" : "1",
+   "connector.class" : "io.github.clescot.kafka.connect.http.sink.HttpSinkConnector",
+   "exchange.template" : "${jsonpath:$.response.body.products[*].id} ${jsonpath:$.response.body.products[*].name}",
+   "exchange.template.processors" : "jsonpath",
+   "topics" : "product-events"
+}
 ```
 
 Given this HTTP response:
@@ -438,10 +424,17 @@ This template will extract all product IDs and names, creating attributes like:
 
 ### SSE Event with Array Data
 
-```properties
-# SSE source connector processing array events
-exchange.template=${jsonpath:$.event.data.messages[*].content} ${jsonpath:$.event.data.messages[*].timestamp}
-exchange.template.processors=jsonpath
+```json
+{
+   "name" : "sse-array-connector",
+   "tasks.max" : "1",
+   "connector.class" : "io.github.clescot.kafka.connect.sse.client.okhttp.SseSourceConnector",
+   "config.ids" : "array-config",
+   "config.array-config.url" : "http://stream.example.com/messages",
+   "config.array-config.topic" : "message-events",
+   "exchange.template" : "${jsonpath:$.event.data.messages[*].content} ${jsonpath:$.event.data.messages[*].timestamp}",
+   "exchange.template.processors" : "jsonpath"
+}
 ```
 
 Given this SSE event data:
@@ -458,18 +451,30 @@ This template will extract all message contents and timestamps.
 
 ### Combining Array Processing with Other Processors
 
-```properties
-# Extract array data and add processing timestamp
-exchange.template=${jsonpath:$.event.data.items[*].id} ${datetime:now:yyyy-MM-dd HH:mm:ss}
-exchange.template.processors=jsonpath,datetime
+```json
+{
+   "name" : "combined-processor-connector",
+   "tasks.max" : "1",
+   "connector.class" : "io.github.clescot.kafka.connect.sse.client.okhttp.SseSourceConnector",
+   "config.ids" : "combined-config",
+   "config.combined-config.url" : "http://stream.example.com/items",
+   "config.combined-config.topic" : "item-events",
+   "exchange.template" : "${jsonpath:$.event.data.items[*].id} ${datetime:now:yyyy-MM-dd HH:mm:ss}",
+   "exchange.template.processors" : "jsonpath,datetime"
+}
 ```
 
 ### Array Processing with Conditional Logic
 
-```properties
-# Extract only high-value items from array
-exchange.template=${jsonpath:$.response.body.items[?(@.price > 50)].id}
-exchange.template.processors=jsonpath
+```json
+{
+   "name" : "conditional-array-connector",
+   "tasks.max" : "1",
+   "connector.class" : "io.github.clescot.kafka.connect.http.sink.HttpSinkConnector",
+   "exchange.template" : "${jsonpath:$.response.body.items[?(@.price > 50)].id}",
+   "exchange.template.processors" : "jsonpath",
+   "topics" : "high-value-items"
+}
 ```
 
 ## Array Processing Best Practices
@@ -511,44 +516,56 @@ exchange.template=${jmespath:response.body.items | [].{id: id, category: categor
 
 ### Extracting Data from HTTP Requests
 
-```properties
-# Extract request headers and body
-exchange.template=${jsonpath:$.request.headers.X-API-Key} ${jsonpath:$.request.body.user.id}
+```json
+{
+   "exchange.template" : "${jsonpath:$.request.headers.X-API-Key} ${jsonpath:$.request.body.user.id}",
+   "exchange.template.processors" : "jsonpath"
+}
 ```
 
 ### Extracting Data from HTTP Responses
 
-```properties
-# Extract response status and body
-exchange.template=${jsonpath:$.response.statusCode} ${jsonpath:$.response.body.success}
+```json
+{
+   "exchange.template" : "${jsonpath:$.response.statusCode} ${jsonpath:$.response.body.success}",
+   "exchange.template.processors" : "jsonpath"
+}
 ```
 
 ### Extracting Data from SSE Events
 
-```properties
-# Extract event ID and data
-exchange.template=${jsonpath:$.event.id} ${jsonpath:$.event.data}
+```json
+{
+   "exchange.template" : "${jsonpath:$.event.id} ${jsonpath:$.event.data}",
+   "exchange.template.processors" : "jsonpath"
+}
 ```
 
 ### Extracting Nested JSON Data
 
-```properties
-# Extract nested data from SSE event
-exchange.template=${jsonpath:$.event.data.user.profile.name} ${jsonpath:$.event.data.timestamp}
+```json
+{
+   "exchange.template" : "${jsonpath:$.event.data.user.profile.name} ${jsonpath:$.event.data.timestamp}",
+   "exchange.template.processors" : "jsonpath"
+}
 ```
 
 ### Adding Timestamps
 
-```properties
-# Add processing timestamp
-exchange.template=${datetime:now:yyyy-MM-dd HH:mm:ss}
+```json
+{
+   "exchange.template" : "${datetime:now:yyyy-MM-dd HH:mm:ss}",
+   "exchange.template.processors" : "datetime"
+}
 ```
 
 ### Combining Multiple Processors
 
-```properties
-# Combine JSONPath, DateTime, and Random processors
-exchange.template=${jsonpath:$.event.data.user.id} ${datetime:now:yyyy-MM-dd} ${random.uuid}
+```json
+{
+   "exchange.template" : "${jsonpath:$.event.data.user.id} ${datetime:now:yyyy-MM-dd} ${random.uuid}",
+   "exchange.template.processors" : "jsonpath,random,datetime"
+}
 ```
 
 ## Best Practices
@@ -557,27 +574,47 @@ exchange.template=${jsonpath:$.event.data.user.id} ${datetime:now:yyyy-MM-dd} ${
 
 Begin with simple templates and gradually add complexity:
 
-```properties
-# Start simple
-exchange.template=${jsonpath:$.event.data}
+```json
+{
+   "exchange.template" : "${jsonpath:$.event.data}",
+   "exchange.template.processors" : "jsonpath"
+}
+```
 
-# Then add more extractions
-exchange.template=${jsonpath:$.event.data} ${jsonpath:$.event.id}
+Then add more extractions:
 
-# Finally add metadata
-exchange.template=${jsonpath:$.event.data} ${datetime:now:yyyy-MM-dd HH:mm:ss}
+```json
+{
+   "exchange.template" : "${jsonpath:$.event.data} ${jsonpath:$.event.id}",
+   "exchange.template.processors" : "jsonpath"
+}
+```
+
+Finally add metadata:
+
+```json
+{
+   "exchange.template" : "${jsonpath:$.event.data} ${datetime:now:yyyy-MM-dd HH:mm:ss}",
+   "exchange.template.processors" : "jsonpath,datetime"
+}
 ```
 
 ### 2. Use Specific Processor Lists
 
 Only enable the processors you need to improve performance:
 
-```properties
-# For JSON data extraction only
-exchange.template.processors=jsonpath
+```json
+{
+   "exchange.template.processors" : "jsonpath"
+}
+```
 
-# For JSON + timestamp
-exchange.template.processors=jsonpath,datetime
+For JSON + timestamp:
+
+```json
+{
+   "exchange.template.processors" : "jsonpath,datetime"
+}
 ```
 
 ### 3. Handle Errors Gracefully
