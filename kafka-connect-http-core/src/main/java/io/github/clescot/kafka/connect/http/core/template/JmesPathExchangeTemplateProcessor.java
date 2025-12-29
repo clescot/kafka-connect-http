@@ -28,7 +28,7 @@ public class JmesPathExchangeTemplateProcessor implements ExchangeTemplateProces
             .options(EnumSet.of(Option.SUPPRESS_EXCEPTIONS, Option.ALWAYS_RETURN_LIST)).build();
     
     @Override
-    public <R extends Request, S extends Response> Exchange<R, S> process(@NotNull Exchange<R, S> exchange, @NotNull String template, Map<String, Object> context) {
+    public <R extends Request,S extends Response,E extends Exchange<R,S>> Exchange<R, S> process(@NotNull E exchange, @NotNull String template, Map<String, Object> context) {
         try {
             // Extract the JMESPath expression and attribute name from template
             // Template format: ${jmespath:expression:attributeName}

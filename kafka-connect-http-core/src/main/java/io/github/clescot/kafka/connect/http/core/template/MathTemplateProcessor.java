@@ -18,7 +18,7 @@ public class MathTemplateProcessor implements ExchangeTemplateProcessor {
     private static final Logger log = LoggerFactory.getLogger(MathTemplateProcessor.class);
     
     @Override
-    public <R extends Request, S extends Response> Exchange<R, S> process(@NotNull Exchange<R, S> exchange, @NotNull String template, Map<String, Object> context) {
+    public <R extends Request,S extends Response,E extends Exchange<R,S>> Exchange<R, S> process(@NotNull E exchange, @NotNull String template, Map<String, Object> context) {
         try {
             // Extract parts from template: ${math:expression:attributeName}
             String[] parts = extractTemplateParts(template);

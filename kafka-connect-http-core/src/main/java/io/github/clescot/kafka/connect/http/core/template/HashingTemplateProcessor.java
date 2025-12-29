@@ -22,7 +22,7 @@ public class HashingTemplateProcessor implements ExchangeTemplateProcessor {
     private static final Logger log = LoggerFactory.getLogger(HashingTemplateProcessor.class);
     
     @Override
-    public <R extends Request, S extends Response> Exchange<R, S> process(@NotNull Exchange<R, S> exchange, @NotNull String template, Map<String, Object> context) {
+    public <R extends Request,S extends Response,E extends Exchange<R,S>> E process(@NotNull E exchange, @NotNull String template, Map<String, Object> context) {
         try {
             // Extract parts from template: ${hash:algorithm:input:attributeName}
             String[] parts = extractTemplateParts(template);
@@ -39,18 +39,18 @@ public class HashingTemplateProcessor implements ExchangeTemplateProcessor {
             String inputValue = getInputValue(input, exchange);
             if (inputValue == null || inputValue.isEmpty()) {
                 log.debug("Empty input for hashing");
-                return   exchange.withAttribute(attributeName, "");
+                return exchange.withAttribute(attributeName, "");
             }
             
             // Generate hash
             String hash = generateHash(algorithm, inputValue);
             
             log.debug("Generated {} hash for input: {}", algorithm, hash);
-            return   exchange.withAttribute(attributeName, hash);
+            return exchange.withAttribute(attributeName, hash);
             
         } catch (Exception e) {
             log.warn("Failed to process hash template '{}': {}", template, e.getMessage());
-            return   exchange;
+            return exchange;
         }
     }
     

@@ -22,7 +22,7 @@ public class HeaderParameterTemplateProcessor implements ExchangeTemplateProcess
     private static final Logger log = LoggerFactory.getLogger(HeaderParameterTemplateProcessor.class);
     
     @Override
-    public <R extends Request, S extends Response> Exchange<R, S> process(@NotNull Exchange<R, S> exchange, @NotNull String template, Map<String, Object> context) {
+    public <R extends Request,S extends Response,E extends Exchange<R,S>> Exchange<R, S> process(@NotNull E exchange, @NotNull String template, Map<String, Object> context) {
         try {
             if (!(exchange instanceof HttpExchange)) {
                 log.warn("HeaderParameter processor only works with HttpExchange, got: {}", exchange.getClass().getName());

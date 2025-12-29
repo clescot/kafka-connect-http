@@ -61,6 +61,6 @@ public interface Exchange<R extends Request,S extends Response> {
      * @param value the attribute value
      * @return a new exchange with the additional attribute
      */
-    Exchange<R, S> withAttribute(String name, Object value);
+    <T extends Exchange<R, S>> T withAttribute(String name, Object value);
 
 }

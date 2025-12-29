@@ -442,7 +442,7 @@ public class HttpConfiguration<C extends HttpClient<NR, NS>, NR, NS> implements 
         // Apply template processing if template is configured
         if (exchangeTemplate != null && !exchangeTemplate.trim().isEmpty() && templateManager != null) {
             try {
-                Exchange<?, ?> processedExchange = templateManager.processTemplate(enrichedExchange, exchangeTemplate, Collections.emptyMap());
+                Exchange<HttpRequest, HttpResponse> processedExchange = templateManager.processTemplate(enrichedExchange, exchangeTemplate, Collections.emptyMap());
                 if (processedExchange instanceof HttpExchange) {
                     enrichedExchange = (HttpExchange) processedExchange;
                     LOGGER.debug("Applied template processing to HttpExchange");

@@ -22,7 +22,7 @@ public interface ExchangeTemplateProcessor {
      * @param context additional context data for template processing
      * @return the processed Exchange with customized output
      */
-    <R extends Request,S extends Response> Exchange<R, S> process(@NotNull Exchange<R, S> exchange, @NotNull String template, Map<String, Object> context);
+    <R extends Request,S extends Response,E extends Exchange<R,S>> Exchange<R, S> process(@NotNull E exchange, @NotNull String template, Map<String, Object> context);
 
     /**
      * Get the name/identifier of this processor.

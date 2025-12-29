@@ -24,7 +24,7 @@ public class RandomExchangeTemplateProcessor implements ExchangeTemplateProcesso
     private static final Random RANDOM = new Random();
 
     @Override
-    public <R extends Request, S extends Response> Exchange<R, S> process(@NotNull Exchange<R, S> exchange, @NotNull String template, Map<String, Object> context) {
+    public <R extends Request,S extends Response,E extends Exchange<R,S>> Exchange<R, S> process(@NotNull E exchange, @NotNull String template, Map<String, Object> context) {
         LOGGER.debug("Processing template with random values: {}", template);
         
         // Start with the original exchange

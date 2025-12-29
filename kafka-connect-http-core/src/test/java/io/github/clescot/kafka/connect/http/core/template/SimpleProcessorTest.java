@@ -53,7 +53,7 @@ class SimpleProcessorTest {
         
         System.out.println("Before processing - attributes: " + testExchange.getAttributes().size());
         
-        Exchange<?, ?> processedExchange = processor.process(testExchange, template, new HashMap<>());
+        Exchange<HttpRequest, HttpResponse> processedExchange = processor.process(testExchange, template, new HashMap<>());
         assertThat(processedExchange).isInstanceOf(HttpExchange.class);
         HttpExchange httpProcessedExchange = (HttpExchange) processedExchange;
         

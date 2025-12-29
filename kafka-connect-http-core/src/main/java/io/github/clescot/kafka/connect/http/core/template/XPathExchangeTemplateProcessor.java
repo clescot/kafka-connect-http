@@ -34,7 +34,7 @@ public class XPathExchangeTemplateProcessor implements ExchangeTemplateProcessor
     private static final XPathFactory XPATH_FACTORY = XPathFactory.newInstance();
 
     @Override
-    public <R extends Request, S extends Response> Exchange<R, S> process(@NotNull Exchange<R, S> exchange, @NotNull String template, Map<String, Object> context) {
+    public <R extends Request,S extends Response,E extends Exchange<R,S>> Exchange<R, S> process(@NotNull E exchange, @NotNull String template, Map<String, Object> context) {
         LOGGER.debug("Processing template with XPath: {}", template);
         
         // Start with the original exchange
