@@ -40,6 +40,324 @@ exchange.template=${jsonpath:$.request.url} ${random.uuid}
 exchange.template=${jsonpath:$.event.data} ${datetime:now:yyyy-MM-dd HH:mm:ss}
 ```
 
+## Connector-Specific Usage
+
+### HTTP Connector Configuration
+
+The HTTP connector supports template processing for both source and sink connectors.
+
+#### HTTP Sink Connector Example
+
+```properties
+# Basic HTTP sink with template processing
+name=http-sink-connector
+tasks.max=1
+connector.class=io.github.clescot.kafka.connect.http.sink.HttpSinkConnector
+
+# HTTP configuration
+http.request.url=http://api.example.com/webhook
+http.request.method=POST
+
+# Enable template processing to extract data from Kafka records
+exchange.template=${jsonpath:$.request.body.user.id} ${jsonpath:$.request.body.timestamp}
+exchange.template.processors=jsonpath,datetime
+
+# Topic configuration
+topics=user-events
+```
+
+#### HTTP Source Connector Example
+
+```properties
+# HTTP source connector with template processing
+tasks.max=1
+connector.class=io.github.clescot.kafka.connect.http.source.queue.HttpInMemoryQueueSourceConnector
+
+# Enable template processing for incoming HTTP requests
+exchange.template=${jsonpath:$.request.headers.X-Request-ID} ${datetime:now:yyyy-MM-dd HH:mm:ss}
+exchange.template.processors=jsonpath,datetime
+
+# Queue configuration
+queue.name=in-memory-queue
+topic=incoming-requests
+```
+
+### SSE Connector Configuration
+
+The SSE (Server-Sent Events) connector supports template processing for incoming events.
+
+#### Basic SSE Source Connector Example
+
+```properties
+# SSE source connector with template processing
+name=sse-source-connector
+tasks.max=1
+connector.class=io.github.clescot.kafka.connect.sse.client.okhttp.SseSourceConnector
+
+# SSE server configuration
+config.ids=sse-config
+config.sse-config.url=http://stream.example.com/events
+config.sse-config.topic=streaming-events
+
+# Enable template processing for SSE events
+exchange.template=${jsonpath:$.content}
+exchange.template.processors=jsonpath
+
+# Extract specific fields from SSE event data
+exchange.template=${jsonpath:$.event.data.user.id} ${jsonpath:$.event.data.timestamp}
+```
+
+#### Advanced SSE Configuration with Multiple Processors
+
+```properties
+# Advanced SSE configuration with multiple processors
+name=advanced-sse-connector
+tasks.max=1
+connector.class=io.github.clescot.kafka.connect.sse.client.okhttp.SseSourceConnector
+
+# Multiple SSE configurations
+config.ids=config1,config2
+
+# First configuration - extract user data
+config.config1.url=http://api.example.com/user-events
+config.config1.topic=user-events
+config.config1.exchange.template=${jsonpath:$.event.data.user.id} ${jsonpath:$.event.data.user.name}
+config.config1.exchange.template.processors=jsonpath
+
+# Second configuration - extract system metrics with timestamp
+config.config2.url=http://api.example.com/system-metrics
+config.config2.topic=system-metrics
+config.config2.exchange.template=${jsonpath:$.event.data.cpu} ${jsonpath:$.event.data.memory} ${datetime:now:yyyy-MM-dd HH:mm:ss}
+config.config2.exchange.template.processors=jsonpath,datetime
+```
+
+## Understanding Exchange Structure
+
+### HTTP Exchange Structure
+
+When using template processing with HTTP connectors, the exchange structure includes:
+
+```json
+{
+  "request": {
+    "url": "http://example.com/api",
+    "method": "POST",
+    "headers": {
+      "Content-Type": "application/json",
+      "Authorization": "Bearer token"
+    },
+    "body": "{\"user\": \"john\", \"action\": \"login\"}"
+  },
+  "response": {
+    "statusCode": 200,
+    "headers": {
+      "Content-Type": "application/json"
+    },
+    "body": "{\"success\": true, \"userId\": 123}"
+  },
+  "content": "{\"success\": true, \"userId\": 123}",
+  "attributes": {},
+  "metadata": {
+    "requestUrl": "http://example.com/api",
+    "requestMethod": "POST",
+    "responseStatus": 200
+  }
+}
+```
+
+### SSE Exchange Structure
+
+When using template processing with SSE connectors, the exchange structure includes:
+
+```json
+{
+  "request": {
+    "url": "http://stream.example.com/events",
+    "method": "GET"
+  },
+  "response": {
+    "id": "event-123",
+    "type": "user-action",
+    "data": "{\"userId\": 456, \"action\": \"click\", \"timestamp\": 1234567890}",
+    "attributes": {},
+    "success": true
+  },
+  "content": "{\"userId\": 456, \"action\": \"click\", \"timestamp\": 1234567890}",
+  "attributes": {},
+  "metadata": {
+    "eventId": "event-123",
+    "eventType": "user-action",
+    "requestUrl": "http://stream.example.com/events",
+    "requestMethod": "GET"
+  }
+}
+```
+
+## Common Template Patterns
+
+### Extracting Data from HTTP Requests
+
+```properties
+# Extract request headers and body
+exchange.template=${jsonpath:$.request.headers.X-API-Key} ${jsonpath:$.request.body.user.id}
+```
+
+### Extracting Data from HTTP Responses
+
+```properties
+# Extract response status and body
+exchange.template=${jsonpath:$.response.statusCode} ${jsonpath:$.response.body.success}
+```
+
+### Extracting Data from SSE Events
+
+```properties
+# Extract event ID and data
+exchange.template=${jsonpath:$.event.id} ${jsonpath:$.event.data}
+```
+
+### Extracting Nested JSON Data
+
+```properties
+# Extract nested data from SSE event
+exchange.template=${jsonpath:$.event.data.user.profile.name} ${jsonpath:$.event.data.timestamp}
+```
+
+### Adding Timestamps
+
+```properties
+# Add processing timestamp
+exchange.template=${datetime:now:yyyy-MM-dd HH:mm:ss}
+```
+
+### Combining Multiple Processors
+
+```properties
+# Combine JSONPath, DateTime, and Random processors
+exchange.template=${jsonpath:$.event.data.user.id} ${datetime:now:yyyy-MM-dd} ${random.uuid}
+```
+
+## Best Practices
+
+### 1. Start with Simple Templates
+
+Begin with simple templates and gradually add complexity:
+
+```properties
+# Start simple
+exchange.template=${jsonpath:$.event.data}
+
+# Then add more extractions
+exchange.template=${jsonpath:$.event.data} ${jsonpath:$.event.id}
+
+# Finally add metadata
+exchange.template=${jsonpath:$.event.data} ${datetime:now:yyyy-MM-dd HH:mm:ss}
+```
+
+### 2. Use Specific Processor Lists
+
+Only enable the processors you need to improve performance:
+
+```properties
+# For JSON data extraction only
+exchange.template.processors=jsonpath
+
+# For JSON + timestamp
+exchange.template.processors=jsonpath,datetime
+```
+
+### 3. Handle Errors Gracefully
+
+Template processing errors are logged but don't stop event processing. The original event is preserved.
+
+### 4. Test Templates
+
+Test your templates with sample data before deploying to production.
+
+### 5. Monitor Performance
+
+Complex templates with many processors can impact performance. Monitor and optimize as needed.
+
+## Troubleshooting
+
+### Template Not Working?
+
+1. **Check Syntax**: Ensure you're using the correct syntax `${processor:expression}`
+2. **Verify Processor**: Make sure the processor is enabled in `exchange.template.processors`
+3. **Check Logs**: Look for warnings about unsupported templates or processor errors
+4. **Test Data**: Verify your template works with the actual data structure
+
+### Common Issues
+
+- **No processor found**: The template syntax is incorrect or the processor isn't enabled
+- **JSONPath not found**: The path doesn't exist in your data structure
+- **Null values**: The template processor returns null for missing data (this is normal)
+
+## Advanced Usage
+
+### Custom Processors
+
+You can create custom template processors by implementing the `ExchangeTemplateProcessor` interface and registering them via Java's Service Loader mechanism.
+
+### Conditional Processing
+
+Use conditional processors to add logic to your templates:
+
+```properties
+exchange.template=${conditional:response.statusCode >= 200 && response.statusCode < 300:SUCCESS:FAILURE}
+exchange.template.processors=jsonpath,conditional
+```
+
+### Data Transformation
+
+Use JMESPath for complex data transformations:
+
+```properties
+exchange.template=${jmespath:event.data | {userId: user.id, timestamp: metadata.timestamp}}
+exchange.template.processors=jmespath
+```
+
+## JSONPath Reference
+
+### Basic Syntax
+
+- `.child` - Child node
+- `['child']` - Child node with special characters
+- `[index]` - Array index
+- `[start:end]` - Array slice
+- `*` - Wildcard (all elements)
+- `..` - Recursive descent
+
+### Examples
+
+- `$.store.book[0].title` - First book title
+- `$.store.book[*].author` - All authors
+- `$.store..price` - All prices (recursive)
+- `$..book[?(@.price < 10)]` - Books cheaper than $10
+
+## JMESPath Reference
+
+### Basic Syntax
+
+- `field` - Field access
+- `list[index]` - List index
+- `*` - Wildcard projection
+- `|` - Pipe operator for transformations
+- `&&`, `||`, `!` - Logical operators
+- `==`, `!=`, `<`, `>`, `<=`, `>=` - Comparison operators
+
+### Examples
+
+- `people[?age > `30`]` - People over 30
+- `orders[].items[].price | sum(@)` - Sum of all order item prices
+- `{name: name, age: age}` - Project specific fields
+
+## Conclusion
+
+The template system provides powerful data extraction and transformation capabilities for both HTTP and SSE connectors. By understanding the exchange structure and using the appropriate processors, you can customize how data flows through your Kafka Connect pipelines.
+
+For more information, refer to the individual processor documentation and the main project documentation.
+
 ## JSONPath Examples
 
 ### Extract Request URL and Response Status

@@ -15,7 +15,13 @@
 # 6. [HTTP Source connector settings (optional)](docs/http_source_connector_settings.md)
 # 7. [Cron Source connector settings (optional)](docs/cron_source_connector_settings.md)
 # 8. [Server Sent Events (SSE) Source connector settings (optional)](docs/sse_source_connector_settings.md)
-# 9. [Exchange Template Customization](EXCHANGE_TEMPLATE_EXAMPLES.md)
+# 9. [Exchange Template Customization](EXCHANGE_TEMPLATE_EXAMPLES.md) 🎨
+
+**Powerful data transformation for HTTP and SSE connectors!**
+
+The template system allows you to extract, transform, and enrich data using JSONPath, XPath, JMESPath, Regex, DateTime, and more. Works with both HTTP and SSE connectors for consistent data processing across all your Kafka Connect pipelines.
+
+📖 [View comprehensive examples and usage guide](EXCHANGE_TEMPLATE_EXAMPLES.md)
 # 10. [incoming message format](docs/incoming_message_format.md)
 # 11. [request handling](docs/request_handling.md)
 # 12. [outcoming message format](docs/outcoming_message_format.md)
