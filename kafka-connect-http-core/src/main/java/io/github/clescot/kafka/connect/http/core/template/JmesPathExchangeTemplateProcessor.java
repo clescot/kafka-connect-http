@@ -21,7 +21,7 @@ import java.util.Map;
  */
 public class JmesPathExchangeTemplateProcessor implements ExchangeTemplateProcessor {
     
-    private static final Logger log = LoggerFactory.getLogger(JmesPathExchangeTemplateProcessor.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(JmesPathExchangeTemplateProcessor.class);
     private static final ObjectMapper objectMapper = new ObjectMapper();
     private static final Configuration jsonPathConfig = Configuration.builder()
             .options(EnumSet.of(Option.SUPPRESS_EXCEPTIONS, Option.ALWAYS_RETURN_LIST)).build();
@@ -33,7 +33,7 @@ public class JmesPathExchangeTemplateProcessor implements ExchangeTemplateProces
             // Template format: ${jmespath:expression:attributeName}
             String[] parts = extractTemplateParts(template);
             if (parts.length < 1) {
-                log.warn("Invalid JMESPath template format: {}", template);
+                LOGGER.warn("Invalid JMESPath template format: {}", template);
                 return   exchange;
             }
             
@@ -43,7 +43,7 @@ public class JmesPathExchangeTemplateProcessor implements ExchangeTemplateProces
             // Get content as JSON
             String content = exchange.getContentAsString();
             if (content == null || content.trim().isEmpty()) {
-                log.debug("No content available for JMESPath processing");
+                LOGGER.debug("No content available for JMESPath processing");
                 return   exchange.withAttribute(attributeName, "");
             }
             
@@ -56,11 +56,11 @@ public class JmesPathExchangeTemplateProcessor implements ExchangeTemplateProces
             // Handle the result properly - extract from arrays if needed
             String resultString = extractResultValue(result);
             
-            log.debug("JMESPath expression '{}' evaluated to: {}", jmesPathExpression, resultString);
+            LOGGER.debug("JMESPath expression '{}' evaluated to: {}", jmesPathExpression, resultString);
             return   exchange.withAttribute(attributeName, resultString);
             
         } catch (Exception e) {
-            log.warn("Failed to process JMESPath template '{}': {}", template, e.getMessage());
+            LOGGER.warn("Failed to process JMESPath template '{}': {}", template, e.getMessage());
             return   exchange;
         }
     }
