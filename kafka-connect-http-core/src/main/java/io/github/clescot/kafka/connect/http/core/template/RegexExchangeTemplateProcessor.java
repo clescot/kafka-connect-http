@@ -18,7 +18,7 @@ import java.util.regex.PatternSyntaxException;
  */
 public class RegexExchangeTemplateProcessor implements ExchangeTemplateProcessor {
     
-    private static final Logger log = LoggerFactory.getLogger(RegexExchangeTemplateProcessor.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(RegexExchangeTemplateProcessor.class);
     
     @Override
     public <R extends Request,S extends Response,E extends Exchange<R,S>> Exchange<R, S> process(@NotNull E exchange, @NotNull String template, Map<String, Object> context) {
@@ -27,7 +27,7 @@ public class RegexExchangeTemplateProcessor implements ExchangeTemplateProcessor
             // Template format: ${regex:pattern:attributeName}
             String[] parts = extractTemplateParts(template);
             if (parts.length < 2) {
-                log.warn("Invalid regex template format: {}", template);
+                LOGGER.warn("Invalid regex template format: {}", template);
                 return   exchange;
             }
             
@@ -37,7 +37,7 @@ public class RegexExchangeTemplateProcessor implements ExchangeTemplateProcessor
             // Get content to search
             String content = exchange.getContentAsString();
             if (content == null || content.trim().isEmpty()) {
-                log.debug("No content available for regex processing");
+                LOGGER.debug("No content available for regex processing");
                 return   exchange.withAttribute(attributeName, "");
             }
             
@@ -49,19 +49,19 @@ public class RegexExchangeTemplateProcessor implements ExchangeTemplateProcessor
             if (matcher.find()) {
                 // Use group 1 if available, otherwise use entire match
                 result = matcher.groupCount() > 0 ? matcher.group(1) : matcher.group(0);
-                log.debug("Regex pattern '{}' matched: {}", regexPattern, result);
+                LOGGER.debug("Regex pattern '{}' matched: {}", regexPattern, result);
             } else {
                 result = "";
-                log.debug("Regex pattern '{}' did not match any content", regexPattern);
+                LOGGER.debug("Regex pattern '{}' did not match any content", regexPattern);
             }
             
             return   exchange.withAttribute(attributeName, result);
             
         } catch (PatternSyntaxException e) {
-            log.warn("Invalid regex pattern in template '{}': {}", template, e.getMessage());
+            LOGGER.warn("Invalid regex pattern in template '{}': {}", template, e.getMessage());
             return   exchange;
         } catch (Exception e) {
-            log.warn("Failed to process regex template '{}': {}", template, e.getMessage());
+            LOGGER.warn("Failed to process regex template '{}': {}", template, e.getMessage());
             return   exchange;
         }
     }

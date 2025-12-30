@@ -14,13 +14,13 @@ import java.util.Map;
  */
 public class HeaderParameterTemplateProcessor implements ExchangeTemplateProcessor {
     
-    private static final Logger log = LoggerFactory.getLogger(HeaderParameterTemplateProcessor.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(HeaderParameterTemplateProcessor.class);
     
     @Override
     public <R extends Request,S extends Response,E extends Exchange<R,S>> Exchange<R, S> process(@NotNull E exchange, @NotNull String template, Map<String, Object> context) {
         try {
             if (!(exchange instanceof HttpExchange)) {
-                log.warn("HeaderParameter processor only works with HttpExchange, got: {}", exchange.getClass().getName());
+                LOGGER.warn("HeaderParameter processor only works with HttpExchange, got: {}", exchange.getClass().getName());
                 return   exchange;
             }
             
@@ -34,7 +34,7 @@ public class HeaderParameterTemplateProcessor implements ExchangeTemplateProcess
             //                  ${cookie:cookieName:attributeName}
             String[] parts = extractTemplateParts(template);
             if (parts.length < 2) {
-                log.warn("Invalid header/param template format: {}", template);
+                LOGGER.warn("Invalid header/param template format: {}", template);
                 return   exchange;
             }
             
@@ -55,15 +55,15 @@ public class HeaderParameterTemplateProcessor implements ExchangeTemplateProcess
                     value = getCookieValue(request, name);
                     break;
                 default:
-                    log.warn("Unknown header/param type: {}", type);
+                    LOGGER.warn("Unknown header/param type: {}", type);
                     return   exchange;
             }
             
-            log.debug("{} '{}' = '{}'", type, name, value);
+            LOGGER.debug("{} '{}' = '{}'", type, name, value);
             return   exchange.withAttribute(attributeName, value);
             
         } catch (Exception e) {
-            log.warn("Failed to process header/param template '{}': {}", template, e.getMessage());
+            LOGGER.warn("Failed to process header/param template '{}': {}", template, e.getMessage());
             return   exchange;
         }
     }

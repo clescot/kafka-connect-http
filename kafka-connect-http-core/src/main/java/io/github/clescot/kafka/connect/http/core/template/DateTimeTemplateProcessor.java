@@ -20,7 +20,7 @@ import java.util.Map;
  */
 public class DateTimeTemplateProcessor implements ExchangeTemplateProcessor {
     
-    private static final Logger log = LoggerFactory.getLogger(DateTimeTemplateProcessor.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(DateTimeTemplateProcessor.class);
     
     @Override
     public <R extends Request,S extends Response,E extends Exchange<R,S>> Exchange<R, S> process(@NotNull E exchange, @NotNull String template, Map<String, Object> context) {
@@ -28,7 +28,7 @@ public class DateTimeTemplateProcessor implements ExchangeTemplateProcessor {
             // Extract parts from template: ${datetime:source:format:attributeName}
             String[] parts = extractTemplateParts(template);
             if (parts.length < 2) {
-                log.warn("Invalid datetime template format: {}", template);
+                LOGGER.warn("Invalid datetime template format: {}", template);
                 return   exchange;
             }
             
@@ -54,7 +54,7 @@ public class DateTimeTemplateProcessor implements ExchangeTemplateProcessor {
                                 ZonedDateTime zonedDateTime = ZonedDateTime.parse((String) moment);
                                 dateTimeString = zonedDateTime.format(formatter);
                             } catch (DateTimeParseException e) {
-                                log.warn("Failed to parse moment '{}': {}", moment, e.getMessage());
+                                LOGGER.warn("Failed to parse moment '{}': {}", moment, e.getMessage());
                                 dateTimeString = "";
                             }
                         } else {
@@ -83,16 +83,16 @@ public class DateTimeTemplateProcessor implements ExchangeTemplateProcessor {
                             dateTimeString = zonedDateTime.format(formatter);
                         }
                     } catch (Exception e) {
-                        log.warn("Failed to parse datetime source '{}': {}", source, e.getMessage());
+                        LOGGER.warn("Failed to parse datetime source '{}': {}", source, e.getMessage());
                         dateTimeString = "";
                     }
             }
             
-            log.debug("Formatted datetime '{}' with pattern '{}': {}", source, format, dateTimeString);
+            LOGGER.debug("Formatted datetime '{}' with pattern '{}': {}", source, format, dateTimeString);
             return   exchange.withAttribute(attributeName, dateTimeString);
             
         } catch (Exception e) {
-            log.warn("Failed to process datetime template '{}': {}", template, e.getMessage());
+            LOGGER.warn("Failed to process datetime template '{}': {}", template, e.getMessage());
             return   exchange;
         }
     }

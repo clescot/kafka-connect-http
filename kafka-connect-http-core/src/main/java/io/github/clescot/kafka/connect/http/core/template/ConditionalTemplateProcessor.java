@@ -16,14 +16,14 @@ import java.util.regex.Pattern;
  */
 public class ConditionalTemplateProcessor implements ExchangeTemplateProcessor {
     
-    private static final Logger log = LoggerFactory.getLogger(ConditionalTemplateProcessor.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(ConditionalTemplateProcessor.class);
     
     @Override
     public <R extends Request,S extends Response,E extends Exchange<R,S>> Exchange<R, S> process(@NotNull E exchange, @NotNull String template, Map<String, Object> context) {
         try {
             String[] parts = extractTemplateParts(template);
             if (parts.length < 3) {
-                log.warn("Invalid conditional template format: {}", template);
+                LOGGER.warn("Invalid conditional template format: {}", template);
                 return   exchange;
             }
             
@@ -35,11 +35,11 @@ public class ConditionalTemplateProcessor implements ExchangeTemplateProcessor {
             boolean conditionResult = evaluateCondition(condition, exchange);
             String result = conditionResult ? trueValue : falseValue;
             
-            log.debug("Condition '{}' evaluated to {}, result: {}", condition, conditionResult, result);
+            LOGGER.debug("Condition '{}' evaluated to {}, result: {}", condition, conditionResult, result);
             return   exchange.withAttribute(attributeName, result);
             
         } catch (Exception e) {
-            log.warn("Failed to process conditional template '{}': {}", template, e.getMessage());
+            LOGGER.warn("Failed to process conditional template '{}': {}", template, e.getMessage());
             return   exchange;
         }
     }
@@ -84,7 +84,7 @@ public class ConditionalTemplateProcessor implements ExchangeTemplateProcessor {
             Object attrValue = exchange.getAttribute(condition);
             return attrValue != null && !attrValue.toString().isEmpty();
         } catch (Exception e) {
-            log.warn("Failed to evaluate condition '{}': {}", condition, e.getMessage());
+            LOGGER.warn("Failed to evaluate condition '{}': {}", condition, e.getMessage());
             return false;
         }
     }

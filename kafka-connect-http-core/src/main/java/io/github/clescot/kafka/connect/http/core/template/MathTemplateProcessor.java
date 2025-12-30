@@ -15,7 +15,7 @@ import java.util.Map;
  */
 public class MathTemplateProcessor implements ExchangeTemplateProcessor {
     
-    private static final Logger log = LoggerFactory.getLogger(MathTemplateProcessor.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(MathTemplateProcessor.class);
     
     @Override
     public <R extends Request,S extends Response,E extends Exchange<R,S>> Exchange<R, S> process(@NotNull E exchange, @NotNull String template, Map<String, Object> context) {
@@ -23,7 +23,7 @@ public class MathTemplateProcessor implements ExchangeTemplateProcessor {
             // Extract parts from template: ${math:expression:attributeName}
             String[] parts = extractTemplateParts(template);
             if (parts.length < 1) {
-                log.warn("Invalid math template format: {}", template);
+                LOGGER.warn("Invalid math template format: {}", template);
                 return   exchange;
             }
             
@@ -33,11 +33,11 @@ public class MathTemplateProcessor implements ExchangeTemplateProcessor {
             // Evaluate the mathematical expression
             double result = evaluateMathExpression(expression, exchange);
             
-            log.debug("Math expression '{}' evaluated to: {}", expression, result);
+            LOGGER.debug("Math expression '{}' evaluated to: {}", expression, result);
             return   exchange.withAttribute(attributeName, String.valueOf(result));
             
         } catch (Exception e) {
-            log.warn("Failed to process math template '{}': {}", template, e.getMessage());
+            LOGGER.warn("Failed to process math template '{}': {}", template, e.getMessage());
             return   exchange;
         }
     }
@@ -88,7 +88,7 @@ public class MathTemplateProcessor implements ExchangeTemplateProcessor {
             return evaluateSimpleExpression(processedExpression);
             
         } catch (Exception e) {
-            log.warn("Failed to evaluate math expression '{}': {}", expression, e.getMessage());
+            LOGGER.warn("Failed to evaluate math expression '{}': {}", expression, e.getMessage());
             return 0.0;
         }
     }
