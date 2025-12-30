@@ -27,7 +27,6 @@ import java.util.concurrent.TimeUnit;
 
 import static io.github.clescot.kafka.connect.http.client.HttpClientFactory.getRandom;
 
-
 /**
  * Configuration for SSE client using OkHttp.
  */
@@ -51,9 +50,8 @@ public class SseConfiguration implements Configuration<OkHttpClient, HttpRequest
     private String exchangeTemplate;
 
     public SseConfiguration(String configurationId,
-                            OkHttpClient httpClient,
-                            Map<String, String> settings
-    ) {
+            OkHttpClient httpClient,
+            Map<String, String> settings) {
         Preconditions.checkNotNull(configurationId, "configurationId must not be null.");
         Preconditions.checkArgument(!configurationId.isEmpty(), "configurationId must not be empty.");
         Preconditions.checkNotNull(httpClient, "httpClient must not be null.");
@@ -68,17 +66,17 @@ public class SseConfiguration implements Configuration<OkHttpClient, HttpRequest
         this.uri = URI.create(url);
         this.topic = settings.get(SseConfigDefinition.TOPIC);
         Preconditions.checkNotNull(topic, "'topic' must not be null or empty.");
-        
+
         // Initialize template processing using shared utility
         this.exchangeTemplate = TemplateConfigurationUtil.getExchangeTemplate(settings);
         this.templateManager = TemplateConfigurationUtil.createTemplateManager(settings);
     }
 
     public static SseConfiguration buildSseConfiguration(String configurationId,
-                                                         Map<String, String> mySettings,
-                                                         ExecutorService executorService,
-                                                         CompositeMeterRegistry meterRegistry,
-                                                         HttpClientFactory<OkHttpClient, Request, Response> httpClientFactory) {
+            Map<String, String> mySettings,
+            ExecutorService executorService,
+            CompositeMeterRegistry meterRegistry,
+            HttpClientFactory<OkHttpClient, Request, Response> httpClientFactory) {
         Random random = getRandom(mySettings);
         OkHttpClient httpClient = httpClientFactory.buildHttpClient(mySettings, executorService, meterRegistry, random);
         return new SseConfiguration(configurationId, httpClient, mySettings);
@@ -88,20 +86,22 @@ public class SseConfiguration implements Configuration<OkHttpClient, HttpRequest
         Preconditions.checkNotNull(queue, "queue must not be null.");
         this.queue = queue;
 
-
-        //retry strategy
+        // retry strategy
         this.retryDelayStrategy = RetryDelayStrategy.defaultStrategy();
         if (settings.containsKey(SseConfigDefinition.RETRY_DELAY_STRATEGY_MAX_DELAY_MILLIS)) {
-            long maxDelayMillis = Long.parseLong(settings.getOrDefault(SseConfigDefinition.RETRY_DELAY_STRATEGY_MAX_DELAY_MILLIS, "30000"));
-            float backoffMultiplier = Float.parseFloat(settings.getOrDefault(SseConfigDefinition.RETRY_DELAY_STRATEGY_BACKOFF_MULTIPLIER, "2"));
-            float jitterMultiplier = Float.parseFloat(settings.getOrDefault(SseConfigDefinition.RETRY_DELAY_STRATEGY_JITTER_MULTIPLIER, "0.5"));
+            long maxDelayMillis = Long.parseLong(
+                    settings.getOrDefault(SseConfigDefinition.RETRY_DELAY_STRATEGY_MAX_DELAY_MILLIS, "30000"));
+            float backoffMultiplier = Float.parseFloat(
+                    settings.getOrDefault(SseConfigDefinition.RETRY_DELAY_STRATEGY_BACKOFF_MULTIPLIER, "2"));
+            float jitterMultiplier = Float.parseFloat(
+                    settings.getOrDefault(SseConfigDefinition.RETRY_DELAY_STRATEGY_JITTER_MULTIPLIER, "0.5"));
             retryDelayStrategy = retryDelayStrategy
                     .maxDelay(maxDelayMillis, TimeUnit.MILLISECONDS)
                     .backoffMultiplier(backoffMultiplier)
                     .jitterMultiplier(jitterMultiplier);
         }
 
-        //error strategy
+        // error strategy
         this.errorStrategy = ErrorStrategy.alwaysThrow();
         if (settings.containsKey(SseConfigDefinition.ERROR_STRATEGY)) {
             String errorStrategyAsString = settings.get(SseConfigDefinition.ERROR_STRATEGY);
@@ -113,11 +113,13 @@ public class SseConfiguration implements Configuration<OkHttpClient, HttpRequest
                     errorStrategy = ErrorStrategy.alwaysThrow();
                     break;
                 case SseConfigDefinition.ERROR_STRATEGY_CONTINUE_WITH_MAX_ATTEMPTS:
-                    int maxAttempts = Integer.parseInt(settings.getOrDefault(SseConfigDefinition.ERROR_STRATEGY_MAX_ATTEMPTS, "3"));
+                    int maxAttempts = Integer
+                            .parseInt(settings.getOrDefault(SseConfigDefinition.ERROR_STRATEGY_MAX_ATTEMPTS, "3"));
                     errorStrategy = ErrorStrategy.continueWithMaxAttempts(maxAttempts);
                     break;
                 case SseConfigDefinition.ERROR_STRATEGY_CONTINUE_WITH_TIME_LIMIT:
-                    long timeLimitCountInMillis = Long.parseLong(settings.getOrDefault(SseConfigDefinition.ERROR_STRATEGY_TIME_LIMIT_COUNT_IN_MILLIS, "60000"));
+                    long timeLimitCountInMillis = Long.parseLong(settings
+                            .getOrDefault(SseConfigDefinition.ERROR_STRATEGY_TIME_LIMIT_COUNT_IN_MILLIS, "60000"));
                     errorStrategy = ErrorStrategy.continueWithTimeLimit(timeLimitCountInMillis, TimeUnit.MILLISECONDS);
                     break;
                 default:
@@ -129,15 +131,15 @@ public class SseConfiguration implements Configuration<OkHttpClient, HttpRequest
                 .httpClient(this.httpClient.getInternalClient())
                 .requestTransformer(input -> {
                     HttpRequest httpRequest = this.httpClient.buildRequest(input);
-                    return this.httpClient.buildNativeRequest(this.httpClient.getEnrichRequestFunction().apply(httpRequest));
+                    return this.httpClient
+                            .buildNativeRequest(this.httpClient.getEnrichRequestFunction().apply(httpRequest));
                 });
         this.backgroundEventSource = new BackgroundEventSource.Builder(backgroundEventHandler,
-                new EventSource.Builder(connectStrategy
-                )
+                new EventSource.Builder(connectStrategy)
                         .streamEventData(false)
                         .retryDelayStrategy(retryDelayStrategy)
-                        .errorStrategy(errorStrategy)
-        ).build();
+                        .errorStrategy(errorStrategy))
+                .build();
         connected = true;
         return backgroundEventSource;
     }
@@ -265,9 +267,11 @@ public class SseConfiguration implements Configuration<OkHttpClient, HttpRequest
     /**
      * Processes an SSE event using the configured template.
      *
-     * @param sseEvent the SSE event to process
-     * @param httpRequest the HTTP request that initiated the SSE connection (can be null)
-     * @return the processed SSE event, or the original event if no template is configured or processing fails
+     * @param sseEvent    the SSE event to process
+     * @param httpRequest the HTTP request that initiated the SSE connection (can be
+     *                    null)
+     * @return the processed SSE event, or the original event if no template is
+     *         configured or processing fails
      */
     public SseEvent processEventWithTemplate(SseEvent sseEvent, HttpRequest httpRequest) {
         if (exchangeTemplate == null || exchangeTemplate.trim().isEmpty() || templateManager == null) {
@@ -277,20 +281,28 @@ public class SseConfiguration implements Configuration<OkHttpClient, HttpRequest
         try {
             // Create an SseExchange for template processing
             SseExchange sseExchange = new SseExchange(httpRequest, sseEvent);
-            
+
             // Process the exchange using the template
             Exchange<?, ?> processedExchange = templateManager.processTemplate(sseExchange, exchangeTemplate, Map.of());
-            
+
             // If the processed exchange is an SseExchange, return its response
             if (processedExchange instanceof SseExchange) {
                 SseExchange processedSseExchange = (SseExchange) processedExchange;
-                return processedSseExchange.getResponse();
+                SseEvent response = processedSseExchange.getResponse();
+                // Propagate attributes from the exchange to the SSE event
+                if (response != null && processedSseExchange.getAttributes() != null) {
+                    response.getAttributes().putAll(processedSseExchange.getAttributes());
+                }
+                return response;
             } else {
                 // Log warning if the processor returned a different type of exchange
-                LOGGER.warn("Template processing returned non-SseExchange type: {}", processedExchange.getClass().getName());
+                LOGGER.warn("Template processing returned non-SseExchange type: {}",
+                        processedExchange.getClass().getName());
                 return sseEvent;
             }
-        } catch (Exception e) {
+        } catch (
+
+        Exception e) {
             LOGGER.warn("Failed to apply template processing to SSE event: {}", e.getMessage());
             return sseEvent;
         }
@@ -299,10 +311,12 @@ public class SseConfiguration implements Configuration<OkHttpClient, HttpRequest
     /**
      * Processes an SSE event using the configured template with additional context.
      *
-     * @param sseEvent the SSE event to process
-     * @param httpRequest the HTTP request that initiated the SSE connection (can be null)
-     * @param context additional context for template processing
-     * @return the processed SSE event, or the original event if no template is configured or processing fails
+     * @param sseEvent    the SSE event to process
+     * @param httpRequest the HTTP request that initiated the SSE connection (can be
+     *                    null)
+     * @param context     additional context for template processing
+     * @return the processed SSE event, or the original event if no template is
+     *         configured or processing fails
      */
     public SseEvent processEventWithTemplate(SseEvent sseEvent, HttpRequest httpRequest, Map<String, Object> context) {
         if (exchangeTemplate == null || exchangeTemplate.trim().isEmpty() || templateManager == null) {
@@ -312,17 +326,23 @@ public class SseConfiguration implements Configuration<OkHttpClient, HttpRequest
         try {
             // Create an SseExchange for template processing with context
             SseExchange sseExchange = new SseExchange(httpRequest, sseEvent, context);
-            
+
             // Process the exchange using the template
             Exchange<?, ?> processedExchange = templateManager.processTemplate(sseExchange, exchangeTemplate, context);
-            
+
             // If the processed exchange is an SseExchange, return its response
             if (processedExchange instanceof SseExchange) {
                 SseExchange processedSseExchange = (SseExchange) processedExchange;
-                return processedSseExchange.getResponse();
+                SseEvent response = processedSseExchange.getResponse();
+                // Propagate attributes from the exchange to the SSE event
+                if (response != null && processedSseExchange.getAttributes() != null) {
+                    response.getAttributes().putAll(processedSseExchange.getAttributes());
+                }
+                return response;
             } else {
                 // Log warning if the processor returned a different type of exchange
-                LOGGER.warn("Template processing returned non-SseExchange type: {}", processedExchange.getClass().getName());
+                LOGGER.warn("Template processing returned non-SseExchange type: {}",
+                        processedExchange.getClass().getName());
                 return sseEvent;
             }
         } catch (Exception e) {
