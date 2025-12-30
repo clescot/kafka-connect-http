@@ -37,6 +37,7 @@ import java.util.Map;
 import java.util.concurrent.ExecutionException;
 
 import static io.github.clescot.kafka.connect.http.SocketUtils.awaitUntilPortIsOpen;
+import static io.github.clescot.kafka.connect.http.SocketUtils.getIP;
 import static org.assertj.core.api.Assertions.assertThat;
 
 @RunWith(Enclosed.class)
@@ -62,14 +63,7 @@ public class HttpTaskTest {
         HttpTask.removeCompositeMeterRegistry();
     }
 
-    private static String getIP() {
-        try (DatagramSocket datagramSocket = new DatagramSocket()) {
-            datagramSocket.connect(InetAddress.getByName("8.8.8.8"), 12345);
-            return datagramSocket.getLocalAddress().getHostAddress();
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-    }
+
 
     @Nested
     class Call {

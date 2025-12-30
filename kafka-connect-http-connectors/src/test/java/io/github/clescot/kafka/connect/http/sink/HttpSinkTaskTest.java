@@ -67,6 +67,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.*;
 import static com.github.tomakehurst.wiremock.stubbing.Scenario.STARTED;
+import static io.github.clescot.kafka.connect.http.SocketUtils.getRandomAvailablePort;
 import static io.github.clescot.kafka.connect.http.SocketUtils.getRandomPort;
 import static io.github.clescot.kafka.connect.http.client.HttpClientConfigDefinition.*;
 import static io.github.clescot.kafka.connect.http.client.HttpClientFactory.defaultSuccessPattern;
@@ -2471,7 +2472,7 @@ public class HttpSinkTaskTest {
 
         @Test
         void test_meter_registry_activate_prometheus() {
-            int availablePort = getRandomPort();
+            int availablePort = getRandomAvailablePort();
             Assertions.assertDoesNotThrow(() -> {
                 HashMap<String, String> settings = Maps.newHashMap();
                 settings.put(METER_REGISTRY_EXPORTER_PROMETHEUS_ACTIVATE, "true");
@@ -2553,10 +2554,11 @@ public class HttpSinkTaskTest {
         @Test
         void test_meter_registry_activate_jmx_and_prometheus() {
             Assertions.assertDoesNotThrow(() -> {
+                int availablePort = getRandomAvailablePort();
                 HashMap<String, String> settings = Maps.newHashMap();
                 settings.put(METER_REGISTRY_EXPORTER_JMX_ACTIVATE, "true");
                 settings.put(METER_REGISTRY_EXPORTER_PROMETHEUS_ACTIVATE, "true");
-                settings.put(METER_REGISTRY_EXPORTER_PROMETHEUS_PORT, "9090");
+                settings.put(METER_REGISTRY_EXPORTER_PROMETHEUS_PORT, ""+availablePort);
                 okHttpSinkTask.start(settings);
 
                 //given
@@ -2635,7 +2637,7 @@ public class HttpSinkTaskTest {
 
         @Test
         void test_meter_registry_activate_jmx_and_prometheus_with_all_bindings() {
-            int availablePort = getRandomPort();
+            int availablePort = getRandomAvailablePort();
             Assertions.assertDoesNotThrow(() -> {
                 HashMap<String, String> settings = Maps.newHashMap();
                 settings.put(METER_REGISTRY_EXPORTER_JMX_ACTIVATE, "true");

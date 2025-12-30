@@ -9,6 +9,8 @@ import io.micrometer.prometheusmetrics.PrometheusConfig;
 import io.micrometer.prometheusmetrics.PrometheusMeterRegistry;
 import io.prometheus.metrics.exporter.httpserver.HTTPServer;
 import io.prometheus.metrics.model.registry.PrometheusRegistry;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.util.Map;
@@ -17,6 +19,7 @@ import static io.github.clescot.kafka.connect.http.sink.HttpConfigDefinition.*;
 
 public class MeterRegistryFactory {
 
+    private static final Logger LOGGER = LoggerFactory.getLogger(MeterRegistryFactory.class);
 
     public CompositeMeterRegistry buildMeterRegistry(Map<String, String> config) {
         CompositeMeterRegistry compositeMeterRegistry = new CompositeMeterRegistry();
@@ -33,7 +36,11 @@ public class MeterRegistryFactory {
             // you can set the daemon flag to false if you want the server to block
 
             try {
-                int port = prometheusPort!=null?prometheusPort:9090;
+                int port = prometheusPort != null ? prometheusPort : 9090;
+                if (SocketUtils.available(port)) {
+                    LOGGER.error("port :'{}' is not available", port);
+                    throw new IllegalStateException("port " + port + " is not available");
+                }
                 PrometheusRegistry prometheusRegistry = prometheusMeterRegistry.getPrometheusRegistry();
                 HTTPServer.builder()
                         .port(port)
@@ -44,7 +51,7 @@ public class MeterRegistryFactory {
             }
             compositeMeterRegistry.add(prometheusMeterRegistry);
         }
-        if(!activateJMX && !activatePrometheus){
+        if (!activateJMX && !activatePrometheus) {
             compositeMeterRegistry.add(new SimpleMeterRegistry());
         }
         return compositeMeterRegistry;
