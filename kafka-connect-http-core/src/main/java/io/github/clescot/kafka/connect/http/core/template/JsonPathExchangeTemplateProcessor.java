@@ -40,9 +40,7 @@ public class JsonPathExchangeTemplateProcessor implements ExchangeTemplateProces
     public <R extends Request,S extends Response,E extends Exchange<R,S>> Exchange<R, S> process(@NotNull E exchange, @NotNull String template, Map<String, Object> context) {
         LOGGER.debug("Processing template with JSONPath: {}", template);
         
-        // Start with the original exchange
-        Exchange<R, S> modifiedExchange = exchange;
-        
+
         // Process the template to extract JSONPath expressions
         Matcher matcher = JSONPATH_PATTERN.matcher(template);
         
@@ -63,9 +61,8 @@ public class JsonPathExchangeTemplateProcessor implements ExchangeTemplateProces
                     
                     // Extract the raw value from JSONPath result
                     String resultValue;
-                    if (result instanceof com.fasterxml.jackson.databind.JsonNode) {
-                        // If it's a Jackson JsonNode, get the raw value
-                        com.fasterxml.jackson.databind.JsonNode jsonNode = (com.fasterxml.jackson.databind.JsonNode) result;
+                    // If it's a Jackson JsonNode, get the raw value
+                    if (result instanceof com.fasterxml.jackson.databind.JsonNode jsonNode) {
                         if (jsonNode.isTextual()) {
                             resultValue = jsonNode.asText();
                         } else if (jsonNode.isNumber()) {
@@ -81,7 +78,7 @@ public class JsonPathExchangeTemplateProcessor implements ExchangeTemplateProces
                     
                     // Add the result to attributes using the exchange's withAttribute method
                     String attributeName = "jsonpath_" + jsonPathExpression.replaceAll("[^a-zA-Z0-9_]", "_");
-                    modifiedExchange = modifiedExchange.withAttribute(attributeName, resultValue);
+                    exchange = exchange.withAttribute(attributeName, resultValue);
                     LOGGER.debug("Added attribute: {} = {}", attributeName, resultValue);
                 } else {
                     LOGGER.debug("JSONPath expression '{}' returned null", jsonPathExpression);
@@ -96,7 +93,7 @@ public class JsonPathExchangeTemplateProcessor implements ExchangeTemplateProces
             LOGGER.debug("No JSONPath expressions found in template");
         }
         
-        return modifiedExchange;
+        return exchange;
     }
 
     /**
