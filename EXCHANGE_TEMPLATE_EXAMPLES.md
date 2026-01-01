@@ -31,13 +31,20 @@ exchange.template.processors=jsonpath,random,xpath,jmespath,regex,headerparam,da
 ```
 
 The template system works with both HTTP and SSE configurations:
-
-```properties
 # For HTTP connectors
-exchange.template=${jsonpath:$.request.url} ${random.uuid}
+
+```json
+{
+ "exchange.template" : "${jsonpath:$.request.url} ${random.uuid}"
+}
+```
 
 # For SSE connectors
-exchange.template=${jsonpath:$.event.data} ${datetime:now:yyyy-MM-dd HH:mm:ss}
+
+```json
+{
+  "exchange.template" : "${jsonpath:$.event.data} ${datetime:now:yyyy-MM-dd HH:mm:ss}"
+}
 ```
 
 ## Connector-Specific Usage
