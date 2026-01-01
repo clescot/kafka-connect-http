@@ -115,18 +115,6 @@ public class HttpConfiguration<C extends HttpClient<NR, NS>, NR, NS> implements 
         }
     }
 
-    /**
-     * Creates a template manager using the shared utility.
-     * This method is kept for backward compatibility but now delegates to TemplateConfigurationUtil.
-     *
-     * @param settings the configuration settings
-     * @return configured ExchangeTemplateManager
-     * @deprecated Use TemplateConfigurationUtil.createTemplateManager() directly
-     */
-    @Deprecated
-    private ExchangeTemplateManager createTemplateManager(Map<String, String> settings) {
-        return TemplateConfigurationUtil.createTemplateManager(settings);
-    }
 
     public Pattern getRetryResponseCodeRegex() {
         return retryResponseCodeRegex;
