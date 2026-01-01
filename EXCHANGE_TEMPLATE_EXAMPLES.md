@@ -1,6 +1,6 @@
 # Exchange Template Customization Examples
 
-This document provides examples of how to customize Exchange output using the template system in the camille-kafka-connect-http project.
+This document provides examples of how to customize Exchange output using the template system in the kafka-connect-http project.
 
 ## Overview
 
