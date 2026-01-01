@@ -220,7 +220,7 @@ public interface HttpClientFactory<C extends HttpClient<R, S>, R, S> {
 
 
 
-    public static  <C extends HttpClient<R, S>, R, S>Map<String,C> buildConfigurations(
+    static <C extends HttpClient<R, S>, R, S>Map<String,C> buildConfigurations(
             HttpClientFactory<C, R, S> httpClientFactory,
             ExecutorService executorService,
             List<String> configIdList,
