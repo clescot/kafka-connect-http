@@ -49,6 +49,12 @@ public class SseConfiguration implements Configuration<OkHttpClient, HttpRequest
     private ExchangeTemplateManager templateManager;
     private String exchangeTemplate;
 
+    /**
+     *
+     * @param configurationId
+     * @param httpClient
+     * @param settings prefix config.<configurationId>.* should be removed
+     */
     public SseConfiguration(String configurationId,
             OkHttpClient httpClient,
             Map<String, String> settings) {
@@ -274,6 +280,8 @@ public class SseConfiguration implements Configuration<OkHttpClient, HttpRequest
      *         configured or processing fails
      */
     public SseEvent processEventWithTemplate(SseEvent sseEvent, HttpRequest httpRequest) {
+        Preconditions.checkNotNull(sseEvent,"sseEvent must not be null.");
+        Preconditions.checkNotNull(httpRequest,"httpRequest must not be null.");
         if (exchangeTemplate == null || exchangeTemplate.trim().isEmpty() || templateManager == null) {
             return sseEvent;
         }
