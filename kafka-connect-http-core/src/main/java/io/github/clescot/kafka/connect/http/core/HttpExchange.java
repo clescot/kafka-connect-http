@@ -468,9 +468,9 @@ public class HttpExchange implements Exchange<HttpRequest,HttpResponse>,Cloneabl
         if (httpResponse != null) {
             metadata.put("response", createResponseMap(httpResponse));
         }
-        metadata.put("durationInMillis", durationInMillis);
-        metadata.put("moment", moment != null ? moment.toString() : null);
-        metadata.put("attempts", attempts != null ? attempts.get() : null);
+        metadata.put(DURATION_IN_MILLIS_KEY, durationInMillis);
+        metadata.put(MOMENT_KEY, moment != null ? moment.toString() : null);
+        metadata.put(ATTEMPTS_KEY, attempts != null ? attempts.get() : null);
         metadata.put("success", success);
         return metadata;
     }
@@ -511,7 +511,7 @@ public class HttpExchange implements Exchange<HttpRequest,HttpResponse>,Cloneabl
         requestMap.put("method", request.getMethod() != null ? request.getMethod().name() : null);
         requestMap.put("headers", request.getHeaders());
         requestMap.put("body", request.getBodyAsString());
-        requestMap.put("attributes", request.getAttributes());
+        requestMap.put(ATTRIBUTES_KEY, request.getAttributes());
         return requestMap;
     }
 
