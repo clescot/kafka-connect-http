@@ -99,8 +99,8 @@ class SseTemplateProcessingSimpleTest {
             
             // Add template configuration that extracts the message field
             // The content contains the JSON string, so we need to parse it first
-            settings.put("config."+configurationId+".exchange.template", "${jsonpath:content}");
-            settings.put("config."+configurationId+".exchange.template.processor.names", "jsonpath");
+            settings.put("exchange.template", "${jsonpath:content}");
+            settings.put("exchange.template.processor.names", "jsonpath");
             
             // Create the configuration directly (without starting the task)
             SseConfiguration sseConfiguration = new SseConfiguration(configurationId, mockHttpClient, settings);
