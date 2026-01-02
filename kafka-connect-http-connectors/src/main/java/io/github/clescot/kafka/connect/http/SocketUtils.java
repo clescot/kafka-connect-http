@@ -10,8 +10,12 @@ import java.util.concurrent.TimeUnit;
 import static org.awaitility.Awaitility.given;
 
 public class SocketUtils {
+
+    private static final Random random = new Random();
+
+    private SocketUtils(){}
+
     public static int getRandomPort() {
-        Random random = new Random();
         int low = 49152;
         int high = 65535;
         return random.nextInt(high - low) + low;
