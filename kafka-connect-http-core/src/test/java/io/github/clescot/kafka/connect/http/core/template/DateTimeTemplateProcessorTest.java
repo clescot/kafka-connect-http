@@ -390,16 +390,18 @@ class DateTimeTemplateProcessorTest {
         // BUG: Should handle null moment object
         String template = "${datetime:moment:yyyy-MM-dd}";
         
+        // Create attributes map with null moment
+        Map<String, Object> attributesWithNull = new HashMap<>();
+        attributesWithNull.put(DateTimeTemplateProcessor.MOMENT, null);
+        
         HttpExchange exchangeWithMoment = HttpExchange.Builder.anHttpExchange()
                 .withHttpRequest(testExchange.getRequest())
                 .withHttpResponse(testExchange.getResponse())
                 .withDuration(testExchange.getDurationInMillis())
                 .at(testExchange.getMoment())
                 .withAttempts(testExchange.getAttempts())
+                .withAttributes(attributesWithNull)
                 .build();
-        
-        // Add null moment
-        exchangeWithMoment = (HttpExchange) exchangeWithMoment.withAttribute(DateTimeTemplateProcessor.MOMENT, null);
         
         Exchange<?, ?> processedExchange = processor.process(exchangeWithMoment, template, new HashMap<>());
         HttpExchange httpProcessedExchange = (HttpExchange) processedExchange;

@@ -28,7 +28,16 @@ public class DateTimeTemplateProcessor implements ExchangeTemplateProcessor {
     public static final String ISO_8601_FORMAT_IN_UTC = "yyyy-MM-dd'T'HH:mm:ss.SSSZ";
 
     @Override
-    public <R extends Request,S extends Response,E extends Exchange<R,S>> Exchange<R, S> process(@NotNull E exchange, @NotNull String template, Map<String, Object> context) {
+    public <R extends Request,S extends Response,E extends Exchange<R,S>> Exchange<R, S> process(E exchange, String template, Map<String, Object> context) {
+        if (exchange == null) {
+            LOGGER.warn("Exchange parameter is null");
+            throw new NullPointerException("Exchange parameter cannot be null");
+        }
+        if (template == null) {
+            LOGGER.warn("Template parameter is null");
+            return exchange.withAttribute("formatted_datetime", "");
+        }
+        
         // Extract parts from template: ${datetime:source:format:attributeName}
         String[] parts = extractTemplateParts(template);
         String source = parts.length > 0 ? parts[0] : "";
@@ -48,18 +57,25 @@ public class DateTimeTemplateProcessor implements ExchangeTemplateProcessor {
                     break;
                 case MOMENT:
                     // Use the exchange's attributes for moment
-                    if (exchange.getAttributes().containsKey(MOMENT)) {
-                        Object moment = exchange.getAttributes().get(MOMENT);
-                        if (moment instanceof String) {
-                            try {
-                                ZonedDateTime zonedDateTime = ZonedDateTime.parse((String) moment);
-                                dateTimeString = zonedDateTime.format(formatter);
-                            } catch (DateTimeParseException e) {
-                                LOGGER.warn("Failed to parse moment '{}': {}", moment, e.getMessage());
-                                dateTimeString = "";
+                    Map<String, Object> attributes = exchange.getAttributes();
+                    if (attributes != null && attributes.containsKey(MOMENT)) {
+                        Object moment = attributes.get(MOMENT);
+                        if (moment != null) {
+                            if (moment instanceof String momentString) {
+                                try {
+                                    ZonedDateTime zonedDateTime = ZonedDateTime.parse(momentString);
+                                    dateTimeString = zonedDateTime.format(formatter);
+                                } catch (DateTimeParseException e) {
+                                    // If parsing fails, use the moment string as-is
+                                    LOGGER.warn("Failed to parse moment '{}': {}, using as-is", moment, e.getMessage());
+                                    dateTimeString = momentString;
+                                }
+                            } else {
+                                // For non-string objects, use toString()
+                                dateTimeString = moment.toString();
                             }
                         } else {
-                            dateTimeString = moment.toString();
+                            dateTimeString = "";
                         }
                     } else {
                         dateTimeString = "";
@@ -108,8 +124,11 @@ public class DateTimeTemplateProcessor implements ExchangeTemplateProcessor {
     }
     
     @Override
-    public boolean supports(@NotNull String template) {
-        return template.startsWith("${datetime:") && template.contains(":");
+    public boolean supports(String template) {
+        return template != null && 
+               template.startsWith("${datetime:") && 
+               template.contains(":") && 
+               template.endsWith("}");
     }
     
     @Override
@@ -128,20 +147,61 @@ public class DateTimeTemplateProcessor implements ExchangeTemplateProcessor {
         // Handle special cases for known sources
         if (innerContent.startsWith(NOW + ":")) {
             // ${datetime:now:format} or ${datetime:now:format:attribute}
-            String[] parts = innerContent.split(":", 3);
-            return parts;
+            // Skip the "now:" prefix
+            String remainder = innerContent.substring((NOW + ":").length());
+            
+            // Find the next colon to separate format from attribute name
+            int nextColonIndex = remainder.indexOf(":");
+            if (nextColonIndex == -1) {
+                // No attribute name, just format
+                return new String[]{NOW, remainder};
+            } else {
+                // Both format and attribute name
+                String format = remainder.substring(0, nextColonIndex);
+                String attributeName = remainder.substring(nextColonIndex + 1);
+                return new String[]{NOW, format, attributeName};
+            }
         } else if (innerContent.startsWith(CURRENT + ":")) {
             // ${datetime:current:format} or ${datetime:current:format:attribute}
-            String[] parts = innerContent.split(":", 3);
-            return parts;
+            String remainder = innerContent.substring((CURRENT + ":").length());
+            
+            int nextColonIndex = remainder.indexOf(":");
+            if (nextColonIndex == -1) {
+                return new String[]{CURRENT, remainder};
+            } else {
+                String format = remainder.substring(0, nextColonIndex);
+                String attributeName = remainder.substring(nextColonIndex + 1);
+                return new String[]{CURRENT, format, attributeName};
+            }
         } else if (innerContent.startsWith(MOMENT + ":")) {
             // ${datetime:moment:format} or ${datetime:moment:format:attribute}
-            String[] parts = innerContent.split(":", 3);
-            return parts;
+            String remainder = innerContent.substring((MOMENT + ":").length());
+            
+            int nextColonIndex = remainder.indexOf(":");
+            if (nextColonIndex == -1) {
+                return new String[]{MOMENT, remainder};
+            } else {
+                String format = remainder.substring(0, nextColonIndex);
+                String attributeName = remainder.substring(nextColonIndex + 1);
+                return new String[]{MOMENT, format, attributeName};
+            }
         } else if (innerContent.startsWith(EPOCH)) {
             // ${datetime:epoch} or ${datetime:epoch:format} or ${datetime:epoch:format:attribute}
-            String[] parts = innerContent.split(":", 3);
-            return parts;
+            if (innerContent.equals(EPOCH)) {
+                return new String[]{EPOCH};
+            } else {
+                // Skip the "epoch:" prefix
+                String remainder = innerContent.substring((EPOCH + ":").length());
+                
+                int nextColonIndex = remainder.indexOf(":");
+                if (nextColonIndex == -1) {
+                    return new String[]{EPOCH, remainder};
+                } else {
+                    String format = remainder.substring(0, nextColonIndex);
+                    String attributeName = remainder.substring(nextColonIndex + 1);
+                    return new String[]{EPOCH, format, attributeName};
+                }
+            }
         } else {
             // For custom sources (like ISO dates with colons), we need to be more careful
             // Find the last colon to separate format from source
