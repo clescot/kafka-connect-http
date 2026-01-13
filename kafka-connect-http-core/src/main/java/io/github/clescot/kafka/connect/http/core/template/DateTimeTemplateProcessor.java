@@ -19,9 +19,14 @@ import java.util.Map;
  * Supports various date/time sources and output formats.
  */
 public class DateTimeTemplateProcessor implements ExchangeTemplateProcessor {
-    
+
     private static final Logger LOGGER = LoggerFactory.getLogger(DateTimeTemplateProcessor.class);
-    
+    public static final String MOMENT = "moment";
+    public static final String CURRENT = "current";
+    public static final String NOW = "now";
+    public static final String EPOCH = "epoch";
+    public static final String ISO_8601_FORMAT_IN_UTC = "yyyy-MM-dd'T'HH:mm:ss.SSSZ";
+
     @Override
     public <R extends Request,S extends Response,E extends Exchange<R,S>> Exchange<R, S> process(@NotNull E exchange, @NotNull String template, Map<String, Object> context) {
         try {
@@ -33,7 +38,7 @@ public class DateTimeTemplateProcessor implements ExchangeTemplateProcessor {
             }
             
             String source = parts[0];
-            String format = parts.length > 1 ? parts[1] : "yyyy-MM-dd'T'HH:mm:ss.SSSXXX";
+            String format = parts.length > 1 ? parts[1] : ISO_8601_FORMAT_IN_UTC;
             String attributeName = parts.length > 2 ? parts[2] : "formatted_datetime";
             
             DateTimeFormatter formatter = DateTimeFormatter.ofPattern(format);
@@ -41,14 +46,14 @@ public class DateTimeTemplateProcessor implements ExchangeTemplateProcessor {
             
             // Determine the source of the datetime
             switch (source.toLowerCase()) {
-                case "now":
-                case "current":
+                case NOW:
+                case CURRENT:
                     dateTimeString = ZonedDateTime.now().format(formatter);
                     break;
-                case "moment":
+                case MOMENT:
                     // Use the exchange's moment/timestamp
-                    if (exchange.getMetadata().containsKey("moment")) {
-                        Object moment = exchange.getMetadata().get("moment");
+                    if (exchange.getMetadata().containsKey(MOMENT)) {
+                        Object moment = exchange.getMetadata().get(MOMENT);
                         if (moment instanceof String) {
                             try {
                                 ZonedDateTime zonedDateTime = ZonedDateTime.parse((String) moment);
@@ -64,7 +69,7 @@ public class DateTimeTemplateProcessor implements ExchangeTemplateProcessor {
                         dateTimeString = "";
                     }
                     break;
-                case "epoch":
+                case EPOCH:
                     // Current epoch time
                     dateTimeString = String.valueOf(System.currentTimeMillis());
                     break;
