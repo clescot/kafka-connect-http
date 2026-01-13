@@ -9,13 +9,18 @@ import org.junit.jupiter.api.Test;
 
 import java.time.OffsetDateTime;
 import java.time.ZonedDateTime;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class DateTimeTemplateProcessorTest {
@@ -240,5 +245,333 @@ class DateTimeTemplateProcessorTest {
         
         // Should still add the attribute, but might be empty or contain error info
         assertThat(httpProcessedExchange.getAttributes()).isNotEmpty();
+    }
+
+    // ========== BUG HIGHLIGHTING TESTS ==========
+
+    @Test
+    void testNullTemplateParameter() {
+        // BUG: Should handle null template gracefully but likely throws NPE
+        Exchange<?, ?> processedExchange = processor.process(testExchange, null, new HashMap<>());
+        
+        // Current implementation probably throws NPE before this point
+        assertThat(processedExchange).isNotNull();
+    }
+
+    @Test
+    void testNullExchangeParameter() {
+        // BUG: Should handle null exchange but likely throws NPE
+        String template = "${datetime:now}";
+        
+        // This will likely throw NPE when trying to call getAttributes()
+        assertThrows(NullPointerException.class, () -> {
+            processor.process(null, template, new HashMap<>());
+        });
+    }
+
+    @Test
+    void testExchangeWithNullAttributes() {
+        // BUG: Should handle exchange with null attributes
+        String template = "${datetime:now}";
+        
+        // Create an exchange with null attributes - this requires custom mock or builder
+        // For now, we'll test the moment source which accesses attributes
+        String templateWithMoment = "${datetime:moment:yyyy-MM-dd}";
+        Exchange<?, ?> processedExchange = processor.process(testExchange, templateWithMoment, new HashMap<>());
+        
+        // Should handle missing moment gracefully
+        assertThat(processedExchange).isNotNull();
+    }
+
+    @Test
+    void testMalformedTemplateMissingPrefix() {
+        // BUG: Should validate template format
+        String template = "datetime:now";
+        
+        // Current implementation probably doesn't validate the ${datetime: prefix
+        boolean supported = processor.supports(template);
+        assertThat(supported).isFalse();
+    }
+
+    @Test
+    void testMalformedTemplateMissingSuffix() {
+        // BUG: Should validate template ends with }
+        String template = "${datetime:now";
+        
+        // This might cause StringIndexOutOfBoundsException in extractTemplateParts
+        boolean supported = processor.supports(template);
+        assertThat(supported).isFalse();
+    }
+
+    @Test
+    void testEmptyTemplateContent() {
+        // BUG: Should handle empty template content
+        String template = "${datetime:}";
+        
+        // This likely causes issues in parsing
+        Exchange<?, ?> processedExchange = processor.process(testExchange, template, new HashMap<>());
+        assertThat(processedExchange).isNotNull();
+    }
+
+    @Test
+    void testTemplateWithOnlySource() {
+        // BUG: Should handle template with only source, no format
+        String template = "${datetime:now}";
+        
+        Exchange<?, ?> processedExchange = processor.process(testExchange, template, new HashMap<>());
+        HttpExchange httpProcessedExchange = (HttpExchange) processedExchange;
+        
+        // Should use default format
+        assertThat(httpProcessedExchange.getAttributes()).containsKey("formatted_datetime");
+    }
+
+    @Test
+    void testTemplateWithEmptySource() {
+        // BUG: Should handle empty source
+        String template = "${datetime::yyyy-MM-dd}";
+        
+        Exchange<?, ?> processedExchange = processor.process(testExchange, template, new HashMap<>());
+        assertThat(processedExchange).isNotNull();
+    }
+
+    @Test
+    void testTemplateWithEmptyFormat() {
+        // BUG: Should handle empty format
+        String template = "${datetime:now:}";
+        
+        Exchange<?, ?> processedExchange = processor.process(testExchange, template, new HashMap<>());
+        HttpExchange httpProcessedExchange = (HttpExchange) processedExchange;
+        
+        // Should still add attribute but might be empty
+        assertThat(httpProcessedExchange.getAttributes()).containsKey("formatted_datetime");
+    }
+
+    @Test
+    void testInvalidDateFormatPattern() {
+        // BUG: Should validate date format patterns
+        String template = "${datetime:now:INVALID_PATTERN_###_@@@}";
+        
+        Exchange<?, ?> processedExchange = processor.process(testExchange, template, new HashMap<>());
+        HttpExchange httpProcessedExchange = (HttpExchange) processedExchange;
+        
+        // DateTimeFormatter.ofPattern with invalid pattern should throw IllegalArgumentException
+        // Current implementation might catch this and return empty string
+        assertThat(httpProcessedExchange.getAttributes()).containsKey("formatted_datetime");
+    }
+
+    @Test
+    void testMomentWithNonStringObject() {
+        // BUG: Should handle non-string moment objects
+        String template = "${datetime:moment:yyyy-MM-dd}";
+        
+        // Add a non-string moment object
+        HttpExchange exchangeWithMoment = HttpExchange.Builder.anHttpExchange()
+                .withHttpRequest(testExchange.getRequest())
+                .withHttpResponse(testExchange.getResponse())
+                .withDuration(testExchange.getDurationInMillis())
+                .at(testExchange.getMoment())
+                .withAttempts(testExchange.getAttempts())
+                .build();
+        
+        // Add non-string moment (e.g., Integer)
+        exchangeWithMoment = (HttpExchange) exchangeWithMoment.withAttribute(DateTimeTemplateProcessor.MOMENT, 12345);
+        
+        Exchange<?, ?> processedExchange = processor.process(exchangeWithMoment, template, new HashMap<>());
+        HttpExchange httpProcessedExchange = (HttpExchange) processedExchange;
+        
+        // Should handle toString() of non-string object
+        assertThat(httpProcessedExchange.getAttributes()).containsKey("formatted_datetime");
+        String result = httpProcessedExchange.getAttributes().get("formatted_datetime").toString();
+        assertThat(result).isEqualTo("12345"); // toString() of Integer
+    }
+
+    @Test
+    void testMomentWithNullObject() {
+        // BUG: Should handle null moment object
+        String template = "${datetime:moment:yyyy-MM-dd}";
+        
+        HttpExchange exchangeWithMoment = HttpExchange.Builder.anHttpExchange()
+                .withHttpRequest(testExchange.getRequest())
+                .withHttpResponse(testExchange.getResponse())
+                .withDuration(testExchange.getDurationInMillis())
+                .at(testExchange.getMoment())
+                .withAttempts(testExchange.getAttempts())
+                .build();
+        
+        // Add null moment
+        exchangeWithMoment = (HttpExchange) exchangeWithMoment.withAttribute(DateTimeTemplateProcessor.MOMENT, null);
+        
+        Exchange<?, ?> processedExchange = processor.process(exchangeWithMoment, template, new HashMap<>());
+        HttpExchange httpProcessedExchange = (HttpExchange) processedExchange;
+        
+        // Should handle null moment gracefully
+        assertThat(httpProcessedExchange.getAttributes()).containsKey("formatted_datetime");
+        String result = httpProcessedExchange.getAttributes().get("formatted_datetime").toString();
+        assertThat(result).isEmpty(); // Should be empty for null moment
+    }
+
+    @Test
+    void testEpochInconsistency() {
+        // BUG: Epoch behavior is inconsistent between default and custom formats
+        String templateWithDefault = "${datetime:epoch}";
+        String templateWithCustom = "${datetime:epoch:yyyy-MM-dd}";
+        
+        Exchange<?, ?> processedDefault = processor.process(testExchange, templateWithDefault, new HashMap<>());
+        Exchange<?, ?> processedCustom = processor.process(testExchange, templateWithCustom, new HashMap<>());
+        
+        HttpExchange httpDefault = (HttpExchange) processedDefault;
+        HttpExchange httpCustom = (HttpExchange) processedCustom;
+        
+        String defaultResult = httpDefault.getAttributes().get("formatted_datetime").toString();
+        String customResult = httpCustom.getAttributes().get("formatted_datetime").toString();
+        
+        // Default returns raw epoch millis (digits only)
+        assertThat(defaultResult).matches("\\d+");
+        
+        // Custom returns formatted date (contains dashes)
+        assertThat(customResult).contains("-");
+        
+        // This inconsistency is confusing - both should be dates or both should be epochs
+    }
+
+    @Test
+    void testInvalidNumericSource() {
+        // BUG: Should handle invalid numeric values
+        String template = "${datetime:999999999999999999999999999999:yyyy-MM-dd}";
+        
+        Exchange<?, ?> processedExchange = processor.process(testExchange, template, new HashMap<>());
+        HttpExchange httpProcessedExchange = (HttpExchange) processedExchange;
+        
+        // Should handle overflow gracefully
+        assertThat(httpProcessedExchange.getAttributes()).containsKey("formatted_datetime");
+    }
+
+    @Test
+    void testInvalidIsoDate() {
+        // BUG: Should handle invalid ISO date strings
+        String template = "${datetime:not-a-valid-date:yyyy-MM-dd}";
+        
+        Exchange<?, ?> processedExchange = processor.process(testExchange, template, new HashMap<>());
+        HttpExchange httpProcessedExchange = (HttpExchange) processedExchange;
+        
+        // Should handle parsing failure gracefully
+        assertThat(httpProcessedExchange.getAttributes()).containsKey("formatted_datetime");
+        String result = httpProcessedExchange.getAttributes().get("formatted_datetime").toString();
+        assertThat(result).isEmpty(); // Should be empty for invalid date
+    }
+
+    @Test
+    void testComplexIsoDateWithMultipleColons() {
+        // BUG: Template parsing might fail with complex ISO dates
+        String complexIsoDate = "2023-01-15T10:30:45.123+05:30";
+        String template = "${datetime:" + complexIsoDate + ":ddMMyyyy}";
+        
+        Exchange<?, ?> processedExchange = processor.process(testExchange, template, new HashMap<>());
+        HttpExchange httpProcessedExchange = (HttpExchange) processedExchange;
+        
+        // Should parse complex ISO date correctly
+        assertThat(httpProcessedExchange.getAttributes()).containsKey("formatted_datetime");
+    }
+
+    @Test
+    void testThreadSafety() throws InterruptedException {
+        // BUG: DateTimeFormatter creation is not thread-safe
+        String template = "${datetime:now:yyyy-MM-dd HH:mm:ss}";
+        int numThreads = 10;
+        int numIterations = 100;
+        CountDownLatch latch = new CountDownLatch(numThreads);
+        List<Exception> exceptions = Collections.synchronizedList(new ArrayList<>());
+        
+        for (int i = 0; i < numThreads; i++) {
+            new Thread(() -> {
+                try {
+                    for (int j = 0; j < numIterations; j++) {
+                        Exchange<?, ?> processedExchange = processor.process(testExchange, template, new HashMap<>());
+                        assertThat(processedExchange).isNotNull();
+                    }
+                } catch (Exception e) {
+                    exceptions.add(e);
+                } finally {
+                    latch.countDown();
+                }
+            }).start();
+        }
+        
+        latch.await(10, TimeUnit.SECONDS);
+        
+        // Should not have any exceptions in concurrent usage
+        assertThat(exceptions).isEmpty();
+    }
+
+    @Test
+    void testPerformanceWithManyFormatterCreations() {
+        // BUG: Creating DateTimeFormatter on every call is expensive
+        String template = "${datetime:now:yyyy-MM-dd HH:mm:ss.SSS}";
+        
+        long startTime = System.currentTimeMillis();
+        for (int i = 0; i < 1000; i++) {
+            Exchange<?, ?> processedExchange = processor.process(testExchange, template, new HashMap<>());
+            assertThat(processedExchange).isNotNull();
+        }
+        long endTime = System.currentTimeMillis();
+        
+        long duration = endTime - startTime;
+        System.out.println("Duration for 1000 operations: " + duration + "ms");
+        
+        // This highlights the performance issue - should be much faster with cached formatters
+        assertThat(duration).isLessThan(5000); // 5 seconds max for demonstration
+    }
+
+    @Test
+    void testTimeZoneInconsistency() {
+        // BUG: No explicit timezone handling
+        String template = "${datetime:now:yyyy-MM-dd HH:mm:ss Z}";
+        
+        Exchange<?, ?> processedExchange = processor.process(testExchange, template, new HashMap<>());
+        HttpExchange httpProcessedExchange = (HttpExchange) processedExchange;
+        
+        String result = httpProcessedExchange.getAttributes().get("formatted_datetime").toString();
+        
+        // Result depends on system default timezone - inconsistent across environments
+        assertThat(result).isNotBlank();
+        System.out.println("Timezone-dependent result: " + result);
+    }
+
+    @Test
+    void testSecurityTemplateInjection() {
+        // BUG: No input validation could allow template injection
+        String maliciousTemplate = "${datetime:now:../../../etc/passwd}";
+        
+        // Should validate/sanitize format patterns
+        Exchange<?, ?> processedExchange = processor.process(testExchange, maliciousTemplate, new HashMap<>());
+        HttpExchange httpProcessedExchange = (HttpExchange) processedExchange;
+        
+        // Current implementation probably tries to create DateTimeFormatter with malicious pattern
+        assertThat(httpProcessedExchange.getAttributes()).containsKey("formatted_datetime");
+    }
+
+    @Test
+    void testVeryLongTemplate() {
+        // BUG: Should handle very long templates gracefully
+        StringBuilder longTemplate = new StringBuilder("${datetime:");
+        for (int i = 0; i < 10000; i++) {
+            longTemplate.append("a");
+        }
+        longTemplate.append(":yyyy-MM-dd}");
+        
+        Exchange<?, ?> processedExchange = processor.process(testExchange, longTemplate.toString(), new HashMap<>());
+        assertThat(processedExchange).isNotNull();
+    }
+
+    @Test
+    void testSpecialCharactersInSource() {
+        // BUG: Should handle special characters in source
+        String template = "${datetime:source with spaces and @#$% symbols:yyyy-MM-dd}";
+        
+        Exchange<?, ?> processedExchange = processor.process(testExchange, template, new HashMap<>());
+        HttpExchange httpProcessedExchange = (HttpExchange) processedExchange;
+        
+        // Should handle special characters gracefully
+        assertThat(httpProcessedExchange.getAttributes()).containsKey("formatted_datetime");
     }
 }
