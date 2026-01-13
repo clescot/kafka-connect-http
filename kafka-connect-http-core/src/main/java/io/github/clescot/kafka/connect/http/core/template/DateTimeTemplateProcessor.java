@@ -29,20 +29,16 @@ public class DateTimeTemplateProcessor implements ExchangeTemplateProcessor {
 
     @Override
     public <R extends Request,S extends Response,E extends Exchange<R,S>> Exchange<R, S> process(@NotNull E exchange, @NotNull String template, Map<String, Object> context) {
+        // Extract parts from template: ${datetime:source:format:attributeName}
+        String[] parts = extractTemplateParts(template);
+        String source = parts.length > 0 ? parts[0] : "";
+        String format = parts.length > 1 ? parts[1] : ISO_8601_FORMAT_IN_UTC;
+        String attributeName = parts.length > 2 ? parts[2] : "formatted_datetime";
+        
+        String dateTimeString = "";
+        
         try {
-            // Extract parts from template: ${datetime:source:format:attributeName}
-            String[] parts = extractTemplateParts(template);
-            if (parts.length < 2) {
-                LOGGER.warn("Invalid datetime template format: {}", template);
-                return   exchange;
-            }
-            
-            String source = parts[0];
-            String format = parts.length > 1 ? parts[1] : ISO_8601_FORMAT_IN_UTC;
-            String attributeName = parts.length > 2 ? parts[2] : "formatted_datetime";
-            
             DateTimeFormatter formatter = DateTimeFormatter.ofPattern(format);
-            String dateTimeString;
             
             // Determine the source of the datetime
             switch (source.toLowerCase()) {
@@ -51,9 +47,9 @@ public class DateTimeTemplateProcessor implements ExchangeTemplateProcessor {
                     dateTimeString = ZonedDateTime.now().format(formatter);
                     break;
                 case MOMENT:
-                    // Use the exchange's moment/timestamp
-                    if (exchange.getMetadata().containsKey(MOMENT)) {
-                        Object moment = exchange.getMetadata().get(MOMENT);
+                    // Use the exchange's attributes for moment
+                    if (exchange.getAttributes().containsKey(MOMENT)) {
+                        Object moment = exchange.getAttributes().get(MOMENT);
                         if (moment instanceof String) {
                             try {
                                 ZonedDateTime zonedDateTime = ZonedDateTime.parse((String) moment);
@@ -70,8 +66,15 @@ public class DateTimeTemplateProcessor implements ExchangeTemplateProcessor {
                     }
                     break;
                 case EPOCH:
-                    // Current epoch time
-                    dateTimeString = String.valueOf(System.currentTimeMillis());
+                    // For epoch, if no custom format is specified, return raw epoch timestamp
+                    if (format.equals(ISO_8601_FORMAT_IN_UTC)) {
+                        dateTimeString = String.valueOf(System.currentTimeMillis());
+                    } else {
+                        // Current epoch time formatted with the specified pattern
+                        Instant now = Instant.now();
+                        ZonedDateTime epochZonedDateTime = now.atZone(ZoneId.systemDefault());
+                        dateTimeString = epochZonedDateTime.format(formatter);
+                    }
                     break;
                 default:
                     // Try to parse the source as a timestamp
@@ -80,12 +83,12 @@ public class DateTimeTemplateProcessor implements ExchangeTemplateProcessor {
                             // Epoch time
                             long epochMillis = Long.parseLong(source);
                             Instant instant = Instant.ofEpochMilli(epochMillis);
-                            ZonedDateTime zonedDateTime = instant.atZone(ZoneId.systemDefault());
-                            dateTimeString = zonedDateTime.format(formatter);
+                            ZonedDateTime parsedZonedDateTime = instant.atZone(ZoneId.systemDefault());
+                            dateTimeString = parsedZonedDateTime.format(formatter);
                         } else {
                             // Try to parse as ISO date
-                            ZonedDateTime zonedDateTime = ZonedDateTime.parse(source);
-                            dateTimeString = zonedDateTime.format(formatter);
+                            ZonedDateTime parsedZonedDateTime = ZonedDateTime.parse(source);
+                            dateTimeString = parsedZonedDateTime.format(formatter);
                         }
                     } catch (Exception e) {
                         LOGGER.warn("Failed to parse datetime source '{}': {}", source, e.getMessage());
@@ -94,12 +97,14 @@ public class DateTimeTemplateProcessor implements ExchangeTemplateProcessor {
             }
             
             LOGGER.debug("Formatted datetime '{}' with pattern '{}': {}", source, format, dateTimeString);
-            return   exchange.withAttribute(attributeName, dateTimeString);
             
         } catch (Exception e) {
             LOGGER.warn("Failed to process datetime template '{}': {}", template, e.getMessage());
-            return   exchange;
+            dateTimeString = "";
         }
+        
+        // Always return the exchange with the attribute
+        return exchange.withAttribute(attributeName, dateTimeString);
     }
     
     @Override
@@ -120,9 +125,46 @@ public class DateTimeTemplateProcessor implements ExchangeTemplateProcessor {
         // Remove ${datetime: and }
         String innerContent = template.substring("${datetime:".length(), template.length() - 1);
         
-        // Split by colons
-        String[] parts = innerContent.split(":", 3);
-        
-        return parts;
+        // Handle special cases for known sources
+        if (innerContent.startsWith(NOW + ":")) {
+            // ${datetime:now:format} or ${datetime:now:format:attribute}
+            String[] parts = innerContent.split(":", 3);
+            return parts;
+        } else if (innerContent.startsWith(CURRENT + ":")) {
+            // ${datetime:current:format} or ${datetime:current:format:attribute}
+            String[] parts = innerContent.split(":", 3);
+            return parts;
+        } else if (innerContent.startsWith(MOMENT + ":")) {
+            // ${datetime:moment:format} or ${datetime:moment:format:attribute}
+            String[] parts = innerContent.split(":", 3);
+            return parts;
+        } else if (innerContent.startsWith(EPOCH)) {
+            // ${datetime:epoch} or ${datetime:epoch:format} or ${datetime:epoch:format:attribute}
+            String[] parts = innerContent.split(":", 3);
+            return parts;
+        } else {
+            // For custom sources (like ISO dates with colons), we need to be more careful
+            // Find the last colon to separate format from source
+            int lastColonIndex = innerContent.lastIndexOf(":");
+            if (lastColonIndex == -1) {
+                // No format or attribute name, just source
+                return new String[]{innerContent};
+            }
+            
+            String source = innerContent.substring(0, lastColonIndex);
+            String remainder = innerContent.substring(lastColonIndex + 1);
+            
+            // Check if there's an attribute name (another colon)
+            int secondLastColonIndex = remainder.lastIndexOf(":");
+            if (secondLastColonIndex == -1) {
+                // Only format, no attribute name
+                return new String[]{source, remainder};
+            } else {
+                // Both format and attribute name
+                String format = remainder.substring(0, secondLastColonIndex);
+                String attributeName = remainder.substring(secondLastColonIndex + 1);
+                return new String[]{source, format, attributeName};
+            }
+        }
     }
 }
