@@ -258,7 +258,8 @@ exchange.template=${jmespath:response.body.orders | length(@)} ${jmespath:respon
 
 ### Understanding the Approach
 
-The template system uses **declarative array processing** rather than traditional imperative `for` loops. This means you specify *what* data you want to extract, not *how* to iterate through it.
+The template system uses **declarative array processing** rather than traditional imperative `for` loops. 
+This means you specify *what* data you want to extract, not *how* to iterate through it.
 
 #### What You Can Do ✅
 
