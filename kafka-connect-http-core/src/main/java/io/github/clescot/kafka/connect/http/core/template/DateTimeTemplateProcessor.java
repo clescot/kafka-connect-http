@@ -26,6 +26,7 @@ public class DateTimeTemplateProcessor implements ExchangeTemplateProcessor {
     public static final String NOW = "now";
     public static final String EPOCH = "epoch";
     public static final String ISO_8601_FORMAT_IN_UTC = "yyyy-MM-dd'T'HH:mm:ss.SSSZ";
+    public static final String ATTRIBUTE_NAME_PATTERN = "^[a-zA-Z_][a-zA-Z0-9_]*$";
 
     @Override
     public <R extends Request,S extends Response,E extends Exchange<R,S>> Exchange<R, S> process(E exchange, String template, Map<String, Object> context) {
@@ -144,63 +145,19 @@ public class DateTimeTemplateProcessor implements ExchangeTemplateProcessor {
         // Remove ${datetime: and }
         String innerContent = template.substring("${datetime:".length(), template.length() - 1);
         
-        // Handle special cases for known sources
+        // For known sources, we need to handle them specially to avoid confusion with custom sources
         if (innerContent.startsWith(NOW + ":")) {
-            // ${datetime:now:format} or ${datetime:now:format:attribute}
-            // Skip the "now:" prefix
-            String remainder = innerContent.substring((NOW + ":").length());
-            
-            // Find the next colon to separate format from attribute name
-            int nextColonIndex = remainder.indexOf(":");
-            if (nextColonIndex == -1) {
-                // No attribute name, just format
-                return new String[]{NOW, remainder};
-            } else {
-                // Both format and attribute name
-                String format = remainder.substring(0, nextColonIndex);
-                String attributeName = remainder.substring(nextColonIndex + 1);
-                return new String[]{NOW, format, attributeName};
-            }
+            // Special handling for "now" to preserve the original logic for this common case
+            return parseKnownSource(innerContent, NOW);
         } else if (innerContent.startsWith(CURRENT + ":")) {
-            // ${datetime:current:format} or ${datetime:current:format:attribute}
-            String remainder = innerContent.substring((CURRENT + ":").length());
-            
-            int nextColonIndex = remainder.indexOf(":");
-            if (nextColonIndex == -1) {
-                return new String[]{CURRENT, remainder};
-            } else {
-                String format = remainder.substring(0, nextColonIndex);
-                String attributeName = remainder.substring(nextColonIndex + 1);
-                return new String[]{CURRENT, format, attributeName};
-            }
+            return parseKnownSource(innerContent, CURRENT);
         } else if (innerContent.startsWith(MOMENT + ":")) {
-            // ${datetime:moment:format} or ${datetime:moment:format:attribute}
-            String remainder = innerContent.substring((MOMENT + ":").length());
-            
-            int nextColonIndex = remainder.indexOf(":");
-            if (nextColonIndex == -1) {
-                return new String[]{MOMENT, remainder};
-            } else {
-                String format = remainder.substring(0, nextColonIndex);
-                String attributeName = remainder.substring(nextColonIndex + 1);
-                return new String[]{MOMENT, format, attributeName};
-            }
+            return parseKnownSource(innerContent, MOMENT);
         } else if (innerContent.startsWith(EPOCH)) {
-            // ${datetime:epoch} or ${datetime:epoch:format} or ${datetime:epoch:format:attribute}
             if (innerContent.equals(EPOCH)) {
                 return new String[]{EPOCH};
             } else {
-                // Skip the "epoch:" prefix
-                String remainder = innerContent.substring((EPOCH + ":").length());
-                
-                int nextColonIndex = remainder.indexOf(":");
-                if (nextColonIndex == -1) {
-                    return new String[]{EPOCH, remainder};
-                } else {
-                    String format = remainder.substring(0, nextColonIndex);
-                    String attributeName = remainder.substring(nextColonIndex + 1);
-                    return new String[]{EPOCH, format, attributeName};
-                }
+                return parseKnownSource(innerContent, EPOCH);
             }
         } else {
             // For custom sources (like ISO dates with colons), we need to be more careful
@@ -224,6 +181,36 @@ public class DateTimeTemplateProcessor implements ExchangeTemplateProcessor {
                 String format = remainder.substring(0, secondLastColonIndex);
                 String attributeName = remainder.substring(secondLastColonIndex + 1);
                 return new String[]{source, format, attributeName};
+            }
+        }
+    }
+    
+    /**
+     * Helper method to parse templates with known sources, handling format patterns that contain colons.
+     */
+    private String[] parseKnownSource(String innerContent, String source) {
+        String remainder = innerContent.substring((source + ":").length());
+        
+        // Check if the remainder looks like it has an attribute name
+        // Heuristic: if the part after the last colon doesn't contain common date format characters,
+        // treat it as an attribute name, otherwise treat the whole thing as a format
+        int lastColonIndex = remainder.lastIndexOf(":");
+        if (lastColonIndex == -1) {
+            // No colon, so it's just a format
+            return new String[]{source, remainder};
+        } else {
+            String possibleAttributeName = remainder.substring(lastColonIndex + 1);
+            // Better heuristic: if the possible attribute name looks like a simple identifier 
+            // (alphanumeric with maybe underscores) and is reasonably short, treat it as attribute name
+            // Otherwise, if it contains spaces, timezone patterns, or other format-like elements, treat as format
+            if (possibleAttributeName.matches(ATTRIBUTE_NAME_PATTERN) && possibleAttributeName.length() <= 50) {
+                // Looks like a simple attribute name
+                String format = remainder.substring(0, lastColonIndex);
+                String attributeName = possibleAttributeName;
+                return new String[]{source, format, attributeName};
+            } else {
+                // Contains spaces, special characters, or is too long - likely part of format
+                return new String[]{source, remainder};
             }
         }
     }
