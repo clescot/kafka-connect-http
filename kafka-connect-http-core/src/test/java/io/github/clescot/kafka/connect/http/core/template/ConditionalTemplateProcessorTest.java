@@ -1,11 +1,6 @@
 package io.github.clescot.kafka.connect.http.core.template;
 
-import io.github.clescot.kafka.connect.http.core.Exchange;
-import io.github.clescot.kafka.connect.http.core.HttpExchange;
-import io.github.clescot.kafka.connect.http.core.HttpRequest;
-import io.github.clescot.kafka.connect.http.core.HttpResponse;
-import io.github.clescot.kafka.connect.http.core.Request;
-import io.github.clescot.kafka.connect.http.core.Response;
+import io.github.clescot.kafka.connect.http.core.*;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 

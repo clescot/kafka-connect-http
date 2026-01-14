@@ -9,19 +9,13 @@ import org.junit.jupiter.api.Test;
 
 import java.time.OffsetDateTime;
 import java.time.ZonedDateTime;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 class DateTimeTemplateProcessorTest {
 
@@ -260,11 +254,11 @@ class DateTimeTemplateProcessorTest {
 
     @Test
     void testNullExchangeParameter() {
-        // BUG: Should handle null exchange but likely throws NPE
+        // BUG: Should handle null exchange but throws exception due to @NotNull contract
         String template = "${datetime:now}";
         
-        // This will likely throw NPE when trying to call getAttributes()
-        assertThrows(NullPointerException.class, () -> {
+        // This throws IllegalArgumentException due to @NotNull contract violation
+        assertThrows(IllegalArgumentException.class, () -> {
             processor.process(null, template, new HashMap<>());
         });
     }

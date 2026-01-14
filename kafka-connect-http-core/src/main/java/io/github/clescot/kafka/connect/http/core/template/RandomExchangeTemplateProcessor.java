@@ -76,7 +76,7 @@ public class RandomExchangeTemplateProcessor implements ExchangeTemplateProcesso
                 case "long":
                     long minLong = minStr != null ? Long.parseLong(minStr) : 0L;
                     long maxLong = maxStr != null ? Long.parseLong(maxStr) : 1000L;
-                    return minLong + (long) (RANDOM.nextDouble() * (maxLong - minLong + 1));
+                    return generateRandomLong(minLong, maxLong);
                     
                 case "double":
                 case "float":
@@ -119,6 +119,32 @@ public class RandomExchangeTemplateProcessor implements ExchangeTemplateProcesso
             sb.append(characters.charAt(RANDOM.nextInt(characters.length())));
         }
         return sb.toString();
+    }
+
+    /**
+     * Generate a random long value in the range [min, max].
+     * Uses a uniform distribution algorithm to avoid bias.
+     * 
+     * @param min the minimum value (inclusive)
+     * @param max the maximum value (inclusive)
+     * @return a random long value between min and max
+     */
+    private long generateRandomLong(long min, long max) {
+        if (min > max) {
+            throw new IllegalArgumentException("min must be less than or equal to max");
+        }
+        long range = max - min;
+        if (range >= 0) {
+            return min + RANDOM.nextLong(range + 1);
+        } else {
+            // Handle overflow case when range > Long.MAX_VALUE
+            while (true) {
+                long random = RANDOM.nextLong();
+                if (random >= min && random <= max) {
+                    return random;
+                }
+            }
+        }
     }
 
     @Override

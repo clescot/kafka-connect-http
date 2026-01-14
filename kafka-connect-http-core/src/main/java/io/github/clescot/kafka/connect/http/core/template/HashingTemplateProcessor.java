@@ -11,6 +11,7 @@ import java.math.BigInteger;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * Hashing template processor for generating cryptographic hashes.
@@ -19,9 +20,16 @@ import java.util.Map;
 public class HashingTemplateProcessor implements ExchangeTemplateProcessor {
     
     private static final Logger LOGGER = LoggerFactory.getLogger(HashingTemplateProcessor.class);
+    private static final Set<String> SUPPORTED_ALGORITHMS = Set.of(
+        "MD5", "SHA-1", "SHA-256", "SHA-384", "SHA-512",
+        "SHA3-256", "SHA3-384", "SHA3-512"
+    );
     
     @Override
     public <R extends Request,S extends Response,E extends Exchange<R,S>> E process(@NotNull E exchange, @NotNull String template, Map<String, Object> context) {
+        String algorithm = null;
+        String attributeName = null;
+        
         try {
             // Extract parts from template: ${hash:algorithm:input:attributeName}
             String[] parts = extractTemplateParts(template);
@@ -30,9 +38,9 @@ public class HashingTemplateProcessor implements ExchangeTemplateProcessor {
                 return   exchange;
             }
             
-            String algorithm = parts[0].toUpperCase();
+            algorithm = parts[0].toUpperCase();
             String input = parts[1];
-            String attributeName = parts.length > 2 ? parts[2] : "hash_result";
+            attributeName = parts.length > 2 ? parts[2] : "hash_result";
             
             // Get the input value (could be literal or attribute reference)
             String inputValue = getInputValue(input, exchange);
@@ -47,6 +55,9 @@ public class HashingTemplateProcessor implements ExchangeTemplateProcessor {
             LOGGER.debug("Generated {} hash for input: {}", algorithm, hash);
             return exchange.withAttribute(attributeName, hash);
             
+        } catch (NoSuchAlgorithmException e) {
+            LOGGER.warn("Invalid hash algorithm '{}' in template '{}': {}", algorithm, template, e.getMessage());
+            return attributeName != null ? exchange.withAttribute(attributeName, "") : exchange;
         } catch (Exception e) {
             LOGGER.warn("Failed to process hash template '{}': {}", template, e.getMessage());
             return exchange;
@@ -55,7 +66,15 @@ public class HashingTemplateProcessor implements ExchangeTemplateProcessor {
     
     @Override
     public boolean supports(@NotNull String template) {
-        return template.startsWith("${hash:") && template.contains(":");
+        if (!template.startsWith("${hash:") || !template.contains(":")) {
+            return false;
+        }
+        String[] parts = extractTemplateParts(template);
+        if (parts.length < 2) {
+            return false;
+        }
+        String algorithm = parts[0].toUpperCase();
+        return SUPPORTED_ALGORITHMS.contains(algorithm);
     }
     
     @Override
@@ -98,18 +117,23 @@ public class HashingTemplateProcessor implements ExchangeTemplateProcessor {
      * Generate hash using specified algorithm
      */
     private String generateHash(String algorithm, String input) throws NoSuchAlgorithmException {
+        if (!SUPPORTED_ALGORITHMS.contains(algorithm)) {
+            throw new NoSuchAlgorithmException("Unsupported hash algorithm: " + algorithm);
+        }
         MessageDigest digest = MessageDigest.getInstance(algorithm);
         byte[] hashBytes = digest.digest(input.getBytes());
         
         // Convert to hexadecimal string
         BigInteger number = new BigInteger(1, hashBytes);
-        StringBuilder hexString = new StringBuilder(number.toString(16));
+        String hexString = number.toString(16);
         
-        // Pad with leading zeros if needed
-        while (hexString.length() < 32) {
-            hexString.insert(0, '0');
+        // Pad with leading zeros if needed (each byte = 2 hex chars)
+        int expectedLength = hashBytes.length * 2;
+        StringBuilder paddedHex = new StringBuilder(hexString);
+        while (paddedHex.length() < expectedLength) {
+            paddedHex.insert(0, '0');
         }
         
-        return hexString.toString();
+        return paddedHex.toString();
     }
 }

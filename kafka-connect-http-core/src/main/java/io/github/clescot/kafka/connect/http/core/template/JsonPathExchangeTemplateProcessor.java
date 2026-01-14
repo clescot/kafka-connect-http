@@ -46,6 +46,7 @@ public class JsonPathExchangeTemplateProcessor implements ExchangeTemplateProces
         
         LOGGER.debug("Looking for JSONPath patterns in template: {}", template);
         boolean foundAny = false;
+        Exchange<R, S> modifiedExchange = exchange;
         
         while (matcher.find()) {
             foundAny = true;
@@ -54,7 +55,7 @@ public class JsonPathExchangeTemplateProcessor implements ExchangeTemplateProces
             
             try {
                 // Try to evaluate the JSONPath expression against the exchange
-                Object result = evaluateJsonPath(exchange, jsonPathExpression);
+                Object result = evaluateJsonPath(modifiedExchange, jsonPathExpression);
                 
                 if (result != null) {
                     LOGGER.debug("JSONPath result for '{}': {}", jsonPathExpression, result);
@@ -78,7 +79,7 @@ public class JsonPathExchangeTemplateProcessor implements ExchangeTemplateProces
                     
                     // Add the result to attributes using the exchange's withAttribute method
                     String attributeName = "jsonpath_" + jsonPathExpression.replaceAll("[^a-zA-Z0-9_]", "_");
-                    exchange = exchange.withAttribute(attributeName, resultValue);
+                    modifiedExchange = modifiedExchange.withAttribute(attributeName, resultValue);
                     LOGGER.debug("Added attribute: {} = {}", attributeName, resultValue);
                 } else {
                     LOGGER.debug("JSONPath expression '{}' returned null", jsonPathExpression);
@@ -93,7 +94,7 @@ public class JsonPathExchangeTemplateProcessor implements ExchangeTemplateProces
             LOGGER.debug("No JSONPath expressions found in template");
         }
         
-        return exchange;
+        return modifiedExchange;
     }
 
     /**

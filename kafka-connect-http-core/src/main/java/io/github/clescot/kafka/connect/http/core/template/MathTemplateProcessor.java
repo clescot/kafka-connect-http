@@ -159,34 +159,42 @@ public class MathTemplateProcessor implements ExchangeTemplateProcessor {
         }
         
         // Then handle multiplication and division
-        double result = evaluateMultiplicationDivision(expression);
-        
-        // Finally handle addition and subtraction
-        return evaluateAdditionSubtraction(result, expression);
+        return evaluateMultiplicationDivision(expression);
     }
     
     private double evaluateMultiplicationDivision(String expression) {
-        // This is a simplified approach - for real implementation, use proper parsing
-        // For now, we'll use a basic approach that handles simple expressions
+        // Split the expression into terms separated by + and -
+        java.util.List<String> terms = new java.util.ArrayList<>();
+        java.util.List<String> operators = new java.util.ArrayList<>();
         
-        // Split by + and - to get terms, then evaluate each term
-        String[] terms = expression.split("[+-]");
-        String[] operators = expression.split("[^+-]+");
+        int termStart = 0;
+        for (int i = 0; i < expression.length(); i++) {
+            char c = expression.charAt(i);
+            if (c == '+' || c == '-') {
+                if (i > termStart) {
+                    terms.add(expression.substring(termStart, i));
+                }
+                operators.add(String.valueOf(c));
+                termStart = i + 1;
+            }
+        }
+        // Add the last term
+        if (termStart < expression.length()) {
+            terms.add(expression.substring(termStart));
+        }
         
         double result = 0;
-        for (int i = 0; i < terms.length; i++) {
-            String term = terms[i];
-            if (term.isEmpty()) continue;
-            
+        for (int i = 0; i < terms.size(); i++) {
+            String term = terms.get(i);
             double termValue = evaluateTerm(term);
             
             if (i == 0) {
                 result = termValue;
             } else {
-                String op = operators[i];
-                if (op.contains("+")) {
+                String op = operators.get(i - 1);
+                if ("+".equals(op)) {
                     result += termValue;
-                } else if (op.contains("-")) {
+                } else if ("-".equals(op)) {
                     result -= termValue;
                 }
             }
@@ -198,16 +206,31 @@ public class MathTemplateProcessor implements ExchangeTemplateProcessor {
     private double evaluateTerm(String term) {
         // Handle multiplication and division within a term
         if (term.contains("*") || term.contains("/")) {
-            String[] factors = term.split("[*/]");
-            String[] ops = term.split("[^*/]+");
+            java.util.List<String> factors = new java.util.ArrayList<>();
+            java.util.List<String> ops = new java.util.ArrayList<>();
             
-            double result = Double.parseDouble(factors[0]);
-            for (int i = 1; i < factors.length; i++) {
-                String op = ops[i];
-                double factor = Double.parseDouble(factors[i]);
-                if (op.contains("*")) {
+            int factorStart = 0;
+            for (int i = 0; i < term.length(); i++) {
+                char c = term.charAt(i);
+                if (c == '*' || c == '/') {
+                    if (i > factorStart) {
+                        factors.add(term.substring(factorStart, i));
+                    }
+                    ops.add(String.valueOf(c));
+                    factorStart = i + 1;
+                }
+            }
+            // Add the last factor
+            if (factorStart < term.length()) {
+                factors.add(term.substring(factorStart));
+            }
+            
+            double result = Double.parseDouble(factors.get(0));
+            for (int i = 0; i < ops.size(); i++) {
+                double factor = Double.parseDouble(factors.get(i + 1));
+                if ("*".equals(ops.get(i))) {
                     result *= factor;
-                } else if (op.contains("/")) {
+                } else if ("/".equals(ops.get(i))) {
                     result /= factor;
                 }
             }
@@ -215,12 +238,5 @@ public class MathTemplateProcessor implements ExchangeTemplateProcessor {
         }
         
         return Double.parseDouble(term);
-    }
-    
-    private double evaluateAdditionSubtraction(double baseResult, String expression) {
-        // This method would handle addition and subtraction
-        // For simplicity, we'll return the base result
-        // In a real implementation, this would parse the expression properly
-        return baseResult;
     }
 }

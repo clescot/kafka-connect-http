@@ -3,7 +3,6 @@ package io.github.clescot.kafka.connect.http.core.template;
 import io.github.clescot.kafka.connect.http.core.Exchange;
 import io.github.clescot.kafka.connect.http.core.Request;
 import io.github.clescot.kafka.connect.http.core.Response;
-import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -32,7 +31,7 @@ public class DateTimeTemplateProcessor implements ExchangeTemplateProcessor {
     public <R extends Request,S extends Response,E extends Exchange<R,S>> Exchange<R, S> process(E exchange, String template, Map<String, Object> context) {
         if (exchange == null) {
             LOGGER.warn("Exchange parameter is null");
-            throw new NullPointerException("Exchange parameter cannot be null");
+            throw new IllegalArgumentException("Exchange parameter cannot be null (violation of @NotNull contract)");
         }
         if (template == null) {
             LOGGER.warn("Template parameter is null");
