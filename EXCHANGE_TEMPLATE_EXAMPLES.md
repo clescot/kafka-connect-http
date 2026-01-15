@@ -14,7 +14,8 @@ The template system allows you to customize Exchange output (HttpExchange, SseEx
 7. Applying conditional logic
 8. Creating hashes and digests
 9. Performing mathematical operations
-10. Creating custom processors
+10. Accessing HTTP headers, parameters, and cookies
+11. Creating custom processors
 
 The template system works with any Exchange implementation, including both HTTP and SSE configurations.
 
@@ -663,7 +664,7 @@ You can create custom template processors by implementing the `ExchangeTemplateP
 Use conditional processors to add logic to your templates:
 
 ```properties
-exchange.template=${conditional:response.statusCode >= 200 && response.statusCode < 300:SUCCESS:FAILURE}
+exchange.template=${if:response.statusCode >= 200 && response.statusCode < 300:SUCCESS:FAILURE}
 exchange.template.processors=jsonpath,conditional
 ```
 
@@ -837,7 +838,7 @@ This adds a timestamp with a custom format.
 ### Conditional Processing
 
 ```properties
-exchange.template=${conditional:response.statusCode >= 200 && response.statusCode < 300:SUCCESS:FAILURE}
+exchange.template=${if:response.statusCode >= 200 && response.statusCode < 300:SUCCESS:FAILURE}
 ```
 
 This adds a SUCCESS or FAILURE attribute based on the status code.
@@ -845,7 +846,7 @@ This adds a SUCCESS or FAILURE attribute based on the status code.
 ### Complex Conditions
 
 ```properties
-exchange.template=${conditional:request.method == 'GET' && response.statusCode == 200:READ_SUCCESS:OTHER}
+exchange.template=${if:request.method == 'GET' && response.statusCode == 200:READ_SUCCESS:OTHER}
 ```
 
 This evaluates complex conditions.
@@ -955,6 +956,53 @@ This combines:
 - Random UUID generation
 - Order status extraction from XML
 
+## Header/Parameter Examples
+
+### Extract HTTP Headers
+
+```properties
+exchange.template=${header:Content-Type} ${header:Authorization}
+exchange.template.processors=headerparam
+```
+
+This extracts:
+- The Content-Type header from the HTTP request/response
+- The Authorization header from the HTTP request/response
+
+### Extract Query Parameters
+
+```properties
+exchange.template=${param:userId} ${param:searchTerm}
+exchange.template.processors=headerparam
+```
+
+This extracts:
+- The userId query parameter from the HTTP request URL
+- The searchTerm query parameter from the HTTP request URL
+
+### Extract Cookies
+
+```properties
+exchange.template=${cookie:sessionId} ${cookie:preferences}
+exchange.template.processors=headerparam
+```
+
+This extracts:
+- The sessionId cookie from the HTTP request
+- The preferences cookie from the HTTP request
+
+### Combined HTTP Metadata Extraction
+
+```properties
+exchange.template=${header:X-Request-ID} ${param:apiKey} ${cookie:userToken}
+exchange.template.processors=headerparam
+```
+
+This combines:
+- Request ID from headers
+- API key from query parameters
+- User token from cookies
+
 ## Advanced Usage
 
 ### Custom Processor Registration
@@ -1029,7 +1077,7 @@ Where:
 ### Conditional Syntax
 
 ```
-${conditional:condition:trueValue:falseValue}
+${if:condition:trueValue:falseValue}
 ```
 
 Where:
@@ -1046,6 +1094,21 @@ ${hash:input:algorithm}
 Where:
 - `input` is the text to hash
 - `algorithm` is the hash algorithm (SHA-256, MD5, SHA-1, etc.)
+
+### Header/Parameter Syntax
+
+```
+${header:headerName:attributeName}
+${param:paramName:attributeName}
+${cookie:cookieName:attributeName}
+```
+
+Where:
+- `header` - Access HTTP request/response headers
+- `param` - Access HTTP query parameters  
+- `cookie` - Access HTTP cookies
+- `headerName/paramName/cookieName` - The name of the header, parameter, or cookie to extract
+- `attributeName` - (Optional) The attribute name to store the value under
 
 ### Math Syntax
 
