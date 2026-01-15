@@ -131,8 +131,6 @@ public class ExchangeTemplateManager {
         registerProcessor(new JsonPathExchangeTemplateProcessor());
         registerProcessor(new XPathExchangeTemplateProcessor());
         registerProcessor(new RandomExchangeTemplateProcessor());
-        
-        // Register new processors
         registerProcessor(new JmesPathExchangeTemplateProcessor());
         registerProcessor(new RegexExchangeTemplateProcessor());
         registerProcessor(new HeaderParameterTemplateProcessor());

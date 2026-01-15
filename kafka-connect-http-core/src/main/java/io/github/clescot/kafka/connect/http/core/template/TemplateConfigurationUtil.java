@@ -25,7 +25,7 @@ public class TemplateConfigurationUtil {
         ExchangeTemplateManager manager = new ExchangeTemplateManager();
         
         // Register built-in processors
-        registerDefaultProcessors(manager);
+        manager.registerDefaultProcessors();
         
         // Check for custom processor configuration
         String customProcessors = settings.getOrDefault("exchange.template.processors", "");
@@ -47,27 +47,6 @@ public class TemplateConfigurationUtil {
         return manager;
     }
 
-    /**
-     * Registers default processors to the given template manager.
-     * This ensures consistent default processor registration across different configuration types.
-     *
-     * @param manager the template manager to register processors to
-     */
-    public static void registerDefaultProcessors(ExchangeTemplateManager manager) {
-        // Register existing processors
-        manager.registerProcessor(new JsonPathExchangeTemplateProcessor());
-        manager.registerProcessor(new XPathExchangeTemplateProcessor());
-        manager.registerProcessor(new RandomExchangeTemplateProcessor());
-        
-        // Register new processors
-        manager.registerProcessor(new JmesPathExchangeTemplateProcessor());
-        manager.registerProcessor(new RegexExchangeTemplateProcessor());
-        manager.registerProcessor(new HeaderParameterTemplateProcessor());
-        manager.registerProcessor(new DateTimeTemplateProcessor());
-        manager.registerProcessor(new ConditionalTemplateProcessor());
-        manager.registerProcessor(new HashingTemplateProcessor());
-        manager.registerProcessor(new MathTemplateProcessor());
-    }
 
     /**
      * Gets the exchange template from settings.

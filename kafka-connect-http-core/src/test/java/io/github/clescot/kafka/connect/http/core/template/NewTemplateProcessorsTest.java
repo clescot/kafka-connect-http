@@ -1,5 +1,6 @@
 package io.github.clescot.kafka.connect.http.core.template;
 
+import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.AssertionsForInterfaceTypes.assertThat;
@@ -74,7 +75,16 @@ class NewTemplateProcessorsTest {
         
         // Now should have all processors
         assertThat(manager.getProcessors()).hasSize(10); // 3 original + 7 new
-        assertThat(manager.getProcessor("jmespath")).isNotNull();
-        assertThat(manager.getProcessor("jsonpath")).isNotNull();
+        Assertions.assertThat(manager.getProcessors()).hasSizeGreaterThanOrEqualTo(10);
+        Assertions.assertThat(manager.getProcessor("jsonpath")).isNotNull();
+        Assertions.assertThat(manager.getProcessor("xpath")).isNotNull();
+        Assertions.assertThat(manager.getProcessor("random")).isNotNull();
+        Assertions.assertThat(manager.getProcessor("jmespath")).isNotNull();
+        Assertions.assertThat(manager.getProcessor("regex")).isNotNull();
+        Assertions.assertThat(manager.getProcessor("headerparam")).isNotNull();
+        Assertions.assertThat(manager.getProcessor("datetime")).isNotNull();
+        Assertions.assertThat(manager.getProcessor("conditional")).isNotNull();
+        Assertions.assertThat(manager.getProcessor("hash")).isNotNull();
+        Assertions.assertThat(manager.getProcessor("math")).isNotNull();
     }
 }

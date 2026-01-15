@@ -47,17 +47,4 @@ class TemplateConfigurationUtilTest {
         assertThat(settings.get("exchange.template")).isEqualTo("new-template");
     }
 
-    @Test
-    void testRegisterDefaultProcessors() {
-        ExchangeTemplateManager manager = new ExchangeTemplateManager(false); // Don't register defaults
-        
-        TemplateConfigurationUtil.registerDefaultProcessors(manager);
-        
-        assertThat(manager.getProcessors()).hasSizeGreaterThanOrEqualTo(10); // Should have all default processors
-        assertThat(manager.getProcessor("jsonpath")).isNotNull();
-        assertThat(manager.getProcessor("xpath")).isNotNull();
-        assertThat(manager.getProcessor("random")).isNotNull();
-        assertThat(manager.getProcessor("jmespath")).isNotNull();
-        assertThat(manager.getProcessor("regex")).isNotNull();
-    }
 }

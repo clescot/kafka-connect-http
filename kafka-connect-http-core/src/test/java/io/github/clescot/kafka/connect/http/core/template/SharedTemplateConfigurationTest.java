@@ -73,27 +73,5 @@ class SharedTemplateConfigurationTest {
         assertThat(template).isEqualTo("test-template");
     }
 
-    @Test
-    void testTemplateConfigurationUtilRegistersAllDefaultProcessors() {
-        ExchangeTemplateManager manager = new ExchangeTemplateManager(false);
-        
-        // Verify that no processors are registered initially
-        assertThat(manager.getProcessors()).isEmpty();
-        
-        // Register default processors using the shared utility
-        TemplateConfigurationUtil.registerDefaultProcessors(manager);
-        
-        // Verify that all default processors are registered
-        assertThat(manager.getProcessors()).hasSizeGreaterThanOrEqualTo(10);
-        assertThat(manager.getProcessor("jsonpath")).isNotNull();
-        assertThat(manager.getProcessor("xpath")).isNotNull();
-        assertThat(manager.getProcessor("random")).isNotNull();
-        assertThat(manager.getProcessor("jmespath")).isNotNull();
-        assertThat(manager.getProcessor("regex")).isNotNull();
-        assertThat(manager.getProcessor("headerparam")).isNotNull();
-        assertThat(manager.getProcessor("datetime")).isNotNull();
-        assertThat(manager.getProcessor("conditional")).isNotNull();
-        assertThat(manager.getProcessor("hash")).isNotNull();
-        assertThat(manager.getProcessor("math")).isNotNull();
-    }
+
 }
