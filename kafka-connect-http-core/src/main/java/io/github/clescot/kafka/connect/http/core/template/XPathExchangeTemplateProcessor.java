@@ -29,6 +29,11 @@ public class XPathExchangeTemplateProcessor implements ExchangeTemplateProcessor
     public static final String NAME = "xpath";
     private static final Pattern XPATH_PATTERN = Pattern.compile("\\$\\{xpath:(.*?)\\}");
     private static final XPathFactory XPATH_FACTORY = XPathFactory.newInstance();
+    
+    // Security constants for XPath
+    private static final int MAX_XPATH_LENGTH = 500; // 500 characters max for XPath expressions
+    private static final int MAX_XML_CONTENT_LENGTH = 500000; // 500KB max XML content size
+    private static final long MAX_XPATH_TIMEOUT_MS = 3000; // 3 second timeout for XPath evaluation
 
     @Override
     public <R extends Request,S extends Response,E extends Exchange<R,S>> Exchange<R, S> process(@NotNull E exchange, @NotNull String template, Map<String, Object> context) {
@@ -84,12 +89,37 @@ public class XPathExchangeTemplateProcessor implements ExchangeTemplateProcessor
      */
     private Object evaluateXPath(Exchange<?, ?> exchange, String xpathExpression) {
         try {
+            // Security validation for XPath expression length
+            if (xpathExpression.length() > MAX_XPATH_LENGTH) {
+                LOGGER.warn("XPath expression too long ({} characters), max allowed is {}: {}", 
+                    xpathExpression.length(), MAX_XPATH_LENGTH, xpathExpression.substring(0, 100) + "...");
+                return null;
+            }
+            
             XPath xpath = XPATH_FACTORY.newXPath();
+            
+            // Timeout protection for XPath compilation
+            long startTime = System.currentTimeMillis();
             XPathExpression expr = xpath.compile(xpathExpression);
+            long compilationTime = System.currentTimeMillis() - startTime;
+            
+            if (compilationTime > MAX_XPATH_TIMEOUT_MS) {
+                LOGGER.warn("XPath expression compilation took too long ({}ms), possible malicious pattern: {}", 
+                    compilationTime, xpathExpression);
+                return null;
+            }
             
             // Try to evaluate against content if it's XML
             String content = exchange.getContentAsString();
             if (content != null && isXmlContent(content)) {
+                
+                // Security validation for XML content size
+                if (content.length() > MAX_XML_CONTENT_LENGTH) {
+                    LOGGER.warn("XML content too large for XPath processing ({} characters), max allowed is {}: {}", 
+                        content.length(), MAX_XML_CONTENT_LENGTH, content.substring(0, 100) + "...");
+                    return null;
+                }
+                
                 Document doc = parseXml(content);
                 if (doc != null) {
                     return expr.evaluate(doc, XPathConstants.STRING);

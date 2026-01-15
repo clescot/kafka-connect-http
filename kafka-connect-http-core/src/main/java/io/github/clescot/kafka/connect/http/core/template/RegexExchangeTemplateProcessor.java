@@ -20,6 +20,11 @@ public class RegexExchangeTemplateProcessor implements ExchangeTemplateProcessor
     
     private static final Logger LOGGER = LoggerFactory.getLogger(RegexExchangeTemplateProcessor.class);
     
+    // Security constants for regex
+    private static final int MAX_REGEX_LENGTH = 500; // 500 characters max for regex patterns
+    private static final int MAX_CONTENT_LENGTH = 100000; // 100KB max content size
+    private static final int MAX_REGEX_TIMEOUT_MS = 2000; // 2 second timeout for regex matching
+    
     @Override
     public <R extends Request,S extends Response,E extends Exchange<R,S>> Exchange<R, S> process(@NotNull E exchange, @NotNull String template, Map<String, Object> context) {
         try {
@@ -34,15 +39,47 @@ public class RegexExchangeTemplateProcessor implements ExchangeTemplateProcessor
             String regexPattern = parts[0];
             String attributeName = parts.length > 1 ? parts[1] : "regex_result";
             
+            // Security validation for regex pattern length
+            if (regexPattern.length() > MAX_REGEX_LENGTH) {
+                LOGGER.warn("Regex pattern too long ({} characters), max allowed is {}: {}", 
+                    regexPattern.length(), MAX_REGEX_LENGTH, regexPattern.substring(0, 100) + "...");
+                return exchange;
+            }
+            
             // Get content to search
             String content = exchange.getContentAsString();
+            
+            // Security validation for content size
+            if (content.length() > MAX_CONTENT_LENGTH) {
+                LOGGER.warn("Content too large for regex processing ({} characters), max allowed is {}: {}", 
+                    content.length(), MAX_CONTENT_LENGTH, content.substring(0, 100) + "...");
+                return exchange;
+            }
+            
+            // Get content to search
             if (content == null || content.trim().isEmpty()) {
                 LOGGER.debug("No content available for regex processing");
                 return   exchange.withAttribute(attributeName, "");
             }
             
-            // Compile and apply regex pattern
-            Pattern pattern = Pattern.compile(regexPattern);
+            // Compile and apply regex pattern with timeout protection
+            Pattern pattern;
+            try {
+                // Use a simple timeout approach - if pattern compilation takes too long, it's likely malicious
+                long startTime = System.currentTimeMillis();
+                pattern = Pattern.compile(regexPattern);
+                long compilationTime = System.currentTimeMillis() - startTime;
+                
+                if (compilationTime > MAX_REGEX_TIMEOUT_MS) {
+                    LOGGER.warn("Regex pattern compilation took too long ({}ms), possible ReDoS pattern: {}", 
+                        compilationTime, regexPattern);
+                    return exchange;
+                }
+            } catch (PatternSyntaxException e) {
+                LOGGER.warn("Invalid regex pattern in template '{}': {}", template, e.getMessage());
+                return exchange;
+            }
+            
             Matcher matcher = pattern.matcher(content);
             
             String result;

@@ -18,6 +18,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.concurrent.*;
 
 /**
  * JSONPath template processor for Exchange.
@@ -25,6 +26,14 @@ import java.util.regex.Pattern;
  */
 public class JsonPathExchangeTemplateProcessor implements ExchangeTemplateProcessor {
     private static final Logger LOGGER = LoggerFactory.getLogger(JsonPathExchangeTemplateProcessor.class);
+    
+    // Security constants
+    private static final long JSONPATH_TIMEOUT_MS = 5000; // 5 second timeout
+    private static final int MAX_TEMPLATE_LENGTH = 1000; // 1000 characters max
+    private static final int MAX_RESULT_LENGTH = 10000; // 10000 characters max
+    private static final int MAX_ATTRIBUTE_NAME_LENGTH = 100; // 100 characters max
+    
+    private static final ExecutorService jsonPathExecutor = Executors.newCachedThreadPool();
     
     public static final String NAME = "jsonpath";
     private static final Pattern JSONPATH_PATTERN = Pattern.compile("\\$\\{jsonpath:(.*?)\\}");
@@ -40,6 +49,12 @@ public class JsonPathExchangeTemplateProcessor implements ExchangeTemplateProces
     public <R extends Request,S extends Response,E extends Exchange<R,S>> Exchange<R, S> process(@NotNull E exchange, @NotNull String template, Map<String, Object> context) {
         LOGGER.debug("Processing template with JSONPath: {}", template);
         
+        // Security validation
+        if (template.length() > MAX_TEMPLATE_LENGTH) {
+            LOGGER.warn("Template too long ({} characters), max allowed is {}: {}", 
+                template.length(), MAX_TEMPLATE_LENGTH, template.substring(0, 100) + "...");
+            return exchange;
+        }
 
         // Process the template to extract JSONPath expressions
         Matcher matcher = JSONPATH_PATTERN.matcher(template);
@@ -77,8 +92,24 @@ public class JsonPathExchangeTemplateProcessor implements ExchangeTemplateProces
                         resultValue = result.toString();
                     }
                     
-                    // Add the result to attributes using the exchange's withAttribute method
+                    // Security validation for result size
+                    if (resultValue.length() > MAX_RESULT_LENGTH) {
+                        LOGGER.warn("JSONPath result too large ({} characters), max allowed is {}: {}", 
+                            resultValue.length(), MAX_RESULT_LENGTH, resultValue.substring(0, 100) + "...");
+                        resultValue = resultValue.substring(0, MAX_RESULT_LENGTH);
+                    }
+                    
+                    // Generate attribute name
                     String attributeName = "jsonpath_" + jsonPathExpression.replaceAll("[^a-zA-Z0-9_]", "_");
+                    
+                    // Security validation for attribute name length
+                    if (attributeName.length() > MAX_ATTRIBUTE_NAME_LENGTH) {
+                        LOGGER.warn("Attribute name too long ({} characters), truncating to {}: {}", 
+                            attributeName.length(), MAX_ATTRIBUTE_NAME_LENGTH, attributeName);
+                        attributeName = attributeName.substring(0, MAX_ATTRIBUTE_NAME_LENGTH);
+                    }
+                    
+                    // Add the result to attributes using the exchange's withAttribute method
                     modifiedExchange = modifiedExchange.withAttribute(attributeName, resultValue);
                     LOGGER.debug("Added attribute: {} = {}", attributeName, resultValue);
                 } else {
@@ -106,16 +137,42 @@ public class JsonPathExchangeTemplateProcessor implements ExchangeTemplateProces
      */
     private Object evaluateJsonPath(Exchange<?, ?> exchange, String jsonPathExpression) {
         try {
+            // Security validation for expression length
+            if (jsonPathExpression.length() > MAX_TEMPLATE_LENGTH) {
+                LOGGER.warn("JSONPath expression too long ({} characters), max allowed is {}: {}", 
+                    jsonPathExpression.length(), MAX_TEMPLATE_LENGTH, jsonPathExpression.substring(0, 100) + "...");
+                return null;
+            }
+            
             // Convert the Exchange to a JSON structure that JSONPath can navigate
             Object exchangeData = createExchangeMap(exchange);
             
             LOGGER.debug("Exchange data for JSONPath: {}", exchangeData);
             
-            // Parse and evaluate the JSONPath expression
-            JsonPath jsonPath = JsonPath.compile(jsonPathExpression);
-            Object result = jsonPath.read(exchangeData, JSON_PATH_CONFIG);
+            // Parse and evaluate the JSONPath expression with timeout protection
+            Future<Object> future = jsonPathExecutor.submit(() -> {
+                JsonPath jsonPath = JsonPath.compile(jsonPathExpression);
+                return jsonPath.read(exchangeData, JSON_PATH_CONFIG);
+            });
             
-            LOGGER.debug("JSONPath '{}' evaluated to: {}", jsonPathExpression, result);
+            Object result;
+            try {
+                result = future.get(JSONPATH_TIMEOUT_MS, TimeUnit.MILLISECONDS);
+                LOGGER.debug("JSONPath '{}' evaluated to: {}", jsonPathExpression, result);
+            } catch (TimeoutException e) {
+                LOGGER.warn("JSONPath evaluation timed out after {}ms for expression: {}", 
+                    JSONPATH_TIMEOUT_MS, jsonPathExpression);
+                future.cancel(true);
+                return null;
+            } catch (InterruptedException e) {
+                LOGGER.warn("JSONPath evaluation interrupted for expression: {}", jsonPathExpression);
+                Thread.currentThread().interrupt();
+                future.cancel(true);
+                return null;
+            } catch (ExecutionException e) {
+                LOGGER.debug("JSONPath evaluation failed for '{}': {}", jsonPathExpression, e.getMessage());
+                return null;
+            }
             
             return result;
             
