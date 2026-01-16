@@ -15,9 +15,10 @@ import java.util.regex.Pattern;
  * Supports if-then-else conditions and basic comparisons.
  */
 public class ConditionalTemplateProcessor implements ExchangeTemplateProcessor {
-    
+
     private static final Logger LOGGER = LoggerFactory.getLogger(ConditionalTemplateProcessor.class);
-    
+    public static final String NAME = "conditional";
+
     @Override
     public <R extends Request,S extends Response,E extends Exchange<R,S>> Exchange<R, S> process(@NotNull E exchange, @NotNull String template, Map<String, Object> context) {
         try {
@@ -51,7 +52,7 @@ public class ConditionalTemplateProcessor implements ExchangeTemplateProcessor {
     
     @Override
     public String getName() {
-        return "conditional";
+        return NAME;
     }
     
     private String[] extractTemplateParts(String template) {

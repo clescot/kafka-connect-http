@@ -14,9 +14,10 @@ import java.util.Map;
  * Supports basic arithmetic and unit conversions.
  */
 public class MathTemplateProcessor implements ExchangeTemplateProcessor {
-    
+
     private static final Logger LOGGER = LoggerFactory.getLogger(MathTemplateProcessor.class);
-    
+    public static final String NAME = "math";
+
     @Override
     public <R extends Request,S extends Response,E extends Exchange<R,S>> Exchange<R, S> process(@NotNull E exchange, @NotNull String template, Map<String, Object> context) {
         try {
@@ -49,7 +50,7 @@ public class MathTemplateProcessor implements ExchangeTemplateProcessor {
     
     @Override
     public String getName() {
-        return "math";
+        return NAME;
     }
     
     /**

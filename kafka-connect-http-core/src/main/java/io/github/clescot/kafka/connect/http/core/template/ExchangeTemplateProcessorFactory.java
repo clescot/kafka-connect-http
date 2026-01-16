@@ -28,8 +28,15 @@ public class ExchangeTemplateProcessorFactory {
 
         return switch (normalizedName) {
             case JsonPathExchangeTemplateProcessor.NAME -> new JsonPathExchangeTemplateProcessor();
-            case RandomExchangeTemplateProcessor.NAME -> new RandomExchangeTemplateProcessor();
             case XPathExchangeTemplateProcessor.NAME -> new XPathExchangeTemplateProcessor();
+            case RandomExchangeTemplateProcessor.NAME -> new RandomExchangeTemplateProcessor();
+            case JmesPathExchangeTemplateProcessor.NAME -> new JmesPathExchangeTemplateProcessor();
+            case RegexExchangeTemplateProcessor.NAME -> new RegexExchangeTemplateProcessor();
+            case HeaderParameterTemplateProcessor.NAME -> new HeaderParameterTemplateProcessor();
+            case DateTimeTemplateProcessor.NAME -> new DateTimeTemplateProcessor();
+            case ConditionalTemplateProcessor.NAME -> new ConditionalTemplateProcessor();
+            case HashingTemplateProcessor.NAME -> new HashingTemplateProcessor();
+            case MathTemplateProcessor.NAME -> new MathTemplateProcessor();
             default -> throw new IllegalArgumentException("Unknown built-in processor: " + processorName);
         };
     }

@@ -13,9 +13,10 @@ import java.util.Map;
  * Provides direct access to HTTP metadata without manual parsing.
  */
 public class HeaderParameterTemplateProcessor implements ExchangeTemplateProcessor {
-    
+
     private static final Logger LOGGER = LoggerFactory.getLogger(HeaderParameterTemplateProcessor.class);
-    
+    public static final String NAME = "headerparam";
+
     @Override
     public <R extends Request,S extends Response,E extends Exchange<R,S>> Exchange<R, S> process(@NotNull E exchange, @NotNull String template, Map<String, Object> context) {
         try {
@@ -77,7 +78,7 @@ public class HeaderParameterTemplateProcessor implements ExchangeTemplateProcess
     
     @Override
     public String getName() {
-        return "headerparam";
+        return NAME;
     }
     
     /**

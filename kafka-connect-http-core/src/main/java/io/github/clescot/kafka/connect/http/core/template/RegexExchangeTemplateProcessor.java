@@ -17,14 +17,15 @@ import java.util.regex.PatternSyntaxException;
  * Useful for parsing unstructured or semi-structured data.
  */
 public class RegexExchangeTemplateProcessor implements ExchangeTemplateProcessor {
-    
+
     private static final Logger LOGGER = LoggerFactory.getLogger(RegexExchangeTemplateProcessor.class);
     
     // Security constants for regex
     private static final int MAX_REGEX_LENGTH = 500; // 500 characters max for regex patterns
     private static final int MAX_CONTENT_LENGTH = 100000; // 100KB max content size
     private static final int MAX_REGEX_TIMEOUT_MS = 2000; // 2 second timeout for regex matching
-    
+    public static final String NAME = "regex";
+
     @Override
     public <R extends Request,S extends Response,E extends Exchange<R,S>> Exchange<R, S> process(@NotNull E exchange, @NotNull String template, Map<String, Object> context) {
         try {
@@ -110,7 +111,7 @@ public class RegexExchangeTemplateProcessor implements ExchangeTemplateProcessor
     
     @Override
     public String getName() {
-        return "regex";
+        return NAME;
     }
     
     /**

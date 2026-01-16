@@ -20,12 +20,13 @@ import java.util.Map;
  * JMESPath provides a simpler syntax than JSONPath for querying JSON data.
  */
 public class JmesPathExchangeTemplateProcessor implements ExchangeTemplateProcessor {
-    
+
     private static final Logger LOGGER = LoggerFactory.getLogger(JmesPathExchangeTemplateProcessor.class);
     private static final ObjectMapper objectMapper = new ObjectMapper();
     private static final Configuration jsonPathConfig = Configuration.builder()
             .options(EnumSet.of(Option.SUPPRESS_EXCEPTIONS, Option.ALWAYS_RETURN_LIST)).build();
-    
+    public static final String NAME = "jmespath";
+
     @Override
     public <R extends Request,S extends Response,E extends Exchange<R,S>> Exchange<R, S> process(@NotNull E exchange, @NotNull String template, Map<String, Object> context) {
         try {
@@ -72,7 +73,7 @@ public class JmesPathExchangeTemplateProcessor implements ExchangeTemplateProces
     
     @Override
     public String getName() {
-        return "jmespath";
+        return NAME;
     }
     
     /**

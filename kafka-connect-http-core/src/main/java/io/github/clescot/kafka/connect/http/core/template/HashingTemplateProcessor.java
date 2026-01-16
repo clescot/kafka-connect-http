@@ -18,13 +18,14 @@ import java.util.Set;
  * Supports various hash algorithms like MD5, SHA-256, etc.
  */
 public class HashingTemplateProcessor implements ExchangeTemplateProcessor {
-    
+
     private static final Logger LOGGER = LoggerFactory.getLogger(HashingTemplateProcessor.class);
     private static final Set<String> SUPPORTED_ALGORITHMS = Set.of(
         "MD5", "SHA-1", "SHA-256", "SHA-384", "SHA-512",
         "SHA3-256", "SHA3-384", "SHA3-512"
     );
-    
+    public static final String NAME = "hash";
+
     @Override
     public <R extends Request,S extends Response,E extends Exchange<R,S>> E process(@NotNull E exchange, @NotNull String template, Map<String, Object> context) {
         String algorithm = null;
@@ -79,7 +80,7 @@ public class HashingTemplateProcessor implements ExchangeTemplateProcessor {
     
     @Override
     public String getName() {
-        return "hash";
+        return NAME;
     }
     
     /**

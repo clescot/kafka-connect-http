@@ -26,6 +26,7 @@ public class DateTimeTemplateProcessor implements ExchangeTemplateProcessor {
     public static final String EPOCH = "epoch";
     public static final String ISO_8601_FORMAT_IN_UTC = "yyyy-MM-dd'T'HH:mm:ss.SSSZ";
     public static final String ATTRIBUTE_NAME_PATTERN = "^[a-zA-Z_][a-zA-Z0-9_]*$";
+    public static final String NAME = "datetime";
 
     @Override
     public <R extends Request,S extends Response,E extends Exchange<R,S>> Exchange<R, S> process(E exchange, String template, Map<String, Object> context) {
@@ -133,7 +134,7 @@ public class DateTimeTemplateProcessor implements ExchangeTemplateProcessor {
     
     @Override
     public String getName() {
-        return "datetime";
+        return NAME;
     }
     
     /**
