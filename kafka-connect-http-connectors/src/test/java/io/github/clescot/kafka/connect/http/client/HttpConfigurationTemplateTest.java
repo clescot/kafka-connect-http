@@ -78,17 +78,15 @@ class HttpConfigurationTemplateTest {
 
         // Verify that template processing was applied
         assertThat(enrichedExchange).isNotNull();
-        assertThat(enrichedExchange.getAttributes()).isNotEmpty();
+        // Content should be set with the template result
+        assertThat(enrichedExchange.getContent()).isNotEmpty();
         
-        // Should have JSONPath attributes
-        boolean hasJsonPathAttribute = enrichedExchange.getAttributes().keySet().stream()
-                .anyMatch(key -> key.startsWith("jsonpath_"));
-        assertThat(hasJsonPathAttribute).isTrue();
-        
-        // Should have random attributes
-        boolean hasRandomAttribute = enrichedExchange.getAttributes().keySet().stream()
-                .anyMatch(key -> key.startsWith("random_"));
-        assertThat(hasRandomAttribute).isTrue();
+        // The template ${jsonpath:$.response.statusCode} ${random.int:1:100} produces content
+        // containing the status code (200) and a random number
+        // JsonPath extracts 200 from response metadata
+        // Note: Content will be like "200 <random_number>"
+        String content = enrichedExchange.getContent();
+        assertThat(content).matches("\\d+\\s+\\d+");  // Should be two numbers separated by space
     }
 
     @Test

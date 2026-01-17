@@ -5,14 +5,15 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.jayway.jsonpath.Configuration;
 import com.jayway.jsonpath.JsonPath;
 import com.jayway.jsonpath.Option;
-import io.github.clescot.kafka.connect.http.core.Exchange;
-import io.github.clescot.kafka.connect.http.core.Request;
-import io.github.clescot.kafka.connect.http.core.Response;
+import io.github.clescot.kafka.connect.http.core.*;
+import io.github.clescot.kafka.connect.sse.core.SseExchange;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.EnumSet;
+import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -28,65 +29,103 @@ public class JmesPathExchangeTemplateProcessor implements ExchangeTemplateProces
     public static final String NAME = "jmespath";
 
     @Override
-    public <R extends Request,S extends Response,E extends Exchange<R,S>> Exchange<R, S> process(@NotNull E exchange, @NotNull String template, Map<String, Object> context) {
+    public <R extends Request, S extends Response, E extends Exchange<R, S>> E process(@NotNull E exchange, @NotNull String template, Map<String, Object> context) {
         try {
-            // Extract the JMESPath expression and attribute name from template
-            // Template format: ${jmespath:expression:attributeName}
+            // Extract the JMESPath expression from template
+            // Template format: ${jmespath:expression} or ${jmespath:expression:attributeName}
+            // The attributeName is ignored - templating puts results in content, not attributes
             String[] parts = extractTemplateParts(template);
             if (parts.length < 1) {
                 LOGGER.warn("Invalid JMESPath template format: {}", template);
-                return   exchange;
+                return exchange;
             }
-            
+
             String jmesPathExpression = parts[0];
-            String attributeName = parts.length > 1 ? parts[1] : "jmespath_result";
-            
+
             // Get content as JSON
-            String content = exchange.getContentAsString();
+            String content = exchange.getContent();
             if (content == null || content.trim().isEmpty()) {
                 LOGGER.debug("No content available for JMESPath processing");
-                return   exchange.withAttribute(attributeName, "");
+                return (E) setContent(exchange, "");
             }
-            
+
             // Parse content as JSON
             JsonNode jsonContent = objectMapper.readTree(content);
-            
+
             // Use JSONPath to evaluate JMESPath-like expression (JSONPath can handle similar syntax)
             Object result = JsonPath.using(jsonPathConfig).parse(jsonContent.toString()).read(jmesPathExpression);
-            
+
             // Handle the result properly - extract from arrays if needed
             String resultString = extractResultValue(result);
-            
+
             LOGGER.debug("JMESPath expression '{}' evaluated to: {}", jmesPathExpression, resultString);
-            return   exchange.withAttribute(attributeName, resultString);
-            
+            return (E) setContent(exchange, resultString);
+
         } catch (Exception e) {
             LOGGER.warn("Failed to process JMESPath template '{}': {}", template, e.getMessage());
-            return   exchange;
+            return exchange;
         }
     }
-    
+
+    @SuppressWarnings("unchecked")
+    private <R extends Request, S extends Response> Exchange<R, S> setContent(
+            Exchange<R, S> exchange, String content) {
+
+        if (exchange instanceof HttpExchange httpExchange) {
+            HttpRequest request = httpExchange.getRequest();
+            HttpResponse originalResponse = httpExchange.getResponse();
+
+            HttpResponse newResponse;
+            if (originalResponse != null) {
+                newResponse = (HttpResponse) originalResponse.clone();
+                newResponse.setBodyAsString(content);
+            } else {
+                newResponse = new HttpResponse(200, "OK");
+                newResponse.setBodyAsString(content);
+            }
+
+            return (Exchange<R, S>) HttpExchange.Builder.anHttpExchange()
+                    .withHttpRequest(request)
+                    .withHttpResponse(newResponse)
+                    .withDuration(httpExchange.getDurationInMillis())
+                    .at(httpExchange.getMoment())
+                    .withAttempts(httpExchange.getAttempts())
+                    .withAttributes(new HashMap<>(httpExchange.getAttributes()))
+                    .withTimings(new HashMap<>(httpExchange.getTimings()))
+                    .build();
+        }
+
+        if (exchange instanceof SseExchange) {
+            SseExchange sseExchange = (SseExchange) exchange;
+            return (Exchange<R, S>) sseExchange.setContent(content);
+        }
+
+        LOGGER.warn("Unsupported exchange type: {}. Cannot set content.", exchange.getClass().getName());
+        return exchange;
+    }
+
     @Override
     public boolean supports(@NotNull String template) {
-        return template.startsWith("${jmespath:") && template.contains(":");
+        return template != null && template.startsWith("${jmespath:") && template.contains(":");
     }
-    
+
     @Override
     public String getName() {
         return NAME;
     }
-    
+
     /**
-     * Extract parts from template: ${jmespath:expression:attributeName}
-     * Returns array where [0] = expression, [1] = attributeName (if present)
+     * Extract parts from template: ${jmespath:expression} or ${jmespath:expression:attributeName}
+     * Returns array where [0] = expression, [1] = attributeName (if present, but ignored)
      */
     private String[] extractTemplateParts(String template) {
-        // Remove ${jmespath: and }
+        if (!template.startsWith("${jmespath:") || !template.endsWith("}")) {
+            return new String[0];
+        }
         String innerContent = template.substring("${jmespath:".length(), template.length() - 1);
-        
-        // Split by colon, but handle nested colons in expressions
+
         int lastColonIndex = innerContent.lastIndexOf(':');
-        
+
         if (lastColonIndex > 0) {
             String expression = innerContent.substring(0, lastColonIndex);
             String attributeName = innerContent.substring(lastColonIndex + 1);
@@ -95,7 +134,7 @@ public class JmesPathExchangeTemplateProcessor implements ExchangeTemplateProces
             return new String[]{innerContent};
         }
     }
-    
+
     /**
      * Extract the actual value from JSONPath result, handling arrays and nulls properly
      */
@@ -103,10 +142,9 @@ public class JmesPathExchangeTemplateProcessor implements ExchangeTemplateProces
         if (result == null) {
             return "null";
         }
-        
-        // Handle arrays - extract first element if array has exactly one element
-        if (result instanceof java.util.List) {
-            java.util.List<?> listResult = (java.util.List<?>) result;
+
+        if (result instanceof List) {
+            List<?> listResult = (List<?>) result;
             if (listResult.isEmpty()) {
                 return "null";
             } else if (listResult.size() == 1) {
@@ -121,7 +159,7 @@ public class JmesPathExchangeTemplateProcessor implements ExchangeTemplateProces
                 }
             }
         }
-        
+
         return result.toString();
     }
 }

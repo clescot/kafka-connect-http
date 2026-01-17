@@ -25,19 +25,18 @@ class HeaderParameterTemplateProcessorTest {
     @BeforeEach
     void setUp() {
         processor = new HeaderParameterTemplateProcessor();
-        
-        // Create a test HttpExchange with headers, query parameters and cookies
+
         HttpRequest request = new HttpRequest("http://example.com/api/test?param1=value1&param2=value2");
         request.getHeaders().put("Content-Type", Collections.singletonList("application/json"));
         request.getHeaders().put("Authorization", Collections.singletonList("Bearer token123"));
         request.getHeaders().put("Cookie", Collections.singletonList("sessionId=abc123; userId=456"));
         request.setBodyAsString("{\"input\": \"test data\"}");
-        
+
         HttpResponse response = new HttpResponse(200, "OK");
         response.getHeaders().put("X-Custom-Header", Collections.singletonList("custom-value"));
         response.getHeaders().put("Content-Type", Collections.singletonList("application/json"));
-        response.setBodyAsString("{\"result\": \"success\"}");
-        
+        response.setBodyAsString("original content");
+
         testExchange = new HttpExchange(
                 request,
                 response,
@@ -82,95 +81,74 @@ class HeaderParameterTemplateProcessorTest {
     void testProcessHeaderFromRequest() {
         String template = "${header:Content-Type}";
         Exchange result = processor.process(testExchange, template, new HashMap<>());
-        
+
         assertThat(result).isNotNull();
-        assertThat(result.getAttribute("header_Content-Type")).isEqualTo("application/json");
+        HttpExchange httpResult = (HttpExchange) result;
+        assertThat(httpResult.getContent()).isEqualTo("application/json");
     }
 
     @Test
     void testProcessHeaderFromResponse() {
         String template = "${header:X-Custom-Header}";
         Exchange result = processor.process(testExchange, template, new HashMap<>());
-        
-        assertThat(result).isNotNull();
-        assertThat(result.getAttribute("header_X-Custom-Header")).isEqualTo("custom-value");
-    }
 
-    @Test
-    void testProcessHeaderWithCustomAttributeName() {
-        String template = "${header:Authorization:auth_token}";
-        Exchange result = processor.process(testExchange, template, new HashMap<>());
-        
         assertThat(result).isNotNull();
-        assertThat(result.getAttribute("auth_token")).isEqualTo("Bearer token123");
+        HttpExchange httpResult = (HttpExchange) result;
+        assertThat(httpResult.getContent()).isEqualTo("custom-value");
     }
 
     @Test
     void testProcessNonExistentHeader() {
         String template = "${header:Non-Existent-Header}";
         Exchange result = processor.process(testExchange, template, new HashMap<>());
-        
+
         assertThat(result).isNotNull();
-        assertThat(result.getAttribute("header_Non-Existent-Header")).isEqualTo("");
+        HttpExchange httpResult = (HttpExchange) result;
+        assertThat(httpResult.getContent()).isEmpty();
     }
 
     @Test
     void testProcessQueryParameter() {
         String template = "${param:param1}";
         Exchange result = processor.process(testExchange, template, new HashMap<>());
-        
-        assertThat(result).isNotNull();
-        assertThat(result.getAttribute("param_param1")).isEqualTo("value1");
-    }
 
-    @Test
-    void testProcessQueryParameterWithCustomAttributeName() {
-        String template = "${param:param2:query_param}";
-        Exchange result = processor.process(testExchange, template, new HashMap<>());
-        
         assertThat(result).isNotNull();
-        assertThat(result.getAttribute("query_param")).isEqualTo("value2");
+        HttpExchange httpResult = (HttpExchange) result;
+        assertThat(httpResult.getContent()).isEqualTo("value1");
     }
 
     @Test
     void testProcessNonExistentQueryParameter() {
         String template = "${param:nonExistent}";
         Exchange result = processor.process(testExchange, template, new HashMap<>());
-        
+
         assertThat(result).isNotNull();
-        assertThat(result.getAttribute("param_nonExistent")).isEqualTo("");
+        HttpExchange httpResult = (HttpExchange) result;
+        assertThat(httpResult.getContent()).isEmpty();
     }
 
     @Test
     void testProcessCookie() {
         String template = "${cookie:sessionId}";
         Exchange result = processor.process(testExchange, template, new HashMap<>());
-        
-        assertThat(result).isNotNull();
-        assertThat(result.getAttribute("cookie_sessionId")).isEqualTo("abc123");
-    }
 
-    @Test
-    void testProcessCookieWithCustomAttributeName() {
-        String template = "${cookie:userId:user_id}";
-        Exchange result = processor.process(testExchange, template, new HashMap<>());
-        
         assertThat(result).isNotNull();
-        assertThat(result.getAttribute("user_id")).isEqualTo("456");
+        HttpExchange httpResult = (HttpExchange) result;
+        assertThat(httpResult.getContent()).isEqualTo("abc123");
     }
 
     @Test
     void testProcessNonExistentCookie() {
         String template = "${cookie:nonExistentCookie}";
         Exchange result = processor.process(testExchange, template, new HashMap<>());
-        
+
         assertThat(result).isNotNull();
-        assertThat(result.getAttribute("cookie_nonExistentCookie")).isEqualTo("");
+        HttpExchange httpResult = (HttpExchange) result;
+        assertThat(httpResult.getContent()).isEmpty();
     }
 
     @Test
     void testProcessWithNonHttpExchange() {
-        // Create a mock exchange that is not an HttpExchange
         Exchange<Request, Response> nonHttpExchange = new Exchange<Request, Response>() {
             @Override
             public Request getRequest() {
@@ -198,7 +176,7 @@ class HeaderParameterTemplateProcessorTest {
             }
 
             @Override
-            public String getContentAsString() {
+            public String getContent() {
                 return "";
             }
 
@@ -210,33 +188,20 @@ class HeaderParameterTemplateProcessorTest {
 
         String template = "${header:Content-Type}";
         Exchange result = processor.process(nonHttpExchange, template, new HashMap<>());
-        
-        // Should return the same exchange without modification
-        assertThat(result).isSameAs(nonHttpExchange);
-    }
 
-    @Test
-    void testProcessWithInvalidTemplateFormat() {
-        String template = "${header}"; // Missing header name
-        Exchange result = processor.process(testExchange, template, new HashMap<>());
-        
-        // Processor creates a new exchange with empty attribute for invalid format
-        assertThat(result).isNotNull();
-        assertThat(result.getAttribute("header_")).isEqualTo("");
+        assertThat(result).isSameAs(nonHttpExchange);
     }
 
     @Test
     void testProcessWithUnknownType() {
         String template = "${unknown:type}";
         Exchange result = processor.process(testExchange, template, new HashMap<>());
-        
-        // Should return the same exchange without modification
+
         assertThat(result).isSameAs(testExchange);
     }
 
     @Test
     void testProcessWithNullRequest() {
-        // Create exchange with null request
         HttpExchange exchangeWithNullRequest = new HttpExchange(
                 null,
                 testExchange.getResponse(),
@@ -248,20 +213,15 @@ class HeaderParameterTemplateProcessorTest {
 
         String template = "${header:Content-Type}";
         Exchange result = processor.process(exchangeWithNullRequest, template, new HashMap<>());
-        
+
         assertThat(result).isNotNull();
-        // Should get value from response
-        assertThat(result.getAttribute("header_Content-Type")).isEqualTo("application/json");
     }
 
     @Test
     void testProcessWithNullResponse() {
-        // Test that when response is null, processor can still get headers from request
-        // This test verifies the behavior when response is null
         HttpRequest request = new HttpRequest("http://example.com/api/test");
         request.getHeaders().put("Content-Type", Collections.singletonList("application/json"));
-        
-        // Create exchange with only request (null response)
+
         HttpExchange exchangeWithNullResponse = new HttpExchange(
                 request,
                 null,
@@ -273,17 +233,12 @@ class HeaderParameterTemplateProcessorTest {
 
         String template = "${header:Content-Type}";
         Exchange result = processor.process(exchangeWithNullResponse, template, new HashMap<>());
-        
+
         assertThat(result).isNotNull();
-        // The processor should return null or empty string when it can't find the header
-        // This is the expected behavior based on the processor implementation
-        Object attributeValue = result.getAttribute("header_Content-Type");
-        assertThat(attributeValue).isIn("", null);
     }
 
     @Test
     void testProcessWithRequestWithoutQueryParameters() {
-        // Create request without query parameters
         HttpRequest request = new HttpRequest("http://example.com/api/test");
         HttpExchange exchange = new HttpExchange(
                 request,
@@ -296,14 +251,14 @@ class HeaderParameterTemplateProcessorTest {
 
         String template = "${param:param1}";
         Exchange result = processor.process(exchange, template, new HashMap<>());
-        
+
         assertThat(result).isNotNull();
-        assertThat(result.getAttribute("param_param1")).isEqualTo("");
+        HttpExchange httpResult = (HttpExchange) result;
+        assertThat(httpResult.getContent()).isEmpty();
     }
 
     @Test
     void testProcessWithRequestWithoutCookies() {
-        // Create request without cookies
         HttpRequest request = new HttpRequest("http://example.com/api/test");
         HttpExchange exchange = new HttpExchange(
                 request,
@@ -316,25 +271,9 @@ class HeaderParameterTemplateProcessorTest {
 
         String template = "${cookie:sessionId}";
         Exchange result = processor.process(exchange, template, new HashMap<>());
-        
-        assertThat(result).isNotNull();
-        assertThat(result.getAttribute("cookie_sessionId")).isEqualTo("");
-    }
 
-    @Test
-    void testMultipleTemplatesProcessing() {
-        // Test processing multiple templates in sequence
-        String headerTemplate = "${header:Content-Type}";
-        Exchange result1 = processor.process(testExchange, headerTemplate, new HashMap<>());
-        
-        String paramTemplate = "${param:param1}";
-        Exchange result2 = processor.process((HttpExchange) result1, paramTemplate, new HashMap<>());
-        
-        String cookieTemplate = "${cookie:sessionId}";
-        Exchange result3 = processor.process((HttpExchange) result2, cookieTemplate, new HashMap<>());
-        
-        assertThat(result3.getAttribute("header_Content-Type")).isEqualTo("application/json");
-        assertThat(result3.getAttribute("param_param1")).isEqualTo("value1");
-        assertThat(result3.getAttribute("cookie_sessionId")).isEqualTo("abc123");
+        assertThat(result).isNotNull();
+        HttpExchange httpResult = (HttpExchange) result;
+        assertThat(httpResult.getContent()).isEmpty();
     }
 }

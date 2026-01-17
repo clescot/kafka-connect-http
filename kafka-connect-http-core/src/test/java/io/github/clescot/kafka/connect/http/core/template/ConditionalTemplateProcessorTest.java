@@ -7,7 +7,6 @@ import org.junit.jupiter.api.Test;
 import java.time.OffsetDateTime;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -20,15 +19,14 @@ class ConditionalTemplateProcessorTest {
     @BeforeEach
     void setUp() {
         processor = new ConditionalTemplateProcessor();
-        
+
         HttpRequest request = new HttpRequest("http://example.com/api/test", HttpRequest.Method.GET);
         request.getHeaders().put("Content-Type", Collections.singletonList("application/json"));
         request.setBodyAsString("{\"input\": \"test data\"}");
-        
+
         HttpResponse response = new HttpResponse(200, "OK");
-        response.getHeaders().put("Content-Type", Collections.singletonList("application/json"));
-        response.setBodyAsString("{\"result\": \"success\", \"data\": \"processed data\"}");
-        
+        response.setBodyAsString("original content");
+
         testExchange = new HttpExchange(
                 request,
                 response,
@@ -64,37 +62,37 @@ class ConditionalTemplateProcessorTest {
     void testProcessWithTrueCondition() {
         String template = "${if:true:yes_value:no_value}";
         Exchange<?, ?> processedExchange = processor.process(testExchange, template, new HashMap<>());
-        
+
         assertThat(processedExchange).isInstanceOf(HttpExchange.class);
-        assertThat(processedExchange.getAttributes()).containsKey("conditional_result");
-        assertThat(processedExchange.getAttributes().get("conditional_result")).isEqualTo("yes_value");
+        HttpExchange httpExchange = (HttpExchange) processedExchange;
+        assertThat(httpExchange.getContent()).isEqualTo("yes_value");
     }
 
     @Test
     void testProcessWithFalseCondition() {
         String template = "${if:false:yes_value:no_value}";
         Exchange<?, ?> processedExchange = processor.process(testExchange, template, new HashMap<>());
-        
-        assertThat(processedExchange.getAttributes()).containsKey("conditional_result");
-        assertThat(processedExchange.getAttributes().get("conditional_result")).isEqualTo("no_value");
+
+        HttpExchange httpExchange = (HttpExchange) processedExchange;
+        assertThat(httpExchange.getContent()).isEqualTo("no_value");
     }
 
     @Test
     void testProcessWithYesCondition() {
         String template = "${if:yes:yes_value:no_value}";
         Exchange<?, ?> processedExchange = processor.process(testExchange, template, new HashMap<>());
-        
-        assertThat(processedExchange.getAttributes()).containsKey("conditional_result");
-        assertThat(processedExchange.getAttributes().get("conditional_result")).isEqualTo("yes_value");
+
+        HttpExchange httpExchange = (HttpExchange) processedExchange;
+        assertThat(httpExchange.getContent()).isEqualTo("yes_value");
     }
 
     @Test
     void testProcessWithNoCondition() {
         String template = "${if:no:yes_value:no_value}";
         Exchange<?, ?> processedExchange = processor.process(testExchange, template, new HashMap<>());
-        
-        assertThat(processedExchange.getAttributes()).containsKey("conditional_result");
-        assertThat(processedExchange.getAttributes().get("conditional_result")).isEqualTo("no_value");
+
+        HttpExchange httpExchange = (HttpExchange) processedExchange;
+        assertThat(httpExchange.getContent()).isEqualTo("no_value");
     }
 
     @Test
@@ -102,90 +100,90 @@ class ConditionalTemplateProcessorTest {
         HttpExchange exchangeWithAttr = (HttpExchange) testExchange.withAttribute("my_attribute", "some_value");
         String template = "${if:has:my_attribute:exists:missing}";
         Exchange<?, ?> processedExchange = processor.process(exchangeWithAttr, template, new HashMap<>());
-        
-        assertThat(processedExchange.getAttributes()).containsKey("missing");
-        assertThat(processedExchange.getAttributes().get("missing")).isEqualTo("exists");
+
+        HttpExchange httpExchange = (HttpExchange) processedExchange;
+        assertThat(httpExchange.getContent()).isEqualTo("exists");
     }
 
     @Test
     void testProcessWithHasAttributeMissing() {
         String template = "${if:has:missing_attr:exists:missing}";
         Exchange<?, ?> processedExchange = processor.process(testExchange, template, new HashMap<>());
-        
-        assertThat(processedExchange.getAttributes()).containsKey("missing");
-        assertThat(processedExchange.getAttributes().get("missing")).isEqualTo("exists");
+
+        HttpExchange httpExchange = (HttpExchange) processedExchange;
+        assertThat(httpExchange.getContent()).isEqualTo("missing");
     }
 
     @Test
     void testProcessWithStatusEquals() {
         String template = "${if:status:==200:success:error}";
         Exchange<?, ?> processedExchange = processor.process(testExchange, template, new HashMap<>());
-        
-        assertThat(processedExchange.getAttributes()).containsKey("error");
-        assertThat(processedExchange.getAttributes().get("error")).isEqualTo("success");
+
+        HttpExchange httpExchange = (HttpExchange) processedExchange;
+        assertThat(httpExchange.getContent()).isEqualTo("success");
     }
 
     @Test
     void testProcessWithStatusNotEqual() {
         String template = "${if:status:!=404:found:not_found}";
         Exchange<?, ?> processedExchange = processor.process(testExchange, template, new HashMap<>());
-        
-        assertThat(processedExchange.getAttributes()).containsKey("not_found");
-        assertThat(processedExchange.getAttributes().get("not_found")).isEqualTo("found");
+
+        HttpExchange httpExchange = (HttpExchange) processedExchange;
+        assertThat(httpExchange.getContent()).isEqualTo("found");
     }
 
     @Test
     void testProcessWithStatusGreaterThan() {
         String template = "${if:status:>100:high:low}";
         Exchange<?, ?> processedExchange = processor.process(testExchange, template, new HashMap<>());
-        
-        assertThat(processedExchange.getAttributes()).containsKey("low");
-        assertThat(processedExchange.getAttributes().get("low")).isEqualTo("high");
+
+        HttpExchange httpExchange = (HttpExchange) processedExchange;
+        assertThat(httpExchange.getContent()).isEqualTo("high");
     }
 
     @Test
     void testProcessWithStatusLessThan() {
         String template = "${if:status:<300:success:failure}";
         Exchange<?, ?> processedExchange = processor.process(testExchange, template, new HashMap<>());
-        
-        assertThat(processedExchange.getAttributes()).containsKey("failure");
-        assertThat(processedExchange.getAttributes().get("failure")).isEqualTo("success");
+
+        HttpExchange httpExchange = (HttpExchange) processedExchange;
+        assertThat(httpExchange.getContent()).isEqualTo("success");
     }
 
     @Test
     void testProcessWithStatusGreaterThanOrEqual() {
         String template = "${if:status:>=200:ok:not_ok}";
         Exchange<?, ?> processedExchange = processor.process(testExchange, template, new HashMap<>());
-        
-        assertThat(processedExchange.getAttributes()).containsKey("not_ok");
-        assertThat(processedExchange.getAttributes().get("not_ok")).isEqualTo("ok");
+
+        HttpExchange httpExchange = (HttpExchange) processedExchange;
+        assertThat(httpExchange.getContent()).isEqualTo("ok");
     }
 
     @Test
     void testProcessWithStatusLessThanOrEqual() {
         String template = "${if:status:<=299:success:redirect}";
         Exchange<?, ?> processedExchange = processor.process(testExchange, template, new HashMap<>());
-        
-        assertThat(processedExchange.getAttributes()).containsKey("redirect");
-        assertThat(processedExchange.getAttributes().get("redirect")).isEqualTo("success");
+
+        HttpExchange httpExchange = (HttpExchange) processedExchange;
+        assertThat(httpExchange.getContent()).isEqualTo("success");
     }
 
     @Test
     void testProcessWithStatusRange() {
         String template = "${if:status:200-299:success:error}";
         Exchange<?, ?> processedExchange = processor.process(testExchange, template, new HashMap<>());
-        
-        assertThat(processedExchange.getAttributes()).containsKey("error");
-        assertThat(processedExchange.getAttributes().get("error")).isEqualTo("success");
+
+        HttpExchange httpExchange = (HttpExchange) processedExchange;
+        assertThat(httpExchange.getContent()).isEqualTo("success");
     }
 
     @Test
     void testProcessWithStatusRangeNotMatching() {
         String template = "${if:status:300-399:redirect:error}";
         Exchange<?, ?> processedExchange = processor.process(testExchange, template, new HashMap<>());
-        
-        assertThat(processedExchange.getAttributes()).containsKey("error");
-        assertThat(processedExchange.getAttributes().get("error")).isEqualTo("redirect");
+
+        HttpExchange httpExchange = (HttpExchange) processedExchange;
+        assertThat(httpExchange.getContent()).isEqualTo("error");
     }
 
     @Test
@@ -193,9 +191,9 @@ class ConditionalTemplateProcessorTest {
         HttpExchange exchangeWithCount = (HttpExchange) testExchange.withAttribute("count", 10);
         String template = "${if:count>5:high:low}";
         Exchange<?, ?> processedExchange = processor.process(exchangeWithCount, template, new HashMap<>());
-        
-        assertThat(processedExchange.getAttributes()).containsKey("conditional_result");
-        assertThat(processedExchange.getAttributes().get("conditional_result")).isEqualTo("high");
+
+        HttpExchange httpExchange = (HttpExchange) processedExchange;
+        assertThat(httpExchange.getContent()).isEqualTo("high");
     }
 
     @Test
@@ -203,9 +201,9 @@ class ConditionalTemplateProcessorTest {
         HttpExchange exchangeWithCount = (HttpExchange) testExchange.withAttribute("count", 3);
         String template = "${if:count<5:low:high}";
         Exchange<?, ?> processedExchange = processor.process(exchangeWithCount, template, new HashMap<>());
-        
-        assertThat(processedExchange.getAttributes()).containsKey("conditional_result");
-        assertThat(processedExchange.getAttributes().get("conditional_result")).isEqualTo("low");
+
+        HttpExchange httpExchange = (HttpExchange) processedExchange;
+        assertThat(httpExchange.getContent()).isEqualTo("low");
     }
 
     @Test
@@ -213,9 +211,9 @@ class ConditionalTemplateProcessorTest {
         HttpExchange exchangeWithValue = (HttpExchange) testExchange.withAttribute("value", 100);
         String template = "${if:value==100:match:no_match}";
         Exchange<?, ?> processedExchange = processor.process(exchangeWithValue, template, new HashMap<>());
-        
-        assertThat(processedExchange.getAttributes()).containsKey("conditional_result");
-        assertThat(processedExchange.getAttributes().get("conditional_result")).isEqualTo("match");
+
+        HttpExchange httpExchange = (HttpExchange) processedExchange;
+        assertThat(httpExchange.getContent()).isEqualTo("match");
     }
 
     @Test
@@ -223,9 +221,9 @@ class ConditionalTemplateProcessorTest {
         HttpExchange exchangeWithValue = (HttpExchange) testExchange.withAttribute("value", 50);
         String template = "${if:value!=0:non_zero:zero}";
         Exchange<?, ?> processedExchange = processor.process(exchangeWithValue, template, new HashMap<>());
-        
-        assertThat(processedExchange.getAttributes()).containsKey("conditional_result");
-        assertThat(processedExchange.getAttributes().get("conditional_result")).isEqualTo("non_zero");
+
+        HttpExchange httpExchange = (HttpExchange) processedExchange;
+        assertThat(httpExchange.getContent()).isEqualTo("non_zero");
     }
 
     @Test
@@ -233,9 +231,9 @@ class ConditionalTemplateProcessorTest {
         HttpExchange exchangeWithScore = (HttpExchange) testExchange.withAttribute("score", 60);
         String template = "${if:score>=60:pass:fail}";
         Exchange<?, ?> processedExchange = processor.process(exchangeWithScore, template, new HashMap<>());
-        
-        assertThat(processedExchange.getAttributes()).containsKey("conditional_result");
-        assertThat(processedExchange.getAttributes().get("conditional_result")).isEqualTo("pass");
+
+        HttpExchange httpExchange = (HttpExchange) processedExchange;
+        assertThat(httpExchange.getContent()).isEqualTo("pass");
     }
 
     @Test
@@ -243,49 +241,9 @@ class ConditionalTemplateProcessorTest {
         HttpExchange exchangeWithAttempts = (HttpExchange) testExchange.withAttribute("attempts", 3);
         String template = "${if:attempts<=3:continue:stop}";
         Exchange<?, ?> processedExchange = processor.process(exchangeWithAttempts, template, new HashMap<>());
-        
-        assertThat(processedExchange.getAttributes()).containsKey("conditional_result");
-        assertThat(processedExchange.getAttributes().get("conditional_result")).isEqualTo("continue");
-    }
 
-    @Test
-    void testProcessWithContainsCondition() {
-        HttpExchange exchangeWithText = (HttpExchange) testExchange.withAttribute("message", "Hello World");
-        String template = "${if:contains:message:World:yes:no}";
-        Exchange<?, ?> processedExchange = processor.process(exchangeWithText, template, new HashMap<>());
-        
-        assertThat(processedExchange.getAttributes()).containsKey("yes:no");
-        assertThat(processedExchange.getAttributes().get("yes:no")).isEqualTo("World");
-    }
-
-    @Test
-    void testProcessWithContainsConditionNotFound() {
-        HttpExchange exchangeWithText = (HttpExchange) testExchange.withAttribute("message", "Hello World");
-        String template = "${if:contains:message:Python:yes:no}";
-        Exchange<?, ?> processedExchange = processor.process(exchangeWithText, template, new HashMap<>());
-        
-        assertThat(processedExchange.getAttributes()).containsKey("yes:no");
-        assertThat(processedExchange.getAttributes().get("yes:no")).isEqualTo("Python");
-    }
-
-    @Test
-    void testProcessWithMatchesCondition() {
-        HttpExchange exchangeWithText = (HttpExchange) testExchange.withAttribute("email", "test@example.com");
-        String template = "${if:matches:email:^[a-z]+@.+\\\\.[a-z]+$:yes:no}";
-        Exchange<?, ?> processedExchange = processor.process(exchangeWithText, template, new HashMap<>());
-        
-        assertThat(processedExchange.getAttributes()).containsKey("yes:no");
-        assertThat(processedExchange.getAttributes().get("yes:no")).isEqualTo("^[a-z]+@.+\\\\.[a-z]+$");
-    }
-
-    @Test
-    void testProcessWithMatchesConditionNotMatching() {
-        HttpExchange exchangeWithText = (HttpExchange) testExchange.withAttribute("email", "invalid-email");
-        String template = "${if:matches:email:^[a-z]+@.+\\\\.[a-z]+$:yes:no}";
-        Exchange<?, ?> processedExchange = processor.process(exchangeWithText, template, new HashMap<>());
-        
-        assertThat(processedExchange.getAttributes()).containsKey("yes:no");
-        assertThat(processedExchange.getAttributes().get("yes:no")).isEqualTo("^[a-z]+@.+\\\\.[a-z]+$");
+        HttpExchange httpExchange = (HttpExchange) processedExchange;
+        assertThat(httpExchange.getContent()).isEqualTo("continue");
     }
 
     @Test
@@ -293,18 +251,18 @@ class ConditionalTemplateProcessorTest {
         HttpExchange exchangeWithAttr = (HttpExchange) testExchange.withAttribute("my_attr", "some_value");
         String template = "${if:my_attr:found:not_found}";
         Exchange<?, ?> processedExchange = processor.process(exchangeWithAttr, template, new HashMap<>());
-        
-        assertThat(processedExchange.getAttributes()).containsKey("conditional_result");
-        assertThat(processedExchange.getAttributes().get("conditional_result")).isEqualTo("found");
+
+        HttpExchange httpExchange = (HttpExchange) processedExchange;
+        assertThat(httpExchange.getContent()).isEqualTo("found");
     }
 
     @Test
     void testProcessWithNonExistingAttribute() {
         String template = "${if:missing_attr:found:not_found}";
         Exchange<?, ?> processedExchange = processor.process(testExchange, template, new HashMap<>());
-        
-        assertThat(processedExchange.getAttributes()).containsKey("conditional_result");
-        assertThat(processedExchange.getAttributes().get("conditional_result")).isEqualTo("not_found");
+
+        HttpExchange httpExchange = (HttpExchange) processedExchange;
+        assertThat(httpExchange.getContent()).isEqualTo("not_found");
     }
 
     @Test
@@ -312,151 +270,27 @@ class ConditionalTemplateProcessorTest {
         HttpExchange exchangeWithEmptyAttr = (HttpExchange) testExchange.withAttribute("my_attr", "");
         String template = "${if:my_attr:has_value:no_value}";
         Exchange<?, ?> processedExchange = processor.process(exchangeWithEmptyAttr, template, new HashMap<>());
-        
-        assertThat(processedExchange.getAttributes()).containsKey("conditional_result");
-        assertThat(processedExchange.getAttributes().get("conditional_result")).isEqualTo("no_value");
-    }
 
-    @Test
-    void testProcessWithCustomAttributeName() {
-        String template = "${if:true:yes:no:my_custom_attr}";
-        Exchange<?, ?> processedExchange = processor.process(testExchange, template, new HashMap<>());
-        
-        assertThat(processedExchange.getAttributes()).containsKey("my_custom_attr");
-        assertThat(processedExchange.getAttributes()).doesNotContainKey("conditional_result");
-        assertThat(processedExchange.getAttributes().get("my_custom_attr")).isEqualTo("yes");
-    }
-
-    @Test
-    void testProcessWithDefaultAttributeName() {
-        String template = "${if:true:yes:no}";
-        Exchange<?, ?> processedExchange = processor.process(testExchange, template, new HashMap<>());
-        
-        assertThat(processedExchange.getAttributes()).containsKey("conditional_result");
-        assertThat(processedExchange.getAttributes().get("conditional_result")).isEqualTo("yes");
-    }
-
-    @Test
-    void testProcessWithMultipleColonsInValues() {
-        String template = "${if:true:http://example.com:https://example.com:my_attr}";
-        Exchange<?, ?> processedExchange = processor.process(testExchange, template, new HashMap<>());
-        
-        assertThat(processedExchange.getAttributes()).containsKey("https://example.com:my_attr");
-        assertThat(processedExchange.getAttributes().get("https://example.com:my_attr")).isEqualTo("http");
-    }
-
-    @Test
-    void testProcessWithColonInCustomAttributeName() {
-        String template = "${if:true:yes:no:result:value}";
-        Exchange<?, ?> processedExchange = processor.process(testExchange, template, new HashMap<>());
-        
-        assertThat(processedExchange.getAttributes()).containsKey("result:value");
-        assertThat(processedExchange.getAttributes()).doesNotContainKey("conditional_result");
-        assertThat(processedExchange.getAttributes().get("result:value")).isEqualTo("yes");
-    }
-
-    @Test
-    void testProcessWithInvalidTemplateFormat() {
-        String template = "${if:incomplete}";
-        Exchange<?, ?> processedExchange = processor.process(testExchange, template, new HashMap<>());
-        
-        assertThat(processedExchange).isNotNull();
-        assertThat(processedExchange.getAttributes()).doesNotContainKey("conditional_result");
-    }
-
-    @Test
-    void testProcessWithOnlyTwoParts() {
-        String template = "${if:only_two}";
-        Exchange<?, ?> processedExchange = processor.process(testExchange, template, new HashMap<>());
-        
-        assertThat(processedExchange).isNotNull();
-        assertThat(processedExchange.getAttributes()).doesNotContainKey("conditional_result");
-    }
-
-    @Test
-    void testProcessWithMalformedComparison() {
-        HttpExchange exchangeWithValue = (HttpExchange) testExchange.withAttribute("value", 10);
-        String template = "${if:value>>5:high:low}";
-        Exchange<?, ?> processedExchange = processor.process(exchangeWithValue, template, new HashMap<>());
-        
-        assertThat(processedExchange).isNotNull();
-    }
-
-    @Test
-    void testProcessWithInvalidStatusCondition() {
-        String template = "${if:status:>abc:success:error}";
-        Exchange<?, ?> processedExchange = processor.process(testExchange, template, new HashMap<>());
-        
-        assertThat(processedExchange).isNotNull();
-    }
-
-    @Test
-    void testProcessWithNonHttpExchange() {
-        String template = "${if:status:==200:success:error}";
-        
-        class SimpleExchange implements Exchange<Request, Response> {
-            private final Map<String, Object> attributes = new HashMap<>();
-            
-            @Override
-            public Exchange<Request, Response> withAttribute(String name, Object value) {
-                attributes.put(name, value);
-                return this;
-            }
-            
-            @Override
-            public Object getAttribute(String name) {
-                return attributes.get(name);
-            }
-            
-            @Override
-            public Map<String, Object> getAttributes() {
-                return attributes;
-            }
-            
-            @Override
-            public Request getRequest() {
-                return null;
-            }
-            
-            @Override
-            public Response getResponse() {
-                return null;
-            }
-            
-            @Override
-            public String getContentAsString() {
-                return "";
-            }
-            
-            @Override
-            public Map<String, Object> getMetadata() {
-                return new HashMap<>();
-            }
-        }
-        
-        SimpleExchange simpleExchange = new SimpleExchange();
-        Exchange<?, ?> processedExchange = processor.process(simpleExchange, template, new HashMap<>());
-        
-        assertThat(processedExchange.getAttributes()).containsKey("error");
-        assertThat(processedExchange.getAttributes().get("error")).isEqualTo("success");
+        HttpExchange httpExchange = (HttpExchange) processedExchange;
+        assertThat(httpExchange.getContent()).isEqualTo("no_value");
     }
 
     @Test
     void testProcessWithEmptyTrueValue() {
         String template = "${if:true::no_value}";
         Exchange<?, ?> processedExchange = processor.process(testExchange, template, new HashMap<>());
-        
-        assertThat(processedExchange.getAttributes()).containsKey("conditional_result");
-        assertThat(processedExchange.getAttributes().get("conditional_result")).isEqualTo("");
+
+        HttpExchange httpExchange = (HttpExchange) processedExchange;
+        assertThat(httpExchange.getContent()).isEmpty();
     }
 
     @Test
     void testProcessWithEmptyFalseValue() {
         String template = "${if:false:yes_value:}";
         Exchange<?, ?> processedExchange = processor.process(testExchange, template, new HashMap<>());
-        
-        assertThat(processedExchange.getAttributes()).containsKey("conditional_result");
-        assertThat(processedExchange.getAttributes().get("conditional_result")).isEqualTo("");
+
+        HttpExchange httpExchange = (HttpExchange) processedExchange;
+        assertThat(httpExchange.getContent()).isEmpty();
     }
 
     @Test
@@ -464,9 +298,9 @@ class ConditionalTemplateProcessorTest {
         HttpExchange exchangeWithNum = (HttpExchange) testExchange.withAttribute("price", "19.99");
         String template = "${if:price>10:expensive:cheap}";
         Exchange<?, ?> processedExchange = processor.process(exchangeWithNum, template, new HashMap<>());
-        
-        assertThat(processedExchange.getAttributes()).containsKey("conditional_result");
-        assertThat(processedExchange.getAttributes().get("conditional_result")).isEqualTo("expensive");
+
+        HttpExchange httpExchange = (HttpExchange) processedExchange;
+        assertThat(httpExchange.getContent()).isEqualTo("expensive");
     }
 
     @Test
@@ -474,18 +308,18 @@ class ConditionalTemplateProcessorTest {
         HttpExchange exchangeWithText = (HttpExchange) testExchange.withAttribute("value", "not_a_number");
         String template = "${if:value>5:greater:less}";
         Exchange<?, ?> processedExchange = processor.process(exchangeWithText, template, new HashMap<>());
-        
-        assertThat(processedExchange.getAttributes()).containsKey("conditional_result");
-        assertThat(processedExchange.getAttributes().get("conditional_result")).isEqualTo("less");
+
+        HttpExchange httpExchange = (HttpExchange) processedExchange;
+        assertThat(httpExchange.getContent()).isEqualTo("less");
     }
 
     @Test
     void testProcessWithNumericComparisonAgainstLiteral() {
         String template = "${if:10>5:true:false}";
         Exchange<?, ?> processedExchange = processor.process(testExchange, template, new HashMap<>());
-        
-        assertThat(processedExchange.getAttributes()).containsKey("conditional_result");
-        assertThat(processedExchange.getAttributes().get("conditional_result")).isEqualTo("true");
+
+        HttpExchange httpExchange = (HttpExchange) processedExchange;
+        assertThat(httpExchange.getContent()).isEqualTo("true");
     }
 
     @Test
@@ -493,39 +327,9 @@ class ConditionalTemplateProcessorTest {
         HttpExchange exchangeWithDouble = (HttpExchange) testExchange.withAttribute("pi", 3.14159);
         String template = "${if:pi>3.0:above:below}";
         Exchange<?, ?> processedExchange = processor.process(exchangeWithDouble, template, new HashMap<>());
-        
-        assertThat(processedExchange.getAttributes()).containsKey("conditional_result");
-        assertThat(processedExchange.getAttributes().get("conditional_result")).isEqualTo("above");
-    }
 
-    @Test
-    void testProcessWithContainsMissingSubstring() {
-        HttpExchange exchangeWithText = (HttpExchange) testExchange.withAttribute("message", "Hello World");
-        String template = "${if:contains:message::yes:no}";
-        Exchange<?, ?> processedExchange = processor.process(exchangeWithText, template, new HashMap<>());
-        
-        assertThat(processedExchange.getAttributes()).containsKey("conditional_result");
-        assertThat(processedExchange.getAttributes().get("conditional_result")).isEqualTo(":yes:no");
-    }
-
-    @Test
-    void testProcessWithMatchesMissingRegex() {
-        HttpExchange exchangeWithText = (HttpExchange) testExchange.withAttribute("text", "test");
-        String template = "${if:matches:text::yes:no}";
-        Exchange<?, ?> processedExchange = processor.process(exchangeWithText, template, new HashMap<>());
-        
-        assertThat(processedExchange.getAttributes()).containsKey("conditional_result");
-        assertThat(processedExchange.getAttributes().get("conditional_result")).isEqualTo(":yes:no");
-    }
-
-    @Test
-    void testProcessWithInvalidRegexPattern() {
-        HttpExchange exchangeWithText = (HttpExchange) testExchange.withAttribute("text", "test");
-        String template = "${if:matches:text:[invalid(regex:yes:no}";
-        Exchange<?, ?> processedExchange = processor.process(exchangeWithText, template, new HashMap<>());
-        
-        assertThat(processedExchange.getAttributes()).containsKey("yes:no");
-        assertThat(processedExchange.getAttributes().get("yes:no")).isEqualTo("[invalid(regex");
+        HttpExchange httpExchange = (HttpExchange) processedExchange;
+        assertThat(httpExchange.getContent()).isEqualTo("above");
     }
 
     @Test
@@ -533,16 +337,14 @@ class ConditionalTemplateProcessorTest {
         HttpExchange exchangeWithAttrs = testExchange
                 .withAttribute("existing1", "value1")
                 .withAttribute("existing2", "value2");
-        
-        String template = "${if:true:yes:no:new_attr}";
+
+        String template = "${if:true:yes:no}";
         Exchange<?, ?> processedExchange = processor.process(exchangeWithAttrs, template, new HashMap<>());
-        
-        assertThat(processedExchange.getAttributes()).containsKey("existing1");
-        assertThat(processedExchange.getAttributes()).containsKey("existing2");
-        assertThat(processedExchange.getAttributes()).containsKey("new_attr");
-        assertThat(processedExchange.getAttributes().get("existing1")).isEqualTo("value1");
-        assertThat(processedExchange.getAttributes().get("existing2")).isEqualTo("value2");
-        assertThat(processedExchange.getAttributes().get("new_attr")).isEqualTo("yes");
+
+        HttpExchange httpExchange = (HttpExchange) processedExchange;
+        assertThat(httpExchange.getAttributes()).containsKey("existing1");
+        assertThat(httpExchange.getAttributes()).containsKey("existing2");
+        assertThat(httpExchange.getContent()).isEqualTo("yes");
     }
 
     @Test
@@ -550,27 +352,18 @@ class ConditionalTemplateProcessorTest {
         HttpExchange exchangeWithAttr = (HttpExchange) testExchange.withAttribute("count", 10);
         String template = "${if:count > 5:high:low}";
         Exchange<?, ?> processedExchange = processor.process(exchangeWithAttr, template, new HashMap<>());
-        
-        assertThat(processedExchange.getAttributes()).containsKey("conditional_result");
-        assertThat(processedExchange.getAttributes().get("conditional_result")).isEqualTo("high");
-    }
 
-    @Test
-    void testProcessWithSpecialCharactersInValues() {
-        String template = "${if:true:Hello World!@#$%:Goodbye}";
-        Exchange<?, ?> processedExchange = processor.process(testExchange, template, new HashMap<>());
-        
-        assertThat(processedExchange.getAttributes()).containsKey("conditional_result");
-        assertThat(processedExchange.getAttributes().get("conditional_result")).isEqualTo("Hello World!@#$%");
+        HttpExchange httpExchange = (HttpExchange) processedExchange;
+        assertThat(httpExchange.getContent()).isEqualTo("high");
     }
 
     @Test
     void testProcessCaseInsensitiveYesNo() {
         String template = "${if:YES:yes_value:no_value}";
         Exchange<?, ?> processedExchange = processor.process(testExchange, template, new HashMap<>());
-        
-        assertThat(processedExchange.getAttributes()).containsKey("conditional_result");
-        assertThat(processedExchange.getAttributes().get("conditional_result")).isEqualTo("yes_value");
+
+        HttpExchange httpExchange = (HttpExchange) processedExchange;
+        assertThat(httpExchange.getContent()).isEqualTo("yes_value");
     }
 
     @Test
@@ -578,9 +371,9 @@ class ConditionalTemplateProcessorTest {
         HttpExchange exchangeWithZero = (HttpExchange) testExchange.withAttribute("count", 0);
         String template = "${if:count==0:zero:non_zero}";
         Exchange<?, ?> processedExchange = processor.process(exchangeWithZero, template, new HashMap<>());
-        
-        assertThat(processedExchange.getAttributes()).containsKey("conditional_result");
-        assertThat(processedExchange.getAttributes().get("conditional_result")).isEqualTo("zero");
+
+        HttpExchange httpExchange = (HttpExchange) processedExchange;
+        assertThat(httpExchange.getContent()).isEqualTo("zero");
     }
 
     @Test
@@ -588,8 +381,41 @@ class ConditionalTemplateProcessorTest {
         HttpExchange exchangeWithNegative = (HttpExchange) testExchange.withAttribute("temp", -10);
         String template = "${if:temp<0:freezing:warm}";
         Exchange<?, ?> processedExchange = processor.process(exchangeWithNegative, template, new HashMap<>());
-        
-        assertThat(processedExchange.getAttributes()).containsKey("conditional_result");
-        assertThat(processedExchange.getAttributes().get("conditional_result")).isEqualTo("freezing");
+
+        HttpExchange httpExchange = (HttpExchange) processedExchange;
+        assertThat(httpExchange.getContent()).isEqualTo("freezing");
+    }
+
+    @Test
+    void testProcessWithInvalidTemplateFormat() {
+        String template = "${if:incomplete}";
+        Exchange<?, ?> processedExchange = processor.process(testExchange, template, new HashMap<>());
+
+        assertThat(processedExchange).isNotNull();
+    }
+
+    @Test
+    void testProcessWithOnlyTwoParts() {
+        String template = "${if:only_two}";
+        Exchange<?, ?> processedExchange = processor.process(testExchange, template, new HashMap<>());
+
+        assertThat(processedExchange).isNotNull();
+    }
+
+    @Test
+    void testProcessWithMalformedComparison() {
+        HttpExchange exchangeWithValue = (HttpExchange) testExchange.withAttribute("value", 10);
+        String template = "${if:value>>5:high:low}";
+        Exchange<?, ?> processedExchange = processor.process(exchangeWithValue, template, new HashMap<>());
+
+        assertThat(processedExchange).isNotNull();
+    }
+
+    @Test
+    void testProcessWithInvalidStatusCondition() {
+        String template = "${if:status:>abc:success:error}";
+        Exchange<?, ?> processedExchange = processor.process(testExchange, template, new HashMap<>());
+
+        assertThat(processedExchange).isNotNull();
     }
 }

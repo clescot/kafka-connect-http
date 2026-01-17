@@ -9,6 +9,8 @@ import org.slf4j.LoggerFactory;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * Manager for Exchange template processors.
@@ -82,7 +84,7 @@ public class ExchangeTemplateManager {
 
     /**
      * Process a template using the appropriate processor.
-     * 
+     *
      * @param exchange the Exchange to process
      * @param template the template to process
      * @param context additional context for processing
@@ -112,6 +114,88 @@ public class ExchangeTemplateManager {
         }
 
         return result;
+    }
+
+    /**
+     * Resolve a template string against an exchange.
+     * This method extracts and resolves template expressions in the given template string.
+     * It properly handles templates with multiple expression types by applying the appropriate
+     * processor for each expression and preserving the template structure.
+     *
+     * @param exchange the Exchange containing data for template resolution
+     * @param template the template string to resolve
+     * @param context additional context for template processing
+     * @return the resolved template string, or the original template if no processing occurred
+     */
+    public <R extends Request, S extends Response> String resolveTemplate(
+            @NotNull Exchange<R, S> exchange,
+            @NotNull String template,
+            Map<String, Object> context) {
+
+        if (template == null || template.isEmpty()) {
+            return template;
+        }
+
+        if (processorList.isEmpty()) {
+            LOGGER.warn("No template processors registered, returning original template");
+            return template;
+        }
+
+        // Build a pattern that matches all processor expressions
+        StringBuilder patternBuilder = new StringBuilder("\\$\\{(?:");
+        patternBuilder.append("jmespath:[^}]+|");
+        patternBuilder.append("jsonpath:[^}]+|");
+        patternBuilder.append("random(?:\\.[^:]+)?(?::[^:}]+)?(?::[^:}]+)?|");
+        patternBuilder.append("regex:[^}]+|");
+        patternBuilder.append("xpath:[^}]+|");
+        patternBuilder.append("headerparam:[^}]+");
+        patternBuilder.append(")\\}");
+
+        Pattern combinedPattern = Pattern.compile(patternBuilder.toString());
+        Matcher matcher = combinedPattern.matcher(template);
+
+        StringBuilder result = new StringBuilder();
+        int lastEnd = 0;
+
+        while (matcher.find()) {
+            // Append text before this match
+            result.append(template, lastEnd, matcher.start());
+
+            // Get the full match (e.g., "${jsonpath:$.response.statusCode}")
+            String fullMatch = matcher.group(0);
+
+            // Find which processor can handle this expression
+            String resolvedValue = null;
+            for (ExchangeTemplateProcessor processor : processorList) {
+                if (processor.supports(fullMatch)) {
+                    // Process the expression
+                    Exchange<R, S> processedExchange = processor.process(exchange, fullMatch, context);
+                    resolvedValue = processedExchange.getContent();
+
+                    // If the processor returned something different from the expression, use it
+                    if (resolvedValue != null && !resolvedValue.equals(fullMatch)) {
+                        break;
+                    }
+                    resolvedValue = null;
+                }
+            }
+
+            if (resolvedValue != null) {
+                result.append(resolvedValue);
+            } else {
+                // If no processor could resolve it, keep the original
+                result.append(fullMatch);
+            }
+
+            lastEnd = matcher.end();
+        }
+
+        // Append remaining text after last match
+        result.append(template, lastEnd, template.length());
+
+        String resolved = result.toString();
+        LOGGER.debug("Resolved template '{}' to '{}'", template, resolved);
+        return resolved;
     }
 
     /**

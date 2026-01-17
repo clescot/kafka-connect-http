@@ -5,6 +5,8 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.base.Strings;
 import com.google.common.collect.Maps;
 import de.sstoehr.harreader.model.*;
+import io.github.clescot.kafka.connect.sse.core.SseEvent;
+import io.github.clescot.kafka.connect.sse.core.SseExchange;
 import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.data.SchemaBuilder;
 import org.apache.kafka.connect.data.Struct;
@@ -448,7 +450,7 @@ public class HttpExchange implements Exchange<HttpRequest,HttpResponse>,Cloneabl
 
     @Override
     @JsonIgnore
-    public String getContentAsString() {
+    public String getContent() {
         if (httpResponse != null && httpResponse.getBodyAsString() != null) {
             return httpResponse.getBodyAsString();
         }
@@ -456,6 +458,24 @@ public class HttpExchange implements Exchange<HttpRequest,HttpResponse>,Cloneabl
             return httpRequest.getBodyAsString();
         }
         return "";
+    }
+
+    @Override
+    public Exchange<HttpRequest, HttpResponse> setContent(String content) {
+        if (httpResponse != null) {
+            HttpResponse newResponse = (HttpResponse) httpResponse.clone();
+            newResponse.setBodyAsString(content);
+            return HttpExchange.Builder.anHttpExchange()
+                    .withHttpRequest(httpRequest)
+                    .withHttpResponse(newResponse)
+                    .withDuration(durationInMillis)
+                    .at(moment)
+                    .withAttempts(attempts)
+                    .withAttributes(new java.util.HashMap<>(attributes))
+                    .withTimings(new java.util.HashMap<>(timings))
+                    .build();
+        }
+        return null;
     }
 
     @Override

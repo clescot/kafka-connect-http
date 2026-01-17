@@ -35,7 +35,9 @@ public interface Exchange<R extends Request,S extends Response> {
      * 
      * @return the content as a string, typically from request or response body
      */
-    String getContentAsString();
+    String getContent();
+
+    Exchange<R,S> setContent(String content);
 
     /**
      * Get metadata about this exchange for template processing.

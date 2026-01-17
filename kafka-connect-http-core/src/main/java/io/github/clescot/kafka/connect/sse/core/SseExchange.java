@@ -57,7 +57,7 @@ public class SseExchange implements Exchange<HttpRequest, SseEvent> {
     }
     
     @Override
-    public String getContentAsString() {
+    public String getContent() {
         return response != null ? response.getData() : "";
     }
     
@@ -128,5 +128,25 @@ public class SseExchange implements Exchange<HttpRequest, SseEvent> {
         Map<String, Object> mergedContext = Map.copyOf(this.context);
         mergedContext.putAll(additionalContext);
         return new SseExchange(this.request, this.response, mergedContext);
+    }
+
+    /**
+     * Creates a new SseExchange with the content set.
+     * Updates the response data to the new content.
+     * Preserves attributes from the original response event.
+     *
+     * @param content the new content to set
+     * @return a new SseExchange with the updated response
+     */
+    @Override
+    public SseExchange setContent(String content) {
+        if (response == null) {
+            return this;
+        }
+        SseEvent newResponse = new SseEvent(response.getId(), response.getType(), content);
+        newResponse.getAttributes().putAll(response.getAttributes());
+        SseExchange newExchange = new SseExchange(this.request, newResponse, this.context);
+        newExchange.attributes.putAll(this.attributes);
+        return newExchange;
     }
 }

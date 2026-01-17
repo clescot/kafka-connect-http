@@ -425,12 +425,24 @@ public class HttpConfiguration<C extends HttpClient<NR, NS>, NR, NS> implements 
         // Apply template processing if template is configured
         if (exchangeTemplate != null && !exchangeTemplate.trim().isEmpty() && templateManager != null) {
             try {
-                Exchange<HttpRequest, HttpResponse> processedExchange = templateManager.processTemplate(enrichedExchange, exchangeTemplate, Collections.emptyMap());
-                if (processedExchange instanceof HttpExchange) {
-                    enrichedExchange = (HttpExchange) processedExchange;
-                    LOGGER.debug("Applied template processing to HttpExchange");
-                } else {
-                    LOGGER.warn("Template processing returned non-HttpExchange type: {}", processedExchange.getClass().getName());
+                String resolvedTemplate = templateManager.resolveTemplate(enrichedExchange, exchangeTemplate, Collections.emptyMap());
+                if (resolvedTemplate != null && !resolvedTemplate.equals(exchangeTemplate)) {
+                    // Set the resolved content on the exchange
+                    HttpResponse response = enrichedExchange.getResponse();
+                    if (response != null) {
+                        HttpResponse newResponse = (HttpResponse) response.clone();
+                        newResponse.setBodyAsString(resolvedTemplate);
+                        enrichedExchange = HttpExchange.Builder.anHttpExchange()
+                                .withHttpRequest(enrichedExchange.getRequest())
+                                .withHttpResponse(newResponse)
+                                .withDuration(enrichedExchange.getDurationInMillis())
+                                .at(enrichedExchange.getMoment())
+                                .withAttempts(enrichedExchange.getAttempts())
+                                .withAttributes(new HashMap<>(enrichedExchange.getAttributes()))
+                                .withTimings(new HashMap<>(enrichedExchange.getTimings()))
+                                .build();
+                        LOGGER.debug("Applied template processing to HttpExchange, resolved to: {}", resolvedTemplate);
+                    }
                 }
             } catch (Exception e) {
                 LOGGER.warn("Failed to apply template processing: {}", e.getMessage());

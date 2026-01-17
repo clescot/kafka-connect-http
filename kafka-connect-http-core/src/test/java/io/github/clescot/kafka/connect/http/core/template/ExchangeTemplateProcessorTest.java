@@ -52,15 +52,12 @@ class ExchangeTemplateProcessorTest {
         assertThat(processedExchange).isInstanceOf(HttpExchange.class);
         HttpExchange httpProcessedExchange = (HttpExchange) processedExchange;
         
-        // Verify that the processor added attributes with JSONPath results
+        // Verify that the processor returned content with JSONPath results
         assertThat(processedExchange).isNotNull();
-        assertThat(processedExchange.getAttributes()).isNotEmpty();
-        assertThat(processedExchange.getAttributes()).containsKey("jsonpath___response_statusCode");
-        assertThat(processedExchange.getAttributes()).containsKey("jsonpath___request_url");
-        
-        // Verify the values are correct
-        assertThat(processedExchange.getAttributes().get("jsonpath___response_statusCode")).isEqualTo("200");
-        assertThat(processedExchange.getAttributes().get("jsonpath___request_url")).isEqualTo("http://example.com/api/test");
+        String content = httpProcessedExchange.getContent();
+        assertThat(content).isNotEmpty();
+        assertThat(content).contains("200");
+        assertThat(content).contains("http://example.com/api/test");
     }
 
     @Test
@@ -76,14 +73,10 @@ class ExchangeTemplateProcessorTest {
         assertThat(processedExchange).isInstanceOf(HttpExchange.class);
         HttpExchange httpProcessedExchange = (HttpExchange) processedExchange;
         
-        // Verify that the processor added random value attributes
+        // Verify that the processor returned content with random values
         assertThat(httpProcessedExchange).isNotNull();
-        assertThat(httpProcessedExchange.getAttributes()).isNotEmpty();
-        
-        // Check that we have at least one random attribute
-        boolean hasRandomAttribute = httpProcessedExchange.getAttributes().keySet().stream()
-                .anyMatch(key -> key.startsWith("random_"));
-        assertThat(hasRandomAttribute).isTrue();
+        String content = httpProcessedExchange.getContent();
+        assertThat(content).isNotEmpty();
     }
 
     @Test
@@ -111,17 +104,14 @@ class ExchangeTemplateProcessorTest {
         Exchange<?, ?> processedJsonPath = manager.processTemplate(testExchange, jsonPathTemplate, new HashMap<>());
         assertThat(processedJsonPath).isInstanceOf(HttpExchange.class);
         HttpExchange httpProcessedJsonPath = (HttpExchange) processedJsonPath;
-        assertThat(httpProcessedJsonPath.getAttributes()).containsKey("jsonpath_response_statusCode");
-        assertThat(httpProcessedJsonPath.getAttributes().get("jsonpath_response_statusCode")).isEqualTo("200");
+        assertThat(httpProcessedJsonPath.getContent()).isEqualTo("200");
         
         // Test Random template
         String randomTemplate = "${random.int:1:100}";
         Exchange<?, ?> processedRandom = manager.processTemplate(testExchange, randomTemplate, new HashMap<>());
         assertThat(processedRandom).isInstanceOf(HttpExchange.class);
         HttpExchange httpProcessedRandom = (HttpExchange) processedRandom;
-        boolean hasRandomAttribute = httpProcessedRandom.getAttributes().keySet().stream()
-                .anyMatch(key -> key.startsWith("random_"));
-        assertThat(hasRandomAttribute).isTrue();
+        assertThat(httpProcessedRandom.getContent()).isNotEmpty();
     }
 
     @Test

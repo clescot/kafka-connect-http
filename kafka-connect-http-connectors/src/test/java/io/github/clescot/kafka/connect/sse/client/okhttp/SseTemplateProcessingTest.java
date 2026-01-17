@@ -131,10 +131,10 @@ class SseTemplateProcessingTest {
             assertThat(records).hasSize(1);
             org.apache.kafka.connect.source.SourceRecord record = records.get(0);
 
-            // The data should be the full SSE event JSON (SSE connector always returns
-            // complete event structure)
+            // The data should be the processed content (JSONPath result) with empty attributes
+            // ${jsonpath:content} extracts the content, so data stays the same
             assertThat(record.value()).isEqualTo(
-                    "{\"id\":\"test-id\",\"attributes\":\"{jsonpath_content={\"message\": \"hello\"}}\",\"type\":\"test-type\",\"data\":\"{\"message\": \"hello\"}\"}");
+                    "{\"id\":\"test-id\",\"attributes\":\"{}\",\"type\":\"test-type\",\"data\":\"{\"message\": \"hello\"}\"}");
         }
     }
 }

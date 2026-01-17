@@ -43,8 +43,8 @@ class SseArrayProcessingTest {
         settings.put("url", "http://example.com/sse");
 
         // Template to extract all item IDs from array using JmesPath
-        // This will create an attribute 'extracted_ids' with the result
-        settings.put("exchange.template", "${jmespath:items[*].id:extracted_ids}");
+        // Templating puts results in content, not attributes
+        settings.put("exchange.template", "${jmespath:items[*].id:result}");
 
         // Create configuration
         SseConfiguration sseConfiguration = new SseConfiguration(configurationId, mockHttpClient, settings);
@@ -55,9 +55,8 @@ class SseArrayProcessingTest {
 
         // Verify processing worked
         assertThat(processedEvent).isNotNull();
-        // Check that the attribute contains the extracted IDs
-        assertThat(processedEvent.getAttributes()).containsKey("extracted_ids");
-        assertThat(processedEvent.getAttributes().get("extracted_ids")).asString().contains("[1,2,3]");
+        // Check that the data contains the extracted IDs
+        assertThat(processedEvent.getData()).contains("[1,2,3]");
     }
 
     @Test
@@ -75,7 +74,7 @@ class SseArrayProcessingTest {
 
         // Template to extract first and last user names
         // JmesPath slice: [0] and [-1] or multi-select [0, 2].name
-        settings.put("exchange.template", "${jmespath:users[0,2].name:extracted_users}");
+        settings.put("exchange.template", "${jmespath:users[0,2].name:result}");
 
         // Create configuration
         SseConfiguration sseConfiguration = new SseConfiguration(configurationId, mockHttpClient, settings);
@@ -86,9 +85,8 @@ class SseArrayProcessingTest {
 
         // Verify processing worked
         assertThat(processedEvent).isNotNull();
-        assertThat(processedEvent.getAttributes()).containsKey("extracted_users");
-        assertThat(processedEvent.getAttributes().get("extracted_users")).asString().contains("Alice");
-        assertThat(processedEvent.getAttributes().get("extracted_users")).asString().contains("Charlie");
+        assertThat(processedEvent.getData()).contains("Alice");
+        assertThat(processedEvent.getData()).contains("Charlie");
     }
 
     @Test
@@ -105,7 +103,7 @@ class SseArrayProcessingTest {
         settings.put("url", "http://example.com/sse");
 
         // Template to extract only active products' prices
-        settings.put("exchange.template", "${jmespath:products[?(@.active == true)].price:active_prices}");
+        settings.put("exchange.template", "${jmespath:products[?(@.active == true)].price:result}");
 
         // Create configuration
         SseConfiguration sseConfiguration = new SseConfiguration(configurationId, mockHttpClient, settings);
@@ -116,9 +114,8 @@ class SseArrayProcessingTest {
 
         // Verify processing worked
         assertThat(processedEvent).isNotNull();
-        assertThat(processedEvent.getAttributes()).containsKey("active_prices");
-        assertThat(processedEvent.getAttributes().get("active_prices")).asString().contains("10.99");
-        assertThat(processedEvent.getAttributes().get("active_prices")).asString().contains("15.75");
-        assertThat(processedEvent.getAttributes().get("active_prices")).asString().doesNotContain("25.50");
+        assertThat(processedEvent.getData()).contains("10.99");
+        assertThat(processedEvent.getData()).contains("15.75");
+        assertThat(processedEvent.getData()).doesNotContain("25.50");
     }
 }

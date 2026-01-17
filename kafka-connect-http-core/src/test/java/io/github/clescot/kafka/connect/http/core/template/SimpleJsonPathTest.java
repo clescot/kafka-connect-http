@@ -53,8 +53,8 @@ public class SimpleJsonPathTest {
         
         // Check results
         assertThat(httpProcessedExchange).isNotNull();
-        System.out.println("DEBUG: Processed exchange attributes: " + httpProcessedExchange.getAttributes());
-        assertThat(httpProcessedExchange.getAttributes()).isNotEmpty();
+        System.out.println("DEBUG: Processed exchange content: " + httpProcessedExchange.getContent());
+        assertThat(httpProcessedExchange.getContent()).isNotEmpty();
         
         System.out.println("DEBUG: Test completed successfully");
     }

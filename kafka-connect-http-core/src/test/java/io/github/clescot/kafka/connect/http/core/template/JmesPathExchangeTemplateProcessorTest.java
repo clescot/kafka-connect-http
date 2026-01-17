@@ -54,27 +54,27 @@ class JmesPathExchangeTemplateProcessorTest {
     @Test
     void testJmesPathExpressionWithAttributeName() {
         Exchange<?, ?> result = processor.process(exchange, "${jmespath:user.name:username}", Collections.emptyMap());
-        assertThat(result.getAttribute("username")).isEqualTo("John Doe");
+        assertThat(result.getContent()).isEqualTo("John Doe");
     }
-    
+
     @Test
     void testJmesPathExpressionWithoutAttributeName() {
         Exchange<?, ?> result = processor.process(exchange, "${jmespath:status}", Collections.emptyMap());
-        assertThat(result.getAttribute("jmespath_result")).isEqualTo("active");
+        assertThat(result.getContent()).isEqualTo("active");
     }
-    
+
     @Test
     void testJmesPathNestedExpression() {
         Exchange<?, ?> result = processor.process(exchange, "${jmespath:user.id:userId}", Collections.emptyMap());
-        assertThat(result.getAttribute("userId")).isEqualTo("123");
+        assertThat(result.getContent()).isEqualTo("123");
     }
-    
+
     @Test
     void testJmesPathNonExistentPath() {
         Exchange<?, ?> result = processor.process(exchange, "${jmespath:user.nonexistent:result}", Collections.emptyMap());
-        assertThat(result.getAttribute("result")).isEqualTo("null");
+        assertThat(result.getContent()).isEqualTo("null");
     }
-    
+
     @Test
     void testJmesPathWithEmptyContent() {
         HttpExchange emptyExchange = new HttpExchange(
@@ -85,9 +85,9 @@ class JmesPathExchangeTemplateProcessorTest {
                 new AtomicInteger(1),
                 true
         );
-        
+
         Exchange<?, ?> result = processor.process(emptyExchange, "${jmespath:user.name:result}", Collections.emptyMap());
-        assertThat(result.getAttribute("result")).isEqualTo("");
+        assertThat(result.getContent()).isEqualTo("");
     }
     
     @Test

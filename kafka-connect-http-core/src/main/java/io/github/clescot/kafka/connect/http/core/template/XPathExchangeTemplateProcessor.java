@@ -1,8 +1,7 @@
 package io.github.clescot.kafka.connect.http.core.template;
 
-import io.github.clescot.kafka.connect.http.core.Exchange;
-import io.github.clescot.kafka.connect.http.core.Request;
-import io.github.clescot.kafka.connect.http.core.Response;
+import io.github.clescot.kafka.connect.http.core.*;
+import io.github.clescot.kafka.connect.sse.core.SseExchange;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -14,6 +13,7 @@ import javax.xml.xpath.XPathConstants;
 import javax.xml.xpath.XPathExpression;
 import javax.xml.xpath.XPathFactory;
 import java.io.StringReader;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -21,123 +21,94 @@ import java.util.regex.Pattern;
 /**
  * XPath template processor for Exchange.
  * Allows extracting and transforming data from any Exchange implementation using XPath expressions.
- * This processor works with XML content in requests or responses.
  */
 public class XPathExchangeTemplateProcessor implements ExchangeTemplateProcessor {
     private static final Logger LOGGER = LoggerFactory.getLogger(XPathExchangeTemplateProcessor.class);
-    
+
     public static final String NAME = "xpath";
     private static final Pattern XPATH_PATTERN = Pattern.compile("\\$\\{xpath:(.*?)\\}");
     private static final XPathFactory XPATH_FACTORY = XPathFactory.newInstance();
-    
-    // Security constants for XPath
-    private static final int MAX_XPATH_LENGTH = 500; // 500 characters max for XPath expressions
-    private static final int MAX_XML_CONTENT_LENGTH = 500000; // 500KB max XML content size
-    private static final long MAX_XPATH_TIMEOUT_MS = 3000; // 3 second timeout for XPath evaluation
+
+    private static final int MAX_XPATH_LENGTH = 500;
+    private static final int MAX_XML_CONTENT_LENGTH = 500000;
+    private static final long MAX_XPATH_TIMEOUT_MS = 3000;
 
     @Override
-    public <R extends Request,S extends Response,E extends Exchange<R,S>> Exchange<R, S> process(@NotNull E exchange, @NotNull String template, Map<String, Object> context) {
+    public <R extends Request, S extends Response, E extends Exchange<R, S>> E process(
+            @NotNull E exchange, @NotNull String template, Map<String, Object> context) {
         LOGGER.debug("Processing template with XPath: {}", template);
-        
-        // Start with the original exchange
-        Exchange<R, S> modifiedExchange = exchange;
-        
-        // Process the template to extract XPath expressions
+
         Matcher matcher = XPATH_PATTERN.matcher(template);
-        
-        LOGGER.debug("Looking for XPath patterns in template: {}", template);
-        boolean foundAny = false;
-        
-        while (matcher.find()) {
-            foundAny = true;
-            String xpathExpression = matcher.group(1);
-            LOGGER.debug("Found XPath expression: {}", xpathExpression);
-            
-            try {
-                // Try to evaluate the XPath expression against the exchange
-                Object result = evaluateXPath(exchange, xpathExpression);
-                
-                if (result != null) {
-                    LOGGER.debug("XPath result for '{}': {}", xpathExpression, result);
-                    
-                    // Add the result to attributes using the exchange's withAttribute method
-                    String attributeName = "xpath_" + xpathExpression.replaceAll("[^a-zA-Z0-9_]", "_");
-                    modifiedExchange = modifiedExchange.withAttribute(attributeName, result.toString());
-                    LOGGER.debug("Added attribute: {} = {}", attributeName, result.toString());
-                } else {
-                    LOGGER.debug("XPath expression '{}' returned null", xpathExpression);
-                }
-            } catch (Exception e) {
-                LOGGER.warn("Failed to evaluate XPath expression '{}': {}", xpathExpression, e.getMessage());
-                LOGGER.debug("Exception details:", e);
+        if (!matcher.find()) {
+            return exchange;
+        }
+
+        String xpathExpression = matcher.group(1);
+        LOGGER.debug("Found XPath expression: {}", xpathExpression);
+
+        try {
+            Object result = evaluateXPath(exchange, xpathExpression);
+
+            if (result != null) {
+                String resultValue = result.toString();
+                LOGGER.debug("XPath result for '{}': {}", xpathExpression, resultValue);
+                return (E) setContent(exchange, resultValue);
+            } else {
+                LOGGER.debug("XPath expression '{}' returned null, returning empty content", xpathExpression);
+                return (E) setContent(exchange, "");
             }
+        } catch (Exception e) {
+            LOGGER.warn("Failed to evaluate XPath expression '{}': {}", xpathExpression, e.getMessage());
+            LOGGER.debug("Exception details:", e);
         }
-        
-        if (!foundAny) {
-            LOGGER.debug("No XPath expressions found in template");
-        }
-        
-        return modifiedExchange;
+
+        return (E) setContent(exchange, "");
     }
 
-    /**
-     * Evaluate an XPath expression against the Exchange.
-     * 
-     * @param exchange the exchange to evaluate against
-     * @param xpathExpression the XPath expression
-     * @return the result of the evaluation, or null if failed
-     */
     private Object evaluateXPath(Exchange<?, ?> exchange, String xpathExpression) {
         try {
-            // Security validation for XPath expression length
             if (xpathExpression.length() > MAX_XPATH_LENGTH) {
-                LOGGER.warn("XPath expression too long ({} characters), max allowed is {}: {}", 
-                    xpathExpression.length(), MAX_XPATH_LENGTH, xpathExpression.substring(0, 100) + "...");
+                LOGGER.warn("XPath expression too long ({} characters), max allowed is {}: {}",
+                        xpathExpression.length(), MAX_XPATH_LENGTH, xpathExpression.substring(0, 100) + "...");
                 return null;
             }
-            
+
             XPath xpath = XPATH_FACTORY.newXPath();
-            
-            // Timeout protection for XPath compilation
+
             long startTime = System.currentTimeMillis();
             XPathExpression expr = xpath.compile(xpathExpression);
             long compilationTime = System.currentTimeMillis() - startTime;
-            
+
             if (compilationTime > MAX_XPATH_TIMEOUT_MS) {
-                LOGGER.warn("XPath expression compilation took too long ({}ms), possible malicious pattern: {}", 
-                    compilationTime, xpathExpression);
+                LOGGER.warn("XPath expression compilation took too long ({}ms), possible malicious pattern: {}",
+                        compilationTime, xpathExpression);
                 return null;
             }
-            
-            // Try to evaluate against content if it's XML
-            String content = exchange.getContentAsString();
+
+            String content = exchange.getContent();
             if (content != null && isXmlContent(content)) {
-                
-                // Security validation for XML content size
+
                 if (content.length() > MAX_XML_CONTENT_LENGTH) {
-                    LOGGER.warn("XML content too large for XPath processing ({} characters), max allowed is {}: {}", 
-                        content.length(), MAX_XML_CONTENT_LENGTH, content.substring(0, 100) + "...");
+                    LOGGER.warn("XML content too large for XPath processing ({} characters), max allowed is {}: {}",
+                            content.length(), MAX_XML_CONTENT_LENGTH, content.substring(0, 100) + "...");
                     return null;
                 }
-                
+
                 Document doc = parseXml(content);
                 if (doc != null) {
                     return expr.evaluate(doc, XPathConstants.STRING);
                 }
             }
-            
+
             LOGGER.debug("No XML content found in exchange for XPath evaluation");
             return null;
-            
+
         } catch (Exception e) {
             LOGGER.debug("XPath evaluation failed for '{}': {}", xpathExpression, e.getMessage());
             return null;
         }
     }
 
-    /**
-     * Check if content appears to be XML.
-     */
     private boolean isXmlContent(String content) {
         if (content == null || content.trim().isEmpty()) {
             return false;
@@ -146,9 +117,6 @@ public class XPathExchangeTemplateProcessor implements ExchangeTemplateProcessor
         return trimmed.startsWith("<") || trimmed.startsWith("<?xml");
     }
 
-    /**
-     * Parse XML string into a Document.
-     */
     private Document parseXml(String xmlContent) {
         try {
             javax.xml.parsers.DocumentBuilderFactory factory = javax.xml.parsers.DocumentBuilderFactory.newInstance();
@@ -159,6 +127,43 @@ public class XPathExchangeTemplateProcessor implements ExchangeTemplateProcessor
             LOGGER.debug("Failed to parse XML content: {}", e.getMessage());
             return null;
         }
+    }
+
+    @SuppressWarnings("unchecked")
+    private <R extends Request, S extends Response> Exchange<R, S> setContent(
+            Exchange<R, S> exchange, String content) {
+
+        if (exchange instanceof HttpExchange httpExchange) {
+            HttpRequest request = httpExchange.getRequest();
+            HttpResponse originalResponse = httpExchange.getResponse();
+
+            HttpResponse newResponse;
+            if (originalResponse != null) {
+                newResponse = (HttpResponse) originalResponse.clone();
+                newResponse.setBodyAsString(content);
+            } else {
+                newResponse = new HttpResponse(200, "OK");
+                newResponse.setBodyAsString(content);
+            }
+
+            return (Exchange<R, S>) HttpExchange.Builder.anHttpExchange()
+                    .withHttpRequest(request)
+                    .withHttpResponse(newResponse)
+                    .withDuration(httpExchange.getDurationInMillis())
+                    .at(httpExchange.getMoment())
+                    .withAttempts(httpExchange.getAttempts())
+                    .withAttributes(new HashMap<>(httpExchange.getAttributes()))
+                    .withTimings(new HashMap<>(httpExchange.getTimings()))
+                    .build();
+        }
+
+        if (exchange instanceof SseExchange) {
+            SseExchange sseExchange = (SseExchange) exchange;
+            return (Exchange<R, S>) sseExchange.setContent(content);
+        }
+
+        LOGGER.warn("Unsupported exchange type: {}. Cannot set content.", exchange.getClass().getName());
+        return exchange;
     }
 
     @Override
