@@ -17,7 +17,7 @@ import io.github.clescot.kafka.connect.http.core.HttpExchange;
 import io.github.clescot.kafka.connect.http.core.HttpRequest;
 import io.github.clescot.kafka.connect.http.core.HttpResponse;
 import io.github.clescot.kafka.connect.http.core.template.ExchangeTemplateManager;
-import io.github.clescot.kafka.connect.http.core.template.TemplateConfigurationUtil;
+import io.github.clescot.kafka.connect.http.core.template.ExchangeTemplateProcessorFactory;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -71,6 +71,7 @@ public class HttpConfiguration<C extends HttpClient<NR, NS>, NR, NS> implements 
     private final long defaultRetryAfterDelayInSeconds;
     private ExchangeTemplateManager templateManager;
     private String exchangeTemplate;
+    private ExchangeTemplateProcessorFactory factory = new ExchangeTemplateProcessorFactory();
 
     public HttpConfiguration(String id,
                              C client,
@@ -93,8 +94,8 @@ public class HttpConfiguration<C extends HttpClient<NR, NS>, NR, NS> implements 
         failsafeExecutor = buildFailsafeExecutor();
         
         // Initialize template processing using shared utility
-        this.exchangeTemplate = TemplateConfigurationUtil.getExchangeTemplate(settings);
-        this.templateManager = TemplateConfigurationUtil.createTemplateManager(settings);
+        this.exchangeTemplate =  settings.getOrDefault("exchange.template", "");
+        this.templateManager = factory.createDefaultTemplateManager();
     }
 
     private FailsafeExecutor<HttpExchange> buildFailsafeExecutor() {

@@ -9,7 +9,7 @@ import io.github.clescot.kafka.connect.http.client.okhttp.OkHttpClient;
 import io.github.clescot.kafka.connect.http.core.Exchange;
 import io.github.clescot.kafka.connect.http.core.HttpRequest;
 import io.github.clescot.kafka.connect.http.core.template.ExchangeTemplateManager;
-import io.github.clescot.kafka.connect.http.core.template.TemplateConfigurationUtil;
+import io.github.clescot.kafka.connect.http.core.template.ExchangeTemplateProcessorFactory;
 import io.github.clescot.kafka.connect.sse.core.SseEvent;
 import io.github.clescot.kafka.connect.sse.core.SseExchange;
 import io.micrometer.core.instrument.composite.CompositeMeterRegistry;
@@ -74,8 +74,9 @@ public class SseConfiguration implements Configuration<OkHttpClient, HttpRequest
         Preconditions.checkNotNull(topic, "'topic' must not be null or empty.");
 
         // Initialize template processing using shared utility
-        this.exchangeTemplate = TemplateConfigurationUtil.getExchangeTemplate(settings);
-        this.templateManager = TemplateConfigurationUtil.createTemplateManager(settings);
+        this.exchangeTemplate =  settings.getOrDefault("exchange.template", "");
+        ExchangeTemplateProcessorFactory factory = new ExchangeTemplateProcessorFactory();
+        this.templateManager = factory.createTemplateManager(settings);
     }
 
     public static SseConfiguration buildSseConfiguration(String configurationId,

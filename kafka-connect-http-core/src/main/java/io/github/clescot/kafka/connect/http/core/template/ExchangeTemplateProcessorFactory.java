@@ -3,6 +3,7 @@ package io.github.clescot.kafka.connect.http.core.template;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.Map;
 import java.util.ServiceLoader;
 
 /**
@@ -62,6 +63,28 @@ public class ExchangeTemplateProcessorFactory {
         return manager;
     }
 
+    public ExchangeTemplateManager createTemplateManager(Map<String,String> settings){
+        ExchangeTemplateManager manager = new ExchangeTemplateManager();
+
+        // Check for custom processor configuration
+        String customProcessors = settings.getOrDefault("exchange.template.processors", "");
+        if (!customProcessors.trim().isEmpty()) {
+            String[] processorNames = customProcessors.split(",");
+            for (String processorName : processorNames) {
+                try {
+                    ExchangeTemplateProcessor processor = new ExchangeTemplateProcessorFactory().createBuiltinProcessor(processorName.trim());
+                    manager.registerProcessor(processor);
+                    if(LOGGER.isInfoEnabled()) {
+                        LOGGER.info("Registered custom processor: {}", processorName.trim());
+                    }
+                } catch (Exception e) {
+                    LOGGER.warn("Failed to load custom processor '{}': {}", processorName.trim(), e.getMessage());
+                }
+            }
+        }
+        return manager;
+    }
+
     /**
      * Create a template manager with default built-in processors.
      * 
@@ -71,10 +94,8 @@ public class ExchangeTemplateProcessorFactory {
         ExchangeTemplateManager manager = new ExchangeTemplateManager();
         
         // Register built-in processors
-        manager.registerProcessor(new JsonPathExchangeTemplateProcessor());
-        manager.registerProcessor(new RandomExchangeTemplateProcessor());
-        manager.registerProcessor(new XPathExchangeTemplateProcessor());
-        
+        manager.registerDefaultProcessors();
+
         // Discover additional processors via ServiceLoader
         ExchangeTemplateManager discoveredManager = discoverProcessors();
         for (ExchangeTemplateProcessor processor : discoveredManager.getProcessors()) {
