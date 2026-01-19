@@ -281,31 +281,7 @@ public class SseConfiguration implements Configuration<OkHttpClient, HttpRequest
      * configured or processing fails
      */
     public SseEvent processEventWithTemplate(SseEvent sseEvent, HttpRequest httpRequest) {
-        Preconditions.checkNotNull(sseEvent, "sseEvent must not be null.");
-        Preconditions.checkNotNull(httpRequest, "httpRequest must not be null.");
-        if (exchangeTemplate == null || exchangeTemplate.trim().isEmpty() || templateManager == null) {
-            return sseEvent;
-        }
-
-        try {
-            // Create an SseExchange for template processing
-            SseExchange sseExchange = new SseExchange(httpRequest, sseEvent);
-
-            // Process the exchange using the template
-            Exchange<HttpRequest, SseEvent> processedExchange = templateManager.processTemplate(sseExchange, exchangeTemplate, Map.of());
-
-            SseEvent response = processedExchange.getResponse();
-            // Propagate attributes from the exchange to the SSE event
-            if (response != null && processedExchange.getAttributes() != null) {
-                response.getAttributes().putAll(processedExchange.getAttributes());
-            }
-            return response;
-        } catch (
-
-                Exception e) {
-            LOGGER.warn("Failed to apply template processing to SSE event: {}", e.getMessage());
-            return sseEvent;
-        }
+        return processEventWithTemplate(sseEvent,httpRequest,Map.of());
     }
 
     /**
@@ -319,34 +295,29 @@ public class SseConfiguration implements Configuration<OkHttpClient, HttpRequest
      * configured or processing fails
      */
     public SseEvent processEventWithTemplate(SseEvent sseEvent, HttpRequest httpRequest, Map<String, Object> context) {
+        Preconditions.checkNotNull(sseEvent, "sseEvent must not be null.");
+        Preconditions.checkNotNull(httpRequest, "httpRequest must not be null.");
         if (exchangeTemplate == null || exchangeTemplate.trim().isEmpty() || templateManager == null) {
             return sseEvent;
         }
 
         try {
-            // Create an SseExchange for template processing with context
-            SseExchange sseExchange = new SseExchange(httpRequest, sseEvent, context);
+            // Create an SseExchange for template processing
+            SseExchange sseExchange = new SseExchange(httpRequest, sseEvent);
 
             // Process the exchange using the template
-            Exchange<?, ?> processedExchange = templateManager.processTemplate(sseExchange, exchangeTemplate, context);
+            Exchange<HttpRequest, SseEvent> processedExchange = templateManager.processTemplate(sseExchange, exchangeTemplate, context);
 
-            // If the processed exchange is an SseExchange, return its response
-            if (processedExchange instanceof SseExchange) {
-                SseExchange processedSseExchange = (SseExchange) processedExchange;
-                SseEvent response = processedSseExchange.getResponse();
-                // Propagate attributes from the exchange to the SSE event
-                if (response != null && processedSseExchange.getAttributes() != null) {
-                    response.getAttributes().putAll(processedSseExchange.getAttributes());
-                }
-                return response;
-            } else {
-                // Log warning if the processor returned a different type of exchange
-                LOGGER.warn("Template processing returned non-SseExchange type: {}",
-                        processedExchange.getClass().getName());
-                return sseEvent;
+            SseEvent response = processedExchange.getResponse();
+            // Propagate attributes from the exchange to the SSE event
+            if (response != null && processedExchange.getAttributes() != null) {
+                response.getAttributes().putAll(processedExchange.getAttributes());
             }
-        } catch (Exception e) {
-            LOGGER.warn("Failed to apply template processing to SSE event with context: {}", e.getMessage());
+            return response;
+        } catch (
+
+                Exception e) {
+            LOGGER.warn("Failed to apply template processing to SSE event: {}", e.getMessage());
             return sseEvent;
         }
     }
