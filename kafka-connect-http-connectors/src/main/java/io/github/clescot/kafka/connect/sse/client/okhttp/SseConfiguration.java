@@ -53,11 +53,11 @@ public class SseConfiguration implements Configuration<OkHttpClient, HttpRequest
      *
      * @param configurationId
      * @param httpClient
-     * @param settings prefix config.<configurationId>.* should be removed
+     * @param settings        prefix config.<configurationId>.* should be removed
      */
     public SseConfiguration(String configurationId,
-            OkHttpClient httpClient,
-            Map<String, String> settings) {
+                            OkHttpClient httpClient,
+                            Map<String, String> settings) {
         Preconditions.checkNotNull(configurationId, "configurationId must not be null.");
         Preconditions.checkArgument(!configurationId.isEmpty(), "configurationId must not be empty.");
         Preconditions.checkNotNull(httpClient, "httpClient must not be null.");
@@ -74,16 +74,16 @@ public class SseConfiguration implements Configuration<OkHttpClient, HttpRequest
         Preconditions.checkNotNull(topic, "'topic' must not be null or empty.");
 
         // Initialize template processing using shared utility
-        this.exchangeTemplate =  settings.getOrDefault("exchange.template", "");
+        this.exchangeTemplate = settings.getOrDefault("exchange.template", "");
         ExchangeTemplateProcessorFactory factory = new ExchangeTemplateProcessorFactory();
         this.templateManager = factory.createTemplateManager(settings);
     }
 
     public static SseConfiguration buildSseConfiguration(String configurationId,
-            Map<String, String> mySettings,
-            ExecutorService executorService,
-            CompositeMeterRegistry meterRegistry,
-            HttpClientFactory<OkHttpClient, Request, Response> httpClientFactory) {
+                                                         Map<String, String> mySettings,
+                                                         ExecutorService executorService,
+                                                         CompositeMeterRegistry meterRegistry,
+                                                         HttpClientFactory<OkHttpClient, Request, Response> httpClientFactory) {
         Random random = getRandom(mySettings);
         OkHttpClient httpClient = httpClientFactory.buildHttpClient(mySettings, executorService, meterRegistry, random);
         return new SseConfiguration(configurationId, httpClient, mySettings);
@@ -278,11 +278,11 @@ public class SseConfiguration implements Configuration<OkHttpClient, HttpRequest
      * @param httpRequest the HTTP request that initiated the SSE connection (can be
      *                    null)
      * @return the processed SSE event, or the original event if no template is
-     *         configured or processing fails
+     * configured or processing fails
      */
     public SseEvent processEventWithTemplate(SseEvent sseEvent, HttpRequest httpRequest) {
-        Preconditions.checkNotNull(sseEvent,"sseEvent must not be null.");
-        Preconditions.checkNotNull(httpRequest,"httpRequest must not be null.");
+        Preconditions.checkNotNull(sseEvent, "sseEvent must not be null.");
+        Preconditions.checkNotNull(httpRequest, "httpRequest must not be null.");
         if (exchangeTemplate == null || exchangeTemplate.trim().isEmpty() || templateManager == null) {
             return sseEvent;
         }
@@ -292,26 +292,17 @@ public class SseConfiguration implements Configuration<OkHttpClient, HttpRequest
             SseExchange sseExchange = new SseExchange(httpRequest, sseEvent);
 
             // Process the exchange using the template
-            Exchange<?, ?> processedExchange = templateManager.processTemplate(sseExchange, exchangeTemplate, Map.of());
+            Exchange<HttpRequest, SseEvent> processedExchange = templateManager.processTemplate(sseExchange, exchangeTemplate, Map.of());
 
-            // If the processed exchange is an SseExchange, return its response
-            if (processedExchange instanceof SseExchange) {
-                SseExchange processedSseExchange = (SseExchange) processedExchange;
-                SseEvent response = processedSseExchange.getResponse();
-                // Propagate attributes from the exchange to the SSE event
-                if (response != null && processedSseExchange.getAttributes() != null) {
-                    response.getAttributes().putAll(processedSseExchange.getAttributes());
-                }
-                return response;
-            } else {
-                // Log warning if the processor returned a different type of exchange
-                LOGGER.warn("Template processing returned non-SseExchange type: {}",
-                        processedExchange.getClass().getName());
-                return sseEvent;
+            SseEvent response = processedExchange.getResponse();
+            // Propagate attributes from the exchange to the SSE event
+            if (response != null && processedExchange.getAttributes() != null) {
+                response.getAttributes().putAll(processedExchange.getAttributes());
             }
+            return response;
         } catch (
 
-        Exception e) {
+                Exception e) {
             LOGGER.warn("Failed to apply template processing to SSE event: {}", e.getMessage());
             return sseEvent;
         }
@@ -325,7 +316,7 @@ public class SseConfiguration implements Configuration<OkHttpClient, HttpRequest
      *                    null)
      * @param context     additional context for template processing
      * @return the processed SSE event, or the original event if no template is
-     *         configured or processing fails
+     * configured or processing fails
      */
     public SseEvent processEventWithTemplate(SseEvent sseEvent, HttpRequest httpRequest, Map<String, Object> context) {
         if (exchangeTemplate == null || exchangeTemplate.trim().isEmpty() || templateManager == null) {
