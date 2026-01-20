@@ -33,9 +33,19 @@ public interface ExchangeTemplateProcessor {
 
     /**
      * Check if this processor can handle the given template.
-     * 
+     *
      * @param template the template to check
      * @return true if this processor can handle the template, false otherwise
      */
     boolean supports(String template);
+
+    /**
+     * Get the regex pattern for matching template expressions handled by this processor.
+     * The pattern should match the full template expression including the ${...} wrapper.
+     * For example, for JSONPath templates like "${jsonpath:$.response.statusCode}",
+     * the pattern should be "jsonpath:[^}]+".
+     *
+     * @return the regex pattern string for matching template expressions
+     */
+    String getTemplatePattern();
 }

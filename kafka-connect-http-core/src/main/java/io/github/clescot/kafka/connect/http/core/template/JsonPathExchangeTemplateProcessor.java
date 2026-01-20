@@ -273,4 +273,9 @@ public class JsonPathExchangeTemplateProcessor implements ExchangeTemplateProces
     public boolean supports(String template) {
         return template != null && JSONPATH_PATTERN.matcher(template).find();
     }
+
+    @Override
+    public String getTemplatePattern() {
+        return "jsonpath:[^}]+";
+    }
 }

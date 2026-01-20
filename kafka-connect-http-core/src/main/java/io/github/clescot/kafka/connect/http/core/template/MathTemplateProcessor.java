@@ -183,6 +183,11 @@ public class MathTemplateProcessor implements ExchangeTemplateProcessor {
     }
 
     @Override
+    public String getTemplatePattern() {
+        return "math:[^}]+";
+    }
+
+    @Override
     public String getName() {
         return NAME;
     }

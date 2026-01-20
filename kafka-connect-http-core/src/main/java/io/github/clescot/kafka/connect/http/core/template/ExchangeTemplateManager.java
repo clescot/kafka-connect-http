@@ -1,5 +1,6 @@
 package io.github.clescot.kafka.connect.http.core.template;
 
+import com.google.common.base.Preconditions;
 import io.github.clescot.kafka.connect.http.core.Exchange;
 import io.github.clescot.kafka.connect.http.core.Request;
 import io.github.clescot.kafka.connect.http.core.Response;
@@ -20,11 +21,10 @@ import java.util.regex.Pattern;
  */
 public class ExchangeTemplateManager {
     private static final Logger LOGGER = LoggerFactory.getLogger(ExchangeTemplateManager.class);
-    
+
     private final Map<String, ExchangeTemplateProcessor> processors = new ConcurrentHashMap<>();
     private final List<ExchangeTemplateProcessor> processorList = new ArrayList<>();
-    Pattern combinedPattern;
-
+    private Pattern combinedPattern;
     /**
      * Default constructor that registers all default processors.
      */
@@ -34,11 +34,10 @@ public class ExchangeTemplateManager {
 
     /**
      * Constructor that allows specifying whether to register default processors.
-     * 
+     *
      * @param registerDefaults true to register default processors, false otherwise
      */
     public ExchangeTemplateManager(boolean registerDefaults) {
-        this.combinedPattern = buildPattern();
         if (registerDefaults) {
             registerDefaultProcessors();
         }
@@ -60,6 +59,7 @@ public class ExchangeTemplateManager {
         processors.put(name, processor);
         processorList.add(processor);
         LOGGER.info("Registered ExchangeTemplateProcessor: {}", name);
+        combinedPattern = buildPattern(processorList);
     }
 
     /**
@@ -85,39 +85,7 @@ public class ExchangeTemplateManager {
         return processors.get(name);
     }
 
-    /**
-     * Process a template using the appropriate processor.
-     *
-     * @param exchange the Exchange to process
-     * @param template the template to process
-     * @param context additional context for processing
-     * @return the processed Exchange
-     * @throws IllegalStateException if no processor can handle the template
-     */
-    public <R extends Request,S extends Response> Exchange<R, S> processTemplate(@NotNull Exchange<R, S> exchange, @NotNull String template, Map<String, Object> context) {
-        if (processorList.isEmpty()) {
-            LOGGER.warn("No template processors registered, returning original exchange");
-            return exchange;
-        }
 
-        Exchange<R, S> result = exchange;
-        boolean processed = false;
-
-        // Apply all processors that support this template
-        for (ExchangeTemplateProcessor processor : processorList) {
-            if (processor.supports(template)) {
-                LOGGER.debug("Applying processor '{}' for template processing", processor.getName());
-                result = processor.process(result, template, context);
-                processed = true;
-            }
-        }
-
-        if (!processed) {
-            LOGGER.warn("No processor found for template: {}", template);
-        }
-
-        return result;
-    }
 
     /**
      * Resolve a template string against an exchange.
@@ -191,20 +159,21 @@ public class ExchangeTemplateManager {
         return resolved;
     }
 
-    private static @NonNull Pattern buildPattern() {
-        // Build a pattern that matches all processor expressions
+
+
+    private static @NonNull Pattern buildPattern(List<ExchangeTemplateProcessor> processors) {
+        Preconditions.checkArgument(!processors.isEmpty());
         StringBuilder patternBuilder = new StringBuilder("\\$\\{(?:");
-        patternBuilder.append("jmespath:[^}]+|");
-        patternBuilder.append("jsonpath:[^}]+|");
-        patternBuilder.append("random(?:\\.[^:]+)?(?::[^:}]+)?(?::[^:}]+)?|");
-        patternBuilder.append("regex:[^}]+|");
-        patternBuilder.append("xpath:[^}]+|");
-        patternBuilder.append("headerparam:[^}]+");
+        for (ExchangeTemplateProcessor processor : processors) {
+            patternBuilder.append(processor.getTemplatePattern()).append("|");
+        }
+        patternBuilder.setLength(patternBuilder.length() - 1);
         patternBuilder.append(")\\}");
 
-        Pattern combinedPattern = Pattern.compile(patternBuilder.toString());
-        return combinedPattern;
+        return Pattern.compile(patternBuilder.toString());
     }
+
+
 
     /**
      * Get all registered processors.

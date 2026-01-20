@@ -192,6 +192,11 @@ public class HeaderParameterTemplateProcessor implements ExchangeTemplateProcess
     }
 
     @Override
+    public String getTemplatePattern() {
+        return "(?:header|param|cookie):[^}]+";
+    }
+
+    @Override
     public String getName() {
         return NAME;
     }

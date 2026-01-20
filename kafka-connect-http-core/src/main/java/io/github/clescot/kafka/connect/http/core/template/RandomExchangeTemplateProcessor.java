@@ -171,4 +171,9 @@ public class RandomExchangeTemplateProcessor implements ExchangeTemplateProcesso
     public boolean supports(String template) {
         return template != null && RANDOM_PATTERN.matcher(template).find();
     }
+
+    @Override
+    public String getTemplatePattern() {
+        return "random(?:\\.[^:]+)?(?::[^:}]+)?(?::[^:}]+)?";
+    }
 }

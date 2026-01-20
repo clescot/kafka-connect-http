@@ -141,6 +141,11 @@ public class HashingTemplateProcessor implements ExchangeTemplateProcessor {
     }
 
     @Override
+    public String getTemplatePattern() {
+        return "hash:[^}]+";
+    }
+
+    @Override
     public String getName() {
         return NAME;
     }

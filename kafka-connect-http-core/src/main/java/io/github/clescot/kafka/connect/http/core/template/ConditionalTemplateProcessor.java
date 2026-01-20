@@ -71,6 +71,11 @@ public class ConditionalTemplateProcessor implements ExchangeTemplateProcessor {
     }
 
     @Override
+    public String getTemplatePattern() {
+        return "if:[^}]+";
+    }
+
+    @Override
     public String getName() {
         return NAME;
     }

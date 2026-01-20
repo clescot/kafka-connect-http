@@ -207,6 +207,11 @@ public class DateTimeTemplateProcessor implements ExchangeTemplateProcessor {
     }
 
     @Override
+    public String getTemplatePattern() {
+        return "datetime:[^}]+";
+    }
+
+    @Override
     public String getName() {
         return NAME;
     }

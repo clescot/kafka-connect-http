@@ -177,6 +177,11 @@ public class RegexExchangeTemplateProcessor implements ExchangeTemplateProcessor
     }
 
     @Override
+    public String getTemplatePattern() {
+        return "regex:[^}]+";
+    }
+
+    @Override
     public String getName() {
         return NAME;
     }

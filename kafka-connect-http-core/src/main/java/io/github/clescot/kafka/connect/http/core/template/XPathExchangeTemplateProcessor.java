@@ -175,4 +175,9 @@ public class XPathExchangeTemplateProcessor implements ExchangeTemplateProcessor
     public boolean supports(String template) {
         return template != null && XPATH_PATTERN.matcher(template).find();
     }
+
+    @Override
+    public String getTemplatePattern() {
+        return "xpath:[^}]+";
+    }
 }

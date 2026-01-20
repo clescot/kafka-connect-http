@@ -110,6 +110,11 @@ public class JmesPathExchangeTemplateProcessor implements ExchangeTemplateProces
     }
 
     @Override
+    public String getTemplatePattern() {
+        return "jmespath:[^}]+";
+    }
+
+    @Override
     public String getName() {
         return NAME;
     }
