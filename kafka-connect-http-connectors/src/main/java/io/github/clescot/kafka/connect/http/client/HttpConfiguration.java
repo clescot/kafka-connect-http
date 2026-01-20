@@ -12,7 +12,6 @@ import io.github.clescot.kafka.connect.RequestClient;
 import io.github.clescot.kafka.connect.RequestResponseClient;
 import io.github.clescot.kafka.connect.http.client.config.AddSuccessStatusToHttpExchangeFunction;
 import io.github.clescot.kafka.connect.http.client.config.HttpRequestPredicateBuilder;
-import io.github.clescot.kafka.connect.http.core.Exchange;
 import io.github.clescot.kafka.connect.http.core.HttpExchange;
 import io.github.clescot.kafka.connect.http.core.HttpRequest;
 import io.github.clescot.kafka.connect.http.core.HttpResponse;

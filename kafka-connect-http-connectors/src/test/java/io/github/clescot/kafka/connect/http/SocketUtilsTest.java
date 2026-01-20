@@ -1,9 +1,10 @@
 package io.github.clescot.kafka.connect.http;
 
 import org.junit.jupiter.api.Test;
-import java.net.ServerSocket;
-import java.net.Socket;
+
 import java.io.IOException;
+import java.net.ServerSocket;
+
 import static org.junit.jupiter.api.Assertions.*;
 
 class SocketUtilsTest {

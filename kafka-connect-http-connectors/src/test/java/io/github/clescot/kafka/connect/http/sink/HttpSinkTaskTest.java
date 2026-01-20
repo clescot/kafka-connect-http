@@ -68,7 +68,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 import static com.github.tomakehurst.wiremock.client.WireMock.*;
 import static com.github.tomakehurst.wiremock.stubbing.Scenario.STARTED;
 import static io.github.clescot.kafka.connect.http.SocketUtils.getRandomAvailablePort;
-import static io.github.clescot.kafka.connect.http.SocketUtils.getRandomPort;
 import static io.github.clescot.kafka.connect.http.client.HttpClientConfigDefinition.*;
 import static io.github.clescot.kafka.connect.http.client.HttpClientFactory.defaultSuccessPattern;
 import static io.github.clescot.kafka.connect.http.client.config.HttpRequestPredicateBuilder.URL_REGEX;

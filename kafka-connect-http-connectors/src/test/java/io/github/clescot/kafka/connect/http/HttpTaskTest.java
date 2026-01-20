@@ -29,9 +29,6 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 import org.junit.runner.RunWith;
 import org.testcontainers.shaded.com.google.common.collect.Maps;
 
-import java.io.IOException;
-import java.net.DatagramSocket;
-import java.net.InetAddress;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;

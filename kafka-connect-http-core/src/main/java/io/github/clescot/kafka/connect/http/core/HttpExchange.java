@@ -5,8 +5,6 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.base.Strings;
 import com.google.common.collect.Maps;
 import de.sstoehr.harreader.model.*;
-import io.github.clescot.kafka.connect.sse.core.SseEvent;
-import io.github.clescot.kafka.connect.sse.core.SseExchange;
 import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.data.SchemaBuilder;
 import org.apache.kafka.connect.data.Struct;

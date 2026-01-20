@@ -1,9 +1,5 @@
 package io.github.clescot.kafka.connect.http.core.template;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.regex.Pattern;
-
 /**
  * Base interface for all expression nodes in the template AST.
  */
