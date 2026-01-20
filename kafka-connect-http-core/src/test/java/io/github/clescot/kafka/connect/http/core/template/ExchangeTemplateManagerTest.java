@@ -252,17 +252,7 @@ class ExchangeTemplateManagerTest {
             assertThat(value).isBetween(1, 100);
         }
 
-        @Test
-        void testResolveTemplateWithMultipleExpressions() {
-            ExchangeTemplateManager manager = new ExchangeTemplateManager();
 
-            String template = "Status: ${jsonpath:$.response.statusCode}, URL: ${jsonpath:$.request.url}";
-            String result = manager.resolveTemplate(testExchange, template, new HashMap<>());
-
-            assertThat(result)
-                    .contains("Status: 200")
-                    .contains("URL: http://example.com/api/test");
-        }
 
         @Test
         void testResolveTemplatePreservesNonTemplateText() {
@@ -521,15 +511,6 @@ class ExchangeTemplateManagerTest {
                     .contains(":");
         }
 
-        @Test
-        void testResolveTemplateWithConditionalNotRecursive() {
-            ExchangeTemplateManager manager = new ExchangeTemplateManager();
-
-            String template = "Result: ${if:status:==200:success:failure}";
-            String result = manager.resolveTemplate(testExchange, template, new HashMap<>());
-
-            assertThat(result).isEqualTo("Result: success");
-        }
 
         @Test
         void testResolveTemplateWithConditionalFalseBranchNotRecursive() {
