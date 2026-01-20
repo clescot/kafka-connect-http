@@ -54,12 +54,12 @@ public class ExpressionEvaluator<R extends Request, S extends Response> {
         evaluationDepth++;
 
         try {
-            if (node instanceof TextNode) {
-                return evaluateTextNode((TextNode) node);
-            } else if (node instanceof TemplateNode) {
-                return evaluateTemplateNode((TemplateNode) node);
-            } else if (node instanceof CompositeNode) {
-                return evaluateCompositeNode((CompositeNode) node);
+            if (node instanceof TextNode textNode) {
+                return evaluateTextNode(textNode);
+            } else if (node instanceof TemplateNode templateNode) {
+                return evaluateTemplateNode(templateNode);
+            } else if (node instanceof CompositeNode compositeNode) {
+                return evaluateCompositeNode(compositeNode);
             } else {
                 return node.toString();
             }
