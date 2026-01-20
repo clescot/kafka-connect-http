@@ -27,13 +27,12 @@ public class JmesPathExchangeTemplateProcessor implements ExchangeTemplateProces
     private static final Configuration jsonPathConfig = Configuration.builder()
             .options(EnumSet.of(Option.SUPPRESS_EXCEPTIONS, Option.ALWAYS_RETURN_LIST)).build();
     public static final String NAME = "jmespath";
+    public static final String PREFIX = "${jmespath:";
 
     @Override
     public <R extends Request, S extends Response, E extends Exchange<R, S>> E process(@NotNull E exchange, @NotNull String template, Map<String, Object> context) {
         try {
             // Extract the JMESPath expression from template
-            // Template format: ${jmespath:expression} or ${jmespath:expression:attributeName}
-            // The attributeName is ignored - templating puts results in content, not attributes
             String[] parts = extractTemplateParts(template);
             if (parts.length < 1) {
                 LOGGER.warn("Invalid JMESPath template format: {}", template);
@@ -106,7 +105,7 @@ public class JmesPathExchangeTemplateProcessor implements ExchangeTemplateProces
 
     @Override
     public boolean supports(@NotNull String template) {
-        return template != null && template.startsWith("${jmespath:") && template.contains(":");
+        return template.startsWith(PREFIX);
     }
 
     @Override
@@ -124,10 +123,10 @@ public class JmesPathExchangeTemplateProcessor implements ExchangeTemplateProces
      * Returns array where [0] = expression, [1] = attributeName (if present, but ignored)
      */
     private String[] extractTemplateParts(String template) {
-        if (!template.startsWith("${jmespath:") || !template.endsWith("}")) {
+        if (!template.startsWith(PREFIX) || !template.endsWith("}")) {
             return new String[0];
         }
-        String innerContent = template.substring("${jmespath:".length(), template.length() - 1);
+        String innerContent = template.substring(PREFIX.length(), template.length() - 1);
 
         int lastColonIndex = innerContent.lastIndexOf(':');
 
