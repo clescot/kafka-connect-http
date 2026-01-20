@@ -7,7 +7,6 @@ import com.launchdarkly.eventsource.background.BackgroundEventSource;
 import io.github.clescot.kafka.connect.Configuration;
 import io.github.clescot.kafka.connect.http.client.HttpClientFactory;
 import io.github.clescot.kafka.connect.http.client.okhttp.OkHttpClient;
-import io.github.clescot.kafka.connect.http.core.Exchange;
 import io.github.clescot.kafka.connect.http.core.HttpRequest;
 import io.github.clescot.kafka.connect.http.core.template.ExchangeTemplateManager;
 import io.github.clescot.kafka.connect.http.core.template.ExchangeTemplateProcessorFactory;
@@ -16,7 +15,6 @@ import io.github.clescot.kafka.connect.sse.core.SseExchange;
 import io.micrometer.core.instrument.composite.CompositeMeterRegistry;
 import okhttp3.Request;
 import okhttp3.Response;
-import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
