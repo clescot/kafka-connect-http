@@ -101,17 +101,13 @@ class ExchangeTemplateProcessorTest {
         
         // Test JSONPath template
         String jsonPathTemplate = "${jsonpath:response.statusCode}";
-        Exchange<?, ?> processedJsonPath = manager.processTemplate(testExchange, jsonPathTemplate, new HashMap<>());
-        assertThat(processedJsonPath).isInstanceOf(HttpExchange.class);
-        HttpExchange httpProcessedJsonPath = (HttpExchange) processedJsonPath;
-        assertThat(httpProcessedJsonPath.getContent()).isEqualTo("200");
+        String resolvedTemplate = manager.resolveTemplate(testExchange, jsonPathTemplate, new HashMap<>());
+        assertThat(resolvedTemplate).isEqualTo("200");
         
         // Test Random template
         String randomTemplate = "${random.int:1:100}";
-        Exchange<?, ?> processedRandom = manager.processTemplate(testExchange, randomTemplate, new HashMap<>());
-        assertThat(processedRandom).isInstanceOf(HttpExchange.class);
-        HttpExchange httpProcessedRandom = (HttpExchange) processedRandom;
-        assertThat(httpProcessedRandom.getContent()).isNotEmpty();
+        String resolvedTemplate2 = manager.resolveTemplate(testExchange, randomTemplate, new HashMap<>());
+        assertThat(resolvedTemplate2).isNotEmpty();
     }
 
     @Test
