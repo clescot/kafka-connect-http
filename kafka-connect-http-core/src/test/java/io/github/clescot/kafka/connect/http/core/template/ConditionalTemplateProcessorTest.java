@@ -39,7 +39,7 @@ class ConditionalTemplateProcessorTest {
 
     @Test
     void testGetName() {
-        assertThat(processor.getName()).isEqualTo("conditional");
+        assertThat(processor.getName()).isEqualTo("if");
     }
 
     @Test

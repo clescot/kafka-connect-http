@@ -48,4 +48,16 @@ public interface ExchangeTemplateProcessor {
      * @return the regex pattern string for matching template expressions
      */
     String getTemplatePattern();
+
+    /**
+     * Check if this processor supports recursive template resolution.
+     * When true, the processor is responsible for resolving any nested templates
+     * within its content. When false, the ExchangeTemplateManager will continue
+     * processing the result to resolve any remaining template expressions.
+     *
+     * @return true if this processor handles recursive resolution internally, false otherwise
+     */
+    default boolean supportsRecursiveResolution() {
+        return false;
+    }
 }

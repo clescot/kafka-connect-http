@@ -14,9 +14,9 @@ class NewTemplateProcessorsTest {
         // Verify all new processors are registered
         assertThat(manager.getProcessor("jmespath")).isNotNull();
         assertThat(manager.getProcessor("regex")).isNotNull();
-        assertThat(manager.getProcessor("headerparam")).isNotNull();
+        assertThat(manager.getProcessor("header")).isNotNull();
         assertThat(manager.getProcessor("datetime")).isNotNull();
-        assertThat(manager.getProcessor("conditional")).isNotNull();
+        assertThat(manager.getProcessor("if")).isNotNull();
         assertThat(manager.getProcessor("hash")).isNotNull();
         assertThat(manager.getProcessor("math")).isNotNull();
         
@@ -49,9 +49,9 @@ class NewTemplateProcessorsTest {
         // Test processor names
         assertThat(manager.getProcessor("jmespath").getName()).isEqualTo("jmespath");
         assertThat(manager.getProcessor("regex").getName()).isEqualTo("regex");
-        assertThat(manager.getProcessor("headerparam").getName()).isEqualTo("headerparam");
+        assertThat(manager.getProcessor("header").getName()).isEqualTo("header");
         assertThat(manager.getProcessor("datetime").getName()).isEqualTo("datetime");
-        assertThat(manager.getProcessor("conditional").getName()).isEqualTo("conditional");
+        assertThat(manager.getProcessor("if").getName()).isEqualTo("if");
         assertThat(manager.getProcessor("hash").getName()).isEqualTo("hash");
         assertThat(manager.getProcessor("math").getName()).isEqualTo("math");
     }
@@ -81,9 +81,9 @@ class NewTemplateProcessorsTest {
         Assertions.assertThat(manager.getProcessor("random")).isNotNull();
         Assertions.assertThat(manager.getProcessor("jmespath")).isNotNull();
         Assertions.assertThat(manager.getProcessor("regex")).isNotNull();
-        Assertions.assertThat(manager.getProcessor("headerparam")).isNotNull();
+        Assertions.assertThat(manager.getProcessor("header")).isNotNull();
         Assertions.assertThat(manager.getProcessor("datetime")).isNotNull();
-        Assertions.assertThat(manager.getProcessor("conditional")).isNotNull();
+        Assertions.assertThat(manager.getProcessor("if")).isNotNull();
         Assertions.assertThat(manager.getProcessor("hash")).isNotNull();
         Assertions.assertThat(manager.getProcessor("math")).isNotNull();
     }

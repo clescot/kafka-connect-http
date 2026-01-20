@@ -74,7 +74,7 @@ class HeaderParameterTemplateProcessorTest {
 
     @Test
     void testGetName() {
-        assertThat(processor.getName()).isEqualTo("headerparam");
+        assertThat(processor.getName()).isEqualTo("header");
     }
 
     @Test

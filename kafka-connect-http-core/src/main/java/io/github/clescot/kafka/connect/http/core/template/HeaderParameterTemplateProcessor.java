@@ -16,7 +16,7 @@ import java.util.Map;
 public class HeaderParameterTemplateProcessor implements ExchangeTemplateProcessor {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(HeaderParameterTemplateProcessor.class);
-    public static final String NAME = "headerparam";
+    public static final String NAME = "header";
 
     @Override
     public <R extends Request, S extends Response, E extends Exchange<R, S>> E process(

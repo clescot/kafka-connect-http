@@ -3,6 +3,7 @@ package io.github.clescot.kafka.connect.http.core.template;
 import io.github.clescot.kafka.connect.http.core.HttpExchange;
 import io.github.clescot.kafka.connect.http.core.HttpRequest;
 import io.github.clescot.kafka.connect.http.core.HttpResponse;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -56,9 +57,9 @@ class ExchangeTemplateManagerTest {
             assertThat(manager.getProcessor("random")).isNotNull();
             assertThat(manager.getProcessor("jmespath")).isNotNull();
             assertThat(manager.getProcessor("regex")).isNotNull();
-            assertThat(manager.getProcessor("headerparam")).isNotNull();
+            assertThat(manager.getProcessor("header")).isNotNull();
             assertThat(manager.getProcessor("datetime")).isNotNull();
-            assertThat(manager.getProcessor("conditional")).isNotNull();
+            assertThat(manager.getProcessor("if")).isNotNull();
             assertThat(manager.getProcessor("hash")).isNotNull();
             assertThat(manager.getProcessor("math")).isNotNull();
         }
@@ -286,10 +287,7 @@ class ExchangeTemplateManagerTest {
         @Test
         void testResolveTemplateWithNullTemplateReturnsNull() {
             ExchangeTemplateManager manager = new ExchangeTemplateManager();
-
-            String result = manager.resolveTemplate(testExchange, null, new HashMap<>());
-
-            assertThat(result).isNull();
+            Assertions.assertThrows(IllegalArgumentException.class,()->manager.resolveTemplate(testExchange, null, new HashMap<>()));
         }
 
         @Test
@@ -507,8 +505,8 @@ class ExchangeTemplateManagerTest {
             String result = manager.resolveTemplate(testExchange, template, new HashMap<>());
 
             assertThat(result)
-                    .isNotEqualTo("200")
-                    .contains(":");
+                    .as("Nested conditional should now resolve inner templates (limitation fixed)")
+                    .isEqualTo("200");
         }
 
 
@@ -753,6 +751,182 @@ class ExchangeTemplateManagerTest {
             manager.registerDefaultProcessors();
 
             assertThat(manager.getProcessors()).hasSizeGreaterThanOrEqualTo(10);
+        }
+    }
+
+    @Nested
+    class ResolveTemplateLimitationTests {
+
+        @Test
+        void testResolveTemplateNestedConditionalShouldRecursivelyProcess() {
+            ExchangeTemplateManager manager = new ExchangeTemplateManager();
+
+            String template = "${if:status:==200:${jsonpath:$.response.statusCode}:${jsonpath:$.request.url}}";
+            String result = manager.resolveTemplate(testExchange, template, new HashMap<>());
+
+            assertThat(result)
+                    .as("Nested conditional should recursively resolve inner templates")
+                    .isEqualTo("200");
+        }
+
+        @Test
+        void testResolveTemplateConditionalTrueBranchShouldResolveInnerTemplate() {
+            ExchangeTemplateManager manager = new ExchangeTemplateManager();
+
+            String template = "Result: ${if:status:==200:status_is_${jsonpath:$.response.statusCode}:error}";
+            String result = manager.resolveTemplate(testExchange, template, new HashMap<>());
+
+            assertThat(result)
+                    .as("Conditional true branch should resolve inner jsonpath template")
+                    .isEqualTo("Result: status_is_200");
+        }
+
+        @Test
+        void testResolveTemplateConditionalFalseBranchShouldResolveInnerTemplate() {
+            HttpRequest failRequest = new HttpRequest("http://example.com/api/fail", HttpRequest.Method.GET);
+            failRequest.setBodyAsString("{}");
+            HttpResponse failResponse = new HttpResponse(404, "Not Found");
+            HttpExchange failExchange = new HttpExchange(
+                    failRequest,
+                    failResponse,
+                    50L,
+                    OffsetDateTime.now(),
+                    new AtomicInteger(1),
+                    true
+            );
+
+            ExchangeTemplateManager manager = new ExchangeTemplateManager();
+
+            String template = "Result: ${if:status:==200:success:error_code_${jsonpath:$.response.statusCode}}";
+            String result = manager.resolveTemplate(failExchange, template, new HashMap<>());
+
+            assertThat(result)
+                    .as("Conditional false branch should resolve inner jsonpath template")
+                    .isEqualTo("Result: error_code_404");
+        }
+
+        @Test
+        void testResolveTemplateHashProcessorShouldRecursivelyResolveInnerTemplate() {
+            ExchangeTemplateManager manager = new ExchangeTemplateManager();
+
+            String template = "Hash: ${hash:MD5:${jsonpath:$.request.url}}";
+            String result = manager.resolveTemplate(testExchange, template, new HashMap<>());
+
+            assertThat(result)
+                    .as("Hash processor should recursively resolve inner jsonpath template before hashing")
+                    .isEqualTo("Hash: c044f31eceb5f72813b7afe72b81c2ae");
+        }
+
+        @Test
+        void testResolveTemplateMathProcessorShouldRecursivelyResolveInnerTemplate() {
+            ExchangeTemplateManager manager = new ExchangeTemplateManager();
+
+            String template = "Math: ${math:${jsonpath:$.response.statusCode}+1}";
+            String result = manager.resolveTemplate(testExchange, template, new HashMap<>());
+
+            assertThat(result)
+                    .as("Math processor should recursively resolve inner jsonpath template before calculating")
+                    .isEqualTo("Math: 201.0");
+        }
+
+        @Test
+        void testResolveTemplateNestedJsonPathShouldRecursivelyResolve() {
+            ExchangeTemplateManager manager = new ExchangeTemplateManager();
+
+            String template = "Value: ${jsonpath:$.${jsonpath:$.request.url}}";
+            String result = manager.resolveTemplate(testExchange, template, new HashMap<>());
+
+            assertThat(result)
+                    .as("Nested jsonpath should be resolved recursively: outer extracts key from inner result")
+                    .isNotNull()
+                    .isNotEmpty();
+        }
+
+        @Test
+        void testResolveTemplateDeeplyNestedConditionalsShouldRecursivelyResolve() {
+            ExchangeTemplateManager manager = new ExchangeTemplateManager();
+
+            String template = "${if:status:==200:${if:true:${jsonpath:$.response.statusCode}:inner}:outer}";
+            String result = manager.resolveTemplate(testExchange, template, new HashMap<>());
+
+            assertThat(result)
+                    .as("Deeply nested conditionals should resolve recursively")
+                    .isEqualTo("200");
+        }
+
+        @Test
+        void testResolveTemplateConditionalWithMathInnerShouldRecursivelyResolve() {
+            ExchangeTemplateManager manager = new ExchangeTemplateManager();
+
+            String template = "${if:status:==200:${math:100+${jsonpath:$.response.statusCode}}:0}";
+            String result = manager.resolveTemplate(testExchange, template, new HashMap<>());
+
+            assertThat(result)
+                    .as("Conditional true branch should resolve math with inner jsonpath")
+                    .isEqualTo("300.0");
+        }
+
+        @Test
+        void testResolveTemplateHeaderInsideConditionalShouldRecursivelyResolve() {
+            ExchangeTemplateManager manager = new ExchangeTemplateManager();
+
+            String template = "${if:header:Content-Type:${header:Content-Type}:missing}";
+            String result = manager.resolveTemplate(testExchange, template, new HashMap<>());
+
+            assertThat(result)
+                    .as("Header processor inside conditional should resolve recursively")
+                    .isEqualTo("application/json");
+        }
+
+        @Test
+        void testResolveTemplateRandomInsideConditionalShouldRecursivelyResolve() {
+            ExchangeTemplateManager manager = new ExchangeTemplateManager();
+
+            String template = "${if:true:random_val_${random.int:1:100}:fixed}";
+            String result = manager.resolveTemplate(testExchange, template, new HashMap<>());
+
+            assertThat(result)
+                    .as("Random processor inside conditional should resolve recursively")
+                    .matches("random_val_\\d+");
+        }
+
+        @Test
+        void testResolveTemplateDateTimeInsideConditionalShouldRecursivelyResolve() {
+            ExchangeTemplateManager manager = new ExchangeTemplateManager();
+
+            String template = "${if:status:==200:timestamp_${datetime:now:yyyyMMdd}:invalid}";
+            String result = manager.resolveTemplate(testExchange, template, new HashMap<>());
+
+            assertThat(result)
+                    .as("DateTime processor inside conditional should resolve recursively")
+                    .matches("timestamp_\\d{8}");
+        }
+
+        @Test
+        void testResolveTemplateHashInsideMathShouldRecursivelyResolve() {
+            ExchangeTemplateManager manager = new ExchangeTemplateManager();
+
+            String template = "${math:${hash:MD5:${jsonpath:$.request.url}}+1}";
+            String result = manager.resolveTemplate(testExchange, template, new HashMap<>());
+
+            assertThat(result)
+                    .as("Hash inside math should resolve recursively")
+                    .isNotNull()
+                    .isNotEmpty();
+        }
+
+        @Test
+        void testResolveTemplateMultipleNestedProcessorsShouldRecursivelyResolve() {
+            ExchangeTemplateManager manager = new ExchangeTemplateManager();
+
+            String template = "${if:status:==200:${hash:MD5:${jsonpath:$.request.url}}:${jsonpath:$.request.url}}";
+            String result = manager.resolveTemplate(testExchange, template, new HashMap<>());
+
+            assertThat(result)
+                    .as("Hash inside conditional inside jsonpath should resolve recursively")
+                    .isNotNull()
+                    .isNotEmpty()
+                    .doesNotContain("${");
         }
     }
 }

@@ -17,7 +17,7 @@ import java.util.regex.Pattern;
 public class ConditionalTemplateProcessor implements ExchangeTemplateProcessor {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(ConditionalTemplateProcessor.class);
-    public static final String NAME = "conditional";
+    public static final String NAME = "if";
 
     @Override
     public <R extends Request, S extends Response, E extends Exchange<R, S>> Exchange<R, S> process(
@@ -50,9 +50,6 @@ public class ConditionalTemplateProcessor implements ExchangeTemplateProcessor {
                 falseValue = parts[2];
             }
 
-            System.out.println("DEBUG: template=" + template + ", parts.length=" + parts.length);
-            System.out.println("DEBUG: condition='" + condition + "', trueValue='" + trueValue + "', falseValue='" + falseValue + "'");
-            
             boolean conditionResult = evaluateCondition(condition, exchange);
             String result = conditionResult ? trueValue : falseValue;
 

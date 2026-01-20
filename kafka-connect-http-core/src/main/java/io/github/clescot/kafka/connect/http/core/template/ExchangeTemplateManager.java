@@ -1,18 +1,14 @@
 package io.github.clescot.kafka.connect.http.core.template;
 
-import com.google.common.base.Preconditions;
 import io.github.clescot.kafka.connect.http.core.Exchange;
 import io.github.clescot.kafka.connect.http.core.Request;
 import io.github.clescot.kafka.connect.http.core.Response;
 import org.jetbrains.annotations.NotNull;
-import org.jspecify.annotations.NonNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 /**
  * Manager for Exchange template processors.
@@ -24,7 +20,7 @@ public class ExchangeTemplateManager {
 
     private final Map<String, ExchangeTemplateProcessor> processors = new ConcurrentHashMap<>();
     private final List<ExchangeTemplateProcessor> processorList = new ArrayList<>();
-    private Pattern combinedPattern;
+
     /**
      * Default constructor that registers all default processors.
      */
@@ -59,7 +55,6 @@ public class ExchangeTemplateManager {
         processors.put(name, processor);
         processorList.add(processor);
         LOGGER.info("Registered ExchangeTemplateProcessor: {}", name);
-        combinedPattern = buildPattern(processorList);
     }
 
     /**
@@ -92,6 +87,7 @@ public class ExchangeTemplateManager {
      * This method extracts and resolves template expressions in the given template string.
      * It properly handles templates with multiple expression types by applying the appropriate
      * processor for each expression and preserving the template structure.
+     * Supports recursive resolution of nested templates using an expression tree.
      *
      * @param exchange the Exchange containing data for template resolution
      * @param template the template string to resolve
@@ -112,66 +108,28 @@ public class ExchangeTemplateManager {
             return template;
         }
 
+        try {
+            ExpressionParser parser = new ExpressionParser();
+            ExpressionNode ast = parser.parse(template);
 
-        Matcher matcher = combinedPattern.matcher(template);
+            ExpressionEvaluator<R, S> evaluator = new ExpressionEvaluator<>(
+                    exchange,
+                    context,
+                    this::getProcessor);
 
-        StringBuilder result = new StringBuilder();
-        int lastEnd = 0;
+            String result = evaluator.evaluate(ast);
+            LOGGER.debug("Resolved template '{}' to '{}'", template, result);
+            return result;
 
-        while (matcher.find()) {
-            // Append text before this match
-            result.append(template, lastEnd, matcher.start());
-
-            // Get the full match (e.g., "${jsonpath:$.response.statusCode}")
-            String fullMatch = matcher.group(0);
-
-            // Find which processor can handle this expression
-            String resolvedValue = null;
-            for (ExchangeTemplateProcessor processor : processorList) {
-                if (processor.supports(fullMatch)) {
-                    // Process the expression
-                    Exchange<R, S> processedExchange = processor.process(exchange, fullMatch, context);
-                    resolvedValue = processedExchange.getContent();
-
-                    // If the processor returned something different from the expression, use it
-                    if (resolvedValue != null && !resolvedValue.equals(fullMatch)) {
-                        break;
-                    }
-                    resolvedValue = null;
-                }
-            }
-
-            if (resolvedValue != null) {
-                result.append(resolvedValue);
-            } else {
-                // If no processor could resolve it, keep the original
-                result.append(fullMatch);
-            }
-
-            lastEnd = matcher.end();
+        } catch (IllegalArgumentException e) {
+            LOGGER.warn("Failed to parse template '{}': {}", template, e.getMessage());
+            return template;
+        } catch (Exception e) {
+            LOGGER.warn("Failed to resolve template '{}': {}", template, e.getMessage());
+            return template;
         }
-
-        // Append remaining text after last match
-        result.append(template, lastEnd, template.length());
-
-        String resolved = result.toString();
-        LOGGER.debug("Resolved template '{}' to '{}'", template, resolved);
-        return resolved;
     }
 
-
-
-    private static @NonNull Pattern buildPattern(List<ExchangeTemplateProcessor> processors) {
-        Preconditions.checkArgument(!processors.isEmpty());
-        StringBuilder patternBuilder = new StringBuilder("\\$\\{(?:");
-        for (ExchangeTemplateProcessor processor : processors) {
-            patternBuilder.append(processor.getTemplatePattern()).append("|");
-        }
-        patternBuilder.setLength(patternBuilder.length() - 1);
-        patternBuilder.append(")\\}");
-
-        return Pattern.compile(patternBuilder.toString());
-    }
 
 
 
