@@ -13,7 +13,7 @@ import java.util.Map;
 public class SseExchange implements Exchange<HttpRequest, SseEvent> {
     
     private final HttpRequest request;
-    private final SseEvent response;
+    private SseEvent response;
     private final Map<String, Object> attributes;
     private final Map<String, Object> context;
     
@@ -143,9 +143,9 @@ public class SseExchange implements Exchange<HttpRequest, SseEvent> {
         if (response == null) {
             return this;
         }
-        SseEvent newResponse = new SseEvent(response.getId(), response.getType(), content);
-        newResponse.getAttributes().putAll(response.getAttributes());
-        SseExchange newExchange = new SseExchange(this.request, newResponse, this.context);
+        this.response = new SseEvent(response.getId(), response.getType(), content);
+        this.response.getAttributes().putAll(response.getAttributes());
+        SseExchange newExchange = new SseExchange(this.request, this.response, this.context);
         newExchange.attributes.putAll(this.attributes);
         return newExchange;
     }

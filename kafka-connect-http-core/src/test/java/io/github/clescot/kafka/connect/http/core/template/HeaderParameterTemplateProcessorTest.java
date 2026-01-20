@@ -181,6 +181,11 @@ class HeaderParameterTemplateProcessorTest {
             }
 
             @Override
+            public Exchange<Request, Response> setContent(String content) {
+                return null;
+            }
+
+            @Override
             public Map<String, Object> getMetadata() {
                 return new HashMap<>();
             }

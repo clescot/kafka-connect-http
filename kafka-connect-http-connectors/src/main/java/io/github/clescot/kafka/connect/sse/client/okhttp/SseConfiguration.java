@@ -1,6 +1,7 @@
 package io.github.clescot.kafka.connect.sse.client.okhttp;
 
 import com.google.common.base.Preconditions;
+import com.google.common.base.Strings;
 import com.launchdarkly.eventsource.*;
 import com.launchdarkly.eventsource.background.BackgroundEventSource;
 import io.github.clescot.kafka.connect.Configuration;
@@ -15,6 +16,7 @@ import io.github.clescot.kafka.connect.sse.core.SseExchange;
 import io.micrometer.core.instrument.composite.CompositeMeterRegistry;
 import okhttp3.Request;
 import okhttp3.Response;
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -306,14 +308,13 @@ public class SseConfiguration implements Configuration<OkHttpClient, HttpRequest
             SseExchange sseExchange = new SseExchange(httpRequest, sseEvent);
 
             // Process the exchange using the template
-            Exchange<HttpRequest, SseEvent> processedExchange = templateManager.processTemplate(sseExchange, exchangeTemplate, context);
-
-            SseEvent response = processedExchange.getResponse();
+            String resolvedTemplate = templateManager.resolveTemplate(sseExchange, exchangeTemplate, context);
+            SseEvent response = sseExchange.getResponse();
             // Propagate attributes from the exchange to the SSE event
-            if (response != null && processedExchange.getAttributes() != null) {
-                response.getAttributes().putAll(processedExchange.getAttributes());
+            if (response != null && !Strings.isNullOrEmpty(resolvedTemplate)){
+                sseExchange.setContent(resolvedTemplate);
             }
-            return response;
+            return sseExchange.getResponse();
         } catch (
 
                 Exception e) {

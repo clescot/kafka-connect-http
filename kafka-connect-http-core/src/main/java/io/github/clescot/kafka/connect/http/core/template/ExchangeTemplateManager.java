@@ -4,6 +4,7 @@ import io.github.clescot.kafka.connect.http.core.Exchange;
 import io.github.clescot.kafka.connect.http.core.Request;
 import io.github.clescot.kafka.connect.http.core.Response;
 import org.jetbrains.annotations.NotNull;
+import org.jspecify.annotations.NonNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -22,12 +23,13 @@ public class ExchangeTemplateManager {
     
     private final Map<String, ExchangeTemplateProcessor> processors = new ConcurrentHashMap<>();
     private final List<ExchangeTemplateProcessor> processorList = new ArrayList<>();
+    Pattern combinedPattern;
 
     /**
      * Default constructor that registers all default processors.
      */
     public ExchangeTemplateManager() {
-        registerDefaultProcessors();
+        this(true);
     }
 
     /**
@@ -36,6 +38,7 @@ public class ExchangeTemplateManager {
      * @param registerDefaults true to register default processors, false otherwise
      */
     public ExchangeTemplateManager(boolean registerDefaults) {
+        this.combinedPattern = buildPattern();
         if (registerDefaults) {
             registerDefaultProcessors();
         }
@@ -141,17 +144,7 @@ public class ExchangeTemplateManager {
             return template;
         }
 
-        // Build a pattern that matches all processor expressions
-        StringBuilder patternBuilder = new StringBuilder("\\$\\{(?:");
-        patternBuilder.append("jmespath:[^}]+|");
-        patternBuilder.append("jsonpath:[^}]+|");
-        patternBuilder.append("random(?:\\.[^:]+)?(?::[^:}]+)?(?::[^:}]+)?|");
-        patternBuilder.append("regex:[^}]+|");
-        patternBuilder.append("xpath:[^}]+|");
-        patternBuilder.append("headerparam:[^}]+");
-        patternBuilder.append(")\\}");
 
-        Pattern combinedPattern = Pattern.compile(patternBuilder.toString());
         Matcher matcher = combinedPattern.matcher(template);
 
         StringBuilder result = new StringBuilder();
@@ -196,6 +189,21 @@ public class ExchangeTemplateManager {
         String resolved = result.toString();
         LOGGER.debug("Resolved template '{}' to '{}'", template, resolved);
         return resolved;
+    }
+
+    private static @NonNull Pattern buildPattern() {
+        // Build a pattern that matches all processor expressions
+        StringBuilder patternBuilder = new StringBuilder("\\$\\{(?:");
+        patternBuilder.append("jmespath:[^}]+|");
+        patternBuilder.append("jsonpath:[^}]+|");
+        patternBuilder.append("random(?:\\.[^:]+)?(?::[^:}]+)?(?::[^:}]+)?|");
+        patternBuilder.append("regex:[^}]+|");
+        patternBuilder.append("xpath:[^}]+|");
+        patternBuilder.append("headerparam:[^}]+");
+        patternBuilder.append(")\\}");
+
+        Pattern combinedPattern = Pattern.compile(patternBuilder.toString());
+        return combinedPattern;
     }
 
     /**
