@@ -485,6 +485,211 @@ class ExchangeTemplateManagerTest {
             int randomValue = Integer.parseInt(randomPart);
             assertThat(randomValue).isBetween(100, 200);
         }
+
+        @Test
+        void testResolveTemplateWithNestedConditionalShowsLimitation() {
+            ExchangeTemplateManager manager = new ExchangeTemplateManager();
+
+            String template = "${if:status:==200:${jsonpath:$.response.statusCode}:${jsonpath:$.request.url}}";
+            String result = manager.resolveTemplate(testExchange, template, new HashMap<>());
+
+            assertThat(result).isNotEqualTo("200");
+            assertThat(result).contains(":");
+        }
+
+        @Test
+        void testResolveTemplateWithConditionalNotRecursive() {
+            ExchangeTemplateManager manager = new ExchangeTemplateManager();
+
+            String template = "Result: ${if:status:==200:success:failure}";
+            String result = manager.resolveTemplate(testExchange, template, new HashMap<>());
+
+            assertThat(result).isEqualTo("Result: success");
+        }
+
+        @Test
+        void testResolveTemplateWithConditionalFalseBranchNotRecursive() {
+            HttpRequest failRequest = new HttpRequest("http://example.com/api/fail", HttpRequest.Method.GET);
+            failRequest.setBodyAsString("{}");
+            HttpResponse failResponse = new HttpResponse(404, "Not Found");
+            HttpExchange failExchange = new HttpExchange(
+                    failRequest,
+                    failResponse,
+                    50L,
+                    OffsetDateTime.now(),
+                    new AtomicInteger(1),
+                    true
+            );
+
+            ExchangeTemplateManager manager = new ExchangeTemplateManager();
+
+            String template = "Result: ${if:status:==200:success:error}";
+            String result = manager.resolveTemplate(failExchange, template, new HashMap<>());
+
+            assertThat(result).isEqualTo("Result: error");
+        }
+
+        @Test
+        void testResolveTemplateWithConditionalAndJsonPathSequential() {
+            ExchangeTemplateManager manager = new ExchangeTemplateManager();
+
+            String template = "${if:status:==200:Success:Failed} - Status: ${jsonpath:$.response.statusCode}";
+            String result = manager.resolveTemplate(testExchange, template, new HashMap<>());
+
+            assertThat(result).isEqualTo("Success - Status: 200");
+        }
+
+        @Test
+        void testResolveTemplateWithConditionalInsideTextBlock() {
+            ExchangeTemplateManager manager = new ExchangeTemplateManager();
+
+            String template = "[IF_SUCCESS: ${if:status:==200:✓:✗}] [Status: ${jsonpath:$.response.statusCode}]";
+            String result = manager.resolveTemplate(testExchange, template, new HashMap<>());
+
+            assertThat(result).isEqualTo("[IF_SUCCESS: ✓] [Status: 200]");
+        }
+
+        @Test
+        void testResolveTemplateWithMathAndConditional() {
+            ExchangeTemplateManager manager = new ExchangeTemplateManager();
+
+            String template = "Math: ${math:10+5} | Check: ${if:true:pass:fail}";
+            String result = manager.resolveTemplate(testExchange, template, new HashMap<>());
+
+            assertThat(result).startsWith("Math: 15.0 | Check: pass");
+        }
+
+        @Test
+        void testResolveTemplateWithHashAndConditional() {
+            ExchangeTemplateManager manager = new ExchangeTemplateManager();
+
+            String template = "Hash: ${hash:MD5:${jsonpath:$.request.url}} | Valid: ${if:true:yes:no}";
+            String result = manager.resolveTemplate(testExchange, template, new HashMap<>());
+
+            assertThat(result).contains("Hash: ");
+            assertThat(result).contains(" | Valid: yes");
+        }
+
+        @Test
+        void testResolveTemplateWithDateTimeAndConditional() {
+            ExchangeTemplateManager manager = new ExchangeTemplateManager();
+
+            String template = "Date: ${datetime:now:yyyy-MM-dd} | Status: ${if:status:==200:active:inactive}";
+            String result = manager.resolveTemplate(testExchange, template, new HashMap<>());
+
+            assertThat(result).contains("Date: ");
+            assertThat(result).contains(" | Status: active");
+        }
+
+        @Test
+        void testResolveTemplateWithRandomAndConditional() {
+            ExchangeTemplateManager manager = new ExchangeTemplateManager();
+
+            String template = "Random: ${random.int:1:100} | Decision: ${if:true:proceed:abort}";
+            String result = manager.resolveTemplate(testExchange, template, new HashMap<>());
+
+            assertThat(result).contains("Random: ");
+            assertThat(result).contains(" | Decision: proceed");
+        }
+
+        @Test
+        void testResolveTemplateWithFourProcessorsMixed() {
+            ExchangeTemplateManager manager = new ExchangeTemplateManager();
+
+            String template = "${header:Content-Type}|${jsonpath:$.response.statusCode}|${datetime:now:HH:mm:ss}|${if:true:A:B}";
+            String result = manager.resolveTemplate(testExchange, template, new HashMap<>());
+
+            assertThat(result).startsWith("application/json|200|");
+            assertThat(result).contains("|A");
+        }
+
+        @Test
+        void testResolveTemplateWithConditionalAndJsonPathBody() {
+            ExchangeTemplateManager manager = new ExchangeTemplateManager();
+
+            String template = "Result: ${if:status:>=200:${jsonpath:$.response.body}:invalid}";
+            String result = manager.resolveTemplate(testExchange, template, new HashMap<>());
+
+            assertThat(result).contains("Result: ");
+            assertThat(result).contains("\"result\"");
+        }
+
+        @Test
+        void testResolveTemplateWithMultipleConditionals() {
+            ExchangeTemplateManager manager = new ExchangeTemplateManager();
+
+            String template = "[C1: ${if:true:A:B}] [C2: ${if:status:==200:X:Y}] [C3: ${if:false:P:Q}]";
+            String result = manager.resolveTemplate(testExchange, template, new HashMap<>());
+
+            assertThat(result).isEqualTo("[C1: A] [C2: X] [C3: Q]");
+        }
+
+        @Test
+        void testResolveTemplateWithConditionalAndHeader() {
+            ExchangeTemplateManager manager = new ExchangeTemplateManager();
+
+            String template = "Header: ${header:Content-Type} | Match: ${if:header:Content-Type:present:missing}";
+            String result = manager.resolveTemplate(testExchange, template, new HashMap<>());
+
+            assertThat(result).isEqualTo("Header: application/json | Match: present");
+        }
+
+        @Test
+        void testResolveTemplateWithConditionalRangeAndMultipleProcessors() {
+            ExchangeTemplateManager manager = new ExchangeTemplateManager();
+
+            String template = "Status: ${jsonpath:$.response.statusCode} | Range: ${if:status:200-299:in_range:out_of_range} | Date: ${datetime:now}";
+            String result = manager.resolveTemplate(testExchange, template, new HashMap<>());
+
+            assertThat(result).contains("Status: 200 | Range: in_range | Date: ");
+            assertThat(result).hasSizeGreaterThan("Status: 200 | Range: in_range | Date: ".length());
+        }
+
+        @Test
+        void testResolveTemplateWithHashProcessorNotRecursive() {
+            ExchangeTemplateManager manager = new ExchangeTemplateManager();
+
+            String template = "Hash: ${hash:MD5:${jsonpath:$.request.url}}";
+            String result = manager.resolveTemplate(testExchange, template, new HashMap<>());
+
+            assertThat(result).contains("Hash: ");
+            assertThat(result).doesNotContain("${jsonpath:$.request.url}");
+        }
+
+        @Test
+        void testResolveTemplateWithMathProcessorNotRecursive() {
+            ExchangeTemplateManager manager = new ExchangeTemplateManager();
+
+            String template = "Math: ${math:${jsonpath:$.response.statusCode}+1}";
+            String result = manager.resolveTemplate(testExchange, template, new HashMap<>());
+
+            assertThat(result).contains("Math: ");
+            assertThat(result).doesNotContain("${jsonpath:");
+        }
+
+        @Test
+        void testResolveTemplateWithMultipleProcessorsSequential() {
+            ExchangeTemplateManager manager = new ExchangeTemplateManager();
+
+            String template = "${header:Content-Type}|${jsonpath:$.response.statusCode}|${if:true:A:B}|${random.int:1:10}";
+            String result = manager.resolveTemplate(testExchange, template, new HashMap<>());
+
+            assertThat(result).startsWith("application/json|200|A|");
+            String randomPart = result.substring(result.lastIndexOf('|') + 1);
+            int randomValue = Integer.parseInt(randomPart);
+            assertThat(randomValue).isBetween(1, 10);
+        }
+
+        @Test
+        void testResolveTemplateLimitationNestedJsonPath() {
+            ExchangeTemplateManager manager = new ExchangeTemplateManager();
+
+            String template = "Value: ${jsonpath:$.${jsonpath:$.request.url}}";
+            String result = manager.resolveTemplate(testExchange, template, new HashMap<>());
+
+            assertThat(result).isNotEqualTo("Value: ${jsonpath:$.http://example.com/api/test}");
+            assertThat(result).contains("Value: ");
+        }
     }
 
     @Nested
