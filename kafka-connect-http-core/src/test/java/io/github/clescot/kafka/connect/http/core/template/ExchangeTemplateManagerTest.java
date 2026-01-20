@@ -13,6 +13,7 @@ import java.util.HashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatNoException;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 class ExchangeTemplateManagerTest {
@@ -46,7 +47,10 @@ class ExchangeTemplateManagerTest {
         void testDefaultConstructorRegistersDefaultProcessors() {
             ExchangeTemplateManager manager = new ExchangeTemplateManager();
 
-            assertThat(manager.getProcessors()).isNotEmpty();
+            assertThat(manager.getProcessors())
+                    .isNotEmpty()
+                    .hasSizeGreaterThanOrEqualTo(10);
+
             assertThat(manager.getProcessor("jsonpath")).isNotNull();
             assertThat(manager.getProcessor("xpath")).isNotNull();
             assertThat(manager.getProcessor("random")).isNotNull();
@@ -70,7 +74,10 @@ class ExchangeTemplateManagerTest {
         void testConstructorWithTrueRegistersDefaults() {
             ExchangeTemplateManager manager = new ExchangeTemplateManager(true);
 
-            assertThat(manager.getProcessors()).isNotEmpty();
+            assertThat(manager.getProcessors())
+                    .isNotEmpty()
+                    .hasSizeGreaterThanOrEqualTo(10);
+
             assertThat(manager.getProcessor("jsonpath")).isNotNull();
         }
     }
@@ -85,7 +92,10 @@ class ExchangeTemplateManagerTest {
 
             manager.registerProcessor(processor);
 
-            assertThat(manager.getProcessors()).hasSize(1);
+            assertThat(manager.getProcessors())
+                    .hasSize(1)
+                    .contains(processor);
+
             assertThat(manager.getProcessor("jsonpath")).isEqualTo(processor);
         }
 
@@ -118,14 +128,16 @@ class ExchangeTemplateManagerTest {
             manager.unregisterProcessor("jsonpath");
 
             assertThat(manager.getProcessor("jsonpath")).isNull();
+            assertThat(manager.getProcessors())
+                    .doesNotContain(processor)
+                    .hasSize(manager.getProcessors().size());
         }
 
         @Test
         void testUnregisterNonexistentProcessorDoesNotThrow() {
             ExchangeTemplateManager manager = new ExchangeTemplateManager();
 
-            manager.unregisterProcessor("nonexistent");
-
+            assertThatNoException().isThrownBy(() -> manager.unregisterProcessor("nonexistent"));
             assertThat(manager.getProcessors()).isNotEmpty();
         }
 
@@ -136,6 +148,7 @@ class ExchangeTemplateManagerTest {
             manager.clearProcessors();
 
             assertThat(manager.getProcessors()).isEmpty();
+
             assertThat(manager.canProcess("${jsonpath:$.test}")).isFalse();
         }
     }
@@ -149,8 +162,10 @@ class ExchangeTemplateManagerTest {
 
             ExchangeTemplateProcessor processor = manager.getProcessor("jsonpath");
 
-            assertThat(processor).isNotNull();
-            assertThat(processor.getName()).isEqualTo("jsonpath");
+            assertThat(processor)
+                    .isNotNull()
+                    .extracting(ExchangeTemplateProcessor::getName)
+                    .isEqualTo("jsonpath");
         }
 
         @Test
@@ -170,9 +185,7 @@ class ExchangeTemplateManagerTest {
         void testCanProcessReturnsTrueForSupportedTemplate() {
             ExchangeTemplateManager manager = new ExchangeTemplateManager();
 
-            boolean result = manager.canProcess("${jsonpath:$.response.statusCode}");
-
-            assertThat(result).isTrue();
+            assertThat(manager.canProcess("${jsonpath:$.response.statusCode}")).isTrue();
         }
 
         @Test
@@ -234,9 +247,9 @@ class ExchangeTemplateManagerTest {
             String result = manager.resolveTemplate(testExchange, template, new HashMap<>());
 
             assertThat(result).isNotEmpty();
+
             int value = Integer.parseInt(result);
-            assertThat(value).isGreaterThanOrEqualTo(1);
-            assertThat(value).isLessThanOrEqualTo(100);
+            assertThat(value).isBetween(1, 100);
         }
 
         @Test
@@ -246,8 +259,9 @@ class ExchangeTemplateManagerTest {
             String template = "Status: ${jsonpath:$.response.statusCode}, URL: ${jsonpath:$.request.url}";
             String result = manager.resolveTemplate(testExchange, template, new HashMap<>());
 
-            assertThat(result).contains("Status: 200");
-            assertThat(result).contains("URL: http://example.com/api/test");
+            assertThat(result)
+                    .contains("Status: 200")
+                    .contains("URL: http://example.com/api/test");
         }
 
         @Test
@@ -305,8 +319,9 @@ class ExchangeTemplateManagerTest {
             String template = "Status: ${jsonpath:$.response.statusCode}, URL: ${jsonpath:$.request.url}";
             String result = manager.resolveTemplate(testExchange, template, new HashMap<>());
 
-            assertThat(result).contains("Status: 200");
-            assertThat(result).contains("URL: http://example.com/api/test");
+            assertThat(result)
+                    .contains("Status: 200")
+                    .contains("URL: http://example.com/api/test");
         }
 
         @Test
@@ -337,8 +352,9 @@ class ExchangeTemplateManagerTest {
             String template = "Current date: ${datetime:now:yyyy-MM-dd}";
             String result = manager.resolveTemplate(testExchange, template, new HashMap<>());
 
-            assertThat(result).contains("Current date:");
-            assertThat(result).matches("Current date: \\d{4}-\\d{2}-\\d{2}");
+            assertThat(result)
+                    .contains("Current date:")
+                    .matches("Current date: \\d{4}-\\d{2}-\\d{2}");
         }
 
         @Test
@@ -358,10 +374,11 @@ class ExchangeTemplateManagerTest {
             String template = "ID: ${random.int:1000:9999} | Date: ${datetime:now:yyyy-MM-dd} | Status: ${jsonpath:$.response.statusCode}";
             String result = manager.resolveTemplate(testExchange, template, new HashMap<>());
 
-            assertThat(result).contains("ID: ");
-            assertThat(result).contains(" | Date: ");
-            assertThat(result).contains(" | Status: 200");
-            assertThat(result).matches("ID: \\d+ \\| Date: \\d{4}-\\d{2}-\\d{2} \\| Status: 200");
+            assertThat(result)
+                    .contains("ID: ")
+                    .contains(" | Date: ")
+                    .contains(" | Status: 200")
+                    .matches("ID: \\d+ \\| Date: \\d{4}-\\d{2}-\\d{2} \\| Status: 200");
         }
 
         @Test
@@ -371,8 +388,10 @@ class ExchangeTemplateManagerTest {
             String template = "${jsonpath:$.response.statusCode}${jsonpath:$.request.url}${random.int:1:10}";
             String result = manager.resolveTemplate(testExchange, template, new HashMap<>());
 
-            assertThat(result).startsWith("200");
-            assertThat(result).contains("http://example.com/api/test");
+            assertThat(result)
+                    .startsWith("200")
+                    .contains("http://example.com/api/test");
+
             String lastPart = result.substring(result.length() - 1);
             assertThat(Integer.parseInt(lastPart)).isBetween(1, 10);
         }
@@ -394,11 +413,12 @@ class ExchangeTemplateManagerTest {
             String template = "${jsonpath:$.response.statusCode}|${jsonpath:$.request.url}|${jsonpath:$.response.body}";
             String result = manager.resolveTemplate(testExchange, template, new HashMap<>());
 
-            assertThat(result).startsWith("200|http://example.com/api/test|");
-            assertThat(result).contains("\"result\"");
-            assertThat(result).contains("\"success\"");
-            assertThat(result).contains("\"data\"");
-            assertThat(result).contains("\"processed data\"");
+            assertThat(result)
+                    .startsWith("200|http://example.com/api/test|")
+                    .contains("\"result\"")
+                    .contains("\"success\"")
+                    .contains("\"data\"")
+                    .contains("\"processed data\"");
         }
 
         @Test
@@ -428,8 +448,9 @@ class ExchangeTemplateManagerTest {
             String template = "GET ${jsonpath:$.request.url} returned status ${jsonpath:$.response.statusCode} at ${datetime:now}";
             String result = manager.resolveTemplate(testExchange, template, new HashMap<>());
 
-            assertThat(result).contains("GET http://example.com/api/test returned status 200 at ");
-            assertThat(result).hasSizeGreaterThan("GET http://example.com/api/test returned status 200 at ".length());
+            assertThat(result)
+                    .contains("GET http://example.com/api/test returned status 200 at ")
+                    .hasSizeGreaterThan("GET http://example.com/api/test returned status 200 at ".length());
         }
 
         @Test
@@ -439,8 +460,9 @@ class ExchangeTemplateManagerTest {
             String template = "Hash: ${hash:MD5:${jsonpath:$.request.url}}";
             String result = manager.resolveTemplate(testExchange, template, new HashMap<>());
 
-            assertThat(result).startsWith("Hash: ");
-            assertThat(result).hasSizeGreaterThan("Hash: ".length());
+            assertThat(result)
+                    .startsWith("Hash: ")
+                    .hasSizeGreaterThan("Hash: ".length());
         }
 
         @Test
@@ -481,6 +503,7 @@ class ExchangeTemplateManagerTest {
             String result = manager.resolveTemplate(testExchange, template, new HashMap<>());
 
             assertThat(result).startsWith("application/json|200|");
+
             String randomPart = result.substring(result.lastIndexOf('|') + 1);
             int randomValue = Integer.parseInt(randomPart);
             assertThat(randomValue).isBetween(100, 200);
@@ -493,8 +516,9 @@ class ExchangeTemplateManagerTest {
             String template = "${if:status:==200:${jsonpath:$.response.statusCode}:${jsonpath:$.request.url}}";
             String result = manager.resolveTemplate(testExchange, template, new HashMap<>());
 
-            assertThat(result).isNotEqualTo("200");
-            assertThat(result).contains(":");
+            assertThat(result)
+                    .isNotEqualTo("200")
+                    .contains(":");
         }
 
         @Test
@@ -566,8 +590,9 @@ class ExchangeTemplateManagerTest {
             String template = "Hash: ${hash:MD5:${jsonpath:$.request.url}} | Valid: ${if:true:yes:no}";
             String result = manager.resolveTemplate(testExchange, template, new HashMap<>());
 
-            assertThat(result).contains("Hash: ");
-            assertThat(result).contains(" | Valid: yes");
+            assertThat(result)
+                    .contains("Hash: ")
+                    .contains(" | Valid: yes");
         }
 
         @Test
@@ -577,8 +602,9 @@ class ExchangeTemplateManagerTest {
             String template = "Date: ${datetime:now:yyyy-MM-dd} | Status: ${if:status:==200:active:inactive}";
             String result = manager.resolveTemplate(testExchange, template, new HashMap<>());
 
-            assertThat(result).contains("Date: ");
-            assertThat(result).contains(" | Status: active");
+            assertThat(result)
+                    .contains("Date: ")
+                    .contains(" | Status: active");
         }
 
         @Test
@@ -588,8 +614,9 @@ class ExchangeTemplateManagerTest {
             String template = "Random: ${random.int:1:100} | Decision: ${if:true:proceed:abort}";
             String result = manager.resolveTemplate(testExchange, template, new HashMap<>());
 
-            assertThat(result).contains("Random: ");
-            assertThat(result).contains(" | Decision: proceed");
+            assertThat(result)
+                    .contains("Random: ")
+                    .contains(" | Decision: proceed");
         }
 
         @Test
@@ -599,8 +626,9 @@ class ExchangeTemplateManagerTest {
             String template = "${header:Content-Type}|${jsonpath:$.response.statusCode}|${datetime:now:HH:mm:ss}|${if:true:A:B}";
             String result = manager.resolveTemplate(testExchange, template, new HashMap<>());
 
-            assertThat(result).startsWith("application/json|200|");
-            assertThat(result).contains("|A");
+            assertThat(result)
+                    .startsWith("application/json|200|")
+                    .contains("|A");
         }
 
         @Test
@@ -610,8 +638,9 @@ class ExchangeTemplateManagerTest {
             String template = "Result: ${if:status:>=200:${jsonpath:$.response.body}:invalid}";
             String result = manager.resolveTemplate(testExchange, template, new HashMap<>());
 
-            assertThat(result).contains("Result: ");
-            assertThat(result).contains("\"result\"");
+            assertThat(result)
+                    .contains("Result: ")
+                    .contains("\"result\"");
         }
 
         @Test
@@ -641,8 +670,9 @@ class ExchangeTemplateManagerTest {
             String template = "Status: ${jsonpath:$.response.statusCode} | Range: ${if:status:200-299:in_range:out_of_range} | Date: ${datetime:now}";
             String result = manager.resolveTemplate(testExchange, template, new HashMap<>());
 
-            assertThat(result).contains("Status: 200 | Range: in_range | Date: ");
-            assertThat(result).hasSizeGreaterThan("Status: 200 | Range: in_range | Date: ".length());
+            assertThat(result)
+                    .contains("Status: 200 | Range: in_range | Date: ")
+                    .hasSizeGreaterThan("Status: 200 | Range: in_range | Date: ".length());
         }
 
         @Test
@@ -652,8 +682,9 @@ class ExchangeTemplateManagerTest {
             String template = "Hash: ${hash:MD5:${jsonpath:$.request.url}}";
             String result = manager.resolveTemplate(testExchange, template, new HashMap<>());
 
-            assertThat(result).contains("Hash: ");
-            assertThat(result).doesNotContain("${jsonpath:$.request.url}");
+            assertThat(result)
+                    .contains("Hash: ")
+                    .doesNotContain("${jsonpath:$.request.url}");
         }
 
         @Test
@@ -663,8 +694,9 @@ class ExchangeTemplateManagerTest {
             String template = "Math: ${math:${jsonpath:$.response.statusCode}+1}";
             String result = manager.resolveTemplate(testExchange, template, new HashMap<>());
 
-            assertThat(result).contains("Math: ");
-            assertThat(result).doesNotContain("${jsonpath:");
+            assertThat(result)
+                    .contains("Math: ")
+                    .doesNotContain("${jsonpath:");
         }
 
         @Test
@@ -675,6 +707,7 @@ class ExchangeTemplateManagerTest {
             String result = manager.resolveTemplate(testExchange, template, new HashMap<>());
 
             assertThat(result).startsWith("application/json|200|A|");
+
             String randomPart = result.substring(result.lastIndexOf('|') + 1);
             int randomValue = Integer.parseInt(randomPart);
             assertThat(randomValue).isBetween(1, 10);
@@ -687,8 +720,9 @@ class ExchangeTemplateManagerTest {
             String template = "Value: ${jsonpath:$.${jsonpath:$.request.url}}";
             String result = manager.resolveTemplate(testExchange, template, new HashMap<>());
 
-            assertThat(result).isNotEqualTo("Value: ${jsonpath:$.http://example.com/api/test}");
-            assertThat(result).contains("Value: ");
+            assertThat(result)
+                    .isNotEqualTo("Value: ${jsonpath:$.http://example.com/api/test}")
+                    .contains("Value: ");
         }
     }
 
@@ -699,8 +733,9 @@ class ExchangeTemplateManagerTest {
         void testGetProcessorsReturnsUnmodifiableCollection() {
             ExchangeTemplateManager manager = new ExchangeTemplateManager();
 
-            assertThat(manager.getProcessors()).isNotNull();
-            assertThat(manager.getProcessors()).isUnmodifiable();
+            assertThat(manager.getProcessors())
+                    .isNotNull()
+                    .isUnmodifiable();
         }
 
         @Test
@@ -721,7 +756,9 @@ class ExchangeTemplateManagerTest {
 
             manager.registerDefaultProcessors();
 
-            assertThat(manager.getProcessors()).hasSizeGreaterThanOrEqualTo(10);
+            assertThat(manager.getProcessors())
+                    .hasSizeGreaterThanOrEqualTo(10);
+
             assertThat(manager.getProcessor("jsonpath")).isNotNull();
             assertThat(manager.canProcess("${jsonpath:$.test}")).isTrue();
         }
