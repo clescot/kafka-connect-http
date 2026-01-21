@@ -50,7 +50,7 @@ public class ExchangeTemplateManager {
         }
         String name = processor.getName();
         if (processors.containsKey(name)) {
-            LOGGER.warn("Processor with name '{}' already registered, overwriting", name);
+            LOGGER.debug("Processor with name '{}' already registered, overwriting", name);
         }
         processors.put(name, processor);
         processorList.add(processor);
