@@ -10,13 +10,11 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import dev.failsafe.RetryPolicy;
 import io.github.clescot.client.MapUtils;
-import io.github.clescot.kafka.connect.http.HttpTask;
 import io.github.clescot.client.http.okhttp.OkHttpClient;
 import io.github.clescot.client.http.okhttp.OkHttpClientFactory;
 import io.github.clescot.core.http.HttpExchange;
 import io.github.clescot.core.http.HttpRequest;
 import io.github.clescot.core.http.HttpResponse;
-import io.github.clescot.kafka.connect.http.sink.HttpConnectorConfig;
 import io.micrometer.core.instrument.Clock;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.composite.CompositeMeterRegistry;
@@ -24,7 +22,6 @@ import io.micrometer.jmx.JmxConfig;
 import io.micrometer.jmx.JmxMeterRegistry;
 import okhttp3.Request;
 import okhttp3.Response;
-import org.apache.kafka.connect.sink.SinkRecord;
 import org.assertj.core.util.Sets;
 import org.awaitility.Awaitility;
 import org.jetbrains.annotations.NotNull;
@@ -139,13 +136,15 @@ class HttpConfigurationTest {
             Map<String, String> settings = Maps.newHashMap();
             settings.put("retry.policy.retries","2");
             settings.put("retry.policy.response.code.regex",DEFAULT_DEFAULT_RETRY_RESPONSE_CODE_REGEX);
-            HttpConnectorConfig httpConnectorConfig = new HttpConnectorConfig(settings);
-            HttpTask<SinkRecord,OkHttpClient,okhttp3.Request,okhttp3.Response> httpTask = new HttpTask<>(
-                    httpConnectorConfig,
-                    new OkHttpClientFactory()
+            HttpTask<?,OkHttpClient,okhttp3.Request,okhttp3.Response> httpTask = new HttpTask<>(
+                    new OkHttpClientFactory(),
+                    Lists.newArrayList(),
+                    Maps.newHashMap(),
+                    1,
+                    Lists.newArrayList()
             );
 
-            RetryPolicy<HttpExchange> retryPolicy = httpTask.buildRetryPolicy(httpConnectorConfig.originalsStrings());
+            RetryPolicy<HttpExchange> retryPolicy = httpTask.buildRetryPolicy(settings);
             String dummy = "dummy";
             HttpConfiguration<OkHttpClient,okhttp3.Request,okhttp3.Response> httpConfiguration = new HttpConfiguration<>(dummy,okHttpClient,executorService, retryPolicy,settings);
             HttpExchange httpExchange = httpConfiguration.call(httpRequest).get();
@@ -185,10 +184,15 @@ class HttpConfigurationTest {
             Map<String, String> settings = Maps.newHashMap();
             settings.put("retry.policy.retries","2");
             settings.put("retry.policy.response.code.regex",DEFAULT_DEFAULT_RETRY_RESPONSE_CODE_REGEX);
-            HttpConnectorConfig httpConnectorConfig = new HttpConnectorConfig(settings);
-            HttpTask<SinkRecord,OkHttpClient,okhttp3.Request,okhttp3.Response> httpTask = new HttpTask<>(httpConnectorConfig,new OkHttpClientFactory());
+            HttpTask<?,OkHttpClient,okhttp3.Request,okhttp3.Response> httpTask = new HttpTask<>(
+                    new OkHttpClientFactory(),
+                    Lists.newArrayList(),
+                    Maps.newHashMap(),
+                    1,
+                    Lists.newArrayList()
+            );
 
-            RetryPolicy<HttpExchange> retryPolicy = httpTask.buildRetryPolicy(httpConnectorConfig.originalsStrings());
+            RetryPolicy<HttpExchange> retryPolicy = httpTask.buildRetryPolicy(settings);
             String dummy = "dummy";
             HttpConfiguration<OkHttpClient,okhttp3.Request,okhttp3.Response> httpConfiguration = new HttpConfiguration<>(dummy,okHttpClient,executorService, retryPolicy,settings);
             HttpExchange httpExchange = httpConfiguration.call(httpRequest).get();
@@ -228,10 +232,15 @@ class HttpConfigurationTest {
             settings.put("retry.policy.retries","2");
             settings.put("retry.policy.response.code.regex",DEFAULT_DEFAULT_RETRY_RESPONSE_CODE_REGEX);
             settings.put("retry.policy.retry.after.max.threshold.in.sec","3");
-            HttpConnectorConfig httpConnectorConfig = new HttpConnectorConfig(settings);
-            HttpTask<SinkRecord,OkHttpClient,okhttp3.Request,okhttp3.Response> httpTask = new HttpTask<>(httpConnectorConfig,new OkHttpClientFactory());
+            HttpTask<?,OkHttpClient,okhttp3.Request,okhttp3.Response> httpTask = new HttpTask<>(
+                    new OkHttpClientFactory(),
+                    Lists.newArrayList(),
+                    Maps.newHashMap(),
+                    1,
+                    Lists.newArrayList()
+            );
 
-            RetryPolicy<HttpExchange> retryPolicy = httpTask.buildRetryPolicy(httpConnectorConfig.originalsStrings());
+            RetryPolicy<HttpExchange> retryPolicy = httpTask.buildRetryPolicy(settings);
             String dummy = "dummy";
             HttpConfiguration<OkHttpClient,okhttp3.Request,okhttp3.Response> httpConfiguration = new HttpConfiguration<>(dummy,okHttpClient,executorService, retryPolicy,settings);
             //when
@@ -271,10 +280,15 @@ class HttpConfigurationTest {
             settings.put("retry.policy.retries","2");
             settings.put("retry.policy.response.code.regex",DEFAULT_DEFAULT_RETRY_RESPONSE_CODE_REGEX);
             settings.put("retry.policy.retry.after.max.threshold.in.sec","3");
-            HttpConnectorConfig httpConnectorConfig = new HttpConnectorConfig(settings);
-            HttpTask<SinkRecord,OkHttpClient,okhttp3.Request,okhttp3.Response> httpTask = new HttpTask<>(httpConnectorConfig,new OkHttpClientFactory());
+            HttpTask<?,OkHttpClient,okhttp3.Request,okhttp3.Response> httpTask = new HttpTask<>(
+                    new OkHttpClientFactory(),
+                    Lists.newArrayList(),
+                    Maps.newHashMap(),
+                    1,
+                    Lists.newArrayList()
+            );
 
-            RetryPolicy<HttpExchange> retryPolicy = httpTask.buildRetryPolicy(httpConnectorConfig.originalsStrings());
+            RetryPolicy<HttpExchange> retryPolicy = httpTask.buildRetryPolicy(settings);
             String dummy = "dummy";
             HttpConfiguration<OkHttpClient,okhttp3.Request,okhttp3.Response> httpConfiguration = new HttpConfiguration<>(dummy,okHttpClient,executorService, retryPolicy,settings);
             //when
@@ -361,10 +375,15 @@ class HttpConfigurationTest {
             Map<String, String> settings = Maps.newHashMap();
             settings.put("retry.policy.retries","2");
             settings.put("retry.policy.response.code.regex",DEFAULT_DEFAULT_RETRY_RESPONSE_CODE_REGEX);
-            HttpConnectorConfig httpConnectorConfig = new HttpConnectorConfig(settings);
-            HttpTask<SinkRecord,OkHttpClient,okhttp3.Request,okhttp3.Response> httpTask = new HttpTask<>(httpConnectorConfig,new OkHttpClientFactory());
+            HttpTask<?,OkHttpClient,okhttp3.Request,okhttp3.Response> httpTask = new HttpTask<>(
+                    new OkHttpClientFactory(),
+                    Lists.newArrayList(),
+                    Maps.newHashMap(),
+                    1,
+                    Lists.newArrayList()
+            );
 
-            RetryPolicy<HttpExchange> retryPolicy = httpTask.buildRetryPolicy(httpConnectorConfig.originalsStrings());
+            RetryPolicy<HttpExchange> retryPolicy = httpTask.buildRetryPolicy(settings);
             String dummy = "dummy";
             HttpConfiguration<OkHttpClient,okhttp3.Request,okhttp3.Response> httpConfiguration = new HttpConfiguration<>(dummy,okHttpClient,executorService, retryPolicy,settings);
             HttpExchange httpExchange = httpConfiguration.call(httpRequest).get();
@@ -534,7 +553,7 @@ class HttpConfigurationTest {
             Map<String, String> settings = Maps.newHashMap();
             settings.put("config.dummy." + RETRY_RESPONSE_CODE_REGEX, "^2[0-9][0-9]$");
             settings.put(CONFIG_DEFAULT_RETRY_RESPONSE_CODE_REGEX, "^[1-5][0-9][0-9]$");
-            Map<String, String> configSettings = MapUtils.getMapWithPrefix(new HttpConnectorConfig(settings).originalsStrings(), "config.dummy.");
+            Map<String, String> configSettings = MapUtils.getMapWithPrefix(settings, "config.dummy.");
             String configId = "dummy";
             HttpRequest httpRequest = getDummyHttpRequest();
             HttpResponse httpResponse = new HttpResponse(200, "Internal Server Error");

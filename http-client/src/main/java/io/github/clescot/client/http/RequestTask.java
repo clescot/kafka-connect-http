@@ -1,9 +1,8 @@
-package io.github.clescot.kafka.connect.http;
+package io.github.clescot.client.http;
 
 import com.google.common.base.Preconditions;
 import dev.failsafe.RetryPolicy;
 import io.github.clescot.client.Configuration;
-import io.github.clescot.client.http.RetryException;
 import io.github.clescot.core.http.Request;
 import org.jetbrains.annotations.NotNull;
 

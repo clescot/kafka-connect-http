@@ -1,4 +1,4 @@
-package io.github.clescot.kafka.connect.http;
+package io.github.clescot.client.http;
 
 import com.google.common.collect.Lists;
 import io.github.clescot.core.http.HttpRequest;

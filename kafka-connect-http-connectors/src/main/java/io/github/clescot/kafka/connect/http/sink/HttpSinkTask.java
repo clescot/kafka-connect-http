@@ -4,7 +4,7 @@ import com.google.common.base.Preconditions;
 import com.google.common.base.Stopwatch;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
-import io.github.clescot.kafka.connect.http.HttpTask;
+import io.github.clescot.client.http.HttpTask;
 import io.github.clescot.kafka.connect.http.MessageSplitter;
 import io.github.clescot.kafka.connect.http.MessageSplitterFactory;
 import io.github.clescot.client.http.HttpClient;
@@ -49,7 +49,7 @@ import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.stream.Stream;
 
-import static io.github.clescot.kafka.connect.http.HttpTask.DATE_TIME_FORMATTER;
+import static io.github.clescot.client.http.HttpTask.DATE_TIME_FORMATTER;
 import static io.github.clescot.core.http.Request.VU_ID;
 import static io.github.clescot.core.http.VersionUtils.VERSION;
 import static io.github.clescot.client.Constants.*;
@@ -159,7 +159,7 @@ public abstract class HttpSinkTask<C extends HttpClient<R, S>, R, S> extends Sin
         MessageSplitterFactory<SinkRecord> messageSplitterFactory = new MessageSplitterFactory<>(FROM_STRING_PART_TO_SINK_RECORD_FUNCTION);
 
         this.messageSplitters = messageSplitterFactory.buildMessageSplitters(httpConnectorConfig.originalsStrings(), jexlEngine, httpConnectorConfig.getList(MESSAGE_SPLITTER_IDS));
-        httpTask = new HttpTask<>(httpConnectorConfig, httpClientFactory);
+        httpTask = new HttpTask<>(httpClientFactory, httpConnectorConfig.getList(REQUEST_GROUPER_IDS), httpConnectorConfig.originalsStrings(), httpConnectorConfig.getInt(HTTP_CLIENT_ASYNC_FIXED_THREAD_POOL_SIZE), httpConnectorConfig.getConfigurationIds());
 
     }
 

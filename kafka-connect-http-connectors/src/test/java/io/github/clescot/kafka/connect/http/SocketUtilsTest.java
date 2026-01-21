@@ -1,5 +1,6 @@
 package io.github.clescot.kafka.connect.http;
 
+import io.github.clescot.client.http.SocketUtils;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;

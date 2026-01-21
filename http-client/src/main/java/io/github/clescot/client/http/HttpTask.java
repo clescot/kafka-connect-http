@@ -1,16 +1,12 @@
-package io.github.clescot.kafka.connect.http;
+package io.github.clescot.client.http;
 
 import com.google.common.base.Stopwatch;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import dev.failsafe.RetryPolicy;
-import io.github.clescot.client.http.HttpClient;
-import io.github.clescot.client.http.HttpClientFactory;
-import io.github.clescot.client.http.HttpConfiguration;
 import io.github.clescot.core.http.HttpExchange;
 import io.github.clescot.core.http.HttpRequest;
 import io.github.clescot.core.http.HttpResponse;
-import io.github.clescot.kafka.connect.http.sink.HttpConnectorConfig;
 import io.micrometer.core.instrument.composite.CompositeMeterRegistry;
 import org.apache.commons.lang3.tuple.Pair;
 import org.jetbrains.annotations.NotNull;
@@ -33,7 +29,6 @@ import java.util.stream.Collectors;
 
 import static io.github.clescot.client.http.HttpClientFactory.buildConfigurations;
 import static io.github.clescot.client.Constants.*;
-import static io.github.clescot.kafka.connect.http.sink.HttpConfigDefinition.*;
 
 /**
  * Task to send HTTP requests.
@@ -65,27 +60,26 @@ public class HttpTask<T,C extends HttpClient<NR, NS>, NR, NS> implements Request
     private final Map<String, String> settings;
     public static final DateTimeFormatter DATE_TIME_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 
-    public HttpTask(HttpConnectorConfig httpConnectorConfig,
-                    HttpClientFactory<C, NR, NS> httpClientFactory) {
+    public HttpTask(HttpClientFactory<C, NR, NS> httpClientFactory, List<String> configList, Map<String, String> originalsStrings, Integer asynFixedThreadPoolSize, List<String> configurationIds) {
 
         //build executorService
-        Optional<Integer> customFixedThreadPoolSize = Optional.ofNullable(httpConnectorConfig.getInt(HTTP_CLIENT_ASYNC_FIXED_THREAD_POOL_SIZE));
+        Optional<Integer> customFixedThreadPoolSize = Optional.ofNullable(asynFixedThreadPoolSize);
         customFixedThreadPoolSize.ifPresent(integer -> this.executorService = buildExecutorService(integer));
 
         //build meterRegistry
-        settings = httpConnectorConfig.originalsStrings();
+        settings = originalsStrings;
         meterRegistry = buildMeterRegistry(settings);
         bindMetrics(settings,meterRegistry, executorService);
 
         //request groupers
         RequestGrouperFactory requestGrouperFactory = new RequestGrouperFactory();
-        this.requestGroupers = requestGrouperFactory.buildRequestGroupers(httpConnectorConfig, httpConnectorConfig.getList(REQUEST_GROUPER_IDS));
-        this.retryPolicy = buildRetryPolicy(httpConnectorConfig.originalsStrings());
+        this.requestGroupers = requestGrouperFactory.buildRequestGroupers(configList, originalsStrings);
+        this.retryPolicy = buildRetryPolicy(originalsStrings);
         //configurations
         Map<String,C> httpClientConfigurations = buildConfigurations(
                 httpClientFactory,
                 executorService,
-                httpConnectorConfig.getConfigurationIds(),
+                configurationIds,
                 settings,
                 meterRegistry
         );

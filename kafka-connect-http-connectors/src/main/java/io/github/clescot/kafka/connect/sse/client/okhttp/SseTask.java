@@ -4,7 +4,7 @@ import com.google.common.base.Preconditions;
 import com.google.common.collect.Maps;
 import com.launchdarkly.eventsource.background.BackgroundEventSource;
 import io.github.clescot.client.MapUtils;
-import io.github.clescot.kafka.connect.http.Task;
+import io.github.clescot.client.http.Task;
 import io.github.clescot.client.http.HttpClientFactory;
 import io.github.clescot.client.http.okhttp.OkHttpClient;
 import io.github.clescot.client.http.okhttp.OkHttpClientFactory;
@@ -22,7 +22,6 @@ import java.util.Optional;
 import java.util.Queue;
 import java.util.stream.Collectors;
 
-import static io.github.clescot.client.http.HttpClientConfigDefinition.*;
 import static io.github.clescot.client.Constants.*;
 
 

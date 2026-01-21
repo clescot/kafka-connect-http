@@ -20,6 +20,7 @@ import io.github.clescot.kafka.connect.http.sink.HttpConfigDefinition;
 import io.github.clescot.kafka.connect.http.sink.HttpConnectorConfig;
 import okhttp3.Cookie;
 import okhttp3.HttpUrl;
+import okhttp3.Response;
 import org.apache.kafka.connect.sink.SinkRecord;
 import org.junit.experimental.runners.Enclosed;
 import org.junit.jupiter.api.AfterEach;
@@ -33,8 +34,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
 
-import static io.github.clescot.kafka.connect.http.SocketUtils.awaitUntilPortIsOpen;
-import static io.github.clescot.kafka.connect.http.SocketUtils.getIP;
+import static io.github.clescot.client.Constants.HTTP_CLIENT_ASYNC_FIXED_THREAD_POOL_SIZE;
+import static io.github.clescot.client.Constants.REQUEST_GROUPER_IDS;
+import static io.github.clescot.client.http.SocketUtils.awaitUntilPortIsOpen;
+import static io.github.clescot.client.http.SocketUtils.getIP;
 import static org.assertj.core.api.Assertions.assertThat;
 
 @RunWith(Enclosed.class)
@@ -57,7 +60,7 @@ public class HttpTaskTest {
     void tearsDown() {
         wmHttp.resetMappings();
         wmHttp.resetRequests();
-        HttpTask.removeCompositeMeterRegistry();
+        io.github.clescot.client.http.HttpTask.removeCompositeMeterRegistry();
     }
 
 
@@ -88,7 +91,7 @@ public class HttpTaskTest {
             Map<String,String> settings = Maps.newHashMap();
             HttpConfigDefinition httpConfigDefinition = new HttpConfigDefinition(settings);
             HttpConnectorConfig httpConnectorConfig = new HttpConnectorConfig(httpConfigDefinition.config(), settings);
-            HttpTask httpTask = new HttpTask(httpConnectorConfig,new OkHttpClientFactory());
+            io.github.clescot.client.http.HttpTask httpTask = new io.github.clescot.client.http.HttpTask(new OkHttpClientFactory(), httpConnectorConfig.getList(REQUEST_GROUPER_IDS), httpConnectorConfig.originalsStrings(), httpConnectorConfig.getInt(HTTP_CLIENT_ASYNC_FIXED_THREAD_POOL_SIZE), httpConnectorConfig.getConfigurationIds());
 
             HttpRequest httpRequest =  getDummyHttpRequest("http://"+IP+":"+ httpPort +"/ping1","1");
             HttpExchange httpExchange = (HttpExchange) httpTask.call(httpRequest).get();
@@ -133,7 +136,7 @@ public class HttpTaskTest {
             Map<String,String> settings = Maps.newHashMap();
             HttpConfigDefinition httpConfigDefinition = new HttpConfigDefinition(settings);
             HttpConnectorConfig httpConnectorConfig = new HttpConnectorConfig(httpConfigDefinition.config(), settings);
-            HttpTask<SinkRecord,OkHttpClient, okhttp3.Request,okhttp3.Response> httpTask = new HttpTask<>(httpConnectorConfig,new OkHttpClientFactory());
+            io.github.clescot.client.http.HttpTask<SinkRecord,OkHttpClient, okhttp3.Request, Response> httpTask = new io.github.clescot.client.http.HttpTask<>(new OkHttpClientFactory(), httpConnectorConfig.getList(REQUEST_GROUPER_IDS), httpConnectorConfig.originalsStrings(), httpConnectorConfig.getInt(HTTP_CLIENT_ASYNC_FIXED_THREAD_POOL_SIZE), httpConnectorConfig.getConfigurationIds());
 
 
             String vuid = "2";
@@ -163,7 +166,7 @@ public class HttpTaskTest {
 
     }
 
-    private List<Cookie> getCookies(HttpTask httpTask, HttpRequest httpRequest) {
+    private List<Cookie> getCookies(io.github.clescot.client.http.HttpTask httpTask, HttpRequest httpRequest) {
         HttpConfiguration configuration =  (HttpConfiguration) httpTask.selectConfiguration(httpRequest);
         OkHttpClient client = (OkHttpClient) configuration.getClient();
         HttpUrl url = client.buildNativeRequest(httpRequest).url();
@@ -183,7 +186,7 @@ public class HttpTaskTest {
         @AfterEach
         void tearsDown() {
             wmHttp.resetAll();
-            HttpTask.removeCompositeMeterRegistry();
+            io.github.clescot.client.http.HttpTask.removeCompositeMeterRegistry();
         }
         @Test
         void test_when_two_request_have_different_vu_id_then_two_different_configuration_instances_are_selected() {
@@ -193,7 +196,7 @@ public class HttpTaskTest {
             Map<String, String> settings = Maps.newHashMap();
             HttpConfigDefinition httpConfigDefinition = new HttpConfigDefinition(settings);
             HttpConnectorConfig httpConnectorConfig = new HttpConnectorConfig(httpConfigDefinition.config(), settings);
-            HttpTask httpTask = new HttpTask(httpConnectorConfig, new OkHttpClientFactory());
+            io.github.clescot.client.http.HttpTask httpTask = new io.github.clescot.client.http.HttpTask(new OkHttpClientFactory(), httpConnectorConfig.getList(REQUEST_GROUPER_IDS), httpConnectorConfig.originalsStrings(), httpConnectorConfig.getInt(HTTP_CLIENT_ASYNC_FIXED_THREAD_POOL_SIZE), httpConnectorConfig.getConfigurationIds());
 
             HttpRequest httpRequest = getDummyHttpRequest("http://"+IP+":" + wmRuntimeInfo.getHttpPort() + "/path2","3");
             httpRequest.addAttribute(Request.VU_ID,"1");

@@ -1,4 +1,4 @@
-package io.github.clescot.kafka.connect.http;
+package io.github.clescot.client.http;
 
 import io.micrometer.core.instrument.Clock;
 import io.micrometer.core.instrument.composite.CompositeMeterRegistry;
@@ -16,7 +16,6 @@ import java.io.IOException;
 import java.util.Map;
 
 import static io.github.clescot.client.Constants.*;
-import static io.github.clescot.kafka.connect.http.sink.HttpConfigDefinition.*;
 
 public class MeterRegistryFactory {
 

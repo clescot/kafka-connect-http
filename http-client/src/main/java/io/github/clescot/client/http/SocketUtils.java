@@ -1,4 +1,4 @@
-package io.github.clescot.kafka.connect.http;
+package io.github.clescot.client.http;
 
 import java.io.IOException;
 import java.net.DatagramSocket;
