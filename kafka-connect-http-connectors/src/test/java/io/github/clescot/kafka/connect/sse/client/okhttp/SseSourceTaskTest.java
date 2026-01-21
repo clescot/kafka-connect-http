@@ -7,7 +7,7 @@ import com.github.tomakehurst.wiremock.http.trafficlistener.ConsoleNotifyingWire
 import com.github.tomakehurst.wiremock.junit5.WireMockExtension;
 import com.github.tomakehurst.wiremock.junit5.WireMockRuntimeInfo;
 import com.google.common.collect.Maps;
-import io.github.clescot.kafka.connect.http.core.queue.QueueFactory;
+import io.github.clescot.kafka.connect.queue.QueueFactory;
 import io.github.clescot.kafka.connect.sse.core.SseEvent;
 import org.awaitility.Awaitility;
 import org.junit.jupiter.api.*;

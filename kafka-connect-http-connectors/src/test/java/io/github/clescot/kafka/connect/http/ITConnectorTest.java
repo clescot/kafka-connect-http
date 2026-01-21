@@ -27,7 +27,7 @@ import io.debezium.testing.testcontainers.ConnectorConfiguration;
 import io.debezium.testing.testcontainers.DebeziumContainer;
 import io.github.clescot.kafka.connect.http.core.HttpExchange;
 import io.github.clescot.kafka.connect.http.core.HttpRequest;
-import io.github.clescot.kafka.connect.http.core.queue.QueueFactory;
+import io.github.clescot.kafka.connect.queue.QueueFactory;
 import io.github.clescot.kafka.connect.http.sink.publish.PublishMode;
 import io.github.clescot.kafka.connect.http.source.cron.CronJobConfig;
 import okhttp3.OkHttpClient;

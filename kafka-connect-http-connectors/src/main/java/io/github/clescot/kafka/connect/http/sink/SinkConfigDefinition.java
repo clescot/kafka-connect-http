@@ -1,6 +1,6 @@
 package io.github.clescot.kafka.connect.http.sink;
 
-import io.github.clescot.kafka.connect.http.core.queue.ConfigConstants;
+import io.github.clescot.kafka.connect.queue.ConfigConstants;
 import io.github.clescot.kafka.connect.http.sink.publish.PublishMode;
 import org.apache.kafka.common.config.ConfigDef;
 

@@ -13,7 +13,7 @@ import io.github.clescot.kafka.connect.http.client.HttpConfiguration;
 import io.github.clescot.kafka.connect.http.core.HttpExchange;
 import io.github.clescot.kafka.connect.http.core.HttpRequest;
 import io.github.clescot.kafka.connect.http.core.HttpResponse;
-import io.github.clescot.kafka.connect.http.core.queue.KafkaRecord;
+import io.github.clescot.kafka.connect.queue.KafkaRecord;
 import io.github.clescot.kafka.connect.http.mapper.HttpRequestMapper;
 import io.github.clescot.kafka.connect.http.mapper.HttpRequestMapperFactory;
 import io.github.clescot.kafka.connect.http.sink.publish.KafkaProducer;

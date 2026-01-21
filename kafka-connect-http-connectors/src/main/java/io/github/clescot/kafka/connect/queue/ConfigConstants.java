@@ -1,4 +1,4 @@
-package io.github.clescot.kafka.connect.http.core.queue;
+package io.github.clescot.kafka.connect.queue;
 
 public class ConfigConstants {
 

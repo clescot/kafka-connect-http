@@ -18,9 +18,9 @@ import io.github.clescot.kafka.connect.http.client.ssl.AlwaysTrustManagerFactory
 import io.github.clescot.kafka.connect.http.core.HttpExchange;
 import io.github.clescot.kafka.connect.http.core.HttpRequest;
 import io.github.clescot.kafka.connect.http.core.HttpResponse;
-import io.github.clescot.kafka.connect.http.core.queue.ConfigConstants;
-import io.github.clescot.kafka.connect.http.core.queue.KafkaRecord;
-import io.github.clescot.kafka.connect.http.core.queue.QueueFactory;
+import io.github.clescot.kafka.connect.queue.ConfigConstants;
+import io.github.clescot.kafka.connect.queue.KafkaRecord;
+import io.github.clescot.kafka.connect.queue.QueueFactory;
 import io.github.clescot.kafka.connect.http.mapper.DirectHttpRequestMapper;
 import io.github.clescot.kafka.connect.http.mapper.JEXLHttpRequestMapper;
 import io.github.clescot.kafka.connect.http.mapper.MapperMode;
