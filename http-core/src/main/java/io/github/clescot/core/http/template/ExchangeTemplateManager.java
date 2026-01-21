@@ -54,7 +54,7 @@ public class ExchangeTemplateManager {
         }
         processors.put(name, processor);
         processorList.add(processor);
-        LOGGER.info("Registered ExchangeTemplateProcessor: {}", name);
+        LOGGER.debug("Registered ExchangeTemplateProcessor: {}", name);
     }
 
     /**
@@ -66,7 +66,7 @@ public class ExchangeTemplateManager {
         ExchangeTemplateProcessor removed = processors.remove(name);
         if (removed != null) {
             processorList.remove(removed);
-            LOGGER.info("Unregistered ExchangeTemplateProcessor: {}", name);
+            LOGGER.debug("Unregistered ExchangeTemplateProcessor: {}", name);
         }
     }
 

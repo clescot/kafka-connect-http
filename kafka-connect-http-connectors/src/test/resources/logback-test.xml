@@ -12,11 +12,11 @@
     <logger name="io.github.clescot.kafka.connect.http" level="INFO" />
     <logger name="io.github.clescot.kafka.connect.sse" level="DEBUG" />
     <logger name="io.github.clescot.kafka.connect.http.client.okhttp" level="INFO" />
-    <logger name="io.github.clescot.kafka.connect.http.client.okhttp.interceptor" level="DEBUG" />
-    <logger name="io.github.clescot.kafka.connect.sse.client.okhttp" level="DEBUG" />
-    <logger name="io.github.clescot.kafka.connect.http.sink" level="DEBUG" />
-    <logger name="io.github.clescot.kafka.connect.http.source" level="DEBUG" />
-    <logger name="io.github.clescot.kafka.connect.sse.client.okhttp" level="DEBUG" />
+    <logger name="io.github.clescot.kafka.connect.http.client.okhttp.interceptor" level="INFO" />
+    <logger name="io.github.clescot.kafka.connect.sse.client.okhttp" level="INFO" />
+    <logger name="io.github.clescot.kafka.connect.http.sink" level="INFO" />
+    <logger name="io.github.clescot.kafka.connect.http.source" level="INFO" />
+    <logger name="io.github.clescot.kafka.connect.sse.client.okhttp" level="INFO" />
     <logger name="io.github.clescot.kafka.connect.http.sink.HttpConnectorConfig" level="INFO" />
     <logger name="org.eclipse.jetty" level="WARN" />
     <logger name="ch.qos.logback" level="WARN" />
