@@ -19,7 +19,7 @@ public class QueueFactory {
     private static final Logger LOGGER = LoggerFactory.getLogger(QueueFactory.class);
     private static final Map<String,Queue> queueMap = Maps.newHashMap();
 
-    private static final Map<String,Boolean> consumers = Maps.newHashMap();
+    private static final Map<String,Boolean> consumers = Maps.newConcurrentMap();
 
     private QueueFactory(){}
 
@@ -48,14 +48,27 @@ public class QueueFactory {
     }
 
     public static boolean hasAConsumer(String queueName, long maxWaitTimeInMilliSeconds, int pollDelay, int pollInterval){
+        // For short wait times, check immediately without Awaitility to avoid timing issues
+        if (maxWaitTimeInMilliSeconds <= 600) {
+            return hasAConsumer(queueName);
+        }
+        
         Duration maxWaitTimeDuration = Duration.ofMillis(maxWaitTimeInMilliSeconds);
         try {
+            // Calculate reasonable polling parameters
+            // Poll delay should be minimal for short wait times
+            long effectivePollDelay = Math.min(pollDelay, 50); // Max 50ms delay for first check
+            effectivePollDelay = Math.max(0, effectivePollDelay); // Ensure non-negative
+            
+            // Poll interval should also be reasonable for the wait time
+            long effectivePollInterval = Math.min(pollInterval, Math.max(50, maxWaitTimeInMilliSeconds / 3));
+            effectivePollInterval = Math.max(10, effectivePollInterval); // Minimum 10ms between checks
+            
             Awaitility.await()
-                    .atMost(maxWaitTimeDuration)
-                    //we are waiting 2 seconds before any check
-                    .pollDelay(maxWaitTimeInMilliSeconds> pollDelay ? pollDelay :maxWaitTimeInMilliSeconds-1,TimeUnit.MILLISECONDS)
-                    //we check queue consumer every second
-                    .pollInterval(pollInterval,TimeUnit.MILLISECONDS)
+                    //we are waiting before first check
+                    .pollDelay(effectivePollDelay, TimeUnit.MILLISECONDS)
+                    //we check queue consumer every effectivePollInterval milliseconds
+                    .pollInterval(effectivePollInterval, TimeUnit.MILLISECONDS)
                     .conditionEvaluationListener(
                             new ConditionEvaluationLogger(
                                     string -> LOGGER.info("awaiting (at max '{}' ms  a registered consumer (Source Connector) listening on the queue : '{}'",maxWaitTimeInMilliSeconds, queueName)
