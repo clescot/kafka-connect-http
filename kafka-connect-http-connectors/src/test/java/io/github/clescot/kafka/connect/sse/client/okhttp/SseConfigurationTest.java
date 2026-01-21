@@ -8,7 +8,7 @@ import com.launchdarkly.eventsource.background.BackgroundEventSource;
 import io.github.clescot.client.http.okhttp.OkHttpClient;
 import io.github.clescot.client.http.okhttp.OkHttpClientFactory;
 import io.github.clescot.core.http.HttpRequest;
-import io.github.clescot.kafka.connect.queue.QueueFactory;
+import io.github.clescot.client.queue.QueueFactory;
 import io.micrometer.core.instrument.composite.CompositeMeterRegistry;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Nested;

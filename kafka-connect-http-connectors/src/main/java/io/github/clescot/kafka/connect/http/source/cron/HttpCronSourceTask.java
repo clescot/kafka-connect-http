@@ -7,7 +7,7 @@ import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import io.github.clescot.core.http.HttpRequest;
-import io.github.clescot.kafka.connect.queue.QueueFactory;
+import io.github.clescot.client.queue.QueueFactory;
 import org.apache.kafka.connect.source.SourceRecord;
 import org.apache.kafka.connect.source.SourceTask;
 import org.quartz.*;

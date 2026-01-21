@@ -11,7 +11,7 @@ import java.util.List;
 import java.util.Map;
 
 import static io.github.clescot.kafka.connect.queue.ConfigConstants.QUEUE_NAME;
-import static io.github.clescot.kafka.connect.queue.QueueFactory.DEFAULT_QUEUE_NAME;
+import static io.github.clescot.client.queue.QueueFactory.DEFAULT_QUEUE_NAME;
 import static io.github.clescot.kafka.connect.http.source.queue.HttpInMemoryQueueSourceConfigDefinition.ERROR_TOPIC;
 import static io.github.clescot.kafka.connect.http.source.queue.HttpInMemoryQueueSourceConfigDefinition.SUCCESS_TOPIC;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;

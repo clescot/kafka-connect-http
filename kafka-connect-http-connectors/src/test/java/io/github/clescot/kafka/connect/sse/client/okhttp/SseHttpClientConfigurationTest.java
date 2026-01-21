@@ -9,7 +9,7 @@ import com.github.tomakehurst.wiremock.junit5.WireMockRuntimeInfo;
 import com.google.common.collect.Maps;
 import io.github.clescot.client.Configuration;
 import io.github.clescot.client.http.okhttp.OkHttpClientFactory;
-import io.github.clescot.kafka.connect.queue.QueueFactory;
+import io.github.clescot.client.queue.QueueFactory;
 import io.github.clescot.core.sse.SseEvent;
 import io.micrometer.core.instrument.composite.CompositeMeterRegistry;
 import org.awaitility.Awaitility;

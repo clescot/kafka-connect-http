@@ -12,7 +12,7 @@ import io.confluent.kafka.schemaregistry.json.JsonSchemaProvider;
 import io.confluent.kafka.serializers.KafkaJsonSerializer;
 import io.confluent.kafka.serializers.json.KafkaJsonSchemaSerializerConfig;
 import io.github.clescot.kafka.connect.queue.KafkaRecord;
-import io.github.clescot.kafka.connect.queue.QueueFactory;
+import io.github.clescot.client.queue.QueueFactory;
 import io.github.clescot.kafka.connect.http.serde.HttpExchangeSerdeFactory;
 import io.github.clescot.kafka.connect.http.serde.HttpResponseSerdeFactory;
 import io.github.clescot.kafka.connect.http.serde.SerdeFactory;

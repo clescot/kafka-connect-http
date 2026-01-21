@@ -6,7 +6,7 @@ import com.google.common.collect.Maps;
 import io.github.clescot.core.http.HttpExchange;
 import io.github.clescot.core.http.HttpResponse;
 import io.github.clescot.kafka.connect.queue.KafkaRecord;
-import io.github.clescot.kafka.connect.queue.QueueFactory;
+import io.github.clescot.client.queue.QueueFactory;
 import org.apache.kafka.connect.data.Struct;
 import org.apache.kafka.connect.source.SourceRecord;
 import org.apache.kafka.connect.source.SourceTask;

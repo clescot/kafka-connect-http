@@ -3,7 +3,7 @@ package io.github.clescot.kafka.connect.http.sink.publish;
 
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
-import io.github.clescot.kafka.connect.queue.QueueFactory;
+import io.github.clescot.client.queue.QueueFactory;
 import io.github.clescot.kafka.connect.http.sink.HttpConnectorConfig;
 import org.apache.kafka.clients.producer.MockProducer;
 import org.apache.kafka.clients.producer.RoundRobinPartitioner;
@@ -19,7 +19,7 @@ import org.junit.jupiter.api.Test;
 
 import java.util.HashMap;
 
-import static io.github.clescot.kafka.connect.queue.QueueFactory.DEFAULT_QUEUE_NAME;
+import static io.github.clescot.client.queue.QueueFactory.DEFAULT_QUEUE_NAME;
 import static io.github.clescot.kafka.connect.http.sink.SinkConfigDefinition.*;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;

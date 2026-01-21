@@ -6,7 +6,7 @@ import io.github.clescot.core.http.HttpRequest;
 import io.github.clescot.core.http.HttpResponse;
 import io.github.clescot.kafka.connect.queue.ConfigConstants;
 import io.github.clescot.kafka.connect.queue.KafkaRecord;
-import io.github.clescot.kafka.connect.queue.QueueFactory;
+import io.github.clescot.client.queue.QueueFactory;
 import org.apache.kafka.common.config.ConfigException;
 import org.apache.kafka.connect.source.SourceRecord;
 import org.jetbrains.annotations.NotNull;

@@ -20,7 +20,7 @@ import io.github.clescot.core.http.HttpRequest;
 import io.github.clescot.core.http.HttpResponse;
 import io.github.clescot.kafka.connect.queue.ConfigConstants;
 import io.github.clescot.kafka.connect.queue.KafkaRecord;
-import io.github.clescot.kafka.connect.queue.QueueFactory;
+import io.github.clescot.client.queue.QueueFactory;
 import io.github.clescot.kafka.connect.http.mapper.DirectHttpRequestMapper;
 import io.github.clescot.kafka.connect.http.mapper.JEXLHttpRequestMapper;
 import io.github.clescot.kafka.connect.http.mapper.MapperMode;
@@ -67,6 +67,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.*;
 import static com.github.tomakehurst.wiremock.stubbing.Scenario.STARTED;
+import static io.github.clescot.client.Constants.*;
 import static io.github.clescot.client.http.SocketUtils.getRandomAvailablePort;
 import static io.github.clescot.client.http.HttpClientFactory.defaultSuccessPattern;
 import static io.github.clescot.client.http.config.HttpRequestPredicateBuilder.URL_REGEX;

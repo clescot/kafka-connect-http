@@ -2,7 +2,7 @@ package io.github.clescot.kafka.connect.sse.client.okhttp;
 
 import com.google.common.collect.Maps;
 import io.github.clescot.core.http.HttpRequest;
-import io.github.clescot.kafka.connect.queue.QueueFactory;
+import io.github.clescot.client.queue.QueueFactory;
 import io.github.clescot.core.sse.SseEvent;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;

@@ -1,4 +1,4 @@
-package io.github.clescot.kafka.connect.queue;
+package io.github.clescot.client.queue;
 
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Maps;

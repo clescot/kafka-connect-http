@@ -22,7 +22,7 @@ import java.util.Queue;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
-import static io.github.clescot.client.http.HttpClientConfigDefinition.CONFIGURATION_IDS;
+import static io.github.clescot.client.Constants.CONFIGURATION_IDS;
 import static org.assertj.core.api.Assertions.assertThat;
 
 @Testcontainers
