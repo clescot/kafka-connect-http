@@ -3,14 +3,14 @@ package io.github.clescot.kafka.connect.sse.client.okhttp;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Maps;
 import com.launchdarkly.eventsource.background.BackgroundEventSource;
-import io.github.clescot.kafka.connect.MapUtils;
-import io.github.clescot.kafka.connect.Task;
-import io.github.clescot.kafka.connect.http.client.HttpClientFactory;
-import io.github.clescot.kafka.connect.http.client.okhttp.OkHttpClient;
-import io.github.clescot.kafka.connect.http.client.okhttp.OkHttpClientFactory;
-import io.github.clescot.kafka.connect.http.core.HttpRequest;
+import io.github.clescot.client.MapUtils;
+import io.github.clescot.kafka.connect.http.Task;
+import io.github.clescot.client.http.HttpClientFactory;
+import io.github.clescot.client.http.okhttp.OkHttpClient;
+import io.github.clescot.client.http.okhttp.OkHttpClientFactory;
+import io.github.clescot.core.http.HttpRequest;
 import io.github.clescot.kafka.connect.queue.QueueFactory;
-import io.github.clescot.kafka.connect.sse.core.SseEvent;
+import io.github.clescot.core.sse.SseEvent;
 import io.micrometer.core.instrument.composite.CompositeMeterRegistry;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -22,7 +22,8 @@ import java.util.Optional;
 import java.util.Queue;
 import java.util.stream.Collectors;
 
-import static io.github.clescot.kafka.connect.http.client.HttpClientConfigDefinition.CONFIGURATION_IDS;
+import static io.github.clescot.client.http.HttpClientConfigDefinition.*;
+import static io.github.clescot.client.Constants.*;
 
 
 public class SseTask implements Task<OkHttpClient, SseConfiguration, HttpRequest> {

@@ -2,7 +2,7 @@ package io.github.clescot.kafka.connect.http;
 
 import org.junit.jupiter.api.Test;
 
-import static io.github.clescot.kafka.connect.http.core.HttpRequest.VERSION;
+import static io.github.clescot.core.http.HttpRequest.VERSION;
 import static org.assertj.core.api.Assertions.assertThat;
 
 class VersionUtilsTest {

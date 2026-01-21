@@ -3,8 +3,8 @@ package io.github.clescot.kafka.connect.sse.client.okhttp;
 import com.google.common.collect.Maps;
 import com.launchdarkly.eventsource.EventSource;
 import com.launchdarkly.eventsource.ReadyState;
-import io.github.clescot.kafka.connect.Configuration;
-import io.github.clescot.kafka.connect.sse.core.SseEvent;
+import io.github.clescot.client.Configuration;
+import io.github.clescot.core.sse.SseEvent;
 import org.awaitility.Awaitility;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
@@ -22,7 +22,7 @@ import java.util.Queue;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
-import static io.github.clescot.kafka.connect.http.client.HttpClientConfigDefinition.CONFIGURATION_IDS;
+import static io.github.clescot.client.http.HttpClientConfigDefinition.CONFIGURATION_IDS;
 import static org.assertj.core.api.Assertions.assertThat;
 
 @Testcontainers

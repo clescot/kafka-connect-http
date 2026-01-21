@@ -1,7 +1,7 @@
-package io.github.clescot.kafka.connect.http.client.config;
+package io.github.clescot.client.http.config;
 
 import com.google.common.collect.Lists;
-import io.github.clescot.kafka.connect.http.core.HttpRequest;
+import io.github.clescot.core.http.HttpRequest;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
@@ -9,7 +9,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 
-import static io.github.clescot.kafka.connect.http.client.config.AddUserAgentHeaderToHttpRequestFunction.USER_AGENT;
+import static io.github.clescot.client.http.config.AddUserAgentHeaderToHttpRequestFunction.USER_AGENT;
 import static org.assertj.core.api.Assertions.assertThat;
 
 class AddUserAgentHeaderToHttpRequestFunctionTest {

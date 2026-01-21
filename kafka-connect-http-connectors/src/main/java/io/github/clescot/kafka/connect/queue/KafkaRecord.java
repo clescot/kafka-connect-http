@@ -1,6 +1,6 @@
 package io.github.clescot.kafka.connect.queue;
 
-import io.github.clescot.kafka.connect.http.core.HttpExchange;
+import io.github.clescot.core.http.HttpExchange;
 import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.header.Header;
 

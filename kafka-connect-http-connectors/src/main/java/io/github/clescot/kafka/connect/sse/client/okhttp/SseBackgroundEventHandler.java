@@ -2,8 +2,8 @@ package io.github.clescot.kafka.connect.sse.client.okhttp;
 
 import com.launchdarkly.eventsource.MessageEvent;
 import com.launchdarkly.eventsource.background.BackgroundEventHandler;
-import io.github.clescot.kafka.connect.ResponseClient;
-import io.github.clescot.kafka.connect.sse.core.SseEvent;
+import io.github.clescot.client.ResponseClient;
+import io.github.clescot.core.sse.SseEvent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

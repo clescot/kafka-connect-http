@@ -3,7 +3,7 @@ package io.github.clescot.kafka.connect.http.serde;
 import com.google.common.collect.Maps;
 import io.confluent.kafka.schemaregistry.client.MockSchemaRegistryClient;
 import io.confluent.kafka.schemaregistry.client.SchemaRegistryClient;
-import io.github.clescot.kafka.connect.http.core.HttpResponse;
+import io.github.clescot.core.http.HttpResponse;
 import org.apache.kafka.common.serialization.Serde;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;

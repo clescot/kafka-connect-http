@@ -6,7 +6,7 @@ import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
-import io.github.clescot.kafka.connect.http.core.HttpRequest;
+import io.github.clescot.core.http.HttpRequest;
 import io.github.clescot.kafka.connect.queue.QueueFactory;
 import org.apache.kafka.connect.source.SourceRecord;
 import org.apache.kafka.connect.source.SourceTask;
@@ -15,7 +15,7 @@ import org.quartz.impl.StdSchedulerFactory;
 
 import java.util.*;
 
-import static io.github.clescot.kafka.connect.http.core.VersionUtils.VERSION;
+import static io.github.clescot.core.http.VersionUtils.VERSION;
 import static io.github.clescot.kafka.connect.http.source.cron.HttpCronJob.*;
 import static org.quartz.CronScheduleBuilder.cronSchedule;
 import static org.quartz.JobBuilder.newJob;

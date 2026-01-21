@@ -13,9 +13,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
-import static io.github.clescot.kafka.connect.Configuration.DEFAULT_CONFIGURATION_ID;
-import static io.github.clescot.kafka.connect.http.client.HttpClientConfigDefinition.*;
-import static io.github.clescot.kafka.connect.http.core.VersionUtils.VERSION;
+import static io.github.clescot.client.Configuration.DEFAULT_CONFIGURATION_ID;
+import static io.github.clescot.client.Constants.*;
+import static io.github.clescot.client.http.HttpClientConfigDefinition.*;
+import static io.github.clescot.core.http.VersionUtils.VERSION;
 
 
 public class HttpSinkConnector extends SinkConnector {

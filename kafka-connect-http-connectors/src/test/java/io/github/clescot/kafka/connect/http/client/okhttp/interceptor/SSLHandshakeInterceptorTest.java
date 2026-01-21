@@ -1,7 +1,7 @@
-package io.github.clescot.kafka.connect.http.client.okhttp.interceptor;
+package io.github.clescot.client.http.okhttp.interceptor;
 
 import com.google.common.collect.Lists;
-import io.github.clescot.kafka.connect.http.client.DummyX509Certificate;
+import io.github.clescot.client.http.DummyX509Certificate;
 import okhttp3.*;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;

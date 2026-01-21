@@ -72,7 +72,8 @@
         <wiremock.version>3.13.2</wiremock.version>
     </properties>
     <modules>
-        <module>kafka-connect-http-core</module>
+        <module>http-core</module>
+        <module>http-client</module>
         <module>kafka-connect-http-connectors</module>
         <module>report-aggregate</module>
     </modules>

@@ -2,8 +2,8 @@ package io.github.clescot.kafka.connect.http.mapper;
 
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Maps;
-import io.github.clescot.kafka.connect.http.core.BodyType;
-import io.github.clescot.kafka.connect.http.core.HttpRequest;
+import io.github.clescot.core.http.BodyType;
+import io.github.clescot.core.http.HttpRequest;
 import org.apache.commons.jexl3.JexlContext;
 import org.apache.commons.jexl3.JexlEngine;
 import org.apache.commons.jexl3.JexlExpression;

@@ -3,8 +3,8 @@ package io.github.clescot.kafka.connect.sse.client.okhttp;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
-import io.github.clescot.kafka.connect.http.core.HttpRequest;
-import io.github.clescot.kafka.connect.sse.core.SseEvent;
+import io.github.clescot.core.http.HttpRequest;
+import io.github.clescot.core.sse.SseEvent;
 import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.source.SourceRecord;
 import org.apache.kafka.connect.source.SourceTask;
@@ -16,7 +16,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Queue;
 
-import static io.github.clescot.kafka.connect.http.core.VersionUtils.VERSION;
+import static io.github.clescot.core.http.VersionUtils.VERSION;
 
 public class SseSourceTask extends SourceTask {
     private static final Logger LOGGER = LoggerFactory.getLogger(SseSourceTask.class);

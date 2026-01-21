@@ -1,13 +1,13 @@
-package io.github.clescot.kafka.connect.http.client.ahc;
+package io.github.clescot.client.http.ahc;
 
 import com.google.common.base.Stopwatch;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
-import io.github.clescot.kafka.connect.http.client.DummyX509Certificate;
-import io.github.clescot.kafka.connect.http.client.HttpClientFactory;
-import io.github.clescot.kafka.connect.http.core.HttpExchange;
-import io.github.clescot.kafka.connect.http.core.HttpRequest;
-import io.github.clescot.kafka.connect.http.core.HttpResponse;
+import io.github.clescot.client.http.DummyX509Certificate;
+import io.github.clescot.client.http.HttpClientFactory;
+import io.github.clescot.core.http.HttpExchange;
+import io.github.clescot.core.http.HttpRequest;
+import io.github.clescot.core.http.HttpResponse;
 import io.github.clescot.kafka.connect.http.sink.HttpSinkTaskTest;
 import org.assertj.core.api.Assertions;
 import org.asynchttpclient.AsyncHttpClient;
@@ -35,10 +35,10 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static io.github.clescot.kafka.connect.http.client.HttpClientConfigDefinition.*;
-import static io.github.clescot.kafka.connect.http.client.HttpClientFactory.CONFIGURATION_ID;
-import static io.github.clescot.kafka.connect.http.client.config.AddMissingCorrelationIdHeaderToHttpRequestFunction.HEADER_X_CORRELATION_ID;
-import static io.github.clescot.kafka.connect.http.client.config.AddMissingRequestIdHeaderToHttpRequestFunction.HEADER_X_REQUEST_ID;
+import static io.github.clescot.client.http.HttpClientConfigDefinition.*;
+import static io.github.clescot.client.http.HttpClientFactory.CONFIGURATION_ID;
+import static io.github.clescot.client.http.config.AddMissingCorrelationIdHeaderToHttpRequestFunction.HEADER_X_CORRELATION_ID;
+import static io.github.clescot.client.http.config.AddMissingRequestIdHeaderToHttpRequestFunction.HEADER_X_REQUEST_ID;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.when;
 

@@ -1,10 +1,10 @@
 package io.github.clescot.kafka.connect.http.client;
 
-import io.github.clescot.kafka.connect.http.client.okhttp.OkHttpClient;
-import io.github.clescot.kafka.connect.http.core.HttpExchange;
-import io.github.clescot.kafka.connect.http.core.HttpRequest;
-import io.github.clescot.kafka.connect.http.core.HttpResponse;
-import io.github.clescot.kafka.connect.http.core.template.ExchangeTemplateManager;
+import io.github.clescot.client.http.okhttp.OkHttpClient;
+import io.github.clescot.core.http.HttpExchange;
+import io.github.clescot.core.http.HttpRequest;
+import io.github.clescot.core.http.HttpResponse;
+import io.github.clescot.core.http.template.ExchangeTemplateManager;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;

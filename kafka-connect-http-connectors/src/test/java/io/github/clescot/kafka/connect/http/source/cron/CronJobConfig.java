@@ -1,6 +1,6 @@
 package io.github.clescot.kafka.connect.http.source.cron;
 
-import io.github.clescot.kafka.connect.http.core.HttpRequest;
+import io.github.clescot.core.http.HttpRequest;
 
 import java.util.List;
 import java.util.Map;

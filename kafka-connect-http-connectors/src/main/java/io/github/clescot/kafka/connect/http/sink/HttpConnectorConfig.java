@@ -4,7 +4,7 @@ import com.google.common.base.Joiner;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
-import io.github.clescot.kafka.connect.http.core.BodyType;
+import io.github.clescot.core.http.BodyType;
 import io.github.clescot.kafka.connect.queue.ConfigConstants;
 import io.github.clescot.kafka.connect.queue.QueueFactory;
 import io.github.clescot.kafka.connect.http.mapper.MapperMode;
@@ -19,8 +19,9 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 
-import static io.github.clescot.kafka.connect.Configuration.DEFAULT_CONFIGURATION_ID;
-import static io.github.clescot.kafka.connect.http.client.HttpClientConfigDefinition.*;
+import static io.github.clescot.client.Configuration.DEFAULT_CONFIGURATION_ID;
+import static io.github.clescot.client.Constants.*;
+import static io.github.clescot.client.http.HttpClientConfigDefinition.*;
 import static io.github.clescot.kafka.connect.http.sink.HttpConfigDefinition.*;
 import static io.github.clescot.kafka.connect.http.sink.SinkConfigDefinition.*;
 

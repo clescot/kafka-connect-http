@@ -1,6 +1,6 @@
 package io.github.clescot.kafka.connect.http.source.cron;
 
-import io.github.clescot.kafka.connect.http.core.HttpRequest;
+import io.github.clescot.core.http.HttpRequest;
 import org.quartz.JobExecutionContext;
 import org.quartz.JobExecutionException;
 import org.quartz.JobListener;

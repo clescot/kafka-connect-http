@@ -1,8 +1,8 @@
 package io.github.clescot.kafka.connect.sse.client.okhttp;
 
 import com.google.common.collect.Sets;
-import io.github.clescot.kafka.connect.ConfigUtils;
-import io.github.clescot.kafka.connect.http.client.HttpClientConfigDefinition;
+import io.github.clescot.client.ConfigUtils;
+import io.github.clescot.client.http.HttpClientConfigDefinition;
 import io.github.clescot.kafka.connect.http.sink.SinkConfigDefinition;
 import org.apache.kafka.common.config.ConfigDef;
 
@@ -10,8 +10,8 @@ import java.util.Arrays;
 import java.util.Map;
 import java.util.Set;
 
-import static io.github.clescot.kafka.connect.http.client.HttpClientConfigDefinition.CONFIGURATION_IDS;
-import static io.github.clescot.kafka.connect.http.client.HttpClientConfigDefinition.DEFAULT_CONFIGURATION_PREFIX;
+import static io.github.clescot.client.http.HttpClientConfigDefinition.*;
+import static io.github.clescot.client.Constants.*;
 
 public class SseConfigDefinition {
     public static final String URL ="url";

@@ -4,14 +4,14 @@ import com.google.common.base.Preconditions;
 import com.google.common.base.Strings;
 import com.launchdarkly.eventsource.*;
 import com.launchdarkly.eventsource.background.BackgroundEventSource;
-import io.github.clescot.kafka.connect.Configuration;
-import io.github.clescot.kafka.connect.http.client.HttpClientFactory;
-import io.github.clescot.kafka.connect.http.client.okhttp.OkHttpClient;
-import io.github.clescot.kafka.connect.http.core.HttpRequest;
-import io.github.clescot.kafka.connect.http.core.template.ExchangeTemplateManager;
-import io.github.clescot.kafka.connect.http.core.template.ExchangeTemplateProcessorFactory;
-import io.github.clescot.kafka.connect.sse.core.SseEvent;
-import io.github.clescot.kafka.connect.sse.core.SseExchange;
+import io.github.clescot.client.Configuration;
+import io.github.clescot.client.http.HttpClientFactory;
+import io.github.clescot.client.http.okhttp.OkHttpClient;
+import io.github.clescot.core.http.HttpRequest;
+import io.github.clescot.core.http.template.ExchangeTemplateManager;
+import io.github.clescot.core.http.template.ExchangeTemplateProcessorFactory;
+import io.github.clescot.core.sse.SseEvent;
+import io.github.clescot.core.sse.SseExchange;
 import io.micrometer.core.instrument.composite.CompositeMeterRegistry;
 import okhttp3.Request;
 import okhttp3.Response;
@@ -25,7 +25,7 @@ import java.util.Random;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
 
-import static io.github.clescot.kafka.connect.http.client.HttpClientFactory.getRandom;
+import static io.github.clescot.client.http.HttpClientFactory.getRandom;
 
 /**
  * Configuration for SSE client using OkHttp.

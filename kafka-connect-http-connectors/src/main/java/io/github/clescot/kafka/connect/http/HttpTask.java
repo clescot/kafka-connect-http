@@ -4,13 +4,12 @@ import com.google.common.base.Stopwatch;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import dev.failsafe.RetryPolicy;
-import io.github.clescot.kafka.connect.RequestTask;
-import io.github.clescot.kafka.connect.http.client.HttpClient;
-import io.github.clescot.kafka.connect.http.client.HttpClientFactory;
-import io.github.clescot.kafka.connect.http.client.HttpConfiguration;
-import io.github.clescot.kafka.connect.http.core.HttpExchange;
-import io.github.clescot.kafka.connect.http.core.HttpRequest;
-import io.github.clescot.kafka.connect.http.core.HttpResponse;
+import io.github.clescot.client.http.HttpClient;
+import io.github.clescot.client.http.HttpClientFactory;
+import io.github.clescot.client.http.HttpConfiguration;
+import io.github.clescot.core.http.HttpExchange;
+import io.github.clescot.core.http.HttpRequest;
+import io.github.clescot.core.http.HttpResponse;
 import io.github.clescot.kafka.connect.http.sink.HttpConnectorConfig;
 import io.micrometer.core.instrument.composite.CompositeMeterRegistry;
 import org.apache.commons.lang3.tuple.Pair;
@@ -32,7 +31,8 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
-import static io.github.clescot.kafka.connect.http.client.HttpClientFactory.buildConfigurations;
+import static io.github.clescot.client.http.HttpClientFactory.buildConfigurations;
+import static io.github.clescot.client.Constants.*;
 import static io.github.clescot.kafka.connect.http.sink.HttpConfigDefinition.*;
 
 /**

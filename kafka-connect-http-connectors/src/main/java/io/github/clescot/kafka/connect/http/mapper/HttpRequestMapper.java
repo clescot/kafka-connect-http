@@ -1,6 +1,6 @@
 package io.github.clescot.kafka.connect.http.mapper;
 
-import io.github.clescot.kafka.connect.http.core.HttpRequest;
+import io.github.clescot.core.http.HttpRequest;
 import org.apache.kafka.connect.connector.ConnectRecord;
 import org.apache.kafka.connect.sink.SinkRecord;
 

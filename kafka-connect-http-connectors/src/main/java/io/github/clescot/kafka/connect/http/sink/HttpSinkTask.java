@@ -7,12 +7,12 @@ import com.google.common.collect.Maps;
 import io.github.clescot.kafka.connect.http.HttpTask;
 import io.github.clescot.kafka.connect.http.MessageSplitter;
 import io.github.clescot.kafka.connect.http.MessageSplitterFactory;
-import io.github.clescot.kafka.connect.http.client.HttpClient;
-import io.github.clescot.kafka.connect.http.client.HttpClientFactory;
-import io.github.clescot.kafka.connect.http.client.HttpConfiguration;
-import io.github.clescot.kafka.connect.http.core.HttpExchange;
-import io.github.clescot.kafka.connect.http.core.HttpRequest;
-import io.github.clescot.kafka.connect.http.core.HttpResponse;
+import io.github.clescot.client.http.HttpClient;
+import io.github.clescot.client.http.HttpClientFactory;
+import io.github.clescot.client.http.HttpConfiguration;
+import io.github.clescot.core.http.HttpExchange;
+import io.github.clescot.core.http.HttpRequest;
+import io.github.clescot.core.http.HttpResponse;
 import io.github.clescot.kafka.connect.queue.KafkaRecord;
 import io.github.clescot.kafka.connect.http.mapper.HttpRequestMapper;
 import io.github.clescot.kafka.connect.http.mapper.HttpRequestMapperFactory;
@@ -50,10 +50,9 @@ import java.util.function.Function;
 import java.util.stream.Stream;
 
 import static io.github.clescot.kafka.connect.http.HttpTask.DATE_TIME_FORMATTER;
-import static io.github.clescot.kafka.connect.http.core.Request.VU_ID;
-import static io.github.clescot.kafka.connect.http.core.VersionUtils.VERSION;
-import static io.github.clescot.kafka.connect.http.sink.HttpConfigDefinition.HTTP_REQUEST_MAPPER_IDS;
-import static io.github.clescot.kafka.connect.http.sink.HttpConfigDefinition.MESSAGE_SPLITTER_IDS;
+import static io.github.clescot.core.http.Request.VU_ID;
+import static io.github.clescot.core.http.VersionUtils.VERSION;
+import static io.github.clescot.client.Constants.*;
 
 /**
  * HttpSinkTask is a Kafka Connect SinkTask that processes SinkRecords,

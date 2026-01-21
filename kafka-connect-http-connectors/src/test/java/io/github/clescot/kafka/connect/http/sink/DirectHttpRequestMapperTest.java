@@ -10,9 +10,9 @@ import io.confluent.kafka.schemaregistry.client.SchemaRegistryClient;
 import io.confluent.kafka.schemaregistry.client.rest.exceptions.RestClientException;
 import io.confluent.kafka.schemaregistry.json.JsonSchema;
 import io.confluent.kafka.schemaregistry.json.JsonSchemaProvider;
-import io.github.clescot.kafka.connect.http.core.BodyType;
-import io.github.clescot.kafka.connect.http.core.HttpPart;
-import io.github.clescot.kafka.connect.http.core.HttpRequest;
+import io.github.clescot.core.http.BodyType;
+import io.github.clescot.core.http.HttpPart;
+import io.github.clescot.core.http.HttpRequest;
 import io.github.clescot.kafka.connect.http.mapper.DirectHttpRequestMapper;
 import org.apache.commons.jexl3.JexlBuilder;
 import org.apache.commons.jexl3.JexlEngine;
@@ -40,7 +40,7 @@ import java.util.Map;
 import java.util.Optional;
 
 import static io.confluent.kafka.serializers.json.KafkaJsonSchemaDeserializerConfig.JSON_VALUE_TYPE;
-import static io.github.clescot.kafka.connect.http.core.HttpRequest.SCHEMA;
+import static io.github.clescot.core.http.HttpRequest.SCHEMA;
 import static org.assertj.core.api.Assertions.assertThat;
 
 class DirectHttpRequestMapperTest {

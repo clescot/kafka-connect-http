@@ -1,8 +1,8 @@
 package io.github.clescot.kafka.connect.http.sink;
 
 import com.google.common.collect.Lists;
-import io.github.clescot.kafka.connect.http.core.BodyType;
-import io.github.clescot.kafka.connect.http.core.HttpRequest;
+import io.github.clescot.core.http.BodyType;
+import io.github.clescot.core.http.HttpRequest;
 import io.github.clescot.kafka.connect.http.mapper.JEXLHttpRequestMapper;
 import org.apache.commons.jexl3.JexlBuilder;
 import org.apache.commons.jexl3.JexlEngine;

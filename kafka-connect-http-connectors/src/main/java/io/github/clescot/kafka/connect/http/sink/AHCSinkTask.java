@@ -1,7 +1,7 @@
 package io.github.clescot.kafka.connect.http.sink;
 
-import io.github.clescot.kafka.connect.http.client.ahc.AHCHttpClient;
-import io.github.clescot.kafka.connect.http.client.ahc.AHCHttpClientFactory;
+import io.github.clescot.client.http.ahc.AHCHttpClient;
+import io.github.clescot.client.http.ahc.AHCHttpClientFactory;
 import io.github.clescot.kafka.connect.http.sink.publish.KafkaProducer;
 import org.apache.kafka.clients.producer.MockProducer;
 import org.asynchttpclient.Request;

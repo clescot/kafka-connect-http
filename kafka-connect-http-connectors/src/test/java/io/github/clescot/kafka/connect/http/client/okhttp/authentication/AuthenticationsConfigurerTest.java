@@ -1,4 +1,4 @@
-package io.github.clescot.kafka.connect.http.client.okhttp.authentication;
+package io.github.clescot.client.http.okhttp.authentication;
 
 
 import com.google.common.collect.Lists;

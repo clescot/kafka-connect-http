@@ -15,6 +15,7 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.util.Map;
 
+import static io.github.clescot.client.Constants.*;
 import static io.github.clescot.kafka.connect.http.sink.HttpConfigDefinition.*;
 
 public class MeterRegistryFactory {

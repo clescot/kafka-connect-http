@@ -1,10 +1,10 @@
 package io.github.clescot.kafka.connect.sse.client.okhttp;
 
 import com.google.common.collect.Maps;
-import io.github.clescot.kafka.connect.http.client.okhttp.OkHttpClient;
-import io.github.clescot.kafka.connect.http.core.HttpRequest;
+import io.github.clescot.client.http.okhttp.OkHttpClient;
+import io.github.clescot.core.http.HttpRequest;
 import io.github.clescot.kafka.connect.queue.QueueFactory;
-import io.github.clescot.kafka.connect.sse.core.SseEvent;
+import io.github.clescot.core.sse.SseEvent;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.parallel.Execution;

@@ -1,7 +1,7 @@
 package io.github.clescot.kafka.connect.sse.client.okhttp;
 
 import com.google.common.base.Preconditions;
-import io.github.clescot.kafka.connect.MapUtils;
+import io.github.clescot.client.MapUtils;
 import org.apache.kafka.common.config.ConfigDef;
 import org.apache.kafka.connect.connector.Task;
 import org.apache.kafka.connect.source.SourceConnector;
@@ -11,7 +11,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import static io.github.clescot.kafka.connect.http.core.VersionUtils.VERSION;
+import static io.github.clescot.core.http.VersionUtils.VERSION;
 
 public class SseSourceConnector extends SourceConnector {
 

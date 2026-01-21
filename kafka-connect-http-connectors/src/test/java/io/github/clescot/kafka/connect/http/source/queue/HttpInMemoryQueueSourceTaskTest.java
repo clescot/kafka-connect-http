@@ -1,9 +1,9 @@
 package io.github.clescot.kafka.connect.http.source.queue;
 
 import com.google.common.collect.Maps;
-import io.github.clescot.kafka.connect.http.core.HttpExchange;
-import io.github.clescot.kafka.connect.http.core.HttpRequest;
-import io.github.clescot.kafka.connect.http.core.HttpResponse;
+import io.github.clescot.core.http.HttpExchange;
+import io.github.clescot.core.http.HttpRequest;
+import io.github.clescot.core.http.HttpResponse;
 import io.github.clescot.kafka.connect.queue.ConfigConstants;
 import io.github.clescot.kafka.connect.queue.KafkaRecord;
 import io.github.clescot.kafka.connect.queue.QueueFactory;

@@ -2,9 +2,9 @@ package io.github.clescot.kafka.connect.http.source.queue;
 
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
-import io.github.clescot.kafka.connect.http.core.HttpExchange;
-import io.github.clescot.kafka.connect.http.core.HttpRequest;
-import io.github.clescot.kafka.connect.http.core.HttpResponse;
+import io.github.clescot.core.http.HttpExchange;
+import io.github.clescot.core.http.HttpRequest;
+import io.github.clescot.core.http.HttpResponse;
 import io.github.clescot.kafka.connect.queue.KafkaRecord;
 import org.jetbrains.annotations.NotNull;
 
@@ -15,7 +15,7 @@ import java.util.Map;
 import java.util.Queue;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static io.github.clescot.kafka.connect.http.client.HttpClient.*;
+import static io.github.clescot.client.http.HttpClient.*;
 
 /**
  * produce some dummy KafkaRecord for tests only.

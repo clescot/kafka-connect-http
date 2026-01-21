@@ -1023,7 +1023,7 @@ settings.put("exchange.template.processors", "jsonpath,random,xpath,mycustom");
 
 Custom processors can be automatically discovered using Java's Service Loader mechanism by creating a file:
 
-`META-INF/services/io.github.clescot.kafka.connect.http.core.template.ExchangeTemplateProcessor`
+`META-INF/services/io.github.clescot.core.http.template.ExchangeTemplateProcessor`
 
 With your processor class name as the content.
 
@@ -1137,7 +1137,7 @@ Supported types:
 Enable debug logging to see template processing details:
 
 ```properties
-log4j.logger.io.github.clescot.kafka.connect.http.core.template=DEBUG
+log4j.logger.io.github.clescot.core.http.template=DEBUG
 ```
 
 This will show:

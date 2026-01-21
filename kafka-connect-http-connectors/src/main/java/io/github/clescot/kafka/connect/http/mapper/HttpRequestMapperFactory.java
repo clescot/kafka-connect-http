@@ -2,14 +2,14 @@ package io.github.clescot.kafka.connect.http.mapper;
 
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
-import io.github.clescot.kafka.connect.MapUtils;
+import io.github.clescot.client.MapUtils;
 import org.apache.commons.jexl3.JexlEngine;
 
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
-import static io.github.clescot.kafka.connect.http.sink.HttpConfigDefinition.REQUEST_MAPPER_DEFAULT_URL_EXPRESSION;
+import static io.github.clescot.client.Constants.REQUEST_MAPPER_DEFAULT_URL_EXPRESSION;
 
 public class HttpRequestMapperFactory {
     public static final String DEFAULT = "default";

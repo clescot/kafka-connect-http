@@ -8,7 +8,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import static io.github.clescot.kafka.connect.http.core.VersionUtils.VERSION;
+import static io.github.clescot.core.http.VersionUtils.VERSION;
 
 public class HttpInMemoryQueueSourceConnector extends SourceConnector {
     private HttpSourceConnectorConfig httpSourceConnectorConfig;

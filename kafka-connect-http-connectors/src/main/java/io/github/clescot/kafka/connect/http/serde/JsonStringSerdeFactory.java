@@ -1,6 +1,6 @@
 package io.github.clescot.kafka.connect.http.serde;
 
-import io.github.clescot.kafka.connect.http.core.JsonStringSerde;
+import io.github.clescot.core.http.JsonStringSerde;
 import org.apache.kafka.common.serialization.Deserializer;
 import org.apache.kafka.common.serialization.Serde;
 import org.apache.kafka.common.serialization.Serializer;

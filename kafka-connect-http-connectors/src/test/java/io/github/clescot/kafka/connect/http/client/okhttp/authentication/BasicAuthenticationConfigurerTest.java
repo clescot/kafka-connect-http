@@ -1,4 +1,4 @@
-package io.github.clescot.kafka.connect.http.client.okhttp.authentication;
+package io.github.clescot.client.http.okhttp.authentication;
 
 import com.burgstaller.okhttp.basic.BasicAuthenticator;
 import com.google.common.collect.Maps;
@@ -8,7 +8,7 @@ import org.junit.jupiter.api.Test;
 
 import java.util.HashMap;
 
-import static io.github.clescot.kafka.connect.http.client.HttpClientConfigDefinition.*;
+import static io.github.clescot.client.http.HttpClientConfigDefinition.*;
 import static org.assertj.core.api.Assertions.assertThat;
 
 class BasicAuthenticationConfigurerTest {

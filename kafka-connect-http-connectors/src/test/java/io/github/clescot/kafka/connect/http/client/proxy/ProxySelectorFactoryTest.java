@@ -1,4 +1,4 @@
-package io.github.clescot.kafka.connect.http.client.proxy;
+package io.github.clescot.client.http.proxy;
 
 import com.github.tomakehurst.wiremock.core.Options;
 import com.github.tomakehurst.wiremock.core.WireMockConfiguration;
@@ -16,7 +16,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Random;
 
-import static io.github.clescot.kafka.connect.http.client.HttpClientConfigDefinition.*;
+import static io.github.clescot.client.http.HttpClientConfigDefinition.*;
 import static org.assertj.core.api.Assertions.assertThat;
 
 class ProxySelectorFactoryTest {

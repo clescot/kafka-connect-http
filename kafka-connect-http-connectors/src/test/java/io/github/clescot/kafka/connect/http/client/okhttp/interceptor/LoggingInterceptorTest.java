@@ -1,4 +1,4 @@
-package io.github.clescot.kafka.connect.http.client.okhttp.interceptor;
+package io.github.clescot.client.http.okhttp.interceptor;
 
 import okhttp3.*;
 import org.junit.jupiter.api.Test;
