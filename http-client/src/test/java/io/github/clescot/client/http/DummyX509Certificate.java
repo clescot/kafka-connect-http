@@ -1,4 +1,4 @@
-package io.github.clescot.kafka.connect.http.client;
+package io.github.clescot.client.http;
 
 import javax.security.auth.x500.X500Principal;
 import java.math.BigInteger;

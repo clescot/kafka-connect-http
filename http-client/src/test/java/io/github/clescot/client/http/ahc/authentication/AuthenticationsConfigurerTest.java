@@ -1,7 +1,9 @@
-package io.github.clescot.client.http.okhttp.authentication;
+package io.github.clescot.client.http.ahc.authentication;
 
 
 import com.google.common.collect.Lists;
+import io.github.clescot.client.http.okhttp.authentication.AuthenticationConfigurer;
+import io.github.clescot.client.http.okhttp.authentication.AuthenticationsConfigurer;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 

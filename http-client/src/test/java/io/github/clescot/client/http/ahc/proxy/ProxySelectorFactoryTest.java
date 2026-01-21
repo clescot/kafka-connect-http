@@ -1,10 +1,12 @@
-package io.github.clescot.client.http.proxy;
+package io.github.clescot.client.http.ahc.proxy;
 
 import com.github.tomakehurst.wiremock.core.Options;
 import com.github.tomakehurst.wiremock.core.WireMockConfiguration;
 import com.github.tomakehurst.wiremock.http.trafficlistener.ConsoleNotifyingWiremockNetworkTrafficListener;
 import com.github.tomakehurst.wiremock.junit5.WireMockExtension;
 import com.google.common.collect.Maps;
+import io.github.clescot.client.http.proxy.*;
+import static io.github.clescot.client.Constants.*;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -16,7 +18,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Random;
 
-import static io.github.clescot.client.http.HttpClientConfigDefinition.*;
 import static org.assertj.core.api.Assertions.assertThat;
 
 class ProxySelectorFactoryTest {

@@ -1,4 +1,5 @@
-package io.github.clescot.client.http.okhttp.authentication;
+
+package io.github.clescot.client.http.ahc.authentication;
 
 
 import com.github.tomakehurst.wiremock.client.WireMock;
@@ -7,6 +8,7 @@ import com.github.tomakehurst.wiremock.core.WireMockConfiguration;
 import com.github.tomakehurst.wiremock.junit5.WireMockExtension;
 import com.github.tomakehurst.wiremock.junit5.WireMockRuntimeInfo;
 import com.google.common.collect.Maps;
+import io.github.clescot.client.http.okhttp.authentication.OAuth2ClientCredentialsFlowAuthenticator;
 import okhttp3.*;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
@@ -24,7 +26,7 @@ import java.util.Map;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.*;
 import static com.github.tomakehurst.wiremock.stubbing.Scenario.STARTED;
-import static io.github.clescot.client.http.HttpClientConfigDefinition.*;
+import static io.github.clescot.client.Constants.*;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 

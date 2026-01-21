@@ -1,10 +1,12 @@
-package io.github.clescot.kafka.connect.http.client;
+package io.github.clescot.client.http;
 
 import io.github.clescot.client.http.okhttp.OkHttpClient;
 import io.github.clescot.core.http.HttpExchange;
 import io.github.clescot.core.http.HttpRequest;
 import io.github.clescot.core.http.HttpResponse;
 import io.github.clescot.core.http.template.ExchangeTemplateManager;
+import okhttp3.Request;
+import okhttp3.Response;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -28,7 +30,7 @@ class HttpConfigurationTemplateTest {
     @Mock
     private ExecutorService mockExecutorService;
 
-    private HttpConfiguration<OkHttpClient, okhttp3.Request, okhttp3.Response> httpConfiguration;
+    private HttpConfiguration<OkHttpClient, Request, Response> httpConfiguration;
     private Map<String, String> settings;
 
     @BeforeEach

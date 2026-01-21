@@ -1,6 +1,7 @@
-package io.github.clescot.client.http.config;
+package io.github.clescot.client.http.ahc.config;
 
 import com.google.common.collect.Lists;
+import io.github.clescot.client.http.config.AddUserAgentHeaderToHttpRequestFunction;
 import io.github.clescot.core.http.HttpRequest;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;

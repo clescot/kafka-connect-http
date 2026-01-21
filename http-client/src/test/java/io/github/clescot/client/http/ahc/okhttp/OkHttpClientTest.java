@@ -1,4 +1,4 @@
-package io.github.clescot.client.http.okhttp;
+package io.github.clescot.client.http.ahc.okhttp;
 
 import com.github.tomakehurst.wiremock.client.WireMock;
 import com.github.tomakehurst.wiremock.core.Options;
@@ -10,10 +10,12 @@ import com.google.common.base.Stopwatch;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.io.Resources;
+import static io.github.clescot.client.Constants.*;
 import io.github.clescot.client.http.DummyX509Certificate;
 import io.github.clescot.client.http.HttpClient;
 import io.github.clescot.client.http.HttpClientFactory;
 import io.github.clescot.client.http.HttpException;
+import io.github.clescot.client.http.okhttp.OkHttpClientFactory;
 import io.github.clescot.client.http.proxy.URIRegexProxySelector;
 import io.github.clescot.core.http.*;
 import io.github.clescot.core.http.MediaType;
@@ -23,9 +25,7 @@ import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.composite.CompositeMeterRegistry;
 import io.micrometer.jmx.JmxMeterRegistry;
 import okhttp3.*;
-import okhttp3.Request;
-import okhttp3.Response;
-import okhttp3.internal.http.RealResponseBody;
+import okhttp3.Request;import okhttp3.Response;import okhttp3.internal.http.RealResponseBody;
 import okio.Buffer;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.assertj.core.util.Sets;
@@ -63,9 +63,7 @@ import static io.github.clescot.client.RequestClient.SHARED_RATE_LIMITERS;
 import static io.github.clescot.client.http.AbstractHttpClient.ACCEPT_NONE;
 import static io.github.clescot.client.http.HttpClient.THROWABLE_CLASS;
 import static io.github.clescot.client.http.HttpClient.THROWABLE_MESSAGE;
-import static io.github.clescot.client.http.HttpClientConfigDefinition.*;
 import static io.github.clescot.client.http.HttpClientFactory.CONFIGURATION_ID;
-import static io.github.clescot.kafka.connect.http.sink.HttpConfigDefinition.*;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doAnswer;
@@ -643,7 +641,7 @@ class OkHttpClientTest {
             HashMap<String, String> config = Maps.newHashMap();
             config.put(CONFIGURATION_ID, "default");
             config.put(HTTP_RESPONSE_BODY_LIMIT, "10");
-            OkHttpClient client = factory.build(config, null, new Random(), null, null, getCompositeMeterRegistry());
+            io.github.clescot.client.http.okhttp.OkHttpClient client = factory.build(config, null, new Random(), null, null, getCompositeMeterRegistry());
 
             HttpRequest httpRequest = new HttpRequest("http://dummy.com/", HttpRequest.Method.POST);
             httpRequest.setBodyAsString("stuff");
@@ -701,7 +699,7 @@ class OkHttpClientTest {
             HashMap<String, String> config = Maps.newHashMap();
             config.put(CONFIGURATION_ID, "default");
             config.put(HTTP_RESPONSE_BODY_LIMIT, "10");
-            OkHttpClient client = factory.build(config, null, new Random(), null, null, getCompositeMeterRegistry());
+            io.github.clescot.client.http.okhttp.OkHttpClient client = factory.build(config, null, new Random(), null, null, getCompositeMeterRegistry());
 
             HttpRequest httpRequest = new HttpRequest("http://dummy.com/", HttpRequest.Method.POST);
             httpRequest.setBodyAsString("stuff");
@@ -838,7 +836,7 @@ class OkHttpClientTest {
             HashMap<String, String> config = Maps.newHashMap();
             config.put(CONFIGURATION_ID, "default");
             config.put("rate.limiter.max.executions", "1");
-            OkHttpClient client = factory.build(config, null, new Random(), null, null, getCompositeMeterRegistry());
+            io.github.clescot.client.http.okhttp.OkHttpClient client = factory.build(config, null, new Random(), null, null, getCompositeMeterRegistry());
 
             HttpRequest httpRequest = getHttpRequest(wmRuntimeInfo);
             Stopwatch stopwatch = Stopwatch.createStarted();
@@ -885,7 +883,7 @@ class OkHttpClientTest {
             config.put("rate.limiter.max.executions", "" + length);
             config.put("rate.limiter.permits.per.execution", RATE_LIMITER_REQUEST_LENGTH_PER_CALL);
 
-            OkHttpClient client = factory.build(config, null, new Random(), null, null, getCompositeMeterRegistry());
+            io.github.clescot.client.http.okhttp.OkHttpClient client = factory.build(config, null, new Random(), null, null, getCompositeMeterRegistry());
 
 
             Stopwatch stopwatch = Stopwatch.createStarted();
@@ -932,7 +930,7 @@ class OkHttpClientTest {
             config.put("rate.limiter.max.executions", "" + length * 2);
             config.put("rate.limiter.permits.per.execution", RATE_LIMITER_REQUEST_LENGTH_PER_CALL);
 
-            OkHttpClient client = factory.build(config, null, new Random(), null, null, getCompositeMeterRegistry());
+            io.github.clescot.client.http.okhttp.OkHttpClient client = factory.build(config, null, new Random(), null, null, getCompositeMeterRegistry());
 
 
             Stopwatch stopwatch = Stopwatch.createStarted();
@@ -978,7 +976,7 @@ class OkHttpClientTest {
             config.put("rate.limiter.max.executions", "1");
             config.put("rate.limiter.permits.per.execution", DEFAULT_RATE_LIMITER_ONE_PERMIT_PER_CALL);
 
-            OkHttpClient client = factory.build(config, null, new Random(), null, null, getCompositeMeterRegistry());
+            io.github.clescot.client.http.okhttp.OkHttpClient client = factory.build(config, null, new Random(), null, null, getCompositeMeterRegistry());
 
             Stopwatch stopwatch = Stopwatch.createStarted();
             List<HttpExchange> exchanges = Lists.newArrayList();
@@ -1022,7 +1020,7 @@ class OkHttpClientTest {
             config.put(CONFIGURATION_ID, "default");
             config.put("dummy.config", "1");
 
-            OkHttpClient client = factory.build(config, null, new Random(), null, null, getCompositeMeterRegistry());
+            io.github.clescot.client.http.okhttp.OkHttpClient client = factory.build(config, null, new Random(), null, null, getCompositeMeterRegistry());
             HttpRequest httpRequest = getHttpRequest(wmRuntimeInfo);
             Stopwatch stopwatch = Stopwatch.createStarted();
             List<HttpExchange> exchanges = Lists.newArrayList();
@@ -1067,9 +1065,9 @@ class OkHttpClientTest {
             config.put("rate.limiter.max.executions", "1");
             config.put("rate.limiter.scope", "static");
 
-            OkHttpClient client1 = factory.build(config, null, new Random(), null, null, getCompositeMeterRegistry());
-            OkHttpClient client2 = factory.build(config, null, new Random(), null, null, getCompositeMeterRegistry());
-            assertThat(client1.getRateLimiter()).containsSame(client2.getRateLimiter().orElseThrow(()-> new HttpException("rate limiter is not the same")));
+            io.github.clescot.client.http.okhttp.OkHttpClient client1 = factory.build(config, null, new Random(), null, null, getCompositeMeterRegistry());
+            io.github.clescot.client.http.okhttp.OkHttpClient client2 = factory.build(config, null, new Random(), null, null, getCompositeMeterRegistry());
+            org.assertj.core.api.Assertions.assertThat(client1.getRateLimiter()).containsSame(client2.getRateLimiter().orElseThrow(()-> new HttpException("rate limiter is not the same")));
             HttpRequest httpRequest = getHttpRequest(wmRuntimeInfo);
             Stopwatch stopwatch = Stopwatch.createStarted();
             List<HttpExchange> exchanges = Lists.newArrayList();
@@ -1116,8 +1114,8 @@ class OkHttpClientTest {
             config.put(CONFIGURATION_ID, "default");
             config.put("rate.limiter.max.executions", "1");
 
-            OkHttpClient client1 = factory.build(config, null, new Random(), null, null, getCompositeMeterRegistry());
-            OkHttpClient client2 = factory.build(config, null, new Random(), null, null, getCompositeMeterRegistry());
+            io.github.clescot.client.http.okhttp.OkHttpClient client1 = factory.build(config, null, new Random(), null, null, getCompositeMeterRegistry());
+            io.github.clescot.client.http.okhttp.OkHttpClient client2 = factory.build(config, null, new Random(), null, null, getCompositeMeterRegistry());
 
             HttpRequest httpRequest = getHttpRequest(wmRuntimeInfo);
             Stopwatch stopwatch = Stopwatch.createStarted();
@@ -1170,7 +1168,7 @@ class OkHttpClientTest {
 
             HashMap<String, String> config = Maps.newHashMap();
             config.put(CONFIGURATION_ID, "default");
-            OkHttpClient client = factory.build(config, null, new Random(), null, null, getCompositeMeterRegistry());
+            io.github.clescot.client.http.okhttp.OkHttpClient client = factory.build(config, null, new Random(), null, null, getCompositeMeterRegistry());
 
             String baseUrl = "http://" + getIP() + ":" + wmRuntimeInfo.getHttpPort();
             String url = baseUrl + "/ping";
@@ -1212,7 +1210,7 @@ class OkHttpClientTest {
             HashMap<String, String> config = Maps.newHashMap();
             config.put(CONFIGURATION_ID, "default");
             config.put(CONFIG_DEFAULT_OKHTTP_INTERCEPTOR_LOGGING_ACTIVATE, "true");
-            OkHttpClient client = factory.build(config, null, new Random(), null, null, getCompositeMeterRegistry());
+            io.github.clescot.client.http.okhttp.OkHttpClient client = factory.build(config, null, new Random(), null, null, getCompositeMeterRegistry());
 
             String baseUrl = "http://" + getIP() + ":" + wmRuntimeInfo.getHttpPort();
             String url = baseUrl + "/ping";
@@ -1266,7 +1264,7 @@ class OkHttpClientTest {
             config.put("httpclient.authentication.basic.username", username);
             config.put("httpclient.authentication.basic.password", password);
 
-            OkHttpClient client = factory.build(config, null, new Random(), null, null, getCompositeMeterRegistry());
+            io.github.clescot.client.http.okhttp.OkHttpClient client = factory.build(config, null, new Random(), null, null, getCompositeMeterRegistry());
 
             String baseUrl = "http://" + getIP() + ":" + wmRuntimeInfo.getHttpPort();
             String url = baseUrl + "/ping";
@@ -1343,7 +1341,7 @@ class OkHttpClientTest {
             config.put("httpclient.authentication.digest.username", username);
             config.put("httpclient.authentication.digest.password", password);
             Random random = getFixedRandom();
-            OkHttpClient client = factory.build(config, null, random, null, null, getCompositeMeterRegistry());
+            io.github.clescot.client.http.okhttp.OkHttpClient client = factory.build(config, null, random, null, null, getCompositeMeterRegistry());
 
             String baseUrl = "http://" + getIP() + ":" + wmRuntimeInfo.getHttpPort();
             String url = baseUrl + "/ping";
@@ -1554,7 +1552,7 @@ class OkHttpClientTest {
                     );
 
 
-            OkHttpClient client = factory.build(config, null, new Random(), null, null, getCompositeMeterRegistry());
+            io.github.clescot.client.http.okhttp.OkHttpClient client = factory.build(config, null, new Random(), null, null, getCompositeMeterRegistry());
 
             HttpExchange httpExchange1 = client.call(httpRequest, new AtomicInteger(1)).get();
             assertThat(httpExchange1.getResponse().getStatusCode()).isEqualTo(200);
@@ -1603,7 +1601,7 @@ class OkHttpClientTest {
             Proxy proxy = new Proxy(Proxy.Type.HTTP, new InetSocketAddress(getIP(), wmRuntimeInfo.getHttpPort()));
 
 
-            OkHttpClient client = factory.build(config, null, new Random(), proxy, null, getCompositeMeterRegistry());
+            io.github.clescot.client.http.okhttp.OkHttpClient client = factory.build(config, null, new Random(), proxy, null, getCompositeMeterRegistry());
 
             HashMap<String, List<String>> headers = Maps.newHashMap();
             headers.put(CONTENT_TYPE, Lists.newArrayList("text/plain"));
@@ -1656,7 +1654,7 @@ class OkHttpClientTest {
             config.put(HTTP_CLIENT_PROXY_AUTHENTICATION_BASIC_PASSWORD, password);
             Proxy proxy = new Proxy(Proxy.Type.HTTP, new InetSocketAddress(getIP(), wmRuntimeInfo.getHttpPort()));
 
-            OkHttpClient client = factory.build(config, null, new Random(), proxy, null, getCompositeMeterRegistry());
+            io.github.clescot.client.http.okhttp.OkHttpClient client = factory.build(config, null, new Random(), proxy, null, getCompositeMeterRegistry());
 
             HashMap<String, List<String>> headers = Maps.newHashMap();
             headers.put(CONTENT_TYPE, Lists.newArrayList("text/plain"));
@@ -1742,7 +1740,7 @@ class OkHttpClientTest {
             config.put("httpclient.authentication.basic.password", password);
             Proxy proxy = new Proxy(Proxy.Type.HTTP, new InetSocketAddress(getIP(), wmRuntimeInfo.getHttpPort()));
 
-            OkHttpClient client = factory.build(config, null, new Random(), proxy, null, getCompositeMeterRegistry());
+            io.github.clescot.client.http.okhttp.OkHttpClient client = factory.build(config, null, new Random(), proxy, null, getCompositeMeterRegistry());
 
             HashMap<String, List<String>> headers = Maps.newHashMap();
             headers.put(CONTENT_TYPE, Lists.newArrayList("text/plain"));
@@ -1852,7 +1850,7 @@ class OkHttpClientTest {
                 return null;
             }).when(random).nextBytes(any(byte[].class));
 
-            OkHttpClient client = factory.build(config, null, random, proxy, null, getCompositeMeterRegistry());
+            io.github.clescot.client.http.okhttp.OkHttpClient client = factory.build(config, null, random, proxy, null, getCompositeMeterRegistry());
 
             HashMap<String, List<String>> headers = Maps.newHashMap();
             headers.put(CONTENT_TYPE, Lists.newArrayList("text/plain"));
@@ -2018,7 +2016,7 @@ class OkHttpClientTest {
             ImmutablePair<Predicate<URI>, Proxy> pair = new ImmutablePair<>(predicate, proxy);
             proxies.add(pair);
             URIRegexProxySelector proxySelector = new URIRegexProxySelector(proxies);
-            OkHttpClient client = factory.build(config, null, new Random(), null, proxySelector, getCompositeMeterRegistry());
+            io.github.clescot.client.http.okhttp.OkHttpClient client = factory.build(config, null, new Random(), null, proxySelector, getCompositeMeterRegistry());
 
             HashMap<String, List<String>> headers = Maps.newHashMap();
             headers.put(CONTENT_TYPE, Lists.newArrayList("text/plain"));
@@ -2080,7 +2078,7 @@ class OkHttpClientTest {
 
             URIRegexProxySelector proxySelector = new URIRegexProxySelector(proxies);
 
-            OkHttpClient client = factory.build(config, null, new Random(), null, proxySelector, getCompositeMeterRegistry());
+            io.github.clescot.client.http.okhttp.OkHttpClient client = factory.build(config, null, new Random(), null, proxySelector, getCompositeMeterRegistry());
             HashMap<String, List<String>> headers = Maps.newHashMap();
             headers.put(CONTENT_TYPE, Lists.newArrayList("text/plain"));
             headers.put("X-Correlation-ID", Lists.newArrayList("e6de70d1-f222-46e8-b755-754880687822"));
@@ -2155,7 +2153,7 @@ class OkHttpClientTest {
             config.put(OKHTTP_DOH_URL, "https://cloudflare-dns.com/dns-query");
             config.put(OKHTTP_DOH_BOOTSTRAP_DNS_HOSTS, "1.1.1.2,1.0.0.2");
             Random random = new Random();
-            OkHttpClient client = factory.build(config, null, random, null, null, getCompositeMeterRegistry());
+            io.github.clescot.client.http.okhttp.OkHttpClient client = factory.build(config, null, random, null, null, getCompositeMeterRegistry());
 
             HttpRequest httpRequest = new HttpRequest(
                     "https://www.google.com",
@@ -2175,7 +2173,7 @@ class OkHttpClientTest {
             config.put(OKHTTP_DOH_URL, "https://cloudflare-dns.com/dns-query");
             config.put(OKHTTP_DOH_BOOTSTRAP_DNS_HOSTS, "1.1.1.2,1.0.0.2");
             config.put(OKHTTP_DOH_INCLUDE_IPV6, "true");
-            OkHttpClient client = factory.build(config, null, new Random(), null, null, getCompositeMeterRegistry());
+            io.github.clescot.client.http.okhttp.OkHttpClient client = factory.build(config, null, new Random(), null, null, getCompositeMeterRegistry());
 
             HttpRequest httpRequest = new HttpRequest(
                     "https://www.google.com",
@@ -2195,7 +2193,7 @@ class OkHttpClientTest {
             config.put(OKHTTP_DOH_URL, "https://cloudflare-dns.com/dns-query");
             config.put(OKHTTP_DOH_USE_POST_METHOD, "true");
             config.put(OKHTTP_DOH_BOOTSTRAP_DNS_HOSTS, "1.1.1.2,1.0.0.2");
-            OkHttpClient client = factory.build(config, null, new Random(), null, null, getCompositeMeterRegistry());
+            io.github.clescot.client.http.okhttp.OkHttpClient client = factory.build(config, null, new Random(), null, null, getCompositeMeterRegistry());
 
             HttpRequest httpRequest = new HttpRequest(
                     "https://www.google.com",
@@ -2215,7 +2213,7 @@ class OkHttpClientTest {
             config.put(OKHTTP_DOH_RESOLVE_PUBLIC_ADDRESSES, "false");
             config.put(OKHTTP_DOH_URL, "https://cloudflare-dns.com/dns-query");
             config.put(OKHTTP_DOH_BOOTSTRAP_DNS_HOSTS, "1.1.1.2,1.0.0.2");
-            OkHttpClient client = factory.build(config, null, new Random(), null, null, getCompositeMeterRegistry());
+            io.github.clescot.client.http.okhttp.OkHttpClient client = factory.build(config, null, new Random(), null, null, getCompositeMeterRegistry());
 
             HttpRequest httpRequest = new HttpRequest(
                     "https://www.toto.com",
@@ -2238,7 +2236,7 @@ class OkHttpClientTest {
             config.put(OKHTTP_DOH_RESOLVE_PRIVATE_ADDRESSES, "false");
             config.put(OKHTTP_DOH_URL, "https://cloudflare-dns.com/dns-query");
             config.put(OKHTTP_DOH_BOOTSTRAP_DNS_HOSTS, "1.1.1.2,1.0.0.2");
-            OkHttpClient client = factory.build(config, null, new Random(), null, null, getCompositeMeterRegistry());
+            io.github.clescot.client.http.okhttp.OkHttpClient client = factory.build(config, null, new Random(), null, null, getCompositeMeterRegistry());
 
             HttpRequest httpRequest = new HttpRequest(
                     "https://localhost",
@@ -2275,7 +2273,7 @@ class OkHttpClientTest {
             config.put(OKHTTP_DOH_ACTIVATE, "true");
             config.put(OKHTTP_DOH_RESOLVE_PRIVATE_ADDRESSES, "true");
             config.put(OKHTTP_DOH_URL, "https://cloudflare-dns.com/dns-query");
-            OkHttpClient client = factory.build(config, null, new Random(), null, null, getCompositeMeterRegistry());
+            io.github.clescot.client.http.okhttp.OkHttpClient client = factory.build(config, null, new Random(), null, null, getCompositeMeterRegistry());
 
             HttpRequest httpRequest = new HttpRequest(
                     "http://127.0.0.1:" + wmHttp.getRuntimeInfo().getHttpPort() + "/ping",
@@ -2295,7 +2293,7 @@ class OkHttpClientTest {
             config.put(OKHTTP_DOH_ACTIVATE, "true");
             config.put(OKHTTP_DOH_URL, "https://cloudflare-dns.com/dns-query");
             config.put(OKHTTP_DOH_BOOTSTRAP_DNS_HOSTS, "1.1.1.2,1.0.0.2");
-            OkHttpClient client = factory.build(config, null, new Random(), null, null, getCompositeMeterRegistry());
+            io.github.clescot.client.http.okhttp.OkHttpClient client = factory.build(config, null, new Random(), null, null, getCompositeMeterRegistry());
 
             HttpRequest httpRequest = new HttpRequest(
                     "https://localhost",
@@ -2370,7 +2368,7 @@ class OkHttpClientTest {
             config.put(OKHTTP_SSL_SKIP_HOSTNAME_VERIFICATION, "true");
             WireMockRuntimeInfo wmRuntimeInfo = wmHttp.getRuntimeInfo();
             WireMock wireMock = wmRuntimeInfo.getWireMock();
-            OkHttpClient client = factory.build(config, null, new Random(), null, null, getCompositeMeterRegistry());
+            io.github.clescot.client.http.okhttp.OkHttpClient client = factory.build(config, null, new Random(), null, null, getCompositeMeterRegistry());
             String baseUrl = "https://" + getIP() + ":" + wmRuntimeInfo.getHttpsPort();
             String url = baseUrl + "/ping";
             HashMap<String, List<String>> headers = Maps.newHashMap();
@@ -2421,7 +2419,7 @@ class OkHttpClientTest {
             config.put("okhttp.connection.pool.keep.alive.duration", "1000");
 
 
-            OkHttpClient client = factory.build(config, null, new Random(), null, null, getCompositeMeterRegistry());
+            io.github.clescot.client.http.okhttp.OkHttpClient client = factory.build(config, null, new Random(), null, null, getCompositeMeterRegistry());
 
             String baseUrl = "http://" + getIP() + ":" + wmRuntimeInfo.getHttpPort();
             String url = baseUrl + "/ping";
@@ -2471,7 +2469,7 @@ class OkHttpClientTest {
             config.put("okhttp.connection.pool.max.idle.connections", "10");
             config.put("okhttp.connection.pool.keep.alive.duration", "1000");
 
-            OkHttpClient client = factory.build(config, null, new Random(), null, null, getCompositeMeterRegistry());
+            io.github.clescot.client.http.okhttp.OkHttpClient client = factory.build(config, null, new Random(), null, null, getCompositeMeterRegistry());
 
             HashMap<String, String> config2 = Maps.newHashMap();
             config2.put(CONFIGURATION_ID, "default");
@@ -2480,7 +2478,7 @@ class OkHttpClientTest {
             config2.put("okhttp.connection.pool.keep.alive.duration", "1000");
 
 
-            OkHttpClient client2 = factory.build(config2, null, new Random(), null, null, getCompositeMeterRegistry());
+            io.github.clescot.client.http.okhttp.OkHttpClient client2 = factory.build(config2, null, new Random(), null, null, getCompositeMeterRegistry());
             String baseUrl = "http://" + getIP() + ":" + wmRuntimeInfo.getHttpPort();
             String url = baseUrl + "/ping";
             HashMap<String, List<String>> headers = Maps.newHashMap();
@@ -2514,7 +2512,7 @@ class OkHttpClientTest {
             HttpExchange httpExchange4 = client2.call(httpRequest, new AtomicInteger(1)).get();
             assertThat(httpExchange4.getResponse().getStatusCode()).isEqualTo(200);
 
-            assertThat(client.getInternalClient().connectionPool()).isEqualTo(client2.getInternalClient().connectionPool());
+            org.assertj.core.api.Assertions.assertThat(client.getInternalClient().connectionPool()).isEqualTo(client2.getInternalClient().connectionPool());
         }
     }
 
@@ -2525,7 +2523,7 @@ class OkHttpClientTest {
         @Test
         void test_two_times_same_user(){
             Map<String, String> config = Maps.newHashMap();
-            OkHttpClient client = factory.build(config, null, new Random(), null, null, getCompositeMeterRegistry());
+            io.github.clescot.client.http.okhttp.OkHttpClient client = factory.build(config, null, new Random(), null, null, getCompositeMeterRegistry());
             HttpClient<Request, Response> client1 = client.customizeForUser("1");
             HttpClient<Request, Response> client2 = client.customizeForUser("1");
             assertThat(client1).isSameAs(client2);
@@ -2534,7 +2532,7 @@ class OkHttpClientTest {
         @Test
         void test_for_two_different_users() {
             Map<String, String> config = Maps.newHashMap();
-            OkHttpClient client = factory.build(config, null, new Random(), null, null, getCompositeMeterRegistry());
+            io.github.clescot.client.http.okhttp.OkHttpClient client = factory.build(config, null, new Random(), null, null, getCompositeMeterRegistry());
             HttpClient<Request, Response> client1 = client.customizeForUser("1");
             HttpClient<Request, Response> client2 = client.customizeForUser("2");
             assertThat(client1).isNotSameAs(client2);
@@ -2544,7 +2542,7 @@ class OkHttpClientTest {
         void test_for_two_different_users_with_cookie_policy_set_to_none() {
             Map<String, String> config = Maps.newHashMap();
             config.put(HTTP_COOKIE_POLICY,ACCEPT_NONE);
-            OkHttpClient client = factory.build(config, null, new Random(), null, null, getCompositeMeterRegistry());
+            io.github.clescot.client.http.okhttp.OkHttpClient client = factory.build(config, null, new Random(), null, null, getCompositeMeterRegistry());
             HttpClient<Request, Response> client1 = client.customizeForUser("1");
             assertThat(client1.getCookiePolicy()).isEqualTo(CookiePolicy.ACCEPT_NONE);
             HttpClient<Request, Response> client2 = client.customizeForUser("2");

@@ -31,7 +31,6 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
 
 import static io.github.clescot.client.Configuration.DEFAULT_CONFIGURATION_ID;
-import static io.github.clescot.client.http.HttpClientConfigDefinition.*;
 import static io.github.clescot.client.Constants.*;
 
 public class OkHttpClientFactory implements HttpClientFactory<OkHttpClient,Request, Response> {

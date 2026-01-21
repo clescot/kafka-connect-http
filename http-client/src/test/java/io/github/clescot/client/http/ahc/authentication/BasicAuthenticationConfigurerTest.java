@@ -1,14 +1,16 @@
-package io.github.clescot.client.http.okhttp.authentication;
+package io.github.clescot.client.http.ahc.authentication;
 
 import com.burgstaller.okhttp.basic.BasicAuthenticator;
 import com.google.common.collect.Maps;
+import io.github.clescot.client.http.okhttp.authentication.AuthenticationConfigurer;
+import io.github.clescot.client.http.okhttp.authentication.BasicAuthenticationConfigurer;
+import static io.github.clescot.client.Constants.*;
 import okhttp3.Authenticator;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 import java.util.HashMap;
 
-import static io.github.clescot.client.http.HttpClientConfigDefinition.*;
 import static org.assertj.core.api.Assertions.assertThat;
 
 class BasicAuthenticationConfigurerTest {

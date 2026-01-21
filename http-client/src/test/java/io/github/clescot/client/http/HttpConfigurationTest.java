@@ -1,4 +1,4 @@
-package io.github.clescot.kafka.connect.http.client;
+package io.github.clescot.client.http;
 
 import com.github.tomakehurst.wiremock.client.WireMock;
 import com.github.tomakehurst.wiremock.core.Options;
@@ -52,8 +52,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.github.tomakehurst.wiremock.stubbing.Scenario.STARTED;
 import static io.github.clescot.client.Configuration.DEFAULT_CONFIGURATION_ID;
+import static io.github.clescot.client.Constants.*;
 import static io.github.clescot.core.http.VersionUtils.VERSION;
-import static io.github.clescot.kafka.connect.http.sink.HttpConfigDefinition.*;
 import static org.assertj.core.api.Assertions.assertThat;
 
 @Execution(ExecutionMode.SAME_THREAD)

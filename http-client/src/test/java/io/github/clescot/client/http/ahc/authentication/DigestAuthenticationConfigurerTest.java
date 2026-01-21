@@ -1,7 +1,10 @@
-package io.github.clescot.client.http.okhttp.authentication;
+package io.github.clescot.client.http.ahc.authentication;
 
 import com.burgstaller.okhttp.digest.DigestAuthenticator;
 import com.google.common.collect.Maps;
+import io.github.clescot.client.http.okhttp.authentication.AuthenticationConfigurer;
+import io.github.clescot.client.http.okhttp.authentication.DigestAuthenticationConfigurer;
+import static io.github.clescot.client.Constants.*;
 import okhttp3.Authenticator;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -9,7 +12,6 @@ import org.junit.jupiter.api.Test;
 import java.util.Map;
 import java.util.Random;
 
-import static io.github.clescot.client.http.HttpClientConfigDefinition.*;
 import static org.assertj.core.api.Assertions.assertThat;
 
 class DigestAuthenticationConfigurerTest {
