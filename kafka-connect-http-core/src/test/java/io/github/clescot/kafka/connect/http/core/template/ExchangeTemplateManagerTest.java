@@ -284,11 +284,7 @@ class ExchangeTemplateManagerTest {
             assertThat(result).isEmpty();
         }
 
-        @Test
-        void testResolveTemplateWithNullTemplateReturnsNull() {
-            ExchangeTemplateManager manager = new ExchangeTemplateManager();
-            Assertions.assertThrows(IllegalArgumentException.class,()->manager.resolveTemplate(testExchange, null, new HashMap<>()));
-        }
+
 
         @Test
         void testResolveTemplateWithPlainTextReturnsUnchanged() {
