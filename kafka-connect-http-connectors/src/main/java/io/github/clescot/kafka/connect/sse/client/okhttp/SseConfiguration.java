@@ -51,9 +51,9 @@ public class SseConfiguration implements Configuration<OkHttpClient, HttpRequest
 
     /**
      *
-     * @param configurationId
-     * @param httpClient
-     * @param settings        prefix config.<configurationId>.* should be removed
+     * @param configurationId configuration id
+     * @param httpClient HTTP Client
+     * @param settings prefix config.configurationId.* should be removed
      */
     public SseConfiguration(String configurationId,
                             OkHttpClient httpClient,
