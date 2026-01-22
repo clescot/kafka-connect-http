@@ -5,16 +5,12 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.base.Strings;
 import com.google.common.collect.Maps;
 import de.sstoehr.harreader.model.*;
-import org.apache.kafka.connect.data.Schema;
-import org.apache.kafka.connect.data.SchemaBuilder;
-import org.apache.kafka.connect.data.Struct;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.Serial;
 import java.io.Serializable;
 import java.time.OffsetDateTime;
 import java.time.ZonedDateTime;
-import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -26,29 +22,13 @@ import static io.github.clescot.core.http.VersionUtils.VERSION;
 public class HttpExchange implements Exchange<HttpRequest,HttpResponse>,Cloneable, Serializable {
     @Serial
     private static final long serialVersionUID = 1L;
-    public static final int HTTP_EXCHANGE_VERSION = 2;
     public static final String DURATION_IN_MILLIS_KEY = "durationInMillis";
     public static final String MOMENT_KEY = "moment";
     public static final String ATTEMPTS_KEY = "attempts";
     public static final String HTTP_REQUEST_KEY = "httpRequest";
     public static final String HTTP_RESPONSE_KEY = "httpResponse";
     public static final String ATTRIBUTES_KEY = "attributes";
-    private static final String TIMINGS_KEY = "timings";
-    public static final Schema SCHEMA = SchemaBuilder
-            .struct()
-            .name(HttpExchange.class.getName())
-            .version(HTTP_EXCHANGE_VERSION)
-            //metadata fields
-            .field(DURATION_IN_MILLIS_KEY, Schema.INT64_SCHEMA)
-            .field(MOMENT_KEY, Schema.STRING_SCHEMA)
-            .field(ATTEMPTS_KEY, Schema.INT32_SCHEMA)
-            //request
-            .field(HTTP_REQUEST_KEY, HttpRequest.SCHEMA)
-            // response
-            .field(HTTP_RESPONSE_KEY, HttpResponse.SCHEMA)
-            .field(ATTRIBUTES_KEY, SchemaBuilder.map(Schema.STRING_SCHEMA,Schema.STRING_SCHEMA).optional().schema())
-            .field(TIMINGS_KEY,SchemaBuilder.map(Schema.STRING_SCHEMA,Schema.OPTIONAL_INT64_SCHEMA).optional().schema())
-            .schema();
+    public static final String TIMINGS_KEY = "timings";
     public static final String RESPONSE_HEADERS_TIMING_KEY = "responseHeaders";
     public static final String RESPONSE_BODY_TIMING_KEY = "responseBody";
     public static final String DIRECT_ELAPSED_TIME_TIMING_KEY = "directElapsedTime";
@@ -170,20 +150,6 @@ public class HttpExchange implements Exchange<HttpRequest,HttpResponse>,Cloneabl
                 '}';
     }
 
-    public Struct toStruct(){
-        Struct struct = new Struct(SCHEMA);
-        struct.put(DURATION_IN_MILLIS_KEY,this.getDurationInMillis());
-        struct.put(ATTRIBUTES_KEY,this.getAttributes());
-        struct.put(MOMENT_KEY,this.getMoment().format(DateTimeFormatter.ISO_ZONED_DATE_TIME));
-        struct.put(ATTEMPTS_KEY,this.attempts.intValue());
-        //request fields
-        struct.put(HTTP_REQUEST_KEY, this.httpRequest.toStruct());
-        // response fields
-        struct.put(HTTP_RESPONSE_KEY, this.httpResponse.toStruct());
-        struct.put(TIMINGS_KEY,this.getTimings());
-        return struct;
-
-    }
 
     public static HttpExchange fromHarEntry(HarEntry harEntry){
         HttpRequest httpRequest = HttpRequest.fromHarRequest(harEntry.request());

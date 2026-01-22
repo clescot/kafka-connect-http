@@ -53,21 +53,7 @@ public class HttpResponse implements Response, Cloneable, Serializable {
     private Integer headersLimit = Integer.MAX_VALUE;
     private Integer bodyLimit = Integer.MAX_VALUE;
 
-    public static final Schema SCHEMA = SchemaBuilder
-            .struct()
-            .name(HttpResponse.class.getName())
-            .version(VERSION)
-            .field(STATUS_CODE_FIELD, Schema.INT64_SCHEMA)
-            .field(STATUS_MESSAGE_FIELD, Schema.STRING_SCHEMA)
-            .field(PROTOCOL_FIELD, Schema.OPTIONAL_STRING_SCHEMA)
-            .field(HEADERS_FIELD, SchemaBuilder.map(Schema.STRING_SCHEMA, SchemaBuilder.array(Schema.STRING_SCHEMA)).build())
-            .field(BODY_TYPE_FIELD, Schema.STRING_SCHEMA)
-            .field(BODY_AS_BYTE_ARRAY_FIELD, Schema.OPTIONAL_STRING_SCHEMA)
-            .field(BODY_AS_FORM_FIELD, SchemaBuilder.map(Schema.STRING_SCHEMA, Schema.STRING_SCHEMA).optional().schema())
-            .field(BODY_AS_STRING_FIELD, Schema.OPTIONAL_STRING_SCHEMA)
-            .field(PARTS_FIELD, SchemaBuilder.array(HttpPart.SCHEMA).optional().schema())
-            .field(ATTRIBUTES_FIELD, SchemaBuilder.map(Schema.STRING_SCHEMA, Schema.STRING_SCHEMA).optional().schema())
-            .schema();
+
 
     @JsonProperty(required = true)
     private Integer statusCode;
@@ -410,18 +396,7 @@ public class HttpResponse implements Response, Cloneable, Serializable {
                 '}';
     }
 
-    public Struct toStruct() {
-        return new Struct(SCHEMA)
-                .put(STATUS_CODE_FIELD, this.getStatusCode().longValue())
-                .put(STATUS_MESSAGE_FIELD, this.getStatusMessage())
-                .put(PROTOCOL_FIELD, this.getProtocol())
-                .put(HEADERS_FIELD, this.getHeaders())
-                .put(BODY_TYPE_FIELD, this.getBodyType().toString())
-                .put(BODY_AS_BYTE_ARRAY_FIELD, this.bodyAsByteArray)
-                .put(BODY_AS_STRING_FIELD, this.getBodyAsString())
-                .put(ATTRIBUTES_FIELD, this.getAttributes())
-                ;
-    }
+
 
     @Override
     public Object clone() {

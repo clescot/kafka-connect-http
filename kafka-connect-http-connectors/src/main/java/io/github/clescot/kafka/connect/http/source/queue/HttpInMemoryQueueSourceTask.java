@@ -5,6 +5,8 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import io.github.clescot.core.http.HttpExchange;
 import io.github.clescot.core.http.HttpResponse;
+import io.github.clescot.kafka.connect.http.HttpExchangeAdapter;
+import io.github.clescot.kafka.connect.http.HttpResponseAdapter;
 import io.github.clescot.kafka.connect.queue.KafkaRecord;
 import io.github.clescot.client.queue.QueueFactory;
 import org.apache.kafka.connect.data.Struct;
@@ -66,9 +68,9 @@ public class HttpInMemoryQueueSourceTask extends SourceTask {
         Struct struct;
         if("response".equalsIgnoreCase(sourceConfig.getContent())){
             HttpResponse httpResponse = httpExchange.getResponse();
-            struct = httpResponse.toStruct();
+            struct = HttpResponseAdapter.from(httpResponse).toStruct();
         }else {
-            struct = httpExchange.toStruct();
+            struct = HttpExchangeAdapter.from(httpExchange).toStruct();
         }
 
         LOGGER.debug("HttpSourcetask Struct received :{}",struct);

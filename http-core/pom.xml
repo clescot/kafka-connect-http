@@ -74,15 +74,6 @@
             <version>2.9.0</version>
         </dependency>
 
-        <!-- provided dependencies -->
-        <!-- TODO to remove -->
-        <dependency>
-            <groupId>org.apache.kafka</groupId>
-            <artifactId>connect-api</artifactId>
-            <version>${kafka.version}</version>
-            <scope>provided</scope>
-        </dependency>
-
         <!-- test dependencies -->
         <dependency>
             <groupId>org.junit.jupiter</groupId>

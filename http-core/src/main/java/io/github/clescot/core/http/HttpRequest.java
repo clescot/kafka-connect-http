@@ -12,9 +12,6 @@ import de.sstoehr.harreader.model.HarPostData;
 import de.sstoehr.harreader.model.HarPostDataParam;
 import de.sstoehr.harreader.model.HarRequest;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.kafka.connect.data.Schema;
-import org.apache.kafka.connect.data.SchemaBuilder;
-import org.apache.kafka.connect.data.Struct;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -27,7 +24,6 @@ import java.time.Instant;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import java.util.stream.Collectors;
 
 import static com.fasterxml.jackson.annotation.JsonInclude.Include;
 import static io.github.clescot.core.http.MediaType.APPLICATION_X_WWW_FORM_URLENCODED;
@@ -75,20 +71,6 @@ public class HttpRequest implements Request, Cloneable, Serializable {
 
     @JsonProperty(defaultValue = "STRING")
     private BodyType bodyType;
-    public static final Schema SCHEMA = SchemaBuilder
-            .struct()
-            .name(HttpPart.class.getName())
-            .version(VERSION)
-            .field(URL_FIELD, Schema.STRING_SCHEMA)
-            .field(HEADERS_FIELD, SchemaBuilder.map(Schema.STRING_SCHEMA, SchemaBuilder.array(Schema.STRING_SCHEMA).schema()).build())
-            .field(METHOD_FIELD, Schema.STRING_SCHEMA)
-            .field(BODY_TYPE_FIELD, Schema.STRING_SCHEMA)
-            .field(BODY_AS_BYTE_ARRAY_FIELD, Schema.OPTIONAL_STRING_SCHEMA)
-            .field(BODY_AS_FORM_FIELD, SchemaBuilder.map(Schema.STRING_SCHEMA, Schema.STRING_SCHEMA).optional().schema())
-            .field(BODY_AS_STRING_FIELD, Schema.OPTIONAL_STRING_SCHEMA)
-            .field(PARTS_FIELD, SchemaBuilder.map(Schema.STRING_SCHEMA, HttpPart.SCHEMA).optional().schema())
-            .field(ATTRIBUTES_FIELD, SchemaBuilder.map(Schema.STRING_SCHEMA, Schema.STRING_SCHEMA).optional().schema())
-            .schema();
 
     /**
      * only for json deserialization
@@ -138,53 +120,9 @@ public class HttpRequest implements Request, Cloneable, Serializable {
     }
 
 
-    public HttpRequest(Struct requestAsstruct) {
-        this.url = requestAsstruct.getString(URL_FIELD);
-        Preconditions.checkNotNull(url, "'url' is required");
 
-        Map<String, List<String>> headers = requestAsstruct.getMap(HEADERS_FIELD);
-        if (headers != null && !headers.isEmpty()) {
-            this.headers = headers;
-        } else {
-            this.headers = Maps.newHashMap();
-        }
 
-        this.method = HttpRequest.Method.valueOf(requestAsstruct.getString(METHOD_FIELD).toUpperCase());
-        Preconditions.checkNotNull(method, "'method' is required");
 
-        this.bodyType = BodyType.valueOf(Optional.ofNullable(requestAsstruct.getString(BODY_TYPE_FIELD)).orElse(BodyType.STRING.name()));
-
-        this.bodyAsByteArray = requestAsstruct.getString(BODY_AS_BYTE_ARRAY_FIELD);
-        this.bodyAsString = requestAsstruct.getString(BODY_AS_STRING_FIELD);
-        this.bodyAsForm = requestAsstruct.getMap(BODY_AS_FORM_FIELD);
-
-        Map<String, Struct> structs = requestAsstruct.getMap(PARTS_FIELD);
-        if (structs != null) {
-            //this is a multipart request
-            for (Map.Entry<String, Struct> entry : structs.entrySet()) {
-                HttpPart httpPart = new HttpPart(entry.getValue());
-                parts.put(entry.getKey(), httpPart);
-                if (!headersFromPartAreValid(httpPart)) {
-                    LOGGER.warn("this is a multipart request. headers from part are not valid : there is at least one header that is not 'Content-Disposition', 'Content-Type' or 'Content-Transfer-Encoding'. clearing headers from this part");
-                    httpPart.getHeaders().clear();
-                }
-            }
-        }
-
-    }
-
-    private boolean headersFromPartAreValid(HttpPart httpPart) {
-        Map<String, List<String>> headersFromPart = httpPart.getHeaders();
-        if (headersFromPart != null && !headersFromPart.isEmpty()) {
-            return headersFromPart.keySet().stream()
-                    .filter(key -> !key.equalsIgnoreCase("Content-Disposition"))
-                    .filter(key -> !key.equalsIgnoreCase(MediaType.KEY))
-                    .filter(key -> !key.equalsIgnoreCase("Content-Transfer-Encoding"))
-                    .findAny().isEmpty();
-
-        }
-        return true;
-    }
 
     public URL toUrl() {
         if (url != null) {
@@ -343,25 +281,6 @@ public class HttpRequest implements Request, Cloneable, Serializable {
                 '}';
     }
 
-    public Struct toStruct() {
-        return new Struct(SCHEMA)
-                .put(URL_FIELD, this.getUrl())
-                .put(ATTRIBUTES_FIELD, this.getAttributes())
-                .put(HEADERS_FIELD, this.getHeaders())
-                .put(METHOD_FIELD, this.getMethod().name())
-                .put(BODY_TYPE_FIELD, this.getBodyType().name())
-                .put(BODY_AS_BYTE_ARRAY_FIELD, this.bodyAsByteArray)
-                .put(BODY_AS_FORM_FIELD, this.getBodyAsForm())
-                .put(BODY_AS_STRING_FIELD, this.getBodyAsString())
-                .put(PARTS_FIELD,
-                        this.getParts().entrySet().stream()
-                                .collect(
-                                        Collectors.toMap(Map.Entry::getKey,
-                                                entry -> entry.getValue().toStruct())
-                                )
-                )
-                ;
-    }
 
     public void setBodyAsString(String bodyAsString) {
         this.bodyAsString = bodyAsString;
