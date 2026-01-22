@@ -3,6 +3,7 @@ package io.github.clescot.client.http.ahc.interceptor;
 import com.google.common.collect.Lists;
 import io.github.clescot.client.http.DummyX509Certificate;
 import io.github.clescot.client.http.okhttp.interceptor.SSLHandshakeInterceptor;
+import okhttp3.*;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;

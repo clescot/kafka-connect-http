@@ -1,7 +1,5 @@
 package io.github.clescot.core.http;
 
-import org.apache.kafka.connect.errors.ConnectException;
-
 import java.io.IOException;
 import java.util.Properties;
 
@@ -16,7 +14,7 @@ public class VersionUtils {
         try {
             properties.load(VersionUtils.class.getClassLoader().getResourceAsStream("project.properties"));
         } catch (IOException e) {
-            throw new ConnectException(e);
+            throw new IllegalStateException(e);
         }
         return (String) properties.get("version");
     }

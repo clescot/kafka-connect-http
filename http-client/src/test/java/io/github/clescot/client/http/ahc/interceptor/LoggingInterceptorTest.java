@@ -1,6 +1,7 @@
 package io.github.clescot.client.http.ahc.interceptor;
 
 import io.github.clescot.client.http.okhttp.interceptor.LoggingInterceptor;
+import okhttp3.*;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;

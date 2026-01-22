@@ -1,42 +1,24 @@
 package io.github.clescot.core.http;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
-import io.confluent.connect.json.JsonSchemaConverter;
-import io.confluent.connect.json.JsonSchemaConverterConfig;
 import io.confluent.kafka.schemaregistry.ParsedSchema;
 import io.confluent.kafka.schemaregistry.client.MockSchemaRegistryClient;
-import io.confluent.kafka.schemaregistry.client.SchemaRegistryClient;
 import io.confluent.kafka.schemaregistry.client.rest.exceptions.RestClientException;
 import io.confluent.kafka.schemaregistry.json.JsonSchemaProvider;
 import io.confluent.kafka.schemaregistry.json.SpecificationVersion;
-import io.confluent.kafka.serializers.json.KafkaJsonSchemaDeserializer;
-import io.confluent.kafka.serializers.json.KafkaJsonSchemaDeserializerConfig;
-import io.confluent.kafka.serializers.json.KafkaJsonSchemaSerializer;
 import io.confluent.kafka.serializers.json.KafkaJsonSchemaSerializerConfig;
-import org.apache.kafka.connect.data.Schema;
-import org.apache.kafka.connect.data.SchemaAndValue;
-import org.apache.kafka.connect.data.Struct;
-import org.json.JSONException;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
-import org.skyscreamer.jsonassert.JSONAssert;
 
-import java.io.File;
 import java.io.IOException;
-import java.net.URISyntaxException;
-import java.net.URL;
 import java.nio.charset.StandardCharsets;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
-import static io.github.clescot.core.http.HttpRequest.BODY_AS_BYTE_ARRAY_FIELD;
-import static io.github.clescot.core.http.MediaType.APPLICATION_X_WWW_FORM_URLENCODED;
 import static io.github.clescot.core.http.SchemaLoader.*;
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -49,33 +31,6 @@ class HttpRequestTest {
     private static final String REQUEST_TOPIC = "dummy_request";
     private static final String EXCHANGE_TOPIC = "dummy_exchange";
 
-    @BeforeEach
-    public void setup() throws RestClientException, IOException {
-        SpecificationVersion jsonSchemaSpecification = SpecificationVersion.DRAFT_2019_09;
-        Map<String,String> jsonSchemaSerializerConfig = Maps.newHashMap();
-        jsonSchemaSerializerConfig.put(KafkaJsonSchemaSerializerConfig.SCHEMA_REGISTRY_URL_CONFIG,"mock://stuff.com");
-        jsonSchemaSerializerConfig.put(KafkaJsonSchemaSerializerConfig.SCHEMA_SPEC_VERSION,jsonSchemaSpecification.toString());
-        jsonSchemaSerializerConfig.put(KafkaJsonSchemaSerializerConfig.WRITE_DATES_AS_ISO8601,"true");
-        jsonSchemaSerializerConfig.put(KafkaJsonSchemaSerializerConfig.ONEOF_FOR_NULLABLES,""+false);
-        jsonSchemaSerializerConfig.put(KafkaJsonSchemaSerializerConfig.FAIL_INVALID_SCHEMA,""+true);
-        jsonSchemaSerializerConfig.put(KafkaJsonSchemaSerializerConfig.FAIL_UNKNOWN_PROPERTIES,""+true);
-
-        MockSchemaRegistryClient schemaRegistryClient = new MockSchemaRegistryClient(Lists.newArrayList(new JsonSchemaProvider()));
-        //Register http part
-        ParsedSchema parsedPartSchema = loadHttpPartSchema();
-        schemaRegistryClient.register("httpPart"+"-value", parsedPartSchema);
-        //register http request
-        ParsedSchema parsedHttpRequestSchema = loadHttpRequestSchema();
-        schemaRegistryClient.register(REQUEST_TOPIC+"-value", parsedHttpRequestSchema);
-        //register http response
-        ParsedSchema parsedHttpResponseSchema = loadHttpResponseSchema();
-        schemaRegistryClient.register(RESPONSE_TOPIC+"-value", parsedHttpResponseSchema);
-        //register http exchange
-        ParsedSchema parsedHttpExchangeSchema = loadHttpExchangeSchema();
-        schemaRegistryClient.register(EXCHANGE_TOPIC+"-value", parsedHttpExchangeSchema);
-
-
-    }
 
 
 

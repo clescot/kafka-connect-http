@@ -38,10 +38,8 @@ import static org.assertj.core.api.AssertionsForInterfaceTypes.assertThat;
 
 public class HttpExchangeTest {
     public static final boolean SUCCESS = true;
-    public static final String DUMMY_TOPIC = "dummy_topic";
-    MockSchemaRegistryClient schemaRegistryClient;
-    private KafkaJsonSchemaSerializer<HttpExchange> serializer;
-    private KafkaJsonSchemaDeserializer<HttpExchange> deserializer;
+
+
 
     private HttpRequest getDummyHttpRequest() {
         HttpRequest httpRequest = new HttpRequest(
@@ -55,39 +53,6 @@ public class HttpExchangeTest {
                 statusCode, "OK");
         httpResponse.setBodyAsString("nfgnlksdfnlnskdfnlsf");
         return httpResponse;
-    }
-
-    @BeforeEach
-    void setup() throws RestClientException, IOException {
-        SpecificationVersion jsonSchemaSpecification = SpecificationVersion.DRAFT_2019_09;
-        boolean useOneOfForNullables = false;
-        boolean failUnknownProperties = true;
-        Map<String, String> jsonSchemaSerializerConfig = Maps.newHashMap();
-        jsonSchemaSerializerConfig.put(KafkaJsonSchemaSerializerConfig.SCHEMA_REGISTRY_URL_CONFIG, "mock://stuff.com");
-        jsonSchemaSerializerConfig.put(KafkaJsonSchemaSerializerConfig.SCHEMA_SPEC_VERSION, jsonSchemaSpecification.toString());
-        jsonSchemaSerializerConfig.put(KafkaJsonSchemaSerializerConfig.WRITE_DATES_AS_ISO8601, "true");
-        jsonSchemaSerializerConfig.put(KafkaJsonSchemaSerializerConfig.ONEOF_FOR_NULLABLES, "" + useOneOfForNullables);
-        jsonSchemaSerializerConfig.put(KafkaJsonSchemaSerializerConfig.FAIL_UNKNOWN_PROPERTIES, "" + failUnknownProperties);
-
-        JsonSchemaProvider jsonSchemaProvider = new JsonSchemaProvider();
-
-        schemaRegistryClient = new MockSchemaRegistryClient(Lists.newArrayList(jsonSchemaProvider));
-        ParsedSchema parsedSchemaRequest = SchemaLoader.loadHttpRequestSchema();
-        schemaRegistryClient.register("httpRequest", parsedSchemaRequest);
-        ParsedSchema parsedSchemaResponse = SchemaLoader.loadHttpResponseSchema();
-        schemaRegistryClient.register("httpResponse", parsedSchemaResponse);
-        ParsedSchema parsedSchemaExchange = SchemaLoader.loadHttpExchangeSchema();
-        schemaRegistryClient.register("httpExchange", parsedSchemaExchange);
-
-        serializer = new KafkaJsonSchemaSerializer<>(schemaRegistryClient, jsonSchemaSerializerConfig);
-
-        Map<String,String> jsonSchemaDeserializerConfig = Maps.newHashMap();
-        jsonSchemaDeserializerConfig.put(KafkaJsonSchemaDeserializerConfig.SCHEMA_REGISTRY_URL_CONFIG,"mock://stuff.com");
-        jsonSchemaDeserializerConfig.put(KafkaJsonSchemaDeserializerConfig.JSON_VALUE_TYPE,HttpExchange.class.getName());
-        jsonSchemaDeserializerConfig.put(KafkaJsonSchemaDeserializerConfig.FAIL_INVALID_SCHEMA,"true");
-        jsonSchemaDeserializerConfig.put(KafkaJsonSchemaDeserializerConfig.FAIL_UNKNOWN_PROPERTIES,""+true);
-        deserializer = new KafkaJsonSchemaDeserializer<>(schemaRegistryClient,jsonSchemaDeserializerConfig, HttpExchange.class);
-
     }
 
     @Nested
@@ -315,52 +280,7 @@ public class HttpExchangeTest {
             assertThat(httpExchange.getResponse().getStatusCode()).isEqualTo(statusCode);
         }
 
-        @Test
-        void generate_json_schema() throws IOException {
-            int statusCode = 200;
-            HttpExchange httpExchange = new HttpExchange(
-                    getDummyHttpRequest(),
-                    getDummyHttpResponse(statusCode),
-                    745L,
-                    OffsetDateTime.now(),
-                    new AtomicInteger(2),
-                    SUCCESS
-            );
 
-            //get JSON schema
-            SpecificationVersion jsonSchemaSpecification = SpecificationVersion.DRAFT_2019_09;
-            boolean useOneOfForNullables = false;
-            boolean failUnknownProperties = true;
-            JsonSchema expectedJsonSchema = JsonSchemaUtils.getSchema(
-                    httpExchange,
-                    jsonSchemaSpecification,
-                    useOneOfForNullables,
-                    failUnknownProperties,
-                    schemaRegistryClient
-            );
-            assertThat(expectedJsonSchema).isNotNull();
-        }
-
-        @Test
-        void test_serialize_http_exchange() {
-            int statusCode = 200;
-            HttpExchange httpExchange = new HttpExchange(
-                    getDummyHttpRequest(),
-                    getDummyHttpResponse(statusCode),
-                    745L,
-                    OffsetDateTime.now(ZoneId.of("UTC")),
-                    new AtomicInteger(2),
-                    SUCCESS
-            );
-
-
-            byte[] bytes = serializer.serialize(DUMMY_TOPIC, httpExchange);
-            assertThat(bytes).isNotEmpty();
-            HttpExchange deserializedHttpExchange = deserializer.deserialize(DUMMY_TOPIC, bytes);
-            assertThat(deserializedHttpExchange.getRequest()).isEqualTo(httpExchange.getRequest());
-            assertThat(deserializedHttpExchange.getResponse()).isEqualTo(httpExchange.getResponse());
-            assertThat(deserializedHttpExchange).isEqualTo(httpExchange);
-        }
     }
 
     @Nested

@@ -1,5 +1,6 @@
 package io.github.clescot.client.http.okhttp.interceptor;
 
+import okhttp3.*;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -17,7 +18,7 @@ public class SSLHandshakeInterceptor implements Interceptor {
 
     @NotNull
     @Override
-    public Response intercept(@NotNull Chain chain) throws IOException {
+    public Response intercept(@NotNull Interceptor.Chain chain) throws IOException {
         Request request = chain.request();
         Connection connection = chain.connection();
         if (connection != null) {
