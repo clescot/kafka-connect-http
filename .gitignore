@@ -3,6 +3,8 @@
 *.bkp
 *.html
 *.iml
+*.ipr
+*.iws
 /src/.~lock.*
 /kafka-connect-http-core/target/
 /kafka-connect-http-connectors/target/
