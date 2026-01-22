@@ -5,7 +5,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
-import org.apache.kafka.connect.data.Struct;
 import org.json.JSONException;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Nested;
@@ -185,38 +184,10 @@ class HttpPartTest {
             URL url = Thread.currentThread().getContextClassLoader().getResource("upload.txt");
             assertDoesNotThrow(()->new HttpPart(headers,"filename",new File(Objects.requireNonNull(url).toURI())));
         }
-        @Test
-        void test_constructor_with_struct_and_body_as_string(){
-            Map<String,List<String>> headers = new HashMap<>();
-            headers.put("Content-Type",List.of("application/json"));
-            Struct struct = new Struct(HttpPart.SCHEMA);
-            struct.put("headers",headers);
-            struct.put("bodyType",STRING.toString());
-            struct.put("bodyAsString","dummy string");
-            HttpPart httpPart = new HttpPart(struct);
-            assertThat(httpPart.getBodyType()).isEqualTo(STRING);
-            assertThat(httpPart.getContentAsString()).isEqualTo("dummy string");
-        }
+
     }
 
-    @Nested
-    class TestToStruct{
-        @Test
-        void test_to_struct_content_as_byte_array() {
-            HttpPart httpPart = new HttpPart("test".getBytes(StandardCharsets.UTF_8));
-            Struct struct = httpPart.toStruct();
-            assertThat(struct.getString("bodyType")).isEqualTo(HttpPart.BodyType.BYTE_ARRAY.toString());
-            assertThat(new String(Base64.getDecoder().decode(struct.getString("bodyAsByteArray")))).isEqualTo("test");
-        }
 
-        @Test
-        void test_to_struct_content_as_string() {
-            HttpPart httpPart = new HttpPart("test");
-            Struct struct = httpPart.toStruct();
-            assertThat(struct.getString("bodyType")).isEqualTo(HttpPart.BodyType.STRING.toString());
-            assertThat(struct.getString("bodyAsString")).isEqualTo("test");
-        }
-    }
 
 
     @Nested

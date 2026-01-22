@@ -179,11 +179,11 @@ class HttpRequestAdapterTest {
 
             Map<String,Struct> parts = Maps.newHashMap();
             HttpPart part1 = new HttpPart("part1".getBytes(StandardCharsets.UTF_8));
-            parts.put("part1",part1.toStruct());
+            parts.put("part1",HttpPartAdapter.from(part1).toStruct());
             HttpPart part2 = new HttpPart("part2".getBytes(StandardCharsets.UTF_8));
-            parts.put("part2",part2.toStruct());
+            parts.put("part2",HttpPartAdapter.from(part2).toStruct());
             HttpPart part3 = new HttpPart("part3".getBytes(StandardCharsets.UTF_8));
-            parts.put("part3",part3.toStruct());
+            parts.put("part3",HttpPartAdapter.from(part3).toStruct());
 
             httpRequestStruct.put(HttpRequest.PARTS_FIELD, parts);
 

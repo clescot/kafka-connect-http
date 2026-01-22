@@ -12,7 +12,6 @@ import org.apache.kafka.connect.data.Struct;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Map;
@@ -36,7 +35,7 @@ public class HttpRequestAdapter {
             .field(BODY_AS_BYTE_ARRAY_FIELD, Schema.OPTIONAL_STRING_SCHEMA)
             .field(BODY_AS_FORM_FIELD, SchemaBuilder.map(Schema.STRING_SCHEMA, Schema.STRING_SCHEMA).optional().schema())
             .field(BODY_AS_STRING_FIELD, Schema.OPTIONAL_STRING_SCHEMA)
-            .field(PARTS_FIELD, SchemaBuilder.map(Schema.STRING_SCHEMA, HttpPart.SCHEMA).optional().schema())
+            .field(PARTS_FIELD, SchemaBuilder.map(Schema.STRING_SCHEMA, HttpPartAdapter.SCHEMA).optional().schema())
             .field(ATTRIBUTES_FIELD, SchemaBuilder.map(Schema.STRING_SCHEMA, Schema.STRING_SCHEMA).optional().schema())
             .schema();
 
@@ -71,7 +70,7 @@ public class HttpRequestAdapter {
             //this is a multipart request
 
             for (Map.Entry<String, Struct> entry : structs.entrySet()) {
-                HttpPart httpPart = new HttpPart(entry.getValue());
+                HttpPart httpPart = HttpPartAdapter.from(entry.getValue()).toHttpPart();
                 parts.put(entry.getKey(), httpPart);
                 if (!headersFromPartAreValid(httpPart)) {
                     LOGGER.warn("this is a multipart request. headers from part are not valid : there is at least one header that is not 'Content-Disposition', 'Content-Type' or 'Content-Transfer-Encoding'. clearing headers from this part");
@@ -126,7 +125,7 @@ public class HttpRequestAdapter {
                         httpRequest.getParts().entrySet().stream()
                                 .collect(
                                         Collectors.toMap(Map.Entry::getKey,
-                                                entry -> entry.getValue().toStruct())
+                                                entry -> HttpPartAdapter.from(entry.getValue()).toStruct())
                                 )
                 )
                 ;

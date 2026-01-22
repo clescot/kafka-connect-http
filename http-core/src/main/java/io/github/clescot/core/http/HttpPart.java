@@ -6,9 +6,6 @@ import com.google.common.base.Joiner;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
-import org.apache.kafka.connect.data.Schema;
-import org.apache.kafka.connect.data.SchemaBuilder;
-import org.apache.kafka.connect.data.Struct;
 
 import java.io.File;
 import java.io.Serializable;
@@ -38,26 +35,7 @@ public class HttpPart implements Cloneable, Serializable {
     private String contentAsByteArray="";
     //Map.Entry<parameterName,Map.Entry<parameterValue,Optional<File>>
     private Map.Entry<String, File> contentAsFormEntry;
-    public static final int VERSION = 2;
-    public static final String HEADERS = "headers";
-    public static final String BODY_TYPE = "bodyType";
-    public static final String BODY_AS_STRING = "bodyAsString";
-    public static final String BODY_AS_FORM_DATA = "bodyAsFormData";
-    public static final String BODY_AS_BYTE_ARRAY = "bodyAsByteArray";
-    public static final String FILE_URI = "fileUri";
 
-    public static final Schema SCHEMA = SchemaBuilder
-            .struct()
-            .name(HttpPart.class.getName())
-            .version(VERSION)
-            .field(HEADERS, SchemaBuilder.map(Schema.STRING_SCHEMA, SchemaBuilder.array(Schema.STRING_SCHEMA).schema()).optional().build())
-            .field(BODY_TYPE, Schema.STRING_SCHEMA)
-            .field(BODY_AS_STRING, Schema.OPTIONAL_STRING_SCHEMA)
-            .field(BODY_AS_FORM_DATA, SchemaBuilder.map(Schema.STRING_SCHEMA, SchemaBuilder.map(Schema.STRING_SCHEMA, Schema.OPTIONAL_STRING_SCHEMA).build()).optional().schema())
-            .field(BODY_AS_BYTE_ARRAY, Schema.OPTIONAL_STRING_SCHEMA)
-            .field(FILE_URI, Schema.OPTIONAL_STRING_SCHEMA)
-            .optional()
-            .schema();
 
 
     //for deserialization only
@@ -114,14 +92,7 @@ public class HttpPart implements Cloneable, Serializable {
         this(Map.of(MediaType.KEY, Lists.newArrayList(APPLICATION_JSON)), contentAsString);
     }
 
-    //for serialization
-    public HttpPart(Struct struct) {
-        this.headers = struct.getMap(HEADERS)!=null?struct.getMap(HEADERS): Maps.newHashMap();
-        this.bodyType = HttpPart.BodyType.valueOf(struct.getString(BODY_TYPE));
-        this.contentAsByteArray = struct.getString(BODY_AS_BYTE_ARRAY);
-        this.contentAsString = struct.getString(BODY_AS_STRING);
-        //this.contentAsFormEntry = struct.getMap(BODY_AS_FORM_DATA);
-    }
+
 
     public HttpPart.BodyType getBodyType() {
         return bodyType;
@@ -218,16 +189,6 @@ public class HttpPart implements Cloneable, Serializable {
                 '}';
     }
 
-    public Struct toStruct() {
-        Struct struct = new Struct(SCHEMA);
-        struct.put(HEADERS, getHeaders());
-        struct.put(BODY_TYPE, getBodyType().name());
-        struct.put(BODY_AS_STRING, contentAsString);
-        struct.put(BODY_AS_FORM_DATA, contentAsFormEntry);
-        struct.put(BODY_AS_BYTE_ARRAY, contentAsByteArray);
-        struct.put(FILE_URI, fileUri);
-        return struct;
-    }
 
     @Override
     protected Object clone() throws CloneNotSupportedException {

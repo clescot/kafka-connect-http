@@ -14,7 +14,6 @@ import io.netty.handler.ssl.SslContextBuilder;
 import io.netty.util.HashedWheelTimer;
 import io.netty.util.Timer;
 import org.apache.commons.lang3.NotImplementedException;
-import org.asynchttpclient.*;
 import org.asynchttpclient.channel.DefaultKeepAliveStrategy;
 import org.asynchttpclient.channel.KeepAliveStrategy;
 import org.asynchttpclient.cookie.CookieStore;

@@ -6,7 +6,6 @@ import com.github.tomakehurst.wiremock.http.trafficlistener.ConsoleNotifyingWire
 import com.github.tomakehurst.wiremock.junit5.WireMockExtension;
 import com.google.common.collect.Maps;
 import io.github.clescot.client.http.proxy.*;
-import static io.github.clescot.client.Constants.*;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -18,6 +17,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Random;
 
+import static io.github.clescot.client.Constants.*;
 import static org.assertj.core.api.Assertions.assertThat;
 
 class ProxySelectorFactoryTest {

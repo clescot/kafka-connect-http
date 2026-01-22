@@ -1,6 +1,5 @@
 package io.github.clescot.client.http.okhttp.interceptor;
 
-import okhttp3.*;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

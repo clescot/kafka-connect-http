@@ -30,7 +30,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ThreadFactory;
 import java.util.function.Consumer;
 
-import static java.lang.Long.getLong;
 import static org.asynchttpclient.config.AsyncHttpClientConfigDefaults.*;
 
 public class PropertyBasedASyncHttpClientConfig implements AsyncHttpClientConfig {

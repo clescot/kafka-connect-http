@@ -9,7 +9,6 @@ import com.google.common.collect.Maps;
 import io.github.clescot.client.http.okhttp.authentication.AuthenticationConfigurer;
 import io.github.clescot.client.http.okhttp.authentication.OAuth2ClientCredentialsFlowAuthenticator;
 import io.github.clescot.client.http.okhttp.authentication.OAuth2ClientCredentialsFlowConfigurer;
-import static io.github.clescot.client.Constants.*;
 import okhttp3.Authenticator;
 import okhttp3.OkHttpClient;
 import org.junit.jupiter.api.Assertions;
@@ -26,6 +25,7 @@ import java.nio.file.Paths;
 import java.util.Map;
 
 import static com.github.tomakehurst.wiremock.stubbing.Scenario.STARTED;
+import static io.github.clescot.client.Constants.*;
 import static org.assertj.core.api.Assertions.assertThat;
 
 @Execution(ExecutionMode.SAME_THREAD)

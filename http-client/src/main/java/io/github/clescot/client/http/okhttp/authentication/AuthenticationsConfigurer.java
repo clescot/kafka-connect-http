@@ -1,6 +1,5 @@
 package io.github.clescot.client.http.okhttp.authentication;
 
-import com.burgstaller.okhttp.*;
 import com.burgstaller.okhttp.digest.CachingAuthenticator;
 import com.google.common.base.Preconditions;
 import io.github.clescot.client.http.okhttp.OkHttpClient;
