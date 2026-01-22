@@ -6,6 +6,7 @@ import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.data.SchemaBuilder;
 import org.apache.kafka.connect.data.Struct;
 
+import java.util.Base64;
 import java.util.Map;
 
 public class HttpPartAdapter {
@@ -37,15 +38,22 @@ public class HttpPartAdapter {
         Map headers = struct.getMap(HEADERS)!=null?struct.getMap(HEADERS): Maps.newHashMap();
         HttpPart.BodyType bodyType = HttpPart.BodyType.valueOf(struct.getString(BODY_TYPE));
         String contentAsByteArray = struct.getString(BODY_AS_BYTE_ARRAY);
-        if(contentAsByteArray!=null && !contentAsByteArray.isEmpty()){
-            this.httpPart = new HttpPart(headers,contentAsByteArray);
-        }
         String contentAsString = struct.getString(BODY_AS_STRING);
-        if(contentAsString!=null && !contentAsString.isEmpty()){
-            this.httpPart = new HttpPart(headers,contentAsString);
+        switch (bodyType) {
+            case BYTE_ARRAY:
+                if(contentAsByteArray != null && !contentAsByteArray.isEmpty()){
+                    byte[] decodedBytes = Base64.getMimeDecoder().decode(contentAsByteArray);
+                    this.httpPart = new HttpPart(headers, decodedBytes);
+                }
+                break;
+            case STRING:
+                if(contentAsString != null && !contentAsString.isEmpty()){
+                    this.httpPart = new HttpPart(headers, contentAsString);
+                }
+                break;
+            default:
+                break;
         }
-        //this.contentAsFormEntry = struct.getMap(BODY_AS_FORM_DATA);
-
     }
 
     private HttpPartAdapter(HttpPart httpPart){
@@ -66,7 +74,7 @@ public class HttpPartAdapter {
         struct.put(BODY_TYPE, httpPart.getBodyType().name());
         struct.put(BODY_AS_STRING, httpPart.getContentAsString());
         struct.put(BODY_AS_FORM_DATA, httpPart.getContentAsFormEntry());
-        struct.put(BODY_AS_BYTE_ARRAY, new String(httpPart.getContentAsByteArray()));
+        struct.put(BODY_AS_BYTE_ARRAY, httpPart.getContentAsByteArrayAsBase64());
         struct.put(FILE_URI, httpPart.getFileUri());
         return struct;
     }

@@ -133,6 +133,11 @@ public class HttpPart implements Cloneable, Serializable {
         return EMPTY_BYTE_ARRAY;
     }
 
+    @JsonIgnore
+    public String getContentAsByteArrayAsBase64() {
+        return contentAsByteArray;
+    }
+
     public Map<String, List<String>> getHeaders() {
         return headers;
     }

@@ -28,7 +28,7 @@ public class HttpResponseAdapter {
             .field(BODY_AS_BYTE_ARRAY_FIELD, Schema.OPTIONAL_STRING_SCHEMA)
             .field(BODY_AS_FORM_FIELD, SchemaBuilder.map(Schema.STRING_SCHEMA, Schema.STRING_SCHEMA).optional().schema())
             .field(BODY_AS_STRING_FIELD, Schema.OPTIONAL_STRING_SCHEMA)
-            .field(PARTS_FIELD, SchemaBuilder.array(HttpPart.SCHEMA).optional().schema())
+            .field(PARTS_FIELD, SchemaBuilder.array(HttpPartAdapter.SCHEMA).optional().schema())
             .field(ATTRIBUTES_FIELD, SchemaBuilder.map(Schema.STRING_SCHEMA, Schema.STRING_SCHEMA).optional().schema())
             .schema();
     private final HttpResponse httpResponse;

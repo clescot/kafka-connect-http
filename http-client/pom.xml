@@ -21,13 +21,7 @@
             <artifactId>http-core</artifactId>
             <version>${project.version}</version>
         </dependency>
-        <!-- TODO to remove -->
-        <dependency>
-            <groupId>org.apache.kafka</groupId>
-            <artifactId>connect-api</artifactId>
-            <version>${kafka.version}</version>
-            <scope>provided</scope>
-        </dependency>
+
         <dependency>
             <groupId>org.asynchttpclient</groupId>
             <artifactId>async-http-client</artifactId>
