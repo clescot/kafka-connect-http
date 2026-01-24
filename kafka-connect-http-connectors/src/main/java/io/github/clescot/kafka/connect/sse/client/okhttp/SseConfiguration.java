@@ -1,5 +1,7 @@
 package io.github.clescot.kafka.connect.sse.client.okhttp;
 
+import static io.github.clescot.client.http.HttpClientFactory.getRandom;
+
 import com.google.common.base.Preconditions;
 import com.google.common.base.Strings;
 import com.launchdarkly.eventsource.*;
@@ -13,311 +15,319 @@ import io.github.clescot.core.http.template.ExchangeTemplateProcessorFactory;
 import io.github.clescot.core.sse.SseEvent;
 import io.github.clescot.core.sse.SseExchange;
 import io.micrometer.core.instrument.composite.CompositeMeterRegistry;
-import okhttp3.Request;
-import okhttp3.Response;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.net.URI;
 import java.util.Map;
 import java.util.Queue;
 import java.util.Random;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
+import okhttp3.Request;
+import okhttp3.Response;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import static io.github.clescot.client.http.HttpClientFactory.getRandom;
-
-/**
- * Configuration for SSE client using OkHttp.
- */
+/** Configuration for SSE client using OkHttp. */
 public class SseConfiguration implements Configuration<OkHttpClient, HttpRequest> {
-    private static final Logger LOGGER = LoggerFactory.getLogger(SseConfiguration.class);
-    private final String configurationId;
-    private OkHttpClient httpClient;
-    private final Map<String, String> settings;
-    private final URI uri;
-    private final String topic;
-    private final String id;
-    private boolean connected = false;
-    private boolean started = false;
-    private SseBackgroundEventHandler backgroundEventHandler;
-    private BackgroundEventSource backgroundEventSource;
-    private Queue<SseEvent> queue;
-    private HttpConnectStrategy connectStrategy;
-    private DefaultRetryDelayStrategy retryDelayStrategy;
-    private ErrorStrategy errorStrategy;
-    private ExchangeTemplateManager templateManager;
-    private String exchangeTemplate;
+  private static final Logger LOGGER = LoggerFactory.getLogger(SseConfiguration.class);
+  private final String configurationId;
+  private OkHttpClient httpClient;
+  private final Map<String, String> settings;
+  private final URI uri;
+  private final String topic;
+  private final String id;
+  private boolean connected = false;
+  private boolean started = false;
+  private SseBackgroundEventHandler backgroundEventHandler;
+  private BackgroundEventSource backgroundEventSource;
+  private Queue<SseEvent> queue;
+  private HttpConnectStrategy connectStrategy;
+  private DefaultRetryDelayStrategy retryDelayStrategy;
+  private ErrorStrategy errorStrategy;
+  private ExchangeTemplateManager templateManager;
+  private String exchangeTemplate;
 
-    /**
-     *
-     * @param configurationId configuration id
-     * @param httpClient HTTP Client
-     * @param settings prefix config.configurationId.* should be removed
-     */
-    public SseConfiguration(String configurationId,
-                            OkHttpClient httpClient,
-                            Map<String, String> settings) {
-        Preconditions.checkNotNull(configurationId, "configurationId must not be null.");
-        Preconditions.checkArgument(!configurationId.isEmpty(), "configurationId must not be empty.");
-        Preconditions.checkNotNull(httpClient, "httpClient must not be null.");
-        this.configurationId = configurationId;
-        this.httpClient = httpClient;
-        this.settings = settings;
-        Preconditions.checkNotNull(settings, "settings must not be null or empty.");
-        Preconditions.checkArgument(!settings.isEmpty(), "settings must not be null or empty.");
-        String url = settings.get(SseConfigDefinition.URL);
-        this.id = configurationId;
-        Preconditions.checkNotNull(url, "'url' must not be null or empty.");
-        this.uri = URI.create(url);
-        this.topic = settings.get(SseConfigDefinition.TOPIC);
-        Preconditions.checkNotNull(topic, "'topic' must not be null or empty.");
+  /**
+   * @param configurationId configuration id
+   * @param httpClient HTTP Client
+   * @param settings prefix config.configurationId.* should be removed
+   */
+  public SseConfiguration(
+      String configurationId, OkHttpClient httpClient, Map<String, String> settings) {
+    Preconditions.checkNotNull(configurationId, "configurationId must not be null.");
+    Preconditions.checkArgument(!configurationId.isEmpty(), "configurationId must not be empty.");
+    Preconditions.checkNotNull(httpClient, "httpClient must not be null.");
+    this.configurationId = configurationId;
+    this.httpClient = httpClient;
+    this.settings = settings;
+    Preconditions.checkNotNull(settings, "settings must not be null or empty.");
+    Preconditions.checkArgument(!settings.isEmpty(), "settings must not be null or empty.");
+    String url = settings.get(SseConfigDefinition.URL);
+    this.id = configurationId;
+    Preconditions.checkNotNull(url, "'url' must not be null or empty.");
+    this.uri = URI.create(url);
+    this.topic = settings.get(SseConfigDefinition.TOPIC);
+    Preconditions.checkNotNull(topic, "'topic' must not be null or empty.");
 
-        // Initialize template processing using shared utility
-        this.exchangeTemplate = settings.getOrDefault("exchange.template", "");
-        ExchangeTemplateProcessorFactory factory = new ExchangeTemplateProcessorFactory();
-        this.templateManager = factory.createTemplateManager(settings);
+    // Initialize template processing using shared utility
+    this.exchangeTemplate = settings.getOrDefault("exchange.template", "");
+    ExchangeTemplateProcessorFactory factory = new ExchangeTemplateProcessorFactory();
+    this.templateManager = factory.createTemplateManager(settings);
+  }
+
+  public static SseConfiguration buildSseConfiguration(
+      String configurationId,
+      Map<String, String> mySettings,
+      ExecutorService executorService,
+      CompositeMeterRegistry meterRegistry,
+      HttpClientFactory<OkHttpClient, Request, Response> httpClientFactory) {
+    Random random = getRandom(mySettings);
+    OkHttpClient httpClient =
+        httpClientFactory.buildHttpClient(mySettings, executorService, meterRegistry, random);
+    return new SseConfiguration(configurationId, httpClient, mySettings);
+  }
+
+  public BackgroundEventSource connect(Queue<SseEvent> queue) {
+    Preconditions.checkNotNull(queue, "queue must not be null.");
+    this.queue = queue;
+
+    // retry strategy
+    this.retryDelayStrategy = RetryDelayStrategy.defaultStrategy();
+    if (settings.containsKey(SseConfigDefinition.RETRY_DELAY_STRATEGY_MAX_DELAY_MILLIS)) {
+      long maxDelayMillis =
+          Long.parseLong(
+              settings.getOrDefault(
+                  SseConfigDefinition.RETRY_DELAY_STRATEGY_MAX_DELAY_MILLIS, "30000"));
+      float backoffMultiplier =
+          Float.parseFloat(
+              settings.getOrDefault(
+                  SseConfigDefinition.RETRY_DELAY_STRATEGY_BACKOFF_MULTIPLIER, "2"));
+      float jitterMultiplier =
+          Float.parseFloat(
+              settings.getOrDefault(
+                  SseConfigDefinition.RETRY_DELAY_STRATEGY_JITTER_MULTIPLIER, "0.5"));
+      retryDelayStrategy =
+          retryDelayStrategy
+              .maxDelay(maxDelayMillis, TimeUnit.MILLISECONDS)
+              .backoffMultiplier(backoffMultiplier)
+              .jitterMultiplier(jitterMultiplier);
     }
 
-    public static SseConfiguration buildSseConfiguration(String configurationId,
-                                                         Map<String, String> mySettings,
-                                                         ExecutorService executorService,
-                                                         CompositeMeterRegistry meterRegistry,
-                                                         HttpClientFactory<OkHttpClient, Request, Response> httpClientFactory) {
-        Random random = getRandom(mySettings);
-        OkHttpClient httpClient = httpClientFactory.buildHttpClient(mySettings, executorService, meterRegistry, random);
-        return new SseConfiguration(configurationId, httpClient, mySettings);
+    // error strategy
+    this.errorStrategy = ErrorStrategy.alwaysThrow();
+    if (settings.containsKey(SseConfigDefinition.ERROR_STRATEGY)) {
+      String errorStrategyAsString = settings.get(SseConfigDefinition.ERROR_STRATEGY);
+      switch (errorStrategyAsString) {
+        case SseConfigDefinition.ERROR_STRATEGY_ALWAYS_CONTINUE:
+          errorStrategy = ErrorStrategy.alwaysContinue();
+          break;
+        case SseConfigDefinition.ERROR_STRATEGY_ALWAYS_THROW:
+          errorStrategy = ErrorStrategy.alwaysThrow();
+          break;
+        case SseConfigDefinition.ERROR_STRATEGY_CONTINUE_WITH_MAX_ATTEMPTS:
+          int maxAttempts =
+              Integer.parseInt(
+                  settings.getOrDefault(SseConfigDefinition.ERROR_STRATEGY_MAX_ATTEMPTS, "3"));
+          errorStrategy = ErrorStrategy.continueWithMaxAttempts(maxAttempts);
+          break;
+        case SseConfigDefinition.ERROR_STRATEGY_CONTINUE_WITH_TIME_LIMIT:
+          long timeLimitCountInMillis =
+              Long.parseLong(
+                  settings.getOrDefault(
+                      SseConfigDefinition.ERROR_STRATEGY_TIME_LIMIT_COUNT_IN_MILLIS, "60000"));
+          errorStrategy =
+              ErrorStrategy.continueWithTimeLimit(timeLimitCountInMillis, TimeUnit.MILLISECONDS);
+          break;
+        default:
+          errorStrategy = ErrorStrategy.alwaysThrow();
+      }
     }
-
-    public BackgroundEventSource connect(Queue<SseEvent> queue) {
-        Preconditions.checkNotNull(queue, "queue must not be null.");
-        this.queue = queue;
-
-        // retry strategy
-        this.retryDelayStrategy = RetryDelayStrategy.defaultStrategy();
-        if (settings.containsKey(SseConfigDefinition.RETRY_DELAY_STRATEGY_MAX_DELAY_MILLIS)) {
-            long maxDelayMillis = Long.parseLong(
-                    settings.getOrDefault(SseConfigDefinition.RETRY_DELAY_STRATEGY_MAX_DELAY_MILLIS, "30000"));
-            float backoffMultiplier = Float.parseFloat(
-                    settings.getOrDefault(SseConfigDefinition.RETRY_DELAY_STRATEGY_BACKOFF_MULTIPLIER, "2"));
-            float jitterMultiplier = Float.parseFloat(
-                    settings.getOrDefault(SseConfigDefinition.RETRY_DELAY_STRATEGY_JITTER_MULTIPLIER, "0.5"));
-            retryDelayStrategy = retryDelayStrategy
-                    .maxDelay(maxDelayMillis, TimeUnit.MILLISECONDS)
-                    .backoffMultiplier(backoffMultiplier)
-                    .jitterMultiplier(jitterMultiplier);
-        }
-
-        // error strategy
-        this.errorStrategy = ErrorStrategy.alwaysThrow();
-        if (settings.containsKey(SseConfigDefinition.ERROR_STRATEGY)) {
-            String errorStrategyAsString = settings.get(SseConfigDefinition.ERROR_STRATEGY);
-            switch (errorStrategyAsString) {
-                case SseConfigDefinition.ERROR_STRATEGY_ALWAYS_CONTINUE:
-                    errorStrategy = ErrorStrategy.alwaysContinue();
-                    break;
-                case SseConfigDefinition.ERROR_STRATEGY_ALWAYS_THROW:
-                    errorStrategy = ErrorStrategy.alwaysThrow();
-                    break;
-                case SseConfigDefinition.ERROR_STRATEGY_CONTINUE_WITH_MAX_ATTEMPTS:
-                    int maxAttempts = Integer
-                            .parseInt(settings.getOrDefault(SseConfigDefinition.ERROR_STRATEGY_MAX_ATTEMPTS, "3"));
-                    errorStrategy = ErrorStrategy.continueWithMaxAttempts(maxAttempts);
-                    break;
-                case SseConfigDefinition.ERROR_STRATEGY_CONTINUE_WITH_TIME_LIMIT:
-                    long timeLimitCountInMillis = Long.parseLong(settings
-                            .getOrDefault(SseConfigDefinition.ERROR_STRATEGY_TIME_LIMIT_COUNT_IN_MILLIS, "60000"));
-                    errorStrategy = ErrorStrategy.continueWithTimeLimit(timeLimitCountInMillis, TimeUnit.MILLISECONDS);
-                    break;
-                default:
-                    errorStrategy = ErrorStrategy.alwaysThrow();
-            }
-        }
-        this.backgroundEventHandler = new SseBackgroundEventHandler(queue, uri);
-        this.connectStrategy = ConnectStrategy.http(uri)
-                .httpClient(this.httpClient.getInternalClient())
-                .requestTransformer(input -> {
-                    HttpRequest httpRequest = this.httpClient.buildRequest(input);
-                    return this.httpClient
-                            .buildNativeRequest(this.httpClient.getEnrichRequestFunction().apply(httpRequest));
+    this.backgroundEventHandler = new SseBackgroundEventHandler(queue, uri);
+    this.connectStrategy =
+        ConnectStrategy.http(uri)
+            .httpClient(this.httpClient.getInternalClient())
+            .requestTransformer(
+                input -> {
+                  HttpRequest httpRequest = this.httpClient.buildRequest(input);
+                  return this.httpClient.buildNativeRequest(
+                      this.httpClient.getEnrichRequestFunction().apply(httpRequest));
                 });
-        this.backgroundEventSource = new BackgroundEventSource.Builder(backgroundEventHandler,
+    this.backgroundEventSource =
+        new BackgroundEventSource.Builder(
+                backgroundEventHandler,
                 new EventSource.Builder(connectStrategy)
-                        .streamEventData(false)
-                        .retryDelayStrategy(retryDelayStrategy)
-                        .errorStrategy(errorStrategy))
-                .build();
-        connected = true;
-        return backgroundEventSource;
+                    .streamEventData(false)
+                    .retryDelayStrategy(retryDelayStrategy)
+                    .errorStrategy(errorStrategy))
+            .build();
+    connected = true;
+    return backgroundEventSource;
+  }
+
+  public void start() {
+    Preconditions.checkState(connected, "SSE client is not connected. Call connect() first.");
+    if (backgroundEventSource != null) {
+      backgroundEventSource.start();
+    }
+    started = true;
+  }
+
+  public void stop() {
+    connected = false;
+    started = false;
+    if (backgroundEventSource != null) {
+      backgroundEventSource.close();
+    }
+  }
+
+  public boolean isConnected() {
+    return connected;
+  }
+
+  public boolean isStarted() {
+    return started;
+  }
+
+  public SseBackgroundEventHandler getBackgroundEventHandler() {
+    return backgroundEventHandler;
+  }
+
+  @Override
+  public boolean matches(HttpRequest request) {
+    return false;
+  }
+
+  @Override
+  public String getId() {
+    return id;
+  }
+
+  @Override
+  public OkHttpClient getClient() {
+    return httpClient;
+  }
+
+  @Override
+  public void setClient(OkHttpClient client) {
+    this.httpClient = client;
+  }
+
+  public Queue<SseEvent> getQueue() {
+    return queue;
+  }
+
+  public BackgroundEventSource getBackgroundEventSource() {
+    return backgroundEventSource;
+  }
+
+  public String getConfigurationId() {
+    return configurationId;
+  }
+
+  public String getTopic() {
+    return topic;
+  }
+
+  public URI getUri() {
+    return uri;
+  }
+
+  public Map<String, String> getSettings() {
+    return settings;
+  }
+
+  public HttpConnectStrategy getConnectStrategy() {
+    return connectStrategy;
+  }
+
+  public DefaultRetryDelayStrategy getRetryDelayStrategy() {
+    return retryDelayStrategy;
+  }
+
+  public ErrorStrategy getErrorStrategy() {
+    return errorStrategy;
+  }
+
+  /**
+   * Gets the template manager for processing SSE events.
+   *
+   * @return the ExchangeTemplateManager
+   */
+  public ExchangeTemplateManager getTemplateManager() {
+    return templateManager;
+  }
+
+  /**
+   * Sets the template manager for processing SSE events.
+   *
+   * @param templateManager the ExchangeTemplateManager to set
+   */
+  public void setTemplateManager(ExchangeTemplateManager templateManager) {
+    this.templateManager = templateManager;
+  }
+
+  /**
+   * Gets the exchange template for processing SSE events.
+   *
+   * @return the exchange template
+   */
+  public String getExchangeTemplate() {
+    return exchangeTemplate;
+  }
+
+  /**
+   * Sets the exchange template for processing SSE events.
+   *
+   * @param exchangeTemplate the template to set
+   */
+  public void setExchangeTemplate(String exchangeTemplate) {
+    this.exchangeTemplate = exchangeTemplate;
+  }
+
+  /**
+   * Processes an SSE event using the configured template.
+   *
+   * @param sseEvent the SSE event to process
+   * @param httpRequest the HTTP request that initiated the SSE connection (can be null)
+   * @return the processed SSE event, or the original event if no template is configured or
+   *     processing fails
+   */
+  public SseEvent processEventWithTemplate(SseEvent sseEvent, HttpRequest httpRequest) {
+    return processEventWithTemplate(sseEvent, httpRequest, Map.of());
+  }
+
+  /**
+   * Processes an SSE event using the configured template with additional context.
+   *
+   * @param sseEvent the SSE event to process
+   * @param httpRequest the HTTP request that initiated the SSE connection (can be null)
+   * @param context additional context for template processing
+   * @return the processed SSE event, or the original event if no template is configured or
+   *     processing fails
+   */
+  public SseEvent processEventWithTemplate(
+      SseEvent sseEvent, HttpRequest httpRequest, Map<String, Object> context) {
+    Preconditions.checkNotNull(sseEvent, "sseEvent must not be null.");
+    Preconditions.checkNotNull(httpRequest, "httpRequest must not be null.");
+    if (exchangeTemplate == null || exchangeTemplate.trim().isEmpty() || templateManager == null) {
+      return sseEvent;
     }
 
-    public void start() {
-        Preconditions.checkState(connected, "SSE client is not connected. Call connect() first.");
-        if (backgroundEventSource != null) {
-            backgroundEventSource.start();
-        }
-        started = true;
+    try {
+      // Create an SseExchange for template processing
+      SseExchange sseExchange = new SseExchange(httpRequest, sseEvent);
+
+      // Process the exchange using the template
+      String resolvedTemplate =
+          templateManager.resolveTemplate(sseExchange, exchangeTemplate, context);
+      SseEvent response = sseExchange.getResponse();
+      // Propagate attributes from the exchange to the SSE event
+      if (response != null && !Strings.isNullOrEmpty(resolvedTemplate)) {
+        sseExchange.setContent(resolvedTemplate);
+      }
+      return sseExchange.getResponse();
+    } catch (Exception e) {
+      LOGGER.warn("Failed to apply template processing to SSE event: {}", e.getMessage());
+      return sseEvent;
     }
-
-    public void stop() {
-        connected = false;
-        started = false;
-        if (backgroundEventSource != null) {
-            backgroundEventSource.close();
-        }
-    }
-
-    public boolean isConnected() {
-        return connected;
-    }
-
-    public boolean isStarted() {
-        return started;
-    }
-
-    public SseBackgroundEventHandler getBackgroundEventHandler() {
-        return backgroundEventHandler;
-    }
-
-    @Override
-    public boolean matches(HttpRequest request) {
-        return false;
-    }
-
-    @Override
-    public String getId() {
-        return id;
-    }
-
-    @Override
-    public OkHttpClient getClient() {
-        return httpClient;
-    }
-
-    @Override
-    public void setClient(OkHttpClient client) {
-        this.httpClient = client;
-    }
-
-    public Queue<SseEvent> getQueue() {
-        return queue;
-    }
-
-    public BackgroundEventSource getBackgroundEventSource() {
-        return backgroundEventSource;
-    }
-
-    public String getConfigurationId() {
-        return configurationId;
-    }
-
-    public String getTopic() {
-        return topic;
-    }
-
-    public URI getUri() {
-        return uri;
-    }
-
-    public Map<String, String> getSettings() {
-        return settings;
-    }
-
-    public HttpConnectStrategy getConnectStrategy() {
-        return connectStrategy;
-    }
-
-    public DefaultRetryDelayStrategy getRetryDelayStrategy() {
-        return retryDelayStrategy;
-    }
-
-    public ErrorStrategy getErrorStrategy() {
-        return errorStrategy;
-    }
-
-    /**
-     * Gets the template manager for processing SSE events.
-     *
-     * @return the ExchangeTemplateManager
-     */
-    public ExchangeTemplateManager getTemplateManager() {
-        return templateManager;
-    }
-
-    /**
-     * Sets the template manager for processing SSE events.
-     *
-     * @param templateManager the ExchangeTemplateManager to set
-     */
-    public void setTemplateManager(ExchangeTemplateManager templateManager) {
-        this.templateManager = templateManager;
-    }
-
-    /**
-     * Gets the exchange template for processing SSE events.
-     *
-     * @return the exchange template
-     */
-    public String getExchangeTemplate() {
-        return exchangeTemplate;
-    }
-
-    /**
-     * Sets the exchange template for processing SSE events.
-     *
-     * @param exchangeTemplate the template to set
-     */
-    public void setExchangeTemplate(String exchangeTemplate) {
-        this.exchangeTemplate = exchangeTemplate;
-    }
-
-    /**
-     * Processes an SSE event using the configured template.
-     *
-     * @param sseEvent    the SSE event to process
-     * @param httpRequest the HTTP request that initiated the SSE connection (can be
-     *                    null)
-     * @return the processed SSE event, or the original event if no template is
-     * configured or processing fails
-     */
-    public SseEvent processEventWithTemplate(SseEvent sseEvent, HttpRequest httpRequest) {
-        return processEventWithTemplate(sseEvent,httpRequest,Map.of());
-    }
-
-    /**
-     * Processes an SSE event using the configured template with additional context.
-     *
-     * @param sseEvent    the SSE event to process
-     * @param httpRequest the HTTP request that initiated the SSE connection (can be
-     *                    null)
-     * @param context     additional context for template processing
-     * @return the processed SSE event, or the original event if no template is
-     * configured or processing fails
-     */
-    public SseEvent processEventWithTemplate(SseEvent sseEvent, HttpRequest httpRequest, Map<String, Object> context) {
-        Preconditions.checkNotNull(sseEvent, "sseEvent must not be null.");
-        Preconditions.checkNotNull(httpRequest, "httpRequest must not be null.");
-        if (exchangeTemplate == null || exchangeTemplate.trim().isEmpty() || templateManager == null) {
-            return sseEvent;
-        }
-
-        try {
-            // Create an SseExchange for template processing
-            SseExchange sseExchange = new SseExchange(httpRequest, sseEvent);
-
-            // Process the exchange using the template
-            String resolvedTemplate = templateManager.resolveTemplate(sseExchange, exchangeTemplate, context);
-            SseEvent response = sseExchange.getResponse();
-            // Propagate attributes from the exchange to the SSE event
-            if (response != null && !Strings.isNullOrEmpty(resolvedTemplate)){
-                sseExchange.setContent(resolvedTemplate);
-            }
-            return sseExchange.getResponse();
-        } catch (
-
-                Exception e) {
-            LOGGER.warn("Failed to apply template processing to SSE event: {}", e.getMessage());
-            return sseEvent;
-        }
-    }
+  }
 }

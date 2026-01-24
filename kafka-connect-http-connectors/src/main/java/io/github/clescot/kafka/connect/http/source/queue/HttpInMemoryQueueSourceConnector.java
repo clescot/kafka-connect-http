@@ -1,49 +1,49 @@
 package io.github.clescot.kafka.connect.http.source.queue;
 
-import org.apache.kafka.common.config.ConfigDef;
-import org.apache.kafka.connect.connector.Task;
-import org.apache.kafka.connect.source.SourceConnector;
+import static io.github.clescot.core.http.VersionUtils.VERSION;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-
-import static io.github.clescot.core.http.VersionUtils.VERSION;
+import org.apache.kafka.common.config.ConfigDef;
+import org.apache.kafka.connect.connector.Task;
+import org.apache.kafka.connect.source.SourceConnector;
 
 public class HttpInMemoryQueueSourceConnector extends SourceConnector {
-    private HttpSourceConnectorConfig httpSourceConnectorConfig;
-    @Override
-    public void start(Map<String, String> props) {
-        this.httpSourceConnectorConfig = new HttpSourceConnectorConfig(config(),props);
+  private HttpSourceConnectorConfig httpSourceConnectorConfig;
+
+  @Override
+  public void start(Map<String, String> props) {
+    this.httpSourceConnectorConfig = new HttpSourceConnectorConfig(config(), props);
+  }
+
+  @Override
+  public Class<? extends Task> taskClass() {
+    return HttpInMemoryQueueSourceTask.class;
+  }
+
+  @Override
+  public List<Map<String, String>> taskConfigs(int maxTasks) {
+    List<Map<String, String>> configs = new ArrayList<>(maxTasks);
+    for (int i = 0; i < maxTasks; i++) {
+      configs.add(this.httpSourceConnectorConfig.originalsStrings());
     }
 
-    @Override
-    public Class<? extends Task> taskClass() {
-        return HttpInMemoryQueueSourceTask.class;
-    }
+    return configs;
+  }
 
-    @Override
-    public List<Map<String, String>> taskConfigs(int maxTasks) {
-        List<Map<String, String>> configs = new ArrayList<>(maxTasks);
-        for (int i = 0; i < maxTasks; i++) {
-            configs.add(this.httpSourceConnectorConfig.originalsStrings());
-        }
+  @Override
+  public void stop() {
+    // nothing to stop
+  }
 
-        return configs;
-    }
+  @Override
+  public ConfigDef config() {
+    return HttpInMemoryQueueSourceConfigDefinition.config();
+  }
 
-    @Override
-    public void stop() {
-        //nothing to stop
-    }
-
-    @Override
-    public ConfigDef config() {
-        return HttpInMemoryQueueSourceConfigDefinition.config();
-    }
-
-    @Override
-    public String version() {
-        return VERSION;
-    }
+  @Override
+  public String version() {
+    return VERSION;
+  }
 }

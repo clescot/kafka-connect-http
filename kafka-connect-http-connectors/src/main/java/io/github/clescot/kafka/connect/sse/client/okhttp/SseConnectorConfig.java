@@ -1,50 +1,61 @@
 package io.github.clescot.kafka.connect.sse.client.okhttp;
 
+import static io.github.clescot.client.Configuration.DEFAULT_CONFIGURATION_ID;
+import static io.github.clescot.client.Constants.*;
+import static io.github.clescot.client.http.HttpClientConfigDefinition.*;
+
 import com.google.common.collect.Lists;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import org.apache.kafka.common.config.AbstractConfig;
 import org.apache.kafka.common.config.ConfigDef;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-
-import static io.github.clescot.client.Configuration.DEFAULT_CONFIGURATION_ID;
-import static io.github.clescot.client.Constants.*;
-import static io.github.clescot.client.http.HttpClientConfigDefinition.*;
-
 public class SseConnectorConfig extends AbstractConfig {
-    private static final Logger LOGGER = LoggerFactory.getLogger(SseConnectorConfig.class);
-    public static final String CANNOT_BE_FOUND_IN_MAP_CONFIGURATION = " cannot be found in map configuration";
-    private final List<String> configurationIds;
-    private final String defaultTopic;
-    private final String defaultUrl;
-    public SseConnectorConfig(Map<String, String> originals) {
-        this(new SseConfigDefinition(originals).config(), originals);
-    }
+  private static final Logger LOGGER = LoggerFactory.getLogger(SseConnectorConfig.class);
+  public static final String CANNOT_BE_FOUND_IN_MAP_CONFIGURATION =
+      " cannot be found in map configuration";
+  private final List<String> configurationIds;
+  private final String defaultTopic;
+  private final String defaultUrl;
 
-    public SseConnectorConfig(ConfigDef configDef, Map<?, ?> originals){
-        super(configDef, originals, LOGGER.isDebugEnabled());
-        List<String> configIds = Lists.newArrayList(getList(CONFIGURATION_IDS));
-        if(configIds.isEmpty()||!configIds.contains(DEFAULT_CONFIGURATION_ID)){
-            configIds.add(DEFAULT_CONFIGURATION_ID);
-        }
-        this.configurationIds =Optional.of(configIds).orElse(Lists.newArrayList(DEFAULT_CONFIGURATION_ID));
-        this.defaultTopic = Optional.ofNullable(getString(SseConfigDefinition.DEFAULT_CONFIG_TOPIC)).orElseThrow(()-> new IllegalArgumentException(SseConfigDefinition.TOPIC + CANNOT_BE_FOUND_IN_MAP_CONFIGURATION));
-        this.defaultUrl = Optional.ofNullable(getString(SseConfigDefinition.DEFAULT_CONFIG_URL)).orElseThrow(()-> new IllegalArgumentException(SseConfigDefinition.URL + CANNOT_BE_FOUND_IN_MAP_CONFIGURATION));
-    }
+  public SseConnectorConfig(Map<String, String> originals) {
+    this(new SseConfigDefinition(originals).config(), originals);
+  }
 
-
-    public String getDefaultTopic() {
-        return defaultTopic;
+  public SseConnectorConfig(ConfigDef configDef, Map<?, ?> originals) {
+    super(configDef, originals, LOGGER.isDebugEnabled());
+    List<String> configIds = Lists.newArrayList(getList(CONFIGURATION_IDS));
+    if (configIds.isEmpty() || !configIds.contains(DEFAULT_CONFIGURATION_ID)) {
+      configIds.add(DEFAULT_CONFIGURATION_ID);
     }
+    this.configurationIds =
+        Optional.of(configIds).orElse(Lists.newArrayList(DEFAULT_CONFIGURATION_ID));
+    this.defaultTopic =
+        Optional.ofNullable(getString(SseConfigDefinition.DEFAULT_CONFIG_TOPIC))
+            .orElseThrow(
+                () ->
+                    new IllegalArgumentException(
+                        SseConfigDefinition.TOPIC + CANNOT_BE_FOUND_IN_MAP_CONFIGURATION));
+    this.defaultUrl =
+        Optional.ofNullable(getString(SseConfigDefinition.DEFAULT_CONFIG_URL))
+            .orElseThrow(
+                () ->
+                    new IllegalArgumentException(
+                        SseConfigDefinition.URL + CANNOT_BE_FOUND_IN_MAP_CONFIGURATION));
+  }
 
-    public List<String> getConfigurationIds() {
-        return configurationIds;
-    }
+  public String getDefaultTopic() {
+    return defaultTopic;
+  }
 
-    public String getDefaultUrl() {
-        return defaultUrl;
-    }
+  public List<String> getConfigurationIds() {
+    return configurationIds;
+  }
+
+  public String getDefaultUrl() {
+    return defaultUrl;
+  }
 }

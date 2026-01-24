@@ -1,93 +1,86 @@
 package io.github.clescot.kafka.connect.http.source.queue;
 
+import static io.github.clescot.core.http.VersionUtils.VERSION;
+
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
+import io.github.clescot.client.queue.QueueFactory;
 import io.github.clescot.core.http.HttpExchange;
 import io.github.clescot.core.http.HttpResponse;
 import io.github.clescot.kafka.connect.http.HttpExchangeAdapter;
 import io.github.clescot.kafka.connect.http.HttpResponseAdapter;
 import io.github.clescot.kafka.connect.queue.KafkaRecord;
-import io.github.clescot.client.queue.QueueFactory;
+import java.util.List;
+import java.util.Map;
+import java.util.Queue;
 import org.apache.kafka.connect.data.Struct;
 import org.apache.kafka.connect.source.SourceRecord;
 import org.apache.kafka.connect.source.SourceTask;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.List;
-import java.util.Map;
-import java.util.Queue;
-
-import static io.github.clescot.core.http.VersionUtils.VERSION;
-
 public class HttpInMemoryQueueSourceTask extends SourceTask {
 
-    private Queue<KafkaRecord> queue;
-    private String queueName;
-    private HttpSourceConnectorConfig sourceConfig;
-    private static final Logger LOGGER = LoggerFactory.getLogger(HttpInMemoryQueueSourceTask.class);
+  private Queue<KafkaRecord> queue;
+  private String queueName;
+  private HttpSourceConnectorConfig sourceConfig;
+  private static final Logger LOGGER = LoggerFactory.getLogger(HttpInMemoryQueueSourceTask.class);
 
+  @Override
+  public String version() {
+    return VERSION;
+  }
 
-    @Override
-    public String version() {
-        return VERSION;
+  @Override
+  public void start(Map<String, String> taskConfig) {
+    Preconditions.checkNotNull(taskConfig, "taskConfig cannot be null");
+    this.sourceConfig = new HttpSourceConnectorConfig(taskConfig);
+    this.queueName = sourceConfig.getQueueName();
+    queue = QueueFactory.getQueue(queueName);
+    QueueFactory.registerConsumerForQueue(queueName);
+  }
+
+  @Override
+  public List<SourceRecord> poll() {
+    List<SourceRecord> records = Lists.newArrayList();
+    while (queue.peek() != null) {
+      KafkaRecord kafkaRecord = queue.poll();
+      LOGGER.debug("received httpExchange from queue '{}':{}", queueName, kafkaRecord);
+      if (kafkaRecord != null) {
+        SourceRecord sourceRecord = toSourceRecord(kafkaRecord);
+        LOGGER.debug("send ack to queue '{}' with source record :{}", queueName, sourceRecord);
+        records.add(sourceRecord);
+      }
     }
 
-    @Override
-    public void start(Map<String, String> taskConfig) {
-        Preconditions.checkNotNull(taskConfig, "taskConfig cannot be null");
-        this.sourceConfig = new HttpSourceConnectorConfig(taskConfig);
-        this.queueName = sourceConfig.getQueueName();
-        queue = QueueFactory.getQueue(queueName);
-        QueueFactory.registerConsumerForQueue(queueName);
+    return records;
+  }
+
+  private SourceRecord toSourceRecord(KafkaRecord kafkaRecord) {
+    // sourcePartition and sourceOffset are useful to track data consumption from source
+    // but it is useless in the in memory queue context
+    HttpExchange httpExchange = kafkaRecord.getHttpExchange();
+
+    Struct struct;
+    if ("response".equalsIgnoreCase(sourceConfig.getContent())) {
+      HttpResponse httpResponse = httpExchange.getResponse();
+      struct = HttpResponseAdapter.from(httpResponse).toStruct();
+    } else {
+      struct = HttpExchangeAdapter.from(httpExchange).toStruct();
     }
 
-    @Override
-    public List<SourceRecord> poll() {
-        List<SourceRecord> records = Lists.newArrayList();
-        while (queue.peek() != null) {
-            KafkaRecord kafkaRecord = queue.poll();
-            LOGGER.debug("received httpExchange from queue '{}':{}",queueName,kafkaRecord);
-            if(kafkaRecord!=null){
-                SourceRecord sourceRecord = toSourceRecord(kafkaRecord);
-                LOGGER.debug("send ack to queue '{}' with source record :{}",queueName,sourceRecord);
-                records.add(sourceRecord);
-            }
-        }
+    LOGGER.debug("HttpSourcetask Struct received :{}", struct);
+    return new SourceRecord(
+        Maps.newHashMap(),
+        Maps.newHashMap(),
+        httpExchange.isSuccess() ? sourceConfig.getSuccessTopic() : sourceConfig.getErrorsTopic(),
+        struct.schema(),
+        struct);
+  }
 
-        return records;
-    }
-
-
-    private SourceRecord toSourceRecord(KafkaRecord kafkaRecord){
-        //sourcePartition and sourceOffset are useful to track data consumption from source
-        //but it is useless in the in memory queue context
-        HttpExchange httpExchange = kafkaRecord.getHttpExchange();
-
-        Struct struct;
-        if("response".equalsIgnoreCase(sourceConfig.getContent())){
-            HttpResponse httpResponse = httpExchange.getResponse();
-            struct = HttpResponseAdapter.from(httpResponse).toStruct();
-        }else {
-            struct = HttpExchangeAdapter.from(httpExchange).toStruct();
-        }
-
-        LOGGER.debug("HttpSourcetask Struct received :{}",struct);
-        return new SourceRecord(
-                Maps.newHashMap(),
-                Maps.newHashMap(),
-                httpExchange.isSuccess()? sourceConfig.getSuccessTopic(): sourceConfig.getErrorsTopic(),
-                struct.schema(),
-                struct
-        );
-    }
-
-
-
-
-    @Override
-    public void stop() {
-        //nothing to stop
-    }
+  @Override
+  public void stop() {
+    // nothing to stop
+  }
 }

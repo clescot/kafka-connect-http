@@ -4,42 +4,39 @@ import io.github.clescot.core.http.HttpExchange;
 import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.header.Header;
 
-/**
- * represents a Kafka Record in the in-memory queue.
- */
+/** represents a Kafka Record in the in-memory queue. */
 public class KafkaRecord {
 
-    private Iterable<Header> headers;
-    private Schema schemaKey;
-    private Object key;
-    private HttpExchange httpExchange;
+  private Iterable<Header> headers;
+  private Schema schemaKey;
+  private Object key;
+  private HttpExchange httpExchange;
 
-    public KafkaRecord(HttpExchange httpExchange) {
-        this.httpExchange = httpExchange;
-    }
-    public KafkaRecord(Iterable<Header> headers,
-                       Schema schemaKey,
-                       Object key,
-                       HttpExchange httpExchange) {
-        this.headers = headers;
-        this.schemaKey = schemaKey;
-        this.key = key;
-        this.httpExchange = httpExchange;
-    }
+  public KafkaRecord(HttpExchange httpExchange) {
+    this.httpExchange = httpExchange;
+  }
 
-    public Iterable<Header> getHeaders() {
-        return headers;
-    }
+  public KafkaRecord(
+      Iterable<Header> headers, Schema schemaKey, Object key, HttpExchange httpExchange) {
+    this.headers = headers;
+    this.schemaKey = schemaKey;
+    this.key = key;
+    this.httpExchange = httpExchange;
+  }
 
-    public Schema getSchemaKey() {
-        return schemaKey;
-    }
+  public Iterable<Header> getHeaders() {
+    return headers;
+  }
 
-    public Object getKey() {
-        return key;
-    }
+  public Schema getSchemaKey() {
+    return schemaKey;
+  }
 
-    public HttpExchange getHttpExchange() {
-        return httpExchange;
-    }
+  public Object getKey() {
+    return key;
+  }
+
+  public HttpExchange getHttpExchange() {
+    return httpExchange;
+  }
 }

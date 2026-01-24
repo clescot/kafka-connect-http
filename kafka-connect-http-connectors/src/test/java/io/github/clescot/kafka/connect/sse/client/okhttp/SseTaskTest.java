@@ -1,130 +1,120 @@
 package io.github.clescot.kafka.connect.sse.client.okhttp;
 
-import com.google.common.collect.Maps;
-import org.junit.jupiter.api.Nested;
-import org.junit.jupiter.api.Test;
-
-import java.util.HashMap;
-import java.util.Map;
-
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.*;
 
+import com.google.common.collect.Maps;
+import java.util.HashMap;
+import java.util.Map;
+import org.junit.jupiter.api.Nested;
+import org.junit.jupiter.api.Test;
 
 class SseTaskTest {
 
-    @Nested
-    class Constructor {
+  @Nested
+  class Constructor {
 
-        @Test
-        void null_args() {
-            assertThrows(NullPointerException.class, () -> new SseTask(null));
-        }
-        @Test
-        void empty_settings() {
-            HashMap<String, String> emptySettings = Maps.newHashMap();
-            assertThrows(IllegalArgumentException.class, () -> new SseTask(emptySettings));
-        }
-
-        @Test
-        void valid_args() {
-            SseTask sseTask = new SseTask(
-                    Map.of(
-                            "config.ids", "default",
-                            "config.default.url", "http://localhost:8080/sse",
-                            "config.default.topic", "test-topic"
-                    )
-            );
-            assertNotNull(sseTask);
-        }
+    @Test
+    void null_args() {
+      assertThrows(NullPointerException.class, () -> new SseTask(null));
     }
 
-    @Nested
-    class Connect {
-
-        @Test
-        void connect() {
-            SseTask sseTask = new SseTask(
-                    Map.of(
-                            "config.ids", "default",
-                            "config.default.url", "http://localhost:8080/sse",
-                            "config.default.topic", "test-topic"
-                    )
-            );
-            sseTask.connect();
-            assertThat(sseTask.getDefaultConfiguration().getConfigurationId()).isEqualTo("default");
-            assertThat(sseTask.getConfigurations().get("default").getTopic()).isEqualTo("test-topic");
-            assertThat(sseTask.isConnected("default")).isTrue();
-            assertThat(sseTask.isStarted("default")).isFalse();
-            assertFalse(sseTask.getQueues().isEmpty());
-
-        }
+    @Test
+    void empty_settings() {
+      HashMap<String, String> emptySettings = Maps.newHashMap();
+      assertThrows(IllegalArgumentException.class, () -> new SseTask(emptySettings));
     }
 
+    @Test
+    void valid_args() {
+      SseTask sseTask =
+          new SseTask(
+              Map.of(
+                  "config.ids", "default",
+                  "config.default.url", "http://localhost:8080/sse",
+                  "config.default.topic", "test-topic"));
+      assertNotNull(sseTask);
+    }
+  }
 
-    @Nested
-    class Start {
+  @Nested
+  class Connect {
 
-        @Test
-        void start() {
-            SseTask sseTask = new SseTask(
-                    Map.of(
-                            "config.ids", "default",
-                            "config.default.url", "http://localhost:8080/sse",
-                            "config.default.topic", "test-topic"
-                    )
-            );
-            sseTask.connect();
-            sseTask.start();
-            assertThat(sseTask.isStarted("default")).isTrue();
-        }
+    @Test
+    void connect() {
+      SseTask sseTask =
+          new SseTask(
+              Map.of(
+                  "config.ids", "default",
+                  "config.default.url", "http://localhost:8080/sse",
+                  "config.default.topic", "test-topic"));
+      sseTask.connect();
+      assertThat(sseTask.getDefaultConfiguration().getConfigurationId()).isEqualTo("default");
+      assertThat(sseTask.getConfigurations().get("default").getTopic()).isEqualTo("test-topic");
+      assertThat(sseTask.isConnected("default")).isTrue();
+      assertThat(sseTask.isStarted("default")).isFalse();
+      assertFalse(sseTask.getQueues().isEmpty());
+    }
+  }
 
-        @Test
-        void start_not_connected() {
-            SseTask sseTask = new SseTask(
-                    Map.of(
-                            "config.ids", "default",
-                            "config.default.url", "http://localhost:8080/sse",
-                            "config.default.topic", "test-topic"
-                    )
-            );
-            sseTask.start();
-            assertThat(sseTask.isStarted("default")).isTrue();
-        }
+  @Nested
+  class Start {
+
+    @Test
+    void start() {
+      SseTask sseTask =
+          new SseTask(
+              Map.of(
+                  "config.ids", "default",
+                  "config.default.url", "http://localhost:8080/sse",
+                  "config.default.topic", "test-topic"));
+      sseTask.connect();
+      sseTask.start();
+      assertThat(sseTask.isStarted("default")).isTrue();
     }
 
-
-    @Nested
-    class Stop {
-
-        @Test
-        void connect_start_and_stop() {
-            SseTask sseTask = new SseTask(
-                    Map.of(
-                            "config.ids", "default",
-                            "config.default.url", "http://localhost:8080/sse",
-                            "config.default.topic", "test-topic"
-                    )
-            );
-            sseTask.connect();
-            sseTask.start();
-            sseTask.stop();
-            assertThat(sseTask.isStarted("default")).isFalse();
-            assertThat(sseTask.isConnected("default")).isFalse();
-        }
-
-        @Test
-        void stop_without_connect_and_start() {
-            SseTask sseTask = new SseTask(
-                    Map.of(
-                            "config.ids", "default",
-                            "config.default.url", "http://localhost:8080/sse",
-                            "config.default.topic", "test-topic"
-                    )
-            );
-            sseTask.stop();
-            assertThat(sseTask.isStarted("default")).isFalse();
-            assertThat(sseTask.isConnected("default")).isFalse();
-        }
+    @Test
+    void start_not_connected() {
+      SseTask sseTask =
+          new SseTask(
+              Map.of(
+                  "config.ids", "default",
+                  "config.default.url", "http://localhost:8080/sse",
+                  "config.default.topic", "test-topic"));
+      sseTask.start();
+      assertThat(sseTask.isStarted("default")).isTrue();
     }
+  }
+
+  @Nested
+  class Stop {
+
+    @Test
+    void connect_start_and_stop() {
+      SseTask sseTask =
+          new SseTask(
+              Map.of(
+                  "config.ids", "default",
+                  "config.default.url", "http://localhost:8080/sse",
+                  "config.default.topic", "test-topic"));
+      sseTask.connect();
+      sseTask.start();
+      sseTask.stop();
+      assertThat(sseTask.isStarted("default")).isFalse();
+      assertThat(sseTask.isConnected("default")).isFalse();
+    }
+
+    @Test
+    void stop_without_connect_and_start() {
+      SseTask sseTask =
+          new SseTask(
+              Map.of(
+                  "config.ids", "default",
+                  "config.default.url", "http://localhost:8080/sse",
+                  "config.default.topic", "test-topic"));
+      sseTask.stop();
+      assertThat(sseTask.isStarted("default")).isFalse();
+      assertThat(sseTask.isConnected("default")).isFalse();
+    }
+  }
 }
