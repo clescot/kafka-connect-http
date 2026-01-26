@@ -48,7 +48,7 @@
         <jacoco.version>0.8.12</jacoco.version>
         <json.assert.version>1.5.3</json.assert.version>
         <junit.version>6.0.2</junit.version>
-        <logback.version>1.5.25</logback.version>
+        <logback.version>1.5.26</logback.version>
         <maven.compiler.release>17</maven.compiler.release>
         <maven.compiler.source>17</maven.compiler.source>
         <maven.compiler.target>17</maven.compiler.target>
@@ -102,7 +102,7 @@
             <dependency>
                 <groupId>ch.qos.logback</groupId>
                 <artifactId>logback-classic</artifactId>
-                <version>1.5.25</version>
+                <version>1.5.26</version>
             </dependency>
 
             <dependency>
