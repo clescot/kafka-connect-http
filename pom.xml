@@ -6,7 +6,7 @@
     <url>https://github.com/clescot/kafka-connect-http</url>
     <groupId>io.github.clescot</groupId>
     <artifactId>kafka-connect-http</artifactId>
-    <version>0.8.171</version>
+    <version>0.8.172-SNAPSHOT</version>
     <licenses>
         <license>
             <name>Apache License, Version 2.0</name>
@@ -19,7 +19,7 @@
         <connection>scm:git:${project.scm.url}</connection>
         <developerConnection>scm:git:${project.scm.url}</developerConnection>
         <url>https://github.com/clescot/kafka-connect-http.git</url>
-        <tag>0.8.171</tag>
+        <tag>0.7.180</tag>
     </scm>
     <developers>
         <developer>
