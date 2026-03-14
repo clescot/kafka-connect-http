@@ -6,7 +6,6 @@
 *.ipr
 *.iws
 /src/.~lock.*
-/kafka-connect-http-core/target/
 /http-core/target/
 /http-client/target/
 /kafka-connect-http-connectors/target/
