@@ -100,7 +100,7 @@ public class ExchangeTemplateProcessorFactory {
         ExchangeTemplateManager discoveredManager = discoverProcessors();
         for (ExchangeTemplateProcessor processor : discoveredManager.getProcessors()) {
             // Avoid duplicate registration
-            if (!manager.getProcessors().stream().anyMatch(p -> p.getName().equals(processor.getName()))) {
+            if (manager.getProcessors().stream().noneMatch(p -> p.getName().equals(processor.getName()))) {
                 manager.registerProcessor(processor);
             }
         }
