@@ -12,7 +12,7 @@
     <dependencies>
         <dependency>
             <groupId>${project.groupId}</groupId>
-            <artifactId>kafka-connect-http-core</artifactId>
+            <artifactId>http-core</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>
