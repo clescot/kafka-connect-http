@@ -95,8 +95,8 @@ public class HttpConfiguration<C extends HttpClient<NR, NS>, NR, NS> implements 
         failsafeExecutor = buildFailsafeExecutor();
         
         // Initialize template processing using shared utility
-        this.exchangeTemplate =  settings.getOrDefault("exchange.template", "");
-        this.templateManager = factory.createDefaultTemplateManager();
+        this.exchangeTemplate =  settings.getOrDefault(EXCHANGE_TEMPLATE, "");
+        this.templateManager = factory.createTemplateManager(settings);
     }
 
     private FailsafeExecutor<HttpExchange> buildFailsafeExecutor() {

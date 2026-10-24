@@ -167,6 +167,20 @@ there is no default http request grouper.
 - `message.limit` : define the maximum of initial messages grouped into one.
 - `body.limit` : define the maximum body length in bytes of the grouped HttpRequest.
 
+### Exchange templating
+
+Before an HttpExchange is published, its content can be rewritten with a template expression.
+
+- `exchange.template` : the template applied to the exchange. empty by default (templating disabled).
+- `exchange.template.processors` : comma-separated list of template processors to enable. when empty, all
+  built-in processors are enabled. built-in processors are `jsonpath`, `xpath`, `jmespath`, `regex`,
+  `headerparam`, `datetime`, `conditional`, `hash`, `math` and `random`.
+
+Both settings are available per configuration, e.g. `config.default.exchange.template` and
+`config.default.exchange.template.processors`.
+
+See [Exchange Template Customization](EXCHANGE_TEMPLATE_EXAMPLES.md) for the full syntax and examples.
+
 ### Configuration
 
 Configuration of an Http Client instance.

@@ -15,6 +15,10 @@ Only the 'IN_MEMORY_QUEUE' publish mode require to setup an HTTP Source connecto
 - *`queue.name`* : if not set, listen on the 'default' queue.
 - *`content`* : either `exchange` (HttpExchange) or `response`(HttpResponse). default is `exchange`.
 
+> Note: this connector reads HttpExchanges that are already produced (typically by an HTTP Sink connector). Exchange
+> templating is applied where the exchange is produced, on the producing side (see
+> [Exchange Template Customization](EXCHANGE_TEMPLATE_EXAMPLES.md)), so it has no effect on this source connector.
+
 #### Configuration example
 
 

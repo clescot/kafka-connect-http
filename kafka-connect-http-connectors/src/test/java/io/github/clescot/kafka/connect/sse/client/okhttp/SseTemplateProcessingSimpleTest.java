@@ -45,7 +45,7 @@ class SseTemplateProcessingSimpleTest {
 
       // Add template configuration - use jsonpath processor
       settings.put("config." + configurationId + ".exchange.template", "${response.data}");
-      settings.put("config." + configurationId + ".exchange.template.processor.names", "jsonpath");
+      settings.put("config." + configurationId + ".exchange.template.processors", "jsonpath");
 
       // Create the configuration directly (without starting the task)
       SseConfiguration sseConfiguration =

@@ -48,7 +48,7 @@ jobs:
         uses: ncipollo/release-action@v1.20.0
         with:
           tag: ${{ steps.tag-name.outputs.TAG }}
-          artifacts: "kafka-connect-http-core/target/*-${{ steps.tag-name.outputs.TAG }}.jar,kafka-connect-http-connectors/target/components/packages/*-${{ steps.tag-name.outputs.TAG }}.zip"
+          artifacts: "http-core/target/*-${{ steps.tag-name.outputs.TAG }}.jar,http-client/target/*-${{ steps.tag-name.outputs.TAG }}.jar,kafka-connect-http-connectors/target/components/packages/*-${{ steps.tag-name.outputs.TAG }}.zip"
           generateReleaseNotes: true
           token: ${{ secrets.GITHUB_TOKEN }}
 

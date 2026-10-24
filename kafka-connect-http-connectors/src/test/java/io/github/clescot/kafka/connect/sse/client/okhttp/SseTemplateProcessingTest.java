@@ -49,7 +49,7 @@ class SseTemplateProcessingTest {
 
       // Add template configuration - use correct JSONPath syntax
       settings.put("config." + configurationId + ".exchange.template", "${jsonpath:content}");
-      settings.put("config." + configurationId + ".exchange.template.processor.names", "jsonpath");
+      settings.put("config." + configurationId + ".exchange.template.processors", "jsonpath");
 
       sseSourceTask.start(settings);
 
@@ -117,7 +117,7 @@ class SseTemplateProcessingTest {
       // syntax
       // The content contains the JSON string, so we need to parse it first
       settings.put("config." + configurationId + ".exchange.template", "${jsonpath:content}");
-      settings.put("config." + configurationId + ".exchange.template.processor.names", "jsonpath");
+      settings.put("config." + configurationId + ".exchange.template.processors", "jsonpath");
 
       sseSourceTask.start(settings);
 

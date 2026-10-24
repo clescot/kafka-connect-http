@@ -139,6 +139,19 @@ public class SseConfigDefinition {
             ConfigDef.Type.STRING,
             "0.5",
             ConfigDef.Importance.MEDIUM,
-            RETRY_DELAY_STRATEGY_JITTER_MULTIPLIER_DOC);
+            RETRY_DELAY_STRATEGY_JITTER_MULTIPLIER_DOC)
+        // templating
+        .define(
+            prefix + EXCHANGE_TEMPLATE,
+            ConfigDef.Type.STRING,
+            "",
+            ConfigDef.Importance.LOW,
+            EXCHANGE_TEMPLATE_DOC)
+        .define(
+            prefix + EXCHANGE_TEMPLATE_PROCESSORS,
+            ConfigDef.Type.STRING,
+            "",
+            ConfigDef.Importance.LOW,
+            EXCHANGE_TEMPLATE_PROCESSORS_DOC);
   }
 }

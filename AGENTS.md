@@ -57,7 +57,7 @@ mvn clean install
 - **Methods**: camelCase with underscores for tests (e.g., `test_serialization_with_attributes`)
 - **Constants**: UPPER_SNAKE_CASE (e.g., `URL_FIELD`, `DEFAULT_TIMEOUT`)
 - **Variables**: camelCase (e.g., `httpRequest`, `headersMap`)
-- **Packages**: lowercase (e.g., `io.github.clescot.kafka.connect.http.core`)
+- **Packages**: lowercase (e.g., `io.github.clescot.core.http`)
 
 ### Field Declarations
 - Use `@Serial` annotation for Serializable class serialVersionUID fields

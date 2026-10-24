@@ -69,18 +69,11 @@ The HTTP connector supports template processing for both source and sink connect
 }
 ```
 
-#### HTTP Source Connector Example
+#### HTTP Source Connector
 
-```json
-{
-   "tasks.max" : "1",
-   "connector.class" : "io.github.clescot.kafka.connect.http.source.queue.HttpInMemoryQueueSourceConnector",
-   "exchange.template" : "${jsonpath:$.request.headers.X-Request-ID} ${datetime:now:yyyy-MM-dd HH:mm:ss}",
-   "exchange.template.processors" : "jsonpath,datetime",
-   "queue.name" : "in-memory-queue",
-   "topic" : "incoming-requests"
-}
-```
+> The HTTP Source connector (`HttpInMemoryQueueSourceConnector`) only *consumes* HttpExchanges that were produced
+> elsewhere (typically by an HTTP Sink connector). Templating is applied on the production side, so configure
+> `exchange.template` on the connector that produces the exchange (HTTP Sink connector), not on this source connector.
 
 ### SSE Connector Configuration
 

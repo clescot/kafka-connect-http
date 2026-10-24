@@ -14,6 +14,12 @@ public class ExchangeTemplateProcessorFactory {
     private static final Logger LOGGER = LoggerFactory.getLogger(ExchangeTemplateProcessorFactory.class);
 
     /**
+     * Settings key used to restrict the set of enabled template processors.
+     * When absent or empty, all built-in processors are enabled.
+     */
+    public static final String EXCHANGE_TEMPLATE_PROCESSORS_KEY = "exchange.template.processors";
+
+    /**
      * Create a new instance of a built-in template processor.
      * 
      * @param processorName the name of the processor to create
@@ -33,9 +39,9 @@ public class ExchangeTemplateProcessorFactory {
             case RandomExchangeTemplateProcessor.NAME -> new RandomExchangeTemplateProcessor();
             case JmesPathExchangeTemplateProcessor.NAME -> new JmesPathExchangeTemplateProcessor();
             case RegexExchangeTemplateProcessor.NAME -> new RegexExchangeTemplateProcessor();
-            case HeaderParameterTemplateProcessor.NAME -> new HeaderParameterTemplateProcessor();
+            case HeaderParameterTemplateProcessor.NAME, "headerparam" -> new HeaderParameterTemplateProcessor();
             case DateTimeTemplateProcessor.NAME -> new DateTimeTemplateProcessor();
-            case ConditionalTemplateProcessor.NAME -> new ConditionalTemplateProcessor();
+            case ConditionalTemplateProcessor.NAME, "conditional" -> new ConditionalTemplateProcessor();
             case HashingTemplateProcessor.NAME -> new HashingTemplateProcessor();
             case MathTemplateProcessor.NAME -> new MathTemplateProcessor();
             default -> throw new IllegalArgumentException("Unknown built-in processor: " + processorName);
@@ -64,22 +70,27 @@ public class ExchangeTemplateProcessorFactory {
     }
 
     public ExchangeTemplateManager createTemplateManager(Map<String,String> settings){
-        ExchangeTemplateManager manager = new ExchangeTemplateManager();
+        String customProcessors = settings.getOrDefault(EXCHANGE_TEMPLATE_PROCESSORS_KEY, "");
 
-        // Check for custom processor configuration
-        String customProcessors = settings.getOrDefault("exchange.template.processors", "");
-        if (!customProcessors.trim().isEmpty()) {
-            String[] processorNames = customProcessors.split(",");
-            for (String processorName : processorNames) {
-                try {
-                    ExchangeTemplateProcessor processor = new ExchangeTemplateProcessorFactory().createBuiltinProcessor(processorName.trim());
-                    manager.registerProcessor(processor);
-                    if(LOGGER.isInfoEnabled()) {
-                        LOGGER.info("Registered custom processor: {}", processorName.trim());
-                    }
-                } catch (Exception e) {
-                    LOGGER.warn("Failed to load custom processor '{}': {}", processorName.trim(), e.getMessage());
+        // No explicit selection -> every built-in processor is enabled (plus discovered ones).
+        if (customProcessors == null || customProcessors.trim().isEmpty()) {
+            return createDefaultTemplateManager();
+        }
+
+        // Explicit selection -> only the requested processors are registered.
+        ExchangeTemplateManager manager = new ExchangeTemplateManager(false);
+        for (String processorName : customProcessors.split(",")) {
+            String trimmed = processorName.trim();
+            if (trimmed.isEmpty()) {
+                continue;
+            }
+            try {
+                manager.registerProcessor(createBuiltinProcessor(trimmed));
+                if(LOGGER.isInfoEnabled()) {
+                    LOGGER.info("Registered template processor: {}", trimmed);
                 }
+            } catch (Exception e) {
+                LOGGER.warn("Failed to load custom processor '{}': {}", trimmed, e.getMessage());
             }
         }
         return manager;

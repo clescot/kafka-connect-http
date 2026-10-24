@@ -373,7 +373,20 @@ public class HttpConfigDefinition {
                 ConfigDef.Type.INT,
                 100_000,
                 ConfigDef.Importance.LOW,
-                CONFIG_DEFAULT_HTTP_RESPONSE_BODY_LIMIT_DOC);
+                CONFIG_DEFAULT_HTTP_RESPONSE_BODY_LIMIT_DOC)
+            // templating
+            .define(
+                prefix + EXCHANGE_TEMPLATE,
+                ConfigDef.Type.STRING,
+                "",
+                ConfigDef.Importance.LOW,
+                EXCHANGE_TEMPLATE_DOC)
+            .define(
+                prefix + EXCHANGE_TEMPLATE_PROCESSORS,
+                ConfigDef.Type.STRING,
+                "",
+                ConfigDef.Importance.LOW,
+                EXCHANGE_TEMPLATE_PROCESSORS_DOC);
     String staticHeaderNames = settings.get(prefix + STATIC_REQUEST_HEADER_NAMES);
     if (staticHeaderNames != null && !staticHeaderNames.isBlank()) {
       List<String> staticHeaders = Arrays.asList(staticHeaderNames.split(","));

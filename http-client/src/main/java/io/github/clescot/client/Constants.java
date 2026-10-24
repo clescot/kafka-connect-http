@@ -596,5 +596,10 @@ public class Constants {
     public static final String CONFIG_DEFAULT_HTTP_CLIENT_PROXY_AUTHENTICATION_DIGEST_CHARSET = DEFAULT_CONFIGURATION_PREFIX + HTTP_CLIENT_PROXY_AUTHENTICATION_DIGEST_CHARSET;
     public static final String CONFIG_DEFAULT_HTTP_CLIENT_PROXY_AUTHENTICATION_DIGEST_CHARSET_DOC = "charset used to encode proxy 'digest' credentials. default is 'US-ASCII'";
 
+    //templating
+    public static final String EXCHANGE_TEMPLATE = "exchange.template";
+    public static final String EXCHANGE_TEMPLATE_DOC = "template applied to the Exchange before it is published. see EXCHANGE_TEMPLATE_EXAMPLES.md for the supported syntax. empty by default (templating disabled).";
+    public static final String EXCHANGE_TEMPLATE_PROCESSORS = "exchange.template.processors";
+    public static final String EXCHANGE_TEMPLATE_PROCESSORS_DOC = "comma-separated list of template processors to enable. when empty, all built-in processors are enabled.";
 
 }

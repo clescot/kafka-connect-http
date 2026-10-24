@@ -24,6 +24,12 @@ and provide them to each configured topic.
 `always-throw`, `always-continue`, `continue-with-max-attempts`,`continue-with-time-limit`.
 * `error.strategy.max-attempts` (default: `3`) - Maximum number of attempts before giving up.
 * `error.strategy.time-limit-millis` (default: `60000`) - Time limit in milliseconds before giving up.
+* `exchange.template` - template applied to each received SSE event. empty by default (templating disabled).
+* `exchange.template.processors` - comma-separated list of template processors to enable. when empty, all
+  built-in processors are enabled. See [Exchange Template Customization](EXCHANGE_TEMPLATE_EXAMPLES.md).
+
+Both template settings are available per configuration, e.g. `config.default.exchange.template` and
+`config.default.exchange.template.processors`.
 
     
 

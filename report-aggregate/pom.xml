@@ -17,6 +17,11 @@
         </dependency>
         <dependency>
             <groupId>${project.groupId}</groupId>
+            <artifactId>http-client</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>${project.groupId}</groupId>
             <artifactId>kafka-connect-http-connectors</artifactId>
             <version>${project.version}</version>
         </dependency>

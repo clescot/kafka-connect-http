@@ -1,5 +1,6 @@
 package io.github.clescot.kafka.connect.sse.client.okhttp;
 
+import static io.github.clescot.client.Constants.EXCHANGE_TEMPLATE;
 import static io.github.clescot.client.http.HttpClientFactory.getRandom;
 
 import com.google.common.base.Preconditions;
@@ -69,7 +70,7 @@ public class SseConfiguration implements Configuration<OkHttpClient, HttpRequest
     Preconditions.checkNotNull(topic, "'topic' must not be null or empty.");
 
     // Initialize template processing using shared utility
-    this.exchangeTemplate = settings.getOrDefault("exchange.template", "");
+    this.exchangeTemplate = settings.getOrDefault(EXCHANGE_TEMPLATE, "");
     ExchangeTemplateProcessorFactory factory = new ExchangeTemplateProcessorFactory();
     this.templateManager = factory.createTemplateManager(settings);
   }
