@@ -5,6 +5,7 @@ import static io.github.clescot.client.http.HttpClientConfigDefinition.*;
 
 import com.google.common.collect.Sets;
 import io.github.clescot.client.ConfigUtils;
+import io.github.clescot.client.http.ExchangeTemplateProcessorsValidator;
 import io.github.clescot.client.http.HttpClientConfigDefinition;
 import io.github.clescot.kafka.connect.http.sink.SinkConfigDefinition;
 import java.util.Arrays;
@@ -151,6 +152,7 @@ public class SseConfigDefinition {
             prefix + EXCHANGE_TEMPLATE_PROCESSORS,
             ConfigDef.Type.STRING,
             "",
+            new ExchangeTemplateProcessorsValidator(),
             ConfigDef.Importance.LOW,
             EXCHANGE_TEMPLATE_PROCESSORS_DOC);
   }

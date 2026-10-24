@@ -27,7 +27,7 @@ To enable template processing, add the following to your connector configuration
 # Enable template processing
 exchange.template=your_template_here
 
-# Optionally specify which processors to use (default includes all built-in processors)
+# Optionally restrict which processors are enabled (empty = all built-in processors are enabled)
 exchange.template.processors=jsonpath,random,xpath,jmespath,regex,headerparam,datetime,conditional,hash,math
 ```
 
@@ -1012,6 +1012,10 @@ Map<String, String> settings = new HashMap<>();
 settings.put("exchange.template.processors", "jsonpath,random,xpath,mycustom");
 ```
 
+Note: `exchange.template.processors` is a **whitelist**. When it is set, only the listed processors are
+enabled - unlisted built-in processors are disabled. Custom processor names are resolved via the Java
+Service Loader (see below), and unknown names are rejected at connector configuration validation.
+
 ### Service Loader Discovery
 
 Custom processors can be automatically discovered using Java's Service Loader mechanism by creating a file:
@@ -1019,6 +1023,10 @@ Custom processors can be automatically discovered using Java's Service Loader me
 `META-INF/services/io.github.clescot.core.http.template.ExchangeTemplateProcessor`
 
 With your processor class name as the content.
+
+When `exchange.template.processors` is empty, discovered processors are registered automatically,
+alongside all the built-in ones. When it is set, discovered processors are only registered if their
+name appears in the list.
 
 ## Template Syntax Reference
 

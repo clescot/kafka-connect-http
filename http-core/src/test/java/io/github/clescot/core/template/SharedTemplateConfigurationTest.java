@@ -64,4 +64,48 @@ class SharedTemplateConfigurationTest {
         assertThat(manager.getProcessor("invalid-processor")).isNull();
     }
 
+    @Test
+    void testExplicitProcessorSelectionIsRestrictive() {
+        // An explicit list is a whitelist: only the listed processors are registered
+        Map<String, String> settings = new HashMap<>();
+        settings.put("exchange.template.processors", "jsonpath");
+
+        ExchangeTemplateProcessorFactory factory = new ExchangeTemplateProcessorFactory();
+        ExchangeTemplateManager manager = factory.createTemplateManager(settings);
+
+        // the listed processor is registered
+        assertThat(manager.getProcessor("jsonpath")).isNotNull();
+        // unlisted built-in processors are NOT registered
+        assertThat(manager.getProcessor("random")).isNull();
+        assertThat(manager.getProcessor("xpath")).isNull();
+        assertThat(manager.getProcessor("jmespath")).isNull();
+        assertThat(manager.getProcessor("regex")).isNull();
+        assertThat(manager.getProcessor("header")).isNull();
+        assertThat(manager.getProcessor("datetime")).isNull();
+        assertThat(manager.getProcessor("if")).isNull();
+        assertThat(manager.getProcessor("hash")).isNull();
+        assertThat(manager.getProcessor("math")).isNull();
+    }
+
+    @Test
+    void testEmptyProcessorSelectionEnablesAllBuiltins() {
+        // An empty list means all built-in processors are enabled
+        Map<String, String> settings = new HashMap<>();
+        settings.put("exchange.template.processors", "");
+
+        ExchangeTemplateProcessorFactory factory = new ExchangeTemplateProcessorFactory();
+        ExchangeTemplateManager manager = factory.createTemplateManager(settings);
+
+        assertThat(manager.getProcessor("jsonpath")).isNotNull();
+        assertThat(manager.getProcessor("xpath")).isNotNull();
+        assertThat(manager.getProcessor("jmespath")).isNotNull();
+        assertThat(manager.getProcessor("regex")).isNotNull();
+        assertThat(manager.getProcessor("random")).isNotNull();
+        assertThat(manager.getProcessor("header")).isNotNull();
+        assertThat(manager.getProcessor("datetime")).isNotNull();
+        assertThat(manager.getProcessor("if")).isNotNull();
+        assertThat(manager.getProcessor("hash")).isNotNull();
+        assertThat(manager.getProcessor("math")).isNotNull();
+    }
+
 }

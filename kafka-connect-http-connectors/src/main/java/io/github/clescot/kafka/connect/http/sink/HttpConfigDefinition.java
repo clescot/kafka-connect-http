@@ -5,6 +5,7 @@ import static io.github.clescot.client.Constants.*;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import io.github.clescot.client.ConfigUtils;
+import io.github.clescot.client.http.ExchangeTemplateProcessorsValidator;
 import io.github.clescot.client.http.HttpClientConfigDefinition;
 import io.github.clescot.kafka.connect.http.mapper.MapperMode;
 import java.util.*;
@@ -385,6 +386,7 @@ public class HttpConfigDefinition {
                 prefix + EXCHANGE_TEMPLATE_PROCESSORS,
                 ConfigDef.Type.STRING,
                 "",
+                new ExchangeTemplateProcessorsValidator(),
                 ConfigDef.Importance.LOW,
                 EXCHANGE_TEMPLATE_PROCESSORS_DOC);
     String staticHeaderNames = settings.get(prefix + STATIC_REQUEST_HEADER_NAMES);

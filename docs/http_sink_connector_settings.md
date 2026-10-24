@@ -173,8 +173,9 @@ Before an HttpExchange is published, its content can be rewritten with a templat
 
 - `exchange.template` : the template applied to the exchange. empty by default (templating disabled).
 - `exchange.template.processors` : comma-separated list of template processors to enable. when empty, all
-  built-in processors are enabled. built-in processors are `jsonpath`, `xpath`, `jmespath`, `regex`,
-  `headerparam`, `datetime`, `conditional`, `hash`, `math` and `random`.
+  built-in processors are enabled. when set, only the listed processors are enabled (**whitelist**) and
+  unknown names are rejected at connector configuration validation. built-in processors are `jsonpath`,
+  `xpath`, `jmespath`, `regex`, `headerparam`, `datetime`, `conditional`, `hash`, `math` and `random`.
 
 Both settings are available per configuration, e.g. `config.default.exchange.template` and
 `config.default.exchange.template.processors`.

@@ -6,7 +6,10 @@ import com.google.common.collect.Maps;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
+import org.apache.kafka.common.config.Config;
 import org.apache.kafka.common.config.ConfigDef;
+import org.apache.kafka.common.config.ConfigValue;
 import org.apache.kafka.connect.connector.Task;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Nested;
@@ -188,6 +191,47 @@ public class HttpSinkConnectorTest {
           .containsKey("config.config2.enrich.request.static.header.header5");
       assertThat(configDef.configKeys())
           .containsKey("config.config2.enrich.request.static.header.header6");
+    }
+
+    @Test
+    void test_unknown_template_processor_is_rejected_at_validation() {
+
+      // given
+      HttpSinkConnector httpSinkConnector = new HttpSinkConnector();
+      Map<String, String> settings = Maps.newHashMap();
+      settings.put("config.default.exchange.template.processors", "jsonpath,jsonpth,random");
+
+      // when
+      Config config = httpSinkConnector.validate(settings);
+
+      // then
+      Optional<ConfigValue> configValue =
+          config.configValues().stream()
+              .filter(value -> value.name().equals("config.default.exchange.template.processors"))
+              .findFirst();
+      assertThat(configValue).isPresent();
+      assertThat(configValue.get().errorMessages()).isNotEmpty();
+    }
+
+    @Test
+    void test_known_template_processors_pass_validation() {
+
+      // given
+      HttpSinkConnector httpSinkConnector = new HttpSinkConnector();
+      Map<String, String> settings = Maps.newHashMap();
+      settings.put("config.default.exchange.template", "${jsonpath:$.response.statusCode}");
+      settings.put("config.default.exchange.template.processors", "jsonpath,datetime");
+
+      // when
+      Config config = httpSinkConnector.validate(settings);
+
+      // then
+      Optional<ConfigValue> configValue =
+          config.configValues().stream()
+              .filter(value -> value.name().equals("config.default.exchange.template.processors"))
+              .findFirst();
+      assertThat(configValue).isPresent();
+      assertThat(configValue.get().errorMessages()).isEmpty();
     }
   }
 }
