@@ -598,7 +598,7 @@ public class Constants {
 
     //templating
     public static final String EXCHANGE_TEMPLATE = "exchange.template";
-    public static final String EXCHANGE_TEMPLATE_DOC = "template applied to the Exchange before it is published. see EXCHANGE_TEMPLATE_EXAMPLES.md for the supported syntax. empty by default (templating disabled).";
+    public static final String EXCHANGE_TEMPLATE_DOC = "template applied to the Exchange before it is published. see docs/reference/exchange-template-syntax.md for the supported syntax. empty by default (templating disabled).";
     public static final String EXCHANGE_TEMPLATE_PROCESSORS = "exchange.template.processors";
     public static final String EXCHANGE_TEMPLATE_PROCESSORS_DOC = "comma-separated list of template processors to enable. when empty, all built-in processors are enabled. when set, only the listed processors are enabled (whitelist). unknown processor names are rejected at configuration validation.";
 
