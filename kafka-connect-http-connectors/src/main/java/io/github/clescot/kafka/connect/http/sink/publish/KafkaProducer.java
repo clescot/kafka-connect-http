@@ -1,5 +1,9 @@
 package io.github.clescot.kafka.connect.http.sink.publish;
 
+import java.time.Duration;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.Future;
 import org.apache.kafka.clients.consumer.ConsumerGroupMetadata;
 import org.apache.kafka.clients.consumer.OffsetAndMetadata;
 import org.apache.kafka.clients.producer.*;
@@ -8,104 +12,102 @@ import org.apache.kafka.common.errors.ProducerFencedException;
 import org.apache.kafka.common.metrics.KafkaMetric;
 import org.apache.kafka.common.serialization.Serializer;
 
-import java.time.Duration;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.Future;
-
 public class KafkaProducer<K, V> implements Producer<K, V> {
 
+  private Producer<K, V> producer;
 
-    private Producer<K, V> producer;
+  public KafkaProducer(Producer<K, V> producer) {
+    this.producer = producer;
+  }
 
+  public KafkaProducer() {}
 
-    public KafkaProducer(Producer<K, V> producer) {
-        this.producer = producer;
+  public void configure(
+      Map<String, Object> producerSettings,
+      Serializer<K> keySerializer,
+      Serializer<V> valueSerializer) {
+
+    if (!MockProducer.class.isAssignableFrom(producer.getClass())) {
+      producer =
+          new org.apache.kafka.clients.producer.KafkaProducer<>(
+              producerSettings, keySerializer, valueSerializer);
     }
+  }
 
-    public KafkaProducer() {
-    }
+  @Override
+  public void initTransactions() {
+    producer.initTransactions();
+  }
 
-    public void configure(Map<String, Object> producerSettings, Serializer<K> keySerializer, Serializer<V> valueSerializer) {
+  @Override
+  public void beginTransaction() throws ProducerFencedException {
+    producer.beginTransaction();
+  }
 
-            if (!MockProducer.class.isAssignableFrom(producer.getClass())) {
-                producer = new org.apache.kafka.clients.producer.KafkaProducer<>(producerSettings, keySerializer, valueSerializer);
-            }
-    }
+  @Override
+  public void sendOffsetsToTransaction(
+      Map<TopicPartition, OffsetAndMetadata> offsets, ConsumerGroupMetadata groupMetadata)
+      throws ProducerFencedException {
+    producer.sendOffsetsToTransaction(offsets, groupMetadata);
+  }
 
-    @Override
-    public void initTransactions() {
-        producer.initTransactions();
-    }
+  @Override
+  public void commitTransaction() throws ProducerFencedException {
+    producer.commitTransaction();
+  }
 
-    @Override
-    public void beginTransaction() throws ProducerFencedException {
-        producer.beginTransaction();
-    }
+  @Override
+  public void abortTransaction() throws ProducerFencedException {
+    producer.abortTransaction();
+  }
 
+  @Override
+  public void registerMetricForSubscription(KafkaMetric kafkaMetric) {
+    producer.registerMetricForSubscription(kafkaMetric);
+  }
 
-    @Override
-    public void sendOffsetsToTransaction(Map<TopicPartition, OffsetAndMetadata> offsets, ConsumerGroupMetadata groupMetadata) throws ProducerFencedException {
-        producer.sendOffsetsToTransaction(offsets, groupMetadata);
-    }
+  @Override
+  public void unregisterMetricFromSubscription(KafkaMetric kafkaMetric) {
+    producer.unregisterMetricFromSubscription(kafkaMetric);
+  }
 
-    @Override
-    public void commitTransaction() throws ProducerFencedException {
-        producer.commitTransaction();
-    }
+  @Override
+  public Future<RecordMetadata> send(ProducerRecord<K, V> myRecord) {
+    return producer.send(myRecord);
+  }
 
-    @Override
-    public void abortTransaction() throws ProducerFencedException {
-        producer.abortTransaction();
-    }
+  @Override
+  public Future<RecordMetadata> send(ProducerRecord<K, V> myRecord, Callback callback) {
+    return producer.send(myRecord, callback);
+  }
 
-    @Override
-    public void registerMetricForSubscription(KafkaMetric kafkaMetric) {
-        producer.registerMetricForSubscription(kafkaMetric);
-    }
+  @Override
+  public void flush() {
+    producer.flush();
+  }
 
-    @Override
-    public void unregisterMetricFromSubscription(KafkaMetric kafkaMetric) {
-        producer.unregisterMetricFromSubscription(kafkaMetric);
-    }
+  @Override
+  public List<PartitionInfo> partitionsFor(String topic) {
+    return producer.partitionsFor(topic);
+  }
 
-    @Override
-    public Future<RecordMetadata> send(ProducerRecord<K, V> myRecord) {
-        return producer.send(myRecord);
-    }
+  @Override
+  public Map<MetricName, ? extends Metric> metrics() {
+    return producer.metrics();
+  }
 
-    @Override
-    public Future<RecordMetadata> send(ProducerRecord<K, V> myRecord, Callback callback) {
-        return producer.send(myRecord, callback);
-    }
+  @Override
+  public Uuid clientInstanceId(Duration duration) {
+    return producer.clientInstanceId(duration);
+  }
 
-    @Override
-    public void flush() {
-        producer.flush();
-    }
+  @Override
+  public void close() {
+    producer.close();
+  }
 
-    @Override
-    public List<PartitionInfo> partitionsFor(String topic) {
-        return producer.partitionsFor(topic);
-    }
-
-    @Override
-    public Map<MetricName, ? extends Metric> metrics() {
-        return producer.metrics();
-    }
-
-    @Override
-    public Uuid clientInstanceId(Duration duration) {
-        return producer.clientInstanceId(duration);
-    }
-
-    @Override
-    public void close() {
-        producer.close();
-    }
-
-    @Override
-    public void close(Duration timeout) {
-        producer.close(timeout);
-    }
+  @Override
+  public void close(Duration timeout) {
+    producer.close(timeout);
+  }
 }

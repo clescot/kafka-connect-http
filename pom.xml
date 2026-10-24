@@ -72,7 +72,8 @@
         <wiremock.version>3.13.2</wiremock.version>
     </properties>
     <modules>
-        <module>kafka-connect-http-core</module>
+        <module>http-core</module>
+        <module>http-client</module>
         <module>kafka-connect-http-connectors</module>
         <module>report-aggregate</module>
     </modules>
@@ -391,7 +392,22 @@
                     </archive>
                 </configuration>
             </plugin>
-
+            <plugin>
+                <groupId>com.diffplug.spotless</groupId>
+                <artifactId>spotless-maven-plugin</artifactId>
+                <version>3.1.0</version>
+                <configuration>
+                    <java>
+                        <includes>
+                            <include>src/main/java/**/*.java</include> <!-- Check application code -->
+                            <include>src/test/java/**/*.java</include> <!-- Check application tests code -->
+                        </includes>
+                        <googleJavaFormat/>
+                        <importOrder />
+                        <removeUnusedImports />
+                    </java>
+                </configuration>
+            </plugin>
         </plugins>
     </build>
 
