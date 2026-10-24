@@ -35,20 +35,10 @@ public class SocketUtils {
     }
 
     public static boolean available(String host, int port) {
-        Socket s = null;
-        try {
-            s = new Socket(host, port);
+        try (Socket socket = new Socket(host, port)) {
             return true;
         } catch (IOException e) {
             return false;
-        } finally {
-            if (s != null) {
-                try {
-                    s.close();
-                } catch (IOException e) {
-                    throw new RuntimeException(e.getMessage());
-                }
-            }
         }
     }
 
@@ -58,7 +48,10 @@ public class SocketUtils {
 
     public static String getIP() {
         try (DatagramSocket datagramSocket = new DatagramSocket()) {
-            datagramSocket.connect(InetAddress.getByName("8.8.8.8"), 12345);
+            // the remote address is only used to determine the local address of the default
+            // route: 'connect' on a DatagramSocket does not send any data. the loopback address
+            // is used, so that no external address is hardcoded and no network access is needed.
+            datagramSocket.connect(InetAddress.getLoopbackAddress(), 12345);
             return datagramSocket.getLocalAddress().getHostAddress();
         } catch (IOException e) {
             throw new RuntimeException(e);

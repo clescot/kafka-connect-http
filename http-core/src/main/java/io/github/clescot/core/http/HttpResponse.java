@@ -325,8 +325,9 @@ public class HttpResponse implements Response, Cloneable, Serializable {
 
     @JsonIgnore
     public Long getBodyContentLength() {
-        if (getHeaders().containsKey("Content-Length")) {
-            List<String> values = getHeaders().get("Content-Length");
+        Map<String, List<String>> headers = getHeaders();
+        if (headers != null && headers.containsKey("Content-Length")) {
+            List<String> values = headers.get("Content-Length");
             if (values != null && !values.isEmpty()) {
                 try {
                     return Long.parseLong(values.get(0));

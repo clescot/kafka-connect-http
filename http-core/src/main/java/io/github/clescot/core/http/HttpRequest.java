@@ -308,7 +308,9 @@ public class HttpRequest implements Request, Cloneable, Serializable {
         if (BodyType.STRING == bodyType) {
             return bodyAsString != null ? bodyAsString.length() : 0;
         } else if (BodyType.BYTE_ARRAY == bodyType) {
-            return bodyAsByteArray != null ? getBodyAsByteArray().length : 0;
+            // getBodyAsByteArray() returns null when the base64 payload is null or empty
+            byte[] bodyAsBytes = getBodyAsByteArray();
+            return bodyAsBytes != null ? bodyAsBytes.length : 0;
         } else if (BodyType.FORM == bodyType) {
             return bodyAsForm != null ?
                     bodyAsForm

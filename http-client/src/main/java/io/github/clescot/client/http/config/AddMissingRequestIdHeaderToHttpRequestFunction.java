@@ -8,7 +8,6 @@ import org.slf4j.LoggerFactory;
 
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.UUID;
 import java.util.function.UnaryOperator;
 
@@ -27,14 +26,20 @@ public class AddMissingRequestIdHeaderToHttpRequestFunction implements UnaryOper
             LOGGER.warn("httpRequest is null");
             throw new IllegalArgumentException("httpRequest is null");
         }
-        Map<String, List<String>> headers = Optional.ofNullable(httpRequest.getHeaders()).orElse(Maps.newHashMap());
+        Map<String, List<String>> headers = httpRequest.getHeaders();
+        if (headers == null) {
+            headers = Maps.newHashMap();
+        }
 
         //we generate an 'X-Request-ID' header if not present
-        Optional<List<String>> requestId = Optional.ofNullable(httpRequest.getHeaders().get(HEADER_X_REQUEST_ID));
-        if (requestId.isEmpty() && this.generateMissingRequestId) {
-            requestId = Optional.of(Lists.newArrayList(UUID.randomUUID().toString()));
+        List<String> requestId = headers.get(HEADER_X_REQUEST_ID);
+        if (requestId == null && this.generateMissingRequestId) {
+            requestId = Lists.newArrayList(UUID.randomUUID().toString());
         }
-        requestId.ifPresent(reqId -> headers.put(HEADER_X_REQUEST_ID, Lists.newArrayList(reqId)));
+        if (requestId != null) {
+            headers.put(HEADER_X_REQUEST_ID, Lists.newArrayList(requestId));
+            httpRequest.setHeaders(headers);
+        }
 
 
         return httpRequest;

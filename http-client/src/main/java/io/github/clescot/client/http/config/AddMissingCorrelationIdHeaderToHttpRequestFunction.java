@@ -8,7 +8,6 @@ import org.slf4j.LoggerFactory;
 
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.UUID;
 import java.util.function.UnaryOperator;
 
@@ -27,14 +26,20 @@ public class AddMissingCorrelationIdHeaderToHttpRequestFunction implements Unary
             LOGGER.warn("httpRequest is null");
             throw new IllegalArgumentException("httpRequest is null");
         }
-        Map<String, List<String>> headers = Optional.ofNullable(httpRequest.getHeaders()).orElse(Maps.newHashMap());
+        Map<String, List<String>> headers = httpRequest.getHeaders();
+        if (headers == null) {
+            headers = Maps.newHashMap();
+        }
 
         //we generate an 'X-Correlation-ID' header if not present
-        Optional<List<String>> correlationId = Optional.ofNullable(httpRequest.getHeaders().get(HEADER_X_CORRELATION_ID));
-        if (correlationId.isEmpty() && this.generateMissingCorrelationId) {
-            correlationId = Optional.of(Lists.newArrayList(UUID.randomUUID().toString()));
+        List<String> correlationId = headers.get(HEADER_X_CORRELATION_ID);
+        if (correlationId == null && this.generateMissingCorrelationId) {
+            correlationId = Lists.newArrayList(UUID.randomUUID().toString());
         }
-        correlationId.ifPresent(corrId -> headers.put(HEADER_X_CORRELATION_ID, Lists.newArrayList(corrId)));
+        if (correlationId != null) {
+            headers.put(HEADER_X_CORRELATION_ID, Lists.newArrayList(correlationId));
+            httpRequest.setHeaders(headers);
+        }
 
         return httpRequest;
     }

@@ -128,7 +128,7 @@ class OkHttpClientTest {
             assertThat(request.method()).isEqualTo(httpRequest.getMethod().name());
             RequestBody body = request.body();
             final Buffer buffer = new Buffer();
-            assert body != null;
+            assertThat(body).isNotNull();
             body.writeTo(buffer);
             assertThat(buffer.readUtf8()).isEqualTo(httpRequest.getBodyAsString());
         }
