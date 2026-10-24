@@ -1,0 +1,22 @@
+package io.github.clescot.client;
+
+import org.apache.kafka.common.config.ConfigDef;
+
+import java.util.Collection;
+
+public class ConfigUtils {
+
+    private ConfigUtils(){
+        // Utility class, no instantiation
+    }
+    public static ConfigDef mergeConfigDefs(ConfigDef... configDefs) {
+        ConfigDef mergedConfigDef = new ConfigDef();
+        for (ConfigDef configDef : configDefs) {
+            Collection<ConfigDef.ConfigKey> values = configDef.configKeys().values();
+            for (ConfigDef.ConfigKey value : values) {
+                mergedConfigDef = mergedConfigDef.define(value);
+            }
+        }
+        return mergedConfigDef;
+    }
+}
