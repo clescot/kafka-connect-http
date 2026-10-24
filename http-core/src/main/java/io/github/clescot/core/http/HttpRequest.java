@@ -22,8 +22,6 @@ import java.net.URI;
 import java.net.URL;
 import java.time.Instant;
 import java.util.*;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 import static com.fasterxml.jackson.annotation.JsonInclude.Include;
 import static io.github.clescot.core.http.MediaType.APPLICATION_X_WWW_FORM_URLENCODED;
@@ -46,7 +44,7 @@ public class HttpRequest implements Request, Cloneable, Serializable {
 
     public static final int VERSION = 2;
 
-    private static final Pattern BOUNDARY = Pattern.compile(".*; boundary=(.*)");
+    private static final String BOUNDARY_DELIMITER = "; boundary=";
 
     //request
     @JsonProperty(required = true)
@@ -202,9 +200,12 @@ public class HttpRequest implements Request, Cloneable, Serializable {
         String contentType = getContentType();
         String boundary = null;
         if (!StringUtils.isEmpty(contentType)) {
-            Matcher matcher = BOUNDARY.matcher(contentType);
-            if (matcher.matches()) {
-                boundary = matcher.group(1);
+            // plain string scan instead of a regex, to avoid polynomial backtracking on
+            // attacker-controlled Content-Type header values. lastIndexOf() preserves the
+            // 'last occurrence' semantics of the previously used greedy regex.
+            int boundaryIndex = contentType.lastIndexOf(BOUNDARY_DELIMITER);
+            if (boundaryIndex >= 0) {
+                boundary = contentType.substring(boundaryIndex + BOUNDARY_DELIMITER.length());
             }
         }
         return boundary;

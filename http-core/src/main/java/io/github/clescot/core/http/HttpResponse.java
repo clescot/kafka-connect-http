@@ -131,11 +131,14 @@ public class HttpResponse implements Response, Cloneable, Serializable {
 
     @JsonIgnore
     public List<String> getContentType() {
-        return headers.get(MediaType.KEY);
+        return headers != null ? headers.get(MediaType.KEY) : null;
     }
 
 
     public void setContentType(String contentType) {
+        if (headers == null) {
+            headers = Maps.newHashMap();
+        }
         if (contentType != null && !contentType.isEmpty()) {
             headers.put(MediaType.KEY, Lists.newArrayList(contentType));
             bodyType = BodyType.getBodyType(contentType);
