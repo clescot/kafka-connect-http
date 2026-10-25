@@ -149,3 +149,15 @@ Default triage vocabulary: `needs-triage`, `needs-info`, `ready-for-agent`, `rea
 ### Domain docs
 
 Single-context repo. One `CONTEXT.md` at root, ADRs in `docs/adr/`. See `docs/agents/domain.md`.
+
+### Verification skills
+
+Project-local skills live in `.agents/skills/`:
+
+- `verify-kafka-connect-http` — starts Kafka (KRaft) plus a Kafka Connect worker running this
+  plugin, then drives the sink/source/cron/SSE connectors over the Connect REST API and captures
+  the resulting HTTP traffic or Kafka records. Run it before claiming a connector change works.
+- `verify-sse-source-no-event-loss` — TLA+/TLC model check of the SSE source connector's
+  at-least-once promise, parameterised by facts extracted from the Java source so a code change
+  changes the model. Run it when a change touches the SSE task, the connection/resume logic, the
+  in-memory queue or the source offsets.

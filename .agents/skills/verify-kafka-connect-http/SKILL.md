@@ -7,7 +7,7 @@ description: Drive kafka-connect-http the way a user does — register a source/
 
 kafka-connect-http has no web UI and no CLI of its own. The user-facing surface is **Kafka Connect itself**: you register a connector with a JSON config over the Connect REST API, then observe records flowing `HTTP -> Kafka` (source connectors) or `Kafka -> HTTP` (sink connector). A verification run therefore means: bring up a real Kafka broker + Kafka Connect worker with this repo's plugin installed, register a connector, drive records, and capture what the connector actually did.
 
-The harness lives in this skill. Its one entry point is `scripts/control.sh` (call it `control-kchttp` below). All commands are run from the repo root `/home/charles/IdeaProjects/kafka-connect-http`.
+The harness lives in this skill. Its one entry point is `scripts/control.sh` (call it `control-kchttp` below). It resolves the repo root itself, so run it from any checkout, worktree or directory. The relative paths below are from the repo root.
 
 Read [`features/README.md`](features/README.md) before driving anything: it indexes the user-facing features and points at the per-feature recipe.
 
@@ -45,6 +45,8 @@ The stack is Docker Compose, but you never call `docker compose` by hand — the
    Connector configs use the **in-network** addresses, because the Connect worker reaches the target container-to-container. `http-target` is `wiremock/wiremock:3.13.2`; its `/__admin` API is both how you stub responses and how you read back the requests the connector made. `sse-target` is `jmalloc/echo-server:v0.3.7`, serving a perpetual SSE stream at `/.sse`.
 
 Teardown is `control.sh cleanup` (see Cleanup).
+
+If Docker is a snap-confined install and the repo lives under a hidden directory, as a `~/.herdr/` worktree does, `launch` fails with `permission denied` reading the compose file, because the snap cannot see hidden paths. Set `COMPOSE_FILE` to a byte-identical copy outside the hidden tree and everything else about the run is unchanged.
 
 ## Doctor
 
@@ -162,5 +164,5 @@ Otherwise there is one shared port set: **refuse to double-drive the same ports.
 | `doctor`     | read-only readiness/identity check                      |
 | `drive-sink` | drive the HTTP Sink feature end to end, capture evidence |
 | `status`     | print run id, ports, artifact dir, container state      |
-| `logs [svc]` | tail logs for `kafka`, `connect`, `http-target` or `sse-target` |
+| `logs [svc]` | tail logs for `kafka`, `connect`, `http-target` or `sse-target`. A finite tail, so an agent can read evidence without blocking; add `-f` to follow |
 | `cleanup`    | tear down the stack, keep evidence                      |

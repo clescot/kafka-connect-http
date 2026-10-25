@@ -26,9 +26,11 @@ verified), re-reads the facts from the Java source, runs TLC three times, writes
 results under `.agents/skills/verify-sse-source-no-event-loss/results/`, and prints a verdict.
 Reads and writes only the paths above; it never changes product code.
 
-**Read every result with the pstack `/statechart` skill.** It turns each invariant violation
-into its shortest path in plain words and shows which violations a change fixes. Do not try to
-read a TLC trace by hand: use `/statechart`.
+**Read `results/counterexample.txt`, not the raw TLC trace.** The script decodes each violation
+into the connector's own steps (`SseSourceTask.start`, `poll`, `SseConfiguration.connect`, …), so
+you never have to parse TLC output by hand. If your harness has the pstack `/statechart` skill it
+will also show the shortest path in plain words and which violations a change fixes; use it when
+it is available, and read `results/counterexample.txt` when it is not.
 
 ## Does your change touch the verified code?
 
@@ -61,7 +63,7 @@ fixed, and `4` on a tool/model error.
 | Verdict | Meaning | What to do |
 | --- | --- | --- |
 | `from_start : OK` | With a server that replays from the start of the stream, no event is lost. | nothing |
-| `from_start : VIOLATED` (exit 1) | **A new loss, independent of finding F1.** The guarded code was broken. | read `results/counterexample.txt` with `/statechart`; the trace names the step that drops the event |
+| `from_start : VIOLATED` (exit 1) | **A new loss, independent of finding F1.** The guarded code was broken. | read `results/counterexample.txt`; the decoded trace names the step that drops the event |
 | `from_now : VIOLATED` | Finding F1 is still present (see below). | this is the baseline |
 | `F1 LOOKS FIXED` (exit 3) | No event is lost under either server policy. | remove finding F1 from this skill and move the sync commit forward |
 | `ERROR` (exit 4) | TLC could not run, or `extract-facts.sh` could not find the code it reads. | fix the model or the script, not the test |
@@ -186,8 +188,8 @@ Not covered by this check:
 
 1. Change a covered file.
 2. Run `bash .agents/skills/verify-sse-source-no-event-loss/scripts/run-check.sh`.
-3. If it prints `from_start : VIOLATED`, the model caught a break — inspect it with
-   `/statechart` before assuming the model is wrong.
+3. If it prints `from_start : VIOLATED`, the model caught a break — inspect it
+   (`results/counterexample.txt`) before assuming the model is wrong.
 4. If an actionable change was intended, update the model (add an action, or a `CONSTANTS`
    bound in the `.cfg`), then re-run until the verdict matches the intended behaviour.
 5. Only then move the sync commit in this file forward to the new `git rev-parse HEAD`, and

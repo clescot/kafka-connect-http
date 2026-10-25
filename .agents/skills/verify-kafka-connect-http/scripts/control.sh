@@ -8,11 +8,17 @@
 #   control.sh doctor         read-only health/identity check (run this when unsure)
 #   control.sh drive-sink     drive the HTTP Sink feature end to end + capture evidence
 #   control.sh status         show the current run id, ports and container state
-#   control.sh logs [svc]     tail logs (svc: kafka|connect|http-target|sse-target)
+#   control.sh logs [svc] [-f] tail logs, finite by default (-f to follow)
+#                             (svc: kafka|connect|http-target|sse-target)
 #   control.sh cleanup        remove the stack and scratch state (evidence survives)
 #
 # Environment overrides:
 #   RUN_ID        reuse a specific run id instead of the timestamped default
+#   COMPOSE_FILE  compose file to use (default: this skill's scripts/compose.yml).
+#                 Point it at a byte-identical copy outside any hidden directory
+#                 when Docker is snap-confined and the repo lives under one, such
+#                 as ~/.herdr/: the snap cannot read hidden paths and 'launch'
+#                 fails with "permission denied" on the compose file.
 #   CONNECT_PORT  host port for the Connect REST API (default 8083)
 #   TARGET_PORT   host port for the http-target WireMock admin API (default 8080)
 #   SSE_PORT      host port for the sse-target echo server (default 8082)
@@ -21,7 +27,7 @@
 set -euo pipefail
 
 SKILL_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-COMPOSE_FILE="$SKILL_DIR/scripts/compose.yml"
+COMPOSE_FILE="${COMPOSE_FILE:-$SKILL_DIR/scripts/compose.yml}"
 REPO_ROOT="$(git -C "$SKILL_DIR" rev-parse --show-toplevel)"
 STATE_DIR="$REPO_ROOT/artifacts/verify-kafka-connect-http"
 CURRENT_RUN_FILE="$STATE_DIR/.current-run"
@@ -297,7 +303,10 @@ cmd_status() {
 cmd_logs() {
   load_run_id
   local svc="${1:-connect}"
-  dc logs --tail=100 -f "$svc"
+  local follow=""
+  case "${2:-}" in -f | --follow) follow="-f" ;; esac
+  # A finite tail by default: an agent reading logs for evidence must not block.
+  dc logs --tail="${KCHTTP_LOG_TAIL:-200}" $follow "$svc"
 }
 
 cmd_cleanup() {

@@ -6,7 +6,8 @@
 #
 # It regenerates the TLA+ facts from the Java source, model-checks the
 # SseDelivery spec twice (two possible SSE server resume policies) and prints a
-# verdict. Read the results with the pstack `/statechart` skill.
+# verdict, plus a counterexample decoded into the connector's own steps in
+# results/counterexample.txt.
 #
 set -uo pipefail
 
@@ -123,7 +124,7 @@ grep -E '^(EnqueueLossless|SeedsFromCommittedOffset) ==' "$WORK/Facts.tla" | sed
 echo "  from_start       : $FROM_START"
 echo "  from_now         : $FROM_NOW"
 echo "  from_now_restart : $FROM_NOW_RESTART"
-echo "  results          : $RESULTS_DIR/ (read them with the pstack /statechart skill)"
+echo "  results          : $RESULTS_DIR/ (trace decoded in counterexample.txt)"
 echo
 
 if [ "$FROM_START" = "VIOLATED" ]; then
