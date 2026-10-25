@@ -207,6 +207,26 @@ With `override.with: project`, the User-Agent is
 | `config.<id>.retry.policy.retry.after.max.threshold.in.sec` | `60` | Above this delay the circuit breaker opens; below it the connector waits locally. |
 | `config.<id>.retry.policy.retry.after.delay.in.sec` | `3600` | Delay used when no `Retry-After` value is present. |
 
+### Server-advertised rate limits
+
+The connector honours the IETF `RateLimit` / `RateLimit-Policy` response header fields
+([draft-ietf-httpapi-ratelimit-headers](https://datatracker.ietf.org/doc/draft-ietf-httpapi-ratelimit-headers/)).
+When a response advertises an exhausted service limit (`r=0` on a `requests` or
+`concurrent-requests` quota), later calls to the same target authority wait for the advertised
+window before being sent. A window above the threshold opens the circuit breaker instead.
+
+| Setting | Default | Description |
+| --- | --- | --- |
+| `config.<id>.rate.limit.headers.enabled` | `true` | Honour the `RateLimit` fields at all. |
+| `config.<id>.rate.limit.headers.scope` | `instance` | `instance` (per configuration in this connector) or `static` (one gate per configuration id shared across connector instances in the JVM). |
+| `config.<id>.rate.limit.headers.max.threshold.in.sec` | `60` | Above this window the circuit breaker opens; below it the connector waits locally. |
+| `config.<id>.rate.limit.headers.max.duration.in.sec` | `86400` | Maximum advertised window considered; longer values are capped. |
+| `config.<id>.rate.limit.headers.default.delay.in.sec` | `3600` | Delay used when an exhausted service limit has neither `t` nor a matching policy `w`. |
+
+`Retry-After` / `X-Retry-After` takes precedence when both are present (the draft requires it).
+Malformed fields, items without `r`, and non-admission quota units (`content-bytes`, unknown
+units) are ignored; the pause is jittered by up to 500 ms on resume.
+
 ### Rate limiter
 
 | Setting | Default | Description |

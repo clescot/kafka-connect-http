@@ -273,14 +273,6 @@ public class HttpConnectorConfig extends AbstractConfig {
     return Maps.newHashMap(staticRequestHeaders);
   }
 
-  public Integer getDefaultRetries() {
-    return defaultRetries;
-  }
-
-  public Long getDefaultRetryDelayInMs() {
-    return defaultRetryDelayInMs;
-  }
-
   public Long getDefaultRetryMaxDelayInMs() {
     return defaultRetryMaxDelayInMs;
   }
@@ -301,20 +293,8 @@ public class HttpConnectorConfig extends AbstractConfig {
     return generateMissingCorrelationId;
   }
 
-  public Long getDefaultRateLimiterMaxExecutions() {
-    return defaultRateLimiterMaxExecutions;
-  }
-
   public Long getDefaultRateLimiterPeriodInMs() {
     return defaultRateLimiterPeriodInMs;
-  }
-
-  public String getDefaultSuccessResponseCodeRegex() {
-    return defaultSuccessResponseCodeRegex;
-  }
-
-  public String getDefaultRetryResponseCodeRegex() {
-    return defaultRetryResponseCodeRegex;
   }
 
   public PublishMode getPublishMode() {

@@ -7,6 +7,7 @@
 #   control.sh launch         start kafka + connect + http-target; create topics
 #   control.sh doctor         read-only health/identity check (run this when unsure)
 #   control.sh drive-sink     drive the HTTP Sink feature end to end + capture evidence
+#   control.sh drive-ratelimit drive the server-advertised RateLimit feature end to end + capture evidence
 #   control.sh status         show the current run id, ports and container state
 #   control.sh logs [svc] [-f] tail logs, finite by default (-f to follow)
 #                             (svc: kafka|connect|http-target|sse-target)
@@ -287,6 +288,110 @@ EOF
   log "evidence: $ART"
 }
 
+cmd_drive_ratelimit() {
+  load_run_id
+  [ -d "$ART" ] || die "artifact dir missing: $ART"
+  local marker="ratelimit-verify $RUN_ID $(date +%H%M%S%N)"
+  local window=5
+  local topic=ratelimit-request
+
+  log "step 1/7 create the dedicated topic '$topic' (other sink recipes leave consumers on http-request)"
+  dc exec -T kafka kafka-topics --bootstrap-server localhost:9092 \
+    --create --if-not-exists --topic "$topic" --partitions 1 --replication-factor 1 >/dev/null
+
+  log "step 2/7 register the target expectation (POST /limited -> 200 with an exhausted RateLimit header)"
+  curl -sf -X POST "$TARGET_URL/__admin/mappings" -H 'Content-Type: application/json' -d '{
+    "request":  {"method": "POST", "url": "/limited"},
+    "response": {"status": 200, "headers": {"Content-Type": "text/plain", "RateLimit": "\"default\";r=0;t=5"}, "body": "limited-ok"}
+  }' > "$ART/ratelimit-mapping-response.json"
+
+  log "step 3/7 register the HTTP Sink connector via the Connect REST API"
+  jq -nc --arg topic "$topic" '{
+      "connector.class": "io.github.clescot.kafka.connect.http.sink.HttpSinkConnector",
+      "tasks.max": "1",
+      "topics": $topic,
+      "key.converter": "org.apache.kafka.connect.storage.StringConverter",
+      "value.converter": "org.apache.kafka.connect.storage.StringConverter",
+      "publish.mode": "NONE"
+    }' > "$ART/ratelimit-config.json"
+  curl -sf -X PUT "$CONNECT_URL/connectors/http-sink-ratelimit/config" \
+    -H 'Content-Type: application/json' -d @"$ART/ratelimit-config.json" > "$ART/ratelimit-config-response.json"
+
+  log "step 4/7 wait for connector + task to be RUNNING"
+  local i=0 state=""
+  while [ "$i" -lt 60 ]; do
+    state="$(curl -sf "$CONNECT_URL/connectors/http-sink-ratelimit/status" \
+      | jq -r '.connector.state + "/" + (.tasks[0].state // "none")' 2>/dev/null || echo "")"
+    [ "$state" = "RUNNING/RUNNING" ] && break
+    i=$((i + 1)); sleep 2
+  done
+  [ "$state" = "RUNNING/RUNNING" ] || die "sink connector never reached RUNNING/RUNNING (last: $state)"
+
+  log "step 5/7 produce the three requests one at a time, each as soon as the previous was recorded"
+  log "        (the producer adds no spacing of its own; any gap is the connector's pause)"
+  local n payload seen
+  # WireMock's request log carries no timestamps, so each request is timestamped by the first
+  # poll that sees it.
+  local -a recorded_at=()
+  for n in 1 2 3; do
+    payload="$(jq -nc --arg url "http://http-target:8080/limited" --arg body "$marker #$n" \
+      '{url:$url, method:"POST", bodyType:"STRING", bodyAsString:$body}')"
+    printf '%s\n' "$payload" | dc exec -T kafka kafka-console-producer \
+      --bootstrap-server localhost:9092 --topic "$topic"
+    seen=""
+    i=0
+    while [ "$i" -lt 240 ]; do
+      if curl -sf "$TARGET_URL/__admin/requests" -o "$ART/ratelimit-requests.json"; then
+        if jq -e --arg m "$marker #$n" \
+          '[.requests[] | select(.request.body == $m)] | length > 0' \
+          "$ART/ratelimit-requests.json" >/dev/null 2>&1; then
+          seen="$(date +%s%3N)"
+          break
+        fi
+      fi
+      i=$((i + 1)); sleep 0.25
+    done
+    [ -n "$seen" ] || die "request #$n was never recorded"
+    recorded_at+=("$seen")
+    log "request #$n recorded"
+  done
+
+  log "step 6/7 capture evidence (the gaps between first sightings are the pause)"
+  printf '%s\n' "${recorded_at[@]}" > "$ART/ratelimit-dates.txt"
+  local gaps min_gap
+  gaps="$(awk 'NR>1 {print $1 - previous} {previous=$1}' "$ART/ratelimit-dates.txt")"
+  printf '%s\n' "$gaps" > "$ART/ratelimit-gaps-ms.txt"
+  min_gap="$(printf '%s\n' "$gaps" | sort -n | head -1)"
+  [ -n "$min_gap" ] || die "could not compute the gaps between the recorded requests"
+  [ "$min_gap" -ge 4000 ] || die "requests were not paced: smallest gap ${min_gap}ms for an advertised window of ${window}s"
+  dc logs --tail=400 connect > "$ART/ratelimit-connect-logs.txt" 2>&1 || true
+
+  log "step 7/7 write the summary"
+  cat > "$ART/ratelimit-SUMMARY.md" <<EOF
+# RateLimit headers verification — PASS
+
+- run id:            $RUN_ID
+- connector:         http-sink-ratelimit (io.github.clescot.kafka.connect.http.sink.HttpSinkConnector)
+- connector state:   RUNNING/RUNNING
+- produced to:       $topic (3 requests, marker '$marker')
+- advertised:        RateLimit: "default";r=0;t=${window}
+- producer cadence:  the next request is produced as soon as the previous one was recorded
+- recorded gaps(ms): $(printf '%s' "$gaps" | tr '\n' ' ')
+- smallest gap(ms):  $min_gap
+
+## Artifacts
+- \`ratelimit-config.json\`          — the exact config PUT to Connect
+- \`ratelimit-config-response.json\` — PUT /connectors/http-sink-ratelimit/config response
+- \`ratelimit-requests.json\`        — full WireMock __admin/requests log
+- \`ratelimit-dates.txt\`            — first-sighting epoch ms of each request, oldest first
+- \`ratelimit-gaps-ms.txt\`          — gaps between consecutive first sightings
+- \`ratelimit-connect-logs.txt\`     — worker log tail (shows the "waiting ..." lines)
+EOF
+
+  log "PROOF PASS: three requests recorded, smallest gap ${min_gap}ms for an advertised ${window}s window"
+  log "evidence: $ART"
+}
+
 cmd_status() {
   load_run_id
   log "run id:      $RUN_ID"
@@ -327,6 +432,7 @@ main() {
     launch)     cmd_launch ;;
     doctor)     cmd_doctor ;;
     drive-sink) cmd_drive_sink ;;
+    drive-ratelimit) cmd_drive_ratelimit ;;
     status)     cmd_status ;;
     logs)       shift; cmd_logs "$@" ;;
     cleanup)    cmd_cleanup ;;

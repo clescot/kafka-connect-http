@@ -49,6 +49,19 @@ If a server returns a `Retry-After` header, the connector honours it for the sta
 `config.<id>.retry.policy.retry.after.status.code`. When the requested delay exceeds the
 threshold, the circuit breaker opens instead of waiting.
 
+## Server-advertised rate limits
+
+Servers can advertise their quota in the IETF `RateLimit` / `RateLimit-Policy` response fields.
+When an advertised service limit is exhausted (`r=0` on a `requests` or `concurrent-requests`
+quota), the connector pauses before the next call to the same configuration + target authority
+instead of running into 429s. The pause is the effective window `t`, else the matching policy's
+`w`, else `config.<id>.rate.limit.headers.default.delay.in.sec`, capped by
+`rate.limit.headers.max.duration.in.sec` and jittered by up to 500 ms; new exhausted signals may
+extend a pause, never shorten it. A window above `rate.limit.headers.max.threshold.in.sec` opens
+the circuit breaker instead of waiting. `Retry-After` / `X-Retry-After` wins when both are
+present. See the
+[sink reference](../reference/http-sink-connector.md#server-advertised-rate-limits).
+
 ## Correlating requests and responses
 
 Each `HttpExchange` keeps the incoming record's key and headers, so the published exchange
