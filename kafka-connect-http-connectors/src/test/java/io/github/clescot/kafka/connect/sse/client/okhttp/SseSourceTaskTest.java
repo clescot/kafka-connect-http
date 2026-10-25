@@ -271,8 +271,8 @@ class SseSourceTaskTest {
 
       assertThat(records).isNotEmpty();
       // the partition is the SSE connection, so a restart can resume from the committed offset
-      for (SourceRecord record : records) {
-        assertThat(record.sourcePartition())
+      for (SourceRecord sourceRecord : records) {
+        assertThat(sourceRecord.sourcePartition())
             .isEqualTo(Map.of("configurationId", configurationId));
       }
       assertThat(records.get(0).sourceOffset()).isEqualTo(Map.of("eventId", "1"));

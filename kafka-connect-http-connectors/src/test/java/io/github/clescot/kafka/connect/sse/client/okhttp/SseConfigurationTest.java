@@ -10,10 +10,12 @@ import io.github.clescot.client.http.okhttp.OkHttpClient;
 import io.github.clescot.client.http.okhttp.OkHttpClientFactory;
 import io.github.clescot.client.queue.QueueFactory;
 import io.github.clescot.core.http.HttpRequest;
+import io.github.clescot.core.sse.SseEvent;
 import io.micrometer.core.instrument.composite.CompositeMeterRegistry;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Queue;
 import java.util.Random;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Nested;
@@ -415,11 +417,9 @@ class SseConfigurationTest {
           okHttpClientFactory.buildHttpClient(
               settings, null, new CompositeMeterRegistry(), new Random());
       SseConfiguration sseConfiguration = new SseConfiguration("test-id", okHttpClient, settings);
+      Queue<SseEvent> queue = QueueFactory.getQueue(QueueFactory.DEFAULT_QUEUE_NAME);
       Assertions.assertThrows(
-          NullPointerException.class,
-          () ->
-              sseConfiguration.connect(
-                  QueueFactory.getQueue(QueueFactory.DEFAULT_QUEUE_NAME), null));
+          NullPointerException.class, () -> sseConfiguration.connect(queue, null));
     }
   }
 

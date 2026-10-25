@@ -2,9 +2,9 @@ package io.github.clescot.kafka.connect.sse.client.okhttp;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import com.google.common.collect.Maps;
 import java.util.HashMap;
 import org.apache.kafka.common.config.ConfigDef;
-import org.gradle.internal.impldep.com.google.common.collect.Maps;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;

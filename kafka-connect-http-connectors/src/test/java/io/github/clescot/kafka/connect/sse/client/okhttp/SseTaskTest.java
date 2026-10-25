@@ -68,7 +68,8 @@ class SseTaskTest {
               configurationId -> Optional.of("42"));
       sseTask.connect();
       assertThat(
-              sseTask.getConfigurations()
+              sseTask
+                  .getConfigurations()
                   .get("default")
                   .getBackgroundEventSource()
                   .getEventSource()
@@ -86,7 +87,8 @@ class SseTaskTest {
                   "config.default.topic", "test-topic"));
       sseTask.connect();
       assertThat(
-              sseTask.getConfigurations()
+              sseTask
+                  .getConfigurations()
                   .get("default")
                   .getBackgroundEventSource()
                   .getEventSource()
@@ -96,15 +98,12 @@ class SseTaskTest {
 
     @Test
     void connect_with_null_resume_lookup() {
-      assertThrows(
-          NullPointerException.class,
-          () ->
-              new SseTask(
-                  Map.of(
-                      "config.ids", "default",
-                      "config.default.url", "http://localhost:8080/sse",
-                      "config.default.topic", "test-topic"),
-                  null));
+      var settings =
+          Map.of(
+              "config.ids", "default",
+              "config.default.url", "http://localhost:8080/sse",
+              "config.default.topic", "test-topic");
+      assertThrows(NullPointerException.class, () -> new SseTask(settings, null));
     }
   }
 
