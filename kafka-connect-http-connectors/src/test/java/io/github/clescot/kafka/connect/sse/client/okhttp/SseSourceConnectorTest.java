@@ -53,6 +53,23 @@ class SseSourceConnectorTest {
     }
 
     @Test
+    void a_task_can_be_built_from_its_task_config() {
+      HashMap<String, String> settings = Maps.newHashMap();
+      settings.put("config.ids", "default,second");
+      settings.put("config.default.topic", "test");
+      settings.put("config.default.url", "http://localhost:8080/sse");
+      settings.put("config.second.topic", "test2");
+      settings.put("config.second.url", "http://localhost:8080/sse2");
+      sseSourceConnector.start(settings);
+
+      var taskConfigs = sseSourceConnector.taskConfigs(1);
+
+      // SseTask needs the ids of the configurations its task owns. A task whose
+      // settings lack them dies at start, which is what a live run showed.
+      Assertions.assertDoesNotThrow(() -> new SseTask(taskConfigs.get(0)));
+    }
+
+    @Test
     void test_two_sse_endpoints_with_one_task() {
       HashMap<String, String> settings = Maps.newHashMap();
       settings.put("config.ids", "default,second");
