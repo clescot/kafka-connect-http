@@ -105,8 +105,7 @@ public class SseConfiguration implements Configuration<OkHttpClient, HttpRequest
   public BackgroundEventSource connect(
       Queue<SseEvent> queue, Optional<String> lastCommittedEventId) {
     Preconditions.checkNotNull(queue, "queue must not be null.");
-    Preconditions.checkNotNull(
-        lastCommittedEventId, "lastCommittedEventId must not be null.");
+    Preconditions.checkNotNull(lastCommittedEventId, "lastCommittedEventId must not be null.");
     this.queue = queue;
 
     // retry strategy

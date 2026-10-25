@@ -3,8 +3,8 @@ package io.github.clescot.kafka.connect.sse.client.okhttp;
 import java.util.Optional;
 
 /**
- * Looks up the resume cursor of an SSE configuration: the highest event id Kafka Connect
- * committed for it, so a restarted task can ask the SSE server to resume from there.
+ * Looks up the resume cursor of an SSE configuration: the highest event id Kafka Connect committed
+ * for it, so a restarted task can ask the SSE server to resume from there.
  */
 @FunctionalInterface
 public interface SseResumeLookup {

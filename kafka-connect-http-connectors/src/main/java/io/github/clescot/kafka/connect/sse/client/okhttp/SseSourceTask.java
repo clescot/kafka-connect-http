@@ -96,9 +96,7 @@ public class SseSourceTask extends SourceTask {
       // The cursor is the id the SSE server sent, never the id a template may have rewritten:
       // Last-Event-ID is only meaningful inside the server's own id space.
       Map<String, String> sourceOffset =
-          sseEvent.getId() != null
-              ? Map.of(OFFSET_EVENT_ID, sseEvent.getId())
-              : Maps.newHashMap();
+          sseEvent.getId() != null ? Map.of(OFFSET_EVENT_ID, sseEvent.getId()) : Maps.newHashMap();
       SourceRecord sourceRecord =
           new SourceRecord(
               partition,

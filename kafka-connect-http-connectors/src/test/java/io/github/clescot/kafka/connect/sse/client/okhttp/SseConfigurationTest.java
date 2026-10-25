@@ -383,9 +383,9 @@ class SseConfigurationTest {
           okHttpClientFactory.buildHttpClient(
               settings, null, new CompositeMeterRegistry(), new Random());
       SseConfiguration sseConfiguration = new SseConfiguration("test-id", okHttpClient, settings);
-      sseConfiguration.connect(QueueFactory.getQueue(QueueFactory.DEFAULT_QUEUE_NAME), Optional.of("7"));
-      assertThat(
-              sseConfiguration.getBackgroundEventSource().getEventSource().getLastEventId())
+      sseConfiguration.connect(
+          QueueFactory.getQueue(QueueFactory.DEFAULT_QUEUE_NAME), Optional.of("7"));
+      assertThat(sseConfiguration.getBackgroundEventSource().getEventSource().getLastEventId())
           .isEqualTo("7");
     }
 
@@ -401,8 +401,7 @@ class SseConfigurationTest {
       SseConfiguration sseConfiguration = new SseConfiguration("test-id", okHttpClient, settings);
       sseConfiguration.connect(
           QueueFactory.getQueue(QueueFactory.DEFAULT_QUEUE_NAME), Optional.empty());
-      assertThat(
-              sseConfiguration.getBackgroundEventSource().getEventSource().getLastEventId())
+      assertThat(sseConfiguration.getBackgroundEventSource().getEventSource().getLastEventId())
           .isNullOrEmpty();
     }
 
@@ -419,7 +418,8 @@ class SseConfigurationTest {
       Assertions.assertThrows(
           NullPointerException.class,
           () ->
-              sseConfiguration.connect(QueueFactory.getQueue(QueueFactory.DEFAULT_QUEUE_NAME), null));
+              sseConfiguration.connect(
+                  QueueFactory.getQueue(QueueFactory.DEFAULT_QUEUE_NAME), null));
     }
   }
 
