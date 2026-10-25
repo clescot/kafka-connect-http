@@ -1,0 +1,94 @@
+# Verification stack for kafka-connect-http.
+#
+# Started by scripts/control.sh, never directly by hand: the driver needs a
+# deterministic run id, port set and artifact directory.
+#
+# Services:
+#   kafka       single-node KRaft broker. Internal listener kafka:9092 is what
+#               the connect worker and the http-target stubs use; the EXTERNAL
+#               listener on the host is only used by the driver to create topics.
+#   connect     clescot/kafka-connect-http:<version>, i.e. the image this repo
+#               builds in the Maven `package` phase. The plugin is already
+#               installed at /usr/share/confluent-hub-components by confluent-hub
+#               (see kafka-connect-http-connectors/src/main/resources/Dockerfile).
+#   http-target WireMock standalone. This is the "external HTTP server" a user
+#               would point the sink/source connectors at. Its admin API under
+#               /__admin is the observable proof of the requests the connector made.
+#
+# Ports are parameterised so a second stack can run beside the first, but the
+# defaults (8083, 8080, 29092) are what the rest of the skill assumes.
+services:
+  kafka:
+    image: confluentinc/cp-kafka:8.0.0
+    environment:
+      KAFKA_NODE_ID: 1
+      KAFKA_PROCESS_ROLES: broker,controller
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka:9093
+      KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:9092,CONTROLLER://0.0.0.0:9093,EXTERNAL://0.0.0.0:29092
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092,EXTERNAL://localhost:29092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT,EXTERNAL:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "false"
+      CLUSTER_ID: MkU3OEVBNTcwNTJENDM2Qk
+    ports:
+      - "${KAFKA_PORT:-29092}:29092"
+    healthcheck:
+      test: ["CMD-SHELL", "kafka-topics --bootstrap-server localhost:9092 --list >/dev/null 2>&1"]
+      interval: 5s
+      timeout: 15s
+      retries: 30
+
+  connect:
+    image: "${KCHTTP_IMAGE:-clescot/kafka-connect-http:0.8.176-SNAPSHOT}"
+    depends_on:
+      kafka:
+        condition: service_healthy
+    ports:
+      - "${CONNECT_PORT:-8083}:8083"
+    environment:
+      CONNECT_BOOTSTRAP_SERVERS: kafka:9092
+      CONNECT_GROUP_ID: kchttp-verify
+      CONNECT_CONFIG_STORAGE_TOPIC: kchttp-verify-configs
+      CONNECT_OFFSET_STORAGE_TOPIC: kchttp-verify-offsets
+      CONNECT_STATUS_STORAGE_TOPIC: kchttp-verify-status
+      CONNECT_CONFIG_STORAGE_REPLICATION_FACTOR: 1
+      CONNECT_OFFSET_STORAGE_REPLICATION_FACTOR: 1
+      CONNECT_STATUS_STORAGE_REPLICATION_FACTOR: 1
+      CONNECT_KEY_CONVERTER: org.apache.kafka.connect.storage.StringConverter
+      CONNECT_VALUE_CONVERTER: org.apache.kafka.connect.storage.StringConverter
+      CONNECT_REST_ADVERTISED_HOST_NAME: connect
+      CONNECT_REST_PORT: 8083
+      CONNECT_TOPIC_CREATION_ENABLE: "true"
+      CONNECT_LOG4J_ROOT_LOGLEVEL: INFO
+      CONNECT_LOG4J_LOGGERS: "io.github.clescot=INFO,org.reflections=ERROR"
+      CONNECT_PLUGIN_PATH: /usr/share/java,/usr/share/confluent-hub-components
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:8083/connector-plugins >/dev/null"]
+      interval: 5s
+      timeout: 10s
+      retries: 40
+
+  http-target:
+    image: wiremock/wiremock:3.13.2
+    command: ["--port", "8080", "--verbose", "--disable-banner"]
+    ports:
+      - "${TARGET_PORT:-8080}:8080"
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:8080/__admin/health >/dev/null"]
+      interval: 5s
+      timeout: 10s
+      retries: 30
+
+  # Server-Sent Events source for the SSE source connector feature. jmalloc/echo-server
+  # exposes a never-ending SSE stream at /.sse (ids increment, one "server" event plus a
+  # "request" event per connection). It is a scratch image with no shell, so it has no
+  # healthcheck; the driver checks it from the host instead.
+  sse-target:
+    image: jmalloc/echo-server:v0.3.7
+    ports:
+      - "${SSE_PORT:-8082}:8080"

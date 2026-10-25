@@ -47,6 +47,30 @@ the SSE source connector **connects to every configured URL** at once.
 
 See [customize exchange templates](../how-to/customize-exchange-templates.md).
 
+## Resuming after a restart or a rebalance
+
+Each configuration's progress is tracked as a Kafka Connect source offset: the `id:` of the last
+SSE event committed for that configuration. When a task starts, it reads that offset back and asks
+the server to resume after it with a `Last-Event-ID` request header, so events published while the
+connector was down are re-delivered instead of skipped.
+
+Two consequences are worth knowing:
+
+* The offset is keyed by the configuration id, so **changing a configuration id starts a new
+  stream**, with no committed position, under the server's own default policy.
+* A configuration with no committed offset has nothing to ask for. That covers a first-ever start,
+  and the first start after upgrading from a version that keyed offsets by event type, whose old
+  offsets are orphaned. The connector sends no `Last-Event-ID` and inherits the server's default
+  policy, which for most servers means "from now", so events published before its first commit are
+  not recoverable. It logs `no committed offset for configuration <id>` when that happens.
+
+The cursor is the `id:` the server sent, not the id an `exchange.template` may have produced, so a
+template that rewrites or drops the id does not move the resume point.
+
+Whether the server honours `Last-Event-ID` is the server's decision. The connector asks, and a
+server that ignores the header, or that treats an unknown id as "from now", will still skip events
+published during the gap. The connector cannot detect that.
+
 ## Examples
 
 Minimal configuration:

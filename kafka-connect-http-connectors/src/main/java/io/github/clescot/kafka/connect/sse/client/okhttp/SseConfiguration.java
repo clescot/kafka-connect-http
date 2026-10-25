@@ -18,6 +18,7 @@ import io.github.clescot.core.sse.SseExchange;
 import io.micrometer.core.instrument.composite.CompositeMeterRegistry;
 import java.net.URI;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Queue;
 import java.util.Random;
 import java.util.concurrent.ExecutorService;
@@ -88,7 +89,23 @@ public class SseConfiguration implements Configuration<OkHttpClient, HttpRequest
   }
 
   public BackgroundEventSource connect(Queue<SseEvent> queue) {
+    return connect(queue, Optional.empty());
+  }
+
+  /**
+   * Connects to the SSE server, seeding the resume cursor with the given committed event id: the
+   * server is asked to replay from the last event Kafka Connect committed. An empty id means no
+   * committed offset, so no Last-Event-ID header is sent and the server's own resume policy
+   * applies.
+   *
+   * @param queue queue receiving the SSE events
+   * @param lastCommittedEventId highest event id committed by Kafka Connect, or empty
+   * @return the background event source
+   */
+  public BackgroundEventSource connect(
+      Queue<SseEvent> queue, Optional<String> lastCommittedEventId) {
     Preconditions.checkNotNull(queue, "queue must not be null.");
+    Preconditions.checkNotNull(lastCommittedEventId, "lastCommittedEventId must not be null.");
     this.queue = queue;
 
     // retry strategy
@@ -157,6 +174,7 @@ public class SseConfiguration implements Configuration<OkHttpClient, HttpRequest
                 backgroundEventHandler,
                 new EventSource.Builder(connectStrategy)
                     .streamEventData(false)
+                    .lastEventId(lastCommittedEventId.orElse(null))
                     .retryDelayStrategy(retryDelayStrategy)
                     .errorStrategy(errorStrategy))
             .build();

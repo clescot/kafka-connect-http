@@ -2,8 +2,9 @@ package io.github.clescot.kafka.connect.sse.client.okhttp;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import com.google.common.collect.Maps;
 import java.util.HashMap;
-import org.gradle.internal.impldep.com.google.common.collect.Maps;
+import org.apache.kafka.common.config.ConfigDef;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
@@ -52,6 +53,23 @@ class SseSourceConnectorTest {
     }
 
     @Test
+    void a_task_can_be_built_from_its_task_config() {
+      HashMap<String, String> settings = Maps.newHashMap();
+      settings.put("config.ids", "default,second");
+      settings.put("config.default.topic", "test");
+      settings.put("config.default.url", "http://localhost:8080/sse");
+      settings.put("config.second.topic", "test2");
+      settings.put("config.second.url", "http://localhost:8080/sse2");
+      sseSourceConnector.start(settings);
+
+      var taskConfigs = sseSourceConnector.taskConfigs(1);
+
+      // SseTask needs the ids of the configurations its task owns. A task whose
+      // settings lack them dies at start, which is what a live run showed.
+      Assertions.assertDoesNotThrow(() -> new SseTask(taskConfigs.get(0)));
+    }
+
+    @Test
     void test_two_sse_endpoints_with_one_task() {
       HashMap<String, String> settings = Maps.newHashMap();
       settings.put("config.ids", "default,second");
@@ -96,6 +114,21 @@ class SseSourceConnectorTest {
       assertThat(taskConfigs.get(1))
           .doesNotContainEntry("config.default.url", "http://localhost:8080/sse");
       assertThat(taskConfigs.get(1)).doesNotContainEntry("config.default.topic", "test");
+    }
+  }
+
+  @Nested
+  class Config {
+
+    @Test
+    void config_is_available_before_start() {
+      // Kafka Connect asks a fresh connector instance for its ConfigDef before start(),
+      // so config() must not depend on state that only start() sets.
+      SseSourceConnector sseSourceConnector = new SseSourceConnector();
+
+      ConfigDef configDef = Assertions.assertDoesNotThrow(sseSourceConnector::config);
+
+      assertThat(configDef.configKeys()).containsKey("config.default.url");
     }
   }
 }

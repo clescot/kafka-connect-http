@@ -18,3 +18,4 @@ docs/.$http_sink_connector.drawio.bkp
 **/.project
 **/org.eclipse*
 **/.settings
+/artifacts/

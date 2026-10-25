@@ -1,12 +1,15 @@
 package io.github.clescot.kafka.connect.sse.client.okhttp;
 
+import static io.github.clescot.client.Constants.CONFIGURATION_IDS;
 import static io.github.clescot.core.http.VersionUtils.VERSION;
 
 import com.google.common.base.Preconditions;
+import com.google.common.collect.Maps;
 import io.github.clescot.client.MapUtils;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import org.apache.kafka.common.config.ConfigDef;
 import org.apache.kafka.connect.connector.Task;
 import org.apache.kafka.connect.source.SourceConnector;
@@ -41,8 +44,12 @@ public class SseSourceConnector extends SourceConnector {
       List<String> list =
           partition.stream().map(configurationId -> "config." + configurationId).toList();
       Map<String, String> subSettings =
-          MapUtils.filterEntriesStartingWithPrefixes(
-              this.sseConnectorConfig.originalsStrings(), list.toArray(new String[0]));
+          Maps.newHashMap(
+              MapUtils.filterEntriesStartingWithPrefixes(
+                  this.sseConnectorConfig.originalsStrings(), list.toArray(new String[0])));
+      // The task builds one configuration per id and needs to know which ones it owns: the
+      // prefix filter above keeps only config.<id>.* keys, so the id list travels separately.
+      subSettings.put(CONFIGURATION_IDS, String.join(",", partition));
       configs.add(subSettings);
     }
     return configs;
@@ -55,8 +62,10 @@ public class SseSourceConnector extends SourceConnector {
 
   @Override
   public ConfigDef config() {
-    Preconditions.checkNotNull(props, "props must not be null. Call start() first.");
-    SseConfigDefinition sseConfigDefinition = new SseConfigDefinition(props);
+    // Kafka Connect validates a fresh connector instance before it calls start(), so config()
+    // must not depend on state that only start() sets.
+    SseConfigDefinition sseConfigDefinition =
+        new SseConfigDefinition(Optional.ofNullable(props).orElse(Maps.newHashMap()));
     return sseConfigDefinition.config();
   }
 

@@ -10,9 +10,12 @@ import io.github.clescot.client.http.okhttp.OkHttpClient;
 import io.github.clescot.client.http.okhttp.OkHttpClientFactory;
 import io.github.clescot.client.queue.QueueFactory;
 import io.github.clescot.core.http.HttpRequest;
+import io.github.clescot.core.sse.SseEvent;
 import io.micrometer.core.instrument.composite.CompositeMeterRegistry;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
+import java.util.Queue;
 import java.util.Random;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Nested;
@@ -370,6 +373,53 @@ class SseConfigurationTest {
       // After the time limit, it should throw an exception
       ErrorStrategy.Result result2 = result.getNext().apply(new StreamHttpErrorException(500));
       assertThat(result2.getAction()).isEqualTo(ErrorStrategy.Action.THROW);
+    }
+
+    @Test
+    void connect_with_committed_event_id_seeds_the_resume_cursor() {
+      OkHttpClientFactory okHttpClientFactory = new OkHttpClientFactory();
+      Map<String, String> settings = Maps.newHashMap();
+      settings.put("url", "http://example.com/sse");
+      settings.put("topic", "test-topic");
+      OkHttpClient okHttpClient =
+          okHttpClientFactory.buildHttpClient(
+              settings, null, new CompositeMeterRegistry(), new Random());
+      SseConfiguration sseConfiguration = new SseConfiguration("test-id", okHttpClient, settings);
+      sseConfiguration.connect(
+          QueueFactory.getQueue(QueueFactory.DEFAULT_QUEUE_NAME), Optional.of("7"));
+      assertThat(sseConfiguration.getBackgroundEventSource().getEventSource().getLastEventId())
+          .isEqualTo("7");
+    }
+
+    @Test
+    void connect_without_committed_event_id_sends_no_resume_cursor() {
+      OkHttpClientFactory okHttpClientFactory = new OkHttpClientFactory();
+      Map<String, String> settings = Maps.newHashMap();
+      settings.put("url", "http://example.com/sse");
+      settings.put("topic", "test-topic");
+      OkHttpClient okHttpClient =
+          okHttpClientFactory.buildHttpClient(
+              settings, null, new CompositeMeterRegistry(), new Random());
+      SseConfiguration sseConfiguration = new SseConfiguration("test-id", okHttpClient, settings);
+      sseConfiguration.connect(
+          QueueFactory.getQueue(QueueFactory.DEFAULT_QUEUE_NAME), Optional.empty());
+      assertThat(sseConfiguration.getBackgroundEventSource().getEventSource().getLastEventId())
+          .isNullOrEmpty();
+    }
+
+    @Test
+    void connect_with_null_committed_event_id() {
+      OkHttpClientFactory okHttpClientFactory = new OkHttpClientFactory();
+      Map<String, String> settings = Maps.newHashMap();
+      settings.put("url", "http://example.com/sse");
+      settings.put("topic", "test-topic");
+      OkHttpClient okHttpClient =
+          okHttpClientFactory.buildHttpClient(
+              settings, null, new CompositeMeterRegistry(), new Random());
+      SseConfiguration sseConfiguration = new SseConfiguration("test-id", okHttpClient, settings);
+      Queue<SseEvent> queue = QueueFactory.getQueue(QueueFactory.DEFAULT_QUEUE_NAME);
+      Assertions.assertThrows(
+          NullPointerException.class, () -> sseConfiguration.connect(queue, null));
     }
   }
 
