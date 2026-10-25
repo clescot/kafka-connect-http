@@ -43,8 +43,7 @@ The whole recipe is one command; the bullets below are what it does and what pro
 ## Gotchas
 
 - The connector must reach the target by its **in-network** name. `http://127.0.0.1:8080/ping` in the message would make the Connect container call itself; use `http://http-target:8080/ping`.
-- `url` is the only field annotated as required, but the JSON path applies no defaults: `method` must be set — it does **not** default to `GET` (`@JsonProperty(defaultValue = "GET")` is documentation-only for Jackson's data-binding).
-- `bodyType` has no parse-time default either, so set it whenever the request has a body.
+- `url` is the only field you must provide: `method` defaults to `GET` and `bodyType` to `STRING` when omitted (fixed in #955). Set `method` explicitly whenever the stub expects anything but `GET`.
 - `RUNNING` alone is not proof. Assert on the recorded request.
 - The default `publish.mode` is `NONE`: nothing is republished to Kafka. In `PRODUCER` mode the published payload is the exchange, not the bare response — `producer.content` defaults to `exchange`.
 - Keys are not sent to the target; only the message body is parsed into an `HttpRequest`.
