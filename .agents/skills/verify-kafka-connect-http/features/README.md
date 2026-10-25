@@ -57,7 +57,9 @@ Keep implementation details out of the map. Name only user paths, stable handles
 
 ## Status of the seed map
 
-Only **HTTP Sink connector** (`http-sink-connector.md`) has been exercised end to end by a `control-kchttp drive-sink` run so far. The other three recipes are written from the connector settings docs and the repo's own integration tests (`kafka-connect-http-connectors/src/test/java/**/IT*.java`) and are pending their first verification run. Do not mark them verified until a run produces the records/requests they describe.
+Verified by a live run: **HTTP Sink connector** (`http-sink-connector.md`, via `control-kchttp drive-sink`), **In-Memory-Queue Source connector** and **Cron Source connector** (run `20261025-194103`), and **SSE Source connector** (run `20261025-202706`). The in-memory-queue recipe was corrected after its run (the success record is the Connect `Struct` form, not JSON) and the SSE driver gained the restart step that proves resumption.
+
+Each recipe still lists what no run has covered, in its own file. Do not move a bullet to verified without a run that produced the record or request it describes.
 
 ## Features
 
