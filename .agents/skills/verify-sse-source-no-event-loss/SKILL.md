@@ -51,13 +51,13 @@ and, in another module:
 | --- | --- |
 | `http-client/src/main/java/io/github/clescot/client/queue/QueueFactory.java` | `getQueue` (the queue implementation) |
 
-**Sync commit: `739f94d20160b8f86d1871cb10fc6221e0fc40d3`** (2026-10-25, "fix: resume the SSE
-source from the committed offset instead of \"now\""). At this commit the verification was
-confirmed to describe the code above and prints `F1 LOOKS FIXED`, exit 3. The previous sync commit
-was `826e024af0bb0015e9d3057a204216df90cd524d`, where the check was confirmed to describe the code
-and printed the F1 baseline. Move this commit forward only after you have re-run the check and
-confirmed the model still describes the code at the new commit, see "Keeping this in step with the
-code".
+**Sync commit: `ace85b1a8c55d6d84942d9e85c83e8c2251f7f61`** (2026-10-25, "fix(verification):
+honour TLA2TOOLS_JAR in the SSE check"). At this commit the verification was confirmed to describe
+the code above and prints `F1 LOOKS FIXED`, exit 3. The previous sync commit was
+`739f94d20160b8f86d1871cb10fc6221e0fc40d3`, where the fix landed. The only later change to covered
+code was `spotless:apply`, which moves whitespace and nothing else. Move this commit forward only
+after you have re-run the check and confirmed the model still describes the code at the new commit,
+see "Keeping this in step with the code".
 
 ## How to read the verdict
 
