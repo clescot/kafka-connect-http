@@ -2,6 +2,8 @@ package io.github.clescot.core.sse;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.Maps;
 import io.github.clescot.core.http.Response;
 import org.apache.kafka.connect.data.Schema;
@@ -130,12 +132,14 @@ public class SseEvent implements Response,Cloneable, Serializable {
                 '}';
     }
 
+    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
+
     public String toJson() {
-        return "{\"id\":\"" + id +
-                "\",\"attributes\":\"" + attributes +
-                "\",\"type\":\"" + type +
-                "\",\"data\":\"" + data +
-                "\"}";
+        try {
+            return OBJECT_MAPPER.writeValueAsString(this);
+        } catch (JsonProcessingException e) {
+            throw new IllegalStateException("cannot serialize SseEvent to JSON", e);
+        }
     }
 
     public Struct toStruct() {

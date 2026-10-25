@@ -90,8 +90,18 @@ class SseEventTest {
         @Test
         void shouldReturnCorrectJson() {
             SseEvent event = new SseEvent("1", "message", "Hello, World!");
-            String expectedJson = "{\"id\":\"1\",\"attributes\":\"{}\",\"type\":\"message\",\"data\":\"Hello, World!\"}";
+            String expectedJson = "{\"attributes\":{},\"id\":\"1\",\"type\":\"message\",\"data\":\"Hello, World!\"}";
             assertEquals(expectedJson, event.toJson());
+        }
+
+        @Test
+        void shouldEscapeMultiLineDataSoTheJsonStaysParseable() throws JsonProcessingException {
+            SseEvent event = new SseEvent("42", "request", "GET / HTTP/1.1\nHost: example.com");
+            String json = event.toJson();
+            SseEvent reparsed = new ObjectMapper().readValue(json, SseEvent.class);
+            assertEquals(event.getId(), reparsed.getId());
+            assertEquals(event.getType(), reparsed.getType());
+            assertEquals(event.getData(), reparsed.getData());
         }
     }
 

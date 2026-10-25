@@ -42,8 +42,22 @@ public class HttpCronSourceTask extends SourceTask {
     queue = QueueFactory.getQueue("" + UUID.randomUUID());
     Preconditions.checkNotNull(settings);
     this.settings = settings;
-    SchedulerFactory schedulerFactory = new StdSchedulerFactory();
+    // One scheduler per task: a JVM-wide scheduler would let one task's listener see the other
+    // task's job executions, and one task's stop() would shut the other task's scheduling down.
+    Properties schedulerProperties = new Properties();
+    schedulerProperties.setProperty(
+        StdSchedulerFactory.PROP_SCHED_INSTANCE_NAME,
+        "kafka-connect-http-cron-" + UUID.randomUUID());
+    // A properties-initialised factory takes no defaults from quartz.properties, so state the
+    // in-memory job store and thread pool it needs explicitly.
+    schedulerProperties.setProperty(
+        StdSchedulerFactory.PROP_THREAD_POOL_CLASS, "org.quartz.simpl.SimpleThreadPool");
+    schedulerProperties.setProperty(
+        StdSchedulerFactory.PROP_THREAD_POOL_PREFIX + ".threadCount", "1");
+    schedulerProperties.setProperty(
+        StdSchedulerFactory.PROP_JOB_STORE_CLASS, "org.quartz.simpl.RAMJobStore");
     try {
+      SchedulerFactory schedulerFactory = new StdSchedulerFactory(schedulerProperties);
       scheduler = schedulerFactory.getScheduler();
       ListenerManager listenerManager = scheduler.getListenerManager();
       listenerManager.addJobListener(new HttpCronJobListener(queue));

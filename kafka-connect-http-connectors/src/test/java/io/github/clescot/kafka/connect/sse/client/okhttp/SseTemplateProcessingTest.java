@@ -136,7 +136,7 @@ class SseTemplateProcessingTest {
       // ${jsonpath:content} extracts the content, so data stays the same
       assertThat(record.value())
           .isEqualTo(
-              "{\"id\":\"test-id\",\"attributes\":\"{}\",\"type\":\"test-type\",\"data\":\"{\"message\": \"hello\"}\"}");
+              "{\"attributes\":{},\"id\":\"test-id\",\"type\":\"test-type\",\"data\":\"{\\\"message\\\": \\\"hello\\\"}\"}");
     }
   }
 }

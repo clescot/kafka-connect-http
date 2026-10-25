@@ -1,5 +1,6 @@
 package io.github.clescot.core.http;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import io.confluent.kafka.schemaregistry.ParsedSchema;
@@ -688,6 +689,34 @@ class HttpRequestTest {
             assertThat(contentLength)
                     .isGreaterThan(0L)
                     .isEqualTo(part1.getBodyContentLength() + part2.getBodyContentLength() + part3.getBodyContentLength());
+        }
+    }
+
+    @Nested
+    class JsonDeserializationDefaults {
+
+        private final ObjectMapper objectMapper = new ObjectMapper();
+
+        @Test
+        void test_method_and_body_type_default_when_absent() throws IOException {
+            //given a message with only the url
+            String json = "{\"url\":\"http://www.stuff.com\"}";
+            //when
+            HttpRequest httpRequest = objectMapper.readValue(json, HttpRequest.class);
+            //then
+            assertThat(httpRequest.getMethod()).isEqualTo(HttpRequest.Method.GET);
+            assertThat(httpRequest.getBodyType()).isEqualTo(BodyType.STRING);
+        }
+
+        @Test
+        void test_explicit_method_and_body_type_are_kept() throws IOException {
+            //given
+            String json = "{\"url\":\"http://www.stuff.com\",\"method\":\"POST\",\"bodyType\":\"FORM\"}";
+            //when
+            HttpRequest httpRequest = objectMapper.readValue(json, HttpRequest.class);
+            //then
+            assertThat(httpRequest.getMethod()).isEqualTo(HttpRequest.Method.POST);
+            assertThat(httpRequest.getBodyType()).isEqualTo(BodyType.FORM);
         }
     }
 }
