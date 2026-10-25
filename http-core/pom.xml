@@ -7,7 +7,7 @@
     <parent>
         <groupId>io.github.clescot</groupId>
         <artifactId>kafka-connect-http</artifactId>
-        <version>0.8.176-SNAPSHOT</version>
+        <version>0.8.180-SNAPSHOT</version>
     </parent>
     <artifactId>http-core</artifactId>
     <packaging>jar</packaging>
@@ -65,7 +65,7 @@
         <dependency>
             <groupId>de.sstoehr</groupId>
             <artifactId>har-reader</artifactId>
-            <version>4.0.1</version>
+            <version>4.0.2</version>
         </dependency>
         <!-- JSON Path for template processing -->
         <dependency>

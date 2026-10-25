@@ -7,7 +7,7 @@
     <parent>
         <groupId>io.github.clescot</groupId>
         <artifactId>kafka-connect-http</artifactId>
-        <version>0.8.176-SNAPSHOT</version>
+        <version>0.8.180-SNAPSHOT</version>
     </parent>
     <artifactId>kafka-connect-http-connectors</artifactId>
     <packaging>jar</packaging>
@@ -20,7 +20,7 @@
             <groupId>io.github.clescot</groupId>
             <artifactId>http-client</artifactId>
             <scope>compile</scope>
-            <version>0.8.176-SNAPSHOT</version>
+            <version>0.8.180-SNAPSHOT</version>
         </dependency>
         <dependency>
             <groupId>org.asynchttpclient</groupId>
@@ -142,7 +142,7 @@
         <dependency>
             <groupId>com.nimbusds</groupId>
             <artifactId>oauth2-oidc-sdk</artifactId>
-            <version>11.33</version>
+            <version>11.34</version>
         </dependency>
         <dependency>
             <groupId>org.apache.commons</groupId>
@@ -307,7 +307,7 @@
             </plugin>
             <plugin>
                 <artifactId>maven-resources-plugin</artifactId>
-                <version>3.4.0</version>
+                <version>3.5.0</version>
                 <executions>
                     <execution>
                         <id>copy-resource-one</id>
@@ -400,7 +400,7 @@
                     <plugin>
                         <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-failsafe-plugin</artifactId>
-                        <version>3.5.4</version>
+                        <version>3.5.5</version>
                         <executions>
                             <execution>
                                 <goals>

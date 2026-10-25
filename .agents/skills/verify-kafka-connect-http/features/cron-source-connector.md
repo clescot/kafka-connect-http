@@ -60,4 +60,4 @@ COMPOSE=(docker compose -f .agents/skills/verify-kafka-connect-http/scripts/comp
 - The message it emits is an `HttpRequest` JSON, not your `job.job1.body` verbatim: `body` is placed in `bodyAsString`.
 - Keys are not propagated from jobs; the emitted records have a null key.
 - `tasks.max` greater than the number of jobs is harmless, but jobs are grouped: with `tasks.max` lower than the job count, jobs are split across tasks.
-- Not yet exercised by a verification run: this recipe is derived from `docs/cron_source_connector_settings.md` and `CronSourceConnector`/`HttpCronSourceTask`. Run it once and record the artifacts before treating it as verified.
+- Not yet exercised by a verification run: this recipe is derived from `docs/reference/cron-source-connector.md` and `CronSourceConnector`/`HttpCronSourceTask`. Run it once and record the artifacts before treating it as verified.

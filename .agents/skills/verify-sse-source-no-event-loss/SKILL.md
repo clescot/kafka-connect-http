@@ -145,7 +145,7 @@ configuration id, so the offset can be read back at all.
 first-ever start and the first start after upgrading from type-keyed offsets, there is no portable
 resume token. The connector sends no `Last-Event-ID` and inherits the server's policy, so events
 published before the first commit are not recoverable. It logs a warning when that happens, and
-`docs/sse_source_connector_settings.md` states the limit. `SeedsFromCommittedOffset` is a grep, so
+`docs/reference/sse-source-connector.md` states the limit. `SeedsFromCommittedOffset` is a grep, so
 the check prints `F1 LOOKS FIXED` whether or not this case is handled; only a live run against a
 server that honours `Last-Event-ID` tells them apart.
 

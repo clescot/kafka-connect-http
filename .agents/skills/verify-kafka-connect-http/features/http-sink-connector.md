@@ -45,7 +45,7 @@ The whole recipe is one command; the bullets below are what it does and what pro
 - The connector must reach the target by its **in-network** name. `http://127.0.0.1:8080/ping` in the message would make the Connect container call itself; use `http://http-target:8080/ping`.
 - `url` is the only required field. If `method` is omitted it defaults to `GET`, which will not match a `POST` stub — always set it.
 - `RUNNING` alone is not proof. Assert on the recorded request.
-- The default `publish.mode` is `NONE`: the HTTP response never reaches a Kafka topic. To observe exchanges in Kafka, use `in-memory-queue-source-connector.md`.
+- The default `publish.mode` is `NONE`: the HTTP response never reaches a Kafka topic. Use `PRODUCER` to publish the response to a topic.
 - Keys are not sent to the target; only the message body is parsed into an `HttpRequest`.
 - The target records requests even when no stub matches (a bare 404); a request found with `wasMatched: false` means your stub was wrong, not that the connector failed. Assert on `wasMatched` too.
 - Re-running `drive-sink` PUTs the same connector name; WireMock accumulates requests, so match on the unique body marker (run id) rather than "any request".

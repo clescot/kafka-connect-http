@@ -5,7 +5,6 @@ This directory is the maintained source for verifying the user-facing behaviour 
 There is no web UI and no CLI. The surface is Kafka Connect:
 
 - **HTTP Sink connector** — `Kafka -> HTTP`. Consumes `HttpRequest` messages from a topic and performs the HTTP call.
-- **HTTP In-Memory-Queue Source connector** — publishes the resulting `HttpExchange`/`HttpResponse` back into Kafka. Only useful together with a sink in `IN_MEMORY_QUEUE` publish mode.
 - **Cron Source connector** — emits `HttpRequest` messages into a topic on a Quartz cron schedule.
 - **SSE Source connector** — subscribes to Server-Sent-Events streams and emits each event into a topic.
 
@@ -15,7 +14,7 @@ The harness is `scripts/control.sh` (`control-kchttp`), documented in [`../SKILL
 
 - The plugin image is built: `control-kchttp build` produces `clescot/kafka-connect-http:<version>` from `pom.xml`.
 - A run is up: `control-kchttp launch`. It brings up `kafka` (cp-kafka 8.0.0, KRaft), `connect` (this repo's image with the plugin installed) and the two HTTP targets, then creates topics `http-request`, `http-success`, `http-error`.
-- `control-kchttp doctor` passes (containers up, all four connector classes present in `GET /connector-plugins`, both targets healthy, port 8083 owned by our Connect worker).
+- `control-kchttp doctor` passes (containers up, all three connector classes present in `GET /connector-plugins`, both targets healthy, port 8083 owned by our Connect worker).
 - Artifacts go to `artifacts/verify-kafka-connect-http/<RUN_ID>/`. The current run id is in `artifacts/verify-kafka-connect-http/.current-run`.
 - Never drive a Connect worker this skill did not start.
 
@@ -57,13 +56,12 @@ Keep implementation details out of the map. Name only user paths, stable handles
 
 ## Status of the seed map
 
-Verified by a live run: **HTTP Sink connector** (`http-sink-connector.md`, via `control-kchttp drive-sink`), **In-Memory-Queue Source connector** and **Cron Source connector** (run `20261025-194103`), and **SSE Source connector** (run `20261025-202706`). The in-memory-queue recipe was corrected after its run (the success record is the Connect `Struct` form, not JSON) and the SSE driver gained the restart step that proves resumption.
+Verified by a live run: **HTTP Sink connector** (`http-sink-connector.md`, via `control-kchttp drive-sink`), **Cron Source connector** (run `20261025-194103`), and **SSE Source connector** (run `20261025-202706`). The SSE driver gained the restart step that proves resumption.
 
 Each recipe still lists what no run has covered, in its own file. Do not move a bullet to verified without a run that produced the record or request it describes.
 
 ## Features
 
 - [HTTP Sink connector](./http-sink-connector.md) — `Kafka -> HTTP`: a topic message triggers an HTTP request; the target records it.
-- [In-Memory-Queue Source connector](./in-memory-queue-source-connector.md) — sink publishes the HTTP exchange to Kafka `success`/`error` topics through the in-memory queue.
 - [Cron Source connector](./cron-source-connector.md) — scheduled `HttpRequest` emission into a topic.
 - [SSE Source connector](./sse-source-connector.md) — Server-Sent-Events stream -> Kafka messages.

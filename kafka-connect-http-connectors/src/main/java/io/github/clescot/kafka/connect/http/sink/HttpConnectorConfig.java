@@ -8,11 +8,9 @@ import com.google.common.base.Joiner;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
-import io.github.clescot.client.queue.QueueFactory;
 import io.github.clescot.core.http.BodyType;
 import io.github.clescot.kafka.connect.http.mapper.MapperMode;
 import io.github.clescot.kafka.connect.http.sink.publish.PublishMode;
-import io.github.clescot.kafka.connect.queue.ConfigConstants;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -67,7 +65,6 @@ public class HttpConnectorConfig extends AbstractConfig {
   private final String httpClientImplementation;
   private final String defaultSuccessResponseCodeRegex;
   private final String defaultRetryResponseCodeRegex;
-  private final String queueName;
   private final PublishMode publishMode;
   private final Integer defaultRetries;
   private final Long defaultRetryDelayInMs;
@@ -81,9 +78,6 @@ public class HttpConnectorConfig extends AbstractConfig {
   private final boolean generateMissingRequestId;
   private final boolean generateMissingCorrelationId;
 
-  private final long maxWaitTimeRegistrationOfQueueConsumerInMs;
-  private final int pollDelayRegistrationOfQueueConsumerInMs;
-  private final int pollIntervalRegistrationOfQueueConsumerInMs;
   private final Integer customFixedThreadpoolSize;
   private final List<String> configurationIds;
   private final List<String> httpRequestMapperIds;
@@ -156,21 +150,12 @@ public class HttpConnectorConfig extends AbstractConfig {
 
     this.httpClientImplementation = getString(CONFIG_HTTP_CLIENT_IMPLEMENTATION);
 
-    this.queueName =
-        Optional.ofNullable(getString(ConfigConstants.QUEUE_NAME))
-            .orElse(QueueFactory.DEFAULT_QUEUE_NAME);
     this.publishMode =
         PublishMode.valueOf(
             Optional.ofNullable(getString(PUBLISH_MODE)).orElse(PublishMode.NONE.name()));
     this.producerSuccessTopic = getString(PRODUCER_SUCCESS_TOPIC);
     this.producerDlqTopic = getString(PRODUCER_DEAD_LETTER_QUEUE_TOPIC);
     this.producerErrorTopic = getString(PRODUCER_ERROR_TOPIC);
-    if (QueueFactory.queueMapIsEmpty()
-        && PublishMode.IN_MEMORY_QUEUE.name().equalsIgnoreCase(publishMode.name())) {
-      LOGGER.warn(
-          "no pre-existing queue exists. this HttpSourceConnector has created a '{}' one. It needs to consume a queue filled with a SinkConnector. Ignore this message if a SinkConnector will be created after this one.",
-          queueName);
-    }
 
     this.defaultRetries = getInt(CONFIG_DEFAULT_RETRIES);
     this.defaultRetryDelayInMs = getLong(CONFIG_DEFAULT_RETRY_DELAY_IN_MS);
@@ -184,12 +169,6 @@ public class HttpConnectorConfig extends AbstractConfig {
     this.defaultRateLimiterPeriodInMs = getLong(CONFIG_DEFAULT_RATE_LIMITER_PERIOD_IN_MS);
     this.defaultRateLimiterMaxExecutions = getLong(CONFIG_DEFAULT_RATE_LIMITER_MAX_EXECUTIONS);
     this.defaultRateLimiterScope = getString(CONFIG_DEFAULT_RATE_LIMITER_SCOPE);
-    this.maxWaitTimeRegistrationOfQueueConsumerInMs =
-        getLong(WAIT_TIME_REGISTRATION_QUEUE_CONSUMER_IN_MS);
-    this.pollDelayRegistrationOfQueueConsumerInMs =
-        getInt(POLL_DELAY_REGISTRATION_QUEUE_CONSUMER_IN_MS);
-    this.pollIntervalRegistrationOfQueueConsumerInMs =
-        getInt(POLL_INTERVAL_REGISTRATION_QUEUE_CONSUMER_IN_MS);
     Optional<List<String>> staticRequestHeaderNames =
         Optional.ofNullable(getList(CONFIG_STATIC_REQUEST_HEADER_NAMES));
     List<String> additionalHeaderNamesList = staticRequestHeaderNames.orElse(Lists.newArrayList());
@@ -262,10 +241,6 @@ public class HttpConnectorConfig extends AbstractConfig {
     return defaultRequestMapperMode;
   }
 
-  public String getQueueName() {
-    return queueName;
-  }
-
   public Long getMissingIdCacheTTLSec() {
     return missingIdCacheTTLSec;
   }
@@ -334,24 +309,12 @@ public class HttpConnectorConfig extends AbstractConfig {
     return defaultRateLimiterPeriodInMs;
   }
 
-  public long getMaxWaitTimeRegistrationOfQueueConsumerInMs() {
-    return maxWaitTimeRegistrationOfQueueConsumerInMs;
-  }
-
   public String getDefaultSuccessResponseCodeRegex() {
     return defaultSuccessResponseCodeRegex;
   }
 
   public String getDefaultRetryResponseCodeRegex() {
     return defaultRetryResponseCodeRegex;
-  }
-
-  public int getPollDelayRegistrationOfQueueConsumerInMs() {
-    return pollDelayRegistrationOfQueueConsumerInMs;
-  }
-
-  public int getPollIntervalRegistrationOfQueueConsumerInMs() {
-    return pollIntervalRegistrationOfQueueConsumerInMs;
   }
 
   public PublishMode getPublishMode() {
@@ -599,9 +562,6 @@ public class HttpConnectorConfig extends AbstractConfig {
         + ", defaultRetryResponseCodeRegex='"
         + defaultRetryResponseCodeRegex
         + '\''
-        + ", queueName='"
-        + queueName
-        + '\''
         + ", publishMode="
         + publishMode
         + ", defaultRetries="
@@ -627,12 +587,6 @@ public class HttpConnectorConfig extends AbstractConfig {
         + generateMissingRequestId
         + ", generateMissingCorrelationId="
         + generateMissingCorrelationId
-        + ", maxWaitTimeRegistrationOfQueueConsumerInMs="
-        + maxWaitTimeRegistrationOfQueueConsumerInMs
-        + ", pollDelayRegistrationOfQueueConsumerInMs="
-        + pollDelayRegistrationOfQueueConsumerInMs
-        + ", pollIntervalRegistrationOfQueueConsumerInMs="
-        + pollIntervalRegistrationOfQueueConsumerInMs
         + ", customFixedThreadpoolSize="
         + customFixedThreadpoolSize
         + ", configurationIds="
@@ -688,11 +642,6 @@ public class HttpConnectorConfig extends AbstractConfig {
         && meterRegistryTagIncludeUrlPath == that.meterRegistryTagIncludeUrlPath
         && generateMissingRequestId == that.generateMissingRequestId
         && generateMissingCorrelationId == that.generateMissingCorrelationId
-        && maxWaitTimeRegistrationOfQueueConsumerInMs
-            == that.maxWaitTimeRegistrationOfQueueConsumerInMs
-        && pollDelayRegistrationOfQueueConsumerInMs == that.pollDelayRegistrationOfQueueConsumerInMs
-        && pollIntervalRegistrationOfQueueConsumerInMs
-            == that.pollIntervalRegistrationOfQueueConsumerInMs
         && Objects.equals(producerFormat, that.producerFormat)
         && Objects.equals(producerBootstrapServers, that.producerBootstrapServers)
         && Objects.equals(producerSuccessTopic, that.producerSuccessTopic)
@@ -712,7 +661,6 @@ public class HttpConnectorConfig extends AbstractConfig {
         && Objects.equals(httpClientImplementation, that.httpClientImplementation)
         && Objects.equals(defaultSuccessResponseCodeRegex, that.defaultSuccessResponseCodeRegex)
         && Objects.equals(defaultRetryResponseCodeRegex, that.defaultRetryResponseCodeRegex)
-        && Objects.equals(queueName, that.queueName)
         && publishMode == that.publishMode
         && Objects.equals(defaultRetries, that.defaultRetries)
         && Objects.equals(defaultRetryDelayInMs, that.defaultRetryDelayInMs)
@@ -767,7 +715,6 @@ public class HttpConnectorConfig extends AbstractConfig {
         httpClientImplementation,
         defaultSuccessResponseCodeRegex,
         defaultRetryResponseCodeRegex,
-        queueName,
         publishMode,
         defaultRetries,
         defaultRetryDelayInMs,
@@ -780,9 +727,6 @@ public class HttpConnectorConfig extends AbstractConfig {
         staticRequestHeaders,
         generateMissingRequestId,
         generateMissingCorrelationId,
-        maxWaitTimeRegistrationOfQueueConsumerInMs,
-        pollDelayRegistrationOfQueueConsumerInMs,
-        pollIntervalRegistrationOfQueueConsumerInMs,
         customFixedThreadpoolSize,
         configurationIds);
   }

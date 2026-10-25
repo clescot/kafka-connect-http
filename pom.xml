@@ -6,7 +6,7 @@
     <url>https://github.com/clescot/kafka-connect-http</url>
     <groupId>io.github.clescot</groupId>
     <artifactId>kafka-connect-http</artifactId>
-    <version>0.8.176-SNAPSHOT</version>
+    <version>0.8.180-SNAPSHOT</version>
     <licenses>
         <license>
             <name>Apache License, Version 2.0</name>
@@ -19,7 +19,7 @@
         <connection>scm:git:${project.scm.url}</connection>
         <developerConnection>scm:git:${project.scm.url}</developerConnection>
         <url>https://github.com/clescot/kafka-connect-http.git</url>
-        <tag>0.7.180</tag>
+        <tag>0.8.179</tag>
     </scm>
     <developers>
         <developer>
@@ -41,10 +41,10 @@
         <connect-json.version>4.2.0</connect-json.version>
         <debezium.version>2.7.4.Final</debezium.version>
         <kafka.version>4.2.0</kafka.version>
-        <confluent.platform.version>8.1.1</confluent.platform.version>
+        <confluent.platform.version>8.2.0</confluent.platform.version>
         <failsafe.version>3.3.2</failsafe.version>
         <guava.version>33.5.0-jre</guava.version>
-        <jackson.version>2.21.0</jackson.version>
+        <jackson.version>2.21.7</jackson.version>
         <jacoco.version>0.8.12</jacoco.version>
         <json.assert.version>1.5.3</json.assert.version>
         <junit.version>6.0.3</junit.version>
@@ -54,8 +54,8 @@
         <maven.compiler.target>17</maven.compiler.target>
         <maven.plugin.validation>VERBOSE</maven.plugin.validation>
         <mock-oauth2-server.version>3.0.1</mock-oauth2-server.version>
-        <mockito.version>5.21.0</mockito.version>
-        <micrometer.version>1.16.3</micrometer.version>
+        <mockito.version>5.23.0</mockito.version>
+        <micrometer.version>1.16.4</micrometer.version>
         <okhttp.version>5.3.2</okhttp.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
@@ -261,7 +261,7 @@
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-resources-plugin</artifactId>
-                    <version>3.4.0</version>
+                    <version>3.5.0</version>
                 </plugin>
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
@@ -294,7 +294,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-resources-plugin</artifactId>
-                <version>3.4.0</version>
+                <version>3.5.0</version>
                 <configuration>
                     <propertiesEncoding>ISO-8859-1</propertiesEncoding>
                 </configuration>
@@ -349,7 +349,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
-                <version>3.5.4</version>
+                <version>3.5.5</version>
                 <dependencies>
                     <dependency>
                         <groupId>me.fabriciorby</groupId>
@@ -402,7 +402,7 @@
                             <include>src/main/java/**/*.java</include> <!-- Check application code -->
                             <include>src/test/java/**/*.java</include> <!-- Check application tests code -->
                         </includes>
-                        <googleJavaFormat/>
+                        <googleJavaFormat />
                         <importOrder />
                         <removeUnusedImports />
                     </java>

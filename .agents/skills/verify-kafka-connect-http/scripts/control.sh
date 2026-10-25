@@ -149,7 +149,6 @@ cmd_doctor() {
     local cls
     for cls in \
       io.github.clescot.kafka.connect.http.sink.HttpSinkConnector \
-      io.github.clescot.kafka.connect.http.source.queue.HttpInMemoryQueueSourceConnector \
       io.github.clescot.kafka.connect.http.source.cron.CronSourceConnector \
       io.github.clescot.kafka.connect.sse.client.okhttp.SseSourceConnector
     do

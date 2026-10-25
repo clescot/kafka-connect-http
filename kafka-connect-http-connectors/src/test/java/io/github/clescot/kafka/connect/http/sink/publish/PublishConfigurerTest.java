@@ -1,6 +1,5 @@
 package io.github.clescot.kafka.connect.http.sink.publish;
 
-import static io.github.clescot.client.queue.QueueFactory.DEFAULT_QUEUE_NAME;
 import static io.github.clescot.kafka.connect.http.sink.SinkConfigDefinition.*;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
@@ -8,7 +7,6 @@ import static org.mockito.Mockito.when;
 
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
-import io.github.clescot.client.queue.QueueFactory;
 import io.github.clescot.kafka.connect.http.sink.HttpConnectorConfig;
 import java.util.HashMap;
 import org.apache.kafka.clients.producer.MockProducer;
@@ -19,7 +17,6 @@ import org.apache.kafka.common.Node;
 import org.apache.kafka.common.PartitionInfo;
 import org.apache.kafka.common.serialization.StringSerializer;
 import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
@@ -174,32 +171,6 @@ class PublishConfigurerTest {
       Assertions.assertThrows(
           KafkaException.class,
           () -> publishConfigurer.configureProducerPublishMode(httpConnectorConfig, kafkaProducer));
-    }
-  }
-
-  @Nested
-  class ConfigureInMemoryQueue {
-
-    @BeforeEach
-    void setup() {
-      QueueFactory.clearRegistrations();
-      QueueFactory.clearQueueMap();
-    }
-
-    @Test
-    void test_null() {
-      PublishConfigurer publishConfigurer = PublishConfigurer.build();
-      Assertions.assertThrows(
-          NullPointerException.class, () -> publishConfigurer.configureInMemoryQueue(null));
-    }
-
-    @Test
-    void test_empty_connector_config() {
-      PublishConfigurer publishConfigurer = PublishConfigurer.build();
-      HttpConnectorConfig httpConnectorConfig = new HttpConnectorConfig(Maps.newHashMap());
-      QueueFactory.registerConsumerForQueue(DEFAULT_QUEUE_NAME);
-      Assertions.assertDoesNotThrow(
-          () -> publishConfigurer.configureInMemoryQueue(httpConnectorConfig));
     }
   }
 }

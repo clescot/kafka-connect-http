@@ -56,7 +56,7 @@ One read-only check that answers "is this instance worth driving?". Run it first
 .agents/skills/verify-kafka-connect-http/scripts/control.sh doctor
 ```
 
-It confirms, without mutating anything: the four containers are running, the Connect REST API answers, all four connector classes (`HttpSinkConnector`, `HttpInMemoryQueueSourceConnector`, `CronSourceConnector`, `SseSourceConnector`) are in `GET /connector-plugins`, both targets are reachable, and host port 8083 is owned by *our* Connect container. It exits non-zero with a `FAIL` line per problem. It also dumps `/connector-plugins` to the run's `connector-plugins.json`.
+It confirms, without mutating anything: the four containers are running, the Connect REST API answers, all three connector classes (`HttpSinkConnector`, `CronSourceConnector`, `SseSourceConnector`) are in `GET /connector-plugins`, both targets are reachable, and host port 8083 is owned by *our* Connect container. It exits non-zero with a `FAIL` line per problem. It also dumps `/connector-plugins` to the run's `connector-plugins.json`.
 
 If doctor fails because no run exists, run `launch`. If it fails on a port-ownership or plugin check, do not drive the instance — it is not the one this skill started.
 
