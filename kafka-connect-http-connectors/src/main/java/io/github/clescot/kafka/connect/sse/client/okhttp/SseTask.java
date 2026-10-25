@@ -28,10 +28,16 @@ public class SseTask implements Task<OkHttpClient, SseConfiguration, HttpRequest
   private static final Logger LOGGER = LoggerFactory.getLogger(SseTask.class);
   private static CompositeMeterRegistry meterRegistry;
   private final Map<String, SseConfiguration> sseConfigurations;
+  private final SseResumeLookup resumeLookup;
 
   public SseTask(Map<String, String> settings) {
+    this(settings, SseResumeLookup.NONE);
+  }
+
+  public SseTask(Map<String, String> settings, SseResumeLookup resumeLookup) {
 
     Preconditions.checkNotNull(settings, "settings must not be null or empty.");
+    this.resumeLookup = Preconditions.checkNotNull(resumeLookup, "resumeLookup must not be null.");
     Map<String, String> mySettings = Maps.newHashMap(settings);
     String configurationIds =
         Optional.ofNullable(settings.get(CONFIGURATION_IDS))
@@ -70,13 +76,28 @@ public class SseTask implements Task<OkHttpClient, SseConfiguration, HttpRequest
 
   /**
    * Connects to the configured SSE servers using the provided configurations. Each configuration is
-   * connected to a queue for processing events.
+   * connected to a queue for processing events. The resume cursor of each configuration is seeded
+   * from the event id Kafka Connect committed for it, so a restarted task asks the SSE server to
+   * replay from there; with no committed offset, the server's own resume policy applies.
    */
   public void connect() {
     this.sseConfigurations.forEach(
         (name, config) -> {
           // don't close the backgroundEventSource to receive events
-          BackgroundEventSource backgroundEventSource = config.connect(QueueFactory.getQueue(name));
+          Optional<String> committedEventId = this.resumeLookup.lastCommittedEventId(name);
+          if (committedEventId.isPresent()) {
+            LOGGER.info(
+                "resuming SSE configuration {} from the committed event id {}",
+                name,
+                committedEventId.get());
+          } else {
+            LOGGER.warn(
+                "no committed offset for configuration {}, the server's own resume policy applies"
+                    + " and events published before its first commit are not recoverable",
+                name);
+          }
+          BackgroundEventSource backgroundEventSource =
+              config.connect(QueueFactory.getQueue(name), committedEventId);
           URI origin = backgroundEventSource.getEventSource().getOrigin();
           LOGGER.debug("connected to SSE server at {} for configuration {}", origin, name);
         });

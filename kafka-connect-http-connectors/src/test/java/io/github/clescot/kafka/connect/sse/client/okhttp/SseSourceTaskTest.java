@@ -5,6 +5,8 @@ import static com.github.tomakehurst.wiremock.client.WireMock.okForContentType;
 import static com.github.tomakehurst.wiremock.stubbing.Scenario.STARTED;
 import static io.github.clescot.client.Constants.CONFIGURATION_IDS;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 import com.github.tomakehurst.wiremock.client.WireMock;
 import com.github.tomakehurst.wiremock.core.Options;
@@ -16,9 +18,13 @@ import com.google.common.collect.Maps;
 import io.github.clescot.client.queue.QueueFactory;
 import io.github.clescot.core.sse.SseEvent;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Queue;
 import java.util.concurrent.TimeUnit;
+import org.apache.kafka.connect.source.SourceRecord;
+import org.apache.kafka.connect.source.SourceTaskContext;
+import org.apache.kafka.connect.storage.OffsetStorageReader;
 import org.awaitility.Awaitility;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.extension.RegisterExtension;
@@ -246,6 +252,121 @@ class SseSourceTaskTest {
       Awaitility.await().atMost(20, TimeUnit.SECONDS).until(() -> !queue.isEmpty());
       assertThat(queue).hasSize(2);
       Awaitility.await().atMost(20, TimeUnit.SECONDS).until(() -> !sseSourceTask.poll().isEmpty());
+    }
+
+    @Test
+    void test_polling_keys_source_records_by_configuration_id_not_by_event_type() {
+      Map<String, String> settings = Maps.newHashMap();
+      String configurationId = "poll1234";
+      settings.put("config.ids", configurationId);
+      settings.put("config." + configurationId + ".topic", "test");
+      settings.put(
+          "config." + configurationId + ".url", wmRuntimeInfo.getHttpBaseUrl() + "/events1");
+      sseSourceTask.start(settings);
+      assertThat(sseSourceTask.isConnected(configurationId)).isTrue();
+      Queue<SseEvent> queue = sseSourceTask.getQueue(configurationId).orElseThrow();
+      Awaitility.await().atMost(30, TimeUnit.SECONDS).until(() -> !queue.isEmpty());
+
+      List<SourceRecord> records = sseSourceTask.poll();
+
+      assertThat(records).isNotEmpty();
+      // the partition is the SSE connection, so a restart can resume from the committed offset
+      for (SourceRecord record : records) {
+        assertThat(record.sourcePartition())
+            .isEqualTo(Map.of("configurationId", configurationId));
+      }
+      assertThat(records.get(0).sourceOffset()).isEqualTo(Map.of("eventId", "1"));
+    }
+  }
+
+  @Nested
+  class Resume {
+    SseSourceTask sseSourceTask;
+    WireMockRuntimeInfo wmRuntimeInfo;
+
+    /** Plays the role of the Kafka Connect runtime, which sets the protected context field. */
+    private SseSourceTask sseSourceTaskWithCommittedOffset(
+        String configurationId, String committedEventId) {
+      OffsetStorageReader offsetStorageReader = mock(OffsetStorageReader.class);
+      Map<String, String> partition = Map.of("configurationId", configurationId);
+      Map<String, Object> committedOffset = Map.of("eventId", committedEventId);
+      when(offsetStorageReader.offset(partition)).thenReturn(committedOffset);
+      SourceTaskContext sourceTaskContext = mock(SourceTaskContext.class);
+      when(sourceTaskContext.offsetStorageReader()).thenReturn(offsetStorageReader);
+      return new SseSourceTask() {
+        {
+          context = sourceTaskContext;
+        }
+      };
+    }
+
+    @BeforeEach
+    void setup() {
+      QueueFactory.clearRegistrations();
+      QueueFactory.clearQueueMap();
+      wmRuntimeInfo = wmHttp.getRuntimeInfo();
+    }
+
+    @AfterEach
+    void shutdown() {
+      if (sseSourceTask != null) {
+        sseSourceTask.stop();
+      }
+    }
+
+    private void registerQuietEventStream(String url) {
+      // an empty stream keeps the connection open without delivering an event, so the seeded
+      // resume cursor is not overwritten by a received event id before the assertion runs
+      wmRuntimeInfo
+          .getWireMock()
+          .register(WireMock.get(url).willReturn(okForContentType("text/event-stream", "")));
+    }
+
+    private Map<String, String> settingsFor(String configurationId) {
+      Map<String, String> settings = Maps.newHashMap();
+      settings.put("config.ids", configurationId);
+      settings.put("config." + configurationId + ".topic", "test");
+      settings.put(
+          "config." + configurationId + ".url", wmRuntimeInfo.getHttpBaseUrl() + "/events1");
+      return settings;
+    }
+
+    @Test
+    void test_resume_from_the_committed_offset() {
+      String configurationId = "resume123";
+      registerQuietEventStream("/events1");
+      sseSourceTask = sseSourceTaskWithCommittedOffset(configurationId, "7");
+
+      sseSourceTask.start(settingsFor(configurationId));
+
+      assertThat(sseSourceTask.isConnected(configurationId)).isTrue();
+      assertThat(
+              sseSourceTask
+                  .getConfigurations()
+                  .get(configurationId)
+                  .getBackgroundEventSource()
+                  .getEventSource()
+                  .getLastEventId())
+          .isEqualTo("7");
+    }
+
+    @Test
+    void test_no_committed_offset_lets_the_server_resume_policy_apply() {
+      String configurationId = "resume456";
+      registerQuietEventStream("/events1");
+      sseSourceTask = new SseSourceTask();
+
+      sseSourceTask.start(settingsFor(configurationId));
+
+      assertThat(sseSourceTask.isConnected(configurationId)).isTrue();
+      assertThat(
+              sseSourceTask
+                  .getConfigurations()
+                  .get(configurationId)
+                  .getBackgroundEventSource()
+                  .getEventSource()
+                  .getLastEventId())
+          .isNullOrEmpty();
     }
   }
 }

@@ -33,7 +33,26 @@ and provide them to each configured topic.
 Both template settings are available per configuration, e.g. `config.default.exchange.template` and
 `config.default.exchange.template.processors`.
 
-    
+## resuming after a restart or a rebalance
+
+Each configuration's progress is tracked as a Kafka Connect source offset: the `id:` of the last
+SSE event committed for that configuration. When a task starts, it reads that offset back and asks
+the server to resume after it with a `Last-Event-ID` request header, so events published while the
+connector was down are re-delivered instead of skipped.
+
+Two consequences are worth knowing:
+
+* The offset is keyed by the configuration id, so **changing a configuration id starts a new
+  stream**, with no committed position, under the server's own default policy.
+* A configuration with no committed offset has nothing to ask for. That covers a first-ever start,
+  and the first start after upgrading from a version that keyed offsets by event type, whose old
+  offsets are orphaned. The connector sends no `Last-Event-ID` and inherits the server's default
+  policy, which for most servers means "from now", so events published before its first commit are
+  not recoverable. It logs `no committed offset for <configuration>` when that happens.
+
+Whether the server honours `Last-Event-ID` is the server's decision. The connector asks, and a
+server that ignores the header, or that treats an unknown id as "from now", will still skip events
+published during the gap. The connector cannot detect that.
 
 ## minimal configuration example
 

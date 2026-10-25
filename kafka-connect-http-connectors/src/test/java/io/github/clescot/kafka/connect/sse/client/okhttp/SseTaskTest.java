@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.*;
 import com.google.common.collect.Maps;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
@@ -54,6 +55,56 @@ class SseTaskTest {
       assertThat(sseTask.isConnected("default")).isTrue();
       assertThat(sseTask.isStarted("default")).isFalse();
       assertFalse(sseTask.getQueues().isEmpty());
+    }
+
+    @Test
+    void connect_with_committed_event_id_seeds_the_resume_cursor() {
+      SseTask sseTask =
+          new SseTask(
+              Map.of(
+                  "config.ids", "default",
+                  "config.default.url", "http://localhost:8080/sse",
+                  "config.default.topic", "test-topic"),
+              configurationId -> Optional.of("42"));
+      sseTask.connect();
+      assertThat(
+              sseTask.getConfigurations()
+                  .get("default")
+                  .getBackgroundEventSource()
+                  .getEventSource()
+                  .getLastEventId())
+          .isEqualTo("42");
+    }
+
+    @Test
+    void connect_without_committed_offset_seeds_no_resume_cursor() {
+      SseTask sseTask =
+          new SseTask(
+              Map.of(
+                  "config.ids", "default",
+                  "config.default.url", "http://localhost:8080/sse",
+                  "config.default.topic", "test-topic"));
+      sseTask.connect();
+      assertThat(
+              sseTask.getConfigurations()
+                  .get("default")
+                  .getBackgroundEventSource()
+                  .getEventSource()
+                  .getLastEventId())
+          .isNullOrEmpty();
+    }
+
+    @Test
+    void connect_with_null_resume_lookup() {
+      assertThrows(
+          NullPointerException.class,
+          () ->
+              new SseTask(
+                  Map.of(
+                      "config.ids", "default",
+                      "config.default.url", "http://localhost:8080/sse",
+                      "config.default.topic", "test-topic"),
+                  null));
     }
   }
 

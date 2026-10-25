@@ -14,11 +14,14 @@ import java.util.Queue;
 import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.source.SourceRecord;
 import org.apache.kafka.connect.source.SourceTask;
+import org.apache.kafka.connect.storage.OffsetStorageReader;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class SseSourceTask extends SourceTask {
   private static final Logger LOGGER = LoggerFactory.getLogger(SseSourceTask.class);
+  static final String PARTITION_CONFIGURATION_ID = "configurationId";
+  static final String OFFSET_EVENT_ID = "eventId";
   private SseTask sseTask;
 
   @Override
@@ -26,10 +29,34 @@ public class SseSourceTask extends SourceTask {
     return VERSION;
   }
 
+  static Map<String, String> sourcePartition(String configurationId) {
+    return Map.of(PARTITION_CONFIGURATION_ID, configurationId);
+  }
+
+  /**
+   * Builds the lookup of the event ids Kafka Connect committed. The Kafka Connect transport stays
+   * at this boundary: a task that was never initialised by Connect (unit tests) has no offset
+   * storage, so nothing was committed and the server's own resume policy applies.
+   */
+  SseResumeLookup resumeLookup() {
+    OffsetStorageReader reader = context == null ? null : context.offsetStorageReader();
+    if (reader == null) {
+      return SseResumeLookup.NONE;
+    }
+    return configurationId -> {
+      Map<String, Object> committed = reader.offset(sourcePartition(configurationId));
+      if (committed == null) {
+        return Optional.empty();
+      }
+      Object eventId = committed.get(OFFSET_EVENT_ID);
+      return eventId == null ? Optional.empty() : Optional.of(eventId.toString());
+    };
+  }
+
   @Override
   public void start(Map<String, String> settings) {
     Preconditions.checkNotNull(settings, "settings must not be null or empty.");
-    this.sseTask = new SseTask(settings);
+    this.sseTask = new SseTask(settings, resumeLookup());
     this.sseTask.connect();
     this.sseTask.start();
   }
@@ -54,6 +81,9 @@ public class SseSourceTask extends SourceTask {
     // This represents the SSE connection request
     HttpRequest httpRequest = new HttpRequest(sseConfiguration.getUri().toString());
 
+    // the partition is the SSE connection, not the event type: it is the unit the committed
+    // offsets are keyed by, and the unit the resume cursor is read back for
+    Map<String, String> partition = sourcePartition(sseConfiguration.getConfigurationId());
     while (queue.peek() != null) {
       SseEvent sseEvent = queue.poll();
       LOGGER.debug(
@@ -63,13 +93,15 @@ public class SseSourceTask extends SourceTask {
       SseEvent processedEvent = sseConfiguration.processEventWithTemplate(sseEvent, httpRequest);
       SseEvent eventToUse = (processedEvent != null) ? processedEvent : sseEvent;
 
-      Map<String, String> sourcePartition =
-          eventToUse.getType() != null ? Map.of("type", eventToUse.getType()) : Maps.newHashMap();
+      // The cursor is the id the SSE server sent, never the id a template may have rewritten:
+      // Last-Event-ID is only meaningful inside the server's own id space.
       Map<String, String> sourceOffset =
-          eventToUse.getId() != null ? Map.of("eventId", eventToUse.getId()) : Maps.newHashMap();
+          sseEvent.getId() != null
+              ? Map.of(OFFSET_EVENT_ID, sseEvent.getId())
+              : Maps.newHashMap();
       SourceRecord sourceRecord =
           new SourceRecord(
-              sourcePartition,
+              partition,
               sourceOffset,
               sseConfiguration.getTopic(),
               Schema.STRING_SCHEMA,
