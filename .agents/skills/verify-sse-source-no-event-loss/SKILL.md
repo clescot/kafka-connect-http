@@ -22,7 +22,8 @@ bash .agents/skills/verify-sse-source-no-event-loss/scripts/run-check.sh
 ```
 
 One command. It downloads the pinned model checker if needed (tla2tools v1.7.4, sha256
-verified), re-reads the facts from the Java source, runs TLC three times, writes the raw
+verified, or `TLA2TOOLS_JAR` pointing at a local copy of that version), re-reads the facts from
+the Java source, runs TLC three times, writes the raw
 results under `.agents/skills/verify-sse-source-no-event-loss/results/`, and prints a verdict.
 Reads and writes only the paths above; it never changes product code.
 

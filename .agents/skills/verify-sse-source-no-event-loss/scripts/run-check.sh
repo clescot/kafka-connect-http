@@ -21,7 +21,9 @@ TLA_VERSION="1.7.4"
 TLA_SHA256="936a262061c914694dfd669a543be24573c45d5aa0ff20a8b96b23d01e050e88"
 TLA_URL="https://github.com/tlaplus/tlaplus/releases/download/v${TLA_VERSION}/tla2tools.jar"
 TLA_CACHE="${XDG_CACHE_HOME:-$HOME/.cache}/kafka-connect-http-formal-verification"
-TLA_JAR="$TLA_CACHE/tla2tools-${TLA_VERSION}.jar"
+# TLA2TOOLS_JAR points at a jar you already have, for a run with no network. Its
+# sha256 still has to match the pinned version.
+TLA_JAR="${TLA2TOOLS_JAR:-$TLA_CACHE/tla2tools-${TLA_VERSION}.jar}"
 
 # --- work directories -------------------------------------------------------
 TMP_BASE="${TMPDIR:-/tmp}"
@@ -38,10 +40,10 @@ fail() { echo "run-check: $*" >&2; exit 4; }
 
 # --- 1. model checker -------------------------------------------------------
 if [ ! -f "$TLA_JAR" ]; then
-  mkdir -p "$TLA_CACHE"
+  mkdir -p "$(dirname "$TLA_JAR")"
   echo "run-check: downloading tla2tools v${TLA_VERSION} (pinned) ..."
   curl -sfL -o "$TLA_JAR.tmp" "$TLA_URL" \
-    || fail "cannot download $TLA_URL (offline? set TLA2TOOLS_JAR to a local tla2tools.jar)"
+    || fail "cannot download $TLA_URL (offline? set TLA2TOOLS_JAR to a local copy of tla2tools v${TLA_VERSION})"
   mv "$TLA_JAR.tmp" "$TLA_JAR"
 fi
 ACTUAL_SHA="$(sha256sum "$TLA_JAR" | awk '{print $1}')"
