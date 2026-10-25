@@ -3,6 +3,7 @@ package io.github.clescot.kafka.connect.sse.client.okhttp;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import java.util.HashMap;
+import org.apache.kafka.common.config.ConfigDef;
 import org.gradle.internal.impldep.com.google.common.collect.Maps;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
@@ -96,6 +97,21 @@ class SseSourceConnectorTest {
       assertThat(taskConfigs.get(1))
           .doesNotContainEntry("config.default.url", "http://localhost:8080/sse");
       assertThat(taskConfigs.get(1)).doesNotContainEntry("config.default.topic", "test");
+    }
+  }
+
+  @Nested
+  class Config {
+
+    @Test
+    void config_is_available_before_start() {
+      // Kafka Connect asks a fresh connector instance for its ConfigDef before start(),
+      // so config() must not depend on state that only start() sets.
+      SseSourceConnector sseSourceConnector = new SseSourceConnector();
+
+      ConfigDef configDef = Assertions.assertDoesNotThrow(sseSourceConnector::config);
+
+      assertThat(configDef.configKeys()).containsKey("config.default.url");
     }
   }
 }
