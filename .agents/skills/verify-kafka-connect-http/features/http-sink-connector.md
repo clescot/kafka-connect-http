@@ -38,14 +38,14 @@ The whole recipe is one command; the bullets below are what it does and what pro
   ```
   Run `printf '%s\n' "$JSON" | "${COMPOSE[@]}" exec -T kafka kafka-console-producer --bootstrap-server localhost:9092 --topic http-request`. The producer exits 0.
 - **Observe the side effect.** Poll `GET http://127.0.0.1:8080/__admin/requests`. A request appears whose `.request.absoluteUrl` is `http://http-target:8080/ping`, `.request.method` is `POST`, `.request.body` is the marker, and `.response.status` is `200`. This is the proof.
-- **Proof.** `drive-sink` writes `received-request.json`, `sink-status.json`, `produced-message.json` and `SUMMARY.md` under `artifacts/verify-kafka-connect-http/<RUN_ID>/`. The pass line names the received method, URL, body and response status.
+- **Proof.** `drive-sink` writes `received-request.json`, `sink-status.json`, `produced-message.json` and `SUMMARY.md` under `artifacts/verify-kafka-connect-http/<RUN_ID>/`. The pass line names the received method, URL, body and response status, and the driver only accepts a recorded request with `wasMatched: true`.
 
 ## Gotchas
 
 - The connector must reach the target by its **in-network** name. `http://127.0.0.1:8080/ping` in the message would make the Connect container call itself; use `http://http-target:8080/ping`.
-- `url` is the only required field. If `method` is omitted it defaults to `GET`, which will not match a `POST` stub — always set it.
+- `url` is the only field you must provide: `method` defaults to `GET` and `bodyType` to `STRING` when omitted (fixed in #955). Set `method` explicitly whenever the stub expects anything but `GET`.
 - `RUNNING` alone is not proof. Assert on the recorded request.
-- The default `publish.mode` is `NONE`: the HTTP response never reaches a Kafka topic. Use `PRODUCER` to publish the response to a topic.
+- The default `publish.mode` is `NONE`: nothing is republished to Kafka. In `PRODUCER` mode the published payload is the exchange, not the bare response — `producer.content` defaults to `exchange`.
 - Keys are not sent to the target; only the message body is parsed into an `HttpRequest`.
 - The target records requests even when no stub matches (a bare 404); a request found with `wasMatched: false` means your stub was wrong, not that the connector failed. Assert on `wasMatched` too.
 - Re-running `drive-sink` PUTs the same connector name; WireMock accumulates requests, so match on the unique body marker (run id) rather than "any request".

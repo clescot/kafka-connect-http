@@ -52,6 +52,7 @@ COMPOSE=(docker compose -f .agents/skills/verify-kafka-connect-http/scripts/comp
   The value is an `HttpRequest` JSON whose `url` is `http://http-target:8080/ping`, `method` is `POST` and `bodyAsString` is `cron-payload`.
 - **Observe the end-to-end side effect (with a sink registered).** With `http-sink-connector`'s sink also consuming `http-request`, the target records `POST /ping`. Check `GET http://127.0.0.1:8080/__admin/requests` and assert on a request with body `cron-payload`.
 - **Proof.** Capture the connector status and a consumed `http-request` record (and, if a sink is attached, the recorded target request) into `artifacts/verify-kafka-connect-http/<RUN_ID>/cron/`.
+- **Verified.** Run `20261025-231240`: registration answered HTTP 201, the connector and its task reached `RUNNING/RUNNING`, both jobs fired on `0/5 * * ? * *` (`cron-payload-1` and `cron-payload-2` appeared in `http-request`), job1's record carried the configured `X-Cron: cron-one` header, and — with the HTTP Sink attached — the target recorded `POST /ping` for both bodies. That covers `cron-register`, `cron-fire`, `cron-method` and `cron-multi-job`. Evidence: `artifacts/verify-kafka-connect-http/20261025-231240/cron/`.
 
 ## Gotchas
 
@@ -60,4 +61,4 @@ COMPOSE=(docker compose -f .agents/skills/verify-kafka-connect-http/scripts/comp
 - The message it emits is an `HttpRequest` JSON, not your `job.job1.body` verbatim: `body` is placed in `bodyAsString`.
 - Keys are not propagated from jobs; the emitted records have a null key.
 - `tasks.max` greater than the number of jobs is harmless, but jobs are grouped: with `tasks.max` lower than the job count, jobs are split across tasks.
-- Not yet exercised by a verification run: this recipe is derived from `docs/reference/cron-source-connector.md` and `CronSourceConnector`/`HttpCronSourceTask`. Run it once and record the artifacts before treating it as verified.
+- `http-request` keeps earlier traffic (for example a `drive-sink` run), so `--from-beginning --max-messages 1` can return a non-cron record: assert on the cron payload body rather than the first record.
