@@ -92,14 +92,22 @@ esac
 # ---------------------------------------------------------------------------
 # fact 2: seeds-from-committed-offset
 #
-#   TRUE  iff the SSE source task seeds the SSE resume cursor from the offset
-#         Kafka Connect committed (offsetStorageReader), or explicitly sends a
-#         Last-Event-ID request header. This is what makes a restart or a
-#         rebalance replay events that were received but not yet committed.
+#   TRUE  iff the SSE delivery code calls something that seeds the resume cursor
+#         from what Kafka Connect committed: offsetStorageReader(), the
+#         eventsource builder's lastEventId(), or an explicit Last-Event-ID
+#         request header. This is what makes a restart or a rebalance replay
+#         events that were received but not yet committed.
+#
+#   It is a call-site check, so it proves the plumbing exists, not that the value
+#   fed in is the right one. A seeded wrong value still passes; only a live run
+#   against a server that honours the header can tell.
 # ---------------------------------------------------------------------------
 
-if grep -rqE 'offsetStorageReader|offsetStorage|Last-Event-ID|last-event-id' \
-      "$SOURCE_TASK" "$SSE_TASK" "$SSE_CONFIGURATION"; then
+# Match a call, not prose. An earlier version matched the bare words, so a comment
+# or javadoc that merely named Last-Event-ID kept the fact TRUE after the seeding
+# itself was removed, and the check passed on broken code.
+SEEDS_CALL_PATTERN='\.offsetStorageReader[[:space:]]*\(|\.lastEventId[[:space:]]*\(|"Last-Event-ID"'
+if grep -rqE "$SEEDS_CALL_PATTERN" "$SOURCE_TASK" "$SSE_TASK" "$SSE_CONFIGURATION"; then
   SEEDS_FROM_OFFSET=TRUE
 else
   SEEDS_FROM_OFFSET=FALSE

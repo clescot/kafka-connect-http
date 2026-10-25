@@ -14,6 +14,6 @@ EnqueueLossless == TRUE
 
 \* fact 2: seeds-from-committed-offset
 \* checked files: SseSourceTask.java, SseTask.java, SseConfiguration.java
-SeedsFromCommittedOffset == FALSE
+SeedsFromCommittedOffset == TRUE
 
 ===============================================================================

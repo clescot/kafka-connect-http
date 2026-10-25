@@ -141,8 +141,9 @@ fi
 
 if [ "$FROM_NOW" = "OK" ] && [ "$FROM_NOW_RESTART" = "OK" ]; then
   echo "VERDICT: F1 LOOKS FIXED - the connector no longer skips events when the"
-  echo "         server resumes from 'now'. Update this skill: remove finding F1"
-  echo "         and move the sync commit forward."
+  echo "         server resumes from 'now'; the resume cursor is seeded from the"
+  echo "         committed offset. If the covered code changed since the sync"
+  echo "         commit, follow 'Keeping this in step with the code' in SKILL.md."
   exit 3
 fi
 

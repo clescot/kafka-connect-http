@@ -38,9 +38,10 @@ The check covers these files and methods — a change to any of them needs this 
 
 | File (all under `kafka-connect-http-connectors/src/main/java/io/github/clescot/kafka/connect/sse/client/okhttp/`) | Method / part |
 | --- | --- |
-| `SseSourceTask.java` | `start`, `poll`, `stop` |
+| `SseSourceTask.java` | `start`, `poll`, `stop`, and the `{configurationId}` source partition it exports |
 | `SseTask.java` | `connect`, `start` |
-| `SseConfiguration.java` | `connect` (the `BackgroundEventSource` builder, retry/error strategy, `ConnectStrategy`) |
+| `SseConfiguration.java` | `connect` (the `BackgroundEventSource` builder, retry/error strategy, `ConnectStrategy`, and the `lastEventId` seed) |
+| `SseResumeLookup.java` | the committed-offset lookup (`lastCommittedEventId`) |
 | `SseBackgroundEventHandler.java` | `onMessage`, `buildResponse` |
 
 and, in another module:
@@ -49,23 +50,25 @@ and, in another module:
 | --- | --- |
 | `http-client/src/main/java/io/github/clescot/client/queue/QueueFactory.java` | `getQueue` (the queue implementation) |
 
-**Sync commit: `826e024af0bb0015e9d3057a204216df90cd524d`** (2026-10-24, "Add Exchange
-templating system (HTTP + SSE) and split core/client modules (#947)"). At this commit the
-verification was confirmed to describe the code above. Move this commit forward only after you
-have re-run the check and confirmed the model still describes the code at the new commit — see
-"Keeping this in step with the code".
+**Sync commit: `739f94d20160b8f86d1871cb10fc6221e0fc40d3`** (2026-10-25, "fix: resume the SSE
+source from the committed offset instead of \"now\""). At this commit the verification was
+confirmed to describe the code above and prints `F1 LOOKS FIXED`, exit 3. The previous sync commit
+was `826e024af0bb0015e9d3057a204216df90cd524d`, where the check was confirmed to describe the code
+and printed the F1 baseline. Move this commit forward only after you have re-run the check and
+confirmed the model still describes the code at the new commit, see "Keeping this in step with the
+code".
 
 ## How to read the verdict
 
-The script exits `0` on the known baseline, `1` on a new break, `3` when finding F1 appears
-fixed, and `4` on a tool/model error.
+The script exits `3` when no event is lost under either server policy, `0` when the task
+skips events under a "from now" policy, `1` on a new break, and `4` on a tool or model error.
+For the code as it stands, `3` is the expected verdict.
 
 | Verdict | Meaning | What to do |
 | --- | --- | --- |
-| `from_start : OK` | With a server that replays from the start of the stream, no event is lost. | nothing |
-| `from_start : VIOLATED` (exit 1) | **A new loss, independent of finding F1.** The guarded code was broken. | read `results/counterexample.txt`; the decoded trace names the step that drops the event |
-| `from_now : VIOLATED` | Finding F1 is still present (see below). | this is the baseline |
-| `F1 LOOKS FIXED` (exit 3) | No event is lost under either server policy. | remove finding F1 from this skill and move the sync commit forward |
+| `from_start : OK` and `from_now : OK` (exit 3) | No event is lost under either server policy: the task resumes from the committed offset. This is the expected state. | nothing, unless the covered code changed, then follow "Keeping this in step with the code" |
+| `from_start : OK`, `from_now : VIOLATED` (exit 0) | The task resumes from "now" again: seeding the resume cursor is gone or no longer reaches the connection. This is what finding F1 was. | read `results/counterexample.txt`; the decoded trace names the step that drops the event, and `git log` over the covered files names the change that dropped the seeding |
+| `from_start : VIOLATED` (exit 1) | **A new loss, independent of the resume seeding.** The guarded code was broken. | read `results/counterexample.txt`; the decoded trace names the step that drops the event |
 | `ERROR` (exit 4) | TLC could not run, or `extract-facts.sh` could not find the code it reads. | fix the model or the script, not the test |
 
 Telling a real bug from a modeling error:
@@ -83,7 +86,9 @@ Telling a real bug from a modeling error:
 ## The counterexample, in the code's words
 
 `.agents/skills/verify-sse-source-no-event-loss/results/counterexample.txt` holds the violation
-trace decoded into the connector's own steps, for example:
+trace of the current run decoded into the connector's own steps, and holds no trace for a config
+that passes. The trace below is the one the check produced for `from_now_restart` before the fix,
+kept here as the record of what was repaired:
 
 ```
 1. SseSourceTask.start(): task up, first SSE connection open
@@ -97,7 +102,7 @@ trace decoded into the connector's own steps, for example:
 9. Kafka Connect commits the offsets of the returned records
 ```
 
-That trace is finding F1b: the server published event 1 while the task was connected but before
+That trace was finding F1b: the server published event 1 while the task was connected but before
 event 1 was received, then the worker lost the task. The new task's fresh connection resumes at
 "now" (`floor = 2`), skipping event 1; the server then publishes event 2, which is received,
 polled and committed (`delivered = {2}`). Event 1 is now committed past and can never be
@@ -106,32 +111,42 @@ committed are reachable too — the model explores them all.
 
 Event ids in the trace are `1..MaxEvents` and correspond to the `id:` field of the SSE stream.
 
-## Finding F1 (reported, not fixed)
+## Finding F1 (fixed in 739f94d2)
 
-**F1: the connector never seeds the SSE resume cursor from the offset Kafka Connect
-committed.** `SseSourceTask.poll` exports `{eventId: <id>}` as the source offset, but nothing
-reads committed offsets back: `SseSourceTask.start` / `SseTask.connect` / `SseConfiguration.connect`
-build a new `BackgroundEventSource` without `offsetStorageReader` and without a `Last-Event-ID`
-request header. The only resume cursor is the eventsource library's in-memory `lastEventId`,
-which is empty on a fresh task and until the first event of a connection arrives.
+**F1 was: the connector never seeded the SSE resume cursor from the offset Kafka Connect
+committed.** `SseSourceTask.poll` exported `{eventId: <id>}` as the source offset, but nothing
+read committed offsets back, so `SseSourceTask.start` / `SseTask.connect` /
+`SseConfiguration.connect` built a new `BackgroundEventSource` with no `offsetStorageReader` and
+no `Last-Event-ID` request header. The only resume cursor was the eventsource library's in-memory
+`lastEventId`, empty on a fresh task and until the first event of a connection arrives.
 
 Consequence: an SSE server that resumes a connection with no `Last-Event-ID` from "now"
 (a conforming choice — the SSE spec does not require a server to replay) will not re-send
 events that arrived before the connection was re-established. The in-memory queue and the
 polled-but-uncommitted batch are also lost on a restart or rebalance.
 
-This is a finding, not a reason to relax the check: do not weaken `NoGap` or the model to make
-`from_now` pass. Two triggers are reproduced:
+A loss is a loss: do not weaken `NoGap` or the model to make a violation pass. If exit 0 comes
+back, the seeding was lost or broken, not the model. Two triggers were reproduced, and the fix
+covers both:
 
 - **F1a** — a connection drops before the first event of that connection arrives, then the
   library reconnects with no `Last-Event-ID`, so everything published during the gap is skipped.
 - **F1b** — a task restart / rebalance: the worker loses the connection, the in-memory queue and
   any polled-but-uncommitted records, and the new task starts a fresh stream at "now".
 
-A fix would be: in the source task's `start`, read the committed offset with
-`context.offsetStorageReader()` and seed the resume cursor (a `Last-Event-ID` request header
-via `SseConfiguration.connect`'s `requestTransformer`, or reject a resume policy that cannot
-replay). After such a change, the script should print `F1 LOOKS FIXED` and exit 3.
+The fix reads the committed offset per configuration with `context.offsetStorageReader()` in
+`SseSourceTask`, hands it to `SseTask.connect` through `SseResumeLookup`, and seeds
+`EventSource.Builder.lastEventId(...)` in `SseConfiguration.connect`, which is what puts
+`Last-Event-ID` on the first request. The source partition moved from the event type to the
+configuration id, so the offset can be read back at all.
+
+**What the fix does not cover.** With no committed offset for a configuration, which is a
+first-ever start and the first start after upgrading from type-keyed offsets, there is no portable
+resume token. The connector sends no `Last-Event-ID` and inherits the server's policy, so events
+published before the first commit are not recoverable. It logs a warning when that happens, and
+`docs/sse_source_connector_settings.md` states the limit. `SeedsFromCommittedOffset` is a grep, so
+the check prints `F1 LOOKS FIXED` whether or not this case is handled; only a live run against a
+server that honours `Last-Event-ID` tells them apart.
 
 ## What the model is parameterised by (the code/model bridge)
 
@@ -143,7 +158,7 @@ fail loudly.
 | Fact | Read from | `TRUE` means |
 | --- | --- | --- |
 | `EnqueueLossless` | `QueueFactory.getQueue` (queue type) + `SseBackgroundEventHandler.onMessage` (enqueue call) | the in-memory queue cannot silently drop an event |
-| `SeedsFromCommittedOffset` | `offsetStorageReader` / `Last-Event-ID` anywhere in `SseSourceTask.java`, `SseTask.java`, `SseConfiguration.java` | the task asks the server to resume from the committed offset |
+| `SeedsFromCommittedOffset` | a call to `offsetStorageReader()`, a call to the builder's `lastEventId()`, or a literal `"Last-Event-ID"`, in `SseSourceTask.java`, `SseTask.java`, `SseConfiguration.java` | the task asks the server to resume from the committed offset. It matches a call site, so a comment or javadoc cannot set it by accident, and it still cannot see whether the value seeded is the right one; see "Not covered by this check" |
 
 `spec/Facts.tla` is a snapshot generated at the sync commit; `run-check.sh` always
 regenerates it in a temporary directory, so the snapshot is for reading, not for checking.
@@ -153,10 +168,13 @@ regenerates it in a temporary directory, so the snapshot is for reading, not for
 Verified, within these bounds:
 
 - At most `MaxEvents = 4` events are published (`spec/*.cfg`). Every interleaving of the
-  actions in `spec/SseDelivery.tla` is explored, not sampled: the `from_start` config searches
-  1682 distinct states to completion (0 left on the queue); the two `from_now` configs stop as
-  soon as they violate (137 and 90 states before the violation). Raise `MaxEvents` if a
-  violation needs a longer trace — the state space grows quickly.
+  actions in `spec/SseDelivery.tla` is explored, not sampled: with the resume cursor seeded all
+  three configs search to completion with 0 states left on the queue (`from_start` and
+  `from_now` 506 distinct states each, `from_now_restart` 156). `from_start` and `from_now` agree
+  to the state, which is what the fix buys: the server's resume policy no longer changes what is
+  delivered. Raise `MaxEvents` if a violation needs a longer trace, the state space grows quickly.
+  Before the fix the same spec searched 1682 states for `from_start` and stopped at the violation
+  after 137 (`from_now`) and 90 (`from_now_restart`) distinct states.
 - The safety invariant `NoGap` in `SseDelivery.tla` is the at-least-once promise.
 
 Assumptions the model makes about things it does not itself verify:
@@ -164,6 +182,10 @@ Assumptions the model makes about things it does not itself verify:
 - The launchdarkly eventsource library advances `lastEventId` on every received event and
   sends `Last-Event-ID` on a reconnect that has one. `SseConfiguration.connect` does not
   override the request, so the model treats a mid-run reconnect as replay-from-`cursor`.
+- The task seeds that cursor from the committed offset when a fresh task connects, and only then.
+  The model's `SeedsFromCommittedOffset` branch is that step; the read from Connect's offset
+  storage, the value it returns, and what the server does with the header are all outside the
+  model.
 - The server delivers events in increasing id order and the ids are contiguous.
 - `SseSourceTask.poll` drains the entire in-memory queue into `SourceRecords` (the
   `while (queue.peek() != null) queue.poll()` loop) and Kafka Connect commits the returned
@@ -179,8 +201,19 @@ Not covered by this check:
 - **Cross-task queue sharing.** `QueueFactory.getQueue` keys queues by configuration id in a
   `static` map, so two tasks in one JVM that use the same id share a queue. That is a separate
   target, not modelled here.
+- **The cold start.** With no committed offset for a configuration the task sends no
+  `Last-Event-ID`, so events published before its first commit are not recoverable. The model's
+  `floor = 1` branch there describes a `from_start` server, not a portable guarantee, and the
+  `SeedsFromCommittedOffset` grep cannot tell the two apart. One cold start per configuration also
+  follows the partition key change from event type to configuration id, because the old offsets
+  cannot be enumerated to migrate them.
+- **Whether the server honours `Last-Event-ID`.** A server that ignores the header, or that treats
+  an unknown id as "from now", still skips events published during the gap. The model assumes the
+  header works.
+- The read of the committed offset itself: the partition and offset keys, a failed or empty read,
+  and the value a template would have produced for the id. The cursor uses the id the server sent.
 - The template-processing path (`processEventWithTemplate`), the offset *payload* shape
-  (`{type, eventId}`), schema conversion, and anything outside the SSE source pipeline.
+  (`{configurationId, eventId}`), schema conversion, and anything outside the SSE source pipeline.
 - The retry / backoff / error strategy and the circuit breaker.
 - The HTTP sink connector and the in-memory queue source connector.
 
