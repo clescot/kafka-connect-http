@@ -3,10 +3,12 @@ package io.github.clescot.kafka.connect.sse.client.okhttp;
 import static io.github.clescot.core.http.VersionUtils.VERSION;
 
 import com.google.common.base.Preconditions;
+import com.google.common.collect.Maps;
 import io.github.clescot.client.MapUtils;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import org.apache.kafka.common.config.ConfigDef;
 import org.apache.kafka.connect.connector.Task;
 import org.apache.kafka.connect.source.SourceConnector;
@@ -55,8 +57,10 @@ public class SseSourceConnector extends SourceConnector {
 
   @Override
   public ConfigDef config() {
-    Preconditions.checkNotNull(props, "props must not be null. Call start() first.");
-    SseConfigDefinition sseConfigDefinition = new SseConfigDefinition(props);
+    // Kafka Connect validates a fresh connector instance before it calls start(), so config()
+    // must not depend on state that only start() sets.
+    SseConfigDefinition sseConfigDefinition =
+        new SseConfigDefinition(Optional.ofNullable(props).orElse(Maps.newHashMap()));
     return sseConfigDefinition.config();
   }
 
