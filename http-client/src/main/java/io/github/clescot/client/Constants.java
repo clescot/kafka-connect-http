@@ -139,18 +139,18 @@ public class Constants {
     public static final String DEFAULT_RETRY_AFTER_MAX_DURATION_IN_SEC = "86400";
 
     public static final String RETRY_DELAY_THRESHOLD_IN_SEC = RETRY_POLICY_PREFIX + "retry.after.max.threshold.in.sec";
-    public static final String CONFIG_DEFAULT_RETRY_DELAY_THRESHOLD_IN_SEC = DEFAULT_CONFIGURATION_PREFIX + RETRY_AFTER_MAX_DURATION_IN_SEC;
+    public static final String CONFIG_DEFAULT_RETRY_DELAY_THRESHOLD_IN_SEC = DEFAULT_CONFIGURATION_PREFIX + RETRY_DELAY_THRESHOLD_IN_SEC;
     public static final String CONFIG_DEFAULT_RETRY_DELAY_THRESHOLD_IN_SEC_DOC = "maximum delay threshold in second to consider retry-after header value. above this threshold, circuit breaker will be opened. under this threshold, a local wait will be done.";
     public static final String DEFAULT_RETRY_DELAY_THRESHOLD_IN_SEC = "60";
 
     public static final String DEFAULT_RETRY_DELAY_IN_SEC = RETRY_POLICY_PREFIX + "default.retry.after.delay.in.sec";
-    public static final String CONFIG_DEFAULT_DEFAULT_RETRY_DELAY_IN_SEC = DEFAULT_CONFIGURATION_PREFIX + RETRY_AFTER_MAX_DURATION_IN_SEC;
+    public static final String CONFIG_DEFAULT_DEFAULT_RETRY_DELAY_IN_SEC = DEFAULT_CONFIGURATION_PREFIX + DEFAULT_RETRY_DELAY_IN_SEC;
     public static final String CONFIG_DEFAULT_DEFAULT_RETRY_DELAY_IN_SEC_DOC = "delay in second to use if retry-after header value is not set.";
     public static final String DEFAULT_DEFAULT_RETRY_DELAY_IN_SEC = "3600";
 
     public static final String CUSTOM_STATUS_CODE_FOR_RETRY_AFTER_HEADER = RETRY_POLICY_PREFIX + "retry.after.status.code";
-    public static final String CONFIG_DEFAULT_CUSTOM_STATUS_CODE_FOR_RETRY_AFTER_HEADER = DEFAULT_CONFIGURATION_PREFIX + RETRY_AFTER_MAX_DURATION_IN_SEC;
-    public static final String CONFIG_DEFAULT_CUSTOM_STATUS_CODE_FOR_RETRY_AFTER_HEADER_DOC = "maximum delay threshold in second to consider retry-after header value. above this threshold, circuit breaker will be opened. under this threshold, a local wait will be done.";
+    public static final String CONFIG_DEFAULT_CUSTOM_STATUS_CODE_FOR_RETRY_AFTER_HEADER = DEFAULT_CONFIGURATION_PREFIX + CUSTOM_STATUS_CODE_FOR_RETRY_AFTER_HEADER;
+    public static final String CONFIG_DEFAULT_CUSTOM_STATUS_CODE_FOR_RETRY_AFTER_HEADER_DOC = "regex of the response status codes whose Retry-After or X-Retry-After header is honoured.";
     public static final String DEFAULT_CUSTOM_STATUS_CODE_FOR_RETRY_AFTER_HEADER = "503|429|301";
 
     //rate limiter
@@ -181,6 +181,25 @@ public class Constants {
     public static final long DEFAULT_RATE_LIMITER_PERIOD_IN_MS_VALUE = 1000L;
     public static final long DEFAULT_RATE_LIMITER_MAX_EXECUTIONS_VALUE = 1L;
     public static final String DEFAULT_RATE_LIMITER_SCOPE_VALUE = "instance";
+
+    //server-advertised rate limits (IETF RateLimit / RateLimit-Policy headers)
+    public static final String RATE_LIMIT_HEADERS_PREFIX = "rate.limit.headers.";
+    public static final String RATE_LIMIT_HEADERS_ENABLED = RATE_LIMIT_HEADERS_PREFIX + "enabled";
+    public static final String RATE_LIMIT_HEADERS_ENABLED_DOC = "when true, the connector honours the server-advertised RateLimit response header fields : while the advertised service limit is exhausted (r=0), calls to the same target wait for the advertised window to elapse.";
+    public static final String RATE_LIMIT_HEADERS_SCOPE = RATE_LIMIT_HEADERS_PREFIX + "scope";
+    public static final String RATE_LIMIT_HEADERS_SCOPE_DOC = "scope of the '" + RATE_LIMIT_HEADERS_SCOPE + "' parameter. can be either 'instance' (a rate limit gate per configuration in the connector instance), or 'static' (a rate limit gate per configuration id shared with all connector instances in the same Java Virtual Machine.";
+    public static final String RATE_LIMIT_HEADERS_MAX_THRESHOLD_IN_SEC = RATE_LIMIT_HEADERS_PREFIX + "max.threshold.in.sec";
+    public static final String RATE_LIMIT_HEADERS_MAX_THRESHOLD_IN_SEC_DOC = "maximum advertised exhausted window in second to wait locally. above this threshold, the circuit breaker will be opened. under this threshold, a local wait will be done.";
+    public static final String RATE_LIMIT_HEADERS_MAX_DURATION_IN_SEC = RATE_LIMIT_HEADERS_PREFIX + "max.duration.in.sec";
+    public static final String RATE_LIMIT_HEADERS_MAX_DURATION_IN_SEC_DOC = "maximum advertised window in second taken into account. longer advertised windows are capped to this value.";
+    public static final String RATE_LIMIT_HEADERS_DEFAULT_DELAY_IN_SEC = RATE_LIMIT_HEADERS_PREFIX + "default.delay.in.sec";
+    public static final String RATE_LIMIT_HEADERS_DEFAULT_DELAY_IN_SEC_DOC = "delay in second to use when an exhausted service limit has neither an effective window (t) nor a matching policy window (w).";
+
+    public static final String DEFAULT_RATE_LIMIT_HEADERS_ENABLED_VALUE = "true";
+    public static final String DEFAULT_RATE_LIMIT_HEADERS_SCOPE_VALUE = "instance";
+    public static final String DEFAULT_RATE_LIMIT_HEADERS_MAX_THRESHOLD_IN_SEC = "60";
+    public static final String DEFAULT_RATE_LIMIT_HEADERS_MAX_DURATION_IN_SEC = "86400";
+    public static final String DEFAULT_RATE_LIMIT_HEADERS_DEFAULT_DELAY_IN_SEC = "3600";
 
 
     //enrich HttpRequest

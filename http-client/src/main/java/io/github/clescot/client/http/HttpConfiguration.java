@@ -1,6 +1,5 @@
 package io.github.clescot.client.http;
 
-import com.google.common.base.MoreObjects;
 import com.google.common.base.Stopwatch;
 import com.google.common.collect.Maps;
 import dev.failsafe.CircuitBreaker;
@@ -9,11 +8,11 @@ import dev.failsafe.FailsafeExecutor;
 import dev.failsafe.RetryPolicy;
 import io.github.clescot.client.Client;
 import io.github.clescot.client.Configuration;
-import io.github.clescot.client.Constants;
 import io.github.clescot.client.RequestClient;
 import io.github.clescot.client.RequestResponseClient;
 import io.github.clescot.client.http.config.AddSuccessStatusToHttpExchangeFunction;
 import io.github.clescot.client.http.config.HttpRequestPredicateBuilder;
+import io.github.clescot.client.http.ratelimit.RateLimitGate;
 import io.github.clescot.core.http.HttpExchange;
 import io.github.clescot.core.http.HttpRequest;
 import io.github.clescot.core.http.HttpResponse;
@@ -54,6 +53,7 @@ public class HttpConfiguration<C extends HttpClient<NR, NS>, NR, NS> implements 
     private static final Logger LOGGER = LoggerFactory.getLogger(HttpConfiguration.class);
     public static final String RETRY_AFTER = "Retry-After";
     public static final String X_RETRY_AFTER = "X-Retry-After";
+    public static final int TOO_MANY_REQUESTS_STATUS_CODE = 429;
 
     private C client;
     private final ExecutorService executorService;
@@ -63,6 +63,7 @@ public class HttpConfiguration<C extends HttpClient<NR, NS>, NR, NS> implements 
     private final Pattern retryResponseCodeRegex;
     private final String id;
     private final Predicate<HttpRequest> predicate;
+    private final RateLimitGate rateLimitGate;
 
     private final Pattern customStatusCodeForRetryAfterHeader;
     private final long maxSecondsToWait;
@@ -79,11 +80,21 @@ public class HttpConfiguration<C extends HttpClient<NR, NS>, NR, NS> implements 
                              ExecutorService executorService,
                              RetryPolicy<HttpExchange> retryPolicy,
                              Map<String, String> settings) {
+        this(id, client, executorService, retryPolicy, settings, RateLimitGate.disabled(id));
+    }
+
+    public HttpConfiguration(String id,
+                             C client,
+                             ExecutorService executorService,
+                             RetryPolicy<HttpExchange> retryPolicy,
+                             Map<String, String> settings,
+                             RateLimitGate rateLimitGate) {
         this.id = id;
         this.client = client;
         this.executorService = executorService;
         this.retryPolicy = retryPolicy;
         this.settings = settings;
+        this.rateLimitGate = rateLimitGate == null ? RateLimitGate.disabled(id) : rateLimitGate;
         //retry response code regex
         this.retryResponseCodeRegex = Pattern.compile(settings.getOrDefault(RETRY_RESPONSE_CODE_REGEX, DEFAULT_DEFAULT_RETRY_RESPONSE_CODE_REGEX));
 
@@ -91,11 +102,11 @@ public class HttpConfiguration<C extends HttpClient<NR, NS>, NR, NS> implements 
         maxSecondsToWait = Long.parseLong(settings.getOrDefault(RETRY_AFTER_MAX_DURATION_IN_SEC, DEFAULT_RETRY_AFTER_MAX_DURATION_IN_SEC));
         retryDelayThreshold = Long.parseLong(settings.getOrDefault(RETRY_DELAY_THRESHOLD_IN_SEC, DEFAULT_RETRY_DELAY_THRESHOLD_IN_SEC));
         customStatusCodeForRetryAfterHeader = Pattern.compile(settings.getOrDefault(CUSTOM_STATUS_CODE_FOR_RETRY_AFTER_HEADER, DEFAULT_CUSTOM_STATUS_CODE_FOR_RETRY_AFTER_HEADER));
-        defaultRetryAfterDelayInSeconds = Long.parseLong(settings.getOrDefault(DEFAULT_RETRY_DELAY_THRESHOLD_IN_SEC, DEFAULT_DEFAULT_RETRY_DELAY_IN_SEC));
+        defaultRetryAfterDelayInSeconds = Long.parseLong(settings.getOrDefault(DEFAULT_RETRY_DELAY_IN_SEC, DEFAULT_DEFAULT_RETRY_DELAY_IN_SEC));
         failsafeExecutor = buildFailsafeExecutor();
-        
+
         // Initialize template processing using shared utility
-        this.exchangeTemplate =  settings.getOrDefault(EXCHANGE_TEMPLATE, "");
+        this.exchangeTemplate = settings.getOrDefault(EXCHANGE_TEMPLATE, "");
         this.templateManager = factory.createTemplateManager(settings);
     }
 
@@ -210,6 +221,7 @@ public class HttpConfiguration<C extends HttpClient<NR, NS>, NR, NS> implements 
     private CompletableFuture<HttpExchange> callAndEnrich(HttpRequest httpRequest,
                                                           AtomicInteger attempts) {
         attempts.addAndGet(RequestClient.ONE_REQUEST);
+        long rateLimitWaitingTime = rateLimitGate.awaitIfExhausted(httpRequest.getUrl());
         if (LOGGER.isTraceEnabled()) {
             LOGGER.trace("before enrichment:{}", httpRequest);
         }
@@ -219,8 +231,16 @@ public class HttpConfiguration<C extends HttpClient<NR, NS>, NR, NS> implements 
         }
         CompletableFuture<HttpExchange> completableFuture = this.client.call(enrichedHttpRequest, attempts);
         return completableFuture
-                .thenApply(this::enrichExchange);
+                .thenApply(this::enrichExchange)
+                .thenApply(httpExchange -> addRateLimitWaitingTime(httpExchange, rateLimitWaitingTime));
 
+    }
+
+    private HttpExchange addRateLimitWaitingTime(HttpExchange httpExchange, long rateLimitWaitingTime) {
+        if (rateLimitWaitingTime > 0 && httpExchange.getTimings() != null) {
+            httpExchange.getTimings().put(RateLimitGate.RATE_LIMIT_WAITING_TIME_TIMING_KEY, rateLimitWaitingTime);
+        }
+        return httpExchange;
     }
 
     /**
@@ -243,22 +263,6 @@ public class HttpConfiguration<C extends HttpClient<NR, NS>, NR, NS> implements 
                 //no RetryPolicy is set
                 return callAndEnrich(httpRequest, attempts);
             }
-        } catch (TooLongRetryDelayException tooLongRetryDelayException) {
-            //Retry-After delay is too long
-            LOGGER.error("Failed to call web service after {} retries with error({}). message:{} ",
-                    attempts,
-                    tooLongRetryDelayException,
-                    tooLongRetryDelayException.getMessage()
-            );
-            HttpExchange httpExchange = getClient().buildExchange(
-                    httpRequest,
-                    tooLongRetryDelayException.getHttpExchange().getResponse(),
-                    Stopwatch.createUnstarted(),
-                    OffsetDateTime.now(ZoneId.of(RequestResponseClient.UTC_ZONE_ID)),
-                    attempts,
-                    Maps.newHashMap(),
-                    Maps.newHashMap());
-            return CompletableFuture.supplyAsync(() -> httpExchange);
         } catch (Exception exception) {
             LOGGER.error("Failed to call web service after {} retries with error({}). message:{} ",
                     attempts,
@@ -278,28 +282,31 @@ public class HttpConfiguration<C extends HttpClient<NR, NS>, NR, NS> implements 
 
     private CircuitBreaker<HttpExchange> buildCircuitBreaker() {
         return CircuitBreaker.<HttpExchange>builder()
-                //we break circuit when 1 TooLongRetryDelayException occurs
+                //we break the circuit when the advertised delay or exhausted window exceeds the
+                //retry delay threshold (see circuitMustBeOpened)
                 .withFailureThreshold(1)
                 //we reestablish the circuit after one successful call
                 .withSuccessThreshold(1)
+                //only results open the circuit breaker (through circuitMustBeOpened): a failure
+                //condition must be configured, otherwise every exception would count as a failure
+                .handleIf((Throwable throwable) -> false)
                 .withDelayFn(context -> {
                     HttpExchange httpExchange = context.getLastResult();
-                    HttpResponse response = httpExchange.getResponse();
-
-                    Integer statusCode = response.getStatusCode();
-                    LOGGER.debug("status code:{}", statusCode);
-
-                    String retryAfterValue = response.getRetryAfterValue();
+                    String retryAfterValue = null;
+                    if (httpExchange != null && httpExchange.getResponse() != null) {
+                        retryAfterValue = httpExchange.getResponse().getRetryAfterValue();
+                    }
                     LOGGER.debug("Retry-After Value:{}", retryAfterValue);
 
-                    long secondsToWait = response.getRetryAfterSecondsToWait(MoreObjects.firstNonNull(retryAfterValue, DEFAULT_DEFAULT_RETRY_DELAY_IN_SEC));
+                    long secondsToWait = delayBeforeClosingTheCircuit(httpExchange);
                     LOGGER.debug("seconds to wait:{}", secondsToWait);
                     this.nextRetryInstant = Instant.now().plusSeconds(secondsToWait);
-                    httpExchange.getRequest().setRetryAfterInstant(this.nextRetryInstant);
+                    if (httpExchange != null && httpExchange.getRequest() != null) {
+                        httpExchange.getRequest().setRetryAfterInstant(this.nextRetryInstant);
+                    }
                     LOGGER.info("Circuit breaker opened for '{}' seconds, until '{}'", secondsToWait, nextRetryInstant);
                     return Duration.of(min(secondsToWait, maxSecondsToWait), SECONDS);
                 })
-                .handle(TooLongRetryDelayException.class)
                 .handleResultIf(result -> circuitMustBeOpened(result) > 0L)
                 .onOpen(context -> LOGGER.error("Circuit breaker for too long retry delay is now OPEN. Calls will not be retried anymore."))
                 .onHalfOpen(context -> {
@@ -310,6 +317,22 @@ public class HttpConfiguration<C extends HttpClient<NR, NS>, NR, NS> implements 
                 .build();
     }
 
+    private long delayBeforeClosingTheCircuit(HttpExchange httpExchange) {
+        if (httpExchange == null || httpExchange.getResponse() == null) {
+            return defaultRetryAfterDelayInSeconds;
+        }
+        HttpResponse response = httpExchange.getResponse();
+        String retryAfterValue = response.getRetryAfterValue();
+        if (retryAfterValue != null) {
+            return response.getRetryAfterSecondsToWait(retryAfterValue);
+        }
+        long rateLimitWait = rateLimitGate.exhaustedWaitSeconds(httpExchange);
+        if (rateLimitWait > 0) {
+            return rateLimitWait;
+        }
+        return defaultRetryAfterDelayInSeconds;
+    }
+
     /**
      * Handle the retry logic for the HttpExchange.
      * If the HttpExchange is successful, it returns the HttpExchange as is.
@@ -318,7 +341,7 @@ public class HttpConfiguration<C extends HttpClient<NR, NS>, NR, NS> implements 
      * @param httpExchange HttpExchange to handle
      * @return HttpExchange if no retry is needed
      */
-    private HttpExchange handleRetry(HttpExchange httpExchange) throws TooLongRetryDelayException {
+    private HttpExchange handleRetry(HttpExchange httpExchange) {
         //we don't retry successful HTTP Exchange
         boolean responseCodeImpliesRetry = retryNeeded(httpExchange);
         LOGGER.debug("httpExchange success :'{}'", httpExchange.isSuccess());
@@ -335,15 +358,20 @@ public class HttpConfiguration<C extends HttpClient<NR, NS>, NR, NS> implements 
      * @param httpExchange HttpExchange to check
      * @return true if the response code implies a retry
      */
-    protected boolean retryNeeded(HttpExchange httpExchange) throws TooLongRetryDelayException {
+    protected boolean retryNeeded(HttpExchange httpExchange) {
         Optional<Pattern> myRetryResponseCodeRegex = Optional.ofNullable(getRetryResponseCodeRegex());
         if (myRetryResponseCodeRegex.isPresent()) {
             Pattern retryPattern = myRetryResponseCodeRegex.get();
             HttpResponse response = httpExchange.getResponse();
             int statusCode = response.getStatusCode();
             Map<String, List<String>> httpResponseHeaders = response.getHeaders();
-            if (httpResponseHeaders.containsKey(RETRY_AFTER) || httpResponseHeaders.containsKey(X_RETRY_AFTER)) {
-                long secondToWait = circuitMustBeOpened(httpExchange);
+            boolean hasRetryAfter = httpResponseHeaders.containsKey(RETRY_AFTER) || httpResponseHeaders.containsKey(X_RETRY_AFTER);
+            //an exhausted server-advertised quota is a delay instruction only on the status codes
+            //that already treat a server delay as a retry instruction
+            long rateLimitWait = rateLimitGate.exhaustedWaitSeconds(httpExchange);
+            boolean rateLimitAdvisesDelayRetry = rateLimitWait > 0 && statusCodeIsCompatibleWithRetryAfter(statusCode);
+            if (hasRetryAfter || rateLimitAdvisesDelayRetry) {
+                long secondToWait = hasRetryAfter ? circuitMustBeOpened(httpExchange) : rateLimitWait;
                 if (secondToWait < retryDelayThreshold) {
                     try {
                         LOGGER.info("Waiting '{}' seconds (below the retryDelayThreshold:'{}' seconds) before retrying the call", secondToWait, retryDelayThreshold);
@@ -364,43 +392,55 @@ public class HttpConfiguration<C extends HttpClient<NR, NS>, NR, NS> implements 
     }
 
     /**
-     * when the response code is compatible with a retry after header, we can open the circuit (i.e disable the client),
-     * and wait for the retry after header Duration to re-enable the client.
+     * when the response advertises a delay, we can open the circuit (i.e disable the client),
+     * and wait for that delay to re-enable the client. The delay is either a Retry-After /
+     * X-Retry-After header value, or the window of an exhausted server-advertised RateLimit
+     * quota.
      *
-     * @param httpExchange the exchange with the response containing the retry after header
+     * @param httpExchange the exchange with the response carrying the delay information
      * @return the number of seconds to wait before re-enabling the client, 0 if no need to open the circuit.
      */
     private long circuitMustBeOpened(HttpExchange httpExchange) {
 
         HttpResponse response = httpExchange.getResponse();
         Integer statusCode = response.getStatusCode();
-        //503,429,301 ?
+        String value = response.getRetryAfterValue();
         boolean statusCodeIsCompatibleWithRetryAfter = statusCodeIsCompatibleWithRetryAfter(statusCode);
-        if (!statusCodeIsCompatibleWithRetryAfter) {
-            return 0L;
+        if (value != null) {
+            if (!statusCodeIsCompatibleWithRetryAfter) {
+                //Retry-After on a status code the connector does not treat as a retry instruction
+                return 0L;
+            }
+            long secondsToWait = response.getRetryAfterSecondsToWait(value);
+            LOGGER.debug("Retry-After or X-Retry-After header is present with value '{}', so delayed retry is needed", value);
+            if (secondsToWait == 0L) {
+                return 0L;
+            }
+            if (secondsToWait > retryDelayThreshold) {
+                return secondsToWait;
+            } else {
+                //delay is not too long to wait
+                LOGGER.info("Waiting '{}' seconds (below the retryDelayThreshold:'{}' seconds) before retrying the call", secondsToWait, retryDelayThreshold);
+                return secondsToWait;
+            }
         }
-        String value = httpExchange.getResponse().getRetryAfterValue();
-        if (value == null && statusCode != 429) {
+        //no Retry-After: an exhausted server-advertised quota can open the breaker, whatever the
+        //status code the fields came with (the IETF draft allows them on any response)
+        long rateLimitWait = rateLimitGate.exhaustedWaitSeconds(httpExchange);
+        if (rateLimitWait > retryDelayThreshold) {
+            LOGGER.info("Advertised rate limit exhausted for '{}' seconds (over the retryDelayThreshold:'{}' seconds), opening the circuit breaker", rateLimitWait, retryDelayThreshold);
+            return rateLimitWait;
+        }
+        if (rateLimitWait > 0) {
+            //below the threshold the gate waits before the next call; the circuit breaker stays closed
             return 0L;
         }
         //status code 429 is clear : we need to retry after a delay, although if no delay is present in headers
-        if (value == null) {
-            LOGGER.debug("429 status code detected without Retry-After or X-Retry-After header, falling back to default retry value '{}' seconds", defaultRetryAfterDelayInSeconds);
+        if (statusCode != null && statusCode == TOO_MANY_REQUESTS_STATUS_CODE && statusCodeIsCompatibleWithRetryAfter) {
+            LOGGER.debug("429 status code detected without Retry-After, X-Retry-After or exhausted RateLimit, falling back to default retry value '{}' seconds", defaultRetryAfterDelayInSeconds);
             return defaultRetryAfterDelayInSeconds;
         }
-        long secondsToWait = response.getRetryAfterSecondsToWait(value);
-        LOGGER.debug("Retry-After or X-Retry-After header is present with value '{}', so delayed retry is needed", value);
-
-        if (secondsToWait == 0L) return 0L;
-
-        if (secondsToWait > retryDelayThreshold) {
-            return secondsToWait;
-        } else {
-            //delay is not too long to wait
-            //seconds to millis
-            LOGGER.info("Waiting '{}' seconds (below the retryDelayThreshold:'{}' seconds) before retrying the call", secondsToWait, retryDelayThreshold);
-            return secondsToWait;
-        }
+        return 0L;
     }
 
     private boolean statusCodeIsCompatibleWithRetryAfter(Integer statusCode) {
@@ -416,13 +456,16 @@ public class HttpConfiguration<C extends HttpClient<NR, NS>, NR, NS> implements 
 
     protected HttpExchange enrichExchange(HttpExchange httpExchange) {
         HttpExchange enrichedExchange = httpExchange;
-        
+
         // Apply success status function if available
         AddSuccessStatusToHttpExchangeFunction addSuccessStatusToHttpExchangeFunction = client.getAddSuccessStatusToHttpExchangeFunction();
         if (addSuccessStatusToHttpExchangeFunction != null) {
             enrichedExchange = addSuccessStatusToHttpExchangeFunction.apply(enrichedExchange);
         }
-        
+
+        //remember an exhausted server-advertised quota for the next calls to the same authority
+        rateLimitGate.observe(enrichedExchange);
+
         // Apply template processing if template is configured
         if (exchangeTemplate != null && !exchangeTemplate.trim().isEmpty() && templateManager != null) {
             try {
@@ -449,7 +492,7 @@ public class HttpConfiguration<C extends HttpClient<NR, NS>, NR, NS> implements 
                 LOGGER.warn("Failed to apply template processing: {}", e.getMessage());
             }
         }
-        
+
         return enrichedExchange;
     }
 
@@ -498,6 +541,6 @@ public class HttpConfiguration<C extends HttpClient<NR, NS>, NR, NS> implements 
 
     @Override
     public Object clone() throws CloneNotSupportedException {
-        return new HttpConfiguration<>(this.id, this.client, this.executorService, this.retryPolicy, Maps.newHashMap(this.settings));
+        return new HttpConfiguration<>(this.id, this.client, this.executorService, this.retryPolicy, Maps.newHashMap(this.settings), this.rateLimitGate);
     }
 }

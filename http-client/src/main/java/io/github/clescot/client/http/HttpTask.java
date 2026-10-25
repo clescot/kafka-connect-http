@@ -3,7 +3,7 @@ package io.github.clescot.client.http;
 import com.google.common.base.Stopwatch;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
-import dev.failsafe.RetryPolicy;
+import io.github.clescot.client.http.ratelimit.RateLimitGate;
 import io.github.clescot.core.http.HttpExchange;
 import io.github.clescot.core.http.HttpRequest;
 import io.github.clescot.core.http.HttpResponse;
@@ -27,6 +27,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
+import static io.github.clescot.client.http.HttpClientFactory.buildConfigurationSettings;
 import static io.github.clescot.client.http.HttpClientFactory.buildConfigurations;
 import static io.github.clescot.client.Constants.*;
 
@@ -44,11 +45,10 @@ public class HttpTask<T,C extends HttpClient<NR, NS>, NR, NS> implements Request
 
 
     private static final Logger LOGGER = LoggerFactory.getLogger(HttpTask.class);
-    
+
 
 
     private final Map<String,HttpConfiguration<C, NR, NS>> configurations;
-    private final RetryPolicy<HttpExchange> retryPolicy;
     private final Map<String,HttpConfiguration<C, NR, NS>> userConfigurations = Maps.newHashMap();
     private static CompositeMeterRegistry meterRegistry;
 
@@ -74,8 +74,10 @@ public class HttpTask<T,C extends HttpClient<NR, NS>, NR, NS> implements Request
         //request groupers
         RequestGrouperFactory requestGrouperFactory = new RequestGrouperFactory();
         this.requestGroupers = requestGrouperFactory.buildRequestGroupers(configList, originalsStrings);
-        this.retryPolicy = buildRetryPolicy(originalsStrings);
-        //configurations
+        //configurations : every configuration is built with the settings of its own 'config.<id>.'
+        //scope layered over the connector-wide settings, so that per-configuration retry,
+        //template and server-advertised rate limit settings are honoured.
+        Map<String, Map<String, String>> configurationSettings = buildConfigurationSettings(configurationIds, settings);
         Map<String,C> httpClientConfigurations = buildConfigurations(
                 httpClientFactory,
                 executorService,
@@ -86,14 +88,18 @@ public class HttpTask<T,C extends HttpClient<NR, NS>, NR, NS> implements Request
         //wrap configurations in HttpConfiguration
         this.configurations = httpClientConfigurations.entrySet().stream()
                 .map(
-                        entry->Map.entry(entry.getKey(),
-                        new HttpConfiguration<>(
-                                entry.getKey(),
-                                entry.getValue(),
-                                executorService,
-                                retryPolicy,
-                                settings)
-                        )
+                        entry->{
+                            Map<String, String> effectiveSettings = effectiveSettings(entry.getKey(), configurationSettings);
+                            return Map.entry(entry.getKey(),
+                            new HttpConfiguration<>(
+                                    entry.getKey(),
+                                    entry.getValue(),
+                                    executorService,
+                                    buildRetryPolicy(effectiveSettings),
+                                    effectiveSettings,
+                                    RateLimitGate.fromSettings(entry.getKey(), effectiveSettings)
+                            ));
+                        }
                 )
                 .collect(
                         Collectors.<Map.Entry<String, HttpConfiguration<C, NR, NS>>, String, HttpConfiguration<C, NR, NS>>toMap(
@@ -101,6 +107,12 @@ public class HttpTask<T,C extends HttpClient<NR, NS>, NR, NS> implements Request
                                 Map.Entry::getValue)
                 );
 
+    }
+
+    private Map<String, String> effectiveSettings(String configurationId, Map<String, Map<String, String>> configurationSettings) {
+        Map<String, String> effectiveSettings = Maps.newHashMap(settings);
+        effectiveSettings.putAll(configurationSettings.getOrDefault(configurationId, Maps.newHashMap()));
+        return effectiveSettings;
     }
 
     public HttpConfiguration<C, NR, NS> getConfiguration(@NotNull HttpRequest httpRequest){
@@ -242,39 +254,10 @@ public class HttpTask<T,C extends HttpClient<NR, NS>, NR, NS> implements Request
         LOGGER.info("HttpTask stopped");
     }
 
-    private String retryPolicyToString(){
-        StringBuilder result = new StringBuilder("{");
-
-        String retries = settings.get(RETRIES);
-        if(retries!=null){
-            result.append(", retries:'").append(retries).append("'");
-        }
-        String retryDelayInMs = settings.get(RETRY_DELAY_IN_MS);
-        if(retryDelayInMs!=null){
-            result.append(", retryDelayInMs:'").append(retryDelayInMs).append("'");
-        }
-        String maxRetryDelayInMs = settings.get(RETRY_MAX_DELAY_IN_MS);
-        if(maxRetryDelayInMs!=null){
-            result.append(", maxRetryDelayInMs:'").append(maxRetryDelayInMs).append("'");
-        }
-        String retryDelayFactor = settings.get(RETRY_DELAY_FACTOR);
-        if(retryDelayFactor!=null){
-            result.append(", retryDelayFactor:'").append(retryDelayFactor).append("'");
-        }
-        String retryjitterInMs = settings.get(RETRY_JITTER_IN_MS);
-        if(retryjitterInMs!=null){
-            result.append(", retryjitterInMs:'").append(retryjitterInMs).append("'");
-        }
-        result.append("}");
-        return result.toString();
-    }
-
     @Override
     public String toString() {
         return "HttpTask{" +
                 "configurations=" + configurations +
-                ", retryPolicy=" + retryPolicyToString() +
-                ", userConfigurations=" + userConfigurations +
                 ", executorService=" + executorService +
                 ", requestGroupers=" + requestGroupers +
                 ", settings=" + settings +

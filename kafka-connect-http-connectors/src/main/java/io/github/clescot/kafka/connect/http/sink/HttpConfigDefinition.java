@@ -255,7 +255,38 @@ public class HttpConfigDefinition {
                 ConfigDef.Type.STRING,
                 DEFAULT_CUSTOM_STATUS_CODE_FOR_RETRY_AFTER_HEADER,
                 ConfigDef.Importance.LOW,
-                CONFIG_DEFAULT_RETRY_DELAY_THRESHOLD_IN_SEC_DOC)
+                CONFIG_DEFAULT_CUSTOM_STATUS_CODE_FOR_RETRY_AFTER_HEADER_DOC)
+            // server-advertised rate limits (IETF RateLimit / RateLimit-Policy)
+            .define(
+                prefix + RATE_LIMIT_HEADERS_ENABLED,
+                ConfigDef.Type.STRING,
+                DEFAULT_RATE_LIMIT_HEADERS_ENABLED_VALUE,
+                ConfigDef.Importance.MEDIUM,
+                RATE_LIMIT_HEADERS_ENABLED_DOC)
+            .define(
+                prefix + RATE_LIMIT_HEADERS_SCOPE,
+                ConfigDef.Type.STRING,
+                DEFAULT_RATE_LIMIT_HEADERS_SCOPE_VALUE,
+                ConfigDef.Importance.MEDIUM,
+                RATE_LIMIT_HEADERS_SCOPE_DOC)
+            .define(
+                prefix + RATE_LIMIT_HEADERS_MAX_THRESHOLD_IN_SEC,
+                ConfigDef.Type.STRING,
+                DEFAULT_RATE_LIMIT_HEADERS_MAX_THRESHOLD_IN_SEC,
+                ConfigDef.Importance.MEDIUM,
+                RATE_LIMIT_HEADERS_MAX_THRESHOLD_IN_SEC_DOC)
+            .define(
+                prefix + RATE_LIMIT_HEADERS_MAX_DURATION_IN_SEC,
+                ConfigDef.Type.STRING,
+                DEFAULT_RATE_LIMIT_HEADERS_MAX_DURATION_IN_SEC,
+                ConfigDef.Importance.MEDIUM,
+                RATE_LIMIT_HEADERS_MAX_DURATION_IN_SEC_DOC)
+            .define(
+                prefix + RATE_LIMIT_HEADERS_DEFAULT_DELAY_IN_SEC,
+                ConfigDef.Type.STRING,
+                DEFAULT_RATE_LIMIT_HEADERS_DEFAULT_DELAY_IN_SEC,
+                ConfigDef.Importance.MEDIUM,
+                RATE_LIMIT_HEADERS_DEFAULT_DELAY_IN_SEC_DOC)
             // retry settings
             .define(
                 prefix + SUCCESS_RESPONSE_CODE_REGEX,

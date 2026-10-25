@@ -163,6 +163,7 @@ Otherwise there is one shared port set: **refuse to double-drive the same ports.
 | `launch`     | start stack, wait for readiness, create topics          |
 | `doctor`     | read-only readiness/identity check                      |
 | `drive-sink` | drive the HTTP Sink feature end to end, capture evidence |
+| `drive-ratelimit` | drive the server-advertised RateLimit feature end to end, capture evidence |
 | `status`     | print run id, ports, artifact dir, container state      |
 | `logs [svc]` | tail logs for `kafka`, `connect`, `http-target` or `sse-target`. A finite tail, so an agent can read evidence without blocking; add `-f` to follow |
 | `cleanup`    | tear down the stack, keep evidence                      |

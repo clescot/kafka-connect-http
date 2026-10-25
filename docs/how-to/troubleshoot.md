@@ -65,6 +65,19 @@ Adjust the rate limiter: `config.<id>.rate.limiter.max.executions` over
 size. Use `rate.limiter.scope: static` to share one limiter across connector instances in
 the same JVM.
 
+## The connector pauses calls after a server advertises an exhausted quota
+
+**Symptom:** after a successful response, the next requests to that host wait (the log reads
+`waiting '...' ms for the advertised rate limit window of '...'`).
+
+**Cause:** the server advertised an exhausted IETF `RateLimit` service limit (`r=0`); the
+connector respects the advertised window instead of running into 429s.
+
+**Fix:** let it wait, or tune `config.<id>.rate.limit.headers.*`: `enabled: false` restores the
+previous behaviour, `max.threshold.in.sec` bounds the inline wait (above it the circuit breaker
+opens), `max.duration.in.sec` caps the advertised window. See
+[server-advertised rate limits](../reference/http-sink-connector.md#server-advertised-rate-limits).
+
 ## SSL handshake failures
 
 **Symptom:** `SSLHandshakeException` against a server with a private certificate authority.

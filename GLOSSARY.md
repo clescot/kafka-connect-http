@@ -15,6 +15,11 @@ The `PRODUCER` publish mode. It writes exchanges to the Kafka topics `producer.s
 `producer.error.topic` through a low-level producer.
 _Avoid_: direct mode
 
+**RateLimit Headers**:
+The IETF `RateLimit` and `RateLimit-Policy` response fields, in which a server advertises its quota policies and current
+service limits. Distinct from the local `rate.limiter.*` pacing, which is configured, not server-advertised.
+_Avoid_: "rate limiting" for this feature (reserve it for `rate.limiter.*`), "throttling"
+
 **In-Memory Queue**:
 _(Retired)_ A JVM-local unbounded buffer that handed exchanges from an HTTP sink connector to a colocated HTTP source
 connector. It was removed because it required both connectors in one worker.

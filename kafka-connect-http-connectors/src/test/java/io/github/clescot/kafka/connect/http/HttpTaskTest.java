@@ -225,6 +225,36 @@ public class HttpTaskTest {
     }
   }
 
+  @Nested
+  class PerConfigurationSettings {
+
+    @Test
+    void test_per_configuration_retry_and_template_settings_reach_the_configuration() {
+      // given a connector with a second configuration id carrying its own retry and template
+      Map<String, String> settings = Maps.newHashMap();
+      settings.put("config.ids", "default,custom");
+      settings.put("config.custom.retry.policy.retries", "7");
+      settings.put("config.custom.exchange.template", "tpl:${jsonpath:$.response.statusCode}");
+      HttpConfigDefinition httpConfigDefinition = new HttpConfigDefinition(settings);
+      HttpConnectorConfig httpConnectorConfig =
+          new HttpConnectorConfig(httpConfigDefinition.config(), settings);
+      io.github.clescot.client.http.HttpTask httpTask =
+          new io.github.clescot.client.http.HttpTask(
+              new OkHttpClientFactory(),
+              httpConnectorConfig.getList(REQUEST_GROUPER_IDS),
+              httpConnectorConfig.originalsStrings(),
+              httpConnectorConfig.getInt(HTTP_CLIENT_ASYNC_FIXED_THREAD_POOL_SIZE),
+              httpConnectorConfig.getConfigurationIds());
+      // when
+      HttpConfiguration custom = (HttpConfiguration) httpTask.getConfigurations().get("custom");
+      // then the documented 'config.<id>.' settings are effective
+      assertThat(custom).isNotNull();
+      assertThat(custom.getRetryPolicy()).isNotNull();
+      assertThat(custom.getRetryPolicy().getConfig().getMaxRetries()).isEqualTo(7);
+      assertThat(custom.getExchangeTemplate()).isEqualTo("tpl:${jsonpath:$.response.statusCode}");
+    }
+  }
+
   static HttpRequest getDummyHttpRequest(String url, String vuId) {
     HttpRequest httpRequest = new HttpRequest(url, HttpRequest.Method.POST);
     Map<String, List<String>> headers = com.google.common.collect.Maps.newHashMap();

@@ -222,18 +222,35 @@ public interface HttpClientFactory<C extends HttpClient<R, S>, R, S> {
             List<String> configIdList,
             Map<String, String> originals, CompositeMeterRegistry meterRegistry) {
         Map<String,C> httpClientConfigurations = Maps.newHashMap();
+        Map<String, Map<String, String>> configurationSettings = buildConfigurationSettings(configIdList, originals);
+        for (Map.Entry<String, Map<String, String>> entry : configurationSettings.entrySet()) {
+            Random random = getRandom(entry.getValue());
+            C httpClient = httpClientFactory.buildHttpClient(entry.getValue(), executorService, meterRegistry, random);
+            httpClientConfigurations.put(entry.getKey(),httpClient);
+        }
+        return httpClientConfigurations;
+    }
+
+    /**
+     * extracts, for every configuration id, the settings of its own 'config.&lt;id&gt;.' scope
+     * (prefix stripped), on top of which callers layer the connector-wide settings.
+     *
+     * @param configIdList configuration ids
+     * @param originals the connector-wide settings
+     * @return the per-configuration settings, as a map keyed by configuration id
+     */
+    static Map<String, Map<String, String>> buildConfigurationSettings(
+            List<String> configIdList, Map<String, String> originals) {
+        Map<String, Map<String, String>> configurationSettings = Maps.newHashMap();
         List<String> configurationIds = Lists.newArrayList();
         Optional<List<String>> ids = Optional.ofNullable(configIdList);
         ids.ifPresent(configurationIds::addAll);
         for (String configId : configurationIds) {
             Map<String, String> config = Maps.newHashMap(HttpClientConfigDefinition.getMapWithPrefix(originals, "config." + configId + "."));
-            HashMap<String, String> settings = Maps.newHashMap(config);
-            settings.put("configuration.id", configId);
-            Random random = getRandom(settings);
-            C httpClient = httpClientFactory.buildHttpClient(settings, executorService, meterRegistry, random);
-            httpClientConfigurations.put(configId,httpClient);
+            config.put(CONFIGURATION_ID, configId);
+            configurationSettings.put(configId, config);
         }
-        return httpClientConfigurations;
+        return configurationSettings;
     }
 
     @java.lang.SuppressWarnings({"java:S2119","java:S2245"})
