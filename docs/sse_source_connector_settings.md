@@ -48,7 +48,10 @@ Two consequences are worth knowing:
   and the first start after upgrading from a version that keyed offsets by event type, whose old
   offsets are orphaned. The connector sends no `Last-Event-ID` and inherits the server's default
   policy, which for most servers means "from now", so events published before its first commit are
-  not recoverable. It logs `no committed offset for <configuration>` when that happens.
+  not recoverable. It logs `no committed offset for configuration <id>` when that happens.
+
+The cursor is the `id:` the server sent, not the id an `exchange.template` may have produced, so a
+template that rewrites or drops the id does not move the resume point.
 
 Whether the server honours `Last-Event-ID` is the server's decision. The connector asks, and a
 server that ignores the header, or that treats an unknown id as "from now", will still skip events
