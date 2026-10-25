@@ -28,7 +28,6 @@ import io.github.clescot.client.http.ahc.AHCHttpClient;
 import io.github.clescot.client.http.config.AddSuccessStatusToHttpExchangeFunction;
 import io.github.clescot.client.http.okhttp.OkHttpClient;
 import io.github.clescot.client.http.ssl.AlwaysTrustManagerFactory;
-import io.github.clescot.client.queue.QueueFactory;
 import io.github.clescot.core.http.HttpExchange;
 import io.github.clescot.core.http.HttpRequest;
 import io.github.clescot.core.http.HttpResponse;
@@ -36,8 +35,6 @@ import io.github.clescot.kafka.connect.http.mapper.DirectHttpRequestMapper;
 import io.github.clescot.kafka.connect.http.mapper.JEXLHttpRequestMapper;
 import io.github.clescot.kafka.connect.http.mapper.MapperMode;
 import io.github.clescot.kafka.connect.http.sink.publish.PublishMode;
-import io.github.clescot.kafka.connect.queue.ConfigConstants;
-import io.github.clescot.kafka.connect.queue.KafkaRecord;
 import io.micrometer.core.instrument.Meter;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.composite.CompositeMeterRegistry;
@@ -97,8 +94,6 @@ public class HttpSinkTaskTest {
   @Mock ErrantRecordReporter errantRecordReporter;
   @Mock SinkTaskContext sinkTaskContext;
 
-  @Mock Queue<HttpExchange> dummyQueue;
-
   @InjectMocks OkHttpSinkTask okHttpSinkTask;
 
   @InjectMocks AHCSinkTask ahcSinkTask;
@@ -111,7 +106,6 @@ public class HttpSinkTaskTest {
 
   @BeforeEach
   void setUp() {
-    QueueFactory.clearRegistrations();
     MockitoAnnotations.openMocks(this);
     okHttpSinkTask.initialize(sinkTaskContext);
     ahcSinkTask.initialize(sinkTaskContext);
@@ -125,16 +119,6 @@ public class HttpSinkTaskTest {
 
   @Nested
   class Start {
-
-    @Test
-    void test_start_with_queue_name() {
-      Assertions.assertDoesNotThrow(
-          () -> {
-            Map<String, String> settings = Maps.newHashMap();
-            settings.put(ConfigConstants.QUEUE_NAME, "dummyQueueName");
-            okHttpSinkTask.start(settings);
-          });
-    }
 
     @Test
     void test_start_with_static_request_headers() {
@@ -421,9 +405,6 @@ public class HttpSinkTaskTest {
       // no additional headers added
       ArgumentCaptor<HttpRequest> captor = ArgumentCaptor.forClass(HttpRequest.class);
       verify(httpClient, never()).call(captor.capture(), any(AtomicInteger.class));
-
-      // no records are published into the in memory queue by default
-      verify(dummyQueue, never()).offer(any(HttpExchange.class));
     }
 
     @Test
@@ -468,9 +449,6 @@ public class HttpSinkTaskTest {
       verify(httpClient, times(1)).call(captor.capture(), any(AtomicInteger.class));
       HttpRequest enhancedRecordBeforeHttpCall = captor.getValue();
       assertThat(enhancedRecordBeforeHttpCall.getHeaders()).hasSameSizeAs(sinkRecord.headers());
-
-      // no records are published into the in memory queue by default
-      verify(dummyQueue, never()).offer(any(HttpExchange.class));
     }
 
     @Test
@@ -515,9 +493,6 @@ public class HttpSinkTaskTest {
       verify(httpClient, times(1)).call(captor.capture(), any(AtomicInteger.class));
       HttpRequest enhancedRecordBeforeHttpCall = captor.getValue();
       assertThat(enhancedRecordBeforeHttpCall.getHeaders()).hasSameSizeAs(sinkRecord.headers());
-
-      // no records are published into the in memory queue by default
-      verify(dummyQueue, never()).offer(any(HttpExchange.class));
     }
 
     @Test
@@ -555,18 +530,6 @@ public class HttpSinkTaskTest {
     }
 
     @Test
-    void test_put_with_publish_to_in_memory_queue_without_consumer() {
-      // given
-      Map<String, String> settings = Maps.newHashMap();
-      settings.put(PUBLISH_MODE, PublishMode.IN_MEMORY_QUEUE.name());
-      settings.put(ConfigConstants.QUEUE_NAME, "test");
-      settings.put(WAIT_TIME_REGISTRATION_QUEUE_CONSUMER_IN_MS, "200");
-      // when
-      // then
-      Assertions.assertThrows(IllegalArgumentException.class, () -> okHttpSinkTask.start(settings));
-    }
-
-    @Test
     void test_put_with_publish_mode_set_to_none() {
       Map<String, String> settings = Maps.newHashMap();
       settings.put(PUBLISH_MODE, PublishMode.NONE.name());
@@ -578,8 +541,6 @@ public class HttpSinkTaskTest {
       when(httpClient.getEnrichRequestFunction()).thenReturn(request -> request);
       when(httpClient.customizeForUser(anyString())).thenReturn(httpClient);
       ahcSinkTask.getDefaultConfiguration().setClient(httpClient);
-      Queue<KafkaRecord> queue = mock(Queue.class);
-      ahcSinkTask.setQueue(queue);
       List<SinkRecord> records = Lists.newArrayList();
       List<Header> headers = Lists.newArrayList();
       SinkRecord sinkRecord =
@@ -597,7 +558,6 @@ public class HttpSinkTaskTest {
       records.add(sinkRecord);
       ahcSinkTask.put(records);
       verify(httpClient, times(1)).call(any(HttpRequest.class), any(AtomicInteger.class));
-      verify(queue, never()).offer(any(KafkaRecord.class));
     }
 
     @Test
@@ -661,48 +621,6 @@ public class HttpSinkTaskTest {
       assertThat(firstRecord.topic()).isEqualTo("myTopic");
       assertThat(firstRecord.key()).isNull();
       assertThat(firstRecord.value()).isNotNull();
-    }
-
-    @Test
-    void test_put_with_publish_to_in_memory_queue_set_to_true_with_a_consumer() {
-
-      // given
-      Map<String, String> settings = Maps.newHashMap();
-      settings.put(PUBLISH_MODE, PublishMode.IN_MEMORY_QUEUE.name());
-      QueueFactory.registerConsumerForQueue(QueueFactory.DEFAULT_QUEUE_NAME);
-      ahcSinkTask.start(settings);
-      AHCHttpClient httpClient = Mockito.mock(AHCHttpClient.class);
-      HttpExchange dummyHttpExchange = getHttpExchange();
-      when(httpClient.call(any(HttpRequest.class), any(AtomicInteger.class)))
-          .thenReturn(CompletableFuture.supplyAsync(() -> dummyHttpExchange));
-      when(httpClient.getEnrichRequestFunction()).thenReturn(request -> request);
-      when(httpClient.customizeForUser(anyString())).thenReturn(httpClient);
-      when(httpClient.getAddSuccessStatusToHttpExchangeFunction())
-          .thenReturn(new AddSuccessStatusToHttpExchangeFunction(defaultSuccessPattern));
-      ahcSinkTask.getDefaultConfiguration().setClient(httpClient);
-      Queue<KafkaRecord> queue = mock(Queue.class);
-      ahcSinkTask.setQueue(queue);
-      List<SinkRecord> records = Lists.newArrayList();
-      List<Header> headers = Lists.newArrayList();
-      SinkRecord sinkRecord =
-          new SinkRecord(
-              "myTopic",
-              0,
-              Schema.STRING_SCHEMA,
-              "key",
-              Schema.STRING_SCHEMA,
-              getDummyHttpRequestAsString(),
-              -1,
-              System.currentTimeMillis(),
-              TimestampType.CREATE_TIME,
-              headers);
-      records.add(sinkRecord);
-      // when
-      ahcSinkTask.put(records);
-
-      // then
-      verify(httpClient, times(1)).call(any(HttpRequest.class), any(AtomicInteger.class));
-      verify(queue, times(1)).offer(any(KafkaRecord.class));
     }
   }
 

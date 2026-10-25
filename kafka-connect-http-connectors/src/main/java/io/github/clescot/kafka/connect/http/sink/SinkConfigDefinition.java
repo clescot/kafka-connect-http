@@ -1,7 +1,6 @@
 package io.github.clescot.kafka.connect.http.sink;
 
 import io.github.clescot.kafka.connect.http.sink.publish.PublishMode;
-import io.github.clescot.kafka.connect.queue.ConfigConstants;
 import org.apache.kafka.common.config.ConfigDef;
 
 public class SinkConfigDefinition {
@@ -85,41 +84,10 @@ public class SinkConfigDefinition {
   public static final String PRODUCER_SUCCESS_DEFAULT_TOPIC = "http-success";
   public static final String PRODUCER_DLQ_DEFAULT_TOPIC = "http-dlq";
   public static final String PRODUCER_ERROR_DEFAULT_TOPIC = "http-errors";
-  // publish to in memory queue
+  // publish mode
   public static final String PUBLISH_MODE = "publish.mode";
   public static final String PUBLISH_MODE_DOC =
-      "can be either 'IN_MEMORY_QUEUE', 'NONE', or 'PRODUCER'. When set to 'NONE', ignore HTTP responses, i.e does not publish responses in the in memory queue ; no Source Connector is needed when set to 'none'. When set to 'IN_MEMORY_QUEUE', a Source Connector is needed to consume published Http exchanges in this in memory queue. when set to 'PRODUCER' a low level producer will be used to publish response to another topic. when set to 'DLQ', the errantReporter used to publish bad message in a Dead letter queue will be used.";
-
-  private static final long DEFAULT_WAIT_TIME_REGISTRATION_QUEUE_CONSUMER_IN_MS = 60000L;
-  public static final String WAIT_TIME_REGISTRATION_QUEUE_CONSUMER_IN_MS =
-      "wait.time.registration.queue.consumer.in.ms";
-  public static final String WAIT_TIME_REGISTRATION_QUEUE_CONSUMER_IN_MS_DOC =
-      "wait time defined with the '"
-          + WAIT_TIME_REGISTRATION_QUEUE_CONSUMER_IN_MS
-          + "' parameter, for a queue consumer (Source Connector) registration. "
-          + "We wait if the "
-          + PUBLISH_MODE
-          + " parameter is set to 'inMemoryQueue', to avoid to publish to the queue without any consumer (OutOfMemoryError possible). default value is "
-          + DEFAULT_WAIT_TIME_REGISTRATION_QUEUE_CONSUMER_IN_MS;
-
-  private static final int DEFAULT_POLL_DELAY_REGISTRATION_QUEUE_CONSUMER_IN_MS = 2000;
-  public static final String POLL_DELAY_REGISTRATION_QUEUE_CONSUMER_IN_MS =
-      "poll.delay.registration.queue.consumer.in.ms";
-  public static final String POLL_DELAY_REGISTRATION_QUEUE_CONSUMER_IN_MS_DOC =
-      "poll delay, i.e, wait time before start polling a registered consumer defined with the '"
-          + POLL_DELAY_REGISTRATION_QUEUE_CONSUMER_IN_MS
-          + "' parameter, "
-          + "for a queue consumer (Source Connector) registration.if not set, default value is "
-          + DEFAULT_POLL_DELAY_REGISTRATION_QUEUE_CONSUMER_IN_MS;
-  private static final int DEFAULT_POLL_INTERVAL_REGISTRATION_QUEUE_CONSUMER_IN_MS = 500;
-  public static final String POLL_INTERVAL_REGISTRATION_QUEUE_CONSUMER_IN_MS =
-      "poll.interval.registration.queue.consumer.in.ms";
-  public static final String POLL_INTERVAL_REGISTRATION_QUEUE_CONSUMER_IN_MS_DOC =
-      "poll interval, i.e, time between every poll for a registered consumer defined with the '"
-          + POLL_INTERVAL_REGISTRATION_QUEUE_CONSUMER_IN_MS
-          + "' parameter, "
-          + "for a queue consumer (Source Connector) registration.if not set, default value is "
-          + DEFAULT_POLL_INTERVAL_REGISTRATION_QUEUE_CONSUMER_IN_MS;
+      "can be either 'NONE' or 'PRODUCER'. When set to 'NONE', the connector ignores HTTP responses. When set to 'PRODUCER', the connector publishes each HTTP exchange to another topic with a low-level producer.";
 
   public ConfigDef config() {
     return new ConfigDef()
@@ -273,36 +241,12 @@ public class SinkConfigDefinition {
             Boolean.TRUE,
             ConfigDef.Importance.LOW,
             PRODUCER_JSON_FAIL_UNKNOWN_PROPERTIES_DOC)
-        // in memory queue settings
+        // publish mode
         .define(
             PUBLISH_MODE,
             ConfigDef.Type.STRING,
             PublishMode.NONE.name(),
             ConfigDef.Importance.MEDIUM,
-            PUBLISH_MODE_DOC)
-        .define(
-            ConfigConstants.QUEUE_NAME,
-            ConfigDef.Type.STRING,
-            null,
-            ConfigDef.Importance.MEDIUM,
-            ConfigConstants.QUEUE_NAME_DOC)
-        .define(
-            WAIT_TIME_REGISTRATION_QUEUE_CONSUMER_IN_MS,
-            ConfigDef.Type.LONG,
-            DEFAULT_WAIT_TIME_REGISTRATION_QUEUE_CONSUMER_IN_MS,
-            ConfigDef.Importance.LOW,
-            WAIT_TIME_REGISTRATION_QUEUE_CONSUMER_IN_MS_DOC)
-        .define(
-            POLL_DELAY_REGISTRATION_QUEUE_CONSUMER_IN_MS,
-            ConfigDef.Type.INT,
-            DEFAULT_POLL_DELAY_REGISTRATION_QUEUE_CONSUMER_IN_MS,
-            ConfigDef.Importance.LOW,
-            POLL_DELAY_REGISTRATION_QUEUE_CONSUMER_IN_MS_DOC)
-        .define(
-            POLL_INTERVAL_REGISTRATION_QUEUE_CONSUMER_IN_MS,
-            ConfigDef.Type.INT,
-            DEFAULT_POLL_INTERVAL_REGISTRATION_QUEUE_CONSUMER_IN_MS,
-            ConfigDef.Importance.LOW,
-            POLL_INTERVAL_REGISTRATION_QUEUE_CONSUMER_IN_MS_DOC);
+            PUBLISH_MODE_DOC);
   }
 }

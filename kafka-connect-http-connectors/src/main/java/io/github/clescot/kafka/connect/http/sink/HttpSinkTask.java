@@ -23,7 +23,6 @@ import io.github.clescot.kafka.connect.http.mapper.HttpRequestMapperFactory;
 import io.github.clescot.kafka.connect.http.sink.publish.KafkaProducer;
 import io.github.clescot.kafka.connect.http.sink.publish.PublishConfigurer;
 import io.github.clescot.kafka.connect.http.sink.publish.PublishMode;
-import io.github.clescot.kafka.connect.queue.KafkaRecord;
 import java.time.OffsetDateTime;
 import java.time.ZoneId;
 import java.util.*;
@@ -77,7 +76,6 @@ public abstract class HttpSinkTask<C extends HttpClient<R, S>, R, S> extends Sin
                   sinkRecord.timestampType());
   private static final Logger LOGGER = LoggerFactory.getLogger(HttpSinkTask.class);
   private final HttpClientFactory<C, R, S> httpClientFactory;
-  private Queue<KafkaRecord> queue;
   private ErrantRecordReporter errantRecordReporter;
 
   private HttpTask<SinkRecord, C, R, S> httpTask;
@@ -132,9 +130,6 @@ public abstract class HttpSinkTask<C extends HttpClient<R, S>, R, S> extends Sin
     switch (publishMode) {
       case PRODUCER:
         publishConfigurer.configureProducerPublishMode(httpConnectorConfig, producer);
-        break;
-      case IN_MEMORY_QUEUE:
-        this.queue = publishConfigurer.configureInMemoryQueue(httpConnectorConfig);
         break;
       case NONE:
       default:
@@ -370,11 +365,6 @@ public abstract class HttpSinkTask<C extends HttpClient<R, S>, R, S> extends Sin
   }
 
   @NotNull
-  private KafkaRecord mapToRecord(HttpExchange httpExchange) {
-    return new KafkaRecord(null, null, null, httpExchange);
-  }
-
-  @NotNull
   private ProducerRecord<String, Object> mapToRecord(
       HttpExchange httpExchange, String producerContent, String targetTopic) {
     ProducerRecord<String, Object> myRecord;
@@ -389,10 +379,7 @@ public abstract class HttpSinkTask<C extends HttpClient<R, S>, R, S> extends Sin
   @NotNull
   public Function<HttpExchange, HttpExchange> publish() {
     return httpExchange -> {
-      // publish eventually to 'in memory' queue
-      if (PublishMode.IN_MEMORY_QUEUE.equals(publishMode)) {
-        publishInInMemoryQueueMode(httpExchange, this.httpConnectorConfig.getQueueName());
-      } else if (PublishMode.PRODUCER.equals(publishMode)) {
+      if (PublishMode.PRODUCER.equals(publishMode)) {
         publishInProducerMode(
             httpExchange,
             this.httpConnectorConfig.getProducerContent(),
@@ -403,17 +390,6 @@ public abstract class HttpSinkTask<C extends HttpClient<R, S>, R, S> extends Sin
       }
       return httpExchange;
     };
-  }
-
-  private void publishInInMemoryQueueMode(HttpExchange httpExchange, String queueName) {
-    LOGGER.debug(
-        "publish.mode : 'IN_MEMORY_QUEUE': http exchange published to queue '{}':{}",
-        queueName,
-        httpExchange);
-    boolean offer = queue.offer(mapToRecord(httpExchange));
-    if (!offer) {
-      LOGGER.error("sinkRecord  not added to the 'in memory' queue:{}", queueName);
-    }
   }
 
   @Override
@@ -439,10 +415,6 @@ public abstract class HttpSinkTask<C extends HttpClient<R, S>, R, S> extends Sin
 
   protected HttpRequestMapper getDefaultHttpRequestMapper() {
     return this.defaultHttpRequestMapper;
-  }
-
-  public void setQueue(Queue<KafkaRecord> queue) {
-    this.queue = queue;
   }
 
   public static void clearMeterRegistry() {
