@@ -1,5 +1,6 @@
 package io.github.clescot.kafka.connect.sse.client.okhttp;
 
+import static io.github.clescot.client.Constants.CONFIGURATION_IDS;
 import static io.github.clescot.core.http.VersionUtils.VERSION;
 
 import com.google.common.base.Preconditions;
@@ -43,8 +44,12 @@ public class SseSourceConnector extends SourceConnector {
       List<String> list =
           partition.stream().map(configurationId -> "config." + configurationId).toList();
       Map<String, String> subSettings =
-          MapUtils.filterEntriesStartingWithPrefixes(
-              this.sseConnectorConfig.originalsStrings(), list.toArray(new String[0]));
+          Maps.newHashMap(
+              MapUtils.filterEntriesStartingWithPrefixes(
+                  this.sseConnectorConfig.originalsStrings(), list.toArray(new String[0])));
+      // The task builds one configuration per id and needs to know which ones it owns: the
+      // prefix filter above keeps only config.<id>.* keys, so the id list travels separately.
+      subSettings.put(CONFIGURATION_IDS, String.join(",", partition));
       configs.add(subSettings);
     }
     return configs;
