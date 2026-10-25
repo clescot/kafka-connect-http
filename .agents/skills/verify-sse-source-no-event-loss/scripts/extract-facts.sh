@@ -92,22 +92,26 @@ esac
 # ---------------------------------------------------------------------------
 # fact 2: seeds-from-committed-offset
 #
-#   TRUE  iff the SSE delivery code calls something that seeds the resume cursor
-#         from what Kafka Connect committed: offsetStorageReader(), the
-#         eventsource builder's lastEventId(), or an explicit Last-Event-ID
-#         request header. This is what makes a restart or a rebalance replay
-#         events that were received but not yet committed.
+#   TRUE  iff the SSE delivery code both reads what Kafka Connect committed and
+#         asks the server to resume from it: a call to offsetStorageReader() in
+#         one of the covered files, plus either a call to the eventsource
+#         builder's lastEventId() or an explicit Last-Event-ID request header.
+#         Both halves are required, so removing either one flips the fact.
 #
 #   It is a call-site check, so it proves the plumbing exists, not that the value
 #   fed in is the right one. A seeded wrong value still passes; only a live run
 #   against a server that honours the header can tell.
 # ---------------------------------------------------------------------------
 
-# Match a call, not prose. An earlier version matched the bare words, so a comment
-# or javadoc that merely named Last-Event-ID kept the fact TRUE after the seeding
-# itself was removed, and the check passed on broken code.
-SEEDS_CALL_PATTERN='\.offsetStorageReader[[:space:]]*\(|\.lastEventId[[:space:]]*\(|"Last-Event-ID"'
-if grep -rqE "$SEEDS_CALL_PATTERN" "$SOURCE_TASK" "$SSE_TASK" "$SSE_CONFIGURATION"; then
+# TRUE needs both halves of the plumbing: the task reads what Kafka Connect
+# committed, and the connection asks the server to resume from it. Match a call,
+# not prose. An earlier version matched the bare words and passed on broken code,
+# because a javadoc that named Last-Event-ID kept the fact TRUE after the read
+# was gone.
+SEEDS_READ_PATTERN='\.offsetStorageReader[[:space:]]*\('
+SEEDS_SEND_PATTERN='\.lastEventId[[:space:]]*\(|"Last-Event-ID"'
+if grep -rqE "$SEEDS_READ_PATTERN" "$SOURCE_TASK" "$SSE_TASK" "$SSE_CONFIGURATION" \
+   && grep -rqE "$SEEDS_SEND_PATTERN" "$SOURCE_TASK" "$SSE_TASK" "$SSE_CONFIGURATION"; then
   SEEDS_FROM_OFFSET=TRUE
 else
   SEEDS_FROM_OFFSET=FALSE

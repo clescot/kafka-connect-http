@@ -158,7 +158,7 @@ fail loudly.
 | Fact | Read from | `TRUE` means |
 | --- | --- | --- |
 | `EnqueueLossless` | `QueueFactory.getQueue` (queue type) + `SseBackgroundEventHandler.onMessage` (enqueue call) | the in-memory queue cannot silently drop an event |
-| `SeedsFromCommittedOffset` | a call to `offsetStorageReader()`, a call to the builder's `lastEventId()`, or a literal `"Last-Event-ID"`, in `SseSourceTask.java`, `SseTask.java`, `SseConfiguration.java` | the task asks the server to resume from the committed offset. It matches a call site, so a comment or javadoc cannot set it by accident, and it still cannot see whether the value seeded is the right one; see "Not covered by this check" |
+| `SeedsFromCommittedOffset` | a call to `offsetStorageReader()` and, in the same three files, a seed call, either the builder's `lastEventId()` or a literal `"Last-Event-ID"` | the task reads what Kafka Connect committed and asks the server to resume from it. Both halves are required, so deleting either one flips the fact, and a comment cannot set it. It still cannot see whether the value seeded is the right one; see "Not covered by this check" |
 
 `spec/Facts.tla` is a snapshot generated at the sync commit; `run-check.sh` always
 regenerates it in a temporary directory, so the snapshot is for reading, not for checking.
