@@ -56,7 +56,7 @@ Keep implementation details out of the map. Name only user paths, stable handles
 
 ## Status of the seed map
 
-Verified by a live run: **HTTP Sink connector** (`http-sink-connector.md`, via `control-kchttp drive-sink`), **Cron Source connector** (run `20261025-194103`), and **SSE Source connector** (run `20261025-202706`). The SSE driver gained the restart step that proves resumption.
+Verified by live runs: **HTTP Sink connector** (`http-sink-connector.md`, via `control-kchttp drive-sink`), **Cron Source connector** (`cron-source-connector.md`, run `20261025-231240`), and **SSE Source connector** (`sse-source-connector.md`, run `20261025-231240`, covering resume, multi-config and template). The SSE driver gained the restart step that proves resumption.
 
 Each recipe still lists what no run has covered, in its own file. Do not move a bullet to verified without a run that produced the record or request it describes.
 

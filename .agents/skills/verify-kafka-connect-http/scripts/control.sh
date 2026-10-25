@@ -241,7 +241,7 @@ cmd_drive_sink() {
   while [ "$i" -lt 60 ]; do
     if curl -sf "$TARGET_URL/__admin/requests" -o "$ART/requests.json"; then
       matched="$(jq -c --arg b "$marker" \
-        '[.requests[] | select(.request.absoluteUrl | endswith("/ping")) | select(.request.body == $b)] | first' \
+        '[.requests[] | select(.request.absoluteUrl | endswith("/ping")) | select(.request.body == $b) | select(.wasMatched == true)] | first' \
         "$ART/requests.json" 2>/dev/null || echo "")"
       [ -n "$matched" ] && [ "$matched" != "null" ] && break
     fi

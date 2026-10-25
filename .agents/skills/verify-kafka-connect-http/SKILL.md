@@ -21,7 +21,7 @@ The stack is Docker Compose, but you never call `docker compose` by hand — the
    .agents/skills/verify-kafka-connect-http/scripts/control.sh build
    ```
 
-   This runs `mvn -B -q -pl kafka-connect-http-connectors -am clean package -DskipTests` and produces `clescot/kafka-connect-http:<version>` where `<version>` is read from `pom.xml` (currently `0.8.176-SNAPSHOT`).
+   This runs `mvn -B -q -pl kafka-connect-http-connectors -am clean package -DskipTests` and produces `clescot/kafka-connect-http:<version>` where `<version>` is read from `pom.xml`.
 
 2. Start the stack and create the topics:
 
@@ -46,7 +46,7 @@ The stack is Docker Compose, but you never call `docker compose` by hand — the
 
 Teardown is `control.sh cleanup` (see Cleanup).
 
-If Docker is a snap-confined install and the repo lives under a hidden directory, as a `~/.herdr/` worktree does, `launch` fails with `permission denied` reading the compose file, because the snap cannot see hidden paths. Set `COMPOSE_FILE` to a byte-identical copy outside the hidden tree and everything else about the run is unchanged.
+If Docker is a snap-confined install and the repo lives under a hidden directory, as a `~/.herdr/` worktree does, `launch` fails with `permission denied` reading the compose file, because the snap cannot see hidden paths. Set `COMPOSE_FILE` to a byte-identical copy outside the hidden tree — and outside `/tmp` too, which the snap sees as its own private directory (a copy there still fails with `compose file ... is invalid: ... no such file or directory`; a copy in your home directory works). Everything else about the run is unchanged.
 
 ## Doctor
 
