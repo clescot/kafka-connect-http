@@ -27,7 +27,7 @@ public class KafkaProducer<K, V> implements Producer<K, V> {
       Serializer<K> keySerializer,
       Serializer<V> valueSerializer) {
 
-    if (!MockProducer.class.isAssignableFrom(producer.getClass())) {
+    if (producer == null || !MockProducer.class.isAssignableFrom(producer.getClass())) {
       producer =
           new org.apache.kafka.clients.producer.KafkaProducer<>(
               producerSettings, keySerializer, valueSerializer);

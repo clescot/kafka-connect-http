@@ -52,7 +52,7 @@ public class HttpRequest implements Request, Cloneable, Serializable {
     @JsonProperty
     private Map<String, List<String>> headers = Maps.newHashMap();
     @JsonProperty(defaultValue = "GET")
-    private HttpRequest.Method method;
+    private HttpRequest.Method method = HttpRequest.Method.GET;
     @JsonProperty
     private Map<String, Object> attributes = Maps.newHashMap();
     //regular body
@@ -68,7 +68,7 @@ public class HttpRequest implements Request, Cloneable, Serializable {
     private Map<String, HttpPart> parts = Maps.newHashMap();
 
     @JsonProperty(defaultValue = "STRING")
-    private BodyType bodyType;
+    private BodyType bodyType = BodyType.STRING;
 
     /**
      * only for json deserialization

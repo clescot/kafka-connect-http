@@ -159,4 +159,48 @@ class HttpCronSourceTaskTest {
           .until(() -> !httpCronSourceTask.poll().isEmpty());
     }
   }
+
+  @Nested
+  class IndependentSchedulers {
+
+    @Test
+    void test_stopping_one_task_does_not_stop_the_other() throws SchedulerException {
+      HttpCronSourceTask first = new HttpCronSourceTask();
+      HttpCronSourceTask second = new HttpCronSourceTask();
+      try {
+        first.start(settingsWithOneJob("job1"));
+        second.start(settingsWithOneJob("job2"));
+
+        assertThat(first.getScheduler()).isNotSameAs(second.getScheduler());
+
+        first.stop();
+
+        assertThat(second.getScheduler().isShutdown()).isFalse();
+        assertThat(second.getScheduler().getJobDetail(new JobKey("job2"))).isNotNull();
+      } finally {
+        stopQuietly(first);
+        stopQuietly(second);
+      }
+    }
+
+    private Map<String, String> settingsWithOneJob(String jobId) {
+      Map<String, String> settings = Maps.newHashMap();
+      settings.put("topic", "test");
+      settings.put("jobs", jobId);
+      settings.put("job." + jobId + ".cron", "0 0 6 * * ?");
+      settings.put("job." + jobId + ".url", "https://example.com");
+      return settings;
+    }
+
+    private void stopQuietly(HttpCronSourceTask task) {
+      try {
+        Scheduler scheduler = task.getScheduler();
+        if (scheduler != null && !scheduler.isShutdown()) {
+          task.stop();
+        }
+      } catch (Exception ignored) {
+        // teardown is best-effort; the test body carries the assertions
+      }
+    }
+  }
 }
