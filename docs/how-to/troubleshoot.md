@@ -13,7 +13,7 @@ cause, and the fix.
 Two common mistakes:
 
 - There is no `publish.to.in.memory.queue`. Publishing is controlled by `publish.mode`
-  (`NONE`, `PRODUCER`, `IN_MEMORY_QUEUE`, `DLQ`).
+  (`NONE` or `PRODUCER`).
 - Configuration settings use the `config.<id>.` prefix, not `httpclient.<id>.`. The default
   configuration is `config.default.`.
 
@@ -23,20 +23,8 @@ Two common mistakes:
 
 **Cause:** `publish.mode` defaults to `NONE`, which discards responses.
 
-**Fix:** set `publish.mode` to `PRODUCER` or `IN_MEMORY_QUEUE`. See
+**Fix:** set `publish.mode` to `PRODUCER`. See
 [choose a publish mode](choose-a-publish-mode.md).
-
-## The sink connector fails on its first message (in-memory queue)
-
-**Symptom:** with `publish.mode: IN_MEMORY_QUEUE`, the task fails immediately, mentioning a
-queue without a consumer.
-
-**Cause:** no source connector is registered against the queue. The sink refuses to publish
-to a queue nobody reads, which would otherwise grow until the JVM runs out of memory.
-
-**Fix:** start the `HttpInMemoryQueueSourceConnector` on the **same worker**, with the same
-`queue.name` and the same `tasks.max`. If the source is slow to start, increase
-`wait.time.registration.queue.consumer.in.ms`.
 
 ## No HTTP request is made for a message
 

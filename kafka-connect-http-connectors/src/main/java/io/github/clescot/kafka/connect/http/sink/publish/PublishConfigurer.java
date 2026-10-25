@@ -19,15 +19,12 @@ import io.confluent.kafka.schemaregistry.client.rest.RestService;
 import io.confluent.kafka.schemaregistry.json.JsonSchemaProvider;
 import io.confluent.kafka.serializers.KafkaJsonSerializer;
 import io.confluent.kafka.serializers.json.KafkaJsonSchemaSerializerConfig;
-import io.github.clescot.client.queue.QueueFactory;
 import io.github.clescot.kafka.connect.http.serde.HttpExchangeSerdeFactory;
 import io.github.clescot.kafka.connect.http.serde.HttpResponseSerdeFactory;
 import io.github.clescot.kafka.connect.http.serde.SerdeFactory;
 import io.github.clescot.kafka.connect.http.sink.HttpConnectorConfig;
-import io.github.clescot.kafka.connect.queue.KafkaRecord;
 import java.util.List;
 import java.util.Map;
-import java.util.Queue;
 import org.apache.kafka.common.KafkaException;
 import org.apache.kafka.common.PartitionInfo;
 import org.apache.kafka.common.serialization.Serializer;
@@ -106,27 +103,6 @@ public class PublishConfigurer {
     } else {
       LOGGER.info("connectivity OK");
     }
-  }
-
-  public Queue<KafkaRecord> configureInMemoryQueue(HttpConnectorConfig connectorConfig) {
-    Preconditions.checkNotNull(connectorConfig, "connectorConfig is required but 'null'");
-    String queueName = connectorConfig.getQueueName();
-    LOGGER.debug("we are looking for a queue named :{}", queueName);
-    Queue<KafkaRecord> queue = QueueFactory.getQueue(queueName);
-    Preconditions.checkArgument(
-        QueueFactory.hasAConsumer(
-            queueName,
-            connectorConfig.getMaxWaitTimeRegistrationOfQueueConsumerInMs(),
-            connectorConfig.getPollDelayRegistrationOfQueueConsumerInMs(),
-            connectorConfig.getPollIntervalRegistrationOfQueueConsumerInMs()),
-        "timeout : '"
-            + connectorConfig.getMaxWaitTimeRegistrationOfQueueConsumerInMs()
-            + "'ms timeout reached :"
-            + queueName
-            + "' queue hasn't got any consumer, "
-            + "i.e no Source Connector has been configured to consume records published in this in memory queue. "
-            + "we stop the Sink Connector to prevent any OutOfMemoryError.");
-    return queue;
   }
 
   private <T> Serializer<T> getSerializer(HttpConnectorConfig httpConnectorConfig) {

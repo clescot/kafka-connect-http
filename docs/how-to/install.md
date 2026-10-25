@@ -45,10 +45,8 @@ RUN confluent-hub install /tmp/kafka-connect-http.zip --no-prompt
 The repository ships a working example at
 [`kafka-connect-http-connectors/src/main/resources/Dockerfile`](https://github.com/clescot/kafka-connect-http/blob/master/kafka-connect-http-connectors/src/main/resources/Dockerfile).
 
-> **Why one archive?** The HTTP Sink and the HTTP Source connectors exchange data through an
-> in-memory queue. Kafka Connect loads each plugin in an isolated classloader, so the two
-> plugins must live in the same archive to share that queue. Installing this single archive
-> gives every sink connector access to the source connector in the same classloader.
+> **Why one archive?** Every connector ships in the same archive, so one install gives you the
+> HTTP Sink, the Cron Source, and the SSE Source connectors.
 
 ## 3. Verify the installation
 
@@ -58,11 +56,10 @@ Start a worker and query the connector plugins REST API:
 curl -s http://localhost:8083/connector-plugins | jq '.[].class' | grep clescot
 ```
 
-You should see the four connector classes:
+You should see the three connector classes:
 
 ```
 "io.github.clescot.kafka.connect.http.sink.HttpSinkConnector"
-"io.github.clescot.kafka.connect.http.source.queue.HttpInMemoryQueueSourceConnector"
 "io.github.clescot.kafka.connect.http.source.cron.CronSourceConnector"
 "io.github.clescot.kafka.connect.sse.client.okhttp.SseSourceConnector"
 ```

@@ -51,7 +51,5 @@ threshold, the circuit breaker opens instead of waiting.
 
 ## Correlating requests and responses
 
-Each `HttpExchange` keeps the incoming record's key and headers. In `IN_MEMORY_QUEUE` mode
-this lets the source connector store the response in the same partition as the request, so
-correlation survives partitioning. See
-[choose a publish mode](../how-to/choose-a-publish-mode.md).
+Each `HttpExchange` keeps the incoming record's key and headers, so the published exchange
+carries the correlation data of the request that produced it.

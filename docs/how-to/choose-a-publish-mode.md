@@ -8,12 +8,10 @@ For the reasoning behind these modes, see [publish modes](../explanation/publish
 
 ## The options at a glance
 
-| `publish.mode` | Responses are… | Needs a source connector? | Co-location needed? |
-| --- | --- | --- | --- |
-| `NONE` (default) | discarded | no | no |
-| `PRODUCER` | published to Kafka by the sink's own producer | no | no |
-| `IN_MEMORY_QUEUE` | published to Kafka via an in-memory queue + source connector | yes | **yes** |
-| `DLQ` | handed to the dead-letter-queue reporter | no | no |
+| `publish.mode` | Responses are… | Duplicated config |
+| --- | --- | --- |
+| `NONE` (default) | discarded | no |
+| `PRODUCER` | published to Kafka by the sink's own producer | yes |
 
 ## `NONE` — fire and forget
 
@@ -43,68 +41,32 @@ producer connection details yourself.
 }
 ```
 
-**Trade-off:** you duplicate broker/registry connection configuration at the connector level.
-That duplication is awkward when the cluster connection relies on third-party libraries or a
-custom classloader. Choose `IN_MEMORY_QUEUE` instead if you want to reuse the Connect
-worker's own configuration.
+**Trade-off:** you duplicate broker and registry connection configuration at the connector
+level. That duplication is awkward when the cluster connection relies on third-party libraries
+or a custom classloader.
 
-## `IN_MEMORY_QUEUE` — reuse the Connect worker
+## Migrating from `IN_MEMORY_QUEUE`
 
-The sink connector writes each exchange to an in-memory queue. A
-`HttpInMemoryQueueSourceConnector` running in the same worker reads the queue and publishes
-to Kafka. This keeps both connectors on high-level Kafka Connect configuration.
+The `IN_MEMORY_QUEUE` publish mode is removed. It worked only when an HTTP sink and an HTTP
+source connector ran in the same worker process. That requirement conflicts with the
+distributed execution model of Kafka Connect. See
+[ADR 0001](../adr/0001-remove-in-memory-queue-publish-mode.md).
 
-Sink connector:
+Replace these settings in your HTTP sink connector configuration:
 
-```json
-{
-  "publish.mode": "IN_MEMORY_QUEUE",
-  "queue.name": "default"
-}
-```
+| Removed setting | Replacement |
+| --- | --- |
+| `publish.mode: IN_MEMORY_QUEUE` | `publish.mode: PRODUCER` |
+| `queue.name` | `producer.success.topic` and `producer.error.topic` |
+| `wait.time.registration.queue.consumer.in.ms` | not needed |
+| `poll.delay.registration.queue.consumer.in.ms` | not needed |
+| `poll.interval.registration.queue.consumer.in.ms` | not needed |
 
-Source connector (same worker, same `queue.name`, same `tasks.max`):
-
-```json
-{
-  "connector.class": "io.github.clescot.kafka.connect.http.source.queue.HttpInMemoryQueueSourceConnector",
-  "success.topic": "http-success",
-  "error.topic": "http-error",
-  "queue.name": "default"
-}
-```
-
-Because the queue lives in memory, the sinks and sources must be co-located:
-
-- configure the **same `tasks.max`** for both connectors;
-- give the topics used by the sink and the source the **same number of partitions**, so a
-  record with a given key lands in the same partition on both sides;
-- deploy no more workers than the partition count.
-
-**Trade-off:** co-location constrains how you distribute the connectors. It does not remove
-Kafka Connect's distributed nature: the HTTP requests themselves can still be spread across
-workers, and only the request/response correlation stays local.
-
-If you set `publish.mode` to `IN_MEMORY_QUEUE` without a consumer for the queue, the sink
-connector fails on the first message rather than growing the queue without bound. You can
-tune that wait with `wait.time.registration.queue.consumer.in.ms` (default 60000).
-
-## `DLQ` — route bad messages to a dead-letter queue
-
-Use it when a message cannot be turned into a valid HTTP request, and you want the built-in
-errant-record reporter to send it to a dead-letter topic instead of failing the task.
-
-```json
-{ "publish.mode": "DLQ" }
-```
+Remove the `HttpInMemoryQueueSourceConnector` instance as well. `PRODUCER` also needs
+`producer.bootstrap.servers`.
 
 ## Related settings
 
-- `queue.name` — the in-memory queue to use (default `default`). Only meaningful with
-  `IN_MEMORY_QUEUE`.
-- `wait.time.registration.queue.consumer.in.ms`, `poll.delay.registration.queue.consumer.in.ms`,
-  `poll.interval.registration.queue.consumer.in.ms` — tune how the sink waits for, and
-  polls, the source connector's queue registration.
 - `producer.*` — every producer setting, used only with `PRODUCER`.
 
 Full defaults are in the [HTTP Sink reference](../reference/http-sink-connector.md).

@@ -32,15 +32,3 @@ not by partitions.
 The Cron source connector creates one job per configured cron entry. Each instance creates a
 task for each job, so parallelism is bounded by the number of jobs.
 
-## The locality constraint
-
-`IN_MEMORY_QUEUE` mode adds one constraint on top of the above: the sink and source connectors
-must be co-located, because they share an in-memory queue (see
-[publish modes](publish-modes.md)). Practically:
-
-- use the same `tasks.max` for both connectors;
-- use the same partition count for the sink and source topics;
-- do not deploy more workers than the partition count.
-
-This keeps request/response correlation local without giving up the distribution of the HTTP
-calls themselves.

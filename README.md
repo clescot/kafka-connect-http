@@ -15,14 +15,13 @@ Kafka Connect moves data between Kafka and external systems, but it does not nat
 perform request/response interactions with an HTTP server. This project fills that gap:
 
 - **Send** HTTP requests described by Kafka messages.
-- **Receive** the HTTP responses and publish them to Kafka, either through a low-level
-  producer or through an in-memory queue shared with a source connector.
+- **Receive** the HTTP responses and publish them to Kafka through a low-level producer.
 - **Transform** requests and responses with JSONPath, XPath, JMESPath, Regex, DateTime,
   and other template processors.
 
-Kafka Connect is one-way by design. To reconcile that with the two-way nature of HTTP,
-this project splits the work across a **sink** connector (Kafka → HTTP) and, when you need
-the responses, a **source** connector (HTTP → Kafka). See
+Kafka Connect is one-way by design. To reconcile that with the two-way nature of HTTP, the
+**sink** connector turns Kafka messages into HTTP requests and publishes the responses back
+to Kafka with its own producer. See
 [Publish modes](docs/explanation/publish-modes.md) for the trade-offs.
 
 ## Connectors
@@ -30,7 +29,6 @@ the responses, a **source** connector (HTTP → Kafka). See
 | Connector | Kind | Class |
 | --- | --- | --- |
 | HTTP Sink | Sink | `io.github.clescot.kafka.connect.http.sink.HttpSinkConnector` |
-| HTTP Source (in-memory queue) | Source | `io.github.clescot.kafka.connect.http.source.queue.HttpInMemoryQueueSourceConnector` |
 | Cron Source | Source | `io.github.clescot.kafka.connect.http.source.cron.CronSourceConnector` |
 | Server-Sent Events (SSE) Source | Source | `io.github.clescot.kafka.connect.sse.client.okhttp.SseSourceConnector` |
 
@@ -52,7 +50,6 @@ that matches what you are trying to do.
 
 **Look something up (reference)**
 - [HTTP Sink connector settings](docs/reference/http-sink-connector.md)
-- [HTTP Source connector settings](docs/reference/http-source-connector.md)
 - [Cron Source connector settings](docs/reference/cron-source-connector.md)
 - [SSE Source connector settings](docs/reference/sse-source-connector.md)
 - [Message formats](docs/reference/message-formats.md)
@@ -70,9 +67,8 @@ A full index is available at [docs/README.md](docs/README.md).
 
 ## Quick install
 
-The connectors are shipped as a single Confluent Hub archive that bundles both the sink and
-source plugins (they share a classloader so they can exchange data through the in-memory
-queue). Download the latest `clescot-kafka-connect-http-connectors-<version>.zip` from the
+The connectors are shipped as a single Confluent Hub archive that bundles every connector.
+Download the latest `clescot-kafka-connect-http-connectors-<version>.zip` from the
 [releases](https://github.com/clescot/kafka-connect-http/releases), then install it into your
 Kafka Connect image:
 
