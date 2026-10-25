@@ -31,7 +31,6 @@ Precise, complete descriptions of the machinery. These pages are derived from th
 configuration definitions so they stay accurate.
 
 - [HTTP Sink connector settings](reference/http-sink-connector.md)
-- [HTTP Source connector settings](reference/http-source-connector.md)
 - [Cron Source connector settings](reference/cron-source-connector.md)
 - [SSE Source connector settings](reference/sse-source-connector.md)
 - [Message formats](reference/message-formats.md)
@@ -45,5 +44,5 @@ Discussions that answer "why". They are meant to be read, not followed.
 - [Project intention](explanation/project-intention.md) — the problem this project solves.
 - [Architecture](explanation/architecture.md) — how the sink connector processes a message.
 - [Request handling](explanation/request-handling.md) — async execution, rate limiting, and retries.
-- [Publish modes](explanation/publish-modes.md) — NONE, PRODUCER, IN_MEMORY_QUEUE, and DLQ.
+- [Publish modes](explanation/publish-modes.md) — NONE and PRODUCER.
 - [Scalability](explanation/scalability.md) — how load is distributed across tasks and workers.

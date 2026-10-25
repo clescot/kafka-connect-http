@@ -36,9 +36,7 @@ Because Kafka Connect is one-way, the publish step is split into modes with diff
 trade-offs. Each mode decides what happens to an HTTP response:
 
 - ignore it,
-- publish it with the connector's own producer,
-- publish it through an in-memory queue consumed by a source connector,
-- or route bad messages to a dead-letter queue.
+- or publish it with the connector's own producer.
 
 The modes are described in [publish modes](publish-modes.md), and how to configure them in
 [choose a publish mode](../how-to/choose-a-publish-mode.md).

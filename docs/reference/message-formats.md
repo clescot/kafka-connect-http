@@ -47,7 +47,7 @@ The sink can generate a missing `X-Request-ID` or `X-Correlation-ID`; see
 
 ## HttpExchange
 
-The value published by the HTTP Sink connector and consumed by the HTTP Source connector.
+The value published by the HTTP Sink connector.
 
 | Field | Type | Notes |
 | --- | --- | --- |

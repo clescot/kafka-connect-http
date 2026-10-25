@@ -77,45 +77,6 @@ JSON output (requires a schema registry):
 See the [`producer.*` reference](../reference/http-sink-connector.md#producer-settings) for
 every producer setting.
 
-## Publish responses through the in-memory queue
-
-Set `publish.mode` to `IN_MEMORY_QUEUE`. The sink connector writes the exchange to an
-in-memory queue, and a source connector on the same worker reads it and writes it to Kafka.
-
-> **Constraint.** With this mode the sink and source connectors must run in the **same Kafka
-> Connect instance** (same worker), because the queue is in memory. They must also use the
-> same `queue.name` and the same `tasks.max`.
-
-Sink connector:
-
-```json
-{
-  "name": "my-http-sink-connector",
-  "config": {
-    "connector.class": "io.github.clescot.kafka.connect.http.sink.HttpSinkConnector",
-    "tasks.max": "1",
-    "topics": "http-request",
-    "publish.mode": "IN_MEMORY_QUEUE"
-  }
-}
-```
-
-Source connector:
-
-```json
-{
-  "name": "my-http-source-connector",
-  "config": {
-    "connector.class": "io.github.clescot.kafka.connect.http.source.queue.HttpInMemoryQueueSourceConnector",
-    "tasks.max": "1",
-    "success.topic": "http-success",
-    "error.topic": "http-error"
-  }
-}
-```
-
-Read [choose a publish mode](choose-a-publish-mode.md) before using this mode in production.
-
 ## Generate requests on a schedule
 
 The Cron Source connector emits an HTTP request message on a cron schedule. Point it at the

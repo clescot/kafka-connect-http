@@ -23,11 +23,7 @@ configuration definitions in `http-client` and `kafka-connect-http-connectors`.
 
 | Setting | Default | Description |
 | --- | --- | --- |
-| `publish.mode` | `NONE` | `NONE`, `PRODUCER`, `IN_MEMORY_QUEUE`, or `DLQ`. See [choose a publish mode](../how-to/choose-a-publish-mode.md). |
-| `queue.name` | `default` | In-memory queue name. Meaningful with `IN_MEMORY_QUEUE`. |
-| `wait.time.registration.queue.consumer.in.ms` | `60000` | How long to wait for a queue consumer (source connector) to register. |
-| `poll.delay.registration.queue.consumer.in.ms` | `2000` | Wait before starting to poll a registered consumer. |
-| `poll.interval.registration.queue.consumer.in.ms` | `500` | Interval between polls for a registered consumer. |
+| `publish.mode` | `NONE` | `NONE` or `PRODUCER`. See [choose a publish mode](../how-to/choose-a-publish-mode.md). |
 
 ## Producer settings
 
