@@ -211,27 +211,10 @@ services:
             "tasks.max": "1",
             "value.converter":"org.apache.kafka.connect.storage.StringConverter",
             "topics":"http-request",
-            "publish.to.in.memory.queue":"true"
-          }
-        }'
-    depends_on:
-      connect:
-        condition: service_healthy
-#        restart: true
-  connect-config-source:
-    image: curlimages/curl:8.2.1
-    command: |
-      -X POST \
-        http://connect:8083/connectors \
-        -H 'Content-Type: application/json' \
-        -d '{ "name": "my-http-source-connector",
-          "config":
-          {
-            "connector.class":"io.github.clescot.kafka.connect.http.source.HttpSourceConnector",
-            "tasks.max": "1",
-            "value.converter":"org.apache.kafka.connect.storage.StringConverter",
-            "success.topic": "http-success",
-            "error.topic": "http-error"
+            "publish.mode":"PRODUCER",
+            "producer.bootstrap.servers":"kafka1:39092,kafka2:39093,kafka3:39094",
+            "producer.success.topic":"http-success",
+            "producer.error.topic":"http-error"
           }
         }'
     depends_on:
