@@ -2,7 +2,6 @@ package io.github.clescot.client.http.ratelimit;
 
 import com.google.common.collect.Maps;
 import io.github.clescot.core.http.HttpExchange;
-import io.github.clescot.core.http.HttpResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -207,18 +206,13 @@ public class RateLimitGate {
     long exhaustedWaitSeconds(Snapshot snapshot) {
         long waitSeconds = 0L;
         for (ServiceLimit serviceLimit : snapshot.serviceLimits()) {
-            if (serviceLimit.remaining() != 0 || !snapshot.countsRequestAdmissions(serviceLimit)) {
-                continue;
-            }
-            long candidate =
-                    snapshot
-                            .advertisedWindowSeconds(serviceLimit)
-                            .orElse(defaultDelaySeconds);
-            if (candidate <= 0) {
+            if (serviceLimit.remaining() == 0 && snapshot.countsRequestAdmissions(serviceLimit)) {
+                long candidate = snapshot.advertisedWindowSeconds(serviceLimit).orElse(defaultDelaySeconds);
                 // an explicit "t=0" means the window has already elapsed
-                continue;
+                if (candidate > 0) {
+                    waitSeconds = Math.max(waitSeconds, Math.min(candidate, maxDurationSeconds));
+                }
             }
-            waitSeconds = Math.max(waitSeconds, Math.min(candidate, maxDurationSeconds));
         }
         return waitSeconds;
     }

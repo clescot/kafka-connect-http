@@ -173,10 +173,13 @@ public class Constants {
     public static final String CONFIG_DEFAULT_RATE_LIMITER_MAX_EXECUTIONS = DEFAULT_CONFIGURATION_PREFIX + RATE_LIMITER_MAX_EXECUTIONS;
     public static final String CONFIG_DEFAULT_RATE_LIMITER_MAX_EXECUTIONS_DOC = "max executions (permits, i.e execution if one permit per execution) in the period defined with the '" + CONFIG_DEFAULT_RATE_LIMITER_PERIOD_IN_MS + "' parameter";
 
+    //shared documentation fragment of the 'scope' settings
+    private static final String SCOPE_DOC_PREFIX = "scope of the '";
+
     //rate limiter scope
     public static final String RATE_LIMITER_SCOPE = DEFAULT_RATE_LIMITER_PREFIX + "scope";
     public static final String CONFIG_DEFAULT_RATE_LIMITER_SCOPE = DEFAULT_CONFIGURATION_PREFIX + RATE_LIMITER_SCOPE;
-    public static final String CONFIG_DEFAULT_RATE_LIMITER_SCOPE_DOC = "scope of the '" + CONFIG_DEFAULT_RATE_LIMITER_SCOPE + "' parameter. can be either 'instance' (i.e a rate limiter per configuration in the connector instance),  or 'static' (a rate limiter per configuration id shared with all connectors instances in the same Java Virtual Machine.";
+    public static final String CONFIG_DEFAULT_RATE_LIMITER_SCOPE_DOC = SCOPE_DOC_PREFIX + CONFIG_DEFAULT_RATE_LIMITER_SCOPE + "' parameter. can be either 'instance' (i.e a rate limiter per configuration in the connector instance),  or 'static' (a rate limiter per configuration id shared with all connectors instances in the same Java Virtual Machine.";
 
     public static final long DEFAULT_RATE_LIMITER_PERIOD_IN_MS_VALUE = 1000L;
     public static final long DEFAULT_RATE_LIMITER_MAX_EXECUTIONS_VALUE = 1L;
@@ -187,7 +190,7 @@ public class Constants {
     public static final String RATE_LIMIT_HEADERS_ENABLED = RATE_LIMIT_HEADERS_PREFIX + "enabled";
     public static final String RATE_LIMIT_HEADERS_ENABLED_DOC = "when true, the connector honours the server-advertised RateLimit response header fields : while the advertised service limit is exhausted (r=0), calls to the same target wait for the advertised window to elapse.";
     public static final String RATE_LIMIT_HEADERS_SCOPE = RATE_LIMIT_HEADERS_PREFIX + "scope";
-    public static final String RATE_LIMIT_HEADERS_SCOPE_DOC = "scope of the '" + RATE_LIMIT_HEADERS_SCOPE + "' parameter. can be either 'instance' (a rate limit gate per configuration in the connector instance), or 'static' (a rate limit gate per configuration id shared with all connector instances in the same Java Virtual Machine.";
+    public static final String RATE_LIMIT_HEADERS_SCOPE_DOC = SCOPE_DOC_PREFIX + RATE_LIMIT_HEADERS_SCOPE + "' parameter. can be either 'instance' (a rate limit gate per configuration in the connector instance), or 'static' (a rate limit gate per configuration id shared with all connector instances in the same Java Virtual Machine.";
     public static final String RATE_LIMIT_HEADERS_MAX_THRESHOLD_IN_SEC = RATE_LIMIT_HEADERS_PREFIX + "max.threshold.in.sec";
     public static final String RATE_LIMIT_HEADERS_MAX_THRESHOLD_IN_SEC_DOC = "maximum advertised exhausted window in second to wait locally. above this threshold, the circuit breaker will be opened. under this threshold, a local wait will be done.";
     public static final String RATE_LIMIT_HEADERS_MAX_DURATION_IN_SEC = RATE_LIMIT_HEADERS_PREFIX + "max.duration.in.sec";
@@ -416,7 +419,7 @@ public class Constants {
 
     public static final String OKHTTP_CONNECTION_POOL_SCOPE = OKHTTP_PREFIX + "connection.pool.scope";
     public static final String CONFIG_DEFAULT_OKHTTP_CONNECTION_POOL_SCOPE = DEFAULT_CONFIGURATION_PREFIX + OKHTTP_CONNECTION_POOL_SCOPE;
-    public static final String CONFIG_DEFAULT_OKHTTP_CONNECTION_POOL_SCOPE_DOC = "scope of the '" + CONFIG_DEFAULT_OKHTTP_CONNECTION_POOL_SCOPE + "' parameter. can be either 'instance' (i.e a connection pool per configuration in the connector instance),  or 'static' (a connection pool shared with all connectors instances in the same Java Virtual Machine).";
+    public static final String CONFIG_DEFAULT_OKHTTP_CONNECTION_POOL_SCOPE_DOC = SCOPE_DOC_PREFIX + CONFIG_DEFAULT_OKHTTP_CONNECTION_POOL_SCOPE + "' parameter. can be either 'instance' (i.e a connection pool per configuration in the connector instance),  or 'static' (a connection pool shared with all connectors instances in the same Java Virtual Machine).";
 
     public static final String OKHTTP_DISPATCHER_MAX_REQUESTS = OKHTTP_PREFIX + "dispatcher.max.requests";
     public static final String CONFIG_DEFAULT_OKKHTTP_DISPATCHER_MAX_REQUESTS = DEFAULT_CONFIGURATION_PREFIX + OKHTTP_DISPATCHER_MAX_REQUESTS;

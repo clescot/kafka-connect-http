@@ -29,7 +29,6 @@ import java.util.stream.Collectors;
 
 import static io.github.clescot.client.http.HttpClientFactory.buildConfigurationSettings;
 import static io.github.clescot.client.http.HttpClientFactory.buildConfigurations;
-import static io.github.clescot.client.Constants.*;
 
 /**
  * Task to send HTTP requests.

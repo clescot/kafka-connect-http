@@ -69,8 +69,7 @@ class RateLimitGateTest {
       RateLimitGate gate = gate(settings());
       gate.observe(exchange("http://api.example.com/stuff", "RateLimit", "\"default\";r=0;t=30"));
       long waited = gate.awaitIfExhausted("http://api.example.com/stuff");
-      assertThat(waited).isBetween(30_000L, 30_500L);
-      assertThat(waited).isEqualTo(sleeper.sleptMillis());
+      assertThat(waited).isBetween(30_000L, 30_500L).isEqualTo(sleeper.sleptMillis());
     }
 
     @Test

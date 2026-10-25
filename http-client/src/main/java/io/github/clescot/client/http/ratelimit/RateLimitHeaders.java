@@ -1,6 +1,7 @@
 package io.github.clescot.client.http.ratelimit;
 
 import com.google.common.collect.Lists;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -30,25 +31,15 @@ public final class RateLimitHeaders {
     public record ServiceLimit(String policy, long remaining, Long effectiveWindowSeconds) {}
 
     /** the parsed view of both fields. */
-    public static final class Snapshot {
-        private final List<ServiceLimit> serviceLimits;
-        private final List<QuotaPolicy> quotaPolicies;
+    public record Snapshot(List<ServiceLimit> serviceLimits, List<QuotaPolicy> quotaPolicies) {
 
-        public Snapshot(List<ServiceLimit> serviceLimits, List<QuotaPolicy> quotaPolicies) {
-            this.serviceLimits = Lists.newArrayList(serviceLimits);
-            this.quotaPolicies = Lists.newArrayList(quotaPolicies);
+        public Snapshot {
+            serviceLimits = Lists.newArrayList(serviceLimits);
+            quotaPolicies = Lists.newArrayList(quotaPolicies);
         }
 
         public static Snapshot empty() {
             return new Snapshot(Lists.newArrayList(), Lists.newArrayList());
-        }
-
-        public List<ServiceLimit> serviceLimits() {
-            return serviceLimits;
-        }
-
-        public List<QuotaPolicy> quotaPolicies() {
-            return quotaPolicies;
         }
 
         /** the policy advertised for the given policy name, if any. */
@@ -160,68 +151,76 @@ public final class RateLimitHeaders {
         return String.join(",", values);
     }
 
-    /**
-     * Splits on the given delimiter, ignoring delimiters inside quoted strings and byte
-     * sequences.
-     */
+    /** Splits on the given delimiter, ignoring delimiters inside quoted strings and byte sequences. */
     static List<String> splitTopLevel(String value, char delimiter) {
         List<String> parts = Lists.newArrayList();
         if (value == null) {
             return parts;
         }
-        StringBuilder current = new StringBuilder();
-        boolean inQuotes = false;
-        boolean inByteSequence = false;
-        for (int i = 0; i < value.length(); i++) {
-            char character = value.charAt(i);
-            if (inQuotes) {
-                current.append(character);
-                if (character == '\\' && i + 1 < value.length()) {
-                    current.append(value.charAt(++i));
-                } else if (character == '"') {
-                    inQuotes = false;
-                }
-                continue;
-            }
-            if (inByteSequence) {
-                current.append(character);
-                if (character == ':') {
-                    inByteSequence = false;
-                }
-                continue;
-            }
-            if (character == '"') {
-                inQuotes = true;
-                current.append(character);
-            } else if (character == ':') {
-                inByteSequence = true;
-                current.append(character);
-            } else if (character == delimiter) {
-                parts.add(current.toString());
-                current.setLength(0);
-            } else {
-                current.append(character);
-            }
+        int index = 0;
+        while (index < value.length()) {
+            int nextDelimiter = nextDelimiterIndex(value, index, delimiter);
+            parts.add(value.substring(index, nextDelimiter));
+            index = nextDelimiter + 1;
         }
-        parts.add(current.toString());
         return parts;
     }
 
+    /** index of the next top-level delimiter at or after the start index, else the value length. */
+    private static int nextDelimiterIndex(String value, int start, char delimiter) {
+        int index = start;
+        while (index < value.length()) {
+            char character = value.charAt(index);
+            if (character == '"') {
+                index = indexAfterQuotedString(value, index);
+            } else if (character == ':') {
+                index = indexAfterByteSequence(value, index);
+            } else if (character == delimiter) {
+                return index;
+            } else {
+                index++;
+            }
+        }
+        return value.length();
+    }
+
+    private static int indexAfterQuotedString(String value, int start) {
+        int index = start + 1;
+        while (index < value.length()) {
+            char character = value.charAt(index);
+            if (character == '\\') {
+                index += 2;
+            } else if (character == '"') {
+                return index + 1;
+            } else {
+                index++;
+            }
+        }
+        return value.length();
+    }
+
+    private static int indexAfterByteSequence(String value, int start) {
+        int index = start + 1;
+        while (index < value.length()) {
+            if (value.charAt(index) == ':') {
+                return index + 1;
+            }
+            index++;
+        }
+        return value.length();
+    }
+
     private static Map<String, String> parameters(List<String> itemParts) {
-        Map<String, String> parameters = new java.util.LinkedHashMap<>();
+        Map<String, String> parameters = new LinkedHashMap<>();
         for (int i = 1; i < itemParts.size(); i++) {
             String parameter = itemParts.get(i);
-            if (parameter == null) {
-                continue;
-            }
-            int separator = parameter.indexOf('=');
-            if (separator <= 0) {
-                continue;
-            }
-            String key = parameter.substring(0, separator).trim().toLowerCase(Locale.ROOT);
-            String value = unquote(parameter.substring(separator + 1));
-            if (!key.isEmpty() && !value.isEmpty()) {
-                parameters.put(key, value);
+            int separator = parameter == null ? -1 : parameter.indexOf('=');
+            if (separator > 0) {
+                String key = parameter.substring(0, separator).trim().toLowerCase(Locale.ROOT);
+                String value = unquote(parameter.substring(separator + 1));
+                if (!key.isEmpty() && !value.isEmpty()) {
+                    parameters.put(key, value);
+                }
             }
         }
         return parameters;

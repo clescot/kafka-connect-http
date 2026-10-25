@@ -31,7 +31,6 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Predicate;
-import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import static com.google.common.primitives.Longs.min;
@@ -359,36 +358,48 @@ public class HttpConfiguration<C extends HttpClient<NR, NS>, NR, NS> implements 
      * @return true if the response code implies a retry
      */
     protected boolean retryNeeded(HttpExchange httpExchange) {
-        Optional<Pattern> myRetryResponseCodeRegex = Optional.ofNullable(getRetryResponseCodeRegex());
-        if (myRetryResponseCodeRegex.isPresent()) {
-            Pattern retryPattern = myRetryResponseCodeRegex.get();
-            HttpResponse response = httpExchange.getResponse();
-            int statusCode = response.getStatusCode();
-            Map<String, List<String>> httpResponseHeaders = response.getHeaders();
-            boolean hasRetryAfter = httpResponseHeaders.containsKey(RETRY_AFTER) || httpResponseHeaders.containsKey(X_RETRY_AFTER);
-            //an exhausted server-advertised quota is a delay instruction only on the status codes
-            //that already treat a server delay as a retry instruction
-            long rateLimitWait = rateLimitGate.exhaustedWaitSeconds(httpExchange);
-            boolean rateLimitAdvisesDelayRetry = rateLimitWait > 0 && statusCodeIsCompatibleWithRetryAfter(statusCode);
-            if (hasRetryAfter || rateLimitAdvisesDelayRetry) {
-                long secondToWait = hasRetryAfter ? circuitMustBeOpened(httpExchange) : rateLimitWait;
-                if (secondToWait < retryDelayThreshold) {
-                    try {
-                        LOGGER.info("Waiting '{}' seconds (below the retryDelayThreshold:'{}' seconds) before retrying the call", secondToWait, retryDelayThreshold);
-                        Thread.sleep(secondToWait * 1000);
-                        return true;
-                    } catch (InterruptedException e) {
-                        throw new HttpException(e);
-                    }
-                } else {
-                    return false;
-                }
-            }
-            Matcher matcher = retryPattern.matcher("" + statusCode);
-            return matcher.matches();
-        } else {
+        Pattern retryPattern = getRetryResponseCodeRegex();
+        if (retryPattern == null) {
             return false;
         }
+        int statusCode = httpExchange.getResponse().getStatusCode();
+        if (advertisedDelayRequiresRetry(httpExchange, statusCode)) {
+            return waitForAdvertisedDelay(httpExchange);
+        }
+        return retryPattern.matcher("" + statusCode).matches();
+    }
+
+    /** true when the response advertises a delay the retry machinery must act on. */
+    private boolean advertisedDelayRequiresRetry(HttpExchange httpExchange, int statusCode) {
+        if (hasRetryAfterHeader(httpExchange)) {
+            return true;
+        }
+        //an exhausted server-advertised quota is a delay instruction only on the status codes
+        //that already treat a server delay as a retry instruction
+        long rateLimitWait = rateLimitGate.exhaustedWaitSeconds(httpExchange);
+        return rateLimitWait > 0 && statusCodeIsCompatibleWithRetryAfter(statusCode);
+    }
+
+    /** waits below the retry delay threshold, or leaves the circuit breaker to open above it. */
+    private boolean waitForAdvertisedDelay(HttpExchange httpExchange) {
+        long secondToWait = hasRetryAfterHeader(httpExchange)
+                ? circuitMustBeOpened(httpExchange)
+                : rateLimitGate.exhaustedWaitSeconds(httpExchange);
+        if (secondToWait >= retryDelayThreshold) {
+            return false;
+        }
+        try {
+            LOGGER.info("Waiting '{}' seconds (below the retryDelayThreshold:'{}' seconds) before retrying the call", secondToWait, retryDelayThreshold);
+            Thread.sleep(secondToWait * 1000);
+            return true;
+        } catch (InterruptedException e) {
+            throw new HttpException(e);
+        }
+    }
+
+    private boolean hasRetryAfterHeader(HttpExchange httpExchange) {
+        Map<String, List<String>> responseHeaders = httpExchange.getResponse().getHeaders();
+        return responseHeaders.containsKey(RETRY_AFTER) || responseHeaders.containsKey(X_RETRY_AFTER);
     }
 
     /**
