@@ -62,6 +62,14 @@ the circuit breaker instead of waiting. `Retry-After` / `X-Retry-After` wins whe
 present. See the
 [sink reference](../reference/http-sink-connector.md#server-advertised-rate-limits).
 
+The SSE source applies the same interpretation, but to its *connection attempts* rather than to
+calls: it observes the headers of every attempt (accepted or refused) and lengthens the delay
+before the next reconnect. Because launchdarkly-eventsource owns that loop, the pause is handed to
+it as a longer retry delay, which keeps the wait interruptible by `stop()`. With no circuit breaker
+on the source side, the threshold only chooses the log level; the advertised duration caps are the
+real ceiling. See the
+[source reference](../reference/sse-source-connector.md#server-advertised-delays).
+
 ## Correlating requests and responses
 
 Each `HttpExchange` keeps the incoming record's key and headers, so the published exchange

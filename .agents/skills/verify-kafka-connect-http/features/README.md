@@ -56,13 +56,13 @@ Keep implementation details out of the map. Name only user paths, stable handles
 
 ## Status of the seed map
 
-Verified by live runs: **HTTP Sink connector** (`http-sink-connector.md`, via `control-kchttp drive-sink`), **Cron Source connector** (`cron-source-connector.md`, run `20261025-231240`), **SSE Source connector** (`sse-source-connector.md`, run `20261025-231240`, covering resume, multi-config and template), and **Server-advertised rate limits** (`rate-limit-headers.md`, run `20261026-001116`, via `control-kchttp drive-ratelimit`). The SSE driver gained the restart step that proves resumption.
+Verified by live runs: **HTTP Sink connector** (`http-sink-connector.md`, via `control-kchttp drive-sink`), **Cron Source connector** (`cron-source-connector.md`, run `20261025-231240`), **SSE Source connector** (`sse-source-connector.md`, run `20261025-231240`, covering resume, multi-config and template; its advertised-delay pacing is scripted, run `20261026-013419`), and **Server-advertised rate limits** (`rate-limit-headers.md`, run `20261026-001116`, via `control-kchttp drive-ratelimit`). The SSE recipe is driven by hand except for the pacing, which has a driver (`control-kchttp drive-sse-ratelimit`).
 
 Each recipe still lists what no run has covered, in its own file. Do not move a bullet to verified without a run that produced the record or request it describes.
 
 ## Features
 
 - [HTTP Sink connector](./http-sink-connector.md) — `Kafka -> HTTP`: a topic message triggers an HTTP request; the target records it.
-- [Server-advertised rate limits](./rate-limit-headers.md) — the sink waits when a server advertises an exhausted IETF `RateLimit` window.
+- [Server-advertised rate limits](./rate-limit-headers.md) — the sink waits when a server advertises an exhausted IETF `RateLimit` window; the SSE source's equivalent pacing lives in [the SSE recipe](./sse-source-connector.md) and is driven by `control-kchttp drive-sse-ratelimit`.
 - [Cron Source connector](./cron-source-connector.md) — scheduled `HttpRequest` emission into a topic.
 - [SSE Source connector](./sse-source-connector.md) — Server-Sent-Events stream -> Kafka messages.

@@ -169,13 +169,17 @@ public class SseConfiguration implements Configuration<OkHttpClient, HttpRequest
                   return this.httpClient.buildNativeRequest(
                       this.httpClient.getEnrichRequestFunction().apply(httpRequest));
                 });
+    // the server may advertise an exhausted quota or a Retry-After delay: observe every attempt,
+    // and never reconnect sooner than it asked. Only the delay changes; the resume cursor below
+    // is untouched.
+    SseRateLimitPacing pacing = SseRateLimitPacing.fromSettings(configurationId, uri, settings);
     this.backgroundEventSource =
         new BackgroundEventSource.Builder(
                 backgroundEventHandler,
-                new EventSource.Builder(connectStrategy)
+                new EventSource.Builder(pacing.connectStrategy(connectStrategy))
                     .streamEventData(false)
                     .lastEventId(lastCommittedEventId.orElse(null))
-                    .retryDelayStrategy(retryDelayStrategy)
+                    .retryDelayStrategy(pacing.retryDelayStrategy(retryDelayStrategy))
                     .errorStrategy(errorStrategy))
             .build();
     connected = true;

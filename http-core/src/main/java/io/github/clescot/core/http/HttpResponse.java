@@ -17,20 +17,14 @@ import org.slf4j.LoggerFactory;
 import java.io.Serial;
 import java.io.Serializable;
 import java.time.*;
-import java.time.format.DateTimeFormatter;
-import java.time.format.DateTimeParseException;
 import java.util.*;
-import java.util.regex.Pattern;
 
 import static io.github.clescot.core.http.MediaType.APPLICATION_OCTET_STREAM;
 import static io.github.clescot.core.http.MediaType.APPLICATION_X_WWW_FORM_URLENCODED;
-import static java.time.temporal.ChronoUnit.SECONDS;
 
 public class HttpResponse implements Response, Cloneable, Serializable {
     @Serial
     private static final long serialVersionUID = 1L;
-    private static final String UTC = "UTC";
-    private static final Pattern IS_INTEGER = Pattern.compile("\\d+");
     public static final Integer VERSION = 2;
     public static final String RETRY_AFTER = "Retry-After";
     public static final String X_RETRY_AFTER = "X-Retry-After";
@@ -45,10 +39,7 @@ public class HttpResponse implements Response, Cloneable, Serializable {
     public static final String PARTS_FIELD = "parts";
     public static final String ATTRIBUTES_FIELD = "attributes";
     //cf https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Retry-After
-    //regex to match 503 (Internal Server Error), 429(Too Many Requests), 301(Moved Permanently) HTTP response status code
     public static final String RFC_7231_PATTERN = "EEE, dd MMM yyyy HH:mm:ss O";
-    private static final DateTimeFormatter RFC_7231_FORMATTER = DateTimeFormatter.ofPattern(RFC_7231_PATTERN);
-    private static final DateTimeFormatter RFC_1123_FORMATTER = DateTimeFormatter.RFC_1123_DATE_TIME;
     private Integer statusMessageLimit = Integer.MAX_VALUE;
     private Integer headersLimit = Integer.MAX_VALUE;
     private Integer bodyLimit = Integer.MAX_VALUE;
@@ -173,28 +164,7 @@ public class HttpResponse implements Response, Cloneable, Serializable {
      * @return the number of seconds to wait
      */
     public long getRetryAfterSecondsToWait(String value) {
-        //is it a date or an integer ?
-        long secondsToWait;
-        Instant until;
-
-        if (IS_INTEGER.matcher(value).matches()) {
-            secondsToWait = Integer.parseInt(value);
-        } else {
-            try {
-                until = LocalDateTime.parse(value, RFC_7231_FORMATTER).atZone(ZoneId.of(UTC)).toInstant();
-            } catch (DateTimeParseException dtp) {
-                LOGGER.warn("Cannot parse Retry-After / X-Retry-After header value '{}' as a date with RFC7231 format, falling back to RFC1123 format", value);
-                try {
-                    until = ZonedDateTime.parse(value, RFC_1123_FORMATTER).toInstant();
-                } catch (DateTimeParseException dtp2) {
-                    LOGGER.error("Cannot parse Retry-After / X-Retry-After header value '{}' as a date with RFC1123 format either, falling back retry", value);
-                    return 0L;
-                }
-            }
-            secondsToWait = Instant.now().until(until, SECONDS);
-
-        }
-        return secondsToWait;
+        return RetryAfterParser.secondsToWait(value);
     }
 
 

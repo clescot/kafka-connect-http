@@ -38,6 +38,42 @@ the SSE source connector **connects to every configured URL** at once.
 | `config.<id>.retry.delay.strategy.backoff-multiplier` | `2` | Backoff multiplier. |
 | `config.<id>.retry.delay.strategy.jitter-multiplier` | `0.5` | Jitter multiplier. |
 
+## Server-advertised delays
+
+The connector honours the delays a server advertises in the responses to its connection attempts
+(including the refused ones). A pause delays the next connection or reconnect attempt to the same
+target authority; it never drops an event, and the stream resumes from the same cursor as before.
+
+It reads two sources, with the same interpretation as the HTTP sink (see
+[ADR 0003](../adr/0003-pace-sse-source-with-ratelimit-headers.md)):
+
+* the IETF `RateLimit` / `RateLimit-Policy`
+  ([draft-ietf-httpapi-ratelimit-headers](https://datatracker.ietf.org/doc/draft-ietf-httpapi-ratelimit-headers/)).
+  When a response advertises an exhausted admission quota (`r=0` on a `requests` or
+  `concurrent-requests` unit), the next attempt to that authority waits for the advertised window.
+  Malformed fields, items without `r`, and non-admission units are ignored.
+* `Retry-After` / `X-Retry-After`, honoured on the status codes matching
+  `config.<id>.retry.policy.retry.after.status.code`. It wins when both are present, and the
+  `RateLimit` field is then ignored.
+
+| Setting | Default | Description |
+| --- | --- | --- |
+| `config.<id>.rate.limit.headers.enabled` | `true` | Honour the `RateLimit` fields at all. `false` restores the previous behaviour. |
+| `config.<id>.rate.limit.headers.scope` | `instance` | `instance` (per configuration in this connector) or `static` (one gate per configuration id shared across connector instances in the JVM). |
+| `config.<id>.rate.limit.headers.max.threshold.in.sec` | `60` | **Advisory for this connector** (see below): above this window the pause is logged at WARN instead of INFO. |
+| `config.<id>.rate.limit.headers.max.duration.in.sec` | `86400` | Maximum advertised `RateLimit` window considered; longer values are capped. |
+| `config.<id>.rate.limit.headers.default.delay.in.sec` | `3600` | Delay used when an exhausted service limit has neither `t` nor a matching policy `w`. |
+| `config.<id>.retry.policy.retry.after.status.code` | `503\|429\|301` | Status codes whose `Retry-After` is honoured. |
+| `config.<id>.retry.policy.retry.after.max.duration.in.sec` | `86400` | Maximum `Retry-After` delay considered; longer values are capped. |
+
+Two behaviours are worth knowing:
+
+* The pause stays under the control of the underlying event source, so `stop()` interrupts a wait
+  immediately instead of holding the task for the length of the advertised window.
+* An advertised delay is never shorter than the retry delay strategy's own backoff, and can be
+  longer than `config.<id>.retry.delay.strategy.max-delay-millis`: a server explicitly asking the
+  connector to stay away outranks the local backoff cap.
+
 ## Templating
 
 | Setting | Default | Description |
@@ -70,6 +106,20 @@ template that rewrites or drops the id does not move the resume point.
 Whether the server honours `Last-Event-ID` is the server's decision. The connector asks, and a
 server that ignores the header, or that treats an unknown id as "from now", will still skip events
 published during the gap. The connector cannot detect that.
+
+## Known inconsistencies
+
+The following are genuine mismatches between the setting definitions and their documented
+text. They are listed so you can confirm the effective behaviour against your build:
+
+* `config.<id>.rate.limit.headers.max.threshold.in.sec` shares its description with the sink,
+  where an over-threshold window opens the circuit breaker. The SSE source has no circuit
+  breaker: an over-threshold window is still waited out (capped by the `max.duration` settings),
+  and the threshold only changes the log level.
+* `config.<id>.retry.delay.strategy.max-delay-millis` is documented as the maximum delay between
+  retries, but it does not cap an advertised pause: `RateLimit` windows are capped by
+  `rate.limit.headers.max.duration.in.sec` and `Retry-After` by
+  `retry.policy.retry.after.max.duration.in.sec`.
 
 ## Examples
 

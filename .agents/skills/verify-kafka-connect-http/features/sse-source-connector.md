@@ -10,6 +10,9 @@ The SSE Source connector opens Server-Sent-Events streams (one per configured UR
 - `sse-resume` a restarted task asks the server to resume from the last committed event id, so events published while it was down are re-delivered instead of skipped.
 - `sse-multi-config` multiple configurations (`config.ids`) each map their URL to their own topic.
 - `sse-template` `config.<id>.exchange.template` rewrites each event's data before it is emitted (the event id, type and key are preserved); `config.<id>.exchange.template.processors` restricts the enabled processors.
+- `sse-ratelimit-pause` an exhausted `RateLimit` window advertised by a refused connection attempt pauses the next attempt to the same configuration + authority, instead of reconnecting into another 429.
+- `sse-ratelimit-precedence` `Retry-After` / `X-Retry-After` wins over the `RateLimit` window when both are present, on the status codes `config.<id>.retry.policy.retry.after.status.code` allows.
+- `sse-ratelimit-delivery` a stream whose first attempt was paced still delivers all of its events afterwards (the pause delays attempts, it does not drop events).
 
 ## How to get to it (user POV)
 
@@ -73,6 +76,14 @@ COMPOSE=(docker compose -f .agents/skills/verify-kafka-connect-http/scripts/comp
 - **Observe templating.** Add `config.default.exchange.template: tpl:${jsonpath:$.eventType}:${jsonpath:$.eventId}` and `config.default.exchange.template.processors: jsonpath`. Each record's `data` becomes `tpl:<type>:<server id>` while the record `id` stays the server's.
 - **Proof.** Capture the connector status, the consumed records, the target's recorded requests across the restart, and the connect log line naming the resume point into `artifacts/verify-kafka-connect-http/<RUN_ID>/sse/`; the multi-config and template steps write their own subdirectories there.
 - **Verified.** Runs `20261025-202706` (register/connect/emit/resume) and `20261025-231240` (all six sub-features). In the latter: registration answered HTTP 201 without a top-level `topic`, 3 stub records (ids 1–3) were consumed from `sse-events`, and after `POST .../tasks/0/restart` the first new request to `/events` carried `last-event-id: 3` with the log line `resuming SSE configuration default from the committed event id 3`; `config.ids: default,second` routed the second stream's events only to `sse-events-2`; and `config.default.exchange.template: tpl:${jsonpath:$.eventType}:${jsonpath:$.eventId}` rewrote `data` to `tpl:time:<server id>` while the record `id` stayed the server id. Evidence: `artifacts/verify-kafka-connect-http/20261025-231240/sse/`.
+
+- **Drive the advertised-delay pacing in one command.** `.agents/skills/verify-kafka-connect-http/scripts/control.sh drive-sse-ratelimit`
+  - **Stub two paced endpoints.** The driver registers WireMock scenarios whose *first* attempt answers `429`, then a `200 text/event-stream` with three `id:` frames. `/sse-limited` advertises `RateLimit: "default";r=0;t=5`; `/sse-priority` advertises the same shape with `t=30` **and** `Retry-After: 3`.
+  - **Register two configurations.** `config.ids: default,priority`, each endpoint on its own dedicated topic (`sse-ratelimit-default`, `sse-ratelimit-priority`), so neither inherits another recipe's committed offsets.
+  - **Observe the pacing.** The driver timestamps the first sighting of attempt 1 and attempt 2 of each endpoint from `GET /__admin/requests` (WireMock's log carries no timestamps) and fails unless `/sse-limited` waited at least 4 s for its 5 s window.
+  - **Observe the precedence.** The same measurement on `/sse-priority` must land between 2.5 s and 12 s: `Retry-After: 3` wins, so a gap near 30 s proves the `RateLimit` window was used instead and the driver fails.
+  - **Observe that nothing was lost.** Both topics must yield the three events of the accepted stream through `kafka-console-consumer`, so the pause is proven to delay attempts rather than skip events.
+  - **Proof.** `sse-ratelimit-config.json`, `sse-ratelimit-mapping-*.json`, `sse-ratelimit-requests-*.json`, `sse-ratelimit-dates-*.txt`, `sse-ratelimit-gap-*-ms.txt`, `sse-ratelimit-consumed-*.txt`, `sse-ratelimit-connect-logs.txt` and `sse-ratelimit-SUMMARY.md` under `artifacts/verify-kafka-connect-http/<RUN_ID>/sse-ratelimit/`; the worker log shows `delaying the next SSE connection attempt to ...` and, for `/sse-priority`, `the SSE server at ... asked to wait '3' s before reconnecting`.
 
 ## Gotchas
 

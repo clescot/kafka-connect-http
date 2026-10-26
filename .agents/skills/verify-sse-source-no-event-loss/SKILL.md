@@ -216,6 +216,12 @@ Not covered by this check:
 - The template-processing path (`processEventWithTemplate`), the offset *payload* shape
   (`{configurationId, eventId}`), schema conversion, and anything outside the SSE source pipeline.
 - The retry / backoff / error strategy and the circuit breaker.
+- **The advertised-delay pacing.** The pause before a reconnect (an exhausted IETF `RateLimit`
+  window or a `Retry-After`, see ADR 0003) is a *timing* change, not a delivery change: in the
+  model it is an ordinary stutter step, during which the server may publish and the next
+  `Connect` resumes from `cursor + 1` as before. The model therefore says nothing about how long
+  a connection is delayed, only that delaying it cannot skip an event. The HTTP-level trigger
+  (status codes, headers) is out of scope too.
 - The HTTP sink connector and the in-memory queue source connector.
 
 ## Keeping this in step with the code

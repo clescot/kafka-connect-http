@@ -141,6 +141,49 @@ public class SseConfigDefinition {
             "0.5",
             ConfigDef.Importance.MEDIUM,
             RETRY_DELAY_STRATEGY_JITTER_MULTIPLIER_DOC)
+        // server-advertised delays (IETF RateLimit / RateLimit-Policy and Retry-After)
+        .define(
+            prefix + RATE_LIMIT_HEADERS_ENABLED,
+            ConfigDef.Type.STRING,
+            DEFAULT_RATE_LIMIT_HEADERS_ENABLED_VALUE,
+            ConfigDef.Importance.MEDIUM,
+            RATE_LIMIT_HEADERS_ENABLED_DOC)
+        .define(
+            prefix + RATE_LIMIT_HEADERS_SCOPE,
+            ConfigDef.Type.STRING,
+            DEFAULT_RATE_LIMIT_HEADERS_SCOPE_VALUE,
+            ConfigDef.Importance.MEDIUM,
+            RATE_LIMIT_HEADERS_SCOPE_DOC)
+        .define(
+            prefix + RATE_LIMIT_HEADERS_MAX_THRESHOLD_IN_SEC,
+            ConfigDef.Type.STRING,
+            DEFAULT_RATE_LIMIT_HEADERS_MAX_THRESHOLD_IN_SEC,
+            ConfigDef.Importance.MEDIUM,
+            RATE_LIMIT_HEADERS_MAX_THRESHOLD_IN_SEC_DOC)
+        .define(
+            prefix + RATE_LIMIT_HEADERS_MAX_DURATION_IN_SEC,
+            ConfigDef.Type.STRING,
+            DEFAULT_RATE_LIMIT_HEADERS_MAX_DURATION_IN_SEC,
+            ConfigDef.Importance.MEDIUM,
+            RATE_LIMIT_HEADERS_MAX_DURATION_IN_SEC_DOC)
+        .define(
+            prefix + RATE_LIMIT_HEADERS_DEFAULT_DELAY_IN_SEC,
+            ConfigDef.Type.STRING,
+            DEFAULT_RATE_LIMIT_HEADERS_DEFAULT_DELAY_IN_SEC,
+            ConfigDef.Importance.MEDIUM,
+            RATE_LIMIT_HEADERS_DEFAULT_DELAY_IN_SEC_DOC)
+        .define(
+            prefix + CUSTOM_STATUS_CODE_FOR_RETRY_AFTER_HEADER,
+            ConfigDef.Type.STRING,
+            DEFAULT_CUSTOM_STATUS_CODE_FOR_RETRY_AFTER_HEADER,
+            ConfigDef.Importance.LOW,
+            CONFIG_DEFAULT_CUSTOM_STATUS_CODE_FOR_RETRY_AFTER_HEADER_DOC)
+        .define(
+            prefix + RETRY_AFTER_MAX_DURATION_IN_SEC,
+            ConfigDef.Type.STRING,
+            DEFAULT_RETRY_AFTER_MAX_DURATION_IN_SEC,
+            ConfigDef.Importance.LOW,
+            CONFIG_DEFAULT_RETRY_AFTER_MAX_DURATION_IN_SEC_DOC)
         // templating
         .define(
             prefix + EXCHANGE_TEMPLATE,

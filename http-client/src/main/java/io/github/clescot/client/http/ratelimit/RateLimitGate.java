@@ -9,6 +9,7 @@ import java.net.URI;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.List;
 import java.util.Map;
 import java.util.Random;
 import java.util.concurrent.ConcurrentHashMap;
@@ -80,7 +81,12 @@ public class RateLimitGate {
         return fromSettings(configurationId, settings, Clock.systemUTC(), Thread::sleep, new Random());
     }
 
-    static RateLimitGate fromSettings(
+    /**
+     * the settings-driven factory with the clock, sleeper and jitter seams exposed, so that a
+     * caller whose HTTP loop it does not own (the SSE source) can test its pacing against a fake
+     * clock.
+     */
+    public static RateLimitGate fromSettings(
             String configurationId,
             Map<String, String> settings,
             Clock clock,
@@ -173,11 +179,27 @@ public class RateLimitGate {
         if (!enabled || exchange == null || exchange.getResponse() == null || exchange.getRequest() == null) {
             return;
         }
-        String authority = authorityOf(exchange.getRequest().getUrl());
+        observe(exchange.getRequest().getUrl(), exchange.getResponse().getHeaders());
+    }
+
+    /**
+     * records the service limits a response advertises, extending the pause of the target
+     * authority when a quota is exhausted. Takes the response headers directly, for clients that
+     * do not build an {@link HttpExchange} (the SSE source, whose HTTP exchanges belong to
+     * launchdarkly-eventsource).
+     *
+     * @param url     the request URL: only its authority keys the pause
+     * @param headers the response headers
+     */
+    public void observe(String url, Map<String, List<String>> headers) {
+        if (!enabled || url == null || headers == null) {
+            return;
+        }
+        String authority = authorityOf(url);
         if (authority == null) {
             return;
         }
-        Snapshot snapshot = RateLimitHeaders.parse(exchange.getResponse().getHeaders());
+        Snapshot snapshot = RateLimitHeaders.parse(headers);
         long waitSeconds = exhaustedWaitSeconds(snapshot);
         if (waitSeconds <= 0) {
             // a healthy quota does not cancel an active pause: the deadline is never shortened.
@@ -190,6 +212,38 @@ public class RateLimitGate {
                 configurationId,
                 authority,
                 candidate);
+    }
+
+    /**
+     * the pause the advertised limits still require for the url's authority, in milliseconds,
+     * without sleeping. Zero when the gate is disabled, nothing was advertised, or the window has
+     * already elapsed.
+     *
+     * <p>Unlike {@link #awaitIfExhausted(String)}, reading the remaining pause does not consume
+     * the deadline: the deadline is an absolute instant, so it expires on its own, and the caller
+     * decides when (and how) to wait.
+     *
+     * @param url the request URL
+     * @return the remaining pause in milliseconds, 0 when there is nothing to wait for
+     */
+    public long remainingPauseMillis(String url) {
+        if (!enabled || url == null) {
+            return 0L;
+        }
+        String authority = authorityOf(url);
+        if (authority == null) {
+            return 0L;
+        }
+        Instant deadline = exhaustedUntilByAuthority.get(authority);
+        if (deadline == null) {
+            return 0L;
+        }
+        long remainingMs = Duration.between(clock.instant(), deadline).toMillis();
+        if (remainingMs <= 0) {
+            exhaustedUntilByAuthority.remove(authority, deadline);
+            return 0L;
+        }
+        return remainingMs;
     }
 
     /**
@@ -222,7 +276,11 @@ public class RateLimitGate {
         return max <= 0 ? 0L : jitter.nextLong(max + 1);
     }
 
-    static String authorityOf(String url) {
+    /**
+     * the scheme://host:port key a pause is remembered under, or null when the url carries no
+     * host. Two connectors observing the same authority must normalise it the same way.
+     */
+    public static String authorityOf(String url) {
         if (url == null) {
             return null;
         }
