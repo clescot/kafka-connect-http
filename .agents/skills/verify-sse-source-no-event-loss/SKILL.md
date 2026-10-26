@@ -51,12 +51,12 @@ and, in another module:
 | --- | --- |
 | `http-client/src/main/java/io/github/clescot/client/queue/QueueFactory.java` | `getQueue` (the queue implementation) |
 
-**Sync commit: `ace85b1a8c55d6d84942d9e85c83e8c2251f7f61`** (2026-10-25, "fix(verification):
-honour TLA2TOOLS_JAR in the SSE check"). At this commit the verification was confirmed to describe
-the code above and prints `F1 LOOKS FIXED`, exit 3. The previous sync commit was
-`739f94d20160b8f86d1871cb10fc6221e0fc40d3`, where the fix landed. The only later change to covered
-code was `spotless:apply`, which moves whitespace and nothing else. Move this commit forward only
-after you have re-run the check and confirmed the model still describes the code at the new commit,
+**Sync commit: `286678306c106f3f1107866cde3bce2017fa81de`** (2026-10-26, "feat: pace the SSE source
+with the advertised RateLimit headers (#956)"). At this commit the verification was re-run after the
+reconnect-pacing change and still prints `F1 LOOKS FIXED`, exit 3: the pause is a stutter step, so it
+does not alter the delivery model (see "Not covered by this check"). The previous sync commit was
+`ace85b1a8c55d6d84942d9e85c83e8c2251f7f61`, where the resume-cursor fix landed. Move this commit forward
+only after you have re-run the check and confirmed the model still describes the code at the new commit,
 see "Keeping this in step with the code".
 
 ## How to read the verdict
@@ -216,6 +216,12 @@ Not covered by this check:
 - The template-processing path (`processEventWithTemplate`), the offset *payload* shape
   (`{configurationId, eventId}`), schema conversion, and anything outside the SSE source pipeline.
 - The retry / backoff / error strategy and the circuit breaker.
+- **The advertised-delay pacing.** The pause before a reconnect (an exhausted IETF `RateLimit`
+  window or a `Retry-After`, see ADR 0003) is a *timing* change, not a delivery change: in the
+  model it is an ordinary stutter step, during which the server may publish and the next
+  `Connect` resumes from `cursor + 1` as before. The model therefore says nothing about how long
+  a connection is delayed, only that delaying it cannot skip an event. The HTTP-level trigger
+  (status codes, headers) is out of scope too.
 - The HTTP sink connector and the in-memory queue source connector.
 
 ## Keeping this in step with the code

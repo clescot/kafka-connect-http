@@ -106,6 +106,25 @@ entirely. See [configure authentication](configure-authentication.md#custom-ssl-
 `always-continue`, `always-throw`, `continue-with-max-attempts`, or
 `continue-with-time-limit`. Tune backoff with the `retry.delay.strategy.*` settings.
 
+## The SSE source is not reconnecting
+
+**Symptom:** the SSE source stopped logging connection attempts and delivers nothing, with no
+task failure.
+
+**Fix:** the server may have asked the connector to wait. Look for
+`delaying the next SSE connection attempt to '<authority>' by '<n>' ms` and
+`the SSE server at '<authority>' asked to wait '<n>' s before reconnecting` in the worker log.
+The pause honours an exhausted `RateLimit` window or a `Retry-After`, whichever came last, and is
+capped by `config.<id>.rate.limit.headers.max.duration.in.sec` and
+`config.<id>.retry.policy.retry.after.max.duration.in.sec` (both default to a day). A window that
+long means the connector is behaving as asked, not hanging. To decline, set
+`config.<id>.rate.limit.headers.enabled: false` and, if the delay came from `Retry-After`, narrow
+`config.<id>.retry.policy.retry.after.status.code`. Note that
+`config.<id>.rate.limit.headers.max.threshold.in.sec` does **not** shorten the wait on the source:
+with no circuit breaker, it only selects the log level.
+
+`stop()` interrupts the wait immediately, so a paused task still shuts down cleanly.
+
 ## I cannot see what the connector is doing
 
 **Fix:** enable metrics. Activate an exporter

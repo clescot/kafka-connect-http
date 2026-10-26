@@ -184,6 +184,44 @@ class RateLimitGateTest {
   }
 
   @Nested
+  class HeaderMapObservation {
+
+    @Test
+    void test_headers_can_be_observed_without_an_exchange() {
+      RateLimitGate gate = gate(settings());
+      gate.observe("http://api.example.com/stuff", Map.of("ratelimit", List.of("\"default\";r=0;t=30")));
+      assertThat(gate.remainingPauseMillis("http://api.example.com/stuff"))
+          .isBetween(30_000L, 30_500L);
+    }
+
+    @Test
+    void test_remaining_pause_does_not_sleep_nor_consume_the_deadline() {
+      RateLimitGate gate = gate(settings());
+      gate.observe("http://api.example.com/stuff", Map.of("RateLimit", List.of("\"default\";r=0;t=30")));
+      clock.advanceSeconds(2);
+      assertThat(gate.remainingPauseMillis("http://api.example.com/stuff"))
+          .isBetween(28_000L, 28_500L);
+      assertThat(gate.remainingPauseMillis("http://api.example.com/stuff")).isPositive();
+      assertThat(sleeper.sleptMillis()).isZero();
+    }
+
+    @Test
+    void test_remaining_pause_is_zero_once_the_window_elapsed() {
+      RateLimitGate gate = gate(settings());
+      gate.observe("http://api.example.com/stuff", Map.of("RateLimit", List.of("\"default\";r=0;t=5")));
+      clock.advanceSeconds(6);
+      assertThat(gate.remainingPauseMillis("http://api.example.com/stuff")).isZero();
+    }
+
+    @Test
+    void test_remaining_pause_is_zero_when_disabled() {
+      RateLimitGate gate = gate(settings(RATE_LIMIT_HEADERS_ENABLED, "false"));
+      gate.observe("http://api.example.com/stuff", Map.of("RateLimit", List.of("\"default\";r=0;t=30")));
+      assertThat(gate.remainingPauseMillis("http://api.example.com/stuff")).isZero();
+    }
+  }
+
+  @Nested
   class Decision {
 
     @Test

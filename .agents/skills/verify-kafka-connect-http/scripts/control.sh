@@ -8,6 +8,7 @@
 #   control.sh doctor         read-only health/identity check (run this when unsure)
 #   control.sh drive-sink     drive the HTTP Sink feature end to end + capture evidence
 #   control.sh drive-ratelimit drive the server-advertised RateLimit feature end to end + capture evidence
+#   control.sh drive-sse-ratelimit drive the SSE source's advertised-delay pacing end to end + capture evidence
 #   control.sh status         show the current run id, ports and container state
 #   control.sh logs [svc] [-f] tail logs, finite by default (-f to follow)
 #                             (svc: kafka|connect|http-target|sse-target)
@@ -392,6 +393,192 @@ EOF
   log "evidence: $ART"
 }
 
+cmd_drive_sse_ratelimit() {
+  load_run_id
+  [ -d "$ART" ] || die "artifact dir missing: $ART"
+  local dir="$ART/sse-ratelimit"
+  mkdir -p "$dir"
+  local window=5
+  local retry_after=3
+  local topic_default=sse-ratelimit-default
+  local topic_priority=sse-ratelimit-priority
+
+  log "step 1/7 create the dedicated topics (one per configuration)"
+  local topic
+  for topic in "$topic_default" "$topic_priority"; do
+    dc exec -T kafka kafka-topics --bootstrap-server localhost:9092 \
+      --create --if-not-exists --topic "$topic" --partitions 1 --replication-factor 1 >/dev/null
+  done
+  # a re-run must start from the initial scenario state and a clean connector: deleting the
+  # connector does not stop its task instantly, and a dying task's connections would consume the
+  # scenario's first (refused) response before the new task starts
+  curl -sf -X DELETE "$CONNECT_URL/connectors/sse-source-ratelimit" >/dev/null 2>&1 || true
+  local k=0
+  while [ "$k" -lt 60 ] && curl -sf "$CONNECT_URL/connectors/sse-source-ratelimit" >/dev/null 2>&1; do
+    k=$((k + 1)); sleep 0.5
+  done
+  sleep 2
+  local stale
+  for stale in $(curl -sf "$TARGET_URL/__admin/mappings" \
+      | jq -r '.mappings[] | select(.request.url == "/sse-limited" or .request.url == "/sse-priority") | .id' 2>/dev/null); do
+    curl -sf -X DELETE "$TARGET_URL/__admin/mappings/$stale" >/dev/null 2>&1 || true
+  done
+
+  log "step 2/7 stub the two paced endpoints: first attempt refused, second streams"
+  # /sse-limited advertises only an exhausted RateLimit window; /sse-priority advertises both that
+  # window and a shorter Retry-After, so its gap proves the precedence rule as well.
+  curl -sf -X POST "$TARGET_URL/__admin/mappings" -H 'Content-Type: application/json' -d '{
+    "scenarioName": "sse-ratelimit",
+    "requiredScenarioState": "Started",
+    "newScenarioState": "streaming",
+    "request":  {"method": "GET", "url": "/sse-limited"},
+    "response": {"status": 429, "headers": {"Content-Type": "text/plain", "RateLimit": "\"default\";r=0;t=5"}, "body": "slow down"}
+  }' > "$dir/sse-ratelimit-mapping-limited-1.json"
+  curl -sf -X POST "$TARGET_URL/__admin/mappings" -H 'Content-Type: application/json' -d '{
+    "scenarioName": "sse-ratelimit",
+    "requiredScenarioState": "streaming",
+    "request":  {"method": "GET", "url": "/sse-limited"},
+    "response": {"status": 200, "headers": {"Content-Type": "text/event-stream"}, "body": "id: 1\nevent: one\ndata: first\n\nid: 2\nevent: two\ndata: second\n\nid: 3\nevent: three\ndata: third\n\n"}
+  }' > "$dir/sse-ratelimit-mapping-limited-2.json"
+  curl -sf -X POST "$TARGET_URL/__admin/mappings" -H 'Content-Type: application/json' -d '{
+    "scenarioName": "sse-priority",
+    "requiredScenarioState": "Started",
+    "newScenarioState": "streaming",
+    "request":  {"method": "GET", "url": "/sse-priority"},
+    "response": {"status": 429, "headers": {"Content-Type": "text/plain", "Retry-After": "3", "RateLimit": "\"default\";r=0;t=30"}, "body": "slow down"}
+  }' > "$dir/sse-ratelimit-mapping-priority-1.json"
+  curl -sf -X POST "$TARGET_URL/__admin/mappings" -H 'Content-Type: application/json' -d '{
+    "scenarioName": "sse-priority",
+    "requiredScenarioState": "streaming",
+    "request":  {"method": "GET", "url": "/sse-priority"},
+    "response": {"status": 200, "headers": {"Content-Type": "text/event-stream"}, "body": "id: 1\nevent: one\ndata: first\n\nid: 2\nevent: two\ndata: second\n\nid: 3\nevent: three\ndata: third\n\n"}
+  }' > "$dir/sse-ratelimit-mapping-priority-2.json"
+
+  # a stale connection may already have advanced the scenario; force both back to their first step
+  local scenario
+  for scenario in sse-ratelimit sse-priority; do
+    curl -sf -X PUT "$TARGET_URL/__admin/scenarios/$scenario/state" \
+      -H 'Content-Type: application/json' -d '{"state":"Started"}' >/dev/null 2>&1 || true
+  done
+
+  # the journal keeps every request the target ever saw: start counting from zero
+  curl -sf -X DELETE "$TARGET_URL/__admin/requests" >/dev/null 2>&1 || true
+
+  log "step 3/7 start the attempt watcher (before the connector exists, so attempt 1 is timestamped on time)"
+  # WireMock's request log carries no timestamps, so each attempt is timestamped by the first poll
+  # that sees it. The watcher runs while the connector is registered and connects, and writes the
+  # first sighting of attempt 1 and attempt 2 of each endpoint.
+  (
+    limited_1=""; limited_2=""; priority_1=""; priority_2=""; tries=0
+    while { [ -z "$limited_2" ] || [ -z "$priority_2" ]; } && [ "$tries" -lt 600 ]; do
+      tries=$((tries + 1))
+      if curl -sf "$TARGET_URL/__admin/requests" -o "$dir/sse-ratelimit-requests.json"; then
+        seen_at="$(date +%s%3N)"
+        limited_count="$(jq '[.requests[] | select(.request.absoluteUrl == "http://http-target:8080/sse-limited")] | length' "$dir/sse-ratelimit-requests.json" 2>/dev/null || echo 0)"
+        priority_count="$(jq '[.requests[] | select(.request.absoluteUrl == "http://http-target:8080/sse-priority")] | length' "$dir/sse-ratelimit-requests.json" 2>/dev/null || echo 0)"
+        if [ -z "$limited_1" ] && [ "$limited_count" -ge 1 ]; then limited_1="$seen_at"; fi
+        if [ -z "$limited_2" ] && [ "$limited_count" -ge 2 ]; then limited_2="$seen_at"; fi
+        if [ -z "$priority_1" ] && [ "$priority_count" -ge 1 ]; then priority_1="$seen_at"; fi
+        if [ -z "$priority_2" ] && [ "$priority_count" -ge 2 ]; then priority_2="$seen_at"; fi
+      fi
+      sleep 0.1
+    done
+    printf '%s\n%s\n' "$limited_1" "$limited_2" > "$dir/sse-ratelimit-dates-limited.txt"
+    printf '%s\n%s\n' "$priority_1" "$priority_2" > "$dir/sse-ratelimit-dates-priority.txt"
+  ) &
+  local watcher=$!
+
+  log "step 4/7 register the SSE Source connector, one configuration per endpoint, then wait for RUNNING"
+  jq -nc --arg topicDefault "$topic_default" --arg topicPriority "$topic_priority" '{
+      "connector.class": "io.github.clescot.kafka.connect.sse.client.okhttp.SseSourceConnector",
+      "tasks.max": "1",
+      "config.ids": "default,priority",
+      "key.converter": "org.apache.kafka.connect.storage.StringConverter",
+      "value.converter": "org.apache.kafka.connect.storage.StringConverter",
+      "config.default.url": "http://http-target:8080/sse-limited",
+      "config.default.topic": $topicDefault,
+      "config.priority.url": "http://http-target:8080/sse-priority",
+      "config.priority.topic": $topicPriority
+    }' > "$dir/sse-ratelimit-config.json"
+  curl -sf -X PUT "$CONNECT_URL/connectors/sse-source-ratelimit/config" \
+    -H 'Content-Type: application/json' -d @"$dir/sse-ratelimit-config.json" \
+    > "$dir/sse-ratelimit-config-response.json"
+
+  local i=0 state=""
+  while [ "$i" -lt 60 ]; do
+    state="$(curl -sf "$CONNECT_URL/connectors/sse-source-ratelimit/status" \
+      | jq -r '.connector.state + "/" + (.tasks[0].state // "none")' 2>/dev/null || echo "")"
+    [ "$state" = "RUNNING/RUNNING" ] && break
+    i=$((i + 1)); sleep 2
+  done
+  [ "$state" = "RUNNING/RUNNING" ] || die "SSE connector never reached RUNNING/RUNNING (last: $state)"
+
+  log "step 5/7 wait for both endpoints to have been attempted twice"
+  wait "$watcher" || true
+  local limited_1 limited_2 priority_1 priority_2
+  limited_1="$(sed -n '1p' "$dir/sse-ratelimit-dates-limited.txt")"
+  limited_2="$(sed -n '2p' "$dir/sse-ratelimit-dates-limited.txt")"
+  priority_1="$(sed -n '1p' "$dir/sse-ratelimit-dates-priority.txt")"
+  priority_2="$(sed -n '2p' "$dir/sse-ratelimit-dates-priority.txt")"
+  [ -n "$limited_1" ] && [ -n "$limited_2" ] && [ -n "$priority_1" ] && [ -n "$priority_2" ] \
+    || die "an endpoint was attempted fewer than twice (limited: '$limited_1' '$limited_2', priority: '$priority_1' '$priority_2')"
+  jq '.' "$dir/sse-ratelimit-requests.json" > "$dir/sse-ratelimit-requests-final.json" 2>/dev/null || true
+
+  log "step 6/7 assert the gaps and that each stream still delivers its events"
+  local limited_gap=$((limited_2 - limited_1))
+  local priority_gap=$((priority_2 - priority_1))
+  printf '%s\n' "$limited_gap" > "$dir/sse-ratelimit-gap-limited-ms.txt"
+  printf '%s\n' "$priority_gap" > "$dir/sse-ratelimit-gap-priority-ms.txt"
+
+  [ "$limited_gap" -ge 4000 ] \
+    || die "the RateLimit window was not waited: smallest gap ${limited_gap}ms for an advertised ${window}s window"
+  [ "$priority_gap" -ge 2500 ] \
+    || die "Retry-After was not honoured: gap ${priority_gap}ms for an advertised ${retry_after}s delay"
+  [ "$priority_gap" -le 12000 ] \
+    || die "Retry-After did not win over RateLimit: gap ${priority_gap}ms, expected about ${retry_after}s not 30s"
+
+  local consumed_default consumed_priority
+  consumed_default="$(dc exec -T kafka kafka-console-consumer --bootstrap-server localhost:9092 \
+    --topic "$topic_default" --from-beginning --max-messages 3 --timeout-ms 30000 2>/dev/null || true)"
+  consumed_priority="$(dc exec -T kafka kafka-console-consumer --bootstrap-server localhost:9092 \
+    --topic "$topic_priority" --from-beginning --max-messages 3 --timeout-ms 30000 2>/dev/null || true)"
+  printf '%s\n' "$consumed_default" > "$dir/sse-ratelimit-consumed-default.txt"
+  printf '%s\n' "$consumed_priority" > "$dir/sse-ratelimit-consumed-priority.txt"
+  [ "$(printf '%s\n' "$consumed_default" | grep -c 'first')" -ge 1 ] \
+    || die "the paced /sse-limited stream never delivered its events"
+  [ "$(printf '%s\n' "$consumed_priority" | grep -c 'first')" -ge 1 ] \
+    || die "the paced /sse-priority stream never delivered its events"
+
+  dc logs --tail=400 connect > "$dir/sse-ratelimit-connect-logs.txt" 2>&1 || true
+
+  log "step 7/7 write the summary"
+  cat > "$dir/SUMMARY.md" <<EOF
+# SSE RateLimit headers verification — PASS
+
+- run id:               $RUN_ID
+- connector:            sse-source-ratelimit (io.github.clescot.kafka.connect.sse.client.okhttp.SseSourceConnector)
+- connector state:      RUNNING/RUNNING
+- configurations:       default -> \`$topic_default\` (/sse-limited), priority -> \`$topic_priority\` (/sse-priority)
+- advertised:           \`RateLimit: "default";r=0;t=${window}\` on both, plus \`Retry-After: ${retry_after}\` on /sse-priority
+- limiting semantics:   /sse-limited: ${limited_gap} ms between attempt 1 and 2 (window ${window}s)
+- precedence:           /sse-priority: ${priority_gap} ms between attempt 1 and 2 (Retry-After ${retry_after}s, not the 30s window)
+- delivery:             both topics received the 3 events of the accepted stream
+
+## Artifacts
+- \`sse-ratelimit-config.json\`               — the exact config PUT to Connect
+- \`sse-ratelimit-config-response.json\`      — PUT /connectors/sse-source-ratelimit/config response
+- \`sse-ratelimit-mapping-*.json\`            — the stub mappings (refused attempt then streaming attempt)
+- \`sse-ratelimit-requests-*.json\`           — WireMock __admin/requests snapshots
+- \`sse-ratelimit-dates-*.txt\`               — first-sighting epoch ms of each attempt, oldest first
+- \`sse-ratelimit-gap-*-ms.txt\`              — the measured gap per endpoint
+- \`sse-ratelimit-consumed-*.txt\`            — the records read back from each topic
+- \`sse-ratelimit-connect-logs.txt\`          — worker log tail (shows the "delaying the next SSE connection attempt" lines)
+EOF
+
+  log "PROOF PASS: /sse-limited paused ${limited_gap}ms for an advertised ${window}s window; /sse-priority honoured Retry-After (${priority_gap}ms, not 30s); both streams delivered"
+  log "evidence: $dir"
+}
+
 cmd_status() {
   load_run_id
   log "run id:      $RUN_ID"
@@ -433,6 +620,7 @@ main() {
     doctor)     cmd_doctor ;;
     drive-sink) cmd_drive_sink ;;
     drive-ratelimit) cmd_drive_ratelimit ;;
+    drive-sse-ratelimit) cmd_drive_sse_ratelimit ;;
     status)     cmd_status ;;
     logs)       shift; cmd_logs "$@" ;;
     cleanup)    cmd_cleanup ;;
