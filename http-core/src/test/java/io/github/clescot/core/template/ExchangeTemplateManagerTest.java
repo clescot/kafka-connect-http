@@ -378,8 +378,11 @@ class ExchangeTemplateManagerTest {
                     .startsWith("200")
                     .contains("http://example.com/api/test");
 
-            String lastPart = result.substring(result.length() - 1);
-            assertThat(Integer.parseInt(lastPart)).isBetween(1, 10);
+            // the random part can be 1..10, so it is not always a single character: take everything
+            // after the known prefix instead of the last character (which parsed "0" for 10)
+            String randomPart = result.substring("200http://example.com/api/test".length());
+            assertThat(randomPart).matches("10|[1-9]");
+            assertThat(Integer.parseInt(randomPart)).isBetween(1, 10);
         }
 
         @Test
