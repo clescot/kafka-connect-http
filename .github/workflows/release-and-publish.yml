@@ -1,4 +1,4 @@
-name: release and publish to central.sonatype.com and github packages
+name: release and publish to central.sonatype.com and github releases
 on:
   push:
     branches:
@@ -13,7 +13,11 @@ jobs:
       packages: write
 
     steps:
+      # a full clone: the release plugin pushes a tag and two commits, and re-runs need to see the
+      # tag a previous attempt already created
       - uses: actions/checkout@v7.0.1
+        with:
+          fetch-depth: 0
 
       - name: Set up JDK 17 for central.sonatype.com
         uses: actions/setup-java@v6.1.0
@@ -28,7 +32,13 @@ jobs:
         run: |
           git config --global user.email "actions@github.com"
           git config --global user.name "clescot"
+
+      # A failure here must not stop the GitHub release: `release:prepare` has already created and
+      # pushed the tag, and the connector ZIP is the artifact users download. The run still fails,
+      # at the end, so a Central problem stays visible.
       - name: Publish to the Maven Central Repository via central.sonatype.com
+        id: central
+        continue-on-error: true
         run: mvn -B release:prepare release:perform -e -PsonatypeDeploy --no-transfer-progress  -Dmaven.test.skip=true  deploy  -DskipNexusStagingDeployMojo=true
         env:
           MAVEN_USERNAME: "${{ secrets.NEXUS_USERNAME }}"
@@ -39,16 +49,58 @@ jobs:
           GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
           MAVEN_OPTS: " -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn "
 
-      - name: Get release tag name
-        id: tag-name
+      # `release:prepare` tags the release commit and then commits the next SNAPSHOT version on top
+      # of it, so the nearest tag from HEAD is the released version, whether the bump committed or
+      # the release failed before it.
+      - name: Read the released tag
+        id: tag
         run: |
-          export TAG=$(git describe --tags --abbrev=0 HEAD~)
-          echo "TAG=$TAG" >> $GITHUB_OUTPUT
-      - name: upload artifacts to github packages
+          set -euo pipefail
+          TAG="$(git describe --tags --abbrev=0 HEAD)"
+          echo "TAG=$TAG" >> "$GITHUB_OUTPUT"
+          echo "released tag: $TAG"
+
+      # `release:prepare` packages the release version (its preparationGoals), but a release that
+      # fails early leaves no artifacts behind; rebuild them from the tag so the GitHub release
+      # always carries the files of the version it names.
+      - name: Rebuild the release artifacts when the release did not produce them
+        if: steps.central.outcome == 'failure'
+        run: |
+          set -euo pipefail
+          git checkout --force "${{ steps.tag.outputs.TAG }}"
+          mvn -B -DskipTests -DskipITs --no-transfer-progress package
+
+      - name: Assert the release artifacts exist
+        run: |
+          set -euo pipefail
+          TAG="${{ steps.tag.outputs.TAG }}"
+          missing=0
+          for pattern in \
+            "http-core/target/*-${TAG}.jar" \
+            "http-client/target/*-${TAG}.jar" \
+            "kafka-connect-http-connectors/target/components/packages/*-${TAG}.zip"; do
+            if compgen -G "$pattern" > /dev/null; then
+              echo "found $pattern"
+            else
+              echo "missing release artifact: $pattern" >&2
+              missing=1
+            fi
+          done
+          exit "$missing"
+
+      - name: Publish the GitHub release
         uses: ncipollo/release-action@v1.21.0
         with:
-          tag: ${{ steps.tag-name.outputs.TAG }}
-          artifacts: "http-core/target/*-${{ steps.tag-name.outputs.TAG }}.jar,http-client/target/*-${{ steps.tag-name.outputs.TAG }}.jar,kafka-connect-http-connectors/target/components/packages/*-${{ steps.tag-name.outputs.TAG }}.zip"
+          tag: ${{ steps.tag.outputs.TAG }}
+          name: ${{ steps.tag.outputs.TAG }}
+          artifacts: "http-core/target/*-${{ steps.tag.outputs.TAG }}.jar,http-client/target/*-${{ steps.tag.outputs.TAG }}.jar,kafka-connect-http-connectors/target/components/packages/*-${{ steps.tag.outputs.TAG }}.zip"
+          artifactErrorsFailBuild: true
+          skipIfReleaseExists: true
           generateReleaseNotes: true
           token: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Fail when the Central publish failed
+        if: steps.central.outcome == 'failure'
+        run: |
+          echo "::error::the Maven Central publish failed; the GitHub release was published anyway (see the deployment in central.sonatype.com)"
+          exit 1
