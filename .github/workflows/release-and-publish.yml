@@ -33,6 +33,20 @@ jobs:
           git config --global user.email "actions@github.com"
           git config --global user.name "clescot"
 
+      # Maven 3.10 (the runner's default) leaves maven-metadata-local.xml at the artifact level of
+      # the Central staging directory, and Central rejects the bundle with "content that does NOT
+      # have a .pom file: io/github/clescot/<artifactId>". central-publishing-maven-plugin 0.10.0
+      # has no fix for it, so pin the Maven that writes the bundle.
+      - name: Use Maven 3.9
+        run: |
+          set -euo pipefail
+          MAVEN_VERSION=3.9.16
+          MAVEN_DIR="/opt/apache-maven-${MAVEN_VERSION}"
+          curl -fsSL "https://archive.apache.org/dist/maven/maven-3/${MAVEN_VERSION}/binaries/apache-maven-${MAVEN_VERSION}-bin.tar.gz" \
+            | sudo tar -xz -C /opt
+          echo "${MAVEN_DIR}/bin" >> "$GITHUB_PATH"
+          "${MAVEN_DIR}/bin/mvn" -v
+
       # A failure here must not stop the GitHub release: `release:prepare` has already created and
       # pushed the tag, and the connector ZIP is the artifact users download. The run still fails,
       # at the end, so a Central problem stays visible.
