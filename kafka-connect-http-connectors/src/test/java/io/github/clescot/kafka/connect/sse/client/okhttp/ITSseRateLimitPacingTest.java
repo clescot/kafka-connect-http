@@ -14,6 +14,7 @@ import com.github.tomakehurst.wiremock.junit5.WireMockRuntimeInfo;
 import com.google.common.collect.Maps;
 import io.github.clescot.core.sse.SseEvent;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.Queue;
 import java.util.concurrent.TimeUnit;
 import org.awaitility.Awaitility;
@@ -78,8 +79,16 @@ class ITSseRateLimitPacingTest {
                     .withStatus(200)
                     .withHeader("Content-Type", "text/event-stream")
                     .withBody(
-                        "id: 1\nevent: one\ndata: first\n\n"
-                            + "id: 2\nevent: two\ndata: second\n\n")));
+                        """
+                        id: 1
+                        event: one
+                        data: first
+
+                        id: 2
+                        event: two
+                        data: second
+
+                        """)));
 
     sseSourceTask.start(settings());
 
@@ -104,18 +113,19 @@ class ITSseRateLimitPacingTest {
   }
 
   private long awaitAttempt(int attemptNumber) {
-    long deadline = System.currentTimeMillis() + 20_000L;
-    while (System.currentTimeMillis() < deadline) {
-      if (wireMock.findAll(getRequestedFor(urlEqualTo(STREAM_PATH))).size() >= attemptNumber) {
-        return System.currentTimeMillis();
-      }
-      try {
-        Thread.sleep(20L);
-      } catch (InterruptedException e) {
-        Thread.currentThread().interrupt();
-        break;
-      }
-    }
-    throw new AssertionError("connection attempt " + attemptNumber + " never reached the server");
+    AtomicLong seenAt = new AtomicLong();
+    Awaitility.await()
+        .atMost(20, TimeUnit.SECONDS)
+        .pollInterval(20, TimeUnit.MILLISECONDS)
+        .until(
+            () -> {
+              if (wireMock.findAll(getRequestedFor(urlEqualTo(STREAM_PATH))).size()
+                  >= attemptNumber) {
+                seenAt.compareAndSet(0L, System.currentTimeMillis());
+                return true;
+              }
+              return false;
+            });
+    return seenAt.get();
   }
 }

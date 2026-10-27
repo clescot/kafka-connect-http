@@ -63,6 +63,7 @@ final class SseRateLimitPacing {
   private final Pattern retryAfterStatusCodes;
   private final long retryAfterMaxDurationSeconds;
   private final Clock clock;
+  private final String authority;
   private final AtomicReference<Instant> retryAfterDeadline = new AtomicReference<>();
 
   private SseRateLimitPacing(
@@ -78,6 +79,7 @@ final class SseRateLimitPacing {
     this.retryAfterStatusCodes = retryAfterStatusCodes;
     this.retryAfterMaxDurationSeconds = retryAfterMaxDurationSeconds;
     this.clock = clock;
+    this.authority = authorityOf(uri);
   }
 
   static SseRateLimitPacing fromSettings(
@@ -121,46 +123,7 @@ final class SseRateLimitPacing {
     return new PacedRetryDelayStrategy(delegate);
   }
 
-  private void observe(ResponseHeaders headers, Integer statusCode) {
-    if (!gate.isEnabled() || headers == null) {
-      return;
-    }
-    Map<String, List<String>> headerMap = toMap(headers);
-    String retryAfter = firstValue(headerMap, RETRY_AFTER, X_RETRY_AFTER);
-    if (retryAfter != null
-        && statusCode != null
-        && retryAfterStatusCodes.matcher(statusCode.toString()).matches()) {
-      // Retry-After wins: acting on both would wait for the longer, non-authoritative window
-      long advertisedSeconds =
-          Math.max(
-              0L,
-              Math.min(
-                  RetryAfterParser.secondsToWait(retryAfter, clock), retryAfterMaxDurationSeconds));
-      retryAfterDeadline.set(clock.instant().plusSeconds(advertisedSeconds));
-      LOGGER.info(
-          "configuration '{}' : the SSE server at '{}' asked to wait '{}' s before reconnecting",
-          configurationId,
-          authority(),
-          advertisedSeconds);
-      return;
-    }
-    gate.observe(uri.toString(), headerMap);
-  }
-
-  private long retryAfterRemainingMillis() {
-    Instant deadline = retryAfterDeadline.get();
-    if (deadline == null) {
-      return 0L;
-    }
-    long remainingMs = Duration.between(clock.instant(), deadline).toMillis();
-    if (remainingMs <= 0) {
-      retryAfterDeadline.compareAndSet(deadline, null);
-      return 0L;
-    }
-    return remainingMs;
-  }
-
-  private String authority() {
+  private static String authorityOf(URI uri) {
     String authority = RateLimitGate.authorityOf(uri.toString());
     return authority == null ? uri.toString() : authority;
   }
@@ -193,6 +156,33 @@ final class SseRateLimitPacing {
 
     private ObservingConnectStrategy(ConnectStrategy delegate) {
       this.delegate = delegate;
+    }
+
+    private void observe(ResponseHeaders headers, Integer statusCode) {
+      if (!gate.isEnabled() || headers == null) {
+        return;
+      }
+      Map<String, List<String>> headerMap = toMap(headers);
+      String retryAfter = firstValue(headerMap, RETRY_AFTER, X_RETRY_AFTER);
+      if (retryAfter != null
+          && statusCode != null
+          && retryAfterStatusCodes.matcher(statusCode.toString()).matches()) {
+        // Retry-After wins: acting on both would wait for the longer, non-authoritative window
+        long advertisedSeconds =
+            Math.max(
+                0L,
+                Math.min(
+                    RetryAfterParser.secondsToWait(retryAfter, clock),
+                    retryAfterMaxDurationSeconds));
+        retryAfterDeadline.set(clock.instant().plusSeconds(advertisedSeconds));
+        LOGGER.info(
+            "configuration '{}' : the SSE server at '{}' asked to wait '{}' s before reconnecting",
+            configurationId,
+            authority,
+            advertisedSeconds);
+        return;
+      }
+      gate.observe(uri.toString(), headerMap);
     }
 
     @Override
@@ -236,6 +226,19 @@ final class SseRateLimitPacing {
       this.delegate = delegate;
     }
 
+    private long retryAfterRemainingMillis() {
+      Instant deadline = retryAfterDeadline.get();
+      if (deadline == null) {
+        return 0L;
+      }
+      long remainingMs = Duration.between(clock.instant(), deadline).toMillis();
+      if (remainingMs <= 0) {
+        retryAfterDeadline.compareAndSet(deadline, null);
+        return 0L;
+      }
+      return remainingMs;
+    }
+
     @Override
     public Result apply(long baseDelayMillis) {
       Result result = delegate.apply(baseDelayMillis);
@@ -247,7 +250,7 @@ final class SseRateLimitPacing {
         LOGGER.info(
             "configuration '{}' : delaying the next SSE connection attempt to '{}' by '{}' ms for the advertised {}",
             configurationId,
-            authority(),
+            authority,
             advertisedMillis,
             retryAfterMillis > rateLimitMillis ? "Retry-After" : "rate limit window");
       }
