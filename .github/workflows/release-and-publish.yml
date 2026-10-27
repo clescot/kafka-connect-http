@@ -61,7 +61,10 @@ jobs:
           NEXUS_PASSWORD: "${{ secrets.NEXUS_PASSWORD }}"
         run: |
           set -euo pipefail
-          DEPLOYMENT="$(grep -oE 'Deployment [0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}' central-release.log | head -1 | cut -d' ' -f2 || true)"
+          # -a: the captured Maven log contains binary bytes, and without it grep only says
+          #     "binary file matches" instead of printing the match
+          # -m1: stop at the first match, so no head/pipefail SIGPIPE race
+          DEPLOYMENT="$(grep -a -m1 -oE 'Deployment [0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}' central-release.log | cut -d' ' -f2 || true)"
           if [ -z "$DEPLOYMENT" ]; then
             echo "::warning::no deployment id in the release log: the job failed before uploading to Central"
             exit 0
