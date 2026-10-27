@@ -51,7 +51,7 @@ public class DateTimeTemplateProcessor implements ExchangeTemplateProcessor {
             switch (source.toLowerCase()) {
                 case NOW:
                 case CURRENT:
-                    dateTimeString = ZonedDateTime.now().format(formatter);
+                    dateTimeString = ZonedDateTime.now(ZoneId.systemDefault()).format(formatter);
                     break;
                 case MOMENT:
                     Map<String, Object> attributes = exchange.getAttributes();

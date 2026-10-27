@@ -72,7 +72,7 @@ public class HttpConfiguration<C extends HttpClient<NR, NS>, NR, NS> implements 
     private final long defaultRetryAfterDelayInSeconds;
     private ExchangeTemplateManager templateManager;
     private String exchangeTemplate;
-    private ExchangeTemplateProcessorFactory factory = new ExchangeTemplateProcessorFactory();
+    private final ExchangeTemplateProcessorFactory factory = new ExchangeTemplateProcessorFactory();
 
     public HttpConfiguration(String id,
                              C client,

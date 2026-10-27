@@ -48,7 +48,7 @@ public class HttpRequestAdapter {
               SchemaBuilder.map(Schema.STRING_SCHEMA, Schema.STRING_SCHEMA).optional().schema())
           .schema();
 
-  private HttpRequest httpRequest;
+  private final HttpRequest httpRequest;
 
   private HttpRequestAdapter(HttpRequest httpRequest) {
     this.httpRequest = httpRequest;

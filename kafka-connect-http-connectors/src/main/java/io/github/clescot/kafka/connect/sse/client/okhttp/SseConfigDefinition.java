@@ -1,7 +1,6 @@
 package io.github.clescot.kafka.connect.sse.client.okhttp;
 
 import static io.github.clescot.client.Constants.*;
-import static io.github.clescot.client.http.HttpClientConfigDefinition.*;
 
 import com.google.common.collect.Sets;
 import io.github.clescot.client.ConfigUtils;

@@ -177,7 +177,10 @@ class HttpRequestTest {
             httpRequest.setHeaders(headers);
 
             //when
-            assertThat(httpRequest).isNotEqualTo(new ArrayList<>());
+            Object otherType = new ArrayList<>();
+
+            //then
+            assertThat(httpRequest.equals(otherType)).isFalse();
         }
 
 
@@ -196,9 +199,12 @@ class HttpRequestTest {
             httpRequest.setHeaders(headers);
 
             //when
+            HttpRequest sameInstance = httpRequest;
+
+            //then
             assertThat(httpRequest)
-                    .isEqualTo(httpRequest)
-                    .hasSameHashCodeAs(httpRequest);
+                    .isEqualTo(sameInstance)
+                    .hasSameHashCodeAs(sameInstance);
         }
 
         @Test
