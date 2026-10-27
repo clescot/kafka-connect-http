@@ -39,7 +39,10 @@ jobs:
       - name: Publish to the Maven Central Repository via central.sonatype.com
         id: central
         continue-on-error: true
-        run: mvn -B release:prepare release:perform -e -PsonatypeDeploy --no-transfer-progress  -Dmaven.test.skip=true  deploy  -DskipNexusStagingDeployMojo=true
+        # tee keeps the deployment id the plugin prints, so the failure can name its own reason
+        run: |
+          set -o pipefail
+          mvn -B release:prepare release:perform -e -PsonatypeDeploy --no-transfer-progress  -Dmaven.test.skip=true  deploy  -DskipNexusStagingDeployMojo=true 2>&1 | tee central-release.log
         env:
           MAVEN_USERNAME: "${{ secrets.NEXUS_USERNAME }}"
           MAVEN_PASSWORD: "${{ secrets.NEXUS_PASSWORD }}"
@@ -48,6 +51,31 @@ jobs:
           MAVEN_GPG_PASSPHRASE: "${{ secrets.MAVEN_GPG_PASSPHRASE }}"
           GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
           MAVEN_OPTS: " -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn "
+
+      # The plugin only reports "Deployment <id> failed". The Publisher API returns the validation
+      # errors for that id, so print them here: the build log then says why Central rejected it.
+      - name: Explain the Central publish failure
+        if: steps.central.outcome == 'failure'
+        env:
+          NEXUS_USERNAME: "${{ secrets.NEXUS_USERNAME }}"
+          NEXUS_PASSWORD: "${{ secrets.NEXUS_PASSWORD }}"
+        run: |
+          set -euo pipefail
+          DEPLOYMENT="$(grep -oE 'Deployment [0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}' central-release.log | head -1 | cut -d' ' -f2 || true)"
+          if [ -z "$DEPLOYMENT" ]; then
+            echo "::warning::no deployment id in the release log: the job failed before uploading to Central"
+            exit 0
+          fi
+          echo "deployment: $DEPLOYMENT"
+          TOKEN="$(printf '%s:%s' "$NEXUS_USERNAME" "$NEXUS_PASSWORD" | base64 -w0)"
+          RESPONSE="$(curl -sS -X POST -H "Authorization: Bearer $TOKEN" \
+            "https://central.sonatype.com/api/v1/publisher/status?id=$DEPLOYMENT" || true)"
+          echo "$RESPONSE" | jq '{deploymentState, errors}' 2>/dev/null || echo "$RESPONSE"
+          if echo "$RESPONSE" | jq -e '.errors | length > 0' > /dev/null 2>&1; then
+            echo "::error::Maven Central rejected deployment $DEPLOYMENT, see the errors above"
+          else
+            echo "::warning::Central returned no error detail for $DEPLOYMENT; see https://central.sonatype.com/publishing/deployments"
+          fi
 
       # `release:prepare` tags the release commit and then commits the next SNAPSHOT version on top
       # of it, so the nearest tag from HEAD is the released version, whether the bump committed or
