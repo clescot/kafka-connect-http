@@ -18,7 +18,7 @@
         <dependency>
             <groupId>org.apache.commons</groupId>
             <artifactId>commons-lang3</artifactId>
-            <version>3.20.0</version>
+            <version>3.21.0</version>
         </dependency>
         <dependency>
             <groupId>io.confluent</groupId>
@@ -65,7 +65,7 @@
         <dependency>
             <groupId>de.sstoehr</groupId>
             <artifactId>har-reader</artifactId>
-            <version>4.0.2</version>
+            <version>4.0.4</version>
         </dependency>
         <!-- JSON Path for template processing -->
         <dependency>
@@ -110,7 +110,7 @@
         <dependency>
             <groupId>ch.qos.logback</groupId>
             <artifactId>logback-classic</artifactId>
-            <version>1.6.5</version>
+            <version>1.6.6</version>
             <scope>test</scope>
         </dependency>
     </dependencies>
