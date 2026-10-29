@@ -43,7 +43,7 @@
         <kafka.version>4.2.0</kafka.version>
         <confluent.platform.version>8.3.2</confluent.platform.version>
         <failsafe.version>3.3.2</failsafe.version>
-        <guava.version>33.5.0-jre</guava.version>
+        <guava.version>33.7.2-jre</guava.version>
         <jackson.version>2.22.4</jackson.version>
         <jacoco.version>0.8.12</jacoco.version>
         <json.assert.version>1.5.3</json.assert.version>
@@ -60,7 +60,7 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <project.scm.id>github</project.scm.id>
-        <slf4j.version>2.0.17</slf4j.version>
+        <slf4j.version>2.0.20</slf4j.version>
         <skipIT>false</skipIT>
         <sonar.coverage.jacoco.xmlReportPaths>
             ${project.basedir}/report-aggregate/target/site/jacoco-aggregate/jacoco.xml
@@ -266,7 +266,7 @@
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-dependency-plugin</artifactId>
-                    <version>3.10.0</version>
+                    <version>3.11.0</version>
                 </plugin>
                 <plugin>
                     <groupId>io.confluent</groupId>
@@ -276,7 +276,7 @@
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-jar-plugin</artifactId>
-                    <version>3.5.0</version>
+                    <version>3.5.1</version>
                 </plugin>
                 <plugin>
                     <groupId>org.jacoco</groupId>
@@ -349,7 +349,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
-                <version>3.5.5</version>
+                <version>3.6.1</version>
                 <dependencies>
                     <dependency>
                         <groupId>me.fabriciorby</groupId>
@@ -382,7 +382,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-jar-plugin</artifactId>
-                <version>3.5.0</version>
+                <version>3.5.1</version>
                 <configuration>
                     <archive>
                         <manifest>
