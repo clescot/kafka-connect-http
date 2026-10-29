@@ -51,20 +51,19 @@ and, in another module:
 | --- | --- |
 | `http-client/src/main/java/io/github/clescot/client/queue/QueueFactory.java` | `getQueue` (the queue implementation) |
 
-**Sync commit: `ee6db4f0d633af89d58aa5f515acf425b424ab6b`** (2026-10-29, "Merge pull request #985
-from clescot/dependabot/maven/maven-deps-21af9d6da3"). Re-run at this commit: `F1 LOOKS FIXED`,
-exit 3, with the same 506/506/156 distinct states, because every covered file is byte-identical to
-the previous anchor `286678306c106f3f1107866cde3bce2017fa81de` (#956). The two commits in between
-were triaged as no effect: `473cf027` refactors `SseRateLimitPacing` (the authority is cached in the
-constructor and two methods moved into the inner classes that use them) and the dependabot merge
-`ee6db4f0` bumps `okhttp-eventsource` from 4.2.0 to 5.0.1. Pacing is not covered by this check (see
-"Not covered by this check"), so the delivery model is unchanged. Note that at this commit the
-connector module does **not** compile: `SseRateLimitPacing` still implements the 4.x
-`RetryDelayStrategy` (`apply(long)`), which 5.x replaced with `getNext()`. The check reads the
-source, so it still runs; a green build is a prerequisite for a live run, not for this check. The
-previous sync commit was `ace85b1a8c55d6d84942d9e85c83e8c2251f7f61`, where the resume-cursor fix
-landed. Move this commit forward only after you have re-run the check and confirmed the model still
-describes the code at the new commit, see "Keeping this in step with the code".
+**Sync commit: `1bfd7493`** (2026-10-29, master after the 0.8.192 release). Re-run at this commit:
+`F1 LOOKS FIXED`, exit 3, with the same 506/506/156 distinct states, because every covered file is
+byte-identical to the previous anchor `286678306c106f3f1107866cde3bce2017fa81de` (#956). The commits
+in between were triaged as no effect: `473cf027` refactors `SseRateLimitPacing` (the authority is
+cached in the constructor and two methods moved into the inner classes that use them), the
+dependabot merge `ee6db4f0` bumps `okhttp-eventsource` from 4.2.0 to 5.0.1, and `0e8e96ca` (#986)
+migrates the pacing to that 5.x API. Pacing is not covered by this check (see "Not covered by this
+check"), so the delivery model is unchanged. Note that `ee6db4f0` itself did **not** compile;
+`0e8e96ca` repairs it. The check reads the source, so it ran even on the broken commit, but a green
+build stays a prerequisite for a live run, not for this check. The previous sync commit was
+`ace85b1a8c55d6d84942d9e85c83e8c2251f7f61`, where the resume-cursor fix landed. Move this commit
+forward only after you have re-run the check and confirmed the model still describes the code at
+the new commit, see "Keeping this in step with the code".
 
 ## How to read the verdict
 
