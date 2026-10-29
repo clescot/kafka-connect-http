@@ -240,13 +240,13 @@ final class SseRateLimitPacing {
     }
 
     @Override
-    public Result apply(long baseDelayMillis) {
-      Result result = delegate.apply(baseDelayMillis);
+    public long getDelayMillis() {
+      long libraryMillis = delegate.getDelayMillis();
       long rateLimitMillis = gate.remainingPauseMillis(uri.toString());
       long retryAfterMillis = retryAfterRemainingMillis();
       long advertisedMillis = Math.max(rateLimitMillis, retryAfterMillis);
-      long delayMillis = Math.max(result.getDelayMillis(), advertisedMillis);
-      if (advertisedMillis > result.getDelayMillis()) {
+      long delayMillis = Math.max(libraryMillis, advertisedMillis);
+      if (advertisedMillis > libraryMillis) {
         LOGGER.info(
             "configuration '{}' : delaying the next SSE connection attempt to '{}' by '{}' ms for the advertised {}",
             configurationId,
@@ -254,10 +254,15 @@ final class SseRateLimitPacing {
             advertisedMillis,
             retryAfterMillis > rateLimitMillis ? "Retry-After" : "rate limit window");
       }
-      // the underlying backoff returns a new strategy per attempt; re-wrap it or the pacing
-      // silently stops applying after the second retry
-      RetryDelayStrategy next = result.getNext();
-      return new Result(delayMillis, next == null ? null : new PacedRetryDelayStrategy(next));
+      return delayMillis;
+    }
+
+    // the library asks for the next strategy after a failed attempt; re-wrap it or the pacing
+    // silently stops applying after the second retry
+    @Override
+    public RetryDelayStrategy getNext() {
+      RetryDelayStrategy next = delegate.getNext();
+      return next == null ? null : new PacedRetryDelayStrategy(next);
     }
   }
 }

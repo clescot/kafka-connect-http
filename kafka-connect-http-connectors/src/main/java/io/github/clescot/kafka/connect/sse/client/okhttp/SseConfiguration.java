@@ -109,7 +109,7 @@ public class SseConfiguration implements Configuration<OkHttpClient, HttpRequest
     this.queue = queue;
 
     // retry strategy
-    this.retryDelayStrategy = RetryDelayStrategy.defaultStrategy();
+    this.retryDelayStrategy = (DefaultRetryDelayStrategy) RetryDelayStrategy.defaultStrategy();
     if (settings.containsKey(SseConfigDefinition.RETRY_DELAY_STRATEGY_MAX_DELAY_MILLIS)) {
       long maxDelayMillis =
           Long.parseLong(
