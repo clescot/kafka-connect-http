@@ -51,13 +51,19 @@ and, in another module:
 | --- | --- |
 | `http-client/src/main/java/io/github/clescot/client/queue/QueueFactory.java` | `getQueue` (the queue implementation) |
 
-**Sync commit: `286678306c106f3f1107866cde3bce2017fa81de`** (2026-10-26, "feat: pace the SSE source
-with the advertised RateLimit headers (#956)"). At this commit the verification was re-run after the
-reconnect-pacing change and still prints `F1 LOOKS FIXED`, exit 3: the pause is a stutter step, so it
-does not alter the delivery model (see "Not covered by this check"). The previous sync commit was
-`ace85b1a8c55d6d84942d9e85c83e8c2251f7f61`, where the resume-cursor fix landed. Move this commit forward
-only after you have re-run the check and confirmed the model still describes the code at the new commit,
-see "Keeping this in step with the code".
+**Sync commit: `1bfd7493`** (2026-10-29, master after the 0.8.192 release). Re-run at this commit:
+`F1 LOOKS FIXED`, exit 3, with the same 506/506/156 distinct states, because every covered file is
+byte-identical to the previous anchor `286678306c106f3f1107866cde3bce2017fa81de` (#956). The commits
+in between were triaged as no effect: `473cf027` refactors `SseRateLimitPacing` (the authority is
+cached in the constructor and two methods moved into the inner classes that use them), the
+dependabot merge `ee6db4f0` bumps `okhttp-eventsource` from 4.2.0 to 5.0.1, and `0e8e96ca` (#986)
+migrates the pacing to that 5.x API. Pacing is not covered by this check (see "Not covered by this
+check"), so the delivery model is unchanged. Note that `ee6db4f0` itself did **not** compile;
+`0e8e96ca` repairs it. The check reads the source, so it ran even on the broken commit, but a green
+build stays a prerequisite for a live run, not for this check. The previous sync commit was
+`ace85b1a8c55d6d84942d9e85c83e8c2251f7f61`, where the resume-cursor fix landed. Move this commit
+forward only after you have re-run the check and confirmed the model still describes the code at
+the new commit, see "Keeping this in step with the code".
 
 ## How to read the verdict
 
@@ -196,6 +202,9 @@ Assumptions the model makes about things it does not itself verify:
 
 Not covered by this check:
 
+- **Compilation.** `extract-facts.sh` reads the source; it never compiles the module. A build break
+  in the SSE package, such as a dependency bump that changes a library API, does not fail this
+  check. Build the module separately before any live run.
 - **Liveness / starvation.** `poll()` drains with `while (queue.peek() != null)`; whether a
   fast producer can keep `poll()` from ever returning is a separate property, not modelled here.
 - **Duplicates / exactly-once.** Not checked.
