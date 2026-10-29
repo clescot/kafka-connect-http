@@ -6,7 +6,7 @@ The HTTP Sink connector honours the IETF `RateLimit` / `RateLimit-Policy` respon
 
 - `ratelimit-pause` an exhausted `RateLimit` window pauses the next call to the same configuration + target authority (jitter on resume, deadline never shortened).
 - `ratelimit-window` the pause is the effective window `t`, else the matching policy's `w`, else the default delay, capped by `rate.limit.headers.max.duration.in.sec`.
-- `ratelimit-threshold` a window above `rate.limit.headers.max.threshold.in.sec` opens the circuit breaker instead of waiting inline.
+- `ratelimit-threshold` a window above the circuit-breaker threshold, `config.<id>.retry.policy.retry.after.max.threshold.in.sec` (default `60`), opens the circuit breaker instead of waiting inline.
 - `ratelimit-unit-filter` only admission units pause (`requests`, `concurrent-requests`); `content-bytes` and unknown units are informational.
 - `ratelimit-retry-after-precedence` `Retry-After` / `X-Retry-After` wins when both are present (IETF MUST).
 - `ratelimit-disabled` `config.<id>.rate.limit.headers.enabled=false` restores the previous behaviour.
@@ -14,7 +14,8 @@ The HTTP Sink connector honours the IETF `RateLimit` / `RateLimit-Policy` respon
 ## How to get to it (user POV)
 
 - Register the connector: `connector.class: io.github.clescot.kafka.connect.http.sink.HttpSinkConnector`.
-- Every configuration id accepts the `config.<id>.rate.limit.headers.*` settings: `enabled` (default `true`), `scope` (`instance`/`static`), `max.threshold.in.sec` (`60`), `max.duration.in.sec` (`86400`), `default.delay.in.sec` (`3600`).
+- Every configuration id accepts the `config.<id>.rate.limit.headers.*` settings: `enabled` (default `true`), `scope` (`instance`/`static`), `max.duration.in.sec` (`86400`), `default.delay.in.sec` (`3600`).
+- The circuit-breaker threshold is **not** one of them: `config.<id>.rate.limit.headers.max.threshold.in.sec` is accepted and shows its `60` default in the config definition, but nothing reads it. The breaker compares the window with `config.<id>.retry.policy.retry.after.max.threshold.in.sec` (same default `60`).
 - Produce `HttpRequest` messages, on a dedicated topic, pointing at a server that answers with the `RateLimit` field.
 
 ## Driving it with control-kchttp
@@ -36,15 +37,18 @@ The whole recipe is one command; the bullets below are what it does and what pro
 - **Require RUNNING.** `connector.state` and `tasks[0].state` must both read `RUNNING`.
 - **Produce three requests, one at a time.** Each record is produced as soon as the previous one has been recorded by the target, so the producer contributes no spacing of its own; any gap is the connector's pause. (Producing a burst at once would not prove it: the sink dispatches records concurrently, before the first response has advertised the exhausted quota.)
 - **Observe the pacing.** A poll of `GET http://127.0.0.1:8080/__admin/requests` timestamps each request when it is first seen (WireMock's request log carries no timestamps); consecutive sightings are about 5 s apart (the advertised `t`), not milliseconds.
-- **Proof.** The driver writes `ratelimit-config.json`, `ratelimit-config-response.json`, `ratelimit-requests.json`, `ratelimit-dates.txt`, `ratelimit-gaps-ms.txt`, `ratelimit-connect-logs.txt` and `ratelimit-SUMMARY.md` under `artifacts/verify-kafka-connect-http/<RUN_ID>/`, and fails unless the smallest gap is at least 4 s.
-- **Verified.** Run `20261026-001116`: the connector and its task reached `RUNNING/RUNNING`, three `POST /limited` requests were recorded with gaps of 5199 ms and 5123 ms for the advertised `t=5`, and the worker log shows `waiting '<n>' ms for the advertised rate limit window of 'http://http-target:8080'`. Evidence: `artifacts/verify-kafka-connect-http/20261026-001116/`.
+- **Proof.** The driver writes `ratelimit-config.json`, `ratelimit-config-response.json`, `ratelimit-mapping-response.json`, `ratelimit-requests.json`, `ratelimit-dates.txt`, `ratelimit-gaps-ms.txt`, `ratelimit-connect-logs.txt` and `ratelimit-SUMMARY.md` under `artifacts/verify-kafka-connect-http/<RUN_ID>/`, and fails unless the smallest gap is at least 4 s.
+- **Verified.** Run `20261026-001116`: three `POST /limited` requests were recorded with gaps of 5199 ms and 5123 ms for the advertised `t=5`, and the worker log shows `waiting '<n>' ms for the advertised rate limit window of 'http://http-target:8080'`. Re-driven on `20261029-210442`: gaps 4817 ms and 5053 ms. Evidence: `artifacts/verify-kafka-connect-http/20261029-210442/`.
+- **Probe the threshold key.** Re-register a sink on its own topic with `config.default.rate.limit.headers.max.threshold.in.sec: "1"` and drive two requests through the same `t=5` stub. On `20261029-210442` both calls still succeeded with a 4855 ms gap: the documented key is inert, and a honoured 1 s threshold would have opened the breaker instead. Evidence: `artifacts/verify-kafka-connect-http/20261029-210442/threshold-probe/`.
 
 ## Gotchas
 
 - The pause is per configuration + target authority: another host is not delayed by host A's quota.
 - `Retry-After` / `X-Retry-After` always wins over `RateLimit`: a response carrying both follows `Retry-After`.
-- The stub must quote the policy name (`"default"`); an item without `r` is ignored (the draft requires tolerant parsing, malformed fields are silently dropped).
+- The stub must quote the policy name (`"default"`); an item without `r` is ignored (the draft requires tolerant parsing, malformed fields are silently dropped). Unquoted tokens are accepted too — the parser unquotes both forms.
+- `t=0` means "no window": the field parses, no pause is recorded. A `r=0` item with neither `t` nor a matching policy `w` falls back to `default.delay.in.sec` (3600 s), which is above the 60 s threshold and therefore opens the breaker rather than waiting.
 - A service limit without a matching `RateLimit-Policy` is treated as unit `requests`.
+- The circuit-breaker threshold is `retry.policy.retry.after.max.threshold.in.sec`; `rate.limit.headers.max.threshold.in.sec` is inert (see above). A probe that sets only the latter to `1` still sees inline waits — that is the expected result, not a pass.
 - Jitter can extend a pause by up to 500 ms, so gaps exceed `t` rather than matching it exactly; the driver therefore asserts a floor (4 s for a 5 s window), not equality.
 - The circuit-breaker side (over-threshold windows) is observable by advertising a window above 60 s: calls get a synthetic 500 until the breaker half-opens.
 - The pause applies before every attempt, retries of the same exchange included, and waits are recorded on the exchange as the `rateLimitWaitingTime` timing.

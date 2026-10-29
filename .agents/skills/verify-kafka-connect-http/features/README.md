@@ -20,6 +20,9 @@ The harness is `scripts/control.sh` (`control-kchttp`), documented in [`../SKILL
 
 ## Driving conventions
 
+- Every recipe below uses the default host ports: Connect `8083`, target `8080`, SSE target
+  `8082`, Kafka `29092`. If you launched with different ports (see *Isolation* in `../SKILL.md`),
+  substitute them in the commands you copy.
 - Start every recipe from the baseline state unless its preconditions say otherwise.
 - Resolve the run's compose project once, then reach into the Kafka container:
   ```bash
@@ -57,6 +60,11 @@ Keep implementation details out of the map. Name only user paths, stable handles
 ## Status of the seed map
 
 Verified by live runs: **HTTP Sink connector** (`http-sink-connector.md`, via `control-kchttp drive-sink`), **Cron Source connector** (`cron-source-connector.md`, run `20261025-231240`), **SSE Source connector** (`sse-source-connector.md`, run `20261025-231240`, covering resume, multi-config and template; its advertised-delay pacing is scripted, run `20261026-013419`), and **Server-advertised rate limits** (`rate-limit-headers.md`, run `20261026-001116`, via `control-kchttp drive-ratelimit`). The SSE recipe is driven by hand except for the pacing, which has a driver (`control-kchttp drive-sse-ratelimit`).
+
+Re-driven end to end on `20261029-210442`: `drive-sink` (DIRECT mapping), a JEXL-mapping drive by
+hand, `drive-ratelimit` plus a threshold probe, the cron and SSE recipes by hand, and
+`drive-sse-ratelimit`. That run also proved the record shape, the resume header and multi-config
+routing quoted in the SSE recipe, and showed that WireMock preserves header case.
 
 Each recipe still lists what no run has covered, in its own file. Do not move a bullet to verified without a run that produced the record or request it describes.
 
