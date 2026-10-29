@@ -161,3 +161,7 @@ Project-local skills live in `.agents/skills/`:
   at-least-once promise, parameterised by facts extracted from the Java source so a code change
   changes the model. Run it when a change touches the SSE task, the connection/resume logic, the
   in-memory queue or the source offsets.
+- `verify-request-grouper-preserves-requests` — exhaustive, in-process check that the sink's
+  `RequestGrouper` neither loses, duplicates, invents nor misroutes a pending request and always
+  terminates. Run it when a change touches `RequestGrouper`, `RequestGrouperFactory`,
+  `HttpTask.groupRequests` or the `request.grouper.*` settings.
