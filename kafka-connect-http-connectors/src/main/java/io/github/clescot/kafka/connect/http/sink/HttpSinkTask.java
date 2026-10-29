@@ -18,6 +18,7 @@ import io.github.clescot.core.http.HttpRequest;
 import io.github.clescot.core.http.HttpResponse;
 import io.github.clescot.kafka.connect.http.MessageSplitter;
 import io.github.clescot.kafka.connect.http.MessageSplitterFactory;
+import io.github.clescot.kafka.connect.http.jexl.JexlEngineFactory;
 import io.github.clescot.kafka.connect.http.mapper.HttpRequestMapper;
 import io.github.clescot.kafka.connect.http.mapper.HttpRequestMapperFactory;
 import io.github.clescot.kafka.connect.http.sink.publish.KafkaProducer;
@@ -34,10 +35,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.stream.Stream;
-import org.apache.commons.jexl3.JexlBuilder;
 import org.apache.commons.jexl3.JexlEngine;
-import org.apache.commons.jexl3.JexlFeatures;
-import org.apache.commons.jexl3.introspection.JexlPermissions;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.clients.producer.RecordMetadata;
@@ -135,7 +133,7 @@ public abstract class HttpSinkTask<C extends HttpClient<R, S>, R, S> extends Sin
       default:
         LOGGER.debug("NONE publish mode");
     }
-    JexlEngine jexlEngine = buildJexlEngine();
+    JexlEngine jexlEngine = JexlEngineFactory.build();
 
     // HttpRequestMappers
     HttpRequestMapperFactory httpRequestMapperFactory = new HttpRequestMapperFactory();
@@ -193,17 +191,6 @@ public abstract class HttpSinkTask<C extends HttpClient<R, S>, R, S> extends Sin
     List<CompletableFuture<HttpExchange>> completableFutures =
         preparedRequests.stream().map(this::callAndPublish).toList();
     return completableFutures.stream().map(CompletableFuture::join).toList();
-  }
-
-  private static JexlEngine buildJexlEngine() {
-    // Restricted permissions to a safe set but with URI allowed
-    JexlPermissions permissions =
-        new JexlPermissions.ClassPermissions(
-            SinkRecord.class, ConnectRecord.class, HttpRequest.class);
-    // Create the engine
-    JexlFeatures features =
-        new JexlFeatures().loops(false).sideEffectGlobal(false).sideEffect(false);
-    return new JexlBuilder().features(features).permissions(permissions).create();
   }
 
   public CompletableFuture<HttpExchange> callAndPublish(Pair<SinkRecord, HttpRequest> pair) {
