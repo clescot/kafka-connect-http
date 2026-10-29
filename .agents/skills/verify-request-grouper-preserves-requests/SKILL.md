@@ -38,8 +38,10 @@ to `results/check.txt`, and prints a verdict. It reads only the module sources a
 | `RequestGrouperFactory.java` | the values the factory feeds it: the predicate, `message.limit` (`-1` when absent), `body.limit` (`-1` when absent), the `separator` / `start` / `end` defaults |
 | `HttpTask.java` | `groupRequests`, the caller that applies each registered grouper in turn |
 
-**Sync commit: `ee6db4f0d633af89d58aa5f515acf425b424ab6b`** (2026-10-29). At this commit the check
-reports the four findings below in 4472 of 5440 cases. Move this commit forward only after you have
+**Sync commit: `1bfd7493`** (2026-10-29, master after the 0.8.192 release). At this commit the
+check reports the four findings below in 4472 of 5440 cases; the covered files are byte-identical
+to the previous anchor `ee6db4f0` (the commits in between only touch the SSE package and the
+release metadata). Move this commit forward only after you have
 re-run the check and confirmed what it reports at the new commit, see "Keeping this in step with the
 code".
 
