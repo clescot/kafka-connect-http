@@ -84,6 +84,7 @@ COMPOSE=(docker compose -f .agents/skills/verify-kafka-connect-http/scripts/comp
   - **Observe the precedence.** The same measurement on `/sse-priority` must land between 2.5 s and 12 s: `Retry-After: 3` wins, so a gap near 30 s proves the `RateLimit` window was used instead and the driver fails.
   - **Observe that nothing was lost.** Both topics must yield the three events of the accepted stream through `kafka-console-consumer`, so the pause is proven to delay attempts rather than skip events.
   - **Proof.** `sse-ratelimit-config.json`, `sse-ratelimit-mapping-*.json`, `sse-ratelimit-requests-*.json`, `sse-ratelimit-dates-*.txt`, `sse-ratelimit-gap-*-ms.txt`, `sse-ratelimit-consumed-*.txt`, `sse-ratelimit-connect-logs.txt` and `sse-ratelimit-SUMMARY.md` under `artifacts/verify-kafka-connect-http/<RUN_ID>/sse-ratelimit/`; the worker log shows `delaying the next SSE connection attempt to ...` and, for `/sse-priority`, `the SSE server at ... asked to wait '3' s before reconnecting`.
+  - **Verified.** Run `20261026-013419`: `/sse-limited` paused 5242 ms for the advertised 5 s window, `/sse-priority` waited 2979 ms for a `Retry-After: 3` that beat the 30 s window, and both topics yielded the accepted stream's three events; the worker log carries `delaying the next SSE connection attempt to 'http://http-target:8080' by '5190' ms for the advertised rate limit window` and `... by '2999' ms for the advertised Retry-After`. Evidence: `artifacts/verify-kafka-connect-http/20261026-013419/sse-ratelimit/`.
 
 ## Gotchas
 
