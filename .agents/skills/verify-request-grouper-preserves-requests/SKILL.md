@@ -34,16 +34,15 @@ to `results/check.txt`, and prints a verdict. It reads only the module sources a
 
 | File (under `http-client/src/main/java/io/github/clescot/client/http/`) | Part |
 | --- | --- |
-| `RequestGrouper.java` | `group(List)`: the matching / non-matching split, the `message.limit` / `body.limit` loop, the `consumed` index, the aggregate seed and the `start` / `separator` / `end` assembly, and the recursion |
+| `RequestGrouper.java` | `group(List)`: the matching / non-matching split, the `message.limit` / `body.limit` loop, how many matching entries each aggregate consumes, the aggregate seed and the `start` / `separator` / `end` assembly |
 | `RequestGrouperFactory.java` | the values the factory feeds it: the predicate, `message.limit` (`-1` when absent), `body.limit` (`-1` when absent), the `separator` / `start` / `end` defaults |
 | `HttpTask.java` | `groupRequests`, the caller that applies each registered grouper in turn |
 
-**Sync commit: `1bfd7493`** (2026-10-29, master after the 0.8.192 release). At this commit the
-check reports the four findings below in 4472 of 5440 cases; the covered files are byte-identical
-to the previous anchor `ee6db4f0` (the commits in between only touch the SSE package and the
-release metadata). Move this commit forward only after you have
-re-run the check and confirmed what it reports at the new commit, see "Keeping this in step with the
-code".
+**Sync commit: `d1d28e4e`** (2026-10-29, the #993 grouper fix). At this commit the check reports
+`no violation` on all 5440 cases. The previous anchor, `1bfd7493` (master after the 0.8.192
+release), reported the four findings below in 4472 cases; the fix is the one described under
+"Findings fixed at the sync commit". Move this commit forward only after you have re-run the check
+and confirmed what it reports at the new commit.
 
 ## How to read the verdict
 
@@ -61,28 +60,32 @@ The checker names each violation by cause:
 - `wrong destination` — an aggregate's URL is not the URL of any matching request.
 - `does not terminate` — the recursion never shrank the list (`StackOverflowError`).
 
-## Findings at the sync commit
+## Findings fixed at the sync commit
 
-All four are one algorithm: `group()` filters `matchingEntries` / `nonMatchingEntries`, walks
-`matchingEntries`, sets `consumed = i` when a limit is hit, then recurses on
-`entries.subList(consumed, entries.size())` — an index into `matchingEntries` used on `entries` —
-and adds `nonMatchingEntries` again at every level.
+Before `d1d28e4e`, all four were one algorithm: `group()` filtered `matchingEntries` /
+`nonMatchingEntries`, walked `matchingEntries`, set `consumed = i` when a limit was hit, then
+recursed on `entries.subList(consumed, entries.size())` — an index into `matchingEntries` used on
+`entries` — and added `nonMatchingEntries` again at every level. The fix builds the groups
+iteratively from `matchingEntries`: each aggregate is cloned from its first matching entry,
+`message.limit` counts within the group, a group always consumes at least its first entry, and the
+non-matching entries are added once at the end.
 
-- **F1 — duplicated requests.** `entries=[N(x), M(a), M(bb)]`, `message.limit=1`: bodies come back
-  as `a, a, bb, x`. The index space mismatch re-processes the same matching entry.
-- **F2 — misrouted aggregates.** `entries=[N(y), M(a)]`, no limits: the group `[a]` is sent to
-  `http://other.example/0`, the non-matching entry's URL, because the aggregate is cloned from
+- **F1 — duplicated requests.** `entries=[N(x), M(a), M(bb)]`, `message.limit=1`: bodies came back
+  as `a, a, bb, x`. The index space mismatch re-processed the same matching entry.
+- **F2 — misrouted aggregates.** `entries=[N(y), M(a)]`, no limits: the group `[a]` was sent to
+  `http://other.example/0`, the non-matching entry's URL, because the aggregate was cloned from
   `entries.get(0)` instead of the first *matching* entry.
-- **F3 — invented empty request.** `entries=[N(x), N(y)]`: the grouper returns both originals **and**
-  an empty group `[]`, sent to the first non-matching URL. It also does this whenever no entry
-  matches.
+- **F3 — invented empty request.** `entries=[N(x), N(y)]`: the grouper returned both originals
+  **and** an empty group `[]`, sent to the first non-matching URL. It also did this whenever no
+  entry matched.
 - **F4 — non-termination.** `entries=[M(bb)]`, `body.limit=3`: the first matching body already
-  reaches the limit, so `consumed` stays `0` and `group()` recurses on the same list until
-  `StackOverflowError` — in a live sink, that kills the task.
+  reached the limit, so `consumed` stayed `0` and `group()` recursed on the same list until
+  `StackOverflowError` — in a live sink, that killed the task.
 
-Counts at the sync commit: `does not terminate=2120`, `wrong destination=1620`,
+Counts at `1bfd7493`: `does not terminate=2120`, `wrong destination=1620`,
 `invents an empty request=480`, `duplicates a request=252`; **no case loses a body** in the
-enumerated space. Evidence: `results/check.txt`.
+enumerated space. At `d1d28e4e` the same check reports no violation. Evidence:
+`results/check.txt`.
 
 The algorithm first landed in `7415223c6` ("336 batch messages into one http request body (#534)");
 `git log --follow -- http-client/src/main/java/io/github/clescot/client/http/RequestGrouper.java`
@@ -114,7 +117,9 @@ Verified, within these bounds:
   in `RequestGrouperFactory`. Every combination is run for every sequence: 5440 cases, exhaustive.
 - One grouper per call, as `HttpTask.groupRequests` invokes them. Bodies are non-null strings.
 - `body.limit` is compared against `String.length()` (the code), not UTF-8 bytes (what
-  `docs/reference/http-sink-connector.md` says), so the bound is in characters.
+  `docs/reference/http-sink-connector.md` says), so the bound is in characters. The check runs
+  before adding the next body and ignores the separator and `end`, so an assembled body can exceed
+  the configured limit; that is existing behaviour, not something this property checks.
 
 Assumptions the check makes:
 
@@ -131,9 +136,9 @@ Not covered by this check:
   4ⁿ, so keep it small).
 - **Composing several groupers.** `HttpTask.groupRequests` reduces over the registered groupers;
   the second grouper sees the first one's output. The checker runs one grouper.
-- **Null bodies.** With `body.limit` set and `bodyAsString == null`, `group()` throws
-  `NullPointerException` (`part.length()`); with no limit it appends the literal `null` to the group
-  body. Both are adjacent defects, not part of the enumerated property.
+- **Null bodies.** The checker only uses non-null strings. Since `d1d28e4e`, `group()` treats a
+  null `bodyAsString` as empty (no `NullPointerException` with `body.limit`, no literal `null`);
+  `RequestGrouperTest` covers both shapes. Null bodies are still outside the enumerated property.
 - **Non-`STRING` body types, byte arrays, multipart and form bodies**; the grouper concatenates
   `getBodyAsString()` only.
 - The HTTP call itself, retries, rate limiting, and the sink's mapper/splitter stages.

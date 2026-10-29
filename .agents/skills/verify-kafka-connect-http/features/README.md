@@ -66,6 +66,10 @@ hand, `drive-ratelimit` plus a threshold probe, the cron and SSE recipes by hand
 `drive-sse-ratelimit`. That run also proved the record shape, the resume header and multi-config
 routing quoted in the SSE recipe, and showed that WireMock preserves header case.
 
+The sink JEXL date-time recipe was re-driven on `20261029-225830`: a record with a pinned timestamp
+produced a `POST /ping` whose URL, `X-Event-Time` header and body all carry that event time.
+Evidence: `artifacts/verify-kafka-connect-http/20261029-225830/jexl/`.
+
 Each recipe still lists what no run has covered, in its own file. Do not move a bullet to verified without a run that produced the record or request it describes.
 
 ## Features

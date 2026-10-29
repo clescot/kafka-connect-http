@@ -44,33 +44,107 @@ The whole recipe is one command; the bullets below are what it does and what pro
 ### JEXL mapping (`sink-jexl-mapping`)
 
 `drive-sink` covers `DIRECT` only. To drive a JEXL-mode mapper, use a dedicated topic so the
-`DIRECT` sink does not parse the same records:
+`DIRECT` sink does not parse the same records; the mapper below therefore always matches. It builds
+the URL, a header and the body from the record's event time, so all three date-time variables and
+both `datetime` functions are exercised:
+
+- `dateTime` in the URL (`?at=…`) and in the header;
+- `timestamp` (epoch seconds) and `timestampInMs` (epoch millis) in the same header;
+- `datetime:format(dateTime,'yyyy-MM-dd')` and
+  `datetime:fromEpochMillis(timestampInMs,'yyyyMMdd')` in the body.
 
 ```bash
-PROJECT="kchttp-$(cat artifacts/verify-kafka-connect-http/.current-run)"
+RUN_ID="$(cat artifacts/verify-kafka-connect-http/.current-run)"
+ART="artifacts/verify-kafka-connect-http/$RUN_ID/jexl"
+TOPIC="http-request-jexl-$RUN_ID"
+mkdir -p "$ART"
+PROJECT="kchttp-$RUN_ID"
 COMPOSE=(docker compose -f .agents/skills/verify-kafka-connect-http/scripts/compose.yml -p "$PROJECT")
-"${COMPOSE[@]}" exec -T kafka kafka-topics --bootstrap-server localhost:9092 --create --if-not-exists --topic http-request-jexl --partitions 1 --replication-factor 1
-curl -sf -X PUT http://127.0.0.1:8083/connectors/http-sink-jexl-verify/config -H 'Content-Type: application/json' -d '{
+"${COMPOSE[@]}" exec -T kafka kafka-topics --bootstrap-server localhost:9092 --create --if-not-exists --topic "$TOPIC" --partitions 1 --replication-factor 1
+
+cat > "$ART/connector-config.json" <<JSON
+{
   "connector.class": "io.github.clescot.kafka.connect.http.sink.HttpSinkConnector",
-  "tasks.max": "1", "topics": "http-request-jexl",
+  "tasks.max": "1",
+  "topics": "$TOPIC",
   "key.converter": "org.apache.kafka.connect.storage.StringConverter",
   "value.converter": "org.apache.kafka.connect.storage.StringConverter",
   "publish.mode": "NONE",
   "http.request.mapper.ids": "jx",
   "http.request.mapper.jx.mode": "JEXL",
-  "http.request.mapper.jx.matcher": "sinkRecord.topic()==\u0027http-request-jexl\u0027",
-  "http.request.mapper.jx.url": "\u0027http://http-target:8080/ping\u0027",
-  "http.request.mapper.jx.method": "\u0027POST\u0027",
-  "http.request.mapper.jx.body": "\u0027mapped-\u0027 + sinkRecord.value()"
-}'
-printf '%s\n' 'hello' | "${COMPOSE[@]}" exec -T kafka kafka-console-producer --bootstrap-server localhost:9092 --topic http-request-jexl
-curl -sf http://127.0.0.1:8080/__admin/requests | jq '[.requests[]|select(.request.body=="mapped-hello" and .request.method=="POST" and .wasMatched)]|length'
+  "http.request.mapper.jx.matcher": "true",
+  "http.request.mapper.jx.url": "'http://http-target:8080/ping?at=' + dateTime",
+  "http.request.mapper.jx.method": "'POST'",
+  "http.request.mapper.jx.headers": "{'X-Event-Time':[dateTime,'' + timestamp,'' + timestampInMs,...]}",
+  "http.request.mapper.jx.body": "datetime:format(dateTime,'yyyy-MM-dd') + ' ' + datetime:fromEpochMillis(timestampInMs,'yyyyMMdd')"
+}
+JSON
+curl -sf -X PUT http://127.0.0.1:8083/connectors/http-sink-jexl-verify/config \
+  -H 'Content-Type: application/json' -d @"$ART/connector-config.json" > "$ART/config-response.json"
+
+# require connector + task RUNNING/RUNNING before producing anything
+for i in $(seq 1 60); do
+  state="$(curl -sf http://127.0.0.1:8083/connectors/http-sink-jexl-verify/status | jq -r '.connector.state + "/" + (.tasks[0].state // "none")')"
+  [ "$state" = "RUNNING/RUNNING" ] && break
+  sleep 2
+done
+[ "$state" = "RUNNING/RUNNING" ]
+
+# stub POST /ping (any query string) and start from an empty request log
+curl -sf -X POST http://127.0.0.1:8080/__admin/mappings -H 'Content-Type: application/json' -d '{
+  "request":  {"method": "POST", "urlPath": "/ping"},
+  "response": {"status": 200, "headers": {"Content-Type": "application/json"}, "body": "{\"result\":\"pong\"}"}
+}' > "$ART/mapping-response.json"
+curl -sf -X DELETE http://127.0.0.1:8080/__admin/requests >/dev/null
+
+# produce one record with a pinned timestamp: 1699228800000 ms = 2023-11-06T00:00:00.000Z.
+# The Kafka console producer cannot set a record timestamp.
+EVENT_MS=1699228800000
+EVENT_SEC=$((EVENT_MS / 1000))
+EVENT_ISO=2023-11-06T00:00:00.000Z
+EVENT_BODY="2023-11-06 20231106"
+.agents/skills/verify-kafka-connect-http/scripts/produce-pinned-timestamp.sh \
+  localhost:29092 "$TOPIC" "$EVENT_MS" "jexl-verify $RUN_ID" | tee "$ART/producer.txt"
+
+# one filter, reused by the wait loop and by the final assertion below
+cat > "$ART/matched.jq" <<'JQ'
+[.requests[]
+ | select(.request.method == "POST")
+ | select(.wasMatched == true)
+ | select(.request.absoluteUrl | contains("/ping?at=" + $at))
+ | select((.request.headers["X-Event-Time"] // []) | index($at) != null)
+ | select((.request.headers["X-Event-Time"] // []) | index($sec) != null)
+ | select((.request.headers["X-Event-Time"] // []) | index($ms) != null)
+ | select(.request.body == $body)]
+| length == 1
+JQ
+
+for i in $(seq 1 60); do
+  curl -sf http://127.0.0.1:8080/__admin/requests -o "$ART/requests.json"
+  jq -e -f "$ART/matched.jq" --arg at "$EVENT_ISO" --arg sec "$EVENT_SEC" \
+    --arg ms "$EVENT_MS" --arg body "$EVENT_BODY" "$ART/requests.json" >/dev/null && break
+  sleep 2
+done
+jq -e -f "$ART/matched.jq" --arg at "$EVENT_ISO" --arg sec "$EVENT_SEC" \
+  --arg ms "$EVENT_MS" --arg body "$EVENT_BODY" "$ART/requests.json" >/dev/null
+jq --arg at "$EVENT_ISO" --arg body "$EVENT_BODY" '
+  [.requests[]
+   | select(.request.method == "POST")
+   | select(.request.absoluteUrl | contains("/ping?at=" + $at))
+   | select(.request.body == $body)]
+  | first' "$ART/requests.json" > "$ART/received-request.json"
+curl -sf http://127.0.0.1:8083/connectors/http-sink-jexl-verify/status | jq . > "$ART/status.json"
+curl -sf http://127.0.0.1:8083/connectors/http-sink-jexl-verify/config | jq . > "$ART/config.json"
 ```
 
-- The last command must print `1`: the target recorded the request the expressions built.
-- Verified on `20261029-210442`: `POST http://http-target:8080/ping` with body `mapped-hello`, plus
-  a configured header, connector and task `RUNNING/RUNNING`. Evidence:
-  `artifacts/verify-kafka-connect-http/20261029-210442/jexl/`.
+- The `jq -e` loop must succeed: exactly one recorded, matched `POST` has
+  `/ping?at=2023-11-06T00:00:00.000Z`, header `X-Event-Time` values
+  `2023-11-06T00:00:00.000Z`, `1699228800` and `1699228800000`, and body
+  `2023-11-06 20231106`. Those values are the pinned event time, not the wall clock.
+- Verified on `20261029-225830`: `POST http://http-target:8080/ping?at=2023-11-06T00:00:00.000Z`
+  with header `X-Event-Time: [2023-11-06T00:00:00.000Z,1699228800,1699228800000]` and body
+  `2023-11-06 20231106`; connector and task `RUNNING/RUNNING`. Evidence:
+  `artifacts/verify-kafka-connect-http/20261029-225830/jexl/`.
 
 ## Gotchas
 
@@ -84,6 +158,13 @@ curl -sf http://127.0.0.1:8080/__admin/requests | jq '[.requests[]|select(.reque
   whose `matcher` is true; everything else falls through to the default mapper, which tries to parse
   the value as an `HttpRequest` and fails on a plain string. Give a custom mapper a matcher, or
   switch the default mapper to `JEXL` (`http.request.mapper.default.mode`).
+- **`sinkRecord` method calls did not resolve in the `20261029-225830` stack.** A matcher using
+  `sinkRecord.topic()` evaluated false and a body using `sinkRecord.value()` failed with a null
+  operand, while the top-level `timestamp`/`timestampInMs`/`dateTime` variables worked. The recipe
+  therefore matches every record on its dedicated topic; investigate the mapper/sandbox before
+  relying on `sinkRecord` method calls in a live sink.
 - **JEXL mode requires `url`.** `http.request.mapper.<id>.url` is mandatory for a `JEXL` mapper;
   the other expressions default to `GET` and `STRING`. The raw value is not parsed as JSON.
+- **A JEXL list literal needs the trailing `...`.** `{'X':[a,b,...]}` evaluates to a `List`; without
+  the `...` JEXL returns a raw array and the sink fails casting it to `List<String>`.
 - Re-running `drive-sink` PUTs the same connector name; WireMock accumulates requests, so match on the unique body marker (run id) rather than "any request".
