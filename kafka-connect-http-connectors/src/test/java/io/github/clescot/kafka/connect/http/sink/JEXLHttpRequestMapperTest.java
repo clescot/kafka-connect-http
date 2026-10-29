@@ -5,14 +5,11 @@ import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 import com.google.common.collect.Lists;
 import io.github.clescot.core.http.BodyType;
 import io.github.clescot.core.http.HttpRequest;
+import io.github.clescot.kafka.connect.http.jexl.JexlEngineFactory;
 import io.github.clescot.kafka.connect.http.mapper.JEXLHttpRequestMapper;
 import java.util.List;
-import org.apache.commons.jexl3.JexlBuilder;
 import org.apache.commons.jexl3.JexlEngine;
-import org.apache.commons.jexl3.JexlFeatures;
-import org.apache.commons.jexl3.introspection.JexlPermissions;
 import org.apache.kafka.common.record.TimestampType;
-import org.apache.kafka.connect.connector.ConnectRecord;
 import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.header.Header;
 import org.apache.kafka.connect.sink.SinkRecord;
@@ -33,14 +30,7 @@ class JEXLHttpRequestMapperTest {
 
   @BeforeEach
   void setUp() {
-    // Restricted permissions to a safe set but with URI allowed
-    JexlPermissions permissions =
-        new JexlPermissions.ClassPermissions(
-            SinkRecord.class, ConnectRecord.class, HttpRequest.class);
-    // Create the engine
-    JexlFeatures features =
-        new JexlFeatures().loops(false).sideEffectGlobal(false).sideEffect(false);
-    jexlEngine = new JexlBuilder().features(features).permissions(permissions).create();
+    jexlEngine = JexlEngineFactory.build();
   }
 
   @Nested
@@ -342,6 +332,119 @@ class JEXLHttpRequestMapperTest {
       assertThat(httpRequest.getMethod()).isEqualTo(HttpRequest.Method.PUT);
       assertThat(httpRequest.getBodyType()).isEqualTo(BodyType.STRING);
       assertThat(httpRequest.getBodyAsString()).isEqualTo("mybodycontent");
+    }
+  }
+
+  @Nested
+  class DateTime {
+
+    private static final long TIMESTAMP_IN_MS = 1699228800000L;
+    private static final String DATE_TIME = "2023-11-06T00:00:00.000Z";
+
+    private SinkRecord sinkRecord;
+
+    @BeforeEach
+    void setup() {
+      sinkRecord =
+          new SinkRecord(
+              "myTopic",
+              0,
+              Schema.STRING_SCHEMA,
+              "key",
+              Schema.STRING_SCHEMA,
+              "value",
+              0,
+              TIMESTAMP_IN_MS,
+              TimestampType.CREATE_TIME);
+    }
+
+    private HttpRequest mapWithUrl(String urlExpression) {
+      JEXLHttpRequestMapper mapper =
+          new JEXLHttpRequestMapper(
+              DEFAULT,
+              jexlEngine,
+              "sinkRecord.topic()=='myTopic'",
+              urlExpression,
+              null,
+              null,
+              null,
+              null);
+      assertThat(mapper.matches(sinkRecord)).isTrue();
+      return mapper.map(sinkRecord);
+    }
+
+    @Test
+    void test_url_with_date_time_variable() {
+      HttpRequest httpRequest = mapWithUrl("'http://url.com?at='+dateTime");
+
+      assertThat(httpRequest.getUrl()).isEqualTo("http://url.com?at=" + DATE_TIME);
+    }
+
+    @Test
+    void test_url_with_timestamp_variable_in_seconds() {
+      HttpRequest httpRequest = mapWithUrl("'http://url.com?at='+timestamp");
+
+      assertThat(httpRequest.getUrl()).isEqualTo("http://url.com?at=1699228800");
+    }
+
+    @Test
+    void test_url_with_timestamp_in_ms_variable() {
+      HttpRequest httpRequest = mapWithUrl("'http://url.com?at='+timestampInMs");
+
+      assertThat(httpRequest.getUrl()).isEqualTo("http://url.com?at=" + TIMESTAMP_IN_MS);
+    }
+
+    @Test
+    void test_matcher_with_date_time_variable() {
+      JEXLHttpRequestMapper mapper =
+          new JEXLHttpRequestMapper(
+              DEFAULT,
+              jexlEngine,
+              "dateTime=='" + DATE_TIME + "'",
+              "'http://url.com'",
+              null,
+              null,
+              null,
+              null);
+
+      assertThat(mapper.matches(sinkRecord)).isTrue();
+    }
+
+    @Test
+    void test_headers_with_a_custom_date_time_pattern() {
+      JEXLHttpRequestMapper mapper =
+          new JEXLHttpRequestMapper(
+              DEFAULT,
+              jexlEngine,
+              "sinkRecord.topic()=='myTopic'",
+              "'http://url.com'",
+              null,
+              null,
+              null,
+              "{'X-Date':[datetime:format(dateTime,'yyyy-MM-dd HH:mm'),...]}");
+
+      HttpRequest httpRequest = mapper.map(sinkRecord);
+
+      assertThat(httpRequest.getHeaders().get("X-Date"))
+          .isEqualTo(Lists.newArrayList("2023-11-06 00:00"));
+    }
+
+    @Test
+    void test_body_with_a_custom_pattern_from_timestamp_in_ms() {
+      JEXLHttpRequestMapper mapper =
+          new JEXLHttpRequestMapper(
+              DEFAULT,
+              jexlEngine,
+              "sinkRecord.topic()=='myTopic'",
+              "'http://url.com'",
+              null,
+              null,
+              "datetime:fromEpochMillis(timestampInMs,'yyyyMMddHHmmss')",
+              null);
+
+      HttpRequest httpRequest = mapper.map(sinkRecord);
+
+      assertThat(httpRequest.getBodyAsString()).isEqualTo("20231106000000");
     }
   }
 
