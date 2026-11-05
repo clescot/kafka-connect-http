@@ -40,9 +40,10 @@ The check covers these files and methods — a change to any of them needs this 
 | File (all under `kafka-connect-http-connectors/src/main/java/io/github/clescot/kafka/connect/sse/client/okhttp/`) | Method / part |
 | --- | --- |
 | `SseSourceTask.java` | `start`, `poll`, `stop`, and the `{configurationId}` source partition it exports |
-| `SseTask.java` | `connect`, `start` |
-| `SseConfiguration.java` | `connect` (the `BackgroundEventSource` builder, retry/error strategy, `ConnectStrategy`, and the `lastEventId` seed) |
-| `SseResumeLookup.java` | the committed-offset lookup (`lastCommittedEventId`) |
+| `SseTask.java` | `connect` (including the Resume Policy decision that may refuse to start), `start` |
+| `SseConfiguration.java` | `connect` (the `BackgroundEventSource` builder, retry/error strategy, `ConnectStrategy`, its request transformer, the `from-start` sentinel, and the `lastEventId` seed) |
+| `SseResumePolicy.java` | `fromSettings` (the policy the two files above branch on) |
+| `SseResumeLookup.java` | the committed-offset lookup (`lastCommittedEventId`) and whether offset storage exists at all (`hasOffsetStorage`) |
 | `SseBackgroundEventHandler.java` | `onMessage`, `buildResponse` |
 
 and, in another module:
@@ -51,13 +52,13 @@ and, in another module:
 | --- | --- |
 | `http-client/src/main/java/io/github/clescot/client/queue/QueueFactory.java` | `getQueue` (the queue implementation) |
 
-**Sync commit: `286678306c106f3f1107866cde3bce2017fa81de`** (2026-10-26, "feat: pace the SSE source
-with the advertised RateLimit headers (#956)"). At this commit the verification was re-run after the
-reconnect-pacing change and still prints `F1 LOOKS FIXED`, exit 3: the pause is a stutter step, so it
-does not alter the delivery model (see "Not covered by this check"). The previous sync commit was
-`ace85b1a8c55d6d84942d9e85c83e8c2251f7f61`, where the resume-cursor fix landed. Move this commit forward
-only after you have re-run the check and confirmed the model still describes the code at the new commit,
-see "Keeping this in step with the code".
+**Sync commit: `32c56227d8e908a32cb78aace8a409591f7ea6b3`** (2026-11-05, "feat(sse): choose the SSE source start position with a
+resume policy (#952)"). At this commit the verification was re-run after the Resume Policy change and
+still prints `F1 LOOKS FIXED`, exit 3: the policy is a runtime, per-configuration choice, and the
+`from_start` / `from_now` configurations already describe the two worlds it chooses between. The
+previous sync commit was `286678306c106f3f1107866cde3bce2017fa81de`, where the reconnect-pacing change
+landed. Move this commit forward only after you have re-run the check and confirmed the model still
+describes the code at the new commit, see "Keeping this in step with the code".
 
 ## How to read the verdict
 
