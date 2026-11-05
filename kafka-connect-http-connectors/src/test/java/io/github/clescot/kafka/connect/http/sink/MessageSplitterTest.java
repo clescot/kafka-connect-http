@@ -1,14 +1,13 @@
 package io.github.clescot.kafka.connect.http.sink;
 
 import static io.github.clescot.kafka.connect.http.sink.HttpSinkTask.FROM_STRING_PART_TO_SINK_RECORD_FUNCTION;
+import static org.assertj.core.api.Assertions.assertThat;
 
-import io.github.clescot.core.http.HttpRequest;
 import io.github.clescot.kafka.connect.http.MessageSplitter;
-import org.apache.commons.jexl3.JexlBuilder;
+import io.github.clescot.kafka.connect.http.jexl.JexlEngineFactory;
 import org.apache.commons.jexl3.JexlEngine;
-import org.apache.commons.jexl3.JexlFeatures;
-import org.apache.commons.jexl3.introspection.JexlPermissions;
-import org.apache.kafka.connect.connector.ConnectRecord;
+import org.apache.kafka.common.record.TimestampType;
+import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.sink.SinkRecord;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Nested;
@@ -29,7 +28,7 @@ class MessageSplitterTest {
 
     @Test
     void test_with_null_id() {
-      JexlEngine jexlEngine = buildJexlEngine();
+      JexlEngine jexlEngine = JexlEngineFactory.build();
       Assertions.assertThrows(
           NullPointerException.class,
           () ->
@@ -39,7 +38,7 @@ class MessageSplitterTest {
 
     @Test
     void test_with_null_matching_expression() {
-      JexlEngine jexlEngine = buildJexlEngine();
+      JexlEngine jexlEngine = JexlEngineFactory.build();
       Assertions.assertThrows(
           NullPointerException.class,
           () ->
@@ -63,7 +62,7 @@ class MessageSplitterTest {
 
     @Test
     void test_with_null_split_pattern() {
-      JexlEngine jexlEngine = buildJexlEngine();
+      JexlEngine jexlEngine = JexlEngineFactory.build();
       Assertions.assertThrows(
           NullPointerException.class,
           () ->
@@ -78,7 +77,7 @@ class MessageSplitterTest {
 
     @Test
     void test_with_no_split_limit() {
-      JexlEngine jexlEngine = buildJexlEngine();
+      JexlEngine jexlEngine = JexlEngineFactory.build();
       Assertions.assertDoesNotThrow(
           () ->
               new MessageSplitter(
@@ -91,14 +90,50 @@ class MessageSplitterTest {
     }
   }
 
-  private static JexlEngine buildJexlEngine() {
-    // Restricted permissions to a safe set but with URI allowed
-    JexlPermissions permissions =
-        new JexlPermissions.ClassPermissions(
-            SinkRecord.class, ConnectRecord.class, HttpRequest.class);
-    // Create the engine
-    JexlFeatures features =
-        new JexlFeatures().loops(false).sideEffectGlobal(false).sideEffect(false);
-    return new JexlBuilder().features(features).permissions(permissions).create();
+  @Nested
+  class Matches {
+
+    private static final long TIMESTAMP_IN_MS = 1699228800000L;
+
+    private SinkRecord record() {
+      return new SinkRecord(
+          "myTopic",
+          0,
+          Schema.STRING_SCHEMA,
+          "key",
+          Schema.STRING_SCHEMA,
+          "a\nb",
+          0,
+          TIMESTAMP_IN_MS,
+          TimestampType.CREATE_TIME);
+    }
+
+    @Test
+    void test_matcher_can_use_the_record_date_time() {
+      MessageSplitter<SinkRecord> splitter =
+          new MessageSplitter<>(
+              FROM_STRING_PART_TO_SINK_RECORD_FUNCTION,
+              "myid",
+              JexlEngineFactory.build(),
+              "dateTime=='2023-11-06T00:00:00.000Z'",
+              "\\n",
+              0);
+
+      assertThat(splitter.matches(record())).isTrue();
+    }
+
+    @Test
+    void test_matcher_can_use_a_custom_date_time_pattern() {
+      MessageSplitter<SinkRecord> splitter =
+          new MessageSplitter<>(
+              FROM_STRING_PART_TO_SINK_RECORD_FUNCTION,
+              "myid",
+              JexlEngineFactory.build(),
+              "datetime:fromEpochMillis(timestampInMs,'yyyy-MM-dd')=='2023-11-06'",
+              "\\n",
+              0);
+
+      assertThat(splitter.matches(record())).isTrue();
+    }
   }
 }

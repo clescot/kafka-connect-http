@@ -131,6 +131,9 @@ ${datetime:<source>:<format>}
 `<format>` is a Java `DateTimeFormatter` pattern, e.g. `yyyy-MM-dd HH:mm:ss`. If omitted, the
 ISO-8601 format in UTC is used.
 
+Sink JEXL expressions get a comparable vocabulary through the `datetime` namespace, formatted in
+UTC; see [JEXL variables](http-sink-connector.md#jexl-variables).
+
 ## if
 
 ```

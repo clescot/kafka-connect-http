@@ -57,7 +57,7 @@ class SseRateLimitPacingTest {
 
     attempt(pacing, 200, headers());
 
-    assertThat(paced(pacing, ONE_SECOND).apply(ONE_SECOND).getDelayMillis())
+    assertThat(paced(pacing, ONE_SECOND).getDelayMillis())
         .isEqualTo(ONE_SECOND);
   }
 
@@ -68,7 +68,7 @@ class SseRateLimitPacingTest {
     attempt(pacing, 200, headers("RateLimit", "\"default\";r=0;t=5"));
 
     // jitter can extend the pause by up to 500 ms
-    assertThat(paced(pacing, ONE_SECOND).apply(ONE_SECOND).getDelayMillis())
+    assertThat(paced(pacing, ONE_SECOND).getDelayMillis())
         .isBetween(5 * ONE_SECOND, 5 * ONE_SECOND + 500L);
   }
 
@@ -78,7 +78,7 @@ class SseRateLimitPacingTest {
 
     attempt(pacing, 429, headers("Retry-After", "3", "RateLimit", "\"default\";r=0;t=30"));
 
-    assertThat(paced(pacing, ONE_SECOND).apply(ONE_SECOND).getDelayMillis())
+    assertThat(paced(pacing, ONE_SECOND).getDelayMillis())
         .isEqualTo(3 * ONE_SECOND);
   }
 
@@ -89,7 +89,7 @@ class SseRateLimitPacingTest {
 
     attempt(pacing, 500, headers("Retry-After", "3", "RateLimit", "\"default\";r=0;t=5"));
 
-    assertThat(paced(pacing, ONE_SECOND).apply(ONE_SECOND).getDelayMillis())
+    assertThat(paced(pacing, ONE_SECOND).getDelayMillis())
         .isBetween(5 * ONE_SECOND, 5 * ONE_SECOND + 500L);
   }
 
@@ -99,7 +99,7 @@ class SseRateLimitPacingTest {
 
     attempt(pacing, 429, headers("Retry-After", "3"));
 
-    assertThat(paced(pacing, 30 * ONE_SECOND).apply(30 * ONE_SECOND).getDelayMillis())
+    assertThat(paced(pacing, 30 * ONE_SECOND).getDelayMillis())
         .isEqualTo(30 * ONE_SECOND);
   }
 
@@ -110,7 +110,7 @@ class SseRateLimitPacingTest {
 
     clock.advance(6 * ONE_SECOND);
 
-    assertThat(paced(pacing, ONE_SECOND).apply(ONE_SECOND).getDelayMillis())
+    assertThat(paced(pacing, ONE_SECOND).getDelayMillis())
         .isEqualTo(ONE_SECOND);
   }
 
@@ -120,12 +120,21 @@ class SseRateLimitPacingTest {
     attempt(pacing, 200, headers("RateLimit", "\"default\";r=0;t=5"));
     RetryDelayStrategy unwrappedNext = fixed(ONE_SECOND, null);
 
-    RetryDelayStrategy.Result first =
-        pacing.retryDelayStrategy(fixed(ONE_SECOND, unwrappedNext)).apply(ONE_SECOND);
+    RetryDelayStrategy first = pacing.retryDelayStrategy(fixed(ONE_SECOND, unwrappedNext));
 
     assertThat(first.getNext()).isNotNull().isNotSameAs(unwrappedNext);
-    assertThat(first.getNext().apply(ONE_SECOND).getDelayMillis())
+    assertThat(first.getNext().getDelayMillis())
         .isGreaterThanOrEqualTo(5 * ONE_SECOND);
+  }
+
+  @Test
+  void a_server_directed_base_delay_reaches_the_wrapped_backoff() {
+    SseRateLimitPacing pacing = pacing(Maps.newHashMap());
+
+    RetryDelayStrategy reset =
+        pacing.retryDelayStrategy(fixed(ONE_SECOND, null)).withBaseDelayMillis(2 * ONE_SECOND);
+
+    assertThat(reset.getDelayMillis()).isEqualTo(2 * ONE_SECOND);
   }
 
   @Test
@@ -134,7 +143,7 @@ class SseRateLimitPacingTest {
 
     attempt(pacing, 200, headers("RateLimit", "\"default\";r=0"));
 
-    assertThat(paced(pacing, ONE_SECOND).apply(ONE_SECOND).getDelayMillis())
+    assertThat(paced(pacing, ONE_SECOND).getDelayMillis())
         .isBetween(3600 * ONE_SECOND, 3600 * ONE_SECOND + 500L);
   }
 
@@ -148,7 +157,7 @@ class SseRateLimitPacingTest {
 
     attempt(pacing, 200, headers("RateLimit", "\"default\";r=0;t=172800"));
 
-    assertThat(paced(pacing, ONE_SECOND).apply(ONE_SECOND).getDelayMillis())
+    assertThat(paced(pacing, ONE_SECOND).getDelayMillis())
         .isBetween(
             86400 * ONE_SECOND,
             86400 * ONE_SECOND + 500L);
@@ -160,7 +169,7 @@ class SseRateLimitPacingTest {
 
     attempt(pacing, 429, headers("Retry-After", "3", "RateLimit", "\"default\";r=0;t=30"));
 
-    assertThat(paced(pacing, ONE_SECOND).apply(ONE_SECOND).getDelayMillis())
+    assertThat(paced(pacing, ONE_SECOND).getDelayMillis())
         .isEqualTo(ONE_SECOND);
   }
 
@@ -174,7 +183,7 @@ class SseRateLimitPacingTest {
 
     attempt(pacing, 503, headers("Retry-After", date));
 
-    assertThat(paced(pacing, ONE_SECOND).apply(ONE_SECOND).getDelayMillis())
+    assertThat(paced(pacing, ONE_SECOND).getDelayMillis())
         .isEqualTo(60 * ONE_SECOND);
   }
 
@@ -184,7 +193,7 @@ class SseRateLimitPacingTest {
 
     attempt(pacing, 429, headers("Retry-After", "not-a-date"));
 
-    assertThat(paced(pacing, ONE_SECOND).apply(ONE_SECOND).getDelayMillis())
+    assertThat(paced(pacing, ONE_SECOND).getDelayMillis())
         .isEqualTo(ONE_SECOND);
   }
 
@@ -231,8 +240,18 @@ class SseRateLimitPacingTest {
   private static RetryDelayStrategy fixed(long delayMillis, RetryDelayStrategy next) {
     return new RetryDelayStrategy() {
       @Override
-      public Result apply(long baseDelayMillis) {
-        return new Result(delayMillis, next);
+      public long getDelayMillis() {
+        return delayMillis;
+      }
+
+      @Override
+      public RetryDelayStrategy getNext() {
+        return next;
+      }
+
+      @Override
+      public RetryDelayStrategy withBaseDelayMillis(long millis) {
+        return fixed(millis, next);
       }
     };
   }

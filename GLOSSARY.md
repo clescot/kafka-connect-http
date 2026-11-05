@@ -10,6 +10,12 @@ What the HTTP sink connector does with each HTTP exchange's result. `NONE` disca
 Kafka topics.
 _Avoid_: publish strategy, output mode
 
+**Event Time**:
+The timestamp Kafka attaches to a record. Sink JEXL expressions expose it as `timestamp` (epoch seconds),
+`timestampInMs` (epoch milliseconds) and `dateTime` (ISO-8601 in UTC); when a record carries none, these fall back to
+the time the expression is evaluated.
+_Avoid_: "record date", "creation time" (that is only one way Kafka can set the event time), "now" for the event time
+
 **Producer Mode**:
 The `PRODUCER` publish mode. It writes exchanges to the Kafka topics `producer.success.topic` and
 `producer.error.topic` through a low-level producer.

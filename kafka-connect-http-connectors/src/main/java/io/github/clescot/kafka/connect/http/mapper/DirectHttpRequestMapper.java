@@ -5,12 +5,11 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import io.github.clescot.core.http.HttpRequest;
 import io.github.clescot.kafka.connect.http.HttpRequestAdapter;
+import io.github.clescot.kafka.connect.http.jexl.SinkRecordJexlContext;
 import java.nio.charset.StandardCharsets;
 import java.util.Objects;
-import org.apache.commons.jexl3.JexlContext;
 import org.apache.commons.jexl3.JexlEngine;
 import org.apache.commons.jexl3.JexlExpression;
-import org.apache.commons.jexl3.MapContext;
 import org.apache.kafka.connect.connector.ConnectRecord;
 import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.data.Struct;
@@ -33,10 +32,7 @@ public class DirectHttpRequestMapper extends AbstractHttpRequestMapper {
 
   @Override
   public boolean matches(ConnectRecord sinkRecord) {
-    // populate the context
-    JexlContext context = new MapContext();
-    context.set("sinkRecord", sinkRecord);
-    return (boolean) expression.evaluate(context);
+    return (boolean) expression.evaluate(SinkRecordJexlContext.contextFor(sinkRecord));
   }
 
   @Override

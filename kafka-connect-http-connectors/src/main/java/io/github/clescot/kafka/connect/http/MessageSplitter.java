@@ -2,12 +2,11 @@ package io.github.clescot.kafka.connect.http;
 
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
+import io.github.clescot.kafka.connect.http.jexl.SinkRecordJexlContext;
 import java.util.List;
 import java.util.function.BiFunction;
-import org.apache.commons.jexl3.JexlContext;
 import org.apache.commons.jexl3.JexlEngine;
 import org.apache.commons.jexl3.JexlExpression;
-import org.apache.commons.jexl3.MapContext;
 import org.apache.kafka.connect.connector.ConnectRecord;
 import org.jetbrains.annotations.NotNull;
 
@@ -21,7 +20,7 @@ public class MessageSplitter<T extends ConnectRecord<T>> {
   private final String id;
   private final String splitPattern;
   private final int splitLimit;
-  public static final String SINK_RECORD = "sinkRecord";
+  public static final String SINK_RECORD = SinkRecordJexlContext.SINK_RECORD;
   private final JexlExpression jexlMatchingExpression;
   private final BiFunction<T, String, T> fromStringPartToRecordFunction;
 
@@ -56,10 +55,8 @@ public class MessageSplitter<T extends ConnectRecord<T>> {
   }
 
   public boolean matches(T connectRecord) {
-    // populate the context
-    JexlContext context = new MapContext();
-    context.set(SINK_RECORD, connectRecord);
-    return (boolean) jexlMatchingExpression.evaluate(context);
+    return (boolean)
+        jexlMatchingExpression.evaluate(SinkRecordJexlContext.contextFor(connectRecord));
   }
 
   private List<String> split(String body) {

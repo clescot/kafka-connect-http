@@ -17,17 +17,14 @@ import io.github.clescot.core.http.BodyType;
 import io.github.clescot.core.http.HttpPart;
 import io.github.clescot.core.http.HttpRequest;
 import io.github.clescot.kafka.connect.http.HttpRequestAdapter;
+import io.github.clescot.kafka.connect.http.jexl.JexlEngineFactory;
 import io.github.clescot.kafka.connect.http.mapper.DirectHttpRequestMapper;
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import org.apache.commons.jexl3.JexlBuilder;
 import org.apache.commons.jexl3.JexlEngine;
-import org.apache.commons.jexl3.JexlFeatures;
-import org.apache.commons.jexl3.introspection.JexlPermissions;
 import org.apache.kafka.common.record.TimestampType;
-import org.apache.kafka.connect.connector.ConnectRecord;
 import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.data.SchemaAndValue;
 import org.apache.kafka.connect.data.Struct;
@@ -54,17 +51,36 @@ class DirectHttpRequestMapperTest {
 
   @BeforeEach
   void setup() {
-    // Restricted permissions to a safe set but with URI allowed
-    JexlPermissions permissions =
-        new JexlPermissions.ClassPermissions(
-            SinkRecord.class, ConnectRecord.class, HttpRequest.class);
-    // Create the engine
-    JexlFeatures features =
-        new JexlFeatures().loops(false).sideEffectGlobal(false).sideEffect(false);
-    JexlEngine jexlEngine = new JexlBuilder().features(features).permissions(permissions).create();
+    JexlEngine jexlEngine = JexlEngineFactory.build();
     httpRequestMapper = new DirectHttpRequestMapper(DEFAULT, jexlEngine, "true");
     schemaRegistryClient =
         new MockSchemaRegistryClient(Lists.newArrayList(new JsonSchemaProvider()));
+  }
+
+  @Nested
+  class TestMatches {
+
+    @Test
+    void test_matcher_can_use_the_record_date_time() {
+      DirectHttpRequestMapper mapper =
+          new DirectHttpRequestMapper(
+              DEFAULT,
+              JexlEngineFactory.build(),
+              "dateTime=='2023-11-06T00:00:00.000Z' && sinkRecord.topic()=='myTopic'");
+      SinkRecord sinkRecord =
+          new SinkRecord(
+              "myTopic",
+              0,
+              Schema.STRING_SCHEMA,
+              "key",
+              Schema.STRING_SCHEMA,
+              "value",
+              0,
+              1699228800000L,
+              TimestampType.CREATE_TIME);
+
+      assertThat(mapper.matches(sinkRecord)).isTrue();
+    }
   }
 
   @Nested

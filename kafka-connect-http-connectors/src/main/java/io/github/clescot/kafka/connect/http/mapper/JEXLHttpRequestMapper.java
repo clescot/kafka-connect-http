@@ -4,6 +4,7 @@ import com.google.common.base.Preconditions;
 import com.google.common.collect.Maps;
 import io.github.clescot.core.http.BodyType;
 import io.github.clescot.core.http.HttpRequest;
+import io.github.clescot.kafka.connect.http.jexl.SinkRecordJexlContext;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -11,18 +12,18 @@ import java.util.Optional;
 import org.apache.commons.jexl3.JexlContext;
 import org.apache.commons.jexl3.JexlEngine;
 import org.apache.commons.jexl3.JexlExpression;
-import org.apache.commons.jexl3.MapContext;
 import org.apache.kafka.connect.connector.ConnectRecord;
 import org.jetbrains.annotations.Nullable;
 
 /**
  * this class is used to map a sink record to an http request using JEXL expressions. The JEXL
- * expressions are evaluated using the sink record as context. Each part of the http request can be
- * evaluated with a JEXL expression.
+ * expressions are evaluated using the sink record as context, plus the record event time exposed as
+ * {@code timestamp}, {@code timestampInMs} and {@code dateTime}. Each part of the http request can
+ * be evaluated with a JEXL expression.
  */
 public class JEXLHttpRequestMapper extends AbstractHttpRequestMapper {
 
-  public static final String SINK_RECORD = "sinkRecord";
+  public static final String SINK_RECORD = SinkRecordJexlContext.SINK_RECORD;
 
   private final JexlExpression jexlMatchingExpression;
   private final JexlExpression jexlUrlExpression;
@@ -67,16 +68,12 @@ public class JEXLHttpRequestMapper extends AbstractHttpRequestMapper {
 
   @Override
   public boolean matches(ConnectRecord sinkRecord) {
-    // populate the context
-    JexlContext context = new MapContext();
-    context.set(SINK_RECORD, sinkRecord);
-    return (boolean) jexlMatchingExpression.evaluate(context);
+    return (boolean) jexlMatchingExpression.evaluate(SinkRecordJexlContext.contextFor(sinkRecord));
   }
 
   @Override
   public HttpRequest map(ConnectRecord sinkRecord) {
-    JexlContext context = new MapContext();
-    context.set(SINK_RECORD, sinkRecord);
+    JexlContext context = SinkRecordJexlContext.contextFor(sinkRecord);
     String url = (String) jexlUrlExpression.evaluate(context);
     HttpRequest.Method method =
         jexlMethodExpression

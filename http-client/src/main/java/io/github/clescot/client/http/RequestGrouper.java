@@ -60,11 +60,6 @@ public class RequestGrouper<T> {
             return Lists.newArrayList();
         }
         LOGGER.debug("'{}' grouping requests",getId());
-        HttpRequest aggregatedRequest = (HttpRequest) (entries.get(0).getRight()).clone();
-        String aggregatedBody=init;
-        int consumed = 0;
-        StringBuilder builder = new StringBuilder(aggregatedBody);
-        boolean interrupted=false;
 
         List<Pair<T, HttpRequest>> matchingEntries = entries.stream()
                 .filter(pair-> this.matches(pair.getRight()))
@@ -74,33 +69,42 @@ public class RequestGrouper<T> {
                 .filter(pair-> !this.matches(pair.getRight()))
                 .toList();
 
-        for (int i = 0; i < matchingEntries.size(); i++) {
-            Pair<T, HttpRequest> myEntry = matchingEntries.get(i);
-            String part = myEntry.getRight().getBodyAsString();
-            if((messageLimit>0 && i==messageLimit)||(bodyLimit!=-1 && builder.length()+part.length()>=bodyLimit)){
-                consumed = i;
-                interrupted = true;
-                break;
-            }
-            if(i>0) {
-                builder.append(separator);
-            }
-            builder.append(part);
-        }
-        if(!interrupted){
-            consumed = entries.size();
-        }
-        if(end!=null) {
-            builder.append(end);
-        }
-        aggregatedBody = builder.toString();
-        aggregatedRequest.setBodyAsString(aggregatedBody);
-        List<Pair<T, HttpRequest>> nonAggregatedRequests = entries.subList(consumed, entries.size());
         List<Pair<T, HttpRequest>> aggregatedRequests = Lists.newArrayList();
-        aggregatedRequests.add(Pair.of(entries.get(0).getLeft(),aggregatedRequest));
-        aggregatedRequests.addAll(group(nonAggregatedRequests));
+        int index = 0;
+        while (index < matchingEntries.size()) {
+            //the aggregate is cloned from the first matching entry, so it keeps its url, headers and method
+            Pair<T, HttpRequest> firstMatchingEntry = matchingEntries.get(index);
+            HttpRequest aggregatedRequest = (HttpRequest) firstMatchingEntry.getRight().clone();
+            StringBuilder builder = new StringBuilder(init);
+            int grouped = 0;
+            while (index < matchingEntries.size()) {
+                String part = bodyOf(matchingEntries.get(index).getRight());
+                boolean messageLimitReached = messageLimit > 0 && grouped >= messageLimit;
+                boolean bodyLimitReached = bodyLimit != -1 && builder.length() + part.length() >= bodyLimit;
+                //a group always consumes its first matching entry, otherwise it would never terminate
+                if (grouped > 0 && (messageLimitReached || bodyLimitReached)) {
+                    break;
+                }
+                if (grouped > 0) {
+                    builder.append(separator);
+                }
+                builder.append(part);
+                grouped++;
+                index++;
+            }
+            if(end!=null) {
+                builder.append(end);
+            }
+            aggregatedRequest.setBodyAsString(builder.toString());
+            aggregatedRequests.add(Pair.of(firstMatchingEntry.getLeft(), aggregatedRequest));
+        }
         aggregatedRequests.addAll(nonMatchingEntries);
         return aggregatedRequests;
+    }
+
+    private String bodyOf(HttpRequest httpRequest) {
+        String body = httpRequest.getBodyAsString();
+        return body != null ? body : "";
     }
 
     public String getId() {

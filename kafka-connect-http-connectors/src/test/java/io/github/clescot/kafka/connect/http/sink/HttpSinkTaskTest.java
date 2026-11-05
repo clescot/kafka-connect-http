@@ -2885,6 +2885,140 @@ public class HttpSinkTaskTest {
                     .withRequestBody(equalTo("hello\nstuff3\ngood bye")));
           });
     }
+
+    @Test
+    void test_request_grouper_does_not_recurse_when_first_body_reaches_body_limit() {
+      Assertions.assertDoesNotThrow(
+          () -> {
+            HashMap<String, String> settings = Maps.newHashMap();
+            String id = "myid1";
+            settings.put(REQUEST_GROUPER_IDS, id);
+            settings.put(REQUEST_GROUPER_PREFIX + id + "." + URL_REGEX, ".*/path1");
+            settings.put(REQUEST_GROUPER_PREFIX + id + "." + "start", "[");
+            settings.put(REQUEST_GROUPER_PREFIX + id + "." + "end", "]");
+            settings.put(REQUEST_GROUPER_PREFIX + id + "." + "body.limit", "3");
+            okHttpSinkTask.start(settings);
+
+            WireMock wireMock = wmHttp.getRuntimeInfo().getWireMock();
+            stubPost(wireMock, "/path1");
+
+            // when
+            okHttpSinkTask.put(Lists.newArrayList(sinkRecord("/path1", "bb")));
+
+            // then a group always consumes its first matching entry, even past the limit
+            wireMock.verifyThat(
+                1, postRequestedFor(urlEqualTo("/path1")).withRequestBody(equalTo("[bb]")));
+          });
+    }
+
+    @Test
+    void test_request_grouper_sends_a_group_to_the_first_matching_url() {
+      Assertions.assertDoesNotThrow(
+          () -> {
+            HashMap<String, String> settings = Maps.newHashMap();
+            String id = "myid1";
+            settings.put(REQUEST_GROUPER_IDS, id);
+            settings.put(REQUEST_GROUPER_PREFIX + id + "." + URL_REGEX, ".*/path1");
+            okHttpSinkTask.start(settings);
+
+            WireMock wireMock = wmHttp.getRuntimeInfo().getWireMock();
+            stubPost(wireMock, "/path1");
+            stubPost(wireMock, "/pathA");
+
+            // when the non-matching request comes first
+            okHttpSinkTask.put(
+                Lists.newArrayList(sinkRecord("/pathA", "y"), sinkRecord("/path1", "a")));
+
+            // then the group is addressed to the matching request, not to the first entry
+            wireMock.verifyThat(
+                1, postRequestedFor(urlEqualTo("/path1")).withRequestBody(equalTo("a")));
+            wireMock.verifyThat(
+                1, postRequestedFor(urlEqualTo("/pathA")).withRequestBody(equalTo("y")));
+          });
+    }
+
+    @Test
+    void test_request_grouper_does_not_invent_an_empty_request() {
+      Assertions.assertDoesNotThrow(
+          () -> {
+            HashMap<String, String> settings = Maps.newHashMap();
+            String id = "myid1";
+            settings.put(REQUEST_GROUPER_IDS, id);
+            settings.put(REQUEST_GROUPER_PREFIX + id + "." + URL_REGEX, ".*/path1");
+            okHttpSinkTask.start(settings);
+
+            WireMock wireMock = wmHttp.getRuntimeInfo().getWireMock();
+            stubPost(wireMock, "/pathA");
+            stubPost(wireMock, "/pathB");
+
+            // when no request matches the grouper
+            okHttpSinkTask.put(
+                Lists.newArrayList(sinkRecord("/pathA", "x"), sinkRecord("/pathB", "y")));
+
+            // then each non-matching request is returned once, with no empty group
+            wireMock.verifyThat(1, postRequestedFor(urlEqualTo("/pathA")));
+            wireMock.verifyThat(
+                1, postRequestedFor(urlEqualTo("/pathA")).withRequestBody(equalTo("x")));
+            wireMock.verifyThat(
+                1, postRequestedFor(urlEqualTo("/pathB")).withRequestBody(equalTo("y")));
+          });
+    }
+
+    @Test
+    void test_request_grouper_does_not_duplicate_requests_with_message_limit() {
+      Assertions.assertDoesNotThrow(
+          () -> {
+            HashMap<String, String> settings = Maps.newHashMap();
+            String id = "myid1";
+            settings.put(REQUEST_GROUPER_IDS, id);
+            settings.put(REQUEST_GROUPER_PREFIX + id + "." + URL_REGEX, ".*/path1");
+            settings.put(REQUEST_GROUPER_PREFIX + id + "." + "message.limit", "1");
+            okHttpSinkTask.start(settings);
+
+            WireMock wireMock = wmHttp.getRuntimeInfo().getWireMock();
+            stubPost(wireMock, "/path1");
+            stubPost(wireMock, "/pathA");
+
+            // when a non-matching request is interleaved with matching ones
+            okHttpSinkTask.put(
+                Lists.newArrayList(
+                    sinkRecord("/pathA", "x"), sinkRecord("/path1", "a"), sinkRecord("/path1", "bb")));
+
+            // then each original body is sent exactly once
+            wireMock.verifyThat(
+                1, postRequestedFor(urlEqualTo("/path1")).withRequestBody(equalTo("a")));
+            wireMock.verifyThat(
+                1, postRequestedFor(urlEqualTo("/path1")).withRequestBody(equalTo("bb")));
+            wireMock.verifyThat(
+                1, postRequestedFor(urlEqualTo("/pathA")).withRequestBody(equalTo("x")));
+          });
+    }
+
+    private SinkRecord sinkRecord(String path, String body) {
+      int port = wmHttp.getRuntimeInfo().getHttpPort();
+      return new SinkRecord(
+          "myTopic",
+          0,
+          Schema.STRING_SCHEMA,
+          "key",
+          Schema.STRING_SCHEMA,
+          getLocalHttpRequestAsStringWithPath(port, path, "POST", body),
+          -1,
+          System.currentTimeMillis(),
+          TimestampType.CREATE_TIME,
+          Lists.newArrayList());
+    }
+
+    private void stubPost(WireMock wireMock, String path) {
+      wireMock.register(
+          WireMock.post(path)
+              .willReturn(
+                  WireMock.aResponse()
+                      .withHeader("Content-Type", "application/json")
+                      .withBody("{\"result\":\"pong\"}")
+                      .withStatus(200)
+                      .withStatusMessage(OK)));
+    }
   }
 
   @Nested

@@ -80,7 +80,7 @@ Split one message value into several messages. No splitter is registered by defa
 | `message.splitter.ids` | Comma-separated list of splitter ids to register. |
 | `message.splitter.<id>.pattern` | Java regex used to split the body. |
 | `message.splitter.<id>.limit` | Result threshold, like `String.split`. |
-| `message.splitter.<id>.matcher` | JEXL expression deciding which messages to split. |
+| `message.splitter.<id>.matcher` | JEXL expression deciding which messages to split. It can use the [JEXL variables](#jexl-variables). |
 
 ## HttpRequestMapper
 
@@ -103,7 +103,45 @@ registered and catches every message.
 - **`DIRECT`** — the message value is already an `HttpRequest`: a `Struct`, or a JSON string
   parsed into one.
 - **`JEXL`** — the `HttpRequest` is built from fields extracted with JEXL expressions
-  evaluated against the variable `sinkRecord`.
+  evaluated against the record.
+
+### JEXL variables
+
+Every sink JEXL expression sees these variables:
+
+| Variable | Type | Value |
+| --- | --- | --- |
+| `sinkRecord` | `SinkRecord` | The Kafka record. |
+| `timestamp` | `Long` | Record event time, in epoch seconds. |
+| `timestampInMs` | `Long` | Record event time, in epoch milliseconds. |
+| `dateTime` | `String` | Record event time, in ISO-8601 UTC, e.g. `2023-11-06T00:00:00.000Z`. |
+
+When a record carries no event time, `timestamp`, `timestampInMs` and `dateTime` fall back to the
+time the expression is evaluated.
+
+The `datetime` namespace formats a date and time in UTC, with the English locale, using any
+[`DateTimeFormatter`](https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/time/format/DateTimeFormatter.html)
+pattern:
+
+| Expression | Result |
+| --- | --- |
+| `datetime:format(dateTime,'yyyy-MM-dd')` | `2023-11-06` |
+| `datetime:format(dateTime,'EEEE d MMMM')` | `Monday 6 November` |
+| `datetime:fromEpochMillis(timestampInMs,'HH:mm:ss')` | `00:00:00` |
+| `datetime:now('yyyy-MM-dd')` | Current date, in UTC. |
+| `datetime:now()` | Current date and time, in ISO-8601 UTC. |
+
+`datetime:format` takes an ISO-8601 value, such as `dateTime`. Use
+`datetime:fromEpochMillis` for an epoch-millis value: a plain number carries no unit, so
+`datetime:format(timestampInMs,…)` is rejected rather than guessed.
+
+```json
+{
+  "http.request.mapper.myid.mode": "JEXL",
+  "http.request.mapper.myid.url": "'https://api.example.com/events/' + datetime:format(dateTime,'yyyy/MM/dd')",
+  "http.request.mapper.myid.headers": "{'X-Event-Time':[dateTime,...]}"
+}
+```
 
 ## Request groupers
 
