@@ -52,24 +52,17 @@ and, in another module:
 | --- | --- |
 | `http-client/src/main/java/io/github/clescot/client/queue/QueueFactory.java` | `getQueue` (the queue implementation) |
 
-**Sync commit: `1bfd7493`** (2026-10-29, master after the 0.8.192 release). Re-run at this commit:
-`F1 LOOKS FIXED`, exit 3, with the same 506/506/156 distinct states, because every covered file is
-byte-identical to the previous anchor `286678306c106f3f1107866cde3bce2017fa81de` (#956). The commits
-in between were triaged as no effect: `473cf027` refactors `SseRateLimitPacing` (the authority is
-cached in the constructor and two methods moved into the inner classes that use them), the
-dependabot merge `ee6db4f0` bumps `okhttp-eventsource` from 4.2.0 to 5.0.1, and `0e8e96ca` (#986)
-migrates the pacing to that 5.x API. Pacing is not covered by this check (see "Not covered by this
-check"), so the delivery model is unchanged. Note that `ee6db4f0` itself did **not** compile;
-`0e8e96ca` repairs it. The check reads the source, so it ran even on the broken commit, but a green
-build stays a prerequisite for a live run, not for this check. The previous sync commit was
-`ace85b1a8c55d6d84942d9e85c83e8c2251f7f61`, where the resume-cursor fix landed. Move this commit
-forward only after you have re-run the check and confirmed the model still describes the code at
-the new commit, see "Keeping this in step with the code".
-
-The Resume Policy change (#952) landed on top of that anchor: the coverage table below now names
-the resume-policy parts of the files it covers, and the cold start it governs is described under
-"Not covered by this check". The check was re-run on the merged tree; the anchor is moved in the
-commit that follows this merge.
+**Sync commit: `04d90eddd5b19b483e9ad4f060a4f5401ebca638`** (2026-11-05, the merge that brings the
+Resume Policy change (#952) onto master). Re-run at this commit: `F1 LOOKS FIXED`, exit 3, all three
+configs OK. The policy is a runtime, per-configuration choice the check cannot see: its `from_start`
+and `from_now` configurations already describe the two worlds the policy chooses between, and the
+cold start it governs stays under "Not covered by this check". Master's `okhttp-eventsource` 4.2.0 →
+5.0.1 upgrade does not alter the delivery model either: the sentinel and the resume header are
+asserted on the wire by the unit tests. The previous sync commit was `1bfd7493` (2026-10-29, master
+after the 0.8.192 release), and before it `286678306c106f3f1107866cde3bce2017fa81de`, where the
+reconnect-pacing change landed. Move this commit forward only after you have re-run the check and
+confirmed the model still describes the code at the new commit, see "Keeping this in step with the
+code".
 
 ## How to read the verdict
 
