@@ -1,10 +1,12 @@
 package io.github.clescot.kafka.connect.sse.client.okhttp;
 
 import static io.github.clescot.client.Constants.EXCHANGE_TEMPLATE;
+import static io.github.clescot.client.Constants.STATIC_REQUEST_HEADER_NAMES;
 import static io.github.clescot.client.http.HttpClientFactory.getRandom;
 
 import com.google.common.base.Preconditions;
 import com.google.common.base.Strings;
+import com.google.common.collect.Lists;
 import com.launchdarkly.eventsource.*;
 import com.launchdarkly.eventsource.background.BackgroundEventSource;
 import io.github.clescot.client.Configuration;
@@ -17,6 +19,7 @@ import io.github.clescot.core.sse.SseEvent;
 import io.github.clescot.core.sse.SseExchange;
 import io.micrometer.core.instrument.composite.CompositeMeterRegistry;
 import java.net.URI;
+import java.util.Arrays;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Queue;
@@ -31,12 +34,21 @@ import org.slf4j.LoggerFactory;
 /** Configuration for SSE client using OkHttp. */
 public class SseConfiguration implements Configuration<OkHttpClient, HttpRequest> {
   private static final Logger LOGGER = LoggerFactory.getLogger(SseConfiguration.class);
+
+  /**
+   * The SSE resume header: the only lever the connector has on the position a stream starts from.
+   */
+  static final String LAST_EVENT_ID_HEADER = "Last-Event-ID";
+
   private final String configurationId;
   private OkHttpClient httpClient;
   private final Map<String, String> settings;
   private final URI uri;
   private final String topic;
   private final String id;
+  private final SseResumePolicy resumePolicy;
+  private boolean askFromStart = false;
+  private String fromStartEventId;
   private boolean connected = false;
   private boolean started = false;
   private SseBackgroundEventHandler backgroundEventHandler;
@@ -74,6 +86,13 @@ public class SseConfiguration implements Configuration<OkHttpClient, HttpRequest
     this.exchangeTemplate = settings.getOrDefault(EXCHANGE_TEMPLATE, "");
     ExchangeTemplateProcessorFactory factory = new ExchangeTemplateProcessorFactory();
     this.templateManager = factory.createTemplateManager(settings);
+
+    this.resumePolicy = SseResumePolicy.fromSettings(settings);
+    this.fromStartEventId =
+        settings.getOrDefault(
+            SseConfigDefinition.RESUME_FROM_START_EVENT_ID,
+            SseConfigDefinition.DEFAULT_RESUME_FROM_START_EVENT_ID);
+    checkResumePolicyAgainstStaticHeaders();
   }
 
   public static SseConfiguration buildSseConfiguration(
@@ -95,8 +114,8 @@ public class SseConfiguration implements Configuration<OkHttpClient, HttpRequest
   /**
    * Connects to the SSE server, seeding the resume cursor with the given committed event id: the
    * server is asked to replay from the last event Kafka Connect committed. An empty id means no
-   * committed offset, so no Last-Event-ID header is sent and the server's own resume policy
-   * applies.
+   * committed offset: the configuration's Resume Policy decides what is asked of the server, which
+   * by default is nothing.
    *
    * @param queue queue receiving the SSE events
    * @param lastCommittedEventId highest event id committed by Kafka Connect, or empty
@@ -107,6 +126,9 @@ public class SseConfiguration implements Configuration<OkHttpClient, HttpRequest
     Preconditions.checkNotNull(queue, "queue must not be null.");
     Preconditions.checkNotNull(lastCommittedEventId, "lastCommittedEventId must not be null.");
     this.queue = queue;
+    // the policy only speaks where nothing was committed: an offset is always the better answer
+    this.askFromStart =
+        resumePolicy == SseResumePolicy.FROM_START && lastCommittedEventId.isEmpty();
 
     // retry strategy
     this.retryDelayStrategy = RetryDelayStrategy.defaultStrategy();
@@ -166,6 +188,9 @@ public class SseConfiguration implements Configuration<OkHttpClient, HttpRequest
             .requestTransformer(
                 input -> {
                   HttpRequest httpRequest = this.httpClient.buildRequest(input);
+                  // before the operator's own enrichment, so an explicitly configured header wins
+                  // over the connector's sentinel
+                  applyResumePolicy(httpRequest);
                   return this.httpClient.buildNativeRequest(
                       this.httpClient.getEnrichRequestFunction().apply(httpRequest));
                 });
@@ -184,6 +209,61 @@ public class SseConfiguration implements Configuration<OkHttpClient, HttpRequest
             .build();
     connected = true;
     return backgroundEventSource;
+  }
+
+  /**
+   * Applies this configuration's Resume Policy to an outgoing request. When the policy asks for the
+   * whole stream and the eventsource library put no cursor of its own on the request, the sentinel
+   * event id is added: an absent {@code Last-Event-ID} is how the library says "nothing to resume
+   * from", so its own cursor always wins and a mid-run reconnect resumes from it as before.
+   *
+   * @param httpRequest the request about to be sent, enriched in place
+   */
+  void applyResumePolicy(HttpRequest httpRequest) {
+    Preconditions.checkNotNull(httpRequest, "httpRequest must not be null.");
+    if (!askFromStart || hasHeader(httpRequest, LAST_EVENT_ID_HEADER)) {
+      return;
+    }
+    httpRequest.getHeaders().put(LAST_EVENT_ID_HEADER, Lists.newArrayList(fromStartEventId));
+  }
+
+  private static boolean hasHeader(HttpRequest httpRequest, String name) {
+    return httpRequest.getHeaders().keySet().stream()
+        .anyMatch(headerName -> name.equalsIgnoreCase(headerName));
+  }
+
+  /**
+   * Rejects a configuration that combines the {@code from-start} policy with a static {@code
+   * Last-Event-ID} header, and warns about a static header on its own. A static header is re-sent
+   * on every reconnect, so it never lets the stream resume from where it stopped.
+   */
+  private void checkResumePolicyAgainstStaticHeaders() {
+    if (!hasStaticLastEventIdHeader()) {
+      return;
+    }
+    if (resumePolicy == SseResumePolicy.FROM_START) {
+      throw new IllegalArgumentException(
+          "configuration "
+              + configurationId
+              + " sets a static Last-Event-ID header and resume.policy '"
+              + SseResumePolicy.FROM_START.settingValue()
+              + "': the static header is re-sent on every reconnect, so it would ask for the whole"
+              + " stream forever instead of once. Configure one of the two.");
+    }
+    LOGGER.warn(
+        "configuration {} sets a static Last-Event-ID header: it overrides the committed offset and"
+            + " asks the server for that position on every reconnect, so the stream never resumes"
+            + " from where it stopped",
+        configurationId);
+  }
+
+  private boolean hasStaticLastEventIdHeader() {
+    String headerNames = settings.get(STATIC_REQUEST_HEADER_NAMES);
+    if (headerNames == null) {
+      return false;
+    }
+    return Arrays.stream(headerNames.split(","))
+        .anyMatch(name -> LAST_EVENT_ID_HEADER.equalsIgnoreCase(name.trim()));
   }
 
   public void start() {
@@ -244,6 +324,11 @@ public class SseConfiguration implements Configuration<OkHttpClient, HttpRequest
 
   public String getConfigurationId() {
     return configurationId;
+  }
+
+  /** Returns the configured Resume Policy of this configuration. */
+  public SseResumePolicy getResumePolicy() {
+    return resumePolicy;
   }
 
   public String getTopic() {

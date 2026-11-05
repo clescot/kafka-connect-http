@@ -40,9 +40,10 @@ The check covers these files and methods — a change to any of them needs this 
 | File (all under `kafka-connect-http-connectors/src/main/java/io/github/clescot/kafka/connect/sse/client/okhttp/`) | Method / part |
 | --- | --- |
 | `SseSourceTask.java` | `start`, `poll`, `stop`, and the `{configurationId}` source partition it exports |
-| `SseTask.java` | `connect`, `start` |
-| `SseConfiguration.java` | `connect` (the `BackgroundEventSource` builder, retry/error strategy, `ConnectStrategy`, and the `lastEventId` seed) |
-| `SseResumeLookup.java` | the committed-offset lookup (`lastCommittedEventId`) |
+| `SseTask.java` | `connect` (including the Resume Policy decision that may refuse to start), `start` |
+| `SseConfiguration.java` | `connect` (the `BackgroundEventSource` builder, retry/error strategy, `ConnectStrategy`, its request transformer, the `from-start` sentinel, and the `lastEventId` seed) |
+| `SseResumePolicy.java` | `fromSettings` (the policy the two files above branch on) |
+| `SseResumeLookup.java` | the committed-offset lookup (`lastCommittedEventId`) and whether offset storage exists at all (`hasOffsetStorage`) |
 | `SseBackgroundEventHandler.java` | `onMessage`, `buildResponse` |
 
 and, in another module:
@@ -51,19 +52,17 @@ and, in another module:
 | --- | --- |
 | `http-client/src/main/java/io/github/clescot/client/queue/QueueFactory.java` | `getQueue` (the queue implementation) |
 
-**Sync commit: `1bfd7493`** (2026-10-29, master after the 0.8.192 release). Re-run at this commit:
-`F1 LOOKS FIXED`, exit 3, with the same 506/506/156 distinct states, because every covered file is
-byte-identical to the previous anchor `286678306c106f3f1107866cde3bce2017fa81de` (#956). The commits
-in between were triaged as no effect: `473cf027` refactors `SseRateLimitPacing` (the authority is
-cached in the constructor and two methods moved into the inner classes that use them), the
-dependabot merge `ee6db4f0` bumps `okhttp-eventsource` from 4.2.0 to 5.0.1, and `0e8e96ca` (#986)
-migrates the pacing to that 5.x API. Pacing is not covered by this check (see "Not covered by this
-check"), so the delivery model is unchanged. Note that `ee6db4f0` itself did **not** compile;
-`0e8e96ca` repairs it. The check reads the source, so it ran even on the broken commit, but a green
-build stays a prerequisite for a live run, not for this check. The previous sync commit was
-`ace85b1a8c55d6d84942d9e85c83e8c2251f7f61`, where the resume-cursor fix landed. Move this commit
-forward only after you have re-run the check and confirmed the model still describes the code at
-the new commit, see "Keeping this in step with the code".
+**Sync commit: `04d90eddd5b19b483e9ad4f060a4f5401ebca638`** (2026-11-05, the merge that brings the
+Resume Policy change (#952) onto master). Re-run at this commit: `F1 LOOKS FIXED`, exit 3, all three
+configs OK. The policy is a runtime, per-configuration choice the check cannot see: its `from_start`
+and `from_now` configurations already describe the two worlds the policy chooses between, and the
+cold start it governs stays under "Not covered by this check". Master's `okhttp-eventsource` 4.2.0 →
+5.0.1 upgrade does not alter the delivery model either: the sentinel and the resume header are
+asserted on the wire by the unit tests. The previous sync commit was `1bfd7493` (2026-10-29, master
+after the 0.8.192 release), and before it `286678306c106f3f1107866cde3bce2017fa81de`, where the
+reconnect-pacing change landed. Move this commit forward only after you have re-run the check and
+confirmed the model still describes the code at the new commit, see "Keeping this in step with the
+code".
 
 ## How to read the verdict
 
@@ -149,11 +148,13 @@ configuration id, so the offset can be read back at all.
 
 **What the fix does not cover.** With no committed offset for a configuration, which is a
 first-ever start and the first start after upgrading from type-keyed offsets, there is no portable
-resume token. The connector sends no `Last-Event-ID` and inherits the server's policy, so events
-published before the first commit are not recoverable. It logs a warning when that happens, and
-`docs/reference/sse-source-connector.md` states the limit. `SeedsFromCommittedOffset` is a grep, so
-the check prints `F1 LOOKS FIXED` whether or not this case is handled; only a live run against a
-server that honours `Last-Event-ID` tells them apart.
+resume token. Each configuration now carries a Resume Policy for that state:
+`from-committed-offset` (the default) sends no `Last-Event-ID` and inherits the server's policy, so
+events published before the first commit are not recoverable; `from-start` sends the configured
+sentinel and is the opted-in world the model's `from_start` configuration already describes; `fail`
+refuses to start the task, so its stream never begins. The connector logs which policy applies.
+`SeedsFromCommittedOffset` is a grep, so the check prints `F1 LOOKS FIXED` whether or not any of
+this is handled; only a live run against a server that honours `Last-Event-ID` tells them apart.
 
 ## What the model is parameterised by (the code/model bridge)
 
@@ -211,12 +212,14 @@ Not covered by this check:
 - **Cross-task queue sharing.** `QueueFactory.getQueue` keys queues by configuration id in a
   `static` map, so two tasks in one JVM that use the same id share a queue. That is a separate
   target, not modelled here.
-- **The cold start.** With no committed offset for a configuration the task sends no
-  `Last-Event-ID`, so events published before its first commit are not recoverable. The model's
-  `floor = 1` branch there describes a `from_start` server, not a portable guarantee, and the
-  `SeedsFromCommittedOffset` grep cannot tell the two apart. One cold start per configuration also
-  follows the partition key change from event type to configuration id, because the old offsets
-  cannot be enumerated to migrate them.
+- **The cold start.** With no committed offset for a configuration the task has no resume cursor to
+  send, and what it asks for is the configuration's Resume Policy: nothing under
+  `from-committed-offset` (the default, so events published before its first commit are not
+  recoverable), the configured sentinel under `from-start`, or no stream at all under `fail`. The
+  model's `floor = 1` branch there describes the `from_start` world, not a portable guarantee, and
+  the `SeedsFromCommittedOffset` grep cannot tell the policies apart — the policy is a runtime,
+  per-configuration choice. One cold start per configuration also follows the partition key change
+  from event type to configuration id, because the old offsets cannot be enumerated to migrate them.
 - **Whether the server honours `Last-Event-ID`.** A server that ignores the header, or that treats
   an unknown id as "from now", still skips events published during the gap. The model assumes the
   header works.

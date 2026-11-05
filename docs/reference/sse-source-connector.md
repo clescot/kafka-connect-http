@@ -90,22 +90,44 @@ SSE event committed for that configuration. When a task starts, it reads that of
 the server to resume after it with a `Last-Event-ID` request header, so events published while the
 connector was down are re-delivered instead of skipped.
 
+| Setting | Default | Description |
+| --- | --- | --- |
+| `config.<id>.resume.policy` | `from-committed-offset` | What the configuration asks its server for when it starts with **no** committed offset: `from-committed-offset` asks nothing, `from-start` asks for the whole stream, `fail` refuses to start the task. |
+| `config.<id>.resume.from.start.event.id` | `0` | Event id sent as `Last-Event-ID` under `from-start`. Server-specific: `0`, `-1`, the first event id, or empty for a server that reads an empty header as "the whole stream". |
+
+A configuration with no committed offset is a **cold start**: a first-ever start, and the first start
+after upgrading from a version that keyed offsets by event type, whose old offsets are orphaned and
+cannot be enumerated. There is no portable resume token in that state, so the configuration's resume
+policy decides:
+
+* `from-committed-offset`, the default, sends no `Last-Event-ID` and inherits the server's own
+  policy, which for most servers means "from now", so events published before its first commit are
+  not recoverable. The connector logs `no committed offset for configuration <id>`.
+* `from-start` sends the configured sentinel as `Last-Event-ID`, asking the server for the whole
+  stream. The sentinel is only sent when the request carries no `Last-Event-ID` of its own, so a
+  reconnect after the first event resumes from that event's id as usual: the replay, duplicates
+  included, happens once, at the cold start.
+* `fail` refuses to start: the task goes to `FAILED`, and the log names the configuration. Every
+  stream of that task stops with it, since a source task owns several configurations and Connect has
+  no per-configuration failure channel.
+
+The policy no longer applies to a configuration that has an offset committed: the committed offset
+always wins.
+
 Two consequences are worth knowing:
 
 * The offset is keyed by the configuration id, so **changing a configuration id starts a new
-  stream**, with no committed position, under the server's own default policy.
-* A configuration with no committed offset has nothing to ask for. That covers a first-ever start,
-  and the first start after upgrading from a version that keyed offsets by event type, whose old
-  offsets are orphaned. The connector sends no `Last-Event-ID` and inherits the server's default
-  policy, which for most servers means "from now", so events published before its first commit are
-  not recoverable. It logs `no committed offset for configuration <id>` when that happens.
+  stream**, with no committed position, under the configuration's resume policy.
+* Whether the server honours `Last-Event-ID` is the server's decision. The connector asks, and a
+  server that ignores the header, or that treats an unknown id as "from now", will still skip events
+  published during the gap. The connector cannot detect that.
+
+A static `Last-Event-ID` header (`config.<id>.enrich.request.static.header.*`) bypasses all of this:
+it is re-sent on every reconnect, so the stream never resumes from where it stopped. The connector
+refuses it together with `from-start`, and warns about it on its own.
 
 The cursor is the `id:` the server sent, not the id an `exchange.template` may have produced, so a
 template that rewrites or drops the id does not move the resume point.
-
-Whether the server honours `Last-Event-ID` is the server's decision. The connector asks, and a
-server that ignores the header, or that treats an unknown id as "from now", will still skip events
-published during the gap. The connector cannot detect that.
 
 ## Known inconsistencies
 

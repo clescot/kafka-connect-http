@@ -78,18 +78,39 @@ public class SseTask implements Task<OkHttpClient, SseConfiguration, HttpRequest
    * Connects to the configured SSE servers using the provided configurations. Each configuration is
    * connected to a queue for processing events. The resume cursor of each configuration is seeded
    * from the event id Kafka Connect committed for it, so a restarted task asks the SSE server to
-   * replay from there; with no committed offset, the server's own resume policy applies.
+   * replay from there. With no committed offset, the configuration's Resume Policy decides: ask
+   * nothing (the default), ask for the whole stream, or refuse to start.
    */
   public void connect() {
     this.sseConfigurations.forEach(
         (name, config) -> {
           // don't close the backgroundEventSource to receive events
+          SseResumePolicy resumePolicy = config.getResumePolicy();
           Optional<String> committedEventId = this.resumeLookup.lastCommittedEventId(name);
+          LOGGER.info(
+              "SSE configuration {} uses resume policy '{}'", name, resumePolicy.settingValue());
           if (committedEventId.isPresent()) {
             LOGGER.info(
                 "resuming SSE configuration {} from the committed event id {}",
                 name,
                 committedEventId.get());
+          } else if (resumePolicy == SseResumePolicy.FAIL && this.resumeLookup.hasOffsetStorage()) {
+            LOGGER.error(
+                "no committed offset for SSE configuration {} and its resume policy is '{}': its"
+                    + " stream would start at a position nobody chose",
+                name,
+                resumePolicy.settingValue());
+            throw new IllegalStateException(
+                "no committed offset for SSE configuration "
+                    + name
+                    + " and its resume policy is '"
+                    + resumePolicy.settingValue()
+                    + "'");
+          } else if (resumePolicy == SseResumePolicy.FROM_START) {
+            LOGGER.info(
+                "starting SSE configuration {} from the beginning of the stream, as its resume policy"
+                    + " asks",
+                name);
           } else {
             LOGGER.warn(
                 "no committed offset for configuration {}, the server's own resume policy applies"

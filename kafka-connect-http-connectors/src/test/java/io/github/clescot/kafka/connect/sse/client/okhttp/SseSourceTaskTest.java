@@ -1,10 +1,13 @@
 package io.github.clescot.kafka.connect.sse.client.okhttp;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.equalTo;
+import static com.github.tomakehurst.wiremock.client.WireMock.getRequestedFor;
 import static com.github.tomakehurst.wiremock.client.WireMock.okForContentType;
+import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
 import static com.github.tomakehurst.wiremock.stubbing.Scenario.STARTED;
 import static io.github.clescot.client.Constants.CONFIGURATION_IDS;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -323,12 +326,36 @@ class SseSourceTaskTest {
     }
 
     private Map<String, String> settingsFor(String configurationId) {
+      return settingsFor(configurationId, "/events1");
+    }
+
+    private Map<String, String> settingsFor(String configurationId, String path) {
       Map<String, String> settings = Maps.newHashMap();
       settings.put("config.ids", configurationId);
       settings.put("config." + configurationId + ".topic", "test");
-      settings.put(
-          "config." + configurationId + ".url", wmRuntimeInfo.getHttpBaseUrl() + "/events1");
+      settings.put("config." + configurationId + ".url", wmRuntimeInfo.getHttpBaseUrl() + path);
       return settings;
+    }
+
+    private Map<String, String> settingsFor(
+        String configurationId, String path, String resumePolicy) {
+      Map<String, String> settings = settingsFor(configurationId, path);
+      settings.put(
+          "config." + configurationId + "." + SseConfigDefinition.RESUME_POLICY, resumePolicy);
+      return settings;
+    }
+
+    /** Plays the role of the Kafka Connect runtime of a task that has no committed offset yet. */
+    private SseSourceTask sseSourceTaskWithEmptyOffsetStorage() {
+      OffsetStorageReader offsetStorageReader = mock(OffsetStorageReader.class);
+      when(offsetStorageReader.offset(any())).thenReturn(null);
+      SourceTaskContext sourceTaskContext = mock(SourceTaskContext.class);
+      when(sourceTaskContext.offsetStorageReader()).thenReturn(offsetStorageReader);
+      return new SseSourceTask() {
+        {
+          context = sourceTaskContext;
+        }
+      };
     }
 
     @Test
@@ -367,6 +394,122 @@ class SseSourceTaskTest {
                   .getEventSource()
                   .getLastEventId())
           .isNullOrEmpty();
+    }
+
+    @Test
+    void test_from_start_policy_asks_for_the_whole_stream_on_a_cold_start() {
+      String configurationId = "fromstart123";
+      registerQuietEventStream("/from-start");
+      sseSourceTask = new SseSourceTask();
+
+      sseSourceTask.start(
+          settingsFor(
+              configurationId, "/from-start", SseConfigDefinition.RESUME_POLICY_FROM_START));
+
+      assertThat(sseSourceTask.isConnected(configurationId)).isTrue();
+      Awaitility.await()
+          .atMost(30, TimeUnit.SECONDS)
+          .untilAsserted(
+              () ->
+                  wmRuntimeInfo
+                      .getWireMock()
+                      .verifyThat(
+                          getRequestedFor(urlEqualTo("/from-start"))
+                              .withHeader("Last-Event-ID", equalTo("0"))));
+      // the sentinel is not the library's cursor: the seed stays empty
+      assertThat(
+              sseSourceTask
+                  .getConfigurations()
+                  .get(configurationId)
+                  .getBackgroundEventSource()
+                  .getEventSource()
+                  .getLastEventId())
+          .isNullOrEmpty();
+    }
+
+    @Test
+    void test_from_start_policy_still_resumes_from_a_committed_offset() {
+      String configurationId = "fromstart456";
+      String path = "/from-start-committed";
+      registerQuietEventStream(path);
+      sseSourceTask = sseSourceTaskWithCommittedOffset(configurationId, "7");
+
+      sseSourceTask.start(
+          settingsFor(configurationId, path, SseConfigDefinition.RESUME_POLICY_FROM_START));
+
+      Awaitility.await()
+          .atMost(30, TimeUnit.SECONDS)
+          .untilAsserted(
+              () ->
+                  wmRuntimeInfo
+                      .getWireMock()
+                      .verifyThat(
+                          getRequestedFor(urlEqualTo(path))
+                              .withHeader("Last-Event-ID", equalTo("7"))));
+      // the policy does not apply where an offset is committed: no sentinel is ever asked for
+      wmRuntimeInfo
+          .getWireMock()
+          .verifyThat(
+              0, getRequestedFor(urlEqualTo(path)).withHeader("Last-Event-ID", equalTo("0")));
+    }
+
+    @Test
+    void test_fail_policy_without_a_committed_offset_fails_the_task() {
+      String configurationId = "fail123";
+      registerQuietEventStream("/fail");
+      sseSourceTask = sseSourceTaskWithEmptyOffsetStorage();
+
+      IllegalStateException exception =
+          Assertions.assertThrows(
+              IllegalStateException.class,
+              () ->
+                  sseSourceTask.start(
+                      settingsFor(
+                          configurationId, "/fail", SseConfigDefinition.RESUME_POLICY_FAIL)));
+
+      assertThat(exception).hasMessageContaining(configurationId);
+    }
+
+    @Test
+    void test_fail_policy_without_offset_storage_does_not_fail_the_task() {
+      String configurationId = "fail456";
+      registerQuietEventStream("/fail-no-storage");
+      // no context: the task was never started by Connect, so "nothing committed" says nothing
+      // about the configuration
+      sseSourceTask = new SseSourceTask();
+
+      sseSourceTask.start(
+          settingsFor(configurationId, "/fail-no-storage", SseConfigDefinition.RESUME_POLICY_FAIL));
+
+      assertThat(sseSourceTask.isConnected(configurationId)).isTrue();
+    }
+  }
+
+  @Nested
+  class ResumeLookup {
+
+    @Test
+    void a_task_never_started_by_connect_has_no_offset_storage() {
+      SseSourceTask sseSourceTask = new SseSourceTask();
+
+      assertThat(sseSourceTask.resumeLookup().hasOffsetStorage()).isFalse();
+      assertThat(sseSourceTask.resumeLookup().lastCommittedEventId("any")).isEmpty();
+    }
+
+    @Test
+    void a_task_started_by_connect_has_offset_storage() {
+      OffsetStorageReader offsetStorageReader = mock(OffsetStorageReader.class);
+      SourceTaskContext sourceTaskContext = mock(SourceTaskContext.class);
+      when(sourceTaskContext.offsetStorageReader()).thenReturn(offsetStorageReader);
+      SseSourceTask sseSourceTask =
+          new SseSourceTask() {
+            {
+              context = sourceTaskContext;
+            }
+          };
+
+      assertThat(sseSourceTask.resumeLookup().hasOffsetStorage()).isTrue();
+      assertThat(sseSourceTask.resumeLookup().lastCommittedEventId("any")).isEmpty();
     }
   }
 }

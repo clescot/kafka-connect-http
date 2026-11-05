@@ -9,6 +9,7 @@
 #   control.sh drive-sink     drive the HTTP Sink feature end to end + capture evidence
 #   control.sh drive-ratelimit drive the server-advertised RateLimit feature end to end + capture evidence
 #   control.sh drive-sse-ratelimit drive the SSE source's advertised-delay pacing end to end + capture evidence
+#   control.sh drive-sse-resume-policy drive the SSE source's Resume Policy (from-start and fail) end to end + capture evidence
 #   control.sh status         show the current run id, ports and container state
 #   control.sh logs [svc] [-f] tail logs, finite by default (-f to follow)
 #                             (svc: kafka|connect|http-target|sse-target)
@@ -579,6 +580,193 @@ EOF
   log "evidence: $dir"
 }
 
+cmd_drive_sse_resume_policy() {
+  load_run_id
+  [ -d "$ART" ] || die "artifact dir missing: $ART"
+  local dir="$ART/sse-resume-policy"
+  mkdir -p "$dir"
+  local invocation
+  invocation="$(date +%s%3N)"
+  local topic_from_start=sse-resume-from-start-$invocation
+  local topic_fail=sse-resume-fail-$invocation
+  local topic_quiet=sse-resume-quiet-$invocation
+  # a source offset is keyed by the configuration id, so a configuration id that already ran is not
+  # a cold start any more: scope the two ids under test, and the topics, to this invocation, and
+  # keep the mandatory `default` pair on a quiet endpoint that neither assertion looks at
+  local id_from_start="fromstart-$invocation"
+  local id_fail="fail-$invocation"
+  local connector_from_start=sse-source-resume-from-start
+  local connector_fail=sse-source-resume-fail
+
+  log "step 1/6 create the dedicated topics"
+  local topic
+  for topic in "$topic_from_start" "$topic_fail" "$topic_quiet"; do
+    dc exec -T kafka kafka-topics --bootstrap-server localhost:9092 \
+      --create --if-not-exists --topic "$topic" --partitions 1 --replication-factor 1 >/dev/null
+  done
+  local c
+  for c in "$connector_from_start" "$connector_fail"; do
+    curl -sf -X DELETE "$CONNECT_URL/connectors/$c" >/dev/null 2>&1 || true
+    local k=0
+    while [ "$k" -lt 60 ] && curl -sf "$CONNECT_URL/connectors/$c" >/dev/null 2>&1; do
+      k=$((k + 1)); sleep 0.5
+    done
+  done
+  sleep 2
+  local stale
+  for stale in $(curl -sf "$TARGET_URL/__admin/mappings" \
+      | jq -r '.mappings[] | select(.request.url == "/sse-from-start" or .request.url == "/sse-quiet") | .id' 2>/dev/null); do
+    curl -sf -X DELETE "$TARGET_URL/__admin/mappings/$stale" >/dev/null 2>&1 || true
+  done
+
+  log "step 2/6 stub the endpoint as a server that honours Last-Event-ID, plus a quiet one"
+  # the sentinel asks for the whole stream: this is the branch a replaying server takes
+  curl -sf -X POST "$TARGET_URL/__admin/mappings" -H 'Content-Type: application/json' -d '{
+    "priority": 1,
+    "request":  {"method": "GET", "url": "/sse-from-start", "headers": {"Last-Event-ID": {"equalTo": "0"}}},
+    "response": {"status": 200, "headers": {"Content-Type": "text/event-stream"}, "body": "id: 1\nevent: one\ndata: first\n\nid: 2\nevent: two\ndata: second\n\nid: 3\nevent: three\ndata: third\n\n"}
+  }' > "$dir/sse-resume-policy-mapping-sentinel.json"
+  # the same server when nothing is asked: it starts at "now", so it delivers nothing at all
+  curl -sf -X POST "$TARGET_URL/__admin/mappings" -H 'Content-Type: application/json' -d '{
+    "priority": 5,
+    "request":  {"method": "GET", "url": "/sse-from-start"},
+    "response": {"status": 200, "headers": {"Content-Type": "text/event-stream"}, "body": ""}
+  }' > "$dir/sse-resume-policy-mapping-fallback.json"
+  # the configuration that only exists to satisfy the mandatory default pair connects here
+  curl -sf -X POST "$TARGET_URL/__admin/mappings" -H 'Content-Type: application/json' -d '{
+    "request":  {"method": "GET", "url": "/sse-quiet"},
+    "response": {"status": 200, "headers": {"Content-Type": "text/event-stream"}, "body": ""}
+  }' > "$dir/sse-resume-policy-mapping-quiet.json"
+  curl -sf -X DELETE "$TARGET_URL/__admin/requests" >/dev/null 2>&1 || true
+
+  log "step 3/6 register the from-start configuration, wait for RUNNING/RUNNING"
+  jq -nc --arg id "$id_from_start" --arg topic "$topic_from_start" --arg quietTopic "$topic_quiet" '{
+      "connector.class": "io.github.clescot.kafka.connect.sse.client.okhttp.SseSourceConnector",
+      "tasks.max": "1",
+      "config.ids": $id,
+      "key.converter": "org.apache.kafka.connect.storage.StringConverter",
+      "value.converter": "org.apache.kafka.connect.storage.StringConverter",
+      "config.default.url": "http://http-target:8080/sse-quiet",
+      "config.default.topic": $quietTopic,
+      ("config." + $id + ".url"): "http://http-target:8080/sse-from-start",
+      ("config." + $id + ".topic"): $topic,
+      ("config." + $id + ".resume.policy"): "from-start"
+    }' > "$dir/sse-resume-policy-config-from-start.json"
+  curl -sf -X PUT "$CONNECT_URL/connectors/$connector_from_start/config" \
+    -H 'Content-Type: application/json' -d @"$dir/sse-resume-policy-config-from-start.json" \
+    > "$dir/sse-resume-policy-config-from-start-response.json"
+  local i=0 state=""
+  while [ "$i" -lt 60 ]; do
+    state="$(curl -sf "$CONNECT_URL/connectors/$connector_from_start/status" \
+      | jq -r '.connector.state + "/" + (.tasks[0].state // "none")' 2>/dev/null || echo "")"
+    [ "$state" = "RUNNING/RUNNING" ] && break
+    i=$((i + 1)); sleep 2
+  done
+  [ "$state" = "RUNNING/RUNNING" ] || die "the from-start connector never reached RUNNING/RUNNING (last: $state)"
+
+  log "step 4/6 assert the sentinel was asked for, once, and the whole stream arrived"
+  local consumed="" tries=0
+  while [ "$tries" -lt 30 ]; do
+    consumed="$(dc exec -T kafka kafka-console-consumer --bootstrap-server localhost:9092 \
+      --topic "$topic_from_start" --from-beginning --max-messages 3 --timeout-ms 10000 2>/dev/null || true)"
+    printf '%s\n' "$consumed" | grep -q 'first' && break
+    tries=$((tries + 1))
+  done
+  printf '%s\n' "$consumed" > "$dir/sse-resume-policy-consumed-from-start.txt"
+  printf '%s\n' "$consumed" | grep -q 'first' \
+    || die "the from-start stream never delivered the events of the whole stream"
+  curl -sf "$TARGET_URL/__admin/requests" > "$dir/sse-resume-policy-requests.json"
+  # the journal lists the newest request first and keeps the header name as the client spelled it,
+  # so look the header up case-insensitively and take the oldest request as the cold start
+  local oldest_request="" sentinel_requests=""
+  oldest_request="$(jq -r '[.requests[] | select(.request.url == "/sse-from-start")] | last
+      | [.request.headers | to_entries[] | select(.key | ascii_downcase == "last-event-id") | .value]
+      | .[0] // ""' "$dir/sse-resume-policy-requests.json")"
+  sentinel_requests="$(jq '[.requests[] | select(.request.url == "/sse-from-start")
+      | [.request.headers | to_entries[] | select(.key | ascii_downcase == "last-event-id") | .value]
+      | select(index("0") != null)] | length' "$dir/sse-resume-policy-requests.json")"
+  [ "$oldest_request" = "0" ] \
+    || die "the cold start did not ask for the whole stream: the first request to /sse-from-start carried last-event-id '$oldest_request' instead of 0 (see $dir/sse-resume-policy-requests.json)"
+  [ "${sentinel_requests:-0}" -eq 1 ] \
+    || die "the sentinel was sent ${sentinel_requests:-0} times: the policy must speak only for the cold start, after which the committed offset and the library's cursor take over"
+  dc logs --tail=2000 connect > "$dir/sse-resume-policy-connect-logs-from-start.txt" 2>&1 || true
+  grep -q "starting SSE configuration $id_from_start from the beginning of the stream" \
+    "$dir/sse-resume-policy-connect-logs-from-start.txt" \
+    || die "the worker log does not name the from-start resume policy (see $dir/sse-resume-policy-connect-logs-from-start.txt)"
+
+  log "step 5/6 register the fail configuration and assert the task refused to start"
+  jq -nc --arg id "$id_fail" --arg topic "$topic_fail" --arg quietTopic "$topic_quiet" '{
+      "connector.class": "io.github.clescot.kafka.connect.sse.client.okhttp.SseSourceConnector",
+      "tasks.max": "1",
+      "config.ids": $id,
+      "key.converter": "org.apache.kafka.connect.storage.StringConverter",
+      "value.converter": "org.apache.kafka.connect.storage.StringConverter",
+      "config.default.url": "http://http-target:8080/sse-quiet",
+      "config.default.topic": $quietTopic,
+      ("config." + $id + ".url"): "http://http-target:8080/sse-fail",
+      ("config." + $id + ".topic"): $topic,
+      ("config." + $id + ".resume.policy"): "fail"
+    }' > "$dir/sse-resume-policy-config-fail.json"
+  curl -sf -X PUT "$CONNECT_URL/connectors/$connector_fail/config" \
+    -H 'Content-Type: application/json' -d @"$dir/sse-resume-policy-config-fail.json" \
+    > "$dir/sse-resume-policy-config-fail-response.json"
+  local j=0 connector_state="none" task_state="none" status_json=""
+  while [ "$j" -lt 60 ]; do
+    status_json="$(curl -sf "$CONNECT_URL/connectors/$connector_fail/status" 2>/dev/null || echo '{}')"
+    connector_state="$(printf '%s' "$status_json" | jq -r '.connector.state // "none"' 2>/dev/null || echo none)"
+    task_state="$(printf '%s' "$status_json" | jq -r '.tasks[0].state // "none"' 2>/dev/null || echo none)"
+    if [ "$connector_state" = "FAILED" ] || [ "$task_state" = "FAILED" ]; then break; fi
+    j=$((j + 1)); sleep 2
+  done
+  local failed="$connector_state/$task_state"
+  curl -sf "$CONNECT_URL/connectors/$connector_fail/status" \
+    > "$dir/sse-resume-policy-status-fail.json" 2>/dev/null || true
+  if [ "$connector_state" != "FAILED" ] && [ "$task_state" != "FAILED" ]; then
+    die "the fail policy did not stop the task (last status: $failed)"
+  fi
+  # the failed task must have refused before opening any stream: /sse-fail is unstubbed, so a
+  # single request there would prove the policy let it start anyway
+  curl -sf "$TARGET_URL/__admin/requests" > "$dir/sse-resume-policy-requests-final.json"
+  local fail_requests
+  fail_requests="$(jq '[.requests[] | select(.request.url == "/sse-fail")] | length' "$dir/sse-resume-policy-requests-final.json")"
+  [ "${fail_requests:-1}" -eq 0 ] \
+    || die "the fail policy still opened $fail_requests stream(s) on /sse-fail"
+
+  log "step 6/6 write the summary"
+  dc logs --tail=800 connect > "$dir/sse-resume-policy-connect-logs-fail.txt" 2>&1 || true
+  grep -q "no committed offset for SSE configuration $id_fail and its resume policy is 'fail'" \
+    "$dir/sse-resume-policy-connect-logs-fail.txt" \
+    || die "the worker log does not name the refuse-to-start reason (see $dir/sse-resume-policy-connect-logs-fail.txt)"
+  cat > "$dir/SUMMARY.md" <<EOF
+# SSE resume policy verification — PASS
+
+- run id:              $RUN_ID
+- connector:           $connector_from_start / $connector_fail (io.github.clescot.kafka.connect.sse.client.okhttp.SseSourceConnector)
+- configurations:      $id_from_start -> \`$topic_from_start\` (/sse-from-start, resume.policy=from-start)
+                       $id_fail -> \`$topic_fail\` (/sse-fail, resume.policy=fail)
+- cold start:          both configuration ids and topics are scoped to this invocation, so neither has a committed offset
+- from-start:          the first (oldest) request to /sse-from-start carried \`last-event-id: 0\`, and exactly
+                       $sentinel_requests request asked for the whole stream. The server answered with that stream
+                       (3 events), and events one/two/three reached Kafka.
+- offset takes over:   every later request carried the library's own cursor, not the sentinel
+- fail:                the task went \`$failed\` and /sse-fail recorded 0 requests: the connector refused
+                       before opening a stream
+
+## Artifacts
+- \`sse-resume-policy-config-from-start.json\` — the exact config PUT for the from-start connector
+- \`sse-resume-policy-config-fail.json\`       — the exact config PUT for the fail connector
+- \`sse-resume-policy-mapping-*.json\`         — the stubs (sentinel branch, fallback branch, quiet)
+- \`sse-resume-policy-requests*.json\`         — WireMock __admin/requests snapshots
+- \`sse-resume-policy-consumed-from-start.txt\` — records read back from \`$topic_from_start\`
+- \`sse-resume-policy-status-fail.json\`       — Connect status of the fail connector
+- \`sse-resume-policy-connect-logs-from-start.txt\` — worker log snapshot naming the from-start policy
+- \`sse-resume-policy-connect-logs-fail.txt\`       — worker log snapshot naming the refuse-to-start reason
+EOF
+
+  log "PROOF PASS: from-start asked for the whole stream with last-event-id: 0 and got it; fail refused to start and opened no stream"
+  log "evidence: $dir"
+}
+
 cmd_status() {
   load_run_id
   log "run id:      $RUN_ID"
@@ -621,6 +809,7 @@ main() {
     drive-sink) cmd_drive_sink ;;
     drive-ratelimit) cmd_drive_ratelimit ;;
     drive-sse-ratelimit) cmd_drive_sse_ratelimit ;;
+    drive-sse-resume-policy) cmd_drive_sse_resume_policy ;;
     status)     cmd_status ;;
     logs)       shift; cmd_logs "$@" ;;
     cleanup)    cmd_cleanup ;;

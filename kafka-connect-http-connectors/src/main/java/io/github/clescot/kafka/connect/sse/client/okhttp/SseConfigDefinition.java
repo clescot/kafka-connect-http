@@ -69,6 +69,26 @@ public class SseConfigDefinition {
       "Multiplier for the jitter delay when retrying to process an event after an error. "
           + "This setting is used to add randomness to the delay between retries to avoid thundering herd problems.";
 
+  // resume policy
+  public static final String RESUME_POLICY = "resume.policy";
+  public static final String RESUME_POLICY_FROM_COMMITTED_OFFSET = "from-committed-offset";
+  public static final String RESUME_POLICY_FROM_START = "from-start";
+  public static final String RESUME_POLICY_FAIL = "fail";
+  public static final String RESUME_POLICY_DOC =
+      "What this configuration asks its server for when it starts with no committed offset. "
+          + "With 'from-committed-offset', nothing is asked and the server's own resume policy applies, "
+          + "so the events published before the first commit are not recoverable. With 'from-start', "
+          + "the whole stream is asked for by sending the configured event id sentinel. With 'fail', the "
+          + "task refuses to start instead of letting its stream begin at a position nobody chose. "
+          + "Once an offset is committed, the committed offset wins under every policy.";
+  public static final String RESUME_FROM_START_EVENT_ID = "resume.from.start.event.id";
+  public static final String DEFAULT_RESUME_FROM_START_EVENT_ID = "0";
+  public static final String RESUME_FROM_START_EVENT_ID_DOC =
+      "Event id sent as Last-Event-ID when the resume policy is 'from-start' and no offset is committed. "
+          + "A server that replays the whole stream uses its own convention for that request: '0', '-1', "
+          + "the first event id, or an empty value for a server that reads an empty header that way. It is "
+          + "sent only when the request carries no Last-Event-ID of its own.";
+
   private final Map<String, String> settings;
 
   public SseConfigDefinition(Map<String, String> settings) {
@@ -140,6 +160,21 @@ public class SseConfigDefinition {
             "0.5",
             ConfigDef.Importance.MEDIUM,
             RETRY_DELAY_STRATEGY_JITTER_MULTIPLIER_DOC)
+        // resume policy
+        .define(
+            prefix + RESUME_POLICY,
+            ConfigDef.Type.STRING,
+            RESUME_POLICY_FROM_COMMITTED_OFFSET,
+            ConfigDef.ValidString.in(
+                RESUME_POLICY_FROM_COMMITTED_OFFSET, RESUME_POLICY_FROM_START, RESUME_POLICY_FAIL),
+            ConfigDef.Importance.MEDIUM,
+            RESUME_POLICY_DOC)
+        .define(
+            prefix + RESUME_FROM_START_EVENT_ID,
+            ConfigDef.Type.STRING,
+            DEFAULT_RESUME_FROM_START_EVENT_ID,
+            ConfigDef.Importance.MEDIUM,
+            RESUME_FROM_START_EVENT_ID_DOC)
         // server-advertised delays (IETF RateLimit / RateLimit-Policy and Retry-After)
         .define(
             prefix + RATE_LIMIT_HEADERS_ENABLED,
