@@ -13,6 +13,7 @@ import io.github.clescot.core.http.HttpRequest;
 import io.github.clescot.core.sse.SseEvent;
 import io.micrometer.core.instrument.composite.CompositeMeterRegistry;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Queue;
@@ -22,6 +23,18 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 class SseConfigurationTest {
+
+  private static Map<String, String> baseSettings() {
+    Map<String, String> settings = Maps.newHashMap();
+    settings.put("url", "http://example.com/sse");
+    settings.put("topic", "test-topic");
+    return settings;
+  }
+
+  private static OkHttpClient buildClient(Map<String, String> settings) {
+    return new OkHttpClientFactory()
+        .buildHttpClient(settings, null, new CompositeMeterRegistry(), new Random());
+  }
 
   @Nested
   class Constructor {
@@ -91,6 +104,63 @@ class SseConfigurationTest {
       Assertions.assertThrows(
           IllegalArgumentException.class,
           () -> new SseConfiguration("test", okHttpClient, emptySettings));
+    }
+
+    @Test
+    void resume_policy_defaults_to_from_committed_offset() {
+      Map<String, String> settings = Maps.newHashMap();
+      settings.put("url", "http://example.com/sse");
+      settings.put("topic", "test-topic");
+
+      SseConfiguration sseConfiguration =
+          new SseConfiguration("test-id", buildClient(settings), settings);
+
+      assertThat(sseConfiguration.getResumePolicy())
+          .isEqualTo(SseResumePolicy.FROM_COMMITTED_OFFSET);
+    }
+
+    @Test
+    void from_start_policy_with_a_static_last_event_id_header_is_refused() {
+      Map<String, String> settings = Maps.newHashMap();
+      settings.put("url", "http://example.com/sse");
+      settings.put("topic", "test-topic");
+      settings.put("enrich.request.static.header.names", "Last-Event-ID");
+      settings.put("enrich.request.static.header.Last-Event-ID", "5");
+      settings.put(SseConfigDefinition.RESUME_POLICY, SseConfigDefinition.RESUME_POLICY_FROM_START);
+
+      IllegalArgumentException exception =
+          Assertions.assertThrows(
+              IllegalArgumentException.class,
+              () -> new SseConfiguration("conflicting-id", buildClient(settings), settings));
+
+      assertThat(exception).hasMessageContaining("conflicting-id");
+    }
+
+    @Test
+    void a_static_last_event_id_header_on_its_own_is_accepted() {
+      Map<String, String> settings = Maps.newHashMap();
+      settings.put("url", "http://example.com/sse");
+      settings.put("topic", "test-topic");
+      settings.put("enrich.request.static.header.names", "Last-Event-ID");
+      settings.put("enrich.request.static.header.Last-Event-ID", "5");
+
+      Assertions.assertDoesNotThrow(
+          () -> new SseConfiguration("static-id", buildClient(settings), settings));
+    }
+
+    @Test
+    void an_unknown_resume_policy_is_refused() {
+      Map<String, String> settings = Maps.newHashMap();
+      settings.put("url", "http://example.com/sse");
+      settings.put("topic", "test-topic");
+      settings.put(SseConfigDefinition.RESUME_POLICY, "from-strat");
+
+      IllegalArgumentException exception =
+          Assertions.assertThrows(
+              IllegalArgumentException.class,
+              () -> new SseConfiguration("typo-id", buildClient(settings), settings));
+
+      assertThat(exception).hasMessageContaining("from-strat");
     }
   }
 
@@ -420,6 +490,85 @@ class SseConfigurationTest {
       Queue<SseEvent> queue = QueueFactory.getQueue(QueueFactory.DEFAULT_QUEUE_NAME);
       Assertions.assertThrows(
           NullPointerException.class, () -> sseConfiguration.connect(queue, null));
+    }
+
+    @Test
+    void from_start_policy_adds_the_sentinel_when_no_offset_is_committed() {
+      Map<String, String> settings = baseSettings();
+      settings.put(SseConfigDefinition.RESUME_POLICY, SseConfigDefinition.RESUME_POLICY_FROM_START);
+      SseConfiguration sseConfiguration =
+          new SseConfiguration("test-id", buildClient(settings), settings);
+      sseConfiguration.connect(
+          QueueFactory.getQueue(QueueFactory.DEFAULT_QUEUE_NAME), Optional.empty());
+
+      HttpRequest request = new HttpRequest("http://example.com/sse");
+      sseConfiguration.applyResumePolicy(request);
+
+      assertThat(request.getHeaders()).containsEntry("Last-Event-ID", List.of("0"));
+    }
+
+    @Test
+    void from_start_policy_sends_an_empty_header_when_the_sentinel_is_empty() {
+      Map<String, String> settings = baseSettings();
+      settings.put(SseConfigDefinition.RESUME_POLICY, SseConfigDefinition.RESUME_POLICY_FROM_START);
+      settings.put(SseConfigDefinition.RESUME_FROM_START_EVENT_ID, "");
+      SseConfiguration sseConfiguration =
+          new SseConfiguration("test-id", buildClient(settings), settings);
+      sseConfiguration.connect(
+          QueueFactory.getQueue(QueueFactory.DEFAULT_QUEUE_NAME), Optional.empty());
+
+      HttpRequest request = new HttpRequest("http://example.com/sse");
+      sseConfiguration.applyResumePolicy(request);
+
+      assertThat(request.getHeaders()).containsKey("Last-Event-ID");
+      assertThat(request.getHeaders().get("Last-Event-ID")).containsExactly("");
+    }
+
+    @Test
+    void from_start_policy_leaves_the_library_cursor_alone() {
+      Map<String, String> settings = baseSettings();
+      settings.put(SseConfigDefinition.RESUME_POLICY, SseConfigDefinition.RESUME_POLICY_FROM_START);
+      SseConfiguration sseConfiguration =
+          new SseConfiguration("test-id", buildClient(settings), settings);
+      sseConfiguration.connect(
+          QueueFactory.getQueue(QueueFactory.DEFAULT_QUEUE_NAME), Optional.empty());
+      HttpRequest request = new HttpRequest("http://example.com/sse");
+      // the eventsource library lower-cases the header name it derives from its own cursor
+      request.getHeaders().put("last-event-id", List.of("3"));
+
+      sseConfiguration.applyResumePolicy(request);
+
+      assertThat(request.getHeaders()).doesNotContainKey("Last-Event-ID");
+      assertThat(request.getHeaders().get("last-event-id")).containsExactly("3");
+    }
+
+    @Test
+    void from_start_policy_does_not_apply_when_an_offset_is_committed() {
+      Map<String, String> settings = baseSettings();
+      settings.put(SseConfigDefinition.RESUME_POLICY, SseConfigDefinition.RESUME_POLICY_FROM_START);
+      SseConfiguration sseConfiguration =
+          new SseConfiguration("test-id", buildClient(settings), settings);
+      sseConfiguration.connect(
+          QueueFactory.getQueue(QueueFactory.DEFAULT_QUEUE_NAME), Optional.of("7"));
+
+      HttpRequest request = new HttpRequest("http://example.com/sse");
+      sseConfiguration.applyResumePolicy(request);
+
+      assertThat(request.getHeaders()).doesNotContainKey("Last-Event-ID");
+    }
+
+    @Test
+    void the_default_policy_does_not_touch_the_request() {
+      Map<String, String> settings = baseSettings();
+      SseConfiguration sseConfiguration =
+          new SseConfiguration("test-id", buildClient(settings), settings);
+      sseConfiguration.connect(
+          QueueFactory.getQueue(QueueFactory.DEFAULT_QUEUE_NAME), Optional.empty());
+
+      HttpRequest request = new HttpRequest("http://example.com/sse");
+      sseConfiguration.applyResumePolicy(request);
+
+      assertThat(request.getHeaders()).doesNotContainKey("Last-Event-ID");
     }
   }
 

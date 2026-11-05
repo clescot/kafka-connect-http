@@ -18,6 +18,32 @@ public interface SseResumeLookup {
    */
   Optional<String> lastCommittedEventId(String configurationId);
 
-  /** Lookup that never finds a committed offset: the server's own resume policy applies. */
-  SseResumeLookup NONE = configurationId -> Optional.empty();
+  /**
+   * Tells whether Kafka Connect's offset storage is reachable at all. A task that Connect never
+   * initialised (an embedded task, a unit test) has none, and "nothing was committed" is then not a
+   * statement about the configuration: a {@code fail} resume policy must not treat it as a gap to
+   * refuse.
+   *
+   * @return true when committed offsets can be read back
+   */
+  default boolean hasOffsetStorage() {
+    return true;
+  }
+
+  /**
+   * Lookup for a task with no offset storage: no committed offset can ever be found, so the
+   * configuration's Resume Policy has nothing to work from.
+   */
+  SseResumeLookup NONE =
+      new SseResumeLookup() {
+        @Override
+        public Optional<String> lastCommittedEventId(String configurationId) {
+          return Optional.empty();
+        }
+
+        @Override
+        public boolean hasOffsetStorage() {
+          return false;
+        }
+      };
 }

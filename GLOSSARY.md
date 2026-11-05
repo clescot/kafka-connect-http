@@ -26,6 +26,14 @@ that authority is paused. Distinct from the local `rate.limiter.*` pacing, and f
 wins when both are present.
 _Avoid_: "cooldown", "backoff" (reserved for the connector's own retry curve)
 
+**Resume Policy**:
+A per-configuration choice of what an SSE source asks its server for when it starts in a Cold Start. Once an offset is committed, the policy no longer applies.
+_Avoid_: replay mode, resume strategy, seek
+
+**Cold Start**:
+An SSE source configuration starting with no committed offset, so it has no resume cursor to send. The only state in which a Resume Policy applies.
+_Avoid_: gap, resume window
+
 **In-Memory Queue**:
 _(Retired)_ A JVM-local unbounded buffer that handed exchanges from an HTTP sink connector to a colocated HTTP source
 connector. It was removed because it required both connectors in one worker.

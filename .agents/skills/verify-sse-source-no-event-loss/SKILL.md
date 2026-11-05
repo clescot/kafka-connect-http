@@ -143,11 +143,13 @@ configuration id, so the offset can be read back at all.
 
 **What the fix does not cover.** With no committed offset for a configuration, which is a
 first-ever start and the first start after upgrading from type-keyed offsets, there is no portable
-resume token. The connector sends no `Last-Event-ID` and inherits the server's policy, so events
-published before the first commit are not recoverable. It logs a warning when that happens, and
-`docs/reference/sse-source-connector.md` states the limit. `SeedsFromCommittedOffset` is a grep, so
-the check prints `F1 LOOKS FIXED` whether or not this case is handled; only a live run against a
-server that honours `Last-Event-ID` tells them apart.
+resume token. Each configuration now carries a Resume Policy for that state:
+`from-committed-offset` (the default) sends no `Last-Event-ID` and inherits the server's policy, so
+events published before the first commit are not recoverable; `from-start` sends the configured
+sentinel and is the opted-in world the model's `from_start` configuration already describes; `fail`
+refuses to start the task, so its stream never begins. The connector logs which policy applies.
+`SeedsFromCommittedOffset` is a grep, so the check prints `F1 LOOKS FIXED` whether or not any of
+this is handled; only a live run against a server that honours `Last-Event-ID` tells them apart.
 
 ## What the model is parameterised by (the code/model bridge)
 
@@ -202,12 +204,14 @@ Not covered by this check:
 - **Cross-task queue sharing.** `QueueFactory.getQueue` keys queues by configuration id in a
   `static` map, so two tasks in one JVM that use the same id share a queue. That is a separate
   target, not modelled here.
-- **The cold start.** With no committed offset for a configuration the task sends no
-  `Last-Event-ID`, so events published before its first commit are not recoverable. The model's
-  `floor = 1` branch there describes a `from_start` server, not a portable guarantee, and the
-  `SeedsFromCommittedOffset` grep cannot tell the two apart. One cold start per configuration also
-  follows the partition key change from event type to configuration id, because the old offsets
-  cannot be enumerated to migrate them.
+- **The cold start.** With no committed offset for a configuration the task has no resume cursor to
+  send, and what it asks for is the configuration's Resume Policy: nothing under
+  `from-committed-offset` (the default, so events published before its first commit are not
+  recoverable), the configured sentinel under `from-start`, or no stream at all under `fail`. The
+  model's `floor = 1` branch there describes the `from_start` world, not a portable guarantee, and
+  the `SeedsFromCommittedOffset` grep cannot tell the policies apart — the policy is a runtime,
+  per-configuration choice. One cold start per configuration also follows the partition key change
+  from event type to configuration id, because the old offsets cannot be enumerated to migrate them.
 - **Whether the server honours `Last-Event-ID`.** A server that ignores the header, or that treats
   an unknown id as "from now", still skips events published during the gap. The model assumes the
   header works.

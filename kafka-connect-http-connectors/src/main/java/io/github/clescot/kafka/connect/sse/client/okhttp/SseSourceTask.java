@@ -36,7 +36,8 @@ public class SseSourceTask extends SourceTask {
   /**
    * Builds the lookup of the event ids Kafka Connect committed. The Kafka Connect transport stays
    * at this boundary: a task that was never initialised by Connect (unit tests) has no offset
-   * storage, so nothing was committed and the server's own resume policy applies.
+   * storage, so nothing was committed and the server's own resume policy applies. The lookup says
+   * which of the two it is, so a {@code fail} resume policy only refuses on a real gap.
    */
   SseResumeLookup resumeLookup() {
     OffsetStorageReader reader = context == null ? null : context.offsetStorageReader();
