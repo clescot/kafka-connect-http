@@ -116,7 +116,7 @@
         <dependency>
             <groupId>com.nimbusds</groupId>
             <artifactId>oauth2-oidc-sdk</artifactId>
-            <version>11.38.2</version>
+            <version>11.39</version>
         </dependency>
         <dependency>
             <groupId>org.apache.commons</groupId>
@@ -136,7 +136,7 @@
         <dependency>
             <groupId>com.launchdarkly</groupId>
             <artifactId>okhttp-eventsource</artifactId>
-            <version>5.0.2</version>
+            <version>6.0.0</version>
         </dependency>
 
         <dependency>
